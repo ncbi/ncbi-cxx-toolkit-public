@@ -35,7 +35,6 @@
 
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
-#include "ncbi_priv.h"
 #include "ncbi_socketp.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidbg.hpp>
@@ -618,7 +617,7 @@ static void s_Fini(void) THROWS_NONE
     if (s_CORE_Set & eCORE_SetLOG)
         CORE_SetLOG(0);
     if (s_CORE_Set & eCORE_SetLOCK)
-        CORE_SetLOCK(&g_CORE_MT_Lock_default);
+        CORE_SetLOCK(0);
     g_CORE_Set &= ~s_CORE_Set;
     s_CORE_Set  =  0;
 }

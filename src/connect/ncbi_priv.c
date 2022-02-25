@@ -91,8 +91,9 @@ extern int g_NCBI_CoreCheckLock(void)
 
 extern int g_NCBI_CoreCheckUnlock(void)
 {
-    /* check that unlock operates on the same lock */
-    if (s_CoreLock != g_CORE_MT_Lock) {
+    /* check that unlock operates on the same lock (excl. process run-down) */
+    if (s_CoreLock != g_CORE_MT_Lock
+        &&  (s_CoreLock != &g_CORE_MT_Lock_default  ||  g_CORE_MT_Lock)) {
         CORE_LOG(eLOG_Critical, "Inconsistent use of CORE MT-Lock");
         assert(0);
         return 0/*failure*/;

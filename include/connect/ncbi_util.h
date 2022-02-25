@@ -86,7 +86,7 @@ extern "C" {
 
 /** Set the MT critical section lock/unlock handler -- to be used by the core
  * internals for protection of internal static variables and other MT-sensitive
- * code from being accessed/changed by several threads simultaneously. It is
+ * code from being accessed/changed by several threads simultaneously.  It is
  * also to fully protect the core log handler and core regirsty, including
  * their setup, as well as callback and cleanup functions.
  * @warning This function itself is NOT MT-safe!
@@ -102,7 +102,7 @@ extern "C" {
  * a (write) lock), the lock must allow recursive locking (by the same thread)
  * to the depth of 2.
  * @param lk
- *  MT-Lock as created by MT_LOCK_Create
+ *  MT-Lock as created by MT_LOCK_Create (NULL "lk" drops the internal MT-Lock)
  * @sa
  *  MT_LOCK_Create, MT_LOCK_Delete, CORE_SetLOG, CORE_SetREG
  */
