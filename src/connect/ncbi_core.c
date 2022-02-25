@@ -78,8 +78,8 @@ extern const char* IO_StatusStr(EIO_Status status)
  *  MT locking
  */
 
-/* Check the validity of the MT lock */
-#define MT_LOCK_VALID  assert(lk->count  &&  lk->magic == kMT_LOCK_magic)
+/* Check the validity of an MT lock */
+#define MT_LOCK_VALID(lk)  assert((lk)->count && (lk)->magic == kMT_LOCK_magic)
 
 
 /* MT lock data and callbacks */
@@ -217,7 +217,7 @@ extern MT_LOCK MT_LOCK_Create
 extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk)
 {
     if (lk) {
-        MT_LOCK_VALID;
+        MT_LOCK_VALID(lk);
         if (lk != &g_CORE_MT_Lock_default) {
             // CORE_DEBUG_ARG(unsigned int count;)
             MT_LOCK_Do(lk, eMT_Lock);
@@ -234,12 +234,12 @@ extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk)
 extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
 {
     if (lk) {
-        MT_LOCK_VALID;
+        MT_LOCK_VALID(lk);
         if (lk != &g_CORE_MT_Lock_default) {
             unsigned int count;
             if (lk->handler)
                 verify(lk->handler(lk->data, eMT_Lock));
-            count = --lk->count;
+            count = --lk->count;  /* NB: may invalidate MT_LOCK_VALID(lk) */
             if (lk->handler)
                 verify(lk->handler(lk->data, eMT_Unlock));
             // CORE_TRACEF(("MT_LOCK_Delete(%p) = %u", lk, count));
@@ -259,7 +259,7 @@ extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
 
 extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
 {
-    MT_LOCK_VALID;
+    MT_LOCK_VALID(lk);
     return lk->handler ? lk->handler(lk->data, how) : -1/*rightful non-doing*/;
 }
 
@@ -269,14 +269,14 @@ extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
  *  ERROR HANDLING and LOGGING
  */
 
-/* Lock/unlock the logger */
-#define LOG_LOCK_WRITE  verify(MT_LOCK_Do(lg->lock, eMT_Lock)     != 0)
-#define LOG_LOCK_READ   verify(MT_LOCK_Do(lg->lock, eMT_LockRead) != 0)
-#define LOG_UNLOCK      verify(MT_LOCK_Do(lg->lock, eMT_Unlock)   != 0)
+/* Lock/unlock a logger */
+#define LOG_LOCK_WRITE(lg)  verify(MT_LOCK_Do((lg)->lock, eMT_Lock)     != 0)
+#define LOG_LOCK_READ(lg)   verify(MT_LOCK_Do((lg)->lock, eMT_LockRead) != 0)
+#define LOG_UNLOCK(lg)      verify(MT_LOCK_Do((lg)->lock, eMT_Unlock)   != 0)
 
 
-/* Check the validity of the logger */
-#define LOG_VALID  assert(lg->count  &&  lg->magic == kLOG_magic)
+/* Check the validity of a logger */
+#define LOG_VALID(lg)  assert((lg)->count  &&  (lg)->magic == kLOG_magic)
 
 
 /* Logger data and callbacks */
@@ -335,8 +335,8 @@ extern LOG LOG_Reset
  FLOG_Handler handler,
  FLOG_Cleanup cleanup)
 {
-    LOG_LOCK_WRITE;
-    LOG_VALID;
+    LOG_LOCK_WRITE(lg);
+    LOG_VALID(lg);
 
     if (lg->cleanup)
         lg->cleanup(lg->data);
@@ -345,19 +345,19 @@ extern LOG LOG_Reset
     lg->handler = handler;
     lg->cleanup = cleanup;
 
-    LOG_UNLOCK;
+    LOG_UNLOCK(lg);
     return lg;
 }
 
 
 extern LOG LOG_AddRef(LOG lg)
 {
-    LOG_LOCK_WRITE;
-    LOG_VALID;
+    LOG_LOCK_WRITE(lg);
+    LOG_VALID(lg);
 
     lg->count++;
 
-    LOG_UNLOCK;
+    LOG_UNLOCK(lg);
     return lg;
 }
 
@@ -365,16 +365,16 @@ extern LOG LOG_AddRef(LOG lg)
 extern LOG LOG_Delete(LOG lg)
 {
     if (lg) {
-        LOG_LOCK_WRITE;
-        LOG_VALID;
+        LOG_LOCK_WRITE(lg);
+        LOG_VALID(lg);
 
         if (lg->count > 1) {
             lg->count--;
-            LOG_UNLOCK;
+            LOG_UNLOCK(lg);
             return lg;
         }
 
-        LOG_UNLOCK;
+        LOG_UNLOCK(lg);
 
         LOG_Reset(lg, 0, 0, 0);
         lg->count--;
@@ -396,13 +396,13 @@ extern void LOG_WriteInternal
     assert(!mess->raw_size  ||  mess->raw_data);
 
     if (lg) {
-        LOG_LOCK_READ;
-        LOG_VALID;
+        LOG_LOCK_READ(lg);
+        LOG_VALID(lg);
 
         if (lg->handler)
             lg->handler(lg->data, mess);
 
-        LOG_UNLOCK;
+        LOG_UNLOCK(lg);
     }
 
     if (mess->dynamic  &&  mess->message)
@@ -457,17 +457,17 @@ extern void LOG_Write
  *  REGISTRY
  */
 
-/* Lock/unlock the registry  */
-#define REG_LOCK_WRITE  verify(MT_LOCK_Do(rg->lock, eMT_Lock)     != 0)
-#define REG_LOCK_READ   verify(MT_LOCK_Do(rg->lock, eMT_LockRead) != 0)
-#define REG_UNLOCK      verify(MT_LOCK_Do(rg->lock, eMT_Unlock)   != 0)
+/* Lock/unlock a registry  */
+#define REG_LOCK_WRITE(rg)  verify(MT_LOCK_Do((rg)->lock, eMT_Lock)     != 0)
+#define REG_LOCK_READ(rg)   verify(MT_LOCK_Do((rg)->lock, eMT_LockRead) != 0)
+#define REG_UNLOCK(rg)      verify(MT_LOCK_Do((rg)->lock, eMT_Unlock)   != 0)
 
 
-/* Check the validity of the registry */
-#define REG_VALID  assert(rg->count  &&  rg->magic == kREG_magic)
+/* Check the validity of a registry */
+#define REG_VALID(rg)  assert((rg)->count  &&  (rg)->magic == kREG_magic)
 
 
-/* Logger data and callbacks */
+/* Registry data and callbacks */
 struct REG_tag {
     unsigned int count;
     void*        data;
@@ -510,8 +510,8 @@ extern void REG_Reset
  FREG_Cleanup cleanup,
  int/*bool*/  do_cleanup)
 {
-    REG_LOCK_WRITE;
-    REG_VALID;
+    REG_LOCK_WRITE(rg);
+    REG_VALID(rg);
 
     if (rg->cleanup  &&  do_cleanup)
         rg->cleanup(rg->data);
@@ -521,18 +521,18 @@ extern void REG_Reset
     rg->set     = set;
     rg->cleanup = cleanup;
 
-    REG_UNLOCK;
+    REG_UNLOCK(rg);
 }
 
 
 extern REG REG_AddRef(REG rg)
 {
-    REG_LOCK_WRITE;
-    REG_VALID;
+    REG_LOCK_WRITE(rg);
+    REG_VALID(rg);
 
     rg->count++;
 
-    REG_UNLOCK;
+    REG_UNLOCK(rg);
     return rg;
 }
 
@@ -540,16 +540,16 @@ extern REG REG_AddRef(REG rg)
 extern REG REG_Delete(REG rg)
 {
     if (rg) {
-        REG_LOCK_WRITE;
-        REG_VALID;
+        REG_LOCK_WRITE(rg);
+        REG_VALID(rg);
 
         if (rg->count > 1) {
             rg->count--;
-            REG_UNLOCK;
+            REG_UNLOCK(rg);
             return rg;
         }
 
-        REG_UNLOCK;
+        REG_UNLOCK(rg);
 
         REG_Reset(rg, 0, 0, 0, 0, 1/*true*/);
         rg->count--;
@@ -577,14 +577,14 @@ extern const char* REG_Get
 
     *value = '\0';
     if (rg) {
-        REG_LOCK_READ;
-        REG_VALID;
+        REG_LOCK_READ(rg);
+        REG_VALID(rg);
 
         rv = (rg->get
               ? rg->get(rg->data, section, name, value, value_size)
               : -1/*default*/);
 
-        REG_UNLOCK;
+        REG_UNLOCK(rg);
     } else
         rv = -1/*default*/;
 
@@ -611,14 +611,14 @@ extern int/*bool*/ REG_Set
     int/*bool*/ rv;
 
     if (rg) {
-        REG_LOCK_READ;
-        REG_VALID;
+        REG_LOCK_READ(rg);
+        REG_VALID(rg);
 
         rv = (rg->set
               ? rg->set(rg->data, section, name, value, storage)
               : 0/*failed*/);
 
-        REG_UNLOCK;
+        REG_UNLOCK(rg);
     } else
         rv = 0/*failed*/;
 
