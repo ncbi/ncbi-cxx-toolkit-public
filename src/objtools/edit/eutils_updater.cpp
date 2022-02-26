@@ -261,7 +261,14 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
     CPubmed_entry pme;
     string content;
     req->Read(&content);
-    content >> pme;
+    try {
+        content >> pme;
+    } catch (...) {
+        if (perr) {
+            *perr = EError_val::eError_val_citation_not_found;
+        }
+        return {};
+    }
 
     if (pme.IsSetMedent()) {
         CMedline_entry& mle = pme.SetMedent();

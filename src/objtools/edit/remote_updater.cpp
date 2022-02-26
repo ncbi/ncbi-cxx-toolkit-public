@@ -34,9 +34,6 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/taxon3/taxon3.hpp>
-#include <objects/mla/Title_msg.hpp>
-#include <objects/mla/Title_msg_list.hpp>
-#include <objects/mla/mla_client.hpp>
 
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
@@ -107,30 +104,29 @@ CRef<CPub> s_GetPubFrompmid(IPubmedUpdater* upd, TEntrezId id, int maxAttempts, 
         result = upd->GetPub(id, &errorVal);
         if (result) {
             return result;
-        } else {
-            EError_val mlaErrorVal = static_cast<EError_val>(errorVal);
-            bool isConnectionError = s_IsConnectionFailure(mlaErrorVal);
-            if (isConnectionError && count<maxCount-1) {
-                continue;
-            }
+        }
 
-            std::ostringstream oss;
-            oss << "Failed to retrieve publication for PMID "
-                << id
-                << ". ";
-            if (isConnectionError) {
-                oss << count+1 << " attempts made. ";
-            }
-            oss << "CMLAClient : "
-                << mlaErrorVal;
-            string msg = oss.str();
-            if (pMessageListener) {
-                pMessageListener->PutMessage(CRemoteUpdaterMessage(msg, mlaErrorVal));
-                break;
-            }
-            else {
-                NCBI_THROW(CRemoteUpdaterException, eUnknown, msg);
-            }
+        bool isConnectionError = s_IsConnectionFailure(errorVal);
+        if (isConnectionError && count<maxCount-1) {
+            continue;
+        }
+
+        std::ostringstream oss;
+        oss << "Failed to retrieve publication for PMID "
+            << id
+            << ". ";
+        if (isConnectionError) {
+            oss << count+1 << " attempts made. ";
+        }
+        oss << "CMLAClient : "
+            << errorVal;
+        string msg = oss.str();
+        if (pMessageListener) {
+            pMessageListener->PutMessage(CRemoteUpdaterMessage(msg, errorVal));
+            break;
+        }
+        else {
+            NCBI_THROW(CRemoteUpdaterException, eUnknown, msg);
         }
     }
     return result;
@@ -243,7 +239,6 @@ protected:
 
 bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 {
-    CMLAClient::TReply reply;
     auto new_pub = s_GetPubFrompmid(m_pubmed.get(), id, m_MaxMlaAttempts, m_pMessageListener);
     if (!new_pub) {
         return false;

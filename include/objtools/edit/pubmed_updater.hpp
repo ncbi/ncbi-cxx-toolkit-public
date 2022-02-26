@@ -34,6 +34,7 @@
 #define _PUBMED_UPDATER_HPP_
 
 #include <corelib/ncbiobj.hpp>
+#include <objects/mla/Error_val.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -44,7 +45,7 @@ class CTitle_msg_list;
 
 BEGIN_SCOPE(edit)
 
-using EPubmedError = int;
+using EPubmedError = EError_val;
 
 class NCBI_XOBJEDIT_EXPORT IPubmedUpdater
 {

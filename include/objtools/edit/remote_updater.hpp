@@ -37,7 +37,6 @@
 
 #include <corelib/ncbimisc.hpp>
 #include <functional>
-#include <objects/mla/Error_val.hpp>
 #include <objtools/edit/edit_error.hpp>
 #include <objtools/edit/pubmed_updater.hpp>
 #include <mutex>
