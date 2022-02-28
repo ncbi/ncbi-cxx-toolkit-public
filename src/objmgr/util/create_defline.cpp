@@ -3918,16 +3918,19 @@ string CDeflineGenerator::GenerateDefline (
             if( uo.IsSetData() ) {
                 ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
                     const CUser_field &field = **field_iter;
-                    if( ! field.IsSetData() || ! field.GetData().IsStr() ||
-                        ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
+                    if( ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
                         continue;
                     }
-                    if ( field.GetLabel().GetStr() == "FeatureListType" ) {
+                    string fld = field.GetLabel().GetStr();
+                    if ( fld == "FeatureListType" ) {
+                        if ( ! field.IsSetData() || ! field.GetData().IsStr() ) {
+                            continue;
+                        }
                         string featlisttype = field.GetData().GetStr();
                         if ( featlisttype != "List All Features" ) {
                             preferredSuffix = featlisttype;
                         }
-                    } else if ( field.GetLabel().GetStr() == "SuppressedFeatures" ) {
+                    } else if ( fld == "SuppressedFeatures" ) {
                         suppressedFeats = true;
                     }
                 }
