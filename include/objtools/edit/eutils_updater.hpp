@@ -8,7 +8,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-class CEUtilsUpdater : public IPubmedUpdater
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public IPubmedUpdater
 {
 public:
     CEUtilsUpdater();
