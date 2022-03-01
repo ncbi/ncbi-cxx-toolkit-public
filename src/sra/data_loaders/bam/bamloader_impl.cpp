@@ -770,7 +770,7 @@ void CBamRefSeqInfo::GetShortSeqBlobId(CRef<CBAMBlobId>& ret,
 {
     bool exists;
     {{
-        CMutexGuard guard(m_File->GetMutex());
+        CMutexGuard guard(m_Seq2ChunkMutex);
         exists = m_Seq2Chunk.find(idh) != m_Seq2Chunk.end();
     }}
     if ( exists ) {
@@ -1509,7 +1509,10 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
             }
         }
     }
-    m_Seq2Chunk.clear();
+    {{
+        CMutexGuard guard(m_Seq2ChunkMutex);
+        m_Seq2Chunk.clear();
+    }}
 }
 
 
@@ -1665,7 +1668,7 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
         chunk_info.x_AddUsedMemory(count*2500+10000);
     }
     {{
-        CMutexGuard guard(m_File->GetMutex());
+        CMutexGuard guard(m_Seq2ChunkMutex);
         int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq+(sub_chunk-eChunk_align);
         CRef<CTSE_Chunk_Info> seq_chunk;
         ITERATE ( vector<CSeq_id_Handle>, it, short_ids ) {
@@ -1733,45 +1736,49 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
     list< CRef<CBioseq> > bioseqs;
-    for( ; ait; ++ait ){
-        TSeqPos align_pos = ait.GetRefSeqPos();
-        if ( align_pos < start_range.GetFrom() ) {
-            // the alignments starts before current chunk range
-            ++skipped;
-            continue;
-        }
-        if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
-            ++skipped;
-            continue;
-        }
+    {{
+        CMutexGuard guard(m_Seq2ChunkMutex);
+        for( ; ait; ++ait ){
+            TSeqPos align_pos = ait.GetRefSeqPos();
+            if ( align_pos < start_range.GetFrom() ) {
+                // the alignments starts before current chunk range
+                ++skipped;
+                continue;
+            }
+            if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
+                ++skipped;
+                continue;
+            }
 #ifdef SKIP_TOO_LONG_ALIGNMENTS
-        TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
-        if ( align_end > ref_len ) {
-            ++skipped;
-            continue;
-        }
+            TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+            if ( align_end > ref_len ) {
+                ++skipped;
+                continue;
+            }
 #endif
         
-        if ( ait.GetShortSequenceLength() == 0 ) {
-            // far reference
-            ++far_refs;
-            continue;
-        }
+            if ( ait.GetShortSequenceLength() == 0 ) {
+                // far reference
+                ++far_refs;
+                continue;
+            }
         
-        CSeq_id_Handle seq_id =
-            CSeq_id_Handle::GetHandle(*ait.GetShortSeq_id());
-        if ( m_Seq2Chunk[seq_id] != chunk_id ) {
-            ++skipped;
-            continue;
-        }
+            CSeq_id_Handle seq_id =
+                CSeq_id_Handle::GetHandle(*ait.GetShortSeq_id());
+            auto iter = m_Seq2Chunk.find(seq_id);
+            if ( iter == m_Seq2Chunk.end() || iter->second != chunk_id ) {
+                ++skipped;
+                continue;
+            }
 
-        if ( !loaded.insert(seq_id).second ) {
-            ++dups;
-            continue;
+            if ( !loaded.insert(seq_id).second ) {
+                ++dups;
+                continue;
+            }
+            bioseqs.push_back(ait.GetShortBioseq());
+            ++count;
         }
-        bioseqs.push_back(ait.GetShortBioseq());
-        ++count;
-    }
+    }}
     chunk_info.x_LoadBioseqs(place, bioseqs);
 
     if ( GetDebugLevel() >= 3 ) {

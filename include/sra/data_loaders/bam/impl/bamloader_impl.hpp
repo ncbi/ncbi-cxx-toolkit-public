@@ -186,6 +186,7 @@ protected:
     bool m_LoadedRanges;
     CIRef<CBamAlignIterator::ISpotIdDetector> m_SpotIdDetector;
     TSeq2Chunk m_Seq2Chunk;
+    mutable CMutex m_Seq2ChunkMutex;
 };
 
 
