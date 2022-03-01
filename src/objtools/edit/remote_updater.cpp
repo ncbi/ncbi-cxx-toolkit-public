@@ -57,6 +57,7 @@
 
 #include <objtools/edit/remote_updater.hpp>
 #include <objtools/edit/mla_updater.hpp>
+#include <objtools/edit/eutils_updater.hpp>
 #include <objtools/edit/edit_error.hpp>
 #include <objtools/logging/listener.hpp>
 
@@ -271,11 +272,24 @@ void CRemoteUpdater::SetTaxonTimeout(unsigned seconds, unsigned retries, bool ex
     m_TaxonExponential = exponential;
 }
 
-bool CRemoteUpdater::xSetTaxonTimeoutFromConfig()
+bool CRemoteUpdater::xSetFromConfig()
 {
     CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
     if (app) {
         const CNcbiRegistry& cfg = app->GetConfig();
+
+        if (cfg.HasEntry("RemotePubmedUpdate")) {
+            string s = cfg.Get("RemotePubmedUpdate", "Source");
+            NStr::ToLower(s);
+            if (s == "mla") {
+                m_pm_source = EPubmedSource::eMLA;
+            } else if (s == "eutils") {
+                m_pm_source = EPubmedSource::eEUtils;
+            } else if (s == "none") {
+                m_pm_source = EPubmedSource::eNone;
+            }
+        }
+
         if (cfg.HasEntry("RemoteTaxonomyUpdate"))
         {
             int delay = cfg.GetInt("RemoteTaxonomyUpdate", "RetryDelay", 20);
@@ -342,13 +356,14 @@ CRemoteUpdater& CRemoteUpdater::GetInstance()
     return instance;
 }
 
-CRemoteUpdater::CRemoteUpdater(FLogger logger): m_logger{logger}
+CRemoteUpdater::CRemoteUpdater(FLogger logger, EPubmedSource pms) :
+    m_logger{ logger }, m_pm_source(pms)
 {
-    xSetTaxonTimeoutFromConfig();
+    xSetFromConfig();
 }
 
-CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener) :
-    m_pMessageListener(pMessageListener)
+CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource pms) :
+    m_pMessageListener(pMessageListener), m_pm_source(pms)
 {
     if (m_pMessageListener)
     {
@@ -357,12 +372,12 @@ CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener) :
             m_pMessageListener->PutMessage(CObjEditMessage(error_message, eDiag_Warning));
         };
     }
-    xSetTaxonTimeoutFromConfig();
+    xSetFromConfig();
 }
 
 CRemoteUpdater::CRemoteUpdater(bool)
 {
-    xSetTaxonTimeoutFromConfig();
+    xSetFromConfig();
 }
 
 CRemoteUpdater::~CRemoteUpdater()
@@ -446,8 +461,17 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 
         auto& arr = pDesc->SetPub().SetPub().Set();
         if (!m_pubmed) {
-            // use MLA by default
-            m_pubmed.reset(new CMLAUpdater());
+            switch (m_pm_source) {
+            case EPubmedSource::eNone:
+                break;
+            case EPubmedSource::eEUtils:
+                m_pubmed.reset(new CEUtilsUpdater());
+                break;
+            default:
+            case EPubmedSource::eMLA:
+                m_pubmed.reset(new CMLAUpdater());
+                break;
+            }
         }
 
         TEntrezId id = FindPMID(arr);

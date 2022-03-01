@@ -60,6 +60,13 @@ class CTaxon3_reply;
 
 BEGIN_SCOPE(edit)
 
+enum class EPubmedSource
+{
+    eNone,
+    eEUtils,
+    eMLA,
+};
+
 class CCachedTaxon3_impl;
 
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterMessage: public CObjEditMessage
@@ -94,8 +101,8 @@ public:
     // With this constructor, failure to retrieve
     // a publication for a PMID is logged with the supplied message listener.
     // If no message listener is supplied, an exception is thrown.
-    CRemoteUpdater(IObjtoolsListener* pMessageListener);
-    CRemoteUpdater(FLogger logger);
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource = EPubmedSource::eMLA);
+    CRemoteUpdater(FLogger logger, EPubmedSource = EPubmedSource::eMLA);
     ~CRemoteUpdater();
 
     void UpdatePubReferences(CSerialObject& obj);
@@ -128,11 +135,13 @@ private:
     void xUpdatePubReferences(CSeq_descr& descr);
     void xUpdateOrgTaxname(COrg_ref& org, FLogger logger);
     bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
+    bool xSetFromConfig();
 
     IObjtoolsListener* m_pMessageListener = nullptr;
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
+    EPubmedSource m_pm_source = EPubmedSource::eNone;
     unique_ptr<IPubmedUpdater> m_pubmed;
-    unique_ptr<CCachedTaxon3_impl>  m_taxClient;
+    unique_ptr<CCachedTaxon3_impl> m_taxClient;
 
     std::mutex m_Mutex;
     int m_MaxMlaAttempts=3;
@@ -140,8 +149,7 @@ private:
     bool m_TaxonTimeoutSet = false;
     unsigned m_TaxonTimeout = 20;   // in seconds
     unsigned m_TaxonAttempts = 5;
-    unsigned m_TaxonExponential = false;
-    bool xSetTaxonTimeoutFromConfig();
+    bool m_TaxonExponential = false;
 };
 
 END_SCOPE(edit)
