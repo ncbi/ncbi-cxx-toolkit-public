@@ -7619,6 +7619,7 @@ UNEX:FECRGA	c	Universidad de Extremadura, Departamento de Botanica, Fungal Endop
 UNGGVH	s	University of North Georgia			
 UNH	s	University of New Hampshire			
 UNI	s	University of Northern Iowa			
+UNIFR	s	University of Fribourg			
 UNIMAS	s	Universiti Malaysia Sarawak			
 UNIN	s	University of the North, Botany Department			
 UNIP	s	Universidade Paulista, Laboratorio de Botanica			
