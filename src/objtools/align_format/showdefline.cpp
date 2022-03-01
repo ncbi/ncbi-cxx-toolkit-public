@@ -1721,12 +1721,18 @@ void CShowBlastDefline::DisplayOneDefline(CNcbiOstream & out, SDeflineInfo* sdl,
         defLine = CAlignFormatUtil::MapTemplate(defLine,"firstSeq",firstSeq);    
     }
     else if(m_Option & eShowCSVDescr) {        
-        defLine = x_FormatDeflineTableLineCSV(sdl,iter);
+        if(!sdl->clustMemList.empty()) {
+            // Cluster members CSV downlaod                
+            defLine = x_FormatClusterMemData(sdl, m_DeflineTemplates->defLineTmpl);
+        }
+        else {
+            defLine = x_FormatDeflineTableLineCSV(sdl,iter);
+        }
     }
     else { // text            
         if(!sdl->clustMemList.empty()) {  // Show cluster member infor
             defLine = x_FormatDeflineTableLine(sdl,iter,first_new);
-            defLine = x_FormatClusterMemDataTxt(sdl, defLine);
+            defLine = x_FormatClusterMemDataTxt(sdl, defLine);         
         }
         else {//Format just deline table row
             defLine = x_FormatDeflineTableLineText(sdl,iter);
