@@ -110,9 +110,6 @@ private:
     void x_Finish(EPSGS_Status status);
     void x_ProcessResolveRequest(void);
     void x_ProcessGetBlobRequest(void);
-    void x_GetBlobBySeqIdAsync(void);
-    void x_GetBlobIdAsync(void);
-    void x_GetBlobByBlobIdAsync(void);
     void x_SendAnnotInfo(const objects::CCDD_Reply_Get_Blob_Id& blob_info);
     void x_SendAnnot(const objects::CID2_Blob_Id& id2_blob_id, CRef<objects::CSeq_annot>& annot);
     bool x_IsCanceled();
