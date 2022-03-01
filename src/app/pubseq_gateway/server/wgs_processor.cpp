@@ -144,6 +144,7 @@ void CWGSProcessorRef::Detach()
 
 void CWGSProcessorRef::ResolveSeqId(shared_ptr<CWGSProcessorRef> ref)
 {
+    CRequestContextResetter context_resetter;
     CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
     shared_ptr<CWGSClient> client;
     CRef<CSeq_id> seq_id;
@@ -152,6 +153,7 @@ void CWGSProcessorRef::ResolveSeqId(shared_ptr<CWGSProcessorRef> ref)
         if ( !ref->m_ProcessorPtr ) {
             return;
         }
+        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
         client = ref->m_ProcessorPtr->m_Client;
         seq_id = ref->m_ProcessorPtr->m_SeqId;
     }}
@@ -183,6 +185,7 @@ void CWGSProcessorRef::OnResolvedSeqId(void *data)
 
 void CWGSProcessorRef::GetBlobBySeqId(shared_ptr<CWGSProcessorRef> ref)
 {
+    CRequestContextResetter context_resetter;
     CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
     shared_ptr<CWGSClient> client;
     CRef<CSeq_id> seq_id;
@@ -192,6 +195,7 @@ void CWGSProcessorRef::GetBlobBySeqId(shared_ptr<CWGSProcessorRef> ref)
         if ( !ref->m_ProcessorPtr ) {
             return;
         }
+        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
         client = ref->m_ProcessorPtr->m_Client;
         seq_id = ref->m_ProcessorPtr->m_SeqId;
         excluded = ref->m_ProcessorPtr->m_ExcludedBlobs;
@@ -226,6 +230,7 @@ void CWGSProcessorRef::OnGotBlobBySeqId(void *data)
 
 void CWGSProcessorRef::GetBlobByBlobId(shared_ptr<CWGSProcessorRef> ref)
 {
+    CRequestContextResetter context_resetter;
     CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
     shared_ptr<CWGSClient> client;
     string blob_id;
@@ -234,6 +239,7 @@ void CWGSProcessorRef::GetBlobByBlobId(shared_ptr<CWGSProcessorRef> ref)
         if ( !ref->m_ProcessorPtr ) {
             return;
         }
+        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
         client = ref->m_ProcessorPtr->m_Client;
         blob_id = ref->m_ProcessorPtr->m_PSGBlobId;
     }}
@@ -267,6 +273,7 @@ void CWGSProcessorRef::OnGotBlobByBlobId(void *data)
 
 void CWGSProcessorRef::GetChunk(shared_ptr<CWGSProcessorRef> ref)
 {
+    CRequestContextResetter context_resetter;
     CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
     shared_ptr<CWGSClient> client;
     string id2info;
@@ -276,6 +283,7 @@ void CWGSProcessorRef::GetChunk(shared_ptr<CWGSProcessorRef> ref)
         if ( !ref->m_ProcessorPtr ) {
             return;
         }
+        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
         client = ref->m_ProcessorPtr->m_Client;
         id2info = ref->m_ProcessorPtr->m_Id2Info;
         chunk_id = ref->m_ProcessorPtr->m_ChunkId;
@@ -753,6 +761,8 @@ void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& data,
 
 void CPSGS_WGSProcessor::OnResolvedSeqId(void)
 {
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -770,6 +780,8 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
 
 void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
 {
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -789,6 +801,8 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
 
 void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
 {
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -806,6 +820,8 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
 
 void CPSGS_WGSProcessor::OnGotChunk(void)
 {
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
     }
