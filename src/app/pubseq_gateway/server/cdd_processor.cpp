@@ -117,6 +117,7 @@ void CCDDProcessorRef::OnGotBlobByBlobId(void *data)
 
 void CCDDProcessorRef::GetBlobBySeqId(shared_ptr<CCDDProcessorRef> ref)
 {
+    CRequestContextResetter context_resetter;
     shared_ptr<CCDDClientPool> client_pool;
     CSeq_id_Handle seq_id;
     {{
@@ -124,6 +125,7 @@ void CCDDProcessorRef::GetBlobBySeqId(shared_ptr<CCDDProcessorRef> ref)
         if ( !ref->m_ProcessorPtr ) {
             return;
         }
+        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
         client_pool = ref->m_ProcessorPtr->m_ClientPool;
         seq_id = ref->m_ProcessorPtr->m_SeqId;
     }}
@@ -135,20 +137,15 @@ void CCDDProcessorRef::GetBlobBySeqId(shared_ptr<CCDDProcessorRef> ref)
             return;
         }
         processor->m_CDDBlob = blob;
-        if ( 1 ) {
-            processor->GetUvLoopBinder().PostponeInvoke(
-                OnGotBlobBySeqId,
-                new shared_ptr<CCDDProcessorRef>(ref));
-        }
-        else {
-            processor->OnGotBlobBySeqId();
-        }
+        processor->GetUvLoopBinder().PostponeInvoke(
+            OnGotBlobBySeqId, new shared_ptr<CCDDProcessorRef>(ref));
     }}
 }
 
 
 void CCDDProcessorRef::GetBlobId(shared_ptr<CCDDProcessorRef> ref)
 {
+    CRequestContextResetter context_resetter;
     shared_ptr<CCDDClientPool> client_pool;
     CSeq_id_Handle seq_id;
     {{
@@ -156,6 +153,7 @@ void CCDDProcessorRef::GetBlobId(shared_ptr<CCDDProcessorRef> ref)
         if ( !ref->m_ProcessorPtr ) {
             return;
         }
+        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
         client_pool = ref->m_ProcessorPtr->m_ClientPool;
         seq_id = ref->m_ProcessorPtr->m_SeqId;
     }}
@@ -166,20 +164,15 @@ void CCDDProcessorRef::GetBlobId(shared_ptr<CCDDProcessorRef> ref)
             return;
         }
         ref->m_ProcessorPtr->m_CDDBlob.info = info;
-        if ( 1 ) {
-            ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-                OnGotBlobId,
-                new shared_ptr<CCDDProcessorRef>(ref));
-        }
-        else {
-            ref->m_ProcessorPtr->OnGotBlobId();
-        }
+        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
+            OnGotBlobId, new shared_ptr<CCDDProcessorRef>(ref));
     }}
 }
 
 
 void CCDDProcessorRef::GetBlobByBlobId(shared_ptr<CCDDProcessorRef> ref)
 {
+    CRequestContextResetter context_resetter;
     shared_ptr<CCDDClientPool> client_pool;
     CRef<CCDDClientPool::TBlobId> blob_id;
     {{
@@ -187,6 +180,7 @@ void CCDDProcessorRef::GetBlobByBlobId(shared_ptr<CCDDProcessorRef> ref)
         if ( !ref->m_ProcessorPtr ) {
             return;
         }
+        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
         client_pool = ref->m_ProcessorPtr->m_ClientPool;
         blob_id = ref->m_ProcessorPtr->m_BlobId;
     }}
@@ -197,14 +191,8 @@ void CCDDProcessorRef::GetBlobByBlobId(shared_ptr<CCDDProcessorRef> ref)
             return;
         }
         ref->m_ProcessorPtr->m_CDDBlob.data = data;
-        if ( 1 ) {
-            ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-                OnGotBlobByBlobId,
-                new shared_ptr<CCDDProcessorRef>(ref));
-        }
-        else {
-            ref->m_ProcessorPtr->OnGotBlobByBlobId();
-        }
+        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
+            OnGotBlobByBlobId, new shared_ptr<CCDDProcessorRef>(ref));
     }}
 }
 
@@ -351,24 +339,10 @@ void CPSGS_CDDProcessor::x_ProcessGetBlobRequest(void)
 }
 
 
-static void s_OnGotBlobBySeqIdCallback(void* proc)
-{
-    static_cast<CPSGS_CDDProcessor*>(proc)->OnGotBlobBySeqId();
-}
-
-
-void CPSGS_CDDProcessor::x_GetBlobBySeqIdAsync(void)
-{
-    m_CDDBlob = m_ClientPool->GetBlobBySeq_id(m_SeqId);
-    if ( x_IsCanceled() ) {
-        return;
-    }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobBySeqIdCallback, this);
-}
-
-
 void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
 {
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -385,24 +359,10 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
 }
 
 
-static void s_OnGotBlobIdCallback(void* proc)
-{
-    static_cast<CPSGS_CDDProcessor*>(proc)->OnGotBlobId();
-}
-
-
-void CPSGS_CDDProcessor::x_GetBlobIdAsync(void)
-{
-    m_CDDBlob.info = m_ClientPool->GetBlobIdBySeq_id(m_SeqId);
-    if ( x_IsCanceled() ) {
-        return;
-    }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobIdCallback, this);
-}
-
-
 void CPSGS_CDDProcessor::OnGotBlobId(void)
 {
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
     }
@@ -418,24 +378,10 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
 }
 
 
-static void s_OnGotBlobByBlobIdCallback(void* proc)
-{
-    static_cast<CPSGS_CDDProcessor*>(proc)->OnGotBlobByBlobId();
-}
-
-
-void CPSGS_CDDProcessor::x_GetBlobByBlobIdAsync(void)
-{
-    m_CDDBlob.data = m_ClientPool->GetBlobByBlobId(*m_BlobId);
-    if ( x_IsCanceled() ) {
-        return;
-    }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobByBlobIdCallback, this);
-}
-
-
 void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
 {
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
     }
