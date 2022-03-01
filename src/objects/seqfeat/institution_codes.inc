@@ -7652,6 +7652,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNGGVH\ts\tUniversity of North Georgia\t\t\t",
 "UNH\ts\tUniversity of New Hampshire\t\t\t",
 "UNI\ts\tUniversity of Northern Iowa\t\t\t",
+"UNIFR\ts\tUniversity of Fribourg\t\t\t",
 "UNIMAS\ts\tUniversiti Malaysia Sarawak\t\t\t",
 "UNIN\ts\tUniversity of the North, Botany Department\t\t\t",
 "UNIP\ts\tUniversidade Paulista, Laboratorio de Botanica\t\t\t",
