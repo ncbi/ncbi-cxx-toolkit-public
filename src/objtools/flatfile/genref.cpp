@@ -3045,11 +3045,14 @@ static CRef<CSeqFeatXref> GetXrpForOverlap(const Char* acnum, GeneRefFeats& gene
     {
         for (TSeqFeatList::iterator cur_feat = gene_refs.first; cur_feat != gene_refs.last; ++cur_feat)
         {
+            if (strand != cur_loc->strand) {
+                ++cur_loc;
+                continue;                   /* f location is within sfp one */
+            }
+
             sequence::ECompare cmp_res = sequence::Compare(*loc, *cur_loc->loc, nullptr, sequence::fCompareOverlapping);
 
-            if (strand != cur_loc->strand ||
-                (cmp_res != sequence::eContained && cmp_res != sequence::eSame))
-            {
+            if (cmp_res != sequence::eContained && cmp_res != sequence::eSame) {
                 ++cur_loc;
                 continue;                   /* f location is within sfp one */
             }
