@@ -247,6 +247,7 @@ esac
 : ${LIBUV_PATH=$NCBI/libuv-1.35.0}
 
 case "$ncbi_platform" in
+    Linux64    ) : ${LIBXML_PATH=$NCBI/libxml-2.9.1} ;;
     *MAC       ) ;;
     *          ) : ${LIBXML_PATH=$NCBI/libxml-2.7.8} ;;
 esac
