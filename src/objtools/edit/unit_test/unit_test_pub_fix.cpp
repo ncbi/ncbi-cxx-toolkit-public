@@ -924,8 +924,8 @@ R"(Pub ::= equiv {
     CNcbiIstrstream(TEST_PUB) >> MSerial_AsnText >> pub;
     CNcbiIstrstream(TEST_PUB_GOOD) >> MSerial_AsnText >> pub_good;
 
-auto check_pubfix = [&](IPubmedUpdater& upd) {
-    CPubFix pub_fixing(true, true, true, nullptr, &upd);
+auto check_pubfix = [&](IPubmedUpdater* upd) {
+    CPubFix pub_fixing(true, true, true, nullptr, upd);
     pub_fixing.FixPub(pub);
     BOOST_CHECK_EQUAL(pub.Equals(pub_good), true);
 
@@ -933,8 +933,10 @@ auto check_pubfix = [&](IPubmedUpdater& upd) {
     BOOST_CHECK_EQUAL(pub_good.Equals(pub), true);
 };
 
-    check_pubfix(CMLAUpdater());
-    check_pubfix(CEUtilsUpdater());
+    CMLAUpdater upd_mla;
+    check_pubfix(&upd_mla);
+    CEUtilsUpdater upd_eutils;
+    check_pubfix(&upd_eutils);
 }
 
 
@@ -1237,9 +1239,8 @@ R"(Pub ::= equiv {
     CNcbiIstrstream(TEST_PUB) >> MSerial_AsnText >> pub;
     CNcbiIstrstream(TEST_PUB_GOOD) >> MSerial_AsnText >> pub_good;
 
-    CMLAUpdater upd;
-auto check_pubfix = [&](IPubmedUpdater& upd) {
-    CPubFix pub_fixing(true, true, true, nullptr, &upd);
+auto check_pubfix = [&](IPubmedUpdater* upd) {
+    CPubFix pub_fixing(true, true, true, nullptr, upd);
     pub_fixing.FixPub(pub);
     BOOST_CHECK_EQUAL(pub.Equals(pub_good), true);
 
@@ -1247,6 +1248,8 @@ auto check_pubfix = [&](IPubmedUpdater& upd) {
     BOOST_CHECK_EQUAL(pub_good.Equals(pub), true);
 };
 
-    check_pubfix(CMLAUpdater());
-    check_pubfix(CEUtilsUpdater());
+    CMLAUpdater upd_mla;
+    check_pubfix(&upd_mla);
+    CEUtilsUpdater upd_eutils;
+    check_pubfix(&upd_eutils);
 }
