@@ -38,6 +38,7 @@
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
 #include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
@@ -53,6 +54,7 @@
 #include <util/compress/zlib.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
+#include <serial/iterator.hpp>
 #include <util/thread_pool.hpp>
 #include <sstream>
 
@@ -1937,13 +1939,36 @@ static CRef<CTSE_Chunk_Info> x_CreateLocalCDDEntryChunk(const CSeq_id_Handle& id
         CSeqFeatData::eSubtype_region,
         CSeqFeatData::eSubtype_site
     };
+    vector<CSeq_id_Handle> ids;
+    for ( int i = 0; i < 2; ++i ) {
+        const CSeq_id_Handle& id = i? id2: id1;
+        if ( !id ) {
+            continue;
+        }
+        ids.push_back(id);
+        if ( id.Which() == CSeq_id::e_Pdb ) {
+            // unfortunately PDB chain can be specified differently so we have
+            // to add all variants
+            auto seq_id = id.GetSeqId();
+            auto& pdb_id = seq_id->GetPdb();
+            if ( pdb_id.IsSetMol() && pdb_id.IsSetChain() && pdb_id.IsSetChain_id() ) {
+                CRef<CSeq_id> new_id(new CSeq_id);
+                auto& new_pdb_id = new_id->SetPdb();
+                new_pdb_id.SetMol(pdb_id.GetMol());
+                new_pdb_id.SetChain_id(pdb_id.GetChain_id());
+                ids.push_back(CSeq_id_Handle::GetHandle(*new_id));
+            }
+        }
+    }
+    if ( s_GetDebugLevel() >= 6 ) {
+        for ( auto& id : ids ) {
+            LOG_POST(Info<<"CPSGDataLoader: CDD synthetic id "<<MSerial_AsnText<<*id.GetSeqId());
+        }
+    }
     for ( auto subtype : subtypes ) {
         SAnnotTypeSelector type(subtype);
-        if ( id1 ) {
-            chunk->x_AddAnnotType(name, type, id1, range);
-        }
-        if ( id2 ) {
-            chunk->x_AddAnnotType(name, type, id2, range);
+        for ( auto& id : ids ) {
+            chunk->x_AddAnnotType(name, type, id, range);
         }
     }
     return chunk;
@@ -2028,6 +2053,15 @@ bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataSource* data_source,
     if ( s_GetDebugLevel() >= 8 ) {
         LOG_POST(Info<<"PSG loader: TSE "<<load_lock->GetBlobId().ToString()<<" "<<
                  MSerial_AsnText<<*entry);
+    }
+    if ( s_GetDebugLevel() >= 6 ) {
+        set<CSeq_id_Handle> annot_ids;
+        for ( CTypeConstIterator<CSeq_id> it = ConstBegin(*entry); it; ++it ) {
+            annot_ids.insert(CSeq_id_Handle::GetHandle(*it));
+        }
+        for ( auto& id : annot_ids ) {
+            LOG_POST(Info<<"CPSGDataLoader: CDD actual id "<<MSerial_AsnText<<*id.GetSeqId());
+        }
     }
     load_lock->SetSeq_entry(*entry);
     chunk->SetLoaded();
