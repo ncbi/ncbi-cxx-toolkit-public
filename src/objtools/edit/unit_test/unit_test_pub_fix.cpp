@@ -65,6 +65,7 @@
 #include "../pub_fix_aux.hpp"
 #include <objtools/edit/pub_fix.hpp>
 #include <objtools/edit/mla_updater.hpp>
+#include <objtools/edit/eutils_updater.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -923,14 +924,17 @@ R"(Pub ::= equiv {
     CNcbiIstrstream(TEST_PUB) >> MSerial_AsnText >> pub;
     CNcbiIstrstream(TEST_PUB_GOOD) >> MSerial_AsnText >> pub_good;
 
-    CMLAUpdater upd;
+auto check_pubfix = [&](IPubmedUpdater& upd) {
     CPubFix pub_fixing(true, true, true, nullptr, &upd);
     pub_fixing.FixPub(pub);
     BOOST_CHECK_EQUAL(pub.Equals(pub_good), true);
 
     pub_fixing.FixPub(pub);
     BOOST_CHECK_EQUAL(pub_good.Equals(pub), true);
+};
 
+    check_pubfix(CMLAUpdater());
+    check_pubfix(CEUtilsUpdater());
 }
 
 
@@ -1234,11 +1238,15 @@ R"(Pub ::= equiv {
     CNcbiIstrstream(TEST_PUB_GOOD) >> MSerial_AsnText >> pub_good;
 
     CMLAUpdater upd;
+auto check_pubfix = [&](IPubmedUpdater& upd) {
     CPubFix pub_fixing(true, true, true, nullptr, &upd);
     pub_fixing.FixPub(pub);
     BOOST_CHECK_EQUAL(pub.Equals(pub_good), true);
 
     pub_fixing.FixPub(pub);
     BOOST_CHECK_EQUAL(pub_good.Equals(pub), true);
+};
 
+    check_pubfix(CMLAUpdater());
+    check_pubfix(CEUtilsUpdater());
 }
