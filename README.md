@@ -1,3 +1,3 @@
 
-[README](doc/public/README)
+[README](doc/public/README.md)
 
