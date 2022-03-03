@@ -3018,6 +3018,27 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
     delete gnp;
 }
 
+bool GenelocContained(
+    const CSeq_loc& loc1,
+    const CSeq_loc& loc2,
+    CScope* scope)
+{
+    const auto& strand1 = loc1.GetStrand() == eNa_strand_minus ? eNa_strand_minus: eNa_strand_plus;
+    const auto& strand2 = loc2.GetStrand() == eNa_strand_minus ? eNa_strand_minus : eNa_strand_plus;
+    if (strand1 != strand2) {
+        return false;
+    }
+    if (loc1.IsInt()  &&  loc2.IsInt()) {
+        const auto& intv1 = loc1.GetInt();
+        const auto& intv2 = loc2.GetInt();
+        return (intv1.GetFrom() >= intv2.GetFrom()  && intv1.GetTo() <= intv2.GetTo());
+    }
+    auto compResult = sequence::Compare(
+        loc1, loc2, nullptr, sequence::fCompareOverlapping);
+    return (compResult == sequence::eContained  ||  compResult == sequence::eSame);
+}
+
+
 /**********************************************************
  *
  *   SeqFeatXrefPtr GetXrpForOverlap(glap, sfp, gerep):
@@ -3045,14 +3066,7 @@ static CRef<CSeqFeatXref> GetXrpForOverlap(const Char* acnum, GeneRefFeats& gene
     {
         for (TSeqFeatList::iterator cur_feat = gene_refs.first; cur_feat != gene_refs.last; ++cur_feat)
         {
-            if (strand != cur_loc->strand) {
-                ++cur_loc;
-                continue;                   /* f location is within sfp one */
-            }
-
-            sequence::ECompare cmp_res = sequence::Compare(*loc, *cur_loc->loc, nullptr, sequence::fCompareOverlapping);
-
-            if (cmp_res != sequence::eContained && cmp_res != sequence::eSame) {
+            if (!GenelocContained(*loc, *cur_loc->loc, nullptr)) {
                 ++cur_loc;
                 continue;                   /* f location is within sfp one */
             }
