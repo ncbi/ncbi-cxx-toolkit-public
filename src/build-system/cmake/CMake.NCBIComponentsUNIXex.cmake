@@ -51,10 +51,10 @@ set(NCBI_ThirdParty_VDB           ${NCBI_OPT_ROOT}/trace_software/vdb/vdb-versio
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(NCBI_ThirdParty_XML           ${NCBI_TOOLS_ROOT}/libxml-2.9.1 CACHE PATH "XML root")
   set(NCBI_ThirdParty_XSLT          ${NCBI_TOOLS_ROOT}/libxml-2.9.1 CACHE PATH "XSLT root")
-else
+else()
   set(NCBI_ThirdParty_XML           ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XML root")
   set(NCBI_ThirdParty_XSLT          ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XSLT root")
-endif
+endif()
 set(NCBI_ThirdParty_EXSLT         ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_XLSXWRITER    ${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9 CACHE PATH "XLSXWRITER root")
 set(NCBI_ThirdParty_SAMTOOLS      ${NCBI_TOOLS_ROOT}/samtools CACHE PATH "SAMTOOLS root")
