@@ -55,7 +55,7 @@ public:
     virtual void Fini() {}
     virtual TEntrezId CitMatch(const CPub&) = 0;
     virtual CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) = 0;
-    virtual CRef<CTitle_msg_list> GetTitle(const CTitle_msg&) = 0;
+    virtual string GetTitle(const string&) = 0;
 };
 
 END_SCOPE(edit)

@@ -165,52 +165,16 @@ void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
     // from a journal - get iso_jta
     CCit_jour& journal = cit_art.SetFrom().SetJournal();
 
-    auto IsIso_jta = [](const CRef<CTitle::C_E>& title) -> bool { return title->IsIso_jta(); };
-
-    if (journal.IsSetTitle() && journal.GetTitle().IsSet()) {
+    if (journal.IsSetTitle() && journal.GetTitle().IsSet() && upd) {
 
         auto& titles = journal.SetTitle().Set();
 
-        if (find_if(titles.begin(), titles.end(), IsIso_jta) == titles.end()) {
+        auto is_jta = [](const CRef<CTitle::C_E>& title) -> bool { return title->IsIso_jta(); };
+        if (find_if(titles.begin(), titles.end(), is_jta) == titles.end()) {
             // no iso_jta
-
             CTitle::C_E& first_title = *titles.front();
             const string& title_str = journal.SetTitle().GetTitle(first_title);
-
-            CRef<CTitle> title_new(new CTitle);
-            CRef<CTitle::C_E> type_new(new CTitle::C_E);
-            type_new->SetIso_jta(title_str);
-            title_new->Set().push_back(type_new);
-
-            CRef<CTitle_msg> msg_new(new CTitle_msg);
-            msg_new->SetType(eTitle_type_iso_jta);
-            msg_new->SetTitle(*title_new);
-
-            CRef<CTitle_msg_list> msg_list_new;
-            try {
-                if (upd) {
-                    msg_list_new = upd->GetTitle(*msg_new);
-                }
-            } catch (exception&) {
-                // msg_list_new stays empty
-            }
-
-            if (msg_list_new.NotEmpty() && msg_list_new->IsSetTitles()) {
-
-                for (const auto& item : msg_list_new->GetTitles()) {
-                    const CTitle& cur_title = item->GetTitle();
-
-                    if (cur_title.IsSet()) {
-                        const auto& title_list = cur_title.Get();
-                        auto iso_jta_title = find_if(title_list.begin(), title_list.end(), IsIso_jta);
-                        if (iso_jta_title != title_list.end()) {
-                            first_title.SetIso_jta((*iso_jta_title)->GetIso_jta());
-                            break;
-                        }
-                    }
-
-                }
-            }
+            first_title.SetIso_jta(upd->GetTitle(title_str));
         }
     }
 

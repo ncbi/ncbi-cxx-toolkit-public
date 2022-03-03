@@ -66,11 +66,36 @@ CRef<CPub> CMLAUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
     return {};
 }
 
-CRef<CTitle_msg_list> CMLAUpdater::GetTitle(const CTitle_msg& msg)
+string CMLAUpdater::GetTitle(const string& title)
 {
+    CRef<CTitle> title_new(new CTitle);
+    CRef<CTitle::C_E> type_new(new CTitle::C_E);
+    type_new->SetIso_jta(title);
+    title_new->Set().push_back(type_new);
+
+    CRef<CTitle_msg> msg_new(new CTitle_msg);
+    msg_new->SetType(eTitle_type_iso_jta);
+    msg_new->SetTitle(*title_new);
+
+    CRef<CTitle_msg_list> msg_list_new;
     try {
-        return m_mlac->AskGettitle(msg);
+        msg_list_new = m_mlac->AskGettitle(*msg_new);
     } catch (CException&) {
+        // msg_list_new stays empty
+    }
+
+    if (msg_list_new.NotEmpty() && msg_list_new->IsSetTitles()) {
+        auto is_jta = [](const CRef<CTitle::C_E>& title) -> bool { return title->IsIso_jta(); };
+        for (const auto& item : msg_list_new->GetTitles()) {
+            const CTitle& cur_title = item->GetTitle();
+            if (cur_title.IsSet()) {
+                const auto& title_list = cur_title.Get();
+                auto jta_title = find_if(title_list.begin(), title_list.end(), is_jta);
+                if (jta_title != title_list.end()) {
+                    return (*jta_title)->GetIso_jta();
+                }
+            }
+        }
     }
 
     return {};
