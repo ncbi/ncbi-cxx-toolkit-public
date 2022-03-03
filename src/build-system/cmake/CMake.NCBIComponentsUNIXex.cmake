@@ -48,8 +48,13 @@ set(NCBI_ThirdParty_SybaseNetPath "/opt/sybase/clients/16.0-64bit" CACHE PATH "S
 set(NCBI_ThirdParty_SybaseLocalPath "" CACHE PATH "SybaseLocalPath")
 set(NCBI_ThirdParty_PYTHON        "/opt/python-3.8" CACHE PATH "PYTHON root")
 set(NCBI_ThirdParty_VDB           ${NCBI_OPT_ROOT}/trace_software/vdb/vdb-versions/cxx_toolkit/3 CACHE PATH "VDB root")
-set(NCBI_ThirdParty_XML           ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XML root")
-set(NCBI_ThirdParty_XSLT          ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XSLT root")
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  set(NCBI_ThirdParty_XML           ${NCBI_TOOLS_ROOT}/libxml-2.9.1 CACHE PATH "XML root")
+  set(NCBI_ThirdParty_XSLT          ${NCBI_TOOLS_ROOT}/libxml-2.9.1 CACHE PATH "XSLT root")
+else
+  set(NCBI_ThirdParty_XML           ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XML root")
+  set(NCBI_ThirdParty_XSLT          ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XSLT root")
+endif
 set(NCBI_ThirdParty_EXSLT         ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_XLSXWRITER    ${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9 CACHE PATH "XLSXWRITER root")
 set(NCBI_ThirdParty_SAMTOOLS      ${NCBI_TOOLS_ROOT}/samtools CACHE PATH "SAMTOOLS root")
