@@ -73,7 +73,7 @@ set(NCBI_ThirdParty_GL2PS      ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPart
 set(NCBI_ThirdParty_Sybase     ${NCBI_ThirdPartyBasePath}/sybase/${NCBI_ThirdPartyCompiler}/15.5 CACHE PATH "Sybase root")
 set(NCBI_ThirdParty_SybaseLocalPath "" CACHE PATH "SybaseLocalPath")
 
-set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/cxx_toolkit/3.0.0 CACHE PATH "VDB root")
+set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/3.0.0 CACHE PATH "VDB root")
 set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
 if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 16 2019")
     set(NCBI_ThirdParty_VDB_ARCH x86_64/v142)
