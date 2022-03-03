@@ -284,7 +284,7 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
 }
 
 
-CRef<CTitle_msg_list> CEUtilsUpdater::GetTitle(const CTitle_msg& msg)
+string CEUtilsUpdater::GetTitle(const string&)
 {
     // Not yet implemented
     return {};

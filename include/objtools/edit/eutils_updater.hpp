@@ -14,7 +14,7 @@ public:
     CEUtilsUpdater();
     TEntrezId CitMatch(const CPub&) override;
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
-    CRef<CTitle_msg_list> GetTitle(const CTitle_msg&) override;
+    string GetTitle(const string&) override;
 private:
     CRef<CEUtils_ConnContext> m_Ctx;
 };
