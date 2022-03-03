@@ -392,6 +392,12 @@ void CPrimeCacheApplication::Init(void)
 
     arg_desc->AddFlag("resume", "Resume interrupted previous execution");
 
+    arg_desc->AddFlag("non-exclusive",
+                      "Can run this cache process in parallel with other "
+                      "tasks; use this if writing to a dedicated cache rather "
+                      "than the build's standard cache. Ignored by "
+                      "application, but provides information to action node");
+
     // Setup arg.descriptions for this application
     arg_desc->SetCurrentGroup("Default application arguments");
     SetupArgDescriptions(arg_desc.release());
