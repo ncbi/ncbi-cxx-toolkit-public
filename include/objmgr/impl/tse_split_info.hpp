@@ -180,8 +180,12 @@ private:
 
     // all TSEs using this split info
     TTSE_Set               m_TSE_Set;
+
+    // mutex to serialize chunk addition
+    mutable CMutex         m_AttachMutex;
     
     // Split chunks
+    mutable CMutex         m_ChunksMutex;
     TChunks                m_Chunks;
     TChunkId               m_BioseqChunkId;
 

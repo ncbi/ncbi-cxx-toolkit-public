@@ -68,7 +68,6 @@ CTSE_Chunk_Info::CTSE_Chunk_Info(TChunkId id)
       m_ChunkId(id),
       m_LoadBytes(0),
       m_LoadSeconds(0),
-      m_AnnotIndexEnabled(false),
       m_ExplicitFeatIds(false)
 {
 }
@@ -150,6 +149,9 @@ void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
 
     // register seq-data
     split_info.x_AddSeq_data(m_Seq_data, *this);
+
+    // index annots
+    split_info.x_UpdateAnnotIndex(*this);
 }
 
 
@@ -221,9 +223,7 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse, ITSE_Assigner& lsnr)
         lsnr.AddSeq_data(tse, m_Seq_data, *this);
     }
 
-    if ( m_AnnotIndexEnabled ) {
-        x_UpdateAnnotIndex(tse);
-    }
+    x_UpdateAnnotIndex(tse);
 }
 
 
@@ -253,10 +253,6 @@ bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
         Load();
         return true;
     }
-    if ( !bioseq ) {
-        // we are requested to index annotations
-        const_cast<CTSE_Chunk_Info*>(this)->x_EnableAnnotIndex();
-    }
     return false;
 }
 
@@ -278,7 +274,6 @@ void CTSE_Chunk_Info::Load(void) const
     if ( init ) {
         m_SplitInfo->GetDataLoader().GetChunk(Ref(chunk));
         _ASSERT(IsLoaded());
-        chunk->x_DisableAnnotIndexWhenLoaded();
     }
 }
 
@@ -296,7 +291,6 @@ void CTSE_Chunk_Info::SetLoaded(CObject* obj)
         }
         m_LoadLock.Reset(obj);
     }}
-    x_DisableAnnotIndexWhenLoaded();
 }
 
 
@@ -473,31 +467,14 @@ void CTSE_Chunk_Info::x_AddXref_ids(const SAnnotTypeSelector& type,
 
 /////////////////////////////////////////////////////////////////////////////
 // annot index maintainance
-void CTSE_Chunk_Info::x_EnableAnnotIndex(void)
-{
-    if ( !m_AnnotIndexEnabled ) {
-        // enable index
-        if ( !m_AnnotContents.empty() ) {
-            m_SplitInfo->x_UpdateAnnotIndex(*this);
-        }
-        else {
-            m_AnnotIndexEnabled = true;
-        }
-    }
-    _ASSERT(m_AnnotIndexEnabled || IsLoaded());
-}
-
-
-void CTSE_Chunk_Info::x_DisableAnnotIndexWhenLoaded(void)
-{
-    _ASSERT(IsLoaded());
-    m_AnnotIndexEnabled = false;
-    _ASSERT(!m_AnnotIndexEnabled);
-}
-
 
 void CTSE_Chunk_Info::x_UpdateAnnotIndex(CTSE_Info& tse)
 {
+    CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
+    if ( tse.HasDataSource() ) {
+        guard.Guard(tse.GetDataSource());
+    }
+    CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
     x_UpdateAnnotIndexContents(tse);
 }
 
