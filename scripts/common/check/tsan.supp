@@ -82,17 +82,50 @@ race:^ncbi::objects::CDataSource::SetLoaded
 # false positive -- one-time initialization, order doesn't matter
 race:^ncbi::objects::CCSraRefSeqIterator::GetSeqLength
 
-# false positive -- CInitMutexPool reuses mutexes
+# false positive -- CInitMutexPool doesn't delete its mutexes
 deadlock:^ncbi::CInitGuard::CInitGuard
+
+# false positive -- CInitMutexPool doesn't delete its mutexes
+race:^ncbi::CInitMutexPool::AcquireMutex
+
+# false positive -- CInitMutexPool doesn't delete its mutexes
+race:^ncbi::CInitMutexPool::ReleaseMutex
 
 # false positive -- double-check initialization
 race:^ncbi::CInitMutex_Base::operator void
+
+# false positive -- double-check initialization
+race:^ncbi::CInitMutex*::GetPointer
+
+# false positive -- doubke-check initialization
+race:^ncbi::objects::CSynonymsSet::ContainsSynonym
 
 # false positive -- double-check initialization
 race:^ncbi::objects::CSeq_id_Mapper::GetInstance
 
 # false positive -- double-check initialization
 race:^ncbi::CSafeStatic*::x_Init
+
+# false positive -- one-time initialization, order doesn't matter
+race:^ncbi::objects::CSeq_loc::GetTotalRange
+
+# false positive -- values are read in a MT-safe manner
+race:^ncbi::objects::CPagedFile::GetReadStatistics
+
+# false positive -- page read is guarded, check page position is safely unguarded
+race:^ncbi::objects::CBGZFFile::x_ReadBlock
+
+# false positive -- double-check
+race:^ncbi::objects::CTSE_Info_Object::x_ResetDirtyAnnotIndex
+
+# false positive -- double-check
+race:^ncbi::objects::CTSE_Info_Object::x_DirtyAnnotIndex
+
+# false positive -- double-check
+race:^ncbi::objects::CScopeInfo_Base::x_ResetTSE_Lock
+
+# false positive -- double-check one-time initialization
+race:^ncbi::CTypeRef::Get
 
 ################################################################
 # lavr CXX-11285
