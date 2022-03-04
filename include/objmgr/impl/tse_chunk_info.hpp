@@ -283,8 +283,7 @@ protected:
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
 
     // annot index maintainance
-    void x_EnableAnnotIndex(void);
-    void x_DisableAnnotIndexWhenLoaded(void);
+    bool x_AnnotIndexNeedsUpdate() const;
     void x_UpdateAnnotIndex(CTSE_Info& tse);
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
     bool x_ContainsFeatType(CSeqFeatData::E_Choice type) const;
@@ -316,7 +315,6 @@ private:
     Uint4            m_LoadBytes;
     float            m_LoadSeconds;
 
-    bool             m_AnnotIndexEnabled;
     bool             m_ExplicitFeatIds;
 
     TDescInfos       m_DescInfos;
@@ -355,6 +353,13 @@ inline
 bool CTSE_Chunk_Info::IsLoaded(void) const
 {
     return m_LoadLock;
+}
+
+
+inline
+bool CTSE_Chunk_Info::x_AnnotIndexNeedsUpdate() const
+{
+    return false;
 }
 
 

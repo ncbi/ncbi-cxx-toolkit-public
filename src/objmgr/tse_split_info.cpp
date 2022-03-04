@@ -82,6 +82,7 @@ CTSE_Split_Info::CTSE_Split_Info(TBlobId blob_id, TBlobVersion blob_ver)
 
 CTSE_Split_Info::~CTSE_Split_Info(void)
 {
+    CMutexGuard guard(m_ChunksMutex);
     NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
         it->second->x_DropAnnotObjects();
     }
@@ -93,6 +94,7 @@ CTSE_Split_Info::~CTSE_Split_Info(void)
 void CTSE_Split_Info::x_TSEAttach(CTSE_Info& tse, CRef<ITSE_Assigner>& lsnr)
 {
     m_TSE_Set.insert(TTSE_Set::value_type(&tse, lsnr));
+    CMutexGuard guard(m_ChunksMutex);
     NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
         it->second->x_TSEAttach(tse, *lsnr);
     }
@@ -122,9 +124,12 @@ void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
         _ASSERT(m_DataLoader);
         if ( m_ContainsBioseqs ) {
             vector<CSeq_id_Handle> ids;
-            for ( auto& chunk : m_Chunks ) {
-                chunk.second->GetBioseqsIds(ids);
-            }
+            {{
+                CMutexGuard guard(m_ChunksMutex);
+                for ( auto& chunk : m_Chunks ) {
+                    chunk.second->GetBioseqsIds(ids);
+                }
+            }}
             ds.x_IndexSplitInfo(ids, this);
         }
     }
@@ -185,6 +190,7 @@ CDataLoader& CTSE_Split_Info::GetDataLoader(void) const
 
 bool CTSE_Split_Info::x_HasDelayedMainChunk(void) const
 {
+    CMutexGuard guard(m_ChunksMutex);
     TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
     return iter != begin && (--iter)->first == CTSE_Chunk_Info::kDelayedMain_ChunkId;
 }
@@ -192,6 +198,7 @@ bool CTSE_Split_Info::x_HasDelayedMainChunk(void) const
 
 bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
 {
+    CMutexGuard guard(m_ChunksMutex);
     TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
     if ( iter == begin || (--iter)->first != CTSE_Chunk_Info::kDelayedMain_ChunkId ) {
         // no delayed main chunk
@@ -204,6 +211,7 @@ bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
 
 void CTSE_Split_Info::x_LoadDelayedMainChunk(void) const
 {
+    CMutexGuard guard(m_ChunksMutex);
     TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
     while ( iter != begin && (--iter)->first >= kMax_Int-1 ) {
         iter->second->Load();
@@ -214,23 +222,23 @@ void CTSE_Split_Info::x_LoadDelayedMainChunk(void) const
 // chunk attach
 void CTSE_Split_Info::AddChunk(CTSE_Chunk_Info& chunk_info)
 {
-    bool need_update;
+    _ASSERT(!chunk_info.IsLoaded());
     {{
-        CMutexGuard guard(m_SeqIdToChunksMutex);
+        CMutexGuard guard(m_ChunksMutex);
         _ASSERT(m_Chunks.find(chunk_info.GetChunkId()) == m_Chunks.end());
         _ASSERT(m_Chunks.empty() || chunk_info.GetChunkId() != chunk_info.kDelayedMain_ChunkId);
-        need_update = x_HasDelayedMainChunk();
         m_Chunks[chunk_info.GetChunkId()].Reset(&chunk_info);
+    }}
+    {{
+        CMutexGuard guard(m_AttachMutex);
         chunk_info.x_SplitAttach(*this);
     }}
-    if ( need_update ) {
-        chunk_info.x_EnableAnnotIndex();
-    }
 }
 
 
 CTSE_Chunk_Info& CTSE_Split_Info::GetChunk(TChunkId chunk_id)
 {
+    CMutexGuard guard(m_ChunksMutex);
     TChunks::iterator iter = m_Chunks.find(chunk_id);
     if ( iter == m_Chunks.end() ) {
         NCBI_THROW(CObjMgrException, eAddDataError,
@@ -242,6 +250,7 @@ CTSE_Chunk_Info& CTSE_Split_Info::GetChunk(TChunkId chunk_id)
 
 const CTSE_Chunk_Info& CTSE_Split_Info::GetChunk(TChunkId chunk_id) const
 {
+    CMutexGuard guard(m_ChunksMutex);
     TChunks::const_iterator iter = m_Chunks.find(chunk_id);
     if ( iter == m_Chunks.end() ) {
         NCBI_THROW(CObjMgrException, eAddDataError,
@@ -253,6 +262,7 @@ const CTSE_Chunk_Info& CTSE_Split_Info::GetChunk(TChunkId chunk_id) const
 
 CTSE_Chunk_Info& CTSE_Split_Info::GetSkeletonChunk(void)
 {
+    CMutexGuard guard(m_ChunksMutex);
     TChunks::iterator iter = m_Chunks.find(0);
     if ( iter != m_Chunks.end() ) {
         return *iter->second;
@@ -375,46 +385,24 @@ bool CTSE_Split_Info::x_CanAddBioseq(const TBioseqId& id) const
 void CTSE_Split_Info::x_UpdateFeatIdIndex(CSeqFeatData::E_Choice type,
                                           EFeatIdType id_type)
 {
-    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        CTSE_Chunk_Info& chunk = *it->second;
-        if ( !chunk.IsLoaded() && !chunk.m_AnnotIndexEnabled &&
-             chunk.x_ContainsFeatIds(type, id_type) ) {
-            x_UpdateAnnotIndex(chunk);
-        }
-    }
 }
 
 
 void CTSE_Split_Info::x_UpdateFeatIdIndex(CSeqFeatData::ESubtype subtype,
                                           EFeatIdType id_type)
 {
-    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        CTSE_Chunk_Info& chunk = *it->second;
-        if ( !chunk.IsLoaded() && !chunk.m_AnnotIndexEnabled &&
-             chunk.x_ContainsFeatIds(subtype, id_type) ) {
-            x_UpdateAnnotIndex(chunk);
-        }
-    }
 }
 
 
 void CTSE_Split_Info::x_UpdateAnnotIndex(void)
 {
-    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        x_UpdateAnnotIndex(*it->second);
-    }
 }
 
 
 void CTSE_Split_Info::x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 {
-    if ( !chunk.IsLoaded() && !chunk.m_AnnotIndexEnabled ) {
-        NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-            CTSE_Info& tse = *it->first;
-            ITSE_Assigner& listener = *it->second;
-            listener.UpdateAnnotIndex(tse, chunk);
-        }
-        chunk.m_AnnotIndexEnabled = true;
+    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        chunk.x_UpdateAnnotIndex(*it->first);
     }
 }
 
@@ -439,19 +427,19 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
         // shortcut - this TSE doesn't contain any Bioseqs
         return;
     }
-    vector< CConstRef<CTSE_Chunk_Info> > chunks;
+    vector<TChunkId> chunk_ids;
     {{
         CMutexGuard guard(m_SeqIdToChunksMutex);
         for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
               iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
-            const CTSE_Chunk_Info& chunk = GetChunk(iter->second);
-            if ( !chunk.IsLoaded() ) {
-                chunks.push_back(ConstRef(&chunk));
-            }
+            chunk_ids.push_back(iter->second);
         }
     }}
-    ITERATE ( vector< CConstRef<CTSE_Chunk_Info> >, it, chunks ) {
-        (*it)->x_GetRecords(id, bioseq);
+    for ( auto& chunk_id : chunk_ids ) {
+        const CTSE_Chunk_Info& chunk = GetChunk(chunk_id);
+        if ( !chunk.IsLoaded() ) {
+            chunk.x_GetRecords(id, bioseq);
+        }
     }
 }
 
@@ -479,6 +467,7 @@ void CTSE_Split_Info::x_AddChunksForGetRecords(vector<CConstRef<CTSE_Chunk_Info>
 
 void CTSE_Split_Info::GetBioseqsIds(TSeqIds& ids) const
 {
+    CMutexGuard guard(m_ChunksMutex);
     ITERATE ( TChunks, it, m_Chunks ) {
         it->second->GetBioseqsIds(ids);
     }
