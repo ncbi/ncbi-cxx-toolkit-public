@@ -110,6 +110,8 @@ def main():
     shutil.copy(NSIS_CONFIG, cwd)
     license_file = os.path.join(SCRIPT_DIR, "..", "..", "LICENSE")
     shutil.copy(license_file, cwd)
+    privacy_file = os.path.join(SCRIPT_DIR, "..", "..", "BLAST_PRIVACY")
+    shutil.copy(privacy_file, cwd)
 
     f = open("README.txt", "w")
     f.write("The user manual is available in http://www.ncbi.nlm.nih.gov/books/NBK279690\n")
