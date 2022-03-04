@@ -1249,6 +1249,7 @@ void CBDB_Cache::Open(const string& cache_path,
 
     m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
     m_Name = cache_name;
+    m_ReadOnly = false;
 
     CDir dir(m_Path);
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
@@ -1549,8 +1550,6 @@ void CBDB_Cache::Open(const string& cache_path,
 # endif
     }
 
-    m_ReadOnly = false;
-
     LOG_POST_X(9, Info <<
                "LC: '" << cache_name <<
                "' Cache mount at: " << cache_path);
@@ -1591,6 +1590,7 @@ void CBDB_Cache::OpenReadOnly(const string&  cache_path,
 
     m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
     m_Name = cache_name;
+    m_ReadOnly = true;
 
     m_BLOB_SplitStore = new TSplitStore(new CBDB_BlobDeMux_RoundRobin(0));
     m_CacheAttrDB = new SCache_AttrDB();
@@ -1609,8 +1609,6 @@ void CBDB_Cache::OpenReadOnly(const string&  cache_path,
     m_CacheAttrDB->Open(attr_db_name.c_str(),    CBDB_RawFile::eReadOnly);
 
     }}
-
-    m_ReadOnly = true;
 
     LOG_POST_X(12, Info <<
                "LC: '" << cache_name <<
