@@ -38,8 +38,6 @@
 #include <objects/pubmed/Pubmed_entry.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/pub/Pub.hpp>
-#include <objects/mla/Title_msg.hpp>
-#include <objects/mla/Title_msg_list.hpp>
 
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_jour.hpp>
