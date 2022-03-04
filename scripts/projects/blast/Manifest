@@ -30,7 +30,7 @@ COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
 COPY: $srcdir/src/app/blast/cleanup-blastdb-volumes.py $installdir/bin
 COPY: $srcdir/src/app/blast/get_species_taxids.sh $installdir/bin
 
-COPY: BLAST_PRIVACY $installdir/doc
+#COPY: BLAST_PRIVACY $installdir/doc
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
 
