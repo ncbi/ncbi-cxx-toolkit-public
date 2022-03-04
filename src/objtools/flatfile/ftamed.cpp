@@ -35,8 +35,6 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <objects/mla/Title_msg.hpp>
-#include <objects/mla/Title_msg_list.hpp>
 #include <objtools/edit/mla_updater.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Auth_list.hpp>

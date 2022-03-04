@@ -55,9 +55,6 @@
 
 #include "pub_fix_aux.hpp"
 
-#include <objects/mla/Title_msg.hpp>
-#include <objects/mla/Title_msg_list.hpp>
-
 #include <corelib/ncbi_message.hpp>
 #include <objtools/eutils/api/esearch.hpp>
 #include <objtools/eutils/esearch/IdList.hpp>
@@ -174,7 +171,10 @@ void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
             // no iso_jta
             CTitle::C_E& first_title = *titles.front();
             const string& title_str = journal.SetTitle().GetTitle(first_title);
-            first_title.SetIso_jta(upd->GetTitle(title_str));
+            const string new_title = upd->GetTitle(title_str);
+            if (!new_title.empty()) {
+                first_title.SetIso_jta(new_title);
+            }
         }
     }
 
