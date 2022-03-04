@@ -1144,9 +1144,6 @@ CWGSFileInfo::CWGSFileInfo(const CWGSDataLoader_Impl& impl,
 void CWGSFileInfo::Open(const CWGSDataLoader_Impl& impl,
                         CTempString prefix)
 {
-    if ( m_WGSDb ) {
-        return;
-    }
     CMutexGuard guard(m_Mutex);
     if ( m_WGSDb ) {
         return;
