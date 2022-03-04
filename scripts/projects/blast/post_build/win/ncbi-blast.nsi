@@ -131,6 +131,7 @@ Section "DefaultSection" SecDflt
   
   SetOutPath "$INSTDIR\doc"
   File "README.txt"
+  File "BLAST_PRIVACY"
   
   ;Store installation folder
   WriteRegStr HKCU "Software\NCBI\blast-BLAST_VERSION+" "" $INSTDIR
