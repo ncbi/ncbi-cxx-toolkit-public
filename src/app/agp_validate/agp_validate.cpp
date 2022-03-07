@@ -126,12 +126,6 @@ public:
 
   string& PrintUsage(string& str, bool detailed) const
   {
-      // use svn's keyword substitution to automatically keep track of
-      // versioning.
-     // string version_str = "$Date$";
-     // version_str = version_str.substr(7); // chop "$Date: " from beginning
-     // version_str.resize( version_str.length() - 1 ); // remove final '$'
-     // version_str.resize(version_str.find(" "), 1);
       auto version_str = m_VersionInfo.Print();
       version_str+=", AGP Specification v2.1";
 
