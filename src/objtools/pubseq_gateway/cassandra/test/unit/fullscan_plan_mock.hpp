@@ -32,6 +32,7 @@
 #include <gmock/gmock.h>
 
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/fullscan/seg_plan.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -47,6 +48,16 @@ class MockCassandraFullscanPlan
 
 class CCassandraFullscanPlanExpose
     : public CCassandraFullscanPlan
+{
+ public:
+    CCassConnection::TTokenRanges CopyRanges()
+    {
+        return GetTokenRanges();
+    }
+};
+
+class CCassandraSegmentedPlanExpose
+    : public CCassandraSegscanPlan
 {
  public:
     CCassConnection::TTokenRanges CopyRanges()

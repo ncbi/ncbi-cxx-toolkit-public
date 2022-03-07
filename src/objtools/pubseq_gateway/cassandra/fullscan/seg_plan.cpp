@@ -33,10 +33,22 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-CCassandraSegscanPlan::CCassandraSegscanPlan() :
-    m_Segment({0, 1})
+BEGIN_SCOPE()
+void FilterTokenRanges(CCassConnection::TTokenRanges& ranges, size_t segment, size_t segment_count)
 {
+    if (segment_count > 1) {
+        for (ssize_t i = ranges.size() - 1; i >= 0; --i) {
+            if (i % segment_count != segment) {
+                ranges.erase(ranges.begin() + i);
+            }
+        }
+    }
 }
+END_SCOPE()
+
+CCassandraSegscanPlan::CCassandraSegscanPlan()
+  : m_Segment({0, 1})
+{}
 
 CCassandraSegscanPlan& CCassandraSegscanPlan::SetSegment(pair<size_t, size_t> segment)
 {
@@ -46,23 +58,20 @@ CCassandraSegscanPlan& CCassandraSegscanPlan::SetSegment(pair<size_t, size_t> se
 
 void CCassandraSegscanPlan::Generate()
 {
-    CCassandraFullscanPlan::Generate();
-    if (m_Segment.second > 1) {
-        // by setting Segment we want to run sub-set of the token ranges
-        // for example if we have to distribute a task among 5 segments, we run them
-        // with segments of {0,5}, {1,5}, {2,5}, {3,5} and {4,5}
-        //    where .first is segment index and .second is total segment count
-        //
-        // In this method we fetch full range of tokens from Cassandra, then remove the token ranges
-        // that the other segments will perform
-        // in particular, seg #0 will remove tokens that will be handled by seg #1, 2, 3 and 4
-        //                seg #1 will remove tokens intended for seg #0, 2, 3 and 4
-        //                and so forth
-        CCassConnection::TTokenRanges& TokenRanges = GetTokenRanges();
-        for (ssize_t i = TokenRanges.size() - 1; i >= 0; --i) {
-            if (i % m_Segment.second != m_Segment.first)
-                TokenRanges.erase(TokenRanges.begin() + i);
-        }
+    auto partition_count_limit = GetPartitionCountPerQueryLimit();
+    if (partition_count_limit > 0) {
+        // Limiting token range partition size is unstable as size estimates may be different on different nodes
+        //  so we first apply segment filter
+        //  and then we split remaining token ranges accorting to limit
+        SetPartitionCountPerQueryLimit(0);
+        CCassandraFullscanPlan::Generate();
+        FilterTokenRanges(GetTokenRanges(), m_Segment.first, m_Segment.second);
+        SetPartitionCountPerQueryLimit(partition_count_limit);
+        SplitTokenRangesForLimits();
+    }
+    else {
+        CCassandraFullscanPlan::Generate();
+        FilterTokenRanges(GetTokenRanges(), m_Segment.first, m_Segment.second);
     }
 }
 

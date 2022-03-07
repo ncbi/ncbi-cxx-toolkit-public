@@ -72,6 +72,10 @@ class CCassandraFullscanPlan
     CCassandraFullscanPlan& SetMinPartitionsForSubrangeScan(size_t value);
     CCassandraFullscanPlan& SetKeyspace(string const & keyspace);
     CCassandraFullscanPlan& SetTable(string const & table);
+
+    // If original schema token ranges contain too many records
+    //  we could split them further to distribute workload more equally
+    //  and reduce paging sub-queries count
     CCassandraFullscanPlan& SetPartitionCountPerQueryLimit(int64_t value);
     size_t GetMinPartitionsForSubrangeScan();
 
@@ -81,10 +85,14 @@ class CCassandraFullscanPlan
 
  protected:
     CCassConnection::TTokenRanges& GetTokenRanges();
+    void SplitTokenRangesForLimits();
+    int64_t GetPartitionCountPerQueryLimit() const
+    {
+        return m_PartitionCountPerQueryLimit;
+    }
 
  private:
     size_t GetPartitionCountEstimate();
-    void SplitTokenRangesForLimits();
 
     shared_ptr<CCassConnection> m_Connection;
     vector<string> m_FieldList{"*"};
@@ -95,7 +103,6 @@ class CCassandraFullscanPlan
     CCassConnection::TTokenRanges m_TokenRanges;
     size_t m_MinPartitionsForSubrangeScan{kMinPartitionsForSubrangeScanDefault};
     int64_t m_PartitionCountPerQueryLimit{0};
-
 };
 
 END_IDBLOB_SCOPE

@@ -233,7 +233,11 @@ size_t CCassandraFullscanPlan::GetQueryCount() const
 void CCassandraFullscanPlan::SplitTokenRangesForLimits()
 {
     auto local_dc = m_Connection->GetDatacenterName();
+    ERR_POST(Trace << "CCassandraFullscanPlan::SplitTokenRangesForLimits - "
+        "Local dc -  '" << local_dc << "'");
     auto local_estimates = m_Connection->GetSizeEstimates(local_dc, m_Keyspace, m_Table);
+    ERR_POST(Trace << "CCassandraFullscanPlan::SplitTokenRangesForLimits - "
+            "Local estimates size -  '" << local_estimates.size() << "'");
     auto estimates = NormalizeSizeEstimates(local_estimates);
 
     // Additional verification of estimates data
@@ -283,6 +287,7 @@ void CCassandraFullscanPlan::SplitTokenRangesForLimits()
             result_ranges.push_back(range);
         }
     }
+    swap(result_ranges, m_TokenRanges);
 }
 
 void CCassandraFullscanPlan::Generate()
