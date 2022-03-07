@@ -202,6 +202,8 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("alt", "Check component Accessions, Lengths and Taxonomy ID using GenBank data");
   arg_desc->AddFlag("g", "Check that component names look like Nucleotide accessions (this does not require components to be in GenBank)");
   arg_desc->AddFlag("obj","Use FASTA files to read names and lengths of objects (the default is components)");
+  arg_desc->SetDependency("obj", CArgDescriptions::eExcludes, "alt");
+  arg_desc->SetDependency("obj", CArgDescriptions::eExcludes, "species");
   arg_desc->AddFlag("un"  , "Unplaced/unlocalized scaffolds: any single-component scaffold must use the whole component in orientation '+'");
   arg_desc->SetDependency("un", CArgDescriptions::eExcludes, "scaf");
   arg_desc->SetDependency("un", CArgDescriptions::eExcludes, "chr");
@@ -319,10 +321,6 @@ int CAgpValidateApplication::Run(void)
   }
 
   if( args["alt"].HasValue() || args["species"].HasValue() ) {
-    if(m_reader.m_CheckObjLen) {
-      cerr << "Error -- cannot specify -obj with -alt/-species.\n";
-      exit(1);
-    }
     m_ValidationType = VT_AccLenTaxid;
   }
   else {
