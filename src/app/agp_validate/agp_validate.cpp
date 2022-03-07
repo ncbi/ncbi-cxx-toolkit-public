@@ -190,45 +190,33 @@ public:
 
 void CAgpValidateApplication::Init(void)
 {
-//  unique_ptr<CArgDesc_agp_validate> arg_desc(new CArgDesc_agp_validate);
-    
-  auto arg_desc = make_unique<CArgDescriptions>();
+  unique_ptr<CArgDesc_agp_validate> arg_desc(new CArgDesc_agp_validate);
 
   arg_desc->SetUsageContext(
     GetArguments().GetProgramBasename(),
     "Validate AGP data", false);
 
   // component_id  checks that involve GenBank: Accession Length Taxid
-  arg_desc->AddFlag("alt", "Check component Accessions, Lengths and Taxonomy ID using GenBank data");
-  arg_desc->AddFlag("g", "Check that component names look like Nucleotide accessions (this does not require components to be in GenBank)");
-  arg_desc->AddFlag("obj","Use FASTA files to read names and lengths of objects (the default is components)");
-  arg_desc->SetDependency("obj", CArgDescriptions::eExcludes, "alt");
-  arg_desc->SetDependency("obj", CArgDescriptions::eExcludes, "species");
-  arg_desc->AddFlag("un"  , "Unplaced/unlocalized scaffolds: any single-component scaffold must use the whole component in orientation '+'");
-  arg_desc->SetDependency("un", CArgDescriptions::eExcludes, "scaf");
-  arg_desc->SetDependency("un", CArgDescriptions::eExcludes, "chr");
-  arg_desc->AddFlag("scaf", "Scaffold from component AGP: no scaffold-breaking gaps allowed");
-  arg_desc->AddFlag("chr" , "Chromosome from scaffold AGP: ONLY scaffold-breaking gaps allowed");
-  arg_desc->AddFlag("comp", "Check that the supplied object sequences (in FASTA files) match what can be" 
-          " constructed from the AGP and the component sequences (in FASTA files or in GenBank)");
-  arg_desc->AddFlag("xml" , "Report results in XML format");
-  arg_desc->AddFlag("sub" , "Treat serious warnings as errors, put summary and stats at the top");
+  arg_desc->AddFlag("alt", "");
+
+  arg_desc->AddFlag("g"   , "");
+  arg_desc->AddFlag("obj" , "");
+  arg_desc->AddFlag("un"  , "");
+  arg_desc->AddFlag("scaf", "");
+  arg_desc->AddFlag("chr" , "");
+  arg_desc->AddFlag("comp", "");
+  arg_desc->AddFlag("xml" , "");
+  arg_desc->AddFlag("sub" , "");
 
   // -comp args
   arg_desc->AddOptionalKey( "loadlog", "FILE",
-    "specifies where we write our loading log for -comp", CArgDescriptions::eOutputFile);
+    "specifies where we write our loading log for -comp",
+    CArgDescriptions::eOutputFile);
+  arg_desc->AddFlag("ignoreagponly",     "");
+  arg_desc->AddFlag("ignoreobjfileonly", "");
+  arg_desc->AddDefaultKey( "diffstofind", "", "",
+                           CArgDescriptions::eInteger, "0" );
 
-  arg_desc->SetDependency("loadlog", CArgDescriptions::eRequires, "comp");
-  arg_desc->AddFlag("ignoreagponly", "Do not report objects present in AGP file(s) only");
-  arg_desc->SetDependency("ignoreagponly", CArgDescriptions::eRequires, "comp");
-  arg_desc->AddFlag("ignoreobjfileonly", "Do not report objects present in FASTA file(s) only");
-  arg_desc->SetDependency("ignoreobjfileonly", CArgDescriptions::eRequires, "comp");
-  arg_desc->AddOptionalKey( "diffstofind", 
-          "NUM", 
-          "(EXPERIMENTAL) If specified, list the first NUM lines of each difference",
-          CArgDescriptions::eInteger);
-
-  arg_desc->SetDependency("diffstofind", CArgDescriptions::eRequires, "comp");
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
   arg_desc->AddOptionalKey( "out", "FILE",
@@ -303,11 +291,20 @@ int CAgpValidateApplication::Run(void)
   m_reader.m_CheckObjLen=args["obj"].HasValue();
   m_reader.m_unplaced   =args["un" ].HasValue();
 
-
   if (m_reader.m_unplaced) {
       pAgpErr->UpgradeToError(CAgpErrEx::W_SingleOriNotPlus);
   }
 
+  if(args["chr" ].HasValue() || args["scaf" ].HasValue()) {
+    if( m_reader.m_unplaced  ) {
+      cerr << "Error -- cannot specify -un with -chr/-scaf.\n";
+      exit(1);
+    }
+    if( args["alt"].HasValue() || args["species"].HasValue() ) {
+      cerr << "Error -- cannot specify -chr/-scaf with -alt/-species.\n";
+      exit(1);
+    }
+  }
   if( args["chr"].HasValue() ) {
     if( args["scaf"].HasValue() ) {
       cerr << "Error -- -scaf and -chr must precede different files.\n";
@@ -321,6 +318,10 @@ int CAgpValidateApplication::Run(void)
   }
 
   if( args["alt"].HasValue() || args["species"].HasValue() ) {
+    if(m_reader.m_CheckObjLen) {
+      cerr << "Error -- cannot specify -obj with -alt/-species.\n";
+      exit(1);
+    }
     m_ValidationType = VT_AccLenTaxid;
   }
   else {
@@ -421,6 +422,16 @@ int CAgpValidateApplication::Run(void)
   }
 
   if( ! args["comp"] ) {
+      // if "-comp" not specified, neither should the other
+      // comp-related args
+      if( args["loadlog"] || args["ignoreagponly"] ||
+          args["ignoreobjfileonly"] ||
+          args["diffstofind"].AsInteger() > 0 )
+      {
+          cerr << "Error -- -comp mode options without -comp" << endl;
+          exit(1);
+      }
+
       //// Process files, print results
       bool taxid_check_failed=false;
       if(m_use_xml) {
@@ -476,7 +487,7 @@ int CAgpValidateApplication::Run(void)
           diffsToHide |= CAgpFastaComparator::fDiffsToHide_ObjfileOnly;
       }
 
-      int diffsToFind = args["diffstofind"] ? args["diffstofind"].AsInteger() : 0;
+      int diffsToFind = args["diffstofind"].AsInteger();
 
       CAgpFastaComparator agpFastaComparator;
       if( CAgpFastaComparator::eResult_Success !=
@@ -886,7 +897,6 @@ END_NCBI_SCOPE
 
 int main(int argc, const char* argv[])
 {
-/*
   if(argc==1+1 && string("-comp")==argv[1]) {
     cout << "agp_validate -comp (formerly agp_fasta_compare):\n"
       // "check that the object sequences (in FASTA or ASN.1 file) match the AGP.\n" //
@@ -905,7 +915,6 @@ int main(int argc, const char* argv[])
       ;
     return 0;
   }
-  */
 
   return CAgpValidateApplication().AppMain(argc, argv);
 }
