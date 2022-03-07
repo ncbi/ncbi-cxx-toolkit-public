@@ -25,20 +25,11 @@ setup()
 
 prep_data_collection_notice_file()
 {
-    cat > ${INSTALLDIR}/data_collection_notice.txt<<EOF
-To help improve the quality of this product and ensure proper funding and
-resource allocation, we collect usage data. For a listing of data
-collected and how this is handled, please visit our privacy policy
-<https://ncbi.nlm.nih.gov/books/NBK569851/>.
-You may choose to opt out of this collection any time by setting the
-following environment variable:
-
-    BLAST_USAGE_REPORT=false
-
-EOF
-
-  if [ ! -f ${INSTALLDIR}/data_collection_notice.txt ] ; then
-      echo "prep_data_collection_notice_file: ERROR: missing: ${INSTALLDIR}/data_collection_notice.txt"
+# JIRA SB-3327 use provided BLAST_PRIVACY
+  if [ ! -f ${INSTALLDIR}/BLAST_PRIVACY  ] ; then
+      echo "ERROR: missing: ${INSTALLDIR}/BLAST_PRIVACY"
+  else
+    cp -p $INSTALLDIR/BLAST_PRIVACY $STAGE_DIR1/doc/BLAST_PRIVACY
   fi
 }
 
@@ -59,6 +50,7 @@ EOF
         cp -p $INSTALLDIR/bin/$bin $STAGE_DIR1/bin
     done
 
+
     /usr/bin/pkgbuild --root $STAGE_DIR1 --identifier $ID.binaries --version \
         $BLAST_VERSION --install-location $INSTALL_LOCATION1 binaries.pkg
 }
@@ -76,7 +68,7 @@ customize_distribution_xml()
     <title>NCBI BLAST+ Command Line Applications</title> \
     <welcome file="welcome.txt" mime-type="text/plain"/> \
     <license file="LICENSE" mime-type="text/plain"/> \
-    <readme file="data_collection_notice.txt" mime-type="text/plain"/>  \
+    <readme file="BLAST_PRIVACY" mime-type="text/plain"/>  \
     <background scaling="proportional" alignment="left" file="large-Blue_ncbi_logo.tiff" mime-type="image/tiff"/> \
 ' Distribution.xml 
 }
@@ -90,7 +82,7 @@ create_product_archive()
 
     mkdir $RESOURCES_DIR
     cp -p $INSTALLDIR/LICENSE $RESOURCES_DIR
-    cp -p $INSTALLDIR/data_collection_notice.txt $RESOURCES_DIR
+    cp -p $INSTALLDIR/BLAST_PRIVACY $RESOURCES_DIR
     for f in welcome.txt large-Blue_ncbi_logo.tiff ; do
         cp -p $SCRIPTDIR/$f $RESOURCES_DIR
     done
