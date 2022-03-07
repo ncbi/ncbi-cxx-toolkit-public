@@ -1141,7 +1141,8 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
     }
 
     if (!m_execution_host.empty()) {
-        cass_statement_set_host_n(m_statement, m_execution_host.c_str(), m_execution_host.size(), m_connection->m_port);
+        int port = m_connection->m_port ? m_connection->m_port : 9042;
+        cass_statement_set_host_n(m_statement, m_execution_host.c_str(), m_execution_host.size(), port);
     }
 
     try {

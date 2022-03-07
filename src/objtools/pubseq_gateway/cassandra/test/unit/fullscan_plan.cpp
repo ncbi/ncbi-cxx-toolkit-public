@@ -45,6 +45,7 @@
 #include <limits>
 
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/fullscan/seg_plan.hpp>
 
 #include "fullscan_plan_mock.hpp"
 
@@ -66,7 +67,8 @@ class CCassandraFullscanPlanTest
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
-        r.Set(config_section, "service", string(s_TestClusterName), IRegistry::fPersistent);
+        //r.Set(config_section, "service", string(s_TestClusterName), IRegistry::fPersistent);
+        r.Set(config_section, "service", "idtest112,idtest111", IRegistry::fPersistent);
         s_Factory = CCassConnectionFactory::s_Create();
         s_Factory->LoadConfig(r, config_section);
         s_Connection = s_Factory->CreateInstance();
@@ -128,8 +130,8 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
     while(query) {
         ASSERT_LE(++i, ranges.size());
         string expected_query = expected_template + "\nparams: "
-            + NStr::NumericToString(ranges[ranges.size() - i].first)
-            + ", " + NStr::NumericToString(ranges[ranges.size() - i].second);
+            + to_string(ranges[ranges.size() - i].first)
+            + ", " + to_string(ranges[ranges.size() - i].second);
         ASSERT_EQ(expected_query, query->ToString());
         query = plan.GetNextQuery();
     }
@@ -144,8 +146,8 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
     while(query) {
         ASSERT_LE(++i, ranges.size());
         string expected_query = expected_template + "\nparams: "
-            + NStr::NumericToString(ranges[ranges.size() - i].first)
-            + ", " + NStr::NumericToString(ranges[ranges.size() - i].second);
+            + to_string(ranges[ranges.size() - i].first)
+            + ", " + to_string(ranges[ranges.size() - i].second);
         ASSERT_EQ(expected_query, query->ToString());
         query = plan.GetNextQuery();
     }
@@ -195,20 +197,67 @@ TEST_F(CCassandraFullscanPlanTest, CheckPartitionCountPerQueryLimit) {
     plan
         .SetConnection(s_Connection)
         .SetKeyspace("idmain2")
-        .SetTable("si2csi")
-        .SetPartitionCountPerQueryLimit(100'000);
+        .SetTable("si2csi");
     plan.Generate();
-    auto ranges = plan.CopyRanges();
-    EXPECT_FALSE(ranges.empty());
-    EXPECT_EQ(numeric_limits<int64_t>::min(), ranges.cbegin()->first);
-    EXPECT_EQ(numeric_limits<int64_t>::max(), ranges.crbegin()->second);
-    for (auto itr = ranges.cbegin(); itr != ranges.cend(); ++itr) {
+    auto full_ranges = plan.CopyRanges();
+    ASSERT_FALSE(full_ranges.empty());
+    plan.SetPartitionCountPerQueryLimit(100'000);
+    plan.Generate();
+    auto limited_ranges = plan.CopyRanges();
+
+    ASSERT_GT(limited_ranges.size(), full_ranges.size());
+    EXPECT_EQ(numeric_limits<int64_t>::min(), limited_ranges.cbegin()->first);
+    EXPECT_EQ(numeric_limits<int64_t>::max(), limited_ranges.crbegin()->second);
+    for (auto itr = limited_ranges.cbegin(); itr != limited_ranges.cend(); ++itr) {
         EXPECT_LT(itr->first, itr->second) << "Range start should be less than range end";
         auto next = itr + 1;
-        if (next != ranges.cend()) {
+        if (next != limited_ranges.cend()) {
             EXPECT_EQ(itr->second, next->first) << "Adjacent ranges should have equal border";
         }
     }
+}
+
+TEST_F(CCassandraFullscanPlanTest, CheckSegmentedPlanWithLimit) {
+    CCassandraSegmentedPlanExpose plan;
+    plan
+        .SetSegment({7, 64})
+        .SetConnection(s_Connection)
+        .SetKeyspace("idmain2")
+        .SetTable("si2csi");
+    plan.Generate();
+    auto full_ranges = plan.CopyRanges();
+    ASSERT_FALSE(full_ranges.empty());
+
+    plan.SetPartitionCountPerQueryLimit(100'000);
+    plan.Generate();
+    auto limited_ranges = plan.CopyRanges();
+    ASSERT_FALSE(limited_ranges.empty());
+    ASSERT_GT(limited_ranges.size(), full_ranges.size());
+
+    auto full_range = full_ranges.cbegin();
+    //cout << "Validating: " << full_range->first << " - " << full_range->second << endl;
+    EXPECT_EQ(full_range->first, limited_ranges.cbegin()->first);
+    for (auto itr = limited_ranges.cbegin(); itr != limited_ranges.cend(); ++itr) {
+        //cout << "     Limited: " << itr->first << " - " << itr->second << endl;
+        EXPECT_LT(itr->first, itr->second) << "Range start should be less than range end";
+        EXPECT_LE(full_range->first, itr->first) << "Limited range should be enclosed by full";
+        EXPECT_GE(full_range->second, itr->second) << "Limited range should be enclosed by full";
+        auto next = itr + 1;
+        if (full_range->second == itr->second) {
+            ++full_range;
+            if (full_range != full_ranges.cend()) {
+                //cout << "Validating: " << full_range->first << " - " << full_range->second << endl;
+                ASSERT_FALSE(next == limited_ranges.cend());
+                EXPECT_EQ(full_range->first, next->first);
+            }
+        }
+        else {
+            if (next != limited_ranges.cend()) {
+                EXPECT_EQ(itr->second, next->first) << "Adjacent ranges should have equal border";
+            }
+        }
+    }
+    EXPECT_EQ(full_range, full_ranges.cend());
 }
 
 }  // namespace

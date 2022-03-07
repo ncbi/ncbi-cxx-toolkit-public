@@ -81,7 +81,7 @@ class CBlobInsertTest
     string m_TargetKeyspaceName{"blob_repartition"};
 };
 
-static auto wait_function = [](CCassBlobTaskLoadBlob& task){
+static auto wait_function = [](auto& task){
     bool done = task.Wait();
     while (!done) {
         usleep(100);
@@ -114,8 +114,8 @@ TEST_F(CBlobInsertTest, CheckBigBlobLoading)
     blob->SetModified(fake_modified);
     blob->SetBigBlobSchema(true);
 
-    CCassBlobTaskInsertExtended insert(m_Connection, m_TargetKeyspaceName, blob.get(), false, error_function);
-    insert.Wait();
+    CCassBlobTaskInsertExtended insert(m_Connection, m_TargetKeyspaceName, blob.get(), true, error_function);
+    wait_function(insert);
 
     CCassBlobTaskLoadBlob fetch_loaded(m_Connection, m_TargetKeyspaceName, fake_key, true, error_function);
     wait_function(fetch_loaded);

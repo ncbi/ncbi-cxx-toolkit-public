@@ -39,6 +39,17 @@ class CCassandraSegscanPlan: public CCassandraFullscanPlan
 {
  public:
     CCassandraSegscanPlan();
+
+    // by setting Segment we want to run sub-set of the token ranges
+    // for example if we have to distribute a task among 5 segments, we run them
+    // with segments of {0,5}, {1,5}, {2,5}, {3,5} and {4,5}
+    //    where .first is segment index and .second is total segment count
+    //
+    // In this method we fetch full range of tokens from Cassandra, then remove the token ranges
+    // that the other segments will perform
+    // in particular, seg #0 will remove tokens that will be handled by seg #1, 2, 3 and 4
+    //                seg #1 will remove tokens intended for seg #0, 2, 3 and 4
+    //                and so forth
     CCassandraSegscanPlan& SetSegment(pair<size_t, size_t> segment);
 
     virtual void Generate() override;
