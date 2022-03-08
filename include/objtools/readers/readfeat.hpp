@@ -62,7 +62,9 @@ public:
     /// Note that "bad key" could mean many different conditions, from
     /// unrecognized feature name to qualifier without a feature, and so on.
     enum EFlags {
-        fReportBadKey           = (1<<0), ///< = 0x01 (Report bad keys into the error container)
+        fReportBadKey NCBI_STD_DEPRECATED("This flag is redundant. Bad keys are now reported by default"  
+                                          " and fSuppressBadKeyWarning must be specified to silence these warnings.")         
+                                = (1<<0), ///< = 0x01 (Report bad keys into the error container)
         fKeepBadKey             = (1<<1), ///< = 0x02 (As much as possible, try to use bad keys as if they were acceptable)
         fTranslateBadKey        = (1<<2), ///< = 0x04 (yields misc_feature /standard_name="...")
         fIgnoreWebComments      = (1<<3), ///< = 0x08 (ignore web comment lines such as lines that start with " INFO:", or consist of many equals signs)
