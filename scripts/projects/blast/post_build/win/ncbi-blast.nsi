@@ -17,14 +17,17 @@ Var data_collect_notice_text
 Function .onInit
   ${If} ${RunningX64}
     StrCpy $INSTDIR "$PROGRAMFILES64\NCBI\blast-BLAST_VERSION+"
-	StrCpy $data_collect_notice_text "\
-To help improve the quality of this product and ensure proper funding and$\r$\n\
-resource allocation, we collect usage data. For a listing of data collected$\r$\n\
-and how this is handled, please visit our$\r$\n\
-privacy policy <https://ncbi.nlm.nih.gov/books/NBK569851/>.$\r$\n$\r$\n\
-You may choose to opt out of this collection any time by setting the following$\r$\n\
-environment variable:$\r$\n  $\r$\n\
-                      BLAST_USAGE_REPORT=false$\r$\n"
+	StrCpy $data_collect_notice_text \	  
+"As part of our efforts to improve BLAST+, we have implemented usage $\r$\n\
+reporting to collect limited data. This information shows us whether $\r$\n\
+BLAST+ is being used by the community, and therefore is worth being $\r$\n\
+maintained and developed by NCBI.$\r$\n\
+It also allows us to focus our development efforts on the most used$\r$\n\
+aspects of BLAST+.$\r$\n\
+$\r$\n\
+See https://www.ncbi.nlm.nih.gov/books/NBK569851/$\r$\n\
+for what data we collect and how to opt out of usage reporting.$\r$\n" 
+					  
   ${EndIf}
 FunctionEnd
 
