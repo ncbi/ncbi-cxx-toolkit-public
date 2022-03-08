@@ -913,44 +913,16 @@ static int CkQualText(objects::CGb_qual& cur,
 
     std::string value(bptr, eptr);
     /* Some check must be done for illegal characters in gbpq->val
-          for (s = value; *s != '\0'; s++) {
-          if (!IS_WHITESP(*s) && !IS_ALPHANUM(*s) && *s != '\"') {
-          if (error_msgs){
-          ErrPostEx(SEV_WARNING, ERR_QUALIFIER_IllegalCharacter,
-          "illegal char [%c] used in qualifier %s", s, gbqp ->qual);
-          }
-          return (retval > GB_FEAT_ERR_REPAIRABLE) ? retval :
-          GB_FEAT_ERR_REPAIRABLE;
-          }
-          }
-          */
-    /* only finds first embedded qualifier */
-    if (!value.empty() && ScanEmbedQual(value.c_str()))
-    {
-
-        if (has_embedded != NULL) {
-            *has_embedded = true;
-        }
-
-        if (from_note){
+    for (s = value; *s != '\0'; s++) {
+        if (!IS_WHITESP(*s) && !IS_ALPHANUM(*s) && *s != '\"') {
             if (error_msgs){
-                ErrPostEx(SEV_WARNING, ERR_QUALIFIER_NoteEmbeddedQual,
-                          "/note with embedded qualifiers %s", cur.GetVal().c_str());
+                ErrPostEx(SEV_WARNING, ERR_QUALIFIER_IllegalCharacter,
+                "illegal char [%c] used in qualifier %s", s, gbqp ->qual);
             }
-            return (retval > GB_FEAT_ERR_REPAIRABLE) ? retval :
-                GB_FEAT_ERR_REPAIRABLE;
+            return (retval > GB_FEAT_ERR_REPAIRABLE) ? retval : GB_FEAT_ERR_REPAIRABLE;
         }
-        else{
-            if (error_msgs){
-                ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual,
-                          "/%s with embedded qualifiers %s",
-                          cur.GetQual().c_str(), cur.GetVal().c_str());
-            }
-            return retval;
-        }
-
-        /*  This needs to be discussed some!, not sure -Karl 1/28/94 */
     }
+    */
 
     return retval;
 } /* CkQualText */

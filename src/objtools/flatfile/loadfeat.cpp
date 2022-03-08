@@ -4391,7 +4391,6 @@ static void ParseQualifiers(FeatBlkPtr fbp, char* bptr, char* eptr,
     char*    r;
     Char       ch;
     Int4       vallen;
-    Int4       count;
     Int2       got;
     Int2       quotes;
     Int2       reject;
@@ -4521,6 +4520,24 @@ static void ParseQualifiers(FeatBlkPtr fbp, char* bptr, char* eptr,
                 val_buf.assign(aux.begin(), aux.end());
                 val_buf.push_back(0);
 
+                auto slash = aux.find('/');
+                if (slash != string::npos) {
+                    string embedded;
+                    string key(fbp->key);
+                    if (CheckLegalQual(aux.substr(slash+1).c_str(), ' ', &embedded)) {
+                        if (qual_str != "note") {
+                            ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual,
+                                "/%s contains embedded /%s : FEAT=%s[%s] : %s.",
+                                qual_str.c_str(), embedded.c_str(), fbp->key, fbp->location, &val_buf[0]);
+                        }
+                        else if (key != "misc_feature") {
+                            ErrPostEx(SEV_INFO, ERR_QUALIFIER_EmbeddedQual,
+                                "/%s contains embedded /%s : FEAT=%s[%s] : %s.",
+                                qual_str.c_str(), embedded.c_str(), fbp->key, fbp->location, &val_buf[0]);
+                        }
+                    }
+                }
+
                 if(qual_str == "translation" ||
                    qual_str == "replace")
                 {
@@ -4582,42 +4599,6 @@ static void ParseQualifiers(FeatBlkPtr fbp, char* bptr, char* eptr,
                         if(ch != '\0')
                             val_buf[30] = ch;
                         reject = 1;
-                    }
-
-                    if(fbp != NULL && fbp->key != NULL &&
-                       StringCmp(fbp->key, "misc_feature") != 0)
-                    {
-                        std::string qual;
-                        for (count = 0, p = &val_buf[0]; ; p++)
-                        {
-                            p = StringChr(p, '/');
-                            if(p == NULL)
-                                break;
-
-                            std::string cur_qual;
-                            if (CheckLegalQual(p + 1, ' ', &cur_qual))
-                            {
-                                if (qual.empty())
-                                    qual = cur_qual;
-                                else
-                                    count++;
-                            }
-                        }
-
-                        if (!qual.empty())
-                        {
-                            FtaDeletePrefix(PREFIX_FEATURE);
-                            if(count == 0)
-                                ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual,
-                                          "/note contains /%s : FEAT=%s[%s] : %s.",
-                                          qual.c_str(), fbp->key, fbp->location, &val_buf[0]);
-                            else
-                                ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual,
-                                          "/note contains /%s and %d other embedded qualifiers : FEAT=%s[%s] : %s.",
-                                          qual.c_str(), count, fbp->key, fbp->location, &val_buf[0]);
-                            FtaInstallPrefix(PREFIX_FEATURE, fbp->key,
-                                             fbp->location);
-                        }
                     }
                 }
 
