@@ -3012,7 +3012,7 @@ bool CFeatureTableReader_Imp::x_SetupSeqFeat (
 
     // unrecognized feature key
 
-    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+    if (!(flags & CFeature_table_reader::fSuppressBadKeyWarning)) {
         x_ProcessMsg(ILineError::eProblem_UnrecognizedFeatureName, eDiag_Warning, feat );
     }
 
@@ -3216,7 +3216,7 @@ void CFeatureTableReader_Imp::x_ProcessQualifier(const string& qual_name,
     }
 
     if (!feat) {
-        if ( flags & CFeature_table_reader::fReportBadKey ) {
+        if ( !(flags & CFeature_table_reader::fSuppressBadKeyWarning) ) {
             x_ProcessMsg(ILineError::eProblem_QualifierWithoutFeature,
                         eDiag_Warning, kEmptyStr, qual_name, qual_val);
         }
@@ -3236,7 +3236,7 @@ void CFeatureTableReader_Imp::x_ProcessQualifier(const string& qual_name,
 
     // else qual_name and qual_val are not blank
     if (!x_AddQualifierToFeature(feat, feat_name, qual_name, qual_val, flags)) {
-        if (flags & CFeature_table_reader::fReportBadKey) {
+        if ( !(flags & CFeature_table_reader::fSuppressBadKeyWarning)) {
             x_ProcessMsg(ILineError::eProblem_UnrecognizedQualifierName,
                          eDiag_Warning, feat_name, qual_name, qual_val);
         }
@@ -3412,7 +3412,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                     x_AddIntervalToFeature (curr_feat_name, sfp, loc_info);
                                            // start, stop, partial5, partial3, ispoint, isminus);
                 } else {
-                    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                    if (!(flags & CFeature_table_reader::fSuppressBadKeyWarning)) {
                         x_ProcessMsg(ILineError::eProblem_NoFeatureProvidedOnIntervals,
                             eDiag_Warning);
                     }
@@ -3430,7 +3430,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                 // (although there still can be ranges for quals, of course).
                 curr_feat_intervals_done = true;
 
-                if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                if (!(flags & CFeature_table_reader::fSuppressBadKeyWarning)) {
                     x_ProcessMsg(
                         ILineError::eProblem_FeatureBadStartAndOrStop, eDiag_Warning,
                         feat );
@@ -3518,7 +3518,7 @@ void CFeatureTableReader_Imp::AddFeatQual (
     if (!val.empty ()) { // Should probably use NStr::IsBlank()
         if (! x_AddQualifierToFeature (sfp, feat_name, qual, val, flags)) {
             // unrecognized qualifier key
-            if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+            if (!(flags & CFeature_table_reader::fSuppressBadKeyWarning)) {
                 ERR_POST_X (5, Warning << "Unrecognized qualifier '" << qual << "'");
             }
             if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
@@ -3739,7 +3739,7 @@ CFeature_table_reader::AddStringFlags(
     TFlags& baseFlags)
 {
     static const map<string, CFeature_table_reader::TReaderFlags> flagsMap = {
-        { "ReportBadKey", CFeature_table_reader::fReportBadKey},
+        //{ "ReportBadKey", CFeature_table_reader::fReportBadKey},
         { "KeepBadKey", CFeature_table_reader::fKeepBadKey},
         { "TranslateBadKey", CFeature_table_reader::fTranslateBadKey},
         { "IgnoreWebComments", CFeature_table_reader::fIgnoreWebComments},
@@ -3749,6 +3749,7 @@ CFeature_table_reader::AddStringFlags(
         { "LeaveProteinIds", CFeature_table_reader::fLeaveProteinIds},
         { "AllIdsAsLocal", CFeature_table_reader::fAllIdsAsLocal},
         { "PreferGenbankId", CFeature_table_reader::fPreferGenbankId},
+        { "SuppressBadKeyWarning", CFeature_table_reader::fSuppressBadKeyWarning},
     };
 
     return CReaderBase::xAddStringFlagsWithMap(stringFlags, flagsMap, baseFlags);
