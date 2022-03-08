@@ -26,10 +26,11 @@ setup()
 prep_data_collection_notice_file()
 {
 # JIRA SB-3327 use provided BLAST_PRIVACY
-  if [ ! -f ${INSTALLDIR}/BLAST_PRIVACY  ] ; then
-      echo "ERROR: missing: ${INSTALLDIR}/BLAST_PRIVACY"
+  if [ ! -f ${SCRIPTDIR}/../../BLAST_PRIVACY  ] ; then
+      echo "ERROR: missing: ${SCRIPTDIR}/../../BLAST_PRIVACY"
   else
-    cp -p $INSTALLDIR/BLAST_PRIVACY $STAGE_DIR1/doc/BLAST_PRIVACY
+    cp -p ${SCRIPTDIR}/../../BLAST_PRIVACY $STAGE_DIR1/doc/BLAST_PRIVACY
+    cp -p ${SCRIPTDIR}/../../BLAST_PRIVACY $INSTALLDIR
   fi
 }
 
