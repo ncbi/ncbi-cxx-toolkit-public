@@ -1,7 +1,8 @@
-As part of our efforts to improve BLAST+, we have implemented usage reporting
-to collect limited data. This information shows us whether BLAST+ is being
-used by the community, and therefore is worth being maintained and developed
-by NCBI. It also allows us to focus our development efforts on the most used
+As part of our efforts to improve BLAST+, we have implemented usage
+reporting to collect limited data. This information shows us whether
+BLAST+ is being used by the community, and therefore is worth being
+maintained and developed by NCBI.
+It also allows us to focus our development efforts on the most used
 aspects of BLAST+.
 
 See https://www.ncbi.nlm.nih.gov/books/NBK569851/
