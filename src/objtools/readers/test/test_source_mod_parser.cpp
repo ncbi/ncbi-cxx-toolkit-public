@@ -151,7 +151,7 @@ int CSourceModParserTestApp::Run(void)
 
         CMessageListenerLenient err_container;
         CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry,
-            CFeature_table_reader::fReportBadKey,
+            0,
             &err_container, &tbl_filter );
 
         // print out result

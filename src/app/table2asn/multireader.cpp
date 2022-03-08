@@ -1070,7 +1070,6 @@ public:
             while (!m_line_reader->AtEOF()) {
                 CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable(
                     *m_line_reader,
-                    CFeature_table_reader::fReportBadKey |
                     CFeature_table_reader::fLeaveProteinIds |
                     CFeature_table_reader::fCreateGenesFromCDSs |
                     CFeature_table_reader::fAllIdsAsLocal |
