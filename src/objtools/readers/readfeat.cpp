@@ -3739,7 +3739,6 @@ CFeature_table_reader::AddStringFlags(
     TFlags& baseFlags)
 {
     static const map<string, CFeature_table_reader::TReaderFlags> flagsMap = {
-        //{ "ReportBadKey", CFeature_table_reader::fReportBadKey},
         { "KeepBadKey", CFeature_table_reader::fKeepBadKey},
         { "TranslateBadKey", CFeature_table_reader::fTranslateBadKey},
         { "IgnoreWebComments", CFeature_table_reader::fIgnoreWebComments},
