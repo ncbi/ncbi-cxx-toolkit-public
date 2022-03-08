@@ -80,6 +80,7 @@
 #include <objtools/edit/feattable_edit.hpp>
 
 #include <corelib/stream_utils.hpp>
+#include <common/ncbi_revision.h>
 
 #ifndef NCBI_SC_VERSION
 #   define FLATFILE_PARSER_ENABLED
@@ -443,9 +444,9 @@ CFormatGuess::EFormat CMultiReader::xAnnotGetFormat(CNcbiIstream& istr) const
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
-    // FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2); 
+    // FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2);
     //  RW-1591: Need at least GFF3 or GTF (plain or Augustus) to properly relate
-    //  the features 
+    //  the features
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFiveColFeatureTable);
 #ifdef FLATFILE_PARSER_ENABLED
