@@ -70,9 +70,9 @@ public:
         fCDSsMustBeInTheirGenes = (1<<5),  ///< = 0x20 (If a CDS has a gene xref, it *must* be inside of that gene)
         fReportDiscouragedKey   = (1<<6),  ///< = 0x40 (Report discouraged keys into the error container)
         fLeaveProteinIds        = (1<<7),  ///< = 0x80 (Leave all protein_id as a qualifiers)
-        fAllIdsAsLocal          = (1<<8),  ///< = 0xA0 (Do not attempt to parse accessions)
-        fPreferGenbankId        = (1<<9),  ///< = 0xB0 (Prefer Genbank accession ids)
-        fSuppressBadKeyWarning  = (1<<10), ///<=       (Suppress 'bad key' errors)
+        fAllIdsAsLocal          = (1<<8),  ///< = 0x100 (Do not attempt to parse accessions)
+        fPreferGenbankId        = (1<<9),  ///< = 0x200 (Prefer Genbank accession ids)
+        fSuppressBadKeyWarning  = (1<<10), ///<=  0x400 (Suppress 'bad key' errors; Not recommended.)
     };
     using TFlags = long; ///< binary OR of EFlags
     static void AddStringFlags(
