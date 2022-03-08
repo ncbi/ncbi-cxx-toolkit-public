@@ -1,10 +1,7 @@
 # $Id$
 
+ASN_DEP = pubmed medline biblio general
 LIB = efetch
 SRC = efetch__ efetch___
 
 WATCHERS = gotvyans
-
-
-USES_LIBRARIES =  \
-    xser
