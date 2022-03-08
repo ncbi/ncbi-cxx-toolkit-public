@@ -2,7 +2,7 @@
 
 NCBI_begin_lib(efetch)
   NCBI_dataspecs(efetch.dtd)
-  NCBI_uses_toolkit_libraries(xser)
+  NCBI_uses_toolkit_libraries(efetch pubmed medline biblio xser xncbi)
   NCBI_project_watchers(gotvyans)
 NCBI_end_lib()
 

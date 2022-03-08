@@ -1,0 +1,9 @@
+#  $Id$
+
+NCBI_begin_app(test_pubmed_article)
+
+  NCBI_sources(test_pubmed_article)
+  NCBI_uses_toolkit_libraries(efetch pubmed medline biblio xser xncbi)
+  NCBI_project_watchers(grichenk)
+
+NCBI_end_app()
