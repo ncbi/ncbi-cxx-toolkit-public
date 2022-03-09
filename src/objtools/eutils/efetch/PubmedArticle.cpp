@@ -39,6 +39,7 @@
 #include <codecvt>
 #include <numeric>
 #include <regex>
+#include <unordered_map>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
