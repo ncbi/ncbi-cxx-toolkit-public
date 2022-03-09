@@ -107,6 +107,7 @@ class CPubseqGatewayCache
 
     static string PackSiKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackSiKey(const char* key, size_t key_sz, int& sec_seq_id_type);
+    static bool UnpackSiKey(const char* key, size_t key_sz, string& sec_seq_id, int& sec_seq_id_type);
 
     static string PackBlobPropKey(int32_t sat_key);
     static string PackBlobPropKey(int32_t sat_key, int64_t last_modified);
