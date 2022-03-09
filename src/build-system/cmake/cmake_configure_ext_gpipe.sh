@@ -21,11 +21,18 @@ add_gpipe_warnings()
 configure_ext_Usage()
 {
     cat <<EOF
-GPipe Predefined Settings:
+
+GPIPE OPTIONS:
+  GPipe compilations should use one of these 4 predefined settings.
+
   --gpipe-prod            for production use (--with-dll --without-debug)
   --gpipe-dev             for development and debugging (--with-dll)
   --gpipe-cgi             for deployment of web CGIs (--without-debug)
-  --gpipe-distrib         for external distribution to the public.
+  --gpipe-distrib         for external distribution to the public
+
+  NOTE: GPipe settings override several Toolkit defaults, such as
+        compilation warnings, --with-components, --with-features.
+
 EOF
 }
 
@@ -37,6 +44,7 @@ configure_ext_ParseArgs()
   while [ $# != 0 ]; do
     case "$1" in 
     "--gpipe-prod")
+      GPIPE_MODE=prod
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="ON"
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
@@ -45,6 +53,7 @@ configure_ext_ParseArgs()
       add_gpipe_warnings
       ;; 
     "--gpipe-dev")
+      GPIPE_MODE=dev
       BUILD_TYPE="Debug"
       BUILD_SHARED_LIBS="ON"
       PROJECT_FEATURES="${PROJECT_FEATURES};StrictGI"
@@ -53,6 +62,7 @@ configure_ext_ParseArgs()
       add_gpipe_warnings
       ;; 
     "--gpipe-cgi")
+      GPIPE_MODE=cgi
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="OFF"
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
@@ -61,8 +71,10 @@ configure_ext_ParseArgs()
       add_gpipe_warnings
       ;; 
     "--gpipe-distrib")
+      GPIPE_MODE=distrib
       BUILD_TYPE="Release"
       BUILD_SHARED_LIBS="OFF"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST;-PCRE"
       : "${BUILD_ROOT:=../Distrib}"
       add_gpipe_warnings
@@ -78,5 +90,12 @@ configure_ext_ParseArgs()
 
 configure_ext_PreCMake()
 {
+  case "${GPIPE_MODE:-}" in
+  "") echo "WARNING: Configuring without choosing a predefined GPipe setting."
+      configure_ext_Usage
+      ;;
+  *) ;;
+  esac
+
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_FLAGS=$(Quote "${_ext_CFLAGS}") -DCMAKE_CXX_FLAGS=$(Quote "${_ext_CXXFLAGS}")"
 }
