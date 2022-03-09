@@ -261,6 +261,11 @@ bool CPubseqGatewayCache::UnpackSiKey(const char* key, size_t key_sz, int& sec_s
     return CPubseqGatewayCacheSi2Csi::UnpackKey(key, key_sz, sec_seq_id_type);
 }
 
+bool CPubseqGatewayCache::UnpackSiKey(const char* key, size_t key_sz, string& sec_seq_id, int& sec_seq_id_type)
+{
+    return CPubseqGatewayCacheSi2Csi::UnpackKey(key, key_sz, sec_seq_id, sec_seq_id_type);
+}
+
 string CPubseqGatewayCache::PackBlobPropKey(int32_t sat_key)
 {
     return CPubseqGatewayCacheBlobProp::PackKey(sat_key);
