@@ -1057,7 +1057,7 @@ void CTabularFormatter_AnyScore::Print(CNcbiOstream& ostr,
             score_i = (int)m_Scores->GetScore(align, m_ScoreName);  
         else
             score_d = m_Scores->GetScore(align, m_ScoreName);
-    } catch (CAlgoAlignUtilException &) {
+    } catch (CException &) {
         score_d = 0;
         score_i = 0;
     }
