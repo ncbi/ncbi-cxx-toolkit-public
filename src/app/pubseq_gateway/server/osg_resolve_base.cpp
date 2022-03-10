@@ -278,7 +278,7 @@ static const size_t kVersionDigits = 2;
 static const size_t kPrefixLenV1 = kNumLettersV1 + kVersionDigits;
 static const size_t kPrefixLenV2 = kNumLettersV2 + kVersionDigits;
 static const size_t kMinRowDigitsV1 = 6;
-static const size_t kMaxRowDigitsV1 = 7;
+static const size_t kMaxRowDigitsV1 = 8;
 static const size_t kMinRowDigitsV2 = 7;
 static const size_t kMaxRowDigitsV2 = 9;
 
