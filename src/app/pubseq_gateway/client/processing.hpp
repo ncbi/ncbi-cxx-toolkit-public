@@ -285,18 +285,8 @@ private:
     template <class TInput>
     struct SReader;
 
-    template <class TRequest, class TInput>
-    static TSpecified GetSpecified(const SReader<TInput>& reader) { return reader.GetSpecified(); }
-
-    static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(TSpecified specified);
-
+    template <class TRequest>
     struct SImpl;
-
-    template <class TRequest>
-    static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
-
-    template <class TRequest>
-    static void SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution);
 };
 
 template <>
@@ -333,6 +323,7 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     void ForEachTSE(TExclude exclude) const;
 };
 
+template <class TRequest>
 struct SRequestBuilder::SImpl
 {
     shared_ptr<void> user_context;
@@ -343,16 +334,20 @@ struct SRequestBuilder::SImpl
         request_context(move(rc))
     {}
 
+    template <class... TArgs>
+    auto Create(TArgs&&... args)
+    {
+        return make_shared<TRequest>(forward<TArgs>(args)..., move(user_context), move(request_context));
+    }
+
     template <class TReader>
-    auto Build(CPSG_Request_Biodata*, TReader reader);
+    shared_ptr<TRequest> Build(const TReader& reader);
+
     template <class TReader>
-    auto Build(CPSG_Request_Resolve*, TReader reader);
-    template <class TReader>
-    auto Build(CPSG_Request_Blob*, TReader reader);
-    template <class TReader>
-    auto Build(CPSG_Request_NamedAnnotInfo*, TReader reader);
-    template <class TReader>
-    auto Build(CPSG_Request_Chunk*, TReader reader);
+    static TSpecified GetSpecified(const TReader& reader) { return reader.GetSpecified(); }
+    static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(TSpecified specified);
+    static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
+    static void SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution);
 };
 
 inline SRequestBuilder::TSpecified SRequestBuilder::SReader<CArgs>::GetSpecified() const
@@ -370,7 +365,8 @@ inline SRequestBuilder::TSpecified SRequestBuilder::SReader<CJson_ConstObject>::
 }
 
 template <>
-inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified<CPSG_Request_Resolve>(const SReader<CJson_ConstObject>& reader)
+template <>
+inline SRequestBuilder::TSpecified SRequestBuilder::SImpl<CPSG_Request_Resolve>::GetSpecified(const SReader<CJson_ConstObject>& reader)
 {
     return [&](const string& name) {
         if (!reader.input.has("include_info")) return false;
@@ -381,17 +377,21 @@ inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified<CPSG_Request_Re
     };
 }
 
+template <>
+CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::SImpl<CPSG_Request_Resolve>::GetIncludeInfo(TSpecified specified);
+
 template <class TInput>
 inline CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(const TInput& input)
 {
+    using TImpl = SImpl<CPSG_Request_Resolve>;
     SReader<TInput> reader(input);
-    return GetIncludeInfo(GetSpecified<CPSG_Request_Resolve>(reader));
+    return TImpl::GetIncludeInfo(TImpl::GetSpecified(reader));
 }
 
 template <class TRequest, class TInput, class... TArgs>
 shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args)
 {
-    return SImpl(forward<TArgs>(args)...).Build((TRequest*)nullptr, SReader<TInput>(input));
+    return SImpl<TRequest>(forward<TArgs>(args)...).Build(SReader<TInput>(input));
 }
 
 template <class... TArgs>
@@ -417,12 +417,13 @@ shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_
     return rv;
 }
 
+template <>
 template <class TReader>
-auto SRequestBuilder::SImpl::Build(CPSG_Request_Biodata*, TReader reader)
+shared_ptr<CPSG_Request_Biodata> SRequestBuilder::SImpl<CPSG_Request_Biodata>::Build(const TReader& reader)
 {
     auto bio_id = reader.GetBioId();
-    auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), move(user_context));
-    auto specified = GetSpecified<CPSG_Request_Biodata>(reader);
+    auto request = Create(move(bio_id));
+    auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     auto exclude = [&](string blob_id) { request->ExcludeTSE(blob_id); };
     reader.ForEachTSE(exclude);
@@ -436,49 +437,53 @@ auto SRequestBuilder::SImpl::Build(CPSG_Request_Biodata*, TReader reader)
     return request;
 }
 
+template <>
 template <class TReader>
-auto SRequestBuilder::SImpl::Build(CPSG_Request_Resolve*, TReader reader)
+shared_ptr<CPSG_Request_Resolve> SRequestBuilder::SImpl<CPSG_Request_Resolve>::Build(const TReader& reader)
 {
     auto bio_id = reader.GetBioId();
-    auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
-    auto specified = GetSpecified<CPSG_Request_Resolve>(reader);
+    auto request = Create(move(bio_id));
+    auto specified = GetSpecified(reader);
     const auto include_info = GetIncludeInfo(specified);
     request->IncludeInfo(include_info);
     SetAccSubstitution(request, reader.GetAccSubstitution());
     return request;
 }
 
+template <>
 template <class TReader>
-auto SRequestBuilder::SImpl::Build(CPSG_Request_Blob*, TReader reader)
+shared_ptr<CPSG_Request_Blob> SRequestBuilder::SImpl<CPSG_Request_Blob>::Build(const TReader& reader)
 {
     auto blob_id = reader.GetBlobId();
-    auto request = make_shared<CPSG_Request_Blob>(move(blob_id), move(user_context));
-    auto specified = GetSpecified<CPSG_Request_Blob>(reader);
+    auto request = Create(move(blob_id));
+    auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     return request;
 }
 
+template <>
 template <class TReader>
-auto SRequestBuilder::SImpl::Build(CPSG_Request_NamedAnnotInfo*, TReader reader)
+shared_ptr<CPSG_Request_NamedAnnotInfo> SRequestBuilder::SImpl<CPSG_Request_NamedAnnotInfo>::Build(const TReader& reader)
 {
     auto bio_id = reader.GetBioId();
     auto named_annots = reader.GetNamedAnnots();
-    auto request =  make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
-    auto specified = GetSpecified<CPSG_Request_NamedAnnotInfo>(reader);
+    auto request =  Create(move(bio_id), move(named_annots));
+    auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     SetAccSubstitution(request, reader.GetAccSubstitution());
     return request;
 }
 
+template <>
 template <class TReader>
-auto SRequestBuilder::SImpl::Build(CPSG_Request_Chunk*, TReader reader)
+shared_ptr<CPSG_Request_Chunk> SRequestBuilder::SImpl<CPSG_Request_Chunk>::Build(const TReader& reader)
 {
     auto chunk_id = reader.GetChunkId();
-    return make_shared<CPSG_Request_Chunk>(move(chunk_id), move(user_context));
+    return Create(move(chunk_id));
 }
 
 template <class TRequest>
-inline void SRequestBuilder::IncludeData(shared_ptr<TRequest> request, TSpecified specified)
+inline void SRequestBuilder::SImpl<TRequest>::IncludeData(shared_ptr<TRequest> request, TSpecified specified)
 {
     for (const auto& f : GetDataFlags()) {
         if (specified(f.name)) {
@@ -489,7 +494,7 @@ inline void SRequestBuilder::IncludeData(shared_ptr<TRequest> request, TSpecifie
 }
 
 template <class TRequest>
-void SRequestBuilder::SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution)
+void SRequestBuilder::SImpl<TRequest>::SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution)
 {
     if (acc_substitution == "limited") {
         request->SetAccSubstitution(EPSG_AccSubstitution::Limited);
