@@ -728,6 +728,7 @@ string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_re
 {
     static const string other_args(s_GetOtherArgs());
 
+    _ASSERT(user_request);
     ostringstream os;
     user_request->x_GetAbsPathRef(os);
 
@@ -849,6 +850,10 @@ void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG_Request> r, CDeadline deadline)
 {
     _ASSERT(queue);
+
+    if (!r) {
+        NCBI_THROW(CPSG_Exception, eParameterMissing, "request cannot be empty");
+    }
 
     auto user_request = const_pointer_cast<const CPSG_Request>(r);
     auto& ioc = m_Service.ioc;
