@@ -268,7 +268,7 @@ struct SRequestBuilder
     static shared_ptr<TRequest> Build(const TInput& input, TArgs&&... args);
 
     template <class... TArgs>
-    static shared_ptr<CPSG_Request> Build(const string& name, const CJson_ConstObject& input, const string& user_args, TArgs&&... args);
+    static shared_ptr<CPSG_Request> Build(const string& name, const CJson_ConstObject& input, TArgs&&... args);
 
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
@@ -304,6 +304,7 @@ struct SRequestBuilder::SReader<CArgs>
     string GetAccSubstitution() const { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
     CTimeout GetResendTimeout() const { return CTimeout::eDefault; }
     void ForEachTSE(TExclude exclude) const;
+    SPSG_UserArgs GetUserArgs() const { return input["user-args"].HasValue() ? input["user-args"].AsString() : SPSG_UserArgs(); }
 };
 
 template <>
@@ -321,6 +322,7 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     string GetAccSubstitution() const { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
     CTimeout GetResendTimeout() const { return !input.has("resend_timeout") ? CTimeout::eDefault : CTimeout(input["resend_timeout"].GetValue().GetDouble()); }
     void ForEachTSE(TExclude exclude) const;
+    SPSG_UserArgs GetUserArgs() const { return input.has("user_args") ? input["user_args"].GetValue().GetString() : SPSG_UserArgs(); }
 };
 
 template <class TRequest>
@@ -391,30 +393,28 @@ inline CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(const 
 template <class TRequest, class TInput, class... TArgs>
 shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args)
 {
-    return SImpl<TRequest>(forward<TArgs>(args)...).Build(SReader<TInput>(input));
+    SReader<TInput> reader(input);
+    auto rv = SImpl<TRequest>(forward<TArgs>(args)...).Build(reader);
+    rv->SetUserArgs(reader.GetUserArgs());
+    return rv;
 }
 
 template <class... TArgs>
-shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_ConstObject& input, const string& user_args, TArgs&&... args)
+shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_ConstObject& input, TArgs&&... args)
 {
-    shared_ptr<CPSG_Request> rv;
-
     if (name == "biodata") {
-        rv = Build<CPSG_Request_Biodata>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_Biodata>(input, forward<TArgs>(args)...);
     } else if (name == "blob") {
-        rv = Build<CPSG_Request_Blob>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_Blob>(input, forward<TArgs>(args)...);
     } else if (name == "resolve") {
-        rv = Build<CPSG_Request_Resolve>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_Resolve>(input, forward<TArgs>(args)...);
     } else if (name == "named_annot") {
-        rv = Build<CPSG_Request_NamedAnnotInfo>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_NamedAnnotInfo>(input, forward<TArgs>(args)...);
     } else if (name == "chunk") {
-        rv = Build<CPSG_Request_Chunk>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_Chunk>(input, forward<TArgs>(args)...);
     } else {
         return {};
     }
-
-    rv->SetUserArgs(user_args);
-    return rv;
 }
 
 template <>
