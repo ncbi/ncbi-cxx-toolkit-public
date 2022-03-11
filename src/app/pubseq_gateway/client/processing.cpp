@@ -1226,7 +1226,7 @@ CPSG_BioId::TType SRequestBuilder::GetBioIdType(string type)
     return static_cast<CPSG_BioId::TType>(atoi(type.c_str()));
 }
 
-CPSG_BioId SRequestBuilder::GetBioId(const CArgs& input)
+CPSG_BioId SRequestBuilder::SReader<CArgs>::GetBioId() const
 {
     const auto& id = input["ID"].AsString();
 
@@ -1236,7 +1236,7 @@ CPSG_BioId SRequestBuilder::GetBioId(const CArgs& input)
     return CPSG_BioId(id, type);
 }
 
-CPSG_BioId SRequestBuilder::GetBioId(const CJson_ConstObject& input)
+CPSG_BioId SRequestBuilder::SReader<CJson_ConstObject>::GetBioId() const
 {
     auto array = input["bio_id"].GetArray();
     auto id = array[0].GetValue().GetString();
@@ -1248,32 +1248,32 @@ CPSG_BioId SRequestBuilder::GetBioId(const CJson_ConstObject& input)
     return CPSG_BioId(id, type);
 }
 
-CPSG_BlobId SRequestBuilder::GetBlobId(const CArgs& input)
+CPSG_BlobId SRequestBuilder::SReader<CArgs>::GetBlobId() const
 {
     const auto& id = input["ID"].AsString();
     const auto& last_modified = input["last-modified"];
     return last_modified.HasValue() ? CPSG_BlobId(id, last_modified.AsInt8()) : id;
 }
 
-CPSG_BlobId SRequestBuilder::GetBlobId(const CJson_ConstObject& input)
+CPSG_BlobId SRequestBuilder::SReader<CJson_ConstObject>::GetBlobId() const
 {
     auto array = input["blob_id"].GetArray();
     auto id = array[0].GetValue().GetString();
     return array.size() > 1 ? CPSG_BlobId(move(id), array[1].GetValue().GetInt8()) : move(id);
 }
 
-CPSG_ChunkId SRequestBuilder::GetChunkId(const CArgs& input)
+CPSG_ChunkId SRequestBuilder::SReader<CArgs>::GetChunkId() const
 {
     return { input["ID2_CHUNK"].AsInteger(), input["ID2_INFO"].AsString() };
 }
 
-CPSG_ChunkId SRequestBuilder::GetChunkId(const CJson_ConstObject& input)
+CPSG_ChunkId SRequestBuilder::SReader<CJson_ConstObject>::GetChunkId() const
 {
     auto array = input["chunk_id"].GetArray();
     return { static_cast<int>(array[0].GetValue().GetInt4()), array[1].GetValue().GetString() };
 }
 
-vector<string> SRequestBuilder::GetNamedAnnots(const CJson_ConstObject& input)
+vector<string> SRequestBuilder::SReader<CJson_ConstObject>::GetNamedAnnots() const
 {
     auto na_array = input["named_annots"].GetArray();
     CPSG_Request_NamedAnnotInfo::TAnnotNames names;
@@ -1307,7 +1307,7 @@ CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(TSpecified sp
     return include_info ? include_info : CPSG_Request_Resolve::fAllInfo;
 }
 
-void SRequestBuilder::ForEachTSE(TExclude exclude, const CArgs& input)
+void SRequestBuilder::SReader<CArgs>::ForEachTSE(TExclude exclude) const
 {
     if (!input["exclude-blob"].HasValue()) return;
 
@@ -1318,7 +1318,7 @@ void SRequestBuilder::ForEachTSE(TExclude exclude, const CArgs& input)
     }
 }
 
-void SRequestBuilder::ForEachTSE(TExclude exclude, const CJson_ConstObject& input)
+void SRequestBuilder::SReader<CJson_ConstObject>::ForEachTSE(TExclude exclude) const
 {
     if (!input.has("exclude_blobs")) return;
 
