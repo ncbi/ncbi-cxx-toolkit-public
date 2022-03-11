@@ -282,75 +282,87 @@ private:
     using TSpecified = function<bool(const string&)>;
     using TExclude = function<void(string)>;
 
-    template <class TRequest>
-    static TSpecified GetSpecified(const CArgs& input);
-    template <class TRequest>
-    static TSpecified GetSpecified(const CJson_ConstObject& input);
+    template <class TInput>
+    struct SReader;
+
+    template <class TRequest, class TInput>
+    static TSpecified GetSpecified(const SReader<TInput>& reader) { return reader.GetSpecified(); }
 
     static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(TSpecified specified);
 
-    template <class TInput>
     struct SImpl;
-
-    static CPSG_BioId GetBioId(const CArgs& input);
-    static CPSG_BioId GetBioId(const CJson_ConstObject& input);
-
-    static CPSG_BlobId GetBlobId(const CArgs& input);
-    static CPSG_BlobId GetBlobId(const CJson_ConstObject& input);
-
-    static CPSG_ChunkId GetChunkId(const CArgs& input);
-    static CPSG_ChunkId GetChunkId(const CJson_ConstObject& input);
-
-    static vector<string> GetNamedAnnots(const CArgs& input) { return input["na"].GetStringList(); }
-    static vector<string> GetNamedAnnots(const CJson_ConstObject& input);
-
-    static string GetAccSubstitution(const CArgs& input) { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
-    static string GetAccSubstitution(const CJson_ConstObject& input) { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
-
-    static CTimeout GetResendTimeout(const CArgs&) { return CTimeout::eDefault; }
-    static CTimeout GetResendTimeout(const CJson_ConstObject& input) { return !input.has("resend_timeout") ? CTimeout::eDefault : CTimeout(input["resend_timeout"].GetValue().GetDouble()); }
 
     template <class TRequest>
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
-
-    static void ForEachTSE(TExclude exclude, const CArgs& input);
-    static void ForEachTSE(TExclude exclude, const CJson_ConstObject& input);
 
     template <class TRequest>
     static void SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution);
 };
 
-// Helper class to 'overload' on return type and specify input parameters once
-template <class TInput>
+template <>
+struct SRequestBuilder::SReader<CArgs>
+{
+    const CArgs& input;
+
+    SReader(const CArgs& i) : input(i) {}
+
+    TSpecified GetSpecified() const;
+    CPSG_BioId GetBioId() const;
+    CPSG_BlobId GetBlobId() const;
+    CPSG_ChunkId GetChunkId() const;
+    vector<string> GetNamedAnnots() const { return input["na"].GetStringList(); }
+    string GetAccSubstitution() const { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
+    CTimeout GetResendTimeout() const { return CTimeout::eDefault; }
+    void ForEachTSE(TExclude exclude) const;
+};
+
+template <>
+struct SRequestBuilder::SReader<CJson_ConstObject>
+{
+    const CJson_ConstObject& input;
+
+    SReader(const CJson_ConstObject& i) : input(i) {}
+
+    TSpecified GetSpecified() const;
+    CPSG_BioId GetBioId() const;
+    CPSG_BlobId GetBlobId() const;
+    CPSG_ChunkId GetChunkId() const;
+    vector<string> GetNamedAnnots() const;
+    string GetAccSubstitution() const { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
+    CTimeout GetResendTimeout() const { return !input.has("resend_timeout") ? CTimeout::eDefault : CTimeout(input["resend_timeout"].GetValue().GetDouble()); }
+    void ForEachTSE(TExclude exclude) const;
+};
+
 struct SRequestBuilder::SImpl
 {
-    const TInput& input;
     shared_ptr<void> user_context;
     CRef<CRequestContext> request_context;
 
-    SImpl(const TInput& i, shared_ptr<void> uc = {}, CRef<CRequestContext> rc = {}) :
-        input(i),
+    SImpl(shared_ptr<void> uc = {}, CRef<CRequestContext> rc = {}) :
         user_context(move(uc)),
         request_context(move(rc))
     {}
 
-    operator shared_ptr<CPSG_Request_Biodata>();
-    operator shared_ptr<CPSG_Request_Resolve>();
-    operator shared_ptr<CPSG_Request_Blob>();
-    operator shared_ptr<CPSG_Request_NamedAnnotInfo>();
-    operator shared_ptr<CPSG_Request_Chunk>();
+    template <class TReader>
+    auto Build(CPSG_Request_Biodata*, TReader reader);
+    template <class TReader>
+    auto Build(CPSG_Request_Resolve*, TReader reader);
+    template <class TReader>
+    auto Build(CPSG_Request_Blob*, TReader reader);
+    template <class TReader>
+    auto Build(CPSG_Request_NamedAnnotInfo*, TReader reader);
+    template <class TReader>
+    auto Build(CPSG_Request_Chunk*, TReader reader);
 };
 
-template <class TRequest>
-inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified(const CArgs& input)
+inline SRequestBuilder::TSpecified SRequestBuilder::SReader<CArgs>::GetSpecified() const
 {
     return [&](const string& name) {
         return input[name].HasValue();
     };
 }
 
-template <class TRequest>
-inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified(const CJson_ConstObject& input)
+inline SRequestBuilder::TSpecified SRequestBuilder::SReader<CJson_ConstObject>::GetSpecified() const
 {
     return [&](const string& name) {
         return input.has("include_data") && (name == input["include_data"].GetValue().GetString());
@@ -358,12 +370,12 @@ inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified(const CJson_Con
 }
 
 template <>
-inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified<CPSG_Request_Resolve>(const CJson_ConstObject& input)
+inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified<CPSG_Request_Resolve>(const SReader<CJson_ConstObject>& reader)
 {
     return [&](const string& name) {
-        if (!input.has("include_info")) return false;
+        if (!reader.input.has("include_info")) return false;
 
-        auto include_info = input["include_info"].GetArray();
+        auto include_info = reader.input["include_info"].GetArray();
         auto equals_to = [&](const CJson_ConstNode& node) { return node.GetValue().GetString() == name; };
         return find_if(include_info.begin(), include_info.end(), equals_to) != include_info.end();
     };
@@ -372,31 +384,31 @@ inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified<CPSG_Request_Re
 template <class TInput>
 inline CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(const TInput& input)
 {
-    return GetIncludeInfo(GetSpecified<CPSG_Request_Resolve>(input));
+    SReader<TInput> reader(input);
+    return GetIncludeInfo(GetSpecified<CPSG_Request_Resolve>(reader));
 }
 
 template <class TRequest, class TInput, class... TArgs>
 shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args)
 {
-    return SImpl<TInput>(input, forward<TArgs>(args)...);
+    return SImpl(forward<TArgs>(args)...).Build((TRequest*)nullptr, SReader<TInput>(input));
 }
 
 template <class... TArgs>
 shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_ConstObject& input, const string& user_args, TArgs&&... args)
 {
-    SImpl<CJson_ConstObject> build(input, forward<TArgs>(args)...);
     shared_ptr<CPSG_Request> rv;
 
     if (name == "biodata") {
-        rv = static_cast<shared_ptr<CPSG_Request_Biodata>>(build);
+        rv = Build<CPSG_Request_Biodata>(input, forward<TArgs>(args)...);
     } else if (name == "blob") {
-        rv = static_cast<shared_ptr<CPSG_Request_Blob>>(build);
+        rv = Build<CPSG_Request_Blob>(input, forward<TArgs>(args)...);
     } else if (name == "resolve") {
-        rv = static_cast<shared_ptr<CPSG_Request_Resolve>>(build);
+        rv = Build<CPSG_Request_Resolve>(input, forward<TArgs>(args)...);
     } else if (name == "named_annot") {
-        rv = static_cast<shared_ptr<CPSG_Request_NamedAnnotInfo>>(build);
+        rv = Build<CPSG_Request_NamedAnnotInfo>(input, forward<TArgs>(args)...);
     } else if (name == "chunk") {
-        rv = static_cast<shared_ptr<CPSG_Request_Chunk>>(build);
+        rv = Build<CPSG_Request_Chunk>(input, forward<TArgs>(args)...);
     } else {
         return {};
     }
@@ -405,17 +417,17 @@ shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_
     return rv;
 }
 
-template <class TInput>
-SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Biodata>()
+template <class TReader>
+auto SRequestBuilder::SImpl::Build(CPSG_Request_Biodata*, TReader reader)
 {
-    auto bio_id = GetBioId(input);
+    auto bio_id = reader.GetBioId();
     auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), move(user_context));
-    auto specified = GetSpecified<CPSG_Request_Biodata>(input);
+    auto specified = GetSpecified<CPSG_Request_Biodata>(reader);
     IncludeData(request, specified);
     auto exclude = [&](string blob_id) { request->ExcludeTSE(blob_id); };
-    ForEachTSE(exclude, input);
-    SetAccSubstitution(request, GetAccSubstitution(input));
-    const auto resend_timeout = GetResendTimeout(input);
+    reader.ForEachTSE(exclude);
+    SetAccSubstitution(request, reader.GetAccSubstitution());
+    const auto resend_timeout = reader.GetResendTimeout();
 
     if (!resend_timeout.IsDefault()) {
         request->SetResendTimeout(resend_timeout);
@@ -424,44 +436,44 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Biodata>()
     return request;
 }
 
-template <class TInput>
-SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Resolve>()
+template <class TReader>
+auto SRequestBuilder::SImpl::Build(CPSG_Request_Resolve*, TReader reader)
 {
-    auto bio_id = GetBioId(input);
+    auto bio_id = reader.GetBioId();
     auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
-    auto specified = GetSpecified<CPSG_Request_Resolve>(input);
+    auto specified = GetSpecified<CPSG_Request_Resolve>(reader);
     const auto include_info = GetIncludeInfo(specified);
     request->IncludeInfo(include_info);
-    SetAccSubstitution(request, GetAccSubstitution(input));
+    SetAccSubstitution(request, reader.GetAccSubstitution());
     return request;
 }
 
-template <class TInput>
-SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Blob>()
+template <class TReader>
+auto SRequestBuilder::SImpl::Build(CPSG_Request_Blob*, TReader reader)
 {
-    auto blob_id = GetBlobId(input);
+    auto blob_id = reader.GetBlobId();
     auto request = make_shared<CPSG_Request_Blob>(move(blob_id), move(user_context));
-    auto specified = GetSpecified<CPSG_Request_Blob>(input);
+    auto specified = GetSpecified<CPSG_Request_Blob>(reader);
     IncludeData(request, specified);
     return request;
 }
 
-template <class TInput>
-SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_NamedAnnotInfo>()
+template <class TReader>
+auto SRequestBuilder::SImpl::Build(CPSG_Request_NamedAnnotInfo*, TReader reader)
 {
-    auto bio_id = GetBioId(input);
-    auto named_annots = GetNamedAnnots(input);
+    auto bio_id = reader.GetBioId();
+    auto named_annots = reader.GetNamedAnnots();
     auto request =  make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
-    auto specified = GetSpecified<CPSG_Request_NamedAnnotInfo>(input);
+    auto specified = GetSpecified<CPSG_Request_NamedAnnotInfo>(reader);
     IncludeData(request, specified);
-    SetAccSubstitution(request, GetAccSubstitution(input));
+    SetAccSubstitution(request, reader.GetAccSubstitution());
     return request;
 }
 
-template <class TInput>
-SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Chunk>()
+template <class TReader>
+auto SRequestBuilder::SImpl::Build(CPSG_Request_Chunk*, TReader reader)
 {
-    auto chunk_id = GetChunkId(input);
+    auto chunk_id = reader.GetChunkId();
     return make_shared<CPSG_Request_Chunk>(move(chunk_id), move(user_context));
 }
 
