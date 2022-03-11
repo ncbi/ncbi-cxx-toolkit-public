@@ -86,6 +86,14 @@
 
 #include "table2asn.hpp"
 
+#include <common/ncbi_revision.h>
+
+#ifndef NCBI_SC_VERSION
+#   define FLATFILE_PARSER_ENABLED
+#elif (NCBI_SC_VERSION == 0)
+#   define FLATFILE_PARSER_ENABLED
+#endif
+
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
@@ -1606,9 +1614,14 @@ void CTbl2AsnApp::LoadAdditionalFiles()
     }
     else
     {
-        for (auto suffix : {".gbf", ".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
+        for (auto suffix : {".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
             LoadAnnots(name + suffix, m_secret_files->m_Annots);
         }
+#ifdef FLATFILE_PARSER_ENABLED
+        for (auto suffix : {".gbf"}) {
+            LoadAnnots(name + suffix, m_secret_files->m_Annots);
+        }
+#endif
     }
 }
 
