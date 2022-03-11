@@ -275,7 +275,12 @@ struct SRequestBuilder
 
     static CPSG_BioId::TType GetBioIdType(string type);
 
+    template <class TInput>
+    static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(const TInput& input);
+
+private:
     using TSpecified = function<bool(const string&)>;
+    using TExclude = function<void(string)>;
 
     template <class TRequest>
     static TSpecified GetSpecified(const CArgs& input);
@@ -284,7 +289,6 @@ struct SRequestBuilder
 
     static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(TSpecified specified);
 
-private:
     template <class TInput>
     struct SImpl;
 
@@ -309,11 +313,11 @@ private:
     template <class TRequest>
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
 
-    static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CArgs& input);
-    static void ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CJson_ConstObject& input);
+    static void ForEachTSE(TExclude exclude, const CArgs& input);
+    static void ForEachTSE(TExclude exclude, const CJson_ConstObject& input);
 
-    template <class TRequest, class TInput>
-    static void SetAccSubstitution(shared_ptr<TRequest>& request, const TInput& input);
+    template <class TRequest>
+    static void SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution);
 };
 
 // Helper class to 'overload' on return type and specify input parameters once
@@ -365,6 +369,12 @@ inline SRequestBuilder::TSpecified SRequestBuilder::GetSpecified<CPSG_Request_Re
     };
 }
 
+template <class TInput>
+inline CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(const TInput& input)
+{
+    return GetIncludeInfo(GetSpecified<CPSG_Request_Resolve>(input));
+}
+
 template <class TRequest, class TInput, class... TArgs>
 shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args)
 {
@@ -402,8 +412,9 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Biodata>()
     auto request = make_shared<CPSG_Request_Biodata>(move(bio_id), move(user_context));
     auto specified = GetSpecified<CPSG_Request_Biodata>(input);
     IncludeData(request, specified);
-    ExcludeTSEs(request, input);
-    SetAccSubstitution(request, input);
+    auto exclude = [&](string blob_id) { request->ExcludeTSE(blob_id); };
+    ForEachTSE(exclude, input);
+    SetAccSubstitution(request, GetAccSubstitution(input));
     const auto resend_timeout = GetResendTimeout(input);
 
     if (!resend_timeout.IsDefault()) {
@@ -421,7 +432,7 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_Resolve>()
     auto specified = GetSpecified<CPSG_Request_Resolve>(input);
     const auto include_info = GetIncludeInfo(specified);
     request->IncludeInfo(include_info);
-    SetAccSubstitution(request, input);
+    SetAccSubstitution(request, GetAccSubstitution(input));
     return request;
 }
 
@@ -443,7 +454,7 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_NamedAnnotInfo>
     auto request =  make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
     auto specified = GetSpecified<CPSG_Request_NamedAnnotInfo>(input);
     IncludeData(request, specified);
-    SetAccSubstitution(request, input);
+    SetAccSubstitution(request, GetAccSubstitution(input));
     return request;
 }
 
@@ -465,11 +476,9 @@ inline void SRequestBuilder::IncludeData(shared_ptr<TRequest> request, TSpecifie
     }
 }
 
-template <class TRequest, class TInput>
-void SRequestBuilder::SetAccSubstitution(shared_ptr<TRequest>& request, const TInput& input)
+template <class TRequest>
+void SRequestBuilder::SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution)
 {
-    const auto& acc_substitution = GetAccSubstitution(input);
-
     if (acc_substitution == "limited") {
         request->SetAccSubstitution(EPSG_AccSubstitution::Limited);
     } else if (acc_substitution == "never") {
