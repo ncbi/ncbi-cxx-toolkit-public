@@ -1285,7 +1285,8 @@ vector<string> SRequestBuilder::SReader<CJson_ConstObject>::GetNamedAnnots() con
     return names;
 }
 
-CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(TSpecified specified)
+template <>
+CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::SImpl<CPSG_Request_Resolve>::GetIncludeInfo(TSpecified specified)
 {
     const auto& info_flags = GetInfoFlags();
 
