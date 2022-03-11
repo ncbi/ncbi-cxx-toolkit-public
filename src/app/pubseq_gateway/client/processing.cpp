@@ -750,7 +750,7 @@ CParallelProcessing::~CParallelProcessing()
 void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args)
 {
     auto type(args["type"].HasValue() ? SRequestBuilder::GetBioIdType(args["type"].AsString()) : CPSG_BioId::TType());
-    auto include_info(SRequestBuilder::GetIncludeInfo(SRequestBuilder::GetSpecified<CPSG_Request_Resolve>(args)));
+    auto include_info(SRequestBuilder::GetIncludeInfo(args));
 
     string id;
 
@@ -1307,25 +1307,25 @@ CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(TSpecified sp
     return include_info ? include_info : CPSG_Request_Resolve::fAllInfo;
 }
 
-void SRequestBuilder::ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CArgs& input)
+void SRequestBuilder::ForEachTSE(TExclude exclude, const CArgs& input)
 {
     if (!input["exclude-blob"].HasValue()) return;
 
     auto blob_ids = input["exclude-blob"].GetStringList();
 
     for (const auto& blob_id : blob_ids) {
-        request->ExcludeTSE(blob_id);
+        exclude(blob_id);
     }
 }
 
-void SRequestBuilder::ExcludeTSEs(shared_ptr<CPSG_Request_Biodata> request, const CJson_ConstObject& input)
+void SRequestBuilder::ForEachTSE(TExclude exclude, const CJson_ConstObject& input)
 {
     if (!input.has("exclude_blobs")) return;
 
     auto blob_ids = input["exclude_blobs"].GetArray();
 
     for (const auto& blob_id : blob_ids) {
-        request->ExcludeTSE(blob_id.GetValue().GetString());
+        exclude(blob_id.GetValue().GetString());
     }
 }
 
