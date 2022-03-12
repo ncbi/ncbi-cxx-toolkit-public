@@ -416,7 +416,7 @@ eclib needs xutil
 edirect needs eueid
 edirect needs ncqhst
 edirect needs txserv
-efetch needs xser
+efetch needs pubmed
 egenedb needs $(COMPRESS_LIBS)
 egenedb needs $(CONNEXT)
 egenedb needs dbapi_driver_wrap_s
