@@ -147,8 +147,6 @@ struct SParams
     const SPSG_UserArgs user_args;
 
     static bool verbose;
-
-    SParams(const CArgs& args);
 };
 
 struct SOneRequestParams : SParams
@@ -167,8 +165,6 @@ struct SOneRequestParams : SParams
 
     SLatency latency;
     SDataOnly data_only;
-
-    SOneRequestParams(const CArgs& args);
 };
 
 struct SParallelProcessingParams : SParams
@@ -177,23 +173,17 @@ struct SParallelProcessingParams : SParams
     const bool pipe;
     const bool server;
     istream& is;
-
-    SParallelProcessingParams(const CArgs& args, const string& filename);
 };
 
 struct SBatchResolveParams : SParallelProcessingParams
 {
     const CPSG_BioId::TType type;
     const CPSG_Request_Resolve::TIncludeInfo include_info;
-
-    SBatchResolveParams(const CArgs& args);
 };
 
 struct SInteractiveParams : SParallelProcessingParams
 {
     const bool echo;
-
-    SInteractiveParams(const CArgs& args);
 };
 
 struct SPerformanceParams : SParams
@@ -203,8 +193,6 @@ struct SPerformanceParams : SParams
     const bool local_queue;
     const bool report_immediately;
     ostream& os;
-
-    SPerformanceParams(const CArgs& args);
 };
 
 class CParallelProcessing
@@ -261,11 +249,11 @@ private:
 class CProcessing
 {
 public:
-    static int OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request);
+    static int OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Request> request);
 
     template <class TParams>
-    static int ParallelProcessing(const TParams params);
-    static int Performance(const SPerformanceParams params);
+    static int ParallelProcessing(const TParams& params);
+    static int Performance(const SPerformanceParams& params);
     static int JsonCheck(istream* schema_is, istream& doc_is);
 
     static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
@@ -281,7 +269,7 @@ private:
 };
 
 template <class TParams>
-inline int CProcessing::ParallelProcessing(const TParams params)
+inline int CProcessing::ParallelProcessing(const TParams& params)
 {
     CParallelProcessing parallel_processing(params);
     string line;

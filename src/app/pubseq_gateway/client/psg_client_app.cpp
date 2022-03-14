@@ -300,11 +300,123 @@ void s_SetPsgDefaults(const CArgs& args, bool parallel)
     }
 }
 
+namespace NParamsBuilder
+{
+
+template <class TParams>
+struct SBase : TParams
+{
+    template <class... TInitArgs>
+    SBase(const CArgs& args, TInitArgs&&... init_args) :
+        TParams{
+            args["service"].AsString(),
+            args["user-args"].HasValue() ? args["user-args"].AsString() : SPSG_UserArgs(),
+            forward<TInitArgs>(init_args)...
+        }
+    {
+        TParams::verbose = args["verbose"].HasValue();
+    }
+};
+
+struct SOneRequest : SBase<SOneRequestParams>
+{
+    SOneRequest(const CArgs& args) :
+        SBase{
+            args,
+            args["latency"].HasValue(),
+            args["debug-printout"].HasValue(),
+            GetDataOnlyEnabled(args),
+            GetDataOnlyOutputFormat(args)
+        }
+    {
+    }
+
+    static bool GetDataOnlyEnabled(const CArgs& args)
+    {
+        return (args.Exist("blob-only") && args["blob-only"].HasValue()) ||
+            (args.Exist("annot-only") && args["annot-only"].HasValue());
+    }
+
+    static ESerialDataFormat GetDataOnlyOutputFormat(const CArgs& args)
+    {
+        if (args.Exist("output-fmt") && args["output-fmt"].HasValue()) {
+            const auto& format = args["output-fmt"].AsString();
+
+            if (format == "asn")  return eSerial_AsnText;
+            if (format == "asnb") return eSerial_AsnBinary;
+            if (format == "xml")  return eSerial_Xml;
+            if (format == "json") return eSerial_Json;
+        }
+
+        return eSerial_None;
+    }
+
+};
+
+template <class TParams>
+struct SParallelProcessing : SBase<TParams>
+{
+    template <class... TInitArgs>
+    SParallelProcessing(const CArgs& args, const string& filename, TInitArgs&&... init_args) :
+        SBase<TParams>{
+            args,
+            max(1, min(10, args["worker-threads"].AsInteger())),
+            args[filename].AsString() == "-",
+            args["server-mode"].AsBoolean(),
+            args[filename].AsString() == "-" ? cin : args[filename].AsInputFile(),
+            forward<TInitArgs>(init_args)...
+        }
+    {
+    }
+};
+
+struct SBatchResolve : SParallelProcessing<SBatchResolveParams>
+{
+    SBatchResolve(const CArgs& args) :
+        SParallelProcessing<SBatchResolveParams>{
+            args,
+            "id-file",
+            args["type"].HasValue() ? SRequestBuilder::GetBioIdType(args["type"].AsString()) : CPSG_BioId::TType(),
+            SRequestBuilder::GetIncludeInfo(args)
+        }
+    {
+    }
+};
+
+struct SInteractive : SParallelProcessing<SInteractiveParams>
+{
+    SInteractive(const CArgs& args) :
+        SParallelProcessing<SInteractiveParams>{
+            args,
+            "input-file",
+            args["echo"].HasValue()
+        }
+    {
+    }
+};
+
+struct SPerformance : SBase<SPerformanceParams>
+{
+    SPerformance(const CArgs& args) :
+        SBase<SPerformanceParams>{
+            args,
+            static_cast<size_t>(args["user-threads"].AsInteger()),
+            args["delay"].AsDouble(),
+            args["local-queue"].AsBoolean(),
+            args["report-immediately"].AsBoolean(),
+            args["output-file"].AsOutputFile()
+        }
+    {
+    }
+};
+
+}
+
 template <class TRequest>
 int CPsgClientApp::RunRequest(const CArgs& args)
 {
     auto request = SRequestBuilder::Build<TRequest>(args);
-    return CProcessing::OneRequest(args, request);
+    return CProcessing::OneRequest(NParamsBuilder::SOneRequest(args), request);
 }
 
 template<>
@@ -314,23 +426,23 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
 
     if (single_request) {
         auto request = SRequestBuilder::Build<CPSG_Request_Resolve>(args);
-        return CProcessing::OneRequest(args, request);
+        return CProcessing::OneRequest(NParamsBuilder::SOneRequest(args), request);
     } else {
-        return CProcessing::ParallelProcessing(SBatchResolveParams(args));
+        return CProcessing::ParallelProcessing(NParamsBuilder::SBatchResolve(args));
     }
 }
 
 template<>
 int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 {
-    return CProcessing::ParallelProcessing(SInteractiveParams(args));
+    return CProcessing::ParallelProcessing(NParamsBuilder::SInteractive(args));
 }
 
 template <>
 int CPsgClientApp::RunRequest<SPerformance>(const CArgs& args)
 {
     TPSG_PsgClientMode::SetDefault(EPSG_PsgClientMode::ePerformance);
-    return CProcessing::Performance(args);
+    return CProcessing::Performance(NParamsBuilder::SPerformance(args));
 }
 
 template <>
