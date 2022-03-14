@@ -24,4 +24,4 @@ WATCHERS = stakhovv gotvyans foleyjp
 
 
 USES_LIBRARIES =  \
-    taxon3 xobjutil xlogging eutils
+    taxon3 xobjutil xlogging eutils efetch
