@@ -459,45 +459,6 @@ void SMetrics::OutputItems(ostream& os) const
     }
 }
 
-SParams::SParams(const CArgs& args) :
-    service(args["service"].AsString()),
-    user_args(args["user-args"].HasValue() ? args["user-args"].AsString() : SPSG_UserArgs())
-{
-    verbose = args["verbose"].HasValue();
-}
-
-SParallelProcessingParams::SParallelProcessingParams(const CArgs& args, const string& filename) :
-    SParams(args),
-    worker_threads(max(1, min(10, args["worker-threads"].AsInteger()))),
-    pipe(args[filename].AsString() == "-"),
-    server(args["server-mode"].AsBoolean()),
-    is(pipe ? cin : args[filename].AsInputFile())
-{
-}
-
-SBatchResolveParams::SBatchResolveParams(const CArgs& args) :
-    SParallelProcessingParams(args, "id-file"),
-    type(args["type"].HasValue() ? SRequestBuilder::GetBioIdType(args["type"].AsString()) : CPSG_BioId::TType()),
-    include_info(SRequestBuilder::GetIncludeInfo(args))
-{
-}
-
-SInteractiveParams::SInteractiveParams(const CArgs& args) :
-    SParallelProcessingParams(args, "input-file"),
-    echo(args["echo"].HasValue())
-{
-}
-
-SPerformanceParams::SPerformanceParams(const CArgs& args) :
-    SParams(args),
-    user_threads(static_cast<size_t>(args["user-threads"].AsInteger())),
-    delay(args["delay"].AsDouble()),
-    local_queue(args["local-queue"].AsBoolean()),
-    report_immediately(args["report-immediately"].AsBoolean()),
-    os(args["output-file"].AsOutputFile())
-{
-}
-
 template <class TItem, class TStr>
 void s_ReportErrors(ostream& os, EPSG_Status status, TItem item, TStr prefix, const char* delim = "\n\t")
 {
@@ -565,20 +526,6 @@ ESerialDataFormat s_GetInputFormat(const string& format)
     if (format == "json")      return eSerial_Json;
 
     return eSerial_AsnBinary;
-}
-
-ESerialDataFormat s_GetOutputFormat(const CArgs& args)
-{
-    if (args.Exist("output-fmt") && args["output-fmt"].HasValue()) {
-        const auto& format = args["output-fmt"].AsString();
-
-        if (format == "asn")  return eSerial_AsnText;
-        if (format == "asnb") return eSerial_AsnBinary;
-        if (format == "xml")  return eSerial_Xml;
-        if (format == "json") return eSerial_Json;
-    }
-
-    return eSerial_None;
 }
 
 TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
@@ -664,19 +611,6 @@ void SDataOnlyCopy::Process(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
     }
 }
 
-bool s_GetDataOnly(const CArgs& args)
-{
-    return (args.Exist("blob-only") && args["blob-only"].HasValue()) ||
-        (args.Exist("annot-only") && args["annot-only"].HasValue());
-}
-
-SOneRequestParams::SOneRequestParams(const CArgs& args) :
-    SParams(args),
-    latency({args["latency"].HasValue(), args["debug-printout"].HasValue()}),
-    data_only({s_GetDataOnly(args), s_GetOutputFormat(args)})
-{
-}
-
 void CProcessing::ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     CJsonResponse result_doc(status, item);
@@ -691,7 +625,7 @@ void CProcessing::ReplyComplete(SJsonOut& output, EPSG_Status status, const shar
     }
 }
 
-int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request)
+int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Request> request)
 {
     SDataOnlyCopy data_only_copy(params.data_only);
     CLogLatencyReport latency_report{
@@ -948,7 +882,7 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
     return requests;
 }
 
-int CProcessing::Performance(const SPerformanceParams params)
+int CProcessing::Performance(const SPerformanceParams& params)
 {
     if (params.delay < 0.0) {
         cerr << "DELAY must be non-negative" << endl;
