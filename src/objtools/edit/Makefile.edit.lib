@@ -18,7 +18,7 @@ LIB    = xobjedit
 
 DLL_LIB = xobjutil taxon3 valid mlacli xlogging eutils $(SOBJMGR_LIBS)
 
-ASN_DEP = esearch esummary genome_collection mla submit taxon3 valid
+ASN_DEP = efetch esearch esummary genome_collection mla submit taxon3 valid
 
 WATCHERS = stakhovv gotvyans foleyjp
 
