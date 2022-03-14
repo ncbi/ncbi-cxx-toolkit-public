@@ -143,7 +143,7 @@ private:
 
 struct SParams
 {
-    const string& service;
+    const string service;
     const SPSG_UserArgs user_args;
 
     static bool verbose;
@@ -285,8 +285,8 @@ struct SRequestBuilder
     template <class TRequest, class TInput, class... TArgs>
     static shared_ptr<TRequest> Build(const TInput& input, TArgs&&... args);
 
-    template <class... TArgs>
-    static shared_ptr<CPSG_Request> Build(const string& name, const CJson_ConstObject& input, TArgs&&... args);
+    template <class TInput, class... TArgs>
+    static shared_ptr<CPSG_Request> Build(const string& name, const TInput& input, TArgs&&... args);
 
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
@@ -417,8 +417,8 @@ shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args
     return rv;
 }
 
-template <class... TArgs>
-shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const CJson_ConstObject& input, TArgs&&... args)
+template <class TInput, class... TArgs>
+shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const TInput& input, TArgs&&... args)
 {
     if (name == "biodata") {
         return Build<CPSG_Request_Biodata>(input, forward<TArgs>(args)...);

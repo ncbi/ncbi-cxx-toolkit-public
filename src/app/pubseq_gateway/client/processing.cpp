@@ -371,13 +371,13 @@ void CJsonResponse::Fill(shared_ptr<CPSG_PublicComment> public_comment)
 string s_ProgressStatusToString(CPSG_Processor::EProgressStatus progress_status)
 {
     switch (progress_status) {
-        case CPSG_Processor::eStart:     return "start";      
-        case CPSG_Processor::eDone:      return "done";       
-        case CPSG_Processor::eNotFound:  return "not_found";  
-        case CPSG_Processor::eCanceled:  return "canceled";   
-        case CPSG_Processor::eTimeout:   return "timeout";    
-        case CPSG_Processor::eError:     return "error";      
-        case CPSG_Processor::eUnknown:   return "unknown";    
+        case CPSG_Processor::eStart:     return "start";
+        case CPSG_Processor::eDone:      return "done";
+        case CPSG_Processor::eNotFound:  return "not_found";
+        case CPSG_Processor::eCanceled:  return "canceled";
+        case CPSG_Processor::eTimeout:   return "timeout";
+        case CPSG_Processor::eError:     return "error";
+        case CPSG_Processor::eUnknown:   return "unknown";
     }
 
     _TROUBLE;
@@ -482,22 +482,41 @@ struct SDataOnlyCopy
     void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
     void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 
+    operator int() const { return int(m_Status); }
+
 private:
     void Process(shared_ptr<CPSG_BlobInfo> blob_info);
     void Process(shared_ptr<CPSG_BlobData> blob_data);
     void Process(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
     void Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG_BlobData> blob_data);
 
+    template <class TItem>
+    bool ReportErrors(EPSG_Status status, TItem item, const char* prefix);
+
     const SOneRequestParams::SDataOnly& m_Params;
     unordered_map<string, pair<shared_ptr<CPSG_BlobInfo>, shared_ptr<CPSG_BlobData>>> m_Data;
+    EPSG_Status m_Status = EPSG_Status::eSuccess;
 };
+
+template <class TItem>
+bool SDataOnlyCopy::ReportErrors(EPSG_Status status, TItem item, const char* prefix)
+{
+    if (status != EPSG_Status::eSuccess) {
+        if (m_Status == EPSG_Status::eSuccess) m_Status = status;
+
+        stringstream ss;
+        s_ReportErrors(ss, status, item, prefix);
+        cerr << ss.rdbuf();
+        return true;
+    }
+
+    return false;
+}
 
 void SDataOnlyCopy::ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
-    if (status != EPSG_Status::eSuccess) {
-        stringstream ss;
-        s_ReportErrors(ss, status, item, "Item error: ");
-        cerr << ss.rdbuf();
+    if (ReportErrors(status, item, "Item error: ")) {
+        return;
 
     } else if (item->GetType() == CPSG_ReplyItem::eBlobInfo) {
         Process(static_pointer_cast<CPSG_BlobInfo>(item));
@@ -512,11 +531,7 @@ void SDataOnlyCopy::ItemComplete(EPSG_Status status, const shared_ptr<CPSG_Reply
 
 void SDataOnlyCopy::ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
-    if (status != EPSG_Status::eSuccess) {
-        stringstream ss;
-        s_ReportErrors(ss, status, reply, "Reply error: ");
-        cerr << ss.rdbuf();
-    }
+    ReportErrors(status, reply, "Reply error: ");
 }
 
 ESerialDataFormat s_GetInputFormat(const string& format)
@@ -659,7 +674,7 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
     _VERIFY(queue.SendRequest(request, CDeadline::eInfinite));
     queue.Stop();
     _VERIFY(queue.Run(CDeadline::eInfinite));
-    return 0;
+    return data_only_copy;
 }
 
 template <class TItemComplete, class TReplyComplete, class TSubmitter>
@@ -732,9 +747,6 @@ void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue
 void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, const SInteractiveParams& params)
 {
     CJson_Document json_schema_doc(CProcessing::RequestSchema());
-    // cout << boolalpha << json_schema_doc.ReadSucceeded() << '|' << json_schema_doc.GetReadError() << endl;
-    // cout << json_schema_doc.ToString() << endl;
-
     CJson_Schema json_schema(json_schema_doc);
     string line;
 
