@@ -172,7 +172,6 @@ struct SParallelProcessingParams : SParams
     const int worker_threads;
     const bool pipe;
     const bool server;
-    istream& is;
 };
 
 struct SBatchResolveParams : SParallelProcessingParams
@@ -192,7 +191,6 @@ struct SPerformanceParams : SParams
     const double delay;
     const bool local_queue;
     const bool report_immediately;
-    ostream& os;
 };
 
 class CParallelProcessing
@@ -254,7 +252,7 @@ public:
     template <class TParams>
     static int ParallelProcessing(const TParams& params);
     static int Performance(const SPerformanceParams& params);
-    static int JsonCheck(istream* schema_is, istream& doc_is);
+    static int JsonCheck(istream* schema_is);
 
     static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
     static void ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
@@ -265,7 +263,7 @@ private:
     template <class TCreateContext>
     static vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context, size_t report_progress_after = 0);
 
-    static bool ReadLine(string& line, istream& is = cin);
+    static bool ReadLine(string& line);
 };
 
 template <class TParams>
@@ -274,7 +272,7 @@ inline int CProcessing::ParallelProcessing(const TParams& params)
     CParallelProcessing parallel_processing(params);
     string line;
 
-    while (ReadLine(line, params.is)) {
+    while (ReadLine(line)) {
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
         parallel_processing(move(line));
     }

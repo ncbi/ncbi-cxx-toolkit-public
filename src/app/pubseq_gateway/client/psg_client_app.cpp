@@ -354,7 +354,7 @@ struct SOneRequest : SBase<SOneRequestParams>
 };
 
 template <class TParams>
-struct SParallelProcessing : SBase<TParams>
+struct SParallelProcessing : SBase<TParams>, SIoRedirector
 {
     template <class... TInitArgs>
     SParallelProcessing(const CArgs& args, const string& filename, TInitArgs&&... init_args) :
@@ -363,9 +363,9 @@ struct SParallelProcessing : SBase<TParams>
             max(1, min(10, args["worker-threads"].AsInteger())),
             args[filename].AsString() == "-",
             args["server-mode"].AsBoolean(),
-            args[filename].AsString() == "-" ? cin : args[filename].AsInputFile(),
             forward<TInitArgs>(init_args)...
-        }
+        },
+        SIoRedirector(cin, args[filename].AsInputFile())
     {
     }
 };
@@ -395,7 +395,7 @@ struct SInteractive : SParallelProcessing<SInteractiveParams>
     }
 };
 
-struct SPerformance : SBase<SPerformanceParams>
+struct SPerformance : SBase<SPerformanceParams>, SIoRedirector
 {
     SPerformance(const CArgs& args) :
         SBase<SPerformanceParams>{
@@ -404,8 +404,8 @@ struct SPerformance : SBase<SPerformanceParams>
             args["delay"].AsDouble(),
             args["local-queue"].AsBoolean(),
             args["report-immediately"].AsBoolean(),
-            args["output-file"].AsOutputFile()
-        }
+        },
+        SIoRedirector(cout, args["output-file"].AsOutputFile())
     {
     }
 };
@@ -449,8 +449,8 @@ template <>
 int CPsgClientApp::RunRequest<SJsonCheck>(const CArgs& args)
 {
     const auto& schema = args["schema-file"];
-    auto& doc_is = args["input-file"].AsInputFile();
-    return CProcessing::JsonCheck(schema.HasValue() ? &schema.AsInputFile() : nullptr, doc_is);
+    SIoRedirector ior(cin, args["input-file"].AsInputFile());
+    return CProcessing::JsonCheck(schema.HasValue() ? &schema.AsInputFile() : nullptr);
 }
 
 template <class TRequest>

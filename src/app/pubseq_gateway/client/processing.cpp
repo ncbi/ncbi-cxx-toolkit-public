@@ -892,7 +892,6 @@ int CProcessing::Performance(const SPerformanceParams& params)
     const size_t kReportProgressAfter = 2000;
 
     using TReplyStorage = deque<shared_ptr<CPSG_Reply>>;
-    SIoRedirector io_redirector(cout, params.os);
 
     if (SParams::verbose) cerr << "Preparing requests: ";
     auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(move(id)); }, SParams::verbose ? kReportProgressAfter : 0);
@@ -1016,10 +1015,10 @@ int CProcessing::Performance(const SPerformanceParams& params)
     return 0;
 }
 
-bool CProcessing::ReadLine(string& line, istream& is)
+bool CProcessing::ReadLine(string& line)
 {
     for (;;) {
-        if (!getline(is, line)) {
+        if (!getline(cin, line)) {
             return false;
         } else if (!line.empty()) {
             return true;
@@ -1125,7 +1124,7 @@ void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_Cons
     };
 }
 
-int CProcessing::JsonCheck(istream* schema_is, istream& doc_is)
+int CProcessing::JsonCheck(istream* schema_is)
 {
     CJson_Document schema_doc;
 
@@ -1142,7 +1141,7 @@ int CProcessing::JsonCheck(istream* schema_is, istream& doc_is)
     size_t line_no = 0;
     int rv = 0;
 
-    while (ReadLine(line, doc_is)) {
+    while (ReadLine(line)) {
         CJson_Document input_doc;
         ++line_no;
 
