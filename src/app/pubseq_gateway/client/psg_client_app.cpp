@@ -316,22 +316,14 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
         auto request = SRequestBuilder::Build<CPSG_Request_Resolve>(args);
         return CProcessing::OneRequest(args, request);
     } else {
-        auto& ctx = CDiagContext::GetRequestContext();
-
-        ctx.SetRequestID();
-        ctx.SetSessionID();
-        ctx.SetHitID();
-
-        CJsonResponse::SetReplyType(false);
-        return CProcessing::ParallelProcessing({ args, true, false });
+        return CProcessing::ParallelProcessing(SBatchResolveParams(args));
     }
 }
 
 template<>
 int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 {
-    const auto echo = args["echo"].HasValue();
-    return CProcessing::ParallelProcessing({ args, false, echo });
+    return CProcessing::ParallelProcessing(SInteractiveParams(args));
 }
 
 template <>

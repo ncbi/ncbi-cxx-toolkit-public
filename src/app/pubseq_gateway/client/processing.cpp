@@ -466,15 +466,25 @@ SParams::SParams(const CArgs& args) :
     verbose = args["verbose"].HasValue();
 }
 
-SParallelProcessingParams::SParallelProcessingParams(const CArgs& a, bool br, bool e) :
-    SParams(a),
-    args(a),
+SParallelProcessingParams::SParallelProcessingParams(const CArgs& args, const string& filename) :
+    SParams(args),
     worker_threads(max(1, min(10, args["worker-threads"].AsInteger()))),
-    batch_resolve(br),
-    echo(e),
-    pipe(args[batch_resolve ? "id-file" : "input-file"].AsString() == "-"),
+    pipe(args[filename].AsString() == "-"),
     server(args["server-mode"].AsBoolean()),
-    is(pipe ? cin : args[batch_resolve ? "id-file" : "input-file"].AsInputFile())
+    is(pipe ? cin : args[filename].AsInputFile())
+{
+}
+
+SBatchResolveParams::SBatchResolveParams(const CArgs& args) :
+    SParallelProcessingParams(args, "id-file"),
+    type(args["type"].HasValue() ? SRequestBuilder::GetBioIdType(args["type"].AsString()) : CPSG_BioId::TType()),
+    include_info(SRequestBuilder::GetIncludeInfo(args))
+{
+}
+
+SInteractiveParams::SInteractiveParams(const CArgs& args) :
+    SParallelProcessingParams(args, "input-file"),
+    echo(args["echo"].HasValue())
 {
 }
 
@@ -718,26 +728,48 @@ int CProcessing::OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Requ
     return 0;
 }
 
-CParallelProcessing::CParallelProcessing(const SParallelProcessingParams& params) :
+template <class TItemComplete, class TReplyComplete, class TSubmitter>
+CParallelProcessing::CParallelProcessing(const SParallelProcessingParams& params, TItemComplete ic, TReplyComplete rc, TSubmitter submitter) :
     m_JsonOut(params.pipe, params.server)
 {
     using namespace placeholders;
-    auto item_complete = bind(params.batch_resolve ? &CProcessing::ItemComplete : &Interactive::ItemComplete, ref(m_JsonOut), _1, _2);
-    auto f = params.batch_resolve ? &CProcessing::ReplyComplete : params.server ? &Interactive::ReplyComplete::All : &Interactive::ReplyComplete::ErrorsOnly;
-    auto reply_complete = bind(f, ref(m_JsonOut), _1, _2);
+    auto item_complete = bind(ic, ref(m_JsonOut), _1, _2);
+    auto reply_complete = bind(rc, ref(m_JsonOut), _1, _2);
 
     for (int n = params.worker_threads; n > 0; --n) {
         m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
         auto& queue = m_PsgQueues.back();
         queue.SetUserArgs(params.user_args);
         m_Threads.emplace_back(&CPSG_EventLoop::Run, ref(queue), CDeadline::eInfinite);
-
-        if (params.batch_resolve) {
-            m_Threads.emplace_back(&BatchResolve::Submitter, ref(m_InputQueue), ref(queue), cref(params.args));
-        } else {
-            m_Threads.emplace_back(&Interactive::Submitter, ref(m_InputQueue), ref(queue), ref(m_JsonOut), params.echo);
-        }
+        m_Threads.emplace_back(submitter, ref(m_InputQueue), ref(queue));
     }
+}
+
+CParallelProcessing::CParallelProcessing(const SBatchResolveParams& params) :
+    CParallelProcessing{
+        params,
+        &CProcessing::ItemComplete,
+        &CProcessing::ReplyComplete,
+        bind(&BatchResolve::Submitter, placeholders::_1, placeholders::_2, params)
+    }
+{
+        auto& ctx = CDiagContext::GetRequestContext();
+
+        ctx.SetRequestID();
+        ctx.SetSessionID();
+        ctx.SetHitID();
+
+        CJsonResponse::SetReplyType(false);
+}
+
+CParallelProcessing::CParallelProcessing(const SInteractiveParams& params) :
+    CParallelProcessing{
+        params,
+        &Interactive::ItemComplete,
+        params.server ? &Interactive::ReplyComplete::All : &Interactive::ReplyComplete::ErrorsOnly,
+        bind(&Interactive::Submitter, placeholders::_1, placeholders::_2, ref(m_JsonOut), params)
+    }
+{
 }
 
 CParallelProcessing::~CParallelProcessing()
@@ -745,20 +777,17 @@ CParallelProcessing::~CParallelProcessing()
     m_InputQueue.Stop(m_InputQueue.eDrain);
 }
 
-void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args)
+void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& output, const SBatchResolveParams& params)
 {
-    auto type(args["type"].HasValue() ? SRequestBuilder::GetBioIdType(args["type"].AsString()) : CPSG_BioId::TType());
-    auto include_info(SRequestBuilder::GetIncludeInfo(args));
-
     string id;
 
     while (input.Pop(id)) {
         _ASSERT(!id.empty()); // ReadLine makes sure it's not empty
-        auto bio_id = CPSG_BioId(id, type);
+        auto bio_id = CPSG_BioId(id, params.type);
         auto user_context = make_shared<string>(move(id));
         auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
 
-        request->IncludeInfo(include_info);
+        request->IncludeInfo(params.include_info);
 
         _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
     }
@@ -766,7 +795,7 @@ void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue
     output.Stop();
 }
 
-void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo)
+void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, const SInteractiveParams& params)
 {
     CJson_Document json_schema_doc(CProcessing::RequestSchema());
     // cout << boolalpha << json_schema_doc.ReadSucceeded() << '|' << json_schema_doc.GetReadError() << endl;
@@ -785,7 +814,7 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
         } else if (!json_schema.Validate(json_doc)) {
             json_out << CJsonResponse(s_GetId(json_doc), eJsonRpc_InvalidRequest, json_schema.GetValidationError());
         } else {
-            if (echo) json_out << json_doc;
+            if (params.echo) json_out << json_doc;
 
             CJson_ConstObject json_obj(json_doc.GetObject());
             auto method = json_obj["method"].GetValue().GetString();
@@ -1160,19 +1189,6 @@ void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_Cons
             Print(prefix, json.GetObject());
             break;
     };
-}
-
-int CProcessing::ParallelProcessing(const SParallelProcessingParams params)
-{
-    CParallelProcessing parallel_processing(params);
-    string line;
-
-    while (ReadLine(line, params.is)) {
-        _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
-        parallel_processing(move(line));
-    }
-
-    return 0;
 }
 
 int CProcessing::JsonCheck(istream* schema_is, istream& doc_is)

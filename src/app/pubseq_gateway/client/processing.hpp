@@ -173,15 +173,27 @@ struct SOneRequestParams : SParams
 
 struct SParallelProcessingParams : SParams
 {
-    const CArgs& args;
     const int worker_threads;
-    const bool batch_resolve;
-    const bool echo;
     const bool pipe;
     const bool server;
     istream& is;
 
-    SParallelProcessingParams(const CArgs& a, bool br, bool e);
+    SParallelProcessingParams(const CArgs& args, const string& filename);
+};
+
+struct SBatchResolveParams : SParallelProcessingParams
+{
+    const CPSG_BioId::TType type;
+    const CPSG_Request_Resolve::TIncludeInfo include_info;
+
+    SBatchResolveParams(const CArgs& args);
+};
+
+struct SInteractiveParams : SParallelProcessingParams
+{
+    const bool echo;
+
+    SInteractiveParams(const CArgs& args);
 };
 
 struct SPerformanceParams : SParams
@@ -198,7 +210,8 @@ struct SPerformanceParams : SParams
 class CParallelProcessing
 {
 public:
-    CParallelProcessing(const SParallelProcessingParams& params);
+    CParallelProcessing(const SBatchResolveParams& params);
+    CParallelProcessing(const SInteractiveParams& params);
     ~CParallelProcessing();
 
     void operator()(string id) { m_InputQueue.Push(move(id)); }
@@ -208,12 +221,12 @@ private:
 
     struct BatchResolve
     {
-        static void Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args);
+        static void Submitter(TInputQueue& input, CPSG_Queue& output, const SBatchResolveParams& params);
     };
 
     struct Interactive
     {
-        static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo);
+        static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, const SInteractiveParams& params);
         static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
 
         struct ReplyComplete
@@ -236,6 +249,9 @@ private:
         thread m_Thread;
     };
 
+    template <class TItemComplete, class TReplyComplete, class TSubmitter>
+    CParallelProcessing(const SParallelProcessingParams& params, TItemComplete ic, TReplyComplete rc, TSubmitter submitter);
+
     TInputQueue m_InputQueue;
     list<CPSG_EventLoop> m_PsgQueues;
     SJsonOut m_JsonOut;
@@ -246,7 +262,9 @@ class CProcessing
 {
 public:
     static int OneRequest(const SOneRequestParams params, shared_ptr<CPSG_Request> request);
-    static int ParallelProcessing(const SParallelProcessingParams params);
+
+    template <class TParams>
+    static int ParallelProcessing(const TParams params);
     static int Performance(const SPerformanceParams params);
     static int JsonCheck(istream* schema_is, istream& doc_is);
 
@@ -261,6 +279,20 @@ private:
 
     static bool ReadLine(string& line, istream& is = cin);
 };
+
+template <class TParams>
+inline int CProcessing::ParallelProcessing(const TParams params)
+{
+    CParallelProcessing parallel_processing(params);
+    string line;
+
+    while (ReadLine(line, params.is)) {
+        _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
+        parallel_processing(move(line));
+    }
+
+    return 0;
+}
 
 struct SRequestBuilder
 {
