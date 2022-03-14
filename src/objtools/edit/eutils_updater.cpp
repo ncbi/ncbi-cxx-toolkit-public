@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 #include <objtools/edit/eutils_updater.hpp>
 
+#include <objtools/eutils/efetch/PubmedArticle.hpp>
+#include <objtools/eutils/efetch/PubmedArticleSet.hpp>
 #include <objtools/eutils/api/efetch.hpp>
 #include <objects/pubmed/Pubmed_entry.hpp>
 #include <objects/medline/Medline_entry.hpp>
@@ -254,13 +256,13 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
 
     req->SetRequestMethod(CEUtils_Request::eHttp_Get);
     req->GetId().AddId(to_string(pmid));
-    req->SetRetMode(CEFetch_Request::eRetMode_asn);
+    req->SetRetMode(CEFetch_Request::eRetMode_xml);
 
-    CPubmed_entry pme;
+    eutils::CPubmedArticleSet pas;
     string content;
     req->Read(&content);
     try {
-        content >> pme;
+        CNcbiIstrstream(content) >> MSerial_Xml >> pas;
     } catch (...) {
         if (perr) {
             *perr = EError_val::eError_val_citation_not_found;
@@ -268,13 +270,21 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
         return {};
     }
 
-    if (pme.IsSetMedent()) {
-        CMedline_entry& mle = pme.SetMedent();
-        if (mle.IsSetCit()) {
-            CRef<CPub> cit_art;
-            cit_art.Reset(new CPub);
-            cit_art->SetArticle(mle.SetCit());
-            return cit_art;
+    const auto& pp = pas.GetPP().GetPP();
+    if (!pp.empty()) {
+        const auto& ppf = *pp.front();
+        if (ppf.IsPubmedArticle()) {
+            const eutils::CPubmedArticle& article = ppf.GetPubmedArticle();
+            CRef<CPubmed_entry> pme = article.ToPubmed_entry();
+            if (pme->IsSetMedent()) {
+                CMedline_entry& mle = pme->SetMedent();
+                if (mle.IsSetCit()) {
+                    CRef<CPub> cit_art;
+                    cit_art.Reset(new CPub);
+                    cit_art->SetArticle(mle.SetCit());
+                    return cit_art;
+                }
+            }
         }
     }
 
