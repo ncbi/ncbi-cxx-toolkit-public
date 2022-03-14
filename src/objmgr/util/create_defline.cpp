@@ -2032,19 +2032,26 @@ static CConstRef<CBioSource> x_GetSourceFeatViaCDS  (
         if (cds_loc) {
             CRef<CSeq_loc> cleaned_location( new CSeq_loc );
             cleaned_location->Assign( *cds_loc );
-            CConstRef<CSeq_feat> src_feat
-                = GetBestOverlappingFeat (*cleaned_location, CSeqFeatData::eSubtype_biosrc, eOverlap_SubsetRev, scope);
-            if (! src_feat  &&  cleaned_location->IsSetStrand()  &&  IsReverse(cleaned_location->GetStrand())) {
-                CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(*cleaned_location, &scope));
-                cleaned_location->Assign(*rev_loc);
-                src_feat = GetBestOverlappingFeat (*cleaned_location, CSeqFeatData::eSubtype_biosrc, eOverlap_SubsetRev, scope);
-            }
+            CConstRef<CSeq_feat> src_feat = GetBestOverlappingFeat (*cleaned_location, CSeqFeatData::eSubtype_biosrc, eOverlap_SubsetRev, scope);
             if (src_feat) {
                 const CSeq_feat& feat = *src_feat;
                 if (feat.IsSetData()) {
                     const CSeqFeatData& sfd = feat.GetData();
                     if (sfd.IsBiosrc()) {
                         src_ref = &sfd.GetBiosrc();
+                    }
+                }
+            } else {
+                CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(*cleaned_location, &scope));
+                cleaned_location->Assign(*rev_loc);
+                src_feat = GetBestOverlappingFeat (*cleaned_location, CSeqFeatData::eSubtype_biosrc, eOverlap_SubsetRev, scope);
+                if (src_feat) {
+                    const CSeq_feat& feat = *src_feat;
+                    if (feat.IsSetData()) {
+                        const CSeqFeatData& sfd = feat.GetData();
+                        if (sfd.IsBiosrc()) {
+                            src_ref = &sfd.GetBiosrc();
+                        }
                     }
                 }
             }
@@ -2318,6 +2325,7 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
           taxname.find ("vector") == NPOS  &&
           taxname.find ("Vector") == NPOS))  &&
         !m_LocalAnnotsOnly) {
+        /*
         CWeakRef<CBioseqIndex> bsxp = bsx->GetBioseqForProduct();
         auto nucx = bsxp.Lock();
         if (nucx) {
@@ -2327,6 +2335,11 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
                     taxname = src->GetTaxname();
                 }
             }
+        }
+        */
+        src = x_GetSourceFeatViaCDS (bsh);
+        if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+            taxname = src->GetTaxname();
         }
     }
 
