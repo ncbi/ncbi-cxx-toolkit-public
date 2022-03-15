@@ -758,13 +758,18 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
         const SAnnotSelector::TNamedAnnotAccessions& accs =
             sel->GetNamedAnnotAccessions();
         if ( m_FixedFiles.empty() ) {
-            if ( m_FoundFiles.get_size_limit() < accs.size() ) {
-                // increase VDB cache size
-                m_FoundFiles.set_size_limit(accs.size()+GetGCSize());
-            }
-            if ( m_MissingFiles.get_size_limit() < accs.size() ) {
-                // increase VDB cache size
-                m_MissingFiles.set_size_limit(accs.size()+GetMissingGCSize());
+            auto accs_size = accs.size();
+            if ( m_FoundFiles.get_size_limit() < accs_size ||
+                 m_MissingFiles.get_size_limit() < accs_size ) {
+                CMutexGuard guard(m_Mutex);
+                if ( m_FoundFiles.get_size_limit() < accs_size ) {
+                    // increase VDB cache size
+                    m_FoundFiles.set_size_limit(accs_size+GetGCSize());
+                }
+                if ( m_MissingFiles.get_size_limit() < accs_size ) {
+                    // increase VDB cache size
+                    m_MissingFiles.set_size_limit(accs_size+GetMissingGCSize());
+                }
             }
         }
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
