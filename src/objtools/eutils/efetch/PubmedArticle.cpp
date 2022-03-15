@@ -1346,11 +1346,12 @@ static CRef<CTitle> s_GetTitle(const CMedlineCitation& medlineCitation)
 static CRef<CTitle> s_GetJournalTitle(const CPubmedArticle& pubmed_article)
 {
     const CMedlineCitation& medlineCitation = pubmed_article.GetMedlineCitation();
+    const CJournal& journal = medlineCitation.GetArticle().GetJournal();
     CRef<CTitle> title(new CTitle());
 
-    if (medlineCitation.GetArticle().GetJournal().IsSetISOAbbreviation()) {
+    if (journal.IsSetISOAbbreviation()) {
         CRef<CTitle::C_E> iso(new CTitle::C_E());
-        iso->SetIso_jta(medlineCitation.GetArticle().GetJournal().GetISOAbbreviation());
+        iso->SetIso_jta(journal.GetISOAbbreviation());
         title->Set().push_back(iso);
     }
 
@@ -1358,10 +1359,16 @@ static CRef<CTitle> s_GetJournalTitle(const CPubmedArticle& pubmed_article)
     mljta->SetMl_jta(medlineCitation.GetMedlineJournalInfo().GetMedlineTA());
     title->Set().push_back(mljta);
 
-    if (medlineCitation.GetArticle().GetJournal().IsSetISSN()) {
+    if (journal.IsSetISSN()) {
         CRef<CTitle::C_E> issn(new CTitle::C_E());
-        issn->SetIssn(medlineCitation.GetArticle().GetJournal().GetISSN());
+        issn->SetIssn(journal.GetISSN());
         title->Set().push_back(issn);
+    }
+
+    if (journal.IsSetTitle()) {
+        CRef<CTitle::C_E> name(new CTitle::C_E());
+        name->SetName(journal.GetTitle());
+        title->Set().push_back(name);
     }
 
     return title;
