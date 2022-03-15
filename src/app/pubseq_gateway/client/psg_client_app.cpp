@@ -326,6 +326,7 @@ struct SOneRequest : SBase<SOneRequestParams>
             args["latency"].HasValue(),
             args["debug-printout"].HasValue(),
             GetDataOnlyEnabled(args),
+            false,
             GetDataOnlyOutputFormat(args)
         }
     {
