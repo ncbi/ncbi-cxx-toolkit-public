@@ -82,6 +82,12 @@ void GetSSLSettings(bool &  enabled,
                     string &  key_file,
                     string &  ciphers);
 void NotifyRequestFinished(size_t  request_id);
+void CheckFDLimit(void);
+
+#if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
+    h2o_socket_t *  Geth2oConnectionSocketForRequest(h2o_req_t *  req);
+#endif
+
 
 struct CQueryParam
 {
@@ -1083,7 +1089,6 @@ struct CHttpGateHandler
 };
 
 
-
 template<typename P>
 class CHttpProto
 {
@@ -1137,7 +1142,11 @@ public:
                          uv_close_cb  close_cb)
     {
         int                 fd;
-        h2o_socket_t *      sock = h2o_uv_socket_create(conn, close_cb);
+        #if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
+            h2o_socket_t *      sock = h2o_uv_socket_create((uv_handle_t*)conn, close_cb);
+        #else
+            h2o_socket_t *      sock = h2o_uv_socket_create(conn, close_cb);
+        #endif
 
         if (!sock) {
             PSG_ERROR("h2o layer failed to create socket");
@@ -1160,6 +1169,9 @@ public:
         }
         sock->on_close.cb = CHttpConnection<P>::s_OnBeforeClosedConnection;
         sock->on_close.data = http_conn;
+
+        // This check may initiate a shutdown or exit immediately
+        CheckFDLimit();
     }
 
     void OnClientClosedConnection(uv_stream_t *  conn,
@@ -1195,9 +1207,14 @@ public:
     int OnHttpRequest(CHttpGateHandler<P> *  rh, h2o_req_t *  req, const char *  cd_uid)
     {
         h2o_conn_t *        conn = req->conn;
-        h2o_socket_t *      sock = conn->callbacks->get_socket(conn);
+        #if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
+            h2o_socket_t *  sock = Geth2oConnectionSocketForRequest(req);
+        #else
+            h2o_socket_t *      sock = conn->callbacks->get_socket(conn);
+        #endif
 
         assert(sock->on_close.data != nullptr);
+
         CHttpConnection<P> *        http_conn =
                         static_cast<CHttpConnection<P>*>(sock->on_close.data);
         CHttpRequest                hreq(req);
@@ -1386,7 +1403,12 @@ public:
         for (auto &  it: m_Handlers) {
             h2o_pathconf_t *        pathconf = h2o_config_register_path(
                                                 hostconf, it.m_Path.c_str(), 0);
-            h2o_chunked_register(pathconf);
+            #if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
+                // No need anymore
+                ;
+            #else
+                h2o_chunked_register(pathconf);
+            #endif
 
             h2o_handler_t *         handler = h2o_create_handler(
                                         pathconf, sizeof(CHttpGateHandler<P>));

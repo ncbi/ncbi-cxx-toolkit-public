@@ -107,6 +107,8 @@ const bool              kDefaultSSLEnable = false;
 const string            kDefaultSSLCertFile = "";
 const string            kDefaultSSLKeyFile = "";
 const string            kDefaultSSLCiphers = "EECDH+aRSA+AESGCM EDH+aRSA+AESGCM EECDH+aRSA EDH+aRSA !SHA !SHA256 !SHA384";
+const size_t            kDefaultShutdownIfTooManyOpenFDforHTTP = 0;
+const size_t            kDefaultShutdownIfTooManyOpenFDforHTTPS = 8000;
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -167,7 +169,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
     m_SSLEnable(kDefaultSSLEnable),
-    m_SSLCiphers(kDefaultSSLCiphers)
+    m_SSLCiphers(kDefaultSSLCiphers),
+    m_ShutdownIfTooManyOpenFD(0)
 {
     sm_PubseqApp = this;
     m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
@@ -316,6 +319,14 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_SSLCertFile = registry.GetString("SSL", "ssl_cert_file", kDefaultSSLCertFile);
     m_SSLKeyFile = registry.GetString("SSL", "ssl_key_file", kDefaultSSLKeyFile);
     m_SSLCiphers = registry.GetString("SSL", "ssl_ciphers", kDefaultSSLCiphers);
+
+    if (m_SSLEnable) {
+        m_ShutdownIfTooManyOpenFD = registry.GetInt("SERVER", "ShutdownIfTooManyOpenFD",
+                                                    kDefaultShutdownIfTooManyOpenFDforHTTPS);
+    } else {
+        m_ShutdownIfTooManyOpenFD = registry.GetInt("SERVER", "ShutdownIfTooManyOpenFD",
+                                                    kDefaultShutdownIfTooManyOpenFDforHTTP);
+    }
 
     // It throws an exception in case of inability to start
     x_ValidateArgs();
