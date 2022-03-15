@@ -383,7 +383,7 @@ protected:
     vector<CSegment> m_Segments;
     
     // index of last resolved segment position
-    mutable size_t   m_Resolved;
+    volatile mutable size_t m_Resolved;
     
     // representation object of the sequence
     CRef<CObject>    m_Delta;
