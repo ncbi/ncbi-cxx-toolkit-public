@@ -1036,10 +1036,10 @@ int CProcessing::Performance(const SPerformanceParams& params)
     return 0;
 }
 
-bool CProcessing::ReadLine(string& line)
+bool CProcessing::ReadLine(string& line, istream& is)
 {
     for (;;) {
-        if (!getline(cin, line)) {
+        if (!getline(is, line)) {
             return false;
         } else if (!line.empty()) {
             return true;
