@@ -76,6 +76,9 @@ race:^ncbi::objects::CSeq_id_General_Str_Info::Restore
 # false positive -- CSeq_id_Handle uses lock-less access to generated CSeq_id
 race:^ncbi::objects::CSeq_id_Gi_Info::GetPackedSeqId
 
+# false positive -- deletion and removal from indexes are controlled by atomic counters
+race:^ncbi::objects::CSeq_id_InfoLocker::Unlock
+
 # false positive -- double-check initialization
 race:^ncbi::objects::CDataSource::SetLoaded
 
@@ -126,6 +129,21 @@ race:^ncbi::objects::CScopeInfo_Base::x_ResetTSE_Lock
 
 # false positive -- double-check one-time initialization
 race:^ncbi::CTypeRef::Get
+
+# false positive -- double-check one-time initialization
+race:^ncbi::*_Base::GetTypeInfo()
+
+# false positive -- double-check one-time initialization
+race:^ncbi::objects::CTSE_Chunk_Info::SetLoaded
+
+# false positive -- double-check one-time initialization
+race:^ncbi::objects::CBioseq_Info::GetSeqMap
+
+# false positive -- double-check one-time initialization
+race:^ncbi::objects::CSeqMap::x_FindSegment
+
+# false positive -- double-check one-time initialization
+race:^ncbi::objects::CSeqMap::GetLength
 
 ################################################################
 # lavr CXX-11285
