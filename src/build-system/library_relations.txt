@@ -1747,6 +1747,7 @@ xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
 xassembly_svc needs xgencollstats
 xbiosample_util needs $(OBJEDIT_LIBS)
+xbiosample_util needs efetch
 xbiosample_util needs xmlwrapp
 xbiosample_util needs xobjutil
 xblast includes blast
@@ -1777,6 +1778,7 @@ xcgi needs xutil
 xcgi_redirect needs xcgi
 xcgi_redirect needs xhtml
 xcleanup needs $(OBJEDIT_LIBS)
+xcleanup needs efetch
 xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
 xcompress needs xutil
@@ -1909,6 +1911,7 @@ xngalign needs xalgoalignutil
 xngalign needs xmergetree
 xobjedit needs $(EUTILS_LIBS)
 xobjedit needs $(OBJREAD_LIBS)
+xobjedit needs efetch
 xobjedit needs mlacli
 xobjedit needs taxon3
 xobjedit needs valid
