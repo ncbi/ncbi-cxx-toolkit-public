@@ -34,6 +34,7 @@
 #include <vector>
 
 #include <connect/ext/ncbi_localnet.h>
+#include <corelib/ncbi_process.hpp>
 
 #include "pending_operation.hpp"
 #include "http_server_transport.hpp"
@@ -444,4 +445,73 @@ void CHttpConnection<P>::PostponedStart(shared_ptr<CPSGS_Reply>  reply)
 
 // Explicit instantiation due to PostponedStart() method is in the .cpp file
 template class CHttpConnection<CPendingOperation>;
+
+
+// Checks if the configured FD limit is reached.
+// If so then produce a log message and initiate a shutdown
+void CheckFDLimit(void)
+{
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    size_t  limit = app->GetShutdownIfTooManyOpenFD();
+
+    if (limit == 0)
+        return;
+
+    // Get the used FD number
+    int         proc_fd_soft_limit;
+    int         proc_fd_hard_limit;
+    int         proc_fd_used =
+            CCurrentProcess::GetFileDescriptorsCount(&proc_fd_soft_limit,
+                                                     &proc_fd_hard_limit);
+
+    if (proc_fd_used < limit)
+        return;
+
+    #if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
+        // The new library changed the behavior so that the shutdown from this
+        // point strugles with closing sockets and leads to a core dump.
+        // So it was decided to exit immediately
+        ERR_POST(Fatal << "The file descriptor usage limit has reached. Currently in use: " +
+                   to_string(proc_fd_used) + " Limit: " + to_string(limit) +
+                   " Exit immediately.");
+        exit(1);
+    #endif
+
+    PSG_CRITICAL("The file descriptor usage limit has reached. Currently in use: " +
+                 to_string(proc_fd_used) + " Limit: " + to_string(limit));
+
+    // Initiate a shutdown
+    auto        now = psg_clock_t::now();
+    auto        expiration = now + chrono::seconds(2);
+
+    if (g_ShutdownData.m_ShutdownRequested) {
+        // It has already been requested
+        if (expiration >= g_ShutdownData.m_Expired) {
+            // Previous expiration is shorter than this one
+            return;
+        }
+    }
+
+    PSG_CRITICAL("Auto shutdown within 2 seconds is initiated.");
+
+    g_ShutdownData.m_Expired = expiration;
+    g_ShutdownData.m_ShutdownRequested = true;
+}
+
+
+#if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
+    #include <h2o/http2_internal.h>
+    h2o_socket_t *  Geth2oConnectionSocketForRequest(h2o_req_t *  req)
+    {
+        // Dirty hack:
+        // all the structures for http1/2 have the same beginning of the
+        // connection structure. However the http1 structure is in the a
+        // .c file while htt2 connection structure is in the available header.
+        // So, the shift of the socket pointer is the same regardless of the
+        // connection type and thus the cast is to http2 connection regardless
+        // of the actual connection type
+        h2o_http2_conn_t *  conn_http2 = (h2o_http2_conn_t * )req->conn;
+        return conn_http2->sock;
+    }
+#endif
 

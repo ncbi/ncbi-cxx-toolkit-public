@@ -268,6 +268,11 @@ public:
         return m_SSLCiphers;
     }
 
+    size_t GetShutdownIfTooManyOpenFD(void) const
+    {
+        return m_ShutdownIfTooManyOpenFD;
+    }
+
     CPSGAlerts &  GetAlerts(void)
     {
         return m_Alerts;
@@ -515,6 +520,8 @@ private:
     string                              m_SSLCertFile;
     string                              m_SSLKeyFile;
     string                              m_SSLCiphers;
+
+    size_t                              m_ShutdownIfTooManyOpenFD;
 
     // Mapping between the libuv thread id and the binder associated with the
     // libuv worker thread loop
