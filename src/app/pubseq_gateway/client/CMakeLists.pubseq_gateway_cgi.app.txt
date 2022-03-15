@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(pubseq_gateway.cgi)
+  NCBI_sources(psg_client_cgi processing)
+  NCBI_uses_toolkit_libraries(psg_client seqset xcompress xcgi)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()
