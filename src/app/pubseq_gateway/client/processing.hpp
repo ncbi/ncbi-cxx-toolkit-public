@@ -251,7 +251,7 @@ public:
     static int OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Request> request);
 
     template <class TParams>
-    static int ParallelProcessing(const TParams& params);
+    static int ParallelProcessing(const TParams& params, istream& is = cin);
     static int Performance(const SPerformanceParams& params);
     static int JsonCheck(istream* schema_is);
 
@@ -264,16 +264,16 @@ private:
     template <class TCreateContext>
     static vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context, size_t report_progress_after = 0);
 
-    static bool ReadLine(string& line);
+    static bool ReadLine(string& line, istream& is = cin);
 };
 
 template <class TParams>
-inline int CProcessing::ParallelProcessing(const TParams& params)
+inline int CProcessing::ParallelProcessing(const TParams& params, istream& is)
 {
     CParallelProcessing parallel_processing(params);
     string line;
 
-    while (ReadLine(line)) {
+    while (ReadLine(line, is)) {
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
         parallel_processing(move(line));
     }
