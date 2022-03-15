@@ -942,7 +942,7 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
         const int OldRole = x_GetRole(*Found->second);
         const int NewRole = x_GetRole(*Seq);
         if (NewRole == SIdSpec::e_Role_NotSet ||
-            (OldRole != SIdSpec::e_Role_NotSet && OldRole >= NewRole && 
+            (OldRole != SIdSpec::e_Role_NotSet && OldRole <= NewRole && 
              (OldRole != eGC_SequenceRole_pseudo_scaffold && 
               OldRole != eGC_SequenceRole_submitter_pseudo_scaffold) )
            ) {
