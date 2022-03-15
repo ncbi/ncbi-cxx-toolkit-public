@@ -160,6 +160,7 @@ struct SOneRequestParams : SParams
     struct SDataOnly
     {
         const bool enabled;
+        const bool messages_only;
         const ESerialDataFormat output_format;
     };
 

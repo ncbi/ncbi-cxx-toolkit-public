@@ -459,22 +459,6 @@ void SMetrics::OutputItems(ostream& os) const
     }
 }
 
-template <class TItem, class TStr>
-void s_ReportErrors(ostream& os, EPSG_Status status, TItem item, TStr prefix, const char* delim = "\n\t")
-{
-    os << prefix << s_StrStatus(status);
-
-    for (;;) {
-        auto message = item->GetNextMessage();
-
-        if (message.empty()) break;
-
-        os << delim << message;
-    }
-
-    os << '\n';
-}
-
 struct SDataOnlyCopy
 {
     SDataOnlyCopy(const SOneRequestParams::SDataOnly& params) : m_Params(params) {}
@@ -501,16 +485,41 @@ private:
 template <class TItem>
 bool SDataOnlyCopy::ReportErrors(EPSG_Status status, TItem item, const char* prefix)
 {
-    if (status != EPSG_Status::eSuccess) {
-        if (m_Status == EPSG_Status::eSuccess) m_Status = status;
-
-        stringstream ss;
-        s_ReportErrors(ss, status, item, prefix);
-        cerr << ss.rdbuf();
-        return true;
+    if (status == EPSG_Status::eSuccess) {
+        return false;
     }
 
-    return false;
+    if (m_Status == EPSG_Status::eSuccess) m_Status = status;
+
+    stringstream ss;
+
+    if (m_Params.messages_only) {
+        auto delim = "";
+
+        for (;;) {
+            auto message = item->GetNextMessage();
+
+            if (message.empty()) break;
+
+            ss << delim << message;
+            delim = ", ";
+        }
+    } else {
+        ss << prefix << s_StrStatus(status);
+
+        for (;;) {
+            auto message = item->GetNextMessage();
+
+            if (message.empty()) break;
+
+            ss << "\n\t" << message;
+        }
+
+        ss << '\n';
+    }
+
+    cerr << ss.rdbuf();
+    return true;
 }
 
 void SDataOnlyCopy::ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
