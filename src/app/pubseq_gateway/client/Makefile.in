@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = psg_client
+APP_PROJ = psg_client pubseq_gateway_cgi
 
 REQUIRES = MT LIBUV NGHTTP2
 
