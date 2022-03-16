@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     SConnNetInfo*  net_info;
     const char*    service = argv[1];
 
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
     LBSMD_FastHeapAccess(eOn);

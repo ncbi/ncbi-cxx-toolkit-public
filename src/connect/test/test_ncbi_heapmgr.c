@@ -121,7 +121,7 @@ int main(int argc, const char* argv[])
     HEAP heap;
     char* c;
 
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     /* the first init needed to clear up uninited mutex, if any */
     CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*false*/);

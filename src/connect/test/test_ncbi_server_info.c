@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     const char* server = argv[1];
     SSERV_Info* info;
 
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 

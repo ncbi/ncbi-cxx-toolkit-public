@@ -125,7 +125,7 @@ int main(int argc, const char* argv[])
             inp_file, user_header);
 
     /* Log stream */
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 

@@ -55,7 +55,7 @@ int main(int argc, const char* argv[])
         = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 

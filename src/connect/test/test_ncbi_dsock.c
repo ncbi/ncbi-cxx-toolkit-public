@@ -383,7 +383,7 @@ int main(int argc, const char* argv[])
     unsigned short max_try;
     SConnNetInfo* net_info;
 
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
