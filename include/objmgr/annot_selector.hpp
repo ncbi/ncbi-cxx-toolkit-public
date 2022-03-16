@@ -881,14 +881,6 @@ protected:
 };
 
 
-/// Named annotations zoom level can be encoded in the accession string
-/// with @@ suffix, for example: NA000000001.1@@1000
-/// zoom level is the number of bases covered by single value in a annotation
-/// density graph.
-
-#define NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "@@"
-
-
 /// Extract optional zoom level suffix from named annotation string.
 /// returns true if zoom level explicitly defined in the full_name argument.
 /// The accession string without zoom level will be written
