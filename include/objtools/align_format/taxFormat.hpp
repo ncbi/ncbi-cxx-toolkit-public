@@ -121,6 +121,17 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
                      unsigned int displayOption = eHtml,
                      bool connectToTaxServer = true,
                      unsigned int lineLength = 100);
+
+    ///@param accessionTaxidList: list of pair<string,TTaxId> accession and corresponding taxid to display taxonomy info     
+    ///@param scope: scope to fetch your sequence 
+    ///@param connectToTaxServe: default true indicates to connect to Tax server
+    ///@param lineLength: lineLength for text formatting
+    ///@param displayOption: displayOption HTML or text formatting
+    CTaxFormat(list< pair<string,TTaxId> > &accessionTaxidList,
+                     objects::CScope & scope,                     
+                     unsigned int displayOption = eHtml,
+                     bool connectToTaxServer = true,
+                     unsigned int lineLength = 100);
                      
                      
         /// Destructor
@@ -229,7 +240,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
     ///@return: taxFormatTemplates
     ///    
     STaxFormatTemplates *GetTaxFormatTemplates(void) {return m_TaxFormatTemplates;}    
-
+    
     ///Gets taxids for sequences in alignment
     ///@return: vector of taxids
     ///    
@@ -263,9 +274,10 @@ protected:
  
     /// reference to seqalign set
     CConstRef < objects::CSeq_align_set > m_SeqalignSetRef;     
+    list< pair<string,TTaxId> > m_AccessionTaxidList;
     objects::CScope & m_Scope;        
     CCgiContext* m_Ctx;
-
+    
     
     SBlastResTaxInfo *m_BlastResTaxInfo;    ///< SBlastResTaxInfo structure containing information for taxids in alignment, orderedTaxids are ordered by highest score
     SBlastResTaxInfo *m_TaxTreeinfo;        ///< SBlastResTaxInfo structure containing information for all taxids in common tree, intermediate nodes with no hits or only 1 child are removed
@@ -280,6 +292,7 @@ protected:
     CNcbiRegistry *m_Reg;
     string  m_TaxBrowserURL;                ///< Taxonomy Browser URL
     CTaxon1 *m_TaxClient;                   ///< Taxonomy server client
+    string m_TaxIdToSeqsMap;                /// String containig map of taxids to corresponding accessions
 
     bool    m_Debug;
 
@@ -312,7 +325,10 @@ protected:
                                   
 
     void x_InitBlastDBTaxInfo(SSeqInfo *seqInfo);
+    void x_InitBlastDBTaxInfo(pair<string,TTaxId> &accTaxidPair);
     void x_InitTaxInfoMap(void);
+    void x_InitTaxInfoMapFromAccList(void);
+    void x_InitTaxFormat(void);
 
     void x_InitTaxClient(void); /// Initializes CTaxon1 *m_TaxClient
 
@@ -331,6 +347,7 @@ protected:
     string x_MapSeqTemplate(string seqTemplate, STaxInfo &taxInfo);
     string x_MapTaxInfoTemplate(string tableRowTemplate,STaxInfo &taxInfo,unsigned int depth = 0);
     void x_InitTextFormatInfo(CTaxFormat::SSeqInfo *seqInfo);
+    void x_InitTaxIdToSeqsMap(void);
 
     void x_PrintTaxInfo(vector <TTaxId> taxids, string title);       
     void x_PrintLineage(void);

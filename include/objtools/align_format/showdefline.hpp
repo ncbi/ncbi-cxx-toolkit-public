@@ -37,6 +37,7 @@
 #include <corelib/ncbireg.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>    // for CSeqDB::ExtractBlastDefline
 #include <objtools/align_format/align_format_util.hpp>
 #include <cgi/cgictx.hpp>
 
@@ -126,6 +127,9 @@ public:
         string  textSeqID;             //Text Seq ID 
         int     clustMemberNum;        //Number of cluster members  
         int     clustTaxaNum;          //Number of cluster taxa
+        string  clustAncSciName;      //Cluster ancestor scientific name 
+        string  clustAncCmnName;      //Cluster ancestor common name  
+        TTaxId  clustAncTaxid;        //Cluster ancestor taxid
         vector <SClusterMemberInfo>    clustMemList;        
     };
 
@@ -641,6 +645,7 @@ protected:
     string x_FormatDeflineTableLineText(SDeflineInfo* sdl,SScoreInfo* iter);
     string x_FormatDeflineTableLineCSV(SDeflineInfo* sdl,SScoreInfo* iter);    
     string x_FormatDeflineTableHeaderText(void);
+    void x_GetTaxonomyInfoForTaxID(SDeflineInfo* sdl, SSeqDBTaxInfo &taxInfo);
 
     void x_InitFormattingInfo(SScoreInfo* sci);    
     //For internal test
