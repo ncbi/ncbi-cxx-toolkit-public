@@ -5987,6 +5987,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PVPH\ts\tPaleontolga de Vertebrados\t\t\t",
 "PVSJ\ts\tMuseo do Ciencias Naturles\t\t\t",
 "PW\ts\tPaleontological Collections\t\t\t",
+"PW<UKR>\ts\tVasyl Krychevsky Poltava Museum of Local Lore\t\t\t",
 "PWRC\ts\tPatuxent Wildlife Research Center\t\t\t",
 "PWU\ts\tV.G.Korolenko Poltava National Pedagogical University\t\t\t",
 "PY\ts\tCentro de Estudios y Colecciones Biologicas para la Conservacion\t\t\t",

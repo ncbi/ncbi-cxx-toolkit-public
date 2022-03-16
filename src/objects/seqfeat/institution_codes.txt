@@ -5954,6 +5954,7 @@ PVNH	s	ORSTOM
 PVPH	s	Paleontolga de Vertebrados			
 PVSJ	s	Museo do Ciencias Naturles			
 PW	s	Paleontological Collections			
+PW<UKR>	s	Vasyl Krychevsky Poltava Museum of Local Lore			
 PWRC	s	Patuxent Wildlife Research Center			
 PWU	s	V.G.Korolenko Poltava National Pedagogical University			
 PY	s	Centro de Estudios y Colecciones Biologicas para la Conservacion			
