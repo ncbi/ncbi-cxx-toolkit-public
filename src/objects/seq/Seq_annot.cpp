@@ -205,6 +205,106 @@ bool CSeq_annot::IsSeq_table(void) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// Zoom level manipulation functions
+/////////////////////////////////////////////////////////////////////////////
+
+static const size_t NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX_LEN = 2;
+
+
+bool CSeq_annot::ExtractZoomLevel(const string& full_name, string* acc_ptr, int* zoom_level_ptr)
+{
+    SIZE_TYPE pos = full_name.find(NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX);
+    if ( pos != NPOS ) {
+        if ( acc_ptr ) {
+            *acc_ptr = full_name.substr(0, pos);
+        }
+        SIZE_TYPE num_pos = pos + NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX_LEN;
+        // assuming single asterisk "*" as wildcard for all zoom levels
+        if ( num_pos+1 == full_name.size() && full_name[num_pos] == '*' ) {
+            if ( zoom_level_ptr ) {
+                *zoom_level_ptr = -1;
+            }
+            return true;
+        }
+        else {
+            try {
+                int zoom_level = NStr::StringToInt(full_name.substr(num_pos));
+                if ( zoom_level_ptr ) {
+                    *zoom_level_ptr = zoom_level;
+                }
+                return true;
+            }
+            catch ( CException& ) {
+                // invalid zoom level suffix, assume no zoom level
+            }
+        }
+    }
+    // no explicit zoom level
+    if ( acc_ptr ) {
+        *acc_ptr = full_name;
+    }
+    if ( zoom_level_ptr ) {
+        *zoom_level_ptr = 0;
+    }
+    return false;
+}
+
+
+string CSeq_annot::CombineWithZoomLevel(const string& acc, int zoom_level)
+{
+    int incl_level;
+    if ( !ExtractZoomLevel(acc, 0, &incl_level) ) {
+        if ( zoom_level == -1 ) {
+            // wildcard
+            return acc + NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "*";
+        }
+        else {
+            return acc +
+                NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX +
+                NStr::IntToString(zoom_level);
+        }
+    }
+    else if ( incl_level != zoom_level ) {
+        // different zoom level
+        NCBI_THROW_FMT(CSeqAnnotException, eZoom,
+                       "AddZoomLevel: Incompatible zoom levels: "
+                       <<acc<<" vs "<<zoom_level);
+    }
+    return acc;
+}
+
+
+void CSeq_annot::AddZoomLevel(string& acc, int zoom_level)
+{
+    int incl_level;
+    if ( !ExtractZoomLevel(acc, 0, &incl_level) ) {
+        if ( zoom_level == -1 ) {
+            // wildcard
+            acc += NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "*";
+        }
+        else {
+            acc += NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX;
+            acc += NStr::IntToString(zoom_level);
+        }
+    }
+    else if ( incl_level != zoom_level ) {
+        // different zoom level
+        NCBI_THROW_FMT(CSeqAnnotException, eZoom,
+                       "AddZoomLevel: Incompatible zoom levels: "
+                       <<acc<<" vs "<<zoom_level);
+    }
+}
+
+
+const char* CSeqAnnotException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eZoom: return "Bad zoom level";
+    default:    return CException::GetErrCodeString();
+    }
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
