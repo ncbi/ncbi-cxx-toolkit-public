@@ -681,7 +681,7 @@ int main(int argc, const char *argv[])
         }
     }
 
-    CORE_SetLOGFormatFlags(fLOG_None | fLOG_Level | fLOG_OmitNoteLevel);
+    CORE_SetLOGFormatFlags(fLOG_None | fLOG_Short | fLOG_OmitNoteLevel);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     SOCK_SetupSSL(NcbiSetupTls);

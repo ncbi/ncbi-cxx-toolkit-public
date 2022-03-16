@@ -64,7 +64,7 @@ int main(int argc, const char* argv[])
     inp_file = argv[1];
 
     /* log and data log streams */
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 

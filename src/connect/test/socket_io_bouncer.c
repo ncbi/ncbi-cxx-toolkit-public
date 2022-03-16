@@ -124,7 +124,7 @@ int main(int argc, const char* argv[])
     /* logging */
     s_LogFile = fopen("socket_io_bouncer.log", "ab");
     assert(s_LogFile);
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(s_LogFile, 1/*auto-close*/);
 

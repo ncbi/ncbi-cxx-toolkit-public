@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
     srand(g_NCBI_ConnectRandomSeed);
 
     /* Log and data-log streams */
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
     data_file = fopen("test_ncbi_ftp_connector.dat", "wb");
