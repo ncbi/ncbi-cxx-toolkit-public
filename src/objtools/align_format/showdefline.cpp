@@ -54,7 +54,7 @@
 
 #include <objtools/align_format/showdefline.hpp>
 #include <objtools/align_format/align_format_util.hpp>
-#include <objtools/blast/seqdb_reader/seqdb.hpp>    // for CSeqDB::ExtractBlastDefline
+
 
 #include <stdio.h>
 #include <html/htmlhelper.hpp>
@@ -106,7 +106,9 @@ static const string kName = "Name";
 static const string kAccAbbr = "Acc.";
 static const string kLenAbbr = "Len";
 static const string kTaxid = "Taxid";
-static const string kClusterTitle = "Cluster Title";
+static const string kClusterTitle = "Cluster Rep.";
+static const string kCluster = "Cluster";
+static const string kAncestor = "Ancestor";
 static const string kMember = "Mem.";
 static const string kTaxa = "Taxa";
 static const string kNumOf = "#";
@@ -398,6 +400,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     sdl->is_new = false;
     sdl->was_checked = false;
     sdl->taxid = ZERO_TAX_ID;
+    sdl->clustAncTaxid = ZERO_TAX_ID;
     //get psiblast stuff
 
     if(m_SeqStatus){
@@ -1559,6 +1562,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<string> &use_thi
     sdl->defline = "Unknown";
     sdl->clustMemberNum = 0;
     sdl->clustTaxaNum = 0;
+    sdl->clustAncTaxid = ZERO_TAX_ID;
 
     try{
         const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*id);
@@ -1637,21 +1641,26 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
 }
 
 
-SSeqDBTaxInfo taxInfo;
-static void s_GetTaxonomyInfoForTaxID(TTaxId sdlTaxid, SSeqDBTaxInfo &taxInfo)
+void CShowBlastDefline::x_GetTaxonomyInfoForTaxID(SDeflineInfo* sdl, SSeqDBTaxInfo &taxInfo)
 {
-    string taxid;
-    if(sdlTaxid > 0) {        
-        taxid = NStr::IntToString(sdlTaxid);
-        try{
-            CSeqDB::GetTaxInfo(sdlTaxid, taxInfo);         
-            taxInfo.common_name = (taxInfo.common_name == taxInfo.scientific_name || taxInfo.common_name.empty()) ? "NA" : taxInfo.common_name;
-        } catch (const CException&){
-            taxInfo.common_name = "Unknown";
-            taxInfo.scientific_name  = "Unknown";
-            taxInfo.blast_name  = "Unknown";
-        }        
+    if(sdl->clustAncTaxid == 0) {
+        if(sdl->taxid > 0) {                    
+            try{                
+                CSeqDB::GetTaxInfo(sdl->taxid, taxInfo);         
+                taxInfo.common_name = (taxInfo.common_name == taxInfo.scientific_name || taxInfo.common_name.empty()) ? "NA" : taxInfo.common_name;                
+                taxInfo.taxid = sdl->taxid;
+            } catch (const CException&){
+                taxInfo.common_name = "Unknown";
+                taxInfo.scientific_name  = "Unknown";
+                taxInfo.blast_name  = "Unknown";
+            }        
+        }    
     }    
+    else {        
+        taxInfo.taxid = sdl->clustAncTaxid;
+        taxInfo.common_name = sdl->clustAncCmnName;
+        taxInfo.scientific_name  = sdl->clustAncSciName;        
+    }
 }          
 
 
@@ -1778,10 +1787,10 @@ string CShowBlastDefline::x_FormatDeflineTableLineCSV(SDeflineInfo* sdl,SScoreIn
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",descr);
 
     SSeqDBTaxInfo taxInfo;
-    s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
+    x_GetTaxonomyInfoForTaxID(sdl, taxInfo);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);        
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid));            
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(taxInfo.taxid));            
               
             
     defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);
@@ -1793,7 +1802,8 @@ string CShowBlastDefline::x_FormatDeflineTableLineCSV(SDeflineInfo* sdl,SScoreIn
     int len = sequence::GetLength(*sdl->id, m_ScopeRef);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"acclen",NStr::IntToString(len));        
     defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",sdl->clustMemberNum);                    
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);          
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);    
+           
     return defLine;            
 }
 
@@ -1810,7 +1820,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplateCSV(CNcbiOstream & out)
 
 }
 
-
+        
 string CShowBlastDefline::x_FormatDeflineTableLineText(SDeflineInfo* sdl,SScoreInfo* iter)
 {
         string defLine = m_DeflineTemplates->defLineTmpl;
@@ -1827,10 +1837,10 @@ string CShowBlastDefline::x_FormatDeflineTableLineText(SDeflineInfo* sdl,SScoreI
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"clust_member_num",NStr::IntToString(sdl->clustMemberNum),kMaxDispNumberLength);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"clust_taxa_num",NStr::IntToString(sdl->clustTaxaNum),kMaxDispNumberLength);        
         SSeqDBTaxInfo taxInfo;
-        s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
+        x_GetTaxonomyInfoForTaxID(sdl, taxInfo);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"common_name",taxInfo.common_name,kMaxTaxonomyNameLength);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"scientific_name",taxInfo.scientific_name,kMaxTaxonomyNameLength);        
-        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid),kMaxDispNumberLength);
+        defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"taxid",NStr::IntToString(taxInfo.taxid),kMaxDispNumberLength);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"score_info",iter->bit_string,m_MaxScoreLen);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"total_bit_string",iter->total_bit_string,m_MaxTotalScoreLen);
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"percent_coverage",NStr::IntToString(iter->percent_coverage) + "%",m_MaxQueryCoverLen);
@@ -1841,7 +1851,7 @@ string CShowBlastDefline::x_FormatDeflineTableLineText(SDeflineInfo* sdl,SScoreI
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"acclen",NStr::IntToString(len),kMaxDispNumberLength);        
         defLine = CAlignFormatUtil::MapSpaceTemplate(defLine,"seq_info",seqid,kMaxAccLength);            
         defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",sdl->clustMemberNum);                    
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);  
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);          
         return defLine;
 }
 
@@ -1854,6 +1864,7 @@ string CShowBlastDefline::x_FormatDeflineTableHeaderText(void)
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clusttaxanum_hd1",kNumOf,kMaxDispNumberLength);                
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd1",kScientific,kMaxTaxonomyNameLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd1",kCommon,kMaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clustancestor_hd1",kCluster,kMaxTaxonomyNameLength);                
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd1"," ",kMaxDispNumberLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kMax,m_MaxScoreLen);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
@@ -1870,6 +1881,7 @@ string CShowBlastDefline::x_FormatDeflineTableHeaderText(void)
 
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"sciname_hd2",kName,kMaxTaxonomyNameLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"comname_hd2",kName,kMaxTaxonomyNameLength);        
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"clustancestor_hd2",kAncestor,kMaxTaxonomyNameLength);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"taxid_hd2",kTaxid,kMaxDispNumberLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd2",kScoreLine2,m_MaxScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd2",kScoreLine2,m_MaxTotalScoreLen);
@@ -1968,11 +1980,11 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
     }       
     SSeqDBTaxInfo taxInfo;
-    s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);    
+    x_GetTaxonomyInfoForTaxID(sdl, taxInfo);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"blast_name",taxInfo.blast_name);
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(sdl->taxid));                
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"taxid",NStr::IntToString(taxInfo.taxid));                
             
     int len = sequence::GetLength(*sdl->id, m_ScopeRef);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"acclen",NStr::IntToString(len));        
@@ -1980,7 +1992,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     if(m_AppLogInfo && (m_AppLogInfo->currInd < m_AppLogInfo->topMatchesNum)) {
         m_AppLogInfo->deflIdVec.push_back(deflId);
         m_AppLogInfo->accVec.push_back(deflAccs);
-        m_AppLogInfo->taxidVec.push_back(NStr::NumericToString(sdl->taxid));
+        m_AppLogInfo->taxidVec.push_back(NStr::NumericToString(taxInfo.taxid));
         m_AppLogInfo->queryCoverageVec.push_back(NStr::IntToString(iter->percent_coverage));
         m_AppLogInfo->percentIdentityVec.push_back(NStr::DoubleToString(iter->percent_identity));
         m_AppLogInfo->currInd++;
@@ -1999,8 +2011,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_blast_rank",m_StartIndex + iter->blast_rank);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_member_num",sdl->clustMemberNum);                    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"clust_taxa_num",sdl->clustTaxaNum);  
-
-	
+    	
 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
 
