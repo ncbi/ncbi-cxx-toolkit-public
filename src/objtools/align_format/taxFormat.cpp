@@ -70,6 +70,16 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
       m_LineLength(lineLength) //used for text output
       
 {
+    x_InitTaxFormat();
+    x_InitTaxInfoMap();    //Sets m_BlastResTaxInfo
+    if(m_ConnectToTaxServer) {        
+        x_LoadTaxTree();
+    }
+}
+
+
+void CTaxFormat::x_InitTaxFormat(void)      
+{
     m_TaxClient = NULL;    
     m_TaxTreeLoaded = false;    
     m_Rid = "0";         
@@ -88,10 +98,6 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
     
     if(m_ConnectToTaxServer) {        
         x_InitTaxClient();        
-    }
-    x_InitTaxInfoMap();    //Sets m_BlastResTaxInfo
-    if(m_ConnectToTaxServer) {        
-        x_LoadTaxTree();
     }
     
     //set config file
@@ -125,6 +131,28 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
     m_TaxFormatTemplates->taxonomyReportTableHeader     = kTaxonomyReportTableHeader;
     m_TaxFormatTemplates->taxonomyReportTableRow        = kTaxonomyReportTableRow;
 }
+
+CTaxFormat::CTaxFormat(list< pair<string,TTaxId> > &accessionTaxidList,    
+                       CScope& scope,                    
+                       unsigned int displayOption,
+                       bool connectToTaxServer,
+                       unsigned int lineLength)
+                      
+                      
+    : m_AccessionTaxidList(accessionTaxidList),    
+      m_Scope(scope),  
+      m_DisplayOption(displayOption),
+      m_ConnectToTaxServer(connectToTaxServer),
+      m_LineLength(lineLength) //used for text output
+      
+{    
+    x_InitTaxFormat();
+    x_InitTaxInfoMapFromAccList();    //Sets m_BlastResTaxInfo
+    if(m_ConnectToTaxServer) {        
+        x_LoadTaxTree();
+    }
+}
+
 
 CTaxFormat::~CTaxFormat()
 {   
@@ -353,8 +381,11 @@ public:
 
 void CTaxFormat::DisplayOrgReport(CNcbiOstream& out) 
 {
-    string orgReportData;  
-    string taxIdToSeqsMap;
+    string orgReportData;      
+
+    if(m_TaxIdToSeqsMap.empty()) {
+        x_InitTaxIdToSeqsMap();
+    }
 
     for(size_t i = 0; i < m_BlastResTaxInfo->orderedTaxids.size(); i++) {
         TTaxId taxid = m_BlastResTaxInfo->orderedTaxids[i];
@@ -395,11 +426,6 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
 
         string oneOrgInfo = orgHeader + orgReportSeqInfo;
         orgReportData += oneOrgInfo; 
-
-        //string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.giList);
-        string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.accList);
-        taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(taxIdToSeqsRow,"taxid", TAX_ID_TO(TIntId, taxid));
-        taxIdToSeqsMap += taxIdToSeqsRow;
     }   
     orgReportData = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->orgReportTable,"table_rows",orgReportData);
     if(m_DisplayOption == eText) {
@@ -411,13 +437,12 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
         orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"evalue_hd",kOrgEValueTxtTableHeader,m_MaxEvalLength);        
     }
     else {        
-        orgReportData = CAlignFormatUtil::MapTemplate(orgReportData,"taxidToSeqsMap",taxIdToSeqsMap);    
+        orgReportData = CAlignFormatUtil::MapTemplate(orgReportData,"taxidToSeqsMap",m_TaxIdToSeqsMap);    
     }
     out << orgReportData;
 }
 
  
-
 void CTaxFormat::DisplayLineageReport(CNcbiOstream& out) 
 {
     x_InitLineageReport();    
@@ -428,7 +453,6 @@ void CTaxFormat::DisplayLineageReport(CNcbiOstream& out)
             string lngReportTableRow;
             unsigned int depth = 0;
             STaxInfo alnSeqTaxInfo = *iter;
-//            taxInfo.lineage.push_back(iter->taxid);            
             for(size_t i = 0; i< alnSeqTaxInfo.lineage.size();i++) {
                 TTaxId taxid = alnSeqTaxInfo.lineage[i];
                 if(header) {                                        
@@ -452,10 +476,10 @@ void CTaxFormat::DisplayLineageReport(CNcbiOstream& out)
             header = false;            
      }
      string lngReportData = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->lineageReportTable,"table_rows",lngReportRows);
+     lngReportData = CAlignFormatUtil::MapTemplate(lngReportData,"taxidToSeqsMap",m_TaxIdToSeqsMap);    
+    
      out << lngReportData;
 }
-
-
 
 void CTaxFormat::DisplayTaxonomyReport(CNcbiOstream& out) 
 {
@@ -536,6 +560,10 @@ void CTaxFormat::x_InitLineageReport(void)
         x_InitOrgTaxMetaData();
     }
     x_InitLineageMetaData();
+
+    if(m_TaxIdToSeqsMap.empty()) {
+        x_InitTaxIdToSeqsMap();
+    }
 }
 
 
@@ -598,10 +626,20 @@ void CTaxFormat::x_LoadTaxTree(void)
         else {
             const string& err = m_TaxClient->GetLastError();
             NCBI_THROW(CException, eUnknown,"Cannot connect to tax server. " + err);
-        }
-    }
+        }     
+    }           
 }
 
+void CTaxFormat::x_InitTaxIdToSeqsMap(void)
+{
+    for(size_t i = 0; i < m_BlastResTaxInfo->orderedTaxids.size(); i++) {
+        TTaxId taxid = m_BlastResTaxInfo->orderedTaxids[i];
+        STaxInfo seqsForTaxID = m_BlastResTaxInfo->seqTaxInfoMap[taxid];
+        string taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->taxIdToSeqsMap,"giList",seqsForTaxID.accList);
+        taxIdToSeqsRow = CAlignFormatUtil::MapTemplate(taxIdToSeqsRow,"taxid", TAX_ID_TO(TIntId, taxid));
+        m_TaxIdToSeqsMap += taxIdToSeqsRow;
+    }
+}
 
 void CTaxFormat::x_PrintTaxInfo(vector <TTaxId> taxids, string title)
 {
@@ -921,6 +959,17 @@ void CTaxFormat::x_InitTaxInfoMap(void)
     }                
 }
 
+
+void CTaxFormat::x_InitTaxInfoMapFromAccList(void)
+{
+    m_BlastResTaxInfo = new SBlastResTaxInfo;    
+    std::list<std::pair<std::string,TTaxId> >::iterator  at_it;    
+    for( at_it = m_AccessionTaxidList.begin(); at_it != m_AccessionTaxidList.end(); at_it++){
+      x_InitBlastDBTaxInfo(*at_it);        
+    }    
+}
+
+
 void CTaxFormat::x_InitBlastDBTaxInfo(CTaxFormat::SSeqInfo *seqInfo)    
 {
     TTaxId taxid = seqInfo->taxid;
@@ -947,6 +996,43 @@ void CTaxFormat::x_InitBlastDBTaxInfo(CTaxFormat::SSeqInfo *seqInfo)
         m_BlastResTaxInfo->seqTaxInfoMap[taxid].accList += ", ";
         m_BlastResTaxInfo->seqTaxInfoMap[taxid].accList += seqInfo->label;
 
+        m_BlastResTaxInfo->seqTaxInfoMap[taxid].seqInfoList.push_back(seqInfo);
+    }    
+}
+       
+
+
+void CTaxFormat::x_InitBlastDBTaxInfo(pair<string,TTaxId> &accTaxidPair)    
+{
+    TTaxId taxid = accTaxidPair.second;
+    string accession = accTaxidPair.first;
+
+    SSeqInfo *seqInfo = new SSeqInfo;
+	seqInfo->gi = ZERO_GI;	
+	seqInfo->label =  accession;
+    
+    seqInfo->dispSeqID = seqInfo->label;    
+    seqInfo->taxid = taxid;	
+
+    if(m_BlastResTaxInfo->seqTaxInfoMap.count(taxid) == 0){		                            
+        SSeqDBTaxInfo taxInfo;
+        CSeqDB::GetTaxInfo(taxid, taxInfo);
+
+        STaxInfo seqsForTaxID;
+        seqsForTaxID.taxid = taxid;
+        seqsForTaxID.commonName = taxInfo.common_name;
+        seqsForTaxID.scientificName = taxInfo.scientific_name;
+        seqsForTaxID.blastName = taxInfo.blast_name;                    
+        seqsForTaxID.giList = NStr::NumericToString(seqInfo->gi);        
+        seqsForTaxID.accList = accession;
+        x_InitBlastNameTaxInfo(seqsForTaxID);
+        seqsForTaxID.seqInfoList.push_back(seqInfo);
+		m_BlastResTaxInfo->seqTaxInfoMap.insert(CTaxFormat::TSeqTaxInfoMap::value_type(taxid,seqsForTaxID));  
+        m_BlastResTaxInfo->orderedTaxids.push_back(taxid);
+	}
+    else {        
+        m_BlastResTaxInfo->seqTaxInfoMap[taxid].accList += ", ";
+        m_BlastResTaxInfo->seqTaxInfoMap[taxid].accList += accession;
         m_BlastResTaxInfo->seqTaxInfoMap[taxid].seqInfoList.push_back(seqInfo);
     }    
 }
