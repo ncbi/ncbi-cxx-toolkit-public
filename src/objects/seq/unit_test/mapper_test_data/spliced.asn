@@ -765,3 +765,581 @@ Seq-align ::= {
     product-length 2644
   }
 }
+-- Trimming gen-ins - 1: mapping source
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 2
+}
+-- Trimming gen-ins - 1: mapping destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 3
+}
+-- Trimming gen-ins - 1: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 100,
+        genomic-end 469,
+        parts {
+          match 30,
+          genomic-ins 70,
+          match 270
+        },
+        partial FALSE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 1: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 9,
+          frame 3
+        },
+        genomic-start 100,
+        genomic-end 129,
+        parts {
+          match 30
+        }
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 2: mapping source
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 2
+}
+-- Trimming gen-ins - 2: mapping destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 3
+}
+-- Trimming gen-ins - 2: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 100,
+        genomic-end 479,
+        parts {
+          match 30,
+          genomic-ins 80,
+          match 270
+        },
+        partial FALSE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 2: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 9,
+          frame 3
+        },
+        genomic-start 100,
+        genomic-end 129,
+        parts {
+          match 30
+        },
+        partial TRUE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 3: mapping source
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 2
+}
+-- Trimming gen-ins - 3: mapping destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 3
+}
+-- Trimming gen-ins - 3: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 70,
+        genomic-end 439,
+        parts {
+          match 30,
+          genomic-ins 70,
+          match 270
+        },
+        partial FALSE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 3: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 10,
+          frame 1
+        },
+        product-end protpos {
+          amin 19,
+          frame 3
+        },
+        genomic-start 170,
+        genomic-end 199,
+        parts {
+          match 30
+        }
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 4: mapping source
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 2
+}
+-- Trimming gen-ins - 4: mapping destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 3
+}
+-- Trimming gen-ins - 4: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 70,
+        genomic-end 439,
+        parts {
+          match 20,
+          genomic-ins 70,
+          match 280
+        },
+        partial FALSE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 4: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 6,
+          frame 3
+        },
+        product-end protpos {
+          amin 19,
+          frame 3
+        },
+        genomic-start 160,
+        genomic-end 199,
+        parts {
+          match 40
+        },
+        partial TRUE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 5: mapping source
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 2
+}
+-- Trimming gen-ins - 5: mapping destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 3
+}
+-- Trimming gen-ins - 5: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 100,
+        genomic-end 469,
+        parts {
+          match 270,
+          genomic-ins 70,
+          match 30
+        },
+        partial FALSE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 5: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 90,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 100,
+        genomic-end 129,
+        parts {
+          match 30
+        }
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 6: mapping source
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 2
+}
+-- Trimming gen-ins - 6: mapping destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 3
+}
+-- Trimming gen-ins - 6: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 70,
+        genomic-end 439,
+        parts {
+          match 270,
+          genomic-ins 70,
+          match 30
+        },
+        partial FALSE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 6: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 80,
+          frame 1
+        },
+        product-end protpos {
+          amin 89,
+          frame 3
+        },
+        genomic-start 170,
+        genomic-end 199,
+        parts {
+          match 30
+        }
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 7: mapping source
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 2
+}
+-- Trimming gen-ins - 7: mapping destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  strand minus,
+  id gi 3
+}
+-- Trimming gen-ins - 7: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 100,
+        genomic-end 469,
+        parts {
+          match 30,
+          genomic-ins 70,
+          match 270
+        },
+        partial FALSE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 7: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 9,
+          frame 3
+        },
+        genomic-start 170,
+        genomic-end 199,
+        parts {
+          match 30
+        }
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 8: mapping source
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  id gi 2
+}
+-- Trimming gen-ins - 8: mapping destination
+Seq-loc ::= int {
+  from 100,
+  to 199,
+  strand minus,
+  id gi 3
+}
+-- Trimming gen-ins - 8: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 3
+        },
+        genomic-start 70,
+        genomic-end 439,
+        parts {
+          match 30,
+          genomic-ins 70,
+          match 270
+        },
+        partial FALSE
+      }
+    },
+    product-length 100
+  }
+}
+-- Trimming gen-ins - 8: mapped
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 10,
+          frame 1
+        },
+        product-end protpos {
+          amin 19,
+          frame 3
+        },
+        genomic-start 100,
+        genomic-end 129,
+        parts {
+          match 30
+        }
+      }
+    },
+    product-length 100
+  }
+}
