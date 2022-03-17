@@ -2025,12 +2025,12 @@ x_GetDstExon(CSpliced_seg&              spliced,
             }
             else {
                 mapped_gaps = 0;
-                if (!is_gap) {
-                    non_gap_prod_start = prod_start;
-                    non_gap_gen_start = gen_start;
-                    non_gap_prod_end = prod_end;
-                    non_gap_gen_end = gen_end;
-                }
+                // NOTE: This may be a gap, but copied from the original exon rather than mapped.
+                // Such gaps may be trimmed later.
+                non_gap_prod_start = prod_start;
+                non_gap_gen_start = gen_start;
+                non_gap_prod_end = prod_end;
+                non_gap_gen_end = gen_end;
             }
         }
         else {
