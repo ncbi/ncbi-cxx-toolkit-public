@@ -1585,9 +1585,9 @@ TSeqPos CSeq_align::GetNumGapOpeningsWithinRanges(
     return s_GetGapCount(*this, row, ranges, false);
 }
 
-string CSeq_align::SIndel::AsString() const
+string CSeq_align::SIndel::AsString(int row_pos) const
 {
-    return NStr::NumericToString(genomic_pos)
+    return NStr::NumericToString(row_pos == 0 ? product_pos : genomic_pos)
          + (row == 0 ? 'I' : 'D')
          + NStr::NumericToString(length);
 }
@@ -1687,18 +1687,25 @@ s_GetIndels(const CSeq_align& align, CSeq_align::TDim row,
                        ((include_frameshifts && gap_len % 3 != 0) ||
                         (include_non_frameshifts && gap_len % 3 == 0)))
                     {
+                        TSignedSeqPos product_gap_start = ds.GetStarts()[i*ds.GetDim()];
                         TSignedSeqPos genomic_gap_start = ds.GetStarts()[i*ds.GetDim() + 1];
-                        CSeq_align::TDim inserted_row = 1;
-                        if (genomic_gap_start < 0) {
+                        CSeq_align::TDim inserted_row = product_gap_start < 0 ? 1 : 0;
+                        if (product_gap_start < 0) {
+                            ENa_strand product_strand = ds.IsSetStrands() ? ds.GetStrands()[(i-1) * ds.GetDim()] : eNa_strand_plus;
+                            product_gap_start = product_strand == eNa_strand_minus
+                                 ? ds.GetStarts()[(i+1) * ds.GetDim()]
+                                      + ds.GetLens()[i+1]
+                                 : ds.GetStarts()[(i-1) * ds.GetDim()]
+                                      + ds.GetLens()[i-1];
+                        } else {
                             ENa_strand genomic_strand = ds.IsSetStrands() ? ds.GetStrands()[(i-1) * ds.GetDim() + 1] : eNa_strand_plus;
                             genomic_gap_start = genomic_strand == eNa_strand_minus
                                  ? ds.GetStarts()[(i+1) * ds.GetDim() + 1]
                                       + ds.GetLens()[i+1]
                                  : ds.GetStarts()[(i-1) * ds.GetDim() + 1]
                                       + ds.GetLens()[i-1];
-                            inserted_row = 0;
                         }
-                        results.push_back(CSeq_align::SIndel(genomic_gap_start, inserted_row, gap_len));
+                        results.push_back(CSeq_align::SIndel(product_gap_start, genomic_gap_start, inserted_row, gap_len));
                     }
                 }
             }

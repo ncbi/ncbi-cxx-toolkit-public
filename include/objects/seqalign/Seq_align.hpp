@@ -194,15 +194,16 @@ public:
     typedef map<string, EScoreType> TScoreNameMap;
 
     struct NCBI_SEQALIGN_EXPORT SIndel {
+        TSeqPos product_pos;
         TSeqPos genomic_pos;
         TDim row;
         TSeqPos length;
 
-        SIndel(TSeqPos p = 0, TDim r = 0, TSeqPos l = 0)
-        : genomic_pos(p), row(r), length(l)
+        SIndel(TSeqPos p = 0, TSeqPos g = 0, TDim r = 0, TSeqPos l = 0)
+        : product_pos(p), genomic_pos(g), row(r), length(l)
         {} 
 
-        string AsString() const;
+        string AsString(int row_pos) const;
     };
 
     /// constructor
