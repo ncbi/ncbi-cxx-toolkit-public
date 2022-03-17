@@ -375,11 +375,6 @@ CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSourc
     xSetFromConfig();
 }
 
-CRemoteUpdater::CRemoteUpdater(bool)
-{
-    xSetFromConfig();
-}
-
 CRemoteUpdater::~CRemoteUpdater()
 {
 }
