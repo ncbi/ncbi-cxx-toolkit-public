@@ -606,7 +606,7 @@ int CCgiApplication::Run(void)
             }
         }
         catch (const CCgiException& e) {
-            if ( x_DoneHeadRequest(*context) ) {
+            if ( context && x_DoneHeadRequest(*context) ) {
                 // Ignore errors after HEAD request has been finished.
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
             }
@@ -645,7 +645,7 @@ int CCgiApplication::Run(void)
             context->GetResponse().AbortChunkedTransfer();
         }
         GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
-        if ( x_DoneHeadRequest(*context) ) {
+        if ( context && x_DoneHeadRequest(*context) ) {
             // Ignore errors after HEAD request has been finished.
             result = 0;
             x_OnEvent(eSuccess, result);
