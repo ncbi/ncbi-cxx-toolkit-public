@@ -2324,8 +2324,10 @@ void CTabularFormatter_Traceback::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
-CTabularFormatter_Indels::CTabularFormatter_Indels(EIndelType indel_type)
+CTabularFormatter_Indels::CTabularFormatter_Indels(EIndelType indel_type,
+                                                   int coordinate_row)
 : m_IndelType(indel_type)
+, m_CoordinateRow(coordinate_row)
 {
 }
 
@@ -2345,6 +2347,9 @@ void CTabularFormatter_Indels::PrintHelpText(CNcbiOstream& ostr) const
         ostr << "List of all indels wihin CDS";
         break;
     }
+    if (m_CoordinateRow  == 0) {
+        ostr << ", coordinates on query sequence";
+    }
 }
 
 void CTabularFormatter_Indels::PrintHeader(CNcbiOstream& ostr) const
@@ -2361,6 +2366,9 @@ void CTabularFormatter_Indels::PrintHeader(CNcbiOstream& ostr) const
     default:
         ostr << "indels in cds";
         break;
+    }
+    if (m_CoordinateRow  == 0) {
+        ostr << " on query";
     }
 }
 
@@ -2406,7 +2414,7 @@ void CTabularFormatter_Indels::Print(CNcbiOstream& ostr,
         if (!first) {
             ostr << ',';
         }
-        ostr << indel.AsString();
+        ostr << indel.AsString(m_CoordinateRow);
         first = false;
     }
 }
@@ -2651,11 +2659,17 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("btop",
             new CTabularFormatter_Traceback);
     formatter.RegisterField("frameshifts",
-            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_Frameshifts));
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_Frameshifts, 1));
     formatter.RegisterField("nonframeshifts",
-            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_NonFrameshifts));
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_NonFrameshifts, 1));
     formatter.RegisterField("cds_indels",
-            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_All));
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_All, 1));
+    formatter.RegisterField("frameshifts_on_query",
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_Frameshifts, 0));
+    formatter.RegisterField("nonframeshifts_on_query",
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_NonFrameshifts, 0));
+    formatter.RegisterField("cds_indels_on_query",
+            new CTabularFormatter_Indels(CTabularFormatter_Indels::e_All, 0));
     formatter.RegisterField("gene_symbol",
             new CTabularFormatter_GeneSymbol(0));
     formatter.RegisterField("qasmunit", new CTabularFormatter_AssemblyInfo(0,
