@@ -726,7 +726,7 @@ class CTabularFormatter_Indels : public CTabularFormatter::IFormatter
 {
 public:
     enum EIndelType { e_Frameshifts, e_NonFrameshifts, e_All };
-    CTabularFormatter_Indels(EIndelType indel_type);
+    CTabularFormatter_Indels(EIndelType indel_type, int coordinate_row);
     void PrintHelpText(CNcbiOstream& ostr) const;
     void PrintHeader(CNcbiOstream& ostr) const;
     void Print(CNcbiOstream& ostr,
@@ -734,6 +734,7 @@ public:
 
 private:
     EIndelType m_IndelType;
+    int m_CoordinateRow;
 };
 
 class CTabularFormatter_GeneSymbol : public CTabularFormatter::IFormatter
