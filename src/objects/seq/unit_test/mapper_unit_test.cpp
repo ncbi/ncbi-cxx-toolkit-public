@@ -622,6 +622,31 @@ void TestMapping_Spliced()
     mapper.reset(CreateMapperFromSeq_locs(in));
     cout << "  Trimming indels, minus strand" << endl;
     TestMappingSeq_align(*mapper, in);
+
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming gen-ins - 1" << endl;
+    TestMappingSeq_align(*mapper, in);
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming gen-ins - 2" << endl;
+    TestMappingSeq_align(*mapper, in);
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming gen-ins - 3" << endl;
+    TestMappingSeq_align(*mapper, in);
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming gen-ins - 4" << endl;
+    TestMappingSeq_align(*mapper, in);
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming gen-ins - 5" << endl;
+    TestMappingSeq_align(*mapper, in);
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming gen-ins - 6" << endl;
+    TestMappingSeq_align(*mapper, in);
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming gen-ins - 7" << endl;
+    TestMappingSeq_align(*mapper, in);
+    mapper.reset(CreateMapperFromSeq_locs(in));
+    cout << "  Trimming gen-ins - 8" << endl;
+    TestMappingSeq_align(*mapper, in);
 }
 
 
