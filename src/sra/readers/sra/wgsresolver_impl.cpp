@@ -665,24 +665,58 @@ CWGSResolver_Ids::~CWGSResolver_Ids(void)
 }
 
 
+static const size_t kTypePrefixLen = 4; // "WGS:" or "TSA:"
+static const size_t kNumLettersV1 = 4;
+static const size_t kNumLettersV2 = 6;
+static const size_t kVersionDigits = 2;
+static const size_t kPrefixLenV1 = kNumLettersV1 + kVersionDigits;
+static const size_t kPrefixLenV2 = kNumLettersV2 + kVersionDigits;
+static const size_t kMinRowDigitsV1 = 6;
+static const size_t kMaxRowDigitsV1 = 8;
+static const size_t kMinRowDigitsV2 = 7;
+static const size_t kMaxRowDigitsV2 = 9;
+
+
 string CWGSResolver_Ids::ParseWGSPrefix(const CDbtag& dbtag) const
 {
     const string& db = dbtag.GetDb();
-    if ( (db.size() != 8 && db.size() != 10) ||
-         !NStr::StartsWith(db, "WGS:") ) {
+    if ( db.size() != kTypePrefixLen+kNumLettersV1 /* WGS:AAAA */ &&
+         db.size() != kTypePrefixLen+kPrefixLenV1  /* WGS:AAAA01 */ &&
+         db.size() != kTypePrefixLen+kNumLettersV2 /* WGS:AAAAAA */ &&
+         db.size() != kTypePrefixLen+kPrefixLenV2  /* WGS:AAAAAA01 */ ) {
         return string();
     }
-    string prefix = db.substr(4);
-    if ( prefix.size() == 4 ) {
+    if ( !NStr::StartsWith(db, "WGS:", NStr::eNocase) &&
+         !NStr::StartsWith(db, "TSA:", NStr::eNocase) ) {
+        return string();
+    }
+    string prefix = db.substr(kTypePrefixLen);
+    size_t num_letters;
+    for ( num_letters = 0; num_letters < kNumLettersV2; ++num_letters ) {
+        if ( num_letters >= prefix.size() || !isalpha(prefix[num_letters]&0xff) ) {
+            break;
+        }
+    }
+    if ( num_letters != kNumLettersV1 &&
+         num_letters != kNumLettersV2 ) {
+        return string();
+    }
+    if ( prefix.size() == num_letters ) {
         prefix += "01";
     }
-    _ASSERT(prefix.size() == 6);
-    for ( size_t i = 0; i < 4; ++i ) {
+    else if ( prefix.size() >= num_letters + kVersionDigits ) {
+        prefix.resize(num_letters+kVersionDigits);
+    }
+    else {
+        return string();
+    }
+    _ASSERT(prefix.size() == num_letters + kVersionDigits);
+    for ( size_t i = 0; i < num_letters; ++i ) {
         if ( !isupper(Uint1(prefix[i])) ) {
             return string();
         }
     }
-    for ( size_t i = 4; i < 6; ++i ) {
+    for ( size_t i = num_letters; i < prefix.size(); ++i ) {
         if ( !isdigit(Uint1(prefix[i])) ) {
             return string();
         }
@@ -691,30 +725,28 @@ string CWGSResolver_Ids::ParseWGSPrefix(const CDbtag& dbtag) const
 }
 
 
-static const size_t kNumLetters = 4;
-static const size_t kVersionDigits = 2;
-static const size_t kPrefixLen = kNumLetters + kVersionDigits;
-static const size_t kMinRowDigits = 6;
-static const size_t kMaxRowDigits = 8;
-
-
 string CWGSResolver_Ids::ParseWGSAcc(const string& acc, bool protein) const
 {
-    if ( acc.size() < kPrefixLen + kMinRowDigits ||
-         acc.size() > kPrefixLen + kMaxRowDigits + 1 ) { // one for type letter
+    if ( acc.size() < kPrefixLenV1 + kMinRowDigitsV1 ||
+         acc.size() > kPrefixLenV2 + kMaxRowDigitsV2 + 1 ) { // one for type letter
         return string();
     }
-    for ( size_t i = 0; i < kNumLetters; ++i ) {
-        if ( !isalpha(acc[i]&0xff) ) {
-            return string();
+    size_t num_letters;
+    for ( num_letters = 0; num_letters < kNumLettersV2; ++num_letters ) {
+        if ( !isalpha(acc[num_letters]&0xff) ) {
+            break;
         }
     }
-    for ( size_t i = kNumLetters; i < kPrefixLen; ++i ) {
+    if ( num_letters != kNumLettersV1 && num_letters != kNumLettersV2 ) {
+        return string();
+    }
+    size_t prefix_len = num_letters + kVersionDigits;
+    for ( size_t i = num_letters; i < prefix_len; ++i ) {
         if ( !isdigit(acc[i]&0xff) ) {
             return string();
         }
     }
-    SIZE_TYPE row_pos = kPrefixLen;
+    SIZE_TYPE row_pos = prefix_len;
     switch ( acc[row_pos] ) { // optional type letter
     case 'S':
         if ( protein ) {
@@ -735,13 +767,24 @@ string CWGSResolver_Ids::ParseWGSAcc(const string& acc, bool protein) const
         }
         break;
     }
+    size_t row_digits = acc.size() - row_pos;
+    if ( num_letters == kNumLettersV1 ) {
+        if ( row_digits < kMinRowDigitsV1 || row_digits > kMaxRowDigitsV1 ) {
+            return string();
+        }
+    }
+    else {
+        if ( row_digits < kMinRowDigitsV2 || row_digits > kMaxRowDigitsV2 ) {
+            return string();
+        }
+    }
     for ( size_t i = row_pos; i < acc.size(); ++i ) {
         char c = acc[i];
         if ( c < '0' || c > '9' ) {
             return string();
         }
     }
-    return acc.substr(0, kPrefixLen);
+    return acc.substr(0, prefix_len);
 }
 
 
