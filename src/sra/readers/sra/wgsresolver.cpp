@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <sra/readers/sra/wgsresolver.hpp>
 #include <sra/readers/sra/impl/wgsresolver_impl.hpp>
 #include <sra/error_codes.hpp>
@@ -38,9 +39,26 @@
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   WGSResolver
-NCBI_DEFINE_ERR_SUBCODE_X(11);
+NCBI_DEFINE_ERR_SUBCODE_X(32);
 
 BEGIN_NAMESPACE(objects);
+
+
+NCBI_PARAM_DECL(int, WGS, DEBUG_RESOLVE);
+NCBI_PARAM_DEF_EX(int, WGS, DEBUG_RESOLVE, CWGSResolver::eDebug_error,
+                  eParam_NoThread, WGS_DEBUG_RESOLVE);
+
+static inline int s_DebugLevel(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(WGS, DEBUG_RESOLVE)> s_Value;
+    return s_Value->Get();
+}
+
+
+bool CWGSResolver::s_DebugEnabled(EDebugLevel level)
+{
+    return s_DebugLevel() >= level;
+}
 
 
 CWGSResolver::CWGSResolver(void)
@@ -61,10 +79,10 @@ CWGSResolver::CreateResolver(const CVDBMgr& mgr)
         // resolver from local VDB index file
         ret = CWGSResolver_VDB::CreateResolver(mgr);
     }
-    if ( !ret ) {
-        // resolver from GenBank loader
-        ret = CWGSResolver_DL::CreateResolver();
-    }
+    //if ( !ret ) {
+    //    // resolver from GenBank loader
+    //    ret = CWGSResolver_DL::CreateResolver();
+    //}
 #ifdef WGS_RESOLVER_USE_ID2_CLIENT
     if ( !ret ) {
         // resolver from ID2
@@ -72,13 +90,6 @@ CWGSResolver::CreateResolver(const CVDBMgr& mgr)
     }
 #endif
     return ret;
-}
-
-
-CRef<CWGSResolver>
-CWGSResolver::CreateResolver(CID2ProcessorResolver* resolver)
-{
-    return CWGSResolver_Proc::CreateResolver(resolver);
 }
 
 

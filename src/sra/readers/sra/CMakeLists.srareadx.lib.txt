@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_lib(srareadx)
+  NCBI_sources(
+    snpread_packed
+  )
+  NCBI_uses_toolkit_libraries(sraread xobjmgr)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
