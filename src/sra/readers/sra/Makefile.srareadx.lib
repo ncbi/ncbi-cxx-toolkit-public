@@ -3,9 +3,20 @@
 LIB = srareadx
 SRC = snpread_packed
 
+
+ASN_DEP = seq seqset
+
 REQUIRES = objects
 
 LIB_OR_DLL = lib
 
+
+
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
+
 WATCHERS = vasilche
 
+
+USES_LIBRARIES =  \
+    $(SRA_LIBS) $(SRA_SDK_SYSLIBS) seqset
