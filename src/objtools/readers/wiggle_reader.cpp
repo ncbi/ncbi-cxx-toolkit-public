@@ -461,29 +461,14 @@ CRef<CSeq_table> CWiggleReader::xMakeTable()
         table->SetColumns().push_back(col_val);
         col_val->SetHeader().SetField_name("values");
 
-        if ( 1 ) {
-            AutoPtr< vector<char> > values(new vector<char>());
-            values->reserve(size);
-            ITERATE ( TValues, it, m_Values ) {
-                pos.push_back(it->m_Pos);
-                if ( span_ptr ) {
-                    span_ptr->push_back(it->m_Span);
-                }
-                values->push_back(stat.AsByte(it->m_Value));
+        CSeqTable_multi_data::TInt2& values = col_val->SetData().SetInt2();
+        values.reserve(size);
+        ITERATE ( TValues, it, m_Values ) {
+            pos.push_back(it->m_Pos);
+            if ( span_ptr ) {
+                span_ptr->push_back(it->m_Span);
             }
-            col_val->SetData().SetBytes().push_back(values.release());
-        }
-        else {
-            CSeqTable_multi_data::TInt& values = col_val->SetData().SetInt();
-            values.reserve(size);
-
-            ITERATE ( TValues, it, m_Values ) {
-                pos.push_back(it->m_Pos);
-                if ( span_ptr ) {
-                    span_ptr->push_back(it->m_Span);
-                }
-                values.push_back(stat.AsByte(it->m_Value));
-            }
+            values.push_back(stat.AsByte(it->m_Value));
         }
     }
     else {
