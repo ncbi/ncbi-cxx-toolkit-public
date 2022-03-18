@@ -284,13 +284,10 @@ endmacro()
 
 ##############################################################################
 macro(NCBI_util_Cfg_ToStd _value _result)
-    set(${_result} ${_value})
-    if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
-        if("${_value}" MATCHES "Debug")
-            set(${_result} Debug)
-        else()
-            set(${_result} Release)
-        endif()
+    if("${_value}" MATCHES "Debug")
+        set(${_result} Debug)
+    else()
+        set(${_result} Release)
     endif()
 endmacro()
 
