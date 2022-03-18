@@ -61,6 +61,7 @@
 #include <sra/error_codes.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
 #include <sra/readers/sra/wgsresolver.hpp>
+#include <sra/readers/sra/impl/wgsresolver_impl.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 #include <sra/data_loaders/wgs/impl/wgsloader_impl.hpp>
 
@@ -73,7 +74,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   WGSLoader
-NCBI_DEFINE_ERR_SUBCODE_X(20);
+NCBI_DEFINE_ERR_SUBCODE_X(23);
 
 BEGIN_SCOPE(objects)
 
@@ -388,12 +389,88 @@ CWGSDataLoader_Impl::~CWGSDataLoader_Impl(void)
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+NCBI_PARAM_DECL(bool, WGS, RESOLVER_GENBANK);
+NCBI_PARAM_DEF(bool, WGS, RESOLVER_GENBANK, true);
+
+class CWGSResolver_DL : public CWGSResolver_Ids
+{
+public:
+    CWGSResolver_DL(void) // find GenBank loader
+        : m_Loader(CObjectManager::GetInstance()->FindDataLoader("GBLOADER"))
+        {
+        }
+    explicit
+    CWGSResolver_DL(CDataLoader* loader)
+        : m_Loader(loader)
+        {
+        }
+    
+    static CRef<CWGSResolver> CreateResolver(void) // find GenBank loader
+        {
+            if ( !NCBI_PARAM_TYPE(WGS, RESOLVER_GENBANK)::GetDefault() ) {
+                return null;
+            }
+            CRef<CWGSResolver_DL> resolver(new CWGSResolver_DL());
+            if ( !resolver->IsValid() ) {
+                return null;
+            }
+            return CRef<CWGSResolver>(resolver);
+        }
+    static CRef<CWGSResolver> CreateResolver(CDataLoader* loader)
+        {
+            if ( !loader ) {
+                return null;
+            }
+            return CRef<CWGSResolver>(new CWGSResolver_DL(loader));
+        }
+    
+    bool IsValid(void) const {
+        return m_Loader;
+    }
+
+protected:
+    virtual TWGSPrefixes GetPrefixes(const CSeq_id& id)
+        {
+            TWGSPrefixes prefixes;
+            if ( s_DebugEnabled(eDebug_resolve) ) {
+                LOG_POST_X(21, "CWGSResolver_DL: "
+                           "Asking DataLoader for ids of "<<id.AsFastaString());
+            }
+            CDataLoader::TIds ids;
+            m_Loader->GetIds(CSeq_id_Handle::GetHandle(id), ids);
+            ITERATE ( CDataLoader::TIds, rit, ids ) {
+                if ( s_DebugEnabled(eDebug_resolve) ) {
+                    LOG_POST_X(22, "CWGSResolver_DL: Parsing Seq-id "<<*rit);
+                }
+                string prefix = ParseWGSPrefix(*rit->GetSeqId());
+                if ( !prefix.empty() ) {
+                    if ( s_DebugEnabled(eDebug_resolve) ) {
+                        LOG_POST_X(23, "CWGSResolver_DL: WGS prefix: "<<prefix);
+                    }
+                    prefixes.push_back(prefix);
+                    break;
+                }
+            }
+            return prefixes;
+        }
+
+    CRef<CDataLoader> m_Loader;
+};
+
+END_LOCAL_NAMESPACE;
+
+
 CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
 {
     if ( !m_Resolver ) {
         CMutexGuard guard(m_Mutex);
         if ( !m_Resolver ) {
             m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
+        }
+        if ( !m_Resolver ) {
+            m_Resolver = CWGSResolver_DL::CreateResolver();
         }
         if ( m_Resolver && !m_UpdateThread ) {
 #ifdef NCBI_THREADS
