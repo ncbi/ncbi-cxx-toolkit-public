@@ -40,7 +40,6 @@ BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
 
 class CVDBMgr;
-class CID2ProcessorResolver;
 
 class NCBI_SRAREAD_EXPORT CWGSResolver : public CObject
 {
@@ -76,8 +75,18 @@ public:
     // or use ID2 connection for resolution requests.
     static CRef<CWGSResolver> CreateResolver(const CVDBMgr& mgr);
 
-    // create recursive resolver
-    static CRef<CWGSResolver> CreateResolver(CID2ProcessorResolver* resolver);
+    // debug levels
+    enum EDebugLevel {
+        eDebug_none     = 0,
+        eDebug_error    = 1,
+        eDebug_open     = 2,
+        eDebug_request  = 5,
+        eDebug_replies  = 6,
+        eDebug_resolve  = 7,
+        eDebug_data     = 8,
+        eDebug_all      = 9
+    };
+    static bool s_DebugEnabled(EDebugLevel level);
 
 private:
     // to prevent copying

@@ -1,0 +1,11 @@
+# $Id$
+
+LIB = srareadx
+SRC = snpread_packed
+
+REQUIRES = objects
+
+LIB_OR_DLL = lib
+
+WATCHERS = vasilche
+

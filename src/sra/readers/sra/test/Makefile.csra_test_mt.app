@@ -9,7 +9,7 @@
 APP = csra_test_mt
 SRC = csra_test_mt
 
-LIB = test_mt $(SRAREAD_LIBS) $(SOBJMGR_LIBS) $(CMPRS_LIB)
+LIB = test_mt $(SRAREAD_LIBS) $(SOBJMGR_LDEP) $(CMPRS_LIB)
 LIBS =  $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 POST_LINK = $(VDB_POST_LINK)
 

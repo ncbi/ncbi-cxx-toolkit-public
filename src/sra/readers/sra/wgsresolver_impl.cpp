@@ -43,13 +43,6 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/data_loader.hpp>
 
-#include <objects/id2/id2processor.hpp>
-
-#ifdef WGS_RESOLVER_USE_ID2_CLIENT
-# include <objects/id2/id2__.hpp>
-# include <objects/id2/id2_client.hpp>
-#endif
-
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   WGSResolver
@@ -78,9 +71,6 @@ BEGIN_NAMESPACE(objects);
 
 NCBI_PARAM_DECL(bool, WGS, RESOLVER_DIRECT_WGS_INDEX);
 NCBI_PARAM_DEF(bool, WGS, RESOLVER_DIRECT_WGS_INDEX, true);
-
-NCBI_PARAM_DECL(bool, WGS, RESOLVER_GENBANK);
-NCBI_PARAM_DEF(bool, WGS, RESOLVER_GENBANK, true);
 
 NCBI_PARAM_DECL(bool, WGS, RESOLVER_WGS_RANGE_INDEX);
 NCBI_PARAM_DEF(bool, WGS, RESOLVER_WGS_RANGE_INDEX, true);
@@ -129,35 +119,6 @@ NCBI_PARAM_DEF(string, WGS, WGS_RANGE_INDEX_ACC, DEFAULT_WGS_RANGE_INDEX_ACC);
 
 NCBI_PARAM_DECL(string, WGS, WGS_RANGE_INDEX2_ACC);
 NCBI_PARAM_DEF(string, WGS, WGS_RANGE_INDEX2_ACC, DEFAULT_WGS_RANGE_INDEX2_ACC);
-
-
-// debug levels
-enum EDebugLevel {
-    eDebug_none     = 0,
-    eDebug_error    = 1,
-    eDebug_open     = 2,
-    eDebug_request  = 5,
-    eDebug_replies  = 6,
-    eDebug_resolve  = 7,
-    eDebug_data     = 8,
-    eDebug_all      = 9
-};
-
-NCBI_PARAM_DECL(int, WGS, DEBUG_RESOLVE);
-NCBI_PARAM_DEF_EX(int, WGS, DEBUG_RESOLVE, eDebug_error,
-                  eParam_NoThread, WGS_DEBUG_RESOLVE);
-
-static inline int s_DebugLevel(void)
-{
-    static CSafeStatic<NCBI_PARAM_TYPE(WGS, DEBUG_RESOLVE)> s_Value;
-    return s_Value->Get();
-}
-
-
-static inline bool s_DebugEnabled(EDebugLevel level)
-{
-    return s_DebugLevel() >= level;
-}
 
 
 //#define COLLECT_PROFILE
@@ -430,7 +391,7 @@ static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
         // resolve VDB accessions
         try {
             path = mgr.FindAccPath(acc_or_path);
-            if ( s_DebugEnabled(eDebug_open) ) {
+            if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_open) ) {
                 LOG_POST_X(28, "CWGSResolver_VDB("<<acc_or_path<<"): -> "<<path);
             }
         }
@@ -449,7 +410,7 @@ static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
         de.DereferenceLink();
         if ( de.GetPath() != path ) {
             path = de.GetPath();
-            if ( s_DebugEnabled(eDebug_open) ) {
+            if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_open) ) {
                 LOG_POST_X(29, "CWGSResolver_VDB("<<acc_or_path<<"): "
                            "resolved index link to "<<path);
             }
@@ -837,131 +798,6 @@ CWGSResolver::TWGSPrefixes CWGSResolver_Ids::GetPrefixes(const string& acc)
 {
     CSeq_id seq_id(acc);
     return GetPrefixes(seq_id);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CWGSResolver_DL
-/////////////////////////////////////////////////////////////////////////////
-
-
-CWGSResolver_DL::CWGSResolver_DL(void)
-    : m_Loader(CObjectManager::GetInstance()->FindDataLoader("GBLOADER"))
-{
-    
-}
-
-
-CWGSResolver_DL::CWGSResolver_DL(CDataLoader* loader)
-    : m_Loader(loader)
-{
-}
-
-
-CWGSResolver_DL::~CWGSResolver_DL(void)
-{
-}
-
-
-CRef<CWGSResolver>
-CWGSResolver_DL::CreateResolver(CDataLoader* loader)
-{
-    if ( !loader ) {
-        return null;
-    }
-    return CRef<CWGSResolver>(new CWGSResolver_DL(loader));
-}
-
-
-CRef<CWGSResolver>
-CWGSResolver_DL::CreateResolver(void)
-{
-    if ( !NCBI_PARAM_TYPE(WGS, RESOLVER_GENBANK)::GetDefault() ) {
-        return null;
-    }
-    CRef<CWGSResolver_DL> resolver(new CWGSResolver_DL());
-    if ( !resolver->IsValid() ) {
-        return null;
-    }
-    return CRef<CWGSResolver>(resolver);
-}
-
-
-CWGSResolver::TWGSPrefixes CWGSResolver_DL::GetPrefixes(const CSeq_id& id)
-{
-    TWGSPrefixes prefixes;
-    if ( s_DebugEnabled(eDebug_resolve) ) {
-        LOG_POST_X(10, "CWGSResolver_DL: "
-                   "Asking DataLoader for ids of "<<id.AsFastaString());
-    }
-    CDataLoader::TIds ids;
-    m_Loader->GetIds(CSeq_id_Handle::GetHandle(id), ids);
-    ITERATE ( CDataLoader::TIds, rit, ids ) {
-        if ( s_DebugEnabled(eDebug_resolve) ) {
-            LOG_POST_X(11, "CWGSResolver_DL: Parsing Seq-id "<<*rit);
-        }
-        string prefix = ParseWGSPrefix(*rit->GetSeqId());
-        if ( !prefix.empty() ) {
-            if ( s_DebugEnabled(eDebug_resolve) ) {
-                LOG_POST_X(12, "CWGSResolver_DL: WGS prefix: "<<prefix);
-            }
-            prefixes.push_back(prefix);
-            break;
-        }
-    }
-    return prefixes;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CWGSResolver_Proc
-/////////////////////////////////////////////////////////////////////////////
-
-
-CWGSResolver_Proc::CWGSResolver_Proc(CID2ProcessorResolver* resolver)
-    : m_Resolver(resolver)
-{
-}
-
-
-CWGSResolver_Proc::~CWGSResolver_Proc(void)
-{
-}
-
-
-CRef<CWGSResolver>
-CWGSResolver_Proc::CreateResolver(CID2ProcessorResolver* resolver)
-{
-    if ( !resolver ) {
-        return null;
-    }
-    return CRef<CWGSResolver>(new CWGSResolver_Proc(resolver));
-}
-
-
-CWGSResolver::TWGSPrefixes CWGSResolver_Proc::GetPrefixes(const CSeq_id& id)
-{
-    TWGSPrefixes prefixes;
-    if ( s_DebugEnabled(eDebug_resolve) ) {
-        LOG_POST_X(13, "CWGSResolver_Proc: "
-                   "Asking GB for ids of "<<id.AsFastaString());
-    }
-    CID2ProcessorResolver::TIds ids = m_Resolver->GetIds(id);
-    ITERATE ( CID2ProcessorResolver::TIds, rit, ids ) {
-        if ( s_DebugEnabled(eDebug_resolve) ) {
-            LOG_POST_X(14, "CWGSResolver_Proc: "
-                       "Parsing Seq-id "<<(*rit)->AsFastaString());
-        }
-        string prefix = ParseWGSPrefix(**rit);
-        if ( !prefix.empty() ) {
-            if ( s_DebugEnabled(eDebug_resolve) ) {
-                LOG_POST_X(15, "CWGSResolver_Proc: WGS prefix: "<<prefix);
-            }
-            prefixes.push_back(prefix);
-            break;
-        }
-    }
-    return prefixes;
 }
 
 

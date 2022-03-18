@@ -54,7 +54,6 @@ class CSeq_feat;
 class CUser_object;
 class CUser_field;
 class CBioseq;
-class CSeq_annot_SNP_Info;
 
 class CSNPDbTrackIterator;
 class CSNPDbSeqIterator;
@@ -583,12 +582,6 @@ public:
     TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
                                  const string& annot_name,
                                  TFlags flags = fDefaultFlags) const;
-    typedef pair< CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > TPackedAnnot;
-    TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
-                                    const SFilter& filter,
-                                    TFlags flags = fDefaultFlags) const;
-    TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
-                                    TFlags flags = fDefaultFlags) const;
 
     CSNPDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();

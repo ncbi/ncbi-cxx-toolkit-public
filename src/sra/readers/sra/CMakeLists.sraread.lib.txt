@@ -6,7 +6,7 @@ NCBI_begin_lib(sraread SHARED)
     graphread snpread
   )
   NCBI_add_definitions(NCBI_SRAREAD_EXPORTS)
-  NCBI_uses_toolkit_libraries(xobjmgr)
+  NCBI_uses_toolkit_libraries(seqsplit seqset)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 

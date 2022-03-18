@@ -42,6 +42,8 @@
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqtable/seqtable__.hpp>
+
+#include <sra/readers/sra/impl/snpread_packed.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
 #include <serial/serial.hpp>
@@ -531,7 +533,7 @@ int CSNPTestApp::Run(void)
             it.SetTrack(track);
             for ( const auto& query_range : chunk_ranges ) {
                 pair<CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > annot =
-                    it.GetPackedFeatAnnot(query_range, filter);
+                    SNPDbPacked::GetPackedFeatAnnot(it, query_range, filter);
                 if ( annot.second ) {
                     CSeq_annot::TData::TFtable& feats =
                         annot.first->SetData().SetFtable();

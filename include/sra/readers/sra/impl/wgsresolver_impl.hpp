@@ -44,9 +44,6 @@ BEGIN_NAMESPACE(objects);
 class CSeq_id;
 class CTextseq_id;
 class CDbtag;
-class CID2_Reply;
-class CID2Client;
-class CDataLoader;
 
 class NCBI_SRAREAD_EXPORT CWGSResolver_VDB : public CWGSResolver
 {
@@ -154,79 +151,6 @@ protected:
 
     virtual TWGSPrefixes GetPrefixes(const CSeq_id& seq_id) = 0;
 };
-
-
-class NCBI_SRAREAD_EXPORT CWGSResolver_DL : public CWGSResolver_Ids
-{
-public:
-    CWGSResolver_DL(void); // find GenBank loader
-    explicit
-    CWGSResolver_DL(CDataLoader* loader);
-    ~CWGSResolver_DL(void);
-    
-    static CRef<CWGSResolver> CreateResolver(void); // find GenBank loader
-    static CRef<CWGSResolver> CreateResolver(CDataLoader* loader);
-    
-    bool IsValid(void) const {
-        return m_Loader;
-    }
-
-protected:
-    virtual TWGSPrefixes GetPrefixes(const CSeq_id& seq_id);
-
-    CRef<CDataLoader> m_Loader;
-};
-
-
-class NCBI_SRAREAD_EXPORT CWGSResolver_Proc : public CWGSResolver_Ids
-{
-public:
-    explicit
-    CWGSResolver_Proc(CID2ProcessorResolver* resolver);
-    ~CWGSResolver_Proc(void);
-    
-    static CRef<CWGSResolver> CreateResolver(CID2ProcessorResolver* resolver);
-    
-    bool IsValid(void) const {
-        return m_Resolver;
-    }
-
-protected:
-    virtual TWGSPrefixes GetPrefixes(const CSeq_id& seq_id);
-
-    CRef<CID2ProcessorResolver> m_Resolver;
-};
-
-
-//#define WGS_RESOLVER_USE_ID2_CLIENT
-
-#ifdef WGS_RESOLVER_USE_ID2_CLIENT
-class NCBI_SRAREAD_EXPORT CWGSResolver_ID2 : public CWGSResolver_Ids
-{
-public:
-    CWGSResolver_ID2(void);
-    ~CWGSResolver_ID2(void);
-    
-    static CRef<CWGSResolver> CreateResolver(void);
-    
-    bool IsValid(void) const {
-        return m_ID2Client;
-    }
-
-    // force update of indexes from files
-    virtual bool Update(void);
-
-protected:
-    string ParseWGSPrefix(const CID2_Reply& reply) const;
-
-    virtual TWGSPrefixes GetPrefixes(const CSeq_id& seq_id);
-
-    CMutex m_Mutex; // for cache
-    typedef map<string, string> TCache;
-    TCache m_Cache;
-    CRef<CID2Client> m_ID2Client;
-};
-#endif
 
 
 END_NAMESPACE(objects);

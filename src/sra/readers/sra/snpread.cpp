@@ -43,7 +43,6 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqtable/seqtable__.hpp>
 #include <sra/error_codes.hpp>
-#include <objmgr/impl/snp_annot_info.hpp>
 #include <unordered_map>
 
 #include <sra/readers/sra/kdbread.hpp>
@@ -1843,112 +1842,6 @@ CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
                                       TFlags flags) const
 {
     return GetTableFeatAnnots(range, GetFilter(), flags);
-}
-
-
-BEGIN_LOCAL_NAMESPACE;
-
-
-inline
-void x_InitSNP_Info(SSNP_Info& info)
-{
-    info.m_Flags = info.fQualityCodesOs | info.fAlleleReplace;
-    info.m_CommentIndex = info.kNo_CommentIndex;
-    info.m_Weight = 0;
-    info.m_ExtraIndex = info.kNo_ExtraIndex;
-}
-
-
-inline
-bool x_ParseSNP_Info(SSNP_Info& info,
-                     const CSNPDbFeatIterator& it,
-                     CSeq_annot_SNP_Info& packed)
-{
-    TSeqPos len = it.GetSNPLength();
-    if ( len > info.kMax_PositionDelta+1 ) {
-        return false;
-    }
-    info.m_PositionDelta = len-1;
-    info.m_ToPosition = it.GetSNPPosition()+len-1;
-
-    CSNPDbFeatIterator::TExtraRange range = it.GetExtraRange();
-    if ( range.second > info.kMax_AllelesCount ) {
-        return false;
-    }
-    size_t index = 0;
-    for ( ; index < range.second; ++index ) {
-        CTempString allele = it.GetAllele(range, index);
-        if ( allele.size() > kMax_AlleleLength ) {
-            return false;
-        }
-        SSNP_Info::TAlleleIndex a_index = packed.x_GetAlleleIndex(allele);
-        if ( a_index == info.kNo_AlleleIndex ) {
-            return false;
-        }
-        info.m_AllelesIndices[index] = a_index;
-    }
-    for ( ; index < info.kMax_AllelesCount; ++index ) {
-        info.m_AllelesIndices[index] = info.kNo_AlleleIndex;
-    }
-
-    vector<char> os;
-    it.GetBitfieldOS(os);
-    info.m_QualityCodesIndex = packed.x_GetQualityCodesIndex(os);
-    if ( info.m_QualityCodesIndex == info.kNo_QualityCodesIndex ) {
-        return false;
-    }
-
-    auto feat_id = it.GetFeatId();
-    if ( feat_id > kMax_Int ) {
-        NCBI_THROW(CSraException, eDataError,
-                   "CSNPDbSeqIterator: FEAT_ID doesn't fit into table SNPId");
-    }
-    info.m_SNP_Id = SSNP_Info::TSNPId(feat_id);
-
-    packed.x_AddSNP(info);
-    return true;
-}        
-
-
-END_LOCAL_NAMESPACE;
-
-
-CSNPDbSeqIterator::TPackedAnnot
-CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
-                                      const SFilter& filter,
-                                      TFlags flags) const
-{
-    x_AdjustRange(range, *this);
-    CRef<CSeq_annot> annot = x_NewAnnot();
-    CRef<CSeq_annot_SNP_Info> packed(new CSeq_annot_SNP_Info);
-    CSeq_annot::TData::TFtable& feats = annot->SetData().SetFtable();
-
-    SSNP_Info info;
-    x_InitSNP_Info(info);
-    SSelector sel(eSearchByStart, filter);
-    for ( CSNPDbFeatIterator it(*this, range, sel); it; ++it ) {
-        if ( !x_ParseSNP_Info(info, it, *packed) ) {
-            feats.push_back(it.GetSeq_feat());
-        }
-    }
-    if ( packed->empty() ) {
-        packed = null;
-        if ( feats.empty() ) {
-            annot = null;
-        }
-    }
-    else {
-        packed->SetSeq_id(*GetSeqId());
-    }
-    return TPackedAnnot(annot, packed);
-}
-
-
-CSNPDbSeqIterator::TPackedAnnot
-CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
-                                      TFlags flags) const
-{
-    return GetPackedFeatAnnot(range, GetFilter(), flags);
 }
 
 
