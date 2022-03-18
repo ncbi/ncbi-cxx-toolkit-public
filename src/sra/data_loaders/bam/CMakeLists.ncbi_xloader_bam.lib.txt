@@ -3,7 +3,7 @@
 NCBI_begin_lib(ncbi_xloader_bam SHARED)
   NCBI_sources(bamloader bamloader_impl)
   NCBI_add_definitions(NCBI_XLOADER_BAM_EXPORTS)
-  NCBI_uses_toolkit_libraries(bamread xobjreadex seqset)
+  NCBI_uses_toolkit_libraries(xobjmgr bamread xobjreadex seqset)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
