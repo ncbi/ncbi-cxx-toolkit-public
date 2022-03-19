@@ -1395,8 +1395,10 @@ sqlitewrapp needs3party $(SQLITE3_LIBS)
 sra_cache needs gpipe_attr
 sra_cache needs grid_wrapper
 sra_cache needs pathogen_connection
-sraread needs $(SOBJMGR_LIBS)
+sraread needs seqsplit
 sraread needs3party $(VDB_LIBS)
+srareadx needs $(SOBJMGR_LIBS)
+srareadx needs $(SRAREAD_LIBS)
 ssh2 needs $(Z_LIB)
 ssh2 needs3party $(KRB5_LIBS)
 ssh2 needs3party $(NETWORK_LIBS)
