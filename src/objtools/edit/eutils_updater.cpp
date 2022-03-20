@@ -45,6 +45,9 @@
 #include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/general/Person_id.hpp>
+#include <objects/general/Name_std.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 
@@ -148,10 +151,27 @@ public:
     {
         if (A.IsSetAuthors()) {
             const CAuth_list& Au = A.GetAuthors();
-            if (Au.IsSetNames() && Au.GetNames().IsMl()) {
-                const auto& names = Au.GetNames().GetMl();
-                if (!names.empty()) {
-                    this->SetAuthor(names.front());
+            if (Au.IsSetNames()) {
+                const auto& N = Au.GetNames();
+                if (N.IsStd()) {
+                    const auto& names = N.GetStd();
+                    if (!names.empty()) {
+                        const CAuthor& first_author = *names.front();
+                        if (first_author.IsSetName()) {
+                            const CPerson_id& id = first_author.GetName();
+                            if (id.IsName()) {
+                                const CName_std& std_name = id.GetName();
+                                if (std_name.IsSetLast()) {
+                                    this->SetAuthor(std_name.GetLast());
+                                }
+                            }
+                        }
+                    }
+                } else if (N.IsMl()) {
+                    const auto& names = N.GetMl();
+                    if (!names.empty()) {
+                        this->SetAuthor(names.front());
+                    }
                 }
             }
         }
