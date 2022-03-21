@@ -124,8 +124,7 @@ while [ $# != 0 ]; do
     --without-dll) 
       BUILD_SHARED_LIBS=OFF
       ;; 
-    --with-dll) 
-    --with-composite-dll) 
+    --with-dll | --with-composite-dll) 
       BUILD_SHARED_LIBS=ON 
       ;; 
     --with-projects=*)
@@ -173,6 +172,14 @@ while [ $# != 0 ]; do
       WITH_CONAN="ON"
       ;;
     [A-Z]*)
+      ;; 
+    -DCMAKE_CONFIGURATION_TYPES* )
+      types=${1#*=}
+      CMAKE_ARGS="$CMAKE_ARGS  -DCMAKE_CONFIGURATION_TYPES=$(Quote "${types}")"
+      cnt=`echo $types | tr ";" " " | wc -w | tr -d " "`
+      if [ "$cnt" = "1" ]; then
+        BUILD_TYPE=$types
+      fi
       ;; 
     -D* | --debug-* | --log-* | --trace* )
       CMAKE_ARGS="$CMAKE_ARGS $1"
@@ -240,9 +247,16 @@ fi
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 
 if [ -z "$BUILD_ROOT" ]; then
-  BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
-  if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-    BUILD_ROOT="$BUILD_ROOT"-DLL
+  if [ -z "$BUILD_TYPE" ]; then
+    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
+    if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+      BUILD_ROOT="$BUILD_ROOT"-DLL
+    fi
+  else
+    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
+    if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+      BUILD_ROOT="$BUILD_ROOT"DLL
+    fi
   fi
 fi
 
