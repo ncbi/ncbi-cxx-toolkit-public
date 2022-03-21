@@ -418,6 +418,9 @@ if(NCBI_COMPILER_GCC)
     if("${NCBI_COMPILER_VERSION}" LESS "730")
         add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
     endif()
+    if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+    endif()
 
 elseif(NCBI_COMPILER_ICC)
 
