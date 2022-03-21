@@ -33,9 +33,6 @@
 #include <ncbi_pch.hpp>
 
 #include "huge_asn_reader.hpp"
-
-#include <objtools/readers/format_guess_ex.hpp>
-
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -45,7 +42,6 @@
 #include <objects/seq/Seq_inst.hpp>
 
 #include <serial/objistr.hpp>
-#include <objtools/readers/reader_exception.hpp>
 #include <corelib/ncbifile.hpp>
 
 #include <objtools/readers/objhook_lambdas.hpp>
