@@ -148,6 +148,7 @@ set unknown=
 set PROJECT_COMPONENTS=
 set PROJECT_FEATURES=
 set BUILD_ROOT=
+set BUILD_TYPE=
 set PROJECT_LIST=
 set PROJECT_TAGS=
 set PROJECT_TARGETS=
@@ -183,7 +184,20 @@ if "%1"=="--with-conan"        (set USE_CONAN=ON&                 goto :CONTINUE
 if "%1"=="--with-prebuilt"     (set prebuilt_dir=%~dp2& set prebuilt_name=%~nx2&   shift& goto :CONTINUEPARSEARGS)
 set first=%1
 set first=%first:~0,2%
-if "%first%"=="-D"             (set CMAKE_ARGS=%CMAKE_ARGS% %1=%2& shift& goto :CONTINUEPARSEARGS)
+REM if "%first%"=="-D"             (set CMAKE_ARGS=%CMAKE_ARGS% %1=%2& shift& goto :CONTINUEPARSEARGS)
+if "%first%"=="-D"             (
+    set CMAKE_ARGS=%CMAKE_ARGS% %1=%2
+    if "%1"=="-DCMAKE_CONFIGURATION_TYPES" (
+        set types=%2
+        set types=!types:;= !
+        set types=!types:"= !
+        set /a cnt=0
+        for  %%a in (!types!) do  set /a cnt+=1
+        if "!cnt!"=="1" set BUILD_TYPE=%2
+    )
+    shift
+    goto :CONTINUEPARSEARGS
+)
 set first=%1
 set first=%first:~0,8%
 if "%first%"=="--debug-"       (set CMAKE_ARGS=%CMAKE_ARGS% %1& goto :CONTINUEPARSEARGS)
@@ -325,9 +339,16 @@ if not "%INSTALL_PATH%"=="" (
 set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 
 if "%BUILD_ROOT%"=="" (
-  set BUILD_ROOT=CMake-%generator_name%
-  if "%BUILD_SHARED_LIBS%"=="ON" (
-    set BUILD_ROOT=CMake-%generator_name%-DLL
+  if "%BUILD_TYPE%"=="" (
+    set BUILD_ROOT=CMake-%generator_name%
+    if "%BUILD_SHARED_LIBS%"=="ON" (
+      set BUILD_ROOT=CMake-%generator_name%-DLL
+    )
+  ) else (
+    set BUILD_ROOT=CMake-%generator_name%-%BUILD_TYPE%
+    if "%BUILD_SHARED_LIBS%"=="ON" (
+      set BUILD_ROOT=%BUILD_ROOT%DLL
+    )
   )
 )
 
