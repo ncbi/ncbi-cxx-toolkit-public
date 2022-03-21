@@ -44,6 +44,7 @@
 #include <objects/taxon1/taxon1.hpp>
 
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seq/MolInfo.hpp>
@@ -55,6 +56,7 @@
 
 #include <objtools/alnmgr/alnmix.hpp>
 
+#include <algo/sequence/gene_model.hpp>
 #include <algo/align/util/algo_align_util_exceptions.hpp>
 #include <algo/align/util/tabular_fmt.hpp>
 
@@ -2459,6 +2461,196 @@ void CTabularFormatter_GeneSymbol::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
+static string s_CodonVariation(const CSeq_align &align, TSeqPos pos,
+                               CScope &scope, int row)
+{
+    CRef<CSeq_id> query_id(new CSeq_id);
+    query_id->Assign(align.GetSeq_id(0));
+    CRef<CSeq_loc> query_loc(new CSeq_loc(*query_id, pos, pos+2));
+    CSeqVector query_vec(*query_loc, scope, CBioseq_Handle::eCoding_Iupac);
+    string query;
+    query_vec.GetSeqData(0, 3, query);
+
+    CSeq_loc_Mapper mapper(align, 1);
+    CRef<CSeq_loc> subject_loc = mapper.Map(*query_loc);
+    CSeqVector subject_vec(*subject_loc, scope, CBioseq_Handle::eCoding_Iupac);
+    string subject;
+    subject_vec.GetSeqData(0, subject_vec.size(), subject);
+
+    string variation;
+    if (query != subject) {
+        ENa_strand strand = eNa_strand_plus;
+        if (row == 1) {
+            pos = subject_loc->GetStart(eExtreme_Biological);
+            strand = subject_loc->GetStrand();
+        }
+        unsigned snp_count = 0, snp_pos = 0;
+        if (query.size() == subject.size() + 1) {
+            /// query is one longer; check if this is a one-base deletion
+            for (unsigned deletion_pos = 0; deletion_pos < subject.size();
+                 ++deletion_pos)
+            {
+                string subject_with_del = subject;
+                subject_with_del.insert(deletion_pos, 1, query[deletion_pos]);
+                if (query == subject_with_del) {
+                    subject.insert(deletion_pos, 1, '-');
+                    break;
+                }
+            }
+        }
+        if (query.size() == subject.size()) {
+            for (unsigned index = 0; index < query.size(); ++index) {
+                if (query[index] != subject[index]) {
+                    ++snp_count;
+                    snp_pos = index;
+                }
+            }
+        }
+        if (snp_count == 1) {
+            pos += (strand == eNa_strand_minus ? -1 : 1) * snp_pos;
+            variation = NStr::NumericToString(pos) + query[snp_pos] + '/'
+                                                   + subject[snp_pos];
+        } else {
+            variation = NStr::NumericToString(pos) + query + '/' + subject;
+        }
+    }
+    return variation;
+}
+
+CTabularFormatter_StartCodonChanges::CTabularFormatter_StartCodonChanges(int row)
+: m_CoordinateRow(row)
+{
+}
+
+
+void CTabularFormatter_StartCodonChanges::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Mismatches or indels within start codon";
+    if (m_CoordinateRow  == 0) {
+        ostr << ", coordinates on query sequence";
+    }
+}
+
+void CTabularFormatter_StartCodonChanges::PrintHeader(CNcbiOstream& ostr) const
+{
+    ostr << "Start codon changes";
+    if (m_CoordinateRow  == 0) {
+        ostr << " on query";
+    }
+}
+
+
+void CTabularFormatter_StartCodonChanges::Print(CNcbiOstream& ostr,
+                                        const CSeq_align& align)
+{
+    CBioseq_Handle bsh = m_Scores->GetScope().GetBioseqHandle(align.GetSeq_id(0));
+    if ( !bsh ) {
+        NCBI_THROW(CException, eUnknown,
+                   "failed to retrieve sequence for " +
+                   align.GetSeq_id(0).AsFastaString());
+    }
+    if (bsh.GetBioseqMolType() !=  CSeq_inst::eMol_rna) {
+        NCBI_THROW(CException, eUnknown, "Not RNA alignments");
+    }
+
+    CFeat_CI feat_it(bsh,
+                     SAnnotSelector()
+                     .IncludeFeatType(CSeqFeatData::e_Cdregion));
+    if (feat_it) {
+        string variation = s_CodonVariation(align, feat_it->GetRange().GetFrom(),
+                                            m_Scores->GetScope(), m_CoordinateRow);
+        if (!variation.empty()) {
+            ostr << variation;
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+CTabularFormatter_StopCodonChanges::CTabularFormatter_StopCodonChanges(int row)
+: m_CoordinateRow(row)
+{
+}
+
+
+void CTabularFormatter_StopCodonChanges::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Mismatches or indels within stop codon";
+    if (m_CoordinateRow  == 0) {
+        ostr << ", coordinates on query sequence";
+    }
+}
+
+void CTabularFormatter_StopCodonChanges::PrintHeader(CNcbiOstream& ostr) const
+{
+    ostr << "Stop codon changes";
+    if (m_CoordinateRow  == 0) {
+        ostr << " on query";
+    }
+}
+
+
+void CTabularFormatter_StopCodonChanges::Print(CNcbiOstream& ostr,
+                                        const CSeq_align& align)
+{
+    CFeatureGenerator generator(m_Scores->GetScope());
+    generator.SetFlags(CFeatureGenerator::fForceTranscribeMrna |
+                       CFeatureGenerator::fCreateCdregion);
+    generator.SetAllowedUnaligned(10);
+
+    CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
+    CSeq_annot annot;
+    CBioseq_set bset;
+    generator.ConvertAlignToAnnot(*clean_align, annot, bset);
+    if (bset.GetSeq_set().empty() ||
+        !bset.GetSeq_set().front()->IsSetAnnot())
+    {
+        return;
+    }
+
+    CScope transcribed_mrna_scope(*CObjectManager::GetInstance());
+    transcribed_mrna_scope.AddTopLevelSeqEntry(*bset.GetSeq_set().front());
+    CRef<CSeq_feat> cds = bset.GetSeq_set().front()
+                              -> GetSeq().GetAnnot().front()
+                              -> GetData().GetFtable().front();
+    cds->SetData().SetCdregion().ResetCode_break();
+    string trans;
+    CSeqTranslator::Translate(*cds, transcribed_mrna_scope, trans);
+    bool missing_stop = false;
+    if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)) {
+        if (NStr::EndsWith(trans, "*")) {
+            trans.resize(trans.size() - 1);
+        } else {
+            missing_stop = true;
+        }
+    }
+
+    for (size_t changed_codons_count = 0, internal_stop_pos = trans.find('*');
+         internal_stop_pos != string::npos || missing_stop;
+         internal_stop_pos = trans.find('*', internal_stop_pos+1))
+    {
+        if (internal_stop_pos == string::npos) {
+            /// Processed all internal stops if any; process missing final stop
+            internal_stop_pos = trans.size() - 1;
+            missing_stop = false;
+        }
+        string variation = s_CodonVariation(align,
+                            cds->GetLocation().GetStart(eExtreme_Positional)
+                                       + internal_stop_pos*3,
+                            m_Scores->GetScope(), m_CoordinateRow);
+        if (!variation.empty()) {
+            if (changed_codons_count++) {
+                ostr << ',';
+            }
+            ostr << variation;
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 CTabularFormatter::CTabularFormatter(CNcbiOstream& ostr, CScoreLookup &scores,
                                      const string &unavailable_string)
 : m_Scores(&scores), m_Ostr(ostr), m_UnavailableString(unavailable_string)
@@ -2670,6 +2862,14 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
             new CTabularFormatter_Indels(CTabularFormatter_Indels::e_NonFrameshifts, 0));
     formatter.RegisterField("cds_indels_on_query",
             new CTabularFormatter_Indels(CTabularFormatter_Indels::e_All, 0));
+    formatter.RegisterField("start_codon_changes",
+            new CTabularFormatter_StartCodonChanges(1));
+    formatter.RegisterField("stop_codon_changes",
+            new CTabularFormatter_StopCodonChanges(1));
+    formatter.RegisterField("start_codon_changes_on_query",
+            new CTabularFormatter_StartCodonChanges(0));
+    formatter.RegisterField("stop_codon_changes_on_query",
+            new CTabularFormatter_StopCodonChanges(0));
     formatter.RegisterField("gene_symbol",
             new CTabularFormatter_GeneSymbol(0));
     formatter.RegisterField("qasmunit", new CTabularFormatter_AssemblyInfo(0,

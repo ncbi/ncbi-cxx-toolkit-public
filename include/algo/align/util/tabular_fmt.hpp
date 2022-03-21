@@ -750,6 +750,32 @@ private:
     int m_Row;
 };
 
+class CTabularFormatter_StartCodonChanges : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_StartCodonChanges(int row);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+
+private:
+    int m_CoordinateRow;
+};
+
+class CTabularFormatter_StopCodonChanges : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_StopCodonChanges(int row);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+
+private:
+    int m_CoordinateRow;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 
