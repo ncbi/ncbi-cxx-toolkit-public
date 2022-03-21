@@ -218,3 +218,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "GetItemsByTagInfo - memberlist"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			func=GetItemsByTagInfo,src=memberlist.cpp;
+		}
+	}
+}
+
