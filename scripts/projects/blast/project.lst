@@ -75,6 +75,7 @@ objtools/eutils/esearch$
 objtools/eutils/espell$
 objtools/eutils/esummary$
 objtools/eutils/uilist$
+objtools/eutils/efetch$
 objtools/format$
 objtools/format/items$
 objtools/align_format
