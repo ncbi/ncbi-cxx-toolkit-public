@@ -282,6 +282,19 @@ suppression = {
 	}
 }
 suppression = {
+	name = "ucrtbase.dll - System()/wspawnvpe() - invalid partial memory access"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=getenv;
+			mod=ucrtbase.DLL,func=get_initial_narrow_environment;
+			mod=ucrtbase.DLL,func=get_initial_narrow_environment;
+			mod=ucrtbase.DLL,func=wspawnvpe;
+		}
+	}
+}
+suppression = {
 	name = "ucrtbase.DLL - system/spawn - invalid memory access"
 	type = {invalid_memory_access}
 	stacks = {
@@ -405,6 +418,17 @@ suppression = {
 	stacks = {
 		{
 			...;
+			mod=ntdll.dll,func=RtlLockHeap;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+		}
+	}
+}
+suppression = {
+	name = "Critical sections - invalid memory access ???"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
 			mod=ntdll.dll,func=RtlInitializeCriticalSectionEx;
 			mod=ntdll.dll,func=RtlLockHeap;
 			mod=ntdll.dll,func=RtlEnterCriticalSection;
@@ -420,6 +444,18 @@ suppression = {
 			mod=ntdll.dll,func=RtlInitializeCriticalSectionEx;
 			mod=ntdll.dll,func=RtlLockHeap;
 			mod=ntdll.dll,func=RtlEnterCriticalSection;
+		}
+	}
+}
+suppression = {
+	name = "Critical sections - invalid memory partial access ???"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+			mod=ntdll.dll,func=RtlReleaseSRWLockExclusive;
+			mod=ntdll.dll,func=LdrShutdownThread;
 		}
 	}
 }
