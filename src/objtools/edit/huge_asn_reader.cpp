@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-bool CHugeAsnReader::CRefLess::operator()(const CConstRef<objects::CSeq_id>& l, const CConstRef<objects::CSeq_id>& r) const
+bool CHugeAsnReader::CRefLess::operator()(const CConstRef<CSeq_id>& l, const CConstRef<CSeq_id>& r) const
 {
     return *l < *r;
 }
@@ -65,7 +65,7 @@ CHugeAsnReader::CHugeAsnReader()
 {
 }
 
-CHugeAsnReader::CHugeAsnReader(CHugeFile* file, objects::ILineErrorListener * pMessageListener)
+CHugeAsnReader::CHugeAsnReader(CHugeFile* file, ILineErrorListener * pMessageListener)
 {
     Open(file, pMessageListener);
 }
@@ -81,7 +81,7 @@ void CHugeAsnReader::x_ResetIndex()
     m_bioseq_set_index.clear();
 }
 
-void CHugeAsnReader::Open(CHugeFile* file, objects::ILineErrorListener * pMessageListener)
+void CHugeAsnReader::Open(CHugeFile* file, ILineErrorListener * pMessageListener)
 {
     x_ResetIndex();
 
@@ -114,7 +114,7 @@ void CHugeAsnReader::PrintAllSeqIds() const
     std::cout << "Total seqids:" << m_total_seqs << ":" << m_bioseq_index.size() << std::endl;
 }
 
-size_t CHugeAsnReader::FindTopObject(CConstRef<objects::CSeq_id> seqid) const
+size_t CHugeAsnReader::FindTopObject(CConstRef<CSeq_id> seqid) const
 {
     auto it = m_bioseq_index.find(seqid);
     if (it == m_bioseq_index.end())
@@ -123,7 +123,7 @@ size_t CHugeAsnReader::FindTopObject(CConstRef<objects::CSeq_id> seqid) const
         return std::numeric_limits<size_t>::max(); //it->second->m_parent_set;
 }
 
-CRef<objects::CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
+CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
 {
     auto entry = Ref(new CSeq_entry);
     auto obj_stream = x_MakeObjStream(info.m_pos);
@@ -136,7 +136,7 @@ CRef<objects::CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& inf
     return entry;
 }
 
-CRef<objects::CBioseq> CHugeAsnReader::LoadBioseq(CConstRef<CSeq_id> seqid) const
+CRef<CBioseq> CHugeAsnReader::LoadBioseq(CConstRef<CSeq_id> seqid) const
 {
     auto it = m_bioseq_index.find(seqid);
     if (it == m_bioseq_index.end())

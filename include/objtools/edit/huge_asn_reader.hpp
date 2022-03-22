@@ -40,21 +40,20 @@
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
-namespace objects
-{
-    class CSeq_id;
-    class CBioseq;
-    class CSeq_submit;
-    class CSeq_descr;
-}
 
 BEGIN_SCOPE(objects)
+
+class CSeq_id;
+class CBioseq;
+class CSeq_submit;
+class CSeq_descr;
+
 BEGIN_SCOPE(edit)
 
 /*
 struct CRefLess
 {
-    bool operator()(const CConstRef<objects::CSeq_id>& l, const CConstRef<objects::CSeq_id>& r) const;
+    bool operator()(const CConstRef<CSeq_id>& l, const CConstRef<CSeq_id>& r) const;
 };
 */
 
@@ -64,13 +63,13 @@ public:
     using TFileSize = std::streamoff;
 
     CHugeAsnReader();
-    CHugeAsnReader(CHugeFile* file, objects::ILineErrorListener * pMessageListener);
+    CHugeAsnReader(CHugeFile* file, ILineErrorListener * pMessageListener);
     virtual ~CHugeAsnReader();
 
-    void Open(CHugeFile* file, objects::ILineErrorListener * pMessageListener) override;
+    void Open(CHugeFile* file, ILineErrorListener * pMessageListener) override;
     bool GetNextBlob() override;
-    CRef<objects::CSeq_entry> GetNextSeqEntry() override;
-    CConstRef<objects::CSeq_submit> GetSubmit() override { return m_submit; };
+    CRef<CSeq_entry> GetNextSeqEntry() override;
+    CConstRef<CSeq_submit> GetSubmit() override { return m_submit; };
 
     struct TBioseqInfo;
     struct TBioseqSetInfo;
@@ -82,24 +81,24 @@ public:
         TFileSize m_pos;
         TBioseqSetIndex::iterator m_parent_set;
         TSeqPos   m_length  = -1;
-        CRef<objects::CSeq_descr> m_descr;
+        CRef<CSeq_descr> m_descr;
     };
 
     struct TBioseqSetInfo
     {
         TFileSize m_pos;
         TBioseqSetIndex::iterator m_parent_set;
-        objects::CBioseq_set::TClass m_class = objects::CBioseq_set::eClass_not_set;
-        CConstRef<objects::CSeq_descr> m_descr;
+        CBioseq_set::TClass m_class = CBioseq_set::eClass_not_set;
+        CConstRef<CSeq_descr> m_descr;
     };
 
 
     struct CRefLess
     {
-        bool operator()(const CConstRef<objects::CSeq_id>& l, const CConstRef<objects::CSeq_id>& r) const;
+        bool operator()(const CConstRef<CSeq_id>& l, const CConstRef<CSeq_id>& r) const;
     };
 
-    using TBioseqIndex = std::map<CConstRef<objects::CSeq_id>, TBioseqList::iterator, CRefLess>;
+    using TBioseqIndex = std::map<CConstRef<CSeq_id>, TBioseqList::iterator, CRefLess>;
 
     TBioseqList& GetBioseqs() { return m_bioseq_list; };
     TBioseqSetIndex& GetBiosets() { return m_bioseq_set_index; };
@@ -107,13 +106,13 @@ public:
     auto GetMaxLocalId() const { return m_max_local_id; };
 
     // These metods are for CDataLoader, each top object is a 'blob'
-    size_t FindTopObject(CConstRef<objects::CSeq_id> seqid) const;
-    //CRef<objects::CSeq_entry> LoadSeqEntry(size_t id) const;
-    CRef<objects::CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info) const;
+    size_t FindTopObject(CConstRef<CSeq_id> seqid) const;
+    //CRef<CSeq_entry> LoadSeqEntry(size_t id) const;
+    CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info) const;
 
     // Direct loading methods
-    CRef<objects::CSeq_entry> LoadSeqEntry(CConstRef<objects::CSeq_id> seqid) const;
-    CRef<objects::CBioseq> LoadBioseq(CConstRef<objects::CSeq_id> seqid) const;
+    CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> seqid) const;
+    CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;
 
     void PrintAllSeqIds() const;
     bool IsMultiSequence() override { return m_bioseq_index.size()>1; }
@@ -123,7 +122,7 @@ private:
     void x_IndexNextAsn1();
     unique_ptr<CObjectIStream> x_MakeObjStream(TFileSize pos) const;
 
-    objects::ILineErrorListener * mp_MessageListener = nullptr;
+    ILineErrorListener * mp_MessageListener = nullptr;
     CHugeFile*  m_file = nullptr;
     size_t      m_total_seqs = 0;
     size_t      m_total_sets = 0;
@@ -132,7 +131,7 @@ private:
 
     TBioseqList m_bioseq_list;
     TBioseqIndex m_bioseq_index;
-    CConstRef<objects::CSeq_submit> m_submit;
+    CConstRef<CSeq_submit> m_submit;
 protected:
     TBioseqSetIndex m_bioseq_set_index;
 };
