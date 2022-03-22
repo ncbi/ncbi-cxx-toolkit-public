@@ -50,7 +50,7 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
+USING_SCOPE(objects::edit);
 
 CFastaReaderEx::CFastaReaderEx(CTable2AsnContext& context, std::istream& instream, TFlags flags) :
     CFastaReader(instream, flags),

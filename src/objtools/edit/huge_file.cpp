@@ -32,14 +32,15 @@
 
 #include <ncbi_pch.hpp>
 
-#include "huge_file.hpp"
-
+#include <objtools/edit/huge_file.hpp>
 #include <objtools/readers/format_guess_ex.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+BEGIN_SCOPE(edit)
 
 CHugeFile::CHugeFile(){}
 CHugeFile::~CHugeFile(){}
@@ -152,5 +153,6 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
     return object_type;
 }
 
-
+END_SCOPE(edit)
+END_SCOPE(objects)
 END_NCBI_SCOPE

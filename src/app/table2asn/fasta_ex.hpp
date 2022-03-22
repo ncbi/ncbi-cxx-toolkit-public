@@ -3,7 +3,7 @@
 
 #include <objtools/readers/fasta.hpp>
 #include <objtools/edit/gaps_edit.hpp>
-#include "huge_file.hpp"
+#include <objtools/edit/huge_file.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -20,9 +20,11 @@ class CSeq_annot;
 class CSourceModParser;
 }
 
+
 class CTable2AsnContext;
 class CSerialObject;
 class CAnnotationLoader;
+
 
 class CFastaReaderEx : public objects::CFastaReader
 {
@@ -36,12 +38,12 @@ protected:
     objects::CGapsEditor m_gap_editor;
 };
 
-class CHugeFastaReader: public IHugeAsnSource
+class CHugeFastaReader: public objects::edit::IHugeAsnSource
 {
 public:
     CHugeFastaReader(CTable2AsnContext& context);
     ~CHugeFastaReader();
-    void Open(CHugeFile* file, objects::ILineErrorListener * pMessageListener) override;
+    void Open(objects::edit::CHugeFile* file, objects::ILineErrorListener * pMessageListener) override;
     bool GetNextBlob() override;
     CRef<objects::CSeq_entry> GetNextSeqEntry() override;
     bool IsMultiSequence() override { return m_is_multi; }

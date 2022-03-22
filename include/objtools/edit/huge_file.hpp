@@ -49,7 +49,10 @@ namespace objects
     class ILineErrorListener;
 }
 
-class CHugeFile
+BEGIN_SCOPE(objects)
+BEGIN_SCOPE(edit)
+
+class NCBI_XOBJEDIT_EXPORT CHugeFile
 {
 public:
     CHugeFile();
@@ -83,7 +86,7 @@ private:
     bool x_TryOpenMemoryFile(const string& filename);
 };
 
-class IHugeAsnSource
+class NCBI_XOBJEDIT_EXPORT IHugeAsnSource
 {
 public:
     virtual void Open(CHugeFile* file, objects::ILineErrorListener * pMessageListener) = 0;
@@ -96,6 +99,8 @@ protected:
     IHugeAsnSource(){};
 };
 
+END_SCOPE(edit)
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // _HUGE_ASN_READER_HPP_INCLUDED_

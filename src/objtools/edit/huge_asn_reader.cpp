@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include "huge_asn_reader.hpp"
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -44,16 +43,16 @@
 #include <serial/objistr.hpp>
 #include <corelib/ncbifile.hpp>
 
+#include <objtools/edit/huge_asn_reader.hpp>
 #include <objtools/readers/objhook_lambdas.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/general/Object_id.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+BEGIN_SCOPE(edit)
 
-using namespace objects;
-
-
-bool CRefLess::operator()(const CConstRef<objects::CSeq_id>& l, const CConstRef<objects::CSeq_id>& r) const
+bool CHugeAsnReader::CRefLess::operator()(const CConstRef<objects::CSeq_id>& l, const CConstRef<objects::CSeq_id>& r) const
 {
     return *l < *r;
 }
@@ -329,5 +328,6 @@ void CHugeAsnReader::x_IndexNextAsn1()
     m_streampos += obj_stream->GetStreamPos();
 }
 
-
+END_SCOPE(edit)
+END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -34,8 +34,8 @@
 #include <ncbi_pch.hpp>
 #include "table2asn.hpp"
 
-#include "huge_file.hpp"
-#include "huge_asn_reader.hpp"
+#include <objtools/edit/huge_file.hpp>
+#include <objtools/edit/huge_asn_reader.hpp>
 #include "fasta_ex.hpp"
 #include "feature_table_reader.hpp"
 #include "multireader.hpp"
@@ -55,10 +55,11 @@
 #endif
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+USING_SCOPE(objects::edit);
 
 namespace
 {
-
     class CFlattenedAsn: public CHugeAsnReader
     {
     public:
