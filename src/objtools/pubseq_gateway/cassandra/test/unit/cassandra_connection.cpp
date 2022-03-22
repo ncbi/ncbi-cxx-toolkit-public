@@ -252,4 +252,42 @@ TEST_F(CCassConnectionTest, MaxRetriesPropagation)
     EXPECT_EQ(7, task.GetMaxRetries());
 }
 
+TEST_F(CCassConnectionTest, GetTokenRanges)
+{
+    using CC = CCassConnection;
+    auto connection = m_Factory->CreateInstance();
+    connection->Connect();
+    CC::TTokenRanges ranges;
+    connection->GetTokenRanges(ranges);
+    ASSERT_FALSE(ranges.empty());
+    {
+        EXPECT_EQ(ranges.begin()->first, numeric_limits<CC::TTokenValue>::min());
+        EXPECT_EQ(ranges.rbegin()->second, numeric_limits<CC::TTokenValue>::max());
+        auto previous_end = ranges.begin()->first;
+        for (auto range : ranges) {
+            EXPECT_LT(range.first, range.second);
+            EXPECT_EQ(previous_end, range.first);
+            previous_end = range.second;
+        }
+    }
+    {
+        set<CC::TTokenValue> start_tokens, end_tokens;
+        for (auto itr = ranges.begin(); itr != ranges.end(); ++itr) {
+            start_tokens.insert(itr->first);
+            end_tokens.insert(itr->second);
+        }
+        vector<string> tokens;
+        auto query = connection->NewQuery();
+        query->SetSQL("SELECT tokens FROM system.local", 0);
+        query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+        query->NextRow();
+        query->FieldGetSetValues(0, tokens);
+        for(const auto & item: tokens) {
+            CC::TTokenValue value = strtol(item.c_str(), nullptr, 10);
+            EXPECT_FALSE(start_tokens.find(value) == start_tokens.end());
+            EXPECT_FALSE(end_tokens.find(value) == end_tokens.end());
+        }
+    }
+}
+
 }  // namespace

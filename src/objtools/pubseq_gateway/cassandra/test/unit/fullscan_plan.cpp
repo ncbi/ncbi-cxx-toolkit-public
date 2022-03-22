@@ -81,7 +81,6 @@ class CCassandraFullscanPlanTest
         s_Factory = nullptr;
     }
 
-    static const char* s_TestClusterName;
     static shared_ptr<CCassConnectionFactory> s_Factory;
     static shared_ptr<CCassConnection> s_Connection;
 
@@ -89,7 +88,6 @@ class CCassandraFullscanPlanTest
     string m_TableName;
 };
 
-const char* CCassandraFullscanPlanTest::s_TestClusterName = "ID_CASS_TEST";
 shared_ptr<CCassConnectionFactory> CCassandraFullscanPlanTest::s_Factory(nullptr);
 shared_ptr<CCassConnection> CCassandraFullscanPlanTest::s_Connection(nullptr);
 
