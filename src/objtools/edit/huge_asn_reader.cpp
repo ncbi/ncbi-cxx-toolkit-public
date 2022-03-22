@@ -52,10 +52,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-bool CHugeAsnReader::CRefLess::operator()(const CConstRef<CSeq_id>& l, const CConstRef<CSeq_id>& r) const
-{
-    return *l < *r;
-}
 
 CHugeAsnReader::~CHugeAsnReader()
 {
