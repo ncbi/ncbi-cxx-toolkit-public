@@ -44,6 +44,8 @@ NCBI_begin_lib(xflatfile)
     ftamed
     flatfile_message
     flatfile_message_reporter
+    qual_parse
+    qual_validate
   )
 
   NCBI_uses_toolkit_libraries(
