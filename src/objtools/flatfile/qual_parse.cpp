@@ -29,7 +29,7 @@
 *
 */
 #include <ncbi_pch.hpp>
-#include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 
