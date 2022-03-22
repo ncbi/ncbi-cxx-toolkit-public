@@ -42,14 +42,13 @@ BEGIN_NCBI_SCOPE
 
 class CMemoryFile;
 
-namespace objects
-{
-    class CSeq_entry;
-    class CSeq_submit;
-    class ILineErrorListener;
-}
 
 BEGIN_SCOPE(objects)
+
+class CSeq_entry;
+class CSeq_submit;
+class ILineErrorListener;
+
 BEGIN_SCOPE(edit)
 
 class NCBI_XOBJEDIT_EXPORT CHugeFile
@@ -89,11 +88,11 @@ private:
 class NCBI_XOBJEDIT_EXPORT IHugeAsnSource
 {
 public:
-    virtual void Open(CHugeFile* file, objects::ILineErrorListener * pMessageListener) = 0;
+    virtual void Open(CHugeFile* file, ILineErrorListener * pMessageListener) = 0;
     virtual bool GetNextBlob() = 0;
-    virtual CRef<objects::CSeq_entry> GetNextSeqEntry() = 0;
+    virtual CRef<CSeq_entry> GetNextSeqEntry() = 0;
     virtual bool IsMultiSequence() = 0;
-    virtual CConstRef<objects::CSeq_submit> GetSubmit() = 0;
+    virtual CConstRef<CSeq_submit> GetSubmit() = 0;
     virtual ~IHugeAsnSource(){};
 protected:
     IHugeAsnSource(){};
