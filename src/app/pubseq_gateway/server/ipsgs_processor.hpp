@@ -130,6 +130,14 @@ public:
     ///  the processor name
     virtual string GetName(void) const = 0;
 
+    /// Tells the processor group name. For example, all the processors which
+    /// retrieve data from Cassandra should return the same name in response to
+    /// this call. This name is used to control the total number of
+    /// simultaneously working processors retrieving from the same backend.
+    /// @return
+    ///  the processor group name
+    virtual string GetGroupName(void) const = 0;
+
     /// Called when an event happened which may require to have
     /// some processing. By default nothing should be done.
     /// This method can be called as well on a timer event.

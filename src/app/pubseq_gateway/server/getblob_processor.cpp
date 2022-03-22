@@ -40,6 +40,8 @@ USING_NCBI_SCOPE;
 
 using namespace std::placeholders;
 
+static const string   kGetblobProcessorName = "Cassandra-getblob";
+
 
 CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor() :
     m_BlobRequest(nullptr)
@@ -52,7 +54,7 @@ CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor(
                                         TProcessorPriority  priority,
                                         const SCass_BlobId &  blob_id) :
     CPSGS_CassProcessorBase(request, reply, priority),
-    CPSGS_CassBlobBase(request, reply, GetName(),
+    CPSGS_CassBlobBase(request, reply, kGetblobProcessorName,
                        bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
                             this, _1, _2, _3),
                        bind(&CPSGS_GetBlobProcessor::OnGetBlobChunk,
@@ -92,7 +94,7 @@ CPSGS_GetBlobProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
     auto        startup_data_state = app->GetStartupDataState();
     if (startup_data_state != ePSGS_StartupDataOK) {
         if (request->NeedTrace()) {
-            reply->SendTrace("Cannot create " + GetName() +
+            reply->SendTrace("Cannot create " + kGetblobProcessorName +
                              " processor because Cassandra DB "
                              "is not available.\n" +
                              GetCassStartupDataStateMessage(startup_data_state),
@@ -112,11 +114,11 @@ void CPSGS_GetBlobProcessor::Process(void)
     if (!m_BlobId.MapSatToKeyspace()) {
         app->GetCounters().Increment(CPSGSCounters::ePSGS_ClientSatToSatNameError);
 
-        string  err_msg = GetName() + " processor failed to map sat " +
+        string  err_msg = kGetblobProcessorName + " processor failed to map sat " +
                           to_string(m_BlobId.m_Sat) +
                           " to a Cassandra keyspace";
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
-                IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+                IPSGS_Processor::m_Reply->GetItemId(), kGetblobProcessorName,
                 err_msg, CRequestStatus::e404_NotFound,
                 ePSGS_UnknownResolvedSatellite, eDiag_Error);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
@@ -179,21 +181,20 @@ void CPSGS_GetBlobProcessor::Process(void)
             auto        ret_status = CRequestStatus::e404_NotFound;
             if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit) {
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                    item_id, GetName(),
+                    item_id, kGetblobProcessorName,
                     "Blob properties are not found",
                     ret_status, ePSGS_NoBlobPropsError,
                     eDiag_Error);
             } else {
                 ret_status = CRequestStatus::e500_InternalServerError;
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                    item_id, GetName(),
+                    item_id, kGetblobProcessorName,
                     "Blob properties are not found due to a cache lookup error",
                     ret_status, ePSGS_NoBlobPropsError,
                     eDiag_Error);
             }
-            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id,
-                                                                GetName(),
-                                                                2);
+            IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(
+                    item_id, kGetblobProcessorName, 2);
             fetch_details->RemoveFromExcludeBlobCache();
 
             // Finished without reaching cassandra
@@ -321,10 +322,15 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
 }
 
 
-static const string   kGetblobProcessorName = "Cassandra-getblob";
 string CPSGS_GetBlobProcessor::GetName(void) const
 {
     return kGetblobProcessorName;
+}
+
+
+string CPSGS_GetBlobProcessor::GetGroupName(void) const
+{
+    return kCassandraProcessorGroupName;
 }
 
 

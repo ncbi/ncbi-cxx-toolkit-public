@@ -42,6 +42,9 @@ USING_NCBI_SCOPE;
 
 using namespace std::placeholders;
 
+static const string   kTSEChunkProcessorName = "Cassandra-gettsechunk";
+
+
 CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor() :
     m_TSEChunkRequest(nullptr)
 {}
@@ -54,7 +57,7 @@ CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor(
             shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info> sat_info_chunk_ver_id2info,
             shared_ptr<CPSGS_IdModifiedVerFlavorId2Info>    id_mod_ver_id2info) :
     CPSGS_CassProcessorBase(request, reply, priority),
-    CPSGS_CassBlobBase(request, reply, GetName(),
+    CPSGS_CassBlobBase(request, reply, kTSEChunkProcessorName,
                        bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
                             this, _1, _2, _3),
                        bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
@@ -105,7 +108,7 @@ CPSGS_TSEChunkProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
         auto        startup_data_state = app->GetStartupDataState();
         if (startup_data_state != ePSGS_StartupDataOK) {
             if (request->NeedTrace()) {
-                reply->SendTrace("Cannot create " + GetName() +
+                reply->SendTrace("Cannot create " + kTSEChunkProcessorName +
                                  " processor because Cassandra DB "
                                  "is not available.\n" +
                                  GetCassStartupDataStateMessage(startup_data_state),
@@ -245,7 +248,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
     if (!m_IdModVerId2Info->GetTSEId().MapSatToKeyspace()) {
         app->GetCounters().Increment(CPSGSCounters::ePSGS_ClientSatToSatNameError);
 
-        err_msg = GetName() + " failed to map sat " +
+        err_msg = kTSEChunkProcessorName + " failed to map sat " +
                   to_string(m_IdModVerId2Info->GetTSEId().m_Sat) +
                   " to a Cassandra keyspace";
         x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
@@ -594,12 +597,12 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
 
     if (is_found) {
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropData(
-                fetch_details, GetName(),
+                fetch_details, kTSEChunkProcessorName,
                 m_TSEChunkRequest->m_Id2Chunk,
                 m_TSEChunkRequest->m_Id2Info,
                 ToJsonString(blob));
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-                fetch_details, GetName());
+                fetch_details, kTSEChunkProcessorName);
     } else {
         // Not found; it is the user error, not the data inconsistency
         auto *  app = CPubseqGatewayApp::GetInstance();
@@ -610,12 +613,12 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         PSG_WARNING(message);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropMessage(
-                fetch_details, GetName(),
+                fetch_details, kTSEChunkProcessorName,
                 m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
                 message, CRequestStatus::e404_NotFound,
                 ePSGS_NoBlobPropsError, eDiag_Error);
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-                fetch_details, GetName());
+                fetch_details, kTSEChunkProcessorName);
         fetch_details->SetReadFinished();
     }
 
@@ -647,18 +650,18 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
 
     if (fetch_details->IsBlobPropStage()) {
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropMessage(
-            fetch_details, GetName(),
+            fetch_details, kTSEChunkProcessorName,
             m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
             message, status, code, severity);
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-            fetch_details, GetName());
+            fetch_details, kTSEChunkProcessorName);
     } else {
         IPSGS_Processor::m_Reply->PrepareTSEBlobMessage(
-            fetch_details, GetName(),
+            fetch_details, kTSEChunkProcessorName,
             m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
             message, status, code, severity);
         IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
-            fetch_details, GetName());
+            fetch_details, kTSEChunkProcessorName);
     }
 
     if (is_error) {
@@ -712,7 +715,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 
         // A blob chunk; 0-length chunks are allowed too
         IPSGS_Processor::m_Reply->PrepareTSEBlobData(
-                fetch_details, GetName(),
+                fetch_details, kTSEChunkProcessorName,
                 chunk_data, data_size, chunk_no,
                 m_TSEChunkRequest->m_Id2Chunk,
                 m_TSEChunkRequest->m_Id2Info);
@@ -725,7 +728,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 
         // End of the blob
         IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
-                fetch_details, GetName());
+                fetch_details, kTSEChunkProcessorName);
         fetch_details->SetReadFinished();
 
         // Note: no need to set the blob completed in the exclude blob cache.
@@ -759,7 +762,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
-            GetName(), message, status, code, severity);
+            kTSEChunkProcessorName, message, status, code, severity);
 
     // To avoid sending an error in Peek()
     fetch_details->GetLoader()->ClearError();
@@ -817,7 +820,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(),
-                GetName(), message, CRequestStatus::e404_NotFound,
+                kTSEChunkProcessorName, message, CRequestStatus::e404_NotFound,
                 ePSGS_NoSplitHistoryError, eDiag_Error);
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
@@ -970,7 +973,7 @@ CPSGS_TSEChunkProcessor::x_SendProcessorError(const string &  msg,
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(),
-                GetName(), msg, status, code, eDiag_Error);
+                kTSEChunkProcessorName, msg, status, code, eDiag_Error);
     UpdateOverallStatus(status);
 
     if (status >= CRequestStatus::e400_BadRequest &&
@@ -1053,10 +1056,15 @@ IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
 }
 
 
-static const string   kTSEChunkProcessorName = "Cassandra-gettsechunk";
 string CPSGS_TSEChunkProcessor::GetName(void) const
 {
     return kTSEChunkProcessorName;
+}
+
+
+string CPSGS_TSEChunkProcessor::GetGroupName(void) const
+{
+    return kCassandraProcessorGroupName;
 }
 
 
@@ -1129,20 +1137,20 @@ bool CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());
         if (blob_fetch->IsBlobPropStage()) {
             IPSGS_Processor::m_Reply->PrepareTSEBlobPropMessage(
-                blob_fetch, GetName(),
+                blob_fetch, kTSEChunkProcessorName,
                 m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
                 error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
             IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
-                    blob_fetch, GetName());
+                    blob_fetch, kTSEChunkProcessorName);
         } else {
             IPSGS_Processor::m_Reply->PrepareTSEBlobMessage(
-                blob_fetch, GetName(),
+                blob_fetch, kTSEChunkProcessorName,
                 m_TSEChunkRequest->m_Id2Chunk, m_TSEChunkRequest->m_Id2Info,
                 error, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
             IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
-                blob_fetch, GetName());
+                blob_fetch, kTSEChunkProcessorName);
         }
 
         // Mark finished

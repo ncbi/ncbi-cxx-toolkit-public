@@ -46,6 +46,7 @@ USING_IDBLOB_SCOPE;
 
 
 const string    kCassandraProcessorEvent = "Cassandra";
+const string    kCassandraProcessorGroupName = "CASSANDRA";
 
 
 class CPSGS_CassProcessorBase : public IPSGS_Processor

@@ -40,6 +40,8 @@ USING_NCBI_SCOPE;
 
 using namespace std::placeholders;
 
+static const string   kGetProcessorName = "Cassandra-get";
+
 
 CPSGS_GetProcessor::CPSGS_GetProcessor() :
     m_BlobRequest(nullptr)
@@ -57,7 +59,7 @@ CPSGS_GetProcessor::CPSGS_GetProcessor(shared_ptr<CPSGS_Request> request,
                            this, _1, _2, _3, _4),
                       bind(&CPSGS_GetProcessor::x_OnResolutionGoodData,
                            this)),
-    CPSGS_CassBlobBase(request, reply, GetName(),
+    CPSGS_CassBlobBase(request, reply, kGetProcessorName,
                        bind(&CPSGS_GetProcessor::OnGetBlobProp,
                             this, _1, _2, _3),
                        bind(&CPSGS_GetProcessor::OnGetBlobChunk,
@@ -95,7 +97,7 @@ CPSGS_GetProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
         auto        startup_data_state = app->GetStartupDataState();
         if (startup_data_state != ePSGS_StartupDataOK) {
             if (request->NeedTrace()) {
-                reply->SendTrace("Cannot create " + GetName() +
+                reply->SendTrace("Cannot create " + kGetProcessorName +
                                  " processor because Cassandra DB "
                                  "is not available.\n" +
                                  GetCassStartupDataStateMessage(startup_data_state),
@@ -145,10 +147,11 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     CountError(ePSGS_UnknownFetch, status, code, severity, message, logging_flag);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, kGetProcessorName,
                                                    message, status,
                                                    code, severity);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id,
+                                                      kGetProcessorName, 2);
 
     m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -211,9 +214,10 @@ CPSGS_GetProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
                                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
 
     IPSGS_Processor::m_Reply->PrepareBioseqData(
-            item_id, GetName(), data_to_send,
+            item_id, kGetProcessorName, data_to_send,
             SPSGS_ResolveRequest::ePSGS_JsonFormat);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id,
+                                                      kGetProcessorName, 2);
 }
 
 
@@ -231,7 +235,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
 {
     if (x_IsExcludedBlob()) {
         IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+                IPSGS_Processor::m_Reply->GetItemId(), kGetProcessorName,
                 m_BlobId.ToString(), ePSGS_BlobExcluded);
         m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -265,7 +269,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                         sent_mks_ago < m_BlobRequest->m_ResendTimeoutMks) {
                         // No sending; the blob was send recent enough
                         IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                                m_BlobId.ToString(), GetName(),
+                                m_BlobId.ToString(), kGetProcessorName,
                                 sent_mks_ago,
                                 m_BlobRequest->m_ResendTimeoutMks - sent_mks_ago);
                     } else {
@@ -281,7 +285,8 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                     }
                 } else {
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                            m_BlobId.ToString(), GetName(), ePSGS_BlobInProgress);
+                            m_BlobId.ToString(), kGetProcessorName,
+                            ePSGS_BlobInProgress);
                 }
 
                 if (finish_processing) {
@@ -323,20 +328,20 @@ void CPSGS_GetProcessor::x_GetBlob(void)
             auto        ret_status = CRequestStatus::e404_NotFound;
             if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit) {
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                    item_id, GetName(),
+                    item_id, kGetProcessorName,
                     "Blob properties are not found",
                     ret_status, ePSGS_NoBlobPropsError,
                     eDiag_Error);
             } else {
                 ret_status = CRequestStatus::e500_InternalServerError;
                 IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
-                    item_id, GetName(),
+                    item_id, kGetProcessorName,
                     "Blob properties are not found due to a cache lookup error",
                     ret_status, ePSGS_NoBlobPropsError,
                     eDiag_Error);
             }
             IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id,
-                                                                GetName(),
+                                                                kGetProcessorName,
                                                                 2);
             fetch_details->RemoveFromExcludeBlobCache();
 
@@ -450,10 +455,15 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetProcessor::GetStatus(void)
 }
 
 
-static const string   kGetProcessorName = "Cassandra-get";
 string CPSGS_GetProcessor::GetName(void) const
 {
     return kGetProcessorName;
+}
+
+
+string CPSGS_GetProcessor::GetGroupName(void) const
+{
+    return kCassandraProcessorGroupName;
 }
 
 

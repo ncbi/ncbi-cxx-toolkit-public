@@ -40,6 +40,7 @@ USING_NCBI_SCOPE;
 
 using namespace std::placeholders;
 
+static const string   kResolveProcessorName = "Cassandra-resolve";
 
 CPSGS_ResolveProcessor::CPSGS_ResolveProcessor() :
     m_ResolveRequest(nullptr)
@@ -82,7 +83,7 @@ CPSGS_ResolveProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
         auto        startup_data_state = app->GetStartupDataState();
         if (startup_data_state != ePSGS_StartupDataOK) {
             if (request->NeedTrace()) {
-                reply->SendTrace("Cannot create " + GetName() +
+                reply->SendTrace("Cannot create " + kResolveProcessorName +
                                  " processor because Cassandra DB "
                                  "is not available.\n" +
                                  GetCassStartupDataStateMessage(startup_data_state),
@@ -131,10 +132,10 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
     CountError(ePSGS_UnknownFetch, status, code, severity, message, logging_flag);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
-    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, kResolveProcessorName,
                                                    message, status, code,
                                                    severity);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, kResolveProcessorName, 2);
 
     m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -183,10 +184,11 @@ CPSGS_ResolveProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
     }
 
     size_t              item_id = IPSGS_Processor::m_Reply->GetItemId();
-    IPSGS_Processor::m_Reply->PrepareBioseqData(item_id, GetName(),
+    IPSGS_Processor::m_Reply->PrepareBioseqData(item_id, kResolveProcessorName,
                                                 data_to_send,
                                                 effective_output_format);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id,
+                                                      kResolveProcessorName, 2);
 }
 
 
@@ -205,10 +207,15 @@ IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
 }
 
 
-static const string   kResolveProcessorName = "Cassandra-resolve";
 string CPSGS_ResolveProcessor::GetName(void) const
 {
     return kResolveProcessorName;
+}
+
+
+string CPSGS_ResolveProcessor::GetGroupName(void) const
+{
+    return kCassandraProcessorGroupName;
 }
 
 
@@ -289,7 +296,8 @@ bool CPSGS_ResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(),
-                GetName(), error, CRequestStatus::e500_InternalServerError,
+                kResolveProcessorName, error,
+                CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
 
         // Mark finished

@@ -72,6 +72,12 @@ string CPSGS_OSGResolve::GetName() const
 }
 
 
+string CPSGS_OSGResolve::GetGroupName() const
+{
+    return kOSGProcessorGroupName;
+}
+
+
 bool CPSGS_OSGResolve::CanProcess(TEnabledFlags enabled_flags,
                                   shared_ptr<CPSGS_Request>& request)
 {
@@ -230,6 +236,12 @@ CPSGS_OSGGetBlobBySeqId::~CPSGS_OSGGetBlobBySeqId()
 string CPSGS_OSGGetBlobBySeqId::GetName() const
 {
     return "OSG-get";
+}
+
+
+string CPSGS_OSGGetBlobBySeqId::GetGroupName() const
+{
+    return kOSGProcessorGroupName;
 }
 
 

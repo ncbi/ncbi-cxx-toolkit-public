@@ -66,6 +66,12 @@ string CPSGS_OSGGetBlob::GetName() const
 }
 
 
+string CPSGS_OSGGetBlob::GetGroupName() const
+{
+    return kOSGProcessorGroupName;
+}
+
+
 bool CPSGS_OSGGetBlob::CanProcess(TEnabledFlags enabled_flags,
                                   shared_ptr<CPSGS_Request>& request)
 {
@@ -207,6 +213,12 @@ CPSGS_OSGGetChunks::~CPSGS_OSGGetChunks()
 string CPSGS_OSGGetChunks::GetName() const
 {
     return "OSG-gettsechunk";
+}
+
+
+string CPSGS_OSGGetChunks::GetGroupName() const
+{
+    return kOSGProcessorGroupName;
 }
 
 

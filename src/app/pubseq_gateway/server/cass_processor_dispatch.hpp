@@ -1,5 +1,5 @@
-#ifndef OSG_PROCESSOR__HPP
-#define OSG_PROCESSOR__HPP
+#ifndef PSGS_CASSPROCESSORDISPATCH__HPP
+#define PSGS_CASSPROCESSORDISPATCH__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,31 +26,35 @@
  *
  * ===========================================================================
  *
- * Authors: Eugene Vasilchenko
+ * Authors: Sergey Satskiy
  *
- * File Description: processor for data from OSG
+ * File Description: cassandra processor create dispatcher
  *
  */
 
-#include "ipsgs_processor.hpp"
+#include <corelib/request_status.hpp>
+#include <corelib/ncbidiag.hpp>
+
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
+#include "ipsgs_processor.hpp"
+#include "resolve_processor.hpp"
+#include "annot_processor.hpp"
+#include "get_processor.hpp"
+#include "getblob_processor.hpp"
+#include "tse_chunk_processor.hpp"
+#include "accession_version_history_processor.hpp"
 
 
-BEGIN_NCBI_NAMESPACE;
-BEGIN_NAMESPACE(psg);
-BEGIN_NAMESPACE(osg);
+USING_NCBI_SCOPE;
+USING_IDBLOB_SCOPE;
 
 
-class COSGConnectionPool;
-
-
-// OSG processor factory
-class CPSGS_OSGProcessor : public IPSGS_Processor
+class CPSGS_CassProcessorDispatcher : public IPSGS_Processor
 {
 public:
-    CPSGS_OSGProcessor();
-    virtual ~CPSGS_OSGProcessor();
+    CPSGS_CassProcessorDispatcher();
+    virtual ~CPSGS_CassProcessorDispatcher();
 
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                              shared_ptr<CPSGS_Reply> reply,
@@ -62,11 +66,13 @@ public:
     virtual string GetGroupName(void) const;
 
 private:
+    unique_ptr<CPSGS_ResolveProcessor>                  m_ResolveProcessor;
+    unique_ptr<CPSGS_GetProcessor>                      m_GetProcessor;
+    unique_ptr<CPSGS_GetBlobProcessor>                  m_GetBlobProcessor;
+    unique_ptr<CPSGS_AnnotProcessor>                    m_AnnotProcessor;
+    unique_ptr<CPSGS_TSEChunkProcessor>                 m_TSEChunkProcessor;
+    unique_ptr<CPSGS_AccessionVersionHistoryProcessor>  m_AccVerProcessor;
 };
 
+#endif  // PSGS_CASSPROCESSORDISPATCH__HPP
 
-END_NAMESPACE(osg);
-END_NAMESPACE(psg);
-END_NCBI_NAMESPACE;
-
-#endif  // OSG_PROCESSOR__HPP

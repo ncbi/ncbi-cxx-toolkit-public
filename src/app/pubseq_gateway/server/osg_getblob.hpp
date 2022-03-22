@@ -50,6 +50,7 @@ public:
     virtual ~CPSGS_OSGGetBlob();
 
     virtual string GetName() const override;
+    virtual string GetGroupName() const override;
 
     static bool CanProcess(TEnabledFlags enabled_flags,
                            shared_ptr<CPSGS_Request>& request);
@@ -80,6 +81,7 @@ public:
     virtual ~CPSGS_OSGGetChunks();
     
     virtual string GetName() const override;
+    virtual string GetGroupName() const override;
 
     static bool CanProcess(TEnabledFlags enabled_flags,
                            shared_ptr<CPSGS_Request>& request);

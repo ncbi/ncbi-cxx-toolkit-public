@@ -64,6 +64,7 @@ BEGIN_NAMESPACE(wgs);
 USING_SCOPE(objects);
 
 static const string kWGSProcessorName = "WGS";
+static const string kWGSProcessorGroupName = "WGS";
 static const string kWGSProcessorSection = "WGS_PROCESSOR";
 
 
@@ -405,6 +406,12 @@ CPSGS_WGSProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
 string CPSGS_WGSProcessor::GetName() const
 {
     return kWGSProcessorName;
+}
+
+
+string CPSGS_WGSProcessor::GetGroupName() const
+{
+    return kWGSProcessorGroupName;
 }
 
 

@@ -57,6 +57,32 @@ void request_timer_close_cb(uv_handle_t *  handle)
 
 void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 {
+    if (m_RegisteredProcessors.size() >= MAX_PROCESSOR_GROUPS) {
+        ERR_POST(Critical << "Max number of processor groups to be registered "
+                 "has been reached. Please increase the MAX_PROCESSOR_GROUPS "
+                 "value. Exiting.");
+        exit(0);
+    }
+
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    string      processor_group_name = processor->GetGroupName();
+
+    auto        it = find(m_RegisteredProcessorGroups.begin(),
+                          m_RegisteredProcessorGroups.end(),
+                          processor_group_name);
+    if (it != m_RegisteredProcessorGroups.end()) {
+        ERR_POST(Critical << "Each processor group must be registered once. "
+                 "The group '" << processor_group_name << "' is tried to be "
+                 "registered more than once. Exiting.");
+        exit(0);
+    }
+
+    size_t      index = m_RegisteredProcessors.size();
+    size_t      limit = app->GetProcessorMaxConcurrency(processor_group_name);
+
+    m_ProcessorConcurrency[index].m_Limit = limit;
+
+    m_RegisteredProcessorGroups.push_back(processor_group_name);
     m_RegisteredProcessors.push_back(move(processor));
 }
 
@@ -66,11 +92,34 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
                                   shared_ptr<CPSGS_Reply> reply)
 {
     list<IPSGS_Processor *>         ret;
-    TProcessorPriority              priority = m_RegisteredProcessors.size();
+    size_t                          proc_count = m_RegisteredProcessors.size();
+    TProcessorPriority              priority = proc_count;
     auto                            request_id = request->GetRequestId();
     unique_ptr<SProcessorGroup>     procs(new SProcessorGroup());
 
     for (auto const &  proc : m_RegisteredProcessors) {
+        // First check the limit for the number of processors
+        size_t      proc_index = proc_count - priority;
+        size_t      limit = m_ProcessorConcurrency[proc_index].m_Limit;
+
+        m_ProcessorConcurrency[proc_index].m_CountLock.lock();
+        size_t      current_count = m_ProcessorConcurrency[proc_index].m_CurrentCount;
+        m_ProcessorConcurrency[proc_index].m_CountLock.unlock();
+
+        if (current_count >= limit) {
+            if (request->NeedTrace()) {
+                // false: no need to update the last activity
+                reply->SendTrace("Processor: " + proc->GetName() +
+                                 " will not be tried to create because"
+                                 " the processor group limit has been exceeded."
+                                 " Limit: " + to_string(limit) +
+                                 " Current count: " + to_string(current_count),
+                                 request->GetStartTimestamp(), false);
+            }
+            --priority;
+            continue;
+        }
+
         if (request->NeedTrace()) {
             // false: no need to update the last activity
             reply->SendTrace("Try to create processor: " + proc->GetName(),
@@ -78,6 +127,10 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         }
         IPSGS_Processor *   p = proc->CreateProcessor(request, reply, priority);
         if (p) {
+            m_ProcessorConcurrency[proc_index].m_CountLock.lock();
+            ++m_ProcessorConcurrency[proc_index].m_CurrentCount;
+            m_ProcessorConcurrency[proc_index].m_CountLock.unlock();
+
             ret.push_back(p);
 
             auto    new_proc = SProcessorData(p, ePSGS_Up,
@@ -86,7 +139,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
 
             if (request->NeedTrace()) {
                 // false: no need to update the last activity
-                reply->SendTrace("Processor " + proc->GetName() +
+                reply->SendTrace("Processor " + p->GetName() +
                                  " has been created sucessfully (priority: " +
                                  to_string(priority) + ")",
                                  request->GetStartTimestamp(), false);
@@ -103,7 +156,8 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     }
 
     if (ret.empty()) {
-        string  msg = "No matching processors found to serve the request";
+        string  msg = "No matching processors found or processor limits "
+                      "exceeded to serve the request";
         PSG_TRACE(msg);
 
         reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
@@ -397,7 +451,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         // Clear the group after the final chunk is sent
         if (!reply->IsCompleted() && reply->IsFinished()) {
             reply->SetCompleted();
-            m_ProcessorGroups.erase(procs);
+            x_EraseProcessorGroup(procs);
         }
     }
 
@@ -492,7 +546,7 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
             }
         }
 
-        m_ProcessorGroups.erase(procs);
+        x_EraseProcessorGroup(procs);
     }
 
     m_GroupsLock.unlock();
@@ -591,5 +645,22 @@ void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
             proc->Cancel();
         }
     }
+}
+
+
+void CPSGS_Dispatcher::x_EraseProcessorGroup(
+        map<size_t, unique_ptr<SProcessorGroup>>::iterator  to_erase)
+{
+    size_t      proc_count = m_RegisteredProcessors.size();
+
+    for (auto &  proc: to_erase->second->m_Processors) {
+        size_t      proc_priority = proc.m_Processor->GetPriority();
+        size_t      proc_index = proc_count - proc_priority;
+
+        m_ProcessorConcurrency[proc_index].m_CountLock.lock();
+        --m_ProcessorConcurrency[proc_index].m_CurrentCount;
+        m_ProcessorConcurrency[proc_index].m_CountLock.unlock();
+    }
+    m_ProcessorGroups.erase(to_erase);
 }
 
