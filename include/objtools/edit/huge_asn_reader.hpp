@@ -34,6 +34,7 @@
 #define _HUGE_ASN_READER_HPP_INCLUDED_
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objtools/edit/huge_file.hpp>
 
@@ -50,12 +51,6 @@ class CSeq_descr;
 
 BEGIN_SCOPE(edit)
 
-/*
-struct CRefLess
-{
-    bool operator()(const CConstRef<CSeq_id>& l, const CConstRef<CSeq_id>& r) const;
-};
-*/
 
 class NCBI_XOBJEDIT_EXPORT CHugeAsnReader: public IHugeAsnSource
 {
@@ -93,10 +88,8 @@ public:
     };
 
 
-    struct CRefLess
-    {
-        bool operator()(const CConstRef<CSeq_id>& l, const CConstRef<CSeq_id>& r) const;
-    };
+    using CRefLess = PPtrLess<CConstRef<CSeq_id>>;
+
 
     using TBioseqIndex = std::map<CConstRef<CSeq_id>, TBioseqList::iterator, CRefLess>;
 
