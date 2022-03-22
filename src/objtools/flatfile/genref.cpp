@@ -3018,7 +3018,7 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
     delete gnp;
 }
 
-bool sGenelocContained(
+bool GenelocContained(
     const CSeq_loc& loc1,
     const CSeq_loc& loc2,
     CScope* scope)
@@ -3028,7 +3028,7 @@ bool sGenelocContained(
     if (strand1 != strand2) {
         return false;
     }
-    if (loc1.IsInt()  &&  loc2.IsInt()) { // extremely likely for gene locations
+    if (loc1.IsInt()  &&  loc2.IsInt()) {
         const auto& intv1 = loc1.GetInt();
         const auto& intv2 = loc2.GetInt();
         return (intv1.GetFrom() >= intv2.GetFrom()  && intv1.GetTo() <= intv2.GetTo());
@@ -3066,7 +3066,7 @@ static CRef<CSeqFeatXref> GetXrpForOverlap(const Char* acnum, GeneRefFeats& gene
     {
         for (TSeqFeatList::iterator cur_feat = gene_refs.first; cur_feat != gene_refs.last; ++cur_feat)
         {
-            if (!sGenelocContained(*loc, *cur_loc->loc, nullptr)) {
+            if (!GenelocContained(*loc, *cur_loc->loc, nullptr)) {
                 ++cur_loc;
                 continue;                   /* f location is within sfp one */
             }
