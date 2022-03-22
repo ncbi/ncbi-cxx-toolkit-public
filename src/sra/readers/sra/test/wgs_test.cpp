@@ -564,15 +564,15 @@ int CWGSTestApp::Run(void)
     else {
         if ( !row && (row = CWGSDb::ParseContigRow(path)) ) {
             is_component = true;
-            path = path.substr(0, 6);
+            path = CWGSDb_Impl::NormalizePathOrAccession(path);
         }
         if ( !row && (row = CWGSDb::ParseScaffoldRow(path)) ) {
             is_scaffold = true;
-            path = path.substr(0, 6);
+            path = CWGSDb_Impl::NormalizePathOrAccession(path);
         }
         if ( !row && (row = CWGSDb::ParseProteinRow(path)) ) {
             is_protein = true;
-            path = path.substr(0, 6);
+            path = CWGSDb_Impl::NormalizePathOrAccession(path);
         }
     }
     if ( row && !args["limit_count"] ) {
@@ -669,8 +669,13 @@ int CWGSTestApp::Run(void)
                 out << " comment: \""<<it.GetPublicComment()<<"\"";
             }
             out << '\n';
+            CStopWatch sw;
+            sw.Restart();
             CRef<CBioseq> seq1 = it.GetBioseq();
+            out << "Loaded bioseq in "<<sw.Elapsed()<<"s"<<endl;
+            sw.Restart();
             CRef<CBioseq> seq2 = it.GetBioseq(it.fDefaultIds|it.fInst_ncbi4na);
+            out << "Loaded bioseq(na4) in "<<sw.Elapsed()<<"s"<<endl;
             if ( print_seq ) {
                 out << MSerial_AsnText << *seq1;
             }
