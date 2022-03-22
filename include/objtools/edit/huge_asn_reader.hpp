@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
-#include "huge_file.hpp"
+#include <objtools/edit/huge_file.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -48,12 +48,17 @@ namespace objects
     class CSeq_descr;
 }
 
+BEGIN_SCOPE(objects)
+BEGIN_SCOPE(edit)
+
+/*
 struct CRefLess
 {
     bool operator()(const CConstRef<objects::CSeq_id>& l, const CConstRef<objects::CSeq_id>& r) const;
 };
+*/
 
-class CHugeAsnReader: public IHugeAsnSource
+class NCBI_XOBJEDIT_EXPORT CHugeAsnReader: public IHugeAsnSource
 {
 public:
     using TFileSize = std::streamoff;
@@ -86,6 +91,12 @@ public:
         TBioseqSetIndex::iterator m_parent_set;
         objects::CBioseq_set::TClass m_class = objects::CBioseq_set::eClass_not_set;
         CConstRef<objects::CSeq_descr> m_descr;
+    };
+
+
+    struct CRefLess
+    {
+        bool operator()(const CConstRef<objects::CSeq_id>& l, const CConstRef<objects::CSeq_id>& r) const;
     };
 
     using TBioseqIndex = std::map<CConstRef<objects::CSeq_id>, TBioseqList::iterator, CRefLess>;
@@ -126,6 +137,8 @@ protected:
     TBioseqSetIndex m_bioseq_set_index;
 };
 
+END_SCOPE(edit)
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // _HUGE_ASN_READER_HPP_INCLUDED_

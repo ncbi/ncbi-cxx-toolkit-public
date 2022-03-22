@@ -48,7 +48,7 @@ class CMultiReader;
 class CTable2AsnValidator;
 class CMask;
 class CTable2AsnStructuredCommentsReader;
-class CHugeAsnReader;
+//class CHugeAsnReader;
 class CFeatureTableReader;
 
 class CTbl2AsnApp : public CNcbiApplication
