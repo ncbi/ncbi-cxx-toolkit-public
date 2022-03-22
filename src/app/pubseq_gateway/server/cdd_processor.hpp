@@ -90,6 +90,7 @@ public:
     void Cancel(void) override;
     EPSGS_Status GetStatus(void) override;
     string GetName(void) const override;
+    string GetGroupName(void) const override;
 
     void OnGotBlobBySeqId(void);
     void OnGotBlobByBlobId(void);

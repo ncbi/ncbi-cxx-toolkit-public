@@ -42,6 +42,8 @@ USING_NCBI_SCOPE;
 
 using namespace std::placeholders;
 
+static const string   kAccVerHistProcessorName = "Cassandra-accession-version-history";
+
 
 CPSGS_AccessionVersionHistoryProcessor::CPSGS_AccessionVersionHistoryProcessor() :
     m_RecordCount(0),
@@ -90,7 +92,7 @@ CPSGS_AccessionVersionHistoryProcessor::CreateProcessor(
     auto        startup_data_state = app->GetStartupDataState();
     if (startup_data_state != ePSGS_StartupDataOK) {
         if (request->NeedTrace()) {
-            reply->SendTrace("Cannot create " + GetName() +
+            reply->SendTrace("Cannot create " + kAccVerHistProcessorName +
                              " processor because Cassandra DB "
                              "is not available.\n" +
                              GetCassStartupDataStateMessage(startup_data_state),
@@ -138,10 +140,11 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
 
-    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
-                                                   message, status, code,
-                                                   severity);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqMessage(
+                                    item_id, kAccVerHistProcessorName,
+                                    message, status, code, severity);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
+                                    item_id, kAccVerHistProcessorName, 2);
 
     m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -220,9 +223,10 @@ CPSGS_AccessionVersionHistoryProcessor::x_SendBioseqInfo(
                                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
 
     IPSGS_Processor::m_Reply->PrepareBioseqData(
-            item_id, GetName(), data_to_send,
+            item_id, kAccVerHistProcessorName, data_to_send,
             SPSGS_ResolveRequest::ePSGS_JsonFormat);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
+            item_id, kAccVerHistProcessorName, 2);
 }
 
 
@@ -277,7 +281,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
 
     ++m_RecordCount;
     IPSGS_Processor::m_Reply->PrepareAccVerHistoryData(
-        GetName(), ToJsonString(acc_ver_hist_record));
+        kAccVerHistProcessorName, ToJsonString(acc_ver_hist_record));
 
     x_Peek(false);
     return true;
@@ -301,7 +305,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
-            GetName(), message, status, code, severity);
+            kAccVerHistProcessorName, message, status, code, severity);
 
     // To avoid sending an error in Peek()
     fetch_details->GetLoader()->ClearError();
@@ -330,10 +334,15 @@ IPSGS_Processor::EPSGS_Status CPSGS_AccessionVersionHistoryProcessor::GetStatus(
 }
 
 
-static const string   kAccVerHistProcessorName = "Cassandra-accession-version-history";
 string CPSGS_AccessionVersionHistoryProcessor::GetName(void) const
 {
     return kAccVerHistProcessorName;
+}
+
+
+string CPSGS_AccessionVersionHistoryProcessor::GetGroupName(void) const
+{
+    return kCassandraProcessorGroupName;
 }
 
 
@@ -417,7 +426,7 @@ bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fe
 
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(),
-                GetName(), error, status,
+                kAccVerHistProcessorName, error, status,
                 ePSGS_UnknownError, eDiag_Error);
 
         // Mark finished

@@ -17,7 +17,7 @@ SRC = pubseq_gateway  \
       osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot cdd_processor \
       psgs_io_callbacks accession_version_history_processor psgs_uv_loop_binder \
       bioseq_info_record_selector split_info_utils split_info_cache \
-      wgs_client wgs_processor
+      wgs_client wgs_processor cass_processor_dispatch
 
 LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) \
        $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) \

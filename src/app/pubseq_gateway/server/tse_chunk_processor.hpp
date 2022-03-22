@@ -51,6 +51,7 @@ public:
     virtual void Process(void);
     virtual EPSGS_Status GetStatus(void);
     virtual string GetName(void) const;
+    virtual string GetGroupName(void) const;
     virtual void ProcessEvent(void);
 
 public:

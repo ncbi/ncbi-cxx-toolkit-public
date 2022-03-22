@@ -37,6 +37,9 @@
 #include "ipsgs_processor.hpp"
 #include "pubseq_gateway_logging.hpp"
 
+// Must be more than the processor groups registered via the AddProcessor()
+// call
+#define MAX_PROCESSOR_GROUPS    16
 
 // libuv request timer callback
 void request_timer_cb(uv_timer_t *  handle);
@@ -220,6 +223,28 @@ private:
     mutex                                       m_GroupsLock;
 
     uint64_t                                    m_RequestTimeoutMillisec;
+
+private:
+    // Processor concurrency support:
+    // Each group of processors may have its own limits and needs to store a
+    // current number of running instances
+
+    void x_EraseProcessorGroup(map<size_t,
+                                   unique_ptr<SProcessorGroup>>::iterator  to_erase);
+
+    struct SProcessorConcurrency
+    {
+        size_t                  m_Limit;
+        size_t                  m_CurrentCount;
+        mutex                   m_CountLock;
+
+        SProcessorConcurrency() :
+            m_Limit(0), m_CurrentCount(0)
+        {}
+    };
+
+    SProcessorConcurrency       m_ProcessorConcurrency[MAX_PROCESSOR_GROUPS];
+    vector<string>              m_RegisteredProcessorGroups;
 };
 
 

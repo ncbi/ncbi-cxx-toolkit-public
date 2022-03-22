@@ -70,6 +70,12 @@ string CPSGS_OSGAnnot::GetName() const
 }
 
 
+string CPSGS_OSGAnnot::GetGroupName() const
+{
+    return kOSGProcessorGroupName;
+}
+
+
 bool CPSGS_OSGAnnot::CanProcess(TEnabledFlags enabled_flags,
                                 shared_ptr<CPSGS_Request>& request,
                                 TProcessorPriority priority)

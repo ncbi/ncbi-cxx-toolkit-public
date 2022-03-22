@@ -148,6 +148,12 @@ string CPSGS_OSGProcessor::GetName() const
 }
 
 
+string CPSGS_OSGProcessor::GetGroupName() const
+{
+    return kOSGProcessorGroupName;
+}
+
+
 void CPSGS_OSGProcessor::Process()
 {
 }

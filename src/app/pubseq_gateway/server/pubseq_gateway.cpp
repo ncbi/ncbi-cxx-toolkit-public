@@ -52,15 +52,10 @@
 #include "shutdown_data.hpp"
 #include "cass_monitor.hpp"
 #include "introspection.hpp"
-#include "resolve_processor.hpp"
-#include "annot_processor.hpp"
-#include "get_processor.hpp"
-#include "getblob_processor.hpp"
-#include "tse_chunk_processor.hpp"
+#include "cass_processor_dispatch.hpp"
 #include "osg_processor.hpp"
 #include "cdd_processor.hpp"
 #include "wgs_processor.hpp"
-#include "accession_version_history_processor.hpp"
 #include "favicon.hpp"
 
 
@@ -109,6 +104,7 @@ const string            kDefaultSSLKeyFile = "";
 const string            kDefaultSSLCiphers = "EECDH+aRSA+AESGCM EDH+aRSA+AESGCM EECDH+aRSA EDH+aRSA !SHA !SHA256 !SHA384";
 const size_t            kDefaultShutdownIfTooManyOpenFDforHTTP = 0;
 const size_t            kDefaultShutdownIfTooManyOpenFDforHTTPS = 8000;
+const size_t            kDefaultProcessorMaxConcurrency = 200;
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -168,6 +164,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
+    m_ProcessorMaxConcurrency(kDefaultProcessorMaxConcurrency),
     m_SSLEnable(kDefaultSSLEnable),
     m_SSLCiphers(kDefaultSSLCiphers),
     m_ShutdownIfTooManyOpenFD(0)
@@ -255,6 +252,8 @@ void CPubseqGatewayApp::ParseArgs(void)
                                             kDefaultResendTimeoutSec);
     m_RequestTimeoutSec = registry.GetDouble("SERVER", "request_timeout",
                                              kDefaultRequestTimeoutSec);
+    m_ProcessorMaxConcurrency = registry.GetInt("SERVER", "ProcessorMaxConcurrency",
+                                                kDefaultProcessorMaxConcurrency);
 
     try {
         m_AuthToken = registry.GetEncryptedString("ADMIN", "auth_token",
@@ -906,6 +905,15 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                     "timeout is reset to the default value (" +
                     to_string(kDefaultRequestTimeoutSec) + ").");
         m_RequestTimeoutSec = kDefaultRequestTimeoutSec;
+    }
+
+    if (m_ProcessorMaxConcurrency == 0) {
+        PSG_WARNING("Invalid [SERVER]/ProcessorMaxConcurrency value (" +
+                    to_string(m_ProcessorMaxConcurrency) + "). "
+                    "The processor max concurrency must be greater than 0. "
+                    "The processor max concurrency is reset to the default value (" +
+                    to_string(kDefaultProcessorMaxConcurrency) + ").");
+        m_RequestTimeoutSec = kDefaultProcessorMaxConcurrency;
     }
 
     if (m_SSLEnable) {
@@ -1714,23 +1722,41 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
     // Note: the order of adding defines the priority.
     //       Earleir added - higher priority
     m_RequestDispatcher->AddProcessor(
-            unique_ptr<IPSGS_Processor>(new CPSGS_ResolveProcessor()));
-    m_RequestDispatcher->AddProcessor(
-            unique_ptr<IPSGS_Processor>(new CPSGS_GetProcessor()));
-    m_RequestDispatcher->AddProcessor(
-            unique_ptr<IPSGS_Processor>(new CPSGS_GetBlobProcessor()));
-    m_RequestDispatcher->AddProcessor(
-            unique_ptr<IPSGS_Processor>(new CPSGS_AnnotProcessor()));
-    m_RequestDispatcher->AddProcessor(
-            unique_ptr<IPSGS_Processor>(new CPSGS_TSEChunkProcessor()));
+        unique_ptr<IPSGS_Processor>(new CPSGS_CassProcessorDispatcher()));
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::osg::CPSGS_OSGProcessor()));
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::cdd::CPSGS_CDDProcessor()));
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::wgs::CPSGS_WGSProcessor()));
-    m_RequestDispatcher->AddProcessor(
-        unique_ptr<IPSGS_Processor>(new CPSGS_AccessionVersionHistoryProcessor()));
+}
+
+
+size_t
+CPubseqGatewayApp::GetProcessorMaxConcurrency(const string &  processor_id)
+{
+    const CNcbiRegistry &   registry = GetConfig();
+    string                  section = processor_id + "_PROCESSOR";
+
+    if (registry.HasEntry(section, "ProcessorMaxConcurrency")) {
+        size_t      limit = registry.GetInt(section,
+                                            "ProcessorMaxConcurrency",
+                                            m_ProcessorMaxConcurrency);
+        if (limit == 0) {
+           PSG_WARNING("Invalid [" + section + "]/ProcessorMaxConcurrency value (" +
+                       to_string(limit) + "). "
+                       "The processor max concurrency must be greater than 0. "
+                       "The processor max concurrency is reset to the "
+                       "non-processor specific default value (" +
+                       to_string(m_ProcessorMaxConcurrency) + ").");
+            limit = m_ProcessorMaxConcurrency;
+        }
+
+        return limit;
+    }
+
+    // No processor specific value => server wide (or default)
+    return m_ProcessorMaxConcurrency;
 }
 
 

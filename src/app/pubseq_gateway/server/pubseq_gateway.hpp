@@ -237,6 +237,8 @@ public:
         return m_RequestDispatcher->SignalStartProcessing(processor);
     }
 
+    size_t GetProcessorMaxConcurrency(const string &  processor_id);
+
     void SignalFinishProcessing(IPSGS_Processor *  processor,
                                 CPSGS_Dispatcher::EPSGS_SignalSource  signal_source)
     {
@@ -514,6 +516,7 @@ private:
 
     // Requests dispatcher
     unique_ptr<CPSGS_Dispatcher>        m_RequestDispatcher;
+    size_t                              m_ProcessorMaxConcurrency;
 
     // https support
     bool                                m_SSLEnable;

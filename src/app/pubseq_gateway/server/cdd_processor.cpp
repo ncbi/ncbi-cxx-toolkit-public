@@ -53,6 +53,7 @@ BEGIN_NAMESPACE(cdd);
 USING_SCOPE(objects);
 
 static const string kCDDAnnotName = "CDD";
+static const string kCDDProcessorGroupName = "CDD";
 static const string kCDDProcessorName = "CDD";
 const CID2_Blob_Id::TSat kCDDSat = 8087;
 
@@ -270,6 +271,12 @@ CPSGS_CDDProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
 string CPSGS_CDDProcessor::GetName() const
 {
     return kCDDProcessorName;
+}
+
+
+string CPSGS_CDDProcessor::GetGroupName() const
+{
+    return kCDDProcessorGroupName;
 }
 
 

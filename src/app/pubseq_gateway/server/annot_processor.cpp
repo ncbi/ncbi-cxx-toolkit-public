@@ -42,6 +42,8 @@ USING_NCBI_SCOPE;
 
 using namespace std::placeholders;
 
+static const string   kAnnotProcessorName = "Cassandra-getna";
+
 
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
     m_AnnotRequest(nullptr), m_BlobStage(false)
@@ -60,7 +62,7 @@ CPSGS_AnnotProcessor::CPSGS_AnnotProcessor(
                            this, _1, _2, _3, _4),
                       bind(&CPSGS_AnnotProcessor::x_OnResolutionGoodData,
                            this)),
-    CPSGS_CassBlobBase(request, reply, GetName(),
+    CPSGS_CassBlobBase(request, reply, kAnnotProcessorName,
                        bind(&CPSGS_AnnotProcessor::OnGetBlobProp,
                             this, _1, _2, _3),
                        bind(&CPSGS_AnnotProcessor::OnGetBlobChunk,
@@ -98,7 +100,7 @@ CPSGS_AnnotProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
     auto        startup_data_state = app->GetStartupDataState();
     if (startup_data_state != ePSGS_StartupDataOK) {
         if (request->NeedTrace()) {
-            reply->SendTrace("Cannot create " + GetName() +
+            reply->SendTrace("Cannot create " + kAnnotProcessorName +
                              " processor because Cassandra DB "
                              "is not available.\n" +
                              GetCassStartupDataStateMessage(startup_data_state),
@@ -177,10 +179,11 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
 
-    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, GetName(),
+    IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, kAnnotProcessorName,
                                                    message, status, code,
                                                    severity);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
+                                            item_id, kAnnotProcessorName, 2);
 
     m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -296,9 +299,10 @@ CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
                                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
 
     IPSGS_Processor::m_Reply->PrepareBioseqData(
-            item_id, GetName(), data_to_send,
+            item_id, kAnnotProcessorName, data_to_send,
             SPSGS_ResolveRequest::ePSGS_JsonFormat);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, GetName(), 2);
+    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
+            item_id, kAnnotProcessorName, 2);
 }
 
 
@@ -364,7 +368,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     if (other_proc_priority == kUnknownPriority) {
         // Has not been processed yet at all
         IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
-            annot_record.GetAnnotName(), GetName(),
+            annot_record.GetAnnotName(), kAnnotProcessorName,
             ToJsonString(annot_record, sat));
         annot_was_sent = true;
     } else if (other_proc_priority < m_Priority) {
@@ -380,7 +384,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
                 IPSGS_Processor::m_Request->GetStartTimestamp());
         }
         IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
-            annot_record.GetAnnotName(), GetName(),
+            annot_record.GetAnnotName(), kAnnotProcessorName,
             ToJsonString(annot_record, sat));
         annot_was_sent = true;
     } else {
@@ -423,7 +427,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
-            GetName(), message, status, code, severity);
+            kAnnotProcessorName, message, status, code, severity);
 
     // To avoid sending an error in Peek()
     fetch_details->GetLoader()->ClearError();
@@ -480,11 +484,11 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
     if (!blob_id.MapSatToKeyspace()) {
         app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
 
-        string  err_msg = GetName() + " processor failed to map sat " +
+        string  err_msg = kAnnotProcessorName + " processor failed to map sat " +
                           to_string(blob_id.m_Sat) +
                           " to a Cassandra keyspace while requesting the blob props";
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
-                IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+                IPSGS_Processor::m_Reply->GetItemId(), kAnnotProcessorName,
                 err_msg, CRequestStatus::e404_NotFound,
                 ePSGS_UnknownResolvedSatellite, eDiag_Error);
         PSG_WARNING(err_msg);
@@ -524,7 +528,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                         sent_mks_ago < m_AnnotRequest->m_ResendTimeoutMks) {
                         // No sending; the blob was send recent enough
                         IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                                blob_id.ToString(), GetName(),
+                                blob_id.ToString(), kAnnotProcessorName,
                                 sent_mks_ago,
                                 m_AnnotRequest->m_ResendTimeoutMks - sent_mks_ago);
                     } else {
@@ -540,7 +544,8 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                     }
                 } else {
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                            blob_id.ToString(), GetName(), ePSGS_BlobInProgress);
+                            blob_id.ToString(), kAnnotProcessorName,
+                            ePSGS_BlobInProgress);
                 }
                 if (finish_processing) {
                     m_Completed = true;
@@ -753,10 +758,15 @@ IPSGS_Processor::EPSGS_Status CPSGS_AnnotProcessor::GetStatus(void)
 }
 
 
-static const string   kAnnotProcessorName = "Cassandra-getna";
 string CPSGS_AnnotProcessor::GetName(void) const
 {
     return kAnnotProcessorName;
+}
+
+
+string CPSGS_AnnotProcessor::GetGroupName(void) const
+{
+    return kCassandraProcessorGroupName;
 }
 
 
@@ -847,7 +857,8 @@ bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(),
-                GetName(), error, CRequestStatus::e500_InternalServerError,
+                kAnnotProcessorName, error,
+                CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownError, eDiag_Error);
 
         // Mark finished

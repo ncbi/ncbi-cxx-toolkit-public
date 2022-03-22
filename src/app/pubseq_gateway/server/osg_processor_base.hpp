@@ -53,6 +53,8 @@ END_NAMESPACE(objects);
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
+const string kOSGProcessorGroupName = "OSG";
+
 class COSGFetch;
 class COSGConnectionPool;
 class COSGConnection;
