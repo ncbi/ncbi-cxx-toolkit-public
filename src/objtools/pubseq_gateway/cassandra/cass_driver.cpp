@@ -506,85 +506,88 @@ void CCassConnection::getTokenRanges(TTokenRanges &ranges)
 
 void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
 {
-    set<TTokenValue> cluster_tokens;
+    vector<TTokenValue> cluster_tokens;
     map<string, vector<TTokenValue>> peer_tokens;
+    string rpc_address, datacenter, schema, host_id;
 
-    auto query = NewQuery();
-    query->SetSQL("select data_center, schema_version, host_id, tokens "
-                  "from system.local", 0);
-    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
-
-    string host_id,  datacenter, schema;
-    vector<string> tokens;
-
-    query->NextRow();
-    query->FieldGetStrValue(0, datacenter);
-    query->FieldGetStrValue(1, schema);
-    query->FieldGetStrValue(2, host_id);
-    query->FieldGetSetValues(3, tokens);
-    auto itr = peer_tokens.insert(make_pair(host_id,vector<TTokenValue>())).first;
-    for(const auto & item: tokens) {
-        TTokenValue value = strtol(item.c_str(), nullptr, 10);
-        itr->second.push_back(value);
-        cluster_tokens.insert(value);
-    }
-
-    ERR_POST(Info << "GET_TOKEN_MAP: Schema version is " << schema);
-    ERR_POST(Info << "GET_TOKEN_MAP: datacenter is " << datacenter);
-    ERR_POST(Info << "GET_TOKEN_MAP: host_id is " << host_id);
-
-    unsigned int query_host_count = 0;
-    unsigned int retries = 0;
-    set<string> query_hosts;
-    while (retries < 3 && (query_host_count == 0 || peer_tokens.size() == query_host_count)) {
-        retries++;
-        if (query_host_count != 0) {
-            ERR_POST(Info << "GET_TOKEN_MAP: Host_id count is too small. "
-                "Retrying system.peers fetch. " << retries);
+    // Fetch tokens and schema version from any local host
+    {
+        vector<string> tokens;
+        auto query = NewQuery();
+        query->SetSQL("SELECT data_center, schema_version, rpc_address, host_id, tokens FROM system.local", 0);
+        query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+        query->NextRow();
+        query->FieldGetStrValue(0, datacenter);
+        query->FieldGetStrValue(1, schema);
+        query->FieldGetStrValue(2, rpc_address);
+        query->FieldGetStrValue(3, host_id);
+        query->FieldGetSetValues(4, tokens);
+        auto itr = peer_tokens.insert(make_pair(host_id, vector<TTokenValue>())).first;
+        for(const auto & item: tokens) {
+            TTokenValue value = strtol(item.c_str(), nullptr, 10);
+            itr->second.push_back(value);
+            cluster_tokens.push_back(value);
         }
 
-        query_host_count = 0;
-        query_hosts.clear();
-        query->SetSQL("select host_id, data_center, schema_version, tokens from system.peers", 0);
+        ERR_POST(Trace << "GET_TOKEN_MAP: Schema version is " << schema);
+        ERR_POST(Trace << "GET_TOKEN_MAP: datacenter is " << datacenter);
+        ERR_POST(Trace << "GET_TOKEN_MAP: host_id is " << host_id);
+        ERR_POST(Trace << "GET_TOKEN_MAP: rpc_address is " << rpc_address);
+    }
+
+    // Fetch peer tokens from the same local host
+    {
+        size_t peers_count{0};
+        auto query = NewQuery();
+        // We have to query the same host to get complete tokens distribution
+        query->SetHost(rpc_address);
+        query->SetSQL("SELECT data_center, schema_version, host_id, tokens FROM system.peers", 0);
         query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
         while (query->NextRow() == ar_dataready) {
             string peer_host_id, peer_dc, peer_schema;
             vector<string> tokens;
-            query->FieldGetStrValue(1, peer_dc);
-            query->FieldGetStrValue(2, peer_schema);
+            query->FieldGetStrValue(0, peer_dc);
+            query->FieldGetStrValue(1, peer_schema);
             if (datacenter == peer_dc && schema == peer_schema) {
-                query->FieldGetStrValue(0, peer_host_id);
-                if (query_hosts.find(peer_host_id) == query_hosts.end()) {
-                    query_hosts.insert(peer_host_id);
-                    query_host_count++;
-                }
+                ++peers_count;
+                query->FieldGetStrValue(2, peer_host_id);
                 query->FieldGetSetValues(3, tokens);
-                ERR_POST(Info << "GET_TOKEN_MAP: host is " << peer_host_id);
-                ERR_POST(Info << "GET_TOKEN_MAP: tokens " << tokens.size());
+                ERR_POST(Trace << "GET_TOKEN_MAP: host is '" << peer_host_id
+                    << "'; tokens count - " << tokens.size());
                 auto itr = peer_tokens.find(peer_host_id);
                 if (itr == peer_tokens.end()) {
                     itr = peer_tokens.insert(make_pair(peer_host_id, vector<TTokenValue>())).first;
                     for (const auto & item : tokens) {
                         TTokenValue value = strtol(item.c_str(), nullptr, 10);
                         itr->second.push_back(value);
-                        cluster_tokens.insert(value);
+                        cluster_tokens.push_back(value);
                     }
                 }
             }
         }
-        ERR_POST(Info << "GET_TOKEN_MAP: PEERS HOST COUNT IS " << peer_tokens.size());
-        ERR_POST(Info << "GET_TOKEN_MAP: QUERY HOST COUNT IS " << query_host_count);
+        ERR_POST(Trace << "GET_TOKEN_MAP: TOTAL HOST COUNT IS " << peer_tokens.size());
+        if (peer_tokens.size() != peers_count + 1) {
+            NCBI_THROW(CCassandraException, eFatal, "Wrong count of peers while resolving cluster tokens");
+        }
     }
 
-    for(const auto& token : cluster_tokens) {
-        ERR_POST(Trace << "GET_TOKEN_MAP: \ttoken " << token);
+    // Sort and validate
+    {
+        auto token_count = cluster_tokens.size();
+        sort(cluster_tokens.begin(), cluster_tokens.end());
+        cluster_tokens.erase(unique(cluster_tokens.begin(), cluster_tokens.end()), cluster_tokens.end());
+        if (token_count != cluster_tokens.size()) {
+            NCBI_THROW(CCassandraException, eFatal, "Duplicate values resolved for cluster tokens");
+        }
     }
 
-    ERR_POST(Info << "GET_TOKEN_MAP: tokens size " << cluster_tokens.size());
+    // Format and return
+    ERR_POST(Trace << "GET_TOKEN_MAP: tokens count " << cluster_tokens.size());
+    ranges.clear();
     ranges.reserve(cluster_tokens.size() + 1);
     TTokenValue lower_bound = numeric_limits<TTokenValue>::min();
     for (int64_t token : cluster_tokens) {
-        ERR_POST(Trace << "GET_TOKEN_MAP: token " << token << " : " << token - lower_bound);
+        //ERR_POST(Trace << "GET_TOKEN_MAP: range " << lower_bound << " : " << token << "; distance is " << token - lower_bound);
         ranges.push_back(make_pair(lower_bound, token));
         lower_bound = token;
     }
