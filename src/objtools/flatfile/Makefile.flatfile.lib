@@ -37,7 +37,9 @@ SRC     = \
     ftanet \
     ftamed \
     flatfile_message \
-    flatfile_message_reporter
+    flatfile_message_reporter \
+    qual_parse \
+    qual_validate
 
 
 LIB     = xflatfile

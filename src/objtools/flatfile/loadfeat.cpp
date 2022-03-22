@@ -72,6 +72,7 @@
 #include "index.h"
 #include "embl.h"
 #include "genbank.h"
+#include "qual_parse.hpp"
 
 #include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
@@ -4345,14 +4346,17 @@ static void fta_process_con_slice(std::vector<char>& val_buf)
     size_t i = 1;
     char* p = &val_buf[0];
 
+    // look for commas not followed by blank or end-of-string
     for (; *p != '\0'; p++)
         if (*p == ',' && p[1] != ' ' && p[1] != '\0')
             i++;
 
+    // if there are some ...
     if (i > 1)
     {
         vector<char> buf(i + val_buf.size());
         char* q = &buf[0];
+        // ... then insert a blank right after the comma
         for (p = &val_buf[0]; *p != '\0'; p++)
         {
             *q++ = *p;
@@ -4364,6 +4368,13 @@ static void fta_process_con_slice(std::vector<char>& val_buf)
     }
 }
 
+    
+void xSplitLines(
+    const string& str,
+    vector<string>& lines)
+{
+    NStr::Split(str, "\n", lines, 0);
+}
 
 /**********************************************************
  *
@@ -4378,7 +4389,48 @@ static void fta_process_con_slice(std::vector<char>& val_buf)
  *                                              10-12-93
  *
  **********************************************************/
+static void ParseQualifiersOld(FeatBlkPtr, char*, char*, Parser::EFormat);
+static void ParseQualifiersNew(FeatBlkPtr, const char*, const char*, Parser::EFormat);
+
 static void ParseQualifiers(FeatBlkPtr fbp, char* bptr, char* eptr,
+    Parser::EFormat format)
+{
+    ParseQualifiersOld(fbp, bptr, eptr, format);
+}
+
+static void ParseQualifiersNew(
+    FeatBlkPtr fbp, 
+    const char* bptr, 
+    const char* eptr,
+    Parser::EFormat format)
+{
+    string bstr(bptr, eptr);
+    NStr::TruncateSpacesInPlace(bstr);
+    //cerr << "bstr:\n" << bstr.c_str() << "\n\n";
+    vector<string> qualLines;
+    xSplitLines(bstr, qualLines);
+
+    string qualKey, qualVal;
+    string featKey(fbp->key);
+    string featLocation(fbp->location);
+    CQualParser qualParser(featKey, featLocation, qualLines);
+    while (!qualParser.Done()) {
+        if (qualParser.GetNextQualifier(qualKey, qualVal)) {
+            //cerr << "Key:   " << qualKey.c_str() << "\n";
+            //cerr << "Val:   " << qualVal.c_str() << "\n";
+            CRef<objects::CGb_qual> pQual(new objects::CGb_qual);
+            pQual->SetQual(qualKey);
+            pQual->SetVal(qualVal);
+            fbp->quals.push_back(pQual);
+        }
+        //else {
+        //    cerr << "Error: " << "Bad qualifier \"" << qualKey << "=" << qualVal << "\"\n";
+        //}
+    }
+}
+
+
+static void ParseQualifiersOld(FeatBlkPtr fbp, char* bptr, char* eptr,
                             Parser::EFormat format)
 {
     const char **b;
