@@ -1652,7 +1652,7 @@ bool CObjectIStreamXml::ThisTagIsSelfClosed(void)
     if (InsideOpeningTag()) {
         return EndOpeningTagSelfClosed();
     }
-    return false;
+    return SelfClosedTag();
 }
 
 
