@@ -105,6 +105,7 @@ public:
     void WaitForOtherProcessors();
     
     void FinalizeResult(IPSGS_Processor::EPSGS_Status status);
+    void SignalEndOfBackgroundProcessing();
     IPSGS_Processor::EPSGS_Status GetStatus() const;
     bool IsCanceled() const
         {
@@ -195,6 +196,8 @@ protected:
     void SetFinalStatus(EPSGS_Status status);
     void FinalizeResult(EPSGS_Status status);
     void FinalizeResult();
+    bool SignalStartOfBackgroundProcessing();
+    void SignalEndOfBackgroundProcessing();
 
     void AddRequest(const CRef<CID2_Request>& req);
 
@@ -214,7 +217,9 @@ private:
     CRef<COSGConnection> m_Connection;
     TFetches m_Fetches;
     shared_ptr<COSGProcessorRef> m_ProcessorRef;
+    CMutex m_StatusMutex;
     EPSGS_Status m_Status;
+    bool m_BackgroundProcesing;
     bool m_NeedTrace;
 };
 

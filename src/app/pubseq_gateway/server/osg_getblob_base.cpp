@@ -301,6 +301,7 @@ bool CPSGS_OSGGetBlobBase::HasBlob() const
 
 void CPSGS_OSGGetBlobBase::SendBlob()
 {
+    IPSGS_Processor::EPSGS_Status status;
     if ( m_SplitInfo && !m_Blob ) {
         // split_info with blob inside
         x_SetSplitVersion(m_SplitInfo->GetBlob_id(), m_SplitInfo->GetSplit_version());
@@ -308,7 +309,7 @@ void CPSGS_OSGGetBlobBase::SendBlob()
                         x_GetBlobState(*m_SplitInfo),
                         m_SplitInfo->GetSplit_version(),
                         m_SplitInfo->GetData());
-        SetFinalStatus(ePSGS_Done);
+        status = ePSGS_Done;
     }
     else if ( m_Blob && !m_SplitInfo && m_Blob->IsSetData() &&
               m_Blob->GetData().GetData_type() == CID2_Reply_Data::eData_type_id2s_split_info ) {
@@ -318,33 +319,34 @@ void CPSGS_OSGGetBlobBase::SendBlob()
                         x_GetBlobState(*m_Blob),
                         0,
                         m_Blob->GetData());
-        SetFinalStatus(ePSGS_Done);
+        status = ePSGS_Done;
     }
     else if ( m_Blob && !m_SplitInfo && m_Blob->IsSetData() ) {
         // blob only
         x_SendMainEntry(m_Blob->GetBlob_id(),
                         x_GetBlobState(*m_Blob),
                         m_Blob->GetData());
-        SetFinalStatus(ePSGS_Done);
+        status = ePSGS_Done;
     }
     else if ( m_Blob && !m_SplitInfo && !m_Blob->IsSetData() ) {
         // no blob reply TODO
-        SetFinalStatus(ePSGS_NotFound);
+        status = ePSGS_NotFound;
     }
     else if ( m_Blob && m_SplitInfo ) {
         // separate blob and m_SplitInfo TODO
-        SetFinalStatus(ePSGS_NotFound);
+        status = ePSGS_NotFound;
     }
     else if ( m_Chunk ) {
         x_SendChunk(m_Chunk->GetBlob_id(),
                     m_Chunk->GetChunk_id(),
                     m_Chunk->GetData());
-        SetFinalStatus(ePSGS_Done);
+        status = ePSGS_Done;
     }
     else {
         // nothing TODO
-        SetFinalStatus(ePSGS_NotFound);
+        status = ePSGS_NotFound;
     }
+    SetFinalStatus(status);
 }
 
 
