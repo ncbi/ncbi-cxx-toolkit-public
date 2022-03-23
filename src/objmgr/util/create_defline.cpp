@@ -3916,7 +3916,7 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     // use autodef user object, if present, to regenerate title
-    if (m_MainTitle.empty() && m_IsNA && (flags & fUseAutoDef) && ! m_IsTLS && ! m_IsNZ) {
+    if (m_MainTitle.empty() && m_IsNA && (! (flags & fDoNotUseAutoDef)) && ! m_IsTLS && ! m_IsNZ) {
 
         CSeqdesc_CI desc(bsh, CSeqdesc::e_User);
         while (desc && desc->GetUser().GetObjectType() != CUser_object::eObjectType_AutodefOptions) {
