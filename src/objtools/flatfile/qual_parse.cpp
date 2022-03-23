@@ -33,6 +33,7 @@
 
 #include <objects/seqfeat/Seq_feat.hpp>
 
+#include "flatparse_report.hpp"
 #include "qual_parse.hpp"
 #include "ftaerr.hpp"
 
@@ -94,7 +95,7 @@ bool CQualParser::GetNextQualifier(
         }
     }
     if (!sHasBalancedQuotes(qualVal)) {
-        CQualReport::ReportUnbalancedQuotes(qualKey);
+        CFlatParseReport::ReportUnbalancedQuotes(qualKey);
         return false;
     }
     return mCleanerUpper.CleanAndValidate(qualKey, qualVal);
