@@ -39,8 +39,8 @@ SRC     = \
     flatfile_message \
     flatfile_message_reporter \
     qual_parse \
-    qual_validate
-
+    qual_validate \
+    flatparse_report
 
 LIB     = xflatfile
 

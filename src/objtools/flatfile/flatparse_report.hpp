@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* File Name: qual_validate.hpp
+* File Name: flatparse_report.hpp
 *
 * Author: Frank Ludwig
 *
@@ -32,63 +32,41 @@
 *
 */
 
-#ifndef FLATFILE__QUAL_VALIDATE__HPP
-#define FLATFILE__QUAL_VALIDATE__HPP
+#ifndef FLATFILE__FLATPARSE_REPORT__HPP
+#define FLATFILE__FLATPARSE_REPORT__HPP
 
 #include "ftaerr.hpp"
 # include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
-
 //  ----------------------------------------------------------------------------
-class CQualCleanup
+class CFlatParseReport
 //  ----------------------------------------------------------------------------
 {
 public:
-    CQualCleanup(
-        const string& featKey,
-        const string& featLocation);
-
-    bool CleanAndValidate(
-        string& qualKey,
-        string& qualVal);
+    static void ReportUnbalancedQuotes(
+        const string& pQualKey);
 
 private:
-    bool xCleanAndValidateGeneric(
-        string& qualKey,
-        string& qualVal);
+    static void ReportProblemParms1(
+        ErrSev severity,
+        int majorCode,
+        int minorCode,
+        const char* pQualKey);
 
-    bool xCleanAndValidateArtificialLocation(
-        string& qualKey,
-        string& qualVal);
-    bool xCleanAndValidateConsSplice(
-        string& qualKey,
-        string& qualVal);
-    bool xCleanAndValidateSpecificHost(
-        string& qualKey,
-        string& qualVal);
-    bool xCleanAndValidateReplace(
-        string& qualKey,
-        string& qualVal);
-    bool xCleanAndValidateRptUnit(
-        string& qualKey,
-        string& qualVal);
-    bool xCleanAndValidateTranslation(
-        string& qualKey,
-        string& qualVal);
+    static void ReportProblemParms1(
+        ErrSev severity,
+        int majorCode,
+        int minorCode,
+        const string& qualKey);
 
-    static bool xCleanStripBlanks(
-        string& val);
-    static bool xCleanToLower(
-        string& val);
-    static bool xCleanFollowCommasWithBlanks(
-        string& val);
-
-    const char* mpFeatKey;
-    const char* mpFeatLocation;
+    using ErrCode = pair<int, int>;
+    using ErrMessageLookup = map<ErrCode, const char*>;
+    static ErrMessageLookup mMessageTemplates;
 };
+
 
 END_NCBI_SCOPE
 
-#endif //FLATFILE__QUAL_VALIDATE__HPP
+#endif //FLATFILE__FLATPARSE_REPORT__HPP
