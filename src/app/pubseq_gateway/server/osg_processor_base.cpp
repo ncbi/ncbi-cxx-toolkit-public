@@ -53,7 +53,7 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-#if 0
+#if 1
 # define tLOG_POST(m) LOG_POST(m)
 #else
 # define tLOG_POST(m) ((void)0)
@@ -135,6 +135,15 @@ void COSGProcessorRef::FinalizeResult(IPSGS_Processor::EPSGS_Status status)
 }
 
 
+void COSGProcessorRef::SignalEndOfBackgroundProcessing()
+{
+    CFastMutexGuard guard(m_ProcessorPtrMutex);
+    if ( m_ProcessorPtr ) {
+        m_ProcessorPtr->SignalEndOfBackgroundProcessing();
+    }
+}
+
+
 IPSGS_Processor::EPSGS_Status COSGProcessorRef::GetStatus() const
 {
     CFastMutexGuard guard(m_ProcessorPtrMutex);
@@ -156,6 +165,7 @@ void COSGProcessorRef::Cancel()
 
 void COSGProcessorRef::Detach()
 {
+    return;
     CFastMutexGuard guard(m_ProcessorPtrMutex);
     if ( m_ProcessorPtr ) {
         m_FinalStatus = m_ProcessorPtr->GetStatus();
@@ -223,6 +233,7 @@ void COSGProcessorRef::s_ProcessReplies(void *data)
         ERR_POST("OSG: ProcessReplies() failed: "<<exc.what());
         ref->FinalizeResult(IPSGS_Processor::ePSGS_Error);
     }
+    ref->SignalEndOfBackgroundProcessing();
     delete &ref;
 }
 
@@ -346,6 +357,7 @@ void COSGProcessorRef::Process()
             tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() finished: "<<GetStatus());
             _ASSERT(GetStatus() != IPSGS_Processor::ePSGS_InProgress);
             tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() return: "<<GetStatus());
+            SignalEndOfBackgroundProcessing();
         }
         tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() done: "<<GetStatus());
     }
@@ -370,6 +382,7 @@ CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
       m_ConnectionPool(pool),
       m_EnabledFlags(enabled_flags),
       m_Status(IPSGS_Processor::ePSGS_InProgress),
+      m_BackgroundProcesing(false),
       m_NeedTrace(request->NeedTrace())
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CPSGS_OSGProcessorBase()");
@@ -421,8 +434,10 @@ IPSGS_Processor* CPSGS_OSGProcessorBase::CreateProcessor(shared_ptr<CPSGS_Reques
 CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
 {
     StopAsyncThread();
+    CMutexGuard guard(m_StatusMutex);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() status: "<<m_Status);
     _ASSERT(m_Status != IPSGS_Processor::ePSGS_InProgress);
+    _ASSERT(!m_BackgroundProcesing);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() return: "<<m_Status);
     if ( m_ProcessorRef ) {
         m_ProcessorRef->Detach();
@@ -509,6 +524,10 @@ void CPSGS_OSGProcessorBase::ProcessSync()
 
 void CPSGS_OSGProcessorBase::ProcessAsync()
 {
+    if ( !SignalStartOfBackgroundProcessing() ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessAsync(): don't start thread: "<<m_Status);
+        return;
+    }
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessAsync(): "<<m_Status);
     thread(bind(&COSGProcessorRef::s_Process, m_ProcessorRef)).detach();
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessAsync() started: "<<m_Status);
@@ -526,6 +545,7 @@ void CPSGS_OSGProcessorBase::s_ProcessReplies(void* proc)
 
 void CPSGS_OSGProcessorBase::Cancel()
 {
+    CMutexGuard guard(m_StatusMutex);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Cancel()");
     SetFinalStatus(ePSGS_Canceled);
     FinalizeResult();
@@ -585,9 +605,13 @@ void CPSGS_OSGProcessorBase::SetFinalStatus(EPSGS_Status status)
 
 void CPSGS_OSGProcessorBase::FinalizeResult()
 {
+    CMutexGuard guard(m_StatusMutex);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): "<<m_Status);
     _ASSERT(m_Status != ePSGS_InProgress);
-    SignalFinishProcessing();
+    if ( !m_BackgroundProcesing ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): signal "<<m_Status);
+        SignalFinishProcessing();
+    }
 }
 
 
@@ -595,6 +619,32 @@ void CPSGS_OSGProcessorBase::FinalizeResult(EPSGS_Status status)
 {
     SetFinalStatus(status);
     FinalizeResult();
+}
+
+
+bool CPSGS_OSGProcessorBase::SignalStartOfBackgroundProcessing()
+{
+    CMutexGuard guard(m_StatusMutex);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalStartOfBackgroundProcessing(): signal "<<m_Status);
+    _ASSERT(!m_BackgroundProcesing);
+    if ( GetStatus() == IPSGS_Processor::ePSGS_Canceled ) {
+        return false;
+    }
+    m_BackgroundProcesing = true;
+    return true;
+}
+
+
+void CPSGS_OSGProcessorBase::SignalEndOfBackgroundProcessing()
+{
+    CMutexGuard guard(m_StatusMutex);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): signal "<<m_Status);
+    _ASSERT(m_BackgroundProcesing);
+    m_BackgroundProcesing = false;
+    if ( GetStatus() == IPSGS_Processor::ePSGS_Canceled ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): signal "<<m_Status);
+        SignalFinishProcessing();
+    }
 }
 
 

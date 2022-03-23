@@ -190,7 +190,6 @@ void CPSGS_OSGGetBlob::ProcessReplies()
         return;
     }
     SendBlob();
-    FinalizeResult();
 }
 
 
@@ -277,7 +276,6 @@ void CPSGS_OSGGetChunks::ProcessReplies()
         return;
     }
     SendBlob();
-    FinalizeResult();
 }
 
 
