@@ -56,6 +56,7 @@ class CMLAClient;
 class CAuth_list;
 class IObjtoolsListener;
 class CPub;
+class CPubdesc;
 class CTaxon3_reply;
 
 BEGIN_SCOPE(edit)
