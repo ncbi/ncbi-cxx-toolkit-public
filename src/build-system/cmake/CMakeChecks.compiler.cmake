@@ -482,6 +482,8 @@ endif()
 if(CYGWIN)
     set(CMAKE_USE_CCACHE OFF)
     set(CMAKE_USE_DISTCC OFF)
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wa,-mbig-obj")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  -Wa,-mbig-obj")
 endif()
 
 if (APPLE)
