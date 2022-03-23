@@ -883,9 +883,7 @@ bool CSrcWriter::xGatherDefline(
 
 
     string label = 
-        sequence::CDeflineGenerator().GenerateDefline(
-                bsh,
-                sequence::CDeflineGenerator::fUseAutoDef);
+        sequence::CDeflineGenerator().GenerateDefline(bsh);
     if (label.empty()) {
         return true;
     }
