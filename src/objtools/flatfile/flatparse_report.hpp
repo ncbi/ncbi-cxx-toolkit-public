@@ -44,21 +44,33 @@ BEGIN_NCBI_SCOPE
 class CFlatParseReport
 //  ----------------------------------------------------------------------------
 {
+//  Signature convention:
+//  Return value indicates whether the reported problem leaves the qualifier
+//   usable or not.
+//   ==true: problem not serious, use qualifier
+//   ==false: problem serious, don't use qualifier
+//  Args are generally in order featKey, featLocation, qualKey, qualVal but the 
+//   ones that don't apply may be missing.
+//  Any specific arguments come after that.
 public:
-    static void ReportUnbalancedQuotes(
-        const string& pQualKey);
+    static void ContainsEmbeddedQualifier(
+        const string& featKey,
+        const string& featLocation,
+        const string& qualKey,
+        const string& firstEmbedded,
+        bool inNote =false);
 
-private:
-    static void ReportProblemParms1(
-        ErrSev severity,
-        int majorCode,
-        int minorCode,
-        const char* pQualKey);
+    static void QualShouldHaveValue(
+        const string& featKey,
+        const string& featLocation,
+        const string& qualKey);
 
-    static void ReportProblemParms1(
-        ErrSev severity,
-        int majorCode,
-        int minorCode,
+    static void QualShouldNotHaveValue(
+        const string& featKey,
+        const string& featLocation,
+        const string& qualKey);
+
+    static void UnbalancedQuotes(
         const string& qualKey);
 
     using ErrCode = pair<int, int>;

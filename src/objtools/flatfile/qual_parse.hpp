@@ -68,6 +68,10 @@ private:
         string& qualVal,
         bool& thereIsMore);
 
+    bool xValidateSyntax(               //rule: 
+        const string& qualKey,          // check syntax rules in the parser
+        const string& qualVal);         // leave semantic rules for the validator
+
     static bool sIsLegalQual(
         const string& qualKey);
     static bool sHasBalancedQuotes(

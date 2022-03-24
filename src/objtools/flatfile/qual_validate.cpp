@@ -30,7 +30,9 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
+#include "flatparse_report.hpp"
 #include "qual_validate.hpp"
 #include "ftaerr.hpp"
 
@@ -43,8 +45,8 @@ CQualCleanup::CQualCleanup(
     const string& featKey,
     const string& featLocation):
 //  ---------------------------------------------------------------------------- 
-    mpFeatKey(featKey.c_str()),
-    mpFeatLocation(featLocation.c_str())
+    mFeatKey(featKey),
+    mFeatLocation(featLocation)
 {
 }
 
@@ -57,7 +59,7 @@ bool CQualCleanup::CleanAndValidate(
 {
     using VALIDATOR = bool (CQualCleanup::*)(string&, string&);
     static map<string, VALIDATOR> validators = {
-        {"artifial_location", &CQualCleanup::xCleanAndValidateArtificialLocation},
+        {"note", &CQualCleanup::xCleanAndValidateNote},
         {"specific_host", &CQualCleanup::xCleanAndValidateSpecificHost},
         {"replace", &CQualCleanup::xCleanAndValidateReplace},
         {"rpt_unit", &CQualCleanup::xCleanAndValidateRptUnit},
@@ -79,24 +81,26 @@ bool CQualCleanup::xCleanAndValidateGeneric(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    return true;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CQualCleanup::xCleanAndValidateArtificialLocation(
-    string& qualKey,
-    string& qualVal)
-//  ----------------------------------------------------------------------------
-{
-return true; // not sure of the exact rules yet
-    if (!qualVal.empty()) {
-        ErrPostEx(SEV_WARNING, ERR_QUALIFIER_ShouldNotHaveValue,
-            "Qualifier /%s should not have data value. Qualifier value has been ignored. "
-            "Feature \"%s\", location \"%s\".",
-            qualKey.c_str(), (mpFeatKey) ? "Unknown" : mpFeatKey,
-            (mpFeatLocation) ? "Empty" : mpFeatLocation);
-        qualVal.clear(); 
+    bool shouldHaveValue(false);
+    if (xValueIsMissingOrExtra(qualKey, qualVal, shouldHaveValue)) {
+        if (shouldHaveValue) {
+            CFlatParseReport::QualShouldHaveValue(mFeatKey, mFeatLocation, qualKey);
+            return false;
+        }
+        else {
+            CFlatParseReport::QualShouldNotHaveValue(mFeatKey, mFeatLocation, qualKey);
+            qualVal.clear();
+            return true;
+        }
+    }
+    if (!shouldHaveValue) {
+        return true;
+    }
+    string firstEmbedded;
+    if (mFeatKey != "misc_feature"  &&  qualKey != "note"  && 
+            xValueContainsEmbeddedQualifier(qualVal, firstEmbedded)) {
+        CFlatParseReport::ContainsEmbeddedQualifier(
+            mFeatKey, mFeatLocation, qualKey, firstEmbedded, false);
     }
     return true;
 }
@@ -108,8 +112,31 @@ bool CQualCleanup::xCleanAndValidateConsSplice(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    return xCleanFollowCommasWithBlanks(qualVal)  &&
-        xCleanAndValidateGeneric(qualKey, qualVal);
+    return xCleanAndValidateGeneric(qualKey, qualVal)  &&
+        xCleanFollowCommasWithBlanks(qualVal);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CQualCleanup::xCleanAndValidateNote(
+    string& qualKey,
+    string& qualVal)
+    //  ----------------------------------------------------------------------------
+{
+    if (qualVal.empty()) {
+        CFlatParseReport::QualShouldHaveValue(mFeatKey, mFeatLocation, qualKey);
+        return false;
+    }
+    if (mFeatKey == "misc_feature") {
+        return true;
+    }
+    string firstEmbedded;
+    if (xValueContainsEmbeddedQualifier(qualVal, firstEmbedded)) {
+        CFlatParseReport::ContainsEmbeddedQualifier(
+            mFeatKey, mFeatLocation, qualKey, firstEmbedded, true);
+        return true;
+    }
+    return true;
 }
 
 
@@ -143,8 +170,8 @@ bool CQualCleanup::xCleanAndValidateRptUnit(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    return xCleanToLower(qualVal) &&
-        xCleanAndValidateGeneric(qualKey, qualVal);
+    return xCleanAndValidateGeneric(qualKey, qualVal)  &&
+        xCleanToLower(qualVal);
 }
 
 
@@ -199,5 +226,55 @@ bool CQualCleanup::xCleanFollowCommasWithBlanks(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CQualCleanup::xValueContainsEmbeddedQualifier(
+    const string& val,
+    string& firstEmbedded)
+    //  ----------------------------------------------------------------------------
+{
+    auto slash = val.find('/', 0);
+    while (slash != string::npos) {
+        auto blank = val.find(' ', slash + 1);
+        auto inBetween = val.substr(
+            slash+1, blank == string::npos ? blank : blank - slash - 1);
+        auto type = objects::CSeqFeatData::GetQualifierType(inBetween);
+        if (type != objects::CSeqFeatData::eQual_bad) {
+            firstEmbedded = inBetween;
+            return true;
+        }
+        slash = val.find('/', slash + 1);
+    }
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CQualCleanup::xValueIsMissingOrExtra(
+    const string& qualKey,
+    const string& qualVal,
+    bool& shouldHaveValue)
+//  ----------------------------------------------------------------------------
+{
+    static const vector<string> emptyQuals = {
+        "chloroplast", "chromoplast", "cyanelle",
+        "environmental_sample", "focus", "germline", "kinetoplast",
+        "macronuclear", "metagenomic", "mitochondrion",
+        "partial", "proviral", "pseudo",
+        "rearranged", "ribosomal_slippage",
+        "trans_splicing", "transgenic",
+        "virion",
+    };
+    auto qualIt = std::find(emptyQuals.begin(), emptyQuals.end(), qualKey);
+    if (qualIt == emptyQuals.end() && qualVal.empty()) {
+        shouldHaveValue = true;
+        return false;
+    }
+    if (qualIt != emptyQuals.end() && !qualVal.empty()) {
+        shouldHaveValue = false;
+        return false;
+    }
+    return true;
+}
 
 END_NCBI_SCOPE

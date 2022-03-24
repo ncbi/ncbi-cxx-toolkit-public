@@ -38,45 +38,87 @@
 
 BEGIN_NCBI_SCOPE
 
+//  ----------------------------------------------------------------------------
 CFlatParseReport::ErrMessageLookup CFlatParseReport::mMessageTemplates = {
-    { ErrCode(ERR_QUALIFIER_UnbalancedQuotes), 
-        "Qualifier /%s value has unbalanced quotes. The entire qualifier has been ignored."},
+//  ----------------------------------------------------------------------------
+    { ErrCode(ERR_QUALIFIER_EmbeddedQual),
+        "Qualifier /%s contains embedded qualifier /%s. "
+        "Feature \"%s\", location \"%s\"." },
+    { ErrCode(ERR_QUALIFIER_EmptyQual),
+        "Qualifier /%s should have a data value. Qualifier has been dropped. "
+        "Feature \"%s\", location \"%s\"." },
+    { ErrCode(ERR_QUALIFIER_ShouldNotHaveValue),
+        "Qualifier /%s should not have data value. Qualifier value has been dropped. "
+        "Feature \"%s\", location \"%s\"." },
+    { ErrCode(ERR_QUALIFIER_UnbalancedQuotes),
+        "Qualifier /%s value has unbalanced quotes. Qualifier has been dropped."},
 };
 
 
-void CFlatParseReport::ReportUnbalancedQuotes(
-    const string& pQualKey)
+//  ----------------------------------------------------------------------------
+void CFlatParseReport::ContainsEmbeddedQualifier(
+    const string& featKey,
+    const string& featLocation,
+    const string& qualKey,
+    const string& firstEmbedded,
+    bool inNote)
+//  ----------------------------------------------------------------------------
 {
-    CFlatParseReport::ReportProblemParms1(
+    ErrPostEx(
+        inNote ? SEV_INFO : SEV_WARNING,
+        ERR_QUALIFIER_EmbeddedQual,
+        mMessageTemplates.find(ErrCode(ERR_QUALIFIER_EmbeddedQual))->second,
+        qualKey.c_str(),
+        firstEmbedded.c_str(),
+        featKey.empty() ? "Unknown" : featKey.c_str(),
+        featLocation.empty() ? "Empty" : featLocation.c_str());
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFlatParseReport::UnbalancedQuotes(
+    const string& qualKey)
+//  ----------------------------------------------------------------------------
+{
+    ErrPostEx(
         SEV_ERROR,
         ERR_QUALIFIER_UnbalancedQuotes,
-        pQualKey);
-}
-
-void CFlatParseReport::ReportProblemParms1(
-    ErrSev severity,
-    int majorCode,
-    int minorCode,
-    const char* pQualKey)
-{
-    auto pMessageTemplate = mMessageTemplates.find(ErrCode(majorCode, minorCode))->second;
-    ErrPostEx(
-        severity,
-        majorCode, minorCode,
-        pMessageTemplate,
-        pQualKey);
-}
-
-void CFlatParseReport::ReportProblemParms1(
-    ErrSev severity,
-    int majorCode,
-    int minorCode,
-    const string& qualKey)
-{
-    ReportProblemParms1(
-        severity,
-        majorCode, minorCode,
+        mMessageTemplates.find(ErrCode(ERR_QUALIFIER_UnbalancedQuotes))->second,
         qualKey.c_str());
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFlatParseReport::QualShouldHaveValue(
+    const string& featKey,
+    const string& featLocation,
+    const string& qualKey)
+//  ----------------------------------------------------------------------------
+{
+    ErrPostEx(
+        SEV_ERROR,
+        ERR_QUALIFIER_EmptyQual,
+        mMessageTemplates.find(ErrCode(ERR_QUALIFIER_EmptyQual))->second,
+        qualKey.c_str(),
+        featKey.empty() ? "Unknown" : featKey.c_str(),
+        featLocation.empty() ? "Empty" : featLocation.c_str());
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFlatParseReport::QualShouldNotHaveValue(
+    const string& featKey,
+    const string& featLocation,
+    const string& qualKey)
+//  ----------------------------------------------------------------------------
+{
+    ErrPostEx(
+        SEV_WARNING,
+        ERR_QUALIFIER_ShouldNotHaveValue,
+        mMessageTemplates.find(ErrCode(ERR_QUALIFIER_ShouldNotHaveValue))->second,
+        qualKey.c_str(),
+        featKey.empty() ? "Unknown" : featKey.c_str(),
+        featLocation.empty() ? "Empty" : featLocation.c_str());
 }
 
 END_NCBI_SCOPE
