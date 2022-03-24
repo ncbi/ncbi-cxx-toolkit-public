@@ -94,8 +94,9 @@ bool CQualParser::GetNextQualifier(
             return false;
         }
     }
-    if (!sHasBalancedQuotes(qualVal)) {
-        CFlatParseReport::ReportUnbalancedQuotes(qualKey);
+
+    if (!xValidateSyntax(qualKey, qualVal)) {
+        // error should have been reported at lower level, fail
         return false;
     }
     return mCleanerUpper.CleanAndValidate(qualKey, qualVal);
@@ -182,6 +183,22 @@ bool CQualParser::xParseQualifierCont(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CQualParser::xValidateSyntax(
+    const string& qualKey,
+    const string& qualVal)
+// -----------------------------------------------------------------------------
+{
+    // sIsLegalQual should be here, but for efficieny it was done before even
+    //  extracting the qualifier value.
+
+    if (!sHasBalancedQuotes(qualVal)) {
+        CFlatParseReport::UnbalancedQuotes(qualKey);
+        return false;
+    }
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CQualParser::Done() const

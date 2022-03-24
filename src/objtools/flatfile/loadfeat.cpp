@@ -4423,9 +4423,6 @@ static void ParseQualifiersNew(
             pQual->SetVal(qualVal);
             fbp->quals.push_back(pQual);
         }
-        //else {
-        //    cerr << "Error: " << "Bad qualifier \"" << qualKey << "=" << qualVal << "\"\n";
-        //}
     }
 }
 

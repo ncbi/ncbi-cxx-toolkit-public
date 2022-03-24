@@ -59,10 +59,10 @@ private:
         string& qualKey,
         string& qualVal);
 
-    bool xCleanAndValidateArtificialLocation(
+    bool xCleanAndValidateConsSplice(
         string& qualKey,
         string& qualVal);
-    bool xCleanAndValidateConsSplice(
+    bool xCleanAndValidateNote(
         string& qualKey,
         string& qualVal);
     bool xCleanAndValidateSpecificHost(
@@ -85,8 +85,16 @@ private:
     static bool xCleanFollowCommasWithBlanks(
         string& val);
 
-    const char* mpFeatKey;
-    const char* mpFeatLocation;
+    static bool xValueContainsEmbeddedQualifier(
+        const string& val,
+        string& firstEmbeddedQualifier);
+    static bool xValueIsMissingOrExtra(
+        const string& qualKey,
+        const string& qualVal,
+        bool& shouldHaveValue);
+
+    const string& mFeatKey;
+    const string& mFeatLocation;
 };
 
 END_NCBI_SCOPE
