@@ -1,4 +1,0 @@
-; asnval testing manifest
-DESCRIPTION: asnval testing manifest
-bin <- asnvalidate
-bin <- /netopt/ncbi_tools64/bin/asnval
