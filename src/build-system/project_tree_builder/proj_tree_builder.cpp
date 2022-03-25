@@ -1367,6 +1367,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                       maketype,
         IdentifySlnGUID(source_base_dir, CProjKey(CProjKey::eApp, proj_id)));
     //
+    GetApp().GetSite().CheckComponents(requires);
     project.m_NcbiCLibs = ncbi_clibs;
     project.m_StyleObjcpp = style_objcpp;
     project.m_MkName = applib_mfilepath;
@@ -1745,6 +1746,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            defines,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
+    GetApp().GetSite().CheckComponents(requires);
     (tree->m_Projects[proj_key]).m_StyleObjcpp = style_objcpp;
     (tree->m_Projects[proj_key]).m_MkName = applib_mfilepath;
     (tree->m_Projects[proj_key]).m_DataSource = CSimpleMakeFileContents(applib_mfilepath);

@@ -1651,40 +1651,52 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
         }
         const set<string>& epackages =
             CMsvcPrjProjectContext::GetEnabledPackages(c->GetConfigFullName());
-        ITERATE(set<string>, e, epackages) {
-            cfg_enabled.push_back(*e);
-            list_enabled.push_back(*e);
-        }
+        cfg_enabled.insert(cfg_enabled.end(), epackages.begin(), epackages.end()); 
 
         list<string> std_features;
         GetSite().GetStandardFeatures(std_features);
-        ITERATE(list<string>, s, std_features) {
-            cfg_enabled.push_back(*s);
-            list_enabled.push_back(*s);
-        }
+        cfg_enabled.insert(cfg_enabled.end(), std_features.begin(), std_features.end());
 
         list<string> features;
         GetSite().GetConfigurableRequests(features);
         ITERATE(list<string>, s, features) {
             if (GetSite().IsProvided(*s)) {
                 cfg_enabled.push_back(*s);
-                list_enabled.push_back(*s);
             } else {
                 cfg_disabled.push_back(*s);
-                list_disabled.push_back(*s);
             }
         }
 
         const set<string>& dpackages =
             CMsvcPrjProjectContext::GetDisabledPackages(c->GetConfigFullName());
-        ITERATE(set<string>, d, dpackages) {
-            cfg_disabled.push_back(*d);
-            list_disabled.push_back(*d);
+        cfg_disabled.insert(cfg_disabled.end(), dpackages.begin(), dpackages.end()); 
+
+        GetSite().GetComponentsInfo(*c, cfg_enabled, cfg_disabled);
+
+        list<string>::iterator i;
+        for (i=cfg_enabled.begin(); i != cfg_enabled.end();) {
+            if (i->at(0) == '-') {
+                cfg_disabled.push_back( i->substr(1));
+                list<string>::iterator j = i++;
+                cfg_enabled.erase(j);
+            } else {
+                ++i;
+            }
+        }
+        for (i=cfg_disabled.begin(); i != cfg_disabled.end();) {
+            if (i->at(0) == '-') {
+                cfg_enabled.push_back( i->substr(1));
+                list<string>::iterator j = i++;
+                cfg_disabled.erase(j);
+            } else {
+                ++i;
+            }
         }
         cfg_enabled.sort();
         cfg_enabled.unique();
         cfg_disabled.sort();
         cfg_disabled.unique();
+
         CNcbiOfstream ofs(enabled.c_str(), IOS_BASE::out | IOS_BASE::trunc );
         if ( !ofs )
             NCBI_THROW(CProjBulderAppException, eFileCreation, enabled);
@@ -1700,6 +1712,9 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
         for (const string& e : cfg_disabled) {
             ofsd << e << endl;
         }
+
+        list_enabled.insert(list_enabled.end(), cfg_enabled.begin(), cfg_enabled.end());
+        list_disabled.insert(list_disabled.end(), cfg_disabled.begin(), cfg_disabled.end());
     }
     list_enabled.sort();
     list_enabled.unique();
