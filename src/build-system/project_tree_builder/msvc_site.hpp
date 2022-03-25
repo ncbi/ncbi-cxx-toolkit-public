@@ -161,6 +161,9 @@ public:
     // What we have to define:
     void   GetConfigureDefines    (list<string>* defines) const;
 
+    void   CheckComponents(const list<string>& components) const;
+    void   GetComponentsInfo(const SConfigInfo& config, list<string>& list_enabled, list<string>& list_disabled) const;
+
     // Lib Choices related:
     enum ELibChoice {
         eUnknown,

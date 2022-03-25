@@ -456,6 +456,33 @@ void CMsvcSite::GetConfigureDefines(list<string>* defines) const
                 *defines, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
+void  CMsvcSite::CheckComponents(const list<string>& components) const
+{
+    const list<SConfigInfo>& cfgs = GetApp().GetRegSettings().m_ConfigInfo;
+    for( const string& r : components) {
+        for( const SConfigInfo& c : cfgs) {
+            SLibInfo lib_info;
+            GetLibInfo(r, c, &lib_info);
+            IsLibOk(lib_info);
+        }
+    }
+}
+
+void  CMsvcSite::GetComponentsInfo(const SConfigInfo& config, 
+    list<string>& list_enabled, list<string>& list_disabled) const
+{
+    string cfg = "|" + config.GetConfigFullName();
+    for (const auto& a : m_AllLibInfo) {
+        if (NStr::EndsWith(a.first, cfg)) {
+            string component = NStr::Replace(a.first, cfg, kEmptyStr);
+            if (a.second.m_good && IsLibEnabledInConfig(component, config)) {
+                list_enabled.push_back(component);
+            } else {
+                list_disabled.push_back(component);
+            }
+        }
+    }
+}
 
 bool CMsvcSite::IsLibWithChoice(const string& lib_id) const
 {
