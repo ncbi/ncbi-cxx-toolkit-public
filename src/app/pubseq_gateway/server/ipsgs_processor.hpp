@@ -34,6 +34,7 @@
 
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
+#include <objects/seqloc/Seq_id.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -209,6 +210,31 @@ public:
     /// A processor should call this method when it decides that there is
     /// nothing else to be done.
     void SignalFinishProcessing(void);
+
+public:
+    /// Parse seq-id from a string and type representation.
+    /// @param seq_id
+    ///  Destination seq-id to place parsed value into.
+    /// @param request_seq_id
+    ///  Input string containing seq-id to parse.
+    /// @param request_seq_id_type
+    ///  Input seq-id type
+    /// @param err_msg
+    ///  Optional string to receive error message if any.
+    /// @return
+    ///  ePSGS_ParsedOK on success, ePSGS_ParseFailed otherwise.
+    EPSGS_SeqIdParsingResult ParseInputSeqId(
+        objects::CSeq_id& seq_id,
+        const string& request_seq_id,
+        int request_seq_id_type,
+        string* err_msg = nullptr);
+
+protected:
+    bool GetEffectiveSeqIdType(
+        const objects::CSeq_id& parsed_seq_id,
+        int request_seq_id_type,
+        int16_t& eff_seq_id_type,
+        bool need_trace);
 
 protected:
     shared_ptr<CPSGS_Request>  m_Request;
