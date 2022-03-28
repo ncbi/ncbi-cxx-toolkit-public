@@ -56,6 +56,7 @@
 #include "osg_processor.hpp"
 #include "cdd_processor.hpp"
 #include "wgs_processor.hpp"
+#include "snp_processor.hpp"
 #include "favicon.hpp"
 
 
@@ -96,6 +97,7 @@ const bool              kDefaultCassandraProcessorsEnabled = true;
 const bool              kDefaultOSGProcessorsEnabled = false;
 const bool              kDefaultCDDProcessorsEnabled = true;
 const bool              kDefaultWGSProcessorsEnabled = false;
+const bool              kDefaultSNPProcessorsEnabled = false;
 const string            kDefaultTestSeqId = "gi|2";
 const bool              kDefaultTestSeqIdIgnoreError = true;
 const bool              kDefaultSSLEnable = false;
@@ -164,6 +166,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
+    m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
     m_ProcessorMaxConcurrency(kDefaultProcessorMaxConcurrency),
     m_SSLEnable(kDefaultSSLEnable),
     m_SSLCiphers(kDefaultSSLCiphers),
@@ -306,6 +309,9 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_WGSProcessorsEnabled = registry.GetBool(
             "WGS_PROCESSOR", "enabled",
             kDefaultWGSProcessorsEnabled);
+    m_SNPProcessorsEnabled = registry.GetBool(
+        "SNP_PROCESSOR", "enabled",
+        kDefaultSNPProcessorsEnabled);
     m_CassandraProcessorsEnabled = registry.GetBool(
             "CASSANDRA_PROCESSOR", "enabled",
             kDefaultCassandraProcessorsEnabled);
@@ -1729,6 +1735,8 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
         unique_ptr<IPSGS_Processor>(new psg::cdd::CPSGS_CDDProcessor()));
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::wgs::CPSGS_WGSProcessor()));
+    m_RequestDispatcher->AddProcessor(
+        unique_ptr<IPSGS_Processor>(new psg::snp::CPSGS_SNPProcessor()));
 }
 
 
