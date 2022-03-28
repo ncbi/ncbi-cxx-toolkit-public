@@ -3338,6 +3338,21 @@ static bool s_WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
 }
 
 
+static int s_GetMaxRealSeqStretch(const CSeqVector& vec)
+{
+    int max_stretch = 0;
+    auto begin_it = find_if(begin(vec), end(vec), [](char c) { return c != 'N'; });
+    while(begin_it != end(vec)) {
+        auto end_it = find_if(begin_it, end(vec), [](char c) { return c == 'N'; });
+        const auto current_stretch = distance(end_it, begin_it); 
+        if (current_stretch > max_stretch) {
+            max_stretch = current_stretch;
+        } 
+        begin_it = find_if(end_it, end(vec), [](char c) { return c != 'N'; });
+    }
+    return max_stretch;
+}
+
 
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
@@ -3375,6 +3390,9 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             || !seq.GetInst().IsSetLength() || seq.GetInst().GetLength() < 10) {
             return;
         }
+
+      //  if (s_GetMaxRealSeqStretch(vec) < 10) {
+      //  }
 
         EBioseqEndIsType begin_n = eBioseqEndIsType_None;
         EBioseqEndIsType begin_gap = eBioseqEndIsType_None;
