@@ -82,6 +82,11 @@ public:
         const string& featKey,
         const string& featLocation);
 
+    static void UnknownQualifierKey(
+        const string& featKey,
+        const string& featLocation,
+        const string& qualKey);
+
 private:
     using ErrCode = pair<int, int>;
     using ErrMessageLookup = map<ErrCode, const char*>;
