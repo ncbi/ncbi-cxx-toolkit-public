@@ -250,11 +250,6 @@ END_LOCAL_NAMESPACE;
 /////////////////////////////////////////////////////////////////////////////
 
 
-SWGSData::SWGSData(void)
-{
-}
-    
-
 CWGSClient::CWGSClient(const SWGSProcessor_Config& config)
     : m_Config(config)
 {
