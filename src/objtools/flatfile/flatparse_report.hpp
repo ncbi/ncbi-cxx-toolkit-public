@@ -60,6 +60,11 @@ public:
         const string& firstEmbedded,
         bool inNote =false);
 
+    static void NoTextAfterEqualSign(
+        const string& featKey,
+        const string& featLocation,
+        const string& qualKey);
+
     static void QualShouldHaveValue(
         const string& featKey,
         const string& featLocation,
@@ -73,8 +78,17 @@ public:
     static void UnbalancedQuotes(
         const string& qualKey);
 
+    static void UnexpectedData(
+        const string& featKey,
+        const string& featLocation);
+
+private:
     using ErrCode = pair<int, int>;
     using ErrMessageLookup = map<ErrCode, const char*>;
+
+    static const char* sMessageTemplateFor(
+        int major, 
+        int minor);
     static ErrMessageLookup mMessageTemplates;
 };
 

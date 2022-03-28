@@ -141,6 +141,7 @@
 #define ERR_QUALIFIER_MultipleRegulatoryClass          6,36
 #define ERR_QUALIFIER_NoNoteForOtherRegulatory         6,37
 #define ERR_QUALIFIER_NoRefForCiteQual                 6,38
+#define ERR_QUALIFIER_NoTextAfterEqualSign             6,39
 
 #define ERR_SEQUENCE                                   7,0
 #define ERR_SEQUENCE_UnknownBaseHTG3                   7,1
