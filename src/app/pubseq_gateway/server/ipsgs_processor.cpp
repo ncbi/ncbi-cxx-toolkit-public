@@ -33,6 +33,7 @@
 
 #include "ipsgs_processor.hpp"
 #include "pubseq_gateway.hpp"
+#include "insdc_utils.hpp"
 
 
 string
@@ -104,3 +105,150 @@ CPSGS_UvLoopBinder &  IPSGS_Processor::GetUvLoopBinder(void)
     return CPubseqGatewayApp::GetInstance()->GetUvLoopBinder(GetUVThreadId());
 }
 
+
+bool IPSGS_Processor::GetEffectiveSeqIdType(
+    const CSeq_id& parsed_seq_id,
+    int request_seq_id_type,
+    int16_t& eff_seq_id_type,
+    bool need_trace)
+{
+    auto    parsed_seq_id_type = parsed_seq_id.Which();
+    bool    parsed_seq_id_type_found = (parsed_seq_id_type !=
+                                        CSeq_id_Base::e_not_set);
+
+    if (!parsed_seq_id_type_found && request_seq_id_type < 0) {
+        eff_seq_id_type = -1;
+        return true;
+    }
+
+    if (!parsed_seq_id_type_found) {
+        eff_seq_id_type = request_seq_id_type;
+        return true;
+    }
+
+    if (request_seq_id_type < 0) {
+        eff_seq_id_type = parsed_seq_id_type;
+        return true;
+    }
+
+    // Both found
+    if (parsed_seq_id_type == request_seq_id_type) {
+        eff_seq_id_type = request_seq_id_type;
+        return true;
+    }
+
+    // The parsed and url explicit seq_id_type do not match
+    if (IsINSDCSeqIdType(parsed_seq_id_type) &&
+        IsINSDCSeqIdType(request_seq_id_type)) {
+        if (need_trace) {
+            m_Reply->SendTrace(
+                "Seq id type mismatch. Parsed CSeq_id reports seq_id_type as " +
+                to_string(parsed_seq_id_type) + " while the URL reports " +
+                to_string(request_seq_id_type) + ". They both belong to INSDC types so "
+                "CSeq_id provided type " + to_string(parsed_seq_id_type) +
+                " is taken as an effective one",
+                m_Request->GetStartTimestamp());
+        }
+        eff_seq_id_type = parsed_seq_id_type;
+        return true;
+    }
+
+    return false;
+}
+
+
+EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
+    CSeq_id& seq_id,
+    const string& request_seq_id,
+    int request_seq_id_type,
+    string* err_msg)
+{
+    bool    need_trace = m_Request->NeedTrace();
+
+    try {
+        seq_id.Set(request_seq_id);
+        if (need_trace)
+            m_Reply->SendTrace("Parsing CSeq_id('" + request_seq_id +
+                             "') succeeded", m_Request->GetStartTimestamp());
+
+        if (request_seq_id_type <= 0) {
+            if (need_trace)
+                m_Reply->SendTrace("Parsing CSeq_id finished OK (#1)",
+                                   m_Request->GetStartTimestamp());
+            return ePSGS_ParsedOK;
+        }
+
+        // Check the parsed type with the given
+        int16_t     eff_seq_id_type;
+        if (GetEffectiveSeqIdType(seq_id, request_seq_id_type, eff_seq_id_type, false)) {
+            if (need_trace)
+                m_Reply->SendTrace("Parsing CSeq_id finished OK (#2)",
+                                   m_Request->GetStartTimestamp());
+            return ePSGS_ParsedOK;
+        }
+
+        // seq_id_type from URL and from CSeq_id differ
+        CSeq_id_Base::E_Choice  seq_id_type = seq_id.Which();
+
+        if (need_trace)
+            m_Reply->SendTrace("CSeq_id provided type " + to_string(seq_id_type) +
+                               " and URL provided seq_id_type " +
+                               to_string(request_seq_id_type) + " mismatch",
+                               m_Request->GetStartTimestamp());
+
+        if (IsINSDCSeqIdType(request_seq_id_type) &&
+            IsINSDCSeqIdType(seq_id_type)) {
+            // Both seq_id_types belong to INSDC
+            if (need_trace) {
+                m_Reply->SendTrace("Both types belong to INSDC types.\n"
+                                   "Parsing CSeq_id finished OK (#3)",
+                                   m_Request->GetStartTimestamp());
+            }
+            return ePSGS_ParsedOK;
+        }
+
+        // Type mismatch: form the error message in case of resolution problems
+        if (err_msg) {
+            *err_msg = "Seq_id '" + request_seq_id +
+                      "' possible type mismatch: the URL provides " +
+                      to_string(request_seq_id_type) +
+                      " while the CSeq_Id detects it as " +
+                      to_string(static_cast<int>(seq_id_type));
+        }
+    } catch (...) {
+        if (need_trace)
+            m_Reply->SendTrace("Parsing CSeq_id('" + request_seq_id +
+                               "') failed (exception)",
+                               m_Request->GetStartTimestamp());
+    }
+
+    // Second variation of Set()
+    if (request_seq_id_type > 0) {
+        try {
+            seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
+                       (CSeq_id_Base::E_Choice)(request_seq_id_type),
+                       request_seq_id);
+            if (need_trace) {
+                m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
+                                   to_string(request_seq_id_type) +
+                                   ", '" + request_seq_id + "') succeeded.\n"
+                                   "Parsing CSeq_id finished OK (#4)",
+                                   m_Request->GetStartTimestamp());
+            }
+            return ePSGS_ParsedOK;
+        } catch (...) {
+            if (need_trace)
+                m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
+                                   to_string(request_seq_id_type) +
+                                   ", '" + request_seq_id + "') failed (exception)",
+                                   m_Request->GetStartTimestamp());
+        }
+    }
+
+    if (need_trace) {
+        m_Reply->SendTrace("Parsing CSeq_id finished FAILED",
+                           m_Request->GetStartTimestamp());
+    }
+
+    return ePSGS_ParseFailed;
+}

@@ -67,11 +67,6 @@ public:
 
 private:
     SPSGS_RequestBase::EPSGS_CacheAndDbUse x_GetRequestUseCache(void);
-    bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
-                                 int16_t &  eff_seq_id_type,
-                                 bool  need_trace);
-    EPSGS_SeqIdParsingResult x_ParseInputSeqId(CSeq_id &  seq_id,
-                                               string &  err_msg);
     bool x_ComposeOSLT(CSeq_id &  parsed_seq_id,
                        int16_t &  effective_seq_id_type,
                        list<string> &  secondary_id_list,
