@@ -293,6 +293,7 @@ private:
     ETagState m_TagState;
     string m_LastTag;
     string m_RejectedTag;
+    Int8 m_LeadingWs;
     bool m_Attlist;
     bool m_StdXml;
     bool m_Doctype_found;

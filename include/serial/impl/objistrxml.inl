@@ -67,6 +67,7 @@ void CObjectIStreamXml::Found_lt(void)
 {
     _ASSERT(OutsideTag());
     m_TagState = eTagInsideOpening;
+    m_LeadingWs = 0;
 }
 
 inline
@@ -74,6 +75,7 @@ void CObjectIStreamXml::Back_lt(void)
 {
     _ASSERT(InsideOpeningTag());
     m_TagState = eTagOutside;
+    m_LeadingWs = 0;
 }
 
 inline
@@ -88,6 +90,7 @@ void CObjectIStreamXml::Found_gt(void)
 {
     _ASSERT(InsideTag());
     m_TagState = eTagOutside;
+    m_LeadingWs = 0;
 }
 
 inline
@@ -102,6 +105,7 @@ void CObjectIStreamXml::EndSelfClosedTag(void)
 {
     _ASSERT(SelfClosedTag());
     m_TagState = eTagOutside;
+    m_LeadingWs = 0;
 }
 
 inline
