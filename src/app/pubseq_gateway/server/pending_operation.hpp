@@ -58,7 +58,7 @@ class CPendingOperation
 public:
     CPendingOperation(shared_ptr<CPSGS_Request>  user_request,
                       shared_ptr<CPSGS_Reply>  reply,
-                      IPSGS_Processor *  processor);
+                      shared_ptr<IPSGS_Processor>  processor);
     ~CPendingOperation();
 
     void Clear(void);
@@ -93,7 +93,7 @@ private:
     bool                                    m_Started;
     bool                                    m_ConnectionCanceled;
 
-    unique_ptr<IPSGS_Processor>             m_Processor;
+    shared_ptr<IPSGS_Processor>             m_Processor;
     bool                                    m_InProcess;
 };
 

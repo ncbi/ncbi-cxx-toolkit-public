@@ -383,6 +383,8 @@ void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
                 details->SetExcludeBlobCacheCompleted();
             }
         }
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
     m_InPeek = false;

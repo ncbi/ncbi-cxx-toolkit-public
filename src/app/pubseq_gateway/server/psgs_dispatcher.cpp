@@ -55,6 +55,14 @@ void request_timer_close_cb(uv_handle_t *  handle)
 }
 
 
+void erase_processor_group_cb(void *  user_data)
+{
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    size_t      request_id = (size_t)(user_data);
+    app->GetProcessorDispatcher()->EraseProcessorGroup(request_id);
+}
+
+
 void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 {
     if (m_RegisteredProcessors.size() >= MAX_PROCESSOR_GROUPS) {
@@ -87,15 +95,15 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 }
 
 
-list<IPSGS_Processor *>
+list<shared_ptr<IPSGS_Processor>>
 CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
                                   shared_ptr<CPSGS_Reply> reply)
 {
-    list<IPSGS_Processor *>         ret;
-    size_t                          proc_count = m_RegisteredProcessors.size();
-    TProcessorPriority              priority = proc_count;
-    auto                            request_id = request->GetRequestId();
-    unique_ptr<SProcessorGroup>     procs(new SProcessorGroup());
+    list<shared_ptr<IPSGS_Processor>>   ret;
+    size_t                              proc_count = m_RegisteredProcessors.size();
+    TProcessorPriority                  priority = proc_count;
+    auto                                request_id = request->GetRequestId();
+    unique_ptr<SProcessorGroup>         procs(new SProcessorGroup());
 
     for (auto const &  proc : m_RegisteredProcessors) {
         // First check the limit for the number of processors
@@ -125,7 +133,8 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
             reply->SendTrace("Try to create processor: " + proc->GetName(),
                              request->GetStartTimestamp(), false);
         }
-        IPSGS_Processor *   p = proc->CreateProcessor(request, reply, priority);
+        shared_ptr<IPSGS_Processor> p(proc->CreateProcessor(request, reply,
+                                                            priority));
         if (p) {
             m_ProcessorConcurrency[proc_index].m_CountLock.lock();
             ++m_ProcessorConcurrency[proc_index].m_CurrentCount;
@@ -133,9 +142,8 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
 
             ret.push_back(p);
 
-            auto    new_proc = SProcessorData(p, ePSGS_Up,
-                                              IPSGS_Processor::ePSGS_InProgress);
-            procs->m_Processors.emplace_back(new_proc);
+            procs->m_Processors.emplace_back(p, ePSGS_Up,
+                                             IPSGS_Processor::ePSGS_InProgress);
 
             if (request->NeedTrace()) {
                 // false: no need to update the last activity
@@ -219,7 +227,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
 
     // The group found; check that the processor has not been canceled yet
     for (const auto &  proc: procs->second->m_Processors) {
-        if (proc.m_Processor == processor) {
+        if (proc.m_Processor.get() == processor) {
             if (proc.m_DispatchStatus == ePSGS_Canceled) {
                 // The other processor has already called Cancel() for this one
                 m_GroupsLock.unlock();
@@ -236,11 +244,11 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     // Everything looks OK; this is the first processor who started to send
     // data to the client so the other processors should be canceled
     for (auto &  proc: procs->second->m_Processors) {
-        if (proc.m_Processor == processor)
+        if (proc.m_Processor.get() == processor)
             continue;
         if (proc.m_DispatchStatus == ePSGS_Up) {
             proc.m_DispatchStatus = ePSGS_Canceled;
-            to_be_canceled.push_back(proc.m_Processor);
+            to_be_canceled.push_back(proc.m_Processor.get());
         }
     }
 
@@ -277,9 +285,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
     bool                            need_trace = request->NeedTrace();
 
-    size_t                          canceled_count = 0;
+    size_t                          finishing_count = 0;
     size_t                          finished_count = 0;
-    size_t                          total_count = 0;
 
     m_GroupsLock.lock();
 
@@ -294,18 +301,15 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     if (best_status == IPSGS_Processor::ePSGS_InProgress) {
         // Call by mistake? The processor reports status as in progress and
         // there is a call to report that it finished
-        if (need_trace) {
-            // false: no need to update the last activity
-            reply->SendTrace(
-                "Dispatcher received signal (from " +
-                CPSGS_Dispatcher::SignalSourceToString(source) +
-                ") that the processor " + processor->GetName() +
-                " (priority: " + to_string(processor->GetPriority()) +
-                ") finished while the reported status is " +
-                IPSGS_Processor::StatusToString(processor->GetStatus()) +
-                ". Ignore this call and continue.",
-                request->GetStartTimestamp(), false);
-        }
+        x_SendTrace(
+            need_trace, "Dispatcher received signal (from " +
+            CPSGS_Dispatcher::SignalSourceToString(source) +
+            ") that the processor " + processor->GetName() +
+            " (priority: " + to_string(processor->GetPriority()) +
+            ") finished while the reported status is " +
+            IPSGS_Processor::StatusToString(processor->GetStatus()) +
+            ". Ignore this call and continue.",
+            request, reply);
 
         m_GroupsLock.unlock();
         return;
@@ -313,91 +317,96 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
     for (auto &  proc: procs->second->m_Processors) {
 
-        ++total_count;
+        if (proc.m_Processor.get() == processor) {
+            if (source == ePSGS_Fromework) {
+                // This call is when the framework notices that the processor
+                // reports something not InProgress (like error, cancel,
+                // timeout or found).
 
-        if (proc.m_Processor == processor) {
-            if (proc.m_DispatchStatus == ePSGS_Up) {
-                proc.m_DispatchStatus = ePSGS_Finished;
-                proc.m_FinishStatus = processor->GetStatus();
-
-                ++finished_count;
-
-                if (proc.m_FinishStatus == IPSGS_Processor::ePSGS_Timeout ||
-                    proc.m_FinishStatus == IPSGS_Processor::ePSGS_Error ||
-                    request->NeedProcessorEvents()) {
-                    reply->PrepareProcessorProgressMessage(
-                        processor->GetName(),
-                        IPSGS_Processor::StatusToProgressMessage(proc.m_FinishStatus));
-                }
-
-                if (need_trace) {
-                    // false: no need to update the last activity
-                    reply->SendTrace(
-                        "Dispatcher received signal (from " +
-                        CPSGS_Dispatcher::SignalSourceToString(source) +
-                        ") that the processor " + processor->GetName() +
-                        " (priority: " + to_string(processor->GetPriority()) +
-                        ") finished with status status " +
-                        IPSGS_Processor::StatusToString(proc.m_FinishStatus),
-                        request->GetStartTimestamp(),
-                        false);
-                }
-
-                continue;
-            }
-
-            if (proc.m_DispatchStatus == ePSGS_Canceled) {
-                proc.m_DispatchStatus = ePSGS_Finished;
-                proc.m_FinishStatus = processor->GetStatus();
-
-                if (proc.m_FinishStatus == IPSGS_Processor::ePSGS_Timeout ||
-                    proc.m_FinishStatus == IPSGS_Processor::ePSGS_Error ||
-                    request->NeedProcessorEvents()) {
-                    reply->PrepareProcessorProgressMessage(
-                        processor->GetName(),
-                        IPSGS_Processor::StatusToProgressMessage(proc.m_FinishStatus));
-                }
-
-                ++finished_count;
-
-                if (need_trace) {
-                    // false: no need to update the last activity
-                    reply->SendTrace(
-                        "Dispatcher received signal (from " +
-                        CPSGS_Dispatcher::SignalSourceToString(source) +
-                        ") that the previously canceled processor " +
-                        processor->GetName() +
-                        " (priority: " + to_string(processor->GetPriority()) +
-                        ") finished with status status " +
-                        IPSGS_Processor::StatusToString(proc.m_FinishStatus),
-                        request->GetStartTimestamp(),
-                        false);
-                }
-
-                continue;
-            }
-
-            // The status is already finished which may mean that
-            // it is not the first time call. However it is possible that
-            // during the first time the output was not ready so the final PSG
-            // chunk has not been sent. Thus we should continue as usual.
-
-            if (need_trace && source == CPSGS_Dispatcher::ePSGS_Processor) {
-                // false: no need to update the last activity
-                reply->SendTrace(
-                    "Dispatcher received signal (from " +
-                    CPSGS_Dispatcher::SignalSourceToString(source) +
-                    ") that the processor " + processor->GetName() +
+                x_SendTrace(
+                    need_trace, "Dispatcher received signal (from framework)"
+                    " that the processor " + processor->GetName() +
                     " (priority: " + to_string(processor->GetPriority()) +
-                    ") finished with status status " +
-                    IPSGS_Processor::StatusToString(processor->GetStatus()) +
-                    " when the dispatcher already knows that the "
-                    "processor finished (registered status: " +
-                    IPSGS_Processor::StatusToString(proc.m_FinishStatus) + ")",
-                    request->GetStartTimestamp(),
-                    false);
-            }
-        }
+                    ") has changed the status to " +
+                    IPSGS_Processor::StatusToString(processor->GetStatus()),
+                    request, reply);
+
+                // No changes in the dispatch status to ePSGS_Finished
+                // It can be changed only to ePSGS_Canceled
+                switch (proc.m_DispatchStatus) {
+                    case ePSGS_Finished:
+                        // Most probably some kind of timing: dispatcher know
+                        // the processor has already finished and there is one
+                        // more report
+                        ++finished_count;
+                        break;
+                    case ePSGS_Up:
+                        if (processor->GetStatus() != IPSGS_Processor::ePSGS_InProgress)
+                            ++finishing_count;
+                        break;
+                    case ePSGS_Canceled:
+                        ++finishing_count;
+                        break;
+                }
+            } else {
+                // This is source == ePSGS_Processor, so the dispatch status
+                // may need to be changed
+                ++finished_count;
+
+                switch (proc.m_DispatchStatus) {
+                    case ePSGS_Finished:
+                        // The processor signals finishing second time. It is OK,
+                        // just ignore that
+                        x_SendTrace(
+                            need_trace, "Dispatcher received signal (from processor)"
+                            " that the processor " + processor->GetName() +
+                            " (priority: " + to_string(processor->GetPriority()) +
+                            ") finished with status " +
+                            IPSGS_Processor::StatusToString(processor->GetStatus()) +
+                            " when the dispatcher already knows that the "
+                            "processor finished (registered status: " +
+                            IPSGS_Processor::StatusToString(proc.m_FinishStatus) + ")",
+                            request, reply);
+
+                        // Note: there is no update of the dispatcher processor
+                        // status. The only first report from the processor is
+                        // taken into account
+                        break;
+                    case ePSGS_Up:
+                    case ePSGS_Canceled:
+                        proc.m_FinishStatus = processor->GetStatus();
+
+                        if (proc.m_DispatchStatus == ePSGS_Up)
+                            x_SendTrace(
+                                need_trace, "Dispatcher received signal (from processor)"
+                                " that the processor " + processor->GetName() +
+                                " (priority: " + to_string(processor->GetPriority()) +
+                                ") finished with status " +
+                                IPSGS_Processor::StatusToString(proc.m_FinishStatus),
+                                request, reply);
+                        else
+                            // This is a canceled processor final report
+                            x_SendTrace(
+                                need_trace, "Dispatcher received signal (from processor)"
+                                " that the previously canceled processor " +
+                                processor->GetName() +
+                                " (priority: " + to_string(processor->GetPriority()) +
+                                ") finished with status " +
+                                IPSGS_Processor::StatusToString(proc.m_FinishStatus),
+                                request, reply);
+
+                        proc.m_DispatchStatus = ePSGS_Finished;
+                        x_SendProgressMessage(proc.m_FinishStatus, processor,
+                                              request, reply);
+                        break;
+                } // End of (proc.m_DispatchStatus) switch
+
+                best_status = min(best_status, proc.m_FinishStatus);
+
+            } // End of report source condition handling
+
+            continue;
+        } // End of (proc.m_Processor.get() == processor) condition
 
         switch (proc.m_DispatchStatus) {
             case ePSGS_Finished:
@@ -405,12 +414,14 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 ++finished_count;
                 break;
             case ePSGS_Up:
+                if (processor->GetStatus() != IPSGS_Processor::ePSGS_InProgress)
+                    ++finishing_count;
                 break;
             case ePSGS_Canceled:
                 // The canceled processors still have to call
                 // SignalFinishProcessing() on their own so their dispatch
                 // status is updated to ePSGS_Finished
-                ++canceled_count;
+                ++finishing_count;
                 break;
         }
     }
@@ -420,7 +431,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     //       The reply flush must be done if all finished or canceled.
     //       The processors group removal if all finished.
 
-    bool    pre_finished = (finished_count + canceled_count) == total_count;
+    size_t  total_count = procs->second->m_Processors.size();
+    bool    pre_finished = (finished_count + finishing_count) == total_count;
     bool    fully_finished = finished_count == total_count;
 
     if (pre_finished) {
@@ -430,18 +442,16 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             // Map the processor finish to the request status
             CRequestStatus::ECode   request_status = x_MapProcessorFinishToStatus(best_status);
 
-            if (need_trace) {
-                // false: no need to update the last activity
-                reply->SendTrace(
-                    "Dispatcher: request processing finished; final status: " +
-                    to_string(request_status) +
-                    ". The processors group will be deleted.",
-                    request->GetStartTimestamp(), false);
-            }
+            x_SendTrace(
+                need_trace, "Dispatcher: request processing finished; "
+                "final status: " + to_string(request_status) +
+                ". The processors group will be deleted later.",
+                request, reply);
 
             reply->PrepareReplyCompletion(request->GetStartTimestamp());
             // This will switch the stream to the finished state, i.e.
             // IsFinished() will return true
+            procs->second->m_FlushedAndFinished = true;
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
             x_PrintRequestStop(request, request_status);
         }
@@ -451,7 +461,12 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         // Clear the group after the final chunk is sent
         if (!reply->IsCompleted() && reply->IsFinished()) {
             reply->SetCompleted();
-            x_EraseProcessorGroup(procs);
+            // Note: erasing the group right away is not good because the call
+            // comes from a processor and it might be not the last thing the
+            // processor does. So the destrution needs to be delayed till the
+            // next libuv loop iteration
+            processor->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
+                                                        (void*)(request_id));
         }
     }
 
@@ -479,7 +494,7 @@ void CPSGS_Dispatcher::SignalConnectionCanceled(size_t      request_id)
     for (auto &  proc: procs->second->m_Processors) {
         if (proc.m_DispatchStatus == ePSGS_Up) {
             proc.m_DispatchStatus = ePSGS_Canceled;
-            to_be_canceled.push_back(proc.m_Processor);
+            to_be_canceled.push_back(proc.m_Processor.get());
         }
     }
     m_GroupsLock.unlock();
@@ -522,10 +537,42 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
 }
 
 
+void
+CPSGS_Dispatcher::x_SendTrace(bool  need_trace, const string &  msg,
+                              shared_ptr<CPSGS_Request> request,
+                              shared_ptr<CPSGS_Reply> reply)
+{
+    if (need_trace) {
+        // false: no need to update the last activity
+        reply->SendTrace(msg, request->GetStartTimestamp(), false);
+    }
+}
+
+
+void
+CPSGS_Dispatcher::x_SendProgressMessage(IPSGS_Processor::EPSGS_Status  finish_status,
+                                        IPSGS_Processor *  processor,
+                                        shared_ptr<CPSGS_Request> request,
+                                        shared_ptr<CPSGS_Reply> reply)
+{
+    if (finish_status == IPSGS_Processor::ePSGS_Timeout ||
+        finish_status == IPSGS_Processor::ePSGS_Error ||
+        request->NeedProcessorEvents()) {
+        reply->PrepareProcessorProgressMessage(
+            processor->GetName(),
+            IPSGS_Processor::StatusToProgressMessage(finish_status));
+    }
+}
+
+
 void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
 {
     // Low level destroyed the pending request which is associated with the
     // provided request id. So check if the processors group is still held.
+
+
+    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
+                                                    // under the lock
 
     m_GroupsLock.lock();
 
@@ -536,20 +583,31 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
         // Remove the group because the low level request structures have
         // already been dismissed
 
-        // Note: it is possible that a processor is on a wait for another
-        // processor. This should be taken care of. A Cancel() call will make
-        // the locking processor to unlock the waiter
-        for (auto &  proc: procs->second->m_Processors) {
-            if (proc.m_DispatchStatus == ePSGS_Up) {
-                proc.m_DispatchStatus = ePSGS_Canceled;
-                proc.m_Processor->Cancel();
+        // m_FlushedAndFinished => that was a normal finish for the group of
+        // processors. They have reported finish finish with data and the reply
+        //  was flushed and closed.
+        if (!procs->second->m_FlushedAndFinished) {
+            // Note: it is possible that a processor is on a wait for another
+            // processor. This should be taken care of. A Cancel() call will make
+            // the locking processor to unlock the waiter
+            for (auto &  proc: procs->second->m_Processors) {
+                if (proc.m_DispatchStatus == ePSGS_Up) {
+                    if (proc.m_Processor->GetStatus() == IPSGS_Processor::ePSGS_InProgress) {
+                        to_be_canceled.push_back(proc.m_Processor.get());
+                    }
+                }
             }
-        }
 
-        x_EraseProcessorGroup(procs);
+            // Note: deletion of the group must not be done otherwise than
+            // after all processors report their finish themself.
+        }
     }
 
     m_GroupsLock.unlock();
+
+    for (auto & proc: to_be_canceled) {
+        proc->Cancel();
+    }
 }
 
 
@@ -564,7 +622,7 @@ void CPSGS_Dispatcher::CancelAll(void)
     for (auto & procs :  m_ProcessorGroups) {
         for (auto &  proc: procs.second->m_Processors) {
             if (proc.m_DispatchStatus == ePSGS_Up) {
-                to_be_canceled.push_back(proc.m_Processor);
+                to_be_canceled.push_back(proc.m_Processor.get());
             }
         }
     }
@@ -591,7 +649,7 @@ void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
 
     // Check the last activity on the reply object
     list<SProcessorData> &      processors = procs->second->m_Processors;
-    auto *                      first_processor = processors.front().m_Processor;
+    auto *                      first_processor = processors.front().m_Processor.get();
     auto                        reply = first_processor->GetReply();
     auto                        request = first_processor->GetRequest();
     unsigned long               from_last_activity_to_now_ms =
@@ -635,7 +693,7 @@ void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
         // Cancel all active processors in the group
         for (auto &  proc: procs->second->m_Processors) {
             if (proc.m_DispatchStatus == ePSGS_Up) {
-                to_be_canceled.push_back(proc.m_Processor);
+                to_be_canceled.push_back(proc.m_Processor.get());
             }
         }
 
@@ -662,5 +720,17 @@ void CPSGS_Dispatcher::x_EraseProcessorGroup(
         m_ProcessorConcurrency[proc_index].m_CountLock.unlock();
     }
     m_ProcessorGroups.erase(to_erase);
+}
+
+
+void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
+{
+    m_GroupsLock.lock();
+
+    auto    procs = m_ProcessorGroups.find(request_id);
+    if (procs != m_ProcessorGroups.end()) {
+        x_EraseProcessorGroup(procs);
+    }
+    m_GroupsLock.unlock();
 }
 

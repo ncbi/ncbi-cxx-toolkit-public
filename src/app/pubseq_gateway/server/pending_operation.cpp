@@ -46,12 +46,12 @@ USING_IDBLOB_SCOPE;
 
 CPendingOperation::CPendingOperation(shared_ptr<CPSGS_Request>  user_request,
                                      shared_ptr<CPSGS_Reply>  reply,
-                                     IPSGS_Processor *  processor) :
+                                     shared_ptr<IPSGS_Processor>  processor) :
     m_UserRequest(user_request),
     m_Reply(reply),
     m_Started(false),
     m_ConnectionCanceled(false),
-    m_Processor(unique_ptr<IPSGS_Processor>(processor)),
+    m_Processor(processor),
     m_InProcess(false)
 {
     CRequestContextResetter     context_resetter;
