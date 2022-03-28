@@ -56,7 +56,7 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 
 CObjectIStreamXml::CObjectIStreamXml(void)
     : CObjectIStream(eSerial_Xml),
-      m_TagState(eTagOutside), m_Attlist(false),
+      m_TagState(eTagOutside), m_LeadingWs(0), m_Attlist(false),
       m_StdXml(false), m_Doctype_found(false), m_IsNil(false),
       m_Encoding( eEncoding_Unknown ),
       m_StringEncoding( eEncoding_UTF8 ),
@@ -67,7 +67,7 @@ CObjectIStreamXml::CObjectIStreamXml(void)
 
 CObjectIStreamXml::CObjectIStreamXml(CNcbiIstream& in, EOwnership deleteIn)
     : CObjectIStream(eSerial_Xml),
-      m_TagState(eTagOutside), m_Attlist(false),
+      m_TagState(eTagOutside), m_LeadingWs(0), m_Attlist(false),
       m_StdXml(false), m_Doctype_found(false), m_IsNil(false),
       m_Encoding( eEncoding_Unknown ),
       m_StringEncoding( eEncoding_UTF8 ),
@@ -88,6 +88,7 @@ void CObjectIStreamXml::ResetState(void)
         return;
     }
     m_TagState = eTagOutside;
+    m_LeadingWs = 0;
     m_LastTag.clear();
     m_RejectedTag.clear();
     m_Attlist = false;
@@ -242,7 +243,9 @@ char CObjectIStreamXml::SkipWSAndComments(void)
 {
     _ASSERT(OutsideTag());
     for ( ;; ) {
+        Int8 before = m_Input.GetStreamPosAsInt8();
         char c = m_Input.SkipSpaces();
+        m_LeadingWs += m_Input.GetStreamPosAsInt8() - before;
         switch ( c ) {
         case '\t':
             m_Input.SkipChar();
@@ -1282,15 +1285,22 @@ bool CObjectIStreamXml::ReadCDSection(string& str)
 void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
 /*
     White Space Handling:
-    http://www.w3.org/TR/2000/REC-xml-20001006#sec-white-space
+    https://www.w3.org/TR/xml/#sec-white-space
+    https://www.w3.org/TR/xml11/#sec-white-space
 
     End-of-Line Handling
-    http://www.w3.org/TR/2000/REC-xml-20001006#sec-line-ends
+    https://www.w3.org/TR/xml/#sec-line-ends
+    https://www.w3.org/TR/xml11/#sec-line-ends
     
     Attribute-Value Normalization
-    http://www.w3.org/TR/2000/REC-xml-20001006#AVNormalize
+    https://www.w3.org/TR/xml/#AVNormalize
+    https://www.w3.org/TR/xml11/#AVNormalize
 */
 {
+    if (m_LeadingWs != 0) {
+        str.append(m_LeadingWs, ' ');
+        m_LeadingWs = 0;
+    }
     BeginData();
     bool encoded = false;
     bool CR = false;
@@ -2355,6 +2365,7 @@ void CObjectIStreamXml::UndoClassMember(void)
     if (InsideOpeningTag()) {
         m_RejectedTag = m_LastTag;
         m_TagState = eTagOutside;
+        m_LeadingWs = 0;
 #if defined(NCBI_SERIAL_IO_TRACE)
     cout << ", Undo= " << m_LastTag;
 #endif
