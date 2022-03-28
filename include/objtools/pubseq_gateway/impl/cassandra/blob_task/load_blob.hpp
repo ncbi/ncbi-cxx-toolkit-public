@@ -66,6 +66,8 @@ class CCassBlobTaskLoadBlob
     using TBlobPropsCallback = function<void(CBlobRecord const & blob, bool isFound)>;
     using TBlobChunkCallbackEx = function<void(CBlobRecord const & blob,  const unsigned char * data, unsigned int size, int chunk_no)>;
 
+    static void InitBlobChunkDataQuery(CCassQuery* query, string const& keyspace, CBlobRecord const& blob, int32_t chunk_no);
+
     NCBI_DEPRECATED CCassBlobTaskLoadBlob(
         unsigned int op_timeout_ms,
         unsigned int max_retries,

@@ -170,4 +170,13 @@ TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
     EXPECT_EQ(1UL, call_count);
 }
 
+TEST_F(CBlobTaskLoadBlobTest, LoadBigBlobData) {
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 422992879, true, error_function);
+    wait_function(fetch);
+    EXPECT_TRUE(fetch.IsBlobPropsFound());
+    auto blob = fetch.ConsumeBlobRecord();
+    EXPECT_TRUE(blob->GetFlag(EBlobFlags::eBigBlobSchema));
+    EXPECT_EQ(blob->GetChunk(0)[0], 0x78);
+}
+
 }  // namespace
