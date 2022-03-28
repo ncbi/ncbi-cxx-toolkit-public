@@ -59,12 +59,23 @@ public:
     bool Done() const;
 
 private:
+    bool xParseQualifierHead(
+        string& qualKey,
+        string& qualVal,
+        bool& thereIsMore);
+
+    bool xParseQualifierTail(
+        const string& qualKey,
+        string& qualVal,
+        bool& thereIsMore);
+
     bool xParseQualifierStart(
         string& qualKey,
         string& qualVal,
         bool& thereIsMore);
 
     bool xParseQualifierCont(
+        const string& qualKey,
         string& qualVal,
         bool& thereIsMore);
 
@@ -76,12 +87,14 @@ private:
         const string& qualKey);
     static bool sHasBalancedQuotes(
         const string& qualVal);
-
+    
     const string& mFeatKey;
     const string& mFeatLocation;
     CQualCleanup mCleanerUpper;
     const DATA& mData;
     DATA::const_iterator mCurrent;
+    string mPendingKey;
+    string mPendingVal;
 };
 
 END_NCBI_SCOPE

@@ -214,7 +214,7 @@ bool CQualCleanup::xCleanFollowCommasWithBlanks(
     auto origSize = val.size();
     string newVal(1, val[0]);
     newVal.reserve(2*origSize);
-    for (auto i=1; i < origSize-1; ++i) {
+    for (string::size_type i=1; i < origSize-1; ++i) {
         newVal += val[i];
         if (val[i] == ','  &&  val[i+1] != ' ') {
             newVal += ' ';
@@ -226,6 +226,28 @@ bool CQualCleanup::xCleanFollowCommasWithBlanks(
     return true;
 }
 
+bool xIsWordBoundary(
+    char c)
+{
+    //if (std::isalnum(c)) {
+    //    return false;
+    //}
+    //const string extraWordChars("_");
+    //return extraWordChars.find(c) == string::npos;
+
+    return (c != '_'  &&  !std::isalnum(c)); //until it gets more complicated
+}
+
+string::size_type xFindWordBoundary(
+    const string& val,
+    size_t offset)
+{
+    auto boundary = std::find_if(val.begin() + offset, val.end(), xIsWordBoundary);
+    if (boundary == val.end()) {
+        return string::npos;
+    }
+    return boundary - val.begin();
+}
 
 //  ----------------------------------------------------------------------------
 bool CQualCleanup::xValueContainsEmbeddedQualifier(
@@ -235,9 +257,9 @@ bool CQualCleanup::xValueContainsEmbeddedQualifier(
 {
     auto slash = val.find('/', 0);
     while (slash != string::npos) {
-        auto blank = val.find(' ', slash + 1);
+        auto boundary = xFindWordBoundary(val, slash+1);
         auto inBetween = val.substr(
-            slash+1, blank == string::npos ? blank : blank - slash - 1);
+            slash+1, boundary == string::npos ? boundary : boundary - slash - 1);
         auto type = objects::CSeqFeatData::GetQualifierType(inBetween);
         if (type != objects::CSeqFeatData::eQual_bad) {
             firstEmbedded = inBetween;
@@ -268,13 +290,13 @@ bool CQualCleanup::xValueIsMissingOrExtra(
     auto qualIt = std::find(emptyQuals.begin(), emptyQuals.end(), qualKey);
     if (qualIt == emptyQuals.end() && qualVal.empty()) {
         shouldHaveValue = true;
-        return false;
+        return true;
     }
     if (qualIt != emptyQuals.end() && !qualVal.empty()) {
         shouldHaveValue = false;
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
 END_NCBI_SCOPE

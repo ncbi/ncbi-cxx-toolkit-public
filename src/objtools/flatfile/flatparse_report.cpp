@@ -47,11 +47,15 @@ CFlatParseReport::ErrMessageLookup CFlatParseReport::mMessageTemplates = {
     { ErrCode(ERR_QUALIFIER_EmptyQual),
         "Qualifier /%s should have a data value. Qualifier has been dropped. "
         "Feature \"%s\", location \"%s\"." },
+    { ErrCode(ERR_QUALIFIER_NoTextAfterEqualSign),
+        "Qualifier /%s has not text after the equal sign. Interpreted as empty value."},
     { ErrCode(ERR_QUALIFIER_ShouldNotHaveValue),
         "Qualifier /%s should not have data value. Qualifier value has been dropped. "
         "Feature \"%s\", location \"%s\"." },
     { ErrCode(ERR_QUALIFIER_UnbalancedQuotes),
         "Qualifier /%s value has unbalanced quotes. Qualifier has been dropped."},
+    { ErrCode(ERR_FORMAT_UnexpectedData),
+        "Encountered unexpected data while looking for qualifier key. Data has been dropped."}
 };
 
 
@@ -67,9 +71,26 @@ void CFlatParseReport::ContainsEmbeddedQualifier(
     ErrPostEx(
         inNote ? SEV_INFO : SEV_WARNING,
         ERR_QUALIFIER_EmbeddedQual,
-        mMessageTemplates.find(ErrCode(ERR_QUALIFIER_EmbeddedQual))->second,
+        sMessageTemplateFor(ERR_QUALIFIER_EmbeddedQual),
         qualKey.c_str(),
         firstEmbedded.c_str(),
+        featKey.empty() ? "Unknown" : featKey.c_str(),
+        featLocation.empty() ? "Empty" : featLocation.c_str());
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFlatParseReport::NoTextAfterEqualSign(
+    const string& featKey,
+    const string& featLocation,
+    const string& qualKey)
+//  ----------------------------------------------------------------------------
+{
+    ErrPostEx(
+        SEV_INFO,
+        ERR_QUALIFIER_NoTextAfterEqualSign,
+        sMessageTemplateFor(ERR_QUALIFIER_NoTextAfterEqualSign),
+        qualKey.c_str(),
         featKey.empty() ? "Unknown" : featKey.c_str(),
         featLocation.empty() ? "Empty" : featLocation.c_str());
 }
@@ -83,7 +104,7 @@ void CFlatParseReport::UnbalancedQuotes(
     ErrPostEx(
         SEV_ERROR,
         ERR_QUALIFIER_UnbalancedQuotes,
-        mMessageTemplates.find(ErrCode(ERR_QUALIFIER_UnbalancedQuotes))->second,
+        sMessageTemplateFor(ERR_QUALIFIER_UnbalancedQuotes),
         qualKey.c_str());
 }
 
@@ -98,7 +119,7 @@ void CFlatParseReport::QualShouldHaveValue(
     ErrPostEx(
         SEV_ERROR,
         ERR_QUALIFIER_EmptyQual,
-        mMessageTemplates.find(ErrCode(ERR_QUALIFIER_EmptyQual))->second,
+        sMessageTemplateFor(ERR_QUALIFIER_EmptyQual),
         qualKey.c_str(),
         featKey.empty() ? "Unknown" : featKey.c_str(),
         featLocation.empty() ? "Empty" : featLocation.c_str());
@@ -115,10 +136,35 @@ void CFlatParseReport::QualShouldNotHaveValue(
     ErrPostEx(
         SEV_WARNING,
         ERR_QUALIFIER_ShouldNotHaveValue,
-        mMessageTemplates.find(ErrCode(ERR_QUALIFIER_ShouldNotHaveValue))->second,
+        sMessageTemplateFor(ERR_QUALIFIER_ShouldNotHaveValue),
         qualKey.c_str(),
         featKey.empty() ? "Unknown" : featKey.c_str(),
         featLocation.empty() ? "Empty" : featLocation.c_str());
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFlatParseReport::UnexpectedData(
+    const string & featKey,
+    const string & featLocation)
+//  ----------------------------------------------------------------------------
+{
+    ErrPostEx(
+        SEV_ERROR,
+        ERR_FORMAT_UnexpectedData,
+        sMessageTemplateFor(ERR_FORMAT_UnexpectedData));
+}
+
+
+//  ----------------------------------------------------------------------------
+const char* CFlatParseReport::sMessageTemplateFor(
+    int major,
+    int minor)
+//  ----------------------------------------------------------------------------
+{
+    auto messageIt = mMessageTemplates.find(ErrCode(major, minor));
+    _ASSERT(messageIt != mMessageTemplates.end()); // update message list!
+    return messageIt->second;
 }
 
 END_NCBI_SCOPE

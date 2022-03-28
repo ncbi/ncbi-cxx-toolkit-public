@@ -69,30 +69,22 @@ bool CQualParser::GetNextQualifier(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
+    // Note: In general, if a qualifier spans multiple lines then it's 
+    //  surrounded by quotes. The one exception I am aware of is anticodon.
+    // If there are more, or the situation gets more complicated in general,
+    //  then the code needs to be rewritten to extract values according to 
+    //  qualifier dependent rules. So key based handler lookup and stuff like 
+    //  that.
+    // Let's hope we don't have to go there.
+
     qualKey.clear();
     qualVal.clear();
     bool thereIsMore = false;
-    while (true) {
-        if (mCurrent == mData.end()) {
-            return false;
-        }
-        if (xParseQualifierStart(qualKey, qualVal, thereIsMore)) {
-            // report error, throw out, and try again
-            break;
-        }
-        // report error, throw out, and try again
-        ++mCurrent;
+    if (!xParseQualifierHead(qualKey, qualVal, thereIsMore)) {
+        return false;
     }
-
-    while (thereIsMore) {
-        if (mCurrent == mData.end()) {
-            // report data truncation, fail
-            return false;
-        }
-        if (!xParseQualifierCont(qualVal, thereIsMore)) {
-            // error should have been reported at lower level, fail
-            return false;
-        }
+    if (!xParseQualifierTail(qualKey, qualVal, thereIsMore)) {
+        return false;
     }
 
     if (!xValidateSyntax(qualKey, qualVal)) {
@@ -104,12 +96,36 @@ bool CQualParser::GetNextQualifier(
 
 
 //  ----------------------------------------------------------------------------
+bool CQualParser::xParseQualifierHead(
+    string& qualKey,
+    string& qualVal,
+    bool& thereIsMore)
+    //  ----------------------------------------------------------------------------
+{
+    while (mCurrent != mData.end()) {
+        if (xParseQualifierStart(qualKey, qualVal, thereIsMore)) {
+            return true;
+        }
+        CFlatParseReport::UnexpectedData(mFeatKey, mFeatLocation);
+        ++mCurrent;
+    }
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CQualParser::xParseQualifierStart(
     string& qualKey,
     string& qualVal,
     bool& thereIsMore)
 //  ----------------------------------------------------------------------------
 {
+    if (!mPendingKey.empty()) {
+        qualKey = mPendingKey, mPendingKey.clear();
+        qualVal = mPendingVal, mPendingVal.clear();
+        return true;
+    }
+
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
     if (!NStr::StartsWith(cleaned, '/')) {
         return false;
@@ -129,20 +145,20 @@ bool CQualParser::xParseQualifierStart(
         qualVal = "";
         return true;
     }
-    if (qualKey == "note") {
-        cerr << "";
-    }
+
     auto tail = cleaned.substr(idxEqual + 1, string::npos);
     if (tail.empty()) {
-        // report missing value
+        // we can't be harsh here because the legacy flatfile parser regarded
+        //  /xxx, /xxx=, and /xxx="" as the same thing.
+        CFlatParseReport::NoTextAfterEqualSign(mFeatKey, mFeatLocation, qualKey);
         qualVal = "";
         thereIsMore = false;
-        return false;
+        return true;
     }
     if (!NStr::StartsWith(tail, '\"')) {
-        // sanity check tail
+        // sanity check tail?
         qualVal = tail;
-        thereIsMore = false;
+        thereIsMore = (qualKey == "anticodon");
         return true;
     }
     // established: tail starts with quote
@@ -159,15 +175,44 @@ bool CQualParser::xParseQualifierStart(
 
 
 //  ----------------------------------------------------------------------------
+bool CQualParser::xParseQualifierTail(
+    const string& qualKey,
+    string& qualVal,
+    bool& thereIsMore)
+    //  ----------------------------------------------------------------------------
+{
+    while (thereIsMore) {
+        if (mCurrent == mData.end()) {
+            thereIsMore = false;
+            if (qualKey != "anticodon") {
+                CFlatParseReport::UnbalancedQuotes(qualKey);
+                return false;
+            }
+            return true;
+        }
+        if (!xParseQualifierCont(qualKey, qualVal, thereIsMore)) {
+            if (qualKey != "anticodon") {
+                // error should have been reported at lower level, fail
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CQualParser::xParseQualifierCont(
+    const string& qualKey,
     string& qualVal,
     bool& thereIsMore)
 //  ----------------------------------------------------------------------------
 {
-    string dummy1, dummy2;
-    if (xParseQualifierStart(dummy1, dummy2, thereIsMore)) {
+    if (!mPendingKey.empty()) {
         // report error
-        --mCurrent;
+        return false;
+    }
+    if (xParseQualifierStart(mPendingKey, mPendingVal, thereIsMore)) {
         return false;
     }
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
@@ -178,7 +223,9 @@ bool CQualParser::xParseQualifierCont(
         cleaned = cleaned.substr(0, cleaned.size() - 1);
         thereIsMore = false;
     }
-    qualVal += ' ';
+    if (qualKey != "anticodon") {
+        qualVal += ' ';
+    }
     qualVal += cleaned;
     return true;
 }
