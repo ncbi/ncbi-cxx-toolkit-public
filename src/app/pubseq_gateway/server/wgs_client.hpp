@@ -69,9 +69,8 @@ struct SWGSProcessor_Config
 };
 
 
-struct SWGSData {
-    SWGSData(void);
-
+struct SWGSData
+{
     typedef SPSGS_ResolveRequest::TPSGS_BioseqIncludeData TBioseqInfoFlags;
 
     int GetID2BlobState(void) const { return m_Id2BlobState; }
