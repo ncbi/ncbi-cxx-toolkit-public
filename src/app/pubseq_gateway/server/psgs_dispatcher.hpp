@@ -85,8 +85,9 @@ public:
 
     /// Return list of processors which can be used to process the request.
     /// The caller accepts the ownership.
-    list<IPSGS_Processor *> DispatchRequest(shared_ptr<CPSGS_Request> request,
-                                            shared_ptr<CPSGS_Reply> reply);
+    list<shared_ptr<IPSGS_Processor>>
+        DispatchRequest(shared_ptr<CPSGS_Request> request,
+                        shared_ptr<CPSGS_Reply> reply);
 
     /// The processor signals that it is going to provide data to the client
     IPSGS_Processor::EPSGS_StartProcessing
@@ -105,11 +106,20 @@ public:
 
     void OnRequestTimer(size_t  request_id);
 
+    void EraseProcessorGroup(size_t  request_id);
+
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                             CRequestStatus::ECode  status);
     CRequestStatus::ECode
     x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const;
+    void x_SendTrace(bool  need_trace, const string &  msg,
+                     shared_ptr<CPSGS_Request> request,
+                     shared_ptr<CPSGS_Reply> reply);
+    void x_SendProgressMessage(IPSGS_Processor::EPSGS_Status  finish_status,
+                               IPSGS_Processor *  processor,
+                               shared_ptr<CPSGS_Request> request,
+                               shared_ptr<CPSGS_Reply> reply);
 
 private:
     // Registered processors
@@ -130,16 +140,16 @@ private:
     // Auxiliary structure to store a processor properties
     struct SProcessorData
     {
-        // It does not owe the processor.
-        // CPendingOperation owns it.
-        IPSGS_Processor *               m_Processor;
+        // The processor is shared between CPendingOperation and the dispatcher
+        shared_ptr<IPSGS_Processor>     m_Processor;
         EPSGS_ProcessorStatus           m_DispatchStatus;
         IPSGS_Processor::EPSGS_Status   m_FinishStatus;
 
-        SProcessorData(IPSGS_Processor *  processor,
+        SProcessorData(shared_ptr<IPSGS_Processor>  processor,
                        EPSGS_ProcessorStatus  dispatch_status,
                        IPSGS_Processor::EPSGS_Status  finish_status) :
-            m_Processor(processor), m_DispatchStatus(dispatch_status),
+            m_Processor(processor),
+            m_DispatchStatus(dispatch_status),
             m_FinishStatus(finish_status)
         {}
     };
@@ -150,9 +160,10 @@ private:
         list<SProcessorData>        m_Processors;
         uv_timer_t *                m_RequestTimer;
         bool                        m_TimerActive;
+        bool                        m_FlushedAndFinished;
 
         SProcessorGroup() :
-            m_TimerActive(false)
+            m_TimerActive(false), m_FlushedAndFinished(false)
         {}
 
         ~SProcessorGroup()

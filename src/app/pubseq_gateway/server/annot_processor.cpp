@@ -817,6 +817,8 @@ void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
                     details->SetExcludeBlobCacheCompleted();
                 }
             }
+            m_Completed = true;
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
         }
     } else {
         // Ready packets needs to be send only once when everything is finished
@@ -825,6 +827,8 @@ void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
                 if (IPSGS_Processor::m_Reply->IsOutputReady()) {
                     IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
                 }
+                m_Completed = true;
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
             }
         }
     }

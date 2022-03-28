@@ -262,6 +262,8 @@ void CPSGS_ResolveProcessor::x_Peek(bool  need_wait)
             if (IPSGS_Processor::m_Reply->IsOutputReady()) {
                 IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
             }
+            m_Completed = true;
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
         }
     }
 
