@@ -3344,7 +3344,7 @@ static int s_GetMaxRealSeqStretch(const CSeqVector& vec)
     auto begin_it = find_if(begin(vec), end(vec), [](char c) { return c != 'N'; });
     while(begin_it != end(vec)) {
         auto end_it = find_if(begin_it, end(vec), [](char c) { return c == 'N'; });
-        const auto current_stretch = distance(end_it, begin_it); 
+        const auto current_stretch = distance(begin_it, end_it); 
         if (current_stretch > max_stretch) {
             max_stretch = current_stretch;
         } 
