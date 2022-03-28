@@ -147,6 +147,11 @@ struct SParams
     const SPSG_UserArgs user_args;
 
     static bool verbose;
+
+    SParams(string s, SPSG_UserArgs ua) :
+        service(move(s)),
+        user_args(move(ua))
+    {}
 };
 
 struct SOneRequestParams : SParams
@@ -166,6 +171,12 @@ struct SOneRequestParams : SParams
 
     SLatency latency;
     SDataOnly data_only;
+
+    SOneRequestParams(string s, SPSG_UserArgs ua, bool le, bool ld, bool de, bool dm, ESerialDataFormat df) :
+        SParams(move(s), move(ua)),
+        latency{le, ld},
+        data_only{de, dm, df}
+    {}
 };
 
 struct SParallelProcessingParams : SParams
@@ -173,17 +184,35 @@ struct SParallelProcessingParams : SParams
     const int worker_threads;
     const bool pipe;
     const bool server;
+
+    SParallelProcessingParams(string s, SPSG_UserArgs ua, int wt, bool p, bool srv) :
+        SParams(move(s), move(ua)),
+        worker_threads(wt),
+        pipe(p),
+        server(srv)
+    {}
 };
 
 struct SBatchResolveParams : SParallelProcessingParams
 {
     const CPSG_BioId::TType type;
     const CPSG_Request_Resolve::TIncludeInfo include_info;
+
+    SBatchResolveParams(string s, SPSG_UserArgs ua, int wt, bool p, bool srv, CPSG_BioId::TType t, CPSG_Request_Resolve::TIncludeInfo ii) :
+        SParallelProcessingParams(move(s), move(ua), wt, p, srv),
+        type(t),
+        include_info(ii)
+    {}
 };
 
 struct SInteractiveParams : SParallelProcessingParams
 {
     const bool echo;
+
+    SInteractiveParams(string s, SPSG_UserArgs ua, int wt, bool p, bool srv, bool e) :
+        SParallelProcessingParams(move(s), move(ua), wt, p, srv),
+        echo(e)
+    {}
 };
 
 struct SPerformanceParams : SParams
@@ -192,6 +221,14 @@ struct SPerformanceParams : SParams
     const double delay;
     const bool local_queue;
     const bool report_immediately;
+
+    SPerformanceParams(string s, SPSG_UserArgs ua, size_t ut, double d, bool lq, bool ri) :
+        SParams(move(s), move(ua)),
+        user_threads(ut),
+        delay(d),
+        local_queue(lq),
+        report_immediately(ri)
+    {}
 };
 
 class CParallelProcessing
