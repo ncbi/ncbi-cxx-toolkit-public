@@ -174,7 +174,7 @@ private:
     void x_ValidateTitle(const CBioseq& seq);
     void x_ValidateBarcode(const CBioseq& seq);
     void ValidateRawConst(const CBioseq& seq);
-    void x_CalculateNsStretchAndTotal(const CBioseq& seq, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3);
+    void x_CalculateNsStretchAndTotal(const CSeqVector& seqvec, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3);
     void ValidateNsAndGaps(const CBioseq& seq);
     void ReportBadAssemblyGap (const CBioseq& seq);
     static bool HasBadWGSGap(const CBioseq& seq);

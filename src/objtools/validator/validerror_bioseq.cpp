@@ -3075,20 +3075,15 @@ static EDiagSev GetBioseqEndWarning (const CBioseq& seq, bool is_circular, EBios
 }
 
 
-void CValidError_bioseq::x_CalculateNsStretchAndTotal(const CBioseq& seq, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3)
+void CValidError_bioseq::x_CalculateNsStretchAndTotal(const CSeqVector& vec, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3)
 {
+
+    _ASSERT(vec.GetCoding() == CSeq_data::e_Iupacna);
+
     num_ns = 0;
     max_stretch = 0;
     n5 = false;
     n3 = false;
-
-    if (HasAssemblyOrNullGap (seq)) return;
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if ( !bsh ) {
-        return;
-    }
-
-    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     TSeqPos this_stretch = 0;
     for (TSeqPos i = 0; i < vec.size(); i++) {
@@ -3125,13 +3120,26 @@ void CValidError_bioseq::x_CalculateNsStretchAndTotal(const CBioseq& seq, TSeqPo
 
 bool CValidError_bioseq::GetTSANStretchErrors(const CBioseq& seq)
 {
+
+    bool rval = false;
+    if (HasAssemblyOrNullGap(seq)) {
+        return rval;
+    }
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( !bsh ) {
+        return rval;
+    }
+
+
     TSeqPos num_ns = 0;
     TSeqPos max_stretch = 0;
     bool n5 = false;
     bool n3 = false;
-    bool rval = false;
 
-    x_CalculateNsStretchAndTotal(seq, num_ns, max_stretch, n5, n3);
+
+    auto vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    x_CalculateNsStretchAndTotal(vec, num_ns, max_stretch, n5, n3);
 
     if (max_stretch >= 15) {
         PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch,
@@ -3330,6 +3338,7 @@ static bool s_WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
 }
 
 
+
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
     if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
@@ -3419,28 +3428,30 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         // if TSA, check for percentage of Ns and max stretch of Ns
         if (IsBioseqTSA(seq, m_Scope)) {
             ReportBadAssemblyGap (seq);
-            bool n5 = false;
-            bool n3 = false;
-            TSeqPos num_ns = 0, max_stretch = 0;
-            x_CalculateNsStretchAndTotal(seq, num_ns, max_stretch, n5, n3);
+            if (!HasAssemblyOrNullGap(seq)) {
+                bool n5 = false;
+                bool n3 = false;
+                TSeqPos num_ns = 0, max_stretch = 0;
+                x_CalculateNsStretchAndTotal(vec, num_ns, max_stretch, n5, n3);
 
-            int pct_n = (num_ns * 100) / seq.GetLength();
-            if (pct_n > 10) {
-                PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent,
+                int pct_n = (num_ns * 100) / seq.GetLength();
+                if (pct_n > 10) {
+                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent,
                             "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
-            }
-
-            if (max_stretch >= 15) {
-                PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch,
-                            "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
-            } else {
-                if (n5) {
-                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNcontent5Prime,
-                                "Sequence has a stretch of at least 10 Ns within the first 20 bases", seq);
                 }
-                if (n3) {
-                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNcontent3Prime,
+
+                if (max_stretch >= 15) {
+                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch,
+                            "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
+                } else {
+                    if (n5) {
+                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNcontent5Prime,
+                                "Sequence has a stretch of at least 10 Ns within the first 20 bases", seq);
+                    }
+                    if (n3) {
+                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNcontent3Prime,
                                 "Sequence has a stretch of at least 10 Ns within the last 20 bases", seq);
+                    }
                 }
             }
         } else {
