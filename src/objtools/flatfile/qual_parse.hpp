@@ -70,6 +70,7 @@ private:
         bool& thereIsMore);
 
     bool xParseQualifierStart(
+        bool silent,
         string& qualKey,
         string& qualVal,
         bool& thereIsMore);

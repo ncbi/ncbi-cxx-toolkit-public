@@ -142,6 +142,7 @@
 #define ERR_QUALIFIER_NoNoteForOtherRegulatory         6,37
 #define ERR_QUALIFIER_NoRefForCiteQual                 6,38
 #define ERR_QUALIFIER_NoTextAfterEqualSign             6,39
+#define ERR_QUALIFIER_UnknownKey                       6,40
 
 #define ERR_SEQUENCE                                   7,0
 #define ERR_SEQUENCE_UnknownBaseHTG3                   7,1

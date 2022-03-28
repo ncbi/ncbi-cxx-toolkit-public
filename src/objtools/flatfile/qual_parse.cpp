@@ -103,10 +103,9 @@ bool CQualParser::xParseQualifierHead(
     //  ----------------------------------------------------------------------------
 {
     while (mCurrent != mData.end()) {
-        if (xParseQualifierStart(qualKey, qualVal, thereIsMore)) {
+        if (xParseQualifierStart(false, qualKey, qualVal, thereIsMore)) {
             return true;
         }
-        CFlatParseReport::UnexpectedData(mFeatKey, mFeatLocation);
         ++mCurrent;
     }
     return false;
@@ -115,6 +114,7 @@ bool CQualParser::xParseQualifierHead(
 
 //  ----------------------------------------------------------------------------
 bool CQualParser::xParseQualifierStart(
+    bool silent,
     string& qualKey,
     string& qualVal,
     bool& thereIsMore)
@@ -128,6 +128,9 @@ bool CQualParser::xParseQualifierStart(
 
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
     if (!NStr::StartsWith(cleaned, '/')) {
+        if (!silent) {
+            CFlatParseReport::UnexpectedData(mFeatKey, mFeatLocation);
+        }
         return false;
     }
     auto idxEqual = cleaned.find('=', 1);
@@ -136,7 +139,9 @@ bool CQualParser::xParseQualifierStart(
         qualKey.pop_back();
     }
     if (!sIsLegalQual(qualKey)) {
-        //report bad key
+        if (!silent) {
+            CFlatParseReport::UnknownQualifierKey(mFeatKey, mFeatLocation, qualKey);
+        }
         return false;
     }
     ++ mCurrent; // found what we are looking for, flush data
@@ -212,7 +217,7 @@ bool CQualParser::xParseQualifierCont(
         // report error
         return false;
     }
-    if (xParseQualifierStart(mPendingKey, mPendingVal, thereIsMore)) {
+    if (xParseQualifierStart(true, mPendingKey, mPendingVal, thereIsMore)) {
         return false;
     }
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
