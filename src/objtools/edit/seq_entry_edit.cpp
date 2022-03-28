@@ -1724,6 +1724,9 @@ void RemoveUserObjectType(CSeq_entry& entry, CUser_object::EObjectType type)
                 ERASE_SEQDESC_ON_BIOSEQ(desc_it, seq);
             }
         }
+        if (seq.IsSetDescr() && seq.GetDescr().Get().empty()) {
+            seq.ResetDescr();
+        }
     }
     else if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
         CBioseq_set& set = entry.SetSet();
