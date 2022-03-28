@@ -49,6 +49,21 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
+void CCassBlobTaskLoadBlob::InitBlobChunkDataQuery(
+    CCassQuery* query, string const& keyspace, CBlobRecord const& blob, int32_t chunk_no
+) {
+    if (query != nullptr) {
+        const char* const chunk_table_name = blob.GetFlag(EBlobFlags::eBigBlobSchema)
+             ? SBlobStorageConstants::kChunkTableBig
+             : SBlobStorageConstants::kChunkTableDefault;
+        query->SetSQL("SELECT data FROM " + keyspace + "." + chunk_table_name
+            + " WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?", 3);
+        query->BindInt32(0, blob.GetKey());
+        query->BindInt64(1, blob.GetModified());
+        query->BindInt32(2, chunk_no);
+    }
+}
+
 CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     unsigned int op_timeout_ms,
     unsigned int max_retries,
@@ -460,15 +475,7 @@ void CCassBlobTaskLoadBlob::x_RequestChunksAhead()
 
 void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
 {
-    const char* const chunk_table_name = m_Blob->GetFlag(EBlobFlags::eBigBlobSchema)
-         ? SBlobStorageConstants::kChunkTableBig
-         : SBlobStorageConstants::kChunkTableDefault;
-    string sql = "SELECT data FROM " + GetKeySpace() + "." + chunk_table_name
-        + " WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?";
-    qry.SetSQL(sql, 3);
-    qry.BindInt32(0, GetKey());
-    qry.BindInt64(1, m_Blob->GetModified());
-    qry.BindInt32(2, chunk_no);
+    InitBlobChunkDataQuery(&qry, GetKeySpace(), *m_Blob, chunk_no);
     {
         auto DataReadyCb3 = m_DataReadyCb3.lock();
         if (DataReadyCb3) {
