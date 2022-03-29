@@ -134,7 +134,7 @@ public:
 
     void InitializeLibChoices(void);
     // Is REQUIRES provided?
-    bool IsProvided(const string& thing, bool deep=true) const;
+    bool IsProvided(const string& thing, bool deep=true, const SConfigInfo* cfg = nullptr) const;
     
     bool IsBanned(const string& thing) const;
 
@@ -161,8 +161,8 @@ public:
     // What we have to define:
     void   GetConfigureDefines    (list<string>* defines) const;
 
-    void   CheckComponents(const list<string>& components) const;
-    void   GetComponentsInfo(const SConfigInfo& config, list<string>& list_enabled, list<string>& list_disabled) const;
+    void   CollectRequires(const list<string>& requires) const;
+    void   GetRequiresInfo(const SConfigInfo& config, list<string>& list_enabled, list<string>& list_disabled) const;
 
     // Lib Choices related:
     enum ELibChoice {
@@ -239,6 +239,7 @@ private:
     
     set<string> m_ProvidedThing;
     set<string> m_NotProvidedThing;
+    mutable set<string> m_Requires;
 
     list<SLibChoice> m_LibChoices;
 

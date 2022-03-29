@@ -200,7 +200,7 @@ void CMsvcSite::InitializeLibChoices(void)
     }
 }
 
-bool CMsvcSite::IsProvided(const string& thing, bool deep) const
+bool CMsvcSite::IsProvided(const string& thing, bool deep, const SConfigInfo* cfg) const
 {
     if (thing.empty()) {
         return true;
@@ -243,20 +243,30 @@ bool CMsvcSite::IsProvided(const string& thing, bool deep) const
         if (components.empty()) {
             components.push_back(thing);
         }
-        // in at least one configuration all components must be ok
-        ITERATE(list<SConfigInfo>, config , GetApp().GetRegSettings().m_ConfigInfo) {
+        if (cfg != nullptr) {
             res = true;
             ITERATE(list<string>, p, components) {
                 const string& component = *p;
                 SLibInfo lib_info;
-                GetLibInfo(component, *config, &lib_info);
+                GetLibInfo(component, *cfg, &lib_info);
                 res = IsLibOk(lib_info);
-                if ( !res ) {
+            }
+        } else {
+            // in at least one configuration all components must be ok
+            ITERATE(list<SConfigInfo>, config , GetApp().GetRegSettings().m_ConfigInfo) {
+                res = true;
+                ITERATE(list<string>, p, components) {
+                    const string& component = *p;
+                    SLibInfo lib_info;
+                    GetLibInfo(component, *config, &lib_info);
+                    res = IsLibOk(lib_info);
+                    if ( !res ) {
+                        break;
+                    }
+                }
+                if (res) {
                     break;
                 }
-            }
-            if (res) {
-                break;
             }
         }
     }
@@ -456,30 +466,18 @@ void CMsvcSite::GetConfigureDefines(list<string>* defines) const
                 *defines, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
-void  CMsvcSite::CheckComponents(const list<string>& components) const
+void  CMsvcSite::CollectRequires(const list<string>& requires) const
 {
-    const list<SConfigInfo>& cfgs = GetApp().GetRegSettings().m_ConfigInfo;
-    for( const string& r : components) {
-        for( const SConfigInfo& c : cfgs) {
-            SLibInfo lib_info;
-            GetLibInfo(r, c, &lib_info);
-            IsLibOk(lib_info);
-        }
-    }
+    m_Requires.insert(requires.begin(), requires.end());
 }
 
-void  CMsvcSite::GetComponentsInfo(const SConfigInfo& config, 
-    list<string>& list_enabled, list<string>& list_disabled) const
+void  CMsvcSite::GetRequiresInfo(const SConfigInfo& config, list<string>& list_enabled, list<string>& list_disabled) const
 {
-    string cfg = "|" + config.GetConfigFullName();
-    for (const auto& a : m_AllLibInfo) {
-        if (NStr::EndsWith(a.first, cfg)) {
-            string component = NStr::Replace(a.first, cfg, kEmptyStr);
-            if (a.second.m_good && IsLibEnabledInConfig(component, config)) {
-                list_enabled.push_back(component);
-            } else {
-                list_disabled.push_back(component);
-            }
+    for (const string& req : m_Requires) {
+        if ( (IsProvided(req, true, &config) || IsProvided(req, false, &config)) && IsLibEnabledInConfig(req, config)) {
+            list_enabled.push_back(req);
+        } else {
+            list_disabled.push_back(req);
         }
     }
 }

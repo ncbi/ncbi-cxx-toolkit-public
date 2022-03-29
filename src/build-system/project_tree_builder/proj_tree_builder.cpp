@@ -1366,8 +1366,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                       defines,
                       maketype,
         IdentifySlnGUID(source_base_dir, CProjKey(CProjKey::eApp, proj_id)));
-    //
-    GetApp().GetSite().CheckComponents(requires);
+
     project.m_NcbiCLibs = ncbi_clibs;
     project.m_StyleObjcpp = style_objcpp;
     project.m_MkName = applib_mfilepath;
@@ -1426,10 +1425,12 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
         check_timeout = NStr::Join(k->second, " ");
     }
+    GetApp().GetSite().CollectRequires(requires);
     bool check_requires_ok = true;
     string check_requires;
     k = makefile.m_Contents.find("CHECK_REQUIRES");
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
+        GetApp().GetSite().CollectRequires(k->second);
         ITERATE(list<string>, p, k->second) {
             if ( !GetApp().GetSite().IsProvided(*p) ) {
                 check_requires_ok = false;
@@ -1746,7 +1747,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            defines,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
-    GetApp().GetSite().CheckComponents(requires);
+
+    GetApp().GetSite().CollectRequires(requires);
     (tree->m_Projects[proj_key]).m_StyleObjcpp = style_objcpp;
     (tree->m_Projects[proj_key]).m_MkName = applib_mfilepath;
     (tree->m_Projects[proj_key]).m_DataSource = CSimpleMakeFileContents(applib_mfilepath);
