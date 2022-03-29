@@ -71,6 +71,7 @@ public:
     virtual ~COSGCaller();
 
     void AllocateConnection(const CRef<COSGConnectionPool>& connection_pool);
+    void ReleaseConnection();
     void SendRequest(CPSGS_OSGProcessorBase& processor);
     void WaitForReplies(CPSGS_OSGProcessorBase& processor);
 
