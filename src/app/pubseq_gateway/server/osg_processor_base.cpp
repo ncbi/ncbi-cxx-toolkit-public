@@ -69,304 +69,6 @@ BEGIN_NAMESPACE(osg);
         }                                                               \
     } while(0)
 
-/////////////////////////////////////////////////////////////////////////////
-// COSGProcessorRef
-/////////////////////////////////////////////////////////////////////////////
-
-COSGProcessorRef::COSGProcessorRef(CPSGS_OSGProcessorBase* ptr)
-    : m_ProcessorPtr(ptr),
-      m_FinalStatus(IPSGS_Processor::ePSGS_InProgress),
-      m_ConnectionPool(ptr->m_ConnectionPool)
-{
-    _ASSERT(m_ConnectionPool);
-}
-
-
-COSGProcessorRef::~COSGProcessorRef()
-{
-}
-
-
-COSGProcessorRef::TFetches COSGProcessorRef::GetFetches()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        return m_ProcessorPtr->GetFetches();
-    }
-    else {
-        return TFetches();
-    }
-}
-
-
-void COSGProcessorRef::NotifyOSGCallStart()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->NotifyOSGCallStart();
-    }
-}
-
-
-void COSGProcessorRef::NotifyOSGCallReply(const CID2_Reply& reply)
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->NotifyOSGCallReply(reply);
-    }
-}
-
-
-void COSGProcessorRef::NotifyOSGCallEnd()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->NotifyOSGCallEnd();
-    }
-}
-
-
-void COSGProcessorRef::FinalizeResult(IPSGS_Processor::EPSGS_Status status)
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->FinalizeResult(status);
-    }
-}
-
-
-void COSGProcessorRef::SignalEndOfBackgroundProcessing()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->SignalEndOfBackgroundProcessing();
-    }
-}
-
-
-IPSGS_Processor::EPSGS_Status COSGProcessorRef::GetStatus() const
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    return m_ProcessorPtr? m_ProcessorPtr->GetStatus(): m_FinalStatus;
-}
-
-
-void COSGProcessorRef::Cancel()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->Cancel();
-    }
-    else {
-        m_FinalStatus = IPSGS_Processor::ePSGS_Canceled;
-    }
-}
-
-
-void COSGProcessorRef::Detach()
-{
-    return;
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_FinalStatus = m_ProcessorPtr->GetStatus();
-        m_ProcessorPtr = 0;
-    }
-}
-
-
-void COSGProcessorRef::ProcessReplies()
-{
-    SEND_TRACE("OSG: processing replies");
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->ProcessReplies();
-    }
-}
-
-
-void COSGProcessorRef::SetRequestContext()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->GetRequest()->SetRequestContext();
-    }
-}
-
-
-void COSGProcessorRef::WaitForOtherProcessors()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->WaitForOtherProcessors();
-    }
-}
-
-
-bool COSGProcessorRef::NeedTrace() const
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        return m_ProcessorPtr->NeedTrace();
-    }
-    return false;
-}
-
-
-void COSGProcessorRef::SendTrace(const string& str)
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr->SendTrace(str);
-    }
-}
-
-
-void COSGProcessorRef::s_ProcessReplies(void *data)
-{
-    CRequestContextResetter     context_resetter;
-    shared_ptr<COSGProcessorRef>& ref = *static_cast<shared_ptr<COSGProcessorRef>*>(data);
-    try {
-        ref->SetRequestContext();
-        ref->ProcessReplies();
-    }
-    catch ( exception& exc ) {
-        ERR_POST("OSG: ProcessReplies() failed: "<<exc.what());
-        ref->FinalizeResult(IPSGS_Processor::ePSGS_Error);
-    }
-    ref->SignalEndOfBackgroundProcessing();
-    delete &ref;
-}
-
-
-void COSGProcessorRef::ProcessRepliesInUvLoop()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        _ASSERT(m_ProcessorPtr->m_ProcessorRef);
-        m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-            s_ProcessReplies,
-            new shared_ptr<COSGProcessorRef>(m_ProcessorPtr->m_ProcessorRef));
-    }
-}
-
-
-void COSGProcessorRef::s_Process(shared_ptr<COSGProcessorRef> processor)
-{
-    processor->Process();
-}
-
-
-void COSGProcessorRef::Process()
-{
-    SEND_TRACE("OSG: Process() started");
-    CRequestContextResetter     context_resetter;
-    SetRequestContext();
-
-    try {
-        tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() start: "<<GetStatus());
-        for ( double retry_count = m_ConnectionPool->GetRetryCount(); retry_count > 0; ) {
-            if ( IsCanceled() ) {
-                SEND_TRACE("OSG: Process() canceled");
-                return;
-            }
-        
-            // We need to distinguish different kinds of communication failures with different
-            //   effect on retry logic.
-            // 1. stale/disconnected connection failure - there maybe multiple in active connection pool
-            // 2. multiple simultaneous failures from concurrent incoming requests
-            // 3. repeated failure of specific request at OSG server
-            // In the first case we shouldn't account all such failures in the same retry counter -
-            //   it will overflow easily, and quite unnecessary.
-            // In the first case we shouldn't increase wait time too much -
-            //   the failures should be treated as single failure for the sake of waiting before
-            //   next connection attempt.
-            // In the third case we should make sure we abandon the failing request when retry limit
-            //   is reached. It should be detected no matter of concurrent successful requests.
-        
-            bool last_attempt = retry_count <= 1;
-            COSGCaller caller;
-            try {
-                SEND_TRACE("OSG: allocating connection");
-                caller.AllocateConnection(m_ConnectionPool);
-                SEND_TRACE_FMT("OSG: allocated connection: "<<caller.GetConnectionID());
-            }
-            catch ( exception& exc ) {
-                if ( last_attempt ) {
-                    ERR_POST("OSG: failed opening connection: "<<exc.what());
-                    throw;
-                }
-                else {
-                    // failed new connection - consume full retry
-                    ERR_POST("OSG: retrying after failure opening connection: "<<exc.what());
-                    retry_count -= 1;
-                    continue;
-                }
-            }
-        
-            if ( IsCanceled() ) {
-                SEND_TRACE("OSG: Process() canceled");
-                return;
-            }
-        
-            try {
-                caller.SendRequest(*this);
-                caller.WaitForReplies(*this);
-            }
-            catch ( exception& exc ) {
-                if ( last_attempt ) {
-                    ERR_POST("OSG: failed receiving replies: "<<exc.what());
-                    throw;
-                }
-                else {
-                    // this may be failure of old connection
-                    ERR_POST("OSG: retrying after failure receiving replies: "<<exc.what());
-                    if ( caller.GetRequestPacket().Get().front()->GetSerial_number() <= 1 ) {
-                        // new connection - consume full retry
-                        retry_count -= 1;
-                    }
-                    else {
-                        // old connection from pool - consume part of retry
-                        retry_count -= 1./m_ConnectionPool->GetMaxConnectionCount();
-                    }
-                    continue;
-                }
-            }
-        
-            // successful
-            break;
-        }
-
-        if ( IsCanceled() ) {
-            SEND_TRACE("OSG: Process() canceled");
-            return;
-        }
-        tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() got replies: "<<GetStatus());
-        WaitForOtherProcessors();
-        if ( IsCanceled() ) {
-            SEND_TRACE("OSG: Process() canceled");
-            return;
-        }
-        if ( 1 ) {
-            SEND_TRACE("OSG: switching to UV loop");
-            ProcessRepliesInUvLoop();
-            tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() return with async post: "<<GetStatus());
-        }
-        else {
-            SEND_TRACE("OSG: processing replies");
-            ProcessReplies();
-            tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() finished: "<<GetStatus());
-            _ASSERT(GetStatus() != IPSGS_Processor::ePSGS_InProgress);
-            tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() return: "<<GetStatus());
-            SignalEndOfBackgroundProcessing();
-        }
-        tLOG_POST("COSGProcessorRef("<<m_ProcessorPtr<<")::Process() done: "<<GetStatus());
-    }
-    catch ( exception& exc ) {
-        ERR_POST("OSG: DoProcess() failed: "<<exc.what());
-        FinalizeResult(IPSGS_Processor::ePSGS_Error);
-    }
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CPSGS_OSGProcessorBase
@@ -382,7 +84,7 @@ CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
       m_ConnectionPool(pool),
       m_EnabledFlags(enabled_flags),
       m_Status(IPSGS_Processor::ePSGS_InProgress),
-      m_BackgroundProcesing(false),
+      m_BackgroundProcesing(0),
       m_NeedTrace(request->NeedTrace())
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CPSGS_OSGProcessorBase()");
@@ -435,13 +137,10 @@ CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
 {
     StopAsyncThread();
     CMutexGuard guard(m_StatusMutex);
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() status: "<<m_Status);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() status: "<<State());
     _ASSERT(m_Status != IPSGS_Processor::ePSGS_InProgress);
     _ASSERT(!m_BackgroundProcesing);
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() return: "<<m_Status);
-    if ( m_ProcessorRef ) {
-        m_ProcessorRef->Detach();
-    }
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() return: "<<State());
 }
 
 
@@ -467,9 +166,6 @@ void CPSGS_OSGProcessorBase::SendTrace(const string& str)
 
 void CPSGS_OSGProcessorBase::StopAsyncThread()
 {
-    if ( m_ProcessorRef ) {
-        m_ProcessorRef->Detach();
-    }
     /*
     if ( m_Thread ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() joining status: "<<m_Status);
@@ -487,9 +183,9 @@ void CPSGS_OSGProcessorBase::Process()
     CRequestContextResetter     context_resetter;
     GetRequest()->SetRequestContext();
 
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process(): "<<m_Status);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process(): "<<State());
     if ( IsCanceled() ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() canceled: "<<m_Status);
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() canceled: "<<State());
         return;
     }
     if ( GetFetches().empty() ) {
@@ -501,54 +197,234 @@ void CPSGS_OSGProcessorBase::Process()
         }
     }
     _ASSERT(!GetFetches().empty());
-    m_ProcessorRef = make_shared<COSGProcessorRef>(this);
     if ( m_ConnectionPool->GetAsyncProcessing() ) {
-        SEND_TRACE("OSG: switching Process() to background thread");
-        ProcessAsync();
+        CallDoProcessAsync();
     }
     else {
-        ProcessSync();
+        CallDoProcessSync();
     }
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() return: "<<m_Status);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() return: "<<State());
 }
 
 
-void CPSGS_OSGProcessorBase::ProcessSync()
+void CPSGS_OSGProcessorBase::CallDoProcessSync()
 {
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessSync(): "<<m_Status);
-    m_ProcessorRef->Process();
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessSync() return: "<<m_Status);
-    _ASSERT(m_Status != ePSGS_InProgress);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessSync() start: "<<State());
+    DoProcess();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessSync() return: "<<State());
 }
 
 
-void CPSGS_OSGProcessorBase::ProcessAsync()
+void CPSGS_OSGProcessorBase::CallDoProcessCallback()
 {
+    CRequestContextResetter context_resetter;
+    CEndOfBackgroundProcessingGuard guard(this);
+    try {
+        GetRequest()->SetRequestContext();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() start: "<<State());
+        DoProcess();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() return: "<<State());
+    }
+    catch ( exception& exc ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() exc: "<<exc.what()<<": "<<State());
+        ERR_POST("OSG: DoProcess() failed: "<<exc.what());
+        FinalizeResult(IPSGS_Processor::ePSGS_Error);
+    }
+}
+
+
+void CPSGS_OSGProcessorBase::CallDoProcessAsync()
+{
+    SEND_TRACE("OSG: switching Process() to background thread");
     if ( !SignalStartOfBackgroundProcessing() ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessAsync(): don't start thread: "<<m_Status);
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync(): canceled: "<<State());
         return;
     }
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessAsync(): "<<m_Status);
-    thread(bind(&COSGProcessorRef::s_Process, m_ProcessorRef)).detach();
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::ProcessAsync() started: "<<m_Status);
+    try {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync(): starting: "<<State());
+        thread(bind(&CPSGS_OSGProcessorBase::CallDoProcessCallback, this)).detach();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync() started: "<<State());
+    }
+    catch (...) {
+        CEndOfBackgroundProcessingGuard guard(this);
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync() failed: "<<State());
+        throw;
+    }
 }
 
 
-void CPSGS_OSGProcessorBase::s_ProcessReplies(void* proc)
+void CPSGS_OSGProcessorBase::DoProcess()
 {
-    auto processor = static_cast<CPSGS_OSGProcessorBase*>(proc);
-    tLOG_POST("CPSGS_OSGProcessorBase("<<proc<<")::ProcessReplies() start: "<<processor->m_Status);
-    processor->ProcessReplies();
-    tLOG_POST("CPSGS_OSGProcessorBase("<<proc<<")::ProcessReplies() done: "<<processor->m_Status);
+    SEND_TRACE("OSG: DoProcess() started");
+    try {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcess() start: "<<State());
+        for ( double retry_count = m_ConnectionPool->GetRetryCount(); retry_count > 0; ) {
+            if ( IsCanceled() ) {
+                SEND_TRACE("OSG: DoProcess() canceled 1");
+                return;
+            }
+        
+            // We need to distinguish different kinds of communication failures with different
+            //   effect on retry logic.
+            // 1. stale/disconnected connection failure - there maybe multiple in active connection pool
+            // 2. multiple simultaneous failures from concurrent incoming requests
+            // 3. repeated failure of specific request at OSG server
+            // In the first case we shouldn't account all such failures in the same retry counter -
+            //   it will overflow easily, and quite unnecessary.
+            // In the first case we shouldn't increase wait time too much -
+            //   the failures should be treated as single failure for the sake of waiting before
+            //   next connection attempt.
+            // In the third case we should make sure we abandon the failing request when retry limit
+            //   is reached. It should be detected no matter of concurrent successful requests.
+        
+            bool last_attempt = retry_count <= 1;
+            COSGCaller caller;
+            try {
+                SEND_TRACE("OSG: DoProcess() allocating connection");
+                caller.AllocateConnection(m_ConnectionPool);
+                SEND_TRACE_FMT("OSG: DoProcess() allocated connection: "<<caller.GetConnectionID());
+            }
+            catch ( exception& exc ) {
+                if ( last_attempt ) {
+                    ERR_POST("OSG: DoProcess() failed opening connection: "<<exc.what());
+                    throw;
+                }
+                else {
+                    // failed new connection - consume full retry
+                    ERR_POST("OSG: DoProcess() retrying after failure opening connection: "<<exc.what());
+                    retry_count -= 1;
+                    continue;
+                }
+            }
+        
+            if ( IsCanceled() ) {
+                SEND_TRACE("OSG: DoProcess() canceled 2");
+                return;
+            }
+        
+            try {
+                caller.SendRequest(*this);
+                caller.WaitForReplies(*this);
+            }
+            catch ( exception& exc ) {
+                if ( last_attempt ) {
+                    ERR_POST("OSG: DoProcess() failed receiving replies: "<<exc.what());
+                    throw;
+                }
+                else {
+                    // this may be failure of old connection
+                    ERR_POST("OSG: retrying after failure receiving replies: "<<exc.what());
+                    if ( caller.GetRequestPacket().Get().front()->GetSerial_number() <= 1 ) {
+                        // new connection - consume full retry
+                        retry_count -= 1;
+                    }
+                    else {
+                        // old connection from pool - consume part of retry
+                        retry_count -= 1./m_ConnectionPool->GetMaxConnectionCount();
+                    }
+                    continue;
+                }
+            }
+        
+            // successful
+            break;
+        }
+
+        if ( IsCanceled() ) {
+            SEND_TRACE("OSG: DoProcess() canceled 3");
+            return;
+        }
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcess() got replies: "<<State());
+        WaitForOtherProcessors();
+        if ( IsCanceled() ) {
+            SEND_TRACE("OSG: DoProcess() canceled");
+            return;
+        }
+        if ( 1 ) {
+            CallDoProcessRepliesAsync();
+        }
+        else {
+            CallDoProcessRepliesSync();
+        }
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() done: "<<State());
+    }
+    catch ( exception& exc ) {
+        ERR_POST("OSG: DoProcess() failed: "<<exc.what());
+        FinalizeResult(IPSGS_Processor::ePSGS_Error);
+    }
+}
+
+
+void CPSGS_OSGProcessorBase::DoProcessReplies()
+{
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcessReplies() start: "<<State());
+    SEND_TRACE("OSG: processing replies");
+    ProcessReplies();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcessReplies() return: "<<State());
+    _ASSERT(m_Status != IPSGS_Processor::ePSGS_InProgress);
+}
+
+
+void CPSGS_OSGProcessorBase::CallDoProcessRepliesSync()
+{
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesSync() start: "<<State());
+    DoProcessReplies();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesSync() return: "<<State());
+}
+
+
+void CPSGS_OSGProcessorBase::CallDoProcessRepliesCallback()
+{
+    CRequestContextResetter context_resetter;
+    CEndOfBackgroundProcessingGuard guard(this);
+    try {
+        GetRequest()->SetRequestContext();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() start: "<<State());
+        DoProcessReplies();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() return: "<<State());
+    }
+    catch ( exception& exc ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() exc: "<<exc.what()<<": "<<State());
+        ERR_POST("OSG: ProcessReplies() failed: "<<exc.what());
+        FinalizeResult(IPSGS_Processor::ePSGS_Error);
+    }
+}
+
+
+void CPSGS_OSGProcessorBase::s_CallDoProcessRepliesUvCallback(void *data)
+{
+    static_cast<CPSGS_OSGProcessorBase*>(data)->CallDoProcessRepliesCallback();
+}
+
+
+void CPSGS_OSGProcessorBase::CallDoProcessRepliesAsync()
+{
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() start: "<<State());
+    SEND_TRACE("OSG: scheduling ProcessReplies() to UV loop");
+    if ( !SignalStartOfBackgroundProcessing() ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() canceled: "<<State());
+        return;
+    }
+    GetUvLoopBinder().PostponeInvoke(s_CallDoProcessRepliesUvCallback, this);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() return: "<<State());
 }
 
 
 void CPSGS_OSGProcessorBase::Cancel()
 {
     CMutexGuard guard(m_StatusMutex);
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Cancel()");
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Cancel(): status: "<<m_Status<<" "<<m_BackgroundProcesing);
     SetFinalStatus(ePSGS_Canceled);
     FinalizeResult();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Cancel(): return: "<<m_Status<<" "<<m_BackgroundProcesing);
+}
+
+
+CNcbiOstream& COSGStateReporter::Print(CNcbiOstream& out) const
+{
+    return out << m_ProcessorPtr->m_Status << ' '
+               << m_ProcessorPtr->m_BackgroundProcesing << ' '
+               << m_ProcessorPtr->m_FinishSignalled;
 }
 
 
@@ -589,27 +465,28 @@ void CPSGS_OSGProcessorBase::AddRequest(const CRef<CID2_Request>& req0)
 
 IPSGS_Processor::EPSGS_Status CPSGS_OSGProcessorBase::GetStatus()
 {
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::GetStatus(): "<<m_Status);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::GetStatus(): "<<State());
     return m_Status;
 }
 
 
 void CPSGS_OSGProcessorBase::SetFinalStatus(EPSGS_Status status)
 {
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SetFinalStatus(): "<<m_Status<<" -> "<<status);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SetFinalStatus(): status: "<<State());
     _ASSERT(m_Status == ePSGS_InProgress || status == m_Status ||
             m_Status == ePSGS_Canceled || status == ePSGS_Canceled);
     m_Status = status;
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SetFinalStatus(): return: "<<State());
 }
 
 
 void CPSGS_OSGProcessorBase::FinalizeResult()
 {
     CMutexGuard guard(m_StatusMutex);
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): "<<m_Status);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): state: "<<m_Status<<" "<<m_BackgroundProcesing);
     _ASSERT(m_Status != ePSGS_InProgress);
     if ( !m_BackgroundProcesing ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): signal "<<m_Status);
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): signal: "<<m_Status<<" "<<m_BackgroundProcesing);
         SignalFinishProcessing();
     }
 }
@@ -625,12 +502,12 @@ void CPSGS_OSGProcessorBase::FinalizeResult(EPSGS_Status status)
 bool CPSGS_OSGProcessorBase::SignalStartOfBackgroundProcessing()
 {
     CMutexGuard guard(m_StatusMutex);
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalStartOfBackgroundProcessing(): signal "<<m_Status);
-    _ASSERT(!m_BackgroundProcesing);
-    if ( GetStatus() == IPSGS_Processor::ePSGS_Canceled ) {
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalStartOfBackgroundProcessing(): state: "<<m_Status<<" "<<m_BackgroundProcesing);
+    if ( m_Status == IPSGS_Processor::ePSGS_Canceled ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalStartOfBackgroundProcessing(): return cancel: "<<m_Status<<" "<<m_BackgroundProcesing);
         return false;
     }
-    m_BackgroundProcesing = true;
+    ++m_BackgroundProcesing;
     return true;
 }
 
@@ -638,12 +515,12 @@ bool CPSGS_OSGProcessorBase::SignalStartOfBackgroundProcessing()
 void CPSGS_OSGProcessorBase::SignalEndOfBackgroundProcessing()
 {
     CMutexGuard guard(m_StatusMutex);
-    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): signal "<<m_Status);
-    _ASSERT(m_BackgroundProcesing);
-    m_BackgroundProcesing = false;
-    if ( GetStatus() == IPSGS_Processor::ePSGS_Canceled ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): signal "<<m_Status);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): state: "<<m_Status<<" "<<m_BackgroundProcesing<<" "<<m_FinishSignalled);
+    _ASSERT(m_BackgroundProcesing > 0);
+    if ( --m_BackgroundProcesing == 0 ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): signal: "<<m_Status<<" "<<m_BackgroundProcesing<<" "<<m_FinishSignalled);
         SignalFinishProcessing();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): return: "<<m_Status<<" "<<m_BackgroundProcesing<<" "<<m_FinishSignalled);
     }
 }
 

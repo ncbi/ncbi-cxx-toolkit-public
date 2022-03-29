@@ -58,7 +58,6 @@ const string kOSGProcessorGroupName = "OSG";
 class COSGFetch;
 class COSGConnectionPool;
 class COSGConnection;
-class COSGProcessorRef;
 class CPSGS_OSGProcessorBase;
 
 
@@ -82,46 +81,21 @@ void SetDiagSeverity(EDiagSev severity);
 USING_SCOPE(objects);
 
 
-class COSGProcessorRef {
+class COSGStateReporter
+{
 public:
-    explicit COSGProcessorRef(CPSGS_OSGProcessorBase* ptr);
-    ~COSGProcessorRef();
-
-    void SetRequestContext();
-    bool NeedTrace() const;
-    void SendTrace(const string& str);
-
-    typedef vector<CRef<COSGFetch>> TFetches;
-    TFetches GetFetches();
-    void NotifyOSGCallStart();
-    void NotifyOSGCallReply(const CID2_Reply& reply);
-    void NotifyOSGCallEnd();
-    void ProcessReplies();
-    void ProcessRepliesInUvLoop();
-    static void s_ProcessReplies(void* data);
-    void Process();
-    static void s_Process(shared_ptr<COSGProcessorRef> processor);
-    void Cancel();
-    void WaitForOtherProcessors();
-    
-    void FinalizeResult(IPSGS_Processor::EPSGS_Status status);
-    void SignalEndOfBackgroundProcessing();
-    IPSGS_Processor::EPSGS_Status GetStatus() const;
-    bool IsCanceled() const
+    explicit COSGStateReporter(const CPSGS_OSGProcessorBase* processor)
+        : m_ProcessorPtr(processor)
         {
-            return GetStatus() == IPSGS_Processor::ePSGS_Canceled;
         }
-
-    void Detach();
-    
+    CNcbiOstream& Print(CNcbiOstream& out) const;
 private:
-    mutable CFastMutex m_ProcessorPtrMutex;
-    CPSGS_OSGProcessorBase* volatile m_ProcessorPtr;
-    IPSGS_Processor::EPSGS_Status m_FinalStatus;
-    CRef<CRequestContext> m_Context;
-    CRef<COSGConnectionPool> m_ConnectionPool;
+    const CPSGS_OSGProcessorBase* m_ProcessorPtr;
 };
-
+inline CNcbiOstream& operator<<(CNcbiOstream& out, const COSGStateReporter& state)
+{
+    return state.Print(out);
+}
 
 // actual OSG processor base class for communication with OSG
 class CPSGS_OSGProcessorBase : public IPSGS_Processor
@@ -182,22 +156,54 @@ public:
         }
     
 protected:
-    friend class COSGProcessorRef;
-    
     COSGConnectionPool& GetConnectionPool() const {
         return m_ConnectionPool.GetNCObject();
     }
 
     void StopAsyncThread();
-    void ProcessSync();
-    void ProcessAsync();
+    void CallDoProcessSync();
+    void CallDoProcessAsync();
+    void CallDoProcessCallback();
     void DoProcess();
+
+    void CallDoProcessRepliesSync();
+    void CallDoProcessRepliesAsync();
+    void CallDoProcessRepliesCallback();
+    static void s_CallDoProcessRepliesUvCallback(void* proc);
+    void DoProcessReplies();
     
     void SetFinalStatus(EPSGS_Status status);
     void FinalizeResult(EPSGS_Status status);
     void FinalizeResult();
+    // if canceled return false
+    // otherwise increment background processing counter and return true
     bool SignalStartOfBackgroundProcessing();
+    // decrement background processing counter and notify dispatcher if zero
     void SignalEndOfBackgroundProcessing();
+
+    class CEndOfBackgroundProcessingGuard
+    {
+    public:
+        explicit CEndOfBackgroundProcessingGuard(CPSGS_OSGProcessorBase* processor)
+            : m_ProcessorPtr(processor)
+            {
+            }
+        ~CEndOfBackgroundProcessingGuard()
+            {
+                if ( m_ProcessorPtr ) {
+                    m_ProcessorPtr->SignalEndOfBackgroundProcessing();
+                }
+            }
+    private:
+        CPSGS_OSGProcessorBase* m_ProcessorPtr;
+    };
+    friend class CEndOfBackgroundProcessingGuard;
+
+    friend class COSGStateReporter;
+    COSGStateReporter State() const
+        {
+            return COSGStateReporter(this);
+        }
 
     void AddRequest(const CRef<CID2_Request>& req);
 
@@ -208,18 +214,15 @@ protected:
     // reset processing state in case of ID2 communication failure before next attempt
     virtual void ResetReplies();
 
-    static void s_ProcessReplies(void* proc);
-
 private:
     CRef<CRequestContext> m_Context;
     CRef<COSGConnectionPool> m_ConnectionPool;
     TEnabledFlags m_EnabledFlags;
     CRef<COSGConnection> m_Connection;
     TFetches m_Fetches;
-    shared_ptr<COSGProcessorRef> m_ProcessorRef;
     CMutex m_StatusMutex;
     EPSGS_Status m_Status;
-    bool m_BackgroundProcesing;
+    int m_BackgroundProcesing;
     bool m_NeedTrace;
 };
 
