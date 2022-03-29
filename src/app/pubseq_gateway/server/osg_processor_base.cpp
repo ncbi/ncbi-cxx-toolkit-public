@@ -159,7 +159,10 @@ void CPSGS_OSGProcessorBase::WaitForCassandra()
 void CPSGS_OSGProcessorBase::SendTrace(const string& str)
 {
     if ( NeedTrace() ) {
-        m_Reply->SendTrace(str, m_Request->GetStartTimestamp());
+        CMutexGuard guard(m_StatusMutex);
+        if ( !IsCanceled() ) {
+            m_Reply->SendTrace(str, m_Request->GetStartTimestamp());
+        }
     }
 }
 
@@ -298,7 +301,8 @@ void CPSGS_OSGProcessorBase::DoProcess()
             }
         
             if ( IsCanceled() ) {
-                SEND_TRACE("OSG: DoProcess() canceled 2");
+                SEND_TRACE_FMT("OSG: DoProcess() canceled 2, releasing connection: "<<caller.GetConnectionID());
+                caller.ReleaseConnection();
                 return;
             }
         

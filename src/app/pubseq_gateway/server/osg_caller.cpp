@@ -154,6 +154,16 @@ void COSGCaller::AllocateConnection(const CRef<COSGConnectionPool>& connection_p
 }
 
 
+void COSGCaller::ReleaseConnection()
+{
+    if ( m_Connection ) {
+        m_ConnectionPool->ReleaseConnection(m_Connection);
+        _ASSERT(!m_Connection);
+        m_ConnectionPool = null;
+    }
+}
+
+
 void COSGCaller::SendRequest(CPSGS_OSGProcessorBase& processor)
 {
     _ASSERT(m_Connection);
@@ -220,8 +230,7 @@ void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
         str << "OSG("<<m_Connection->GetConnectionID()<<") releasing connection";
         processor.SendTrace(str.str());
     }
-    m_ConnectionPool->ReleaseConnection(m_Connection);
-    _ASSERT(!m_Connection);
+    ReleaseConnection();
     if ( failed ) {
         NCBI_THROW_FMT(CPubseqGatewayException, eOutputNotInReadyState,
                        "OSG error reply: "<<MSerial_AsnText<<*failed);
