@@ -346,24 +346,6 @@ private:
 };
 
 template <>
-struct SRequestBuilder::SReader<CArgs>
-{
-    const CArgs& input;
-
-    SReader(const CArgs& i) : input(i) {}
-
-    TSpecified GetSpecified() const;
-    CPSG_BioId GetBioId() const;
-    CPSG_BlobId GetBlobId() const;
-    CPSG_ChunkId GetChunkId() const;
-    vector<string> GetNamedAnnots() const { return input["na"].GetStringList(); }
-    string GetAccSubstitution() const { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
-    CTimeout GetResendTimeout() const { return CTimeout::eDefault; }
-    void ForEachTSE(TExclude exclude) const;
-    SPSG_UserArgs GetUserArgs() const { return input["user-args"].HasValue() ? input["user-args"].AsString() : SPSG_UserArgs(); }
-};
-
-template <>
 struct SRequestBuilder::SReader<CJson_ConstObject>
 {
     const CJson_ConstObject& input;
@@ -407,13 +389,6 @@ struct SRequestBuilder::SImpl
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
     static void SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution);
 };
-
-inline SRequestBuilder::TSpecified SRequestBuilder::SReader<CArgs>::GetSpecified() const
-{
-    return [&](const string& name) {
-        return input[name].HasValue();
-    };
-}
 
 inline SRequestBuilder::TSpecified SRequestBuilder::SReader<CJson_ConstObject>::GetSpecified() const
 {

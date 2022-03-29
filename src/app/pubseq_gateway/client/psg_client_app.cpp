@@ -413,6 +413,64 @@ struct SPerformance : SBase<SPerformanceParams>, SIoRedirector
 
 }
 
+template <>
+struct SRequestBuilder::SReader<CArgs>
+{
+    const CArgs& input;
+
+    SReader(const CArgs& i) : input(i) {}
+
+    TSpecified GetSpecified() const;
+    CPSG_BioId GetBioId() const;
+    CPSG_BlobId GetBlobId() const;
+    CPSG_ChunkId GetChunkId() const;
+    vector<string> GetNamedAnnots() const { return input["na"].GetStringList(); }
+    string GetAccSubstitution() const { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
+    CTimeout GetResendTimeout() const { return CTimeout::eDefault; }
+    void ForEachTSE(TExclude exclude) const;
+    SPSG_UserArgs GetUserArgs() const { return input["user-args"].HasValue() ? input["user-args"].AsString() : SPSG_UserArgs(); }
+};
+
+SRequestBuilder::TSpecified SRequestBuilder::SReader<CArgs>::GetSpecified() const
+{
+    return [&](const string& name) {
+        return input[name].HasValue();
+    };
+}
+
+CPSG_BioId SRequestBuilder::SReader<CArgs>::GetBioId() const
+{
+    const auto& id = input["ID"].AsString();
+
+    if (!input["type"].HasValue()) return CPSG_BioId(id);
+
+    const auto type = GetBioIdType(input["type"].AsString());
+    return CPSG_BioId(id, type);
+}
+
+CPSG_BlobId SRequestBuilder::SReader<CArgs>::GetBlobId() const
+{
+    const auto& id = input["ID"].AsString();
+    const auto& last_modified = input["last-modified"];
+    return last_modified.HasValue() ? CPSG_BlobId(id, last_modified.AsInt8()) : id;
+}
+
+CPSG_ChunkId SRequestBuilder::SReader<CArgs>::GetChunkId() const
+{
+    return { input["ID2_CHUNK"].AsInteger(), input["ID2_INFO"].AsString() };
+}
+
+void SRequestBuilder::SReader<CArgs>::ForEachTSE(TExclude exclude) const
+{
+    if (!input["exclude-blob"].HasValue()) return;
+
+    auto blob_ids = input["exclude-blob"].GetStringList();
+
+    for (const auto& blob_id : blob_ids) {
+        exclude(blob_id);
+    }
+}
+
 template <class TRequest>
 int CPsgClientApp::RunRequest(const CArgs& args)
 {

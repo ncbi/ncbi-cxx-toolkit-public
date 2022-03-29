@@ -1192,16 +1192,6 @@ CPSG_BioId::TType SRequestBuilder::GetBioIdType(string type)
     return static_cast<CPSG_BioId::TType>(atoi(type.c_str()));
 }
 
-CPSG_BioId SRequestBuilder::SReader<CArgs>::GetBioId() const
-{
-    const auto& id = input["ID"].AsString();
-
-    if (!input["type"].HasValue()) return CPSG_BioId(id);
-
-    const auto type = GetBioIdType(input["type"].AsString());
-    return CPSG_BioId(id, type);
-}
-
 CPSG_BioId SRequestBuilder::SReader<CJson_ConstObject>::GetBioId() const
 {
     auto array = input["bio_id"].GetArray();
@@ -1214,23 +1204,11 @@ CPSG_BioId SRequestBuilder::SReader<CJson_ConstObject>::GetBioId() const
     return CPSG_BioId(id, type);
 }
 
-CPSG_BlobId SRequestBuilder::SReader<CArgs>::GetBlobId() const
-{
-    const auto& id = input["ID"].AsString();
-    const auto& last_modified = input["last-modified"];
-    return last_modified.HasValue() ? CPSG_BlobId(id, last_modified.AsInt8()) : id;
-}
-
 CPSG_BlobId SRequestBuilder::SReader<CJson_ConstObject>::GetBlobId() const
 {
     auto array = input["blob_id"].GetArray();
     auto id = array[0].GetValue().GetString();
     return array.size() > 1 ? CPSG_BlobId(move(id), array[1].GetValue().GetInt8()) : move(id);
-}
-
-CPSG_ChunkId SRequestBuilder::SReader<CArgs>::GetChunkId() const
-{
-    return { input["ID2_CHUNK"].AsInteger(), input["ID2_INFO"].AsString() };
 }
 
 CPSG_ChunkId SRequestBuilder::SReader<CJson_ConstObject>::GetChunkId() const
@@ -1272,17 +1250,6 @@ CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::SImpl<CPSG_Request_Resolve>:
 
     // Provide all info if nothing is specified explicitly
     return include_info ? include_info : CPSG_Request_Resolve::fAllInfo;
-}
-
-void SRequestBuilder::SReader<CArgs>::ForEachTSE(TExclude exclude) const
-{
-    if (!input["exclude-blob"].HasValue()) return;
-
-    auto blob_ids = input["exclude-blob"].GetStringList();
-
-    for (const auto& blob_id : blob_ids) {
-        exclude(blob_id);
-    }
 }
 
 void SRequestBuilder::SReader<CJson_ConstObject>::ForEachTSE(TExclude exclude) const
