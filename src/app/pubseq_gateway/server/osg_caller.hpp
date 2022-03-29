@@ -54,7 +54,7 @@ BEGIN_NAMESPACE(osg);
 class COSGConnectionPool;
 class COSGConnection;
 class COSGFetch;
-class COSGProcessorRef;
+class CPSGS_OSGProcessorBase;
 
 USING_SCOPE(objects);
 
@@ -71,8 +71,8 @@ public:
     virtual ~COSGCaller();
 
     void AllocateConnection(const CRef<COSGConnectionPool>& connection_pool);
-    void SendRequest(COSGProcessorRef& processor);
-    void WaitForReplies(COSGProcessorRef& processor);
+    void SendRequest(CPSGS_OSGProcessorBase& processor);
+    void WaitForReplies(CPSGS_OSGProcessorBase& processor);
 
     const CID2_Request_Packet& GetRequestPacket() const
         {

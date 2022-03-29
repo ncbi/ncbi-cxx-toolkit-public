@@ -154,7 +154,7 @@ void COSGCaller::AllocateConnection(const CRef<COSGConnectionPool>& connection_p
 }
 
 
-void COSGCaller::SendRequest(COSGProcessorRef& processor)
+void COSGCaller::SendRequest(CPSGS_OSGProcessorBase& processor)
 {
     _ASSERT(m_Connection);
     _ASSERT(!m_RequestPacket);
@@ -180,7 +180,7 @@ void COSGCaller::SendRequest(COSGProcessorRef& processor)
 }
 
 
-void COSGCaller::WaitForReplies(COSGProcessorRef& processor)
+void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
 {
     _ASSERT(m_Connection);
     _ASSERT(m_RequestPacket);
