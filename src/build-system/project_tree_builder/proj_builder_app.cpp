@@ -1671,7 +1671,7 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
             CMsvcPrjProjectContext::GetDisabledPackages(c->GetConfigFullName());
         cfg_disabled.insert(cfg_disabled.end(), dpackages.begin(), dpackages.end()); 
 
-        GetSite().GetComponentsInfo(*c, cfg_enabled, cfg_disabled);
+        GetSite().GetRequiresInfo(*c, cfg_enabled, cfg_disabled);
 
         list<string>::iterator i;
         for (i=cfg_enabled.begin(); i != cfg_enabled.end();) {
