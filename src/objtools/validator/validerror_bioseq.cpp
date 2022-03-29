@@ -3391,8 +3391,10 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             return;
         }
 
-      //  if (s_GetMaxRealSeqStretch(vec) < 10) {
-      //  }
+//        if (const int max_length = s_GetMaxRealSeqStretch(vec); max_length < 10) {
+//            PostErr(eDiag_Error, eErr_SEQ_INST_ContigsTooShort, 
+//                    "Maximum contig length is " + NStr::IntToString(max_length) + " bases", seq);
+//        }
 
         EBioseqEndIsType begin_n = eBioseqEndIsType_None;
         EBioseqEndIsType begin_gap = eBioseqEndIsType_None;

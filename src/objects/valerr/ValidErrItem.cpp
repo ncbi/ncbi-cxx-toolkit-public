@@ -363,6 +363,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_CircBactGenomeProblem,
     { "CircBactGenomeProblem",
       "Circular bacteria or archaea sequence should be annotated as chromosome or plasmid" } } ,
+    { eErr_SEQ_INST_ContigsTooShort,
+    {  "ContigsTooShort",
+      "Maximum contig length is shorter than expected"} },
 
     /* SEQ_DESCR */
 
