@@ -459,11 +459,13 @@ bool MUIsJournalIndexed(const string& journal)
         return false;
     }
 
-    if (ids.size() != 1) {
-        return false;
+    for (const string& id : ids) {
+        if (s_IsIndexed(pContext, id)) {
+            return true;
+        }
     }
 
-    return s_IsIndexed(pContext, ids.front());
+    return false;
 }
 
 
