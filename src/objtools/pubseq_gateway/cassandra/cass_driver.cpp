@@ -49,8 +49,9 @@
 #include <utility>
 #include <vector>
 
-#include "corelib/ncbitime.hpp"
-#include "corelib/ncbistr.hpp"
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbitime.hpp>
+#include <corelib/ncbistr.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -93,6 +94,19 @@ BEGIN_SCOPE()
             case eDiag_Trace:       return CASS_LOG_TRACE;
         }
         return CASS_LOG_ERROR;
+    }
+
+    void SetDebugInformation(CassCluster* cluster)
+    {
+        auto app = CNcbiApplication::Instance();
+        if (app) {
+            auto name = app->GetProgramDisplayName();
+            cass_cluster_set_application_name_n(cluster, name.c_str(), name.size());
+            auto version = app->GetFullVersion().GetVersionInfo().Print();
+            if (!version.empty()) {
+                cass_cluster_set_application_version_n(cluster, version.c_str(), version.size());
+            }
+        }
     }
 END_SCOPE()
 
@@ -292,6 +306,7 @@ void CCassConnection::Connect()
 
     UpdateLogging();
     m_cluster = cass_cluster_new();
+    SetDebugInformation(m_cluster);
 
     cass_cluster_set_connect_timeout(m_cluster, m_ctimeoutms);
     cass_cluster_set_contact_points(m_cluster, m_hostlist.c_str());
