@@ -398,3 +398,7 @@ Added support of ConfigurableRequests.
 September 23, 2021
 version 4.12.1, CXX-12138
 Fixed definition of POST-BUILD step on XCode.
+
+March 30, 2022
+version 4.12.2, CXX-12418
+Extended features_and_packages lists to include all potentially required packages.
