@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(s_TestNomenclature)
     // TODO: check source field when it becomes available
 
     // None available in the data.
-    s_GetObject("396553", eg_obj);
+    s_GetObject("107547967", eg_obj);
     nomen = eg_obj.GetNomenclature();
     BOOST_CHECK_EQUAL(nomen->GetStatus(), CGene_nomenclature::eStatus_unknown);
 }
