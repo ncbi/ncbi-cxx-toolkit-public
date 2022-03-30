@@ -414,7 +414,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 ++finished_count;
                 break;
             case ePSGS_Up:
-                if (processor->GetStatus() != IPSGS_Processor::ePSGS_InProgress)
+                if (proc.m_Processor->GetStatus() != IPSGS_Processor::ePSGS_InProgress)
                     ++finishing_count;
                 break;
             case ePSGS_Canceled:
