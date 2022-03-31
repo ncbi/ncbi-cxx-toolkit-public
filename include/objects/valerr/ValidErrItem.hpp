@@ -161,6 +161,7 @@ enum EErrType {
     eErr_SEQ_INST_HighNpercent3Prime,
     eErr_SEQ_INST_CircBactGenomeProblem,
     eErr_SEQ_INST_ContigsTooShort,
+    eErr_SEQ_INST_InstantiatedGapMismatch,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,

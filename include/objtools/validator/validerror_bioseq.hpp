@@ -176,6 +176,7 @@ private:
     void ValidateRawConst(const CBioseq& seq);
     void x_CalculateNsStretchAndTotal(const CSeqVector& seqvec, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3);
     void ValidateNsAndGaps(const CBioseq& seq);
+    void GapByGapInst (const CBioseq& seq);
     void ReportBadAssemblyGap (const CBioseq& seq);
     static bool HasBadWGSGap(const CBioseq& seq);
     void ReportBadWGSGap(const CBioseq& seq);

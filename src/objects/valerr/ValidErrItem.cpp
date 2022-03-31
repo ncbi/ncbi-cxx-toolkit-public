@@ -366,6 +366,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_ContigsTooShort,
     {  "ContigsTooShort",
       "Maximum contig length is shorter than expected"} },
+    { eErr_SEQ_INST_InstantiatedGapMismatch,
+    { "InstantiatedGapMismatch",
+      "Gap misc_feature does not match gap in delta Bioseq" } } ,
 
     /* SEQ_DESCR */
 
