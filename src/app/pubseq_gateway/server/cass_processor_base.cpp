@@ -41,7 +41,7 @@
 
 CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
     m_Completed(false),
-    m_Cancelled(false),
+    m_Canceled(false),
     m_InPeek(false),
     m_Unlocked(false),
     m_Status(CRequestStatus::e200_Ok)
@@ -53,7 +53,7 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
                                             shared_ptr<CPSGS_Reply> reply,
                                             TProcessorPriority  priority) :
     m_Completed(false),
-    m_Cancelled(false),
+    m_Canceled(false),
     m_InPeek(false),
     m_Unlocked(false),
     m_Status(CRequestStatus::e200_Ok)
@@ -75,7 +75,7 @@ void CPSGS_CassProcessorBase::Cancel(void)
     // The other processors may wait on a lock
     UnlockWaitingProcessor();
 
-    m_Cancelled = true;
+    m_Canceled = true;
     CancelLoaders();
 }
 
@@ -128,7 +128,7 @@ bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
             }
         }
     }
-    return started_count != 0 || m_Cancelled;
+    return started_count != 0 || m_Canceled;
 }
 
 

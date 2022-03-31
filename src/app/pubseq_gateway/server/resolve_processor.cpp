@@ -118,8 +118,9 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
                         EDiagSev  severity,
                         const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -147,8 +148,9 @@ void
 CPSGS_ResolveProcessor::x_OnSeqIdResolveFinished(
                             SBioseqResolution &&  bioseq_resolution)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -199,7 +201,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_ResolveProcessor::GetStatus(void)
         return status;
     }
 
-    if (m_Cancelled) {
+    if (m_Canceled) {
         return IPSGS_Processor::ePSGS_Canceled;
     }
 
@@ -227,7 +229,7 @@ void CPSGS_ResolveProcessor::ProcessEvent(void)
 
 void CPSGS_ResolveProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
@@ -317,11 +319,15 @@ void CPSGS_ResolveProcessor::x_OnResolutionGoodData(void)
     // The resolution process started to receive data which look good so
     // the dispatcher should be notified that the other processors can be
     // stopped
-    if (m_Cancelled || m_Completed)
+    if (m_Canceled || m_Completed) {
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
+    }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
     // If the other processor waits then let it go but after sending the signal

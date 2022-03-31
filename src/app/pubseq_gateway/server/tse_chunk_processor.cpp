@@ -570,13 +570,15 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                             CBlobRecord const &  blob,
                                             bool is_found)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -633,8 +635,9 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                              EDiagSev  severity,
                                              const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -689,11 +692,14 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
-    if (m_Cancelled) {
+    if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
         fetch_details->SetReadFinished();
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             x_Peek(false);
+
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
     if (IPSGS_Processor::m_Reply->IsFinished()) {
@@ -748,8 +754,9 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
                                     EDiagSev  severity,
                                     const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -787,13 +794,16 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
 
     fetch_details->SetReadFinished();
 
-    if (m_Cancelled) {
+    if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -965,8 +975,11 @@ CPSGS_TSEChunkProcessor::x_SendProcessorError(const string &  msg,
                                               CRequestStatus::ECode  status,
                                               int  code)
 {
-    if (m_Cancelled)
+    if (m_Canceled) {
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
+    }
 
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
@@ -1049,7 +1062,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_TSEChunkProcessor::GetStatus(void)
     if (status == IPSGS_Processor::ePSGS_InProgress)
         return status;
 
-    if (m_Cancelled)
+    if (m_Canceled)
         return IPSGS_Processor::ePSGS_Canceled;
 
     return status;
@@ -1076,7 +1089,7 @@ void CPSGS_TSEChunkProcessor::ProcessEvent(void)
 
 void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;

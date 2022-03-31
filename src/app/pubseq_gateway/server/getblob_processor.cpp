@@ -255,13 +255,15 @@ void CPSGS_GetBlobProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                            CBlobRecord const &  blob,
                                            bool is_found)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -282,8 +284,9 @@ void CPSGS_GetBlobProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                             EDiagSev  severity,
                                             const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -301,7 +304,7 @@ void CPSGS_GetBlobProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
                                             unsigned int  data_size,
                                             int  chunk_no)
 {
-    CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
+    CPSGS_CassBlobBase::OnGetBlobChunk(m_Canceled, fetch_details,
                                        chunk_data, data_size, chunk_no);
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -315,7 +318,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetBlobProcessor::GetStatus(void)
     if (status == IPSGS_Processor::ePSGS_InProgress)
         return status;
 
-    if (m_Cancelled)
+    if (m_Canceled)
         return IPSGS_Processor::ePSGS_Canceled;
 
     return status;
@@ -342,7 +345,7 @@ void CPSGS_GetBlobProcessor::ProcessEvent(void)
 
 void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;

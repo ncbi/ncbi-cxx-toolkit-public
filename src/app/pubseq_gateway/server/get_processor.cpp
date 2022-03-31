@@ -133,8 +133,9 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
                         EDiagSev  severity,
                         const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -163,8 +164,9 @@ void
 CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
                             SBioseqResolution &&  bioseq_resolution)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -392,8 +394,9 @@ void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                        CBlobRecord const &  blob,
                                        bool is_found)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -410,8 +413,9 @@ void CPSGS_GetProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                         EDiagSev  severity,
                                         const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -429,12 +433,13 @@ void CPSGS_GetProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
                                         unsigned int  data_size,
                                         int  chunk_no)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
-    CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
+    CPSGS_CassBlobBase::OnGetBlobChunk(m_Canceled, fetch_details,
                                        chunk_data, data_size, chunk_no);
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -448,7 +453,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_GetProcessor::GetStatus(void)
     if (status == IPSGS_Processor::ePSGS_InProgress)
         return status;
 
-    if (m_Cancelled)
+    if (m_Canceled)
         return IPSGS_Processor::ePSGS_Canceled;
 
     return status;
@@ -475,7 +480,7 @@ void CPSGS_GetProcessor::ProcessEvent(void)
 
 void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
@@ -567,11 +572,15 @@ void CPSGS_GetProcessor::x_OnResolutionGoodData(void)
     // The resolution process started to receive data which look good so
     // the dispatcher should be notified that the other processors can be
     // stopped
-    if (m_Cancelled || m_Completed)
+    if (m_Canceled || m_Completed) {
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
+    }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
     // If the other processor waits then let it go but after sending the signal
