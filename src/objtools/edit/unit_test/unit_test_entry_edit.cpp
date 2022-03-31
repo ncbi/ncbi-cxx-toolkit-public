@@ -201,62 +201,6 @@ NCBITEST_AUTO_INIT()
 
 }
 
-BOOST_AUTO_TEST_CASE(SegregateSetsByBioseqList)
-{
-    cout << "Testing FUNCTION: SegregateSetsByBioseqList" << endl;
-
-    TMapTestNameToTestFiles & mapOfTests = s_mapFunctionToVecOfTests["segregate"];
-
-    BOOST_CHECK( ! mapOfTests.empty() );
-
-    NON_CONST_ITERATE( TMapTestNameToTestFiles, test_it, mapOfTests ) {
-        const string & sTestName = (test_it->first);
-        cout << "Running TEST: " << sTestName << endl;
-
-        TMapTestFiles & test_stage_map = (test_it->second);
-
-        BOOST_REQUIRE( test_stage_map.size() == 2u );
-
-        // pull out the stages
-        const CFile & input_entry_file = test_stage_map["input_entry"];
-        const CFile & output_expected_file = test_stage_map["output_expected"];
-
-        CRef<CSeq_entry> pInputEntry = s_ReadAndPreprocessEntry( input_entry_file.GetPath() );
-        CRef<CSeq_entry> pOutputExpectedEntry = s_ReadAndPreprocessEntry( output_expected_file.GetPath() );
-
-        CSeq_entry_Handle entry_h = s_pScope->AddTopLevelSeqEntry(*pInputEntry);
-        CSeq_entry_Handle expected_entry_h = s_pScope->AddTopLevelSeqEntry(*pOutputExpectedEntry);
-
-        // load bioseq_handles with the bioseqs we want to segregate
-        CScope::TBioseqHandles bioseq_handles;
-        CBioseq_CI bioseq_ci( entry_h );
-        for( ; bioseq_ci; ++bioseq_ci ) {
-            // see if the bioseq has the user object that marks
-            // it as one of the bioseqs to segregate
-            CSeqdesc_CI user_desc_ci( *bioseq_ci, CSeqdesc::e_User );
-            for( ; user_desc_ci; ++user_desc_ci ) {
-                if( FIELD_EQUALS( user_desc_ci->GetUser(), Class,
-                                  "objtools.edit.unit_test.segregate") )
-                {
-                    bioseq_handles.push_back( *bioseq_ci );
-                    break;
-                }
-            }
-        }
-
-        BOOST_CHECK_NO_THROW(
-            edit::SegregateSetsByBioseqList( entry_h, bioseq_handles ));
-
-        // check if matches expected
-        BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
-             *entry_h.GetCompleteSeq_entry(),
-             *expected_entry_h.GetCompleteSeq_entry()) );
-
-        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
-        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
-    }
-}
-
 
 void CheckLocalId(const CBioseq& seq, const string& expected)
 {
