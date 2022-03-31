@@ -160,10 +160,14 @@ private:
         list<SProcessorData>        m_Processors;
         uv_timer_t *                m_RequestTimer;
         bool                        m_TimerActive;
+        // true if the reply has been already flushed and finished
         bool                        m_FlushedAndFinished;
+        // A processor which has started to supply data
+        IPSGS_Processor *           m_StartedProcessing;
 
         SProcessorGroup() :
-            m_TimerActive(false), m_FlushedAndFinished(false)
+            m_TimerActive(false), m_FlushedAndFinished(false),
+            m_StartedProcessing(nullptr)
         {}
 
         ~SProcessorGroup()

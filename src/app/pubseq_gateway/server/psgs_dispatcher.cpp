@@ -252,6 +252,9 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
         }
     }
 
+    // Memorize which processor succeeded with starting supplying data
+    procs->second->m_StartedProcessing = processor;
+
     m_GroupsLock.unlock();
 
     // Call the other processor's Cancel() out of the lock
@@ -284,6 +287,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     size_t                          request_id = request->GetRequestId();
     IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
     bool                            need_trace = request->NeedTrace();
+    bool                            started_processor_finished = false;
 
     size_t                          finishing_count = 0;
     size_t                          finished_count = 0;
@@ -318,6 +322,13 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     for (auto &  proc: procs->second->m_Processors) {
 
         if (proc.m_Processor.get() == processor) {
+
+            if (processor == procs->second->m_StartedProcessing) {
+                if (proc.m_DispatchStatus == ePSGS_Finished) {
+                    started_processor_finished = true;
+                }
+            }
+
             if (source == ePSGS_Fromework) {
                 // This call is when the framework notices that the processor
                 // reports something not InProgress (like error, cancel,
@@ -395,6 +406,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                 IPSGS_Processor::StatusToString(proc.m_FinishStatus),
                                 request, reply);
 
+                        started_processor_finished = true;
                         proc.m_DispatchStatus = ePSGS_Finished;
                         x_SendProgressMessage(proc.m_FinishStatus, processor,
                                               request, reply);
@@ -438,7 +450,13 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     if (pre_finished) {
         // The reply needs to be flushed if it has not been done yet
 
-        if (!reply->IsFinished() && reply->IsOutputReady()) {
+        if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
+            // There is no start data notification in case of annotation
+            // requests. All the processors can supply data
+            started_processor_finished = true;
+        }
+
+        if (!reply->IsFinished() && reply->IsOutputReady() && started_processor_finished) {
             // Map the processor finish to the request status
             CRequestStatus::ECode   request_status = x_MapProcessorFinishToStatus(best_status);
 
