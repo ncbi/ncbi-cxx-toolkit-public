@@ -201,52 +201,6 @@ NCBITEST_AUTO_INIT()
 
 }
 
-BOOST_AUTO_TEST_CASE(divvy)
-{
-    cout << "Testing FUNCTION: DivvyUpAlignments" << endl;
-    // test the function DivvyUpAlignments
-
-    TMapTestNameToTestFiles & mapOfTests = s_mapFunctionToVecOfTests["divvy"];
-
-    BOOST_CHECK( ! mapOfTests.empty() );
-
-    NON_CONST_ITERATE( TMapTestNameToTestFiles, test_it, mapOfTests ) {
-        const string & sTestName = (test_it->first);
-        cout << "Running TEST: " << sTestName << endl;
-
-        TMapTestFiles & test_stage_map = (test_it->second);
-
-        BOOST_REQUIRE( test_stage_map.size() == 2u );
-
-        // pull out the stages
-        const CFile & input_file = test_stage_map["input"];
-        const CFile & output_expected_file = test_stage_map["output_expected"];
-        BOOST_CHECK( input_file.Exists() && output_expected_file.Exists() );
-
-        CRef<CSeq_entry> pInputEntry = s_ReadAndPreprocessEntry( input_file.GetPath() );
-        CSeq_entry_Handle input_entry_h = s_pScope->AddTopLevelSeqEntry( *pInputEntry );
-
-        edit::TVecOfSeqEntryHandles vecOfEntries;
-        // all direct children are used; we do NOT
-        // put the topmost seq-entry into the objmgr
-        CSeq_entry_CI direct_child_ci( input_entry_h, CSeq_entry_CI::eNonRecursive );
-        for( ; direct_child_ci; ++direct_child_ci ) {
-            vecOfEntries.push_back( *direct_child_ci );
-        }
-
-        // do the actual function calling
-        BOOST_CHECK_NO_THROW(edit::DivvyUpAlignments(vecOfEntries));
-
-        CRef<CSeq_entry> pExpectedOutputEntry = s_ReadAndPreprocessEntry( output_expected_file.GetPath() );
-
-        BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
-            *pInputEntry, *pExpectedOutputEntry) );
-
-        // to avoid mem leaks, now remove what we have
-        BOOST_CHECK_NO_THROW(s_pScope->RemoveTopLevelSeqEntry( input_entry_h ) );
-    }
-}
-
 BOOST_AUTO_TEST_CASE(SegregateSetsByBioseqList)
 {
     cout << "Testing FUNCTION: SegregateSetsByBioseqList" << endl;
