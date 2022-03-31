@@ -1417,7 +1417,7 @@ CPSGS_CassBlobBase::OnPublicCommentError(
                             EDiagSev  severity,
                             const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
         fetch_details->SetReadFinished();
         return;
@@ -1461,7 +1461,7 @@ CPSGS_CassBlobBase::OnPublicComment(
 
     fetch_details->SetReadFinished();
 
-    if (m_Cancelled) {
+    if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
         return;
     }

@@ -125,8 +125,9 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
                                             EDiagSev  severity,
                                             const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -210,7 +211,9 @@ void
 CPSGS_AccessionVersionHistoryProcessor::x_SendBioseqInfo(
                                         SBioseqResolution &  bioseq_resolution)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -251,9 +254,12 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
         }
     }
 
-    if (m_Cancelled) {
+    if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
         fetch_details->SetReadFinished();
+
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
     }
     if (IPSGS_Processor::m_Reply->IsFinished()) {
@@ -327,7 +333,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_AccessionVersionHistoryProcessor::GetStatus(
     if (status == IPSGS_Processor::ePSGS_InProgress)
         return status;
 
-    if (m_Cancelled)
+    if (m_Canceled)
         return IPSGS_Processor::ePSGS_Canceled;
 
     return status;
@@ -354,7 +360,7 @@ void CPSGS_AccessionVersionHistoryProcessor::ProcessEvent(void)
 
 void CPSGS_AccessionVersionHistoryProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
@@ -447,11 +453,15 @@ void CPSGS_AccessionVersionHistoryProcessor::x_OnResolutionGoodData(void)
     // The resolution process started to receive data which look good so
     // the dispatcher should be notified that the other processors can be
     // stopped
-    if (m_Cancelled || m_Completed)
+    if (m_Canceled || m_Completed) {
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
+    }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
     // If the other processor waits then let it go but after sending the signal

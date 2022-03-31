@@ -164,8 +164,9 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
                         EDiagSev  severity,
                         const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -258,7 +259,9 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
 void
 CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
+        m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -327,7 +330,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         }
     }
 
-    if (m_Cancelled) {
+    if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
         fetch_details->SetReadFinished();
         return false;
@@ -645,8 +648,9 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
     // Annotation blob properties may come only once
     fetch_details->SetReadFinished();
 
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -700,8 +704,9 @@ void CPSGS_AnnotProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                          CBlobRecord const &  blob,
                                          bool is_found)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -718,8 +723,9 @@ void CPSGS_AnnotProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                           EDiagSev  severity,
                                           const string &  message)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
@@ -737,7 +743,7 @@ void CPSGS_AnnotProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
                                           unsigned int  data_size,
                                           int  chunk_no)
 {
-    CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
+    CPSGS_CassBlobBase::OnGetBlobChunk(m_Canceled, fetch_details,
                                        chunk_data, data_size, chunk_no);
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -751,7 +757,7 @@ IPSGS_Processor::EPSGS_Status CPSGS_AnnotProcessor::GetStatus(void)
     if (status == IPSGS_Processor::ePSGS_InProgress)
         return status;
 
-    if (m_Cancelled)
+    if (m_Canceled)
         return IPSGS_Processor::ePSGS_Canceled;
 
     return status;
@@ -778,7 +784,7 @@ void CPSGS_AnnotProcessor::ProcessEvent(void)
 
 void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
 {
-    if (m_Cancelled) {
+    if (m_Canceled) {
         m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
