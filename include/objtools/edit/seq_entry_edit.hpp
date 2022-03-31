@@ -107,7 +107,7 @@ CRef<CSeq_entry> SeqEntryFromSeqSubmit(const CSeq_submit& submit);
 ///   The Seq-entry to split
 /// @param bioseq_handles
 ///   The array of bioseqs that should end up in the second part of the target, with the rest in the first part.
-NCBI_XOBJEDIT_EXPORT
+NCBI_DEPRECATED NCBI_XOBJEDIT_EXPORT
 void SegregateSetsByBioseqList(const CSeq_entry_Handle & target,
     const CScope::TBioseqHandles & bioseq_handles );
 
