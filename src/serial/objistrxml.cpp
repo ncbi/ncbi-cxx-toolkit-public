@@ -256,7 +256,14 @@ char CObjectIStreamXml::SkipWSAndComments(void)
             m_Input.SkipEndOfLine(c);
             continue;
         case '<':
-// http://www.w3.org/TR/REC-xml/#dt-comment
+// https://www.w3.org/TR/xml11/#sec-pi
+            if ( m_Input.PeekChar(1) == '?') {
+                m_Input.SkipChar();
+                Found_lt();
+                SkipQDecl();
+                return SkipWSAndComments();
+            }
+// https://www.w3.org/TR/xml11/#sec-comments
             if ( m_Input.PeekChar(1) == '!' &&
                  m_Input.PeekChar(2) == '-' &&
                  m_Input.PeekChar(3) == '-' ) {
