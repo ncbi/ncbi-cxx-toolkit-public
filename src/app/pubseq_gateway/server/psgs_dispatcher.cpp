@@ -148,7 +148,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
             if (request->NeedTrace()) {
                 // false: no need to update the last activity
                 reply->SendTrace("Processor " + p->GetName() +
-                                 " has been created sucessfully (priority: " +
+                                 " has been created successfully (priority: " +
                                  to_string(priority) + ")",
                                  request->GetStartTimestamp(), false);
             }
