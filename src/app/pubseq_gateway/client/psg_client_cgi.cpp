@@ -47,6 +47,8 @@ struct SPsgCgiEntries
     template <typename TF>
     invoke_result_t<TF, const string&> Get(const string& key, TF f, invoke_result_t<TF, const string&> def_value) const;
 
+    template <typename T>
+    T GetNumeric(const string& key) const { return Get(key, [](const auto& v) { return NStr::StringToNumeric<T>(v); }, T()); }
     const string& GetString(const string& key) const { return Get(key, [](const auto& v) -> const auto& { return v; }, kEmptyStr); }
     bool GetBool(const string& key) const { return Get(key, NStr::StringToBool, false); }
     auto GetStringList(const string& key) const;
@@ -241,6 +243,9 @@ void SResponse::Success()
     switch (m_Format.value_or(eSerial_Json))
     {
         case eSerial_None:
+            m_Response.SetContentType("application/octet-stream");
+            break;
+
         case eSerial_AsnBinary:
             m_Response.SetContentType("x-ncbi-data/x-asn-binary");
             break;
@@ -281,6 +286,7 @@ class CPsgCgiApp : public CCgiApplication
     void Init() override;
     int ProcessRequest(CCgiContext& ctx) override;
 
+    static void SetPsgDefaults(const SPsgCgiEntries& entries);
     static int GetStatus(int rv);
 };
 
@@ -293,6 +299,7 @@ int CPsgCgiApp::ProcessRequest(CCgiContext& ctx)
 {
     const auto& request = ctx.GetRequest();
     SPsgCgiEntries entries = request.GetEntries();
+    SetPsgDefaults(entries);
 
     int rv;
     SResponse response = ctx.GetResponse();
@@ -313,6 +320,25 @@ int CPsgCgiApp::ProcessRequest(CCgiContext& ctx)
     SetHTTPStatus(status);
     response(status);
     return rv;
+}
+
+void CPsgCgiApp::SetPsgDefaults(const SPsgCgiEntries& entries)
+{
+    TPSG_UserRequestIds::SetDefault(true);
+
+    const auto& use_cache = entries.GetString("use-cache");
+
+    if (!use_cache.empty()) {
+        TPSG_UseCache::SetDefault(use_cache);
+    }
+
+    if (auto timeout = entries.GetNumeric<unsigned>("timeout")) {
+        TPSG_RequestTimeout::SetDefault(timeout);
+    }
+
+    if (entries.GetBool("https")) {
+        TPSG_Https::SetDefault(true);
+    }
 }
 
 int CPsgCgiApp::GetStatus(int rv)
