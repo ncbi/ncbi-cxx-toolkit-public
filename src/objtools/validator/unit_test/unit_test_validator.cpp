@@ -3267,7 +3267,6 @@ BOOST_AUTO_TEST_CASE(Test_HistAssemblyMissing)
     CLEAR_ERRORS
 }
 
-
 BOOST_AUTO_TEST_CASE(Test_TerminalNs)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -3304,6 +3303,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetSeq_data().SetIupacna().Set("NNNNNNNNNCCC");
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("CCCNNNNNNNNN");
     seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ContigsTooShort", "Maximum contig length is 3 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalNs", "N at beginning of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TerminalNs", "N at end of sequence"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 52 percent Ns"));
@@ -3316,7 +3317,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetSeq_data().SetIupacna().Set("NNNNNNNNNNCC");
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("CCNNNNNNNNNN");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[2]->SetErrMsg ("Sequence contains 58 percent Ns");
+    expected_errors[0]->SetErrMsg("Maximum contig length is 2 bases");
+    expected_errors.back()->SetErrMsg ("Sequence contains 58 percent Ns");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3325,8 +3327,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
     ChangeErrorAcc(expected_errors, "gb|AY123456|");
-    expected_errors[0]->SetSeverity(eDiag_Error);
     expected_errors[1]->SetSeverity(eDiag_Error);
+    expected_errors[2]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3335,8 +3337,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
     ChangeErrorAcc(expected_errors, "ref|NC_123456|");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
     expected_errors[1]->SetSeverity(eDiag_Warning);
+    expected_errors[2]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3346,18 +3348,19 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     entry->SetSeq().SetId().front()->SetPatent().SetCit().SetId().SetNumber("1");
     seh = scope.AddTopLevelSeqEntry(*entry);
     ChangeErrorAcc(expected_errors, "pat|USA|1|1");
-    delete expected_errors[2];
+    delete expected_errors.back();
     expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
     CLEAR_ERRORS
 
     // no more TerminalNs warnings if circular
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
+    expected_errors.push_back(new CExpectedError("pat|USA|1|1", eDiag_Error, "ContigsTooShort", 
+                "Maximum contig length is 2 bases"));
     expected_errors.push_back(new CExpectedError("pat|USA|1|1", eDiag_Warning, "UnwantedCompleteFlag",
-                              "Suspicious use of complete"));
+                "Suspicious use of complete"));
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -3962,7 +3965,6 @@ BOOST_AUTO_TEST_CASE(Test_LeadingX)
     CLEAR_ERRORS
 }
 
-
 BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
 {
     // prepare entry
@@ -3973,6 +3975,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqRaw", "Run of 100 Ns in raw sequence starting at base 6"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ContigsTooShort", "Maximum contig length is 5 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 90 percent Ns"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
@@ -3989,6 +3992,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAAAANNNNNNNNNNNNNNNNNNNNTTTTT");
     entry->SetSeq().SetInst().SetLength(30);
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ContigsTooShort", "Maximum contig length is 5 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 66 percent Ns"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
@@ -4003,6 +4007,7 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqRaw)
     // WGS has lower threshold
     SetTech (entry, CMolInfo::eTech_wgs);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InternalNsInSeqRaw", "Run of 20 Ns in raw sequence starting at base 6"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ContigsTooShort", "Maximum contig length is 5 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNContentPercent", "Sequence contains 66 percent Ns"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "HighNpercent5Prime",
         "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
@@ -4025,14 +4030,13 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsAdjacentToGap)
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "ContigsTooShort", "Maximum contig length is 9 bases"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InternalNsAdjacentToGap", "Ambiguous residue N is adjacent to a gap around position 13"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InternalNsAdjacentToGap", "Ambiguous residue N is adjacent to a gap around position 23"));
-    /*
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
-        "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
-        "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
-    */
+//    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent5Prime",
+//        "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases"));
+//    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "HighNpercent3Prime",
+//        "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases"));
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -4040,7 +4044,6 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsAdjacentToGap)
 
     CLEAR_ERRORS
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_DeltaComponentIsGi0)
 {
