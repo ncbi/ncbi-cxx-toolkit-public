@@ -159,6 +159,9 @@ bool CQualCleanup::xCleanAndValidateReplace(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
+    if (qualVal.empty()) {
+        return true;
+    }
     return xCleanStripBlanks(qualVal) &&
         xCleanAndValidateGeneric(qualKey, qualVal);
 }
