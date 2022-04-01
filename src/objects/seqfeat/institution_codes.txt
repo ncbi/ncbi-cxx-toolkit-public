@@ -1293,7 +1293,7 @@ CMNFI	s	Canadian Museum of Nature, Fish Collection
 CMNH	s	The Cleveland Museum of Natural History			
 CMNH:Birds	s	The Cleveland Museum of Natural History, Birds Collection		
 CMNS	s	Museum of Natural History, Shanghai			
-CMNZ	s	Canterbury Museum	CMC		
+CMNZ	s	Canterbury Museum	CMC<NZ>		
 CMPH	s	Colegio de Postgraduados			
 CMPR	s	Centre for Medicinal Plants Research			
 CMPUJ	c	Coleccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)	CMDM-PUJ		
