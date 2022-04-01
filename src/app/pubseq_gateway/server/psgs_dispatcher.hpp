@@ -108,6 +108,8 @@ public:
 
     void EraseProcessorGroup(size_t  request_id);
 
+    map<string, size_t>  GetConcurrentCounters(void);
+
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                             CRequestStatus::ECode  status);
@@ -244,8 +246,7 @@ private:
     // Each group of processors may have its own limits and needs to store a
     // current number of running instances
 
-    void x_EraseProcessorGroup(map<size_t,
-                                   unique_ptr<SProcessorGroup>>::iterator  to_erase);
+    void x_DecrementConcurrencyCounter(IPSGS_Processor *  processor);
 
     struct SProcessorConcurrency
     {

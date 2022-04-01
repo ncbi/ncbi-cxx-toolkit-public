@@ -408,6 +408,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
                         started_processor_finished = true;
                         proc.m_DispatchStatus = ePSGS_Finished;
+                        x_DecrementConcurrencyCounter(processor);
                         x_SendProgressMessage(proc.m_FinishStatus, processor,
                                               request, reply);
                         break;
@@ -724,31 +725,40 @@ void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
 }
 
 
-void CPSGS_Dispatcher::x_EraseProcessorGroup(
-        map<size_t, unique_ptr<SProcessorGroup>>::iterator  to_erase)
-{
-    size_t      proc_count = m_RegisteredProcessors.size();
-
-    for (auto &  proc: to_erase->second->m_Processors) {
-        size_t      proc_priority = proc.m_Processor->GetPriority();
-        size_t      proc_index = proc_count - proc_priority;
-
-        m_ProcessorConcurrency[proc_index].m_CountLock.lock();
-        --m_ProcessorConcurrency[proc_index].m_CurrentCount;
-        m_ProcessorConcurrency[proc_index].m_CountLock.unlock();
-    }
-    m_ProcessorGroups.erase(to_erase);
-}
-
-
 void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
 {
     m_GroupsLock.lock();
 
     auto    procs = m_ProcessorGroups.find(request_id);
     if (procs != m_ProcessorGroups.end()) {
-        x_EraseProcessorGroup(procs);
+        m_ProcessorGroups.erase(procs);
     }
     m_GroupsLock.unlock();
+}
+
+
+void CPSGS_Dispatcher::x_DecrementConcurrencyCounter(IPSGS_Processor *  processor)
+{
+    size_t      proc_count = m_RegisteredProcessors.size();
+    size_t      proc_priority = processor->GetPriority();
+    size_t      proc_index = proc_count - proc_priority;
+
+    m_ProcessorConcurrency[proc_index].m_CountLock.lock();
+    --m_ProcessorConcurrency[proc_index].m_CurrentCount;
+    m_ProcessorConcurrency[proc_index].m_CountLock.unlock();
+}
+
+
+map<string, size_t>  CPSGS_Dispatcher::GetConcurrentCounters(void)
+{
+    map<string, size_t>     ret;    // name -> current counter
+
+    for (size_t  index = 0; index < m_RegisteredProcessorGroups.size(); ++index) {
+        m_ProcessorConcurrency[index].m_CountLock.lock();
+        ret[m_RegisteredProcessorGroups[index]] = m_ProcessorConcurrency[index].m_CurrentCount;
+        m_ProcessorConcurrency[index].m_CountLock.unlock();
+    }
+
+    return ret;
 }
 
