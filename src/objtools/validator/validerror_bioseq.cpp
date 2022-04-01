@@ -3342,14 +3342,16 @@ static bool s_WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
 static int s_GetMaxRealSeqStretch(const CSeqVector& vec)
 {
     int max_stretch = 0;
-    auto begin_it = find_if(begin(vec), end(vec), [](char c) { return c != 'N'; });
+    auto IsN = [](char c) { return c == 'N'; };
+
+    auto begin_it = find_if_not(begin(vec), end(vec), IsN);
     while(begin_it != end(vec)) {
-        auto end_it = find_if(begin_it, end(vec), [](char c) { return c == 'N'; });
+        auto end_it = find_if(begin_it, end(vec), IsN);
         const auto current_stretch = distance(begin_it, end_it); 
         if (current_stretch > max_stretch) {
             max_stretch = current_stretch;
         } 
-        begin_it = find_if(end_it, end(vec), [](char c) { return c != 'N'; });
+        begin_it = find_if_not(end_it, end(vec), IsN);
     }
     return max_stretch;
 }
