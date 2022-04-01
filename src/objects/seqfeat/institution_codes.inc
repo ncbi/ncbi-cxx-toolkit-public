@@ -1326,7 +1326,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMNH\ts\tThe Cleveland Museum of Natural History\t\t\t",
 "CMNH:Birds\ts\tThe Cleveland Museum of Natural History, Birds Collection\t\t",
 "CMNS\ts\tMuseum of Natural History, Shanghai\t\t\t",
-"CMNZ\ts\tCanterbury Museum\tCMC\t\t",
+"CMNZ\ts\tCanterbury Museum\tCMC<NZ>\t\t",
 "CMPH\ts\tColegio de Postgraduados\t\t\t",
 "CMPR\ts\tCentre for Medicinal Plants Research\t\t\t",
 "CMPUJ\tc\tColeccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)\tCMDM-PUJ\t\t",
