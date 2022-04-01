@@ -228,7 +228,7 @@ bool CQualParser::xParseQualifierCont(
         cleaned = cleaned.substr(0, cleaned.size() - 1);
         thereIsMore = false;
     }
-    if (qualKey != "anticodon") {
+    if (qualKey != "anticodon"  &&  !NStr::EndsWith(qualVal, "-")) {
         qualVal += ' ';
     }
     qualVal += cleaned;
