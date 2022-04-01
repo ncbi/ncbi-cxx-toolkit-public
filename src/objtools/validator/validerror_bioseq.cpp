@@ -3502,126 +3502,134 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 
 void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 {
-    if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
-        // can't check if no Inst or Repr
-        return;
-    }
-    if (!seq.GetInst().IsSetMol() || seq.GetInst().GetMol() == CSeq_inst::eMol_aa) {
-        // don't check proteins here
-        return;
-    }
-    CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
-
-    // only check for raw or for delta sequences that are delta lit only
-    if (repr == CSeq_inst::eRepr_virtual || repr == CSeq_inst::eRepr_map) {
-        return;
-    }
-
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if ( !bsh ) {
-        // no check if Bioseq not in scope
-        return;
-    }
-
-    vector<TSeqPos> gapPositions;
-
-    SSeqMapSelector sel;
-
-    sel.SetFlags(CSeqMap::fFindGap).SetResolveCount(1);
-
-    for (CSeqMap_CI gap_it(bsh, sel); gap_it; ++gap_it) {
-
-        TSeqPos gp_start = gap_it.GetPosition();
-        TSeqPos gp_end = gap_it.GetEndPosition();
-
-        gapPositions.push_back(gp_start);
-        gapPositions.push_back(gp_end);
-
-        // cout << "gap start: " << gp_start << ", end: " << gp_end << endl;
-    }
-
-    vector<TSeqPos> featPositions;
-
-    for (CFeat_CI feat_it(bsh); feat_it; ++feat_it) {
-
-        CSeq_feat_Handle feat = feat_it->GetSeq_feat_Handle();
-        CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
-        if (subtype != CSeqFeatData::eSubtype_gap) continue;
-
-        CConstRef<CSeq_loc> feat_loc(&feat_it->GetLocation());
-
-        int ft_start = feat_loc->GetStart(eExtreme_Positional);
-        int ft_end = feat_loc->GetStop(eExtreme_Positional);
-
-        featPositions.push_back(ft_start);
-        featPositions.push_back(ft_end);
-
-        // cout << "feat start: " << ft_start << ", end: " << ft_end << endl;
-    }
-
-    int remaininig_gaps = gapPositions.size() / 2;
-    int remaining_feats = featPositions.size() / 2;
-
-    if (remaininig_gaps < 1 || remaining_feats < 1) {
-        return;
-    }
-
-    int gap_idx = 0;
-    int feat_idx = 0;
-
-    TSeqPos gap_start = gapPositions[gap_idx];
-    gap_idx++;
-    TSeqPos gap_end = gapPositions[gap_idx];
-    gap_idx++;
-    remaininig_gaps--;
-
-    TSeqPos feat_start = featPositions[feat_idx];
-    feat_idx++;
-    TSeqPos feat_end = featPositions[feat_idx];
-    feat_idx++;
-    remaining_feats--;
-
-    while (remaininig_gaps >= 0 && remaining_feats >= 0) {
-        if (gap_end < feat_start) {
-            if (remaininig_gaps <= 0) {
-                return;
-            }
-            gap_start = gapPositions[gap_idx];
-            gap_idx++;
-            gap_end = gapPositions[gap_idx];
-            gap_idx++;
-            remaininig_gaps--;
-        } else if (feat_end < gap_start) {
-            if (remaining_feats <= 0) {
-                return;
-            }
-            feat_start = featPositions[feat_idx];
-            feat_idx++;
-            feat_end = featPositions[feat_idx];
-            feat_idx++;
-            remaining_feats--;
-        } else {
-            // cout << "overlap gap start: " << gap_start << ", end: " << gap_end << ", feat start: " << feat_start << ", end: " << feat_end << endl;
-            if (feat_start != gap_start || feat_end != gap_end) {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_InstantiatedGapMismatch, "Gap feature location does not match delta gap coordinates", seq);
-            }
-            if (remaininig_gaps <= 0) {
-                return;
-            }
-            gap_start = gapPositions[gap_idx];
-            gap_idx++;
-            gap_end = gapPositions[gap_idx];
-            gap_idx++;
-            remaininig_gaps--;
-            if (remaining_feats <= 0) {
-                return;
-            }
-            feat_start = featPositions[feat_idx];
-            feat_idx++;
-            feat_end = featPositions[feat_idx];
-            feat_idx++;
-            remaining_feats--;
+    try {
+        if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
+            // can't check if no Inst or Repr
+            return;
         }
+        if (!seq.GetInst().IsSetMol() || seq.GetInst().GetMol() == CSeq_inst::eMol_aa) {
+            // don't check proteins here
+            return;
+        }
+        CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
+
+        // only check for raw or for delta sequences that are delta lit only
+        if (repr == CSeq_inst::eRepr_virtual || repr == CSeq_inst::eRepr_map) {
+            return;
+        }
+
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        if ( !bsh ) {
+            // no check if Bioseq not in scope
+            return;
+        }
+
+        vector<TSeqPos> gapPositions;
+
+        SSeqMapSelector sel;
+
+        sel.SetFlags(CSeqMap::fFindGap).SetResolveCount(1);
+
+        for (CSeqMap_CI gap_it(bsh, sel); gap_it; ++gap_it) {
+
+            TSeqPos gp_start = gap_it.GetPosition();
+            TSeqPos gp_end = gap_it.GetEndPosition();
+
+            gapPositions.push_back(gp_start);
+            gapPositions.push_back(gp_end);
+
+            // cout << "gap start: " << gp_start << ", end: " << gp_end << endl;
+        }
+
+        vector<TSeqPos> featPositions;
+
+        for (CFeat_CI feat_it(bsh); feat_it; ++feat_it) {
+
+            CSeq_feat_Handle feat = feat_it->GetSeq_feat_Handle();
+            CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
+            if (subtype != CSeqFeatData::eSubtype_gap) continue;
+
+            CConstRef<CSeq_loc> feat_loc(&feat_it->GetLocation());
+
+            int ft_start = feat_loc->GetStart(eExtreme_Positional);
+            int ft_end = feat_loc->GetStop(eExtreme_Positional);
+
+            featPositions.push_back(ft_start);
+            featPositions.push_back(ft_end);
+
+            // cout << "feat start: " << ft_start << ", end: " << ft_end << endl;
+        }
+
+        int remaininig_gaps = gapPositions.size() / 2;
+        int remaining_feats = featPositions.size() / 2;
+
+        if (remaininig_gaps < 1 || remaining_feats < 1) {
+            return;
+        }
+
+        int gap_idx = 0;
+        int feat_idx = 0;
+
+        TSeqPos gap_start = gapPositions[gap_idx];
+        gap_idx++;
+        TSeqPos gap_end = gapPositions[gap_idx];
+        gap_idx++;
+        remaininig_gaps--;
+
+        TSeqPos feat_start = featPositions[feat_idx];
+        feat_idx++;
+        TSeqPos feat_end = featPositions[feat_idx];
+        feat_idx++;
+        remaining_feats--;
+
+        while (remaininig_gaps >= 0 && remaining_feats >= 0) {
+            if (gap_end < feat_start) {
+                if (remaininig_gaps <= 0) {
+                    return;
+                }
+                gap_start = gapPositions[gap_idx];
+                gap_idx++;
+                gap_end = gapPositions[gap_idx];
+                gap_idx++;
+                remaininig_gaps--;
+            } else if (feat_end < gap_start) {
+                if (remaining_feats <= 0) {
+                    return;
+                }
+                feat_start = featPositions[feat_idx];
+                feat_idx++;
+                feat_end = featPositions[feat_idx];
+                feat_idx++;
+                remaining_feats--;
+            } else {
+                // cout << "overlap gap start: " << gap_start << ", end: " << gap_end << ", feat start: " << feat_start << ", end: " << feat_end << endl;
+                if (feat_start != gap_start || feat_end != gap_end) {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_InstantiatedGapMismatch, "Gap feature location does not match delta gap coordinates", seq);
+                }
+                if (remaininig_gaps <= 0) {
+                    return;
+                }
+                gap_start = gapPositions[gap_idx];
+                gap_idx++;
+                gap_end = gapPositions[gap_idx];
+                gap_idx++;
+                remaininig_gaps--;
+                if (remaining_feats <= 0) {
+                    return;
+                }
+                feat_start = featPositions[feat_idx];
+                feat_idx++;
+                feat_end = featPositions[feat_idx];
+                feat_idx++;
+                remaining_feats--;
+            }
+        }
+    } catch ( const exception& e ) {
+        /*
+        m_Imp.PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+            string("Exception in GapByGapInst. EXCEPTION: ") +
+            e.what(), seq);
+        */
     }
 }
 
