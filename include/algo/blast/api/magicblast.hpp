@@ -198,10 +198,10 @@ public:
     const CSeq_id& GetLastId(void) const {return *m_MateId;}
 
     /// Is the query aligned
-    bool FirstAligned(void) const {return (m_FirstInfo & fUnaligned) != 0;}
+    bool FirstAligned(void) const {return (m_FirstInfo & fUnaligned) == 0;}
 
     /// Is the mate aligned
-    bool LastAligned(void) const {return (m_LastInfo & fUnaligned) != 0;}
+    bool LastAligned(void) const {return (m_LastInfo & fUnaligned) == 0;}
 
     /// Sort alignments by selected criteria (pair configuration)
     void SortAlignments(EOrdering order);
