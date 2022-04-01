@@ -1192,6 +1192,7 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
     static string   kBuildDate = "BuildDate";
     static string   kStartedAt = "StartedAt";
     static string   kExcludeBlobCacheUserCount = "ExcludeBlobCacheUserCount";
+    static string   kConcurrentPrefix = "ConcurrentProcCount_";
 
     // NOTE: expected to work regardless of the shutdown request
 
@@ -1335,6 +1336,13 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
 
         info.SetInteger(kExcludeBlobCacheUserCount,
                         app->GetExcludeBlobCache()->Size());
+
+        map<string, size_t>     concurrent_procs =
+                                    m_RequestDispatcher->GetConcurrentCounters();
+        for (auto item: concurrent_procs) {
+            info.SetInteger(kConcurrentPrefix + item.first,
+                            item.second);
+        }
 
         string      content = info.Repr(CJsonNode::fStandardJson);
 
