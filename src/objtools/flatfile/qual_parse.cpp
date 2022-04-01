@@ -228,8 +228,11 @@ bool CQualParser::xParseQualifierCont(
         cleaned = cleaned.substr(0, cleaned.size() - 1);
         thereIsMore = false;
     }
-    if (qualKey != "anticodon"  &&  !NStr::EndsWith(qualVal, "-")) {
-        qualVal += ' ';
+    if (qualKey != "anticodon") {
+        auto lastLetter = qualVal[qualVal.size()-1];
+        if ('a' <= lastLetter && lastLetter <= 'z') {
+            qualVal += ' ';
+        }
     }
     qualVal += cleaned;
     return true;
