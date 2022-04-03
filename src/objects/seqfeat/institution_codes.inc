@@ -6997,7 +6997,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TASH\ts\tNational Academy of Science, Uzbekistan\t\t\t",
 "TASM\ts\tUzbek Academy of Sciences, Laboratory of Mycology\t\t\t",
 "TAU-MAC\tc\tThessaloniki Aristotle University Microalgae and Cyanobacteria culture collection\t\t\t",
-"TAU<GRC>\tsc\tAristotle University of Thessaloniki, Biology Department\t\t\t",
+"TAU<GRC>\ts\tAristotle University of Thessaloniki, Biology Department\t\t\t",
 "TAU<ISR>\ts\tTel-Aviv University\t\t\t",
 "TAUF\ts\tAristotle University of Thessaloniki, Laboratory of Forest Botany - Geobotany\t\t\t",
 "TAWES\ts\tMaryland Department of Natural Resources\t\t\t",
