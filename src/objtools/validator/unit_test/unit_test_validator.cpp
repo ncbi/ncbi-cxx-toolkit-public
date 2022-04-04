@@ -4055,6 +4055,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaComponentIsGi0)
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InstantiatedGapMismatch", "Exception 2 in GapByGapInst"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "DeltaComponentIsGi0", "Delta component is gi|0"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DeltaSeqError", "Unable to find far delta sequence component"));
     //AddChromosomeNoLocation(expected_errors, entry);
@@ -4096,6 +4097,7 @@ BOOST_AUTO_TEST_CASE(Test_SelfReferentialSequence)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "SelfReferentialSequence", "Self-referential delta sequence"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InstantiatedGapMismatch", "Exception 3 in GapByGapInst"));
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -17200,21 +17202,27 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GapFeatureProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InstantiatedGapMismatch",
+                               "Gap feature location does not match delta gap coordinates"));
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "GapFeatureProblem",
+                               "Gap feature over 2 real bases"));
+
     gap->SetLocation().SetInt().SetFrom(10);
     gap->SetLocation().SetInt().SetTo(20);
-    expected_errors[0]->SetErrMsg("Gap feature over 2 real bases");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     gap->SetLocation().SetInt().SetFrom(20);
     gap->SetLocation().SetInt().SetTo(30);
-    expected_errors[0]->SetErrMsg("Gap feature over 8 real bases and 1 Ns");
+    expected_errors[1]->SetErrMsg("Gap feature over 8 real bases and 1 Ns");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     gap->SetLocation().SetInt().SetFrom(12);
     gap->SetLocation().SetInt().SetTo(21);
-    expected_errors[0]->SetErrMsg("Gap feature estimated_length 11 does not match 10 feature length");
+    expected_errors[1]->SetErrMsg("Gap feature estimated_length 11 does not match 10 feature length");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
