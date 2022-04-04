@@ -1231,7 +1231,7 @@ void CValidError_bioseq::ValidateInst(
         // or sequence entirely made of Ns
         ValidateNsAndGaps(seq);
 
-        // GapByGapInst(seq);
+        GapByGapInst(seq);
     }
 
     // Validate sequence length
@@ -3502,7 +3502,13 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 
 void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 {
+    // rough measure of where exception occurs - triggered by certain conditions set up in unit_test_validator
+    int errPt = 0;
+
     try {
+
+        errPt++;
+
         if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
             // can't check if no Inst or Repr
             return;
@@ -3524,6 +3530,8 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
             return;
         }
 
+        errPt++;
+
         vector<TSeqPos> gapPositions;
 
         SSeqMapSelector sel;
@@ -3540,6 +3548,8 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 
             // cout << "gap start: " << gp_start << ", end: " << gp_end << endl;
         }
+
+        errPt++;
 
         vector<TSeqPos> featPositions;
 
@@ -3559,6 +3569,8 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 
             // cout << "feat start: " << ft_start << ", end: " << ft_end << endl;
         }
+
+        errPt++;
 
         int remaininig_gaps = gapPositions.size() / 2;
         int remaining_feats = featPositions.size() / 2;
@@ -3581,6 +3593,8 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
         TSeqPos feat_end = featPositions[feat_idx];
         feat_idx++;
         remaining_feats--;
+
+        errPt++;
 
         while (remaininig_gaps >= 0 && remaining_feats >= 0) {
             if (gap_end < feat_start) {
@@ -3624,12 +3638,12 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
                 remaining_feats--;
             }
         }
+
+        errPt++;
+
     } catch ( const exception& e ) {
-        /*
-        m_Imp.PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-            string("Exception in GapByGapInst. EXCEPTION: ") +
-            e.what(), seq);
-        */
+        PostErr(eDiag_Warning, eErr_SEQ_INST_InstantiatedGapMismatch,
+            string("Exception " + NStr::IntToString(errPt) + " in GapByGapInst"), seq);
     }
 }
 
