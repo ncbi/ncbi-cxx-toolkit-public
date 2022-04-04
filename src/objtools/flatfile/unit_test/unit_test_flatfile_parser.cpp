@@ -45,6 +45,7 @@
 #include <objtools/flatfile/flatdefn.h>
 #include "../indx_blk.h"
 #include "../add.h"
+#include "../xgbparint.h"
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -163,4 +164,39 @@ BOOST_AUTO_TEST_CASE(IdentifyWGSAccessions)
     
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("ATCF00000000"), 12); // TLS WGS master
 }
+
+
+BOOST_AUTO_TEST_CASE(CheckParseInt) 
+{
+
+    list<CRef<CSeq_id>> seqIds;
+    CRef<CSeq_loc> pLoc;
+
+    bool keepRawPt = false;
+    bool sitesPt = false;
+    int numErrsPt = 0;
+    bool accver = true;
+
+    CSeq_id::ParseIDs(seqIds, "X98106.1");
+    auto intervals = string{"join(41880..42259,1..121)"};
+
+    pLoc = xgbparseint_ver(const_cast<char*>(intervals.c_str()), 
+            keepRawPt, sitesPt, numErrsPt, seqIds, accver);
+    
+    BOOST_CHECK(pLoc->IsMix());
+    {
+        const auto& locMix = pLoc->GetMix();
+        BOOST_CHECK_EQUAL(locMix.Get().size(), 2);
+        const auto* pFirstLoc = locMix.GetFirstLoc();
+        const auto* pLastLoc = locMix.GetLastLoc();
+    
+        BOOST_CHECK_EQUAL(pFirstLoc->GetStart(eExtreme_Positional), 41879);
+        BOOST_CHECK_EQUAL(pFirstLoc->GetStop(eExtreme_Positional), 42258);
+    
+        BOOST_CHECK_EQUAL(pLastLoc->GetStart(eExtreme_Positional), 0);
+        BOOST_CHECK_EQUAL(pLastLoc->GetStop(eExtreme_Positional), 120);
+    }
+}
+
+
 
