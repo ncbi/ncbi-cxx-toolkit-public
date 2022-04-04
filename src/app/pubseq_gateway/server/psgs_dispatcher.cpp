@@ -450,9 +450,10 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     if (pre_finished) {
         // The reply needs to be flushed if it has not been done yet
 
-        if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
-            // There is no start data notification in case of annotation
+        if (procs->second->m_StartedProcessing == nullptr) {
+            // 1. There is no start data notification in case of annotation
             // requests. All the processors can supply data
+            // 2. None of the processors started to supply data; it's 404
             started_processor_finished = true;
         }
 
