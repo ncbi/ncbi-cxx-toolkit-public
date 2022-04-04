@@ -89,6 +89,11 @@ private:
     static bool sHasBalancedQuotes(
         const string& qualVal);
     
+    void xQualValAppendLine(
+        const string& qualKey,
+        const string& line,
+        string& qualData);
+
     const string& mFeatKey;
     const string& mFeatLocation;
     CQualCleanup mCleanerUpper;
@@ -96,6 +101,9 @@ private:
     DATA::const_iterator mCurrent;
     string mPendingKey;
     string mPendingVal;
+
+    string mLastKeyForDataChunk;
+    string mLastDataChunkForKey;
 };
 
 END_NCBI_SCOPE
