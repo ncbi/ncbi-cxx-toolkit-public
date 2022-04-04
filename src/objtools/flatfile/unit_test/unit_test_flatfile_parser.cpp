@@ -168,7 +168,6 @@ BOOST_AUTO_TEST_CASE(IdentifyWGSAccessions)
 
 BOOST_AUTO_TEST_CASE(CheckParseInt) 
 {
-
     list<CRef<CSeq_id>> seqIds;
     CRef<CSeq_loc> pLoc;
 
@@ -178,8 +177,7 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
     bool accver = true;
 
     CSeq_id::ParseIDs(seqIds, "X98106.1");
-    auto intervals = string{"join(41880..42259,1..121)"};
-
+    string intervals{"join(41880..42259,1..121)"};
     pLoc = xgbparseint_ver(const_cast<char*>(intervals.c_str()), 
             keepRawPt, sitesPt, numErrsPt, seqIds, accver);
     
@@ -195,6 +193,26 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
     
         BOOST_CHECK_EQUAL(pLastLoc->GetStart(eExtreme_Positional), 0);
         BOOST_CHECK_EQUAL(pLastLoc->GetStop(eExtreme_Positional), 120);
+    }
+
+
+    intervals = "complement(join(42253..42259,1..170))";
+    pLoc = xgbparseint_ver(const_cast<char*>(intervals.c_str()), 
+            keepRawPt, sitesPt, numErrsPt, seqIds, accver);
+
+    BOOST_CHECK(pLoc->IsMix());
+    BOOST_CHECK(pLoc->IsReverseStrand());
+    {
+        const auto& locMix = pLoc->GetMix();
+        BOOST_CHECK_EQUAL(locMix.Get().size(), 2);
+        const auto* pFirstLoc = locMix.GetFirstLoc();
+        const auto* pLastLoc = locMix.GetLastLoc();
+
+        BOOST_CHECK_EQUAL(pFirstLoc->GetStart(eExtreme_Positional), 0);
+        BOOST_CHECK_EQUAL(pFirstLoc->GetStop(eExtreme_Positional), 169);
+    
+        BOOST_CHECK_EQUAL(pLastLoc->GetStart(eExtreme_Positional), 42252);
+        BOOST_CHECK_EQUAL(pLastLoc->GetStop(eExtreme_Positional), 42258);
     }
 }
 
