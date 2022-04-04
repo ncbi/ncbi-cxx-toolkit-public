@@ -323,12 +323,6 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
         if (proc.m_Processor.get() == processor) {
 
-            if (processor == procs->second->m_StartedProcessing) {
-                if (proc.m_DispatchStatus == ePSGS_Finished) {
-                    started_processor_finished = true;
-                }
-            }
-
             if (source == ePSGS_Fromework) {
                 // This call is when the framework notices that the processor
                 // reports something not InProgress (like error, cancel,
@@ -406,7 +400,6 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                 IPSGS_Processor::StatusToString(proc.m_FinishStatus),
                                 request, reply);
 
-                        started_processor_finished = true;
                         proc.m_DispatchStatus = ePSGS_Finished;
                         x_DecrementConcurrencyCounter(processor);
                         x_SendProgressMessage(proc.m_FinishStatus, processor,
@@ -417,6 +410,12 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 best_status = min(best_status, proc.m_FinishStatus);
 
             } // End of report source condition handling
+
+            if (processor == procs->second->m_StartedProcessing) {
+                if (proc.m_DispatchStatus == ePSGS_Finished) {
+                    started_processor_finished = true;
+                }
+            }
 
             continue;
         } // End of (proc.m_Processor.get() == processor) condition
