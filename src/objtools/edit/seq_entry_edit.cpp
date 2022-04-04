@@ -2427,6 +2427,55 @@ void GetSortedCuts(CBioseq_Handle bsh,
 }
 
 
+/// Update sequence length
+void UpdateSeqLength(CAutoInitRef<CDelta_ext>& pDeltaExt, 
+                     CBioseq_Handle& complete_bsh,
+                     CSeqMap_CI& seqmap_ci, 
+                     CSeq_inst_Base::TLength& new_length)
+{
+    switch (seqmap_ci.GetType()) {
+    case CSeqMap::eSeqGap:
+    {
+        // Sequence gaps
+        const CSeq_inst_Base::TLength uGapLength = seqmap_ci.GetLength();
+        const bool bIsLengthKnown = !seqmap_ci.IsUnknownLength();
+        CConstRef<CSeq_literal> pOriginalGapSeqLiteral =
+            seqmap_ci.GetRefGapLiteral();
+        CAutoInitRef<CDelta_seq> pDeltaSeq;
+        CAutoInitRef<CSeq_literal> pNewGapLiteral;
+        if (pOriginalGapSeqLiteral) {
+            pNewGapLiteral->Assign(*pOriginalGapSeqLiteral);
+        }
+        if (!bIsLengthKnown) {
+            pNewGapLiteral->SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+        }
+        pNewGapLiteral->SetLength(uGapLength);
+        pDeltaSeq->SetLiteral(*pNewGapLiteral);
+        pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
+        new_length += uGapLength;
+    }
+    break;
+    case CSeqMap::eSeqData:
+    {
+        // Sequence data
+        string new_data;
+        CSeqVector seqvec(complete_bsh, CBioseq_Handle::eCoding_Iupac);
+        seqvec.GetSeqData(seqmap_ci.GetPosition(), seqmap_ci.GetEndPosition(),
+                          new_data);
+        CRef<CSeq_data> pSeqData(new CSeq_data());
+        pSeqData->SetIupacna().Set(new_data);
+        CSeqportUtil::Pack(pSeqData);
+        CAutoInitRef<CDelta_seq> pDeltaSeq;
+        pDeltaSeq->SetLiteral().SetLength(seqmap_ci.GetLength());
+        pDeltaSeq->SetLiteral().SetSeq_data(*pSeqData);
+        pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
+        new_length += seqmap_ci.GetLength();
+    }
+    break;
+    }
+}
+
+
 /// Trim sequence data
 void TrimSeqData(CBioseq_Handle bsh,
                  CRef<CSeq_inst> inst,
@@ -2436,7 +2485,7 @@ void TrimSeqData(CBioseq_Handle bsh,
     if (!bsh.IsNucleotide()) {
         return;
     }
-
+    
     // Add the complete bioseq to scope
     CRef<CBioseq> bseq(new CBioseq);
     bseq->Assign(*bsh.GetCompleteBioseq());
@@ -2460,8 +2509,11 @@ void TrimSeqData(CBioseq_Handle bsh,
     CAutoInitRef<CDelta_ext> pDeltaExt;
     CSeqMap_CI seqmap_ci = complete_bsh.GetSeqMap().ResolvedRangeIterator(&complete_bsh.GetScope(),
         left_pos,
-        1 + (right_pos - left_pos));
-
+        1 + (right_pos - left_pos),
+        objects::eNa_strand_plus,
+        size_t(-1),
+        CSeqMap::fFindAny|CSeqMap::fIgnoreUnresolved);
+        
     // exclude leading and trailing gaps, but take all gaps between data elements
     // so figure out new boundaries - first and last data elements
     CSeqMap_CI seqmap_ci_first, seqmap_ci_last;
@@ -2478,49 +2530,14 @@ void TrimSeqData(CBioseq_Handle bsh,
             }
         }
     }
-
+    
+    // seqmap_ci_first, seqmap_ci_last are both inclusive
     CSeq_inst_Base::TLength new_length = 0;
     for (seqmap_ci = seqmap_ci_first; seqmap_ci && seqmap_ci != seqmap_ci_last; ++seqmap_ci) {
-        switch (seqmap_ci.GetType()) {
-        case CSeqMap::eSeqGap:
-        {
-            // Sequence gaps
-            const CSeq_inst_Base::TLength uGapLength = seqmap_ci.GetLength();
-            const bool bIsLengthKnown = !seqmap_ci.IsUnknownLength();
-            CConstRef<CSeq_literal> pOriginalGapSeqLiteral =
-                seqmap_ci.GetRefGapLiteral();
-            CAutoInitRef<CDelta_seq> pDeltaSeq;
-            CAutoInitRef<CSeq_literal> pNewGapLiteral;
-            if (pOriginalGapSeqLiteral) {
-                pNewGapLiteral->Assign(*pOriginalGapSeqLiteral);
-            }
-            if (!bIsLengthKnown) {
-                pNewGapLiteral->SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-            }
-            pNewGapLiteral->SetLength(uGapLength);
-            pDeltaSeq->SetLiteral(*pNewGapLiteral);
-            pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
-            new_length += uGapLength;
-        }
-        break;
-        case CSeqMap::eSeqData:
-        {
-            // Sequence data
-            string new_data;
-            CSeqVector seqvec(complete_bsh, CBioseq_Handle::eCoding_Iupac);
-            seqvec.GetSeqData(seqmap_ci.GetPosition(), seqmap_ci.GetEndPosition(),
-                              new_data);
-            CRef<CSeq_data> pSeqData(new CSeq_data());
-            pSeqData->SetIupacna().Set(new_data);
-            CSeqportUtil::Pack(pSeqData);
-            CAutoInitRef<CDelta_seq> pDeltaSeq;
-            pDeltaSeq->SetLiteral().SetLength(seqmap_ci.GetLength());
-            pDeltaSeq->SetLiteral().SetSeq_data(*pSeqData);
-            pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
-            new_length += seqmap_ci.GetLength();
-        }
-        break;
-        }
+        UpdateSeqLength(pDeltaExt, complete_bsh, seqmap_ci, new_length);
+    }
+    if (seqmap_ci_last) {
+        UpdateSeqLength(pDeltaExt, complete_bsh, seqmap_ci_last, new_length);
     }
 
     scope.RemoveBioseq(complete_bsh);

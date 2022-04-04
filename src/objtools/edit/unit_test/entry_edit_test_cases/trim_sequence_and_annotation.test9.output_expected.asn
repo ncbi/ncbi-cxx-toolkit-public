@@ -1,0 +1,631 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Plasmodium vivax",
+        common "malaria parasite P. vivax",
+        db {
+          {
+            db "taxon",
+            tag id 5855
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Plasmodium",
+            species "vivax"
+          },
+          mod {
+            {
+              subtype isolate,
+              subname "Salvador I"
+            }
+          },
+          lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Plasmodium)",
+          gcode 1,
+          mgcode 4,
+          div "INV"
+        }
+      }
+    },
+    update-date std {
+      year 2007,
+      month 6,
+      day 13
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Carlton",
+                  first "Jane",
+                  initials "J."
+                }
+              }
+            },
+            affil std {
+              affil "The Institute for Genomic Research",
+              city "Rockville",
+              sub "MD",
+              country "USA",
+              street "9712 Medical Center Drive",
+              postal-code "20850"
+            }
+          },
+          date std {
+            year 2005,
+            month 9,
+            day 19
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Carlton",
+                  first "Jane",
+                  initials "J."
+                }
+              }
+            },
+            affil std {
+              affil "The Institute for Genomic Research",
+              city "Rockville",
+              sub "MD",
+              country "USA",
+              street "9712 Medical Center Drive",
+              postal-code "20850"
+            }
+          },
+          date std {
+            year 2006,
+            month 9,
+            day 8
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        article {
+          title {
+            name "Comparative genomics of the neglected human malaria parasite
+ Plasmodium vivax."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Carlton",
+                  initials "J.M."
+                }
+              },
+              {
+                name name {
+                  last "Adams",
+                  initials "J.H."
+                }
+              },
+              {
+                name name {
+                  last "Silva",
+                  initials "J.C."
+                }
+              },
+              {
+                name name {
+                  last "Bidwell",
+                  initials "S.L."
+                }
+              },
+              {
+                name name {
+                  last "Lorenzi",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Caler",
+                  initials "E."
+                }
+              },
+              {
+                name name {
+                  last "Crabtree",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Angiuoli",
+                  initials "S.V."
+                }
+              },
+              {
+                name name {
+                  last "Merino",
+                  initials "E.F."
+                }
+              },
+              {
+                name name {
+                  last "Amedeo",
+                  initials "P."
+                }
+              },
+              {
+                name name {
+                  last "Cheng",
+                  initials "Q."
+                }
+              },
+              {
+                name name {
+                  last "Coulson",
+                  initials "R.M."
+                }
+              },
+              {
+                name name {
+                  last "Crabb",
+                  initials "B.S."
+                }
+              },
+              {
+                name name {
+                  last "Del Portillo",
+                  initials "H.A."
+                }
+              },
+              {
+                name name {
+                  last "Essien",
+                  initials "K."
+                }
+              },
+              {
+                name name {
+                  last "Feldblyum",
+                  initials "T.V."
+                }
+              },
+              {
+                name name {
+                  last "Fernandez-Becerra",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Gilson",
+                  initials "P.R."
+                }
+              },
+              {
+                name name {
+                  last "Gueye",
+                  initials "A.H."
+                }
+              },
+              {
+                name name {
+                  last "Guo",
+                  initials "X."
+                }
+              },
+              {
+                name name {
+                  last "Kang'a",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Kooij",
+                  initials "T.W."
+                }
+              },
+              {
+                name name {
+                  last "Korsinczky",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Meyer",
+                  initials "E.V."
+                }
+              },
+              {
+                name name {
+                  last "Nene",
+                  initials "V."
+                }
+              },
+              {
+                name name {
+                  last "Paulsen",
+                  initials "I."
+                }
+              },
+              {
+                name name {
+                  last "White",
+                  initials "O."
+                }
+              },
+              {
+                name name {
+                  last "Ralph",
+                  initials "S.A."
+                }
+              },
+              {
+                name name {
+                  last "Ren",
+                  initials "Q."
+                }
+              },
+              {
+                name name {
+                  last "Sargeant",
+                  initials "T.J."
+                }
+              },
+              {
+                name name {
+                  last "Salzberg",
+                  initials "S.L."
+                }
+              },
+              {
+                name name {
+                  last "Stoeckert",
+                  initials "C.J."
+                }
+              },
+              {
+                name name {
+                  last "Sullivan",
+                  initials "S.A."
+                }
+              },
+              {
+                name name {
+                  last "Yamamoto",
+                  initials "M.M."
+                }
+              },
+              {
+                name name {
+                  last "Hoffman",
+                  initials "S.L."
+                }
+              },
+              {
+                name name {
+                  last "Wortman",
+                  initials "J.R."
+                }
+              },
+              {
+                name name {
+                  last "Gardner",
+                  initials "M.J."
+                }
+              },
+              {
+                name name {
+                  last "Galinski",
+                  initials "M.R."
+                }
+              },
+              {
+                name name {
+                  last "Barnwell",
+                  initials "J.W."
+                }
+              },
+              {
+                name name {
+                  last "Fraser-Liggett",
+                  initials "C.M."
+                }
+              }
+            },
+            affil str "The Institute for Genomic Research/J. Craig Venter
+ Institute, 9704 Medical Research Drive, Rockville, Maryland 20850, USA.
+ jane.carlton@nyumc.org"
+          },
+          from journal {
+            title {
+              iso-jta "Nature",
+              ml-jta "Nature",
+              issn "1476-4687",
+              name "Nature"
+            },
+            imp {
+              date std {
+                year 2008,
+                month 10,
+                day 9
+              },
+              volume "455",
+              issue "7214",
+              pages "757-763",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus received,
+                  date std {
+                    year 2008,
+                    month 1,
+                    day 18
+                  }
+                },
+                {
+                  pubstatus accepted,
+                  date std {
+                    year 2008,
+                    month 8,
+                    day 8
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2008,
+                    month 10,
+                    day 10,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2008,
+                    month 11,
+                    day 14,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2008,
+                    month 10,
+                    day 10,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2009,
+                    month 10,
+                    day 9
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            pii "nature07327",
+            doi "10.1038/nature07327",
+            pubmed 18843361,
+            other {
+              db "pmc",
+              tag str "PMC2651158"
+            },
+            other {
+              db "mid",
+              tag str "NIHMS75739"
+            }
+          }
+        },
+        pmid 18843361
+      }
+    },
+    comment "FIRST DRAFT ASSEMBLY.  May contain errors. The number of contigs
+ is less than the number of accession numbers because some contigs have been
+ replaced by others.",
+    comment "Annotation was added to the contigs in June 2007.",
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA150"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN02953638"
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        genbank {
+          accession "AAKM01000529",
+          version 1
+        },
+        general {
+          db "WGS:AAKM",
+          tag str "ctg_7021"
+        },
+        gi 75914080
+      },
+      descr {
+        molinfo {
+          biomol genomic,
+          tech wgs
+        },
+        create-date std {
+          year 2005,
+          month 9,
+          day 20
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 1286,
+        seq-data ncbi2na '7013F8121E3EC48FF7980F9FFFC0D5B2608E14BA2F1401FEFF7F
+008600213AA13F7BD2F52F713DF4E916D8EADB3F97CFD02C00383DCC3FCC6FFB0077F3FFF5175D
+B0FFF14FFF800FD3BE5FFFD33FB3F974D1FFC0E9040AD30FFFF9F00C1FEB3DDC180F0F574BDE4F
+AC0A387948355E65410EC0EEFC3FEEF9F4D17D2B2D1E78EDEFF9F03AFAA8FF14339B9CED088C4F
+54F5738E392BAE03FD818FF2B0F751E7793646DBEC4EFBEC02C8E2B5764E80296F79FDAA3FBF75
+567059FCD74D79E543A83611F48675904003844BECBA6D82F7D4FFC2D455C4E44FD40037B0FAA7
+E00062B406F7B2B3DF44E0EEB6AA51D4CDE388531ABEAC9F7400ED07F077F4EFF240E7E492C899
+61A979D438F545F01AFE9F4FAE28247F56E0AA2FD5562B94577E776E67B92A792282F9943D3AE0
+AB1E8D6276B1427C1C949FAB75732E2DB3C3F63094B090'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus-tag "PVX_202290"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 1189,
+                strand minus,
+                id gi 75914080,
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data rna {
+                type mRNA,
+                ext name "adrenodoxin reductase, putative"
+              },
+              partial TRUE,
+              comment "transcript PVX_202290A",
+              location mix {
+                int {
+                  from 0,
+                  to 1189,
+                  strand minus,
+                  id gi 75914080,
+                  fuzz-from lim lt,
+                  fuzz-to lim gt
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        genbank {
+          accession "EDL42622",
+          version 1
+        },
+        general {
+          db "WGS:AAKM",
+          tag str "cds.PVX_202290A"
+        },
+        gi 148801217
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          tech concept-trans,
+          completeness no-right
+        },
+        title "adrenodoxin reductase, putative [Plasmodium vivax]",
+        create-date std {
+          year 2007,
+          month 6,
+          day 13
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 396,
+        seq-data iupacaa "MNWRNFLCSPAQRTRARGWHLGGKLPFTGKCFLTNEAKPFKVGIIGAGPSAL
+YCCKHLLKHERVKVDIFEKLPNPYGLIRYGVAPDHIHVKNTYRTFDLVFSSPNYRFFGNVHVGVDLKMEELRRHYNCV
+IFCCGASEVSIPIGQQDEDKAVSGGETNPRKQNGLFHARDLIYFYNNMYNDVRCRAVENYLKSFENFTTCIIIGNGNV
+SLDIARILVKSPNHLSKTDISSDYLKVMKQHKIKHIYIVGRRGFWQSSFTNAELRELISLENTKVILSKKNYDLCCHL
+KSDEANTNMKKRQHEIFQKMVKNYEEVEKNKEFYKTYKIIEFIFYFEIRQIRPIDGAMKNVELELNRNVPMSFSSFKE
+NKVLVTPLVIFATGFKKSNFAENLYNQSVQMF"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "adrenodoxin reductase, putative"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 395,
+                id gi 148801217,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          comment "encoded by transcript PVX_202290A",
+          product whole gi 148801217,
+          location mix {
+            int {
+              from 0,
+              to 1189,
+              strand minus,
+              id gi 75914080,
+              fuzz-from lim lt
+            }
+          }
+        }
+      }
+    }
+  }
+}

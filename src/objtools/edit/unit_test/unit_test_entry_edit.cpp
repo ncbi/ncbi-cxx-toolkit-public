@@ -549,6 +549,26 @@ static bool s_FindLocalId(const CBioseq_Handle& bsh, const string& sLocalid)
 }
 
 
+static bool s_FindGi(const CBioseq_Handle& bsh, const TGi& gi)
+{
+    const CBioseq_Handle::TId& ids = bsh.GetId();
+    ITERATE( CBioseq_Handle::TId, id_itr, ids ) {
+        const CSeq_id_Handle& id_handle = *id_itr;
+        CConstRef<CSeq_id> id = id_handle.GetSeqIdOrNull();
+        if ( !id ) {
+            continue;
+        }
+
+        if ( id->IsGi() ) {
+            // Found gi
+            return id->GetGi() == gi;
+        }
+    }
+
+    return false;
+}
+
+
 BOOST_AUTO_TEST_CASE(TrimSeqData)
 {
     cout << "Testing FUNCTION: TrimSeqData" << endl;
@@ -1288,6 +1308,39 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
                 // Cut 1st data element of sequence but leave gap
                 // function should remove gap as well
                 edit::TRange cut1(0, 275);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
+            }
+            
+            // gi 1530793995 is found in test7 input
+            if (s_FindGi(bsh, 1530793995)) {
+                // Cut 1st data element of sequence but leave gap
+                // function should remove gap as well
+                edit::TRange cut1(0, 999);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
+            }
+
+            // gi 1530812376 is found in test8 input
+            if (s_FindGi(bsh, 1530812376)) {
+                // Cut 1st data element of sequence but leave gap
+                // function should remove gap as well
+                edit::TRange cut1(0, 999);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation( bsh, cuts, edit::eTrimToClosestEnd ));
+            }
+
+            // gi 75914080 is found in test9 input
+            if (s_FindGi(bsh, 75914080)) {
+                // Cut 1st data element of sequence but leave gap
+                // function should remove gap as well
+                edit::TRange cut1(0, 521);
                 edit::TCuts cuts;
                 cuts.push_back(cut1);
 
