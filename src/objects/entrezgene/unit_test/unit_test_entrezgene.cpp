@@ -51,6 +51,7 @@ USING_SCOPE(objects);
 
 static void s_GetObject(const string& gene_id, CEntrezgene& eg_obj)
 {
+    LOG_POST(Note << "Looking up GeneID " << gene_id);
     CRef<CEUtils_ConnContext> ctx(new CEUtils_ConnContext);
     CEFetch_Request req(ctx);
     req.SetDatabase("gene");
