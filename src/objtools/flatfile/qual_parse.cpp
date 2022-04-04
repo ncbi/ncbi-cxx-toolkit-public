@@ -152,6 +152,9 @@ bool CQualParser::xParseQualifierStart(
     }
 
     auto tail = cleaned.substr(idxEqual + 1, string::npos);
+    mLastKeyForDataChunk = qualKey,
+    mLastDataChunkForKey = cleaned;
+
     if (tail.empty()) {
         // we can't be harsh here because the legacy flatfile parser regarded
         //  /xxx, /xxx=, and /xxx="" as the same thing.
@@ -228,13 +231,14 @@ bool CQualParser::xParseQualifierCont(
         cleaned = cleaned.substr(0, cleaned.size() - 1);
         thereIsMore = false;
     }
-    if (qualKey != "anticodon") {
-        auto lastLetter = qualVal[qualVal.size()-1];
-        if ('a' <= lastLetter && lastLetter <= 'z') {
-            qualVal += ' ';
-        }
-    }
-    qualVal += cleaned;
+    xQualValAppendLine(qualKey, cleaned, qualVal);
+    //if (qualKey != "anticodon") {
+    //    auto lastLetter = qualVal[qualVal.size()-1];
+    //    if ('a' <= lastLetter && lastLetter <= 'z') {
+    //        qualVal += ' ';
+    //    }
+    //}
+    //qualVal += cleaned;
     return true;
 }
 
@@ -254,6 +258,58 @@ bool CQualParser::xValidateSyntax(
     }
     return true;
 }
+
+
+//  ----------------------------------------------------------------------------
+void CQualParser::xQualValAppendLine(
+    const string& qualKey,
+    const string& line,
+    string& qualData)
+//  ----------------------------------------------------------------------------
+{
+    // consult notes for RW-1600 for documentation on the below
+    static const string::size_type QUAL_DATA_CHUNK_SIZE = 58;
+
+    string lastDataChunkSeen = "";
+    if (qualKey == mLastKeyForDataChunk) {
+        lastDataChunkSeen = mLastDataChunkForKey;
+    }
+    else {
+        mLastKeyForDataChunk = qualKey;
+    }
+    mLastDataChunkForKey = line;
+
+    if (qualData.empty() || line.empty()) {
+        qualData += line;
+        return;
+    }
+    if (qualKey == "anticodon") { //? no documentation, only observation
+        qualData += line;
+        return;
+    }
+    // do size check
+    auto sizeAlready = qualData.size();
+    if (qualData[sizeAlready -1] == '-'  &&  qualData[sizeAlready -2] != ' ') {
+        qualData += line;
+        return;
+    }
+    if (NStr::EndsWith(qualData, "(EC")  &&  '0' <= line[0]  &&  line[0] <= '9'  ) {
+        qualData += ' ';
+        qualData += line;
+        return;
+    }
+    if (qualData[sizeAlready-1] == ','  &&  line[0] == '(') {
+        qualData += ' ';
+        qualData += line;
+        return;
+    }
+    auto recentBlank = lastDataChunkSeen.find(' ');
+    if (recentBlank != string::npos) {
+        qualData += ' ';
+    }
+    qualData += line;
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CQualParser::Done() const
