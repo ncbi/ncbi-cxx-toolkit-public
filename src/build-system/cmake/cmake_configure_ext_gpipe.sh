@@ -12,8 +12,9 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-add_gpipe_warnings()
+configure_common_gpipe()
 {
+  PROJECT_LIST=${tree_root}/scripts/projects/ncbi_gpipe.lst
   _ext_CFLAGS="${_ext_CFLAGS:-}${_ext_CFLAGS:+ }-Wmissing-prototypes"
   _ext_CXXFLAGS="${_ext_CXXFLAGS:-}${_ext_CXXFLAGS:+ }-Wnon-virtual-dtor -Wall -Wextra -Wconversion -Wdeprecated-declarations -Wlogical-op -Wmissing-declarations -Wpedantic -Wshadow -Wsuggest-attribute=format -Wswitch -Wpointer-arith -Wcast-align -Wmissing-include-dirs -Winvalid-pch -Wmissing-format-attribute"
 }
@@ -50,7 +51,7 @@ configure_ext_ParseArgs()
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Release}"
-      add_gpipe_warnings
+      configure_common_gpipe
       ;; 
     "--gpipe-dev")
       GPIPE_MODE=dev
@@ -59,7 +60,7 @@ configure_ext_ParseArgs()
       PROJECT_FEATURES="${PROJECT_FEATURES};StrictGI"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Debug}"
-      add_gpipe_warnings
+      configure_common_gpipe
       ;; 
     "--gpipe-cgi")
       GPIPE_MODE=cgi
@@ -68,7 +69,7 @@ configure_ext_ParseArgs()
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Static}"
-      add_gpipe_warnings
+      configure_common_gpipe
       ;; 
     "--gpipe-distrib")
       GPIPE_MODE=distrib
@@ -77,7 +78,7 @@ configure_ext_ParseArgs()
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST;-PCRE"
       : "${BUILD_ROOT:=../Distrib}"
-      add_gpipe_warnings
+      configure_common_gpipe
       ;; 
     *) 
       _ext_unknown="${_ext_unknown} $1"
