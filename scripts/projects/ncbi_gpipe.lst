@@ -137,3 +137,4 @@ util
 -util.*/demo
 -util.*/test
 -util.*/unit_test
+-internal/blast/DistribDbSupport/ls_cli
