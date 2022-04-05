@@ -153,7 +153,7 @@ bool CQualParser::xParseQualifierStart(
 
     auto tail = cleaned.substr(idxEqual + 1, string::npos);
     mLastKeyForDataChunk = qualKey,
-    mLastDataChunkForKey = cleaned;
+    mLastDataChunkForKey = tail;
 
     if (tail.empty()) {
         // we can't be harsh here because the legacy flatfile parser regarded
@@ -299,6 +299,11 @@ void CQualParser::xQualValAppendLine(
         return;
     }
     if (qualData[sizeAlready-1] == ','  &&  line[0] == '(') {
+        qualData += ' ';
+        qualData += line;
+        return;
+    }
+    if (lastDataChunkSeen.size() < QUAL_DATA_CHUNK_SIZE) {
         qualData += ' ';
         qualData += line;
         return;
