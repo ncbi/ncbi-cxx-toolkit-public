@@ -97,7 +97,7 @@ if (WIN32)
     endif()
 
     list(LENGTH CMAKE_CONFIGURATION_TYPES _count)
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "" AND NOT "${_count}" EQUAL "1" AND NOT NCBI_PTBCFG_PACKAGING)
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "" AND NOT "${_count}" EQUAL "1" AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
         set(NCBI_CONFIGURATION_RUNTIMELIB "")
         if (BUILD_SHARED_LIBS)
             set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
@@ -241,7 +241,7 @@ elseif (XCODE)
     set(NCBI_COMPILER_ALT ${NCBI_COMPILER})
 
     list(LENGTH CMAKE_CONFIGURATION_TYPES _count)
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "" AND NOT "${_count}" EQUAL "1" AND NOT NCBI_PTBCFG_PACKAGING)
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "" AND NOT "${_count}" EQUAL "1" AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
         if (BUILD_SHARED_LIBS)
             set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
         else()
@@ -317,12 +317,19 @@ elseif ("${NCBI_COMPILER}" STREQUAL "Intel"
         OR "${NCBI_COMPILER}" STREQUAL "IntelLLVM")
     set(NCBI_COMPILER_ICC 1)
     set(NCBI_COMPILER "ICC")
+    if("${NCBI_COMPILER_VERSION}" STREQUAL "1900")
+        set(NCBI_COMPILER_COMPONENTS "ICC1903")
+    endif()
 elseif ("${NCBI_COMPILER}" STREQUAL "AppleClang")
     set(NCBI_COMPILER_APPLE_CLANG 1)
     set(NCBI_COMPILER "APPLE_CLANG")
+    set(NCBI_COMPILER_COMPONENTS "Clang${NCBI_COMPILER_VERSION};Clang")
 elseif ("${NCBI_COMPILER}" STREQUAL "Clang")
     set(NCBI_COMPILER_LLVM_CLANG 1)
     set(NCBI_COMPILER "LLVM_CLANG")
+    if("${NCBI_COMPILER_VERSION}" STREQUAL "700")
+        set(NCBI_COMPILER_COMPONENTS "GCC730;GCC;Clang700;Clang")
+    endif()
 endif()
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -349,10 +356,6 @@ message(STATUS "NCBI Compiler: ${NCBI_COMPILER}")
 message(STATUS "NCBI Compiler Version: ${NCBI_COMPILER_VERSION}")
 message(STATUS "NCBI Compiler Version Tag: ${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${CMAKE_BUILD_TYPE}")
 
-# pass these back for ccache to pick up
-set(ENV{CCACHE_UMASK} 002)
-set(ENV{CCACHE_BASEDIR} ${top_src_dir})
-
 #
 # Threading libraries
 find_package(Threads REQUIRED)
@@ -369,7 +372,7 @@ endif (CMAKE_USE_PTHREADS_INIT)
 #
 # OpenMP
 if (NOT APPLE AND NOT CYGWIN AND NOT NCBI_COMPILER_LLVM_CLANG
-    AND NOT NCBI_PTBCFG_PACKAGING
+    AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
     AND NOT noOpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 find_package(OpenMP)
 ## message("OPENMP_FOUND: ${OPENMP_FOUND}")
@@ -381,6 +384,13 @@ if (OPENMP_FOUND)
 endif (OPENMP_FOUND)
 endif()
 
+if(NCBI_PTBCFG_PACKAGED)
+    return()
+endif()
+
+# pass these back for ccache to pick up
+set(ENV{CCACHE_UMASK} 002)
+set(ENV{CCACHE_BASEDIR} ${top_src_dir})
 #
 # See:
 # http://stackoverflow.com/questions/32752446/using-compiler-prefix-commands-with-cmake-distcc-ccache
@@ -424,9 +434,6 @@ if(NCBI_COMPILER_GCC)
 
 elseif(NCBI_COMPILER_ICC)
 
-    if("${NCBI_COMPILER_VERSION}" STREQUAL "1900")
-        set(NCBI_COMPILER_COMPONENTS "ICC1903")
-    endif()
     set(_ggdb3 "-g")
     set(_ggdb1 "")
     set(_gdw4r "")
@@ -446,17 +453,6 @@ elseif(NCBI_COMPILER_ICC)
         set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Kc++ -static-intel -diag-disable 10237")
     endif()
-
-elseif(NCBI_COMPILER_APPLE_CLANG)
-
-    set(NCBI_COMPILER_COMPONENTS "Clang${NCBI_COMPILER_VERSION};Clang")
-
-elseif(NCBI_COMPILER_LLVM_CLANG)
-
-    if("${NCBI_COMPILER_VERSION}" STREQUAL "700")
-        set(NCBI_COMPILER_COMPONENTS "GCC730;GCC;Clang700;Clang")
-    endif()
-
 endif()
 
 if (CMAKE_DEBUG_SYMBOLS)
