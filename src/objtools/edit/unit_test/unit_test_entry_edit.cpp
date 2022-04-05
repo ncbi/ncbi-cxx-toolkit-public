@@ -1315,7 +1315,7 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
             }
             
             // gi 1530793995 is found in test7 input
-            if (s_FindGi(bsh, 1530793995)) {
+            if (s_FindGi(bsh, GI_CONST(1530793995))) {
                 // Cut 1st data element of sequence but leave gap
                 // function should remove gap as well
                 edit::TRange cut1(0, 999);
@@ -1326,7 +1326,7 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
             }
 
             // gi 1530812376 is found in test8 input
-            if (s_FindGi(bsh, 1530812376)) {
+            if (s_FindGi(bsh, GI_CONST(1530812376))) {
                 // Cut 1st data element of sequence but leave gap
                 // function should remove gap as well
                 edit::TRange cut1(0, 999);
@@ -1337,7 +1337,7 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
             }
 
             // gi 75914080 is found in test9 input
-            if (s_FindGi(bsh, 75914080)) {
+            if (s_FindGi(bsh, GI_CONST(75914080))) {
                 // Cut 1st data element of sequence but leave gap
                 // function should remove gap as well
                 edit::TRange cut1(0, 521);
