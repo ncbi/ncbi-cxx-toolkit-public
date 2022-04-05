@@ -102,7 +102,7 @@ include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponents.cmake)
 # This sets a version to be used throughout our config process
 # NOTE: Adjust as needed
 #
-set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 24)
+set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 26)
 set(NCBI_CPP_TOOLKIT_VERSION_MINOR 0)
 set(NCBI_CPP_TOOLKIT_VERSION_PATCH 0)
 set(NCBI_CPP_TOOLKIT_VERSION_EXTRA "")
