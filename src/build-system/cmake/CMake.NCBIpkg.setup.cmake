@@ -48,6 +48,18 @@ elseif(NCBI_PTBCFG_USECONAN)
         set(_cmd ${_cmd} -s compiler.libcxx=libstdc++11)
     endif()
 
+    set(_types)
+    if (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "")
+        set(_types ${CMAKE_BUILD_TYPE})
+    elseif (NOT "${CMAKE_CONFIGURATION_TYPES}" STREQUAL "")
+        set(_types ${CMAKE_CONFIGURATION_TYPES})
+    endif()
+    list(LENGTH _types _count)
+    if("${_count}" EQUAL 1)
+        NCBI_util_Cfg_ToStd(${_types} _type)
+        set(_cmd ${_cmd} -s build_type=${_type})
+    endif()
+
     execute_process(
         COMMAND ${NCBI_CONAN_APP} ${_cmd}
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
