@@ -35,6 +35,8 @@
 #ifndef FLATFILE__QUAL_PARSE__HPP
 #define FLATFILE__QUAL_PARSE__HPP
 
+#include <objtools/flatfile/flatfile_parse_info.hpp>
+
 #include "qual_validate.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -47,6 +49,7 @@ public:
     using DATA = vector<string>;
 
     CQualParser(
+        Parser::EFormat fmt,
         const string& featKey,
         const string& featLocation,
         const vector<string>& qualLines);
@@ -94,6 +97,7 @@ private:
         const string& line,
         string& qualData);
 
+    Parser::EFormat mFlatFormat;
     const string& mFeatKey;
     const string& mFeatLocation;
     CQualCleanup mCleanerUpper;
@@ -104,6 +108,7 @@ private:
 
     string mLastKeyForDataChunk;
     string mLastDataChunkForKey;
+    const string::size_type mMaxChunkSize;
 };
 
 END_NCBI_SCOPE
