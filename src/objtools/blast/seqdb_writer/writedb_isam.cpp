@@ -157,6 +157,12 @@ void CWriteDB_Isam::RenameSingle()
     m_DFile->RenameSingle();
 }
 
+void CWriteDB_Isam::RenameFileIndex(unsigned int num_digits)
+{
+    m_IFile->RenameFileIndex(num_digits);
+    m_DFile->RenameFileIndex(num_digits);
+}
+
 CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
                                        const string          & dbname,
                                        bool                    protein,

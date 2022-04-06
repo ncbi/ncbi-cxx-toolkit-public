@@ -46,6 +46,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 BEGIN_NCBI_SCOPE
 
@@ -339,6 +340,14 @@ void CWriteDB_Impl::Close()
         if (m_VolumeList.size() == 1) {
             m_Volume->RenameSingle();
         }
+        else if(m_VolumeList.size() > 100){
+        	unsigned int num_digits = log10(m_VolumeList.size()) +1;
+        	for(unsigned i=0; i < m_VolumeList.size(); i++) {
+        		CRef<CWriteDB_Volume> & v = m_VolumeList[i];
+        		v->RenameFileIndex(num_digits);
+        	}
+        	LOG_POST(Info << "Rename files index to " << num_digits << " digits");
+        }
 
         // disable the check for duplicate ids across volumes
         /*
@@ -395,7 +404,8 @@ void CWriteDB_Impl::x_MakeAlias()
             if (dblist.size())
                 dblist += " ";
 
-            dblist += CDirEntry(CWriteDB_File::MakeShortName(m_Dbname, i)).GetName();
+        		CRef<CWriteDB_Volume> & v = m_VolumeList[i];
+        		dblist += CDirEntry(v->GetVolumeName()).GetName();
         }
     } else {
         dblist = m_Dbname;

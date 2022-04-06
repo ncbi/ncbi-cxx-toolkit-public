@@ -130,6 +130,8 @@ public:
     /// Rename this file, disincluding the volume index.
     virtual void RenameSingle();
 
+    virtual void RenameFileIndex(unsigned int num_digits);
+
     /// Construct the short name for a volume.
     ///
     /// Volume names consist of the database base name, ".", and the

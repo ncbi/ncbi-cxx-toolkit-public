@@ -125,6 +125,13 @@ void CWriteDB_Column::RenameSingle()
     if (m_UseBothByteOrder) m_DFile2->RenameSingle();
 }
 
+void CWriteDB_Column::RenameFileIndex(unsigned int num_digits)
+{
+    m_IFile->RenameFileIndex(num_digits);
+    m_DFile->RenameFileIndex(num_digits);
+    if (m_UseBothByteOrder) m_DFile2->RenameFileIndex(num_digits);
+}
+
 void CWriteDB_Column::AddMetaData(const string & key, const string & value)
 {
     return m_IFile->AddMetaData(key, value);
