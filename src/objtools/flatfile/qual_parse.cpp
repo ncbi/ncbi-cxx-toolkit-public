@@ -130,7 +130,7 @@ bool CQualParser::xParseQualifierStart(
     }
 
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
-    if (!NStr::StartsWith(cleaned, '/')) {
+    if (!NStr::StartsWith(cleaned, '/')  ||  NStr::StartsWith(cleaned, "/ ")) {
         if (!silent) {
             CFlatParseReport::UnexpectedData(mFeatKey, mFeatLocation);
         }
@@ -263,6 +263,9 @@ void CQualParser::xQualValAppendLine(
     string& qualData)
 //  ----------------------------------------------------------------------------
 {
+    //if (qualKey == "note"  &&  qualData.find("Weakly similar to uniprot|J9VV23") != string::npos) {
+    //    cerr << "";
+    //}
     // consult notes for RW-1600 for documentation on the below
 
     string lastDataChunkSeen = "";
@@ -282,8 +285,13 @@ void CQualParser::xQualValAppendLine(
         qualData += line;
         return;
     }
-    // do size check
+
     auto sizeAlready = qualData.size();
+    if (sizeAlready < 2) {
+        qualData += ' ';
+        qualData += line;
+        return;
+    }
     if (qualData[sizeAlready -1] == '-'  &&  qualData[sizeAlready -2] != ' ') {
         qualData += line;
         return;
@@ -298,7 +306,8 @@ void CQualParser::xQualValAppendLine(
         qualData += line;
         return;
     }
-    if (lastDataChunkSeen.size() < mMaxChunkSize) {
+    auto lastSeenSize = lastDataChunkSeen.size();
+    if (lastSeenSize != mMaxChunkSize) {
         qualData += ' ';
         qualData += line;
         return;
