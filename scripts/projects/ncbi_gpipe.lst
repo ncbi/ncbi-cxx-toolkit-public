@@ -34,7 +34,7 @@ internal/txserver
 misc
 objects$
 objects/[a-z0-9_]*$
-objects/genomecoll/test
+objects/genomecoll
 objmgr
 objtools
 serial
