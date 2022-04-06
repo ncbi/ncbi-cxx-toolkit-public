@@ -214,6 +214,44 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
         BOOST_CHECK_EQUAL(pLastLoc->GetStart(eExtreme_Positional), 42252);
         BOOST_CHECK_EQUAL(pLastLoc->GetStop(eExtreme_Positional), 42258);
     }
+
+    intervals = "complement(<11977..>12670)";
+    pLoc = xgbparseint_ver(const_cast<char*>(intervals.c_str()), 
+            keepRawPt, sitesPt, numErrsPt, seqIds, accver);
+    BOOST_CHECK(pLoc->IsInt());
+    BOOST_CHECK(pLoc->IsReverseStrand());
+    {
+        BOOST_CHECK_EQUAL(pLoc->GetStart(eExtreme_Positional), 11976);
+        BOOST_CHECK_EQUAL(pLoc->GetStop(eExtreme_Positional), 12669);
+        BOOST_CHECK(pLoc->IsPartialStart(eExtreme_Positional));
+        BOOST_CHECK(pLoc->IsPartialStop(eExtreme_Positional));
+    }
+
+    seqIds.clear();
+    intervals = "join(AAGH01005985.1:105..1873,AASW01000572.1:2064..2612,AAGH01005986.1:7..8527,gap(338),AAGH01005987.1:1..1908)";
+    pLoc = xgbparseint_ver(const_cast<char*>(intervals.c_str()), 
+            keepRawPt, sitesPt, numErrsPt, seqIds, accver);
+    BOOST_CHECK(pLoc->IsMix());
+    BOOST_CHECK(!pLoc->IsReverseStrand());
+    {
+        const auto& locMix = pLoc->GetMix();
+        BOOST_CHECK_EQUAL(locMix.Get().size(), 5);
+        auto locIt = locMix.Get().cbegin();
+        BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 104);
+        BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 1872);
+        ++locIt;
+        BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 2063);
+        BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 2611);
+        ++locIt;
+        BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 6);
+        BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 8526);
+        ++locIt;
+        BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 0);
+        BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 337);
+        ++locIt;
+        BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 0);
+        BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 1907);
+    }
 }
 
 
