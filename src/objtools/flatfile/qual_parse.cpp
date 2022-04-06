@@ -43,14 +43,17 @@ BEGIN_NCBI_SCOPE
 
 //  ----------------------------------------------------------------------------
 CQualParser::CQualParser(
+    Parser::EFormat fmt,
     const string& featKey,
     const string& featLocation,
     const vector<string>& qualLines): 
 //  ----------------------------------------------------------------------------
+    mFlatFormat(fmt),
     mFeatKey(featKey), 
     mFeatLocation(featLocation),
     mCleanerUpper(featKey, featLocation),
-    mData(qualLines)
+    mData(qualLines),
+    mMaxChunkSize(fmt == Parser::EFormat::EMBL ? 59 : 58)
 {
     mCurrent = mData.begin();
 }
@@ -232,13 +235,6 @@ bool CQualParser::xParseQualifierCont(
         thereIsMore = false;
     }
     xQualValAppendLine(qualKey, cleaned, qualVal);
-    //if (qualKey != "anticodon") {
-    //    auto lastLetter = qualVal[qualVal.size()-1];
-    //    if ('a' <= lastLetter && lastLetter <= 'z') {
-    //        qualVal += ' ';
-    //    }
-    //}
-    //qualVal += cleaned;
     return true;
 }
 
@@ -268,7 +264,6 @@ void CQualParser::xQualValAppendLine(
 //  ----------------------------------------------------------------------------
 {
     // consult notes for RW-1600 for documentation on the below
-    static const string::size_type QUAL_DATA_CHUNK_SIZE = 58;
 
     string lastDataChunkSeen = "";
     if (qualKey == mLastKeyForDataChunk) {
@@ -303,7 +298,7 @@ void CQualParser::xQualValAppendLine(
         qualData += line;
         return;
     }
-    if (lastDataChunkSeen.size() < QUAL_DATA_CHUNK_SIZE) {
+    if (lastDataChunkSeen.size() < mMaxChunkSize) {
         qualData += ' ';
         qualData += line;
         return;

@@ -4404,7 +4404,7 @@ static void ParseQualifiers(
     string qualKey, qualVal;
     string featKey(fbp->key);
     string featLocation(fbp->location);
-    CQualParser qualParser(featKey, featLocation, qualLines);
+    CQualParser qualParser(format, featKey, featLocation, qualLines);
     while (!qualParser.Done()) {
         if (qualParser.GetNextQualifier(qualKey, qualVal)) {
             //cerr << "Key:   " << qualKey.c_str() << "\n";
