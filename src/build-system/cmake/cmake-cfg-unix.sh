@@ -94,7 +94,6 @@ OPTIONS:
   --without-distcc           -- do not use distcc
   --without-analysis         -- skip source tree analysis
   --with-generator="X"       -- use generator X
-  --with-conan-components    -- use conan to fetch dependencies
   --with-conan               -- use Conan to install required components
 OPTIONAL ENVIRONMENT VARIABLES:
   CMAKE_CMD                  -- full path to 'cmake'
