@@ -175,6 +175,7 @@ bool CQualParser::xParseQualifierStart(
     // established: tail starts with quote
     if (NStr::EndsWith(tail, '\"')) {
         qualVal = tail.substr(1, tail.size() - 2);
+        NStr::TruncateSpacesInPlace(qualVal);
         thereIsMore = false;
         return true;
     }
@@ -208,6 +209,7 @@ bool CQualParser::xParseQualifierTail(
             }
         }
     }
+    NStr::TruncateSpacesInPlace(qualVal);
     return true;
 }
 
