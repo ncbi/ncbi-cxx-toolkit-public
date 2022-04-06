@@ -158,8 +158,16 @@ endif()
 
 #############################################################################
 # Kerberos 5
-set(KRB5_LIBS "-framework Kerberos" -liconv)
-list(APPEND NCBI_ALL_COMPONENTS KRB5)
+if(NCBI_COMPONENT_KRB5_DISABLED)
+    message("DISABLED KRB5")
+    set(NCBI_COMPONENT_KRB5_FOUND FALSE)
+else()
+    set(NCBI_COMPONENT_KRB5_LIBS "-framework Kerberos" -liconv)
+    set(KRB5_LIBS ${NCBI_COMPONENT_KRB5_LIBS})
+    set(NCBI_COMPONENT_KRB5_FOUND TRUE)
+    set(HAVE_LIBKRB5 1)
+    list(APPEND NCBI_ALL_COMPONENTS KRB5)
+endif()
 
 ##############################################################################
 # CURL
