@@ -34,6 +34,7 @@
 #include "writedb_volume.hpp"
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>
 #include <iostream>
+#include <cmath>
 
 BEGIN_NCBI_SCOPE
 
@@ -376,6 +377,47 @@ void CWriteDB_Volume::RenameSingle()
     }
 #endif
 }
+
+
+void CWriteDB_Volume::RenameFileIndex(unsigned int num_digits)
+{
+    _ASSERT(! m_Open);
+    m_Idx->RenameFileIndex(num_digits);
+    m_Hdr->RenameFileIndex(num_digits);
+    m_Seq->RenameFileIndex(num_digits);
+
+    if (log10(m_Index) +1 < num_digits) {
+    	string index_filename = m_Idx->GetFilename();
+    	size_t t = index_filename.find_last_of(".");
+    	m_VolName = index_filename.substr(0, t);
+    }
+
+    if (m_Indices != CWriteDB::eNoIndex) {
+        if (m_Protein) {
+            m_PigIsam->RenameFileIndex(num_digits);
+        }
+        m_GiIsam->RenameFileIndex(num_digits);
+        if(m_AccIsam.NotEmpty()) m_AccIsam->RenameFileIndex(num_digits);
+        m_GiIndex->RenameFileIndex(num_digits);
+
+        if (m_TraceIsam.NotEmpty()) {
+            m_TraceIsam->RenameFileIndex(num_digits);
+        }
+
+        if (m_HashIsam.NotEmpty()) {
+            m_HashIsam->RenameFileIndex(num_digits);
+        }
+    }
+
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    NON_CONST_ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
+        (**iter).RenameFileIndex(num_digits);
+    }
+#endif
+}
+
+
 
 void CWriteDB_Volume::ListFiles(vector<string> & files) const
 {

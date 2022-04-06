@@ -38,6 +38,7 @@
 #include <serial/serial.hpp>
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 BEGIN_NCBI_SCOPE
 
@@ -262,6 +263,33 @@ void CWriteDB_File::RenameSingle()
 
     CDirEntry fn1(nm1);
     fn1.Rename(m_Fname, CDirEntry::fRF_Overwrite);
+}
+
+void CWriteDB_File::RenameFileIndex(unsigned int num_digits)
+{
+	_ASSERT(num_digits > 2);
+	unsigned int orig_num_digits = log10(m_Index) +1;
+	if(orig_num_digits == num_digits) {
+		return;
+	}
+
+    string orig_fname = m_Fname;
+    ostringstream fns;
+
+    fns << m_BaseName;
+    fns << ".";
+    for (unsigned int i=2; i< num_digits; i++){
+    	fns << "0";
+    }
+    fns << (m_Index / 10);
+    fns << (m_Index % 10);
+    fns << ".";
+    fns << m_Extension;
+
+    m_Fname = fns.str();
+
+    CDirEntry fn(orig_fname);
+    fn.Rename(m_Fname, CDirEntry::fRF_Overwrite);
 }
 
 CWriteDB_IndexFile::CWriteDB_IndexFile(const string & dbname,

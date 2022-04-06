@@ -261,6 +261,8 @@ public:
     /// should not be called until after Close() is called.
     void RenameSingle();
     
+    void RenameFileIndex(unsigned int num_digits);
+
     /// Flush data to disk and close all associated files.
     void Close();
     

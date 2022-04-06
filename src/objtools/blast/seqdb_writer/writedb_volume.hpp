@@ -170,6 +170,8 @@ public:
     /// volume is Close()s.
     void RenameSingle();
 
+    void RenameFileIndex(unsigned int num_digits);
+
     /// Close the volume.
     ///
     /// This method finalizes and closes all files associated with
