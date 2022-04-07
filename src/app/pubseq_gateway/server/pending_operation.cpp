@@ -143,7 +143,8 @@ void CPendingOperation::Peek(bool  need_wait)
 
     m_InProcess = true;
     auto    processor_status = m_Processor->GetStatus();
-    if (processor_status == IPSGS_Processor::ePSGS_InProgress) {
+    if (processor_status == IPSGS_Processor::ePSGS_InProgress ||
+        processor_status == IPSGS_Processor::ePSGS_Canceled) {
         // Note: the ProcessEvent() _may_ lead to the situation when a
         // processor has completed its job. In this case the processor
         // _may_ call SignalProcessorFinish() which leads to a recursive call

@@ -134,7 +134,6 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
                         const string &  message)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -154,7 +153,6 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id,
                                                       kGetProcessorName, 2);
 
-    m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
@@ -165,7 +163,6 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
                             SBioseqResolution &&  bioseq_resolution)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -239,7 +236,6 @@ void CPSGS_GetProcessor::x_GetBlob(void)
         IPSGS_Processor::m_Reply->PrepareBlobExcluded(
                 IPSGS_Processor::m_Reply->GetItemId(), kGetProcessorName,
                 m_BlobId.ToString(), ePSGS_BlobExcluded);
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -292,7 +288,6 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                 }
 
                 if (finish_processing) {
-                    m_Completed = true;
                     CPSGS_CassProcessorBase::SignalFinishProcessing();
                     return;
                 }
@@ -349,7 +344,6 @@ void CPSGS_GetProcessor::x_GetBlob(void)
 
             // Finished without reaching cassandra
             UpdateOverallStatus(ret_status);
-            m_Completed = true;
             CPSGS_CassProcessorBase::SignalFinishProcessing();
             return;
         }
@@ -395,7 +389,6 @@ void CPSGS_GetProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                        bool is_found)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -414,7 +407,6 @@ void CPSGS_GetProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                         const string &  message)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -434,7 +426,6 @@ void CPSGS_GetProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
                                         int  chunk_no)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -481,7 +472,6 @@ void CPSGS_GetProcessor::ProcessEvent(void)
 void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -522,7 +512,6 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
                 details->SetExcludeBlobCacheCompleted();
             }
         }
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
@@ -572,14 +561,12 @@ void CPSGS_GetProcessor::x_OnResolutionGoodData(void)
     // The resolution process started to receive data which look good so
     // the dispatcher should be notified that the other processors can be
     // stopped
-    if (m_Canceled || m_Completed) {
-        m_Completed = true;
+    if (m_Canceled) {
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 

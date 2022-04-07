@@ -126,7 +126,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
                                             const string &  message)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -147,7 +146,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
                                     item_id, kAccVerHistProcessorName, 2);
 
-    m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
@@ -212,7 +210,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_SendBioseqInfo(
                                         SBioseqResolution &  bioseq_resolution)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -258,7 +255,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
         fetch_details->GetLoader()->Cancel();
         fetch_details->SetReadFinished();
 
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
     }
@@ -269,7 +265,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
                   "while the output has finished, ignoring");
 
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
     }
@@ -280,7 +275,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
         if (m_RecordCount == 0)
             UpdateOverallStatus(CRequestStatus::e404_NotFound);
 
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
     }
@@ -319,7 +313,6 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
     if (is_error) {
         // There will be no more activity
         fetch_details->SetReadFinished();
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
         x_Peek(false);
@@ -361,7 +354,6 @@ void CPSGS_AccessionVersionHistoryProcessor::ProcessEvent(void)
 void CPSGS_AccessionVersionHistoryProcessor::x_Peek(bool  need_wait)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -392,7 +384,6 @@ void CPSGS_AccessionVersionHistoryProcessor::x_Peek(bool  need_wait)
             if (IPSGS_Processor::m_Reply->IsOutputReady()) {
                 IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
             }
-            m_Completed = true;
             CPSGS_CassProcessorBase::SignalFinishProcessing();
         }
     }
@@ -453,14 +444,12 @@ void CPSGS_AccessionVersionHistoryProcessor::x_OnResolutionGoodData(void)
     // The resolution process started to receive data which look good so
     // the dispatcher should be notified that the other processors can be
     // stopped
-    if (m_Canceled || m_Completed) {
-        m_Completed = true;
+    if (m_Canceled) {
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 

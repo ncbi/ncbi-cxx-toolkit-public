@@ -176,7 +176,6 @@ bool CPSGS_TSEChunkProcessor::x_ParseTSEChunkId2Info(
         x_SendProcessorError(err_msg, CRequestStatus::e500_InternalServerError,
                              ePSGS_InvalidId2Info);
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
         PSG_WARNING(err_msg);
@@ -205,7 +204,6 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
         // So in case of errors - synchronous or asynchronous - it is
         // necessary to finish the reply anyway.
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     } else {
         PSG_WARNING(msg);
@@ -254,7 +252,6 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
         x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
                              ePSGS_UnknownResolvedSatellite);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
 
         if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -571,13 +568,11 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                             bool is_found)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -636,7 +631,6 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                              const string &  message)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -698,7 +692,6 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             x_Peek(false);
 
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -755,7 +748,6 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
                                     const string &  message)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -796,13 +788,11 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
 
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -976,7 +966,6 @@ CPSGS_TSEChunkProcessor::x_SendProcessorError(const string &  msg,
                                               int  code)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -1020,7 +1009,6 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
             x_SendProcessorError(msg, CRequestStatus::e400_BadRequest,
                                  ePSGS_MalformedParameter);
             UpdateOverallStatus(CRequestStatus::e422_UnprocessableEntity);
-            m_Completed = true;
             CPSGS_CassProcessorBase::SignalFinishProcessing();
         } else {
             PSG_WARNING(msg);
@@ -1050,7 +1038,6 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id)
     // So in case of errors - synchronous or asynchronous - it is
     // necessary to finish the reply anyway.
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-    m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
     return false;
 }
@@ -1090,7 +1077,6 @@ void CPSGS_TSEChunkProcessor::ProcessEvent(void)
 void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -1121,7 +1107,6 @@ void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
         IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 
     if (AreAllFinishedRead()) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
