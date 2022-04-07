@@ -63,6 +63,7 @@ bool CQualCleanup::CleanAndValidate(
         {"specific_host", &CQualCleanup::xCleanAndValidateSpecificHost},
         {"replace", &CQualCleanup::xCleanAndValidateReplace},
         {"rpt_unit", &CQualCleanup::xCleanAndValidateRptUnit},
+        {"rpt_unit_seq", &CQualCleanup::xCleanAndValidateRptUnitSeq},
         {"translation", &CQualCleanup::xCleanAndValidateTranslation},
     };
 
@@ -174,6 +175,18 @@ bool CQualCleanup::xCleanAndValidateRptUnit(
 //  ----------------------------------------------------------------------------
 {
     return xCleanAndValidateGeneric(qualKey, qualVal)  &&
+        xCleanToLower(qualVal);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CQualCleanup::xCleanAndValidateRptUnitSeq(
+    string& qualKey,
+    string& qualVal)
+    //  ----------------------------------------------------------------------------
+{
+    return xCleanStripBlanks(qualVal)  &&
+        xCleanAndValidateGeneric(qualKey, qualVal) &&
         xCleanToLower(qualVal);
 }
 
