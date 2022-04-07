@@ -74,6 +74,9 @@ private:
     bool xCleanAndValidateRptUnit(
         string& qualKey,
         string& qualVal);
+    bool xCleanAndValidateRptUnitSeq(
+        string& qualKey,
+        string& qualVal);
     bool xCleanAndValidateTranslation(
         string& qualKey,
         string& qualVal);
