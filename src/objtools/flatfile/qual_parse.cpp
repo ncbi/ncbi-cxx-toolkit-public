@@ -80,6 +80,10 @@ bool CQualParser::GetNextQualifier(
     //  that.
     // Let's hope we don't have to go there.
 
+    //if (*mCurrent == "/note=\"match: ESTs /Data/klh/annotate/F18108DIR/ F18108") {
+    //    cerr << "";
+    //}
+
     qualKey.clear();
     qualVal.clear();
     bool thereIsMore = false;
@@ -137,17 +141,18 @@ bool CQualParser::xParseQualifierStart(
         return false;
     }
     auto idxEqual = cleaned.find('=', 1);
-    qualKey = cleaned.substr(1, idxEqual);
+    auto maybeQualKey = cleaned.substr(1, idxEqual);
     if (idxEqual != string::npos) {
-        qualKey.pop_back();
+        maybeQualKey.pop_back();
     }
-    if (!sIsLegalQual(qualKey)) {
+    if (!sIsLegalQual(maybeQualKey)) {
         if (!silent) {
             CFlatParseReport::UnknownQualifierKey(mFeatKey, mFeatLocation, qualKey);
         }
         return false;
     }
-    ++ mCurrent; // found what we are looking for, flush data
+    qualKey = maybeQualKey;
+    ++mCurrent; // found what we are looking for, flush data
 
     if (idxEqual == string::npos) {
         qualVal = "";
@@ -265,7 +270,7 @@ void CQualParser::xQualValAppendLine(
     string& qualData)
 //  ----------------------------------------------------------------------------
 {
-    //if (qualKey == "product"  &&  qualData.find("6-phosphofructo-2-kinase/") != string::npos) {
+    //if (qualKey == "note"  &&  qualData.find("match: ESTs /Data/klh/annotate/F18108DIR") != string::npos) {
     //    cerr << "";
     //}
     // consult notes for RW-1600 for documentation on the below
