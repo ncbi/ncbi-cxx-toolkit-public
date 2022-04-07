@@ -220,7 +220,7 @@ int s_CollectOverlaps(CBamRawDb& bam_raw_db)
     for ( auto& ref_it : overlaps ) {
         for ( size_t i = 0; i < ref_it.second.size(); ++i ) {
             if ( !ref_it.second[i].min_file_pos ) {
-                ref_it.second[i].min_ref_pos = i << bin_shift;
+                ref_it.second[i].min_ref_pos = TSeqPos(i << bin_shift);
             }
         }
     }
@@ -234,7 +234,7 @@ int s_CollectOverlaps(CBamRawDb& bam_raw_db)
         cout <<"Collected overstart data for "<<ref_index<<" in "<<sw.Elapsed()<<"s"<<endl;
         auto bin_count = max(overstart.size(), ref_it.second.size());
         for ( size_t i = 0; i < bin_count; ++i ) {
-            TSeqPos bin_pos = i<<bin_shift;
+            TSeqPos bin_pos = TSeqPos(i<<bin_shift);
             TSeqPos overstart0 = (i<ref_it.second.size())? ref_it.second[i].min_ref_pos: bin_pos;
             TSeqPos overstart1 = (i<overstart.size())? overstart[i]: bin_pos;
             overstart0 = (overstart0 >> bin_shift) << bin_shift;
