@@ -65,6 +65,7 @@
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include "new_gbreleasefile.hpp"
 
 #define USE_CDDLOADER
 
@@ -654,9 +655,17 @@ int CAsn2FlatApp::Run()
     if ( args[ "batch" ] ) {
         s_INSDSetOpen ( is_insdseq, m_Os );
         bool propagate = args[ "p" ];
-        CGBReleaseFile in( *is.release(), propagate );
-        in.RegisterHandler( this );
-        in.Read();  // HandleSeqEntry will be called from this function
+        bool use_huge_files = GetConfig().GetBool("asn2flat", "UseHugeFiles", false);
+        if (use_huge_files)
+        {
+            is.reset();
+            CNewGBReleaseFile in ( args["i"].AsString(), propagate );
+            in.Read([this](CRef<CSeq_entry> se) { this->HandleSeqEntry(se); });
+        } else {
+            CGBReleaseFile in( *is.release(), propagate );
+            in.RegisterHandler( this );
+            in.Read();  // HandleSeqEntry will be called from this function
+        }
         s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
@@ -1664,4 +1673,3 @@ int main(int argc, const char** argv)
     CScope::SetDefaultKeepExternalAnnotsForEdit(true);
     return CAsn2FlatApp().AppMain(argc, argv);
 }
-
