@@ -40,11 +40,12 @@
 
 
 CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
-    m_Completed(false),
     m_Canceled(false),
     m_InPeek(false),
     m_Unlocked(false),
-    m_Status(CRequestStatus::e200_Ok)
+    // e100_Continue means that the processor has not updated the status yet
+    // explicitly
+    m_Status(CRequestStatus::e100_Continue)
 {}
 
 
@@ -52,11 +53,12 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
                                             shared_ptr<CPSGS_Request> request,
                                             shared_ptr<CPSGS_Reply> reply,
                                             TProcessorPriority  priority) :
-    m_Completed(false),
     m_Canceled(false),
     m_InPeek(false),
     m_Unlocked(false),
-    m_Status(CRequestStatus::e200_Ok)
+    // e100_Continue means that the processor has not updated the status yet
+    // explicitly
+    m_Status(CRequestStatus::e100_Continue)
 {
     IPSGS_Processor::m_Request = request;
     IPSGS_Processor::m_Reply = reply;
@@ -84,6 +86,24 @@ void CPSGS_CassProcessorBase::SignalFinishProcessing(void)
 {
     // It is safe to unlock the request many times
     UnlockWaitingProcessor();
+
+    if (!AreAllFinishedRead()) {
+        // Cannot really report finish because there could be still not
+        // finished cassandra fetches. In this case there will be an async
+        // event which will lead to another SignalFinishProcessing() call and
+        // it will go further.
+        return;
+    }
+
+    if (m_Status == CRequestStatus::e100_Continue) {
+        // That means the processor has not updated the status explicitly and
+        // it actually means everything is fine, i.e. 200.
+        // Otherwise the processor would update the status explicitly using the
+        // UpdateOverallStatus() method.
+        // So to report the finishing status properly in response to the
+        // GetStatus() call, the status needs to be updated to 200
+        m_Status = CRequestStatus::e200_Ok;
+    }
     IPSGS_Processor::SignalFinishProcessing();
 }
 
@@ -101,26 +121,27 @@ void CPSGS_CassProcessorBase::UnlockWaitingProcessor(void)
 
 IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void) const
 {
-    if (m_Completed) {
-        // Finished before initiating any cassandra fetches
-        return x_GetProcessorStatus();
-    }
+    if (m_Canceled)
+        return IPSGS_Processor::ePSGS_Canceled;
 
-    if (AreAllFinishedRead()) {
-        // Finished because all cassandra requests completed reading
-        return x_GetProcessorStatus();
-    }
+    if (m_Status == CRequestStatus::e100_Continue)
+        return IPSGS_Processor::ePSGS_InProgress;
 
-    return IPSGS_Processor::ePSGS_InProgress;
+    if (m_Status == CRequestStatus::e504_GatewayTimeout)
+        return IPSGS_Processor::ePSGS_Timeout;
+
+    if (m_Status < 300)
+        return IPSGS_Processor::ePSGS_Done;
+    if (m_Status < 500)
+        return IPSGS_Processor::ePSGS_NotFound; // 300 never actually happens
+    return IPSGS_Processor::ePSGS_Error;
 }
 
 
 bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
 {
-    size_t      started_count = 0;
     for (const auto &  details: m_FetchDetails) {
         if (details) {
-            ++started_count;
             if (!details->Canceled()) {
                 if (!details->ReadFinished()) {
                     return false;
@@ -128,7 +149,21 @@ bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
             }
         }
     }
-    return started_count != 0 || m_Canceled;
+    return true;
+}
+
+
+void call_on_data_cb(void *  user_data)
+{
+    CPSGS_CassProcessorBase *   proc = (CPSGS_CassProcessorBase*)(user_data);
+    proc->CallOnData();
+}
+
+
+void CPSGS_CassProcessorBase::CallOnData(void)
+{
+    auto p = IPSGS_Processor::m_Reply->GetDataReadyCB();
+    p->OnData();
 }
 
 
@@ -144,24 +179,14 @@ void CPSGS_CassProcessorBase::CancelLoaders(void)
                 // lead to a pending operation Peek() call which in turn calls
                 // Wait() for the loader. The Wait() return value should say in
                 // this case that there will be nothing else.
-                IPSGS_Processor::m_Reply->GetDataReadyCB()->OnData();
+                // However, do not do that synchronously. Do the call in the
+                // next iteration of libuv loop associated with the processor
+                // so that it is safe even if Cancel() is done from another
+                // loop
+                GetUvLoopBinder().PostponeInvoke(call_on_data_cb, (void*)(this));
             }
         }
     }
-}
-
-
-IPSGS_Processor::EPSGS_Status
-CPSGS_CassProcessorBase::x_GetProcessorStatus(void) const
-{
-    if (m_Status == CRequestStatus::e504_GatewayTimeout)
-        return IPSGS_Processor::ePSGS_Timeout;
-
-    if (m_Status < 300)
-        return IPSGS_Processor::ePSGS_Done;
-    if (m_Status < 500)
-        return IPSGS_Processor::ePSGS_NotFound; // 300 never actually happens
-    return IPSGS_Processor::ePSGS_Error;
 }
 
 
@@ -239,7 +264,6 @@ CPSGS_CassProcessorBase::TranslateSatToKeyspace(CBioseqInfoRecord::TSat  sat,
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(msg);
 
-    m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
 
     // Return invalid blob id

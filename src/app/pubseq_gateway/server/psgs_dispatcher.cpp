@@ -274,7 +274,6 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     return IPSGS_Processor::ePSGS_Proceed;
 }
 
-
 void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                               EPSGS_SignalSource  source)
 {

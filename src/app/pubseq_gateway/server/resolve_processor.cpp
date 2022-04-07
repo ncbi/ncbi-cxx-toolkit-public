@@ -119,7 +119,6 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
                         const string &  message)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -138,7 +137,6 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
                                                    severity);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, kResolveProcessorName, 2);
 
-    m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
@@ -149,7 +147,6 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveFinished(
                             SBioseqResolution &&  bioseq_resolution)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -159,7 +156,6 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveFinished(
 
     x_SendBioseqInfo(bioseq_resolution);
 
-    m_Completed = true;
     CPSGS_CassProcessorBase::SignalFinishProcessing();
 }
 
@@ -230,7 +226,6 @@ void CPSGS_ResolveProcessor::ProcessEvent(void)
 void CPSGS_ResolveProcessor::x_Peek(bool  need_wait)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -264,7 +259,6 @@ void CPSGS_ResolveProcessor::x_Peek(bool  need_wait)
             if (IPSGS_Processor::m_Reply->IsOutputReady()) {
                 IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
             }
-            m_Completed = true;
             CPSGS_CassProcessorBase::SignalFinishProcessing();
         }
     }
@@ -319,14 +313,12 @@ void CPSGS_ResolveProcessor::x_OnResolutionGoodData(void)
     // The resolution process started to receive data which look good so
     // the dispatcher should be notified that the other processors can be
     // stopped
-    if (m_Canceled || m_Completed) {
-        m_Completed = true;
+    if (m_Canceled) {
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 

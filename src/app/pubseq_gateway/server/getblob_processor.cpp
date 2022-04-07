@@ -124,7 +124,6 @@ void CPSGS_GetBlobProcessor::Process(void)
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
         PSG_WARNING(err_msg);
 
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
 
         if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -199,7 +198,6 @@ void CPSGS_GetBlobProcessor::Process(void)
 
             // Finished without reaching cassandra
             UpdateOverallStatus(ret_status);
-            m_Completed = true;
             CPSGS_CassProcessorBase::SignalFinishProcessing();
             return;
         }
@@ -256,13 +254,11 @@ void CPSGS_GetBlobProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                            bool is_found)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
 
     if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -285,7 +281,6 @@ void CPSGS_GetBlobProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
                                             const string &  message)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -346,7 +341,6 @@ void CPSGS_GetBlobProcessor::ProcessEvent(void)
 void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
 {
     if (m_Canceled) {
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
     }
@@ -386,7 +380,6 @@ void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
                 details->SetExcludeBlobCacheCompleted();
             }
         }
-        m_Completed = true;
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 

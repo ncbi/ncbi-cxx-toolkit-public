@@ -60,6 +60,7 @@ public:
     virtual void Cancel(void);
     void SignalFinishProcessing(void);
     void UnlockWaitingProcessor(void);
+    void CallOnData(void);
 
 protected:
     IPSGS_Processor::EPSGS_Status GetStatus(void) const;
@@ -79,17 +80,9 @@ protected:
                     const string &  message,
                     EPSGS_LoggingFlag  logging_flag=ePSGS_NeedLogging);
 
-private:
-    IPSGS_Processor::EPSGS_Status x_GetProcessorStatus(void) const;
-
 protected:
     // Cassandra data loaders; there could be many of them
     list<unique_ptr<CCassFetch>>    m_FetchDetails;
-
-    // Sometimes the processor finishes without reaching an async stage e.g.
-    // when blob props must be searched only in cache and caches is not hit.
-    // m_Completed signals such conditions
-    bool                            m_Completed;
 
     bool                            m_Canceled;
     bool                            m_InPeek;
