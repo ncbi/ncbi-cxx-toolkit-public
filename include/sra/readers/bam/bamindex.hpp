@@ -46,7 +46,6 @@ class CBamString;
 
 struct NCBI_BAMREAD_EXPORT SBamHeaderRefInfo
 {
-    void Read(CNcbiIstream& in);
     void Read(CBGZFStream& in);
 
     string m_Name;
@@ -60,13 +59,10 @@ public:
     CBamHeader();
     explicit
     CBamHeader(const string& bam_file_name);
-    explicit
-    CBamHeader(CNcbiIstream& file_stream);
     ~CBamHeader();
 
     void Read(CBGZFStream& stream);
     void Read(const string& bam_file_name);
-    void Read(CNcbiIstream& file_stream);
 
     const string& GetText() const
         {
@@ -95,7 +91,6 @@ public:
             return m_Refs[index].m_Length;
         }
     
-    static SBamHeaderRefInfo ReadRef(CNcbiIstream& in);
     static SBamHeaderRefInfo ReadRef(CBGZFStream& in);
 
     CBGZFPos GetAlignStart() const
@@ -117,96 +112,192 @@ struct SBamIndexDefs
         eSearchByOverlap,
         eSearchByStart
     };
+    typedef uint32_t TBin;
+    typedef uint8_t TIndexLevel;
+    typedef uint8_t TShift;
+    static const TShift kLevelStepBinShift = 3;
+    static const TShift kBAI_min_shift = 14;
+    static const TIndexLevel kBAI_depth = 5;
 
-    // BAM index structure contants
-    enum {
-        // bit shifts of sequence coordinates in BAM index
-        kLevel0BinShift = 14,
-        kLevelStepBinShift = 3
-    };
     enum EIndexLevel : uint8_t {
         // number of index levels
         kMinLevel = 0,
         kLevel0 = kMinLevel,
         kLevel1 = kLevel0+1,
-        kMaxLevel = 5,
-        kNumLevels = kMaxLevel+1
+        kMaxLevel = kBAI_depth // special value, to be treated as actual max level
     };
-    enum EBinSize : uint32_t {
-        // size of minimal bin
-        kMinBinSize = 1 << kLevel0BinShift,
-        // size of maximal bin
-        kMaxBinSize = kMinBinSize << (kLevelStepBinShift*kMaxLevel),
-    };
-    // return bit shift for size of bin on a specific index level
-    static uint32_t GetLevelBinShift(EIndexLevel level)
+};
+
+#define BAM_SUPPORT_CSI
+
+struct SBamIndexParams : public SBamIndexDefs
+{
+#ifdef BAM_SUPPORT_CSI
+    bool is_CSI;
+    TShift min_shift;
+    TIndexLevel depth;
+    constexpr TShift GetMinLevelBinShift() const
     {
-        return kLevel0BinShift + kLevelStepBinShift*level;
+        return min_shift;
+    }
+    constexpr TIndexLevel GetMaxIndexLevel() const
+    {
+        return depth;
+    }
+    constexpr TIndexLevel ToIndexLevel(EIndexLevel level) const
+    {
+        return level == kMaxLevel? GetMaxIndexLevel(): TIndexLevel(level);
+    }
+#else
+    static const bool is_CSI = false;
+    static constexpr TShift GetMinLevelBinShift()
+    {
+        return kBAI_min_shift;
+    }
+    static constexpr TIndexLevel GetMaxIndexLevel()
+    {
+        return kBAI_depth;
+    }
+    static constexpr TIndexLevel ToIndexLevel(EIndexLevel level)
+    {
+        return TIndexLevel(level); // direct mapping
+    }
+#endif
+
+    // return bit shift for size of bin on a specific index level
+    constexpr TShift GetLevelBinShift(TIndexLevel level) const
+    {
+        return GetMinLevelBinShift() + kLevelStepBinShift*level;
+    }
+    constexpr TShift GetLevelBinShift(EIndexLevel level) const
+    {
+        return GetLevelBinShift(ToIndexLevel(level));
     }
     // return size of bin on a specific index level
-    static uint32_t GetBinSize(EIndexLevel level)
+    constexpr TSeqPos GetBinSize(TIndexLevel level) const
     {
-        return 1 << GetLevelBinShift(level);
+        return TSeqPos(1) << GetLevelBinShift(level);
+    }
+    constexpr TSeqPos GetBinSize(EIndexLevel level) const
+    {
+        return GetBinSize(ToIndexLevel(level));
+    }
+    constexpr TSeqPos GetMinBinSize() const
+    {
+        return GetBinSize(0);
+    }
+    constexpr TSeqPos GetMaxBinSize() const
+    {
+        return GetBinSize(GetMaxIndexLevel());
     }
 
-    typedef Uint4 TBin;
-    // base for bin numbers calculation
-
+    // normal TIndexLevel=0 - has smallest bin sizes and bins numbers are biggest
+    // for bin number calculation it's better to count from the maximal level with bin=0
+    constexpr TBin GetBinNumberBaseReversed(int reversed_level) const
+    {
+        // (kAllowedLevels*kLevelStepBinShift+1) bits must fit in unsigned
+        constexpr int kAllowedLevels = 10;
+        constexpr unsigned kBaseBits =
+            ((1u<<(kAllowedLevels*kLevelStepBinShift))-1)/((1<<kLevelStepBinShift)-1);
+        return kBaseBits >> ((kAllowedLevels-reversed_level)*kLevelStepBinShift);
+    }
     // base bin number of a specific index level
-    static TBin GetBinNumberBase(EIndexLevel level)
+    constexpr TBin GetBinNumberBase(int level) const
+    {
+        return GetBinNumberBaseReversed(GetMaxIndexLevel()-level);
+    }
+    constexpr TBin GetBinNumberBase(EIndexLevel level) const
+    {
+        return GetBinNumberBase(ToIndexLevel(level));
+    }
+    // base for bin numbers calculation
+    constexpr TBin GetBinNumberBase() const
     {
         // kBinNumberBase == 4681 == 011111 in octal for 5 levels with 3 bits per level
-        const TBin kBinNumberBase = (1<<(kMaxLevel*kLevelStepBinShift))/((1<<kLevelStepBinShift)-1);
-        return kBinNumberBase >> (kLevelStepBinShift*level);
+        return GetBinNumberBase(0);
     }
-    static TBin GetBinNumberOffset(uint32_t pos, EIndexLevel level)
+    constexpr TBin GetFirstOverflowBin() const
     {
-        return (pos >> GetLevelBinShift(level));
+        return GetBinNumberBase(-1);
     }
-    static TBin GetBinNumber(uint32_t pos, EIndexLevel level)
+    constexpr TBin GetPseudoBin() const
+    {
+        return GetFirstOverflowBin()+1;
+    }
+    bool IsOverflowBin(TBin bin) const
+    {
+        return bin >= GetFirstOverflowBin();
+    }
+    TBin GetBinNumberOffset(TSeqPos pos, TIndexLevel level) const
+    {
+        return TBin(pos >> GetLevelBinShift(level));
+    }
+    TBin GetBinNumberOffset(TSeqPos pos, EIndexLevel level) const
+    {
+        return GetBinNumberOffset(pos, ToIndexLevel(level));
+    }
+    TBin GetBinNumber(TSeqPos pos, TIndexLevel level) const
     {
         return GetBinNumberBase(level) + GetBinNumberOffset(pos, level);
     }
-    static TBin GetUpperBinNumber(TBin bin)
+    TBin GetBinNumber(TSeqPos pos, EIndexLevel level) const
     {
-        return (bin-1)>>kLevelStepBinShift;
+        return GetBinNumber(pos, ToIndexLevel(level));
     }
-    static EIndexLevel GetBinNumberIndexLevel(TBin bin)
+    TBin GetUpperBinNumber(TBin bin) const
     {
-        for ( uint8_t k = kMinLevel; ; ++k ) {
-            EIndexLevel level = EIndexLevel(k);
-            if ( bin >= GetBinNumberBase(level) ) {
+        return IsOverflowBin(bin)? 0: (bin-1)>>kLevelStepBinShift;
+    }
+    TIndexLevel GetBinNumberIndexLevel(TBin bin) const
+    {
+        TBin bin_start = GetBinNumberBase();
+        for ( TIndexLevel level = 0; ; ++level, bin_start >>= kLevelStepBinShift ) {
+            if ( bin >= bin_start ) {
                 return level;
             }
         }
     }
-    static EIndexLevel GetRangeIndexLevel(CRange<TSeqPos> range)
+    TIndexLevel GetRangeIndexLevel(CRange<TSeqPos> range) const
     {
-        Uint1 level = kMinLevel;
-        TSeqPos pos1 = range.GetFrom() >> kLevel0BinShift;
-        TSeqPos pos2 = range.GetTo() >> kLevel0BinShift;
+        TIndexLevel level = 0;
+        auto min_shift = GetMinLevelBinShift();
+        TSeqPos pos1 = range.GetFrom() >> min_shift;
+        TSeqPos pos2 = range.GetTo() >> min_shift;
         while ( pos1 != pos2 ) {
             ++level;
             pos1 >>= kLevelStepBinShift;
             pos2 >>= kLevelStepBinShift;
         }
-        return EIndexLevel(level);
+        return level;
+    }
+
+    COpenRange<TSeqPos> GetSeqRange(TBin bin) const
+    {
+        TIndexLevel level = GetBinNumberIndexLevel(bin);
+        TSeqPos len = GetBinSize(level);
+        TSeqPos index = bin - GetBinNumberBase(level);
+        TSeqPos pos = index*len;
+        return COpenRange<TSeqPos>(pos, pos+len);
     }
 };
 
 
 struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo : public SBamIndexDefs
 {
-    void Read(CNcbiIstream& in);
-    const char* Read(const char* buffer_ptr, const char* buffer_end);
+    void Read(CNcbiIstream& in,
+              SBamIndexParams params);
+    const char* Read(const char* buffer_ptr, const char* buffer_end,
+                     SBamIndexParams params);
 
-    static COpenRange<TSeqPos> GetSeqRange(TBin bin);
-    COpenRange<TSeqPos> GetSeqRange() const
-        {
-            return GetSeqRange(m_Bin);
-        }
+    COpenRange<TSeqPos> GetSeqRange(SBamIndexParams params) const
+    {
+        return params.GetSeqRange(m_Bin);
+    }
 
     TBin m_Bin;
+#ifdef BAM_SUPPORT_CSI
+    CBGZFPos m_Overlap;
+#endif
     vector<CBGZFRange> m_Chunks;
 
     bool operator<(const SBamIndexBinInfo& b) const
@@ -229,10 +320,14 @@ struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo : public SBamIndexDefs
 };
 
 
-struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
+struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexParams
 {
-    void Read(CNcbiIstream& in, int32_t ref_index);
-    const char* Read(const char* buffer_ptr, const char* buffer_end, int32_t ref_index);
+    const char* Read(const char* buffer_ptr, const char* buffer_end,
+                     SBamIndexParams params,
+                     int32_t ref_index);
+    void Read(CNcbiIstream& in,
+              SBamIndexParams params,
+              int32_t ref_index);
     
     // return limits of data in file based on linear index
     // also adjusts argument ref_range to be within reference sequence
@@ -242,11 +337,24 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
     void AddLevelFileRanges(vector<CBGZFRange>& ranges,
                             CBGZFRange limit_file_range,
                             COpenRange<TSeqPos> ref_range,
-                            EIndexLevel index_level) const;
+                            TIndexLevel index_level) const;
+    void AddLevelFileRanges(vector<CBGZFRange>& ranges,
+                            CBGZFRange limit_file_range,
+                            COpenRange<TSeqPos> ref_range,
+                            EIndexLevel index_level) const
+        {
+            AddLevelFileRanges(ranges, limit_file_range, ref_range, ToIndexLevel(index_level));
+        }
 
     CBGZFRange GetFileRange() const;
+    vector<uint64_t> CollectEstimatedCoverage(TIndexLevel min_index_level,
+                                              TIndexLevel max_index_level) const;
     vector<uint64_t> CollectEstimatedCoverage(EIndexLevel min_index_level,
-                                              EIndexLevel max_index_level) const;
+                                              EIndexLevel max_index_level) const
+        {
+            return CollectEstimatedCoverage(ToIndexLevel(min_index_level),
+                                            ToIndexLevel(max_index_level));
+        }
     vector<Uint8> EstimateDataSizeByAlnStartPos(TSeqPos seqlen = kInvalidSeqPos) const;
 
     // return array of min start position of alignments overlapping with each page
@@ -259,19 +367,22 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexDefs
 
     typedef vector<SBamIndexBinInfo> TBins;
     typedef TBins::const_iterator TBinsIter;
-    TBinsIter GetLevelEnd(EIndexLevel level) const;
-    pair<TBinsIter, TBinsIter> GetLevelBins(EIndexLevel level) const;
+    pair<TBinsIter, TBinsIter> GetLevelBins(TIndexLevel level) const;
+    pair<TBinsIter, TBinsIter> GetLevelBins(EIndexLevel level) const
+        {
+            return GetLevelBins(ToIndexLevel(level));
+        }
     
     TBins m_Bins;
     CBGZFRange m_UnmappedChunk;
     Uint8 m_MappedCount;
     Uint8 m_UnmappedCount;
-    vector<CBGZFPos> m_Intervals;
+    vector<CBGZFPos> m_Overlaps;
     TSeqPos m_EstimatedLength;
 };
 
 
-class NCBI_BAMREAD_EXPORT CBamIndex : public SBamIndexDefs
+class NCBI_BAMREAD_EXPORT CBamIndex : public SBamIndexParams
 {
 public:
     CBamIndex();
@@ -280,8 +391,8 @@ public:
     ~CBamIndex();
 
     void Read(const string& index_file_name);
-    void Read(CNcbiIstream& in);
     void Read(const char* buffer_ptr, size_t buffer_size);
+    void Read(CNcbiIstream& in);
 
     typedef vector<SBamIndexRefIndex> TRefs;
     const TRefs& GetRefs() const
@@ -301,65 +412,266 @@ public:
                                const string& ref_name,
                                const string& seq_id,
                                const string& annot_name,
-                               EIndexLevel min_index_level = kMinLevel,
-                               EIndexLevel max_index_level = kMaxLevel) const;
+                               TIndexLevel min_index_level,
+                               TIndexLevel max_index_level) const;
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(const CBamHeader& header,
+                               const string& ref_name,
+                               const string& seq_id,
+                               const string& annot_name,
+                               EIndexLevel min_index_level,
+                               EIndexLevel max_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(header, ref_name, seq_id, annot_name,
+                                          ToIndexLevel(min_index_level),
+                                          ToIndexLevel(max_index_level));
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(const CBamHeader& header,
+                               const string& ref_name,
+                               const string& seq_id,
+                               const string& annot_name,
+                               TIndexLevel min_index_level = 0) const
+    {
+        return MakeEstimatedCoverageAnnot(header, ref_name, seq_id, annot_name,
+                                          min_index_level, GetMaxIndexLevel());
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(const CBamHeader& header,
+                               const string& ref_name,
+                               const string& seq_id,
+                               const string& annot_name,
+                               EIndexLevel min_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(header, ref_name, seq_id, annot_name,
+                                          ToIndexLevel(min_index_level));
+    }
     CRef<CSeq_annot>
     MakeEstimatedCoverageAnnot(const CBamHeader& header,
                                const string& ref_name,
                                const CSeq_id& seq_id,
                                const string& annot_name,
-                               EIndexLevel min_index_level = kMinLevel,
-                               EIndexLevel max_index_level = kMaxLevel) const;
+                               TIndexLevel min_index_level,
+                               TIndexLevel max_index_level) const;
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(const CBamHeader& header,
+                               const string& ref_name,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               EIndexLevel min_index_level,
+                               EIndexLevel max_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(header, ref_name, seq_id, annot_name,
+                                          ToIndexLevel(min_index_level),
+                                          ToIndexLevel(max_index_level));
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(const CBamHeader& header,
+                               const string& ref_name,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               TIndexLevel min_index_level = 0) const
+    {
+        return MakeEstimatedCoverageAnnot(header, ref_name, seq_id, annot_name,
+                                          min_index_level, GetMaxIndexLevel());
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(const CBamHeader& header,
+                               const string& ref_name,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               EIndexLevel min_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(header, ref_name, seq_id, annot_name,
+                                          ToIndexLevel(min_index_level));
+    }
 
 
     CRef<CSeq_annot>
     MakeEstimatedCoverageAnnot(size_t ref_index,
                                const string& seq_id,
                                const string& annot_name,
-                               EIndexLevel min_index_level = kMinLevel,
-                               EIndexLevel max_index_level = kMaxLevel) const;
+                               TIndexLevel min_index_level,
+                               TIndexLevel max_index_level) const;
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const string& seq_id,
+                               const string& annot_name,
+                               EIndexLevel min_index_level,
+                               EIndexLevel max_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name,
+                                          ToIndexLevel(min_index_level),
+                                          ToIndexLevel(max_index_level));
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const string& seq_id,
+                               const string& annot_name,
+                               TIndexLevel min_index_level = 0) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name,
+                                          min_index_level, GetMaxIndexLevel());
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const string& seq_id,
+                               const string& annot_name,
+                               EIndexLevel min_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name,
+                                          ToIndexLevel(min_index_level));
+    }
     CRef<CSeq_annot>
     MakeEstimatedCoverageAnnot(size_t ref_index,
                                const CSeq_id& seq_id,
                                const string& annot_name,
-                               EIndexLevel min_index_level = kMinLevel,
-                               EIndexLevel max_index_level = kMaxLevel) const;
+                               TIndexLevel min_index_level,
+                               TIndexLevel max_index_level) const;
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               EIndexLevel min_index_level,
+                               EIndexLevel max_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name,
+                                          ToIndexLevel(min_index_level),
+                                          ToIndexLevel(max_index_level));
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               TIndexLevel min_index_level = 0) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name,
+                                          min_index_level, GetMaxIndexLevel());
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               EIndexLevel min_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name,
+                                          ToIndexLevel(min_index_level));
+    }
 
     CRef<CSeq_annot>
     MakeEstimatedCoverageAnnot(size_t ref_index,
                                const string& seq_id,
                                const string& annot_name,
                                TSeqPos ref_length,
-                               EIndexLevel min_index_level = kMinLevel,
-                               EIndexLevel max_index_level = kMaxLevel) const;
+                               TIndexLevel min_index_level,
+                               TIndexLevel max_index_level) const;
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const string& seq_id,
+                               const string& annot_name,
+                               TSeqPos ref_length,
+                               EIndexLevel min_index_level,
+                               EIndexLevel max_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name, ref_length,
+                                          ToIndexLevel(min_index_level),
+                                          ToIndexLevel(max_index_level));
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const string& seq_id,
+                               const string& annot_name,
+                               TSeqPos ref_length,
+                               TIndexLevel min_index_level = 0) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name, ref_length,
+                                          min_index_level, GetMaxIndexLevel());
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const string& seq_id,
+                               const string& annot_name,
+                               TSeqPos ref_length,
+                               EIndexLevel min_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name, ref_length,
+                                          ToIndexLevel(min_index_level));
+    }
     CRef<CSeq_annot>
     MakeEstimatedCoverageAnnot(size_t ref_index,
                                const CSeq_id& seq_id,
                                const string& annot_name,
                                TSeqPos ref_length,
-                               EIndexLevel min_index_level = kMinLevel,
-                               EIndexLevel max_index_level = kMaxLevel) const;
-
+                               TIndexLevel min_index_level,
+                               TIndexLevel max_index_level) const;
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               TSeqPos ref_length,
+                               EIndexLevel min_index_level,
+                               EIndexLevel max_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name, ref_length,
+                                          ToIndexLevel(min_index_level),
+                                          ToIndexLevel(max_index_level));
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               TSeqPos ref_length,
+                               TIndexLevel min_index_level = 0) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name, ref_length,
+                                          min_index_level, GetMaxIndexLevel());
+    }
+    CRef<CSeq_annot>
+    MakeEstimatedCoverageAnnot(size_t ref_index,
+                               const CSeq_id& seq_id,
+                               const string& annot_name,
+                               TSeqPos ref_length,
+                               EIndexLevel min_index_level) const
+    {
+        return MakeEstimatedCoverageAnnot(ref_index, seq_id, annot_name, ref_length,
+                                          ToIndexLevel(min_index_level));
+    }
+    
     // collect estimated coverage from index level range
     // result bin size will be equal to bin size of min_index_level
     vector<uint64_t>
     CollectEstimatedCoverage(size_t ref_index,
+                             TIndexLevel min_index_level,
+                             TIndexLevel max_index_level) const;
+    vector<uint64_t>
+    CollectEstimatedCoverage(size_t ref_index,
                              EIndexLevel min_index_level,
-                             EIndexLevel max_index_level) const;
+                             EIndexLevel max_index_level) const
+    {
+        return CollectEstimatedCoverage(ref_index,
+                                        ToIndexLevel(min_index_level),
+                                        ToIndexLevel(max_index_level));
+    }
     // collect estimated coverage from specified index level
     // result bin size will be equal to bin size of index_level
     vector<uint64_t>
     CollectEstimatedCoverage(size_t ref_index,
-                             EIndexLevel index_level) const
+                             TIndexLevel index_level) const
         {
             return CollectEstimatedCoverage(ref_index, index_level, index_level);
+        }
+    vector<uint64_t>
+    CollectEstimatedCoverage(size_t ref_index,
+                             EIndexLevel index_level) const
+        {
+            return CollectEstimatedCoverage(ref_index, ToIndexLevel(index_level));
         }
     // collect estimated coverage from all index levels
     // result bin size will be equal to bin size of most detailed index level
     vector<uint64_t>
     CollectEstimatedCoverage(size_t ref_index) const
         {
-            return CollectEstimatedCoverage(ref_index, kMinLevel, kMaxLevel);
+            return CollectEstimatedCoverage(ref_index, 0, GetMaxIndexLevel());
         }
     // collect estimated coverage from all index levels
     // result bin size will be equal to bin size of most detailed index level
@@ -479,6 +791,10 @@ public:
                      ESearchMode search_mode = eSearchByOverlap);
     CBamFileRangeSet(const CBamIndex& index,
                      size_t ref_index, COpenRange<TSeqPos> ref_range,
+                     TIndexLevel min_level, TIndexLevel max_level,
+                     ESearchMode search_mode = eSearchByOverlap);
+    CBamFileRangeSet(const CBamIndex& index,
+                     size_t ref_index, COpenRange<TSeqPos> ref_range,
                      EIndexLevel min_level, EIndexLevel max_level,
                      ESearchMode search_mode = eSearchByOverlap);
     ~CBamFileRangeSet();
@@ -495,20 +811,54 @@ public:
                    ESearchMode search_mode = eSearchByOverlap);
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   TIndexLevel index_level,
+                   ESearchMode search_mode = eSearchByOverlap);
+    void SetRanges(const CBamIndex& index,
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
                    EIndexLevel index_level,
+                   ESearchMode search_mode = eSearchByOverlap)
+        {
+            SetRanges(index, ref_index, ref_range, index.ToIndexLevel(index_level), search_mode);
+        }
+    void AddRanges(const CBamIndex& index,
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   TIndexLevel index_level,
                    ESearchMode search_mode = eSearchByOverlap);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    EIndexLevel index_level,
+                   ESearchMode search_mode = eSearchByOverlap)
+        {
+            AddRanges(index, ref_index, ref_range, index.ToIndexLevel(index_level), search_mode);
+        }
+    void SetRanges(const CBamIndex& index,
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   TIndexLevel min_index_level, TIndexLevel max_index_level,
                    ESearchMode search_mode = eSearchByOverlap);
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    EIndexLevel min_index_level, EIndexLevel max_index_level,
+                   ESearchMode search_mode = eSearchByOverlap)
+        {
+            SetRanges(index, ref_index, ref_range,
+                      index.ToIndexLevel(min_index_level),
+                      index.ToIndexLevel(max_index_level),
+                      search_mode);
+        }
+    void AddRanges(const CBamIndex& index,
+                   size_t ref_index, COpenRange<TSeqPos> ref_range,
+                   TIndexLevel min_index_level, TIndexLevel max_index_level,
                    ESearchMode search_mode = eSearchByOverlap);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    EIndexLevel min_index_level, EIndexLevel max_index_level,
-                   ESearchMode search_mode = eSearchByOverlap);
+                   ESearchMode search_mode = eSearchByOverlap)
+        {
+            AddRanges(index, ref_index, ref_range,
+                      index.ToIndexLevel(min_index_level),
+                      index.ToIndexLevel(max_index_level),
+                      search_mode);
+        }
     void SetWhole(const CBamHeader& header);
     void AddWhole(const CBamHeader& header);
 
@@ -686,7 +1036,11 @@ private:
 struct NCBI_BAMREAD_EXPORT SBamAlignInfo
 {
     void Read(CBGZFStream& in);
-    
+
+    CBGZFPos get_file_pos() const
+        {
+            return m_FilePos;
+        }
     size_t get_record_size() const
         {
             return m_RecordSize;
@@ -845,6 +1199,7 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
     CTempString get_short_seq_accession_id() const;
 
 private:
+    CBGZFPos m_FilePos;
     const char* m_RecordPtr;
     const char* m_CIGARPtr;
     const char* m_ReadPtr;
@@ -852,7 +1207,7 @@ private:
 };
 
 
-class NCBI_BAMREAD_EXPORT CBamRawAlignIterator : public SBamIndexDefs
+class NCBI_BAMREAD_EXPORT CBamRawAlignIterator : public SBamIndexParams
 {
 public:
     CBamRawAlignIterator()
@@ -876,7 +1231,7 @@ public:
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
-                         EIndexLevel index_level,
+                         TIndexLevel index_level,
                          ESearchMode search_mode = eSearchByOverlap)
         : m_Reader(bam_db.GetFile())
         {
@@ -885,9 +1240,28 @@ public:
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
+                         EIndexLevel index_level,
+                         ESearchMode search_mode)
+        : m_Reader(bam_db.GetFile())
+        {
+            Select(bam_db, ref_label, ref_range, index_level, search_mode);
+        }
+    CBamRawAlignIterator(CBamRawDb& bam_db,
+                         const string& ref_label,
+                         CRange<TSeqPos> ref_range,
+                         TIndexLevel min_index_level,
+                         TIndexLevel max_index_level,
+                         ESearchMode search_mode = eSearchByOverlap)
+        : m_Reader(bam_db.GetFile())
+        {
+            Select(bam_db, ref_label, ref_range, min_index_level, max_index_level, search_mode);
+        }
+    CBamRawAlignIterator(CBamRawDb& bam_db,
+                         const string& ref_label,
+                         CRange<TSeqPos> ref_range,
                          EIndexLevel min_index_level,
                          EIndexLevel max_index_level,
-                         ESearchMode search_mode = eSearchByOverlap)
+                         ESearchMode search_mode)
         : m_Reader(bam_db.GetFile())
         {
             Select(bam_db, ref_label, ref_range, min_index_level, max_index_level, search_mode);
@@ -901,9 +1275,16 @@ public:
                          const string& ref_label,
                          TSeqPos ref_pos,
                          TSeqPos window,
+                         TIndexLevel min_index_level,
+                         TIndexLevel max_index_level,
+                         ESearchMode search_mode = eSearchByOverlap);
+    CBamRawAlignIterator(CBamRawDb& bam_db,
+                         const string& ref_label,
+                         TSeqPos ref_pos,
+                         TSeqPos window,
                          EIndexLevel min_index_level,
                          EIndexLevel max_index_level,
-                         ESearchMode search_mode = eSearchByOverlap);
+                         ESearchMode search_mode);
     ~CBamRawAlignIterator()
         {
         }
@@ -925,11 +1306,30 @@ public:
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range,
-                EIndexLevel index_level,
+                TIndexLevel index_level,
                 ESearchMode search_mode = eSearchByOverlap)
         {
             x_Select(bam_db.GetIndex(),
                      bam_db.GetRefIndex(ref_label), ref_range, index_level, search_mode);
+        }
+    void Select(CBamRawDb& bam_db,
+                const string& ref_label,
+                CRange<TSeqPos> ref_range,
+                EIndexLevel index_level,
+                ESearchMode search_mode)
+        {
+            x_Select(bam_db.GetIndex(),
+                     bam_db.GetRefIndex(ref_label), ref_range, index_level, search_mode);
+        }
+    void Select(CBamRawDb& bam_db,
+                const string& ref_label,
+                CRange<TSeqPos> ref_range,
+                TIndexLevel min_index_level,
+                TIndexLevel max_index_level,
+                ESearchMode search_mode = eSearchByOverlap)
+        {
+            x_Select(bam_db.GetIndex(),
+                     bam_db.GetRefIndex(ref_label), ref_range, min_index_level, max_index_level, search_mode);
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
@@ -951,6 +1351,14 @@ public:
     void Select(const CBamIndex& index,
                 size_t ref_index,
                 CRange<TSeqPos> ref_range,
+                TIndexLevel index_level,
+                ESearchMode search_mode = eSearchByOverlap)
+        {
+            x_Select(index, ref_index, ref_range, index_level, search_mode);
+        }
+    void Select(const CBamIndex& index,
+                size_t ref_index,
+                CRange<TSeqPos> ref_range,
                 EIndexLevel index_level,
                 ESearchMode search_mode = eSearchByOverlap)
         {
@@ -964,6 +1372,11 @@ public:
             return *this;
         }
 
+    CBGZFPos GetFilePos() const
+        {
+            return m_AlignInfo.get_file_pos();
+        }
+    
     int32_t GetRefSeqIndex() const
         {
             return m_AlignInfo.get_ref_index();
@@ -1055,7 +1468,7 @@ public:
         {
             return m_AlignInfo.get_bin();
         }
-    EIndexLevel GetIndexLevel() const
+    TIndexLevel GetIndexLevel() const
         {
             return GetBinNumberIndexLevel(GetIndexBin());
         }
@@ -1127,13 +1540,30 @@ protected:
     void x_Select(const CBamHeader& header);
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
-                  EIndexLevel min_index_level, EIndexLevel max_index_level,
+                  TIndexLevel min_index_level, TIndexLevel max_index_level,
                   ESearchMode search_mode);
+    void x_Select(const CBamIndex& index,
+                  size_t ref_index, CRange<TSeqPos> ref_range,
+                  EIndexLevel min_index_level, EIndexLevel max_index_level,
+                  ESearchMode search_mode)
+        {
+            x_Select(index, ref_index, ref_range,
+                     index.ToIndexLevel(min_index_level),
+                     index.ToIndexLevel(max_index_level),
+                     search_mode);
+        }
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
                   ESearchMode search_mode)
         {
-            x_Select(index, ref_index, ref_range, kMinLevel, kMaxLevel, search_mode);
+            x_Select(index, ref_index, ref_range, 0, index.GetMaxIndexLevel(), search_mode);
+        }
+    void x_Select(const CBamIndex& index,
+                  size_t ref_index, CRange<TSeqPos> ref_range,
+                  TIndexLevel index_level,
+                  ESearchMode search_mode)
+        {
+            x_Select(index, ref_index, ref_range, index_level, index_level, search_mode);
         }
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
@@ -1158,7 +1588,7 @@ protected:
 private:
     size_t m_RefIndex;
     COpenRange<TSeqPos> m_QueryRefRange;
-    EIndexLevel m_MinIndexLevel, m_MaxIndexLevel;
+    TIndexLevel m_MinIndexLevel, m_MaxIndexLevel;
     ESearchMode m_SearchMode;
     SBamAlignInfo m_AlignInfo;
     COpenRange<TSeqPos> m_AlignRefRange;
