@@ -104,7 +104,7 @@ License:  BSDish [src/util/diff/dtl/COPYING]
 
 Location: {src,include}/util/regexp
 Author:   Philip Hazel
-License:  BSDish [src/util/regexp/doc/LICENCE]
+License:  BSDish [src/util/regexp/LICENCE]
 
 Location: {src,include}/util/lmdb
 Author:   Howard Chu, Symas Corp. [src/util/lmdb/COPYRIGHT]
