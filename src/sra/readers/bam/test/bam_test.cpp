@@ -768,7 +768,7 @@ int CBAMTestApp::Run(void)
                             out << ' ' << it2->GetTag() << ':';
                             if ( it2->IsArray() ) {
                                 out << "B:" << it2->GetDataType();
-                                for ( size_t i = 0; i < it2->size(); ++it ) {
+                                for ( size_t i = 0; i < it2->size(); ++i ) {
                                     out << ',';
                                     if ( it2->IsFloat() ) {
                                         out << it2->GetFloat(i);
