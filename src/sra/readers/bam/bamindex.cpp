@@ -483,7 +483,7 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts() const
     // next_bin_it points to a low-level bin that starts after current position
     auto bin_it_start = GetLevelBins(0).first, next_bin_it = bin_it_start;
     for ( size_t i = 0; i < nBins; ++i ) {
-        TSeqPos ref_pos = i * GetMinBinSize();
+        TSeqPos ref_pos = TSeqPos(i * GetMinBinSize());
         CBGZFPos min_fp = m_Overlaps[i];
         if ( !min_fp ) {
             // no overspan
