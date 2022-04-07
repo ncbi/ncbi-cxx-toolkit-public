@@ -53,7 +53,7 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
-#if 1
+#if 0
 # define tLOG_POST(m) LOG_POST(m)
 #else
 # define tLOG_POST(m) ((void)0)
@@ -251,6 +251,7 @@ void CPSGS_OSGProcessorBase::CallDoProcessAsync()
     catch (...) {
         CEndOfBackgroundProcessingGuard guard(this);
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync() failed: "<<State());
+        FinalizeResult(IPSGS_Processor::ePSGS_Error);
         throw;
     }
 }
