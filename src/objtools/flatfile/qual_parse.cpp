@@ -156,7 +156,7 @@ bool CQualParser::xParseQualifierStart(
 
     auto tail = cleaned.substr(idxEqual + 1, string::npos);
     mLastKeyForDataChunk = qualKey,
-    mLastDataChunkForKey = tail;
+    mLastDataChunkForKey = cleaned;
 
     if (tail.empty()) {
         // we can't be harsh here because the legacy flatfile parser regarded
@@ -265,7 +265,7 @@ void CQualParser::xQualValAppendLine(
     string& qualData)
 //  ----------------------------------------------------------------------------
 {
-    //if (qualKey == "note"  &&  qualData.find("Weakly similar to uniprot|J9VV23") != string::npos) {
+    //if (qualKey == "product"  &&  qualData.find("6-phosphofructo-2-kinase/") != string::npos) {
     //    cerr << "";
     //}
     // consult notes for RW-1600 for documentation on the below
