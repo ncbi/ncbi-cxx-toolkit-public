@@ -7,7 +7,7 @@
 #################################
 
 APP = asn2flat
-SRC = asn2flat
+SRC = asn2flat new_gbreleasefile
 
 CDD_LIB = ncbi_xloader_cdd cdd_access
 SNP_LIB = $(ncbi_xloader_snp) dbsnp_ptis grpc_integration
