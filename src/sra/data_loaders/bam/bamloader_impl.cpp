@@ -1057,7 +1057,7 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
     vector<Uint8> data_sizes = refseq.EstimateDataSizeByAlnStartPos(raw_db.GetRefSeqLength(refseq_index));
     vector<Uint4> over_ends = refseq.GetAlnOverEnds();
     TSeqPos bin_count = TSeqPos(data_sizes.size());
-    TSeqPos bin_size = CBamIndex::kMinBinSize;
+    TSeqPos bin_size = raw_db.GetIndex().GetMinBinSize();
     if ( GetDebugLevel() >= 2 ) {
         LOG_POST("Total cov: "<<accumulate(data_sizes.begin(), data_sizes.end(), Uint8(0)));
     }

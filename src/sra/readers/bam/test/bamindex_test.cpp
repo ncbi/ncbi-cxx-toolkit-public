@@ -85,7 +85,7 @@ void CBamIndexTestApp::Init(void)
     arg_desc->AddOptionalKey("l", "IndexLevel",
                              "Level of BAM index to scan",
                              CArgDescriptions::eInteger);
-    arg_desc->SetConstraint("l", new CArgAllow_Integers(CBamIndex::kMinLevel, CBamIndex::kMaxLevel));
+    arg_desc->SetConstraint("l", new CArgAllow_Integers(0, 12));
     
     arg_desc->AddDefaultKey("min_quality", "MinQuality",
                             "Minimal quality of alignments to check",
@@ -107,6 +107,7 @@ void CBamIndexTestApp::Init(void)
     arg_desc->AddFlag("dump", "Dump index");
     arg_desc->AddFlag("sra", "Use SRA toolkit");
     arg_desc->AddFlag("ST", "Single thread");
+    arg_desc->AddFlag("overlap", "Verify overlap info");
     arg_desc->AddFlag("overstart", "Verify overstart info");
     arg_desc->AddFlag("overend", "Verify overend info");
     arg_desc->AddFlag("data-size", "Check data size info");
@@ -125,16 +126,23 @@ void CBamIndexTestApp::Init(void)
 void s_DumpIndex(const CBamIndex& index,
                  size_t ref_index)
 {
-    const unsigned kBlockSize = 1<<14;
+    const unsigned kBlockSize = index.GetMinBinSize();
     vector<pair<CBGZFRange, pair<size_t, Uint4>>> cc;
     for ( size_t i = ref_index; i <= ref_index; ++i ) {
         const SBamIndexRefIndex& r = index.GetRef(i);
-        for ( size_t k = 0; k < r.m_Intervals.size(); ++k ) {
+        for ( size_t k = 0; k < r.m_Overlaps.size(); ++k ) {
             cout << "ref["<<i<<"] linear["<<k<<" = "<<k*kBlockSize<<"] FP = "
-                 << r.m_Intervals[k]
+                 << r.m_Overlaps[k]
                  << endl;
         }
         for ( auto& b : r.m_Bins ) {
+#ifdef BAM_SUPPORT_CSI
+            if ( index.is_CSI && b.m_Overlap ) {
+                cout << "ref["<<i<<"] bin["<<b.m_Bin<<" = "<<b.GetSeqRange(index)<<"] FP = "
+                     << b.m_Overlap
+                     << endl;
+            }
+#endif
             for ( auto& c : b.m_Chunks ) {
                 cc.push_back(make_pair(c, make_pair(i, b.m_Bin)));
             }
@@ -145,7 +153,7 @@ void s_DumpIndex(const CBamIndex& index,
     for ( auto& v : cc ) {
         cout << "FP( " << v.first.first << " - " << v.first.second
              << " ) : ref[" << v.second.first << "] bin(" << v.second.second << ") = "
-             << SBamIndexBinInfo::GetSeqRange(v.second.second)
+             << index.GetSeqRange(v.second.second)
              << '\n';
         _ASSERT(v.first.first < v.first.second);
         if ( prev.GetVirtualPos() ) {
@@ -155,6 +163,91 @@ void s_DumpIndex(const CBamIndex& index,
         }
         prev = v.first.second;
     }
+}
+
+
+int s_CollectOverlaps(CBamRawDb& bam_raw_db)
+{
+    int error_code = 0;
+    const auto bin_shift = bam_raw_db.GetIndex().GetMinLevelBinShift();
+    
+    struct SBinOverlapInfo {
+        CBGZFPos min_file_pos;
+        TSeqPos min_ref_pos;
+    };
+    map<int32_t, vector<SBinOverlapInfo>> overlaps;
+    
+    CStopWatch sw(CStopWatch::eStart);
+    int32_t current_seq = -1;
+    vector<SBinOverlapInfo> current_seq_overlaps;
+    size_t unmapped_count = 0;
+    for ( CBamRawAlignIterator it(bam_raw_db); it; ++it ) {
+        auto seq = it.GetRefSeqIndex();
+        if ( seq == -1 ) {
+            ++unmapped_count;
+            continue;
+        }
+        if ( seq != current_seq ) {
+            if ( current_seq >= 0 ) {
+                overlaps[current_seq].swap(current_seq_overlaps);
+            }
+            current_seq = seq;
+            current_seq_overlaps.clear();
+            TSeqPos seq_length = bam_raw_db.GetIndex().GetRef(seq).m_EstimatedLength;
+            current_seq_overlaps.resize(seq_length >> bin_shift);
+        }
+        auto pos = it.GetRefSeqPos();
+        auto len = it.GetCIGARRefSize();
+        auto end = pos+len-1;
+        _ASSERT(end >= pos);
+        auto beg_bin = pos >> bin_shift;
+        auto end_bin = end >> bin_shift;
+        _ASSERT(end_bin >= beg_bin);
+        if ( end_bin >= current_seq_overlaps.size() ) {
+            current_seq_overlaps.resize(end_bin+1);
+        }
+        for ( auto bin = beg_bin; bin <= end_bin; ++bin ) {
+            auto& overlap = current_seq_overlaps[bin];
+            if ( !overlap.min_file_pos ) {
+                overlap.min_file_pos = it.GetFilePos();
+                overlap.min_ref_pos = pos;
+            }
+        }
+    }
+    if ( current_seq >= 0 ) {
+        overlaps[current_seq].swap(current_seq_overlaps);
+    }
+    for ( auto& ref_it : overlaps ) {
+        for ( size_t i = 0; i < ref_it.second.size(); ++i ) {
+            if ( !ref_it.second[i].min_file_pos ) {
+                ref_it.second[i].min_ref_pos = i << bin_shift;
+            }
+        }
+    }
+    cout <<"Collected all real overlap data in "<<sw.Elapsed()<<"s"<<endl;
+
+    for ( auto& ref_it : overlaps ) {
+        auto ref_index = ref_it.first;
+        auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
+        sw.Restart();
+        const auto& overstart = ref.GetAlnOverStarts();
+        cout <<"Collected overstart data for "<<ref_index<<" in "<<sw.Elapsed()<<"s"<<endl;
+        auto bin_count = max(overstart.size(), ref_it.second.size());
+        for ( size_t i = 0; i < bin_count; ++i ) {
+            TSeqPos bin_pos = i<<bin_shift;
+            TSeqPos overstart0 = (i<ref_it.second.size())? ref_it.second[i].min_ref_pos: bin_pos;
+            TSeqPos overstart1 = (i<overstart.size())? overstart[i]: bin_pos;
+            overstart0 = (overstart0 >> bin_shift) << bin_shift;
+            overstart1 = (overstart1 >> bin_shift) << bin_shift;
+            if ( overstart0 != overstart1 ) {
+                cout << "overstart["<<bin_pos<<"] = "
+                     << overstart1 << " != " << overstart0
+                     << endl;
+                error_code = 1;
+            }
+        }
+    }
+    return error_code;
 }
 
 
@@ -196,17 +289,17 @@ int CBamIndexTestApp::Run(void)
 
     Uint8 limit_count = args["limit_count"].AsInteger();
     
-    CBamIndex::EIndexLevel level1 = CBamIndex::kMinLevel;
-    CBamIndex::EIndexLevel level2 = CBamIndex::kMaxLevel;
-    if ( args["l"] ) {
-        level1 = level2 = CBamIndex::EIndexLevel(args["l"].AsInteger());
-    }
-
     CStopWatch sw;
     sw.Restart();
     CBamRawDb bam_raw_db(path, index_path);
     cout << "Opened bam file in "<<sw.Elapsed()<<"s"<<endl;
     
+    CBamIndex::TIndexLevel level1 = 0;
+    CBamIndex::TIndexLevel level2 = bam_raw_db.GetIndex().GetMaxIndexLevel();
+    if ( args["l"] ) {
+        level1 = level2 = CBamIndex::TIndexLevel(args["l"].AsInteger());
+    }
+
     if ( refseq_table ) {
         cout << "RefSeq table:\n";
         for ( size_t i = 0; i < bam_raw_db.GetHeader().GetRefs().size(); ++i ) {
@@ -214,6 +307,10 @@ int CBamIndexTestApp::Run(void)
                  << bam_raw_db.GetIndex().GetRef(i).GetFileRange()
                  << endl;
         }
+    }
+
+    if ( args["overlap"] ) {
+        s_CollectOverlaps(bam_raw_db);
     }
     
     for ( auto& q : queries ) {
@@ -254,7 +351,8 @@ int CBamIndexTestApp::Run(void)
     if ( args["file-range"] ) {
         for ( auto& q : queries ) {
             CBamFileRangeSet rs;
-            if ( level1 != CBamIndex::kMinLevel || level2 != CBamIndex::kMaxLevel ) {
+            if ( level1 != 0 ||
+                 level2 != bam_raw_db.GetIndex().GetMaxIndexLevel() ) {
                 rs.AddRanges(bam_raw_db.GetIndex(),
                              bam_raw_db.GetRefIndex(q.refseq_id), q.refseq_range,
                              level1, level2, search_mode);
@@ -285,7 +383,7 @@ int CBamIndexTestApp::Run(void)
 
     if ( args["overstart"] ) {
         for ( auto& q : queries ) {
-            TSeqPos bin_size = CBamIndex::kMinBinSize;
+            TSeqPos bin_size = bam_raw_db.GetIndex().GetMinBinSize();
             auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
             auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
             auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
@@ -322,7 +420,7 @@ int CBamIndexTestApp::Run(void)
 
     if ( args["overend"] ) {
         for ( auto& q : queries ) {
-            TSeqPos bin_size = CBamIndex::kMinBinSize;
+            TSeqPos bin_size = bam_raw_db.GetIndex().GetMinBinSize();
             auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
             auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
             auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
@@ -423,10 +521,10 @@ int CBamIndexTestApp::Run(void)
                                    TSeqPos ref_pos = it.GetRefSeqPos();
                                    TSeqPos ref_size = it.GetCIGARRefSize();
                                    TSeqPos ref_end = ref_pos + ref_size;
-                                   unsigned pos_level = CBamIndex::kMinLevel;
+                                   unsigned pos_level = 0;
                                    if ( ref_size ) {
-                                       TSeqPos pos1 = ref_pos >> CBamIndex::kLevel0BinShift;
-                                       TSeqPos pos2 = (ref_end-1) >> CBamIndex::kLevel0BinShift;
+                                       TSeqPos pos1 = ref_pos >> bam_raw_db.GetIndex().GetLevelBinShift(0);
+                                       TSeqPos pos2 = (ref_end-1) >> bam_raw_db.GetIndex().GetLevelBinShift(0);
                                        while ( pos1 != pos2 ) {
                                            ++pos_level;
                                            pos1 >>= CBamIndex::kLevelStepBinShift;
@@ -434,6 +532,11 @@ int CBamIndexTestApp::Run(void)
                                        }
                                    }
                                    unsigned got_level = it.GetIndexLevel();
+                                   if ( bam_raw_db.GetIndex().GetMinLevelBinShift() != SBamIndexDefs::kBAI_min_shift ||
+                                        bam_raw_db.GetIndex().GetMaxIndexLevel() != SBamIndexDefs::kBAI_depth ) {
+                                       // in-BAM bin level is valid for standard BAI parameters
+                                       got_level = pos_level;
+                                   }
                                    if ( verbose ||
                                         got_level < level1 || got_level > level2 ||
                                         got_level != pos_level ||
