@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(test_remote_updater)
+  NCBI_sources(test_remote_updater.cpp)
+  NCBI_uses_toolkit_libraries(xobjedit)
+  NCBI_project_watchers(stakhovv gotvyans)
+NCBI_end_app()

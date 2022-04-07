@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(pubmed_fetch)
+  NCBI_sources(pubmed_fetch)
+  NCBI_uses_toolkit_libraries(xobjedit)
+  NCBI_project_watchers(stakhovv gotvyans)
+NCBI_end_app()
