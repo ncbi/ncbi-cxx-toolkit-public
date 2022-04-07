@@ -844,7 +844,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
-    s_CheckFeat(sel, "QTV22642.1");
+    s_CheckFeat(sel, "NP_001385356.1");
 }
 
 
@@ -855,7 +855,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2)
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
-    s_CheckFeat(sel, "QTV22642.1");
+    s_CheckFeat(sel, "NP_001385356.1");
 }
 
 
