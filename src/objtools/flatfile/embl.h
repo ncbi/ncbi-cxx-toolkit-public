@@ -1,5 +1,4 @@
-/* embl.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,13 +23,13 @@
  *
  * ===========================================================================
  *
- * File Name:  embl.h
+ * File Name: embl.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Build EMBL format entry block.
+ *
  */
 
 #ifndef _EMBL_

@@ -1,5 +1,4 @@
-/* ind.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,16 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  ind.c
+ * File Name: ind.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Indexing functions used for references.
  *
- *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

@@ -1,5 +1,4 @@
-/* sprot.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  sprot.h
+ * File Name: sprot.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Defines SP keywords. Build SWISS-PROT format entry block.
  *
  */

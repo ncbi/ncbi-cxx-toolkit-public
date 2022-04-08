@@ -1,5 +1,4 @@
-/* ftanet.cpp
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  ftanet.cpp
+ * File Name: ftanet.cpp
  *
  * Author: Sergey Bazhin
  *
  * File Description:
- * -----------------
  *      Functions for real working with the servers and network.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

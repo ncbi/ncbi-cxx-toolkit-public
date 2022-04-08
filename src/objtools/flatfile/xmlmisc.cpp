@@ -1,5 +1,4 @@
-/* xmlmisc.cpp
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,14 +23,14 @@
  *
  * ===========================================================================
  *
- * File Name:  xmlmisc.cpp
+ * File Name: xmlmisc.cpp
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
  *      XML functionality from C-toolkit.
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

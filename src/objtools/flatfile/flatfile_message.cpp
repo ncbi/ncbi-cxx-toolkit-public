@@ -1,5 +1,4 @@
-/*
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -27,7 +26,7 @@
  * Author: Justin Foley
  *
  * File Description:
- * -----------------
+ *
  */
 
 #include <ncbi_pch.hpp>

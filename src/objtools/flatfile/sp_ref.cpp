@@ -1,5 +1,4 @@
-/* sp_ref.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,16 +23,16 @@
  *
  * ===========================================================================
  *
- * File Name:  sp_ref.c
+ * File Name: sp_ref.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Utility routines for parsing reference block of
  * SWISS-PROT flatfile.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

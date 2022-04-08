@@ -1,5 +1,4 @@
-/* entry.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,14 +23,14 @@
  *
  * ===========================================================================
  *
- * File Name:  entry.c
+ * File Name: entry.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *
  */
+
 #include <ncbi_pch.hpp>
 #include <objects/seqcode/Seq_code_type.hpp>
 

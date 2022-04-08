@@ -1,5 +1,4 @@
-/* xmlmisc.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  xmlmisc.h
+ * File Name: xmlmisc.h
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
  *      XML functionality from C-toolkit.
  */
 

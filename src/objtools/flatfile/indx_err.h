@@ -1,5 +1,4 @@
-/* indx_err.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  indx_err.h
+ * File Name: indx_err.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Defines errors.
  *
  */

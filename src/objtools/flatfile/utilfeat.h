@@ -1,5 +1,4 @@
-/* utilfeat.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  utilfeat.h
+ * File Name: utilfeat.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
+ *
  */
 
 #ifndef _UTILFEAT_

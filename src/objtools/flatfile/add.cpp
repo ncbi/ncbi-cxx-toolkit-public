@@ -1,5 +1,4 @@
-/* add.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  add.c
+ * File Name: add.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Additional parser functions.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

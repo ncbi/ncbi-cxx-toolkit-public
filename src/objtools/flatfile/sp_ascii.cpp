@@ -1,5 +1,4 @@
-/* sp_ascii.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,7 +23,7 @@
  *
  * ===========================================================================
  *
- * File Name:  sp_ascii.c
+ * File Name: sp_ascii.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
@@ -35,6 +34,7 @@
  *      Parse SP image in memory to asn.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

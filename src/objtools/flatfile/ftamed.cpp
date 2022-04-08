@@ -1,5 +1,4 @@
-/* ftamed.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  ftamed.cpp
+ * File Name: ftamed.cpp
  *
  * Author:
  *
  * File Description:
- * -----------------
  *      Pubmed lookup and post-processing utilities.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include <objtools/edit/mla_updater.hpp>

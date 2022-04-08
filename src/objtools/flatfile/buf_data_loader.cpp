@@ -1,5 +1,4 @@
-/* buf_data_loader.cpp
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  buf_data_loader.cpp
+ * File Name: buf_data_loader.cpp
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
  *      Data loader for buffer based flat file parsing.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

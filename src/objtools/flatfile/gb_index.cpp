@@ -1,5 +1,4 @@
-/* gb_index.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  gb_index.c
+ * File Name: gb_index.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Parsing genbank to memory blocks. Build Genbank format index block.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

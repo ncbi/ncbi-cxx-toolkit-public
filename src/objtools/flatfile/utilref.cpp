@@ -1,5 +1,4 @@
-/* utilref.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  utilref.c
+ * File Name: utilref.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Utility routines for parsing reference block of flatfile.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

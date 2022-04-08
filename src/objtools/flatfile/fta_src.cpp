@@ -1,5 +1,4 @@
-/* fta_src.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,14 +23,14 @@
  *
  * ===========================================================================
  *
- * File Name:  fta_src.c
+ * File Name: fta_src.cpp
  *
  * Author: Sergey Bazhin
  *
  * File Description:
- * -----------------
  *      Messes about source features.
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

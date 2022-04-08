@@ -1,5 +1,4 @@
-/* sp_ascii.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  sp_ascii.h
+ * File Name: sp_ascii.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Build SWISS-PROT format entry block.
  *
  */

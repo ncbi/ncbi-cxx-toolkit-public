@@ -1,5 +1,4 @@
-/* block.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  block.c
+ * File Name: block.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Parsing flatfile to blocks in memory.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

@@ -1,5 +1,4 @@
-/* indx_blk.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  indx_blk.h
+ * File Name: indx_blk.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
+ *
  */
 
 #ifndef _INDEXBLOCK_

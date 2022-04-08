@@ -1,7 +1,4 @@
-#ifndef _FLATFILE_MESSAGE_REPORTER_HPP_
-#define _FLATFILE_MESSAGE_REPORTER_HPP_
-/*
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -29,8 +26,11 @@
  * Author: Justin Foley
  *
  * File Description:
- * -----------------
+ *
  */
+
+#ifndef _FLATFILE_MESSAGE_REPORTER_HPP_
+#define _FLATFILE_MESSAGE_REPORTER_HPP_
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/logging/message.hpp>

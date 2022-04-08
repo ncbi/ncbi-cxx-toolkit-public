@@ -1,5 +1,4 @@
-/* utilfun.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  utilfun.h
+ * File Name: utilfun.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Utility functions for parser.
  *
  */

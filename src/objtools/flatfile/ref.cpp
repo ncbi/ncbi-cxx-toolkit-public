@@ -1,5 +1,4 @@
-/* ref.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,14 +23,14 @@
  *
  * ===========================================================================
  *
- * File Name:  ref.c
+ * File Name:  ref.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"
