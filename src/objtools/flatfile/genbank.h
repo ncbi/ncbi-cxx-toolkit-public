@@ -1,5 +1,4 @@
-/* genbank.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  genbank.h
+ * File Name: genbank.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
+ *
  */
 
 #ifndef _GENBANK_

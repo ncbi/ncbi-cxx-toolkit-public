@@ -1,5 +1,4 @@
-/* fta_src.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,13 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  fta_src.h
+ * File Name: fta_src.h
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
-
+ *
  */
 
 #ifndef FTA_SRC_H

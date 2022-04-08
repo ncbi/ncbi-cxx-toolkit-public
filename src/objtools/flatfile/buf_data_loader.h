@@ -1,5 +1,4 @@
-/* buf_data_loader.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  buf_data_loader.h
+ * File Name: buf_data_loader.h
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
  *
  */
 

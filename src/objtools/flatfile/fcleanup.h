@@ -1,5 +1,4 @@
-/* fcleanup.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  fcleanup.h
+ * File Name: fcleanup.h
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
  * This file contains some specific cleanup functionality definitions
  */
 

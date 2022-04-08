@@ -1,5 +1,4 @@
-/* utilref.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  utilref.h
+ * File Name: utilref.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
+ *
  */
 
 #ifndef _UTILREF_

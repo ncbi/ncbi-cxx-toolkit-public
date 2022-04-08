@@ -1,5 +1,4 @@
-/* em_index.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  em_index.c
+ * File Name: em_index.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Parsing embl to blocks. Build Embl format index block.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

@@ -1,5 +1,4 @@
-/* ftamain.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,16 +23,16 @@
  *
  * ===========================================================================
  *
- * File Name:  ftamain.c
+ * File Name: ftamain.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Main routines for parsing flat files to ASN.1 file format.
  * Available flat file format are GENBANK (LANL), EMBL, SWISS-PROT.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

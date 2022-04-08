@@ -1,5 +1,4 @@
-/* em_ascii.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,13 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  em_ascii.h
+ * File Name: em_ascii.h
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
-
+ *
  */
 
 #ifndef EM_ASCII_H

@@ -1,5 +1,4 @@
-/* fcleanup.cpp
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,14 +23,14 @@
  *
  * ===========================================================================
  *
- * File Name:  fcleanup.h
+ * File Name: fcleanup.cpp
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
  * This file contains some specific cleanup functionality
  */
+
 #include <ncbi_pch.hpp>
 
 #include <objmgr/scope.hpp>

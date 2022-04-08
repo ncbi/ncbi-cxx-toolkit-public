@@ -1,5 +1,4 @@
-/* em_ascii.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,16 +23,16 @@
  *
  * ===========================================================================
  *
- * File Name:  em_ascii.c
+ * File Name: em_ascii.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Preprocessing embl from blocks in memory to asn.
  * Build EMBL format entry block.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

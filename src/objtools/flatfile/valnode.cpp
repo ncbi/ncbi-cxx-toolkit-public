@@ -1,5 +1,4 @@
-/* valnode.cpp
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  valnode.cpp
+ * File Name: valnode.cpp
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
  *      ValNode functionality from C-toolkit.
  */
 

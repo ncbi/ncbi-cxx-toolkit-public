@@ -1,5 +1,4 @@
-/* sp_index.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  sp_index.c
+ * File Name: sp_index.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Build SWISS-PROT format index block. Parsing SP to memory blocks.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

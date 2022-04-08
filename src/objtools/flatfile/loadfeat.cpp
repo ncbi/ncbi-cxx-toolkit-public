@@ -1,5 +1,4 @@
-/* loadfeat.cpp
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,17 +23,17 @@
  *
  * ===========================================================================
  *
- * File Name:  loadfeat.c 
+ * File Name: loadfeat.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen 
  *
  * File Description:
- * -----------------
  *      Parse features block to subblock.
  *      Process each subblock.
  *      Output each subblock.
  *      Free out subblock.
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

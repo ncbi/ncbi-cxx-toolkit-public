@@ -1,5 +1,4 @@
-/* valnode.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  valnode.h
+ * File Name: valnode.h
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
  *      ValNode functionality from C-toolkit.
  */
 

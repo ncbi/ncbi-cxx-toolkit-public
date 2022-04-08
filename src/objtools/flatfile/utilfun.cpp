@@ -1,5 +1,4 @@
-/* utilfun.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  utilfun.c
+ * File Name: utilfun.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Utility functions for parser and indexing.
  *
  */
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 

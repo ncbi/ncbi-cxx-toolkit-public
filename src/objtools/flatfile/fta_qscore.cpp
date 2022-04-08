@@ -1,5 +1,4 @@
-/* fta_qscore.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,16 +23,16 @@
  *
  * ===========================================================================
  *
- * File Name:  fta_qscore.c
+ * File Name: fta_qscore.cpp
  *
  * Author: Mark Cavanaugh
  *
  * File Description:
- * -----------------
  *      Utilities to parse quality score buffer to single or
  * delta SeqGraph.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

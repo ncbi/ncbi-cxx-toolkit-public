@@ -1,5 +1,4 @@
-/* asci_blk.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  asci_blk.c
+ * File Name: asci_blk.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Common for all formats function processing ascii blocks to asn.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include <set>

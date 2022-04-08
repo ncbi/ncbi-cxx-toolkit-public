@@ -1,5 +1,4 @@
-/* xm_ascii.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,16 +23,16 @@
  *
  * ===========================================================================
  *
- * File Name:  xm_ascii.c
+ * File Name: xm_ascii.cpp
  *
  * Author: Sergey Bazhin
  *
  * File Description:
- * -----------------
  *      Parse INSDSEQ from blocks to asn.
  * Build XML format entry block.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

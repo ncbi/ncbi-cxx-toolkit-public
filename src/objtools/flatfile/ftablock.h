@@ -1,5 +1,4 @@
-/* ftablock.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  ftablock.h
+ * File Name: ftablock.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
+ *
  */
 
 #ifndef  _BLOCK_

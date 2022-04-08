@@ -1,62 +1,62 @@
-/* nucprot.c
-*
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* File Name:  nucprot.c
-*
-* Author: Karl Sirotkin, Hsiu-Chuan Chen
-*
-* File Description:
-* -----------------
-*
-*      Take a Seq-entry or elements of a Bioseq-set, do orglookup,
-* protein translation lookup, then make a nucleic acid protein
-* sequence.
-*
-*      Get genetic code from either from Taxonomy database or from
-* guess rules (if the organism is different in the segment set or
-* Taxserver is not available)
-*
-*      orglookup includes
-*      - lookup taxname, common name
-*      - get lineage and division
-*      - get genetic codes
-*
-*      Protein translation lookup includes
-*      - lookup internal and end stop codon
-*      - compare two sequences, one from CdRegion, one from
-*        translation qualifier
-*
-*      Take our translation when the only diff is start codon.
-*
-*      This program only assign 3 different level of Bioseqset:
-*         class = nucprot, assign level = 1
-*         class = segset,  assign level = 2
-*         class = parts,   assign levle = 3
-*
-*/
+/* $Id $
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * File Name: nucprot.cpp
+ *
+ * Author: Karl Sirotkin, Hsiu-Chuan Chen
+ *
+ * File Description:
+ * -----------------
+ *
+ *      Take a Seq-entry or elements of a Bioseq-set, do orglookup,
+ * protein translation lookup, then make a nucleic acid protein
+ * sequence.
+ *
+ *      Get genetic code from either from Taxonomy database or from
+ * guess rules (if the organism is different in the segment set or
+ * Taxserver is not available)
+ *
+ *      orglookup includes
+ *      - lookup taxname, common name
+ *      - get lineage and division
+ *      - get genetic codes
+ *
+ *      Protein translation lookup includes
+ *      - lookup internal and end stop codon
+ *      - compare two sequences, one from CdRegion, one from
+ *        translation qualifier
+ *
+ *      Take our translation when the only diff is start codon.
+ *
+ *      This program only assign 3 different level of Bioseqset:
+ *         class = nucprot, assign level = 1
+ *         class = segset,  assign level = 2
+ *         class = parts,   assign levle = 3
+ *
+ */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

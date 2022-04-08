@@ -1,5 +1,4 @@
-/* fta_qscore.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,13 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  fta_qscore.h
+ * File Name: fta_qscore.h
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
-
+ *
  */
 
 #ifndef FTA_QSCORE_H

@@ -1,5 +1,4 @@
-/* xm_index.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  xm_index.c
+ * File Name: xm_index.cpp
  *
  * Author: Sergey Bazhin
  *
  * File Description:
- * -----------------
  *      Parsing flat records to memory blocks in XML format.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

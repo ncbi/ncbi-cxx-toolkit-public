@@ -1,5 +1,4 @@
-/* ftacpp.hpp
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  ftacpp.hpp
+ * File Name: ftacpp.hpp
  *
  * Author: Serge Bazhin
  *
  * File Description:
- * -----------------
  *    Contains common C++ Toolkit header files
  *
  */

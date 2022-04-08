@@ -1,5 +1,4 @@
-/* utilfeat.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,13 +23,14 @@
  *
  * ===========================================================================
  *
- * File Name:  utilfeat.c
+ * File Name: utilfeat.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description: functions for features parsing
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

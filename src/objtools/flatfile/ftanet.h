@@ -1,5 +1,4 @@
-/* ftanet.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,13 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  ftanet.h
+ * File Name: ftanet.h
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
-
+ *
  */
 
 #ifndef FTANET_H

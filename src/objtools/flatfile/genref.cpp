@@ -1,5 +1,4 @@
-/* genref.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  genref.c
+ * File Name: genref.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Parse gene qualifiers.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

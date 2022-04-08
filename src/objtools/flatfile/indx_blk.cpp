@@ -1,5 +1,4 @@
-/* indx_blk.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,15 +23,15 @@
  *
  * ===========================================================================
  *
- * File Name:  indx_blk.c
+ * File Name: indx_blk.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Common for all format functions.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

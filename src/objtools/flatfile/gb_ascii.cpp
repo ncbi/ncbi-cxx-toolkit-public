@@ -1,5 +1,4 @@
-/* gb_ascii.c
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,16 +23,16 @@
  *
  * ===========================================================================
  *
- * File Name:  gb_ascii.c
+ * File Name: gb_ascii.cpp
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Parse gb from blocks to asn.
  * Build GenBank format entry block.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include "ftacpp.hpp"

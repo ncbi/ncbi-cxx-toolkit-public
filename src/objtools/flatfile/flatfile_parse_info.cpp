@@ -1,4 +1,5 @@
-/* ===========================================================================
+/* $Id $
+ * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -22,16 +23,16 @@
  *
  * ===========================================================================
  *
- * File Name:  fta_parser.cpp
+ * File Name: flatfile_parse_info.cpp
  *
  * Author: 
  *
  * File Description:
- * -----------------
  *      Main routines for parsing flat files to ASN.1 file format.
  * Available flat file format are GENBANK (LANL), EMBL, SWISS-PROT.
  *
  */
+
 #include <ncbi_pch.hpp>
 
 #include <objtools/flatfile/flatfile_parse_info.hpp>

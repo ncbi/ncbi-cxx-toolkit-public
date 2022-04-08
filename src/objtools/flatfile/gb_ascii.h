@@ -1,5 +1,4 @@
-/* gb_ascii.h
- *
+/* $Id $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  gb_ascii.h
+ * File Name: gb_ascii.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Build GenBank format entry block.
  *
  */
