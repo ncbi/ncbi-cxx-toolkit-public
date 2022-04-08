@@ -1,4 +1,4 @@
-/* $Id $
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -28,7 +28,6 @@
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *      Build SWISS-PROT format entry block. All external variables
  * are in sp_global.c.
  *      Parse SP image in memory to asn.

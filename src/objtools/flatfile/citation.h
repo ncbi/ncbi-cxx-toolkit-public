@@ -1,4 +1,4 @@
-/* $Id $
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -28,8 +28,8 @@
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
-*
-*/
+ *
+ */
 
 #ifndef CITATION_H
 #define CITATION_H
