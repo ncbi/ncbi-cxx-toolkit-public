@@ -151,8 +151,10 @@ void CPSGS_OSGProcessorBase::WaitForOtherProcessors()
 
 void CPSGS_OSGProcessorBase::WaitForCassandra()
 {
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::WaitForCassandra() waiting: "<<State());
     SendTrace("OSG: waiting for Cassandra results");
     GetRequest()->WaitFor(kCassandraProcessorEvent);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::WaitForCassandra() waited: "<<State());
 }
 
 
@@ -222,17 +224,10 @@ void CPSGS_OSGProcessorBase::CallDoProcessCallback()
 {
     CRequestContextResetter context_resetter;
     CEndOfBackgroundProcessingGuard guard(this);
-    try {
-        GetRequest()->SetRequestContext();
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() start: "<<State());
-        DoProcess();
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() return: "<<State());
-    }
-    catch ( exception& exc ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() exc: "<<exc.what()<<": "<<State());
-        ERR_POST("OSG: DoProcess() failed: "<<exc.what());
-        FinalizeResult(IPSGS_Processor::ePSGS_Error);
-    }
+    GetRequest()->SetRequestContext();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() start: "<<State());
+    DoProcess();
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() return: "<<State());
 }
 
 
@@ -248,11 +243,11 @@ void CPSGS_OSGProcessorBase::CallDoProcessAsync()
         thread(bind(&CPSGS_OSGProcessorBase::CallDoProcessCallback, this)).detach();
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync() started: "<<State());
     }
-    catch (...) {
+    catch (exception& exc) {
         CEndOfBackgroundProcessingGuard guard(this);
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync() failed: "<<State());
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync() failed: "<<exc.what()<<": "<<State());
+        PSG_ERROR("OSG: DoProcessAsync: failed to create thread: "<<exc.what());
         FinalizeResult(IPSGS_Processor::ePSGS_Error);
-        throw;
     }
 }
 
@@ -290,12 +285,12 @@ void CPSGS_OSGProcessorBase::DoProcess()
             }
             catch ( exception& exc ) {
                 if ( last_attempt ) {
-                    ERR_POST("OSG: DoProcess() failed opening connection: "<<exc.what());
+                    PSG_ERROR("OSG: DoProcess() failed opening connection: "<<exc.what());
                     throw;
                 }
                 else {
                     // failed new connection - consume full retry
-                    ERR_POST("OSG: DoProcess() retrying after failure opening connection: "<<exc.what());
+                    PSG_ERROR("OSG: DoProcess() retrying after failure opening connection: "<<exc.what());
                     retry_count -= 1;
                     continue;
                 }
@@ -313,12 +308,12 @@ void CPSGS_OSGProcessorBase::DoProcess()
             }
             catch ( exception& exc ) {
                 if ( last_attempt ) {
-                    ERR_POST("OSG: DoProcess() failed receiving replies: "<<exc.what());
+                    PSG_ERROR("OSG: DoProcess() failed receiving replies: "<<exc.what());
                     throw;
                 }
                 else {
                     // this may be failure of old connection
-                    ERR_POST("OSG: retrying after failure receiving replies: "<<exc.what());
+                    PSG_ERROR("OSG: retrying after failure receiving replies: "<<exc.what());
                     if ( caller.GetRequestPacket().Get().front()->GetSerial_number() <= 1 ) {
                         // new connection - consume full retry
                         retry_count -= 1;
@@ -340,11 +335,15 @@ void CPSGS_OSGProcessorBase::DoProcess()
             return;
         }
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcess() got replies: "<<State());
-        WaitForOtherProcessors();
-        if ( IsCanceled() ) {
-            SEND_TRACE("OSG: DoProcess() canceled");
-            return;
+
+        if ( m_ConnectionPool->GetAsyncProcessing() ) {
+            WaitForOtherProcessors();
+            if ( IsCanceled() ) {
+                tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() canceled: "<<State());
+                return;
+            }
         }
+
         if ( 1 ) {
             CallDoProcessRepliesAsync();
         }
@@ -354,7 +353,7 @@ void CPSGS_OSGProcessorBase::DoProcess()
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() done: "<<State());
     }
     catch ( exception& exc ) {
-        ERR_POST("OSG: DoProcess() failed: "<<exc.what());
+        PSG_ERROR("OSG: DoProcess() failed: "<<exc.what());
         FinalizeResult(IPSGS_Processor::ePSGS_Error);
     }
 }
@@ -384,13 +383,18 @@ void CPSGS_OSGProcessorBase::CallDoProcessRepliesCallback()
     CEndOfBackgroundProcessingGuard guard(this);
     try {
         GetRequest()->SetRequestContext();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() signal start: "<<State());
+        if ( !SignalStartOfBackgroundProcessing() ) {
+            tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() canceled: "<<State());
+            return;
+        }
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() start: "<<State());
         DoProcessReplies();
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() return: "<<State());
     }
     catch ( exception& exc ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() exc: "<<exc.what()<<": "<<State());
-        ERR_POST("OSG: ProcessReplies() failed: "<<exc.what());
+        PSG_ERROR("OSG: ProcessReplies() failed: "<<exc.what());
         FinalizeResult(IPSGS_Processor::ePSGS_Error);
     }
 }
@@ -406,10 +410,6 @@ void CPSGS_OSGProcessorBase::CallDoProcessRepliesAsync()
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() start: "<<State());
     SEND_TRACE("OSG: scheduling ProcessReplies() to UV loop");
-    if ( !SignalStartOfBackgroundProcessing() ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() canceled: "<<State());
-        return;
-    }
     GetUvLoopBinder().PostponeInvoke(s_CallDoProcessRepliesUvCallback, this);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() return: "<<State());
 }
