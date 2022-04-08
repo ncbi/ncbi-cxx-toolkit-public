@@ -37,6 +37,7 @@
 #include <objects/seqsplit/seqsplit__.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include "pubseq_gateway_convert_utils.hpp"
+#include "pubseq_gateway_logging.hpp"
 #include "id2info.hpp"
 
 BEGIN_NCBI_NAMESPACE;
@@ -74,12 +75,12 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
     case CID2_Reply::TReply::e_Get_blob:
         if ( IsEnabledOSGBlob(reply.GetReply().GetGet_blob().GetBlob_id()) ) {
             if ( 0 && reply.GetReply().GetGet_blob().GetBlob_id().GetSat() == 8087 ) {
-                ERR_POST("OSG: simulating CDD blob read failure");
+                PSG_ERROR("OSG: simulating CDD blob read failure");
                 return;
             }
             if ( m_Blob ) {
-                ERR_POST(GetName()<<": "
-                         "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+                PSG_ERROR(GetName()<<": "
+                          "Duplicate blob reply: "<<MSerial_AsnText<<reply);
             }
             m_Blob = &reply.GetReply().GetGet_blob();
         }
@@ -87,12 +88,12 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
     case CID2_Reply::TReply::e_Get_split_info:
         if ( IsEnabledOSGBlob(reply.GetReply().GetGet_split_info().GetBlob_id()) ) {
             if ( 0 && reply.GetReply().GetGet_blob().GetBlob_id().GetSat() == 8087 ) {
-                ERR_POST("OSG: simulating CDD blob read failure");
+                PSG_ERROR("OSG: simulating CDD blob read failure");
                 return;
             }
             if ( m_SplitInfo ) {
-                ERR_POST(GetName()<<": "
-                         "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+                PSG_ERROR(GetName()<<": "
+                          "Duplicate blob reply: "<<MSerial_AsnText<<reply);
             }
             m_SplitInfo = &reply.GetReply().GetGet_split_info();
         }
@@ -100,15 +101,15 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
     case CID2_Reply::TReply::e_Get_chunk:
         if ( IsEnabledOSGBlob(reply.GetReply().GetGet_chunk().GetBlob_id()) ) {
             if ( m_Chunk ) {
-                ERR_POST(GetName()<<": "
-                         "Duplicate blob reply: "<<MSerial_AsnText<<reply);
+                PSG_ERROR(GetName()<<": "
+                          "Duplicate blob reply: "<<MSerial_AsnText<<reply);
             }
             m_Chunk = &reply.GetReply().GetGet_chunk();
         }
         break;
     default:
-        ERR_POST(GetName()<<": "
-                 "Invalid blob reply: "<<MSerial_AsnText<<reply);
+        PSG_ERROR(GetName()<<": "
+                  "Invalid blob reply: "<<MSerial_AsnText<<reply);
         break;
     }
 }

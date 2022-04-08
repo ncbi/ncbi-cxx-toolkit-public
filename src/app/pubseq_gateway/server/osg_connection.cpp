@@ -49,6 +49,7 @@
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include "osg_processor_base.hpp"
 #include "osg_mapper.hpp"
+#include "pubseq_gateway_logging.hpp"
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -567,10 +568,9 @@ TSvrRef COSGConnectionPool::x_GetServer()
         }
         server = m_Balancer->GetServer();
         if ( !server ) {
-            ERR_POST(Warning <<
-                     "Unable to resolve OSG service name "
-                     << m_ServiceName
-                     << " via supplied mapper; passing it as is.");
+            PSG_WARNING("Unable to resolve OSG service name "
+                        << m_ServiceName
+                        << " via supplied mapper; passing it as is.");
             m_NonresolutionRetryDeadline.reset(new CDeadline(kNonResolutionTimeout));
         }
         else if ( server->GetExpireTime() < CCurrentTime().GetTimeT() ) {

@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_socket.hpp>
+#include "pubseq_gateway_logging.hpp"
 
 #include <cmath>
 
@@ -195,7 +196,7 @@ TSvrRef COSGServiceMapper::x_GetServer(const string& service,
                                 = FORMAT(s_EndpointKeyName(*it)
                                          << " unknown, but listed as tried.\n"
                                          << CStackTrace());
-                            ERR_POST(Warning << "OSG: " << msg);
+                            PSG_WARNING("OSG: " << msg);
                         } else {
                             _TRACE("Skipping " << s_EndpointKeyName(*it)
                                    << " (already tried for this request)");
@@ -286,7 +287,7 @@ void COSGServiceMapper::Exclude(const string& service, const TSvrRef& server)
             string msg
                 = "Excluding previously undiscovered " + service + " on "
                 + CSocketAPI::ntoa(server->GetHost()) + '.';
-            ERR_POST(Warning << "OSG: " << msg);
+            PSG_WARNING("OSG: " << msg);
         }
     }}
     {{
@@ -423,7 +424,7 @@ void COSGServiceMapper::AcceptFeedback(const string& service,
     if (was_new) {
         string msg = ("Accepting feedback for previously undiscovered "
                       + service + " on " + rating.ref->GetName() + '.');
-        ERR_POST(Warning << "OSG: " << msg);
+        PSG_WARNING("OSG: " << msg);
     }
     if (feedback == ePositiveFeedback) {
         penalty *= (1.0 - m_PositiveFeedbackWeight);
