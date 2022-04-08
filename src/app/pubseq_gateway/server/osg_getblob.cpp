@@ -37,6 +37,7 @@
 
 #include <objects/id2/id2__.hpp>
 #include <objects/seqsplit/seqsplit__.hpp>
+#include "pubseq_gateway_logging.hpp"
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -176,8 +177,8 @@ void CPSGS_OSGGetBlob::ProcessReplies()
                 }
                 break;
             default:
-                ERR_POST(GetName()<<": "
-                         "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
+                PSG_ERROR(GetName()<<": "
+                          "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
                 break;
             }
         }
@@ -262,8 +263,8 @@ void CPSGS_OSGGetChunks::ProcessReplies()
                 }
                 break;
             default:
-                ERR_POST(GetName()<<": "
-                         "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
+                PSG_ERROR(GetName()<<": "
+                          "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
                 break;
             }
         }

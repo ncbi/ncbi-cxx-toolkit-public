@@ -38,9 +38,7 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/id2/id2__.hpp>
-//#include <objects/seqsplit/seqsplit__.hpp>
-//#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
-//#include "pubseq_gateway_convert_utils.hpp"
+#include "pubseq_gateway_logging.hpp"
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
@@ -183,8 +181,8 @@ void CPSGS_OSGResolve::ProcessReplies()
                 }
                 break;
             default:
-                ERR_POST(GetName()<<": "
-                         "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
+                PSG_ERROR(GetName()<<": "
+                          "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
                 break;
             }
         }
@@ -318,8 +316,8 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
                 ProcessBlobReply(*r);
                 break;
             default:
-                ERR_POST(GetName()<<": "
-                         "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
+                PSG_ERROR(GetName()<<": "
+                          "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
                 break;
             }
         }
@@ -359,7 +357,7 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
         FinalizeResult(ePSGS_Done);
     }
     else {
-        ERR_POST(GetName()<<": Unexpected missing blob");
+        PSG_ERROR(GetName()<<": Unexpected missing blob");
         FinalizeResult(ePSGS_NotFound);
     }
 }

@@ -238,8 +238,8 @@ void CPSGS_OSGAnnot::ProcessReplies()
                 }
                 break;
             default:
-                ERR_POST(GetName()<<": "
-                         "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
+                PSG_ERROR(GetName()<<": "
+                          "Unknown reply to "<<MSerial_AsnText<<*f->GetRequest()<<"\n"<<*r);
                 break;
             }
         }
@@ -374,7 +374,7 @@ namespace {
             else if ( accession != new_accession ||
                       version != new_version ||
                       seq_id_type != new_type ) {
-                ERR_POST("OSG-annot: multiple annotated Seq-ids");
+                PSG_ERROR("OSG-annot: multiple annotated Seq-ids");
                 throw runtime_error("");
             }
         }
@@ -410,7 +410,7 @@ namespace {
                     annot_name = name;
                 }
                 else if ( annot_name != name ) {
-                    ERR_POST("OSG-annot: multiple annot accessions: "<<annot_name<<" <> "<<name);
+                    PSG_ERROR("OSG-annot: multiple annot accessions: "<<annot_name<<" <> "<<name);
                     throw runtime_error("");
                 }
             }

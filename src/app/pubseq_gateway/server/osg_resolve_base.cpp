@@ -43,6 +43,7 @@
 #include "osg_connection.hpp"
 #include "osg_getblob_base.hpp"
 #include "insdc_utils.hpp"
+#include "pubseq_gateway_logging.hpp"
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
@@ -216,8 +217,8 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
         }
     }
     else {
-        ERR_POST(GetName()<<": "
-                 "Unknown reply "<<MSerial_AsnText<<reply);
+        PSG_ERROR(GetName()<<": "
+                  "Unknown reply "<<MSerial_AsnText<<reply);
     }
 }
 
