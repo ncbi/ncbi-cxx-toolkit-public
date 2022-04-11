@@ -363,6 +363,47 @@ static void xlex_error_func(const char* msg,
    Err_func(msg, temp_string.c_str());
 }
 
+static int advance_to(const char c, int current_pos, const string& line)
+{   
+    int pos = current_pos;
+    while (pos < line.size()) {
+        if(line[pos] == c)  {
+           return pos-1; 
+        }
+        ++pos;
+    }
+    return pos-1;
+}
+
+
+static int sGetAccession(string& accession, int& current_col, const string& line, bool accver)
+{
+    int retval = 0;
+
+    auto dex = xgbparse_accprefix(line.c_str() + current_col);
+    int spare = current_col + dex;
+    for (; isdigit((int)line[spare]); spare++){
+        dex++;
+    }
+    
+    if (accver && line[spare] == '.') {
+        dex++;
+        for (spare++; isdigit((int)line[spare]); spare++){
+            dex++;
+        }
+    }
+                
+    if (line[spare] != ':'){
+        xlex_error_func("ACCESSION missing \":\"", line, current_col);
+        retval += 10;
+        current_col--;
+    }
+                
+    accession = string(line.c_str() + current_col, dex);
+    current_col += dex;
+    return retval;
+}
+
 
 /*------------- xgbparselex_ver() -----------------------*/
 
@@ -373,7 +414,6 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
     int retval = 0;
     if (*linein)
     {
-        bool skip_new_token = false;
         string line{ linein };
         NStr::TruncateSpacesInPlace(line);
         auto length = line.size();
@@ -382,25 +422,25 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
         size_t dex = 0;
 
         while (current_col < length) {
-            STokenInfo current_token;
-            skip_new_token = false;
-            switch (line[current_col]){
 
+            if (isspace(line[current_col]) || line[current_col] == '~') {
+                ++current_col;
+                continue;
+            }
+
+            STokenInfo current_token;
+            bool skip_new_token = false;
+            switch (line[current_col]){
             case '\"':
                 current_token.choice = GBPARSE_INT_STRING;
-                for (spare = current_col + 1; spare < length;
-                     spare++) {
-                    if (line[spare] == '\"'){
-                        break;
-                    }
-                }
-                if (spare == length){
+                if (auto closing_quote_pos = line.find('\"', current_col+1); 
+                        closing_quote_pos == string::npos) {
                     xlex_error_func("unterminated string", line, current_col);
-                        retval++;
+                    retval++;
                 }
-                else{
-                    size_t len = spare - current_col + 1;
-                    current_token.data = string(line.c_str() + current_col, len);
+                else {
+                    size_t len = closing_quote_pos - current_col + 1;
+                    current_token.data = string(line.c_str(), + current_col);
                     current_col += len;
                 }
                 break;
@@ -423,17 +463,12 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_JOIN;
                 if (!NStr::StartsWith(line.c_str() + current_col, "join")){
                     xlex_error_func("\"join\" misspelled", line, current_col);
-                        retval += 10;
-                    for (; line[current_col] && line[current_col] != '('; current_col++)
-                        ; /* vi match )   empty body*/
-                    current_col--;  /* back up 'cause ++ follows */
+                    retval += 10;
+                    current_col = advance_to('(', current_col, line);
                 }
                 else{
                     current_col += 3;
                 }
-                    //cout << "GBPARSE_INT_JOIN : " << GBPARSE_INT_JOIN << endl;
-                    //cout << "Current col value : " << current_col << endl;
-                    //cout << "current_token : " << current_token.choice << endl;
                 break;
 
                 /*------
@@ -444,10 +479,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                     if (!NStr::StartsWith(line.c_str() + current_col, "one-of")){
                         xlex_error_func("\"order\" or \"one-of\" misspelled",
                                 line, current_col);
-                            retval++;
-                        for (; line[current_col] && line[current_col] != '('; current_col++)
-                            ; /* vi match )   empty body*/
-                        current_col--;  /* back up 'cause ++ follows */
+                        retval++;
+                        current_col = advance_to('(', current_col, line);
                     }
                     else{
                         current_token.choice = GBPARSE_INT_ONE_OF;
@@ -467,10 +500,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_REPLACE;
                 if (!NStr::StartsWith(line.c_str() + current_col, "replace")){
                     xlex_error_func("\"replace\" misspelled", line, current_col);
-                        retval++;
-                    for (; line[current_col] && line[current_col] != '('; current_col++)
-                        ; /* vi match )   empty body*/
-                    current_col--;  /* back up 'cause ++ follows */
+                    retval++;
+                    current_col = advance_to('(', current_col, line);
                 }
                 else{
                     current_col += 6;
@@ -509,10 +540,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_GROUP;
                 if (!NStr::StartsWith(line.c_str() + current_col, "group")){
                     xlex_error_func("\"group\" misspelled", line, current_col);
-                        retval++;
-                    for (; line[current_col] && line[current_col] != '('; current_col++)
-                        ; /* vi match )   empty body*/
-                    current_col--;  /* back up 'cause ++ follows */
+                    retval++;
+                    current_col = advance_to('(', current_col, line);
                 }
                 else{
                     current_col += 4;
@@ -526,10 +555,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_COMPL;
                 if (!NStr::StartsWith(line.c_str() + current_col, "complement")){
                     xlex_error_func("\"complement\" misspelled", line, current_col);
-                        retval += 10;
-                    for (; line[current_col] && line[current_col] != '('; current_col++)
-                        ; /* vi match )   empty body*/
-                    current_col--;  /* back up 'cause ++ follows */
+                    retval += 10;
+                    current_col = advance_to('(', current_col, line);
                 }
                 else{
                     current_col += 9;
@@ -604,7 +631,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_DOT_DOT;
                 break;
             case '.':
-                if (!NStr::StartsWith(line.c_str() + current_col, "..")){
+                if (current_col==length-1 || line[current_col+1] != '.' ){
                     current_token.choice = GBPARSE_INT_SINGLE_DOT;
                 }
                 else{
@@ -624,10 +651,6 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
             case ';':
             case ',':
                 current_token.choice = GBPARSE_INT_COMMA;
-                break;
-
-            case ' ': case '\t': case '\n': case '\r': case '~':
-                skip_new_token = true;
                 break;
 
             case 't':
@@ -664,41 +687,14 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
 
             ACCESSION:
             default:
-                /*-------
-                * all GenBank accessions start with a capital letter
-                * and then have numbers
-                ------*/
-                /* new accessions start with 2 capital letters !!  1997 */
-                /* new accessions have .version !!  2/15/1999 */
                 current_token.choice = GBPARSE_INT_ACCESION;
-                dex = xgbparse_accprefix(line.c_str() + current_col);
-                spare = current_col + dex;
-                for (; isdigit((int)line[spare]); spare++){
-                    dex++;
-                }
-                if (accver && line[spare] == '.') {
-                    dex++;
-                    for (spare++; isdigit((int)line[spare]); spare++){
-                        dex++;
-                    }
-                }
-                if (line[spare] != ':'){
-                    xlex_error_func("ACCESSION missing \":\"", line, current_col);
-                        retval += 10;
-                    current_col--;
-                }
-                current_token.data = string(line.c_str() + current_col, dex);
-                current_col += dex;
-
-
+                retval += sGetAccession(current_token.data, current_col, line, accver);
             }
 
 
             /*--move to past last "good" character---*/
-            current_col++;
+            ++current_col;
             if (!skip_new_token) {
-                //cout << "current col val : " << current_col << endl;
-                //cout << "Current token : " << current_token.choice << ",     " << current_token.data << endl;
                 tokens.push_back(current_token);
             }
         }
@@ -706,6 +702,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
 
     return retval;
 }
+
+
 
 
 /*----------------- xgbparse_better_be_done()-------------*/
