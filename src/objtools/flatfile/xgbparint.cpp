@@ -395,7 +395,7 @@ static int sGetAccession(string& accession, int& current_col, const string& line
                 
     if (line[spare] != ':'){
         xlex_error_func("ACCESSION missing \":\"", line, current_col);
-        retval += 10;
+        ++retval;
         current_col--;
     }
                 
@@ -463,7 +463,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_JOIN;
                 if (!NStr::StartsWith(line.c_str() + current_col, "join")){
                     xlex_error_func("\"join\" misspelled", line, current_col);
-                    retval += 10;
+                    retval++;
                     current_col = advance_to('(', current_col, line);
                 }
                 else{
@@ -556,7 +556,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_COMPL;
                 if (!NStr::StartsWith(line.c_str() + current_col, "complement")){
                     xlex_error_func("\"complement\" misspelled", line, current_col);
-                    retval += 10;
+                    retval ++;
                     current_col = advance_to('(', current_col, line);
                 }
                 else{
