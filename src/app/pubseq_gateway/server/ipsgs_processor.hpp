@@ -113,9 +113,14 @@ public:
                                              shared_ptr<CPSGS_Reply> reply,
                                              TProcessorPriority  priority) const = 0;
 
-    /// Main processing function
-    /// @throw
-    ///  On error
+    /// Main processing function.
+    /// It should avoid throwing exceptions. In case of errors it must make
+    /// sure that:
+    /// - the consequent GetStatus() calls return appropriate status
+    /// - call SignalFinishProcessing() if there in no more processor activity
+    /// If an exception is generated it is still a must for a processor to
+    /// fulfill the obligations above. The dispatching code will log the
+    /// message (and possibly trace) and continue in this case.
     virtual void Process(void) = 0;
 
     /// The infrastructure request to cancel processing

@@ -620,8 +620,8 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
 
 
     if (reset_to_default)
-        ERR_POST("Invalid statistics parameters detected. Default parameters "
-                 "were used");
+        PSG_ERROR("Invalid statistics parameters detected. Default parameters "
+                  "were used");
 
     // fill the map between the histogram name and where it is stored
     m_NamesMap = {
