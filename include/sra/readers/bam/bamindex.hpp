@@ -260,9 +260,9 @@ struct SBamIndexParams : public SBamIndexDefs
     TIndexLevel GetRangeIndexLevel(CRange<TSeqPos> range) const
     {
         TIndexLevel level = 0;
-        auto min_shift = GetMinLevelBinShift();
-        TSeqPos pos1 = range.GetFrom() >> min_shift;
-        TSeqPos pos2 = range.GetTo() >> min_shift;
+        auto local_min_shift = GetMinLevelBinShift();
+        TSeqPos pos1 = range.GetFrom() >> local_min_shift;
+        TSeqPos pos2 = range.GetTo() >> local_min_shift;
         while ( pos1 != pos2 ) {
             ++level;
             pos1 >>= kLevelStepBinShift;
