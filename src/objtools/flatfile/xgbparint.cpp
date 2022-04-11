@@ -39,7 +39,7 @@
 #include <objects/general/Object_id.hpp>
 #include "ftacpp.hpp"
 #include "ftaerr.hpp"
-#include "valnode.h"
+//#include "valnode.h"
 #include "xgbparint.h"
 
 #ifdef THIS_FILE
@@ -114,6 +114,7 @@ struct STokenInfo
     EChoice choice;
 */
     unsigned char choice;
+    //int choice;
     string data;
 };
 
@@ -322,9 +323,9 @@ static void xfind_one_of_num(list<STokenInfo>& tokens)
 
 
 /**********************************************************/
-static size_t xgbparse_accprefix(char* acc)
+static size_t xgbparse_accprefix(const char* acc)
 {
-    char* p;
+    const char* p;
 
     if (acc == NULL || *acc == '\0')
         return(0);
@@ -353,80 +354,53 @@ static size_t xgbparse_accprefix(char* acc)
     return(ret);
 }
 
-static char Saved_ch;
 
-#define xlex_error_MACRO(msg)\
-        if (current_col != NULL && *current_col){\
-        Saved_ch = *(current_col +1);\
-        *(current_col +1) = '\0';\
-                }else{\
-        Saved_ch='\0';\
-                }\
-        {   \
-            string line_data = line_use + string(" "); \
-            Err_func(msg, line_data.c_str()); \
-        } \
-        if (Saved_ch)\
-        *(current_col +1) = Saved_ch;
+static void xlex_error_func(const char* msg, 
+        const string& line, 
+        const int current_col)
+{
+   string temp_string = line.substr(0, current_col+1) + " ";
+   Err_func(msg, temp_string.c_str());
+}
 
 
 /*------------- xgbparselex_ver() -----------------------*/
 
-//static int xgbparselex_ver(const char* linein, STokenInfo*& lexed, bool accver)
 static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
-{
-    char* current_col = 0, *points_at_term_null, *spare, *line_use = 0;
-    size_t dex = 0,
-           retval = 0,
-           len = 0;
+{   
 
     tokens.clear();
-
-    STokenInfo* current_token = NULL;
-
-    bool skip_new_token = false;
-
+    int retval = 0;
     if (*linein)
     {
-        len = StringLen(linein);
-        line_use = static_cast<char*>(MemNew(len + 1));
-        StringCpy(line_use, linein);
-        current_col = line_use;
+        bool skip_new_token = false;
+        string line{ linein };
+        NStr::TruncateSpacesInPlace(line);
+        auto length = line.size();
+        int current_col = 0;
+        int spare = 0;
+        size_t dex = 0;
 
-        /*---------
-        *   Clear terminal white space
-        *---------*/
-        points_at_term_null = line_use + len;
-        spare = points_at_term_null - 1;
-        while (*spare == ' ' || *spare == '\n' || *spare == '\r' || *spare == '~') {
-            *spare-- = '\0';
-            points_at_term_null--;
-        }
-
-
-        while (current_col < points_at_term_null) {
-            STokenInfo new_token;
-            current_token = &new_token;
-            
-
+        while (current_col < length) {
+            STokenInfo current_token;
             skip_new_token = false;
-            switch (*current_col){
+            switch (line[current_col]){
 
             case '\"':
-                current_token->choice = GBPARSE_INT_STRING;
-                for (spare = current_col + 1; spare < points_at_term_null;
+                current_token.choice = GBPARSE_INT_STRING;
+                for (spare = current_col + 1; spare < length;
                      spare++) {
-                    if (*spare == '\"'){
+                    if (line[spare] == '\"'){
                         break;
                     }
                 }
-                if (spare >= points_at_term_null){
-                    xlex_error_MACRO("unterminated string")
+                if (spare == length){
+                    xlex_error_func("unterminated string", line, current_col);
                         retval++;
                 }
                 else{
-                    len = spare - current_col + 1;
-                    current_token->data = string(current_col, len);
+                    size_t len = spare - current_col + 1;
+                    current_token.data = string(line.c_str() + current_col, len);
                     current_col += len;
                 }
                 break;
@@ -435,51 +409,53 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *------*/
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
-                current_token->choice = GBPARSE_INT_NUMBER;
-                for (dex = 0, spare = current_col; isdigit((int)*spare); spare++){
+                current_token.choice = GBPARSE_INT_NUMBER;
+                for (dex = 0, spare = current_col; isdigit((int)line[spare]); spare++){
                     dex++;
                 }
-                //current_token->data = static_cast<char*>(MemNew(dex + 1));
-                //StringNCpy(current_token->data, current_col, dex);
-                current_token->data = string(current_col, dex);
+                current_token.data = string(line.c_str() + current_col, dex);
                 current_col += dex - 1;
                 break;
                 /*------
                 *  JOIN
                 *------*/
             case 'j':
-                current_token->choice = GBPARSE_INT_JOIN;
-                if (!NStr::StartsWith(current_col, "join")){
-                    xlex_error_MACRO("\"join\" misspelled")
+                current_token.choice = GBPARSE_INT_JOIN;
+                if (!NStr::StartsWith(line.c_str() + current_col, "join")){
+                    xlex_error_func("\"join\" misspelled", line, current_col);
                         retval += 10;
-                    for (; *current_col && *current_col != '('; current_col++)
+                    for (; line[current_col] && line[current_col] != '('; current_col++)
                         ; /* vi match )   empty body*/
                     current_col--;  /* back up 'cause ++ follows */
                 }
                 else{
                     current_col += 3;
                 }
+                    //cout << "GBPARSE_INT_JOIN : " << GBPARSE_INT_JOIN << endl;
+                    //cout << "Current col value : " << current_col << endl;
+                    //cout << "current_token : " << current_token.choice << endl;
                 break;
 
                 /*------
                 *  ORDER and ONE-OF
                 *------*/
             case 'o':
-                if (!NStr::StartsWith(current_col, "order")){
-                    if (!NStr::StartsWith(current_col, "one-of")){
-                        xlex_error_MACRO("\"order\" or \"one-of\" misspelled")
+                if (!NStr::StartsWith(line.c_str() + current_col, "order")){
+                    if (!NStr::StartsWith(line.c_str() + current_col, "one-of")){
+                        xlex_error_func("\"order\" or \"one-of\" misspelled",
+                                line, current_col);
                             retval++;
-                        for (; *current_col && *current_col != '('; current_col++)
+                        for (; line[current_col] && line[current_col] != '('; current_col++)
                             ; /* vi match )   empty body*/
                         current_col--;  /* back up 'cause ++ follows */
                     }
                     else{
-                        current_token->choice = GBPARSE_INT_ONE_OF;
+                        current_token.choice = GBPARSE_INT_ONE_OF;
                         current_col += 5;
                     }
                 }
                 else{
-                    current_token->choice = GBPARSE_INT_ORDER;
+                    current_token.choice = GBPARSE_INT_ORDER;
                     current_col += 4;
                 }
                 break;
@@ -488,11 +464,11 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *  REPLACE
                 *------*/
             case 'r':
-                current_token->choice = GBPARSE_INT_REPLACE;
-                if (!NStr::StartsWith(current_col, "replace")){
-                    xlex_error_MACRO("\"replace\" misspelled")
+                current_token.choice = GBPARSE_INT_REPLACE;
+                if (!NStr::StartsWith(line.c_str() + current_col, "replace")){
+                    xlex_error_func("\"replace\" misspelled", line, current_col);
                         retval++;
-                    for (; *current_col && *current_col != '('; current_col++)
+                    for (; line[current_col] && line[current_col] != '('; current_col++)
                         ; /* vi match )   empty body*/
                     current_col--;  /* back up 'cause ++ follows */
                 }
@@ -505,39 +481,36 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *  GAP or GROUP or GI
                 *------*/
             case 'g':
-                if (NStr::StartsWith(current_col, "gap") &&
-                    (current_col[3] == '(' ||
-                    current_col[3] == ' ' ||
-                    current_col[3] == '\t' ||
-                    current_col[3] == '\0'))
+                if (NStr::StartsWith(line.c_str() + current_col, "gap") &&
+                    (line[current_col+3] == '(' ||
+                     line[current_col+3] == ' ' ||
+                     line[current_col+3] == '\t' ||
+                     line[current_col+3] == '\0'))
                 {
-                    current_token->choice = GBPARSE_INT_GAP;
-                    current_token->data = "gap";
-                    //current_token->data = static_cast<char*>(MemNew(4));
-                    //StringCpy(current_token->data, "gap");
-                    //if (StringNICmp(current_col + 3, "(unk", 4) == 0)
-                    if (NStr::StartsWith(current_col+3, "(unk", NStr::eNocase))     
+                    current_token.choice = GBPARSE_INT_GAP;
+                    current_token.data = "gap";
+                    if (NStr::StartsWith(line.c_str() + current_col+3, "(unk", NStr::eNocase))     
                     {
-                        current_token->choice = GBPARSE_INT_UNK_GAP;
-                        tokens.push_back(new_token);
+                        current_token.choice = GBPARSE_INT_UNK_GAP;
+                        tokens.push_back(current_token);
                         
-                        current_token->choice = GBPARSE_INT_LEFT;
+                        current_token.choice = GBPARSE_INT_LEFT;
                         current_col += 4;
                     }
                     current_col += 2;
                     break;
                 }
-                if (NStr::StartsWith(current_col, "gi|")) {
-                    current_token->choice = GBPARSE_INT_ACCESION;
+                if (NStr::StartsWith(line.c_str() + current_col, "gi|")) {
+                    current_token.choice = GBPARSE_INT_ACCESION;
                     current_col += 3;
-                    for (; isdigit(*current_col); current_col++);
+                    for (; isdigit(line[current_col]); current_col++);
                     break;
                 }
-                current_token->choice = GBPARSE_INT_GROUP;
-                if (!NStr::StartsWith(current_col, "group")){
-                    xlex_error_MACRO("\"group\" misspelled")
+                current_token.choice = GBPARSE_INT_GROUP;
+                if (!NStr::StartsWith(line.c_str() + current_col, "group")){
+                    xlex_error_func("\"group\" misspelled", line, current_col);
                         retval++;
-                    for (; *current_col && *current_col != '('; current_col++)
+                    for (; line[current_col] && line[current_col] != '('; current_col++)
                         ; /* vi match )   empty body*/
                     current_col--;  /* back up 'cause ++ follows */
                 }
@@ -550,11 +523,11 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *  COMPLEMENT
                 *------*/
             case 'c':
-                current_token->choice = GBPARSE_INT_COMPL;
-                if (!NStr::StartsWith(current_col, "complement")){
-                    xlex_error_MACRO("\"complement\" misspelled")
+                current_token.choice = GBPARSE_INT_COMPL;
+                if (!NStr::StartsWith(line.c_str() + current_col, "complement")){
+                    xlex_error_func("\"complement\" misspelled", line, current_col);
                         retval += 10;
-                    for (; *current_col && *current_col != '('; current_col++)
+                    for (; line[current_col] && line[current_col] != '('; current_col++)
                         ; /* vi match )   empty body*/
                     current_col--;  /* back up 'cause ++ follows */
                 }
@@ -567,7 +540,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 * internal bases ignored
                 *---------*/
             case 'b':
-                if (!NStr::StartsWith(current_col, "bases")){
+                if (!NStr::StartsWith(line.c_str() + current_col, "bases")){
                     goto ACCESSION;
                 }
                 else{
@@ -580,34 +553,34 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *  ()^.,<>  (bases (sites
                 *------*/
             case '(':
-                if (NStr::StartsWith(current_col, "(base")){
-                    current_token->choice = GBPARSE_INT_JOIN;
+                if (NStr::StartsWith(line.c_str() + current_col, "(base")){
+                    current_token.choice = GBPARSE_INT_JOIN;
                     current_col += 4;
-                    if (*current_col != '\0')
-                        if (*(current_col + 1) == 's')
+                    if (line[current_col] != '\0')
+                        if (line[current_col + 1] == 's')
                             current_col++;
-                    tokens.push_back(new_token);
-                    current_token->choice = GBPARSE_INT_LEFT;
+                    tokens.push_back(current_token);
+                    current_token.choice = GBPARSE_INT_LEFT;
                 }
-                else if (NStr::StartsWith(current_col, "(sites")){
+                else if (NStr::StartsWith(line.c_str() + current_col, "(sites")){
                     current_col += 5;
-                    if (*current_col != '\0')
+                    if (line[current_col] != '\0')
                     {
-                        if (*(current_col + 1) == ')'){
+                        if (line[current_col + 1] == ')'){
                             current_col++;
-                            current_token->choice = GBPARSE_INT_SITES;
+                            current_token.choice = GBPARSE_INT_SITES;
                         }
                         else{
-                            current_token->choice = GBPARSE_INT_SITES;
-                            tokens.push_back(new_token);
-                            current_token->choice = GBPARSE_INT_JOIN;
-                            tokens.push_back(new_token);
-                            current_token->choice = GBPARSE_INT_LEFT;
-                            if (*current_col != '\0'){
-                                if (*(current_col + 1) == ';'){
+                            current_token.choice = GBPARSE_INT_SITES;
+                            tokens.push_back(current_token);
+                            current_token.choice = GBPARSE_INT_JOIN;
+                            tokens.push_back(current_token);
+                            current_token.choice = GBPARSE_INT_LEFT;
+                            if (line[current_col] != '\0'){
+                                if (line[current_col + 1] == ';'){
                                     current_col++;
                                 }
-                                else if (NStr::StartsWith(current_col + 1, " ;")){
+                                else if (NStr::StartsWith(line.c_str() + current_col + 1, " ;")){
                                     current_col += 2;
                                 }
                             }
@@ -615,43 +588,42 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                     }
                 }
                 else{
-                    current_token->choice = GBPARSE_INT_LEFT;
+                    current_token.choice = GBPARSE_INT_LEFT;
                 }
                 break;
 
             case ')':
-                current_token->choice = GBPARSE_INT_RIGHT;
-
+                current_token.choice = GBPARSE_INT_RIGHT;
                 break;
 
             case '^':
-                current_token->choice = GBPARSE_INT_CARET;
+                current_token.choice = GBPARSE_INT_CARET;
                 break;
 
             case '-':
-                current_token->choice = GBPARSE_INT_DOT_DOT;
+                current_token.choice = GBPARSE_INT_DOT_DOT;
                 break;
             case '.':
-                if (!NStr::StartsWith(current_col, "..")){
-                    current_token->choice = GBPARSE_INT_SINGLE_DOT;
+                if (!NStr::StartsWith(line.c_str() + current_col, "..")){
+                    current_token.choice = GBPARSE_INT_SINGLE_DOT;
                 }
                 else{
-                    current_token->choice = GBPARSE_INT_DOT_DOT;
+                    current_token.choice = GBPARSE_INT_DOT_DOT;
                     current_col++;
                 }
                 break;
 
             case '>':
-                current_token->choice = GBPARSE_INT_GT;
+                current_token.choice = GBPARSE_INT_GT;
                 break;
 
             case '<':
-                current_token->choice = GBPARSE_INT_LT;
+                current_token.choice = GBPARSE_INT_LT;
                 break;
 
             case ';':
             case ',':
-                current_token->choice = GBPARSE_INT_COMMA;
+                current_token.choice = GBPARSE_INT_COMMA;
                 break;
 
             case ' ': case '\t': case '\n': case '\r': case '~':
@@ -659,30 +631,30 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 break;
 
             case 't':
-                if (!NStr::StartsWith(current_col, "to")){
+                if (!NStr::StartsWith(line.c_str() + current_col, "to")){
                     goto ACCESSION;
                 }
                 else{
-                    current_token->choice = GBPARSE_INT_DOT_DOT;
+                    current_token.choice = GBPARSE_INT_DOT_DOT;
                     current_col++;
                     break;
                 }
 
             case 's':
-                if (!NStr::StartsWith(current_col, "site")){
+                if (!NStr::StartsWith(line.c_str() + current_col, "site")){
                     goto ACCESSION;
                 }
                 else{
-                    current_token->choice = GBPARSE_INT_SITES;
+                    current_token.choice = GBPARSE_INT_SITES;
                     current_col += 3;
-                    if (*current_col != '\0')
-                        if (*(current_col + 1) == 's')
+                    if (line[current_col] != '\0')
+                        if (line[current_col + 1] == 's')
                             current_col++;
-                    if (*current_col != '\0'){
-                        if (*(current_col + 1) == ';'){
+                    if (line[current_col] != '\0'){
+                        if (line[current_col + 1] == ';'){
                             current_col++;
                         }
-                        else if (NStr::StartsWith(current_col + 1, " ;")){
+                        else if (NStr::StartsWith(line.c_str() + current_col + 1, " ;")){
                             current_col += 2;
                         }
                     }
@@ -698,42 +670,41 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 ------*/
                 /* new accessions start with 2 capital letters !!  1997 */
                 /* new accessions have .version !!  2/15/1999 */
-                current_token->choice = GBPARSE_INT_ACCESION;
-                dex = xgbparse_accprefix(current_col);
+                current_token.choice = GBPARSE_INT_ACCESION;
+                dex = xgbparse_accprefix(line.c_str() + current_col);
                 spare = current_col + dex;
-                for (; isdigit((int)*spare); spare++){
+                for (; isdigit((int)line[spare]); spare++){
                     dex++;
                 }
-                if (accver && *spare == '.') {
+                if (accver && line[spare] == '.') {
                     dex++;
-                    for (spare++; isdigit((int)*spare); spare++){
+                    for (spare++; isdigit((int)line[spare]); spare++){
                         dex++;
                     }
                 }
-                if (*spare != ':'){
-                    xlex_error_MACRO("ACCESSION missing \":\"")
+                if (line[spare] != ':'){
+                    xlex_error_func("ACCESSION missing \":\"", line, current_col);
                         retval += 10;
                     current_col--;
                 }
-                //current_token->data = static_cast<char*>(MemNew(dex + 1));
-                //StringNCpy(current_token->data, current_col, dex);
-                current_token->data = string(current_col, dex);
+                current_token.data = string(line.c_str() + current_col, dex);
                 current_col += dex;
 
 
             }
+
+
             /*--move to past last "good" character---*/
             current_col++;
             if (!skip_new_token) {
-                tokens.push_back(new_token);
+                //cout << "current col val : " << current_col << endl;
+                //cout << "Current token : " << current_token.choice << ",     " << current_token.data << endl;
+                tokens.push_back(current_token);
             }
         }
     }
 
-    if (line_use)
-        MemFree(line_use);
-
-    return static_cast<int>(retval);
+    return retval;
 }
 
 
