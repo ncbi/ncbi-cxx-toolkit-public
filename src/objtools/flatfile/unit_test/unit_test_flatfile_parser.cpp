@@ -227,6 +227,20 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
         BOOST_CHECK(pLoc->IsPartialStop(eExtreme_Positional));
     }
 
+    intervals = "122890^1";
+    pLoc = xgbparseint_ver(const_cast<char*>(intervals.c_str()), 
+            keepRawPt, sitesPt, numErrsPt, seqIds, accver);
+
+    BOOST_CHECK(pLoc->IsPnt());
+    {
+        const auto& locPnt = pLoc->GetPnt();
+        BOOST_CHECK_EQUAL(locPnt.GetPoint(), 122889);
+        BOOST_CHECK(locPnt.IsSetFuzz() && locPnt.GetFuzz().IsRange());
+        const auto& range = locPnt.GetFuzz().GetRange();
+        BOOST_CHECK_EQUAL(range.GetMax(), 0);
+        BOOST_CHECK_EQUAL(range.GetMin(), 122889);
+    }
+
     seqIds.clear();
     intervals = "join(AAGH01005985.1:105..1873,AASW01000572.1:2064..2612,AAGH01005986.1:7..8527,gap(338),AAGH01005987.1:1..1908)";
     pLoc = xgbparseint_ver(const_cast<char*>(intervals.c_str()), 
