@@ -161,17 +161,6 @@ protected:
     }
 
     void StopAsyncThread();
-    void CallDoProcessSync();
-    void CallDoProcessAsync();
-    void CallDoProcessCallback();
-    void DoProcess();
-
-    void CallDoProcessRepliesSync();
-    void CallDoProcessRepliesAsync();
-    void CallDoProcessRepliesCallback();
-    static void s_CallDoProcessRepliesUvCallback(void* proc);
-    void DoProcessReplies();
-    
     void SetFinalStatus(EPSGS_Status status);
     void FinalizeResult(EPSGS_Status status);
     void FinalizeResult();
@@ -181,24 +170,77 @@ protected:
     // decrement background processing counter and notify dispatcher if zero
     void SignalEndOfBackgroundProcessing();
 
-    class CEndOfBackgroundProcessingGuard
+    class CBackgroundProcessingGuard
     {
     public:
-        explicit CEndOfBackgroundProcessingGuard(CPSGS_OSGProcessorBase* processor)
+        explicit CBackgroundProcessingGuard(CPSGS_OSGProcessorBase* processor)
             : m_ProcessorPtr(processor)
             {
+                x_Start();
             }
-        ~CEndOfBackgroundProcessingGuard()
+        ~CBackgroundProcessingGuard()
+            {
+                x_End();
+            }
+        
+        CBackgroundProcessingGuard(const CBackgroundProcessingGuard& guard)
+            : m_ProcessorPtr(guard.m_ProcessorPtr)
+            {
+                x_Start();
+            }
+        CBackgroundProcessingGuard& operator=(const CBackgroundProcessingGuard& guard)
+            {
+                if ( this != &guard ) {
+                    x_Start(guard.m_ProcessorPtr);
+                }
+                return *this;
+            }
+
+        CPSGS_OSGProcessorBase* GetGuardedProcessor() const
+            {
+                return m_ProcessorPtr;
+            }
+    private:
+        friend class CPSGS_OSGProcessorBase;
+        void x_Start()
+            {
+                if ( m_ProcessorPtr ) {
+                    if ( !m_ProcessorPtr->SignalStartOfBackgroundProcessing() ) {
+                        m_ProcessorPtr = 0;
+                    }
+                }
+            }
+        void x_End()
             {
                 if ( m_ProcessorPtr ) {
                     m_ProcessorPtr->SignalEndOfBackgroundProcessing();
                 }
             }
-    private:
+        void x_Start(CPSGS_OSGProcessorBase* processor)
+            {
+                if ( processor != m_ProcessorPtr ) {
+                    x_End();
+                    m_ProcessorPtr = processor;
+                    x_Start();
+                }
+            }
         CPSGS_OSGProcessorBase* m_ProcessorPtr;
     };
-    friend class CEndOfBackgroundProcessingGuard;
+    friend class CBackgroundProcessingGuard;
 
+    void CallDoProcess();
+    void CallDoProcessSync();
+    void CallDoProcessAsync();
+    void CallDoProcessCallback(const CBackgroundProcessingGuard& guard_in);
+    void DoProcess();
+
+    void CallDoProcessReplies();
+    void CallDoProcessRepliesSync();
+    void CallDoProcessRepliesAsync();
+    void CallDoProcessRepliesCallback(const CBackgroundProcessingGuard& guard_in);
+    static void s_CallDoProcessRepliesUvCallback(void* proc);
+    void DoProcessReplies();
+    
     friend class COSGStateReporter;
     COSGStateReporter State() const
         {
