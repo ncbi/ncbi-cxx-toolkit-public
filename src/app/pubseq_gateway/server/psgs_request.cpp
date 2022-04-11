@@ -74,10 +74,17 @@ CPSGS_Request::~CPSGS_Request()
     for (auto it: m_Wait) {
         switch (it.second->m_State) {
             case SWaitData::ePSGS_Unlocked:
-            case SWaitData::ePSGS_LockedNobodyWaits:
                 delete it.second;
                 break;
-            case SWaitData::ePSGS_LockedOneWaits:
+            case SWaitData::ePSGS_LockedNobodyWaits:
+                // This is rather strange: a processor has not unlocked an
+                // event and at the same time a request is going to be
+                // destroyed.
+                PSG_ERROR("Reply is going to be deleted when a processor has "
+                          "not unlocked an event");
+                delete it.second;
+                break;
+            case SWaitData::ePSGS_LockedSomebodyWaits:
                 // This is rather strange: a processor is still waiting on the
                 // condition variable and at the same time the request is going
                 // to be destroyed.
@@ -85,7 +92,7 @@ CPSGS_Request::~CPSGS_Request()
                 // delete the associated data
                 PSG_ERROR("Reply is going to be deleted when a processor is "
                           "locked on a condition variable");
-                it.second->m_WaitObject.notify_one();
+                it.second->m_WaitObject.notify_all();
                 delete it.second;
                 break;
         }
@@ -148,9 +155,10 @@ void CPSGS_Request::Unlock(const string &  event_name)
         case SWaitData::ePSGS_Unlocked:
             // Double unlocking; it's OK
             break;
-        case SWaitData::ePSGS_LockedOneWaits:
+        case SWaitData::ePSGS_LockedSomebodyWaits:
+            it->second->m_WaitCount = 0;
             it->second->m_State = SWaitData::ePSGS_Unlocked;
-            it->second->m_WaitObject.notify_one();
+            it->second->m_WaitObject.notify_all();
             break;
     }
 }
@@ -173,22 +181,23 @@ void CPSGS_Request::WaitFor(const string &  event_name, size_t  timeout_sec)
 
     switch (it->second->m_State) {
         case SWaitData::ePSGS_LockedNobodyWaits:
+        case SWaitData::ePSGS_LockedSomebodyWaits:
             // The logic to initiate waiting is below
             break;
         case SWaitData::ePSGS_Unlocked:
             // It has already been unlocked
             return;
-        case SWaitData::ePSGS_LockedOneWaits:
-            NCBI_THROW(CPubseqGatewayException, eLogic,
-                       "Multiple waiting of the same event is not supported");
     }
 
-    it->second->m_State = SWaitData::ePSGS_LockedOneWaits;
+    ++it->second->m_WaitCount;
+    it->second->m_State = SWaitData::ePSGS_LockedSomebodyWaits;
     auto    status = it->second->m_WaitObject.wait_for(scope_lock,
                                                        chrono::seconds(timeout_sec));
     if (status == cv_status::timeout) {
-        // Still locked
-        it->second->m_State = SWaitData::ePSGS_LockedNobodyWaits;
+        // Note: decrementing the count only in case of a timeout. In case of a
+        // normal Unlock() the count will be reset there.
+        if (--it->second->m_WaitCount == 0)
+            it->second->m_State = SWaitData::ePSGS_LockedNobodyWaits;
 
         string  message = "Timeout (" + to_string(timeout_sec) +
                           " seconds) waiting on event '" + event_name + "'";
@@ -198,7 +207,6 @@ void CPSGS_Request::WaitFor(const string &  event_name, size_t  timeout_sec)
     }
 
     // Here:
-    // - scope_lock mutex is released inside wait_for()
     // - waiting has completed within the timeout
     // - there is no need to change the state because it is done in Unlock()
     //   by unlocking processor and the state here is ePSGS_Unlocked

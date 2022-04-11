@@ -191,15 +191,16 @@ private:
     {
         enum EPSGS_WaitObjectState {
             ePSGS_LockedNobodyWaits,
-            ePSGS_LockedOneWaits,
+            ePSGS_LockedSomebodyWaits,
             ePSGS_Unlocked
         };
 
         SWaitData() :
-            m_State(ePSGS_LockedNobodyWaits)
+            m_State(ePSGS_LockedNobodyWaits), m_WaitCount(0)
         {}
 
         EPSGS_WaitObjectState   m_State;
+        size_t                  m_WaitCount;
         condition_variable      m_WaitObject;
     };
 
