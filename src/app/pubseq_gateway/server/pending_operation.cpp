@@ -109,7 +109,24 @@ void CPendingOperation::Start(void)
             m_UserRequest->GetStartTimestamp());
     }
 
-    m_Processor->Process();
+    try {
+        m_Processor->Process();
+    } catch (const exception &  exc) {
+        string  msg = "Failure to start processor " + m_Processor->GetName() +
+                      ". The processor generated an exception: " +
+                      string(exc.what());
+        if (m_UserRequest->NeedTrace()) {
+            m_Reply->SendTrace(msg, m_UserRequest->GetStartTimestamp());
+        }
+        PSG_ERROR(msg);
+    } catch (...) {
+        string  msg = "Failure to start processor " + m_Processor->GetName() +
+                      ". The processor generated an unknown exception.";
+        if (m_UserRequest->NeedTrace()) {
+            m_Reply->SendTrace(msg, m_UserRequest->GetStartTimestamp());
+        }
+        PSG_ERROR(msg);
+    }
 }
 
 
