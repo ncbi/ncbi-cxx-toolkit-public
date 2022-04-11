@@ -513,6 +513,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *------*/
             case 'g':
                 if (NStr::StartsWith(line.c_str() + current_col, "gap") &&
+                    (current_col < length-3) &&
                     (line[current_col+3] == '(' ||
                      line[current_col+3] == ' ' ||
                      line[current_col+3] == '\t' ||
@@ -583,15 +584,18 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 if (NStr::StartsWith(line.c_str() + current_col, "(base")){
                     current_token.choice = GBPARSE_INT_JOIN;
                     current_col += 4;
-                    if (line[current_col] != '\0')
-                        if (line[current_col + 1] == 's')
+                    if (current_col < length-1) {
+                        if (line[current_col + 1] == 's') {
                             current_col++;
+                        }
+                    }
                     tokens.push_back(current_token);
                     current_token.choice = GBPARSE_INT_LEFT;
                 }
                 else if (NStr::StartsWith(line.c_str() + current_col, "(sites")){
                     current_col += 5;
-                    if (line[current_col] != '\0')
+                    //if (line[current_col] != '\0')
+                    if (current_col < length-1)
                     {
                         if (line[current_col + 1] == ')'){
                             current_col++;
@@ -603,7 +607,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                             current_token.choice = GBPARSE_INT_JOIN;
                             tokens.push_back(current_token);
                             current_token.choice = GBPARSE_INT_LEFT;
-                            if (line[current_col] != '\0'){
+                            if (current_col < length-1){
                                 if (line[current_col + 1] == ';'){
                                     current_col++;
                                 }
@@ -670,10 +674,10 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 else{
                     current_token.choice = GBPARSE_INT_SITES;
                     current_col += 3;
-                    if (line[current_col] != '\0')
+                    if (current_col < length-1)
                         if (line[current_col + 1] == 's')
                             current_col++;
-                    if (line[current_col] != '\0'){
+                    if (current_col < length-1){
                         if (line[current_col + 1] == ';'){
                             current_col++;
                         }
