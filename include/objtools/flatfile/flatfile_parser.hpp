@@ -1,5 +1,4 @@
-/* ftamain.h
- *
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,13 +23,12 @@
  *
  * ===========================================================================
  *
- * File Name:  ftamain.h
+ * File Name: flatfile_parser.hpp
  *
  * Author: Alexey Dobronadezhdin
  *
  * File Description:
- * -----------------
-
+ *
  */
 
 #ifndef __FLATFILE_PARSER_HPP__
@@ -38,16 +36,16 @@
 
 #include <objtools/flatfile/flatfile_parse_info.hpp>
 
-#define ParFlat_EMBL_AC             "AFVXYZ"    /* patent is "A" */
-#define ParFlat_LANL_AC             "JKLM"
-#define ParFlat_SPROT_AC             NULL
-#define ParFlat_DDBJ_AC              "CDE"
-#define ParFlat_NCBI_AC              "BGHIJKLMRSTUWN"    /* backbone = "S" */
+#define ParFlat_EMBL_AC  "AFVXYZ" /* patent is "A" */
+#define ParFlat_LANL_AC  "JKLM"
+#define ParFlat_SPROT_AC NULL
+#define ParFlat_DDBJ_AC  "CDE"
+#define ParFlat_NCBI_AC  "BGHIJKLMRSTUWN" /* backbone = "S" */
 
 BEGIN_NCBI_SCOPE
 
 class CSerialObject;
-namespace objects 
+namespace objects
 {
     class IObjtoolsListener;
 }
@@ -57,7 +55,7 @@ struct Parser;
 NCBI_DEPRECATED Int2 fta_main(Parser* pp, bool already);
 
 
-class CFlatFileParser 
+class CFlatFileParser
 {
 public:
     CFlatFileParser(objects::IObjtoolsListener* pMessageListener);
