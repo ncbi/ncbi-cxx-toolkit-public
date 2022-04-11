@@ -1746,6 +1746,9 @@ void CFeatureItem::x_AddQualsIdx(
                     // RW-943
                     gene_ref = feat_gene_xref;
                 }
+            } else if ( feat_gene_xref && (! suppressed) &&  subtype == CSeqFeatData::eSubtype_cdregion ) {
+                // CAI12201 coded_by CDS on far embl record
+                gene_ref = feat_gene_xref;
             }
         } else if ((! feat_gene_xref || ! suppressed) &&
                    subtype != CSeqFeatData::eSubtype_primer_bind) {
