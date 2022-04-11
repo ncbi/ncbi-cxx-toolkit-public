@@ -461,6 +461,7 @@ void CAsn2FlatApp::Init()
          arg_desc->AddFlag("c", "Compressed file");
          // propogate top descriptors
          arg_desc->AddFlag("p", "Propagate top descriptors");
+         arg_desc->AddFlag("huge", "Use Huge files");
      }}
 
     // in flat_file_config.cpp
@@ -656,6 +657,9 @@ int CAsn2FlatApp::Run()
         s_INSDSetOpen ( is_insdseq, m_Os );
         bool propagate = args[ "p" ];
         bool use_huge_files = GetConfig().GetBool("asn2flat", "UseHugeFiles", false);
+        if (! use_huge_files) {
+            use_huge_files = ( args[ "huge" ] );
+        }
         if (use_huge_files)
         {
             is.reset();
