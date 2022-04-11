@@ -68,6 +68,11 @@ bool CQualCleanup::CleanAndValidate(
         {"translation", &CQualCleanup::xCleanAndValidateTranslation},
     };
 
+    //if (qualKey == "note"  && qualVal.find("C. briggsae CBR-UBC-20 protein;") != string::npos) {
+    //    cerr << "";
+    //}
+    // consult notes for RW-1600 for documentation on the below
+
     auto validatorIt = validators.find(qualKey);
     if (validatorIt == validators.end()) {
         return CQualCleanup::xCleanAndValidateGeneric(qualKey, qualVal);

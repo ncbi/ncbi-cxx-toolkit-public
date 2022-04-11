@@ -81,7 +81,7 @@ bool CQualParser::GetNextQualifier(
     //  that.
     // Let's hope we don't have to go there.
 
-    //if (*mCurrent == "/note=\"match: ESTs /Data/klh/annotate/F18108DIR/ F18108") {
+    //if (mCurrent->find("/protein_id=\"BAA00994") != string::npos) {
     //    cerr << "";
     //}
 
@@ -210,7 +210,6 @@ bool CQualParser::xParseQualifierTail(
         }
         if (!xParseQualifierCont(qualKey, qualVal, thereIsMore)) {
             if (qualKey != "anticodon") {
-                // error should have been reported at lower level, fail
                 return false;
             }
         }
@@ -231,7 +230,11 @@ bool CQualParser::xParseQualifierCont(
         // report error
         return false;
     }
+    bool thereShouldBeMore = thereIsMore;
     if (xParseQualifierStart(true, mPendingKey, mPendingVal, thereIsMore)) {
+        if (thereShouldBeMore  &&  qualKey != "anticodon") {
+            CFlatParseReport::UnbalancedQuotes(qualKey);
+        }
         return false;
     }
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
@@ -271,7 +274,7 @@ void CQualParser::xQualValAppendLine(
     string& qualData)
 //  ----------------------------------------------------------------------------
 {
-    //if (qualKey == "note"  &&  qualData.find("match: ESTs /Data/klh/annotate/F18108DIR") != string::npos) {
+    //if (qualKey == "protein_id"  &&  qualData.find("") != string::npos) {
     //    cerr << "";
     //}
     // consult notes for RW-1600 for documentation on the below
