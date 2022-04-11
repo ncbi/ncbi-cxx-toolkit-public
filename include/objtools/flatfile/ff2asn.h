@@ -1,5 +1,4 @@
-/* ff2asn.h
- *
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  ff2asn.h
+ * File Name: ff2asn.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *
  */
 
@@ -40,10 +38,10 @@ BEGIN_NCBI_SCOPE
 
 struct Parser;
 
-Parser*   init_pp(Parser* pp);
+Parser* init_pp(Parser* pp);
 
-void        fta_init_servers(Parser* pp);
-void        fta_fini_servers(Parser* pp);
+void fta_init_servers(Parser* pp);
+void fta_fini_servers(Parser* pp);
 
 END_NCBI_SCOPE
 

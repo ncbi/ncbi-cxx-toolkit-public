@@ -1,5 +1,4 @@
-/* fta_parse_buf.h
- *
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -48,7 +47,7 @@ struct Parser;
 typedef std::list<CRef<objects::CSeq_entry>> TEntryList;
 
 TEntryList& fta_parse_buf(Parser& pp, const char* buf);
-bool fta_set_format_source(Parser& pp, const std::string& format, const std::string& source);
+bool        fta_set_format_source(Parser& pp, const std::string& format, const std::string& source);
 
 END_NCBI_SCOPE
 

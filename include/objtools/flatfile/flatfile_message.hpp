@@ -1,7 +1,4 @@
-#ifndef _FLATFILE_MESSAGE_HPP_
-#define _FLATFILE_MESSAGE_HPP_
-/*
- *
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -29,8 +26,11 @@
  * Author: Justin Foley
  *
  * File Description:
- * -----------------
+ *
  */
+
+#ifndef _FLATFILE_MESSAGE_HPP_
+#define _FLATFILE_MESSAGE_HPP_
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/logging/message.hpp>
@@ -39,41 +39,33 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFlatFileMessage : public CObjtoolsMessage 
+class CFlatFileMessage : public CObjtoolsMessage
 {
 public:
     CFlatFileMessage(const string& module,
-                     EDiagSev severity, 
-                     int code,
-                     int subcode,
+                     EDiagSev      severity,
+                     int           code,
+                     int           subcode,
                      const string& text,
-                     int lineNum=-1);
+                     int           lineNum = -1);
 
     virtual ~CFlatFileMessage();
 
-    CFlatFileMessage *Clone(void) const override;
-
-    void Dump(CNcbiOstream& out) const override;
-
-    void DumpAsXML(CNcbiOstream& out) const override;
-
-    void Write(CNcbiOstream& out) const override;
-
-    void WriteAsXML(CNcbiOstream& out) const override;
-    
-    const string& GetModule() const;
-
-    int GetCode(void) const override;
-
-    int GetSubCode(void) const override;
-
-    int GetLineNum(void) const;   
+    CFlatFileMessage* Clone(void) const override;
+    void              Dump(CNcbiOstream& out) const override;
+    void              DumpAsXML(CNcbiOstream& out) const override;
+    void              Write(CNcbiOstream& out) const override;
+    void              WriteAsXML(CNcbiOstream& out) const override;
+    const string&     GetModule() const;
+    int               GetCode(void) const override;
+    int               GetSubCode(void) const override;
+    int               GetLineNum(void) const;
 
 private:
     string m_Module;
-    int m_Code;
-    int m_Subcode;
-    int m_LineNum;
+    int    m_Code;
+    int    m_Subcode;
+    int    m_LineNum;
 };
 
 END_SCOPE(objects)

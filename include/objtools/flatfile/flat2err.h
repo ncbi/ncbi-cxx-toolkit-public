@@ -1,5 +1,4 @@
-/* flat2err.h
- *
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -24,12 +23,11 @@
  *
  * ===========================================================================
  *
- * File Name:  flat2err.h
+ * File Name: flat2err.h
  *
  * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
- * -----------------
  *
  */
 
@@ -175,7 +173,7 @@
 #define ERR_ACCESSION_WGSMasterAsSecondary             9,7
 #define ERR_ACCESSION_UnusualWGS_Secondary             9,8
 #define ERR_ACCESSION_ScfldHasWGSContigSec             9,9
-#define ERR_ACCESSION_WGSPrefixMismatch                9,10 
+#define ERR_ACCESSION_WGSPrefixMismatch                9,10
 
 #define ERR_LOCUS                                      10,0
 #define ERR_LOCUS_WrongTopology                        10,2
