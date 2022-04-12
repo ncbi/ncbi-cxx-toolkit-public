@@ -816,24 +816,26 @@ static CRef<objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static void CheckEmblContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
+static bool CheckEmblContigEverywhere(const IndexblkPtr ibp, Parser::ESource source)
 {
     bool condiv = (NStr::CompareNocase(ibp->division, "CON") == 0);
 
+    bool result = true;
     if(condiv && ibp->segnum != 0)
     {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_ConDivInSegset,
                   "Use of the CON division is not allowed for members of segmented set : %s|%s. Entry skipped.",
                   ibp->locusname, ibp->acnum);
-        ibp->drop = 1;
-        return;
+        //ibp->drop = 1;
+        result = false;
     }
 
     if(!condiv && ibp->is_contig == false && ibp->origin == false)
     {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingSequenceData,
                   "Required sequence data is absent. Entry dropped.");
-        ibp->drop = 1;
+        //ibp->drop = 1;
+        result = false;
     }
     else if(!condiv && ibp->is_contig && ibp->origin == false)
     {
@@ -852,20 +854,23 @@ static void CheckEmblContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
         {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigWithSequenceData,
                       "The CONTIG/CO linetype and sequence data may not both be present in a sequence record.");
-            ibp->drop = 1;
+            //ibp->drop = 1;
+            result = false;
         }
     }
     else if(condiv && !ibp->is_contig && !ibp->origin)
     {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingContigFeature,
                   "No CONTIG data in GenBank format file, entry dropped.");
-        ibp->drop = 1;
+        //ibp->drop = 1;
+        result = false;
     }
     else if(condiv && !ibp->is_contig && ibp->origin)
     {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_ConDivLacksContig,
                   "Division is CON, but CONTIG data have not been found.");
     }
+    return result;
 }
 
 /**********************************************************/
@@ -2589,9 +2594,10 @@ bool EmblAscii(ParserPtr pp)
                 ibp->is_tsa = true;
             }
 
-            CheckEmblContigEverywhere(ibp, pp->source);
-            if(ibp->drop != 0)
-            {
+            if (!CheckEmblContigEverywhere(ibp, pp->source)) {
+            //if(ibp->drop != 0)
+            //{
+                ibp->drop = 1;
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                           "Entry skipped: \"%s|%s\".",
                           ibp->locusname, ibp->acnum);
