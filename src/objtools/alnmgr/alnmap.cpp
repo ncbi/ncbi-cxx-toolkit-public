@@ -601,6 +601,9 @@ TSignedSeqPos CAlnMap::x_FindClosestSeqPos(TNumrow row,
                                            bool try_reverse_dir) const
 {
     _ASSERT(x_GetRawStart(row, seg) == -1);
+    if (dir == eNone) {
+        return -1;
+    }
     TNumseg orig_seg = seg;
     TSignedSeqPos pos = -1;
     bool reverse_pass = false;
