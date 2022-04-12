@@ -753,65 +753,42 @@ static void GetReleaseInfo(const DataBlk& entry, bool accver)
  *      >= 1 OS per entry.
  *
  **********************************************************/
-static CRef<objects::COrg_ref> GetEmblOrgRef(DataBlkPtr dbp)
+static CRef<objects::COrg_ref> GetEmblOrgRef(const DataBlkPtr dbp)
 {
-    char*   bptr;
-    char*   eptr;
-    char*   ptr;
-    char*   str;
-    char*   taxname;
+    const char*   bptr = dbp->mOffset;
+    const char*   eptr = bptr + dbp->len;
 
-    bptr = dbp->mOffset;
-    eptr = bptr + dbp->len;
-
-    taxname = str = (char*) MemNew(dbp->len + 1);
-
-    /* get block of OS line data
-     */
-    while(bptr < eptr && (ptr = SrchTheChar(bptr, eptr, '\n')) != NULL)
-    {
-        if(StringNCmp(bptr, "XX", 2) != 0)
-        {
-            bptr += ParFlat_COL_DATA_EMBL;
-
-            if(StringLen(taxname) > 0)
-                str = StringMove(str, " ");
-
-            size_t size = ptr - bptr;
-            MemCpy(str, bptr, size);
-            str += size;
+    string sTaxname;
+    vector<string> taxLines;
+    NStr::Split(CTempString(bptr, eptr - bptr), "\n", taxLines);
+    for (auto line: taxLines) {
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()  ||  NStr::StartsWith(line, "XX")) {
+            continue;
         }
-
-        bptr = ptr + 1;
+        if (!sTaxname.empty()) {
+            sTaxname += ' ';
+        }
+        sTaxname += line.substr(ParFlat_COL_DATA_EMBL);
     }
 
     CRef<objects::COrg_ref> org_ref;
-    if(taxname[0] == '\0')
-    {
-        MemFree(taxname);
+    if (sTaxname.empty()) {
         return org_ref;
     }
 
     org_ref.Reset(new objects::COrg_ref);
-    org_ref->SetTaxname(taxname);
+    org_ref->SetTaxname(sTaxname);
 
-    ptr = StringChr(taxname, '(');
-    if(ptr != NULL && ptr > taxname)
-    {
-        for(ptr--; *ptr == ' ' || *ptr == '\t'; ptr--)
-            if(ptr == taxname)
-                break;
-        if(*ptr != ' ' && *ptr != '\t')
-            ptr++;
-        if(ptr > taxname)
-        {
-            *ptr = '\0';
-            org_ref->SetCommon(taxname);
+    auto openP = sTaxname.find('(');
+    if (openP != string::npos) {
+        auto sCommonName = sTaxname.substr(0, openP);
+        auto commonTerm = sCommonName.find_last_not_of(" \t(");
+        if (commonTerm != string::npos) {
+            sCommonName = sCommonName.substr(0, commonTerm + 1);
+            org_ref->SetCommon(sCommonName);
         }
     }
-
-    MemFree(taxname);
-        
     return org_ref;
 }
 
