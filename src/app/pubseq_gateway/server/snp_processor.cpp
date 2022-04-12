@@ -104,16 +104,6 @@ private:
 };
 
 
-class CSemaphoreGuard
-{
-public:
-    CSemaphoreGuard(CSemaphore& sema) : m_Sema(sema) {}
-    ~CSemaphoreGuard(void) { m_Sema.Post(); }
-private:
-    CSemaphore& m_Sema;
-};
-
-
 void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& data)
 {
     if ( data.GetData_compression() == data.eData_compression_gzip ) {
@@ -127,172 +117,9 @@ END_LOCAL_NAMESPACE;
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CSNPProcessorRef
-/////////////////////////////////////////////////////////////////////////////
-
-CSNPProcessorRef::CSNPProcessorRef(CPSGS_SNPProcessor* processor)
-    : m_ProcessorPtr(processor)
-{
-}
-
-
-CSNPProcessorRef::~CSNPProcessorRef()
-{
-}
-
-
-void CSNPProcessorRef::Detach()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr = 0;
-    }
-}
-
-
-void CSNPProcessorRef::GetAnnotation(shared_ptr<CSNPProcessorRef> ref)
-{
-    CRequestContextResetter context_resetter;
-    CSemaphoreGuard gsema(*CPSGS_SNPProcessor::sm_ThreadSema);
-    shared_ptr<CSNPClient> client;
-    vector<CSeq_id_Handle> ids;
-    vector<string> names;
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
-        client = ref->m_ProcessorPtr->m_Client;
-        SPSGS_AnnotRequest& annot_request =
-            ref->m_ProcessorPtr->GetRequest()->GetRequest<SPSGS_AnnotRequest>();
-        ids = ref->m_ProcessorPtr->m_SeqIds;
-        names = annot_request.GetNotProcessedName(ref->m_ProcessorPtr->m_Priority);
-    }}
-    vector<SSNPData> data;
-    for (auto& id : ids) {
-        data = client->GetAnnotInfo(id, names);
-        if (!data.empty()) break;
-    }
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->m_SNPData = move(data);
-        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-            OnGotAnnotation, new shared_ptr<CSNPProcessorRef>(ref));
-    }}
-}
-
-
-void CSNPProcessorRef::OnGotAnnotation(void *data)
-{
-    shared_ptr<CSNPProcessorRef>& ref = *static_cast<shared_ptr<CSNPProcessorRef>*>(data);
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( ref->m_ProcessorPtr ) {
-           ref->m_ProcessorPtr->OnGotAnnotation();
-        }
-    }}
-    delete &ref;
-}
-
-
-void CSNPProcessorRef::GetBlobByBlobId(shared_ptr<CSNPProcessorRef> ref)
-{
-    CRequestContextResetter context_resetter;
-    CSemaphoreGuard gsema(*CPSGS_SNPProcessor::sm_ThreadSema);
-    shared_ptr<CSNPClient> client;
-    string blob_id;
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
-        client = ref->m_ProcessorPtr->m_Client;
-        blob_id = ref->m_ProcessorPtr->m_PSGBlobId;
-    }}
-
-    SSNPData data = client->GetBlobByBlobId(blob_id);
-
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->m_SNPData.push_back(data);
-        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-            OnGotBlobByBlobId, new shared_ptr<CSNPProcessorRef>(ref));
-    }}
-}
-
-
-void CSNPProcessorRef::OnGotBlobByBlobId(void *data)
-{
-    shared_ptr<CSNPProcessorRef>& ref = *static_cast<shared_ptr<CSNPProcessorRef>*>(data);
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( ref->m_ProcessorPtr ) {
-            ref->m_ProcessorPtr->OnGotBlobByBlobId();
-        }
-    }}
-    delete &ref;
-}
-
-
-void CSNPProcessorRef::GetChunk(shared_ptr<CSNPProcessorRef> ref)
-{
-    CRequestContextResetter context_resetter;
-    CSemaphoreGuard gsema(*CPSGS_SNPProcessor::sm_ThreadSema);
-    shared_ptr<CSNPClient> client;
-    string id2info;
-    int chunk_id;
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
-        client = ref->m_ProcessorPtr->m_Client;
-        id2info = ref->m_ProcessorPtr->m_Id2Info;
-        chunk_id = ref->m_ProcessorPtr->m_ChunkId;
-    }}
-
-    SSNPData data = client->GetChunk(id2info, chunk_id);
-
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->m_SNPData.push_back(data);
-        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-            OnGotChunk, new shared_ptr<CSNPProcessorRef>(ref));
-    }}
-}
-
-
-void CSNPProcessorRef::OnGotChunk(void* data)
-{
-    shared_ptr<CSNPProcessorRef>& ref = *static_cast<shared_ptr<CSNPProcessorRef>*>(data);
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( ref->m_ProcessorPtr ) {
-            ref->m_ProcessorPtr->OnGotChunk();
-        }
-    }}
-    delete &ref;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 // CPSGS_SNPProcessor
 /////////////////////////////////////////////////////////////////////////////
 
-
-unique_ptr<CSemaphore> CPSGS_SNPProcessor::sm_ThreadSema;
 
 #define PARAM_GC_CACHE_SIZE "gc_cache_size"
 #define PARAM_MISSING_GC_SIZE "missing_gc_size"
@@ -300,7 +127,6 @@ unique_ptr<CSemaphore> CPSGS_SNPProcessor::sm_ThreadSema;
 #define PARAM_VDB_FILES "vdb_files"
 #define PARAM_ANNOT_NAME "annot_name"
 #define PARAM_ADD_PTIS "add_ptis"
-#define PARAM_WORKER_THREADS "worker_threads"
 
 #define DEFAULT_GC_CACHE_SIZE 10
 #define DEFAULT_MISSING_GC_SIZE 10000
@@ -308,14 +134,13 @@ unique_ptr<CSemaphore> CPSGS_SNPProcessor::sm_ThreadSema;
 #define DEFAULT_VDB_FILES ""
 #define DEFAULT_ANNOT_NAME ""
 #define DEFAULT_ADD_PTIS true
-#define DEFAULT_WORKER_THREADS 5
 
 
 CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
-    : m_Config(new SSNPProcessor_Config)
+    : m_Config(new SSNPProcessor_Config),
+      m_Unlocked(true)
 {
     x_LoadConfig();
-    sm_ThreadSema.reset(new CSemaphore(m_Config->m_WorkerThreads, m_Config->m_WorkerThreads));
 }
 
 
@@ -323,16 +148,17 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
     const shared_ptr<CSNPClient>& client,
     shared_ptr<CPSGS_Request> request,
     shared_ptr<CPSGS_Reply> reply,
-    TProcessorPriority priority) :
-    CPSGS_CassProcessorBase(request, reply, priority),
-    CPSGS_ResolveBase(request, reply,
+    TProcessorPriority priority)
+    : CPSGS_CassProcessorBase(request, reply, priority),
+      CPSGS_ResolveBase(request, reply,
         bind(&CPSGS_SNPProcessor::x_OnSeqIdResolveFinished,
             this, placeholders::_1),
         bind(&CPSGS_SNPProcessor::x_OnSeqIdResolveError,
             this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
         bind(&CPSGS_SNPProcessor::x_OnResolutionGoodData, this)),
-    m_Client(client),
-    m_Status(ePSGS_InProgress)
+      m_Client(client),
+      m_Status(ePSGS_InProgress),
+      m_Unlocked(true)
 {
 }
 
@@ -340,9 +166,7 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
 CPSGS_SNPProcessor::~CPSGS_SNPProcessor(void)
 {
     _ASSERT(m_Status != ePSGS_InProgress);
-    if ( m_ProcessorRef ) {
-        m_ProcessorRef->Detach();
-    }
+    x_UnlockRequest();
 }
 
 
@@ -362,9 +186,6 @@ void CPSGS_SNPProcessor::x_LoadConfig(void)
         PSG_ERROR("CSNPClient: SNP primary track is disabled due to lack of GRPC support");
         m_Config->m_AddPTIS = false;
     }
-
-    m_Config->m_WorkerThreads = registry.GetInt(kSNPProcessorSection, PARAM_WORKER_THREADS, DEFAULT_WORKER_THREADS);
-    if (m_Config->m_WorkerThreads <= 0) m_Config->m_WorkerThreads = DEFAULT_WORKER_THREADS;
 }
 
 
@@ -429,21 +250,41 @@ void CPSGS_SNPProcessor::Process()
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
 
-    auto req_type = GetRequest()->GetRequestType();
-    switch (req_type) {
-    case CPSGS_Request::ePSGS_AnnotationRequest:
-        x_ProcessAnnotationRequest();
-        break;
-    case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-        x_ProcessBlobBySatSatKeyRequest();
-        break;
-    case CPSGS_Request::ePSGS_TSEChunkRequest:
-        x_ProcessTSEChunkRequest();
-        break;
-    default:
-        x_Finish(ePSGS_Error);
-        break;
+    try {
+        m_Unlocked = false;
+        if (m_Request) m_Request->Lock(kSNPProcessorEvent);
+        auto req_type = GetRequest()->GetRequestType();
+        switch (req_type) {
+        case CPSGS_Request::ePSGS_AnnotationRequest:
+            x_ProcessAnnotationRequest();
+            break;
+        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+            x_ProcessBlobBySatSatKeyRequest();
+            break;
+        case CPSGS_Request::ePSGS_TSEChunkRequest:
+            x_ProcessTSEChunkRequest();
+            break;
+        default:
+            x_Finish(ePSGS_Error);
+            break;
+        }
     }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+        return;
+    }
+}
+
+
+static void s_GetAnnotation(CPSGS_SNPProcessor* processor)
+{
+    processor->GetAnnotation();
+}
+
+
+static void s_OnGotAnnotation(void* data)
+{
+    static_cast<CPSGS_SNPProcessor*>(data)->OnGotAnnotation();
 }
 
 
@@ -453,13 +294,118 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
 }
 
 
+void CPSGS_SNPProcessor::GetAnnotation(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    try {
+        SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+        vector<string> names = annot_request.GetNotProcessedName(m_Priority);
+        for (auto& id : m_SeqIds) {
+            m_SNPData = m_Client->GetAnnotInfo(id, names);
+            if (!m_SNPData.empty()) break;
+        }
+    }
+    catch (...) {
+        m_SNPData.clear();
+    }
+    GetUvLoopBinder().PostponeInvoke(s_OnGotAnnotation, this);
+}
+
+
+void CPSGS_SNPProcessor::OnGotAnnotation(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    if (x_IsCanceled()) {
+        return;
+    }
+    if (m_SNPData.empty()) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if (!x_SignalStartProcessing()) {
+        return;
+    }
+    try {
+        x_SendAnnotInfo();
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+        return;
+    }
+    x_Finish(ePSGS_Done);
+}
+
+
+static void s_GetBlobByBlobId(CPSGS_SNPProcessor* processor)
+{
+    processor->GetBlobByBlobId();
+}
+
+
+static void s_OnGotBlobByBlobId(void* data)
+{
+    static_cast<CPSGS_SNPProcessor*>(data)->OnGotBlobByBlobId();
+}
+
+
 void CPSGS_SNPProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
-    if ( !x_WaitForIdleThread() ) return;
-    m_ProcessorRef = make_shared<CSNPProcessorRef>(this);
-    thread(bind(&CSNPProcessorRef::GetBlobByBlobId, m_ProcessorRef)).detach();
+    thread(bind(&s_GetBlobByBlobId, this)).detach();
+}
+
+
+void CPSGS_SNPProcessor::GetBlobByBlobId(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    try {
+        m_SNPData.push_back(m_Client->GetBlobByBlobId(m_PSGBlobId));
+    }
+    catch (...) {
+        m_SNPData.clear();
+    }
+    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobByBlobId, this);
+}
+
+
+void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    if (x_IsCanceled()) {
+        return;
+    }
+    if (m_SNPData.empty()) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if (!x_SignalStartProcessing()) {
+        return;
+    }
+    try {
+        x_SendBlob();
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+        return;
+    }
+    x_Finish(ePSGS_Done);
+}
+
+
+static void s_GetChunk(CPSGS_SNPProcessor* processor)
+{
+    processor->GetChunk();
+}
+
+
+static void s_OnGotChunk(void* data)
+{
+    static_cast<CPSGS_SNPProcessor*>(data)->OnGotChunk();
 }
 
 
@@ -468,10 +414,47 @@ void CPSGS_SNPProcessor::x_ProcessTSEChunkRequest(void)
     SPSGS_TSEChunkRequest& chunk_request = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
+    thread(bind(&s_GetChunk, this)).detach();
+}
 
-    if ( !x_WaitForIdleThread() ) return;
-    m_ProcessorRef = make_shared<CSNPProcessorRef>(this);
-    thread(bind(&CSNPProcessorRef::GetChunk, m_ProcessorRef)).detach();
+
+void CPSGS_SNPProcessor::GetChunk(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    try {
+        SSNPData data = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+        m_SNPData.push_back(data);
+    }
+    catch (...) {
+        m_SNPData.clear();
+    }
+    GetUvLoopBinder().PostponeInvoke(s_OnGotChunk, this);
+}
+
+
+void CPSGS_SNPProcessor::OnGotChunk(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    if (x_IsCanceled()) {
+        return;
+    }
+    if (m_SNPData.empty()) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if (!x_SignalStartProcessing()) {
+        return;
+    }
+    try {
+        x_SendChunk();
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+        return;
+    }
+    x_Finish(ePSGS_Done);
 }
 
 
@@ -602,76 +585,24 @@ void CPSGS_SNPProcessor::x_SendChunkBlobData(const string& id2_info, int chunk_i
 }
 
 
-void CPSGS_SNPProcessor::OnGotAnnotation(void)
-{
-    CRequestContextResetter context_resetter;
-    GetRequest()->SetRequestContext();
-    if (x_IsCanceled()) {
-        return;
-    }
-    if (m_SNPData.empty()) {
-        x_Finish(ePSGS_NotFound);
-        return;
-    }
-    if (!x_SignalStartProcessing()) {
-        return;
-    }
-    x_SendAnnotInfo();
-    x_Finish(ePSGS_Done);
-}
-
-
-void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
-{
-    CRequestContextResetter context_resetter;
-    GetRequest()->SetRequestContext();
-    if (x_IsCanceled()) {
-        return;
-    }
-    if (m_SNPData.empty()) {
-        x_Finish(ePSGS_NotFound);
-        return;
-    }
-    if (!x_SignalStartProcessing()) {
-        return;
-    }
-    x_SendBlob();
-    x_Finish(ePSGS_Done);
-}
-
-
-void CPSGS_SNPProcessor::OnGotChunk(void)
-{
-    CRequestContextResetter context_resetter;
-    GetRequest()->SetRequestContext();
-    if (x_IsCanceled()) {
-        return;
-    }
-    if (m_SNPData.empty()) {
-        x_Finish(ePSGS_NotFound);
-        return;
-    }
-    if (!x_SignalStartProcessing()) {
-        return;
-    }
-    x_SendChunk();
-    x_Finish(ePSGS_Done);
-}
-
-
 void CPSGS_SNPProcessor::Cancel()
 {
     m_Canceled = true;
-    x_Finish(ePSGS_Canceled);
-    if ( m_ProcessorRef ) {
-        m_ProcessorRef->Detach();
-    }
+    x_UnlockRequest();
 }
 
 
 IPSGS_Processor::EPSGS_Status CPSGS_SNPProcessor::GetStatus()
 {
     return m_Status;
+}
+
+
+void CPSGS_SNPProcessor::x_UnlockRequest(void)
+{
+    if (m_Unlocked) return;
+    m_Unlocked = true;
+    if (m_Request) m_Request->Unlock(kSNPProcessorEvent);
 }
 
 
@@ -699,18 +630,8 @@ void CPSGS_SNPProcessor::x_Finish(EPSGS_Status status)
 {
     _ASSERT(status != ePSGS_InProgress);
     m_Status = status;
+    x_UnlockRequest();
     SignalFinishProcessing();
-}
-
-
-bool CPSGS_SNPProcessor::x_WaitForIdleThread(void)
-{
-    sm_ThreadSema->Wait();
-    if ( x_IsCanceled() ) {
-        sm_ThreadSema->Post();
-        return false;
-    }
-    return true;
 }
 
 
@@ -735,9 +656,7 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
         m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
     }
 
-    if ( !x_WaitForIdleThread() ) return;
-    m_ProcessorRef = make_shared<CSNPProcessorRef>(this);
-    thread(bind(&CSNPProcessorRef::GetAnnotation, m_ProcessorRef)).detach();
+    thread(bind(&s_GetAnnotation, this)).detach();
 }
 
 
@@ -763,11 +682,6 @@ void CPSGS_SNPProcessor::x_OnResolutionGoodData(void)
     if (x_IsCanceled()) {
         return;
     }
-
-    if (x_SignalStartProcessing()) {
-        return;
-    }
-    UnlockWaitingProcessor();
 }
 
 

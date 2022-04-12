@@ -41,8 +41,6 @@
 
 BEGIN_NCBI_NAMESPACE;
 
-class CSemaphore;
-
 BEGIN_NAMESPACE(objects);
 class CID2_Blob_Id;
 class CID2_Reply_Data;
@@ -55,39 +53,11 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(wgs);
 
 
-class CPSGS_WGSProcessor;
-
-class CWGSProcessorRef
-{
-public:
-    explicit CWGSProcessorRef(CPSGS_WGSProcessor* ptr);
-    ~CWGSProcessorRef();
-
-private:
-    friend class CPSGS_WGSProcessor;
-    
-    void Detach();
-
-    static void ResolveSeqId(shared_ptr<CWGSProcessorRef> ref);
-    static void OnResolvedSeqId(void* data);
-
-    static void GetBlobBySeqId(shared_ptr<CWGSProcessorRef> ref);
-    static void OnGotBlobBySeqId(void* data);
-
-    static void GetBlobByBlobId(shared_ptr<CWGSProcessorRef> ref);
-    static void OnGotBlobByBlobId(void* data);
-    
-    static void GetChunk(shared_ptr<CWGSProcessorRef> ref);
-    static void OnGotChunk(void* data);
-
-    CFastMutex m_ProcessorPtrMutex;
-    CPSGS_WGSProcessor* volatile m_ProcessorPtr;
-};
-
-
 class CWGSClient;
 class SWGSProcessor_Config;
 struct SWGSData;
+
+const string    kWGSProcessorEvent = "WGS";
 
 class CPSGS_WGSProcessor : public IPSGS_Processor
 {
@@ -105,14 +75,19 @@ public:
     string GetName(void) const override;
     string GetGroupName(void) const override;
 
+    void ResolveSeqId(void);
     void OnResolvedSeqId(void);
+
+    void GetBlobBySeqId(void);
     void OnGotBlobBySeqId(void);
+
+    void GetBlobByBlobId(void);
     void OnGotBlobByBlobId(void);
+
+    void GetChunk(void);
     void OnGotChunk(void);
 
 private:
-    friend class CWGSProcessorRef;
-    
     CPSGS_WGSProcessor(const shared_ptr<CWGSClient>& client,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
@@ -156,12 +131,12 @@ private:
         return obj.IsSetBlob_state() ? obj.GetBlob_state() : 0;
     }
 
-    bool x_WaitForIdleThread(void);
+    void x_UnlockRequest(void);
+    void x_WaitForOtherProcessors(void);
     void x_Finish(EPSGS_Status status);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
 
-    shared_ptr<CWGSProcessorRef> m_ProcessorRef;
     shared_ptr<SWGSProcessor_Config> m_Config;
     mutable shared_ptr<CWGSClient> m_Client;
     EPSGS_Status m_Status;
@@ -173,8 +148,7 @@ private:
     TBlobIds m_ExcludedBlobs;
     shared_ptr<SWGSData> m_WGSData;
     EOutputFormat m_OutputFormat;
-
-    static unique_ptr<CSemaphore> sm_ThreadSema;
+    bool m_Unlocked;
 };
 
 
