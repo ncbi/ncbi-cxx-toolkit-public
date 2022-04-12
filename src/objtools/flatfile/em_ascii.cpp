@@ -711,7 +711,7 @@ static objects::CTextseq_id& SetTextIdRef(objects::CSeq_id& id)
 }
 
 /**********************************************************/
-static void GetReleaseInfo(const DataBlk& entry, bool accver)
+static void GetReleaseInfo(const DataBlk& entry)
 {
     EntryBlkPtr  ebp;
 
@@ -720,9 +720,6 @@ static void GetReleaseInfo(const DataBlk& entry, bool accver)
     char*      eptr;
 
     size_t       len;
-
-    if(accver)
-        return;
 
     ebp = (EntryBlkPtr) entry.mpData;
     objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
@@ -2604,7 +2601,9 @@ bool EmblAscii(ParserPtr pp)
             ebp->seq_entry->SetSeq(*bioseq);
             GetScope().AddBioseq(*bioseq);
 
-            GetReleaseInfo(*pEntry, pp->accver);
+            if (!pp->accver) {
+                GetReleaseInfo(*pEntry);
+            }
             if (!GetEmblInst(pp, *pEntry, dnaconv.get()))
             {
                 ibp->drop = 1;

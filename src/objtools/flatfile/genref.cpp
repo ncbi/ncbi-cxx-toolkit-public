@@ -2553,6 +2553,7 @@ static CdssListPtr SrchCdss(CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp,
     return(clp);
 }
 
+
 /**********************************************************
  *
  *   FindGene:
@@ -2590,8 +2591,9 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
 
         SrchGene((*annot)->SetData().SetFtable(), gene_node, bioseq.GetLength(), *id);
 
-        if (gene_node->skipdiv)
+        if (gene_node->skipdiv) {
             gene_node->clp = SrchCdss((*annot)->SetData().SetFtable(), gene_node->clp, gene_node->segindex, *id);
+        }
 
         if (gene_node->glp != NULL && gene_node->flag == false)
         {
@@ -2606,8 +2608,9 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
 }
 
 /**********************************************************/
-static void GeneCheckForStrands(GeneListPtr glp)
+static void GeneCheckForStrands(const GeneListPtr _glp)
 {
+    GeneListPtr glp(_glp);
     GeneListPtr tglp;
 
     if(glp == NULL)
@@ -3046,24 +3049,29 @@ bool GenelocContained(
  *   other gene and asn2ff cannot find it.
  *
  **********************************************************/
-static CRef<CSeqFeatXref> GetXrpForOverlap(const Char* acnum, GeneRefFeats& gene_refs, TSeqLocInfoList& llocs,
-                                                                CSeq_feat& feat, CGene_ref& gerep)
+static CRef<CSeqFeatXref> GetXrpForOverlap(
+            const char* acnum, 
+            GeneRefFeats& gene_refs, 
+            const TSeqLocInfoList& llocs,
+            const CSeq_feat& feat, 
+            CGene_ref& gerep)
 {
-    Int4           count = 0;
-    Uint1          strand = feat.GetLocation().IsSetStrand() ? feat.GetLocation().GetStrand() : eNa_strand_unknown;
-
+    int count = 0;
+    ENa_strand strand = feat.GetLocation().IsSetStrand() ? 
+        feat.GetLocation().GetStrand() : 
+        eNa_strand_unknown;
     if(strand == eNa_strand_other)
         strand = eNa_strand_unknown;
 
     CConstRef<CGene_ref> gene_ref;
 
     TSeqLocInfoList::const_iterator cur_loc = llocs.begin();
-    CRef<CSeq_loc> loc = fta_seqloc_local(feat.GetLocation(), acnum);
+    CRef<CSeq_loc> loc = fta_seqloc_local(feat.GetLocation(), acnum); // passed as consts
 
     bool stopped = false;
     if (gene_refs.valid)
     {
-        for (TSeqFeatList::iterator cur_feat = gene_refs.first; cur_feat != gene_refs.last; ++cur_feat)
+        for (auto cur_feat = gene_refs.first; cur_feat != gene_refs.last; ++cur_feat)
         {
             if (!GenelocContained(*loc, *cur_loc->loc, nullptr)) {
                 ++cur_loc;
@@ -3071,10 +3079,10 @@ static CRef<CSeqFeatXref> GetXrpForOverlap(const Char* acnum, GeneRefFeats& gene
             }
 
             count++;
-            if (gene_ref.Empty())
+            if (gene_ref.Empty()) {
                 gene_ref.Reset(&(*cur_feat)->GetData().GetGene());
-            else if (fta_cmp_gene_refs(*gene_ref, (*cur_feat)->GetData().GetGene()) != 0)
-            {
+            }
+            else if (fta_cmp_gene_refs(*gene_ref, (*cur_feat)->GetData().GetGene())) {
                 stopped = true;
                 break;
             }
@@ -3094,7 +3102,7 @@ static CRef<CSeqFeatXref> GetXrpForOverlap(const Char* acnum, GeneRefFeats& gene
     return xref;
 }
 
-static void FixAnnot(CBioseq::TAnnot& annots, const Char* acnum, GeneRefFeats& gene_refs, TSeqLocInfoList& llocs)
+static void FixAnnot(CBioseq::TAnnot& annots, const char* acnum, GeneRefFeats& gene_refs, TSeqLocInfoList& llocs)
 {
     for (CBioseq::TAnnot::iterator annot = annots.begin(); annot != annots.end(); )
     {
@@ -3171,7 +3179,7 @@ static void FixAnnot(CBioseq::TAnnot& annots, const Char* acnum, GeneRefFeats& g
  *               remove misc_feat 'gene'
  *
  **********************************************************/
-static void GeneQuals(TEntryList& seq_entries, const Char* acnum, GeneRefFeats& gene_refs)
+static void GeneQuals(TEntryList& seq_entries, const char* acnum, GeneRefFeats& gene_refs)
 {
     TSeqLocInfoList llocs;
     if (gene_refs.valid)
