@@ -66,7 +66,6 @@ struct SSNPProcessor_Config
     string m_AnnotName;
     bool m_AddPTIS = true;
     vector<string> m_VDBFiles;
-    unsigned int m_WorkerThreads = 5;
 };
 
 

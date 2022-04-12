@@ -43,8 +43,6 @@
 
 BEGIN_NCBI_NAMESPACE;
 
-class CSemaphore;
-
 BEGIN_NAMESPACE(objects);
 class CID2_Reply_Data;
 END_NAMESPACE(objects);
@@ -53,35 +51,10 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(snp);
 
 
-class CPSGS_SNPProcessor;
-
-class CSNPProcessorRef
-{
-public:
-    explicit CSNPProcessorRef(CPSGS_SNPProcessor* ptr);
-    ~CSNPProcessorRef(void);
-
-private:
-    friend class CPSGS_SNPProcessor;
-    
-    void Detach(void);
-
-    static void GetAnnotation(shared_ptr<CSNPProcessorRef> ref);
-    static void OnGotAnnotation(void* data);
-
-    static void GetBlobByBlobId(shared_ptr<CSNPProcessorRef> ref);
-    static void OnGotBlobByBlobId(void* data);
-    
-    static void GetChunk(shared_ptr<CSNPProcessorRef> ref);
-    static void OnGotChunk(void* data);
-
-    CFastMutex m_ProcessorPtrMutex;
-    CPSGS_SNPProcessor* volatile m_ProcessorPtr;
-};
-
-
 struct SSNPProcessor_Config;
 class CSNPClient;
+
+const string    kSNPProcessorEvent = "SNP";
 
 class CPSGS_SNPProcessor :
     virtual public CPSGS_CassProcessorBase,
@@ -101,16 +74,19 @@ public:
     string GetName(void) const override;
     string GetGroupName(void) const override;
 
+    void GetAnnotation(void);
     void OnGotAnnotation(void);
+
+    void GetBlobByBlobId(void);
     void OnGotBlobByBlobId(void);
+
+    void GetChunk(void);
     void OnGotChunk(void);
 
     // Seq-id pre-resolving
     virtual void ProcessEvent(void);
 
 private:
-    friend class CSNPProcessorRef;
-
     CPSGS_SNPProcessor(const shared_ptr<CSNPClient>& client,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
@@ -146,12 +122,11 @@ private:
     void x_SendChunkBlobProps(const string& id2_info, int chunk_id, CBlobRecord& blob_props);
     void x_SendChunkBlobData(const string& id2_info, int chunk_id, const objects::CID2_Reply_Data& data);
 
-    bool x_WaitForIdleThread(void);
+    void x_UnlockRequest(void);
     void x_Finish(EPSGS_Status status);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
 
-    shared_ptr<CSNPProcessorRef> m_ProcessorRef;
     shared_ptr<SSNPProcessor_Config> m_Config;
     mutable shared_ptr<CSNPClient> m_Client;
 
@@ -162,8 +137,7 @@ private:
     string m_Id2Info;   // requested id2-info
     int m_ChunkId;  // requested chunk-id
     vector<SSNPData> m_SNPData;
-
-    static unique_ptr<CSemaphore> sm_ThreadSema;
+    bool m_Unlocked;
 };
 
 

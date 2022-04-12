@@ -51,31 +51,7 @@ END_NAMESPACE(objects);
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(cdd);
 
-class CPSGS_CDDProcessor;
-
-class CCDDProcessorRef
-{
-public:
-    explicit CCDDProcessorRef(CPSGS_CDDProcessor* ptr);
-    ~CCDDProcessorRef();
-
-private:
-    friend class CPSGS_CDDProcessor;
-    
-    void Detach();
-
-    static void GetBlobBySeqId(shared_ptr<CCDDProcessorRef> ref);
-    static void GetBlobId(shared_ptr<CCDDProcessorRef> ref);
-    static void GetBlobByBlobId(shared_ptr<CCDDProcessorRef> ref);
-        
-    static void OnGotBlobBySeqId(void* data);
-    static void OnGotBlobId(void *data);
-    static void OnGotBlobByBlobId(void *data);
-    
-    CFastMutex m_ProcessorPtrMutex;
-    CPSGS_CDDProcessor* volatile m_ProcessorPtr;
-};
-
+const string    kCDDProcessorEvent = "CDD";
 
 class CPSGS_CDDProcessor : public IPSGS_Processor
 {
@@ -92,13 +68,16 @@ public:
     string GetName(void) const override;
     string GetGroupName(void) const override;
 
-    void OnGotBlobBySeqId(void);
-    void OnGotBlobByBlobId(void);
+    void GetBlobId(void);
     void OnGotBlobId(void);
 
+    void GetBlobBySeqId(void);
+    void OnGotBlobBySeqId(void);
+
+    void GetBlobByBlobId(void);
+    void OnGotBlobByBlobId(void);
+
 private:
-    friend class CCDDProcessorRef;
-    
     CPSGS_CDDProcessor(shared_ptr<objects::CCDDClientPool> client_pool,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
@@ -113,6 +92,7 @@ private:
     void x_ProcessGetBlobRequest(void);
     void x_SendAnnotInfo(const objects::CCDD_Reply_Get_Blob_Id& blob_info);
     void x_SendAnnot(const objects::CID2_Blob_Id& id2_blob_id, CRef<objects::CSeq_annot>& annot);
+    void x_UnlockRequest(void);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
 
@@ -123,7 +103,7 @@ private:
     objects::CSeq_id_Handle m_SeqId;
     CRef<objects::CCDDClientPool::TBlobId> m_BlobId;
     objects::CCDDClientPool::SCDDBlob m_CDDBlob;
-    shared_ptr<CCDDProcessorRef> m_ProcessorRef;
+    bool m_Unlocked;
 };
 
 

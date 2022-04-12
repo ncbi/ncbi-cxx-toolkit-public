@@ -40,6 +40,7 @@
 #include "osg_getblob_base.hpp"
 #include "osg_resolve_base.hpp"
 #include "id2info.hpp"
+#include "cass_processor_base.hpp"
 #include <sra/readers/sra/wgsread.hpp>
 #include <sra/readers/sra/wgsresolver.hpp>
 #include <corelib/rwstream.hpp>
@@ -106,215 +107,7 @@ private:
 };
 
 
-class CSemaphoreGuard
-{
-public:
-    CSemaphoreGuard(CSemaphore& sema) : m_Sema(sema) {}
-    ~CSemaphoreGuard(void) { m_Sema.Post(); }
-private:
-    CSemaphore& m_Sema;
-};
-
-
 END_LOCAL_NAMESPACE;
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CWGSProcessorRef
-/////////////////////////////////////////////////////////////////////////////
-
-CWGSProcessorRef::CWGSProcessorRef(CPSGS_WGSProcessor* processor)
-    : m_ProcessorPtr(processor)
-{
-}
-
-
-CWGSProcessorRef::~CWGSProcessorRef()
-{
-}
-
-
-void CWGSProcessorRef::Detach()
-{
-    CFastMutexGuard guard(m_ProcessorPtrMutex);
-    if ( m_ProcessorPtr ) {
-        m_ProcessorPtr = 0;
-    }
-}
-
-
-void CWGSProcessorRef::ResolveSeqId(shared_ptr<CWGSProcessorRef> ref)
-{
-    CRequestContextResetter context_resetter;
-    CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
-    shared_ptr<CWGSClient> client;
-    CRef<CSeq_id> seq_id;
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
-        client = ref->m_ProcessorPtr->m_Client;
-        seq_id = ref->m_ProcessorPtr->m_SeqId;
-    }}
-    shared_ptr<SWGSData> data = client->ResolveSeqId(*seq_id);
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->m_WGSData = data;
-        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-            OnResolvedSeqId, new shared_ptr<CWGSProcessorRef>(ref));
-    }}
-}
-
-
-void CWGSProcessorRef::OnResolvedSeqId(void *data)
-{
-    shared_ptr<CWGSProcessorRef>& ref = *static_cast<shared_ptr<CWGSProcessorRef>*>(data);
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( ref->m_ProcessorPtr ) {
-           ref->m_ProcessorPtr->OnResolvedSeqId();
-        }
-    }}
-    delete &ref;
-}
-
-
-void CWGSProcessorRef::GetBlobBySeqId(shared_ptr<CWGSProcessorRef> ref)
-{
-    CRequestContextResetter context_resetter;
-    CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
-    shared_ptr<CWGSClient> client;
-    CRef<CSeq_id> seq_id;
-    CWGSClient::TBlobIds excluded;
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
-        client = ref->m_ProcessorPtr->m_Client;
-        seq_id = ref->m_ProcessorPtr->m_SeqId;
-        excluded = ref->m_ProcessorPtr->m_ExcludedBlobs;
-    }}
-
-    shared_ptr<SWGSData> data = client->GetBlobBySeqId(*seq_id, excluded);
-
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->m_WGSData = data;
-        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-            OnGotBlobBySeqId, new shared_ptr<CWGSProcessorRef>(ref));
-    }}
-}
-
-
-void CWGSProcessorRef::OnGotBlobBySeqId(void *data)
-{
-    shared_ptr<CWGSProcessorRef>& ref = *static_cast<shared_ptr<CWGSProcessorRef>*>(data);
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( ref->m_ProcessorPtr ) {
-            ref->m_ProcessorPtr->OnGotBlobBySeqId();
-        }
-    }}
-    delete &ref;
-}
-
-
-void CWGSProcessorRef::GetBlobByBlobId(shared_ptr<CWGSProcessorRef> ref)
-{
-    CRequestContextResetter context_resetter;
-    CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
-    shared_ptr<CWGSClient> client;
-    string blob_id;
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
-        client = ref->m_ProcessorPtr->m_Client;
-        blob_id = ref->m_ProcessorPtr->m_PSGBlobId;
-    }}
-
-    shared_ptr<SWGSData> data = client->GetBlobByBlobId(blob_id);
-
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->m_WGSData = data;
-        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-            OnGotBlobByBlobId, new shared_ptr<CWGSProcessorRef>(ref));
-    }}
-}
-
-
-void CWGSProcessorRef::OnGotBlobByBlobId(void *data)
-{
-    shared_ptr<CWGSProcessorRef>& ref = *static_cast<shared_ptr<CWGSProcessorRef>*>(data);
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( ref->m_ProcessorPtr ) {
-            ref->m_ProcessorPtr->OnGotBlobByBlobId();
-        }
-    }}
-    delete &ref;
-}
-
-
-void CWGSProcessorRef::GetChunk(shared_ptr<CWGSProcessorRef> ref)
-{
-    CRequestContextResetter context_resetter;
-    CSemaphoreGuard gsema(*CPSGS_WGSProcessor::sm_ThreadSema);
-    shared_ptr<CWGSClient> client;
-    string id2info;
-    int64_t chunk_id;
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->GetRequest()->SetRequestContext();
-        client = ref->m_ProcessorPtr->m_Client;
-        id2info = ref->m_ProcessorPtr->m_Id2Info;
-        chunk_id = ref->m_ProcessorPtr->m_ChunkId;
-    }}
-
-    shared_ptr<SWGSData> data = client->GetChunk(id2info, chunk_id);
-
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( !ref->m_ProcessorPtr ) {
-            return;
-        }
-        ref->m_ProcessorPtr->m_WGSData = data;
-        ref->m_ProcessorPtr->GetUvLoopBinder().PostponeInvoke(
-            OnGotChunk, new shared_ptr<CWGSProcessorRef>(ref));
-    }}
-}
-
-
-void CWGSProcessorRef::OnGotChunk(void* data)
-{
-    shared_ptr<CWGSProcessorRef>& ref = *static_cast<shared_ptr<CWGSProcessorRef>*>(data);
-    {{
-        CFastMutexGuard guard(ref->m_ProcessorPtrMutex);
-        if ( ref->m_ProcessorPtr ) {
-            ref->m_ProcessorPtr->OnGotChunk();
-        }
-    }}
-    delete &ref;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -322,17 +115,13 @@ void CWGSProcessorRef::OnGotChunk(void* data)
 /////////////////////////////////////////////////////////////////////////////
 
 
-unique_ptr<CSemaphore> CPSGS_WGSProcessor::sm_ThreadSema;
-
 #define PARAM_VDB_CACHE_SIZE "vdb_cache_size"
 #define PARAM_INDEX_UPDATE_TIME "index_update_time"
 #define PARAM_COMPRESS_DATA "compress_data"
-#define PARAM_WORKER_THREADS "worker_threads"
 
 #define DEFAULT_VDB_CACHE_SIZE 100
 #define DEFAULT_INDEX_UPDATE_TIME 600
 #define DEFAULT_COMPRESS_DATA SWGSProcessor_Config::eCompressData_some
-#define DEFAULT_WORKER_THREADS 5
 
 
 CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
@@ -340,10 +129,10 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
       m_Status(ePSGS_NotFound),
       m_Canceled(false),
       m_ChunkId(0),
-      m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat)
+      m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat),
+      m_Unlocked(true)
 {
     x_LoadConfig();
-    sm_ThreadSema.reset(new CSemaphore(m_Config->m_WorkerThreads, m_Config->m_WorkerThreads));
 }
 
 
@@ -356,7 +145,8 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(
       m_Status(ePSGS_InProgress),
       m_Canceled(false),
       m_ChunkId(0),
-      m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat)
+      m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat),
+      m_Unlocked(true)
 {
     m_Request = request;
     m_Reply = reply;
@@ -367,9 +157,7 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(
 CPSGS_WGSProcessor::~CPSGS_WGSProcessor(void)
 {
     _ASSERT(m_Status != ePSGS_InProgress);
-    if ( m_ProcessorRef ) {
-        m_ProcessorRef->Detach();
-    }
+    x_UnlockRequest();
 }
 
 
@@ -384,8 +172,6 @@ void CPSGS_WGSProcessor::x_LoadConfig(void)
         m_Config->m_CompressData = SWGSProcessor_Config::ECompressData(compress_data);
     }
     m_Config->m_UpdateDelay = registry.GetInt(kWGSProcessorSection, PARAM_INDEX_UPDATE_TIME, DEFAULT_INDEX_UPDATE_TIME);
-    m_Config->m_WorkerThreads = registry.GetInt(kWGSProcessorSection, PARAM_WORKER_THREADS, DEFAULT_WORKER_THREADS);
-    if (m_Config->m_WorkerThreads <= 0) m_Config->m_WorkerThreads = DEFAULT_WORKER_THREADS;
 }
 
 
@@ -420,23 +206,30 @@ void CPSGS_WGSProcessor::Process()
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
 
-    auto req_type = GetRequest()->GetRequestType();
-    switch (req_type) {
-    case CPSGS_Request::ePSGS_ResolveRequest:
-        x_ProcessResolveRequest();
-        break;
-    case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-        x_ProcessBlobBySeqIdRequest();
-        break;
-    case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-        x_ProcessBlobBySatSatKeyRequest();
-        break;
-    case CPSGS_Request::ePSGS_TSEChunkRequest:
-        x_ProcessTSEChunkRequest();
-        break;
-    default:
+    try {
+        m_Unlocked = false;
+        if (m_Request) m_Request->Lock(kWGSProcessorEvent);
+        auto req_type = GetRequest()->GetRequestType();
+        switch (req_type) {
+        case CPSGS_Request::ePSGS_ResolveRequest:
+            x_ProcessResolveRequest();
+            break;
+        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+            x_ProcessBlobBySeqIdRequest();
+            break;
+        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+            x_ProcessBlobBySatSatKeyRequest();
+            break;
+        case CPSGS_Request::ePSGS_TSEChunkRequest:
+            x_ProcessTSEChunkRequest();
+            break;
+        default:
+            x_Finish(ePSGS_Error);
+            break;
+        }
+    }
+    catch (...) {
         x_Finish(ePSGS_Error);
-        break;
     }
 }
 
@@ -471,6 +264,18 @@ void CPSGS_WGSProcessor::x_InitClient(void) const
 }
 
 
+static void s_ResolveSeqId(CPSGS_WGSProcessor* processor)
+{
+    processor->ResolveSeqId();
+}
+
+
+static void s_OnResolvedSeqId(void* data)
+{
+    static_cast<CPSGS_WGSProcessor*>(data)->OnResolvedSeqId();
+}
+
+
 void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
 {
     SPSGS_ResolveRequest& resolve_request = GetRequest()->GetRequest<SPSGS_ResolveRequest>();
@@ -481,10 +286,59 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
         x_Finish(ePSGS_Error);
         return;
     }
+    thread(bind(&s_ResolveSeqId, this)).detach();
+}
 
-    if ( !x_WaitForIdleThread() ) return;
-    m_ProcessorRef = make_shared<CWGSProcessorRef>(this);
-    thread(bind(&CWGSProcessorRef::ResolveSeqId, m_ProcessorRef)).detach();
+
+void CPSGS_WGSProcessor::ResolveSeqId(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    try {
+        m_WGSData = m_Client->ResolveSeqId(*m_SeqId);
+        x_WaitForOtherProcessors();
+    }
+    catch (...) {
+        m_WGSData.reset();
+    }
+    GetUvLoopBinder().PostponeInvoke(s_OnResolvedSeqId, this);
+}
+
+
+void CPSGS_WGSProcessor::OnResolvedSeqId(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    if ( x_IsCanceled() ) {
+        return;
+    }
+    if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if ( !x_SignalStartProcessing() ) {
+        return;
+    }
+    try {
+        x_SendBioseqInfo();
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+        return;
+    }
+    x_Finish(ePSGS_Done);
+}
+
+
+static void s_GetBlobBySeqId(CPSGS_WGSProcessor* processor)
+{
+    processor->GetBlobBySeqId();
+}
+
+
+static void s_OnGotBlobBySeqId(void* data)
+{
+    static_cast<CPSGS_WGSProcessor*>(data)->OnGotBlobBySeqId();
 }
 
 
@@ -498,21 +352,67 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
         return;
     }
 
-    if ( !x_WaitForIdleThread() ) return;
-    m_ProcessorRef = make_shared<CWGSProcessorRef>(this);
     if (get_request.m_TSEOption == SPSGS_BlobRequestBase::ePSGS_NoneTSE) {
-        thread(bind(&CWGSProcessorRef::ResolveSeqId, m_ProcessorRef)).detach();
+        thread(bind(&s_ResolveSeqId, this)).detach();
     }
     else {
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
-        if (!m_ExcludedBlobs.empty()) {
-            string s;
-            for (const auto& bid : m_ExcludedBlobs) {
-                s += bid + ";";
-            }
-        }
-        thread(bind(&CWGSProcessorRef::GetBlobBySeqId, m_ProcessorRef)).detach();
+        thread(bind(&s_GetBlobBySeqId, this)).detach();
     }
+}
+
+
+void CPSGS_WGSProcessor::GetBlobBySeqId(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    try {
+        m_WGSData = m_Client->GetBlobBySeqId(*m_SeqId, m_ExcludedBlobs);
+        x_WaitForOtherProcessors();
+    }
+    catch (...) {
+        m_WGSData.reset();
+    }
+    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobBySeqId, this);
+}
+
+
+void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    if ( x_IsCanceled() ) {
+        return;
+    }
+    // NOTE: m_Data may be null if the blob was excluded.
+    if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if ( !x_SignalStartProcessing() ) {
+        return;
+    }
+    try {
+        x_SendBioseqInfo();
+        x_SendBlob();
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+        return;
+    }
+    x_Finish(ePSGS_Done);
+}
+
+
+static void s_GetBlobByBlobId(CPSGS_WGSProcessor* processor)
+{
+    processor->GetBlobByBlobId();
+}
+
+
+static void s_OnGotBlobByBlobId(void* data)
+{
+    static_cast<CPSGS_WGSProcessor*>(data)->OnGotBlobByBlobId();
 }
 
 
@@ -520,10 +420,58 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
+    thread(bind(&s_GetBlobByBlobId, this)).detach();
+}
 
-    if ( !x_WaitForIdleThread() ) return;
-    m_ProcessorRef = make_shared<CWGSProcessorRef>(this);
-    thread(bind(&CWGSProcessorRef::GetBlobByBlobId, m_ProcessorRef)).detach();
+
+void CPSGS_WGSProcessor::GetBlobByBlobId(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    try {
+        m_WGSData = m_Client->GetBlobByBlobId(m_PSGBlobId);
+    }
+    catch (...) {
+        m_WGSData.reset();
+    }
+    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobByBlobId, this);
+}
+
+
+void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    if ( x_IsCanceled() ) {
+        return;
+    }
+    if ( !m_WGSData  ||  !m_WGSData->m_Data ) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if ( !x_SignalStartProcessing() ) {
+        return;
+    }
+    try {
+        x_SendBlob();
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+        return;
+    }
+    x_Finish(ePSGS_Done);
+}
+
+
+static void s_GetChunk(CPSGS_WGSProcessor* processor)
+{
+    processor->GetChunk();
+}
+
+
+static void s_OnGotChunk(void* data)
+{
+    static_cast<CPSGS_WGSProcessor*>(data)->OnGotChunk();
 }
 
 
@@ -532,10 +480,46 @@ void CPSGS_WGSProcessor::x_ProcessTSEChunkRequest(void)
     SPSGS_TSEChunkRequest& chunk_request = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
+    thread(bind(&s_GetChunk, this)).detach();
+}
 
-    if ( !x_WaitForIdleThread() ) return;
-    m_ProcessorRef = make_shared<CWGSProcessorRef>(this);
-    thread(bind(&CWGSProcessorRef::GetChunk, m_ProcessorRef)).detach();
+
+void CPSGS_WGSProcessor::GetChunk(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    try {
+        m_WGSData = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+    }
+    catch (...) {
+        m_WGSData.reset();
+    }
+    GetUvLoopBinder().PostponeInvoke(s_OnGotChunk, this);
+}
+
+
+void CPSGS_WGSProcessor::OnGotChunk(void)
+{
+    CRequestContextResetter context_resetter;
+    GetRequest()->SetRequestContext();
+    if ( x_IsCanceled() ) {
+        return;
+    }
+    if ( !m_WGSData  ||  !m_WGSData->m_Data ) {
+        x_Finish(ePSGS_NotFound);
+        return;
+    }
+    if ( !x_SignalStartProcessing() ) {
+        return;
+    }
+    try {
+        x_SendChunk();
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+        return;
+    }
+    x_Finish(ePSGS_Done);
 }
 
 
@@ -762,91 +746,30 @@ void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& data,
 }
 
 
-void CPSGS_WGSProcessor::OnResolvedSeqId(void)
+void CPSGS_WGSProcessor::x_UnlockRequest(void)
 {
-    CRequestContextResetter context_resetter;
-    GetRequest()->SetRequestContext();
-    if ( x_IsCanceled() ) {
-        return;
-    }
-    if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
-        x_Finish(ePSGS_NotFound);
-        return;
-    }
-    if ( !x_SignalStartProcessing() ) {
-        return;
-    }
-    x_SendBioseqInfo();
-    x_Finish(ePSGS_Done);
+    if (m_Unlocked) return;
+    m_Unlocked = true;
+    if (m_Request) m_Request->Unlock(kWGSProcessorEvent);
 }
 
 
-void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
+void CPSGS_WGSProcessor::x_WaitForOtherProcessors(void)
 {
-    CRequestContextResetter context_resetter;
-    GetRequest()->SetRequestContext();
-    if ( x_IsCanceled() ) {
+    if (m_Canceled) return;
+    try {
+        GetRequest()->WaitFor(kCassandraProcessorEvent);
+    }
+    catch (...) {
         return;
     }
-    // NOTE: m_Data may be null if the blob was excluded.
-    if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
-        x_Finish(ePSGS_NotFound);
-        return;
-    }
-    if ( !x_SignalStartProcessing() ) {
-        return;
-    }
-    x_SendBioseqInfo();
-    x_SendBlob();
-    x_Finish(ePSGS_Done);
-}
-
-
-void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
-{
-    CRequestContextResetter context_resetter;
-    GetRequest()->SetRequestContext();
-    if ( x_IsCanceled() ) {
-        return;
-    }
-    if ( !m_WGSData  ||  !m_WGSData->m_Data ) {
-        x_Finish(ePSGS_NotFound);
-        return;
-    }
-    if ( !x_SignalStartProcessing() ) {
-        return;
-    }
-    x_SendBlob();
-    x_Finish(ePSGS_Done);
-}
-
-
-void CPSGS_WGSProcessor::OnGotChunk(void)
-{
-    CRequestContextResetter context_resetter;
-    GetRequest()->SetRequestContext();
-    if ( x_IsCanceled() ) {
-        return;
-    }
-    if ( !m_WGSData  ||  !m_WGSData->m_Data ) {
-        x_Finish(ePSGS_NotFound);
-        return;
-    }
-    if ( !x_SignalStartProcessing() ) {
-        return;
-    }
-    x_SendChunk();
-    x_Finish(ePSGS_Done);
 }
 
 
 void CPSGS_WGSProcessor::Cancel()
 {
     m_Canceled = true;
-    x_Finish(ePSGS_Canceled);
-    if ( m_ProcessorRef ) {
-        m_ProcessorRef->Detach();
-    }
+    x_UnlockRequest();
 }
 
 
@@ -880,18 +803,8 @@ void CPSGS_WGSProcessor::x_Finish(EPSGS_Status status)
 {
     _ASSERT(status != ePSGS_InProgress);
     m_Status = status;
+    x_UnlockRequest();
     SignalFinishProcessing();
-}
-
-
-bool CPSGS_WGSProcessor::x_WaitForIdleThread(void)
-{
-    sm_ThreadSema->Wait();
-    if ( x_IsCanceled() ) {
-        sm_ThreadSema->Post();
-        return false;
-    }
-    return true;
 }
 
 
