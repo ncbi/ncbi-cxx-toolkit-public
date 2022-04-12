@@ -481,7 +481,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             reply->SetCompleted();
             // Note: erasing the group right away is not good because the call
             // comes from a processor and it might be not the last thing the
-            // processor does. So the destrution needs to be delayed till the
+            // processor does. So the destruction needs to be delayed till the
             // next libuv loop iteration
             processor->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
                                                         (void*)(request_id));

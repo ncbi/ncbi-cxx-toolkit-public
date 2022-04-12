@@ -51,6 +51,7 @@ CPendingOperation::CPendingOperation(shared_ptr<CPSGS_Request>  user_request,
     m_Reply(reply),
     m_Started(false),
     m_ConnectionCanceled(false),
+    m_ConnectionCanceledHandled(false),
     m_Processor(processor),
     m_InProcess(false)
 {
@@ -86,6 +87,7 @@ void CPendingOperation::Clear()
     m_Reply->Clear();
     m_Started = false;
     m_ConnectionCanceled = false;
+    m_ConnectionCanceledHandled = false;
     m_InProcess = false;
 }
 
@@ -138,6 +140,13 @@ void CPendingOperation::SendProcessorStartMessage(void)
 }
 
 
+void call_process_event_cb(void *  user_data)
+{
+    IPSGS_Processor *       proc = (IPSGS_Processor*)(user_data);
+    proc->ProcessEvent();
+}
+
+
 void CPendingOperation::Peek(bool  need_wait)
 {
     if (m_InProcess) {
@@ -147,14 +156,16 @@ void CPendingOperation::Peek(bool  need_wait)
     }
 
     if (m_ConnectionCanceled) {
-        if (m_Reply->IsOutputReady() && !m_Reply->IsFinished()) {
-            m_Reply->GetHttpReply()->Send(nullptr, 0, true, true);
-            m_Reply->SetCompleted();
+        // The ProcessEvent() needs to be called because it is the processor
+        // responsibility to report the finish even in case of a dropped
+        // connection.
+        // The ProcessEvent() call however should be called from the processor
+        // loop, not from the framework loop.
+        if (!m_ConnectionCanceledHandled) {
+            m_ConnectionCanceledHandled = true;
+            m_Processor->GetUvLoopBinder().PostponeInvoke(call_process_event_cb,
+                                                          (void*)(m_Processor.get()));
         }
-        // To handle the canceled connection
-        m_Processor->Cancel();  // Just in case
-        CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
-                        m_Processor.get(), CPSGS_Dispatcher::ePSGS_Fromework);
         return;
     }
 
