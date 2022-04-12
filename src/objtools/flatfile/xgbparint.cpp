@@ -322,6 +322,28 @@ static void xfind_one_of_num(list<STokenInfo>& tokens)
 
 
 
+static void xlex_error_func(const char* msg, 
+        const string& line, 
+        const int current_col)
+{
+   string temp_string = line.substr(0, current_col+1) + " ";
+   Err_func(msg, temp_string.c_str());
+}
+
+
+static int advance_to(const char c, int current_pos, const string& line)
+{   
+    int pos = current_pos;
+    while (pos < line.size()) {
+        if(line[pos] == c)  {
+           return pos-1; 
+        }
+        ++pos;
+    }
+    return pos-1;
+}
+
+
 /**********************************************************/
 static size_t xgbparse_accprefix(const char* acc)
 {
@@ -355,34 +377,94 @@ static size_t xgbparse_accprefix(const char* acc)
 }
 
 
-static void xlex_error_func(const char* msg, 
-        const string& line, 
-        const int current_col)
-{
-   string temp_string = line.substr(0, current_col+1) + " ";
-   Err_func(msg, temp_string.c_str());
-}
-
-static int advance_to(const char c, int current_pos, const string& line)
+static size_t sParseAccessionPrefix(const CTempString& accession)
 {   
-    int pos = current_pos;
-    while (pos < line.size()) {
-        if(line[pos] == c)  {
-           return pos-1; 
-        }
-        ++pos;
+    if (accession.empty()) {
+        return 0;
     }
-    return pos-1;
+
+    auto IsAlpha = [](char c) { return isalpha(c); };
+
+    auto it = find_if_not(begin(accession), 
+                          end(accession), 
+                          IsAlpha);
+
+
+    if (it == end(accession)) {
+        return 1;
+    }   
+
+    auto prefix_length = distance(begin(accession), it);
+    if (*it == '_') {
+        if (prefix_length != 2) {
+            return 1;
+        }
+        ++it;
+        it = find_if_not(it, end(accession), IsAlpha);
+        if (it == end(accession)) {
+            return 1;
+        }
+        prefix_length = distance(begin(accession), it);
+        if (prefix_length == 3 || prefix_length == 7) {
+            return prefix_length;
+        }
+        return 1;
+    }
+    else if (accession.size() >= 3 && 
+            isdigit(accession[0]) &&
+            isdigit(accession[1]) &&
+            accession[2] == 'S') {
+        return 7;
+    }
+
+    if (prefix_length == 1 ||
+        prefix_length == 2 ||
+        prefix_length == 4 ||
+        prefix_length == 6) {
+        return prefix_length;
+    }  
+
+    return 1;
 }
 
 
 static int sGetAccession(string& accession, int& current_col, const string& line, bool accver)
 {
     int retval = 0;
-
-    auto dex = xgbparse_accprefix(line.c_str() + current_col);
-    int spare = current_col + dex;
     const auto length = line.size();
+    CTempString tempString(line.c_str() + current_col, length-current_col);
+    auto prefixLength = sParseAccessionPrefix(tempString);
+/*
+    size_t accessionLength = prefixLength;
+
+    tempString = tempString.substr(prefixLength);
+    auto notDigitPos = tempString.find_first_not_of("0123456789"); 
+    if (notDigitPos != NPOS) {
+        accessionLength += notDigitPos;
+    }
+
+    if (accver && notDigitPos != NPOS && tempString[notDigitPos] == '.') {
+        ++accessionLength;
+        if (tempString.size() > notDigitPos) {
+            tempString = tempString.substr(notDigitPos+1);
+            notDigitPos = tempString.find_first_not_of("0123456789");
+        }
+    }
+
+    if (notDigitPos == NPOS || tempString[notDigitPos] != ':') {
+        xlex_error_func("ACCESSION missing \":\"", line, current_col);
+        ++retval; 
+        --current_col;
+    } else {
+        accessionLength  += notDigitPos;
+    }
+    accession = string(line.c_str() + current_col, accessionLength);
+    current_col += accessionLength;
+    return retval;
+*/
+    size_t dex = prefixLength;
+
+    int spare = current_col + dex;
     for (; spare<length && isdigit(line[spare]); ++spare){
         dex++;
     }
@@ -401,6 +483,7 @@ static int sGetAccession(string& accession, int& current_col, const string& line
     }
                 
     accession = string(line.c_str() + current_col, dex);
+    cout << "Accession : " << accession << endl;
     current_col += dex;
     return retval;
 }
