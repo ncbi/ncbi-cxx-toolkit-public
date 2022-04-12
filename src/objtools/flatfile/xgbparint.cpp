@@ -57,7 +57,7 @@
 #define GBPARSE_INT_RIGHT 4
 #define GBPARSE_INT_CARET 5
 #define GBPARSE_INT_DOT_DOT 6
-#define GBPARSE_INT_ACCESION 7
+#define GBPARSE_INT_ACCESSION 7
 #define GBPARSE_INT_GT 8
 #define GBPARSE_INT_LT 9
 #define GBPARSE_INT_COMMA 10
@@ -179,7 +179,7 @@ static string xgbparse_point(TTokenIt head, TTokenIt current)
         case GBPARSE_INT_DOT_DOT:
             temp += "..";
             break;
-        case GBPARSE_INT_ACCESION:
+        case GBPARSE_INT_ACCESSION:
         case GBPARSE_INT_NUMBER:
         case GBPARSE_INT_STRING:
             temp += it->data;
@@ -382,18 +382,19 @@ static int sGetAccession(string& accession, int& current_col, const string& line
 
     auto dex = xgbparse_accprefix(line.c_str() + current_col);
     int spare = current_col + dex;
-    for (; isdigit((int)line[spare]); spare++){
+    const auto length = line.size();
+    for (; spare<length && isdigit(line[spare]); ++spare){
         dex++;
     }
     
-    if (accver && line[spare] == '.') {
+    if (accver && spare<length && line[spare] == '.') {
         dex++;
-        for (spare++; isdigit((int)line[spare]); spare++){
+        for (spare++; spare<length && isdigit(line[spare]); spare++){
             dex++;
         }
     }
                 
-    if (line[spare] != ':'){
+    if (spare==length || line[spare] != ':'){
         xlex_error_func("ACCESSION missing \":\"", line, current_col);
         ++retval;
         current_col--;
@@ -409,7 +410,6 @@ static int sGetAccession(string& accession, int& current_col, const string& line
 
 static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
 {   
-
     tokens.clear();
     int retval = 0;
     if (*linein)
@@ -418,8 +418,6 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
         NStr::TruncateSpacesInPlace(line);
         auto length = line.size();
         int current_col = 0;
-        int spare = 0;
-        size_t dex = 0;
 
         while (current_col < length) {
 
@@ -429,6 +427,19 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
             }
 
             STokenInfo current_token;
+            if (isdigit(line[current_col])) {
+                current_token.choice = GBPARSE_INT_NUMBER;
+                CTempString tempString(line.c_str()+current_col, length-current_col);
+                auto not_digit_pos = tempString.find_first_not_of("0123456789");
+                int num_digits = (not_digit_pos == NPOS) ? 
+                    length - current_col :
+                    not_digit_pos;
+                current_token.data = string(line.c_str() + current_col, num_digits);
+                tokens.push_back(current_token);
+                current_col += num_digits;
+                continue;
+            }
+
             bool skip_new_token = false;
             switch (line[current_col]){
             case '\"':
@@ -443,18 +454,6 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                     current_token.data = string(line.c_str(), + current_col);
                     current_col += len;
                 }
-                break;
-                /*------
-                *  NUMBER
-                *------*/
-            case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9':
-                current_token.choice = GBPARSE_INT_NUMBER;
-                for (dex = 0, spare = current_col; isdigit((int)line[spare]); spare++){
-                    dex++;
-                }
-                current_token.data = string(line.c_str() + current_col, dex);
-                current_col += dex - 1;
                 break;
                 /*------
                 *  JOIN
@@ -533,7 +532,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                     break;
                 }
                 if (NStr::StartsWith(line.c_str() + current_col, "gi|")) {
-                    current_token.choice = GBPARSE_INT_ACCESION;
+                    current_token.choice = GBPARSE_INT_ACCESSION;
                     current_col += 3;
                     for (; isdigit(line[current_col]); current_col++);
                     break;
@@ -556,7 +555,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_COMPL;
                 if (!NStr::StartsWith(line.c_str() + current_col, "complement")){
                     xlex_error_func("\"complement\" misspelled", line, current_col);
-                    retval ++;
+                    ++retval;
                     current_col = advance_to('(', current_col, line);
                 }
                 else{
@@ -569,7 +568,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *---------*/
             case 'b':
                 if (!NStr::StartsWith(line.c_str() + current_col, "bases")){
-                    goto ACCESSION;
+                    current_token.choice = GBPARSE_INT_ACCESSION;
+                    retval += sGetAccession(current_token.data, current_col, line, accver);
                 }
                 else{
                     skip_new_token = true;
@@ -584,17 +584,14 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 if (NStr::StartsWith(line.c_str() + current_col, "(base")){
                     current_token.choice = GBPARSE_INT_JOIN;
                     current_col += 4;
-                    if (current_col < length-1) {
-                        if (line[current_col + 1] == 's') {
-                            current_col++;
-                        }
+                    if (current_col < length-1 && line[current_col+1] == 's') {
+                        current_col++;
                     }
                     tokens.push_back(current_token);
                     current_token.choice = GBPARSE_INT_LEFT;
                 }
                 else if (NStr::StartsWith(line.c_str() + current_col, "(sites")){
                     current_col += 5;
-                    //if (line[current_col] != '\0')
                     if (current_col < length-1)
                     {
                         if (line[current_col + 1] == ')'){
@@ -659,24 +656,26 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
 
             case 't':
                 if (!NStr::StartsWith(line.c_str() + current_col, "to")){
-                    goto ACCESSION;
+                    current_token.choice = GBPARSE_INT_ACCESSION;
+                    retval += sGetAccession(current_token.data, current_col, line, accver);
                 }
                 else{
                     current_token.choice = GBPARSE_INT_DOT_DOT;
                     current_col++;
-                    break;
                 }
+                break;
 
             case 's':
                 if (!NStr::StartsWith(line.c_str() + current_col, "site")){
-                    goto ACCESSION;
+                    current_token.choice = GBPARSE_INT_ACCESSION;
+                    retval += sGetAccession(current_token.data, current_col, line, accver);
                 }
                 else{
                     current_token.choice = GBPARSE_INT_SITES;
                     current_col += 3;
-                    if (current_col < length-1)
-                        if (line[current_col + 1] == 's')
-                            current_col++;
+                    if (current_col < length-1 && line[current_col+1] == 's'){
+                        current_col++;
+                    }
                     if (current_col < length-1){
                         if (line[current_col + 1] == ';'){
                             current_col++;
@@ -685,13 +684,11 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                             current_col += 2;
                         }
                     }
-                    break;
                 }
+                break;
 
-
-            ACCESSION:
             default:
-                current_token.choice = GBPARSE_INT_ACCESION;
+                current_token.choice = GBPARSE_INT_ACCESSION;
                 retval += sGetAccession(current_token.data, current_col, line, accver);
             }
 
@@ -1042,7 +1039,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
     CRef<CSeq_id> new_id;
     CRef<CInt_fuzz> new_fuzz;
 
-    if (currentPt->choice == GBPARSE_INT_ACCESION)
+    if (currentPt->choice == GBPARSE_INT_ACCESSION)
     {
         CRef<CTextseq_id> text_id(new CTextseq_id);
 
@@ -1121,7 +1118,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
     {
         switch (currentPt->choice)
         {
-        case  GBPARSE_INT_ACCESION:
+        case  GBPARSE_INT_ACCESSION:
             if (new_id.NotEmpty())
             {
                 xgbparse_error("duplicate accessions",
@@ -1179,7 +1176,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                     case GBPARSE_INT_SINGLE_DOT:
                     case GBPARSE_INT_ORDER:
                     case GBPARSE_INT_GROUP:
-                    case GBPARSE_INT_ACCESION:
+                    case GBPARSE_INT_ACCESSION:
                         xgbparse_error("problem with 2nd number",
                                        head_token, currentPt);
                         keep_rawPt = true;
@@ -1444,7 +1441,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
             xgbgap(currentPt, retval, true);
             break;
 
-        case  GBPARSE_INT_ACCESION:
+        case  GBPARSE_INT_ACCESSION:
         case  GBPARSE_INT_CARET:
         case  GBPARSE_INT_GT:
         case  GBPARSE_INT_LT:
@@ -1743,7 +1740,7 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
                     ++current_token;
                     break;
 
-                case  GBPARSE_INT_ACCESION:
+                case  GBPARSE_INT_ACCESSION:
                     /*--- no warn, but strange ---*/
                     /*-- no break on purpose ---*/
 
