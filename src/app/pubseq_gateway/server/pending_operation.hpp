@@ -92,6 +92,7 @@ private:
     // is created.
     bool                                    m_Started;
     bool                                    m_ConnectionCanceled;
+    bool                                    m_ConnectionCanceledHandled;
 
     shared_ptr<IPSGS_Processor>             m_Processor;
     bool                                    m_InProcess;
