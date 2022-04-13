@@ -1741,35 +1741,29 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
                                                     const TSeqIdList& seq_ids, bool accver)
 {
 
-    CRef<CSeq_loc> ret;
-
-    int paren_count = 0;
-    bool go_again = false;
 
     keep_rawPt = false;
     sitesPt = false;
 
 
-    list<STokenInfo> tokens;
-
+    TTokens tokens;
     num_errsPt = xgbparselex_ver(raw_intervals, tokens, accver);
 
     if (tokens.empty())
     {
         num_errsPt = 1;
-        return ret;
+        return Ref<CSeq_loc>();
     }
 
-    //STokenInfo* head_token = nullptr;
-
-    if ( !num_errsPt) {
-
+    CRef<CSeq_loc> ret;
+    if ( !num_errsPt ) {
         xfind_one_of_num(tokens);
         auto head_token = tokens.begin();
         auto current_token = head_token;
         auto end_it = tokens.end();
-        //xfind_one_of_num(head_token);
-
+    
+        int paren_count = 0;
+        bool go_again;
         do
         {
             go_again = false;
