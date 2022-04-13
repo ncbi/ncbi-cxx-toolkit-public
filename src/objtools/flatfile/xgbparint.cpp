@@ -1752,7 +1752,7 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
     if (tokens.empty())
     {
         num_errsPt = 1;
-        return Ref<CSeq_loc>();
+        return CRef<CSeq_loc>();
     }
 
     CRef<CSeq_loc> ret;
@@ -1837,8 +1837,9 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
     }
     
 
-    if (num_errsPt)
-        ret.Reset();
+    if (num_errsPt) {
+        return CRef<CSeq_loc>();
+    }
 
     return ret;
 }
