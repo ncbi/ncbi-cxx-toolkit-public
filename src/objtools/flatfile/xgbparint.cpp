@@ -120,7 +120,7 @@ struct STokenInfo
 
 using TTokens = list<STokenInfo>;
 using TTokenIt = TTokens::iterator;
-
+using TTokenConstIt = TTokens::const_iterator;
 
 
 /*--------- do_xgbparse_error () ---------------*/
@@ -155,7 +155,7 @@ void xinstall_gbparse_range_func(void* data, X_gbparse_rangefunc new_func)
 }
 
 /*------ xgbparse_point ()----*/
-static string xgbparse_point(TTokenIt head, TTokenIt current)
+static string xgbparse_point(TTokenConstIt head, TTokenConstIt current)
 {
     string temp;
     auto end_it = next(current);
@@ -223,15 +223,22 @@ static string xgbparse_point(TTokenIt head, TTokenIt current)
 
 
 
-static void xgbparse_error(const char* front, TTokenIt head, TTokenIt current)
+static void xgbparse_error(const char* front, TTokenConstIt head, TTokenConstIt current)
 {
     string details = xgbparse_point(head, current);
     Err_func(front, details.c_str());
 }
 
 
+static void xgbparse_error(const char* front, const TTokens& tokens, TTokenConstIt current)
+{
+    xgbparse_error(front, begin(tokens), current);
+}
+
+
 /*------------------ xgbcheck_range()-------------*/
-static void xgbcheck_range(TSeqPos num, const CSeq_id& id, bool& keep_rawPt, int& num_errsPt, TTokenIt head, TTokenIt current)
+static void xgbcheck_range(TSeqPos num, const CSeq_id& id, bool& keep_rawPt, int& num_errsPt, 
+        const TTokens& tokens, TTokenConstIt current)
 {
      if (!Range_func) {
         return;
@@ -239,7 +246,7 @@ static void xgbcheck_range(TSeqPos num, const CSeq_id& id, bool& keep_rawPt, int
 
      const auto len = (*Range_func)(xgbparse_range_data, id);
      if (len != -1 && num >= len) {
-         xgbparse_error("range error", head, current);
+         xgbparse_error("range error", tokens, current);
          keep_rawPt = true;
          ++num_errsPt;
      }
@@ -771,23 +778,23 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
 
 /*----------------- xgbparse_better_be_done()-------------*/
 static void xgbparse_better_be_done(int& num_errsPt, TTokenIt current_token, 
-        TTokenIt head_token, TTokenIt end_it, 
+        const TTokens& tokens,
         bool& keep_rawPt, int paren_count)
 {
-    if (current_token != end_it)
+    if (current_token != end(tokens))
     {
         while (current_token->choice == GBPARSE_INT_RIGHT)
         {
             paren_count--;
             ++current_token;
-            if (current_token == end_it)
+            if (current_token == end(tokens))
             {
                 if (paren_count)
                 {
                     char par_msg[40];
                     sprintf(par_msg, "mismatched parentheses (%d)", paren_count);
                     xgbparse_error(par_msg,
-                                   head_token, current_token);
+                                   tokens, current_token);
                     keep_rawPt = true;
                     ++num_errsPt;
                 }
@@ -799,15 +806,15 @@ static void xgbparse_better_be_done(int& num_errsPt, TTokenIt current_token,
     if (paren_count)
     {
         xgbparse_error("text after last legal right parenthesis",
-                       head_token, current_token);
+                       tokens, current_token);
         keep_rawPt = true;
         ++num_errsPt;
     }
 
-    if (current_token != end_it)
+    if (current_token != end(tokens))
     {
         xgbparse_error("text after end",
-                       head_token, current_token);
+                       tokens, current_token);
         keep_rawPt = true;
         ++num_errsPt;
     }
@@ -848,11 +855,11 @@ static CRef<CSeq_loc> XGapToSeqLocEx(Int4 range, bool unknown)
 }
 
 /**********************************************************/
-static void xgbgap(TTokenIt& current_it,  TTokenIt end_it, CRef<CSeq_loc>& loc,  bool unknown)
+static void xgbgap(TTokenIt& current_it,  TTokenConstIt end_it, CRef<CSeq_loc>& loc,  bool unknown)
 {
     auto it = next(current_it);   
 
-    if (distance(it, end_it) < 2) {
+    if (distance(TTokenConstIt(it), end_it) < 2) {
         return;
     }
 
@@ -903,17 +910,17 @@ static void xgbpintpnt(CSeq_loc& loc)
 
 static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, 
         TTokenIt& currentPt, 
-        TTokenIt head_token, 
-        TTokenIt end_it,
+        const TTokens& tokens,
         int& num_errPt, int take_which)
 {
     int num_found = 0;
     int fuzz_err = 0;
     bool strange_sin_dot = false;
+    auto end_it = end(tokens);
 
     if (currentPt->choice == GBPARSE_INT_CARET)
     {
-        xgbparse_error("duplicate carets", head_token, currentPt);
+        xgbparse_error("duplicate carets", tokens, currentPt);
         keep_rawPt = true;
         ++num_errPt;
         ++currentPt;
@@ -986,7 +993,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt,
         if (currentPt == end_it)
         {
             xgbparse_error("unexpected end of interval tokens",
-                           head_token, currentPt);
+                           tokens, currentPt);
             keep_rawPt = true;
             ++num_errPt;
         }
@@ -1002,7 +1009,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt,
 
     if (fuzz_err)
     {
-        xgbparse_error("Incorrect uncertainty", head_token, currentPt);
+        xgbparse_error("Incorrect uncertainty", tokens, currentPt);
         keep_rawPt = true;
         ++num_errPt;
     }
@@ -1072,14 +1079,14 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt,
             if (!one_of_ok){
 
                 xgbparse_error("bad one-of() syntax as number",
-                               head_token, currentPt);
+                               tokens, currentPt);
                 ++num_errPt;
             }
         }
         else
         {
             xgbparse_error("Number not found when expected",
-                           head_token, currentPt);
+                           tokens, currentPt);
             ++num_errPt;
         }
     }
@@ -1092,8 +1099,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt,
 /* sometimes returns points */
 static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
         TTokenIt& currentPt,
-        TTokenIt head_token, 
-        TTokenIt end_it,
+        const TTokens& tokens,
         int& num_errPt, const TSeqIdList& seq_ids,
         bool accver)
 {
@@ -1104,6 +1110,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
 
     CRef<CSeq_id> new_id;
     CRef<CInt_fuzz> new_fuzz;
+    auto end_it = end(tokens);
 
     if (currentPt->choice == GBPARSE_INT_ACCESSION)
     {
@@ -1120,7 +1127,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
             if (acc_ver.size() == 1) {
                 text_id->SetAccession(currentPt->data);
                 xgbparse_error("Missing accession's version",
-                               head_token, currentPt);
+                               tokens, currentPt);
             }
             else {
                 text_id->SetAccession(acc_ver[0]);
@@ -1151,7 +1158,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
         if (currentPt == end_it)
         {
             xgbparse_error("Nothing after accession",
-                           head_token, currentPt);
+                           tokens, currentPt);
             new_id.Reset();
             keep_rawPt = true;
             ++num_errPt;
@@ -1173,7 +1180,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
         if (currentPt == end_it)
         {
             xgbparse_error("Nothing after \'<\'",
-                           head_token, currentPt);
+                           tokens, currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
@@ -1188,7 +1195,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
             if (new_id.NotEmpty())
             {
                 xgbparse_error("duplicate accessions",
-                               head_token, currentPt);
+                                tokens, currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
                 goto FATAL;
@@ -1196,7 +1203,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
             break;
         case  GBPARSE_INT_CARET:
             xgbparse_error("caret (^) before number",
-                           head_token, currentPt);
+                           tokens, currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
@@ -1204,7 +1211,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
             if (new_id.NotEmpty())
             {
                 xgbparse_error("duplicate \'<\'",
-                               head_token, currentPt);
+                               tokens, currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
                 goto FATAL;
@@ -1221,13 +1228,13 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                 ret->SetInt().SetId(*new_id);
 
             xgbload_number(ret->SetInt().SetFrom(), ret->SetInt().SetFuzz_from(),
-                           keep_rawPt, currentPt, head_token, end_it,
+                           keep_rawPt, currentPt, tokens,
                            num_errPt, TAKE_FIRST);
 
             if (ret->GetInt().GetFuzz_from().Which() == CInt_fuzz::e_not_set)
                 ret->SetInt().ResetFuzz_from();
 
-            xgbcheck_range(ret->GetInt().GetFrom(), *new_id, keep_rawPt, num_errPt, head_token, currentPt);
+            xgbcheck_range(ret->GetInt().GetFrom(), *new_id, keep_rawPt, num_errPt, tokens, currentPt);
 
             if (!num_errPt)
             {
@@ -1244,7 +1251,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                     case GBPARSE_INT_GROUP:
                     case GBPARSE_INT_ACCESSION:
                         xgbparse_error("problem with 2nd number",
-                                       head_token, currentPt);
+                                       tokens, currentPt);
                         keep_rawPt = true;
                         ++num_errPt;
                         goto FATAL;
@@ -1255,7 +1262,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
 
                     case GBPARSE_INT_GT: case GBPARSE_INT_LT:
                         xgbparse_error("Missing \'..\'",
-                                       head_token, currentPt);;
+                                       tokens, currentPt);;
                         keep_rawPt = true;
                         ++num_errPt;
                         goto FATAL;
@@ -1263,7 +1270,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                         if (ret->GetInt().IsSetFuzz_from())
                         {
                             xgbparse_error("\'<\' then \'^\'",
-                                           head_token, currentPt);
+                                           tokens, currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
@@ -1279,7 +1286,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                         if (currentPt == end_it)
                         {
                             xgbparse_error("unexpected end of usable tokens",
-                                           head_token, currentPt);
+                                           tokens, currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
@@ -1295,7 +1302,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                             if (ret->GetInt().IsSetFuzz_from())
                             {
                                 xgbparse_error("\'^\' then \'>\'",
-                                               head_token, currentPt);
+                                               tokens, currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
                                 goto FATAL;
@@ -1303,13 +1310,13 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                         }
 
                         xgbload_number(ret->SetInt().SetTo(), ret->SetInt().SetFuzz_to(),
-                                       keep_rawPt, currentPt, head_token, end_it,
+                                       keep_rawPt, currentPt, tokens,
                                        num_errPt, TAKE_SECOND);
 
                         if (ret->GetInt().GetFuzz_to().Which() == CInt_fuzz::e_not_set)
                             ret->SetInt().ResetFuzz_to();
 
-                        xgbcheck_range(ret->GetInt().GetTo(), *new_id, keep_rawPt, num_errPt, head_token, currentPt);
+                        xgbcheck_range(ret->GetInt().GetTo(), *new_id, keep_rawPt, num_errPt, tokens, currentPt);
 
                         /*----------
                         *  The caret location implies a place (point) between two location.
@@ -1356,7 +1363,7 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
             break;
         default:
             xgbparse_error("No number when expected",
-                           head_token, currentPt);
+                           tokens, currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
@@ -1377,7 +1384,7 @@ FATAL:
 
 static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                                                       bool& sitesPt, TTokenIt& currentPt,
-                                                      TTokenIt head_token, TTokenIt end_it, 
+                                                      const TTokens& tokens,
                                                       int& num_errPt,
                                                       const TSeqIdList& seq_ids, bool accver)
 {
@@ -1387,6 +1394,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
     auto current_token = currentPt;
     bool did_complement = false;
     bool go_again;
+    auto end_it = end(tokens);
 
     do
     {
@@ -1397,14 +1405,14 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
             ++currentPt;
             if (currentPt == end_it){
                 xgbparse_error("unexpected end of usable tokens",
-                               head_token, currentPt);
+                               tokens, currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
                 goto FATAL;
             }
             if (currentPt->choice != GBPARSE_INT_LEFT){
                 xgbparse_error("Missing \'(\'", /* paran match  ) */
-                               head_token, currentPt);
+                               tokens, currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
                 goto FATAL;
@@ -1414,7 +1422,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                 ++currentPt;
                 if (currentPt == end_it){
                     xgbparse_error("illegal null contents",
-                                   head_token, currentPt);
+                                    tokens, currentPt);
                     keep_rawPt = true;
                     ++num_errPt;
                     goto FATAL;
@@ -1422,14 +1430,14 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                 else{
                     if (currentPt->choice == GBPARSE_INT_RIGHT){ /* paran match ( */
                         xgbparse_error("Premature \')\'",
-                                       head_token, currentPt);
+                                       tokens, currentPt);
                         keep_rawPt = true;
                         ++num_errPt;
                         goto FATAL;
                     }
                     else{
                         retval = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt,
-                                            head_token, end_it, num_errPt, seq_ids, accver);
+                                            tokens, num_errPt, seq_ids, accver);
 
                         if (retval.NotEmpty())
                             retval = sequence::SeqLocRevCmpl(*retval, nullptr);
@@ -1438,7 +1446,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                         if (currentPt != end_it){
                             if (currentPt->choice != GBPARSE_INT_RIGHT){
                                 xgbparse_error("Missing \')\'",
-                                               head_token, currentPt);
+                                               tokens, currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
                                 goto FATAL;
@@ -1450,7 +1458,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                         }
                         else{
                             xgbparse_error("Missing \')\'",
-                                           head_token, currentPt);
+                                           tokens, currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
@@ -1482,7 +1490,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
             /* ERROR */
         case GBPARSE_INT_STRING:
             xgbparse_error("string in loc",
-                           head_token, current_token);
+                           tokens, current_token);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
@@ -1494,7 +1502,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
         case  GBPARSE_INT_COMMA:
         case  GBPARSE_INT_SINGLE_DOT:
             xgbparse_error("illegal initial loc token",
-                           head_token, currentPt);
+                           tokens, currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
@@ -1514,13 +1522,13 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
         case  GBPARSE_INT_NUMBER:
         case  GBPARSE_INT_LEFT:
         case GBPARSE_INT_ONE_OF_NUM:
-            retval = xgbint_ver(keep_rawPt, currentPt, head_token, end_it, num_errPt, seq_ids, accver);
+            retval = xgbint_ver(keep_rawPt, currentPt, tokens, num_errPt, seq_ids, accver);
             break;
 
         case  GBPARSE_INT_REPLACE:
             /*-------illegal at this level --*/
             xgbparse_error("illegal replace",
-                           head_token, currentPt);
+                           tokens, currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
@@ -1546,7 +1554,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                 if (currentPt == end_it)
                 {
                     xgbparse_error("unexpected end of interval tokens",
-                                   head_token, currentPt);
+                                   tokens, currentPt);
                     keep_rawPt = true;
                     ++num_errPt;
                     goto FATAL;
@@ -1556,7 +1564,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                     if (currentPt->choice != GBPARSE_INT_LEFT)
                     {
                         xgbparse_error("Missing \'(\'",
-                                       head_token, currentPt); /* paran match  ) */
+                                        tokens, currentPt); /* paran match  ) */
                         keep_rawPt = true;
                         ++num_errPt;
                         goto FATAL;
@@ -1567,7 +1575,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                         if (currentPt == end_it)
                         {
                             xgbparse_error("illegal null contents",
-                                           head_token, currentPt);
+                                           tokens, currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
@@ -1577,7 +1585,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                             if (currentPt->choice == GBPARSE_INT_RIGHT)
                             { /* paran match ( */
                                 xgbparse_error("Premature \')\'",
-                                               head_token, currentPt);
+                                               tokens, currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
                                 goto FATAL;
@@ -1602,7 +1610,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                                         break;
 
                                     CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt,
-                                                                                              currentPt, head_token, end_it, num_errPt,
+                                                                                              currentPt, tokens, num_errPt,
                                                                                               seq_ids, accver);
 
                                     if (next_loc.NotEmpty())
@@ -1632,7 +1640,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                                     }
                                     else{
                                         xgbparse_error("Illegal token after interval",
-                                                       head_token, currentPt);
+                                                       tokens, currentPt);
                                         keep_rawPt = true;
                                         ++num_errPt;
                                         goto FATAL;
@@ -1643,7 +1651,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                         if (currentPt == end_it)
                         {
                             xgbparse_error("unexpected end of usable tokens",
-                                           head_token, currentPt);
+                                           tokens, currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
@@ -1653,7 +1661,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                             if (currentPt->choice != GBPARSE_INT_RIGHT)
                             {
                                 xgbparse_error("Missing \')\'" /* paran match  ) */,
-                                               head_token, currentPt);
+                                                tokens, currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
                                 goto FATAL;
@@ -1688,8 +1696,7 @@ FATAL:
 
 static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt,
         bool& sitesPt, TTokenIt& currentPt,
-        TTokenIt head_token, 
-        TTokenIt end_it,
+        const TTokens& tokens,
         int& num_errPt,
         const TSeqIdList& seq_ids, bool accver)
 {
@@ -1701,13 +1708,13 @@ static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt,
     if (currentPt->choice == GBPARSE_INT_LEFT)
     {
         ++currentPt;
-        ret = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, head_token, end_it,
+        ret = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, tokens,
                          num_errPt, seq_ids, accver);
 
-        if (currentPt == end_it)
+        if (currentPt == end(tokens))
         {
             xgbparse_error("unexpected end of interval tokens",
-                           head_token, currentPt);
+                           tokens, currentPt);
             keep_rawPt = true;
             ++num_errPt;
         }
@@ -1717,7 +1724,7 @@ static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt,
             if (currentPt->choice != GBPARSE_INT_COMMA)
             {
                 xgbparse_error("Missing comma after first location in replace",
-                               head_token, currentPt);
+                               tokens, currentPt);
                 ++num_errPt;
             }
         }
@@ -1725,7 +1732,7 @@ static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt,
     else
     {
         xgbparse_error("Missing \'(\'" /* paran match  ) */
-                       , head_token, currentPt);
+                       , tokens, currentPt);
         ++num_errPt;
     }
 
@@ -1777,13 +1784,13 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
                 case GBPARSE_INT_ONE_OF:
                 case GBPARSE_INT_COMPL:
                     ret = xgbloc_ver(keep_rawPt, paren_count, sitesPt, current_token,
-                                     head_token, end_it, num_errsPt, seq_ids, accver);
+                                     tokens, num_errsPt, seq_ids, accver);
                     /* need to check that out of tokens here */
-                    xgbparse_better_be_done(num_errsPt, current_token, head_token, end_it, keep_rawPt, paren_count);
+                    xgbparse_better_be_done(num_errsPt, current_token, tokens, keep_rawPt, paren_count);
                     break;
 
                 case GBPARSE_INT_STRING:
-                    xgbparse_error("string in loc", head_token, current_token);
+                    xgbparse_error("string in loc", tokens, current_token);
                     keep_rawPt = true;
                     ++num_errsPt;
                     /*  no break on purpose */
@@ -1793,8 +1800,7 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
                 case  GBPARSE_INT_DOT_DOT:
                 case  GBPARSE_INT_COMMA:
                 case  GBPARSE_INT_SINGLE_DOT:
-
-                    xgbparse_error("illegal initial token", head_token, current_token);
+                    xgbparse_error("illegal initial token", tokens, current_token);
                     keep_rawPt = true;
                     ++num_errsPt;
                     ++current_token;
@@ -1810,15 +1816,15 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
 
                 case GBPARSE_INT_ONE_OF_NUM:
 
-                    ret = xgbint_ver(keep_rawPt, current_token, head_token, end_it, num_errsPt, seq_ids, accver);
+                    ret = xgbint_ver(keep_rawPt, current_token, tokens, num_errsPt, seq_ids, accver);
 
                     /* need to check that out of tokens here */
-                    xgbparse_better_be_done(num_errsPt, current_token, head_token, end_it, keep_rawPt, paren_count);
+                    xgbparse_better_be_done(num_errsPt, current_token, tokens, keep_rawPt, paren_count);
                     break;
 
                 case  GBPARSE_INT_REPLACE:
                     ret = xgbreplace_ver(keep_rawPt, paren_count, sitesPt, current_token,
-                                         head_token, end_it, num_errsPt, seq_ids, accver);
+                                         tokens, num_errsPt, seq_ids, accver);
                     keep_rawPt = true;
                     /*---all errors handled within this function ---*/
                     break;
