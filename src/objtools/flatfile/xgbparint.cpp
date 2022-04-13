@@ -848,10 +848,14 @@ static CRef<CSeq_loc> XGapToSeqLocEx(Int4 range, bool unknown)
 }
 
 /**********************************************************/
-static void xgbgap(TTokens::iterator& current_it, CRef<CSeq_loc>& loc,  bool unknown)
+static void xgbgap(TTokenIt& current_it,  TTokenIt end_it, CRef<CSeq_loc>& loc,  bool unknown)
 {
-    // Note that we need to check before we call this function that we won't run out of tokens.
     auto it = next(current_it);   
+
+    if (distance(it, end_it) < 2) {
+        return;
+    }
+
     if (it->choice != GBPARSE_INT_LEFT) {
         return;
     }
@@ -866,7 +870,7 @@ static void xgbgap(TTokens::iterator& current_it, CRef<CSeq_loc>& loc,  bool unk
     }
     else {
         auto gapsize_it = it++;
-        if (it->choice != GBPARSE_INT_RIGHT) {
+        if (it == end_it || it->choice != GBPARSE_INT_RIGHT) {
             return;
         }
         auto pLoc = XGapToSeqLocEx(atoi(gapsize_it->data.c_str()), unknown);
@@ -1497,10 +1501,10 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
 
             /* Interval, occurs on recursion */
         case GBPARSE_INT_GAP:
-            xgbgap(currentPt, retval, false);
+            xgbgap(currentPt, end_it, retval, false);
             break;
         case GBPARSE_INT_UNK_GAP:
-            xgbgap(currentPt, retval, true);
+            xgbgap(currentPt, end_it, retval, true);
             break;
 
         case  GBPARSE_INT_ACCESSION:
