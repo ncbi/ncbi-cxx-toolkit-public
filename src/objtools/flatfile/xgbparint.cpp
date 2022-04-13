@@ -430,62 +430,41 @@ static size_t sParseAccessionPrefix(const CTempString& accession)
 
 static int sGetAccession(string& accession, int& current_col, const string& line, bool accver)
 {
-    int retval = 0;
     const auto length = line.size();
     CTempString tempString(line.c_str() + current_col, length-current_col);
     auto prefixLength = sParseAccessionPrefix(tempString);
-/*
     size_t accessionLength = prefixLength;
 
     tempString = tempString.substr(prefixLength);
     auto notDigitPos = tempString.find_first_not_of("0123456789"); 
     if (notDigitPos != NPOS) {
         accessionLength += notDigitPos;
-    }
-
-    if (accver && notDigitPos != NPOS && tempString[notDigitPos] == '.') {
-        ++accessionLength;
-        if (tempString.size() > notDigitPos) {
-            tempString = tempString.substr(notDigitPos+1);
-            notDigitPos = tempString.find_first_not_of("0123456789");
+        if (accver && tempString[notDigitPos] == '.') {
+            ++accessionLength;
+            if (tempString.size() > notDigitPos) {
+                tempString = tempString.substr(notDigitPos+1);
+                notDigitPos = tempString.find_first_not_of("0123456789");
+                if (notDigitPos != NPOS) {
+                    accessionLength += notDigitPos;
+                }
+            }
         }
     }
+    else {
+        accessionLength = length - current_col;
+    }
 
+    int retval = 0;
     if (notDigitPos == NPOS || tempString[notDigitPos] != ':') {
         xlex_error_func("ACCESSION missing \":\"", line, current_col);
         ++retval; 
         --current_col;
-    } else {
-        accessionLength  += notDigitPos;
-    }
+    } 
+
     accession = string(line.c_str() + current_col, accessionLength);
     current_col += accessionLength;
     return retval;
-*/
-    size_t dex = prefixLength;
 
-    int spare = current_col + dex;
-    for (; spare<length && isdigit(line[spare]); ++spare){
-        dex++;
-    }
-    
-    if (accver && spare<length && line[spare] == '.') {
-        dex++;
-        for (spare++; spare<length && isdigit(line[spare]); spare++){
-            dex++;
-        }
-    }
-                
-    if (spare==length || line[spare] != ':'){
-        xlex_error_func("ACCESSION missing \":\"", line, current_col);
-        ++retval;
-        current_col--;
-    }
-                
-    accession = string(line.c_str() + current_col, dex);
-    cout << "Accession : " << accession << endl;
-    current_col += dex;
-    return retval;
 }
 
 
