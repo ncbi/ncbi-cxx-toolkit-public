@@ -135,7 +135,7 @@ list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
 endif()
-#NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind)
+NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
 #############################################################################

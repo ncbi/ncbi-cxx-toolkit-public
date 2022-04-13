@@ -3,6 +3,7 @@
 
 [requires]
 backward-cpp/1.6@#1b6cbe0def1f1622a9809dfb4911209c
+libunwind/1.6.2
 libdb/5.3.28@#355aa134e9ee1bda60fa224f8b54c913
 # boost/1.72.0 because of https://github.com/boostorg/test/issues/272
 # the problem first showed up in 1.73.0
