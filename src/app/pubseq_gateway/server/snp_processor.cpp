@@ -138,7 +138,8 @@ END_LOCAL_NAMESPACE;
 
 CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
     : m_Config(new SSNPProcessor_Config),
-      m_Unlocked(true)
+      m_Unlocked(true),
+      m_PreResolving(false)
 {
     x_LoadConfig();
 }
@@ -158,7 +159,8 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
         bind(&CPSGS_SNPProcessor::x_OnResolutionGoodData, this)),
       m_Client(client),
       m_Status(ePSGS_InProgress),
-      m_Unlocked(true)
+      m_Unlocked(true),
+      m_PreResolving(false)
 {
 }
 
@@ -290,6 +292,7 @@ static void s_OnGotAnnotation(void* data)
 
 void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
 {
+    m_PreResolving = true;
     ResolveInputSeqId();
 }
 
@@ -298,17 +301,20 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
-        vector<string> names = annot_request.GetNotProcessedName(m_Priority);
-        for (auto& id : m_SeqIds) {
-            m_SNPData = m_Client->GetAnnotInfo(id, names);
-            if (!m_SNPData.empty()) break;
+    if (!m_Canceled) {
+        try {
+            SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+            vector<string> names = annot_request.GetNotProcessedName(m_Priority);
+            for (auto& id : m_SeqIds) {
+                m_SNPData = m_Client->GetAnnotInfo(id, names);
+                if (!m_SNPData.empty()) break;
+            }
+        }
+        catch (...) {
+            m_SNPData.clear();
         }
     }
-    catch (...) {
-        m_SNPData.clear();
-    }
+    // Even if canceled, execute OnGotAnnotation to properly finish processing.
     GetUvLoopBinder().PostponeInvoke(s_OnGotAnnotation, this);
 }
 
@@ -587,6 +593,7 @@ void CPSGS_SNPProcessor::x_SendChunkBlobData(const string& id2_info, int chunk_i
 
 void CPSGS_SNPProcessor::Cancel()
 {
+    CPSGS_CassProcessorBase::Cancel();
     m_Canceled = true;
     x_UnlockRequest();
 }
@@ -639,24 +646,30 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PreResolving = false;
     if (x_IsCanceled()) {
         return;
     }
 
-    auto& info = bioseq_resolution.GetBioseqInfo();
-    CSeq_id id(CSeq_id::E_Choice(info.GetSeqIdType()),
-        info.GetAccession(), info.GetName(), info.GetVersion());
-    m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
-    for (auto& it : info.GetSeqIds()) {
-        string err;
-        if (ParseInputSeqId(id, get<1>(it), get<0>(it), &err) != ePSGS_ParsedOK) {
-            PSG_ERROR("Error parsing seq-id: " << err);
-            continue;
-        }
+    try {
+        auto& info = bioseq_resolution.GetBioseqInfo();
+        CSeq_id id(CSeq_id::E_Choice(info.GetSeqIdType()),
+            info.GetAccession(), info.GetName(), info.GetVersion());
         m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
-    }
+        for (auto& it : info.GetSeqIds()) {
+            string err;
+            if (ParseInputSeqId(id, get<1>(it), get<0>(it), &err) != ePSGS_ParsedOK) {
+                PSG_ERROR("Error parsing seq-id: " << err);
+                continue;
+            }
+            m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
+        }
 
-    thread(bind(&s_GetAnnotation, this)).detach();
+        thread(bind(&s_GetAnnotation, this)).detach();
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+    }
 }
 
 
@@ -668,6 +681,7 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveError(
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    m_PreResolving = false;
     if (x_IsCanceled()) {
         return;
     }
@@ -687,6 +701,7 @@ void CPSGS_SNPProcessor::x_OnResolutionGoodData(void)
 
 void CPSGS_SNPProcessor::ProcessEvent(void)
 {
+    if (!m_PreResolving) return;
     x_Peek(true);
 }
 

@@ -138,6 +138,7 @@ private:
     int m_ChunkId;  // requested chunk-id
     vector<SSNPData> m_SNPData;
     bool m_Unlocked;
+    bool m_PreResolving;
 };
 
 
