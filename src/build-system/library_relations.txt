@@ -466,7 +466,7 @@ fastme needs xncbi
 fbsdstd_g needs3party $(ORIG_LIBS)
 fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
-filter_snps needs xalnmgr
+filter_snps_utils needs xalnmgr
 freetype needs $(BZ2_LIB)
 freetype needs3party $(BZ2_LIBS)
 freetype needs3party $(ORIG_LIBS)
@@ -504,9 +504,10 @@ gca_sqlite needs gencoll_client
 gcaccess_utils needs gc_load_utils
 gcaccess_utils needs gencoll_client
 gcaccess_utils needs seqgapscan
-gcedit needs agp_lookup
-gcedit needs gc_load_utils
-gcedit needs idload_utils
+gcaccess_utils needs seqgapscan_utils
+gcedit_lib needs agp_lookup
+gcedit_lib needs gc_load_utils
+gcedit_lib needs idload_utils
 gcextract2 needs gcaccess_utils
 gcextract2 needs gpipe_sqlite
 gcextract2 needs simple_asm
@@ -596,7 +597,7 @@ gpipe_an_base needs gencoll_client
 gpipe_an_base needs gpinit
 gpipe_an_base needs gpipe_jira
 gpipe_an_base needs gpipe_sadb
-gpipe_an_base needs gpipe_type_verifier
+gpipe_an_base needs gpipe_type_verifier_utils
 gpipe_an_base needs gpxlib
 gpipe_an_base needs grid_wrapper
 gpipe_ani needs tax_xml
@@ -702,9 +703,9 @@ gpipe_teamcity needs gpipe_curl
 gpipe_test_boost needs test_boost
 gpipe_tree needs gpipe_common
 gpipe_tree needs xalgophytree
-gpipe_type_verifier needs gpipe_asn_cleanup
-gpipe_type_verifier needs xalgognomon
-gpipe_type_verifier needs xalgowinmask
+gpipe_type_verifier_utils needs gpipe_asn_cleanup
+gpipe_type_verifier_utils needs xalgognomon
+gpipe_type_verifier_utils needs xalgowinmask
 gpipe_val needs $(SEQ_LIBS)
 gpipe_val needs pub
 gpipe_val needs valerr
@@ -1355,6 +1356,12 @@ seqgapscan needs ncbi_xdbapi_ftds100
 seqgapscan needs xconnect
 seqgapscan needs xobjutil
 seqgapscan needs3party $(SDBAPI_LIBS)
+seqgapscan_utils needs $(SDBAPI_LIB)
+seqgapscan_utils needs ncbi_xdbapi_ftds
+seqgapscan_utils needs ncbi_xdbapi_ftds100
+seqgapscan_utils needs xconnect
+seqgapscan_utils needs xobjutil
+seqgapscan_utils needs3party $(SDBAPI_LIBS)
 seqmasks_io needs $(OBJREAD_LIBS)
 seqmasks_io needs seqdb
 seqmasks_io needs xobjutil
@@ -1367,6 +1374,7 @@ sequtil needs xncbi
 simple_asm needs gc_load_utils
 simple_asm needs gencoll_client
 simple_asm needs seqgapscan
+simple_asm needs seqgapscan_utils
 smartasn_g needs submit
 smartnet needs3party vibrant
 snputil needs $(SOBJMGR_LIBS)
@@ -1819,6 +1827,7 @@ xformat needs xcleanup
 xgencoll needs gc_load_utils
 xgencoll needs gencoll_client
 xgencoll needs seqgapscan
+xgencoll needs seqgapscan_utils
 xgencollstats needs gc_asn_access
 xgencollstats needs gencoll_stats
 xgp_manifest needs xser
@@ -1838,6 +1847,7 @@ xgpsubmit needs gpipe_asn_cleanup
 xgpsubmit needs grid_wrapper
 xgpsubmit needs idload_utils
 xgpsubmit needs seqgapscan
+xgpsubmit needs seqgapscan_utils
 xgpsubmit needs xasmcompare
 xgridcgi needs xcgi
 xgridcgi needs xconnserv
