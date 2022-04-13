@@ -98,12 +98,6 @@ static bool s_KeepMigrated(void)
     return value;
 }
 
-static bool s_KeepExternal(void)
-{
-    static bool value = NCBI_PARAM_TYPE(WGS, KEEP_EXTERNAL)::GetDefault();
-    return value;
-}
-
 enum EAddMasterDescr
 {
     eAddMasterDescr_none,
