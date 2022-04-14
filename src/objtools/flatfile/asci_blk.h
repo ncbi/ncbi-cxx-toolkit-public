@@ -40,10 +40,10 @@
 
 BEGIN_NCBI_SCOPE
 
-CRef<objects::CSeq_id> StrToSeqId(char* pch, bool pid);
-CRef<objects::CSeq_id> MakeAccSeqId(char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_nuc, bool is_tpa);
-CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(char *acc);
-CRef<objects::CSeq_id> MakeLocusSeqId(char* locus, Uint1 seqtype);
+CRef<objects::CSeq_id> StrToSeqId(const char* pch, bool pid);
+CRef<objects::CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_nuc, bool is_tpa);
+CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(const char *acc);
+CRef<objects::CSeq_id> MakeLocusSeqId(const char* locus, Uint1 seqtype);
 CRef<objects::CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc);
 
 void StripSerialNumbers(TEntryList& seq_entries);
@@ -62,7 +62,7 @@ void        GetLenSubNode(DataBlkPtr dbp);
 char*     SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len);
 char*     GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool is_pat);
 void        GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions);
-void        GetSequenceOfKeywords(const DataBlk& entry, Int2 type, Int2 col_data, TKeywordList& keywords);
+void        GetSequenceOfKeywords(const DataBlk& entry, int type, int col_data, TKeywordList& keywords);
 
 bool GetSeqData(ParserPtr pp, const DataBlk& entry, objects::CBioseq& cpp_bsp,
                       Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type);

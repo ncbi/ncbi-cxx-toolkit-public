@@ -60,7 +60,6 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
 /* relative routines for tokenize string
     */
 TokenStatBlk* TokenString(char* str, Char delimiter);
-TokenStatBlk* TokenStringByDelimiter(char* str, Char delimiter);
 void            FreeTokenstatblk(TokenStatBlk* tsbp);
 void            FreeTokenblk(TokenBlk* tbp);
 bool            ParseAccessionRange(TokenStatBlk* tsbp, Int4 skip);
@@ -96,6 +95,7 @@ Int2            MatchArrayISubString(const Char **array, const Char* text);
 /* Return a string which replace newline to blank and skip "XX" line data.
     */
 char*         GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 col_data);
+void xGetBlkDataReplaceNewLine(string&, int indent);
 
 /* Delete any tailing ' ', '\n', '\\', ',', ';', '~', '.', ':'
     * characters.
@@ -129,6 +129,7 @@ int SrchKeyword(const CTempString& ptr, const vector<string>&  keywordList);
 bool            CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool after_origin);
 char*         SrchNodeType(DataBlk* entry, Int4 type, size_t* len);
 char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len);
+string xGetNodeData(const DataBlk& entry, int nodeType);
 DataBlk*      TrackNodeType(const DataBlk& entry, Int2 type);
 const SectionPtr xTrackNodeType(const Entry&, int type);
 ValNode*      ConstructValNode(ValNode* head, Uint1 choice, void* data);
