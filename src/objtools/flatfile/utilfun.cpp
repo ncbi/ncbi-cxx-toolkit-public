@@ -551,61 +551,6 @@ TokenStatBlkPtr TokenString(char* str, Char delimiter)
     return(token);
 }
 
-/**********************************************************
- *
- *   TokenStatBlkPtr TokenStringByDelimiter(str, delimiter):
- *
- *      Parsing string "str" by delimiter.
- *      Parsing stop at end of string ('\0').
- *      Return a statistics of link list token.
- *
- **********************************************************/
-TokenStatBlkPtr TokenStringByDelimiter(char* str, Char delimiter)
-{
-    char*         bptr;
-    char*         ptr;
-    char*         curtoken;
-    char*         s;
-    Int2            num;
-    TokenStatBlkPtr token;
-    Char            ch;
-
-    token = (TokenStatBlkPtr) MemNew(sizeof(TokenStatBlk));
-
-    /* skip first several delimiters if any existed
-     */
-    for(ptr = str; *ptr == delimiter;)
-        ptr++;
-
-    /* remove '.' from the end of the string
-     */
-    s = ptr + StringLen(ptr) - 1;
-    if(*s == '.')
-        *s = '\0';
-
-    for(num = 0; *ptr != '\0';)
-    {
-        for(bptr = ptr; *ptr != delimiter && *ptr != '\0';)
-            ptr++;
-
-        ch = *ptr;
-        *ptr = '\0';
-        curtoken = StringSave(bptr);
-        *ptr = ch;
-
-        InsertTokenVal(&token->list, curtoken);
-        num++;
-        MemFree(curtoken);
-
-        while(*ptr == delimiter || *ptr == ' ')
-            ptr++;
-    }
-
-    token->num = num;
-
-    return(token);
-}
-
 /**********************************************************/
 void FreeTokenblk(TokenBlkPtr tbp)
 {
@@ -833,6 +778,9 @@ Int2 MatchArrayISubString(const Char **array, const Char* text)
 char* GetBlkDataReplaceNewLine(char* bptr, char* eptr,
                                  Int2 start_col_data)
 {
+    string instr(bptr, eptr - bptr);
+    xGetBlkDataReplaceNewLine(instr, start_col_data);
+
     char* ptr;
 
     if(bptr + start_col_data >= eptr)
@@ -872,8 +820,29 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr,
     std::string tstr = NStr::TruncateSpaces(std::string(retstr), NStr::eTrunc_End);
     MemFree(retstr);
     retstr = StringSave(tstr.c_str());
-
     return(retstr);
+}
+
+void xGetBlkDataReplaceNewLine(string& instr, int indent)
+{
+    vector<string> lines;
+    NStr::Split(instr, "\n", lines);
+    string replaced;
+    for (auto line: lines) {
+        if (line.empty()  ||  NStr::StartsWith(line, "XX")) {
+            continue;
+        }
+        replaced += line.substr(indent);
+        auto last = line.size() - 1;
+        if (line[last] != '-') {
+            replaced += ' ';
+        }
+        else if (line[last-1] == ' ') {
+            replaced += ' ';
+        }
+    }
+    NStr::TruncateSpacesInPlace(replaced);
+    instr = replaced;
 }
 
 
@@ -1215,6 +1184,15 @@ char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
 
     *len = 0;
     return(NULL);
+}
+
+string xGetNodeData(const DataBlk& entry, int nodeType)
+{
+    auto tmp = TrackNodeType(entry, (Int2)nodeType);
+    if (!tmp) {
+        return "";
+    }
+    return string(tmp->mOffset, tmp->len);
 }
 
 /**********************************************************

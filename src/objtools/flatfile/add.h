@@ -79,6 +79,7 @@ void          fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int
 bool          fta_if_valid_biosample(const char* id, bool dblink);
 bool          fta_if_valid_sra(const char* id, bool dblink);
 void          StripECO(char* str);
+void xStripECO(string&);
 void          fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source,
                                  Int4 acctype, bool pricon, char* acc);
 

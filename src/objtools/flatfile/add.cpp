@@ -3286,6 +3286,24 @@ void fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num)
 }
 
 /**********************************************************/
+void xStripECO(
+    string& instr)
+{
+    auto ecoStart = instr.find("{ECO:");
+    while (ecoStart != string::npos) {
+        auto ecoStop = instr.find("}", ecoStart);
+        if (ecoStop == string::npos) {
+            return; // hmmm
+        }
+        string test1 = instr.substr(ecoStop);
+        while (instr[ecoStop+1] == ' ') {
+            ++ecoStop;
+        }
+        instr = instr.substr(0, ecoStart) + instr.substr(ecoStop+1);
+        ecoStart = instr.find("{ECO:", ecoStart);
+    }
+}
+
 void StripECO(char* str)
 {
     char* p;

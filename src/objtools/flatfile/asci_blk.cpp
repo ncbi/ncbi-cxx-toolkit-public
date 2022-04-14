@@ -887,7 +887,7 @@ void GetLenSubNode(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(char *acc)
+CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(const char*acc)
 {
     CRef<objects::CPatent_seq_id> pat_id;
     char                          *p;
@@ -927,7 +927,7 @@ CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(char *acc)
 *                                              9-16-93
 *
 **********************************************************/
-static Uint1 ValidSeqType(char* accession, Uint1 type, bool is_nuc, bool is_tpa)
+static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc, bool is_tpa)
 {
     Uint1 cho;
 
@@ -967,7 +967,7 @@ static Uint1 ValidSeqType(char* accession, Uint1 type, bool is_nuc, bool is_tpa)
 *                                              5-10-93
 *
 **********************************************************/
-CRef<objects::CSeq_id> MakeAccSeqId(char* acc, Uint1 seqtype, bool accver,
+CRef<objects::CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver,
                                                 Int2 vernum, bool is_nuc, bool is_tpa)
 {
     CRef<objects::CSeq_id> id;
@@ -998,7 +998,7 @@ CRef<objects::CSeq_id> MakeAccSeqId(char* acc, Uint1 seqtype, bool accver,
 *                                              5-13-93
 *
 **********************************************************/
-CRef<objects::CSeq_id> MakeLocusSeqId(char* locus, Uint1 seqtype)
+CRef<objects::CSeq_id> MakeLocusSeqId(const char* locus, Uint1 seqtype)
 {
     CRef<objects::CSeq_id> res;
     if (locus == NULL || *locus == '\0')
@@ -1598,104 +1598,87 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
     }
 }
 
-/**********************************************************/
-static char* FixEMBLKeywords(char* kwstr)
+//  ----------------------------------------------------------------------------
+void xFixEMBLKeywords(
+    string& keywordData)
+//  ----------------------------------------------------------------------------
 {
-    char* retstr;
-    char* p;
-    char* q;
+    const string problematic("WGS Third Party Data");
+    const string desired("WGS; Third Party Data");
 
-    if(kwstr == NULL || *kwstr == '\0')
-        return(kwstr);
-
-    p = StringIStr(kwstr, "WGS Third Party Data");
-    if(p == NULL || (p[20] != ';' && p[20] != '.'))
-        return(kwstr);
-
-    if(p > kwstr)
-    {
-        for(q = p - 1; q > kwstr && *q == ' ';)
-            q--;
-        if(*q != ' ' && *q != ';')
-            return(kwstr);
+    if (keywordData.empty()) {
+        return;
+    }
+    auto wgsStart = NStr::FindNoCase(keywordData, problematic);
+    if (wgsStart == string::npos) {
+        return;
+    }
+    auto afterProblematic = keywordData[wgsStart + problematic.size()];
+    if (afterProblematic != ';'  && afterProblematic != '.') {
+        return;
     }
 
-    retstr = (char*) MemNew(StringLen(kwstr) + 2);
-    p[3] = '\0';
-    StringCpy(retstr, kwstr);
-    StringCat(retstr, ";");
-    p[3] = ' ';
-    StringCat(retstr, p + 3);
-    MemFree(kwstr);
-
-    return(retstr);
+    string fixedKeywords;
+    if (wgsStart > 0) {
+        auto semiBefore = keywordData.rfind(';', wgsStart -1);
+        if (semiBefore == string::npos) {
+            return;
+        }
+        for (auto i = semiBefore+1; i < wgsStart; ++i) {
+            if (keywordData[i] != ' ') {
+                return;
+            }
+        }
+        fixedKeywords = keywordData.substr(0, wgsStart - 1);
+    }
+    fixedKeywords += desired;
+    fixedKeywords += keywordData.substr(wgsStart + problematic.size());
+    keywordData = fixedKeywords;
 }
 
-/**********************************************************
-*
-*   void GetSequenceOfKeywords(entry, type,
-*                              col_data, keywords):
-*
-*      Each keyword separated by ";", the last one end
-*   with "."
-*
-*                                              6-3-93
-*
-**********************************************************/
-void GetSequenceOfKeywords(const DataBlk& entry, Int2 type, Int2 col_data,
-                           TKeywordList& keywords)
+
+//  ----------------------------------------------------------------------------
+void GetSequenceOfKeywords(
+    const DataBlk& entry, 
+    int type, 
+    int col_data,
+    TKeywordList& keywords)
+//  ----------------------------------------------------------------------------
 {
-    TokenStatBlkPtr tsbp;
-    TokenBlkPtr     tbp;
-    char*         kwstr;
-    char*         bptr;
-    char*         kw;
-    size_t          len;
+    //  Expectation: Each keyword separated by ";", the last one ends with "."
 
     keywords.clear();
-
-    bptr = xSrchNodeType(entry, type, &len);
-    if(bptr == NULL)
-        return;
-
-    kwstr = GetBlkDataReplaceNewLine(bptr, bptr + len, col_data);
-    if (!kwstr) {
+    auto keywordData = xGetNodeData(entry, type);
+    if (keywordData.empty()) {
         return;
     }
+    xGetBlkDataReplaceNewLine(keywordData, col_data);
+    if (true  ||  type == ParFlatSP_KW) {
+        xStripECO(keywordData);
+    }
+    xFixEMBLKeywords(keywordData);
 
-    if(type == ParFlatSP_KW)
-        StripECO(kwstr);
-    if(type == ParFlat_KW)
-        kwstr = FixEMBLKeywords(kwstr);
-
-
-
-    tsbp = TokenStringByDelimiter(kwstr, ';');
-
-    for (tbp = tsbp->list; tbp != NULL; tbp = tbp->next)
-    {
-        kw = tata_save(tbp->str);
-        len = StringLen(kw);
-        if (kw[len - 1] == '.')
-            kw[len - 1] = '\0';
-
-        if (*kw == '\0')
-        {
-            MemFree(kw);
-            continue;
+    NStr::Split(keywordData, ";", keywords);
+    auto it = keywords.begin();
+    auto last = --keywords.end();
+    while (it != keywords.end()) {
+        auto& keyword = *it;
+        NStr::TruncateSpacesInPlace(keyword);
+        if (it == last) {
+            NStr::TrimSuffixInPlace(keyword, ".");
+            NStr::TruncateSpacesInPlace(keyword);
         }
-
-        if (std::find(keywords.begin(), keywords.end(), kw) == keywords.end())
-            keywords.push_back(kw);
-
-        MemFree(kw);
+        if (keyword.empty()) {
+            keywords.erase(it++);
+        }
+        else {
+            it++;
+        }
     }
-
-    MemFree(kwstr);
-    FreeTokenstatblk(tsbp);
 
     fta_fix_tpa_keywords(keywords);
 }
+
 
 /**********************************************************
 *
@@ -3024,7 +3007,7 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd,
 }
 
 /**********************************************************/
-CRef<objects::CSeq_id> StrToSeqId(char* pch, bool pid)
+CRef<objects::CSeq_id> StrToSeqId(const char* pch, bool pid)
 {
     long        lID;
     char*     pchEnd;
@@ -3047,7 +3030,7 @@ CRef<objects::CSeq_id> StrToSeqId(char* pch, bool pid)
 
             id = new objects::CSeq_id;
             CRef<objects::CObject_id> tag(new objects::CObject_id);
-            tag->SetStr(std::string(pch, pchEnd));
+            tag->SetStr(std::string(pch, pchEnd-pch));
 
             CRef<objects::CDbtag> dbtag(new objects::CDbtag);
             dbtag->SetTag(*tag);
