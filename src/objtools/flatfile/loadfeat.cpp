@@ -573,7 +573,7 @@ FeatBlk::~FeatBlk() {
 }
 
 extern Int2      SpFeatKeyNameValid (const Char *keystr);
-extern CRef<objects::CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids);
+extern CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids);
 
 /**********************************************************/
 static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
@@ -623,7 +623,7 @@ static void DelCharBtwData(char* value)
  *                                              ks 1/13/94
  *
  **********************************************************/
-static Int4 flat2asn_range_func(void* pp_ptr, const objects::CSeq_id& id)
+static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
 {
     ParserPtr pp = reinterpret_cast<ParserPtr>(pp_ptr);
 
@@ -644,7 +644,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const objects::CSeq_id& id)
 
 #else
 
-    const objects::CTextseq_id* text_id = nullptr;
+    const CTextseq_id* text_id = nullptr;
     if (id.IsGenbank() || id.IsEmbl() || id.IsDdbj() || id.IsTpg() ||
         id.IsTpe() || id.IsTpd())
         text_id = id.GetTextseq_Id();
@@ -716,21 +716,21 @@ static Int4 flat2asn_range_func(void* pp_ptr, const objects::CSeq_id& id)
 }
 
 /**********************************************************/
-static bool CheckForeignLoc(const objects::CSeq_loc& loc, const objects::CSeq_id& sid)
+static bool CheckForeignLoc(const CSeq_loc& loc, const CSeq_id& sid)
 {
-    const objects::CSeq_id& pid = *loc.GetId();
+    const CSeq_id& pid = *loc.GetId();
 
     if (loc.IsMix() || loc.IsEquiv() ||
-        sid.Compare(pid) == objects::CSeq_id::e_YES)
+        sid.Compare(pid) == CSeq_id::e_YES)
         return false;
 
     return true;
 }
 
 /**********************************************************/
-static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Parser::ESource source)
+static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource source)
 {
-    CRef<objects::CDbtag> tag;
+    CRef<CDbtag> tag;
 
     if (!qual.IsSetQual() ||
         qual.GetQual() != "db_xref")
@@ -892,7 +892,7 @@ static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Pa
     }
 
 
-    tag.Reset(new objects::CDbtag);
+    tag.Reset(new CDbtag);
 
     tag->SetDb(line);
 
@@ -923,14 +923,14 @@ static CRef<objects::CDbtag> DbxrefQualToDbtag(const objects::CGb_qual& qual, Pa
  *      None.
  *
  **********************************************************/
-static void FilterDb_xref(objects::CSeq_feat& feat, Parser::ESource source)
+static void FilterDb_xref(CSeq_feat& feat, Parser::ESource source)
 {
     if (!feat.IsSetQual())
         return;
 
-    objects::CSeq_feat::TDbxref& db_refs = feat.SetDbxref();
+    CSeq_feat::TDbxref& db_refs = feat.SetDbxref();
 
-    for (objects::CSeq_feat::TQual::iterator qual = feat.SetQual().begin(); qual != feat.SetQual().end(); )
+    for (CSeq_feat::TQual::iterator qual = feat.SetQual().begin(); qual != feat.SetQual().end(); )
     {
         if (!(*qual)->IsSetQual() || (*qual)->GetQual() != "db_xref")
         {
@@ -942,7 +942,7 @@ static void FilterDb_xref(objects::CSeq_feat& feat, Parser::ESource source)
 
         /* Current qualifier is db_xref, process it
          */
-        CRef<objects::CDbtag> dbtag = DbxrefQualToDbtag(*(*qual), source);
+        CRef<CDbtag> dbtag = DbxrefQualToDbtag(*(*qual), source);
         if (dbtag.NotEmpty())
         {
             db_refs.push_back(dbtag);
@@ -973,7 +973,7 @@ static void FilterDb_xref(objects::CSeq_feat& feat, Parser::ESource source)
  *                                              7-26-93
  *
  **********************************************************/
-bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
+bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids,
                     bool* hard_err, ParserPtr pp, char* name)
 {
     bool    sitesmap;
@@ -983,8 +983,8 @@ bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
     *hard_err = false;
     num_errs = 0;
 
-    CRef<objects::CSeq_loc> loc = xgbparseint_ver(location, locmap, sitesmap,
-                                                              num_errs, ids, pp->accver);
+    CRef<CSeq_loc> loc = xgbparseint_ver(location, locmap, sitesmap,
+                                         num_errs, ids, pp->accver);
 
     if (loc.NotEmpty())
     {
@@ -998,7 +998,7 @@ bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
     if (num_errs > 0)
     {
         feat.ResetLocation();
-        objects::CSeq_loc& cur_loc = feat.SetLocation();
+        CSeq_loc& cur_loc = feat.SetLocation();
         cur_loc.SetWhole(*(*ids.begin()));
         *hard_err = true;
     }
@@ -1008,7 +1008,7 @@ bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
         {
             if (feat.GetLocation().GetMix().Get().size() == 1)
             {
-                CRef<objects::CSeq_loc> cur_loc(new objects::CSeq_loc);
+                CRef<CSeq_loc> cur_loc(new CSeq_loc);
 
                 cur_loc->Assign(*feat.GetLocation().GetMix().GetFirstLoc());
                 if (cur_loc->IsInt())
@@ -1065,11 +1065,11 @@ static char* CheckLocStr(const Char* str)
 *       checks that a seq interval is valid
 *
 *****************************************************************************/
-static bool SeqIntCheckCpp(const objects::CSeq_loc& loc)
+static bool SeqIntCheckCpp(const CSeq_loc& loc)
 {
     Uint4 len = numeric_limits<unsigned int>::max();
 
-    objects::CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
+    CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
     if (bio_h.CanGetInst() && bio_h.CanGetInst_Length())
         len = bio_h.GetBioseqLength();
 
@@ -1082,11 +1082,11 @@ static bool SeqIntCheckCpp(const objects::CSeq_loc& loc)
 *       checks that a seq point is valid
 *
 *****************************************************************************/
-static bool SeqPntCheckCpp(const objects::CSeq_loc& loc)
+static bool SeqPntCheckCpp(const CSeq_loc& loc)
 {
     Uint4 len = numeric_limits<unsigned int>::max();
 
-    objects::CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
+    CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
     if (bio_h.CanGetInst() && bio_h.CanGetInst_Length())
         len = bio_h.GetBioseqLength();
 
@@ -1098,15 +1098,15 @@ static bool SeqPntCheckCpp(const objects::CSeq_loc& loc)
 *   bool PackSeqPntCheck(loc) is instead of C-toolkit 'Boolean PackSeqPntCheck (pspp)'
 *
 *****************************************************************************/
-static bool PackSeqPntCheckCpp(const objects::CSeq_loc& loc)
+static bool PackSeqPntCheckCpp(const CSeq_loc& loc)
 {
     Uint4 len = numeric_limits<unsigned int>::max();
 
-    objects::CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
+    CBioseq_Handle bio_h = GetScope().GetBioseqHandle(*loc.GetId());
     if (bio_h.CanGetInst() && bio_h.CanGetInst_Length())
         len = bio_h.GetBioseqLength();
 
-    ITERATE(objects::CSeq_loc::TPoints, point, loc.GetPacked_pnt().GetPoints())
+    ITERATE (CSeq_loc::TPoints, point, loc.GetPacked_pnt().GetPoints())
     {
         if (*point >= len)
             return false;
@@ -1118,41 +1118,41 @@ static bool PackSeqPntCheckCpp(const objects::CSeq_loc& loc)
 /**********************************************************/
 /* returns : 2 = Ok, 1 = mixed strands, 0 = error in location
  */
-static Uint1 FTASeqLocCheck(const objects::CSeq_loc& locs, char* accession)
+static Uint1 FTASeqLocCheck(const CSeq_loc& locs, char* accession)
 {
     Uint1        strand = 99;
     Uint1        retval = 2;
 
-    objects::CSeq_loc_CI ci(locs);
+    CSeq_loc_CI ci(locs);
 
     bool good = true;
     for (; ci; ++ci)
     {
-        CConstRef<objects::CSeq_loc> cur_loc = ci.GetRangeAsSeq_loc();
+        CConstRef<CSeq_loc> cur_loc = ci.GetRangeAsSeq_loc();
 
-        const objects::CSeq_id* cur_id = nullptr;
+        const CSeq_id* cur_id = nullptr;
 
         switch (cur_loc->Which())
         {
-        case objects::CSeq_loc::e_Int:
+        case CSeq_loc::e_Int:
             good = SeqIntCheckCpp(*cur_loc);
             if (good)
                 cur_id = cur_loc->GetId();
             break;
 
-        case objects::CSeq_loc::e_Pnt:
+        case CSeq_loc::e_Pnt:
             good = SeqPntCheckCpp(*cur_loc);
             if (good)
                 cur_id = cur_loc->GetId();
             break;
 
-        case objects::CSeq_loc::e_Packed_pnt:
+        case CSeq_loc::e_Packed_pnt:
             good = PackSeqPntCheckCpp(*cur_loc);
             if (good)
                 cur_id = cur_loc->GetId();
             break;
 
-        case objects::CSeq_loc::e_Bond:
+        case CSeq_loc::e_Bond:
             if (!cur_loc->GetBond().CanGetA())
                 good = false;
 
@@ -1160,8 +1160,8 @@ static Uint1 FTASeqLocCheck(const objects::CSeq_loc& locs, char* accession)
                 cur_id = cur_loc->GetId();
             break;
 
-        case objects::CSeq_loc::e_Empty:
-        case objects::CSeq_loc::e_Whole:
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Whole:
             cur_id = cur_loc->GetId();
             break;
 
@@ -1181,7 +1181,7 @@ static Uint1 FTASeqLocCheck(const objects::CSeq_loc& locs, char* accession)
             !cur_id->IsTpd() && !cur_id->IsGpipe())
             continue;
 
-        const objects::CTextseq_id* text_id = cur_id->GetTextseq_Id();
+        const CTextseq_id* text_id = cur_id->GetTextseq_Id();
 
         if (text_id == nullptr || !text_id->CanGetAccession())
             continue;
@@ -1250,11 +1250,11 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats,
         if(dbp->mType != ParFlat_REF_BTW)
             continue;
 
-        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, col_data);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, col_data);
         if (pubdesc.Empty())
             continue;
 
-        CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
+        CRef<CSeq_feat> feat(new CSeq_feat);
         feat->SetData().SetPub(*pubdesc);
 
         location = NULL;
@@ -1381,7 +1381,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats,
  *
  **********************************************************/
 static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats,
-                       objects::CSeq_id& seq_id, Int4 col_data, IndexblkPtr ibp)
+                       CSeq_id& seq_id, Int4 col_data, IndexblkPtr ibp)
 {
     DataBlkPtr dbp;
 
@@ -1396,21 +1396,21 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats,
     if(dbp == NULL)
         return;
 
-    CRef<objects::CSeq_feat> feat;
+    CRef<CSeq_feat> feat;
     for (first = true; dbp != NULL; dbp = dbp->mpNext)
     {
         if(dbp->mType != ParFlat_REF_SITES)
             continue;
 
-        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, col_data);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, col_data);
         if (pubdesc.Empty() || !pubdesc->IsSetPub())
             continue;
 
         if(first)
         {
-            feat.Reset(new objects::CSeq_feat);
+            feat.Reset(new CSeq_feat);
 
-            objects::CImp_feat& imp_feat = feat->SetData().SetImp();
+            CImp_feat& imp_feat = feat->SetData().SetImp();
             imp_feat.SetKey("Site-ref");
             imp_feat.SetLoc("sites");
 
@@ -1418,7 +1418,7 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats,
             first = false;
         }
 
-        CRef<objects::CPub> pub(new objects::CPub);
+        CRef<CPub> pub(new CPub);
         pub->SetEquiv(pubdesc->SetPub());
 
         feat->SetCit().SetPub().push_back(pub);
@@ -1439,7 +1439,7 @@ static void fta_fake_gbparse_err_handler(const Char*, const Char*)
 }
 
 /**********************************************************/
-string location_to_string_or_unknown(const objects::CSeq_loc& loc)
+string location_to_string_or_unknown(const CSeq_loc& loc)
 {
     auto ret = location_to_string(loc);
     if (!ret.empty())
@@ -1449,8 +1449,8 @@ string location_to_string_or_unknown(const objects::CSeq_loc& loc)
 }
 
 /**********************************************************/
-static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, char* qval, const TSeqIdList& seqids,
-                                                            bool accver)
+static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const TSeqIdList& seqids,
+                                       bool accver)
 {
     char*    loc_str;
     char*    p;
@@ -1462,7 +1462,7 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
     Char       ch;
     int        fake3;
 
-    CRef<objects::CSeq_loc> ret;
+    CRef<CSeq_loc> ret;
 
     if (qval == NULL)
         return ret;
@@ -1513,7 +1513,7 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
         return ret;
     }
 
-    range = objects::sequence::GetLength(*ret, &GetScope());
+    range = sequence::GetLength(*ret, &GetScope());
     if (range != 3)
     {
         string loc = location_to_string_or_unknown(feat.GetLocation());
@@ -1551,7 +1551,7 @@ static CRef<objects::CSeq_loc> GetTrnaAnticodon(const objects::CSeq_feat& feat, 
 }
 
 /**********************************************************/
-static void fta_parse_rrna_feat(objects::CSeq_feat& feat, objects::CRNA_ref& rna_ref)
+static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
 {
     char* qval;
     char* p;
@@ -1571,7 +1571,7 @@ static void fta_parse_rrna_feat(objects::CSeq_feat& feat, objects::CRNA_ref& rna
     }
 
     size_t len = 0;
-    if (qval_str.empty() && feat.IsSetComment() && rna_ref.GetType() == objects::CRNA_ref::eType_rRNA)
+    if (qval_str.empty() && feat.IsSetComment() && rna_ref.GetType() == CRNA_ref::eType_rRNA)
     {
         std::string comment = feat.GetComment();
         len = comment.size();
@@ -1750,7 +1750,7 @@ static Uint1 fta_get_aa_from_string(char* str)
 }
 
 /**********************************************************/
-static int get_aa_from_trna(const objects::CTrna_ext& trna)
+static int get_aa_from_trna(const CTrna_ext& trna)
 {
     int ret = 0;
     if (trna.IsSetAa() && trna.GetAa().IsNcbieaa())
@@ -1760,8 +1760,8 @@ static int get_aa_from_trna(const objects::CTrna_ext& trna)
 }
 
 /**********************************************************/
-static CRef<objects::CTrna_ext> fta_get_trna_from_product(objects::CSeq_feat& feat, const Char* product,
-                                                                      unsigned char* remove)
+static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* product,
+                                                 unsigned char* remove)
 {
     const char **b;
 
@@ -1779,7 +1779,7 @@ static CRef<objects::CTrna_ext> fta_get_trna_from_product(objects::CSeq_feat& fe
     if (remove != NULL)
         *remove = 0;
 
-    CRef<objects::CTrna_ext> ret(new objects::CTrna_ext);
+    CRef<CTrna_ext> ret(new CTrna_ext);
 
     if(product == NULL || StringLen(product) < 7)
         return ret;
@@ -1949,13 +1949,13 @@ static CRef<objects::CTrna_ext> fta_get_trna_from_product(objects::CSeq_feat& fe
 }
 
 /**********************************************************/
-static CRef<objects::CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned char* remove)
+static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned char* remove)
 {
     char* comm;
     char* p;
     char* q;
 
-    CRef<objects::CTrna_ext> ret(new objects::CTrna_ext);
+    CRef<CTrna_ext> ret(new CTrna_ext);
 
     *remove = 0;
     if(comment == NULL)
@@ -2013,7 +2013,7 @@ static CRef<objects::CTrna_ext> fta_get_trna_from_comment(const Char* comment, u
 }
 
 /**********************************************************/
-static int get_first_codon_from_trna(const objects::CTrna_ext& trna)
+static int get_first_codon_from_trna(const CTrna_ext& trna)
 {
     int ret = 255;
     if (trna.IsSetCodon() && !trna.GetCodon().empty())
@@ -2023,7 +2023,7 @@ static int get_first_codon_from_trna(const objects::CTrna_ext& trna)
 }
 
 /**********************************************************/
-static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
+static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq,
                       Parser::ESource source, bool accver)
 {
     char*    qval = nullptr;
@@ -2036,9 +2036,9 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
     if (!feat.GetData().IsImp())
         return;
 
-    const objects::CImp_feat& imp_feat = feat.GetData().GetImp();
+    const CImp_feat& imp_feat = feat.GetData().GetImp();
 
-    CRef<objects::CRNA_ref> rna_ref(new objects::CRNA_ref);
+    CRef<CRNA_ref> rna_ref(new CRNA_ref);
 
     type = MatchArrayString(ParFlat_RNA_array, imp_feat.GetKey().c_str());
     if (type < 0)
@@ -2046,46 +2046,46 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
     else
         ++type;
 
-    rna_ref->SetType(static_cast<objects::CRNA_ref::EType>(type));
+    rna_ref->SetType(static_cast<CRNA_ref::EType>(type));
 
     feat.SetData().SetRna(*rna_ref);
 
-    if (type == objects::CRNA_ref::eType_rRNA)
+    if (type == CRNA_ref::eType_rRNA)
     {
         fta_parse_rrna_feat(feat, *rna_ref);
         return;
     }
 
-    CRef<objects::CRNA_gen> rna_gen;
-    CRef<objects::CRNA_qual_set> rna_quals;
+    CRef<CRNA_gen> rna_gen;
+    CRef<CRNA_qual_set> rna_quals;
 
-    if (type == objects::CRNA_ref::eType_ncRNA)
+    if (type == CRNA_ref::eType_ncRNA)
     {
         p = GetTheQualValue(feat.SetQual(), "ncRNA_class");
         if(p != NULL)
         {
-            rna_gen.Reset(new objects::CRNA_gen);
+            rna_gen.Reset(new CRNA_gen);
             rna_gen->SetClass(p);
         }
     }
-    else if (type == objects::CRNA_ref::eType_tmRNA)
+    else if (type == CRNA_ref::eType_tmRNA)
     {
         p = GetTheQualValue(feat.SetQual(), "tag_peptide");
         if (p != NULL)
         {
-            CRef<objects::CRNA_qual> rna_qual(new objects::CRNA_qual);
+            CRef<CRNA_qual> rna_qual(new CRNA_qual);
             rna_qual->SetQual("tag_peptide");
             rna_qual->SetVal(p);
 
-            rna_quals.Reset(new objects::CRNA_qual_set);
+            rna_quals.Reset(new CRNA_qual_set);
             rna_quals->Set().push_back(rna_qual);
 
-            rna_gen.Reset(new objects::CRNA_gen);
+            rna_gen.Reset(new CRNA_gen);
             rna_gen->SetQuals(*rna_quals);
         }
     }
 
-    if (type != objects::CRNA_ref::eType_premsg && type != objects::CRNA_ref::eType_tRNA)    /* mRNA, snRNA, scRNA or other */
+    if (type != CRNA_ref::eType_premsg && type != CRNA_ref::eType_tRNA)    /* mRNA, snRNA, scRNA or other */
     {
         qval = GetTheQualValue(feat.SetQual(), "product");  //may return newly allocated memory!!!
         if(qval != NULL)
@@ -2105,11 +2105,11 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
             delete[] p;
         }
 
-        if (qval == NULL && type == objects::CRNA_ref::eType_mRNA &&
+        if (qval == NULL && type == CRNA_ref::eType_mRNA &&
            source != Parser::ESource::EMBL && source != Parser::ESource::DDBJ)
            qval = GetTheQualValue(feat.SetQual(), "standard_name");
 
-        if (qval == NULL && feat.IsSetComment() && type == objects::CRNA_ref::eType_mRNA)
+        if (qval == NULL && feat.IsSetComment() && type == CRNA_ref::eType_mRNA)
         {
             const Char* c_p = feat.GetComment().c_str();
             const Char* c_q = NULL;
@@ -2161,10 +2161,10 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
                 qval = p;
             }
 
-            if (type > objects::CRNA_ref::eType_snoRNA && type <= objects::CRNA_ref::eType_miscRNA)
+            if (type > CRNA_ref::eType_snoRNA && type <= CRNA_ref::eType_miscRNA)
             {
                 if (rna_gen.Empty())
-                    rna_gen.Reset(new objects::CRNA_gen);
+                    rna_gen.Reset(new CRNA_gen);
 
                 rna_gen->SetProduct(qval);
             }
@@ -2184,22 +2184,22 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
         rna_ref->SetExt().SetGen(*rna_gen);
     }
 
-    if (type != objects::CRNA_ref::eType_tRNA)                  /* if tRNA and codon value exist */
+    if (type != CRNA_ref::eType_tRNA)                  /* if tRNA and codon value exist */
         return;
 
     if (qval) {
         MemFree(qval);
     }
     qval = GetTheQualValue(feat.SetQual(), "anticodon");
-    CRef<objects::CTrna_ext> trnaa;
+    CRef<CTrna_ext> trnaa;
     if (qval != NULL)
     {
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_na);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
 
-        CRef<objects::CSeq_loc> anticodon = GetTrnaAnticodon(feat, qval, bioseq.GetId(), accver);
+        CRef<CSeq_loc> anticodon = GetTrnaAnticodon(feat, qval, bioseq.GetId(), accver);
         if (anticodon.NotEmpty())
         {
-            trnaa.Reset(new objects::CTrna_ext);
+            trnaa.Reset(new CTrna_ext);
 
             /* value has format: (pos:base_range, aa:amino_acid)
              */
@@ -2214,7 +2214,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
 
     qval = CpTheQualValue(feat.SetQual(), "product");
 
-    CRef<objects::CTrna_ext> trnap;
+    CRef<CTrna_ext> trnap;
     if (qval != NULL)
     {
         trnap = fta_get_trna_from_product(feat, qval, NULL);
@@ -2228,7 +2228,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
     }
 
     remove = 0;
-    CRef<objects::CTrna_ext> trnac;
+    CRef<CTrna_ext> trnac;
     if (feat.IsSetComment())
     {
         trnac = fta_get_trna_from_product(feat, feat.GetComment().c_str(), &remove);
@@ -2318,7 +2318,7 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
 
     if (rna_ref->IsSetExt() && rna_ref->GetExt().IsTRNA())
     {
-        const objects::CTrna_ext& trna = rna_ref->GetExt().GetTRNA();
+        const CTrna_ext& trna = rna_ref->GetExt().GetTRNA();
         if (get_aa_from_trna(trna) == 0 && !trna.IsSetAnticodon())
         {
             rna_ref->ResetExt();
@@ -2336,9 +2336,9 @@ static void GetRnaRef(objects::CSeq_feat& feat, objects::CBioseq& bioseq,
  *                                              01/07/97
  *
  **********************************************************/
-static void GetImpFeat(objects::CSeq_feat& feat, FeatBlkPtr fbp, bool locmap)
+static void GetImpFeat(CSeq_feat& feat, FeatBlkPtr fbp, bool locmap)
 {
-    CRef<objects::CImp_feat> imp_feat(new objects::CImp_feat);
+    CRef<CImp_feat> imp_feat(new CImp_feat);
     imp_feat->SetKey(fbp->key);
 
     if (locmap)
@@ -2348,16 +2348,16 @@ static void GetImpFeat(objects::CSeq_feat& feat, FeatBlkPtr fbp, bool locmap)
 }
 
 /**********************************************************/
-void fta_sort_biosource(objects::CBioSource& bio)
+void fta_sort_biosource(CBioSource& bio)
 {
     if(bio.CanGetOrg() && !bio.GetOrg().GetDb().empty())
     {
-        NON_CONST_ITERATE(objects::COrg_ref::TDb, db, bio.SetOrg().SetDb())
+        NON_CONST_ITERATE (COrg_ref::TDb, db, bio.SetOrg().SetDb())
         {
             if (!(*db)->CanGetDb())
                 continue;
 
-            objects::COrg_ref::TDb::iterator tdb = db;
+            COrg_ref::TDb::iterator tdb = db;
             for (++tdb; tdb != bio.SetOrg().SetDb().end(); ++tdb)
             {
                 if (!(*tdb)->IsSetDb())
@@ -2368,8 +2368,8 @@ void fta_sort_biosource(objects::CBioSource& bio)
 
                 if ((*db)->GetDb() == (*tdb)->GetDb())
                 {
-                    const objects::CObject_id& db_id = (*db)->GetTag();
-                    const objects::CObject_id& tdb_id = (*tdb)->GetTag();
+                    const CObject_id& db_id = (*db)->GetTag();
+                    const CObject_id& tdb_id = (*tdb)->GetTag();
 
                     if (!db_id.IsStr() && tdb_id.IsStr())
                         continue;
@@ -2389,9 +2389,9 @@ void fta_sort_biosource(objects::CBioSource& bio)
         
         if (bio.GetOrg().IsSetOrgname() && bio.GetOrg().GetOrgname().IsSetMod())
         {
-            NON_CONST_ITERATE(objects::COrgName::TMod, mod, bio.SetOrg().SetOrgname().SetMod())
+            NON_CONST_ITERATE (COrgName::TMod, mod, bio.SetOrg().SetOrgname().SetMod())
             {
-                objects::COrgName::TMod::iterator tmod = mod;
+                COrgName::TMod::iterator tmod = mod;
                 for (++tmod; tmod != bio.SetOrg().SetOrgname().SetMod().end(); ++tmod)
                 {
                     if ((*mod)->GetSubtype() < (*tmod)->GetSubtype())
@@ -2410,9 +2410,9 @@ void fta_sort_biosource(objects::CBioSource& bio)
     if (!bio.IsSetSubtype())
         return;
 
-    NON_CONST_ITERATE(objects::CBioSource::TSubtype, sub, bio.SetSubtype())
+    NON_CONST_ITERATE (CBioSource::TSubtype, sub, bio.SetSubtype())
     {
-        objects::CBioSource::TSubtype::iterator tsub = sub;
+        CBioSource::TSubtype::iterator tsub = sub;
         for (++tsub; tsub != bio.SetSubtype().end(); ++tsub)
         {
             if ((*sub)->GetSubtype() < (*tsub)->GetSubtype())
@@ -2428,7 +2428,7 @@ void fta_sort_biosource(objects::CBioSource& bio)
 }
 
 /**********************************************************/
-static void ConvertQualifierValue(CRef<objects::CGb_qual>& qual)
+static void ConvertQualifierValue(CRef<CGb_qual>& qual)
 {
     std::string val = qual->GetVal();
     bool has_comma = val.find(',') != std::string::npos;
@@ -2526,7 +2526,7 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
 }
 
 /**********************************************************/
-static bool fta_check_evidence(objects::CSeq_feat& feat, FeatBlkPtr fbp)
+static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
 {
     Int4      evi_exp;
     Int4      evi_not;
@@ -2666,15 +2666,15 @@ static bool fta_check_evidence(objects::CSeq_feat& feat, FeatBlkPtr fbp)
     }
 
     if(exp_good + evi_exp > 0)
-        feat.SetExp_ev(objects::CSeq_feat::eExp_ev_experimental);
+        feat.SetExp_ev(CSeq_feat::eExp_ev_experimental);
     else if (inf_good + evi_not > 0)
-        feat.SetExp_ev(objects::CSeq_feat::eExp_ev_not_experimental);
+        feat.SetExp_ev(CSeq_feat::eExp_ev_not_experimental);
     return true;
 }
 
 /**********************************************************
  *
- *   static CRef<objects::CSeq_feat> ProcFeatBlk(pp, fbp, seqids):
+ *   static CRef<CSeq_feat> ProcFeatBlk(pp, fbp, seqids):
  *
  *      Process each feature sub-block.
  *      location, SeqLocPtr by calling Karl's routine,
@@ -2686,7 +2686,7 @@ static bool fta_check_evidence(objects::CSeq_feat& feat, FeatBlkPtr fbp)
  *   qualifier to be a Imp-feat.
  *
  **********************************************************/
-static CRef<objects::CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
+static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
 {
     const char **b;
 
@@ -2695,7 +2695,7 @@ static CRef<objects::CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqId
     bool    locmap = false;
     bool    err = false;
 
-    CRef<objects::CSeq_feat> feat;
+    CRef<CSeq_feat> feat;
 
     if (fbp->location != NULL)
     {
@@ -2708,7 +2708,7 @@ static CRef<objects::CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqId
         StringCat(pp->buf, " : ");
         StringCat(pp->buf, loc);
 
-        feat.Reset(new objects::CSeq_feat);
+        feat.Reset(new CSeq_feat);
         locmap = GetSeqLocation(*feat, loc, seqids, &err, pp, fbp->key);
 
         if(pp->buf != NULL)
@@ -2812,7 +2812,7 @@ static CRef<objects::CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqId
 }
 
 /**********************************************************/
-static void fta_get_gcode_from_biosource(const objects::CBioSource& bio_src, IndexblkPtr ibp)
+static void fta_get_gcode_from_biosource(const CBioSource& bio_src, IndexblkPtr ibp)
 {
     if (!bio_src.IsSetOrg() || !bio_src.GetOrg().IsSetOrgname())
         return;
@@ -3066,7 +3066,7 @@ class PredIsGivenQual
 public:
     PredIsGivenQual(const std::string& qual) : qual_(qual) {}
 
-    bool operator()(const CRef<objects::CGb_qual>& qual)
+    bool operator()(const CRef<CGb_qual>& qual)
     {
         return qual->GetQual() == qual_;
     }
@@ -3431,11 +3431,11 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr dbp,
                 *p = ':';
 
 
-            if (i == objects::CSeq_id::e_Genbank && (q[0] == 'e' || q[0] == 'E') &&
+            if (i == CSeq_id::e_Genbank && (q[0] == 'e' || q[0] == 'E') &&
                (q[1] == 'z' || q[1] == 'Z') && ibp->is_tpa == false)
                 continue;
-            if (ibp->is_tpa && (i == objects::CSeq_id::e_Tpg || i == objects::CSeq_id::e_Tpd ||
-                i == objects::CSeq_id::e_Tpe))
+            if (ibp->is_tpa && (i == CSeq_id::e_Tpg || i == CSeq_id::e_Tpd ||
+                i == CSeq_id::e_Tpe))
                 continue;
             break;
         }
@@ -3552,7 +3552,7 @@ static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
             matched = true;
             sequence::ECompare compare = sequence::Compare(
                     *resident->mLocation, *operon->mLocation, nullptr, 
-                    objects::sequence::fCompareOverlapping);
+                    sequence::fCompareOverlapping);
             if (compare != sequence::eContained && compare != sequence::eSame) {
                 ErrPostEx(SEV_REJECT, ERR_FEATURE_OperonLocationMisMatch,
                     "Feature \"%s\" at \"%s\" with /operon qualifier \"%s\" does not fall within the span of the operon feature at \"%s\".",
@@ -3639,7 +3639,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp,
     DataBlkPtr         tdbp;
     FeatBlkPtr         fbp;
 
-    objects::CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
+    CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
     std::list<std::string> linkage_evidence_names;
 
     StrNumPtr          snp;
@@ -3823,7 +3823,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp,
                 {
                     ITERATE(std::list<std::string>, evidence, linkage_evidence_names)
                     {
-                        if (*evidence != LinkageEvidenceValues[objects::CLinkage_evidence_Base::eType_unspecified].str)
+                        if (*evidence != LinkageEvidenceValues[CLinkage_evidence_Base::eType_unspecified].str)
                         {
                             ErrPostEx(SEV_ERROR, ERR_QUALIFIER_LinkageShouldBeUnspecified,
                                       "assembly gap has /linkage_evidence of \"%s\", but unoriented and unordered Phase0/Phase1 HTG records are expected to have \"unspecified\" evidence. assembly_gap feature located at \"%d..%d\".",
@@ -3835,7 +3835,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp,
                 {
                     ITERATE(std::list<std::string>, evidence, linkage_evidence_names)
                     {
-                        if (*evidence != LinkageEvidenceValues[objects::CLinkage_evidence_Base::eType_unspecified].str)
+                        if (*evidence != LinkageEvidenceValues[CLinkage_evidence_Base::eType_unspecified].str)
                             continue;
 
                         ErrPostEx(SEV_ERROR, ERR_QUALIFIER_LinkageShouldNotBeUnspecified,
@@ -3913,7 +3913,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp,
                             break;
                         }
                         
-                        CRef<objects::CLinkage_evidence> new_evidence(new objects::CLinkage_evidence);
+                        CRef<CLinkage_evidence> new_evidence(new CLinkage_evidence);
                         new_evidence->SetType(snp->num);
                         asn_linkage_evidence.push_back(new_evidence);
                     }
@@ -4078,7 +4078,7 @@ static void XMLGetQuals(char* entry, XmlIndexPtr xip, TQualVector& quals)
         if(xip->subtags == NULL)
             continue;
 
-        CRef<objects::CGb_qual> qual(new objects::CGb_qual);
+        CRef<CGb_qual> qual(new CGb_qual);
         for(xipqual = xip->subtags; xipqual != NULL; xipqual = xipqual->next)
         {
             if(xipqual->tag == INSDQUALIFIER_NAME)
@@ -4247,7 +4247,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
     }
     *p = '\0';
 
-    CRef<objects::CGb_qual> qual_new(new objects::CGb_qual);
+    CRef<CGb_qual> qual_new(new CGb_qual);
     qual_new->SetQual("note");
     qual_new->SetVal(note);
     MemFree(note);
@@ -4264,8 +4264,8 @@ static bool CheckLegalQual(const Char* val, Char ch, std::string* qual)
     for (; *val && *val != ch && (isalpha(*val) || *val == '_'); ++val)
         qual_name += *val;
 
-    objects::CSeqFeatData::EQualifier type = objects::CSeqFeatData::GetQualifierType(qual_name);
-    if (type == objects::CSeqFeatData::eQual_bad)
+    CSeqFeatData::EQualifier type = CSeqFeatData::GetQualifierType(qual_name);
+    if (type == CSeqFeatData::eQual_bad)
         return false;
 
     if (qual != nullptr)
@@ -4408,7 +4408,7 @@ static void ParseQualifiers(
         if (qualParser.GetNextQualifier(qualKey, qualVal)) {
             //cerr << "Key:   " << qualKey.c_str() << "\n";
             //cerr << "Val:   " << qualVal.c_str() << "\n";
-            CRef<objects::CGb_qual> pQual(new objects::CGb_qual);
+            CRef<CGb_qual> pQual(new CGb_qual);
             pQual->SetQual(qualKey);
             pQual->SetVal(qualVal);
             fbp->quals.push_back(pQual);
@@ -4585,9 +4585,9 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
             fbp->key = StringSave("variation");
         }
 
-        objects::CSeqFeatData::ESubtype subtype = objects::CSeqFeatData::SubtypeNameToValue(fbp->key);
+        CSeqFeatData::ESubtype subtype = CSeqFeatData::SubtypeNameToValue(fbp->key);
 
-        if (subtype == objects::CSeqFeatData::eSubtype_bad && !deb)
+        if (subtype == CSeqFeatData::eSubtype_bad && !deb)
         {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key,
                       "Feature dropped");
@@ -4634,7 +4634,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
             fbp = MergeNoteQual(fbp);   /* allow more than one
                                            notes w/i a key */
 
-            if (subtype == objects::CSeqFeatData::eSubtype_bad)
+            if (subtype == CSeqFeatData::eSubtype_bad)
             {
                 ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key);
                 ret = GB_FEAT_ERR_REPAIRABLE;
@@ -4653,12 +4653,12 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp,
                StringCmp(fbp->key, "ncRNA") != 0)
                 dbp->mDrop = true;
         }
-        else if (subtype == objects::CSeqFeatData::eSubtype_bad && !objects::CSeqFeatData::GetMandatoryQualifiers(subtype).empty())
+        else if (subtype == CSeqFeatData::eSubtype_bad && !CSeqFeatData::GetMandatoryQualifiers(subtype).empty())
         {
             if(StringCmp(fbp->key, "mobile_element") != 0)
             {
-                auto qual_idx = *objects::CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
-                std::string str1 = objects::CSeqFeatData::GetQualifierAsString(qual_idx);
+                auto qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
+                std::string str1 = CSeqFeatData::GetQualifierAsString(qual_idx);
                 const char *str = str1.c_str();
                 if((StringCmp(fbp->key, "old_sequence") != 0 &&
                     StringCmp(fbp->key, "conflict") != 0) ||
@@ -4876,20 +4876,20 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             fbp->key = StringSave("variation");
         }
 
-        objects::CSeqFeatData::ESubtype subtype = objects::CSeqFeatData::SubtypeNameToValue(fbp->key);
+        CSeqFeatData::ESubtype subtype = CSeqFeatData::SubtypeNameToValue(fbp->key);
 
 /* bsv hack: exclude CONFLICT, REGION, SITE, UNSURE UniProt flatfile
  *           features from valid GenBank ones: for USPTO only
  * Needs better workaround
  */
         if(source == Parser::ESource::USPTO &&
-           (subtype == objects::CSeqFeatData::eSubtype_conflict ||
-            subtype == objects::CSeqFeatData::eSubtype_region ||
-            subtype == objects::CSeqFeatData::eSubtype_site ||
-            subtype == objects::CSeqFeatData::eSubtype_unsure))
-            subtype = objects::CSeqFeatData::eSubtype_bad;
+           (subtype == CSeqFeatData::eSubtype_conflict ||
+            subtype == CSeqFeatData::eSubtype_region ||
+            subtype == CSeqFeatData::eSubtype_site ||
+            subtype == CSeqFeatData::eSubtype_unsure))
+            subtype = CSeqFeatData::eSubtype_bad;
         keyindx = -1;
-        if (subtype == objects::CSeqFeatData::eSubtype_bad && !deb)
+        if (subtype == CSeqFeatData::eSubtype_bad && !deb)
         {
             if(source == Parser::ESource::USPTO)
                 keyindx = SpFeatKeyNameValid(fbp->key);
@@ -4910,7 +4910,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             fbp = MergeNoteQual(fbp);   /* allow more than one
                                            notes w/i a key */
 
-            if (subtype == objects::CSeqFeatData::eSubtype_bad)
+            if (subtype == CSeqFeatData::eSubtype_bad)
             {
                 if(keyindx < 0)
                 {
@@ -4932,12 +4932,12 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
                StringCmp(fbp->key, "ncRNA") != 0)
                 dbp->mDrop = true;
         }
-        else if (subtype == objects::CSeqFeatData::eSubtype_bad && !objects::CSeqFeatData::GetMandatoryQualifiers(subtype).empty())
+        else if (subtype == CSeqFeatData::eSubtype_bad && !CSeqFeatData::GetMandatoryQualifiers(subtype).empty())
         {
             if(StringCmp(fbp->key, "mobile_element") != 0)
             {
-                auto qual_idx = *objects::CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
-                std::string str1 = objects::CSeqFeatData::GetQualifierAsString(qual_idx);
+                auto qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
+                std::string str1 = CSeqFeatData::GetQualifierAsString(qual_idx);
                 const char *str = str1.c_str();
                 if((StringCmp(fbp->key, "old_sequence") != 0 &&
                     StringCmp(fbp->key, "conflict") != 0) ||
@@ -4998,12 +4998,12 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
 }
 
 /**********************************************************/
-static bool fta_check_ncrna(const objects::CSeq_feat& feat)
+static bool fta_check_ncrna(const CSeq_feat& feat)
 {
     int count = 0;
 
     bool stop = false;
-    ITERATE(objects::CSeq_feat::TQual, qual, feat.GetQual())
+    ITERATE (CSeq_feat::TQual, qual, feat.GetQual())
     {
         if (!(*qual)->IsSetQual() || (*qual)->GetQual().empty() ||
             (*qual)->GetQual() != "ncRNA_class")
@@ -5051,9 +5051,9 @@ static bool fta_check_ncrna(const objects::CSeq_feat& feat)
 }
 
 /**********************************************************/
-static void fta_check_artificial_location(objects::CSeq_feat& feat, char* key)
+static void fta_check_artificial_location(CSeq_feat& feat, char* key)
 {
-    NON_CONST_ITERATE(objects::CSeq_feat::TQual, qual, feat.SetQual())
+    NON_CONST_ITERATE (CSeq_feat::TQual, qual, feat.SetQual())
     {
         if (!(*qual)->IsSetQual() || (*qual)->GetQual() != "artificial_location")
             continue;
@@ -5107,10 +5107,10 @@ static void fta_check_artificial_location(objects::CSeq_feat& feat, char* key)
 }
 
 /**********************************************************/
-static bool fta_check_mobile_element(const objects::CSeq_feat& feat)
+static bool fta_check_mobile_element(const CSeq_feat& feat)
 {
     bool found = false;
-    ITERATE(objects::CSeq_feat::TQual, qual, feat.GetQual())
+    ITERATE (CSeq_feat::TQual, qual, feat.GetQual())
     {
         if ((*qual)->IsSetQual() && (*qual)->GetQual() == "mobile_element_type" &&
             (*qual)->IsSetVal() && !(*qual)->GetVal().empty())
@@ -5218,7 +5218,7 @@ static void fta_convert_to_regulatory(FeatBlkPtr fbp, const char *rclass)
         MemFree(fbp->key);
     fbp->key = StringSave("regulatory");
 
-    CRef<objects::CGb_qual> qual(new objects::CGb_qual);
+    CRef<CGb_qual> qual(new CGb_qual);
     qual->SetQual("regulatory_class");
     qual->SetVal(rclass);
     fbp->quals.push_back(qual);
@@ -5409,7 +5409,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
 }
 
 /**********************************************************/
-static void fta_create_wgs_dbtag(objects::CBioseq &bioseq,
+static void fta_create_wgs_dbtag(CBioseq &bioseq,
                                  const string& submitter_seqid,
                                  char* prefix, Int4 seqtype)
 {
@@ -5424,15 +5424,15 @@ static void fta_create_wgs_dbtag(objects::CBioseq &bioseq,
         StringCpy(dbname, "TLS:");
     StringCat(dbname, prefix);
 
-    CRef<objects::CSeq_id> gen_id(new objects::CSeq_id);
-    objects::CDbtag &tag = gen_id->SetGeneral();
+    CRef<CSeq_id> gen_id(new CSeq_id);
+    CDbtag &tag = gen_id->SetGeneral();
     tag.SetTag().SetStr(submitter_seqid);
     tag.SetDb(dbname);
     bioseq.SetId().push_back(gen_id);
 }
 
 /**********************************************************/
-static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
+static void fta_create_wgs_seqid(CBioseq &bioseq,
                                  IndexblkPtr ibp, Parser::ESource source)
 {
     TokenBlkPtr tbp;
@@ -5510,24 +5510,22 @@ static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
 
     if(bioseq.GetInst().IsSetExt() && bioseq.GetInst().GetExt().IsDelta())
     {
-        objects::CDelta_ext::Tdata deltas =
-            bioseq.GetInst().GetExt().GetDelta();
-        objects::CDelta_ext::Tdata::iterator delta;
+        CDelta_ext::Tdata deltas = bioseq.GetInst().GetExt().GetDelta();
+        CDelta_ext::Tdata::iterator delta;
 
         for(delta = deltas.begin(); delta != deltas.end(); delta++)
         {
-            const objects::CSeq_id *id = nullptr;
+            const CSeq_id* id = nullptr;
 
             if(!(*delta)->IsLoc())
                 continue;
 
-            const objects::CSeq_loc &locs = (*delta)->GetLoc();
-            objects::CSeq_loc_CI ci(locs);
+            const CSeq_loc& locs = (*delta)->GetLoc();
+            CSeq_loc_CI ci(locs);
 
             for(; ci; ++ci)
             {
-                CConstRef<objects::CSeq_loc> loc =
-                    ci.GetRangeAsSeq_loc();
+                CConstRef<CSeq_loc> loc = ci.GetRangeAsSeq_loc();
                 if(!loc->IsInt())
                     continue;
                 id = &ci.GetSeq_id();
@@ -5538,8 +5536,7 @@ static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
                    !id->IsTpd())
                     break;
 
-                const objects::CTextseq_id *text_id =
-                    id->GetTextseq_Id();
+                const CTextseq_id* text_id = id->GetTextseq_Id();
                 if(text_id == nullptr || !text_id->IsSetAccession() ||
                    text_id->GetAccession().empty())
                     break;
@@ -5608,7 +5605,7 @@ static void fta_create_wgs_seqid(objects::CBioseq &bioseq,
  *                                              5-4-93
  *
  **********************************************************/
-void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
+void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     DataBlkPtr  dab;
     DataBlkPtr  dabnext;
@@ -5620,19 +5617,19 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
     Int4        col_data;
     Int2        type;
     Int4        i = 0;
-    CRef<objects::CSeq_id> pat_seq_id;
+    CRef<CSeq_id> pat_seq_id;
 
     xinstall_gbparse_range_func(pp, flat2asn_range_func);
 
     ibp = pp->entrylist[pp->curindx];
 
-    CRef<objects::CSeq_id> seq_id =
+    CRef<CSeq_id> seq_id =
         MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum,
                      true, ibp->is_tpa);
     if(pp->source == Parser::ESource::USPTO)
     {
-        pat_seq_id = new objects::CSeq_id;
-        CRef<objects::CPatent_seq_id> pat_id = MakeUsptoPatSeqId(ibp->acnum);
+        pat_seq_id = new CSeq_id;
+        CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(ibp->acnum);
         pat_seq_id->SetPatent(*pat_id);
     }
 
@@ -5735,8 +5732,8 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
     if(!ibp->submitter_seqid.empty())
         fta_create_wgs_seqid(bioseq, ibp, pp->source);
 
-    objects::CSeq_descr::Tdata& descr_list = bioseq.SetDescr().Set();
-    for (objects::CSeq_descr::Tdata::iterator descr = descr_list.begin(); descr != descr_list.end();)
+    CSeq_descr::Tdata& descr_list = bioseq.SetDescr().Set();
+    for (CSeq_descr::Tdata::iterator descr = descr_list.begin(); descr != descr_list.end();)
     {
         if (!(*descr)->IsSource())
         {
@@ -5747,7 +5744,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
         descr = descr_list.erase(descr);
     }
 
-    CRef<objects::CSeqdesc> descr_src(new objects::CSeqdesc);
+    CRef<CSeqdesc> descr_src(new CSeqdesc);
     descr_src->SetSource(seq_feats.front()->SetData().SetBiosrc());
 
     descr_list.push_back(descr_src);
@@ -5778,7 +5775,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
                 continue;
 
             fta_sort_quals(fbp, pp->qamode);
-            CRef<objects::CSeq_feat> feat;
+            CRef<CSeq_feat> feat;
             if(fbp->spindex < 0)
                 feat = ProcFeatBlk(pp, fbp, ids);
             else
@@ -5813,7 +5810,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
 
                 if (feat->GetData().IsImp())
                 {
-                    const objects::CImp_feat& imp_feat = feat->GetData().GetImp();
+                    const CImp_feat& imp_feat = feat->GetData().GetImp();
                     if (imp_feat.GetKey() == "intron" ||
                         imp_feat.GetKey() == "exon")
                     {
@@ -5877,7 +5874,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
         if (!(*feat)->GetData().IsImp())
             continue;
 
-        const objects::CImp_feat& imp_feat = (*feat)->GetData().GetImp();
+        const CImp_feat& imp_feat = (*feat)->GetData().GetImp();
 
         if (imp_feat.IsSetKey() &&
             StringStr(imp_feat.GetKey().c_str(), "RNA") != NULL)
@@ -5915,7 +5912,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
     if (seq_feats.empty())
         return;
 
-    CRef<objects::CSeq_annot> annot(new objects::CSeq_annot);
+    CRef<CSeq_annot> annot(new CSeq_annot);
     annot->SetData().SetFtable().swap(seq_feats);
 
     bioseq.SetAnnot().push_back(annot);
@@ -5958,7 +5955,7 @@ static Uint1 GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA,
 
 /**********************************************************/
 void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
-                   const DataBlk& entry, const objects::COrg_ref* org_ref)
+                   const DataBlk& entry, const COrg_ref* org_ref)
 {
     Int4        genomic;
     char*     offset;
@@ -5987,12 +5984,12 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
 
     ebp = (EntryBlkPtr) entry.mpData;
 
-    objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
+    CBioseq& bioseq = ebp->seq_entry->SetSeq();
     ibp = pp->entrylist[pp->curindx];
 
     if(ibp->is_prot)
     {
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
         biomol = 8;
         return;
     }
@@ -6012,7 +6009,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
             return;
 
         biomol = Seq_descr_GIBB_mol_genomic;
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
         if(molstr != NULL)
         {
@@ -6041,7 +6038,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         if(ibp->moltype == "genomic DNA")
         {
             biomol = Seq_descr_GIBB_mol_genomic;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6055,7 +6052,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "genomic RNA")
         {
             biomol = Seq_descr_GIBB_mol_genomic;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL)
             {
@@ -6068,7 +6065,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "mRNA")
         {
             biomol = Seq_descr_GIBB_mol_mRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6081,7 +6078,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "tRNA")
         {
             biomol = Seq_descr_GIBB_mol_tRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6094,7 +6091,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "rRNA")
         {
             biomol = Seq_descr_GIBB_mol_rRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6107,7 +6104,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "snoRNA")
         {
             biomol = Seq_descr_GIBB_mol_snoRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6120,7 +6117,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "snRNA")
         {
             biomol = Seq_descr_GIBB_mol_snRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6133,7 +6130,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "scRNA")
         {
             biomol = Seq_descr_GIBB_mol_scRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6146,7 +6143,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "pre-RNA")
         {
             biomol = Seq_descr_GIBB_mol_preRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6159,7 +6156,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "pre-mRNA")
         {
             biomol = Seq_descr_GIBB_mol_preRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if(pp->source == Parser::ESource::EMBL)
             {
@@ -6175,7 +6172,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 biomol = Seq_descr_GIBB_mol_other_genetic;
             else
                 biomol = Seq_descr_GIBB_mol_other;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL)
             {
@@ -6191,7 +6188,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 biomol = Seq_descr_GIBB_mol_other_genetic;
             else
                 biomol = Seq_descr_GIBB_mol_other;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if (pp->source == Parser::ESource::EMBL)
             {
@@ -6207,7 +6204,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 biomol = Seq_descr_GIBB_mol_other_genetic;
             else
                 biomol = Seq_descr_GIBB_mol_unknown;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL)
             {
@@ -6223,7 +6220,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 biomol = Seq_descr_GIBB_mol_other_genetic;
             else
                 biomol = Seq_descr_GIBB_mol_unknown;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if (pp->source == Parser::ESource::EMBL)
             {
@@ -6236,7 +6233,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "viral cRNA")
         {
             biomol = Seq_descr_GIBB_mol_cRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL)
             {
@@ -6251,7 +6248,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         else if(ibp->moltype == "transcribed RNA")
         {
             biomol = Seq_descr_GIBB_mol_trRNA;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL)
             {
@@ -6265,7 +6262,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                 NStr::CompareNocase(ibp->moltype, "protein") == 0)
         {
             biomol = 8;
-            bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
         }
         else
         {
@@ -6295,35 +6292,35 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
                       q, ibp->moltype.c_str());
         }
 
-        if ((tech == objects::CMolInfo::eTech_sts || tech == objects::CMolInfo::eTech_htgs_0 ||
-            tech == objects::CMolInfo::eTech_htgs_1 || tech == objects::CMolInfo::eTech_htgs_2 ||
-            tech == objects::CMolInfo::eTech_htgs_3 || tech == objects::CMolInfo::eTech_wgs ||
-            tech == objects::CMolInfo::eTech_survey) &&
+        if ((tech == CMolInfo::eTech_sts || tech == CMolInfo::eTech_htgs_0 ||
+            tech == CMolInfo::eTech_htgs_1 || tech == CMolInfo::eTech_htgs_2 ||
+            tech == CMolInfo::eTech_htgs_3 || tech == CMolInfo::eTech_wgs ||
+            tech == CMolInfo::eTech_survey) &&
            ibp->moltype != "genomic DNA")
             techok = false;
-        else if ((tech == objects::CMolInfo::eTech_est || tech == objects::CMolInfo::eTech_fli_cdna ||
-            tech == objects::CMolInfo::eTech_htc) && ibp->moltype != "mRNA")
+        else if ((tech == CMolInfo::eTech_est || tech == CMolInfo::eTech_fli_cdna ||
+            tech == CMolInfo::eTech_htc) && ibp->moltype != "mRNA")
             techok = false;
         else
             techok = true;
 
         if(!techok)
         {
-            if(tech == objects::CMolInfo::eTech_est)
+            if(tech == CMolInfo::eTech_est)
                 p = "EST";
-            else if(tech == objects::CMolInfo::eTech_fli_cdna)
+            else if(tech == CMolInfo::eTech_fli_cdna)
                 p = "fli-cDNA";
-            else if(tech == objects::CMolInfo::eTech_htc)
+            else if(tech == CMolInfo::eTech_htc)
                 p = "HTC";
-            else if(tech == objects::CMolInfo::eTech_sts)
+            else if(tech == CMolInfo::eTech_sts)
                 p = "STS";
-            else if(tech == objects::CMolInfo::eTech_wgs)
+            else if(tech == CMolInfo::eTech_wgs)
                 p = "WGS";
-            else if(tech == objects::CMolInfo::eTech_tsa)
+            else if(tech == CMolInfo::eTech_tsa)
                 p = "TSA";
-            else if(tech == objects::CMolInfo::eTech_targeted)
+            else if(tech == CMolInfo::eTech_targeted)
                 p = "TLS";
-            else if(tech == objects::CMolInfo::eTech_survey)
+            else if(tech == CMolInfo::eTech_survey)
                 p = "GSS";
             else
                 p = "HTG";
@@ -6337,10 +6334,10 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
         return;
     }
 
-    if(tech == objects::CMolInfo::eTech_est)
+    if (tech == CMolInfo::eTech_est)
     {
         biomol = Seq_descr_GIBB_mol_mRNA;
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
         return;
     }
 
@@ -6348,12 +6345,12 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
        pp->source == Parser::ESource::NCBI)
     {
         biomol = Seq_descr_GIBB_mol_genomic;
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
     }
     else
     {
         biomol = Unknown;
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_na);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
     }
 
     if(molstr == NULL)
@@ -6409,11 +6406,11 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp,
     }
 
     if(genomic < 2)
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_na);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
     else if(genomic > 1 && genomic < 6)
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_dna);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
     else
-        bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_rna);
+        bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
     if(genomic != 6)                    /* Not just RNA */
     {

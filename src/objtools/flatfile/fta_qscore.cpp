@@ -64,6 +64,7 @@
 #define THIS_FILE "fta_qscore.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 /* Defines
  */
@@ -644,8 +645,8 @@ static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores,
  *
  ***********************************************************/
 
-static void Split_Qscore_SeqGraph_By_DeltaSeq(objects::CSeq_annot::C_Data::TGraph& graphs,
-                                              objects::CBioseq& bioseq)
+static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs,
+                                              CBioseq& bioseq)
 {
     bool         is_gap = false;        /* set to TRUE if the Seq-literal
                                            represents a gap, rather than
@@ -665,11 +666,11 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(objects::CSeq_annot::C_Data::TGrap
                                            a gap; scores *should* be zero
                                            within gaps */
 
-    if (bioseq.GetInst().GetRepr() != objects::CSeq_inst::eRepr_delta ||
+    if (bioseq.GetInst().GetRepr() != CSeq_inst::eRepr_delta ||
         !bioseq.GetInst().IsSetExt())
         return;
 
-    objects::CSeq_graph& big_graph = *(*graphs.begin());
+    CSeq_graph& big_graph = *(*graphs.begin());
     if (!big_graph.GetGraph().IsByte())
     {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_NonByteGraph,
@@ -693,8 +694,8 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(objects::CSeq_annot::C_Data::TGrap
     nonzero_gap = 0;
     curr_pos = 0;
 
-    objects::CSeq_annot::C_Data::TGraph new_graphs;
-    ITERATE(objects::CDelta_ext::Tdata, delta, bioseq.GetInst().GetExt().GetDelta().Get())
+    CSeq_annot::C_Data::TGraph new_graphs;
+    ITERATE (CDelta_ext::Tdata, delta, bioseq.GetInst().GetExt().GetDelta().Get())
     {
         is_gap = false;
         last_pos = curr_pos;
@@ -717,7 +718,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(objects::CSeq_annot::C_Data::TGrap
             break;
         }
 
-        const objects::CSeq_literal& literal = (*delta)->GetLiteral();
+        const CSeq_literal& literal = (*delta)->GetLiteral();
 
         if (!literal.IsSetLength() || literal.GetLength() < 1)
         {
@@ -785,8 +786,8 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(objects::CSeq_annot::C_Data::TGrap
         /* allocate a SeqGraph and a ByteStore
          */
 
-        CRef<objects::CSeq_graph> graph(new objects::CSeq_graph);
-        objects::CSeq_interval& interval = graph->SetLoc().SetInt();
+        CRef<CSeq_graph> graph(new CSeq_graph);
+        CSeq_interval& interval = graph->SetLoc().SetInt();
 
         interval.SetId(*(*bioseq.SetId().begin()));
 
@@ -910,12 +911,12 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(objects::CSeq_annot::C_Data::TGrap
  *
  ***********************************************************/
 static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
-                                            objects::CBioseq& bioseq,
+                                            CBioseq& bioseq,
                                             char* def_acc,
                                             char* def_ver,
-						                    bool check_minmax,
-						                    bool allow_na,
-                                            objects::CSeq_annot::C_Data::TGraph& graphs)
+                                            bool check_minmax,
+                                            bool allow_na,
+                                            CSeq_annot::C_Data::TGraph& graphs)
 {
     Int4         qs_line = 0;           /* current line number within qs_buf */
     char*      my_buf = NULL;         /* copy of a line of data from
@@ -988,7 +989,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
         return;
     }
 
-    CRef<objects::CSeq_graph> graph;
+    CRef<CSeq_graph> graph;
     std::vector<Char> scores_str;
 
     while (*qs_buf != '\0')
@@ -1075,7 +1076,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
 
             /* allocate a SeqGraph and a ByteStore
              */
-            graph.Reset(new objects::CSeq_graph);
+            graph.Reset(new CSeq_graph);
             graph->SetTitle(def_title);
         }
         else
@@ -1158,7 +1159,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
     /* get a Seq-interval for the SeqGraph, and duplicate the Seq-id
      * of the Bioseq for use in the Seq-interval
      */
-    objects::CSeq_loc& loc = graph->SetLoc();
+    CSeq_loc& loc = graph->SetLoc();
 
     /* otherwise, you can now put all the pieces of the Seq-graph together
      */
@@ -1186,7 +1187,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
     /* feature location for the Seq-graph runs from 0
      * to the sequence length - 1
      */
-    objects::CSeq_interval& interval = loc.SetInt();
+    CSeq_interval& interval = loc.SetInt();
     interval.SetFrom(0);
     interval.SetTo(bioseq.GetLength() - 1);
 
@@ -1200,7 +1201,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char* qs_buf,
 
 /**********************************************************/
 // TODO: functionality in this file was never tested
-bool QscoreToSeqAnnot(char* qscore, objects::CBioseq& bioseq, char* acc,
+bool QscoreToSeqAnnot(char* qscore, CBioseq& bioseq, char* acc,
                       Int2 ver, bool check_minmax, bool allow_na)
 {
     Char        charver[100];
@@ -1210,12 +1211,12 @@ bool QscoreToSeqAnnot(char* qscore, objects::CBioseq& bioseq, char* acc,
 
     sprintf(charver, "%d", (int) ver);
 
-    objects::CSeq_annot::C_Data::TGraph graphs;
+    CSeq_annot::C_Data::TGraph graphs;
     QSbuf_To_Single_Qscore_SeqGraph(qscore, bioseq, acc, charver, check_minmax, allow_na, graphs);
     if (graphs.empty())
         return false;
 
-    if (bioseq.GetInst().GetRepr() == objects::CSeq_inst::eRepr_delta)
+    if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta)
     {
         Split_Qscore_SeqGraph_By_DeltaSeq(graphs, bioseq);
     }
@@ -1223,7 +1224,7 @@ bool QscoreToSeqAnnot(char* qscore, objects::CBioseq& bioseq, char* acc,
     if (graphs.empty())
         return false;
 
-    CRef<objects::CSeq_annot> annot(new objects::CSeq_annot);
+    CRef<CSeq_annot> annot(new CSeq_annot);
     annot->SetData().SetGraph().swap(graphs);
     annot->SetNameDesc("Graphs");
 

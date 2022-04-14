@@ -65,7 +65,7 @@
 #define THIS_FILE "fta_src.cpp"
 
 BEGIN_NCBI_SCOPE
-
+USING_SCOPE(objects);
 
 typedef struct {
     const char *name;
@@ -106,8 +106,8 @@ typedef struct _source_feat_blk {
     char*                      submitter_seqid;
 
     TQualVector quals;
-    CRef<objects::CBioSource> bio_src;
-    CRef<objects::COrgName> orgname;
+    CRef<CBioSource> bio_src;
+    CRef<COrgName> orgname;
 
     bool                      full;
     bool                      focus;
@@ -479,7 +479,7 @@ static void CheckForExemption(SourceFeatBlkPtr sfbp)
 static void PopulateSubNames(char* namstr, const Char *name,
                              const Char* value, Uint1 subtype, TOrgModList& mods)
 {
-    CRef<objects::COrgMod> mod(new objects::COrgMod);
+    CRef<COrgMod> mod(new COrgMod);
 
     StringCat(namstr, name);
     StringCat(namstr, value);
@@ -540,7 +540,7 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
     if(i == j)
         return;
 
-    sfbp->orgname = new objects::COrgName;
+    sfbp->orgname = new COrgName;
     TOrgModList& mods = sfbp->orgname->SetMod();
 
     if((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar != NULL)
@@ -1495,7 +1495,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp,
             continue;
 
         namstr = StringSave(sfbp->namstr);
-        CRef<objects::COrg_ref> org_ref(new objects::COrg_ref);
+        CRef<COrg_ref> org_ref(new COrg_ref);
         org_ref->SetTaxname(sfbp->name);
 
         if (sfbp->orgname.NotEmpty())
@@ -1503,7 +1503,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp,
             org_ref->SetOrgname(*sfbp->orgname);
         }
 
-        CRef<objects::COrg_ref> t_org_ref(new objects::COrg_ref);
+        CRef<COrg_ref> t_org_ref(new COrg_ref);
         t_org_ref->Assign(*org_ref);
         fta_fix_orgref(pp, *org_ref, &pp->entrylist[pp->curindx]->drop, sfbp->genomename);
 
@@ -1529,7 +1529,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp,
             variety = NULL;
             if (org_ref->IsSetOrgname() && org_ref->IsSetOrgMod())
             {
-                ITERATE(objects::COrgName::TMod, mod, org_ref->GetOrgname().GetMod())
+                ITERATE (COrgName::TMod, mod, org_ref->GetOrgname().GetMod())
                 {
                     switch ((*mod)->GetSubtype())
                     {
@@ -1571,7 +1571,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp,
                             sub_species, sub_strain, variety, ecotype);
         }
 
-        sfbp->bio_src.Reset(new objects::CBioSource);
+        sfbp->bio_src.Reset(new CBioSource);
         sfbp->bio_src->SetOrg(*org_ref);
 
         for(tsfbp = sfbp->next; tsfbp != NULL; tsfbp = tsfbp->next)
@@ -1581,7 +1581,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp,
             
             tsfbp->lookup = sfbp->lookup;
 
-            tsfbp->bio_src.Reset(new objects::CBioSource);
+            tsfbp->bio_src.Reset(new CBioSource);
             tsfbp->bio_src->Assign(*sfbp->bio_src);
 
             if(!sfbp->lookup)
@@ -1705,10 +1705,10 @@ static SourceFeatBlkPtr SourceFeatDerive(SourceFeatBlkPtr sfbp,
     tsfbp->genome = res->genome;
     tsfbp->next = NULL;
 
-    tsfbp->bio_src.Reset(new objects::CBioSource);
+    tsfbp->bio_src.Reset(new CBioSource);
     tsfbp->bio_src->Assign(*res->bio_src);
 
-    tsfbp->orgname.Reset(new objects::COrgName);
+    tsfbp->orgname.Reset(new COrgName);
     if (res->orgname.NotEmpty())
         tsfbp->orgname->Assign(*res->orgname);
 
@@ -1886,11 +1886,11 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void AddOrgMod(objects::COrg_ref& org_ref, const Char* val, Uint1 type)
+static void AddOrgMod(COrg_ref& org_ref, const Char* val, Uint1 type)
 {
-    objects::COrgName& orgname = org_ref.SetOrgname();
+    COrgName& orgname = org_ref.SetOrgname();
 
-    CRef<objects::COrgMod> mod(new objects::COrgMod);
+    CRef<COrgMod> mod(new COrgMod);
     mod->SetSubtype(type);
     mod->SetSubname((val == NULL) ? "" : val);
 
@@ -1898,12 +1898,12 @@ static void AddOrgMod(objects::COrg_ref& org_ref, const Char* val, Uint1 type)
 }
 
 /**********************************************************/
-static void FTASubSourceAdd(objects::CBioSource& bio, const Char* val, Uint1 type)
+static void FTASubSourceAdd(CBioSource& bio, const Char* val, Uint1 type)
 {
     if (type != 12)                      /* dev-stage */
     {
         bool found = false;
-        ITERATE(objects::CBioSource::TSubtype, subtype, bio.GetSubtype())
+        ITERATE (CBioSource::TSubtype, subtype, bio.GetSubtype())
         {
             if ((*subtype)->GetSubtype() == type)
             {
@@ -1916,14 +1916,14 @@ static void FTASubSourceAdd(objects::CBioSource& bio, const Char* val, Uint1 typ
             return;
     }
 
-    CRef<objects::CSubSource> sub(new objects::CSubSource);
+    CRef<CSubSource> sub(new CSubSource);
     sub->SetSubtype(type);
     sub->SetName((val == NULL) ? "" : val);
     bio.SetSubtype().push_back(sub);
 }
 
 /**********************************************************/
-static void CheckQualsInSourceFeat(objects::CBioSource& bio, TQualVector& quals,
+static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals,
                                    Uint1 taxserver)
 {
     const Char **b;
@@ -1937,7 +1937,7 @@ static void CheckQualsInSourceFeat(objects::CBioSource& bio, TQualVector& quals,
 
     if (bio.GetOrg().CanGetOrgname() && bio.GetOrg().GetOrgname().CanGetMod())
     {
-        ITERATE(objects::COrgName::TMod, mod, bio.GetOrg().GetOrgname().GetMod())
+        ITERATE (COrgName::TMod, mod, bio.GetOrg().GetOrgname().GetMod())
         {
             for (size_t i = 0; SourceOrgMods[i].name != NULL; ++i)
             {
@@ -2010,14 +2010,14 @@ static void CheckQualsInSourceFeat(objects::CBioSource& bio, TQualVector& quals,
 }
 
 /**********************************************************/
-static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parser::ESource source)
+static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
 {
     const char **b;
     const char *q;
     char*    line;
     char*    p;
 
-    CRef<objects::CDbtag> tag;
+    CRef<CDbtag> tag;
 
     if (qual->GetQual() != "db_xref")
         return tag;
@@ -2125,7 +2125,7 @@ static CRef<objects::CDbtag> GetSourceDbtag(CRef<objects::CGb_qual>& qual, Parse
         return tag;
     }
 
-    tag.Reset(new objects::CDbtag);
+    tag.Reset(new CDbtag);
     tag->SetDb(&val_buf[0]);
 
     *p++ = ':';
@@ -2168,7 +2168,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
         if (sfbp->bio_src.Empty())
             continue;
 
-        objects::CBioSource& bio = *sfbp->bio_src;
+        CBioSource& bio = *sfbp->bio_src;
 
         if(!sfbp->lookup)
         {
@@ -2207,7 +2207,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
             const std::string& cur_qual = (*cur)->GetQual();
             if (cur_qual == "db_xref")
             {
-                CRef<objects::CDbtag> dbtag = GetSourceDbtag(*cur, source);
+                CRef<CDbtag> dbtag = GetSourceDbtag(*cur, source);
                 if (dbtag.Empty())
                     continue;
 
@@ -2296,10 +2296,10 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                     q--;
                 *++q = '\0';
 
-                bool valid_country = objects::CCountries::IsValid(p);
+                bool valid_country = CCountries::IsValid(p);
                 if (!valid_country)
                 {
-                    valid_country = objects::CCountries::WasValid(p);
+                    valid_country = CCountries::WasValid(p);
 
                     if (!valid_country)
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidCountry,
@@ -2344,19 +2344,19 @@ static bool is_a_space_char(Char c)
 }
 
 /**********************************************************/
-static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const objects::CBioseq& bioseq)
+static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq)
 {
     SourceFeatBlkPtr tsfbp;
 
     if(sfbp == NULL || !bioseq.IsSetDescr())
         return;
 
-    ITERATE(objects::CSeq_descr::Tdata, descr, bioseq.GetDescr().Get())
+    ITERATE (CSeq_descr::Tdata, descr, bioseq.GetDescr().Get())
     {
         if (!(*descr)->IsSource())
             continue;
 
-        const objects::CBioSource& bio_src = (*descr)->GetSource();
+        const CBioSource& bio_src = (*descr)->GetSource();
 
         if (!bio_src.IsSetOrg() || !bio_src.GetOrg().IsSetTaxname() ||
             bio_src.GetOrg().GetTaxname().empty())
@@ -2443,7 +2443,7 @@ static bool CheckSourceLineage(SourceFeatBlkPtr sfbp, Parser::ESource source, bo
 }
 
 /**********************************************************/
-static void PropogateSuppliedLineage(objects::CBioseq& bioseq,
+static void PropogateSuppliedLineage(CBioseq& bioseq,
                                      SourceFeatBlkPtr sfbp, Uint1 taxserver)
 {
     SourceFeatBlkPtr tsfbp;
@@ -2461,7 +2461,7 @@ static void PropogateSuppliedLineage(objects::CBioseq& bioseq,
            sfbp->bio_src->GetOrg().GetTaxname().empty())
             continue;
 
-        objects::COrgName& orgname = sfbp->bio_src->SetOrg().SetOrgname();
+        COrgName& orgname = sfbp->bio_src->SetOrg().SetOrgname();
 
         if (orgname.IsSetLineage())
         {
@@ -2475,12 +2475,12 @@ static void PropogateSuppliedLineage(objects::CBioseq& bioseq,
         std::string lineage;
 
         bool found = false;
-        ITERATE(objects::CSeq_descr::Tdata, descr, bioseq.GetDescr().Get())
+        ITERATE (CSeq_descr::Tdata, descr, bioseq.GetDescr().Get())
         {
             if (!(*descr)->IsSource())
                 continue;
 
-            const objects::CBioSource& bio_src = (*descr)->GetSource();
+            const CBioSource& bio_src = (*descr)->GetSource();
 
             if (!bio_src.IsSetOrg() || !bio_src.GetOrg().IsSetOrgname() ||
                 !bio_src.GetOrg().IsSetTaxname() || bio_src.GetOrg().GetTaxname().empty() ||
@@ -2530,7 +2530,7 @@ static void PropogateSuppliedLineage(objects::CBioseq& bioseq,
                 
                 continue;
 
-            objects::COrgName& torgname = tsfbp->bio_src->SetOrg().SetOrgname();
+            COrgName& torgname = tsfbp->bio_src->SetOrg().SetOrgname();
 
             if (torgname.IsSetLineage())
             {
@@ -2688,7 +2688,7 @@ static char* CheckPcrPrimersTag(char* str)
 }
 
 /**********************************************************/
-static void PopulatePcrPrimers(objects::CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
+static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
 {
     PcrPrimersPtr tppp;
 
@@ -2702,24 +2702,24 @@ static void PopulatePcrPrimers(objects::CBioSource& bio, PcrPrimersPtr ppp, Int4
     if (ppp == NULL || count < 1)
         return;
 
-    objects::CBioSource::TSubtype& subs = bio.SetSubtype();
-    CRef<objects::CSubSource> sub;
+    CBioSource::TSubtype& subs = bio.SetSubtype();
+    CRef<CSubSource> sub;
 
     if (count == 1)
     {
-        sub.Reset(new objects::CSubSource);
+        sub.Reset(new CSubSource);
         sub->SetSubtype(33);
         sub->SetName(ppp->fwd_seq);
         subs.push_back(sub);
 
-        sub.Reset(new objects::CSubSource);
+        sub.Reset(new CSubSource);
         sub->SetSubtype(34);
         sub->SetName(ppp->rev_seq);
         subs.push_back(sub);
 
         if(ppp->fwd_name != NULL && ppp->fwd_name[0] != '\0')
         {
-            sub.Reset(new objects::CSubSource);
+            sub.Reset(new CSubSource);
             sub->SetSubtype(35);
             sub->SetName(ppp->fwd_name);
             subs.push_back(sub);
@@ -2727,7 +2727,7 @@ static void PopulatePcrPrimers(objects::CBioSource& bio, PcrPrimersPtr ppp, Int4
 
         if(ppp->rev_name != NULL && ppp->rev_name[0] != '\0')
         {
-            sub.Reset(new objects::CSubSource);
+            sub.Reset(new CSubSource);
             sub->SetSubtype(36);
             sub->SetName(ppp->rev_name);
             subs.push_back(sub);
@@ -2787,7 +2787,7 @@ static void PopulatePcrPrimers(objects::CBioSource& bio, PcrPrimersPtr ppp, Int4
     str_fs[0] = '(';
     StringCat(str_fs, ")");
 
-    sub.Reset(new objects::CSubSource);
+    sub.Reset(new CSubSource);
     sub->SetSubtype(33);
     sub->SetName(str_fs);
     subs.push_back(sub);
@@ -2795,7 +2795,7 @@ static void PopulatePcrPrimers(objects::CBioSource& bio, PcrPrimersPtr ppp, Int4
     str_rs[0] = '(';
     StringCat(str_rs, ")");
 
-    sub.Reset(new objects::CSubSource);
+    sub.Reset(new CSubSource);
     sub->SetSubtype(34);
     sub->SetName(str_rs);
     subs.push_back(sub);
@@ -2805,7 +2805,7 @@ static void PopulatePcrPrimers(objects::CBioSource& bio, PcrPrimersPtr ppp, Int4
         str_fn[0] = '(';
         StringCat(str_fn, ")");
 
-        sub.Reset(new objects::CSubSource);
+        sub.Reset(new CSubSource);
         sub->SetSubtype(35);
         sub->SetName(str_fn);
         subs.push_back(sub);
@@ -2816,7 +2816,7 @@ static void PopulatePcrPrimers(objects::CBioSource& bio, PcrPrimersPtr ppp, Int4
         str_rn[0] = '(';
         StringCat(str_rn, ")");
 
-        sub.Reset(new objects::CSubSource);
+        sub.Reset(new CSubSource);
         sub->SetSubtype(36);
         sub->SetName(str_rn);
         subs.push_back(sub);
@@ -3158,7 +3158,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
     Int4       len;
 
     CTime time(CTime::eCurrent);
-    objects::CDate_std date(time);
+    CDate_std date(time);
 
     for(; sfbp != NULL; sfbp = sfbp->next)
     {
@@ -3431,7 +3431,7 @@ static bool CheckNeedSYNFocus(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void CheckMetagenome(objects::CBioSource& bio)
+static void CheckMetagenome(CBioSource& bio)
 {
     if (!bio.IsSetOrg())
         return;
@@ -3456,7 +3456,7 @@ static void CheckMetagenome(objects::CBioSource& bio)
 
     if (metalin && metatax)
     {
-        CRef<objects::CSubSource> sub(new objects::CSubSource);
+        CRef<CSubSource> sub(new CSubSource);
         sub->SetSubtype(37);
         sub->SetName("");
         bio.SetSubtype().push_back(sub);
@@ -3523,7 +3523,7 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 
 /**********************************************************/
 void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
-                     Int2 type, objects::CBioseq& bioseq, TSeqFeatList& seq_feats)
+                     Int2 type, CBioseq& bioseq, TSeqFeatList& seq_feats)
 {
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;
@@ -3824,7 +3824,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
     {
         CheckMetagenome(*tsfbp->bio_src);
 
-        CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
+        CRef<CSeq_feat> feat(new CSeq_feat);
         feat->SetData().SetBiosrc(*tsfbp->bio_src);
 
         if(pp->buf != NULL)
@@ -3848,9 +3848,9 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids,
             if(p != NULL)
             {
                 if(NStr::CompareNocase(p, "experimental") == 0)
-                    feat->SetExp_ev(objects::CSeq_feat::eExp_ev_experimental);
+                    feat->SetExp_ev(CSeq_feat::eExp_ev_experimental);
                 else if(NStr::CompareNocase(p, "not_experimental") == 0)
-                    feat->SetExp_ev(objects::CSeq_feat::eExp_ev_not_experimental);
+                    feat->SetExp_ev(CSeq_feat::eExp_ev_not_experimental);
                 MemFree(p);
             }
         }

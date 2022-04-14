@@ -51,6 +51,7 @@
 #include "xutils.h"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 /**********************************************************
 *
@@ -62,9 +63,9 @@ BEGIN_NCBI_SCOPE
 *   returns FALSE.
 *
 **********************************************************/
-static bool XISAGappedSeqLoc(const objects::CSeq_loc& loc)
+static bool XISAGappedSeqLoc(const CSeq_loc& loc)
 {
-    const objects::CSeq_id* id = loc.GetId();
+    const CSeq_id* id = loc.GetId();
     if (id == nullptr || !id->IsGeneral() || !id->GetGeneral().IsSetDb() || !id->GetGeneral().IsSetTag())
         return false;
 
@@ -91,16 +92,16 @@ void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
 {
     ITERATE(TSeqLocList, loc, locs)
     {
-        CRef<objects::CDelta_seq> delta(new objects::CDelta_seq);
+        CRef<CDelta_seq> delta(new CDelta_seq);
         if (XISAGappedSeqLoc(*(*loc)))
         {
-            const objects::CSeq_interval& interval = (*loc)->GetInt();
+            const CSeq_interval& interval = (*loc)->GetInt();
             delta->SetLiteral().SetLength(interval.GetTo() - interval.GetFrom() + 1);
 
-            const objects::CSeq_id* id = (*loc)->GetId();
+            const CSeq_id* id = (*loc)->GetId();
             if (id != nullptr)
             {
-                const objects::CDbtag& tag = id->GetGeneral();
+                const CDbtag& tag = id->GetGeneral();
                 if (tag.GetDb() == unkseqlitdbtag)
                     delta->SetLiteral().SetFuzz().SetLim();
             }
@@ -113,7 +114,7 @@ void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
 }
 
 /**********************************************************/
-int XDateCheck(const objects::CDate_std& date)
+int XDateCheck(const CDate_std& date)
 {
     Int2 	day, month, year, last;
     static Uint1 days[12] = { 31, 28, 31, 30, 31,

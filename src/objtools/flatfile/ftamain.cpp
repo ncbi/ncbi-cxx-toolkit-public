@@ -326,8 +326,8 @@ static void CheckDupEntries(ParserPtr pp)
                 continue;
             }
 
-            objects::CDate::ECompare dtm = first->date->Compare(*second->date);
-            if (dtm == objects::CDate::eCompare_before)
+            CDate::ECompare dtm = first->date->Compare(*second->date);
+            if (dtm == CDate::eCompare_before)
             {
                 /* 2 after 1 take 2 remove 1
                  */
@@ -336,7 +336,7 @@ static void CheckDupEntries(ParserPtr pp)
                           "%s (%s) skipped in favor of another entry with a later update date",
                           first->acnum, first->locusname);
             }
-            else if (dtm == objects::CDate::eCompare_same)
+            else if (dtm == CDate::eCompare_same)
             {
                 if(first->offset > second->offset)
                 {
@@ -369,9 +369,9 @@ static void CheckDupEntries(ParserPtr pp)
 
 static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 {
-    CRef<objects::CBioseq_set> bio_set(new objects::CBioseq_set);
+    CRef<CBioseq_set> bio_set(new CBioseq_set);
 
-    bio_set->SetClass(objects::CBioseq_set::eClass_genbank);
+    bio_set->SetClass(CBioseq_set::eClass_genbank);
 
     if(!pp->release_str.empty())
         bio_set->SetRelease(pp->release_str);
@@ -380,7 +380,7 @@ static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 
     if (!pp->qamode)
     {
-        bio_set->SetDate().SetToTime(CTime(CTime::eCurrent), objects::CDate::ePrecision_day);
+        bio_set->SetDate().SetToTime(CTime(CTime::eCurrent), CDate::ePrecision_day);
     }
 
     return bio_set;
@@ -388,8 +388,8 @@ static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 
 static CRef<CSerialObject> MakeSeqSubmit(ParserPtr pp)
 {
-    CRef<objects::CSeq_submit> seq_submit(new objects::CSeq_submit);
-    objects::CSubmit_block& submit_blk = seq_submit->SetSub();
+    CRef<CSeq_submit> seq_submit(new CSeq_submit);
+    CSubmit_block& submit_blk = seq_submit->SetSub();
 
     submit_blk.SetCit().SetAuthors().SetNames().SetStr().push_back(pp->authors_str);
 
@@ -616,31 +616,31 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
     if (NStr::EqualNocase(source, "SPROT"))
     {
         pp.acprefix = ParFlat_SPROT_AC;
-        pp.seqtype = objects::CSeq_id::e_Swissprot;
+        pp.seqtype = CSeq_id::e_Swissprot;
         pp.source = Parser::ESource::SPROT;
     }
     else if (NStr::EqualNocase(source, "LANL"))
     {
         pp.acprefix = ParFlat_LANL_AC;         /* lanl or genbank */
-        pp.seqtype = objects::CSeq_id::e_Genbank;
+        pp.seqtype = CSeq_id::e_Genbank;
         pp.source = Parser::ESource::LANL;
     }
     else if (NStr::EqualNocase(source, "EMBL"))
     {
         pp.acprefix = ParFlat_EMBL_AC;
-        pp.seqtype = objects::CSeq_id::e_Embl;
+        pp.seqtype = CSeq_id::e_Embl;
         pp.source = Parser::ESource::EMBL;
     }
     else if (NStr::EqualNocase(source, "DDBJ"))
     {
         pp.acprefix = ParFlat_DDBJ_AC;
-        pp.seqtype = objects::CSeq_id::e_Ddbj;
+        pp.seqtype = CSeq_id::e_Ddbj;
         pp.source = Parser::ESource::DDBJ;
     }
     else if (NStr::EqualNocase(source, "FLYBASE"))
     {
         pp.source = Parser::ESource::Flybase;
-        pp.seqtype = objects::CSeq_id::e_Genbank;
+        pp.seqtype = CSeq_id::e_Genbank;
         pp.acprefix = NULL;
         if(pp.format != Parser::EFormat::GenBank)
         {
@@ -652,7 +652,7 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
     else if (NStr::EqualNocase(source, "REFSEQ"))
     {
         pp.source = Parser::ESource::Refseq;
-        pp.seqtype = objects::CSeq_id::e_Other;
+        pp.seqtype = CSeq_id::e_Other;
         pp.acprefix = NULL;
         if(pp.format != Parser::EFormat::GenBank)
         {
@@ -683,7 +683,7 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
             }
 
             pp.acprefix = ParFlat_NCBI_AC;
-            pp.seqtype = objects::CSeq_id::e_Genbank;    /* even though EMBL format, make
+            pp.seqtype = CSeq_id::e_Genbank;    /* even though EMBL format, make
                                                                GenBank SEQIDS - Karl */
             pp.source = Parser::ESource::NCBI;
         }
@@ -698,7 +698,7 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
         }
 
         pp.acprefix = ParFlat_SPROT_AC;
-        pp.seqtype = objects::CSeq_id::e_Other;
+        pp.seqtype = CSeq_id::e_Other;
         pp.source = Parser::ESource::USPTO;
         pp.accver = false;
     }
@@ -785,9 +785,9 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format,
 // LCOV_EXCL_STOP
 
 /*
-objects::CScope& GetScope()
+CScope& GetScope()
 {
-    static objects::CScope scope(*objects::CObjectManager::GetInstance());
+    static CScope scope(*CObjectManager::GetInstance());
 
     return scope;
 }
@@ -929,8 +929,8 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     fta_init_servers(&pp);
 
-    CRef<objects::CObjectManager> obj_mgr = objects::CObjectManager::GetInstance();
-    objects::CBuffer_DataLoader::RegisterInObjectManager(*obj_mgr, &pp, objects::CObjectManager::eDefault, objects::CObjectManager::kPriority_Default);
+    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    CBuffer_DataLoader::RegisterInObjectManager(*obj_mgr, &pp, CObjectManager::eDefault, CObjectManager::kPriority_Default);
 
     GetScope().AddDefaults();
 

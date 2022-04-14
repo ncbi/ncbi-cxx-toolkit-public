@@ -86,6 +86,7 @@
 #define THIS_FILE "xm_ascii.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 /**********************************************************/
 static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
@@ -145,7 +146,7 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 
 /**********************************************************/
 static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
-                             objects::CBioseq& bioseq, ParserPtr pp)
+                             CBioseq& bioseq, ParserPtr pp)
 {
     char*    p;
     char*    q;
@@ -181,7 +182,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
         MemFree(pp->buf);
     pp->buf = NULL;
 
-    CRef<objects::CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
+    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
 
     if (loc.Empty())
     {
@@ -203,7 +204,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
     if (loc->IsMix())
     {
         XGappedSeqLocsToDeltaSeqs(loc->GetMix(), bioseq.SetInst().SetExt().SetDelta().Set());
-        bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+        bioseq.SetInst().SetRepr(CSeq_inst::eRepr_delta);
     }
     else
         bioseq.SetInst().ResetExt();
@@ -215,7 +216,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp,
 
 /**********************************************************/
 bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
-                objects::CBioseq& bioseq)
+                CBioseq& bioseq)
 {
     IndexblkPtr ibp;
     XmlIndexPtr xip;
@@ -239,18 +240,18 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
     if(strandstr == NULL)
         strandstr = StringSave("   ");
 
-    objects::CSeq_inst& inst = bioseq.SetInst();
-    inst.SetRepr(objects::CSeq_inst::eRepr_raw);
+    CSeq_inst& inst = bioseq.SetInst();
+    inst.SetRepr(CSeq_inst::eRepr_raw);
 
     /* get linear, circular, tandem topology, blank is linear which = 1
      */
     topology = XMLCheckTPG(topstr);
     if(topology > 1)
-        inst.SetTopology(static_cast<objects::CSeq_inst::ETopology>(topology));
+        inst.SetTopology(static_cast<CSeq_inst::ETopology>(topology));
 
     strand = XMLCheckSTRAND(strandstr);
     if (strand > 0)
-        inst.SetStrand(static_cast<objects::CSeq_inst::EStrand>(strand));
+        inst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
 
     if(topstr != NULL)
         MemFree(topstr);
@@ -258,8 +259,8 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
         MemFree(strandstr);
 
     if(!GetSeqData(pp, *dbp, bioseq, 0, dnaconv,
-                   ibp->is_prot ?  objects::eSeq_code_type_iupacaa :
-                                   objects::eSeq_code_type_iupacna))
+                   ibp->is_prot ?  eSeq_code_type_iupacaa :
+                                   eSeq_code_type_iupacna))
         return false;
 
     if(ibp->is_contig && !XMLGetInstContig(ibp->xip, dbp, bioseq, pp))
@@ -269,10 +270,10 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv,
 }
 
 /**********************************************************/
-static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects::CMolInfo& mol_info,
-                                                          objects::CBioSource* bio_src)
+static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
+                                     CBioSource* bio_src)
 {
-    CRef<objects::CGB_block> gbb(new objects::CGB_block),
+    CRef<CGB_block> gbb(new CGB_block),
                                          ret;
 
     IndexblkPtr  ibp;
@@ -529,8 +530,8 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
             }
 
             thtg = mol_info.GetTech();
-            if (thtg == objects::CMolInfo::eTech_htgs_0 || thtg == objects::CMolInfo::eTech_htgs_1 ||
-                thtg == objects::CMolInfo::eTech_htgs_2 || thtg == objects::CMolInfo::eTech_htgs_3)
+            if (thtg == CMolInfo::eTech_htgs_0 || thtg == CMolInfo::eTech_htgs_1 ||
+                thtg == CMolInfo::eTech_htgs_2 || thtg == CMolInfo::eTech_htgs_3)
             {
                 RemoveHtgPhase(gbb->SetKeywords());
             }
@@ -603,7 +604,7 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
         {
             ErrPostStr(SEV_INFO, ERR_DIVISION_MappedtoEST,
                        "Leading T in accession number.");
-            mol_info.SetTech(objects::CMolInfo::eTech_est);
+            mol_info.SetTech(CMolInfo::eTech_est);
 
             gbb->SetDiv("");
         }
@@ -653,7 +654,7 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
     }
 
     if (fli_kwd)
-        mol_info.SetTech(objects::CMolInfo::eTech_fli_cdna);
+        mol_info.SetTech(CMolInfo::eTech_fli_cdna);
 
     /* will be used in flat file database
      */
@@ -662,25 +663,25 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
         if (gbb->GetDiv() == "EST")
         {
             ibp->EST = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_est);
+            mol_info.SetTech(CMolInfo::eTech_est);
             gbb->SetDiv("");
         }
         else if (gbb->GetDiv() == "STS")
         {
             ibp->STS = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_sts);
+            mol_info.SetTech(CMolInfo::eTech_sts);
             gbb->SetDiv("");
         }
         else if (gbb->GetDiv() == "GSS")
         {
             ibp->GSS = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_survey);
+            mol_info.SetTech(CMolInfo::eTech_survey);
             gbb->SetDiv("");
         }
         else if (gbb->GetDiv() == "HTC")
         {
             ibp->HTC = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_htc);
+            mol_info.SetTech(CMolInfo::eTech_htc);
             gbb->SetDiv("");
         }
         else if (gbb->GetDiv() == "SYN" && bio_src != NULL && bio_src->IsSetOrigin() &&
@@ -691,13 +692,13 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
     }
     else if (mol_info.IsSetTech())
     {
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_est)
+        if (mol_info.GetTech() == CMolInfo::eTech_est)
             ibp->EST = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_sts)
+        if (mol_info.GetTech() == CMolInfo::eTech_sts)
             ibp->STS = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_survey)
+        if (mol_info.GetTech() == CMolInfo::eTech_survey)
             ibp->GSS = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_htc)
+        if (mol_info.GetTech() == CMolInfo::eTech_htc)
             ibp->HTC = true;
     }
 
@@ -715,7 +716,7 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
 
     if (bio_src != NULL && bio_src->IsSetSubtype())
     {
-        ITERATE(objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
+        ITERATE (CBioSource::TSubtype, subtype, bio_src->GetSubtype())
         {
             if ((*subtype)->GetSubtype() == 27)
             {
@@ -740,8 +741,8 @@ static CRef<objects::CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, objects
 }
 
 /**********************************************************/
-static CRef<objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry,
-                                                         objects::COrg_ref* org_ref)
+static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry,
+                                    COrg_ref* org_ref)
 {
     IndexblkPtr ibp;
 
@@ -750,32 +751,32 @@ static CRef<objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry,
 
     ibp = pp->entrylist[pp->curindx];
 
-    CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
+    CRef<CMolInfo> mol_info(new CMolInfo);
 
     molstr = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_MOLTYPE);
     div = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DIVISION);
 
     if(StringNCmp(div, "EST", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_est);
+        mol_info->SetTech(CMolInfo::eTech_est);
     else if(StringNCmp(div, "STS", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_sts);
+        mol_info->SetTech(CMolInfo::eTech_sts);
     else if(StringNCmp(div, "GSS", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_survey);
+        mol_info->SetTech(CMolInfo::eTech_survey);
     else if(StringNCmp(div, "HTG", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_htgs_1);
+        mol_info->SetTech(CMolInfo::eTech_htgs_1);
     else if(ibp->is_wgs)
     {
         if(ibp->is_tsa)
-            mol_info->SetTech(objects::CMolInfo::eTech_tsa);
+            mol_info->SetTech(CMolInfo::eTech_tsa);
         else if(ibp->is_tls)
-            mol_info->SetTech(objects::CMolInfo::eTech_targeted);
+            mol_info->SetTech(CMolInfo::eTech_targeted);
         else
-            mol_info->SetTech(objects::CMolInfo::eTech_wgs);
+            mol_info->SetTech(CMolInfo::eTech_wgs);
     }
     else if(ibp->is_tsa)
-        mol_info->SetTech(objects::CMolInfo::eTech_tsa);
+        mol_info->SetTech(CMolInfo::eTech_tsa);
     else if(ibp->is_tls)
-        mol_info->SetTech(objects::CMolInfo::eTech_targeted);
+        mol_info->SetTech(CMolInfo::eTech_targeted);
 
     MemFree(div);
     GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, *entry, org_ref);
@@ -789,7 +790,7 @@ static CRef<objects::CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry,
 }
 
 /**********************************************************/
-static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, objects::CBioseq& bioseq,
+static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, CBioseq& bioseq,
                               Parser::ESource source)
 {
     char*      organism = NULL;
@@ -815,7 +816,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, objects::CBioseq& bi
         return;
     }
 
-    CRef<objects::CBioSource> bio_src(new objects::CBioSource);
+    CRef<CBioSource> bio_src(new CBioSource);
 
     p = organism;
     if (GetGenomeInfo(*bio_src, p) && bio_src->GetGenome() != 9)      /* ! Plasmid */
@@ -826,7 +827,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, objects::CBioseq& bi
             p++;
     }
 
-    objects::COrg_ref& org_ref = bio_src->SetOrg();
+    COrg_ref& org_ref = bio_src->SetOrg();
 
     if(source == Parser::ESource::EMBL)
     {
@@ -860,7 +861,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, objects::CBioseq& bi
         org_ref.SetOrgname().SetLineage(taxonomy);
     }
 
-    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+    CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetSource(*bio_src);
     bioseq.SetDescr().Set().push_back(descr);
 }
@@ -938,7 +939,7 @@ static void XMLGetDescrComment(char* offset)
 }
 
 /**********************************************************/
-static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
+static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 {
     IndexblkPtr   ibp;
 
@@ -955,12 +956,12 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
 
     ibp = pp->entrylist[pp->curindx];
 
-    objects::CBioSource* bio_src = nullptr;
-    objects::COrg_ref* org_ref = nullptr;
+    CBioSource* bio_src = nullptr;
+    COrg_ref* org_ref = nullptr;
 
     /* ORGANISM
      */
-    NON_CONST_ITERATE(objects::CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
+    NON_CONST_ITERATE(CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
     {
         if ((*descr)->IsSource())
         {
@@ -973,7 +974,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
 
     /* MolInfo from LOCUS line
      */
-    CRef<objects::CMolInfo> mol_info = XMLGetMolInfo(pp, entry, org_ref);
+    CRef<CMolInfo> mol_info = XMLGetMolInfo(pp, entry, org_ref);
 
     /* DEFINITION data ==> descr_title
      */
@@ -1004,7 +1005,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
         MemFree(str);
         str = NULL;
 
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetTitle(title);
         bioseq.SetDescr().Set().push_back(descr);
 
@@ -1070,10 +1071,10 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     {
         dbpnext = dbp->mpNext;
 
-        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
         if (pubdesc.NotEmpty())
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1086,10 +1087,10 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     {
         dbpnext = dbp->mpNext;
 
-        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
         if (pubdesc.NotEmpty())
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1102,21 +1103,21 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     TStringList dr_ena,
                 dr_biosample;
 
-    CRef<objects::CEMBL_block> embl;
-    CRef<objects::CGB_block> gbb;
+    CRef<CEMBL_block> embl;
+    CRef<CGB_block> gbb;
 
     if (pp->source == Parser::ESource::EMBL)
         embl = XMLGetEMBLBlock(pp, entry->mOffset, *mol_info, &gbdiv, bio_src, dr_ena, dr_biosample);
     else
         gbb = XMLGetGBBlock(pp, entry->mOffset, *mol_info, bio_src);
 
-    CRef<objects::CUser_object> dbuop;
+    CRef<CUser_object> dbuop;
     if (!dr_ena.empty() || !dr_biosample.empty())
         fta_build_ena_user_object(bioseq.SetDescr().Set(), dr_ena, dr_biosample, dbuop);
 
     if (mol_info->IsSetBiomol() || mol_info->IsSetTech())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetMolinfo(*mol_info);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1139,10 +1140,10 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     {
         if(StringNICmp(ibp->division, "CON", 3) == 0)
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL,
-                         objects::CSeq_id::e_Embl, true, ibp->acnum);
+                         CSeq_id::e_Embl, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL,
-                         objects::CSeq_id::e_Embl, false, ibp->acnum);
+                         CSeq_id::e_Embl, false, ibp->acnum);
 
         if (embl->GetExtra_acc().empty())
             embl->ResetExtra_acc();
@@ -1151,24 +1152,24 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     {
         if(StringNICmp(ibp->division, "CON", 3) == 0)
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ,
-                         objects::CSeq_id::e_Ddbj, true, ibp->acnum);
+                         CSeq_id::e_Ddbj, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ,
-                         objects::CSeq_id::e_Ddbj, false, ibp->acnum);
+                         CSeq_id::e_Ddbj, false, ibp->acnum);
     }
 
     if(pp->source == Parser::ESource::EMBL)
     {
         if (gbdiv != NULL)
         {
-            gbb.Reset(new objects::CGB_block);
+            gbb.Reset(new CGB_block);
             gbb->SetDiv(gbdiv);
 
             MemFree(gbdiv);
             gbdiv = NULL;
         }
 
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetEmbl(*embl);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1212,7 +1213,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
         if(pp->taxserver == 1 && gbb->IsSetDiv())
             fta_fix_orgref_div(bioseq.SetAnnot(), *org_ref, *gbb);
 
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetGenbank(*gbb);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1236,7 +1237,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
 
         NON_CONST_ITERATE(TUserObjVector, user_obj, user_objs)
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetUser(*(*user_obj));
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1262,7 +1263,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
 
         if (offset[0] != 0)
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetComment(offset);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1274,7 +1275,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     if(pp->no_date)            /* -N in command line means no date */
         return;
 
-    CRef<objects::CDate_std> std_upd_date,
+    CRef<CDate_std> std_upd_date,
                                          std_cre_date;
 
     if(pp->date)               /* -L in command line means replace
@@ -1282,10 +1283,10 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     {
         CTime cur_time(CTime::eCurrent);
 
-        std_upd_date.Reset(new objects::CDate_std);
+        std_upd_date.Reset(new CDate_std);
         std_upd_date->SetToTime(cur_time);
 
-        std_cre_date.Reset(new objects::CDate_std);
+        std_cre_date.Reset(new CDate_std);
         std_cre_date->SetToTime(cur_time);
 
         update = NULL;
@@ -1304,11 +1305,11 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
 
     if (std_upd_date.NotEmpty())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetUpdate_date().SetStd(*std_upd_date);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if (std_cre_date.NotEmpty() && std_cre_date->Compare(*std_upd_date) == objects::CDate::eCompare_after)
+        if (std_cre_date.NotEmpty() && std_cre_date->Compare(*std_upd_date) == CDate::eCompare_after)
         {
             ErrPostEx(SEV_ERROR, ERR_DATE_IllegalDate,
                       "Update-date \"%s\" precedes create-date \"%s\".",
@@ -1320,7 +1321,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq
     {
         if(pp->xml_comp == false || pp->source == Parser::ESource::EMBL)
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetCreate_date().SetStd(*std_cre_date);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1364,7 +1365,7 @@ bool XMLAscii(ParserPtr pp)
 
     TEntryList seq_entries;
 
-    objects::CSeq_loc locs;
+    CSeq_loc locs;
 
     bool        seq_long = false;
     IndexblkPtr ibp;
@@ -1426,8 +1427,8 @@ bool XMLAscii(ParserPtr pp)
 
         ebp = new EntryBlk();
 
-        CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
-        ebp->seq_entry.Reset(new objects::CSeq_entry);
+        CRef<CBioseq> bioseq = CreateEntryBioseq(pp, true);
+        ebp->seq_entry.Reset(new CSeq_entry);
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
 
@@ -1489,7 +1490,7 @@ bool XMLAscii(ParserPtr pp)
 
         if (bioseq->GetInst().IsNa())
         {
-            if (bioseq->GetInst().GetRepr() == objects::CSeq_inst::eRepr_raw)
+            if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw)
             {
                 if(ibp->gaps != NULL)
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
@@ -1563,7 +1564,7 @@ bool XMLAscii(ParserPtr pp)
 
         if (ibp->psip.NotEmpty())
         {
-            CRef<objects::CSeq_id> id(new objects::CSeq_id);
+            CRef<CSeq_id> id(new CSeq_id);
             id->SetPatent(*ibp->psip);
             bioseq->SetId().push_back(id);
             ibp->psip.Reset();

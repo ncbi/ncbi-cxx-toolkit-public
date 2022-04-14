@@ -154,7 +154,7 @@ static void CheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 }
 
 /**********************************************************/
-bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr pp)
+bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
 {
     DataBlkPtr dbp;
 
@@ -201,7 +201,7 @@ bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr
         MemFree(pp->buf);
     pp->buf = NULL;
 
-    CRef<objects::CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bsp.GetId(), pp->accver);
+    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bsp.GetId(), pp->accver);
     if (loc.Empty())
     {
         MemFree(p);
@@ -223,7 +223,7 @@ bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr
     if (loc->IsMix())
     {
         XGappedSeqLocsToDeltaSeqs(loc->GetMix(), bsp.SetInst().SetExt().SetDelta().Set());
-        bsp.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+        bsp.SetInst().SetRepr(CSeq_inst::eRepr_delta);
     }
     else
         bsp.SetInst().ResetExt();
@@ -256,23 +256,23 @@ static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, unsigned char* dn
     topstr = bptr + lcp->topology;
 
     ebp = reinterpret_cast<EntryBlkPtr>(entry.mpData);
-    objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
+    CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
-    objects::CSeq_inst& inst = bioseq.SetInst();
-    inst.SetRepr(ibp->is_mga ? objects::CSeq_inst::eRepr_virtual : objects::CSeq_inst::eRepr_raw);
+    CSeq_inst& inst = bioseq.SetInst();
+    inst.SetRepr(ibp->is_mga ? CSeq_inst::eRepr_virtual : CSeq_inst::eRepr_raw);
 
     /* get linear, circular, tandem topology, blank is linear which = 1
      */
     topology = CheckTPG(topstr);
     if (topology > 1)
-        inst.SetTopology(static_cast<objects::CSeq_inst::ETopology>(topology));
+        inst.SetTopology(static_cast<CSeq_inst::ETopology>(topology));
 
     strand = CheckSTRAND((lcp->strand >= 0) ? bptr+lcp->strand : "   ");
     if (strand > 0)
-        inst.SetStrand(static_cast<objects::CSeq_inst::EStrand>(strand));
+        inst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
 
     if (GetSeqData(pp, entry, bioseq, ParFlat_ORIGIN, dnaconv,
-        (ibp->is_prot ? objects::eSeq_code_type_iupacaa : objects::eSeq_code_type_iupacna)) == false)
+        (ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna)) == false)
         return false;
 
     if(ibp->is_contig && !GetGenBankInstContig(entry, bioseq, pp))
@@ -327,12 +327,12 @@ static char* GetGenBankLineage(char* start, char* end)
  *                                              4-7-93
  *
  **********************************************************/
-static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, objects::CMolInfo& mol_info,
-                                                       objects::CBioSource* bio_src)
+static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& mol_info,
+                                  CBioSource* bio_src)
 {
     LocusContPtr lcp;
 
-    CRef<objects::CGB_block> gbb(new objects::CGB_block),
+    CRef<CGB_block> gbb(new CGB_block),
                                          ret;
 
     IndexblkPtr  ibp;
@@ -623,9 +623,9 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, o
                 return ret;
             }
 
-            objects::CMolInfo::TTech thtg = mol_info.GetTech();
-            if (thtg == objects::CMolInfo::eTech_htgs_0 || thtg == objects::CMolInfo::eTech_htgs_1 ||
-                thtg == objects::CMolInfo::eTech_htgs_2 || thtg == objects::CMolInfo::eTech_htgs_3)
+            CMolInfo::TTech thtg = mol_info.GetTech();
+            if (thtg == CMolInfo::eTech_htgs_0 || thtg == CMolInfo::eTech_htgs_1 ||
+                thtg == CMolInfo::eTech_htgs_2 || thtg == CMolInfo::eTech_htgs_3)
             {
                 RemoveHtgPhase(gbb->SetKeywords());
             }
@@ -700,7 +700,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, o
             ErrPostStr(SEV_INFO, ERR_DIVISION_MappedtoEST,
                        "Leading T in accession number.");
 
-            mol_info.SetTech(objects::CMolInfo::eTech_est);
+            mol_info.SetTech(CMolInfo::eTech_est);
             gbb->ResetDiv();
         }
     }
@@ -742,7 +742,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, o
     }
 
     if (fli_kwd)
-        mol_info.SetTech(objects::CMolInfo::eTech_fli_cdna);
+        mol_info.SetTech(CMolInfo::eTech_fli_cdna);
 
     /* will be used in flat file database
      */
@@ -751,28 +751,28 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, o
         if (gbb->GetDiv() == "EST")
         {
             ibp->EST = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_est);
+            mol_info.SetTech(CMolInfo::eTech_est);
 
             gbb->ResetDiv();
         }
         else if (gbb->GetDiv() == "STS")
         {
             ibp->STS = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_sts);
+            mol_info.SetTech(CMolInfo::eTech_sts);
 
             gbb->ResetDiv();
         }
         else if (gbb->GetDiv() == "GSS")
         {
             ibp->GSS = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_survey);
+            mol_info.SetTech(CMolInfo::eTech_survey);
 
             gbb->ResetDiv();
         }
         else if (gbb->GetDiv() == "HTC")
         {
             ibp->HTC = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_htc);
+            mol_info.SetTech(CMolInfo::eTech_htc);
 
             gbb->ResetDiv();
         }
@@ -784,13 +784,13 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, o
     }
     else if (mol_info.IsSetTech())
     {
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_est)
+        if (mol_info.GetTech() == CMolInfo::eTech_est)
             ibp->EST = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_sts)
+        if (mol_info.GetTech() == CMolInfo::eTech_sts)
             ibp->STS = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_survey)
+        if (mol_info.GetTech() == CMolInfo::eTech_survey)
             ibp->GSS = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_htc)
+        if (mol_info.GetTech() == CMolInfo::eTech_htc)
             ibp->HTC = true;
     }
 
@@ -808,7 +808,7 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, o
 
     if (bio_src != NULL && bio_src->IsSetSubtype())
     {
-        ITERATE(objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
+        ITERATE (CBioSource::TSubtype, subtype, bio_src->GetSubtype())
         {
             if ((*subtype)->GetSubtype() == 27)
             {
@@ -848,14 +848,14 @@ static CRef<objects::CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, o
  *   LOCUS ... column 37, or column 53 if "EST"
  *
  **********************************************************/
-static CRef<objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry,
-                                                             const objects::COrg_ref* org_ref)
+static CRef<CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry,
+                                        const COrg_ref* org_ref)
 {
     IndexblkPtr ibp;
     char*     bptr;
     char*     molstr = NULL;
 
-    CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
+    CRef<CMolInfo> mol_info(new CMolInfo);
 
     bptr = entry.mOffset;
     ibp = pp->entrylist[pp->curindx];
@@ -865,48 +865,48 @@ static CRef<objects::CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& en
     bptr = GBDivOffset(entry, ibp->lc.div);
 
     if(StringNCmp(bptr, "EST", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_est);
+        mol_info->SetTech(CMolInfo::eTech_est);
 
     else if(StringNCmp(bptr, "STS", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_sts);
+        mol_info->SetTech(CMolInfo::eTech_sts);
 
     else if(StringNCmp(bptr, "GSS", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_survey);
+        mol_info->SetTech(CMolInfo::eTech_survey);
 
     else if(StringNCmp(bptr, "HTG", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_htgs_1);
+        mol_info->SetTech(CMolInfo::eTech_htgs_1);
 
     else if(ibp->is_wgs)
     {
         if(ibp->is_tsa)
-            mol_info->SetTech(objects::CMolInfo::eTech_tsa);
+            mol_info->SetTech(CMolInfo::eTech_tsa);
         else if(ibp->is_tls)
-            mol_info->SetTech(objects::CMolInfo::eTech_targeted);
+            mol_info->SetTech(CMolInfo::eTech_targeted);
         else
-            mol_info->SetTech(objects::CMolInfo::eTech_wgs);
+            mol_info->SetTech(CMolInfo::eTech_wgs);
     }
 
     else if(ibp->is_tsa)
-        mol_info->SetTech(objects::CMolInfo::eTech_tsa);
+        mol_info->SetTech(CMolInfo::eTech_tsa);
 
     else if(ibp->is_tls)
-        mol_info->SetTech(objects::CMolInfo::eTech_targeted);
+        mol_info->SetTech(CMolInfo::eTech_targeted);
 
     else if(ibp->is_mga)
     {
-        mol_info->SetTech(objects::CMolInfo::eTech_other);
+        mol_info->SetTech(CMolInfo::eTech_other);
         mol_info->SetTechexp("cage");
     }
 
     GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, entry, org_ref);
-    if (mol_info->GetBiomol() == objects::CMolInfo::eBiomol_unknown) // not set
+    if (mol_info->GetBiomol() == CMolInfo::eBiomol_unknown) // not set
         mol_info->ResetBiomol();
 
     return mol_info;
 }
 
 /**********************************************************/
-static void FakeGenBankBioSources(const DataBlk& entry, objects::CBioseq& bioseq)
+static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
 {
     char*      bptr;
     char*      end;
@@ -928,7 +928,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, objects::CBioseq& bioseq
     ch = *end;
     *end = '\0';
 
-    CRef<objects::CBioSource> bio_src(new objects::CBioSource);
+    CRef<CBioSource> bio_src(new CBioSource);
     bptr += ParFlat_COL_DATA;
 
     if (GetGenomeInfo(*bio_src, bptr) && bio_src->GetGenome() != 9)   /* ! Plasmid */
@@ -946,7 +946,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, objects::CBioseq& bioseq
         return;
     }
 
-    objects::COrg_ref& org_ref = bio_src->SetOrg();
+    COrg_ref& org_ref = bio_src->SetOrg();
 
     *ptr = '\0';
     org_ref.SetTaxname(bptr);
@@ -992,13 +992,13 @@ static void FakeGenBankBioSources(const DataBlk& entry, objects::CBioseq& bioseq
         MemFree(ptr);
     }
 
-    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+    CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetSource(*bio_src);
     bioseq.SetDescr().Set().push_back(descr);
 }
 
 /**********************************************************/
-static void fta_get_user_field(char* line, const Char *tag, objects::CUser_object& user_obj)
+static void fta_get_user_field(char* line, const Char *tag, CUser_object& user_obj)
 {
     char*      p;
     char*      q;
@@ -1023,7 +1023,7 @@ static void fta_get_user_field(char* line, const Char *tag, objects::CUser_objec
             *q++ = *p;
     *q = '\0';
 
-    CRef<objects::CUser_field> root_field(new objects::CUser_field);
+    CRef<CUser_field> root_field(new CUser_field);
     root_field->SetLabel().SetStr(tag);
 
     for(q = res;;)
@@ -1038,13 +1038,13 @@ static void fta_get_user_field(char* line, const Char *tag, objects::CUser_objec
         ch = *p;
         *p = '\0';
 
-        CRef<objects::CUser_field> cur_field(new objects::CUser_field);
+        CRef<CUser_field> cur_field(new CUser_field);
         cur_field->SetLabel().SetStr("accession");
         cur_field->SetString(q);
 
         *p = ch;
 
-        CRef<objects::CUser_field> field_set(new objects::CUser_field);
+        CRef<CUser_field> field_set(new CUser_field);
         field_set->SetData().SetFields().push_back(cur_field);
 
         if(StringNCmp(p, ";gi=", 4) == 0)
@@ -1055,7 +1055,7 @@ static void fta_get_user_field(char* line, const Char *tag, objects::CUser_objec
             ch = *p;
             *p = '\0';
 
-            cur_field.Reset(new objects::CUser_field);
+            cur_field.Reset(new CUser_field);
             cur_field->SetLabel().SetStr("gi");
             cur_field->SetNum(atoi(q));
             field_set->SetData().SetFields().push_back(cur_field);
@@ -1075,7 +1075,7 @@ static void fta_get_user_field(char* line, const Char *tag, objects::CUser_objec
 }
 
 /**********************************************************/
-static void fta_get_str_user_field(char* line, const Char *tag, objects::CUser_object& user_obj)
+static void fta_get_str_user_field(char* line, const Char *tag, CUser_object& user_obj)
 {
     char*      p;
     char*      q;
@@ -1117,7 +1117,7 @@ static void fta_get_str_user_field(char* line, const Char *tag, objects::CUser_o
         return;
     }
 
-    CRef<objects::CUser_field> field(new objects::CUser_field);
+    CRef<CUser_field> field(new CUser_field);
     field->SetLabel().SetStr(tag);
     field->SetString(res);
 
@@ -1127,7 +1127,7 @@ static void fta_get_str_user_field(char* line, const Char *tag, objects::CUser_o
 }
 
 /**********************************************************/
-static void fta_get_user_object(objects::CSeq_entry& seq_entry, const DataBlk& entry)
+static void fta_get_user_object(CSeq_entry& seq_entry, const DataBlk& entry)
 {
     char*       p;
     char*       q;
@@ -1144,7 +1144,7 @@ static void fta_get_user_object(objects::CSeq_entry& seq_entry, const DataBlk& e
     q = StringSave(p);
     p[l-1] = ch;
 
-    CRef<objects::CUser_object> user_obj(new objects::CUser_object);
+    CRef<CUser_object> user_obj(new CUser_object);
     user_obj->SetType().SetStr("RefGeneTracking");
 
     for (p = q;;)
@@ -1171,7 +1171,7 @@ static void fta_get_user_object(objects::CSeq_entry& seq_entry, const DataBlk& e
     if (!user_obj->IsSetData())
         return;
 
-    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+    CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetUser(*user_obj);
 
     if (seq_entry.IsSeq())
@@ -1198,24 +1198,24 @@ static void fta_get_mga_user_object(TSeqdescList& descrs, char* offset,
     if(p != NULL)
         *p++ = '\0';
 
-    CRef<objects::CUser_object> user_obj(new objects::CUser_object);
+    CRef<CUser_object> user_obj(new CUser_object);
 
-    objects::CObject_id& id = user_obj->SetType();
+    CObject_id& id = user_obj->SetType();
     id.SetStr("CAGE-Tag-List");
 
-    CRef<objects::CUser_field> field(new objects::CUser_field);
+    CRef<CUser_field> field(new CUser_field);
 
     field->SetLabel().SetStr("CAGE_tag_total");
-    field->SetData().SetInt(static_cast<objects::CUser_field::C_Data::TInt>(len));
+    field->SetData().SetInt(static_cast<CUser_field::C_Data::TInt>(len));
     user_obj->SetData().push_back(field);
 
-    field.Reset(new objects::CUser_field);
+    field.Reset(new CUser_field);
 
     field->SetLabel().SetStr("CAGE_accession_first");
     field->SetData().SetStr(str);
     user_obj->SetData().push_back(field);
 
-    field.Reset(new objects::CUser_field);
+    field.Reset(new CUser_field);
 
     field->SetLabel().SetStr("CAGE_accession_last");
     field->SetData().SetStr(p);
@@ -1223,14 +1223,14 @@ static void fta_get_mga_user_object(TSeqdescList& descrs, char* offset,
 
     MemFree(str);
 
-    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+    CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetUser(*user_obj);
 
     descrs.push_back(descr);
 }
 
 /**********************************************************/
-static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
+static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     IndexblkPtr   ibp;
 
@@ -1245,13 +1245,13 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
 
     ibp = pp->entrylist[pp->curindx];
 
-    objects::CBioSource* bio_src = nullptr;
-    objects::COrg_ref* org_ref = nullptr;
+    CBioSource* bio_src = nullptr;
+    COrg_ref* org_ref = nullptr;
 
     /* ORGANISM
      */
 
-    NON_CONST_ITERATE(objects::CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
+    NON_CONST_ITERATE (CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
     {
         if ((*descr)->IsSource())
         {
@@ -1264,7 +1264,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
 
     /* MolInfo from LOCUS line
      */
-    CRef<objects::CMolInfo> mol_info = GetGenBankMolInfo(pp, entry, org_ref);
+    CRef<CMolInfo> mol_info = GetGenBankMolInfo(pp, entry, org_ref);
 
     /* DEFINITION data ==> descr_title
      */
@@ -1286,7 +1286,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
         MemFree(str);
         str = NULL;
 
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetTitle(title);
         bioseq.SetDescr().Set().push_back(descr);
 
@@ -1314,7 +1314,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
         }
     }
 
-    CRef<objects::CUser_object> dbuop;
+    CRef<CUser_object> dbuop;
     offset = xSrchNodeType(entry, ParFlat_DBLINK, &len);
     if (offset != NULL)
         fta_get_dblink_user_object(bioseq.SetDescr().Set(), offset, len,
@@ -1370,10 +1370,10 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
         if(dbp->mType != ParFlat_REF_END)
             continue;
 
-        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA);
         if (pubdesc.NotEmpty())
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1385,10 +1385,10 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
         if(dbp->mType != ParFlat_REF_NO_TARGET)
             continue;
 
-        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA);
         if (pubdesc.NotEmpty())
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -1396,7 +1396,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
 
     /* GB-block
      */
-    CRef<objects::CGB_block> gbbp = GetGBBlock(pp, entry, *mol_info, bio_src);
+    CRef<CGB_block> gbbp = GetGBBlock(pp, entry, *mol_info, bio_src);
 
     if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
         ibp->is_contig && (!mol_info->IsSetTech() || mol_info->GetTech() == 0))
@@ -1410,7 +1410,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
 
     if (mol_info->IsSetBiomol() || mol_info->IsSetTech())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetMolinfo(*mol_info);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1426,13 +1426,13 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
 
     if(StringNICmp(ibp->division, "CON", 3) == 0)
         fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), Parser::ESource::DDBJ,
-                     objects::CSeq_id::e_Ddbj, true, ibp->acnum);
+                     CSeq_id::e_Ddbj, true, ibp->acnum);
     else
         fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), Parser::ESource::DDBJ,
-                     objects::CSeq_id::e_Ddbj, false, ibp->acnum);
+                     CSeq_id::e_Ddbj, false, ibp->acnum);
 
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetGenbank(*gbbp);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1469,9 +1469,9 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
     }
 
     if(mol_info.NotEmpty() && mol_info->IsSetTech() &&
-       (mol_info->GetTech() == objects::CMolInfo::eTech_htgs_0 ||
-       mol_info->GetTech() == objects::CMolInfo::eTech_htgs_1 ||
-       mol_info->GetTech() == objects::CMolInfo::eTech_htgs_2))
+       (mol_info->GetTech() == CMolInfo::eTech_htgs_0 ||
+       mol_info->GetTech() == CMolInfo::eTech_htgs_1 ||
+       mol_info->GetTech() == CMolInfo::eTech_htgs_2))
         is_htg = true;
     else
         is_htg = false;
@@ -1499,7 +1499,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
 
             NON_CONST_ITERATE(TUserObjVector, user_obj, user_objs)
             {
-                CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+                CRef<CSeqdesc> descr(new CSeqdesc);
                 descr->SetUser(*(*user_obj));
                 bioseq.SetDescr().Set().push_back(descr);
             }
@@ -1524,7 +1524,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
 
             if (str[0] != 0)
             {
-                CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+                CRef<CSeqdesc> descr(new CSeqdesc);
                 descr->SetComment(str);
                 bioseq.SetDescr().Set().push_back(descr);
             }
@@ -1537,26 +1537,26 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq
     if(pp->no_date)            /* -N in command line means no date */
         return;
 
-    CRef<objects::CDate> date;
+    CRef<CDate> date;
     if (pp->date)               /* -L in command line means replace date */
     {
         CTime time(CTime::eCurrent);
-        date.Reset(new objects::CDate);
+        date.Reset(new CDate);
         date->SetToTime(time);
     }
     else if(ibp->lc.date > 0)
     {
-        CRef<objects::CDate_std> std_date = GetUpdateDate(entry.mOffset+ibp->lc.date, pp->source);
+        CRef<CDate_std> std_date = GetUpdateDate(entry.mOffset+ibp->lc.date, pp->source);
         if (std_date.NotEmpty())
         {
-            date.Reset(new objects::CDate);
+            date.Reset(new CDate);
             date->SetStd(*std_date);
         }
     }
 
     if (date.NotEmpty())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetUpdate_date(*date);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -1603,7 +1603,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
 
     TEntryList seq_entries;
 
-    objects::CSeq_loc locs;
+    CSeq_loc locs;
 
     bool     seq_long = false;
 
@@ -1690,8 +1690,8 @@ bool GenBankAsciiOrig(ParserPtr pp)
         }
         GetGenBankSubBlock(*pEntry, ibp->bases);
 
-        CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
-        ebp->seq_entry.Reset(new objects::CSeq_entry);
+        CRef<CBioseq> bioseq = CreateEntryBioseq(pp, true);
+        ebp->seq_entry.Reset(new CSeq_entry);
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
 
@@ -1754,7 +1754,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
 
         if (bioseq->GetInst().IsNa())
         {
-            if (bioseq->GetInst().GetRepr() == objects::CSeq_inst::eRepr_raw)
+            if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw)
             {
                 if (ibp->gaps != NULL)
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
@@ -1824,7 +1824,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
 
         if (ibp->psip.NotEmpty())
         {
-            CRef<objects::CSeq_id> id(new objects::CSeq_id);
+            CRef<CSeq_id> id(new CSeq_id);
             id->SetPatent(*ibp->psip);
             bioseq->SetId().push_back(id);
             ibp->psip.Reset();
@@ -2151,7 +2151,7 @@ bool GenBankAscii(ParserPtr pp)
 
     TEntryList seq_entries;
 
-    objects::CSeq_loc locs;
+    CSeq_loc locs;
 
     bool     seq_long = false;
 
@@ -2229,8 +2229,8 @@ bool GenBankAscii(ParserPtr pp)
         }
         xGetGenBankSubBlocks(*pEntry, ibp->bases);
 
-        CRef<objects::CBioseq> pBioseq = CreateEntryBioseq(pp, true);
-        pEntry->mSeqEntry.Reset(new objects::CSeq_entry);
+        CRef<CBioseq> pBioseq = CreateEntryBioseq(pp, true);
+        pEntry->mSeqEntry.Reset(new CSeq_entry);
         pEntry->mSeqEntry->SetSeq(*pBioseq);
         GetScope().AddBioseq(*pBioseq);
         pEntry->xInitNidSeqId(*pBioseq, ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
@@ -2290,7 +2290,7 @@ bool GenBankAscii(ParserPtr pp)
 
         if (bioseq->GetInst().IsNa())
         {
-            if (bioseq->GetInst().GetRepr() == objects::CSeq_inst::eRepr_raw)
+            if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw)
             {
                 if(ibp->gaps != NULL)
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
@@ -2360,7 +2360,7 @@ bool GenBankAscii(ParserPtr pp)
 
         if (ibp->psip.NotEmpty())
         {
-            CRef<objects::CSeq_id> id(new objects::CSeq_id);
+            CRef<CSeq_id> id(new CSeq_id);
             id->SetPatent(*ibp->psip);
             bioseq->SetId().push_back(id);
             ibp->psip.Reset();
@@ -2683,9 +2683,9 @@ bool GenBankAscii(ParserPtr pp)
  *                                              9-14-93
  *
  **********************************************************/
-static void SrchFeatSeqLoc(TSeqFeatList& feats, objects::CSeq_annot::C_Data::TFtable& feat_table)
+static void SrchFeatSeqLoc(TSeqFeatList& feats, CSeq_annot::C_Data::TFtable& feat_table)
 {
-    for (objects::CSeq_annot::C_Data::TFtable::iterator feat = feat_table.begin(); feat != feat_table.end(); )
+    for (CSeq_annot::C_Data::TFtable::iterator feat = feat_table.begin(); feat != feat_table.end(); )
     {
         if ((*feat)->IsSetLocation() && (*feat)->GetLocation().GetId() != nullptr)
         {
@@ -2713,16 +2713,16 @@ static void FindFeatSeqLoc(TEntryList& seq_entries, TSeqFeatList& feats)
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
-            const objects::CSeq_id& first_id = *(*bioseq->GetId().begin());
+            const CSeq_id& first_id = *(*bioseq->GetId().begin());
             if (IsSegBioseq(first_id) || !bioseq->IsSetAnnot())
                 continue;
 
             /* process this bioseq entry
             */
-            objects::CBioseq::TAnnot annots = bioseq->SetAnnot();
-            for (objects::CBioseq::TAnnot::iterator annot = annots.begin(); annot != annots.end();)
+            CBioseq::TAnnot annots = bioseq->SetAnnot();
+            for (CBioseq::TAnnot::iterator annot = annots.begin(); annot != annots.end();)
             {
                 if (!(*annot)->IsSetData() || !(*annot)->GetData().IsFtable())
                 {
@@ -2730,7 +2730,7 @@ static void FindFeatSeqLoc(TEntryList& seq_entries, TSeqFeatList& feats)
                     continue;
                 }
 
-                objects::CSeq_annot::C_Data::TFtable& feat_table = (*annot)->SetData().SetFtable();
+                CSeq_annot::C_Data::TFtable& feat_table = (*annot)->SetData().SetFtable();
                 SrchFeatSeqLoc(feats, feat_table);
 
                 if (!feat_table.empty())
@@ -2746,13 +2746,13 @@ static void FindFeatSeqLoc(TEntryList& seq_entries, TSeqFeatList& feats)
 }
 
 /**********************************************************/
-static objects::CBioseq_set* GetParts(TEntryList& seq_entries)
+static CBioseq_set* GetParts(TEntryList& seq_entries)
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
         {
-            if (bio_set->IsSetClass() && bio_set->GetClass() == objects::CBioseq_set::eClass_parts)
+            if (bio_set->IsSetClass() && bio_set->GetClass() == CBioseq_set::eClass_parts)
                 return bio_set.operator->();
         }
     }
@@ -2776,12 +2776,12 @@ void CheckFeatSeqLoc(TEntryList& seq_entries)
     TSeqFeatList feats_no_id;
     FindFeatSeqLoc(seq_entries, feats_no_id);
 
-    objects::CBioseq_set* parts = GetParts(seq_entries);
+    CBioseq_set* parts = GetParts(seq_entries);
 
     if (!feats_no_id.empty() && parts != nullptr)       /* may need to delete duplicate
                                                            one   9-14-93 */
     {
-        NON_CONST_ITERATE(objects::CBioseq::TAnnot, annot, parts->SetAnnot())
+        NON_CONST_ITERATE (CBioseq::TAnnot, annot, parts->SetAnnot())
         {
             if (!(*annot)->IsFtable())
                 continue;
@@ -2792,7 +2792,7 @@ void CheckFeatSeqLoc(TEntryList& seq_entries)
 
         if (parts->GetAnnot().empty())
         {
-            CRef<objects::CSeq_annot> new_annot(new objects::CSeq_annot);
+            CRef<CSeq_annot> new_annot(new CSeq_annot);
             new_annot->SetData().SetFtable().swap(feats_no_id);
             parts->SetAnnot().push_back(new_annot);
         }

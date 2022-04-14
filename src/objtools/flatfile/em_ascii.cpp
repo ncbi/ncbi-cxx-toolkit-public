@@ -262,7 +262,7 @@ static const char *ParFlat_DRname_array[] = {
  *
  **********************************************************/
 static void GetEmblDate(Parser::ESource source, const DataBlk& entry,
-                        CRef<objects::CDate_std>& crdate, CRef<objects::CDate_std>& update)
+                        CRef<CDate_std>& crdate, CRef<CDate_std>& update)
 {
     char* offset;
     char* eptr;
@@ -292,7 +292,7 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry,
     }
     if (update.Empty())
     {
-        update.Reset(new objects::CDate_std);
+        update.Reset(new CDate_std);
         update->SetDay(crdate->GetDay());
         update->SetMonth(crdate->GetMonth());
         update->SetYear(crdate->GetYear());
@@ -381,15 +381,15 @@ static bool OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& seq_entries)
  *      A ValNode which points to a ObjectId.
  *
  **********************************************************/
-static void SetXrefObjId(objects::CEMBL_xref& xref, const std::string& str)
+static void SetXrefObjId(CEMBL_xref& xref, const std::string& str)
 {
     if (str.empty())
         return;
 
-    objects::CEMBL_xref::TId& ids = xref.SetId();
+    CEMBL_xref::TId& ids = xref.SetId();
 
     bool found = false;
-    ITERATE(objects::CEMBL_xref::TId, id, ids)
+    ITERATE (CEMBL_xref::TId, id, ids)
     {
         if ((*id)->IsStr() && (*id)->GetStr() == str)
         {
@@ -401,7 +401,7 @@ static void SetXrefObjId(objects::CEMBL_xref& xref, const std::string& str)
     if (found)
         return;
 
-    CRef<objects::CObject_id> obj_id(new objects::CObject_id);
+    CRef<CObject_id> obj_id(new CObject_id);
     obj_id->SetStr(str);
 
     ids.push_back(obj_id);
@@ -421,7 +421,7 @@ static void SetXrefObjId(objects::CEMBL_xref& xref, const std::string& str)
 static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip,
                              char* chentry, TStringList& dr_ena,
                              TStringList& dr_biosample, unsigned char* drop,
-                             objects::CEMBL_block& embl)
+                             CEMBL_block& embl)
 {
     const char    **b;
 
@@ -441,7 +441,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip,
     Int2          col_data;
     Int2          code;
 
-    objects::CEMBL_block::TXref new_xrefs;
+    CEMBL_block::TXref new_xrefs;
 
     if(xip == NULL)
     {
@@ -632,10 +632,10 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip,
         }
         else
         {
-            CRef<objects::CEMBL_xref> new_xref(new objects::CEMBL_xref);
+            CRef<CEMBL_xref> new_xref(new CEMBL_xref);
 
             if (code != -1)
-                new_xref->SetDbname().SetCode(static_cast<objects::CEMBL_dbname::ECode>(code));
+                new_xref->SetDbname().SetCode(static_cast<CEMBL_dbname::ECode>(code));
             else
                 new_xref->SetDbname().SetName(name);
 
@@ -673,35 +673,35 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip,
         embl.SetXref().swap(new_xrefs);
 }
 
-static objects::CTextseq_id& SetTextIdRef(objects::CSeq_id& id)
+static CTextseq_id& SetTextIdRef(CSeq_id& id)
 {
-    static objects::CTextseq_id noTextId;
+    static CTextseq_id noTextId;
 
     switch (id.Which())
     {
-    case objects::CSeq_id::e_Genbank:
+    case CSeq_id::e_Genbank:
         return id.SetGenbank();
-    case objects::CSeq_id::e_Embl:
+    case CSeq_id::e_Embl:
         return id.SetEmbl();
-    case objects::CSeq_id::e_Pir:
+    case CSeq_id::e_Pir:
         return id.SetPir();
-    case objects::CSeq_id::e_Swissprot:
+    case CSeq_id::e_Swissprot:
         return id.SetSwissprot();
-    case objects::CSeq_id::e_Other:
+    case CSeq_id::e_Other:
         return id.SetOther();
-    case objects::CSeq_id::e_Ddbj:
+    case CSeq_id::e_Ddbj:
         return id.SetDdbj();
-    case objects::CSeq_id::e_Prf:
+    case CSeq_id::e_Prf:
         return id.SetPrf();
-    case objects::CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpg:
         return id.SetTpg();
-    case objects::CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpe:
         return id.SetTpe();
-    case objects::CSeq_id::e_Tpd:
+    case CSeq_id::e_Tpd:
         return id.SetTpd();
-    case objects::CSeq_id::e_Gpipe:
+    case CSeq_id::e_Gpipe:
         return id.SetGpipe();
-    case objects::CSeq_id::e_Named_annot_track:
+    case CSeq_id::e_Named_annot_track:
         return id.SetNamed_annot_track();
     default:
         ; // do nothing
@@ -722,8 +722,8 @@ static void GetReleaseInfo(const DataBlk& entry)
     size_t       len;
 
     ebp = (EntryBlkPtr) entry.mpData;
-    objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
-    objects::CTextseq_id& id = SetTextIdRef(*(*(bioseq.SetId().begin())));
+    CBioseq& bioseq = ebp->seq_entry->SetSeq();
+    CTextseq_id& id = SetTextIdRef(*(*(bioseq.SetId().begin())));
 
     offset = xSrchNodeType(entry, ParFlat_DT, &len);
     if(offset == NULL)
@@ -750,7 +750,7 @@ static void GetReleaseInfo(const DataBlk& entry)
  *      >= 1 OS per entry.
  *
  **********************************************************/
-static CRef<objects::COrg_ref> GetEmblOrgRef(const DataBlkPtr dbp)
+static CRef<COrg_ref> GetEmblOrgRef(const DataBlkPtr dbp)
 {
     const char*   bptr = dbp->mOffset;
     const char*   eptr = bptr + dbp->len;
@@ -769,12 +769,12 @@ static CRef<objects::COrg_ref> GetEmblOrgRef(const DataBlkPtr dbp)
         sTaxname += line.substr(ParFlat_COL_DATA_EMBL);
     }
 
-    CRef<objects::COrg_ref> org_ref;
+    CRef<COrg_ref> org_ref;
     if (sTaxname.empty()) {
         return org_ref;
     }
 
-    org_ref.Reset(new objects::COrg_ref);
+    org_ref.Reset(new COrg_ref);
     org_ref->SetTaxname(sTaxname);
 
     auto openP = sTaxname.find('(');
@@ -848,7 +848,7 @@ static bool CheckEmblContigEverywhere(const IndexblkPtr ibp, Parser::ESource sou
 }
 
 /**********************************************************/
-bool GetEmblInstContig(const DataBlk& entry, objects::CBioseq& bioseq, ParserPtr pp)
+bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
 {
     DataBlkPtr dbp;
 
@@ -907,7 +907,7 @@ bool GetEmblInstContig(const DataBlk& entry, objects::CBioseq& bioseq, ParserPtr
         MemFree(pp->buf);
     pp->buf = NULL;
 
-    CRef<objects::CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
+    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
 
     if (loc.NotEmpty() && loc->IsMix())
     {
@@ -923,7 +923,7 @@ bool GetEmblInstContig(const DataBlk& entry, objects::CBioseq& bioseq, ParserPtr
         pp->allow_crossdb_featloc = allow_crossdb_featloc;
 
         XGappedSeqLocsToDeltaSeqs(loc->GetMix(), bioseq.SetInst().SetExt().SetDelta().Set());
-        bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+        bioseq.SetInst().SetRepr(CSeq_inst::eRepr_delta);
     }
     else
         bioseq.SetInst().ResetExt();
@@ -954,10 +954,10 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
 
     ebp = (EntryBlkPtr) entry.mpData;
 
-    objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
+    CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
-    objects::CSeq_inst& inst = bioseq.SetInst();
-    inst.SetRepr(objects::CSeq_inst::eRepr_raw);
+    CSeq_inst& inst = bioseq.SetInst();
+    inst.SetRepr(CSeq_inst::eRepr_raw);
 
     ibp = pp->entrylist[pp->curindx];
 
@@ -973,7 +973,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
      */
     if(StringNICmp(p, "circular", 8) == 0)
     {
-        inst.SetTopology(objects::CSeq_inst::eTopology_circular);
+        inst.SetTopology(CSeq_inst::eTopology_circular);
         p = PointToNextToken(p);
     }
     else if (ibp->embl_new_ID)
@@ -995,7 +995,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
         q--;
     }
 
-    if (ibp->embl_new_ID == false && inst.GetTopology() != objects::CSeq_inst::eTopology_circular &&
+    if (ibp->embl_new_ID == false && inst.GetTopology() != CSeq_inst::eTopology_circular &&
        StringStr(p, "DNA") == NULL && StringStr(p, "RNA") == NULL &&
        (pp->source != Parser::ESource::EMBL || (StringStr(p, "xxx") == NULL &&
         StringStr(p, "XXX") == NULL)))
@@ -1013,13 +1013,13 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
          */
         strand = CheckSTRAND(p);
         if (strand > 0)
-            inst.SetStrand(static_cast<objects::CSeq_inst::EStrand>(strand));
+            inst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
     }
 
     if(r != NULL)
         *r = ';';
 
-    if (!GetSeqData(pp, entry, bioseq, ParFlat_SQ, dnaconv, objects::eSeq_code_type_iupacna))
+    if (!GetSeqData(pp, entry, bioseq, ParFlat_SQ, dnaconv, eSeq_code_type_iupacna))
         return false;
 
     if(ibp->is_contig && !GetEmblInstContig(entry, bioseq, pp))
@@ -1030,7 +1030,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
 
 /**********************************************************
  *
- *   static CRef<objects::CEMBL_block> GetDescrEmblBlock(pp, entry, mfp,
+ *   static CRef<CEMBL_block> GetDescrEmblBlock(pp, entry, mfp,
  *                                         gbdiv, biosp,
  *                                         dr_ena, dr_biosample):
  *
@@ -1046,11 +1046,11 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
  *      DR line for xref.
  *
  **********************************************************/
-static CRef<objects::CEMBL_block> GetDescrEmblBlock(
-    ParserPtr pp, const DataBlk& entry, objects::CMolInfo& mol_info, char** gbdiv,
-    objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
+static CRef<CEMBL_block> GetDescrEmblBlock(
+    ParserPtr pp, const DataBlk& entry, CMolInfo& mol_info, char** gbdiv,
+    CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
 {
-    CRef<objects::CEMBL_block> ret, embl(new objects::CEMBL_block);
+    CRef<CEMBL_block> ret, embl(new CEMBL_block);
 
     IndexblkPtr  ibp;
     char*      bptr;
@@ -1093,20 +1093,20 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     {
         if (StringNICmp(bptr, "standard", 8) == 0)
         {
-            ;// embl->SetClass(objects::CEMBL_block::eClass_standard);
+            ;// embl->SetClass(CEMBL_block::eClass_standard);
         }
         else if (StringNICmp(bptr, "unannotated", 11) == 0)
         {
-            embl->SetClass(objects::CEMBL_block::eClass_unannotated);
+            embl->SetClass(CEMBL_block::eClass_unannotated);
         }
         else if (StringNICmp(bptr, "unreviewed", 10) == 0 ||
                  StringNICmp(bptr, "preliminary", 11) == 0)
         {
-            embl->SetClass(objects::CEMBL_block::eClass_other);
+            embl->SetClass(CEMBL_block::eClass_other);
         }
         else
         {
-            embl->SetClass(objects::CEMBL_block::eClass_not_set);
+            embl->SetClass(CEMBL_block::eClass_not_set);
         }
 
         bptr = StringChr(bptr, ';');
@@ -1218,7 +1218,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     *gbdiv = StringSave(ParFlat_GBDIV_array[thtg]);
 
     if (div <= 15)
-        embl->SetDiv(static_cast<objects::CEMBL_block_Base::TDiv>(div));
+        embl->SetDiv(static_cast<CEMBL_block_Base::TDiv>(div));
 
     p = *gbdiv;
     if(ibp->is_tpa &&
@@ -1257,8 +1257,8 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     fta_check_htg_kwds(embl->SetKeywords(), pp->entrylist[pp->curindx], mol_info);
 
     DefVsHTGKeywords(mol_info.GetTech(), entry, ParFlat_DE, ParFlat_SQ, cancelled);
-    if ((mol_info.GetTech() == objects::CMolInfo::eTech_htgs_0 || mol_info.GetTech() == objects::CMolInfo::eTech_htgs_1 ||
-        mol_info.GetTech() == objects::CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
+    if ((mol_info.GetTech() == CMolInfo::eTech_htgs_0 || mol_info.GetTech() == CMolInfo::eTech_htgs_1 ||
+        mol_info.GetTech() == CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
     {
         MemFree(*gbdiv);
         *gbdiv = NULL;
@@ -1379,8 +1379,8 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     }
 
     thtg = mol_info.GetTech();
-    if (thtg == objects::CMolInfo::eTech_htgs_0 || thtg == objects::CMolInfo::eTech_htgs_1 ||
-        thtg == objects::CMolInfo::eTech_htgs_2 || thtg == objects::CMolInfo::eTech_htgs_3)
+    if (thtg == CMolInfo::eTech_htgs_0 || thtg == CMolInfo::eTech_htgs_1 ||
+        thtg == CMolInfo::eTech_htgs_2 || thtg == CMolInfo::eTech_htgs_3)
     {
         RemoveHtgPhase(embl->SetKeywords());
     }
@@ -1486,7 +1486,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     }
 
     if (fli_kwd)
-        mol_info.SetTech(objects::CMolInfo::eTech_fli_cdna);
+        mol_info.SetTech(CMolInfo::eTech_fli_cdna);
 
     /* will be used in flat file database
      */
@@ -1495,22 +1495,22 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
         if(StringCmp(*gbdiv, "EST") == 0)
         {
             ibp->EST = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_est);
+            mol_info.SetTech(CMolInfo::eTech_est);
         }
         else if(StringCmp(*gbdiv, "STS") == 0)
         {
             ibp->STS = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_sts);
+            mol_info.SetTech(CMolInfo::eTech_sts);
         }
         else if(StringCmp(*gbdiv, "GSS") == 0)
         {
             ibp->GSS = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_survey);
+            mol_info.SetTech(CMolInfo::eTech_survey);
         }
         else if(StringCmp(*gbdiv, "HTC") == 0)
         {
             ibp->HTC = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_htc);
+            mol_info.SetTech(CMolInfo::eTech_htc);
             MemFree(*gbdiv);
             *gbdiv = NULL;
         }
@@ -1523,13 +1523,13 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     }
     else if (mol_info.IsSetTech())
     {
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_est)
+        if (mol_info.GetTech() == CMolInfo::eTech_est)
             ibp->EST = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_sts)
+        if (mol_info.GetTech() == CMolInfo::eTech_sts)
             ibp->STS = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_survey)
+        if (mol_info.GetTech() == CMolInfo::eTech_survey)
             ibp->GSS = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_htc)
+        if (mol_info.GetTech() == CMolInfo::eTech_htc)
             ibp->HTC = true;
     }
 
@@ -1547,9 +1547,9 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
 
     if (bio_src != NULL && bio_src->IsSetSubtype())
     {
-        ITERATE(objects::CBioSource::TSubtype, subtype, bio_src->GetSubtype())
+        ITERATE (CBioSource::TSubtype, subtype, bio_src->GetSubtype())
         {
-            if ((*subtype)->GetSubtype() == objects::CSubSource::eSubtype_environmental_sample)
+            if ((*subtype)->GetSubtype() == CSubSource::eSubtype_environmental_sample)
             {
                 fta_remove_env_keywords(embl->SetKeywords());
                 break;
@@ -1558,8 +1558,8 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
     }
 
 
-    CRef<objects::CDate_std> std_creation_date,
-                                         std_update_date;
+    CRef<CDate_std> std_creation_date,
+        std_update_date;
 
     GetEmblDate(pp->source, entry, std_creation_date, std_update_date);
 
@@ -1578,7 +1578,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
             StringNCmp(ibp->acnum, "CU", 2) == 0))
         {
             bool found = false;
-            ITERATE(objects::CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc())
+            ITERATE (CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc())
             {
                 if (fta_if_wgs_acc(acc->c_str()) == 0 &&
                     ((*acc)[0] == 'C' || (*acc)[0] == 'U'))
@@ -1588,7 +1588,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
                 }
             }
             if (found)
-                mol_info.SetTech(objects::CMolInfo::eTech_wgs);
+                mol_info.SetTech(CMolInfo::eTech_wgs);
         }
     }
 
@@ -1605,12 +1605,12 @@ static bool s_DuplicatesBiosource(const CBioSource& biosource, const char* gbdiv
 }
 
 /**********************************************************/
-static CRef<objects::CGB_block> GetEmblGBBlock(ParserPtr pp, const DataBlk& entry,
-                                                           char* gbdiv, objects::CBioSource* bio_src)
+static CRef<CGB_block> GetEmblGBBlock(ParserPtr pp, const DataBlk& entry,
+                                      char* gbdiv, CBioSource* bio_src)
 {
     IndexblkPtr  ibp;
 
-    CRef<objects::CGB_block> gbb(new objects::CGB_block);
+    CRef<CGB_block> gbb(new CGB_block);
 
     ibp = pp->entrylist[pp->curindx];
 
@@ -1662,8 +1662,8 @@ static CRef<objects::CGB_block> GetEmblGBBlock(ParserPtr pp, const DataBlk& entr
  *   OG line.
  *
  **********************************************************/
-static CRef<objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry,
-                                                          const objects::COrg_ref* org_ref)
+static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry,
+                                     const COrg_ref* org_ref)
 {
     IndexblkPtr ibp;
 
@@ -1706,23 +1706,23 @@ static CRef<objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry
     else
         p = bptr;
 
-    CRef<objects::CMolInfo> mol_info(new objects::CMolInfo);
+    CRef<CMolInfo> mol_info(new CMolInfo);
 
     if(StringNCmp(p, "EST", 3) == 0)
-        mol_info->SetTech(objects::CMolInfo::eTech_est);
+        mol_info->SetTech(CMolInfo::eTech_est);
     else if(ibp->is_wgs)
     {
         if(ibp->is_tsa)
-            mol_info->SetTech(objects::CMolInfo::eTech_tsa);
+            mol_info->SetTech(CMolInfo::eTech_tsa);
         else if(ibp->is_tls)
-            mol_info->SetTech(objects::CMolInfo::eTech_targeted);
+            mol_info->SetTech(CMolInfo::eTech_targeted);
         else
-            mol_info->SetTech(objects::CMolInfo::eTech_wgs);
+            mol_info->SetTech(CMolInfo::eTech_wgs);
     }
     else if(ibp->is_tsa)
-        mol_info->SetTech(objects::CMolInfo::eTech_tsa);
+        mol_info->SetTech(CMolInfo::eTech_tsa);
     else if(ibp->is_tls)
-        mol_info->SetTech(objects::CMolInfo::eTech_targeted);
+        mol_info->SetTech(CMolInfo::eTech_targeted);
 
     if(i == 0 && CheckSTRAND(bptr) >= 0)
         bptr = bptr + 3;
@@ -1738,15 +1738,15 @@ static CRef<objects::CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry
 }
 
 /**********************************************************/
-static CRef<objects::CUser_field> fta_create_user_field(const char *tag, TStringList& lst)
+static CRef<CUser_field> fta_create_user_field(const char *tag, TStringList& lst)
 {
-    CRef<objects::CUser_field> field;
+    CRef<CUser_field> field;
     if (tag == NULL || lst.empty())
         return field;
 
-    field.Reset(new objects::CUser_field);
+    field.Reset(new CUser_field);
     field->SetLabel().SetStr(tag);
-    field->SetNum(static_cast<objects::CUser_field::TNum>(lst.size()));
+    field->SetNum(static_cast<CUser_field::TNum>(lst.size()));
 
     ITERATE(TStringList, item, lst)
     {
@@ -1757,23 +1757,23 @@ static CRef<objects::CUser_field> fta_create_user_field(const char *tag, TString
 }
 
 /**********************************************************/
-void fta_build_ena_user_object(objects::CSeq_descr::Tdata& descrs, TStringList& dr_ena,
+void fta_build_ena_user_object(CSeq_descr::Tdata& descrs, TStringList& dr_ena,
                                TStringList& dr_biosample,
-                               CRef<objects::CUser_object>& dbuop)
+                               CRef<CUser_object>& dbuop)
 {
     bool got = false;
 
     if(dr_ena.empty() && dr_biosample.empty())
         return;
 
-    objects::CUser_object* user_obj_ptr = nullptr;
+    CUser_object* user_obj_ptr = nullptr;
 
-    NON_CONST_ITERATE(objects::CSeq_descr::Tdata, descr, descrs)
+    NON_CONST_ITERATE (CSeq_descr::Tdata, descr, descrs)
     {
         if (!(*descr)->IsUser() || !(*descr)->GetUser().IsSetType())
             continue;
 
-        const objects::CObject_id& obj_id = (*descr)->GetUser().GetType();
+        const CObject_id& obj_id = (*descr)->GetUser().GetType();
 
         if (obj_id.IsStr() && obj_id.GetStr() == "DBLink")
         {
@@ -1783,11 +1783,11 @@ void fta_build_ena_user_object(objects::CSeq_descr::Tdata& descrs, TStringList& 
         }
     }
 
-    CRef<objects::CUser_field> field_bs;
+    CRef<CUser_field> field_bs;
     if (!dr_biosample.empty())
         field_bs = fta_create_user_field("BioSample", dr_biosample);
 
-    CRef<objects::CUser_field> field_ena;
+    CRef<CUser_field> field_ena;
     if (!dr_ena.empty())
     {
         field_ena = fta_create_user_field("Sequence Read Archive", dr_ena);
@@ -1796,11 +1796,11 @@ void fta_build_ena_user_object(objects::CSeq_descr::Tdata& descrs, TStringList& 
     if (field_bs.Empty() && field_ena.Empty())
         return;
 
-    CRef<objects::CUser_object> user_obj;
+    CRef<CUser_object> user_obj;
 
     if (!got)
     {
-        user_obj.Reset(new objects::CUser_object);
+        user_obj.Reset(new CUser_object);
         user_obj->SetType().SetStr("DBLink");
 
         user_obj_ptr = user_obj.GetPointer();
@@ -1813,7 +1813,7 @@ void fta_build_ena_user_object(objects::CSeq_descr::Tdata& descrs, TStringList& 
 
     if (!got)
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetUser(*user_obj);
         descrs.push_back(descr);
     }
@@ -1822,27 +1822,27 @@ void fta_build_ena_user_object(objects::CSeq_descr::Tdata& descrs, TStringList& 
         dbuop = user_obj;
     else
     {
-        dbuop.Reset(new objects::CUser_object);
+        dbuop.Reset(new CUser_object);
         dbuop->Assign(*user_obj_ptr);
     }
 }
 
 /**********************************************************/
-static void fta_create_imgt_misc_feat(objects::CBioseq& bioseq, objects::CEMBL_block& embl_block,
+static void fta_create_imgt_misc_feat(CBioseq& bioseq, CEMBL_block& embl_block,
                                       IndexblkPtr ibp)
 {
     if (!embl_block.IsSetXref())
         return;
 
-    objects::CSeq_feat::TDbxref xrefs;
-    ITERATE(objects::CEMBL_block::TXref, xref, embl_block.GetXref())
+    CSeq_feat::TDbxref xrefs;
+    ITERATE (CEMBL_block::TXref, xref, embl_block.GetXref())
     {
         if (!(*xref)->IsSetDbname() || !(*xref)->GetDbname().IsName() ||
             StringNCmp((*xref)->GetDbname().GetName().c_str(), "IMGT/", 5) != 0)
             continue;
 
         bool empty = true;
-        ITERATE(objects::CEMBL_xref::TId, id, (*xref)->GetId())
+        ITERATE (CEMBL_xref::TId, id, (*xref)->GetId())
         {
             if ((*id)->IsStr() && !(*id)->GetStr().empty())
             {
@@ -1854,13 +1854,13 @@ static void fta_create_imgt_misc_feat(objects::CBioseq& bioseq, objects::CEMBL_b
         if (empty)
             continue;
 
-        CRef<objects::CDbtag> tag(new objects::CDbtag);
+        CRef<CDbtag> tag(new CDbtag);
         tag->SetDb((*xref)->GetDbname().GetName());
 
         std::string& id_str = tag->SetTag().SetStr();
 
         bool need_delimiter = false;
-        ITERATE(objects::CEMBL_xref::TId, id, (*xref)->GetId())
+        ITERATE (CEMBL_xref::TId, id, (*xref)->GetId())
         {
             if ((*id)->IsStr() && !(*id)->GetStr().empty())
             {
@@ -1879,23 +1879,23 @@ static void fta_create_imgt_misc_feat(objects::CBioseq& bioseq, objects::CEMBL_b
     if (xrefs.empty())
         return;
 
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
-    objects::CImp_feat& imp = feat->SetData().SetImp();
+    CRef<CSeq_feat> feat(new CSeq_feat);
+    CImp_feat& imp = feat->SetData().SetImp();
     imp.SetKey("misc_feature");
     feat->SetDbxref().swap(xrefs);
     feat->SetLocation(*fta_get_seqloc_int_whole(*(*bioseq.SetId().begin()), ibp->bases));
 
-    objects::CBioseq::TAnnot& annot = bioseq.SetAnnot();
+    CBioseq::TAnnot& annot = bioseq.SetAnnot();
     if (annot.empty() || !(*annot.begin())->IsFtable())
     {
-        CRef<objects::CSeq_annot> new_annot(new objects::CSeq_annot);
+        CRef<CSeq_annot> new_annot(new CSeq_annot);
         new_annot->SetData().SetFtable().push_back(feat);
 
         annot.push_back(new_annot);
     }
     else
     {
-        objects::CSeq_annot& old_annot = *(*annot.begin());
+        CSeq_annot& old_annot = *(*annot.begin());
         old_annot.SetData().SetFtable().push_front(feat);
     }
 }
@@ -1911,7 +1911,7 @@ static bool s_HasTPAPrefix(const CTempString& line)
 }
 
 /**********************************************************/
-static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq)
+static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     IndexblkPtr   ibp;
     DataBlkPtr    dbp;
@@ -2010,7 +2010,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
             }
         }
 
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetTitle(str);
         bioseq.SetDescr().Set().push_back(descr);
 
@@ -2057,10 +2057,10 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
         if(dbp->mType != ParFlat_REF_END)
             continue;
 
-        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
         if (pubdesc.NotEmpty())
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -2072,10 +2072,10 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
         if(dbp->mType != ParFlat_REF_NO_TARGET)
             continue;
 
-        CRef<objects::CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
         if (pubdesc.NotEmpty())
         {
-            CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
@@ -2083,10 +2083,10 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
 
     /* OS data ==> descr_org
      */
-    objects::CBioSource* bio_src = nullptr;
-    objects::COrg_ref* org_ref = nullptr;
+    CBioSource* bio_src = nullptr;
+    COrg_ref* org_ref = nullptr;
 
-    NON_CONST_ITERATE(objects::CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
+    NON_CONST_ITERATE (CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
     {
         if ((*descr)->IsSource())
         {
@@ -2099,14 +2099,14 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
 
     /* MolInfo, 3rd or 4th token in the ID line
      */
-    CRef<objects::CMolInfo> mol_info = GetEmblMolInfo(pp, entry, org_ref);
+    CRef<CMolInfo> mol_info = GetEmblMolInfo(pp, entry, org_ref);
 
     gbdiv = NULL;
 
     TStringList dr_ena,
                 dr_biosample;
 
-    CRef<objects::CEMBL_block> embl_block =
+    CRef<CEMBL_block> embl_block =
         GetDescrEmblBlock(pp, entry, *mol_info, &gbdiv, bio_src, dr_ena, dr_biosample);
 
     if (pp->source == Parser::ESource::EMBL && embl_block.NotEmpty())
@@ -2124,12 +2124,12 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
 
     if (mol_info->IsSetBiomol() || mol_info->IsSetTech())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetMolinfo(*mol_info);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if (mol_info->IsSetTech() && (mol_info->GetTech() == objects::CMolInfo::eTech_htgs_0 || mol_info->GetTech() == objects::CMolInfo::eTech_htgs_1 ||
-            mol_info->GetTech() == objects::CMolInfo::eTech_htgs_2))
+        if (mol_info->IsSetTech() && (mol_info->GetTech() == CMolInfo::eTech_htgs_0 || mol_info->GetTech() == CMolInfo::eTech_htgs_1 ||
+            mol_info->GetTech() == CMolInfo::eTech_htgs_2))
             is_htg = true;
     }
     else
@@ -2137,7 +2137,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
         mol_info.Reset();
     }
 
-    CRef<objects::CUser_object> dbuop;
+    CRef<CUser_object> dbuop;
     if (!dr_ena.empty() || !dr_biosample.empty())
         fta_build_ena_user_object(bioseq.SetDescr().Set(), dr_ena, dr_biosample, dbuop);
 
@@ -2148,16 +2148,16 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
     }
 
     if(StringNICmp(ibp->division, "CON", 3) == 0)
-        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, objects::CSeq_id::e_Embl,
+        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl,
                      true, ibp->acnum);
     else
-        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, objects::CSeq_id::e_Embl,
+        fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl,
                      false, ibp->acnum);
 
     if (embl_block->GetExtra_acc().empty())
         embl_block->ResetExtra_acc();
 
-    CRef<objects::CGB_block> gbb;
+    CRef<CGB_block> gbb;
    
     if  (pp->source == Parser::ESource::NCBI || (!embl_block->IsSetDiv() && gbdiv) ) {
         gbb = GetEmblGBBlock(pp, entry, gbdiv, bio_src);      /* GB-block */
@@ -2169,7 +2169,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
     bool hasEmblBlock = false;
     if(pp->source != Parser::ESource::NCBI)
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetEmbl(*embl_block);
         bioseq.SetDescr().Set().push_back(descr);
         hasEmblBlock = true;
@@ -2240,7 +2240,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
 
     if (gbb)
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetGenbank(*gbb);
         bioseq.SetDescr().Set().push_back(descr);
     }
@@ -2268,7 +2268,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
 
             NON_CONST_ITERATE(TUserObjVector, user_obj, user_objs)
             {
-                CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+                CRef<CSeqdesc> descr(new CSeqdesc);
                 descr->SetUser(*(*user_obj));
                 bioseq.SetDescr().Set().push_back(descr);
             }
@@ -2293,7 +2293,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
 
             if (str[0] != 0)
             {
-                CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+                CRef<CSeqdesc> descr(new CSeqdesc);
                 descr->SetComment(str);
                 bioseq.SetDescr().Set().push_back(descr);
             }
@@ -2307,23 +2307,23 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
     /* DT data ==> create-date, update-date
      */
 
-    CRef<objects::CDate_std> std_creation_date,
-                                         std_update_date;
+    CRef<CDate_std> std_creation_date,
+        std_update_date;
     GetEmblDate(pp->source, entry, std_creation_date, std_update_date);
     if (std_creation_date.NotEmpty())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetCreate_date().SetStd(*std_creation_date);
         bioseq.SetDescr().Set().push_back(descr);
     }
 
     if(std_update_date.NotEmpty())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetUpdate_date().SetStd(*std_update_date);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if (std_creation_date.NotEmpty() && std_creation_date->Compare(*std_update_date) == objects::CDate::eCompare_after)
+        if (std_creation_date.NotEmpty() && std_creation_date->Compare(*std_update_date) == CDate::eCompare_after)
         {
             std::string crdate_str,
                         update_str;
@@ -2337,7 +2337,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, objects::CBioseq& b
 }
 
 /**********************************************************/
-static void FakeEmblBioSources(const DataBlk& entry, objects::CBioseq& bioseq)
+static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
 {
     DataBlkPtr   dbp;
     DataBlkPtr   subdbp;
@@ -2359,11 +2359,11 @@ static void FakeEmblBioSources(const DataBlk& entry, objects::CBioseq& bioseq)
         if(dbp->mType != ParFlat_OS)
             continue;
 
-        CRef<objects::COrg_ref> org_ref = GetEmblOrgRef(dbp);
+        CRef<COrg_ref> org_ref = GetEmblOrgRef(dbp);
         if (org_ref.Empty())
             continue;
 
-        CRef<objects::CBioSource> bio_src(new objects::CBioSource);
+        CRef<CBioSource> bio_src(new CBioSource);
         bio_src->SetOrg(*org_ref);
 
         std::string& taxname_str = org_ref->SetTaxname();
@@ -2436,7 +2436,7 @@ static void FakeEmblBioSources(const DataBlk& entry, objects::CBioseq& bioseq)
             MemFree(q);
         }
 
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetSource(*bio_src);
         bioseq.SetDescr().Set().push_front(descr);
     }
@@ -2516,7 +2516,7 @@ bool EmblAscii(ParserPtr pp)
 
     TEntryList seq_entries;
 
-    objects::CSeq_loc locs;
+    CSeq_loc locs;
 
     bool     reject_set;
     bool     seq_long = false;
@@ -2593,11 +2593,11 @@ bool EmblAscii(ParserPtr pp)
             }
             GetEmblSubBlock(ibp->bases, pp->source, *pEntry);
 
-            CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, true);
+            CRef<CBioseq> bioseq = CreateEntryBioseq(pp, true);
             AddNIDSeqId(*bioseq, *pEntry, ParFlat_NI, ParFlat_COL_DATA_EMBL,
                         pp->source);
 
-            ebp->seq_entry.Reset(new objects::CSeq_entry);
+            ebp->seq_entry.Reset(new CSeq_entry);
             ebp->seq_entry->SetSeq(*bioseq);
             GetScope().AddBioseq(*bioseq);
 
@@ -2655,7 +2655,7 @@ bool EmblAscii(ParserPtr pp)
 
             if (bioseq->GetInst().IsNa())
             {
-                if (bioseq->GetInst().GetRepr() == objects::CSeq_inst::eRepr_raw)
+                if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw)
                 {
                     if(ibp->gaps != NULL)
                         GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
@@ -2707,7 +2707,7 @@ bool EmblAscii(ParserPtr pp)
              */
             if (ibp->psip.NotEmpty())
             {
-                CRef<objects::CSeq_id> id(new objects::CSeq_id);
+                CRef<CSeq_id> id(new CSeq_id);
                 id->SetPatent(*ibp->psip);
                 bioseq->SetId().push_back(id);
                 ibp->psip.Reset();
@@ -2865,11 +2865,11 @@ const char* GetEmblDiv(Uint1 num)
 }
 
 /**********************************************************/
-CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::CMolInfo& mol_info,
-                                                       char** gbdiv, objects::CBioSource* bio_src,
-                                                       TStringList& dr_ena, TStringList& dr_biosample)
+CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
+                                  char** gbdiv, CBioSource* bio_src,
+                                  TStringList& dr_ena, TStringList& dr_biosample)
 {
-    CRef<objects::CEMBL_block> embl(new objects::CEMBL_block),
+    CRef<CEMBL_block> embl(new CEMBL_block),
                                            ret;
 
     IndexblkPtr  ibp;
@@ -2965,7 +2965,7 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
     *gbdiv = StringSave(ParFlat_GBDIV_array[thtg]);
 
     if (div <= 15)
-        embl->SetDiv(static_cast<objects::CEMBL_block_Base::TDiv>(div));
+        embl->SetDiv(static_cast<CEMBL_block_Base::TDiv>(div));
 
     p = *gbdiv;
     if(ibp->is_tpa &&
@@ -3002,8 +3002,8 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
     fta_check_htg_kwds(embl->SetKeywords(), ibp, mol_info);
 
     XMLDefVsHTGKeywords(mol_info.GetTech(), entry, ibp->xip, cancelled);
-    if ((mol_info.GetTech() == objects::CMolInfo::eTech_htgs_0 || mol_info.GetTech() == objects::CMolInfo::eTech_htgs_1 ||
-        mol_info.GetTech() == objects::CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
+    if ((mol_info.GetTech() == CMolInfo::eTech_htgs_0 || mol_info.GetTech() == CMolInfo::eTech_htgs_1 ||
+        mol_info.GetTech() == CMolInfo::eTech_htgs_2) && *gbdiv != NULL)
     {
         MemFree(*gbdiv);
         *gbdiv = NULL;
@@ -3123,8 +3123,8 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
     }
 
     thtg = mol_info.GetTech();
-    if (thtg == objects::CMolInfo::eTech_htgs_0 || thtg == objects::CMolInfo::eTech_htgs_1 ||
-        thtg == objects::CMolInfo::eTech_htgs_2 || thtg == objects::CMolInfo::eTech_htgs_3)
+    if (thtg == CMolInfo::eTech_htgs_0 || thtg == CMolInfo::eTech_htgs_1 ||
+        thtg == CMolInfo::eTech_htgs_2 || thtg == CMolInfo::eTech_htgs_3)
     {
         RemoveHtgPhase(embl->SetKeywords());
     }
@@ -3218,7 +3218,7 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
     }
 
     if (fli_kwd)
-        mol_info.SetTech(objects::CMolInfo::eTech_fli_cdna);
+        mol_info.SetTech(CMolInfo::eTech_fli_cdna);
 
     /* will be used in flat file database
      */
@@ -3227,22 +3227,22 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
         if(StringCmp(*gbdiv, "EST") == 0)
         {
             ibp->EST = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_est);
+            mol_info.SetTech(CMolInfo::eTech_est);
         }
         else if(StringCmp(*gbdiv, "STS") == 0)
         {
             ibp->STS = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_sts);
+            mol_info.SetTech(CMolInfo::eTech_sts);
         }
         else if(StringCmp(*gbdiv, "GSS") == 0)
         {
             ibp->GSS = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_survey);
+            mol_info.SetTech(CMolInfo::eTech_survey);
         }
         else if(StringCmp(*gbdiv, "HTC") == 0)
         {
             ibp->HTC = true;
-            mol_info.SetTech(objects::CMolInfo::eTech_htc);
+            mol_info.SetTech(CMolInfo::eTech_htc);
             MemFree(*gbdiv);
             *gbdiv = NULL;
         }
@@ -3255,13 +3255,13 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
     }
     else if (mol_info.IsSetTech())
     {
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_est)
+        if (mol_info.GetTech() == CMolInfo::eTech_est)
             ibp->EST = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_sts)
+        if (mol_info.GetTech() == CMolInfo::eTech_sts)
             ibp->STS = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_survey)
+        if (mol_info.GetTech() == CMolInfo::eTech_survey)
             ibp->GSS = true;
-        if (mol_info.GetTech() == objects::CMolInfo::eTech_htc)
+        if (mol_info.GetTech() == CMolInfo::eTech_htc)
             ibp->HTC = true;
     }
 
@@ -3282,7 +3282,7 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
 
 
     p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE);
-    CRef<objects::CDate_std> std_creation_date,
+    CRef<CDate_std> std_creation_date,
                                          std_update_date;
     if (p != NULL)
     {
@@ -3308,7 +3308,7 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
         if (StringLen(ibp->acnum) == 8 && StringNCmp(ibp->acnum, "CT", 2) == 0)
         {
             bool found = false;
-            ITERATE(objects::CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc())
+            ITERATE (CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc())
             {
                 if (fta_if_wgs_acc(acc->c_str()) == 0 &&
                    ((*acc)[0] == 'C' || (*acc)[0] == 'U'))
@@ -3318,7 +3318,7 @@ CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::C
                 }
             }
             if (found)
-                mol_info.SetTech(objects::CMolInfo::eTech_wgs);
+                mol_info.SetTech(CMolInfo::eTech_wgs);
         }
     }
 
