@@ -309,3 +309,10 @@ NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver REQUIRES ht
 #############################################################################
 # MySQL
 NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient REQUIRES lz4;openssl;zlib;zstd)
+
+#############################################################################
+# VDB
+NCBI_define_Pkgcomponent(NAME VDB PACKAGE ncbi-vdb)
+if(NCBI_COMPONENT_VDB_FOUND)
+    set(HAVE_NCBI_VDB 1)
+endif()

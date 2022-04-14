@@ -346,6 +346,7 @@ endif()
 #############################################################################
 # VDB
 if(NOT NCBI_COMPONENT_VDB_DISABLED)
+if(NOT NCBI_COMPONENT_VDB_FOUND)
 set(NCBI_COMPONENT_VDB_INCLUDE
     ${NCBI_ThirdParty_VDB}/interfaces
     ${NCBI_ThirdParty_VDB}/interfaces/cc/vc++/${NCBI_ThirdParty_VDB_ARCH_INC}
@@ -389,6 +390,7 @@ else()
     unset(NCBI_COMPONENT_VDB_INCLUDE)
     unset(NCBI_COMPONENT_VDB_LIBS)
 endif()
+endif(NOT NCBI_COMPONENT_VDB_FOUND)
 else(NOT NCBI_COMPONENT_VDB_DISABLED)
     set(NCBI_COMPONENT_VDB_FOUND NO)
     message("DISABLED VDB")
