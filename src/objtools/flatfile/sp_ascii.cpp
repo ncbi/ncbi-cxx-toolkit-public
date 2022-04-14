@@ -85,6 +85,7 @@
 #define THIS_FILE "sp_ascii.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 const char *ParFlat_SPComTopics[] = {
     "ALLERGEN:",
@@ -590,18 +591,18 @@ static void StringCombine(std::string& dest, const std::string& to_add, const Ch
 
 /**********************************************************
  *
- *   static CRef<objects::CDbtag> MakeStrDbtag(dbname, str):
+ *   static CRef<CDbtag> MakeStrDbtag(dbname, str):
  *
  *                                              10-1-93
  *
  **********************************************************/
-static CRef<objects::CDbtag> MakeStrDbtag(char* dbname, char* str)
+static CRef<CDbtag> MakeStrDbtag(char* dbname, char* str)
 {
-    CRef<objects::CDbtag> tag;
+    CRef<CDbtag> tag;
 
     if (dbname != NULL && str != NULL)
     {
-        tag.Reset(new objects::CDbtag);
+        tag.Reset(new CDbtag);
         tag->SetDb(dbname);
         tag->SetTag().SetStr(str);
     }
@@ -611,25 +612,25 @@ static CRef<objects::CDbtag> MakeStrDbtag(char* dbname, char* str)
 
 /**********************************************************
     *
-    *   static CRef<objects::CDate> MakeDatePtr(str, source):
+    *   static CRef<CDate> MakeDatePtr(str, source):
     *
     *      Return a DatePtr with "std" type if dd-mmm-yyyy
     *   or dd-mmm-yy format; with "str" type if not
     *   a dd-mmm-yyyy format.
     *
     **********************************************************/
-static CRef<objects::CDate> MakeDatePtr(char* str, Parser::ESource source)
+static CRef<CDate> MakeDatePtr(char* str, Parser::ESource source)
 {
     static Char msg[11];
 
-    CRef<objects::CDate> res(new objects::CDate);
+    CRef<CDate> res(new CDate);
 
     if (str == NULL)
         return res;
 
     if (StringChr(str, '-') != NULL && (isdigit(*str) != 0 || *str == ' '))
     {
-        CRef<objects::CDate_std> std_date = get_full_date(str, true, source);
+        CRef<CDate_std> std_date = get_full_date(str, true, source);
         res->SetStd(*std_date);
         if (XDateCheck(*std_date) != 0)
         {
@@ -640,7 +641,7 @@ static CRef<objects::CDate> MakeDatePtr(char* str, Parser::ESource source)
         }
     }
 
-    if (res->Which() == objects::CDate::e_not_set)
+    if (res->Which() == CDate::e_not_set)
     {
         res->SetStr(str);
     }
@@ -649,26 +650,26 @@ static CRef<objects::CDate> MakeDatePtr(char* str, Parser::ESource source)
 }
 
 /**********************************************************/
-static void fta_create_pdb_seq_id(objects::CSP_block_Base::TSeqref& refs, char* mol, Uint1 chain)
+static void fta_create_pdb_seq_id(CSP_block_Base::TSeqref& refs, char* mol, Uint1 chain)
 {
     if (mol == NULL)
         return;
 
-    CRef<objects::CPDB_seq_id> pdb_seq_id(new objects::CPDB_seq_id);
-    pdb_seq_id->SetMol(objects::CPDB_mol_id(mol));
+    CRef<CPDB_seq_id> pdb_seq_id(new CPDB_seq_id);
+    pdb_seq_id->SetMol(CPDB_mol_id(mol));
 
     if (chain > 0)
     {
         pdb_seq_id->SetChain(chain);
     }
 
-    CRef<objects::CSeq_id> sid(new objects::CSeq_id);
+    CRef<CSeq_id> sid(new CSeq_id);
     sid->SetPdb(*pdb_seq_id);
     refs.push_back(sid);
 }
 
 /**********************************************************/
-static void MakeChainPDBSeqId(objects::CSP_block_Base::TSeqref& refs, char* mol, char* chain)
+static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, char* mol, char* chain)
 {
     char*  fourth;
     char*  p;
@@ -733,7 +734,7 @@ static void MakeChainPDBSeqId(objects::CSP_block_Base::TSeqref& refs, char* mol,
  *                                              10-1-93
  *
  **********************************************************/
-static void MakePDBSeqId(objects::CSP_block_Base::TSeqref& refs, char* mol, char* rel, char* chain,
+static void MakePDBSeqId(CSP_block_Base::TSeqref& refs, char* mol, char* rel, char* chain,
                          unsigned char* drop, Parser::ESource source)
 {
     if (mol == NULL)
@@ -741,16 +742,16 @@ static void MakePDBSeqId(objects::CSP_block_Base::TSeqref& refs, char* mol, char
 
     if(chain == NULL)
     {
-        CRef<objects::CPDB_seq_id> pdb_seq_id(new objects::CPDB_seq_id);
-        pdb_seq_id->SetMol(objects::CPDB_mol_id(mol));
+        CRef<CPDB_seq_id> pdb_seq_id(new CPDB_seq_id);
+        pdb_seq_id->SetMol(CPDB_mol_id(mol));
 
         if (rel != NULL)
         {
-            CRef<objects::CDate> date = MakeDatePtr(rel, source);
+            CRef<CDate> date = MakeDatePtr(rel, source);
             pdb_seq_id->SetRel(*date);
         }
 
-        CRef<objects::CSeq_id> sid(new objects::CSeq_id);
+        CRef<CSeq_id> sid(new CSeq_id);
         sid->SetPdb(*pdb_seq_id);
         refs.push_back(sid);
     }
@@ -759,7 +760,7 @@ static void MakePDBSeqId(objects::CSP_block_Base::TSeqref& refs, char* mol, char
 }
 
 /**********************************************************/
-static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, objects::CInt_fuzz& fuzz)
+static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, CInt_fuzz& fuzz)
 {
     if (choice < 1 || choice > 4)
         return;
@@ -772,7 +773,7 @@ static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, objects::CInt_fuzz& fuzz
     }
     else if (choice == 4)
     {
-        fuzz.SetLim(static_cast<objects::CInt_fuzz::ELim>(a));
+        fuzz.SetLim(static_cast<CInt_fuzz::ELim>(a));
     }
 }
 
@@ -1207,7 +1208,7 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
 }
 
 /**********************************************************/
-static void fix_taxname_dot(objects::COrg_ref& org_ref)
+static void fix_taxname_dot(COrg_ref& org_ref)
 {
     if (!org_ref.IsSetTaxname())
         return;
@@ -1230,7 +1231,7 @@ static void fix_taxname_dot(objects::COrg_ref& org_ref)
 }
 
 /**********************************************************/
-static CRef<objects::COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
+static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
 {
     SetOfSynsPtr synsp;
 
@@ -1241,12 +1242,12 @@ static CRef<objects::COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
     Uint1        num;
     size_t       i;
 
-    CRef<objects::COrg_ref> org_ref;
+    CRef<COrg_ref> org_ref;
 
     if (sosp == NULL)
         return org_ref;
 
-    org_ref.Reset(new objects::COrg_ref);
+    org_ref.Reset(new COrg_ref);
 
     if(sosp->name != NULL && sosp->name[0] != '\0')
         org_ref->SetTaxname(sosp->name);
@@ -1598,14 +1599,14 @@ static Int4 GetTaxIdFrom_OX(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static CRef<objects::COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
+static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
 {
     SetOfSpeciesPtr sosp;
     DataBlkPtr      dbp;
     char*         line_OS;
     char*         line_OC;
 
-    CRef<objects::COrg_ref> org_ref;
+    CRef<COrg_ref> org_ref;
 
     line_OS = NULL;
     line_OC = NULL;
@@ -1646,7 +1647,7 @@ static CRef<objects::COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
 }
 
 /**********************************************************/
-static void get_plasmid(DataBlkPtr entry, objects::CSP_block::TPlasnm& plasms)
+static void get_plasmid(DataBlkPtr entry, CSP_block::TPlasnm& plasms)
 {
     DataBlkPtr dbp;
     DataBlkPtr subdbp;
@@ -1740,12 +1741,12 @@ static char* GetDRToken(char** ptr)
 }
 
 /**********************************************************/
-static CRef<objects::CSeq_id> AddPIDToSeqId(char* str, char* acc)
+static CRef<CSeq_id> AddPIDToSeqId(char* str, char* acc)
 {
     long long lID;
     char*     end = NULL;
 
-    CRef<objects::CSeq_id> sid;
+    CRef<CSeq_id> sid;
 
     if(str == NULL || *str == '\0')
         return sid;
@@ -1769,16 +1770,16 @@ static CRef<objects::CSeq_id> AddPIDToSeqId(char* str, char* acc)
 
     if (*str == 'G')
     {
-        sid.Reset(new objects::CSeq_id);
+        sid.Reset(new CSeq_id);
         sid->SetGi( GI_FROM(long long, lID) );
     }
     else if(*str == 'E' || *str == 'D')
     {
-        CRef<objects::CDbtag> tag(new objects::CDbtag);
+        CRef<CDbtag> tag(new CDbtag);
         tag->SetDb("PID");
         tag->SetTag().SetStr(str);
 
-        sid.Reset(new objects::CSeq_id);
+        sid.Reset(new CSeq_id);
         sid->SetGeneral(*tag);
     }
     else
@@ -1838,26 +1839,26 @@ static bool AddToList(ValNodePtr* head, char* str)
 }
 
 /**********************************************************/
-static void CheckSPDupPDBXrefs(objects::CSP_block::TSeqref& refs)
+static void CheckSPDupPDBXrefs(CSP_block::TSeqref& refs)
 {
-    NON_CONST_ITERATE(objects::CSP_block::TSeqref, cur_ref, refs)
+    NON_CONST_ITERATE (CSP_block::TSeqref, cur_ref, refs)
     {
-        if ((*cur_ref)->Which() != objects::CSeq_id::e_Pdb ||
+        if ((*cur_ref)->Which() != CSeq_id::e_Pdb ||
             (*cur_ref)->GetPdb().IsSetRel())
             continue;
 
         bool got = false;
 
-        const objects::CPDB_seq_id& cur_id = (*cur_ref)->GetPdb();
-        objects::CSP_block::TSeqref::iterator next_ref = cur_ref;
+        const CPDB_seq_id& cur_id = (*cur_ref)->GetPdb();
+        CSP_block::TSeqref::iterator next_ref = cur_ref;
 
         for (++next_ref; next_ref != refs.end(); )
         {
-            if ((*next_ref)->Which() != objects::CSeq_id::e_Pdb ||
+            if ((*next_ref)->Which() != CSeq_id::e_Pdb ||
                 (*next_ref)->GetPdb().IsSetRel())
                 continue;
 
-            const objects::CPDB_seq_id& next_id = (*next_ref)->GetPdb();
+            const CPDB_seq_id& next_id = (*next_ref)->GetPdb();
 
             if (cur_id.GetMol().Get() != next_id.GetMol().Get())
             {
@@ -2006,7 +2007,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
  *      Also need to delete duplicated DR line.
  *
  **********************************************************/
-static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned char* drop,
+static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* drop,
                             Parser::ESource source)
 {
     ValNodePtr   embl_vnp;
@@ -2111,7 +2112,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
         }
         else if(NStr::CompareNocase(token1, "PIR") == 0)
         {
-            CRef<objects::CSeq_id> id(MakeLocusSeqId(token3, objects::CSeq_id::e_Pir));
+            CRef<CSeq_id> id(MakeLocusSeqId(token3, CSeq_id::e_Pir));
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         }
@@ -2126,7 +2127,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
             }
             else if(AddToList(&acc_list, token2))
             {
-                CRef<objects::CSeq_id> id(MakeAccSeqId(token2, ntype, false, 0, true, false));
+                CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, false, 0, true, false));
                 if (id.NotEmpty())
                     spb.SetSeqref().push_back(id);
             }
@@ -2173,7 +2174,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
                 continue;
             }
 
-            CRef<objects::CSeq_id> id;
+            CRef<CSeq_id> id;
             if (p == NULL)
                 id = AddPIDToSeqId(token3, token2);
             else
@@ -2196,7 +2197,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
         {
             if(AddToList(&ens_tran_list, token2))
             {
-                CRef<objects::CDbtag> tag = MakeStrDbtag(token1, token2);
+                CRef<CDbtag> tag = MakeStrDbtag(token1, token2);
                 if (tag.NotEmpty())
                     spb.SetDbref().push_back(tag);
             }
@@ -2209,14 +2210,14 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
             }
             else
             {
-                CRef<objects::CDbtag> tag = MakeStrDbtag(token1, token3);
+                CRef<CDbtag> tag = MakeStrDbtag(token1, token3);
                 if (tag.NotEmpty())
                     spb.SetDbref().push_back(tag);
             }
 
             if(token4 != NULL && AddToList(&ens_gene_list, token4))
             {
-                CRef<objects::CDbtag> tag = MakeStrDbtag(token1, token4);
+                CRef<CDbtag> tag = MakeStrDbtag(token1, token4);
                 if (tag.NotEmpty())
                     spb.SetDbref().push_back(tag);
             }
@@ -2238,7 +2239,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
                     if(q == p + 1 || *q != '\0')
                         p = NULL;
                 }
-                if (ptype != objects::CSeq_id::e_Other)
+                if (ptype != CSeq_id::e_Other)
                     p = NULL;
             }
             else
@@ -2256,7 +2257,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
                 continue;
 
             *p++ = '\0';
-            CRef<objects::CSeq_id> id(MakeAccSeqId(token2, ptype, true, (Int2)atoi(p), false, false));
+            CRef<CSeq_id> id(MakeAccSeqId(token2, ptype, true, (Int2)atoi(p), false, false));
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         }
@@ -2272,12 +2273,12 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
                     StringNICmp(token2, "PomBase:", 8) == 0)
                 token2 += 8;
 
-            CRef<objects::CDbtag> tag = MakeStrDbtag(token1, token2);
+            CRef<CDbtag> tag = MakeStrDbtag(token1, token2);
             if (tag.NotEmpty())
             {
                 bool not_found = true;
 
-                ITERATE(objects::CSP_block::TDbref, cur_tag, spb.SetDbref())
+                ITERATE (CSP_block::TDbref, cur_tag, spb.SetDbref())
                 {
                     if (tag->Match(*(*cur_tag)))
                     {
@@ -2333,8 +2334,8 @@ static void GetDRlineDataSP(DataBlkPtr entry, objects::CSP_block& spb, unsigned 
  *                                              9-30-93
  *
  **********************************************************/
-static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, objects::CDate& crdate,
-                      objects::CDate& sequpd, objects::CDate& annotupd,
+static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate,
+                      CDate& sequpd, CDate& annotupd,
                       short* ver_num)
 {
     ValNodePtr vnp;
@@ -2350,7 +2351,7 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, objects::CDate& crdate,
     Int4       third;
     size_t     len;
 
-    CRef<objects::CDate_std> std_crdate,
+    CRef<CDate_std> std_crdate,
                                          std_sequpd,
                                          std_annotupd;
 
@@ -2547,12 +2548,12 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, objects::CDate& crdate,
  *                                              9-30-93
  *
  **********************************************************/
-static CRef<objects::CSP_block>
-    GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& bioseq)
+static CRef<CSP_block>
+    GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 {
     IndexblkPtr  ibp;
 
-    CRef<objects::CSP_block> spb(new objects::CSP_block);
+    CRef<CSP_block> spb(new CSP_block);
 
     char*      bptr;
     bool         reviewed;
@@ -2565,16 +2566,16 @@ static CRef<objects::CSP_block>
     reviewed = (StringNICmp(bptr, "reviewed", 8) == 0);
     if (reviewed || StringNICmp(bptr, "standard", 8) == 0)
     {
-        spb->SetClass(objects::CSP_block::eClass_standard);
+        spb->SetClass(CSP_block::eClass_standard);
     }
     else if(StringNICmp(bptr, "preliminary", 11) == 0 ||
             StringNICmp(bptr, "unreviewed", 10) == 0)
     {
-        spb->SetClass(objects::CSP_block::eClass_prelim);
+        spb->SetClass(CSP_block::eClass_prelim);
     }
     else
     {
-        spb->SetClass(objects::CSP_block::eClass_not_set);
+        spb->SetClass(CSP_block::eClass_not_set);
         ErrPostStr(SEV_WARNING, ERR_DATACLASS_UnKnownClass,
                    "Not a standard/reviewed or preliminary/unreviewed class in SWISS-PROT");
     }
@@ -2604,19 +2605,19 @@ static CRef<objects::CSP_block>
 
     if (!i)
         ibp->drop = 1;
-    else if (spb->GetClass() == objects::CSP_block::eClass_standard ||
-             spb->GetClass() == objects::CSP_block::eClass_prelim)
+    else if (spb->GetClass() == CSP_block::eClass_standard ||
+             spb->GetClass() == CSP_block::eClass_prelim)
     {
-        NON_CONST_ITERATE(objects::CBioseq::TId, cur_id, bioseq.SetId())
+        NON_CONST_ITERATE (CBioseq::TId, cur_id, bioseq.SetId())
         {
             if (!(*cur_id)->IsSwissprot())
                 continue;
 
-            objects::CTextseq_id& id = (*cur_id)->SetSwissprot();
+            CTextseq_id& id = (*cur_id)->SetSwissprot();
             if(ver_num > 0)
                 id.SetVersion(ver_num);
 
-            if (spb->GetClass() == objects::CSP_block::eClass_standard)
+            if (spb->GetClass() == CSP_block::eClass_standard)
                 id.SetRelease("reviewed");
             else
                 id.SetRelease("reviewed");
@@ -2625,7 +2626,7 @@ static CRef<objects::CSP_block>
         }
     }
 
-    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+    CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetSp(*spb);
     bioseq.SetDescr().Set().push_back(descr);
 
@@ -2639,7 +2640,7 @@ static CRef<objects::CSP_block>
  *                                              10-1-93
  *
  **********************************************************/
-static void ParseSpComment(objects::CSeq_descr::Tdata& descrs, char* line)
+static void ParseSpComment(CSeq_descr::Tdata& descrs, char* line)
 {
     char* com;
     char* p;
@@ -2689,7 +2690,7 @@ static void ParseSpComment(objects::CSeq_descr::Tdata& descrs, char* line)
 
     if (com[0] != 0)
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetComment(com);
         descrs.push_back(descr);
     }
@@ -2705,7 +2706,7 @@ static void ParseSpComment(objects::CSeq_descr::Tdata& descrs, char* line)
  *                                              10-1-93
  *
  **********************************************************/
-static void GetSPDescrComment(DataBlkPtr entry, objects::CSeq_descr::Tdata& descrs,
+static void GetSPDescrComment(DataBlkPtr entry, CSeq_descr::Tdata& descrs,
                               char* acc, Uint1 cla)
 {
     char* offset;
@@ -2790,22 +2791,22 @@ static void GetSPDescrComment(DataBlkPtr entry, objects::CSeq_descr::Tdata& desc
 }
 
 /**********************************************************/
-static void SPAppendPIRToHist(objects::CBioseq& bioseq, const objects::CSP_block& spb)
+static void SPAppendPIRToHist(CBioseq& bioseq, const CSP_block& spb)
 {
     if (spb.GetSeqref().empty())
         return;
 
-    objects::CSeq_hist_rec::TIds rep_ids;
+    CSeq_hist_rec::TIds rep_ids;
 
-    ITERATE(objects::CSP_block::TSeqref, cur_ref, spb.GetSeqref())
+    ITERATE (CSP_block::TSeqref, cur_ref, spb.GetSeqref())
     {
         if (!(*cur_ref)->IsPir())
             continue;
 
-        CRef<objects::CTextseq_id> text_id(new objects::CTextseq_id);
+        CRef<CTextseq_id> text_id(new CTextseq_id);
         text_id->Assign((*cur_ref)->GetPir());
 
-        CRef<objects::CSeq_id> rep_id(new objects::CSeq_id);
+        CRef<CSeq_id> rep_id(new CSeq_id);
         rep_id->SetPir(*text_id);
 
         rep_ids.push_back(rep_id);
@@ -2814,7 +2815,7 @@ static void SPAppendPIRToHist(objects::CBioseq& bioseq, const objects::CSP_block
     if (rep_ids.empty())
         return;
 
-    objects::CSeq_hist& hist = bioseq.SetInst().SetHist();
+    CSeq_hist& hist = bioseq.SetInst().SetHist();
     hist.SetReplaces().SetIds().splice(hist.SetReplaces().SetIds().end(), rep_ids);
 }
 
@@ -2856,7 +2857,7 @@ static bool IfOHTaxIdMatchOHName(char* orpname, char* ohname)
 }
 
 /**********************************************************/
-static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
+static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
 {
     DataBlkPtr   dbp;
     char*      offset;
@@ -2868,7 +2869,7 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
     ViralHostPtr vhp;
     ViralHostPtr tvhp;
 
-    objects::CSeq_descr& descr = bioseq.SetDescr();
+    CSeq_descr& descr = bioseq.SetDescr();
 
     ibp = pp->entrylist[pp->curindx];
     size_t len = 0;
@@ -2878,7 +2879,7 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
         char* title = GetSPDescrTitle(offset, offset + len, &fragment);
         if (title != NULL)
         {
-            CRef<objects::CSeqdesc> desc_new(new objects::CSeqdesc);
+            CRef<CSeqdesc> desc_new(new CSeqdesc);
             desc_new->SetTitle(title);
             descr.Set().push_back(desc_new);
         }
@@ -2886,50 +2887,50 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
 
     /* sp-block
      */
-    CRef<objects::CSP_block> spb = GetDescrSPBlock(pp, entry, bioseq);
+    CRef<CSP_block> spb = GetDescrSPBlock(pp, entry, bioseq);
 
     GetSPDescrComment(entry, descr.Set(), ibp->acnum, spb->GetClass());
 
     if (spb.NotEmpty() && pp->accver && pp->histacc && pp->source == Parser::ESource::SPROT)
     {
-        objects::CSeq_hist_rec::TIds rep_ids;
+        CSeq_hist_rec::TIds rep_ids;
 
-        ITERATE(objects::CSP_block::TExtra_acc, cur_acc, spb->GetExtra_acc())
+        ITERATE (CSP_block::TExtra_acc, cur_acc, spb->GetExtra_acc())
         {
             if (cur_acc->empty() || !IsSPROTAccession(cur_acc->c_str()))
                 continue;
 
-            CRef<objects::CTextseq_id> text_id(new objects::CTextseq_id);
+            CRef<CTextseq_id> text_id(new CTextseq_id);
             text_id->SetAccession(*cur_acc);
 
-            CRef<objects::CSeq_id> rep_id(new objects::CSeq_id);
+            CRef<CSeq_id> rep_id(new CSeq_id);
             rep_id->SetSwissprot(*text_id);
             rep_ids.push_back(rep_id);
         }
 
         if (!rep_ids.empty())
         {
-            objects::CSeq_hist& hist = bioseq.SetInst().SetHist();
+            CSeq_hist& hist = bioseq.SetInst().SetHist();
             hist.SetReplaces().SetIds().swap(rep_ids);
         }
     }
 
     if (spb->CanGetCreated())
     {
-        CRef<objects::CSeqdesc> create_date_descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> create_date_descr(new CSeqdesc);
         create_date_descr->SetCreate_date().Assign(spb->GetCreated());
 
         descr.Set().push_back(create_date_descr);
     }
 
     bool has_update_date = spb->CanGetAnnotupd() || spb->CanGetSequpd();
-    objects::CDate upd_date;
+    CDate upd_date;
     
     if (has_update_date)
     {
         if (spb->CanGetAnnotupd() && spb->CanGetSequpd())
         {
-            upd_date.Assign(spb->GetAnnotupd().Compare(spb->GetSequpd()) == objects::CDate::eCompare_after ?
+            upd_date.Assign(spb->GetAnnotupd().Compare(spb->GetSequpd()) == CDate::eCompare_after ?
                 spb->GetAnnotupd() : spb->GetSequpd());
         }
         else if (spb->CanGetAnnotupd())
@@ -2937,14 +2938,14 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
         else
             upd_date.Assign(spb->GetSequpd());
 
-        CRef<objects::CSeqdesc> upd_date_descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> upd_date_descr(new CSeqdesc);
         upd_date_descr->SetUpdate_date().Assign(upd_date);
 
         descr.Set().push_back(upd_date_descr);
     }
 
     if (spb->CanGetCreated() && has_update_date &&
-        spb->GetCreated().Compare(upd_date) == objects::CDate::eCompare_after)
+        spb->GetCreated().Compare(upd_date) == CDate::eCompare_after)
     {
         std::string upd_date_str,
                     create_date_str;
@@ -2968,34 +2969,34 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
         if(dbp->mType != ParFlatSP_ID)
             continue;
 
-        CRef<objects::CBioSource> bio_src;
+        CRef<CBioSource> bio_src;
 
         taxid = GetTaxIdFrom_OX(dbp);
         if(taxid > 0)
         {
-            CRef<objects::COrg_ref> org_ref = fta_fix_orgref_byid(pp, taxid, &ibp->drop, false);
+            CRef<COrg_ref> org_ref = fta_fix_orgref_byid(pp, taxid, &ibp->drop, false);
             if (org_ref.Empty())
                 ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure,
                           "NCBI TaxID lookup for %d failed : will use organism name for lookup instead.",
                           taxid);
             else
             {
-                bio_src.Reset(new objects::CBioSource);
+                bio_src.Reset(new CBioSource);
 
-                if (gmod != objects::CBioSource::eGenome_unknown)
+                if (gmod != CBioSource::eGenome_unknown)
                     bio_src->SetGenome(gmod);
                 bio_src->SetOrg(*org_ref);
             }
         }
 
-        CRef<objects::COrg_ref> org_ref = GetOrganismFrom_OS_OC(dbp);
+        CRef<COrg_ref> org_ref = GetOrganismFrom_OS_OC(dbp);
         if (org_ref.NotEmpty())
         {
             if (bio_src.Empty())
             {
-                bio_src.Reset(new objects::CBioSource);
+                bio_src.Reset(new CBioSource);
 
-                if (gmod != objects::CBioSource::eGenome_unknown)
+                if (gmod != CBioSource::eGenome_unknown)
                     bio_src->SetGenome(gmod);
                 fta_fix_orgref(pp, *org_ref, &ibp->drop, NULL);
                 bio_src->SetOrg(*org_ref);
@@ -3016,13 +3017,13 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
         vhp = GetViralHostsFrom_OH(dbp);
         if(vhp != NULL)
         {
-            objects::COrgName& orgname = bio_src->SetOrg().SetOrgname();
+            COrgName& orgname = bio_src->SetOrg().SetOrgname();
 
             for(tvhp = vhp; tvhp != NULL; tvhp = vhp)
             {
                 vhp = tvhp->next;
 
-                CRef<objects::COrgMod> mod(new objects::COrgMod);
+                CRef<COrgMod> mod(new COrgMod);
                 mod->SetSubtype(21);
                 mod->SetSubname(tvhp->name);
                 orgname.SetMod().push_back(mod);
@@ -3035,7 +3036,7 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
 
                 gmod = 0;
 
-                CRef<objects::COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, tvhp->taxid, &gmod, true);
+                CRef<COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, tvhp->taxid, &gmod, true);
                 if (org_ref_cur.Empty())
                 {
                     if(gmod == 0)
@@ -3070,7 +3071,7 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
 
         fta_sort_biosource(*bio_src);
 
-        CRef<objects::CSeqdesc> bio_src_desc(new objects::CSeqdesc);
+        CRef<CSeqdesc> bio_src_desc(new CSeqdesc);
         bio_src_desc->SetSource(*bio_src);
         descr.Set().push_back(bio_src_desc);
         break;
@@ -3079,10 +3080,10 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
     if (spb.NotEmpty())
         SPAppendPIRToHist(bioseq, *spb);
 
-    CRef<objects::CSeqdesc> mol_info_descr(new objects::CSeqdesc);
-    objects::CMolInfo& mol_info = mol_info_descr->SetMolinfo();
-    mol_info.SetBiomol(objects::CMolInfo::eBiomol_peptide);
-    mol_info.SetCompleteness(fragment ? objects::CMolInfo::eCompleteness_partial : objects::CMolInfo::eCompleteness_complete);
+    CRef<CSeqdesc> mol_info_descr(new CSeqdesc);
+    CMolInfo& mol_info = mol_info_descr->SetMolinfo();
+    mol_info.SetBiomol(CMolInfo::eBiomol_peptide);
+    mol_info.SetCompleteness(fragment ? CMolInfo::eCompleteness_partial : CMolInfo::eCompleteness_complete);
 
     descr.Set().push_back(mol_info_descr);
 
@@ -3094,10 +3095,10 @@ static void GetSprotDescr(objects::CBioseq& bioseq, ParserPtr pp, DataBlkPtr ent
         if(dbp->mType != ParFlat_REF_END)
             continue;
 
-        CRef<objects::CPubdesc> pub_desc = DescrRefs(pp, dbp, ParFlat_COL_DATA_SP);
+        CRef<CPubdesc> pub_desc = DescrRefs(pp, dbp, ParFlat_COL_DATA_SP);
         if (pub_desc.NotEmpty())
         {
-            CRef<objects::CSeqdesc> pub_desc_descr(new objects::CSeqdesc);
+            CRef<CSeqdesc> pub_desc_descr(new CSeqdesc);
             pub_desc_descr->SetPub(*pub_desc);
 
             descr.Set().push_back(pub_desc_descr);
@@ -3121,12 +3122,12 @@ static void GetSPInst(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 
     ebp = (EntryBlkPtr) entry->mpData;
 
-    objects::CBioseq& bioseq = ebp->seq_entry->SetSeq();
+    CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
-    bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
-    bioseq.SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
 
-    GetSeqData(pp, *entry, bioseq, ParFlatSP_SQ, protconv, objects::CSeq_data::e_Iupacaa);
+    GetSeqData(pp, *entry, bioseq, ParFlatSP_SQ, protconv, CSeq_data::e_Iupacaa);
 }
 
 /**********************************************************/
@@ -3613,7 +3614,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
 
 /**********************************************************
  *
- *   static CRef<objects::CSeq_loc> GetSPSeqLoc(pp, spfip, bond, initmet,
+ *   static CRef<CSeq_loc> GetSPSeqLoc(pp, spfip, bond, initmet,
  *                                signal):
  *
  *      The following rules are assumption since I am
@@ -3624,10 +3625,10 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
  *                                              10-18-93
  *
  **********************************************************/
-static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
-                                                       bool bond, bool initmet, bool signal)
+static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
+                                  bool bond, bool initmet, bool signal)
 {
-    CRef<objects::CSeq_loc> loc;
+    CRef<CSeq_loc> loc;
 
     IndexblkPtr ibp;
 
@@ -3646,7 +3647,7 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
 
     ibp = pp->entrylist[pp->curindx];
 
-    loc.Reset(new objects::CSeq_loc);
+    loc.Reset(new CSeq_loc);
 
     ptr = spfip->from.c_str();
     if(StringChr(ptr, '<') != NULL)
@@ -3693,8 +3694,8 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
 
     if (bond)
     {
-        objects::CSeq_bond& bond = loc->SetBond();
-        objects::CSeq_point& point_a = bond.SetA();
+        CSeq_bond& bond = loc->SetBond();
+        CSeq_point& point_a = bond.SetA();
 
         point_a.SetPoint(from);
         point_a.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, false, false));
@@ -3704,7 +3705,7 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
 
         if (from != to)
         {
-            objects::CSeq_point& point_b = bond.SetB();
+            CSeq_point& point_b = bond.SetB();
             point_b.SetPoint(to);
             point_b.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, false, false));
 
@@ -3714,7 +3715,7 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
     }
     else if(from != to && !pntfuzz)
     {
-        objects::CSeq_interval& interval = loc->SetInt();
+        CSeq_interval& interval = loc->SetInt();
         interval.SetFrom(from);
         interval.SetTo(to);
         interval.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, false, false));
@@ -3733,7 +3734,7 @@ static CRef<objects::CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip,
     }
     else
     {
-        objects::CSeq_point& point = loc->SetPnt();
+        CSeq_point& point = loc->SetPnt();
         point.SetPoint(from);
         point.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, false, false));
 
@@ -3863,7 +3864,7 @@ Int2 SpFeatKeyNameValid(const Char* keystr)
 }
 
 /**********************************************************/
-CRef<objects::CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp,
+CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp,
                                        TSeqIdList &seqids)
 {
     std::string descrip;
@@ -3893,7 +3894,7 @@ CRef<objects::CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp,
             fbp->key = (char *) "MOD_RES";
     }
 
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
+    CRef<CSeq_feat> feat(new CSeq_feat);
     indx = fbp->spindex;
     type = ParFlat_SPFeat[indx].type;
     if(type == ParFlatSPSites)
@@ -3901,11 +3902,11 @@ CRef<objects::CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp,
         if(indx == ParFlatSPSitesModB && !descrip.empty())
             indx = GetSPSitesMod(descrip);
 
-        feat->SetData().SetSite(static_cast<objects::CSeqFeatData::ESite>(ParFlat_SPFeat[indx].keyint));
+        feat->SetData().SetSite(static_cast<CSeqFeatData::ESite>(ParFlat_SPFeat[indx].keyint));
     }
     else if(type == ParFlatSPBonds)
     {
-        feat->SetData().SetBond(static_cast<objects::CSeqFeatData::EBond>(ParFlat_SPFeat[indx].keyint));
+        feat->SetData().SetBond(static_cast<CSeqFeatData::EBond>(ParFlat_SPFeat[indx].keyint));
     }
     else if(type == ParFlatSPRegions)
     {
@@ -3982,7 +3983,7 @@ CRef<objects::CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp,
  *
  **********************************************************/
 static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip,
-                          bool initmet, objects::CSeq_annot::C_Data::TFtable& feats)
+                          bool initmet, CSeq_annot::C_Data::TFtable& feats)
 {
     SPFeatInputPtr temp;
 
@@ -4031,7 +4032,7 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip,
         noexp = SPFeatNoExp(pp, temp);
 */
 
-        CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
+        CRef<CSeq_feat> feat(new CSeq_feat);
 
         type = ParFlat_SPFeat[indx].type;
         if(type == ParFlatSPSites)
@@ -4039,11 +4040,11 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip,
             if(indx == ParFlatSPSitesModB)
                 indx = GetSPSitesMod(temp->descrip);
 
-            feat->SetData().SetSite(static_cast<objects::CSeqFeatData::ESite>(ParFlat_SPFeat[indx].keyint));
+            feat->SetData().SetSite(static_cast<CSeqFeatData::ESite>(ParFlat_SPFeat[indx].keyint));
         }
         else if(type == ParFlatSPBonds)
         {
-            feat->SetData().SetBond(static_cast<objects::CSeqFeatData::EBond>(ParFlat_SPFeat[indx].keyint));
+            feat->SetData().SetBond(static_cast<CSeqFeatData::EBond>(ParFlat_SPFeat[indx].keyint));
             bond = true;
         }
         else if(type == ParFlatSPRegions)
@@ -4072,13 +4073,13 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip,
 
 /* bsv : 03/04/2020 : no Seq-feat.exp-ev setting anymore
         if(noexp)
-            feat->SetExp_ev(objects::CSeq_feat::eExp_ev_not_experimental);
+            feat->SetExp_ev(CSeq_feat::eExp_ev_not_experimental);
         else
-            feat->SetExp_ev(objects::CSeq_feat::eExp_ev_experimental);
+            feat->SetExp_ev(CSeq_feat::eExp_ev_experimental);
 */
 
 
-        CRef<objects::CSeq_loc> loc = GetSPSeqLoc(pp, temp, bond, initmet, signal);
+        CRef<CSeq_loc> loc = GetSPSeqLoc(pp, temp, bond, initmet, signal);
         if (loc.NotEmpty())
             feat->SetLocation(*loc);
 
@@ -4182,7 +4183,7 @@ static void CkGeneNameSP(char* gname)
  *                                              10-25-93
  *
  **********************************************************/
-static void ParseGeneNameSP(char* str, objects::CSeq_feat& feat)
+static void ParseGeneNameSP(char* str, CSeq_feat& feat)
 {
     char*    gname;
     char*    p;
@@ -4194,7 +4195,7 @@ static void ParseGeneNameSP(char* str, objects::CSeq_feat& feat)
     count = 0;
     gname = NULL;
 
-    objects::CGene_ref& gene = feat.SetData().SetGene();
+    CGene_ref& gene = feat.SetData().SetGene();
 
     for(p = str; *p != '\0';)
     {
@@ -4226,21 +4227,21 @@ static void ParseGeneNameSP(char* str, objects::CSeq_feat& feat)
 
 /**********************************************************
 *
-*   static CRef<objects::CSeq_loc> GetSeqLocIntSP(seqlen, acnum,
-                          *                                   accver, vernum):
+*   static CRef<CSeq_loc> GetSeqLocIntSP(seqlen, acnum,
+*                                   accver, vernum):
 *
 *                                              10-18-93
 *
 **********************************************************/
-static CRef<objects::CSeq_loc> GetSeqLocIntSP(size_t seqlen, char* acnum, bool accver,
+static CRef<CSeq_loc> GetSeqLocIntSP(size_t seqlen, char* acnum, bool accver,
                                                           Int2 vernum)
 {
-    CRef<objects::CSeq_loc> loc(new objects::CSeq_loc);
-    objects::CSeq_interval& interval = loc->SetInt();
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    CSeq_interval& interval = loc->SetInt();
 
     interval.SetFrom(0);
     interval.SetTo(static_cast<TSeqPos>(seqlen) - 1);
-    interval.SetId(*MakeAccSeqId(acnum, objects::CSeq_id::e_Swissprot, accver, vernum, false, false));
+    interval.SetId(*MakeAccSeqId(acnum, CSeq_id::e_Swissprot, accver, vernum, false, false));
 
     return loc;
 }
@@ -4255,7 +4256,7 @@ static CRef<objects::CSeq_loc> GetSeqLocIntSP(size_t seqlen, char* acnum, bool a
  *                                              10-25-93
  *
  **********************************************************/
-static void GetOneGeneRef(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable& feats, char* bptr,
+static void GetOneGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, char* bptr,
                           size_t seqlen)
 {
     IndexblkPtr ibp;
@@ -4277,7 +4278,7 @@ static void GetOneGeneRef(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable& fe
 
     CleanTailNoneAlphaChar(str);
 
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
+    CRef<CSeq_feat> feat(new CSeq_feat);
     ParseGeneNameSP(str, *feat);
     feat->SetLocation(*GetSeqLocIntSP(seqlen, ibp->acnum, pp->accver, ibp->vernum));
 
@@ -4299,7 +4300,7 @@ static void SPFreeGenRefTokens(char* name, char* syns,
 }
 
 /**********************************************************/
-static void SPParseGeneRefTag(char* str, objects::CGene_ref& gene, bool set_locus_tag)
+static void SPParseGeneRefTag(char* str, CGene_ref& gene, bool set_locus_tag)
 {
     char* p;
     char* q;
@@ -4327,7 +4328,7 @@ static void SPParseGeneRefTag(char* str, objects::CGene_ref& gene, bool set_locu
 }
 
 /**********************************************************/
-static void SPGetOneGeneRefNew(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable& feats,
+static void SPGetOneGeneRefNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats,
                                size_t seqlen, char* name, char* syns,
                                char* ltags, char* orfs)
 {
@@ -4341,8 +4342,8 @@ static void SPGetOneGeneRefNew(ParserPtr pp, objects::CSeq_annot::C_Data::TFtabl
     if(ibp == NULL)
         return;
 
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
-    objects::CGene_ref& gene = feat->SetData().SetGene();
+    CRef<CSeq_feat> feat(new CSeq_feat);
+    CGene_ref& gene = feat->SetData().SetGene();
 
     if(name != NULL)
         gene.SetLocus(name);
@@ -4358,7 +4359,7 @@ static void SPGetOneGeneRefNew(ParserPtr pp, objects::CSeq_annot::C_Data::TFtabl
 }
 
 /**********************************************************/
-static void SPGetGeneRefsNew(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable& feats,
+static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats,
                                    char* bptr, size_t seqlen)
 {
     IndexblkPtr ibp;
@@ -4509,7 +4510,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable&
 static Int4 GetSeqLen(DataBlkPtr entry)
 {
     EntryBlkPtr ebp = (EntryBlkPtr) entry->mpData;
-    const objects::CBioseq& bioseq = ebp->seq_entry->GetSeq();
+    const CBioseq& bioseq = ebp->seq_entry->GetSeq();
     return bioseq.GetLength();
 }
 
@@ -4539,7 +4540,7 @@ static Int4 GetSeqLen(DataBlkPtr entry)
  *                                              10-25-93
  *
  **********************************************************/
-static void SPFeatGeneRef(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable& feats, DataBlkPtr entry)
+static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, DataBlkPtr entry)
 {
     char* offset;
     char* str;
@@ -4625,7 +4626,7 @@ static void SPValidateEcnum(std::string& ecnum)
 }
 
 /**********************************************************/
-static void SPCollectProtNames(SPDEFieldsPtr sfp, objects::CProt_ref& prot,
+static void SPCollectProtNames(SPDEFieldsPtr sfp, CProt_ref& prot,
                                Int4 tag)
 {
     Char ch;
@@ -4707,8 +4708,8 @@ static void SPValidateDefinition(SPDEFieldsPtr sfp, Uint1* drop, bool is_trembl)
 }
 
 /**********************************************************/
-static void SPParseDefinition(char* str, const objects::CBioseq::TId& ids, IndexblkPtr ibp,
-                              objects::CProt_ref& prot)
+static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ibp,
+                              CProt_ref& prot)
 {
     CharIntLenPtr cilp;
     SPDEFieldsPtr sfp;
@@ -4728,7 +4729,7 @@ static void SPParseDefinition(char* str, const objects::CBioseq::TId& ids, Index
 
     is_trembl = false;
 
-    ITERATE(objects::CBioseq::TId, id, ids)
+    ITERATE(CBioseq::TId, id, ids)
     {
         if (!(*id)->IsSwissprot())
             continue;
@@ -4812,7 +4813,7 @@ static void SPParseDefinition(char* str, const objects::CBioseq::TId& ids, Index
 }
 
 /**********************************************************/
-static void SPGetPEValue(DataBlkPtr entry, objects::CSeq_feat& feat)
+static void SPGetPEValue(DataBlkPtr entry, CSeq_feat& feat)
 {
     char*   offset;
     char*   buf;
@@ -4850,7 +4851,7 @@ static void SPGetPEValue(DataBlkPtr entry, objects::CSeq_feat& feat)
                   "Unrecognized value is encountered in PE (Protein Existence) line: \"%s\".",
                   p);
 
-    CRef<objects::CGb_qual> qual(new objects::CGb_qual);
+    CRef<CGb_qual> qual(new CGb_qual);
     qual->SetQual("UniProtKB_evidence");
     qual->SetVal(p);
     feat.SetQual().push_back(qual);
@@ -4873,7 +4874,7 @@ static void SPGetPEValue(DataBlkPtr entry, objects::CSeq_feat& feat)
  *                                              10-20-93
  *
  **********************************************************/
-static void SPFeatProtRef(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable& feats,
+static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats,
                           DataBlkPtr entry, SPFeatBlnPtr spfbp)
 {
     IndexblkPtr ibp;
@@ -4896,16 +4897,16 @@ static void SPFeatProtRef(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable& fe
 
     ebp = (EntryBlkPtr) entry->mpData;
 
-    objects::CSeq_entry& seq_entry = *ebp->seq_entry;
-    objects::CBioseq& bioseq = seq_entry.SetSeq();
+    CSeq_entry& seq_entry = *ebp->seq_entry;
+    CBioseq& bioseq = seq_entry.SetSeq();
 
     size_t len = 0;
     offset = SrchNodeType(entry, ParFlatSP_DE, &len);
     if(offset == NULL)
         return;
 
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat);
-    objects::CProt_ref& prot = feat->SetData().SetProt();
+    CRef<CSeq_feat> feat(new CSeq_feat);
+    CProt_ref& prot = feat->SetData().SetProt();
 
     bptr = offset;
     eptr = bptr + len;
@@ -5041,7 +5042,7 @@ static void SPFeatProtRef(ParserPtr pp, objects::CSeq_annot::C_Data::TFtable& fe
  *                                              11-5-93
  *
  **********************************************************/
-static SPSegLocPtr GetSPSegLocInfo(objects::CBioseq& bioseq, SPFeatInputPtr spfip,
+static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip,
                                    SPFeatBlnPtr spfbp)
 {
     SPSegLocPtr curspslp = NULL;
@@ -5094,11 +5095,11 @@ static SPSegLocPtr GetSPSegLocInfo(objects::CBioseq& bioseq, SPFeatInputPtr spfi
             continue;
 
         if (spfbp->noleft && spfbp->noright)
-            (*descr)->SetMolinfo().SetCompleteness(objects::CMolInfo::eCompleteness_no_ends);
+            (*descr)->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_ends);
         else if (spfbp->noleft)
-            (*descr)->SetMolinfo().SetCompleteness(objects::CMolInfo::eCompleteness_no_left);
+            (*descr)->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_left);
         else if (spfbp->noright)
-            (*descr)->SetMolinfo().SetCompleteness(objects::CMolInfo::eCompleteness_no_right);
+            (*descr)->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
     }
 
     if(hspslp != NULL)
@@ -5115,7 +5116,7 @@ static SPSegLocPtr GetSPSegLocInfo(objects::CBioseq& bioseq, SPFeatInputPtr spfi
  *
  **********************************************************/
 static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip,
-                        objects::CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
+                        CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
 {
     SPFeatInputPtr temp;
     char*        p;
@@ -5164,9 +5165,9 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip,
     }
 
 
-    objects::CBioseq& bioseq = seq_entry.SetSeq();
+    CBioseq& bioseq = seq_entry.SetSeq();
 
-    objects::CSeq_data& data = bioseq.SetInst().SetSeq_data();
+    CSeq_data& data = bioseq.SetInst().SetSeq_data();
     std::string& sequence = data.SetIupacaa().Set();
 
     if(from == 0)
@@ -5198,15 +5199,15 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip,
  *
  **********************************************************/
 static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip,
-                       objects::CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
+                       CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
 {
     SPFeatInputPtr temp;
     Int4           from;
     Int4           ctr;
     bool           segm;
 
-    objects::CMolInfo* mol_info = nullptr;
-    objects::CBioseq& bioseq = seq_entry.SetSeq();
+    CMolInfo* mol_info = nullptr;
+    CBioseq& bioseq = seq_entry.SetSeq();
 
     ctr = 0;
     NON_CONST_ITERATE(TSeqdescList, descr, bioseq.SetDescr().Set())
@@ -5260,17 +5261,17 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip,
 
     if (segm && mol_info->GetCompleteness() != 2)
     {
-        mol_info->SetCompleteness(objects::CMolInfo::eCompleteness_partial);
+        mol_info->SetCompleteness(CMolInfo::eCompleteness_partial);
         ErrPostEx(SEV_WARNING, ERR_FEATURE_NoFragment,
                   "Found NON_CONS in FT line but no FRAGMENT in DE line.");
     }
-    else if (spfbp->nonter && mol_info->GetCompleteness() != objects::CMolInfo::eCompleteness_partial)
+    else if (spfbp->nonter && mol_info->GetCompleteness() != CMolInfo::eCompleteness_partial)
     {
-        mol_info->SetCompleteness(objects::CMolInfo::eCompleteness_partial);
+        mol_info->SetCompleteness(CMolInfo::eCompleteness_partial);
         ErrPostEx(SEV_WARNING, ERR_FEATURE_NoFragment,
                   "Found NON_TER in FT line but no FRAGMENT in DE line.");
     }
-    else if (!spfbp->nonter && mol_info->GetCompleteness() == objects::CMolInfo::eCompleteness_partial && !segm)
+    else if (!spfbp->nonter && mol_info->GetCompleteness() == CMolInfo::eCompleteness_partial && !segm)
     {
         ErrPostEx(SEV_WARNING, ERR_FEATURE_PartialNoNonTerNonCons,
                   "Entry is partial but has no NON_TER or NON_CONS features.");
@@ -5279,7 +5280,7 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip,
     {
         if (bioseq.GetInst().IsSetSeq_data())
         {
-            const objects::CSeq_data& data = bioseq.GetInst().GetSeq_data();
+            const CSeq_data& data = bioseq.GetInst().GetSeq_data();
             const std::string& sequence = data.GetIupacaa().Get();
 
             for (std::string::const_iterator value = sequence.begin(); value != sequence.end(); ++value) {
@@ -5290,7 +5291,7 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip,
 
                 ctr++;
                 if (ctr == 5) {
-                    mol_info->SetCompleteness(objects::CMolInfo::eCompleteness_partial);
+                    mol_info->SetCompleteness(CMolInfo::eCompleteness_partial);
                     break;
                 }
             }
@@ -5299,24 +5300,24 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip,
 }
 
 /**********************************************************/
-static void SeqToDeltaSP(objects::CBioseq& bioseq, SPSegLocPtr spslp)
+static void SeqToDeltaSP(CBioseq& bioseq, SPSegLocPtr spslp)
 {
     if (spslp == NULL || !bioseq.GetInst().IsSetSeq_data())
         return;
 
-    objects::CSeq_ext::TDelta& deltas = bioseq.SetInst().SetExt().SetDelta();
+    CSeq_ext::TDelta& deltas = bioseq.SetInst().SetExt().SetDelta();
     const std::string& bioseq_data = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
 
     for(;spslp != NULL; spslp = spslp->next)
     {
-        CRef<objects::CDelta_seq> delta(new objects::CDelta_seq);
+        CRef<CDelta_seq> delta(new CDelta_seq);
         if (!deltas.Set().empty())
         {
             delta->SetLiteral().SetLength(0);
             delta->SetLiteral().SetFuzz().SetLim();
             deltas.Set().push_back(delta);
 
-            delta.Reset(new objects::CDelta_seq);
+            delta.Reset(new CDelta_seq);
         }
 
         delta->SetLiteral().SetLength(spslp->len);
@@ -5330,7 +5331,7 @@ static void SeqToDeltaSP(objects::CBioseq& bioseq, SPSegLocPtr spslp)
 
     if (deltas.Set().size() > 1)
     {
-        bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+        bioseq.SetInst().SetRepr(CSeq_inst::eRepr_delta);
         bioseq.SetInst().ResetSeq_data();
     }
     else
@@ -5354,7 +5355,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
     SPSegLocPtr    next;
 
     ebp = (EntryBlkPtr) entry->mpData;
-    objects::CSeq_entry& seq_entry = *ebp->seq_entry;
+    CSeq_entry& seq_entry = *ebp->seq_entry;
 
     spfbp = (SPFeatBlnPtr) MemNew(sizeof(SPFeatBln));
     spfbp->initmet = false;
@@ -5364,7 +5365,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 
     spfip = ParseSPFeat(entry, pp->entrylist[pp->curindx]->bases);
 
-    objects::CSeq_annot::C_Data::TFtable feats;
+    CSeq_annot::C_Data::TFtable feats;
 
     if (spfip != NULL)
     {
@@ -5376,7 +5377,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
     SPFeatGeneRef(pp, feats, entry);        /* GN line */
     SPFeatProtRef(pp, feats, entry, spfbp); /* DE line */
 
-    objects::CBioseq& bioseq = seq_entry.SetSeq();
+    CBioseq& bioseq = seq_entry.SetSeq();
 
     spslp = GetSPSegLocInfo(bioseq, spfip, spfbp); /* checking NON_CONS key */
     if(spslp != NULL)
@@ -5384,7 +5385,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 
     if (!feats.empty())
     {
-        CRef<objects::CSeq_annot> annot(new objects::CSeq_annot);
+        CRef<CSeq_annot> annot(new CSeq_annot);
         annot->SetData().SetFtable().swap(feats);
         bioseq.SetAnnot().push_back(annot);
     }
@@ -5421,8 +5422,8 @@ static void SpPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protco
         SpAddToIndexBlk(entry, pp->entrylist[pp->curindx]);
     }
 
-    CRef<objects::CBioseq> bioseq = CreateEntryBioseq(pp, false);
-    ebp->seq_entry.Reset(new objects::CSeq_entry);
+    CRef<CBioseq> bioseq = CreateEntryBioseq(pp, false);
+    ebp->seq_entry.Reset(new CSeq_entry);
     ebp->seq_entry->SetSeq(*bioseq);
     GetScope().AddBioseq(*bioseq);
 
@@ -5481,7 +5482,7 @@ bool SprotAscii(ParserPtr pp)
 
             if(ibp->drop != 1)
             {
-                CRef<objects::CSeq_entry>& cur_entry = ((EntryBlkPtr)entry->mpData)->seq_entry;
+                CRef<CSeq_entry>& cur_entry = ((EntryBlkPtr)entry->mpData)->seq_entry;
                 pp->entries.push_back(cur_entry);
 
                 cur_entry.Reset();

@@ -50,6 +50,7 @@
 #define THIS_FILE "entry.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 void Section::xBuildSubBlock(int subtype, const char* subKw)
@@ -129,7 +130,7 @@ void Section::xBuildFeatureBlocks()
 
 //  ----------------------------------------------------------------------------
 bool Entry::xInitNidSeqId(
-    objects::CBioseq& bioseq, int type, int dataOffset, Parser::ESource)
+    CBioseq& bioseq, int type, int dataOffset, Parser::ESource)
 //  -----------------------------------------------------------------------------
 {
     SectionPtr secPtr = this->GetFirstSectionOfType(type);
@@ -161,8 +162,8 @@ bool Entry::xInitSeqInst(const unsigned char* pConvert)
     auto& bioseq = mSeqEntry->SetSeq();
     auto& seqInst = bioseq.SetInst();
     seqInst.SetRepr(ibp->is_mga ? 
-        objects::CSeq_inst::eRepr_virtual : 
-        objects::CSeq_inst::eRepr_raw);
+        CSeq_inst::eRepr_virtual :
+        CSeq_inst::eRepr_raw);
     //Int2         topology;
     //Int2         strand;
     //char*      strandstr;
@@ -170,16 +171,16 @@ bool Entry::xInitSeqInst(const unsigned char* pConvert)
     string topologyStr = mBaseData.substr(lcp->topology, 16);
     int topology = CheckTPG(topologyStr);
     if (topology > 1)
-        seqInst.SetTopology(static_cast<objects::CSeq_inst::ETopology>(topology));
+        seqInst.SetTopology(static_cast<CSeq_inst::ETopology>(topology));
 
     string strandStr = mBaseData.substr(lcp->strand, 16);
     int strand = CheckSTRAND((lcp->strand >= 0) ? strandStr : "   ");
     if (strand > 0)
-        seqInst.SetStrand(static_cast<objects::CSeq_inst::EStrand>(strand));
+        seqInst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
 
     auto codeType = (ibp->is_prot ? 
-        objects::eSeq_code_type_iupacaa : 
-        objects::eSeq_code_type_iupacna);
+        eSeq_code_type_iupacaa :
+        eSeq_code_type_iupacna);
     //if (!GetSeqData(pp, entry, bioseq, ParFlat_ORIGIN, dnaconv, codeType))
     //    return false;
 

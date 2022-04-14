@@ -60,6 +60,7 @@
 #define OTHER_MEDIUM 255
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 /**********************************************************/
 ValNodePtr get_tokens(char* pt, const Char *delimeter)
@@ -126,7 +127,7 @@ static void RemoveSpacesAndCommas(std::string& str)
 }
 
 /**********************************************************/
-void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<objects::CAuth_list>& auths)
+void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
 {
     ValNodePtr  vnp;
     char*     p;
@@ -140,7 +141,7 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<objects::CAuth_list
         if (StringNCmp(p, "and ", 4) == 0)
             p += 4;
 
-        CRef<objects::CAuthor> author = get_std_auth(p, format);
+        CRef<CAuthor> author = get_std_auth(p, format);
 
         if (author.Empty())
         {
@@ -161,25 +162,25 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<objects::CAuth_list
         }
 
         if (auths.Empty())
-            auths.Reset(new objects::CAuth_list);
+            auths.Reset(new CAuth_list);
         auths->SetNames().SetStd().push_back(author);
     }
 }
 
 /**********************************************************/
-CRef<objects::CAuthor> get_std_auth(const Char* token, Uint1 format)
+CRef<CAuthor> get_std_auth(const Char* token, Uint1 format)
 {
     const Char* auth;
     const Char* eptr;
 
-    CRef<objects::CAuthor> author;
+    CRef<CAuthor> author;
 
     if (token == NULL || *token == '\0')
         return author;
 
-    author = new objects::CAuthor;
-    objects::CPerson_id& person_id = author->SetName();
-    objects::CName_std& namestd = person_id.SetName();
+    author = new CAuthor;
+    CPerson_id& person_id = author->SetName();
+    CName_std& namestd = person_id.SetName();
 
     for (eptr = token + StringLen(token) - 1; eptr > token && *eptr == ' ';)
         eptr--;
@@ -257,7 +258,7 @@ CRef<objects::CAuthor> get_std_auth(const Char* token, Uint1 format)
  *                                              12-4-93
  *
  **********************************************************/
-void get_auth(char* pt, Uint1 format, char* jour, CRef<objects::CAuth_list>& auths)
+void get_auth(char* pt, Uint1 format, char* jour, CRef<CAuth_list>& auths)
 {
     static const char *delimiter;
     static char*    eptr;
@@ -299,7 +300,7 @@ void get_auth(char* pt, Uint1 format, char* jour, CRef<objects::CAuth_list>& aut
 }
 
 /**********************************************************/
-void get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths)
+void get_auth_consortium(char* cons, CRef<CAuth_list>& auths)
 {
     char*    p;
     char*    q;
@@ -313,11 +314,11 @@ void get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths)
         if(p != NULL)
             *p = '\0';
 
-        CRef<objects::CAuthor> author(new objects::CAuthor);
+        CRef<CAuthor> author(new CAuthor);
         author->SetName().SetConsortium(q);
 
         if (auths.Empty())
-            auths.Reset(new objects::CAuth_list);
+            auths.Reset(new CAuth_list);
         auths->SetNames().SetStd().push_front(author);
 
         if(p == NULL)
@@ -534,9 +535,9 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
  *      Gets only year and return NCBI_DatePtr.
  *
  **********************************************************/
-CRef<objects::CDate> get_date(const Char* year)
+CRef<CDate> get_date(const Char* year)
 {
-    CRef<objects::CDate> ret;
+    CRef<CDate> ret;
 
     if(year == NULL || *year == '\0')
     {
@@ -577,16 +578,16 @@ CRef<objects::CDate> get_date(const Char* year)
                   "Reference's year is too far in future: \"%s\"", year_str.c_str());
     }
 
-    ret.Reset(new objects::CDate);
+    ret.Reset(new CDate);
     ret->SetStd().SetYear(i);
 
     return ret;
 }
 
 /**********************************************************/
-CRef<objects::CCit_gen> get_error(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title)
+CRef<CCit_gen> get_error(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title)
 {
-    CRef<objects::CCit_gen> cit_gen(new objects::CCit_gen);
+    CRef<CCit_gen> cit_gen(new CCit_gen);
 
     char*    s;
     bool       zero_year = false;
@@ -613,7 +614,7 @@ CRef<objects::CCit_gen> get_error(char* bptr, CRef<objects::CAuth_list>& auth_li
 
     if(zero_year)
     {
-        CRef<objects::CTitle::C_E> journal_title(new objects::CTitle::C_E);
+        CRef<CTitle::C_E> journal_title(new CTitle::C_E);
         if(StringNCmp(bptr, "(re)", 4) == 0)
             journal_title->SetName(NStr::Sanitize(bptr));
         else

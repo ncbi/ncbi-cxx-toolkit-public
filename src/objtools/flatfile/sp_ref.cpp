@@ -71,6 +71,7 @@
 #define THIS_FILE "sp_ref.cpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 typedef struct parser_ref_block {
     Int4        refnum;                 /* REFERENCE for GenBank, RN for Embl
@@ -80,7 +81,7 @@ typedef struct parser_ref_block {
     char*     doi;
     char*     agricola;
 
-    CRef<objects::CAuth_list> authors;  /* a linklist of the author's name,
+    CRef<CAuth_list> authors;  /* a linklist of the author's name,
                                                        AUTHORS for GenBank, RA for Embl
                                                        and Swiss-Prot */
     char*     title;                  /* TITLE for GenBank */
@@ -586,9 +587,9 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 }
 
 /**********************************************************/
-static CRef<objects::CDate> get_s_date(const Char* str, bool string)
+static CRef<CDate> get_s_date(const Char* str, bool string)
 {
-    CRef<objects::CDate> ret;
+    CRef<CDate> ret;
 
     const Char* s;
     Int2              year;
@@ -602,7 +603,7 @@ static CRef<objects::CDate> get_s_date(const Char* str, bool string)
     if(*s == '\0')
         return ret;
 
-    ret.Reset(new objects::CDate);
+    ret.Reset(new CDate);
     if (string)
         ret->SetStr(std::string(str, s));
     else
@@ -629,7 +630,7 @@ static CRef<objects::CDate> get_s_date(const Char* str, bool string)
         year = NStr::StringToInt(str + 4, NStr::fAllowTrailingSymbols);
 
         CTime time(CTime::eCurrent);
-        objects::CDate_std now(time);
+        CDate_std now(time);
 
         int cur_year = now.GetYear();
 
@@ -646,12 +647,12 @@ static CRef<objects::CDate> get_s_date(const Char* str, bool string)
 }
 
 /**********************************************************/
-static void SetCitTitle(objects::CTitle& title, const Char* title_str)
+static void SetCitTitle(CTitle& title, const Char* title_str)
 {
     if (title_str == NULL)
         return;
 
-    CRef<objects::CTitle::C_E> new_title(new objects::CTitle::C_E);
+    CRef<CTitle::C_E> new_title(new CTitle::C_E);
     new_title->SetName(title_str);
     title.Set().push_back(new_title);
 }
@@ -663,7 +664,7 @@ static void SetCitTitle(objects::CTitle& title, const Char* title_str)
  *      For swiss-prot only.
  *
  **********************************************************/
-static bool GetImprintPtr(ParRefBlkPtr prbp, objects::CImprint& imp)
+static bool GetImprintPtr(ParRefBlkPtr prbp, CImprint& imp)
 {
     if (prbp->year == NULL)
         return false;
@@ -673,7 +674,7 @@ static bool GetImprintPtr(ParRefBlkPtr prbp, objects::CImprint& imp)
     if (!prbp->vol.empty())
     {
         if (prbp->vol[0] == '0')
-            imp.SetPrepub(objects::CImprint::ePrepub_in_press);
+            imp.SetPrepub(CImprint::ePrepub_in_press);
         else
             imp.SetVolume(prbp->vol);
     }
@@ -681,7 +682,7 @@ static bool GetImprintPtr(ParRefBlkPtr prbp, objects::CImprint& imp)
     if (!prbp->pages.empty())
     {
         if (prbp->pages[0] == '0')
-            imp.SetPrepub(objects::CImprint::ePrepub_in_press);
+            imp.SetPrepub(CImprint::ePrepub_in_press);
         else
             imp.SetPages(prbp->pages);
     }
@@ -695,7 +696,7 @@ static bool GetImprintPtr(ParRefBlkPtr prbp, objects::CImprint& imp)
  *      Only for swiss-prot.
  *
  **********************************************************/
-static bool GetCitSubmit(ParRefBlkPtr prbp, objects::CCit_sub& sub)
+static bool GetCitSubmit(ParRefBlkPtr prbp, CCit_sub& sub)
 {
     const Char* bptr;
     const Char* s;
@@ -707,7 +708,7 @@ static bool GetCitSubmit(ParRefBlkPtr prbp, objects::CCit_sub& sub)
     for(s = bptr; *s != '(' &&  *s != '\0';)
         s++;
 
-    CRef<objects::CDate> date;
+    CRef<CDate> date;
     if (NStr::Equal(s + 1, 0, 3, "XXX"))
     {
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate, "%s", s);
@@ -736,13 +737,13 @@ static bool GetCitSubmit(ParRefBlkPtr prbp, objects::CCit_sub& sub)
 #endif
 
     sub.SetImp().SetPub().SetStr(NStr::Sanitize(s + 1));
-    sub.SetMedium(objects::CCit_sub::eMedium_other);
+    sub.SetMedium(CCit_sub::eMedium_other);
 
     return true;
 }
 
 /**********************************************************/
-static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
+static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
 {
     const Char*  s;
     const Char*  vol;
@@ -809,7 +810,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
             break;
     }
     
-    CRef<objects::CAuth_list> authors;
+    CRef<CAuth_list> authors;
     get_auth_from_toks(here->next, SP_REF, authors);
     if (authors.Empty() || tit == NULL)
     {
@@ -817,7 +818,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
         return false;
     }
 
-    objects::CCit_book& book = article.SetFrom().SetBook();
+    CCit_book& book = article.SetFrom().SetBook();
 
     SetCitTitle(book.SetTitle(), tit);
     book.SetAuthors(*authors);
@@ -852,7 +853,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
     for (; isdigit(*year) != 0;)
         year--;
 
-    CRef<objects::CDate> date = get_date(year + 1);
+    CRef<CDate> date = get_date(year + 1);
     if (date.NotEmpty())
         book.SetImp().SetDate(*date);
     if(*year == '(')
@@ -904,7 +905,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, objects::CCit_art& article)
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitBook(ParRefBlkPtr prbp, objects::CCit_art& article)
+static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
 {
     char*      publisher;
     char*      year;
@@ -929,7 +930,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, objects::CCit_art& article)
 
     ptr = &bptr[0] + eds_pos;
     *ptr = '\0';
-    CRef<objects::CAuth_list> auth;
+    CRef<CAuth_list> auth;
     get_auth(&bptr[0], SP_REF, NULL, auth);
     *ptr = '(';
     if(auth.Empty())
@@ -1067,8 +1068,8 @@ static bool GetCitBook(ParRefBlkPtr prbp, objects::CCit_art& article)
     year = StringSave(q);
     *p = ch;
     
-    objects::CCit_book& book = article.SetFrom().SetBook();
-    objects::CImprint& imp = book.SetImp();
+    CCit_book& book = article.SetFrom().SetBook();
+    CImprint& imp = book.SetImp();
 
     imp.SetPub().SetStr(publisher);
     if(volume != NULL)
@@ -1098,7 +1099,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, objects::CCit_art& article)
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, objects::CCit_pat& pat)
+static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pat)
 {
     char*    num;
     char*    p;
@@ -1155,7 +1156,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, objects::CCi
         return(false);
     }
 
-    CRef<objects::CDate_std> std_date = get_full_date(q, true, source);
+    CRef<CDate_std> std_date = get_full_date(q, true, source);
     if(!std_date || std_date.Empty())
     {
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_Patent,
@@ -1192,7 +1193,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, objects::CCi
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitGen(ParRefBlkPtr prbp, objects::CCit_gen& cit_gen)
+static bool GetCitGen(ParRefBlkPtr prbp, CCit_gen& cit_gen)
 {
     bool is_set = false;
     if (!prbp->journal.empty())
@@ -1231,9 +1232,9 @@ static bool GetCitGen(ParRefBlkPtr prbp, objects::CCit_gen& cit_gen)
  *                                              10-28-93
  *
  **********************************************************/
-static bool GetCitLetThesis(ParRefBlkPtr prbp, objects::CCit_let& cit_let)
+static bool GetCitLetThesis(ParRefBlkPtr prbp, CCit_let& cit_let)
 {
-    objects::CCit_book& book = cit_let.SetCit();
+    CCit_book& book = cit_let.SetCit();
 
     if (prbp->title != NULL)
         SetCitTitle(book.SetTitle(), prbp->title);
@@ -1244,7 +1245,7 @@ static bool GetCitLetThesis(ParRefBlkPtr prbp, objects::CCit_let& cit_let)
     if (prbp->authors.NotEmpty())
         book.SetAuthors(*prbp->authors);
 
-    cit_let.SetType(objects::CCit_let::eType_thesis);
+    cit_let.SetType(CCit_let::eType_thesis);
 
     return true;
 }
@@ -1259,7 +1260,7 @@ static bool GetCitLetThesis(ParRefBlkPtr prbp, objects::CCit_let& cit_let)
  *                                              10-29-93
  *
  **********************************************************/
-static bool GetCitArticle(ParRefBlkPtr prbp, objects::CCit_art& article)
+static bool GetCitArticle(ParRefBlkPtr prbp, CCit_art& article)
 {
     if (prbp->title != NULL && prbp->title[0] != '\0')
         SetCitTitle(article.SetTitle(), prbp->title);
@@ -1267,20 +1268,20 @@ static bool GetCitArticle(ParRefBlkPtr prbp, objects::CCit_art& article)
     if (prbp->authors.NotEmpty())
         article.SetAuthors(*prbp->authors);
 
-    objects::CCit_jour& journal = article.SetFrom().SetJournal();
+    CCit_jour& journal = article.SetFrom().SetJournal();
     if (!GetImprintPtr(prbp, journal.SetImp()))
         journal.ResetImp();
 
     if (!prbp->journal.empty())
     {
-        CRef<objects::CTitle::C_E> title(new objects::CTitle::C_E);
+        CRef<CTitle::C_E> title(new CTitle::C_E);
         title->SetJta(prbp->journal);
         journal.SetTitle().Set().push_back(title);
     }
 
     if(prbp->agricola != NULL)
     {
-        CRef<objects::CArticleId> id(new objects::CArticleId);
+        CRef<CArticleId> id(new CArticleId);
 
         id->SetOther().SetDb("AGRICOLA");
         id->SetOther().SetTag().SetStr(prbp->agricola);
@@ -1290,7 +1291,7 @@ static bool GetCitArticle(ParRefBlkPtr prbp, objects::CCit_art& article)
 
     if(prbp->doi != NULL)
     {
-        CRef<objects::CArticleId> id(new objects::CArticleId);
+        CRef<CArticleId> id(new CArticleId);
         id->SetDoi().Set(prbp->doi);
 
         article.SetIds().Set().push_back(id);
@@ -1323,7 +1324,7 @@ static void FreeParRefBlkPtr(ParRefBlkPtr prbp)
 }
 
 /**********************************************************/
-static void DisrootImprint(objects::CCit_sub& sub)
+static void DisrootImprint(CCit_sub& sub)
 {
     if (!sub.IsSetImp())
         return;
@@ -1347,39 +1348,39 @@ static void DisrootImprint(objects::CCit_sub& sub)
  *      Assume prbp only contains one reference data.
  *
  **********************************************************/
-static CRef<objects::CPubdesc> GetPubRef(ParRefBlkPtr prbp, Parser::ESource source)
+static CRef<CPubdesc> GetPubRef(ParRefBlkPtr prbp, Parser::ESource source)
 {
-    CRef<objects::CPubdesc> ret;
+    CRef<CPubdesc> ret;
 
     const Char *msg;
 
     if(prbp == NULL)
         return ret;
 
-    ret.Reset(new objects::CPubdesc);
+    ret.Reset(new CPubdesc);
     if(prbp->refnum > 0)
     {
-        CRef<objects::CPub> pub(new objects::CPub);
+        CRef<CPub> pub(new CPub);
         pub->SetGen().SetSerial_number(prbp->refnum);
         ret->SetPub().Set().push_back(pub);
     }
 
     if(prbp->muid > 0)
     {
-        CRef<objects::CPub> pub(new objects::CPub);
+        CRef<CPub> pub(new CPub);
         pub->SetMuid(ENTREZ_ID_FROM(int, prbp->muid));
         ret->SetPub().Set().push_back(pub);
     }
 
     if(prbp->pmid > 0)
     {
-        CRef<objects::CPub> pub(new objects::CPub);
+        CRef<CPub> pub(new CPub);
         pub->SetPmid().Set(ENTREZ_ID_FROM(int, prbp->pmid));
         ret->SetPub().Set().push_back(pub);
     }
 
     msg = NULL;
-    CRef<objects::CPub> pub(new objects::CPub);
+    CRef<CPub> pub(new CPub);
     bool is_set = false;
 
     if (prbp->reftype == ParFlat_ReftypeNoParse)
@@ -1444,14 +1445,14 @@ static CRef<objects::CPubdesc> GetPubRef(ParRefBlkPtr prbp, Parser::ESource sour
 }
 
 /**********************************************************/
-CRef<objects::CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
+CRef<CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 {
     ParRefBlkPtr prbp = SprotRefString(pp, dbp, col_data);
 
     if(prbp->title == NULL)
         prbp->title = StringSave("");
 
-    CRef<objects::CPubdesc> desc = GetPubRef(prbp, pp->source);;
+    CRef<CPubdesc> desc = GetPubRef(prbp, pp->source);;
     FreeParRefBlkPtr(prbp);
 
     return desc;

@@ -85,7 +85,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 typedef struct _seq_loc_ids {
-    objects::CSeq_loc* badslp;
+    CSeq_loc* badslp;
     const Char*   wgsacc;
     const Char*   wgscont;
     const Char*   wgsscaf;
@@ -205,7 +205,7 @@ bool no_date(Parser::EFormat format, const TSeqdescList& descrs)
  *      If no reference return TRUE.
  *
  **********************************************************/
-bool no_reference(const objects::CBioseq& bioseq)
+bool no_reference(const CBioseq& bioseq)
 {
     ITERATE(TSeqdescList, desc, bioseq.GetDescr().Get())
     {
@@ -213,23 +213,23 @@ bool no_reference(const objects::CBioseq& bioseq)
             return false;
     }
 
-    ITERATE(objects::CBioseq::TAnnot, annot, bioseq.GetAnnot())
+    ITERATE(CBioseq::TAnnot, annot, bioseq.GetAnnot())
     {
         if (!(*annot)->IsFtable())
             continue;
 
-        ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
+        ITERATE(CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
         {
             if ((*feat)->IsSetData() && (*feat)->GetData().IsPub())
                 return false;
         }
 
-        ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
+        ITERATE(CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
         {
             if (!(*feat)->IsSetData() || !(*feat)->GetData().IsImp())
                 continue;
 
-            const objects::CImp_feat& imp = (*feat)->GetData().GetImp();
+            const CImp_feat& imp = (*feat)->GetData().GetImp();
             if (imp.GetKey() == "Site-ref")
             {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_Illegalreference,
@@ -313,12 +313,12 @@ void err_install(IndexblkPtr ibp, bool accver)
 }
 
 /**********************************************************/
-static void CreateSeqGap(objects::CSeq_literal& seq_lit, GapFeatsPtr gfp)
+static void CreateSeqGap(CSeq_literal& seq_lit, GapFeatsPtr gfp)
 {
     if (gfp == nullptr)
         return;
 
-    objects::CSeq_gap& sgap = seq_lit.SetSeq_data().SetGap();
+    CSeq_gap& sgap = seq_lit.SetSeq_data().SetGap();
     sgap.SetType(gfp->asn_gap_type);
 
     if (!gfp->asn_linkage_evidence.empty())
@@ -334,14 +334,14 @@ static void CreateSeqGap(objects::CSeq_literal& seq_lit, GapFeatsPtr gfp)
 }
 
 /**********************************************************/
-void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
+void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
 {
     if (!bioseq.GetInst().IsSetExt() || !bioseq.GetInst().GetExt().IsDelta() ||
        gfp == NULL)
         return;
 
-    objects::CDelta_ext::Tdata& deltas = bioseq.SetInst().SetExt().SetDelta();
-    objects::CDelta_ext::Tdata::iterator delta = deltas.begin();
+    CDelta_ext::Tdata& deltas = bioseq.SetInst().SetExt().SetDelta();
+    CDelta_ext::Tdata::iterator delta = deltas.begin();
     for (; delta != deltas.end(); ++delta)
     {
         if (gfp == NULL)
@@ -350,7 +350,7 @@ void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned cha
         if (!(*delta)->IsLiteral())            /* not Seq-lit */
             continue;
 
-        objects::CSeq_literal& literal = (*delta)->SetLiteral();
+        CSeq_literal& literal = (*delta)->SetLiteral();
         if (literal.GetLength() != static_cast<Uint4>(gfp->to - gfp->from + 1))
         {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch,
@@ -393,7 +393,7 @@ void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned cha
 }
 
 /**********************************************************/
-void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
+void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
 {
     GapFeatsPtr  tgfp;
 
@@ -476,13 +476,13 @@ void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
     if (*drop != 0)
         return;
 
-    objects::CDelta_ext::Tdata deltas;
+    CDelta_ext::Tdata deltas;
         
     for (prevto = 0, tgfp = gfp;; tgfp = tgfp->next)
     {
         Int4 len = 0;
 
-        CRef<objects::CDelta_seq> delta(new objects::CDelta_seq);
+        CRef<CDelta_seq> delta(new CDelta_seq);
         if (tgfp->from - prevto - 1 > 0)
         {
             len = tgfp->from - prevto - 1;
@@ -491,7 +491,7 @@ void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
 
             deltas.push_back(delta);
 
-            delta.Reset(new objects::CDelta_seq);
+            delta.Reset(new CDelta_seq);
         }
 
         len = tgfp->to - tgfp->from + 1;
@@ -517,7 +517,7 @@ void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
         {
             if (bioseq.GetLength() - prevto > 0)
             {
-                delta.Reset(new objects::CDelta_seq);
+                delta.Reset(new CDelta_seq);
 
                 len = bioseq.GetLength() - prevto;
                 delta->SetLiteral().SetLength(len);
@@ -532,13 +532,13 @@ void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
     if (!deltas.empty())
     {
         bioseq.SetInst().SetExt().SetDelta().Set().swap(deltas);
-        bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+        bioseq.SetInst().SetRepr(CSeq_inst::eRepr_delta);
         bioseq.SetInst().ResetSeq_data();
     }
 }
 
 /**********************************************************/
-void SeqToDelta(objects::CBioseq& bioseq, Int2 tech)
+void SeqToDelta(CBioseq& bioseq, Int2 tech)
 {
     char*  p;
     char*  q;
@@ -560,7 +560,7 @@ void SeqToDelta(objects::CBioseq& bioseq, Int2 tech)
     p = &buf[0];
     gotcha = 0;
 
-    objects::CDelta_ext::Tdata deltas;
+    CDelta_ext::Tdata deltas;
 
     for (q = p; *p != '\0';)
     {
@@ -579,7 +579,7 @@ void SeqToDelta(objects::CBioseq& bioseq, Int2 tech)
             continue;
         }
 
-        CRef<objects::CDelta_seq> delta(new objects::CDelta_seq);
+        CRef<CDelta_seq> delta(new CDelta_seq);
         gotcha = 2;
 
         if(r != q)
@@ -592,7 +592,7 @@ void SeqToDelta(objects::CBioseq& bioseq, Int2 tech)
 
             deltas.push_back(delta);
 
-            delta.Reset(new objects::CDelta_seq);
+            delta.Reset(new CDelta_seq);
 
             *r = 'N';
         }
@@ -611,7 +611,7 @@ void SeqToDelta(objects::CBioseq& bioseq, Int2 tech)
     {
         j = (Int4) (p - q);
 
-        CRef<objects::CDelta_seq> delta(new objects::CDelta_seq);
+        CRef<CDelta_seq> delta(new CDelta_seq);
         delta->SetLiteral().SetLength(j);
         delta->SetLiteral().SetSeq_data().SetIupacna().Set(std::string(q, p));
 
@@ -621,11 +621,11 @@ void SeqToDelta(objects::CBioseq& bioseq, Int2 tech)
     if (deltas.size() > 1)
     {
         bioseq.SetInst().SetExt().SetDelta().Set().swap(deltas);
-        bioseq.SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+        bioseq.SetInst().SetRepr(CSeq_inst::eRepr_delta);
         bioseq.SetInst().ResetSeq_data();
     }
 
-    if (bioseq.GetInst().GetRepr() != objects::CSeq_inst::eRepr_delta && tech == 1)
+    if (bioseq.GetInst().GetRepr() != CSeq_inst::eRepr_delta && tech == 1)
     {
         ErrPostEx(SEV_WARNING, ERR_SEQUENCE_HTGWithoutGaps,
                   "This Phase 1 HTG sequence has no runs of 100 "
@@ -634,7 +634,7 @@ void SeqToDelta(objects::CBioseq& bioseq, Int2 tech)
                   "and this record should not be Phase 1.");
     }
 
-    if (bioseq.GetInst().GetRepr() == objects::CSeq_inst::eRepr_delta)
+    if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta)
     {
         if(tech == 4)                   /* Phase 0 */
             ErrPostEx(SEV_WARNING, ERR_SEQUENCE_HTGPhaseZeroHasGap,
@@ -652,7 +652,7 @@ void SeqToDelta(objects::CBioseq& bioseq, Int2 tech)
 }
 
 /**********************************************************/
-static bool fta_ranges_to_hist(const objects::CGB_block::TExtra_accessions& extra_accs)
+static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
 {
     std::string ppacc1;
     std::string ppacc2;
@@ -671,7 +671,7 @@ static bool fta_ranges_to_hist(const objects::CGB_block::TExtra_accessions& extr
     if(extra_accs.size() != 2)
         return true;
 
-    objects::CGB_block::TExtra_accessions::const_iterator it = extra_accs.begin();
+    CGB_block::TExtra_accessions::const_iterator it = extra_accs.begin();
 
     ppacc1 = *it;
     ++it;
@@ -846,7 +846,7 @@ static int sGetPrefixLength(const CTempString& accession)
 
 
 /**********************************************************/
-void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source,
+void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& extra_accs, Parser::ESource source,
                   Int4 acctype, bool pricon, char* acc)
 {
     IndexblkPtr  ibp;
@@ -861,7 +861,7 @@ void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TE
     if (!fta_ranges_to_hist(extra_accs))
         return;
 
-    objects::CGB_block::TExtra_accessions hist;
+    CGB_block::TExtra_accessions hist;
     UnwrapAccessionRange(extra_accs, hist);
     if (hist.empty())
         return;
@@ -956,7 +956,7 @@ bool fta_strings_same(const char* s1, const char* s2)
 }
 
 /**********************************************************/
-bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& mol_info)
+bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, CMolInfo& mol_info)
 {
     bool deldiv = false;
 
@@ -975,7 +975,7 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& 
             else
             {
                 ibp->htg = 4;
-                mol_info.SetTech(objects::CMolInfo::eTech_htgs_0);
+                mol_info.SetTech(CMolInfo::eTech_htgs_0);
             }
             deldiv = true;
         }
@@ -990,7 +990,7 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& 
             else
             {
                 ibp->htg = 1;
-                mol_info.SetTech(objects::CMolInfo::eTech_htgs_1);
+                mol_info.SetTech(CMolInfo::eTech_htgs_1);
             }
             deldiv = true;
         }
@@ -1005,7 +1005,7 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& 
             else
             {
                 ibp->htg = 2;
-                mol_info.SetTech(objects::CMolInfo::eTech_htgs_2);
+                mol_info.SetTech(CMolInfo::eTech_htgs_2);
             }
             deldiv = true;
         }
@@ -1020,7 +1020,7 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& 
             else
             {
                 ibp->htg = 3;
-                mol_info.SetTech(objects::CMolInfo::eTech_htgs_3);
+                mol_info.SetTech(CMolInfo::eTech_htgs_3);
             }
             deldiv = true;
         }
@@ -1029,7 +1029,7 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& 
             if(ibp->htg == 0)
             {
                 ibp->htg = 5;
-                mol_info.SetTech(objects::CMolInfo::eTech_htgs_3);
+                mol_info.SetTech(CMolInfo::eTech_htgs_3);
             }
             deldiv = true;
         }
@@ -1216,7 +1216,7 @@ bool fta_number_is_huge(const Char* s)
 }
 
 /**********************************************************/
-bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum,
+bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum,
                              Int2 vernum, size_t len, Int2 col_data, bool tpa)
 {
     FTATpaBlockPtr ftbp;
@@ -1363,9 +1363,9 @@ bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum
         else
         {
             tftbp->sicho = GetNucAccOwner(tftbp->accession, false);
-            if ((tftbp->sicho != objects::CSeq_id::e_Genbank && tftbp->sicho != objects::CSeq_id::e_Embl &&
-                tftbp->sicho != objects::CSeq_id::e_Ddbj &&
-                (tftbp->sicho != objects::CSeq_id::e_Tpg || tpa == false)))
+            if ((tftbp->sicho != CSeq_id::e_Genbank && tftbp->sicho != CSeq_id::e_Embl &&
+                tftbp->sicho != CSeq_id::e_Ddbj &&
+                (tftbp->sicho != CSeq_id::e_Tpg || tpa == false)))
             {
                 bad_accession = tftbp->accession;
                 break;
@@ -1473,25 +1473,25 @@ bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum
 
     fta_check_tpa_tsa_coverage(ftbp, bioseq.GetLength(), tpa);
 
-    objects::CSeq_hist::TAssembly& assembly = bioseq.SetInst().SetHist().SetAssembly();
+    CSeq_hist::TAssembly& assembly = bioseq.SetInst().SetHist().SetAssembly();
     if (!assembly.empty())
         assembly.clear();
 
-    CRef<objects::CSeq_align> root_align(new objects::CSeq_align);
+    CRef<CSeq_align> root_align(new CSeq_align);
 
-    root_align->SetType(objects::CSeq_align::eType_not_set);
-    objects::CSeq_align_set& align_set = root_align->SetSegs().SetDisc();
+    root_align->SetType(CSeq_align::eType_not_set);
+    CSeq_align_set& align_set = root_align->SetSegs().SetDisc();
 
     for(; tftbp != NULL; tftbp = tftbp->next)
     {
         len1 = tftbp->to1 - tftbp->from1 + 1;
         len2 = tftbp->to2 - tftbp->from2 + 1;
 
-        CRef<objects::CSeq_align> align(new objects::CSeq_align);
-        align->SetType(objects::CSeq_align::eType_partial);
+        CRef<CSeq_align> align(new CSeq_align);
+        align->SetType(CSeq_align::eType_partial);
         align->SetDim(2);
 
-        objects::CSeq_align::C_Segs::TDenseg& seg = align->SetSegs().SetDenseg();
+        CSeq_align::C_Segs::TDenseg& seg = align->SetSegs().SetDenseg();
 
         seg.SetDim(2);
         seg.SetNumseg((len1 == len2) ? 1 : 2);
@@ -1526,30 +1526,30 @@ bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum
             seg.SetLens().push_back(len1 - len2);
         }
 
-        seg.SetStrands().push_back(objects::eNa_strand_plus);
-        seg.SetStrands().push_back(static_cast<objects::ENa_strand>(tftbp->strand));
+        seg.SetStrands().push_back(eNa_strand_plus);
+        seg.SetStrands().push_back(static_cast<ENa_strand>(tftbp->strand));
 
         if (len1 != len2)
         {
-            seg.SetStrands().push_back(objects::eNa_strand_plus);
-            seg.SetStrands().push_back(static_cast<objects::ENa_strand>(tftbp->strand));
+            seg.SetStrands().push_back(eNa_strand_plus);
+            seg.SetStrands().push_back(static_cast<ENa_strand>(tftbp->strand));
         }
 
-        CRef<objects::CTextseq_id> text_id(new objects::CTextseq_id);
+        CRef<CTextseq_id> text_id(new CTextseq_id);
         text_id->SetAccession(acnum);
 
         if(vernum > 0)
             text_id->SetVersion(vernum);
 
-        CRef<objects::CSeq_id> id(new objects::CSeq_id),
-                                           aux_id;
+        CRef<CSeq_id> id(new CSeq_id),
+            aux_id;
         SetTextId(choice, *id, *text_id);
         seg.SetIds().push_back(id);
 
         if(StringNICmp(tftbp->accession, "ti", 2) == 0)
         {
-            CRef<objects::CSeq_id> gen_id(new objects::CSeq_id);
-            objects::CDbtag& tag = gen_id->SetGeneral();
+            CRef<CSeq_id> gen_id(new CSeq_id);
+            CDbtag& tag = gen_id->SetGeneral();
 
             for(r = tftbp->accession + 2; *r == '0';)
                 r++;
@@ -1563,13 +1563,13 @@ bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum
         }
         else
         {
-            CRef<objects::CTextseq_id> otext_id(new objects::CTextseq_id);
+            CRef<CTextseq_id> otext_id(new CTextseq_id);
             otext_id->SetAccession(tftbp->accession);
 
             if (tftbp->version > 0)
                 otext_id->SetVersion(tftbp->version);
 
-            aux_id.Reset(new objects::CSeq_id);
+            aux_id.Reset(new CSeq_id);
             SetTextId(tftbp->sicho, *aux_id, *otext_id);
         }
 
@@ -1602,15 +1602,15 @@ char* StringRStr(char* where, const char *what)
 }
 
 /**********************************************************/
-CRef<objects::CSeq_loc> fta_get_seqloc_int_whole(objects::CSeq_id& seq_id, size_t len)
+CRef<CSeq_loc> fta_get_seqloc_int_whole(CSeq_id& seq_id, size_t len)
 {
-    CRef<objects::CSeq_loc> ret;
+    CRef<CSeq_loc> ret;
 
     if (len < 1)
         return ret;
 
-    ret.Reset(new objects::CSeq_loc);
-    objects::CSeq_interval& interval = ret->SetInt();
+    ret.Reset(new CSeq_loc);
+    CSeq_interval& interval = ret->SetInt();
 
     interval.SetFrom(0);
     interval.SetTo(static_cast<TSeqPos>(len) - 1);
@@ -1848,7 +1848,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
         return;
     }
 
-    objects::CUser_object* user_obj_ptr;
+    CUser_object* user_obj_ptr;
     bool got = false;
 
     NON_CONST_ITERATE(TSeqdescList, descr, descrs)
@@ -1858,7 +1858,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
 
         user_obj_ptr = &((*descr)->SetUser());
 
-        objects::CObject_id* obj_id = nullptr;
+        CObject_id* obj_id = nullptr;
         if (user_obj_ptr->IsSetType())
             obj_id = &(user_obj_ptr->SetType());
 
@@ -1869,7 +1869,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
         }
     }
         
-    CRef<objects::CUser_object> user_obj;
+    CRef<CUser_object> user_obj;
     if (newstyle)
     {
         for(i = 0, tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
@@ -1877,14 +1877,14 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
 
         if (!got)
         {
-            user_obj.Reset(new objects::CUser_object);
+            user_obj.Reset(new CUser_object);
             user_obj_ptr = user_obj.GetNCPointer();
 
-            objects::CObject_id& id = user_obj_ptr->SetType();
+            CObject_id& id = user_obj_ptr->SetType();
             id.SetStr("DBLink");
         }
 
-        CRef<objects::CUser_field> user_field(new objects::CUser_field);
+        CRef<CUser_field> user_field(new CUser_field);
         user_field->SetLabel().SetStr("BioProject");
         user_field->SetNum(i);
 
@@ -1897,22 +1897,22 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
     {
         got = false;
 
-        user_obj.Reset(new objects::CUser_object);
+        user_obj.Reset(new CUser_object);
         user_obj_ptr = user_obj.GetNCPointer();
 
-        objects::CObject_id& id = user_obj_ptr->SetType();
+        CObject_id& id = user_obj_ptr->SetType();
         id.SetStr("GenomeProjectsDB");
 
         for(tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
         {
 
-            CRef<objects::CUser_field> user_field(new objects::CUser_field);
+            CRef<CUser_field> user_field(new CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
             user_field->SetData().SetInt(atoi((char*)tvnp->data.ptrvalue));
             user_obj_ptr->SetData().push_back(user_field);
 
 
-            user_field.Reset(new objects::CUser_field);
+            user_field.Reset(new CUser_field);
             user_field->SetLabel().SetStr("ParentID");
             user_field->SetData().SetInt(0);
             user_obj_ptr->SetData().push_back(user_field);
@@ -1921,7 +1921,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
 
     if (!got)
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetUser(*user_obj_ptr);
         descrs.push_back(descr);
     }
@@ -2189,7 +2189,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
 /**********************************************************/
 void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
                                 size_t len, Parser::ESource source, unsigned char* drop,
-                                CRef<objects::CUser_object>& dbuop)
+                                CRef<CUser_object>& dbuop)
 {
     ValNodePtr    vnp;
     ValNodePtr    tvnp;
@@ -2212,8 +2212,8 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
         return;
     }
 
-    CRef<objects::CUser_object> user_obj;
-    CRef<objects::CUser_field> user_field;
+    CRef<CUser_object> user_obj;
+    CRef<CUser_field> user_field;
 
     for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
     {
@@ -2224,8 +2224,8 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
 
             if(StringCmp((char*) tvnp->data.ptrvalue, "Project:") == 0)
             {
-                user_obj.Reset(new objects::CUser_object);
-                objects::CObject_id& id = user_obj->SetType();
+                user_obj.Reset(new CUser_object);
+                CObject_id& id = user_obj->SetType();
 
                 id.SetStr("GenomeProjectsDB");
             }
@@ -2250,13 +2250,13 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
             continue;
         }
 
-        user_field.Reset(new objects::CUser_field);
+        user_field.Reset(new CUser_field);
 
         user_field->SetLabel().SetStr("ProjectID");
         user_field->SetData().SetInt(atoi((char*)tvnp->data.ptrvalue));
         user_obj->SetData().push_back(user_field);
 
-        user_field.Reset(new objects::CUser_field);
+        user_field.Reset(new CUser_field);
         user_field->SetLabel().SetStr("ParentID");
         user_field->SetData().SetInt(0);
 
@@ -2270,7 +2270,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
 
     if (user_obj.NotEmpty())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetUser(*user_obj);
         descrs.push_back(descr);
     }
@@ -2293,7 +2293,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
 
             if (user_obj.Empty())
             {
-                user_obj.Reset(new objects::CUser_object);
+                user_obj.Reset(new CUser_object);
                 user_obj->SetType().SetStr("DBLink");
             }
 
@@ -2301,7 +2301,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
                 if(StringChr((char*) uvnp->data.ptrvalue, ':') != NULL)
                     break;
 
-            user_field.Reset(new objects::CUser_field);
+            user_field.Reset(new CUser_field);
 
             std::string lstr((char*)tvnp->data.ptrvalue);
             lstr = lstr.substr(0, lstr.size() - 1);
@@ -2323,7 +2323,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
 
     if (user_obj.NotEmpty())
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+        CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetUser(*user_obj);
         descrs.push_back(descr);
 
@@ -2332,27 +2332,27 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
 }
 
 /**********************************************************/
-Uint1 fta_check_con_for_wgs(objects::CBioseq& bioseq)
+Uint1 fta_check_con_for_wgs(CBioseq& bioseq)
 {
-    if (bioseq.GetInst().GetRepr() != objects::CSeq_inst::eRepr_delta || !bioseq.GetInst().IsSetExt() || !bioseq.GetInst().GetExt().IsDelta())
-        return objects::CMolInfo::eTech_unknown;
+    if (bioseq.GetInst().GetRepr() != CSeq_inst::eRepr_delta || !bioseq.GetInst().IsSetExt() || !bioseq.GetInst().GetExt().IsDelta())
+        return CMolInfo::eTech_unknown;
 
     bool good = false;
     bool finished = true;
 
-    ITERATE(objects::CDelta_ext::Tdata, delta, bioseq.GetInst().GetExt().GetDelta().Get())
+    ITERATE(CDelta_ext::Tdata, delta, bioseq.GetInst().GetExt().GetDelta().Get())
     {
         if (!(*delta)->IsLoc())
             continue;
 
-        const objects::CSeq_loc& locs = (*delta)->GetLoc();
-        objects::CSeq_loc_CI ci(locs);
+        const CSeq_loc& locs = (*delta)->GetLoc();
+        CSeq_loc_CI ci(locs);
 
         for (; ci; ++ci)
         {
-            const objects::CSeq_id* id = nullptr;
+            const CSeq_id* id = nullptr;
 
-            CConstRef<objects::CSeq_loc> loc = ci.GetRangeAsSeq_loc();
+            CConstRef<CSeq_loc> loc = ci.GetRangeAsSeq_loc();
             if (loc->IsEmpty() || loc->IsWhole() || loc->IsInt() || loc->IsPnt() || loc->IsPacked_pnt())
                 id = &ci.GetSeq_id();
             else
@@ -2366,7 +2366,7 @@ Uint1 fta_check_con_for_wgs(objects::CBioseq& bioseq)
                !id->IsTpg() && !id->IsTpe() && !id->IsTpd())
                 break;
 
-            const objects::CTextseq_id* text_id = id->GetTextseq_Id();
+            const CTextseq_id* text_id = id->GetTextseq_Id();
             if (text_id == nullptr || !text_id->IsSetAccession() ||
                text_id->GetAccession().empty() ||
                fta_if_wgs_acc(text_id->GetAccession().c_str()) != 1)
@@ -2382,13 +2382,13 @@ Uint1 fta_check_con_for_wgs(objects::CBioseq& bioseq)
     }
 
     if (good && finished)
-        return objects::CMolInfo::eTech_wgs;
+        return CMolInfo::eTech_wgs;
 
-    return objects::CMolInfo::eTech_unknown;
+    return CMolInfo::eTech_unknown;
 }
 
 /**********************************************************/
-static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, IndexblkPtr ibp,
+static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp,
                            char* location, char* name, SeqLocIdsPtr slip,
                            bool iscon, Parser::ESource source)
 {
@@ -2405,7 +2405,7 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
 
     if(name == NULL && id.IsGeneral())
     {
-        const objects::CDbtag& tag = id.GetGeneral();
+        const CDbtag& tag = id.GetGeneral();
         if (tag.GetDb() == "SeqLit" || tag.GetDb() == "UnkSeqLit")
             return;
     }
@@ -2436,7 +2436,7 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
         return;
     }
 
-    const objects::CTextseq_id* text_id = id.GetTextseq_Id();
+    const CTextseq_id* text_id = id.GetTextseq_Id();
     if (text_id == NULL || !text_id->IsSetAccession())
     {
         if(StringLen(location) > 50)
@@ -2490,7 +2490,7 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
     {
         if (accowner != id.Which())
         {
-            CRef<objects::CTextseq_id> new_text_id(new objects::CTextseq_id);
+            CRef<CTextseq_id> new_text_id(new CTextseq_id);
             new_text_id->Assign(*text_id);
             SetTextId(accowner, id, *new_text_id);
         }
@@ -2504,7 +2504,7 @@ static void fta_fix_seq_id(objects::CSeq_loc& loc, objects::CSeq_id& id, Indexbl
     }
     else if(source == Parser::ESource::USPTO)
     {
-        CRef<objects::CPatent_seq_id> pat_id = MakeUsptoPatSeqId((char *) accession);
+        CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId((char *) accession);
         id.SetPatent(*pat_id);
     }
     else
@@ -2631,7 +2631,7 @@ static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp,
             if (iscon && !(*loc)->GetPnt().IsSetFuzz())
             {
                 int point = (*loc)->GetPnt().GetPoint();
-                CRef<objects::CSeq_interval> interval(new objects::CSeq_interval);
+                CRef<CSeq_interval> interval(new CSeq_interval);
                 interval->SetFrom(point);
                 interval->SetTo(point);
 
@@ -2644,7 +2644,7 @@ static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp,
         }
         else if ((*loc)->IsPacked_int())
         {
-            NON_CONST_ITERATE(objects::CPacked_seqint::Tdata, interval, (*loc)->SetPacked_int().Set())
+            NON_CONST_ITERATE(CPacked_seqint::Tdata, interval, (*loc)->SetPacked_int().Set())
             {
                 fta_fix_seq_id(*(*loc), (*interval)->SetId(), ibp, location, name, slip, iscon, source);
             }
@@ -2899,7 +2899,7 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
 }
 
 /**********************************************************/
-static CRef<objects::CUser_object> fta_build_structured_comment(char* tag, char* buf)
+static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 {
     ValNodePtr    vnp;
     ValNodePtr    tvnp;
@@ -2907,7 +2907,7 @@ static CRef<objects::CUser_object> fta_build_structured_comment(char* tag, char*
     char*       p;
     char*       q;
 
-    CRef<objects::CUser_object> obj;
+    CRef<CUser_object> obj;
 
     if (tag == NULL || *tag == '\0' || buf == NULL || *buf == '\0')
         return obj;
@@ -2916,12 +2916,12 @@ static CRef<objects::CUser_object> fta_build_structured_comment(char* tag, char*
     if(vnp == NULL)
         return obj;
 
-    obj.Reset((new objects::CUser_object));
+    obj.Reset(new CUser_object);
 
-    objects::CObject_id& id = obj->SetType();
+    CObject_id& id = obj->SetType();
     id.SetStr("StructuredComment");
 
-    CRef<objects::CUser_field> field(new objects::CUser_field);
+    CRef<CUser_field> field(new CUser_field);
     field->SetLabel().SetStr("StructuredCommentPrefix");
 
     field->SetData().SetStr() = tag;
@@ -2948,7 +2948,7 @@ static CRef<objects::CUser_object> fta_build_structured_comment(char* tag, char*
         if(*p == '\0' || *q == '\0')
             continue;
 
-        field.Reset(new objects::CUser_field);
+        field.Reset(new CUser_field);
         field->SetLabel().SetStr(p);
         field->SetData().SetStr(q);
 
@@ -2961,7 +2961,7 @@ static CRef<objects::CUser_object> fta_build_structured_comment(char* tag, char*
         return obj;
     }
 
-    field.Reset(new objects::CUser_field);
+    field.Reset(new CUser_field);
     field->SetLabel().SetStr("StructuredCommentSuffix");
     field->SetData().SetStr() = tag;
     field->SetData().SetStr() += "-END##";
@@ -3089,7 +3089,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         buf = StringSave(p + 8);
         *q = '#';
 
-        CRef<objects::CUser_object> cur = fta_build_structured_comment(tag, buf);
+        CRef<CUser_object> cur = fta_build_structured_comment(tag, buf);
         MemFree(buf);
 
         if (cur.Empty())
@@ -3139,7 +3139,7 @@ char* GetQSFromFile(FILE* fd, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-void fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry)
+void fta_remove_cleanup_user_object(CSeq_entry& seq_entry)
 {
     TSeqdescList* descrs = nullptr;
     if (seq_entry.IsSeq())
@@ -3164,7 +3164,7 @@ void fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry)
             continue;
         }
 
-        const objects::CUser_object& user_obj = (*descr)->GetUser();
+        const CUser_object& user_obj = (*descr)->GetUser();
         if (!user_obj.IsSetType() || !user_obj.GetType().IsStr() ||
             user_obj.GetType().GetStr() != "NcbiCleanup")
         {
@@ -3178,7 +3178,7 @@ void fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry)
 }
 
 /**********************************************************/
-void fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq,
+void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
                                       bool is_tsa)
 {
     bool got_comment = false;
@@ -3189,7 +3189,7 @@ void fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq,
         if (!(*descr)->IsUser())
             continue;
 
-        const objects::CUser_object& user_obj = (*descr)->GetUser();
+        const CUser_object& user_obj = (*descr)->GetUser();
         if (!user_obj.IsSetType() || !user_obj.GetType().IsStr())
             continue;
 
@@ -3201,7 +3201,7 @@ void fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq,
             got_dblink = true;
         else if (user_type_str == "DBLink")
         {
-            ITERATE(objects::CUser_object::TData, field, user_obj.GetData())
+            ITERATE(CUser_object::TData, field, user_obj.GetData())
             {
                 if (!(*field)->IsSetLabel() || !(*field)->GetLabel().IsStr() ||
                     (*field)->GetLabel().GetStr() != "BioProject")
@@ -3233,12 +3233,12 @@ void fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq,
 }
 
 /**********************************************************/
-void fta_set_molinfo_completeness(objects::CBioseq& bioseq, IndexblkPtr ibp)
+void fta_set_molinfo_completeness(CBioseq& bioseq, IndexblkPtr ibp)
 {
     if (bioseq.GetInst().GetTopology() != 2 || (ibp != NULL && ibp->gaps != NULL))
         return;
 
-    objects::CMolInfo* mol_info = nullptr;
+    CMolInfo* mol_info = nullptr;
     NON_CONST_ITERATE(TSeqdescList, descr, bioseq.SetDescr().Set())
     {
         if ((*descr)->IsMolinfo())
@@ -3254,8 +3254,8 @@ void fta_set_molinfo_completeness(objects::CBioseq& bioseq, IndexblkPtr ibp)
     }
     else
     {
-        CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
-        objects::CMolInfo& mol = descr->SetMolinfo();
+        CRef<CSeqdesc> descr(new CSeqdesc);
+        CMolInfo& mol = descr->SetMolinfo();
         mol.SetCompleteness(1);
 
         bioseq.SetDescr().Set().push_back(descr);
@@ -3263,7 +3263,7 @@ void fta_set_molinfo_completeness(objects::CBioseq& bioseq, IndexblkPtr ibp)
 }
 
 /**********************************************************/
-void fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num)
+void fta_create_far_fetch_policy_user_object(CBioseq& bsp, Int4 num)
 {
     if (num < 1000)
         return;
@@ -3272,10 +3272,10 @@ void fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num)
               "An OnlyNearFeatures FeatureFetchPolicy User-object has been added to this record because it is constructed from %d components, which exceeds the threshold of 999 for User-object creation.",
               num);
 
-    CRef<objects::CSeqdesc> descr(new objects::CSeqdesc);
+    CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetUser().SetType().SetStr("FeatureFetchPolicy");
 
-    CRef<objects::CUser_field> field(new objects::CUser_field);
+    CRef<CUser_field> field(new CUser_field);
 
     field->SetLabel().SetStr("Policy");
     field->SetData().SetStr("OnlyNearFeatures");
@@ -3335,7 +3335,7 @@ void StripECO(char* str)
 }
 
 /**********************************************************/
-bool fta_dblink_has_sra(const CRef<objects::CUser_object>& uop)
+bool fta_dblink_has_sra(const CRef<CUser_object>& uop)
 {
     if (uop.Empty() || !uop->IsSetData() || !uop->IsSetType() ||
         !uop->GetType().IsStr() || uop->GetType().GetStr() != "DBLink")
@@ -3343,13 +3343,13 @@ bool fta_dblink_has_sra(const CRef<objects::CUser_object>& uop)
 
     bool got = false;
 
-    ITERATE(objects::CUser_object::TData, field, uop->GetData())
+    ITERATE(CUser_object::TData, field, uop->GetData())
     {
         if (!(*field)->IsSetData() || !(*field)->GetData().IsStrs() || !(*field)->IsSetNum() || (*field)->GetNum() < 1 ||
             !(*field)->IsSetLabel() || !(*field)->GetLabel().IsStr() || (*field)->GetLabel().GetStr() != "Sequence Read Archive")
             continue;
 
-        ITERATE(objects::CUser_field::C_Data::TStrs, str, (*field)->GetData().GetStrs())
+        ITERATE(CUser_field::C_Data::TStrs, str, (*field)->GetData().GetStrs())
         {
             if (str->size() > 2 &&
                 ((*str)[0] == 'D' || (*str)[0] == 'E' || (*str)[0] == 'S') && (*str)[1] == 'R' &&

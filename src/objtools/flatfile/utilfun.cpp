@@ -188,14 +188,14 @@ static std::string FTAitoa(Int4 m)
 }
 
 /**********************************************************/
-void UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& extra_accs, objects::CGB_block::TExtra_accessions& hist)
+void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_block::TExtra_accessions& hist)
 {
     Int4       num1;
     Int4       num2;
 
-    objects::CGB_block::TExtra_accessions ret;
+    CGB_block::TExtra_accessions ret;
 
-    ITERATE(objects::CGB_block::TExtra_accessions, acc, extra_accs)
+    ITERATE (CGB_block::TExtra_accessions, acc, extra_accs)
     {
         std::string str = *acc;
         if (str.empty())
@@ -984,20 +984,20 @@ char* SrchTheStr(char* bptr, char* eptr, const char *leadstr)
 }
 
 /**********************************************************/
-void CpSeqId(InfoBioseqPtr ibp, const objects::CSeq_id& id)
+void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
 {
-    const objects::CTextseq_id* text_id = id.GetTextseq_Id();
+    const CTextseq_id* text_id = id.GetTextseq_Id();
     if (text_id != nullptr)
     {
         if (text_id->IsSetName())
             ibp->mLocus = text_id->GetName();
 
-        CRef<objects::CSeq_id> new_id(new objects::CSeq_id);
+        CRef<CSeq_id> new_id(new CSeq_id);
         if (text_id->IsSetAccession())
         {
             ibp->mAccNum = text_id->GetAccession();
 
-            CRef<objects::CTextseq_id> new_text_id(new objects::CTextseq_id);
+            CRef<CTextseq_id> new_text_id(new CTextseq_id);
             new_text_id->SetAccession(text_id->GetAccession());
             if (text_id->IsSetVersion())
                 new_text_id->SetVersion(text_id->GetVersion());
@@ -1020,14 +1020,14 @@ void CpSeqId(InfoBioseqPtr ibp, const objects::CSeq_id& id)
 
 /**********************************************************
     *
-    *   CRef<objects::CDate_std> get_full_date(s, is_ref, source):
+    *   CRef<CDate_std> get_full_date(s, is_ref, source):
     *
-    *      Get year, month, day and return CRef<objects::CDate_std>.
+    *      Get year, month, day and return CRef<CDate_std>.
     *
     **********************************************************/
-CRef<objects::CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source)
+CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source)
 {
-    CRef<objects::CDate_std> date;
+    CRef<CDate_std> date;
 
     if (s == NULL || *s == '\0')
         return date;
@@ -1485,17 +1485,17 @@ void fta_remove_keywords(Uint1 tech, TKeywordList& kwds)
     if(kwds.empty())
         return;
 
-    if (tech == objects::CMolInfo::eTech_est)
+    if (tech == CMolInfo::eTech_est)
         b = ParFlat_EST_kw_array;
-    else if (tech == objects::CMolInfo::eTech_sts)
+    else if (tech == CMolInfo::eTech_sts)
         b = ParFlat_STS_kw_array;
-    else if (tech == objects::CMolInfo::eTech_survey)
+    else if (tech == CMolInfo::eTech_survey)
         b = ParFlat_GSS_kw_array;
-    else if (tech == objects::CMolInfo::eTech_htc)
+    else if (tech == CMolInfo::eTech_htc)
         b = ParFlat_HTC_kw_array;
-    else if (tech == objects::CMolInfo::eTech_fli_cdna)
+    else if (tech == CMolInfo::eTech_fli_cdna)
         b = ParFlat_FLI_kw_array;
-    else if (tech == objects::CMolInfo::eTech_wgs)
+    else if (tech == CMolInfo::eTech_wgs)
         b = ParFlat_WGS_kw_array;
     else
         return;
@@ -1687,7 +1687,7 @@ ValNodePtr ConstructValNodeInt(ValNodePtr head, Uint1 choice, Int4 data)
 }
 
 /**********************************************************/
-bool fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwds)
+bool fta_check_mga_keywords(CMolInfo& mol_info, const TKeywordList& kwds)
 {
     bool is_cage;
     bool is_sage;
@@ -1755,54 +1755,54 @@ void fta_StringCpy(char* dst, const char* src)
 }
 
 /**********************************************************/
-bool SetTextId(Uint1 seqtype, objects::CSeq_id& seqId, objects::CTextseq_id& textId)
+bool SetTextId(Uint1 seqtype, CSeq_id& seqId, CTextseq_id& textId)
 {
     bool wasSet = true;
 
     switch (seqtype)
     {
-    case objects::CSeq_id::e_Genbank:
+    case CSeq_id::e_Genbank:
         seqId.SetGenbank(textId);
         break;
-    case objects::CSeq_id::e_Embl:
+    case CSeq_id::e_Embl:
         seqId.SetEmbl(textId);
         break;
-    case objects::CSeq_id::e_Pir:
+    case CSeq_id::e_Pir:
         seqId.SetPir(textId);
         break;
-    case objects::CSeq_id::e_Swissprot:
+    case CSeq_id::e_Swissprot:
         seqId.SetSwissprot(textId);
         break;
-    case objects::CSeq_id::e_Other:
+    case CSeq_id::e_Other:
         seqId.SetOther(textId);
         break;
-    case objects::CSeq_id::e_Ddbj:
+    case CSeq_id::e_Ddbj:
         seqId.SetDdbj(textId);
         break;
-    case objects::CSeq_id::e_Prf:
+    case CSeq_id::e_Prf:
         seqId.SetPrf(textId);
         break;
-    case objects::CSeq_id::e_Pdb:
+    case CSeq_id::e_Pdb:
     {
         // TODO: test this branch
-        objects::CPDB_seq_id pdbId;
+        CPDB_seq_id pdbId;
         pdbId.SetChain_id(0);
         seqId.SetPdb(pdbId);
     }
     break;
-    case objects::CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpg:
         seqId.SetTpg(textId);
         break;
-    case objects::CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpe:
         seqId.SetTpe(textId);
         break;
-    case objects::CSeq_id::e_Tpd:
+    case CSeq_id::e_Tpd:
         seqId.SetTpd(textId);
         break;
-    case objects::CSeq_id::e_Gpipe:
+    case CSeq_id::e_Gpipe:
         seqId.SetGpipe(textId);
         break;
-    case objects::CSeq_id::e_Named_annot_track:
+    case CSeq_id::e_Named_annot_track:
         seqId.SetNamed_annot_track(textId);
         break;
 
