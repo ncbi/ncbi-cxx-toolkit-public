@@ -17220,9 +17220,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GapFeatureProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Error, "GapFeatureProblem",
+                               "Gap feature estimated_length 11 does not match 10 feature length"));
     gap->SetLocation().SetInt().SetFrom(12);
     gap->SetLocation().SetInt().SetTo(21);
-    expected_errors[1]->SetErrMsg("Gap feature estimated_length 11 does not match 10 feature length");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

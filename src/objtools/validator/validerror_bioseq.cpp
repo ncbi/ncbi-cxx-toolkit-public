@@ -3541,7 +3541,7 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
         for (CSeqMap_CI gap_it(bsh, sel); gap_it; ++gap_it) {
 
             TSeqPos gp_start = gap_it.GetPosition();
-            TSeqPos gp_end = gap_it.GetEndPosition();
+            TSeqPos gp_end = gap_it.GetEndPosition() - 1;
 
             gapPositions.push_back(gp_start);
             gapPositions.push_back(gp_end);
