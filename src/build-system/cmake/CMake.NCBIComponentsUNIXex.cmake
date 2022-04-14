@@ -396,6 +396,7 @@ NCBI_define_Xcomponent(NAME PYTHON LIB python3.8 python3 INCLUDE python3.8)
 
 #############################################################################
 # VDB
+if(NOT NCBI_COMPONENT_VDB_FOUND)
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
         LIBPATH_SUFFIX linux/debug/x86_64/lib INCPATH_SUFFIX interfaces)
@@ -413,6 +414,7 @@ if(NCBI_COMPONENT_VDB_FOUND)
     )
     set(HAVE_NCBI_VDB 1)
 endif()
+endif(NOT NCBI_COMPONENT_VDB_FOUND)
 
 ##############################################################################
 # wxWidgets

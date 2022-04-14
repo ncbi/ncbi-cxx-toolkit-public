@@ -316,6 +316,7 @@ NCBI_define_Xcomponent(NAME PYTHON LIB python${NCBI_ThirdParty_PYTHON_version} I
 
 #############################################################################
 # VDB
+if(NOT NCBI_COMPONENT_VDB_FOUND)
 NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
     LIBPATH_SUFFIX mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib INCPATH_SUFFIX interfaces)
 if(NCBI_COMPONENT_VDB_FOUND)
@@ -330,6 +331,7 @@ if(NCBI_COMPONENT_VDB_FOUND)
 #    set(NCBI_COMPONENT_VDB_BINPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
     set(HAVE_NCBI_VDB 1)
 endif()
+endif(NOT NCBI_COMPONENT_VDB_FOUND)
 
 #############################################################################
 # wxWidgets
