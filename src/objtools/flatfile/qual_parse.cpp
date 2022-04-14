@@ -274,11 +274,23 @@ void CQualParser::xQualValAppendLine(
     string& qualData)
 //  ----------------------------------------------------------------------------
 {
-    //if (qualKey == "protein_id"  &&  qualData.find("") != string::npos) {
-    //    cerr << "";
-    //}
-    // consult notes for RW-1600 for documentation on the below
+    // Consult notes for RW-1600 for documentation on the below.
+    // Or don't --- most of the below does not derive from written specs (no such
+    //  thing) but from observing what's happening out in the wild.
+    // As a primer: the main problem is to determine whether a line break is on a 
+    //  word  boundary or not. With lots of run-on chemical compound names 
+    //  poluting in particular the /note qualifiers that's a non-trivial problem.
+    //  It's particularly tricky if a word is too long for a line by just one or
+    //  two characters. or just fits into a line and the next token is just one 
+    //  or two characters.
+    //
 
+    //if (qualKey == "note"  &&  
+    //        qualData.find(
+    //        "Catalytic activity: Atrazine chlorohydrolases") != string::npos) {
+    //    cerr << ""; //breakpoint
+    //}
+    // 
     string lastDataChunkSeen = "";
     if (qualKey == mLastKeyForDataChunk) {
         lastDataChunkSeen = mLastDataChunkForKey;
@@ -317,17 +329,33 @@ void CQualParser::xQualValAppendLine(
         qualData += line;
         return;
     }
+
     auto lastSeenSize = lastDataChunkSeen.size();
-    if (lastSeenSize != mMaxChunkSize) {
-        qualData += ' ';
+    auto recentBlank = lastDataChunkSeen.find(' ');
+    if (lastSeenSize == mMaxChunkSize - 1  ||  lastSeenSize == mMaxChunkSize) {
+        if (recentBlank != string::npos) {
+            qualData += ' ';
+        }
+        else {
+            auto pendingBlank = line.find(' ');
+            if (lastSeenSize == mMaxChunkSize-1) {
+                if (pendingBlank >= 2) {
+                    qualData += ' ';
+                }
+                else if (pendingBlank == 1) {
+                    auto singleCharAllowed = string("+-").find(line[0]);
+                    if (singleCharAllowed != string::npos) {
+                        qualData += ' ';
+                    }
+                }
+            }
+        }
         qualData += line;
         return;
     }
-    auto recentBlank = lastDataChunkSeen.find(' ');
-    if (recentBlank != string::npos) {
-        qualData += ' ';
-    }
+    qualData += ' ';
     qualData += line;
+    return;
 }
 
 
