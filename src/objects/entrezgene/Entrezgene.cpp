@@ -62,7 +62,7 @@ CEntrezgene::~CEntrezgene(void)
 // always filled in, even if it is not present in the structured elements and
 // has to be derived.
 
-CRef<objects::CGene_nomenclature> CEntrezgene::GetNomenclature() const
+CRef<CGene_nomenclature> CEntrezgene::GetNomenclature() const
 {
     CRef<CGene_nomenclature> nomen(new CGene_nomenclature);
     nomen->SetStatus(CGene_nomenclature::eStatus_unknown);
@@ -205,6 +205,22 @@ string CEntrezgene::GetDescription() const
     }
 
     return desc;
+}
+
+// Try to find a root-level comment with the given heading.
+
+CRef<CGene_commentary> CEntrezgene::FindComment(const string& heading) const
+{
+    CRef<CGene_commentary> found_comment;
+
+    for ( const auto root_comment : GetComments() ) {
+        if (root_comment->IsSetHeading() && (root_comment->GetHeading() == heading)) {
+            found_comment = root_comment;
+            break;
+        }
+    }
+
+    return found_comment;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

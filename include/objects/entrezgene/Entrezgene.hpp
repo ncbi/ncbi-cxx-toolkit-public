@@ -70,6 +70,9 @@ public:
     // Produce a standard description of the gene.
     string GetDescription() const;
 
+    // Try to find a root-level comment with the given heading.
+    CRef<CGene_commentary> FindComment(const string& heading) const; 
+
 private:
     // Prohibit copy constructor and assignment operator
     CEntrezgene(const CEntrezgene& value);
