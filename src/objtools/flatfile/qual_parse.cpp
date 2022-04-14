@@ -287,7 +287,7 @@ void CQualParser::xQualValAppendLine(
 
     //if (qualKey == "note"  &&  
     //        qualData.find(
-    //        "Catalytic activity: Atrazine chlorohydrolases") != string::npos) {
+    //        "Catalytic activity: GTP cyclohydrolases II convert") != string::npos) {
     //    cerr << ""; //breakpoint
     //}
     // 
@@ -339,7 +339,7 @@ void CQualParser::xQualValAppendLine(
         else {
             auto pendingBlank = line.find(' ');
             if (lastSeenSize == mMaxChunkSize-1) {
-                if (pendingBlank >= 2) {
+                if (pendingBlank > 2) {
                     qualData += ' ';
                 }
                 else if (pendingBlank == 1) {
