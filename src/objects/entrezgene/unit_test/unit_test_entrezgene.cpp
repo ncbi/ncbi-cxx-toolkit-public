@@ -38,6 +38,7 @@
 #include <corelib/test_boost.hpp>
 
 #include <objects/entrezgene/Entrezgene.hpp>
+#include <objects/entrezgene/Gene_commentary.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/Gene_nomenclature.hpp>
@@ -133,3 +134,22 @@ BOOST_AUTO_TEST_CASE(s_TestNomenclature)
     BOOST_CHECK_EQUAL(nomen->GetStatus(), CGene_nomenclature::eStatus_unknown);
 }
 
+BOOST_AUTO_TEST_CASE(s_TestFindComment)
+{
+    CEntrezgene eg_obj;
+    CRef<CGene_commentary> comment;
+
+    s_GetObject("1", eg_obj);
+    // Comment not found.
+    comment = eg_obj.FindComment("Nonesuch");
+    BOOST_CHECK_EQUAL(true, comment.Empty());
+    // Comment found.
+    comment = eg_obj.FindComment("RefSeq Status");
+    BOOST_CHECK_EQUAL(true, comment.NotEmpty());
+    if (comment) {
+        BOOST_CHECK_EQUAL(true, comment->IsSetLabel());
+        if (comment->IsSetLabel()) {
+            BOOST_CHECK_EQUAL("REVIEWED", comment->GetLabel());
+        }
+    }
+}
