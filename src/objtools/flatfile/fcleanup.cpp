@@ -68,31 +68,23 @@ static void MoveSourceDescrToTop(CSeq_entry& entry)
     if (entry.IsSeq())
         return;
 
-    CBioseq_set& seq_set = entry.SetSet();
-    const CSeqdesc* source = nullptr;
-    if (seq_set.IsSetDescr())
-    {
-        ITERATE(TSeqdescList, desc, seq_set.GetDescr().Get())
-        {
-            if ((*desc)->IsSource())
-            {
+    CBioseq_set&    seq_set = entry.SetSet();
+    const CSeqdesc* source  = nullptr;
+    if (seq_set.IsSetDescr()) {
+        ITERATE (TSeqdescList, desc, seq_set.GetDescr().Get()) {
+            if ((*desc)->IsSource()) {
                 source = *desc;
                 break;
             }
         }
     }
 
-    for (CTypeIterator<CBioseq> bioseq(Begin(entry)); bioseq; ++bioseq)
-    {
-        if (bioseq->IsSetDescr())
-        {
+    for (CTypeIterator<CBioseq> bioseq(Begin(entry)); bioseq; ++bioseq) {
+        if (bioseq->IsSetDescr()) {
             TSeqdescList& descrs = bioseq->SetDescr().Set();
-            for (TSeqdescList::iterator desc = descrs.begin(); desc != descrs.end(); ++desc)
-            {
-                if ((*desc)->IsSource())
-                {
-                    if (source == nullptr)
-                    {
+            for (TSeqdescList::iterator desc = descrs.begin(); desc != descrs.end(); ++desc) {
+                if ((*desc)->IsSource()) {
+                    if (source == nullptr) {
                         source = *desc;
                         seq_set.SetDescr().Set().push_back(*desc);
                         descrs.erase(desc);
@@ -106,29 +98,27 @@ static void MoveSourceDescrToTop(CSeq_entry& entry)
 
 static bool IsEmptyMolInfo(const CMolInfo& mol_info)
 {
-    return !(mol_info.IsSetBiomol() || mol_info.IsSetCompleteness() || mol_info.IsSetGbmoltype() ||
-             mol_info.IsSetTech() || mol_info.IsSetTechexp());
+    return ! (mol_info.IsSetBiomol() || mol_info.IsSetCompleteness() || mol_info.IsSetGbmoltype() ||
+              mol_info.IsSetTech() || mol_info.IsSetTechexp());
 }
 
 static void MoveAnnotToTop(CSeq_entry& seq_entry)
 {
-    if (!seq_entry.IsSet() || !seq_entry.GetSet().IsSetClass() || seq_entry.GetSet().GetClass() != CBioseq_set::eClass_segset)
+    if (! seq_entry.IsSet() || ! seq_entry.GetSet().IsSetClass() || seq_entry.GetSet().GetClass() != CBioseq_set::eClass_segset)
         return;
 
-    CBioseq_set* parts = nullptr;
+    CBioseq_set* parts   = nullptr;
     CBioseq_set& bio_set = seq_entry.SetSet();
 
     NON_CONST_ITERATE(TEntryList, entry, bio_set.SetSeq_set())
     {
-        if ((*entry)->IsSet() && (*entry)->GetSet().IsSetClass() && (*entry)->GetSet().GetClass() == CBioseq_set::eClass_parts)
-        {
+        if ((*entry)->IsSet() && (*entry)->GetSet().IsSetClass() && (*entry)->GetSet().GetClass() == CBioseq_set::eClass_parts) {
             parts = &(*entry)->SetSet();
             break;
         }
     }
 
-    if (parts != nullptr && parts->IsSetAnnot())
-    {
+    if (parts != nullptr && parts->IsSetAnnot()) {
 
         CBioseq::TAnnot& annot = bio_set.SetSeq_set().front()->SetAnnot();
         annot.splice(annot.end(), parts->SetAnnot());
@@ -138,45 +128,37 @@ static void MoveAnnotToTop(CSeq_entry& seq_entry)
 
 static void MoveBiomolToTop(CSeq_entry& seq_entry)
 {
-    if (!seq_entry.IsSet() || !seq_entry.GetSet().IsSetClass() || seq_entry.GetSet().GetClass() != CBioseq_set::eClass_segset)
+    if (! seq_entry.IsSet() || ! seq_entry.GetSet().IsSetClass() || seq_entry.GetSet().GetClass() != CBioseq_set::eClass_segset)
         return;
 
-    if (seq_entry.IsSetDescr())
-    {
-        ITERATE(TSeqdescList, desc, seq_entry.GetDescr().Get())
-        {
+    if (seq_entry.IsSetDescr()) {
+        ITERATE (TSeqdescList, desc, seq_entry.GetDescr().Get()) {
             if ((*desc)->IsMolinfo())
                 return;
         }
     }
 
-    CBioseq_set* parts = nullptr;
+    CBioseq_set* parts   = nullptr;
     CBioseq_set& bio_set = seq_entry.SetSet();
 
     NON_CONST_ITERATE(TEntryList, entry, bio_set.SetSeq_set())
     {
-        if ((*entry)->IsSet() && (*entry)->GetSet().IsSetClass() && (*entry)->GetSet().GetClass() == CBioseq_set::eClass_parts)
-        {
+        if ((*entry)->IsSet() && (*entry)->GetSet().IsSetClass() && (*entry)->GetSet().GetClass() == CBioseq_set::eClass_parts) {
             parts = &(*entry)->SetSet();
             break;
         }
     }
 
-    if (parts != nullptr)
-    {
+    if (parts != nullptr) {
         int biomol = CMolInfo::eBiomol_unknown;
-        ITERATE(TEntryList, entry, parts->GetSeq_set())
-        {
-            if (!(*entry)->IsSeq())
+        ITERATE (TEntryList, entry, parts->GetSeq_set()) {
+            if (! (*entry)->IsSeq())
                 return;
 
             const CBioseq& bioseq = (*entry)->GetSeq();
-            if (bioseq.IsSetDescr())
-            {
-                ITERATE(TSeqdescList, desc, bioseq.GetDescr().Get())
-                {
-                    if ((*desc)->IsMolinfo() && (*desc)->GetMolinfo().IsSetBiomol())
-                    {
+            if (bioseq.IsSetDescr()) {
+                ITERATE (TSeqdescList, desc, bioseq.GetDescr().Get()) {
+                    if ((*desc)->IsMolinfo() && (*desc)->GetMolinfo().IsSetBiomol()) {
                         int cur_biomol = (*desc)->GetMolinfo().GetBiomol();
                         if (biomol == CMolInfo::eBiomol_unknown)
                             biomol = cur_biomol;
@@ -187,18 +169,14 @@ static void MoveBiomolToTop(CSeq_entry& seq_entry)
             }
         }
 
-        if (biomol != CMolInfo::eBiomol_unknown)
-        {
+        if (biomol != CMolInfo::eBiomol_unknown) {
             NON_CONST_ITERATE(TEntryList, entry, parts->SetSeq_set())
             {
                 CBioseq& bioseq = (*entry)->SetSeq();
-                if (bioseq.IsSetDescr())
-                {
+                if (bioseq.IsSetDescr()) {
                     TSeqdescList& descrs = bioseq.SetDescr().Set();
-                    for (TSeqdescList::iterator desc = descrs.begin(); desc != descrs.end(); ++desc)
-                    {
-                        if ((*desc)->IsMolinfo())
-                        {
+                    for (TSeqdescList::iterator desc = descrs.begin(); desc != descrs.end(); ++desc) {
+                        if ((*desc)->IsMolinfo()) {
                             (*desc)->SetMolinfo().ResetBiomol();
                             if (IsEmptyMolInfo((*desc)->GetMolinfo()))
                                 descrs.erase(desc);
@@ -218,18 +196,14 @@ static void MoveBiomolToTop(CSeq_entry& seq_entry)
 
 static void LookForProductName(CSeq_feat& feat)
 {
-    if (feat.IsSetData() && feat.GetData().IsProt())
-    {
+    if (feat.IsSetData() && feat.GetData().IsProt()) {
         CProt_ref& prot_ref = feat.SetData().SetProt();
 
-        if (!prot_ref.IsSetName() || prot_ref.GetName().empty() || (prot_ref.GetName().size() == 1 && prot_ref.GetName().front() == "unnamed"))
-        {
-            if (feat.IsSetQual())
-            {
+        if (! prot_ref.IsSetName() || prot_ref.GetName().empty() || (prot_ref.GetName().size() == 1 && prot_ref.GetName().front() == "unnamed")) {
+            if (feat.IsSetQual()) {
                 NON_CONST_ITERATE(TQualVector, qual, feat.SetQual())
                 {
-                    if ((*qual)->IsSetQual() && (*qual)->GetQual() == "product" && (*qual)->IsSetVal())
-                    {
+                    if ((*qual)->IsSetQual() && (*qual)->GetQual() == "product" && (*qual)->IsSetVal()) {
                         prot_ref.SetName().clear();
                         prot_ref.SetName().push_back((*qual)->GetVal());
                         feat.SetQual().erase(qual);
@@ -244,9 +218,10 @@ static void LookForProductName(CSeq_feat& feat)
     }
 }
 
-/*bool FeatLocCmp(const CRef<CSeq_feat>& a, const CRef<CSeq_feat>& b)
+/*
+bool FeatLocCmp(const CRef<CSeq_feat>& a, const CRef<CSeq_feat>& b)
 {
-    if (!a->IsSetLocation() || !b->IsSetLocation())
+    if (! a->IsSetLocation() || ! b->IsSetLocation())
         return false;
 
     return a->GetLocation().GetStart(eExtreme_Biological) < b->GetLocation().GetStart(eExtreme_Biological);
@@ -254,12 +229,13 @@ static void LookForProductName(CSeq_feat& feat)
 
 static void SortFeaturesByLocation(CSeq_annot& annot)
 {
-    if (!annot.IsFtable())
+    if (! annot.IsFtable())
         return;
 
     TSeqFeatList& feats = annot.SetData().SetFtable();
     feats.sort(FeatLocCmp);
-}*/
+}
+*/
 
 static bool IsConversionPossible(const vector<pair<TSeqPos, TSeqPos>>& ranges)
 {
@@ -301,9 +277,9 @@ static void SetNewInterval(const CSeq_interval* first, const CSeq_interval* last
 
 static void ConvertMixToInterval(CSeq_loc& loc)
 {
-    const CSeq_loc_mix::Tdata& locs = loc.GetMix().Get();
-    const CSeq_interval* first_interval = nullptr;
-    const CSeq_interval* last_interval = nullptr;
+    const CSeq_loc_mix::Tdata& locs           = loc.GetMix().Get();
+    const CSeq_interval*       first_interval = nullptr;
+    const CSeq_interval*       last_interval  = nullptr;
 
     vector<pair<TSeqPos, TSeqPos>> ranges;
     ITERATE (CSeq_loc_mix::Tdata, cur_loc, locs) {
@@ -314,23 +290,19 @@ static void ConvertMixToInterval(CSeq_loc& loc)
 
             if (first_interval == nullptr) {
                 first_interval = &interval;
-            }
-            else if (first_interval->GetStart(eExtreme_Biological) > interval.GetStart(eExtreme_Biological)) {
+            } else if (first_interval->GetStart(eExtreme_Biological) > interval.GetStart(eExtreme_Biological)) {
                 first_interval = &interval;
             }
 
             if (last_interval == nullptr) {
                 last_interval = &interval;
-            }
-            else if (last_interval->GetStop(eExtreme_Biological) < interval.GetStop(eExtreme_Biological)) {
+            } else if (last_interval->GetStop(eExtreme_Biological) < interval.GetStop(eExtreme_Biological)) {
                 last_interval = &interval;
             }
-        }
-        else if ((*cur_loc)->IsPnt()) {
+        } else if ((*cur_loc)->IsPnt()) {
             const CSeq_point& point = (*cur_loc)->GetPnt();
             ranges.push_back(make_pair(point.GetPoint(), point.GetPoint()));
-        }
-        else {
+        } else {
             // TODO process the other types of intervals
             return;
         }
@@ -361,54 +333,51 @@ static void ConvertPackedIntToInterval(CSeq_loc& loc)
 
     if (IsConversionPossible(ranges)) {
 
-        SetNewInterval(loc.GetPacked_int().GetStartInt(eExtreme_Biological), loc.GetPacked_int().GetStopInt(eExtreme_Biological),
-                       ranges.front().first, ranges.back().second, loc);
+        SetNewInterval(loc.GetPacked_int().GetStartInt(eExtreme_Biological), loc.GetPacked_int().GetStopInt(eExtreme_Biological), ranges.front().first, ranges.back().second, loc);
     }
 }
 
 
-void g_InstantiateMissingProteins(CSeq_entry_Handle entryHandle) 
+void g_InstantiateMissingProteins(CSeq_entry_Handle entryHandle)
 {
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
-    auto& scope = entryHandle.GetScope();
+    auto&          scope = entryHandle.GetScope();
 
-    int protein_id_counter=99;
+    int protein_id_counter = 99;
 
     for (CFeat_CI cds_it(entryHandle, sel); cds_it; ++cds_it) {
         auto pCds = cds_it->GetSeq_feat();
-        if (!sequence::IsPseudo(*pCds, scope)) {
-            if (!pCds->IsSetProduct()) {
+        if (! sequence::IsPseudo(*pCds, scope)) {
+            if (! pCds->IsSetProduct()) {
                 auto pNewCds = Ref(new CSeq_feat());
                 pNewCds->Assign(*pCds);
                 string idLabel;
-                auto pProteinId = 
+                auto   pProteinId =
                     edit::GetNewProtId(scope.GetBioseqHandle(pNewCds->GetLocation()), protein_id_counter, idLabel, false);
                 pNewCds->SetProduct().SetWhole().Assign(*pProteinId);
                 CSeq_feat_EditHandle pCdsEditHandle(*cds_it);
                 pCdsEditHandle.Replace(*pNewCds);
-                pCds  = pNewCds;
-            }
-            else if (pCds->GetProduct().GetId() && 
-                     scope.Exists(*pCds->GetProduct().GetId())) {
-                continue; 
+                pCds = pNewCds;
+            } else if (pCds->GetProduct().GetId() &&
+                       scope.Exists(*pCds->GetProduct().GetId())) {
+                continue;
             }
             // Add protein
             CCleanup::AddProtein(*pCds, scope);
             auto protHandle = scope.GetBioseqHandle(pCds->GetProduct());
             if (protHandle) {
                 CFeat_CI feat_ci(protHandle, CSeqFeatData::eSubtype_prot);
-                if (!feat_ci) {
+                if (! feat_ci) {
                     string protName = CCleanup::GetProteinName(*pCds, entryHandle);
                     if (NStr::IsBlank(protName)) {
                         protName = "hypothetical protein";
-                    }   
-                    feature::AddProteinFeature(*(protHandle.GetCompleteBioseq()), protName, *pCds, scope); 
+                    }
+                    feature::AddProteinFeature(*(protHandle.GetCompleteBioseq()), protName, *pCds, scope);
                 }
             }
         }
     }
 }
-
 
 
 void FinalCleanup(TEntryList& seq_entries)
@@ -450,8 +419,8 @@ void FinalCleanup(TEntryList& seq_entries)
         // TODO the functionality below probably should be moved to Cleanup
         for (CTypeIterator<CBioseq> bioseq(Begin(**entry)); bioseq; ++bioseq) {
 
-            CSeq_feat* gene = nullptr;
-            bool gene_set = false;
+            CSeq_feat* gene     = nullptr;
+            bool       gene_set = false;
 
             for (CTypeIterator<CSeq_feat> feat(Begin(*bioseq)); feat; ++feat) {
 
@@ -460,10 +429,9 @@ void FinalCleanup(TEntryList& seq_entries)
                 if (feat->IsSetData() && feat->GetData().IsGene()) {
                     if (gene_set) {
                         gene = nullptr;
-                    }
-                    else {
+                    } else {
                         gene_set = true;
-                        gene = &(*feat);
+                        gene     = &(*feat);
                     }
                 }
 
@@ -473,8 +441,7 @@ void FinalCleanup(TEntryList& seq_entries)
                     CSeq_loc& loc = feat->SetLocation();
                     if (loc.IsPacked_int()) {
                         ConvertPackedIntToInterval(loc);
-                    }
-                    else if (loc.IsMix()) {
+                    } else if (loc.IsMix()) {
 
                         if (feat->IsSetData() && feat->GetData().IsProt()) {
                             ConvertMixToInterval(loc);
@@ -493,7 +460,7 @@ void FinalCleanup(TEntryList& seq_entries)
                 }
 
                 CBioseq_Handle bioseq_h = GetScope().GetBioseqHandle(*bioseq);
-                if (!bioseq_h) {
+                if (! bioseq_h) {
                     continue;
                 }
 
@@ -502,7 +469,7 @@ void FinalCleanup(TEntryList& seq_entries)
                 if (mol_info && mol_info->GetMolinfo().IsSetBiomol() && mol_info->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA && bioseq->IsSetId()) {
 
                     const CBioseq::TId& ids = bioseq->GetId();
-                    if (!ids.empty()) {
+                    if (! ids.empty()) {
 
                         const CSeq_id& id = *ids.front();
                         if (id.Which() == loc.GetId()->Which()) {
@@ -513,8 +480,8 @@ void FinalCleanup(TEntryList& seq_entries)
             }
         }
 
-/*        for (CTypeIterator<CSeq_feat> feat(Begin(*(*entry))); feat; ++feat)
-        {
+        /*
+        for (CTypeIterator<CSeq_feat> feat(Begin(*(*entry))); feat; ++feat) {
             LookForProductName(*feat);
 
             // TODO the functionality below probably should be moved to Cleanup
@@ -530,17 +497,17 @@ void FinalCleanup(TEntryList& seq_entries)
                     }
 
                     CBioseq_Handle bioseq_h = GetScope().GetBioseqHandle(loc);
-                    if (!bioseq_h) {
+                    if (! bioseq_h) {
                         continue;
                     }
 
                     CConstRef<CBioseq> bioseq = bioseq_h.GetBioseqCore();
-                    CSeqdesc_CI mol_info(bioseq_h, CSeqdesc::E_Choice::e_Molinfo);
+                    CSeqdesc_CI        mol_info(bioseq_h, CSeqdesc::E_Choice::e_Molinfo);
 
                     if (mol_info && mol_info->GetMolinfo().IsSetBiomol() && mol_info->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA && bioseq->IsSetId()) {
 
                         const CBioseq::TId& ids = bioseq->GetId();
-                        if (!ids.empty()) {
+                        if (! ids.empty()) {
 
                             const CSeq_id& id = *ids.front();
                             if (id.Which() == loc.GetId()->Which()) {
@@ -555,27 +522,24 @@ void FinalCleanup(TEntryList& seq_entries)
                     ConvertPackedIntToInterval(loc);
                 }
             }
-        }*/
+        }
+        */
 
         MoveBiomolToTop(*(*entry));
         MoveAnnotToTop(*(*entry));
-        for (CTypeIterator<CSeq_entry> cur_entry(Begin(*(*entry))); cur_entry; ++cur_entry)
-        {
+        for (CTypeIterator<CSeq_entry> cur_entry(Begin(*(*entry))); cur_entry; ++cur_entry) {
             MoveBiomolToTop(*cur_entry);
             MoveAnnotToTop(*cur_entry);
         }
 
-        //for (CTypeIterator<CSeq_annot> annot(Begin(*(*entry))); annot; ++annot)
-        //{
-        //    SortFeaturesByLocation(*annot);
-        //}
+        // for (CTypeIterator<CSeq_annot> annot(Begin(*(*entry))); annot; ++annot) {
+        //     SortFeaturesByLocation(*annot);
+        // }
 
-        //for (CTypeIterator<CSeq_annot> annot(Begin(*(*entry))); annot; ++annot)
-        //{
-        //    CreatePubFromFeats(*annot);
-        //}
+        // for (CTypeIterator<CSeq_annot> annot(Begin(*(*entry))); annot; ++annot) {
+        //     CreatePubFromFeats(*annot);
+        // }
     }
-
 }
 
 END_NCBI_SCOPE
