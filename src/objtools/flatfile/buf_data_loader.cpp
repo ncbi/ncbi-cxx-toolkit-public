@@ -67,28 +67,28 @@ BEGIN_SCOPE(objects)
 
 CBuffer_DataLoader::CBuffer_DataLoader(const string&, Parser* parser) :
     m_parser(parser)
-{}
+{
+}
 
 CDataLoader::TTSE_LockSet CBuffer_DataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
 {
     TTSE_LockSet locks;
 
     switch (choice) {
-        case eBlob:
-        case eBioseq:
-        case eCore:
-        case eBioseqCore:
-        case eSequence:
-        case eAll:
-        {
-            TBlobId blob_id = GetBlobId(idh);
-            if (blob_id) {
-                locks.insert(GetBlobById(blob_id));
-            }
-            break;
+    case eBlob:
+    case eBioseq:
+    case eCore:
+    case eBioseqCore:
+    case eSequence:
+    case eAll: {
+        TBlobId blob_id = GetBlobId(idh);
+        if (blob_id) {
+            locks.insert(GetBlobById(blob_id));
         }
-        default:
-            break;
+        break;
+    }
+    default:
+        break;
     }
 
     return locks;
@@ -108,7 +108,7 @@ CDataLoader::TBlobId CBuffer_DataLoader::GetBlobId(const CSeq_id_Handle& idh)
 CDataLoader::TTSE_Lock CBuffer_DataLoader::GetBlobById(const TBlobId& blob_id)
 {
     CTSE_LoadLock lock = GetDataSource()->GetTSE_LoadLock(blob_id);
-    if (!lock.IsLoaded()) {
+    if (! lock.IsLoaded()) {
         const CBlobIdSeq_id& id = dynamic_cast<const CBlobIdSeq_id&>(*blob_id).GetValue();
         x_LoadData(id.GetValue(), lock);
 
@@ -122,13 +122,12 @@ static char* get_sequence_text(ParserPtr parser, const string& accession, int ve
 {
     char* ret = nullptr;
     if (parser) {
-        if (!parser->accver) {
+        if (! parser->accver) {
             if (parser->ff_get_entry)
                 ret = (*parser->ff_get_entry)(accession.c_str());
             else if (parser->ff_get_entry_pp)
                 ret = (*parser->ff_get_entry_pp)(accession.c_str(), parser);
-        }
-        else {
+        } else {
             if (parser->ff_get_entry_v)
                 ret = (*parser->ff_get_entry_v)(accession.c_str(), version);
             else if (parser->ff_get_entry_v_pp)
@@ -148,16 +147,15 @@ static bool get_accession_from_id(const CSeq_id& id, string& accession, int& ver
         const CTextseq_id* text_id = id.GetTextseq_Id();
         if (text_id && text_id->IsSetAccession()) {
 
-            version = text_id->IsSetVersion() ? text_id->GetVersion() : 0;
+            version   = text_id->IsSetVersion() ? text_id->GetVersion() : 0;
             accession = text_id->GetAccession();
-            ret = true;
+            ret       = true;
         }
-    }
-    else if (id.IsGeneral()) {
+    } else if (id.IsGeneral()) {
         if (id.GetGeneral().IsSetDb() && id.GetGeneral().GetDb() == "GSDB" && id.GetGeneral().IsSetTag() && id.GetGeneral().GetTag().IsId()) {
             accession = NStr::IntToString(id.GetGeneral().GetTag().GetId());
-            version = 0;
-            ret = true;
+            version   = 0;
+            ret       = true;
         }
     }
 
@@ -169,14 +167,14 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     int i = 0;
     for (; i < pp->indx; i++) {
         if (StringCmp(pp->entrylist[i]->acnum, acc) == 0 &&
-            (!pp->accver || pp->entrylist[i]->vernum == vernum))
+            (! pp->accver || pp->entrylist[i]->vernum == vernum))
             break;
     }
 
     if (i < pp->indx)
         return i;
 
-    IndexblkPtr* temp = (IndexblkPtr*) MemNew((pp->indx + 1) * sizeof(IndexblkPtr));
+    IndexblkPtr* temp = (IndexblkPtr*)MemNew((pp->indx + 1) * sizeof(IndexblkPtr));
     copy(pp->entrylist, pp->entrylist + pp->indx, temp);
     MemFree(pp->entrylist);
     pp->entrylist = temp;
@@ -184,7 +182,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     IndexblkPtr cur_block = (IndexblkPtr)MemNew(sizeof(Indexblk));
     StringCpy(cur_block->acnum, acc);
     cur_block->vernum = vernum;
-    cur_block->ppp = pp;
+    cur_block->ppp    = pp;
 
     if (pp->format == Parser::EFormat::GenBank) {
         char* q = entry->mOffset;
@@ -194,22 +192,21 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
                 *p = '\0';
             if (StringLen(q) > 78 && q[28] == ' ' && q[63] == ' ' &&
                 q[67] == ' ') {
-                cur_block->lc.bases = ParFlat_COL_BASES_NEW;
-                cur_block->lc.bp = ParFlat_COL_BP_NEW;
-                cur_block->lc.strand = ParFlat_COL_STRAND_NEW;
+                cur_block->lc.bases    = ParFlat_COL_BASES_NEW;
+                cur_block->lc.bp       = ParFlat_COL_BP_NEW;
+                cur_block->lc.strand   = ParFlat_COL_STRAND_NEW;
                 cur_block->lc.molecule = ParFlat_COL_MOLECULE_NEW;
                 cur_block->lc.topology = ParFlat_COL_TOPOLOGY_NEW;
-                cur_block->lc.div = ParFlat_COL_DIV_NEW;
-                cur_block->lc.date = ParFlat_COL_DATE_NEW;
-            }
-            else {
-                cur_block->lc.bases = ParFlat_COL_BASES;
-                cur_block->lc.bp = ParFlat_COL_BP;
-                cur_block->lc.strand = ParFlat_COL_STRAND;
+                cur_block->lc.div      = ParFlat_COL_DIV_NEW;
+                cur_block->lc.date     = ParFlat_COL_DATE_NEW;
+            } else {
+                cur_block->lc.bases    = ParFlat_COL_BASES;
+                cur_block->lc.bp       = ParFlat_COL_BP;
+                cur_block->lc.strand   = ParFlat_COL_STRAND;
                 cur_block->lc.molecule = ParFlat_COL_MOLECULE;
                 cur_block->lc.topology = ParFlat_COL_TOPOLOGY;
-                cur_block->lc.div = ParFlat_COL_DIV;
-                cur_block->lc.date = ParFlat_COL_DATE;
+                cur_block->lc.div      = ParFlat_COL_DIV;
+                cur_block->lc.date     = ParFlat_COL_DATE;
             }
             if (p != NULL)
                 *p = '\n';
@@ -230,7 +227,7 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
     if (format != Parser::EFormat::GenBank && format != Parser::EFormat::EMBL)
         return;
 
-    offset = entry->mOffset;
+    offset     = entry->mOffset;
     size_t len = entry->len;
 
     if (offset == NULL || len == 0)
@@ -241,7 +238,7 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
         StringNCpy(ibp->division, div, 3);
         ibp->division[3] = '\0';
 
-        div = offset + ibp->lc.bases;
+        div  = offset + ibp->lc.bases;
         eptr = offset + len - 1;
         while (div < eptr && *div == ' ')
             div++;
@@ -252,9 +249,8 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
     div = StringChr(offset, '\n');
     if (div != NULL) {
         eptr = div;
-        len = eptr - offset + 1;
-    }
-    else
+        len  = eptr - offset + 1;
+    } else
         eptr = offset + len - 1;
 
     if (len > 5 && StringNCmp(eptr - 3, "BP.", 3) == 0)
@@ -280,12 +276,12 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 {
     IndexblkPtr ibp;
     EntryBlkPtr ebp;
-    char*     ptr;
-    char*     eptr;
+    char*       ptr;
+    char*       eptr;
 
-    ibp = pp->entrylist[pp->curindx];
-    ebp = (EntryBlkPtr)entry->mpData;
-    ptr = entry->mOffset;
+    ibp  = pp->entrylist[pp->curindx];
+    ebp  = (EntryBlkPtr)entry->mpData;
+    ptr  = entry->mOffset;
     eptr = ptr + entry->len;
 
     CRef<CBioseq> bioseq(new CBioseq);
@@ -309,19 +305,17 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
         }
         if (ptr < eptr) {
 
-            if (!ibp->is_contig) {
+            if (! ibp->is_contig) {
                 auto molconv = GetDNAConv();
-                res = GetSeqData(pp, *entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
-             //   MemFree(molconv);
-            }
-            else {
+                res          = GetSeqData(pp, *entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
+                //   MemFree(molconv);
+            } else {
                 pp->farseq = true;
-                res = GetEmblInstContig(*entry, *bioseq, pp);
+                res        = GetEmblInstContig(*entry, *bioseq, pp);
                 pp->farseq = false;
             }
         }
-    }
-    else if (pp->format == Parser::EFormat::GenBank) {
+    } else if (pp->format == Parser::EFormat::GenBank) {
         bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
 
         Int2 curkw = ParFlat_LOCUS;
@@ -331,19 +325,17 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
         if (ptr < eptr) {
 
             res = false;
-            if (!ibp->is_contig) {
+            if (! ibp->is_contig) {
                 auto molconv = GetDNAConv();
-                res = GetSeqData(pp, *entry, *bioseq, ParFlat_ORIGIN, molconv.get(), eSeq_code_type_iupacna);
-               // MemFree(molconv);
-            }
-            else {
+                res          = GetSeqData(pp, *entry, *bioseq, ParFlat_ORIGIN, molconv.get(), eSeq_code_type_iupacna);
+                // MemFree(molconv);
+            } else {
                 pp->farseq = true;
-                res = GetGenBankInstContig(entry, *bioseq, pp);
+                res        = GetGenBankInstContig(entry, *bioseq, pp);
                 pp->farseq = false;
             }
         }
-    }
-    else if (pp->format == Parser::EFormat::SPROT) {
+    } else if (pp->format == Parser::EFormat::SPROT) {
         bioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
         Int2 curkw = ParFlat_ID;
         while (curkw != ParFlatSP_END) {
@@ -352,12 +344,12 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
         if (ptr < eptr) {
             auto molconv = GetProteinConv();
-            res = GetSeqData(pp, *entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
-        //    MemFree(molconv);
+            res          = GetSeqData(pp, *entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
+            //    MemFree(molconv);
         }
     }
 
-    if (!res)
+    if (! res)
         bioseq.Reset();
 
     return bioseq;
@@ -368,10 +360,10 @@ static DataBlkPtr make_entry(char* entry_str)
     DataBlkPtr entry = new DataBlk(nullptr, ParFlat_ENTRYNODE);
 
     if (entry != NULL) {
-        entry->mpNext = NULL;         /* assume no segment at this time */
+        entry->mpNext  = NULL; /* assume no segment at this time */
         entry->mOffset = entry_str;
-        entry->len = StringLen(entry->mOffset);
-        entry->mpData = (EntryBlkPtr)MemNew(sizeof(EntryBlk));
+        entry->len     = StringLen(entry->mOffset);
+        entry->mpData  = (EntryBlkPtr)MemNew(sizeof(EntryBlk));
     }
 
     return entry;
@@ -380,12 +372,12 @@ static DataBlkPtr make_entry(char* entry_str)
 static CRef<CBioseq> parse_entry(ParserPtr pp, char* entry_str, const string& accession, int ver, const CSeq_id& id)
 {
     CRef<CBioseq> ret;
-    DataBlkPtr entry = make_entry(entry_str);
+    DataBlkPtr    entry = make_entry(entry_str);
 
     if (entry == NULL)
         return ret;
 
-    int ix = add_entry(pp, accession.c_str(), ver, entry),
+    int ix       = add_entry(pp, accession.c_str(), ver, entry),
         old_indx = pp->curindx;
 
     pp->curindx = ix;
@@ -404,10 +396,10 @@ static CRef<CBioseq> parse_entry(ParserPtr pp, char* entry_str, const string& ac
 void CBuffer_DataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock& lock)
 {
     _ASSERT(lock);
-    _ASSERT(!lock.IsLoaded());
+    _ASSERT(! lock.IsLoaded());
 
     string accession;
-    int version = 0;
+    int    version = 0;
     if (get_accession_from_id(*idh.GetSeqId(), accession, version)) {
 
         char* entry_str = get_sequence_text(m_parser, accession, version);
@@ -416,7 +408,7 @@ void CBuffer_DataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock& lo
 
             CRef<CBioseq> bioseq = parse_entry(m_parser, entry_str, accession, version, *idh.GetSeqId());
             if (bioseq.NotEmpty()) {
-                
+
                 GetScope().AddBioseq(*bioseq);
 
                 CRef<CSeq_entry> entry(new CSeq_entry);
@@ -427,15 +419,15 @@ void CBuffer_DataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock& lo
     }
 }
 
-const string& CBuffer_DataLoader::GetLoaderNameFromArgs(Parser* )
+const string& CBuffer_DataLoader::GetLoaderNameFromArgs(Parser*)
 {
     static const string name("FF2ASN_BUF_BASED_LOADER");
     return name;
 }
 
 CBuffer_DataLoader::TRegisterLoaderInfo CBuffer_DataLoader::RegisterInObjectManager(
-    CObjectManager& om,
-    Parser* params,
+    CObjectManager&            om,
+    Parser*                    params,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
@@ -456,14 +448,14 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     if (entry == NULL)
         return -1;
 
-    int ix = objects::add_entry(pp, acc, vernum, entry),
+    int ix       = objects::add_entry(pp, acc, vernum, entry),
         old_indx = pp->curindx;
-    pp->curindx = ix;
+    pp->curindx  = ix;
 
-    EntryBlkPtr ebp = (EntryBlkPtr)entry->mpData;
-    char* ptr = entry->mOffset;    /* points to beginning of the memory line */
-    char* eptr = ptr + entry->len;
-    Int2 curkw = ParFlat_ID;
+    EntryBlkPtr ebp   = (EntryBlkPtr)entry->mpData;
+    char*       ptr   = entry->mOffset; /* points to beginning of the memory line */
+    char*       eptr  = ptr + entry->len;
+    Int2        curkw = ParFlat_ID;
     while (curkw != ParFlatEM_END) {
         /* ptr points to current keyword's memory line
         */
@@ -475,7 +467,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped.");
         MemFree(entry->mOffset);
         delete entry;
-        return(-1);
+        return (-1);
     }
 
     if (pp->entrylist[ix]->bases == 0) {

@@ -49,10 +49,10 @@
 BEGIN_NCBI_SCOPE
 
 typedef struct _qs_struct {
-    char*                accession;
-    Int2                   version;
-    size_t                 offset;
-    size_t                 length;
+    char*              accession;
+    Int2               version;
+    size_t             offset;
+    size_t             length;
     struct _qs_struct* next;
 } QSStruct, *QSStructPtr;
 
@@ -61,9 +61,8 @@ void GapFeatsFree(GapFeatsPtr gfp)
 {
     GapFeatsPtr tgfp;
 
-    for(; gfp != NULL; gfp = tgfp)
-    {
-        if(gfp->gap_type != NULL)
+    for (; gfp != NULL; gfp = tgfp) {
+        if (gfp->gap_type != NULL)
             MemFree(gfp->gap_type);
 
         tgfp = gfp->next;
@@ -90,12 +89,11 @@ DataBlk::~DataBlk()
     for (int i = 0; p && i < MAX_HEAD_RECURSION; ++i) {
         p = p->mpNext;
     }
-    if (!p) {
+    if (! p) {
         delete mpNext;
-    }
-    else {
+    } else {
         auto pTail = p->mpNext;
-        p->mpNext = nullptr;
+        p->mpNext  = nullptr;
         delete mpNext;
         delete pTail;
     }
@@ -138,10 +136,9 @@ void XMLIndexFree(XmlIndexPtr xip)
 {
     XmlIndexPtr xipnext;
 
-    for(; xip != NULL; xip = xipnext)
-    {
+    for (; xip != NULL; xip = xipnext) {
         xipnext = xip->next;
-        if(xip->subtags != NULL)
+        if (xip->subtags != NULL)
             XMLIndexFree(xip->subtags);
         MemFree(xip);
     }
@@ -150,7 +147,7 @@ void XMLIndexFree(XmlIndexPtr xip)
 /**********************************************************/
 void FreeIndexblk(IndexblkPtr ibp)
 {
-    if(ibp == NULL)
+    if (ibp == NULL)
         return;
 
     if (ibp->gaps != NULL)
@@ -193,10 +190,9 @@ static void QSStructFree(QSStructPtr qssp)
 {
     QSStructPtr tqssp;
 
-    for(; qssp != NULL; qssp = tqssp)
-    {
+    for (; qssp != NULL; qssp = tqssp) {
         tqssp = qssp->next;
-        if(qssp->accession != NULL)
+        if (qssp->accession != NULL)
             MemFree(qssp->accession);
         MemFree(qssp);
     }
@@ -205,14 +201,10 @@ static void QSStructFree(QSStructPtr qssp)
 /**********************************************************/
 static bool QSNoSequenceRecordErr(bool accver, QSStructPtr qssp)
 {
-    if(accver)
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord,
-                  "Encountered Quality Score data for a record \"%s.%d\" that does not exist in the file of sequence records being parsed.",
-                  qssp->accession, qssp->version);
+    if (accver)
+        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s.%d\" that does not exist in the file of sequence records being parsed.", qssp->accession, qssp->version);
     else
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord,
-                  "Encountered Quality Score data for a record \"%s\" that does not exist in the file of sequence records being parsed.",
-                  qssp->accession);
+        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s\" that does not exist in the file of sequence records being parsed.", qssp->accession);
     return false;
 }
 
@@ -221,94 +213,84 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
 {
     IndexblkPtr* ibpp;
     QSStructPtr* qsspp;
-    QSStructPtr      qssp;
-    QSStructPtr      tqssp;
-    QSStructPtr      tqsspprev;
-    char*          p;
-    char*          q;
-    bool             ret;
-    size_t           i;
-    Int4             count;
-    Int4             j;
-    Int4             k;
-    Int4             l;
-    Int2             m;
-    Char             buf[1024];
+    QSStructPtr  qssp;
+    QSStructPtr  tqssp;
+    QSStructPtr  tqsspprev;
+    char*        p;
+    char*        q;
+    bool         ret;
+    size_t       i;
+    Int4         count;
+    Int4         j;
+    Int4         k;
+    Int4         l;
+    Int2         m;
+    Char         buf[1024];
 
-    if(pp->qsfd == NULL)
+    if (pp->qsfd == NULL)
         return true;
 
-    qssp = (QSStructPtr) MemNew(sizeof(QSStruct));
-    tqssp = qssp;
+    qssp      = (QSStructPtr)MemNew(sizeof(QSStruct));
+    tqssp     = qssp;
     tqsspprev = NULL;
-    count = 0;
-    while(fgets(buf, 1023, pp->qsfd) != NULL)
-    {
-        if(buf[0] != '>')
+    count     = 0;
+    while (fgets(buf, 1023, pp->qsfd) != NULL) {
+        if (buf[0] != '>')
             continue;
 
         p = StringChr(buf, ' ');
-        if(p == NULL)
+        if (p == NULL)
             continue;
 
-        i = (size_t) StringLen(buf);
+        i  = (size_t)StringLen(buf);
         *p = '\0';
 
         q = StringChr(buf, '.');
-        if(q != NULL)
+        if (q != NULL)
             *q++ = '\0';
 
         count++;
-        tqssp->next = (QSStructPtr) MemNew(sizeof(QSStruct));
-        tqssp = tqssp->next;
+        tqssp->next      = (QSStructPtr)MemNew(sizeof(QSStruct));
+        tqssp            = tqssp->next;
         tqssp->accession = StringSave(buf + 1);
-        tqssp->version = (q == NULL) ? 0 : atoi(q);
-        tqssp->offset = (size_t) ftell(pp->qsfd) - i;
-        if(tqsspprev != NULL)
+        tqssp->version   = (q == NULL) ? 0 : atoi(q);
+        tqssp->offset    = (size_t)ftell(pp->qsfd) - i;
+        if (tqsspprev != NULL)
             tqsspprev->length = tqssp->offset - tqsspprev->offset;
         tqssp->next = NULL;
 
         tqsspprev = tqssp;
     }
-    tqssp->length = (size_t) ftell(pp->qsfd) - tqssp->offset;
+    tqssp->length = (size_t)ftell(pp->qsfd) - tqssp->offset;
 
     tqssp = qssp;
-    qssp = tqssp->next;
+    qssp  = tqssp->next;
     MemFree(tqssp);
 
-    if(qssp == NULL)
-    {
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoScoreDataFound,
-                  "No correctly formatted records containing quality score data were found within file \"%s\".",
-                  pp->qsfile);
+    if (qssp == NULL) {
+        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoScoreDataFound, "No correctly formatted records containing quality score data were found within file \"%s\".", pp->qsfile);
         return false;
     }
 
-    qsspp = (QSStructPtr*) MemNew(count * sizeof(QSStructPtr));
+    qsspp = (QSStructPtr*)MemNew(count * sizeof(QSStructPtr));
     tqssp = qssp;
-    for(j = 0; j < count && tqssp != NULL; j++, tqssp = tqssp->next)
+    for (j = 0; j < count && tqssp != NULL; j++, tqssp = tqssp->next)
         qsspp[j] = tqssp;
 
-    if(count > 1)
-    {
+    if (count > 1) {
         std::sort(qsspp, qsspp + count, QSCmp);
 
-        for(j = 0, count--; j < count; j++)
-            if(StringCmp(qsspp[j]->accession, qsspp[j+1]->accession) == 0)
-                if(pp->accver == false || 
-                   qsspp[j]->version == qsspp[j+1]->version)
+        for (j = 0, count--; j < count; j++)
+            if (StringCmp(qsspp[j]->accession, qsspp[j + 1]->accession) == 0)
+                if (pp->accver == false ||
+                    qsspp[j]->version == qsspp[j + 1]->version)
                     break;
 
-        if(j < count)
-        {
-            if(pp->accver)
-                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores,
-                          "Found more than one set of Quality Score for accession \"%s.%d\".",
-                          qsspp[j]->accession, qsspp[j]->version);
+        if (j < count) {
+            if (pp->accver)
+                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s.%d\".", qsspp[j]->accession, qsspp[j]->version);
             else
-                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores,
-                          "Found more than one set of Quality Score for accession \"%s\".",
-                          qsspp[j]->accession);
+                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s\".", qsspp[j]->accession);
 
             QSStructFree(qssp);
             MemFree(qsspp);
@@ -317,37 +299,32 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         count++;
     }
 
-    ibpp = (IndexblkPtr*) MemNew(pp->indx * sizeof(IndexblkPtr));
-    for(j = 0; j < pp->indx && ibnp != NULL; j++, ibnp = ibnp->next)
+    ibpp = (IndexblkPtr*)MemNew(pp->indx * sizeof(IndexblkPtr));
+    for (j = 0; j < pp->indx && ibnp != NULL; j++, ibnp = ibnp->next)
         ibpp[j] = ibnp->ibp;
 
-    if(pp->indx > 1)
+    if (pp->indx > 1)
         std::sort(ibpp, ibpp + pp->indx, AccsCmp);
 
-    for(ret = true, j = 0, k = 0; j < count; j++)
-    {
-        if(k == pp->indx)
-        {
+    for (ret = true, j = 0, k = 0; j < count; j++) {
+        if (k == pp->indx) {
             ret = QSNoSequenceRecordErr(pp->accver, qsspp[j]);
             continue;
         }
-        for(; k < pp->indx; k++)
-        {
+        for (; k < pp->indx; k++) {
             l = StringCmp(qsspp[j]->accession, ibpp[k]->acnum);
-            if(l < 0)
-            {
+            if (l < 0) {
                 ret = QSNoSequenceRecordErr(pp->accver, qsspp[j]);
                 break;
             }
-            if(l > 0)
+            if (l > 0)
                 continue;
             m = qsspp[j]->version - ibpp[k]->vernum;
-            if(m < 0)
-            {
+            if (m < 0) {
                 ret = QSNoSequenceRecordErr(pp->accver, qsspp[j]);
                 break;
             }
-            if(m > 0)
+            if (m > 0)
                 continue;
             ibpp[k]->qsoffset = qsspp[j]->offset;
             ibpp[k]->qslength = qsspp[j]->length;
@@ -360,7 +337,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
     MemFree(qsspp);
     MemFree(ibpp);
 
-    return(ret);
+    return (ret);
 }
 
 /*********************************************************
