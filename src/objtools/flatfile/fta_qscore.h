@@ -36,8 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
-bool QscoreToSeqAnnot(char* qscore, objects::CBioseq& bioseq, char* acc,
-                            Int2 ver, bool check_minmax, bool allow_na);
+bool QscoreToSeqAnnot(char* qscore, objects::CBioseq& bioseq, char* acc, Int2 ver, bool check_minmax, bool allow_na);
 
 END_NCBI_SCOPE
 #endif // FTA_QSCORE
