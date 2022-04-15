@@ -41,12 +41,12 @@
 
 BEGIN_NCBI_SCOPE
 
-Parser::Parser(): 
+Parser::Parser() :
     mpKeywordParser(nullptr)
-{}
+{
+}
 
-void
-Parser::InitializeKeywordParser(
+void Parser::InitializeKeywordParser(
     EFormat format)
 {
     mpKeywordParser = new CKeywordParser(format);
@@ -59,7 +59,7 @@ Parser::KeywordParser()
     return *mpKeywordParser;
 }
 
-Parser::~Parser() 
+Parser::~Parser()
 {
     delete mpKeywordParser;
     ResetParserStruct(this);

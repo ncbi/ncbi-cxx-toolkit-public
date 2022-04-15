@@ -35,31 +35,31 @@
 #include "flatparse_report.hpp"
 #include "ftaerr.hpp"
 
-# include <objtools/flatfile/flat2err.h>
+#include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
 //  ----------------------------------------------------------------------------
 CFlatParseReport::ErrMessageLookup CFlatParseReport::mMessageTemplates = {
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
     { ErrCode(ERR_QUALIFIER_EmbeddedQual),
-        "Qualifier /%s contains embedded qualifier /%s. "
-        "Feature \"%s\", location \"%s\"." },
+      "Qualifier /%s contains embedded qualifier /%s. "
+      "Feature \"%s\", location \"%s\"." },
     { ErrCode(ERR_QUALIFIER_EmptyQual),
-        "Qualifier /%s should have a data value. Qualifier has been dropped. "
-        "Feature \"%s\", location \"%s\"." },
+      "Qualifier /%s should have a data value. Qualifier has been dropped. "
+      "Feature \"%s\", location \"%s\"." },
     { ErrCode(ERR_QUALIFIER_NoTextAfterEqualSign),
-        "Qualifier /%s has not text after the equal sign. Interpreted as empty value."},
+      "Qualifier /%s has not text after the equal sign. Interpreted as empty value." },
     { ErrCode(ERR_QUALIFIER_ShouldNotHaveValue),
-        "Qualifier /%s should not have data value. Qualifier value has been dropped. "
-        "Feature \"%s\", location \"%s\"." },
+      "Qualifier /%s should not have data value. Qualifier value has been dropped. "
+      "Feature \"%s\", location \"%s\"." },
     { ErrCode(ERR_QUALIFIER_UnbalancedQuotes),
-        "Qualifier /%s value has unbalanced quotes. Qualifier has been dropped."},
+      "Qualifier /%s value has unbalanced quotes. Qualifier has been dropped." },
     { ErrCode(ERR_FORMAT_UnexpectedData),
-        "Encountered unexpected data while looking for qualifier key. Data has been dropped."},
+      "Encountered unexpected data while looking for qualifier key. Data has been dropped." },
     { ErrCode(ERR_QUALIFIER_UnknownKey),
-        "Qualifier key /%s is not recognized. Qualifier has been dropped. "
-        "Feature \"%s\", location \"%s\"." },
+      "Qualifier key /%s is not recognized. Qualifier has been dropped. "
+      "Feature \"%s\", location \"%s\"." },
 };
 
 
@@ -69,7 +69,7 @@ void CFlatParseReport::ContainsEmbeddedQualifier(
     const string& featLocation,
     const string& qualKey,
     const string& firstEmbedded,
-    bool inNote)
+    bool          inNote)
 //  ----------------------------------------------------------------------------
 {
     ErrPostEx(
@@ -135,7 +135,7 @@ void CFlatParseReport::UnknownQualifierKey(
     const string& featKey,
     const string& featLocation,
     const string& qualKey)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     ErrPostEx(
         SEV_ERROR,
@@ -166,8 +166,8 @@ void CFlatParseReport::QualShouldNotHaveValue(
 
 //  ----------------------------------------------------------------------------
 void CFlatParseReport::UnexpectedData(
-    const string & featKey,
-    const string & featLocation)
+    const string& featKey,
+    const string& featLocation)
 //  ----------------------------------------------------------------------------
 {
     ErrPostEx(
