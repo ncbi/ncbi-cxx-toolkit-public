@@ -53,25 +53,23 @@ BEGIN_SCOPE(objects)
 class CBuffer_DataLoader : public CDataLoader
 {
 public:
-
     CBuffer_DataLoader(const string& name, Parser* parser);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
-    virtual bool CanGetBlobById() const;
-    virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
-    virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
+    virtual bool         CanGetBlobById() const;
+    virtual TBlobId      GetBlobId(const CSeq_id_Handle& idh);
+    virtual TTSE_Lock    GetBlobById(const TBlobId& blob_id);
 
     typedef SRegisterLoaderInfo<CBuffer_DataLoader> TRegisterLoaderInfo;
-    static TRegisterLoaderInfo RegisterInObjectManager(CObjectManager& om, Parser* params, CObjectManager::EIsDefault is_default, CObjectManager::TPriority priority);
+    static TRegisterLoaderInfo                      RegisterInObjectManager(CObjectManager& om, Parser* params, CObjectManager::EIsDefault is_default, CObjectManager::TPriority priority);
 
 protected:
-
 private:
     void x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock& lock);
 
     Parser* m_parser;
 
-    static const string& GetLoaderNameFromArgs(Parser*);
+    static const string&                                   GetLoaderNameFromArgs(Parser*);
     typedef CParamLoaderMaker<CBuffer_DataLoader, Parser*> TLoaderMaker;
     friend class CParamLoaderMaker<CBuffer_DataLoader, Parser*>;
 };
