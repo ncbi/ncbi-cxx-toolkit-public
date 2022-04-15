@@ -66,6 +66,73 @@ vector<string> checkedEmblKeywords = {
 };
 
 
+struct CKeywordParser
+{
+    Parser::EFormat mFormat;
+    list<string> mKeywords;
+    bool mDataDone;
+    string mPending;
+    bool mDataClean;
+
+    CKeywordParser(
+            Parser::EFormat format): 
+        mFormat(format),
+        mDataDone(false),
+        mDataClean(false)
+    {};
+
+    ~CKeywordParser() {};
+        
+    const list<string> KeywordList() const
+    {
+        return mKeywords;
+    }
+
+    void AddDataLine(
+        const string& line)
+    {
+        if (mDataDone) {
+            // throw
+        }
+        string data(line);
+        switch(mFormat) {
+        default:
+            break;
+        case Parser::EFormat::EMBL:
+            data = NStr::TruncateSpaces(data.substr(2));
+            break;
+        }
+        if (!mPending.empty()  &&  !NStr::EndsWith(mPending, ";")) {
+            mPending += ' ';
+        }
+        mPending += data;
+        if (NStr::EndsWith(mPending, '.')) {
+            xFinalize();
+            return;
+        }
+        if (!NStr::EndsWith(mPending, ";")) {
+            mPending += ' ';
+            return;
+        }
+    }
+
+    void xFinalize()
+    {
+        list<string> words;
+        NStr::TrimSuffixInPlace(mPending, ".");
+        NStr::Split(mPending, ";", words);
+        for (auto word: words) {
+            mKeywords.push_back(NStr::TruncateSpaces(word));
+        }
+        mDataDone = true;
+    }
+
+    void Cleanup()
+    {
+    }
+};
+
+
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************
@@ -221,6 +288,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     finfo = new FinfoBlk();
 
+    CKeywordParser keywordParser(pp->format);
 
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
     if(end_of_file)
@@ -282,20 +350,8 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 if(StringNCmp(finfo->str, keywordKw.c_str(), 2) == 0)
                 {
                     if(pp->source == Parser::ESource::EMBL ||
-                       pp->source == Parser::ESource::DDBJ)
-                    {
-                        if(kwds == NULL)
-                        {
-                            kwds = ValNodeNew(NULL);
-                            tkwds = kwds;
-                        }
-                        else
-                        {
-                            tkwds->next = ValNodeNew(NULL);
-                            tkwds = tkwds->next;
-                        }
-                        tkwds->data.ptrvalue = StringSave(finfo->str + 2);
-                        kwds_len += StringLen(finfo->str) - 2;
+                            pp->source == Parser::ESource::DDBJ) {
+                        keywordParser.AddDataLine(finfo->str);
                     }
                 }
                 else if(StringNCmp(finfo->str, keywordId.c_str(), keywordId.size()) == 0)
@@ -432,16 +488,10 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 }
             } /* while, end of one entry */
 
-            if(kwds != NULL)
-            {
-                check_est_sts_gss_tpa_kwds(kwds, kwds_len, entry, tpa_check,
-                                           entry->specialist_db,
-                                           entry->inferential,
-                                           entry->experimental,
-                                           entry->assembly);
-                kwds = ValNodeFreeData(kwds);
-                kwds_len = 0;
-            }
+            xCheckEstStsGssTpaKeywords(
+                keywordParser.KeywordList(),
+                tpa_check,
+                entry);
 
             entry->is_tpa_wgs_con = (entry->is_contig && entry->is_wgs && entry->is_tpa);
 
