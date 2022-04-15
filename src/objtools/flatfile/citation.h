@@ -40,19 +40,19 @@ BEGIN_NCBI_SCOPE
 
 class CPubInfo
 {
-    int cit_num_;
-    const objects::CBioseq* bioseq_;
+    int                        cit_num_;
+    const objects::CBioseq*    bioseq_;
     const objects::CPub_equiv* pub_equiv_;
-    const objects::CPub* pub_;
+    const objects::CPub*       pub_;
 
 public:
     CPubInfo();
 
-    int GetSerial() const { return cit_num_; }
+    int                     GetSerial() const { return cit_num_; }
     const objects::CBioseq* GetBioseq() const { return bioseq_; }
 
     const objects::CPub_equiv* GetPubEquiv() const;
-    const objects::CPub* GetPub() const { return pub_; }
+    const objects::CPub*       GetPub() const { return pub_; }
 
     void SetBioseq(const objects::CBioseq* bioseq);
     void SetPubEquiv(const objects::CPub_equiv* pub_equiv);

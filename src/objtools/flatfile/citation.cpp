@@ -72,7 +72,8 @@ CPubInfo::CPubInfo() :
     bioseq_(nullptr),
     pub_equiv_(nullptr),
     pub_(nullptr)
-{}
+{
+}
 
 const CPub_equiv* CPubInfo::GetPubEquiv() const
 {
@@ -92,16 +93,13 @@ void CPubInfo::SetBioseq(const CBioseq* bioseq)
 
 void CPubInfo::SetPubEquiv(const CPub_equiv* pub_equiv)
 {
-    pub_ = nullptr;
+    pub_       = nullptr;
     pub_equiv_ = pub_equiv;
 
     cit_num_ = -1;
-    if (pub_equiv_)
-    {
-        ITERATE(TPubList, pub, pub_equiv_->Get())
-        {
-            if ((*pub)->IsGen() && (*pub)->GetGen().IsSetSerial_number())
-            {
+    if (pub_equiv_) {
+        ITERATE (TPubList, pub, pub_equiv_->Get()) {
+            if ((*pub)->IsGen() && (*pub)->GetGen().IsSetSerial_number()) {
                 cit_num_ = (*pub)->GetGen().GetSerial_number();
                 break;
             }
@@ -112,19 +110,15 @@ void CPubInfo::SetPubEquiv(const CPub_equiv* pub_equiv)
 void CPubInfo::SetPub(const CPub* pub)
 {
     pub_equiv_ = nullptr;
-    pub_ = pub;
+    pub_       = pub;
 
     cit_num_ = -1;
-    if (pub_)
-    {
+    if (pub_) {
         if (pub_->IsGen())
             cit_num_ = pub_->GetGen().GetSerial_number();
-        else if (pub_->IsEquiv())
-        {
-            ITERATE(TPubList, cur_pub, pub_->GetEquiv().Get())
-            {
-                if ((*cur_pub)->IsGen() && (*cur_pub)->GetGen().IsSetSerial_number())
-                {
+        else if (pub_->IsEquiv()) {
+            ITERATE (TPubList, cur_pub, pub_->GetEquiv().Get()) {
+                if ((*cur_pub)->IsGen() && (*cur_pub)->GetGen().IsSetSerial_number()) {
                     cit_num_ = (*cur_pub)->GetGen().GetSerial_number();
                     break;
                 }
@@ -135,10 +129,8 @@ void CPubInfo::SetPub(const CPub* pub)
 
 static void FindCitInDescr(std::vector<CPubInfo>& pubs, const TSeqdescList& descrs, const CBioseq* bioseq)
 {
-    ITERATE(TSeqdescList, descr, descrs)
-    {
-        if ((*descr)->IsPub())
-        {
+    ITERATE (TSeqdescList, descr, descrs) {
+        if ((*descr)->IsPub()) {
             CPubInfo pub_info;
             pub_info.SetBioseq(bioseq);
             pub_info.SetPubEquiv(&(*descr)->GetPub().GetPub());
@@ -150,16 +142,13 @@ static void FindCitInDescr(std::vector<CPubInfo>& pubs, const TSeqdescList& desc
 
 static void FindCitInFeats(std::vector<CPubInfo>& pubs, const CBioseq::TAnnot& annots)
 {
-    ITERATE (CBioseq::TAnnot, annot, annots)
-    {
-        if (!(*annot)->IsSetData() || !(*annot)->GetData().IsFtable())              /* feature table */
+    ITERATE (CBioseq::TAnnot, annot, annots) {
+        if (! (*annot)->IsSetData() || ! (*annot)->GetData().IsFtable()) /* feature table */
             continue;
 
 
-        ITERATE (CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable())
-        {
-            if ((*feat)->IsSetData())
-            {
+        ITERATE (CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable()) {
+            if ((*feat)->IsSetData()) {
                 const CSeq_id* id = nullptr;
                 if ((*feat)->IsSetLocation())
                     id = (*feat)->GetLocation().GetId();
@@ -173,17 +162,13 @@ static void FindCitInFeats(std::vector<CPubInfo>& pubs, const CBioseq::TAnnot& a
                         continue;
                 }
 
-                if ((*feat)->GetData().IsPub())
-                {
+                if ((*feat)->GetData().IsPub()) {
                     pub_info.SetPubEquiv(&(*feat)->GetData().GetPub().GetPub());
                     pubs.push_back(pub_info);
-                }
-                else if ((*feat)->GetData().IsImp() && (*feat)->IsSetCit())
-                {
+                } else if ((*feat)->GetData().IsImp() && (*feat)->IsSetCit()) {
                     const CPub_set& pub_set = (*feat)->GetCit();
 
-                    ITERATE(TPubList, pub, pub_set.GetPub())
-                    {
+                    ITERATE (TPubList, pub, pub_set.GetPub()) {
                         pub_info.SetPub(*pub);
                         pubs.push_back(pub_info);
                     }
@@ -196,7 +181,7 @@ static void FindCitInFeats(std::vector<CPubInfo>& pubs, const CBioseq::TAnnot& a
 static int GetCitSerialFromQual(const CGb_qual& qual)
 {
     const Char* p = qual.GetVal().c_str();
-    while (*p && !isdigit(*p))
+    while (*p && ! isdigit(*p))
         ++p;
 
     if (*p)
@@ -208,22 +193,16 @@ static int GetCitSerialFromQual(const CGb_qual& qual)
 void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
 {
     const CPub_equiv* pub_equiv = pub_info.GetPubEquiv();
-    const CPub* pub = nullptr;
+    const CPub*       pub       = nullptr;
 
     CRef<CPub> new_pub;
-    if (pub_equiv)
-    {
-        ITERATE(TPubList, cur_pub, pub_equiv->Get())
-        {
-            if ((*cur_pub)->IsMuid() || (*cur_pub)->IsPmid())
-            {
-                if (new_pub.Empty())
-                {
+    if (pub_equiv) {
+        ITERATE (TPubList, cur_pub, pub_equiv->Get()) {
+            if ((*cur_pub)->IsMuid() || (*cur_pub)->IsPmid()) {
+                if (new_pub.Empty()) {
                     new_pub.Reset(new CPub);
                     new_pub->Assign(*(*cur_pub));
-                }
-                else
-                {
+                } else {
                     CRef<CPub_equiv> new_pub_equiv(new CPub_equiv);
                     new_pub_equiv->Set().push_back(new_pub);
 
@@ -241,25 +220,21 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
         }
 
         const TPubList& equiv_pubs = pub_equiv->Get();
-        if (!equiv_pubs.empty())
+        if (! equiv_pubs.empty())
             pub = *equiv_pubs.begin();
-    }
-    else
+    } else
         pub = pub_info.GetPub();
 
-    if (new_pub.NotEmpty())
-    {
+    if (new_pub.NotEmpty()) {
         pubs.push_back(new_pub);
         return;
     }
 
-    if (pub->IsGen())
-    {
+    if (pub->IsGen()) {
         if (pub->GetGen().IsSetSerial_number() && pub_info.GetPub() == nullptr) // pub points to the first pub in pub_equiv
         {
             const TPubList& equiv_pubs = pub_equiv->Get();
-            if (equiv_pubs.size() > 1)
-            {
+            if (equiv_pubs.size() > 1) {
                 TPubList::const_iterator cur_pub = equiv_pubs.begin();
                 ++cur_pub;
                 pub = *(cur_pub);
@@ -267,8 +242,7 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
         }
     }
 
-    if (pub->IsMuid() || pub->IsPmid())
-    {
+    if (pub->IsMuid() || pub->IsPmid()) {
         new_pub.Reset(new CPub);
         new_pub->Assign(*pub);
         pubs.push_back(new_pub);
@@ -276,8 +250,7 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
     }
 
     std::string label;
-    if (!pub->GetLabel(&label, CPub::fLabel_Unique))
-    {
+    if (! pub->GetLabel(&label, CPub::fLabel_Unique)) {
         new_pub.Reset(new CPub);
         new_pub->Assign(*pub);
         pubs.push_back(new_pub);
@@ -291,30 +264,25 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
 
 static void ProcessCit(const std::vector<CPubInfo>& pubs, CBioseq::TAnnot& annots, const CBioseq* bioseq)
 {
-    NON_CONST_ITERATE (CBioseq::TAnnot, annot, annots)
+    NON_CONST_ITERATE(CBioseq::TAnnot, annot, annots)
     {
-        if (!(*annot)->IsSetData() || !(*annot)->GetData().IsFtable())
+        if (! (*annot)->IsSetData() || ! (*annot)->GetData().IsFtable())
             continue;
 
-        NON_CONST_ITERATE (CSeq_annot::C_Data::TFtable, feat, (*annot)->SetData().SetFtable())
+        NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat, (*annot)->SetData().SetFtable())
         {
-            if ((*feat)->IsSetQual())
-            {
+            if ((*feat)->IsSetQual()) {
                 TQualVector& quals = (*feat)->SetQual();
 
                 TPubList cit_pubs;
-                for (TQualVector::iterator qual = quals.begin(); qual != quals.end();)
-                {
-                    if ((*qual)->IsSetQual() && (*qual)->GetQual() == "citation")
-                    {
+                for (TQualVector::iterator qual = quals.begin(); qual != quals.end();) {
+                    if ((*qual)->IsSetQual() && (*qual)->GetQual() == "citation") {
                         int ser_num = GetCitSerialFromQual(*(*qual));
-                        qual = quals.erase(qual);
+                        qual        = quals.erase(qual);
 
                         bool found = false;
-                        for (std::vector<CPubInfo>::const_iterator pub = pubs.begin(); pub != pubs.end(); ++pub)
-                        {
-                            if (pub->GetSerial() == ser_num)
-                            {
+                        for (std::vector<CPubInfo>::const_iterator pub = pubs.begin(); pub != pubs.end(); ++pub) {
+                            if (pub->GetSerial() == ser_num) {
                                 if (bioseq && pub->GetBioseq() && bioseq != pub->GetBioseq())
                                     continue;
 
@@ -325,16 +293,14 @@ static void ProcessCit(const std::vector<CPubInfo>& pubs, CBioseq::TAnnot& annot
                             }
                         }
 
-                        if (!found)
-                        {
+                        if (! found) {
                             ErrPostEx(SEV_ERROR, ERR_QUALIFIER_NoRefForCiteQual, "No Reference found for Citation qualifier [%d]", ser_num);
                         }
-                    }
-                    else
+                    } else
                         ++qual;
                 }
 
-                if (!cit_pubs.empty())
+                if (! cit_pubs.empty())
                     (*feat)->SetCit().SetPub().swap(cit_pubs);
             }
         }
@@ -345,10 +311,8 @@ void ProcessCitations(TEntryList& seq_entries)
 {
     std::vector<CPubInfo> pubs;
 
-    ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeConstIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
-        {
+    ITERATE (TEntryList, entry, seq_entries) {
+        for (CTypeConstIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
             if (bio_set->IsSetDescr())
                 FindCitInDescr(pubs, bio_set->GetDescr(), nullptr);
 
@@ -356,8 +320,7 @@ void ProcessCitations(TEntryList& seq_entries)
                 FindCitInFeats(pubs, bio_set->GetAnnot());
         }
 
-        for (CTypeConstIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
+        for (CTypeConstIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 FindCitInDescr(pubs, bioseq->GetDescr(), &(*bioseq));
 
@@ -368,14 +331,12 @@ void ProcessCitations(TEntryList& seq_entries)
 
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
-        {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
             if (bio_set->IsSetAnnot())
                 ProcessCit(pubs, bio_set->SetAnnot(), nullptr);
         }
 
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetAnnot())
                 ProcessCit(pubs, bioseq->SetAnnot(), &(*bioseq));
         }
