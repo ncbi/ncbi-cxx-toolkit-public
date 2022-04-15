@@ -35,7 +35,7 @@
 #define FLATFILE__FLATPARSE_REPORT__HPP
 
 #include "ftaerr.hpp"
-# include <objtools/flatfile/flat2err.h>
+#include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -43,21 +43,21 @@ BEGIN_NCBI_SCOPE
 class CFlatParseReport
 //  ----------------------------------------------------------------------------
 {
-//  Signature convention:
-//  Return value indicates whether the reported problem leaves the qualifier
-//   usable or not.
-//   ==true: problem not serious, use qualifier
-//   ==false: problem serious, don't use qualifier
-//  Args are generally in order featKey, featLocation, qualKey, qualVal but the 
-//   ones that don't apply may be missing.
-//  Any specific arguments come after that.
+    //  Signature convention:
+    //  Return value indicates whether the reported problem leaves the qualifier
+    //   usable or not.
+    //   ==true: problem not serious, use qualifier
+    //   ==false: problem serious, don't use qualifier
+    //  Args are generally in order featKey, featLocation, qualKey, qualVal but the
+    //   ones that don't apply may be missing.
+    //  Any specific arguments come after that.
 public:
     static void ContainsEmbeddedQualifier(
         const string& featKey,
         const string& featLocation,
         const string& qualKey,
         const string& firstEmbedded,
-        bool inNote =false);
+        bool          inNote = false);
 
     static void NoTextAfterEqualSign(
         const string& featKey,
@@ -87,11 +87,11 @@ public:
         const string& qualKey);
 
 private:
-    using ErrCode = pair<int, int>;
+    using ErrCode          = pair<int, int>;
     using ErrMessageLookup = map<ErrCode, const char*>;
 
     static const char* sMessageTemplateFor(
-        int major, 
+        int major,
         int minor);
     static ErrMessageLookup mMessageTemplates;
 };

@@ -55,28 +55,27 @@ void CFlatFileMessageReporter::SetListener(IObjtoolsListener* pMessageListener)
 
 
 void CFlatFileMessageReporter::Report(
-        const string& module,
-        EDiagSev severity,
-        int code,
-        int subcode,
-        const string& text,
-        int lineNum)
+    const string& module,
+    EDiagSev      severity,
+    int           code,
+    int           subcode,
+    const string& text,
+    int           lineNum)
 {
-    if (!m_pMessageListener) {
+    if (! m_pMessageListener) {
         // Throw an exception?
         return;
     }
-    auto pMessage = 
+    auto pMessage =
         make_unique<CFlatFileMessage>(
-                module,
-                severity,
-                code,
-                subcode,
-                text);
+            module,
+            severity,
+            code,
+            subcode,
+            text);
 
     m_pMessageListener->PutMessage(*pMessage);
 }
-
 
 
 END_SCOPE(objects);

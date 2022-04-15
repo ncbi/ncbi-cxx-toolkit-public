@@ -36,42 +36,44 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 CFlatFileMessage::CFlatFileMessage(
-        const string& module,
-        EDiagSev severity,
-        int code,
-        int subcode, 
-        const string& text,
-        int lineNum)
-    : CObjtoolsMessage(text, severity),
-      m_Module(module),
-      m_Code(code),
-      m_Subcode(subcode),
-      m_LineNum(lineNum)
+    const string& module,
+    EDiagSev      severity,
+    int           code,
+    int           subcode,
+    const string& text,
+    int           lineNum) :
+    CObjtoolsMessage(text, severity),
+    m_Module(module),
+    m_Code(code),
+    m_Subcode(subcode),
+    m_LineNum(lineNum)
 {
 }
 
 
-CFlatFileMessage::~CFlatFileMessage(){}
+CFlatFileMessage::~CFlatFileMessage() {}
 
 
 CFlatFileMessage* CFlatFileMessage::Clone() const
 {
     return new CFlatFileMessage(
-            m_Module,
-            m_Severity,
-            m_Code,
-            m_Subcode,
-            m_Text,
-            m_LineNum);
+        m_Module,
+        m_Severity,
+        m_Code,
+        m_Subcode,
+        m_Text,
+        m_LineNum);
 }
 
 
-void CFlatFileMessage::Write(CNcbiOstream& out) const {
+void CFlatFileMessage::Write(CNcbiOstream& out) const
+{
     Dump(out);
 }
 
 
-void CFlatFileMessage::Dump(CNcbiOstream& out) const {
+void CFlatFileMessage::Dump(CNcbiOstream& out) const
+{
 
     const auto severity = GetSeverity();
 
@@ -85,22 +87,22 @@ void CFlatFileMessage::Dump(CNcbiOstream& out) const {
     case eDiag_Info:
         out << "NOTE: ";
         break;
-    default: 
-        {
+    default: {
         string sevName = CNcbiDiag::SeverityName(severity);
         out << NStr::ToUpper(sevName) << ": ";
         break;
-        }
+    }
     }
 
-    if (!m_Module.empty()) {
+    if (! m_Module.empty()) {
         out << m_Module << " ";
     }
     out << GetText() << "\n";
 }
 
 
-void CFlatFileMessage::WriteAsXML(CNcbiOstream& out) const {
+void CFlatFileMessage::WriteAsXML(CNcbiOstream& out) const
+{
     DumpAsXML(out);
 }
 
@@ -108,22 +110,26 @@ void CFlatFileMessage::WriteAsXML(CNcbiOstream& out) const {
 void CFlatFileMessage::DumpAsXML(CNcbiOstream& out) const {}
 
 
-const string& CFlatFileMessage::GetModule() const {
+const string& CFlatFileMessage::GetModule() const
+{
     return m_Module;
 }
 
 
-int CFlatFileMessage::GetCode() const { 
+int CFlatFileMessage::GetCode() const
+{
     return m_Code;
 }
 
 
-int CFlatFileMessage::GetSubCode() const {
+int CFlatFileMessage::GetSubCode() const
+{
     return m_Subcode;
 }
 
 
-int CFlatFileMessage::GetLineNum() const {
+int CFlatFileMessage::GetLineNum() const
+{
     return m_LineNum;
 }
 
