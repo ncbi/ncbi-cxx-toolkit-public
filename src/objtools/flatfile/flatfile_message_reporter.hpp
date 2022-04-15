@@ -41,21 +41,22 @@ BEGIN_SCOPE(objects);
 
 class IObjtoolsListener;
 
-class CFlatFileMessageReporter {
+class CFlatFileMessageReporter
+{
 public:
     static CFlatFileMessageReporter& GetInstance();
-    void SetListener(IObjtoolsListener* pMessageListener);
-    void Report(
-        const string& module,    
-        EDiagSev severity,
-        int code, 
-        int subcode, 
-        const string& text,
-        int lineNum=-1);
+    void                             SetListener(IObjtoolsListener* pMessageListener);
+    void                             Report(
+                                    const string& module,
+                                    EDiagSev      severity,
+                                    int           code,
+                                    int           subcode,
+                                    const string& text,
+                                    int           lineNum = -1);
 
 private:
     CFlatFileMessageReporter(void);
-    IObjtoolsListener* m_pMessageListener=nullptr;    
+    IObjtoolsListener* m_pMessageListener = nullptr;
 };
 
 END_SCOPE(objects);
