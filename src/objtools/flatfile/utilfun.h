@@ -166,6 +166,10 @@ void            check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len,
                                                   bool &inferential,
                                                   bool &experimental,
                                                   bool &assembly);
+void xCheckEstStsGssTpaKeywords(
+    const std::list<std::string> keywordList,
+    bool tpa_check,
+    IndexblkPtr entry);
 
 namespace objects {
     class CScope;

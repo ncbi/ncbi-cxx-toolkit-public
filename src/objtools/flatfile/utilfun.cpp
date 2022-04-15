@@ -1582,6 +1582,45 @@ void fta_remove_env_keywords(TKeywordList& kwds)
 }
 
 /**********************************************************/
+void xCheckEstStsGssTpaKeywords(
+    const std::list<std::string> keywordList,
+    bool tpa_check,
+    IndexblkPtr entry
+    //bool& specialist_db,
+    //bool& inferential,
+    //bool& experimental,
+    //bool& assembly
+)
+{
+    if (keywordList.empty()) {
+        return;
+    }
+    for (auto keyword: keywordList) {
+        fta_keywords_check(
+            keyword.c_str(), &entry->EST, &entry->STS, &entry->GSS,
+            &entry->HTC, nullptr, nullptr,
+            (tpa_check ? &entry->is_tpa : nullptr),
+            nullptr, nullptr, nullptr, nullptr);
+        if (NStr::EqualNocase(keyword, "TPA:assembly")) {
+            entry->specialist_db = true;
+            entry->assembly = true;
+            continue;
+        }
+        if (NStr::EqualNocase(keyword, "TPA:specialist_db")) {
+            entry->specialist_db = true;
+            continue;
+        }
+        if (NStr::EqualNocase(keyword, "TPA:inferential")) {
+            entry->inferential = true;
+            continue;
+        }
+        if (NStr::EqualNocase(keyword, "TPA:experimental")) {
+            entry->experimental = true;
+            continue;
+        }
+    }
+}
+
 void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry,
                                 bool tpa_check, bool &specialist_db,
                                 bool &inferential, bool &experimental,
