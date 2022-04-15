@@ -60,19 +60,19 @@ void Section::xBuildSubBlock(int subtype, const char* subKw)
 
     bool found(false);
     for (auto lineIt = mTextLines.begin(); lineIt != mTextLines.end(); lineIt++) {
-        auto line = *lineIt;
+        auto line         = *lineIt;
         auto firstCharPos = line.find_first_not_of(" ");
         if (found) {
             if (firstCharPos >= 12) {
                 subEnd++;
                 continue;
-            }
-            else break;
+            } else
+                break;
         }
         if (NStr::StartsWith(line, subKw)) {
             subBegin = lineIt;
-            subEnd = subBegin + 1;
-            found = true;
+            subEnd   = subBegin + 1;
+            found    = true;
             continue;
         }
     }
@@ -92,30 +92,29 @@ void Section::xBuildFeatureBlocks()
     bool found(false);
     auto lineIt = mTextLines.begin();
     while (lineIt != mTextLines.end()) {
-        auto line = *lineIt;
+        auto line         = *lineIt;
         auto firstCharPos = line.find_first_not_of(" ");
         if (found) {
             if (firstCharPos > COL_FEATKEY) {
                 subEnd++;
                 lineIt++;
                 continue;
-            }
-            else {
+            } else {
                 if (subBegin != mTextLines.end()) {
                     mSubSections.push_back(
                         new Section(ParFlat_FEATBLOCK, vector<string>(subBegin, subEnd)));
                     mTextLines.erase(subBegin, subEnd);
                 }
                 subBegin = subEnd = mTextLines.end();
-                found = false;
-                lineIt = mTextLines.begin();
+                found             = false;
+                lineIt            = mTextLines.begin();
                 continue;
             }
         }
         if (firstCharPos == COL_FEATKEY) {
             subBegin = lineIt;
-            subEnd = subBegin + 1;
-            found = true;
+            subEnd   = subBegin + 1;
+            found    = true;
             lineIt++;
             continue;
         }
@@ -134,7 +133,7 @@ bool Entry::xInitNidSeqId(
 //  -----------------------------------------------------------------------------
 {
     SectionPtr secPtr = this->GetFirstSectionOfType(type);
-    if (!secPtr) {
+    if (! secPtr) {
         return true;
     }
     throw std::runtime_error("xInitNidSeqId: Details not yet implemented");
@@ -147,7 +146,7 @@ bool Entry::IsAA() const
 //  -----------------------------------------------------------------------------
 {
     IndexblkPtr ibp = mPp->entrylist[mPp->curindx];
-    auto mol = mBaseData.substr(ibp->lc.bp, 2);
+    auto        mol = mBaseData.substr(ibp->lc.bp, 2);
     return (mol == "aa");
 }
 
@@ -156,31 +155,27 @@ bool Entry::IsAA() const
 bool Entry::xInitSeqInst(const unsigned char* pConvert)
 //  -----------------------------------------------------------------------------
 {
-    IndexblkPtr ibp = mPp->entrylist[mPp->curindx];
+    IndexblkPtr  ibp = mPp->entrylist[mPp->curindx];
     LocusContPtr lcp = &ibp->lc;
 
-    auto& bioseq = mSeqEntry->SetSeq();
+    auto& bioseq  = mSeqEntry->SetSeq();
     auto& seqInst = bioseq.SetInst();
-    seqInst.SetRepr(ibp->is_mga ? 
-        CSeq_inst::eRepr_virtual :
-        CSeq_inst::eRepr_raw);
+    seqInst.SetRepr(ibp->is_mga ? CSeq_inst::eRepr_virtual : CSeq_inst::eRepr_raw);
     //Int2         topology;
     //Int2         strand;
     //char*      strandstr;
 
     string topologyStr = mBaseData.substr(lcp->topology, 16);
-    int topology = CheckTPG(topologyStr);
+    int    topology    = CheckTPG(topologyStr);
     if (topology > 1)
         seqInst.SetTopology(static_cast<CSeq_inst::ETopology>(topology));
 
     string strandStr = mBaseData.substr(lcp->strand, 16);
-    int strand = CheckSTRAND((lcp->strand >= 0) ? strandStr : "   ");
+    int    strand    = CheckSTRAND((lcp->strand >= 0) ? strandStr : "   ");
     if (strand > 0)
         seqInst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
 
-    auto codeType = (ibp->is_prot ? 
-        eSeq_code_type_iupacaa :
-        eSeq_code_type_iupacna);
+    auto codeType = (ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna);
     //if (!GetSeqData(pp, entry, bioseq, ParFlat_ORIGIN, dnaconv, codeType))
     //    return false;
 
@@ -195,14 +190,14 @@ bool Entry::xInitSeqInst(const unsigned char* pConvert)
 static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
 {
     const char* p = nullptr;
-    char* q;
-    size_t   i;
+    char*       q;
+    size_t      i;
 
-    for(p = ffbuf.current, q = to, i = 0; i < len && *p != '\0'; i++)
+    for (p = ffbuf.current, q = to, i = 0; i < len && *p != '\0'; i++)
         *q++ = *p++;
 
     ffbuf.current = p;
-    return(i);
+    return (i);
 }
 
 /**********************************************************
@@ -222,95 +217,79 @@ static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
 EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
 {
     DataBlkPtr entry;
-    char* eptr;
-    char* q;
+    char*      eptr;
+    char*      q;
     size_t     i;
 
     pp->ffbuf.current = pp->ffbuf.start + offset;
-    i = 0;
+    i                 = 0;
 
-    entry = new DataBlk(nullptr, ParFlat_ENTRYNODE);
-    entry->mpNext = NULL;                 /* assume no segment at this time */
+    entry          = new DataBlk(nullptr, ParFlat_ENTRYNODE);
+    entry->mpNext  = NULL;                   /* assume no segment at this time */
     entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */
-    entry->len = FileReadBuf(entry->mOffset, len, pp->ffbuf);
+    entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
 
-    if ((size_t)entry->len != len)  /* hardware problem */
+    if ((size_t)entry->len != len) /* hardware problem */
     {
-        ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry,
-            "FileRead failed, in LoadEntry routine.");
+        ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
         MemFree(entry);
-        return(NULL);
+        return (NULL);
     }
 
-    eptr = entry->mOffset + entry->len;
+    eptr     = entry->mOffset + entry->len;
     bool was = false;
 
-    for (q = entry->mOffset; q < eptr; q++)
-    {
+    for (q = entry->mOffset; q < eptr; q++) {
         if (*q == 13) {
             *q = 10;
         }
-        if (*q > 126 || (*q < 32 && *q != 10))
-        {
-            ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar,
-                "none-ASCII char, Decimal value %d, replaced by # ",
-                (int)*q);
+        if (*q > 126 || (*q < 32 && *q != 10)) {
+            ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "none-ASCII char, Decimal value %d, replaced by # ", (int)*q);
             *q = '#';
         }
 
         /* Modified to skip empty line: Tatiana - 01/21/94
         */
-        if (*q != '\n')
-        {
+        if (*q != '\n') {
             was = false;
             continue;
         }
-        for (i = 0; q > entry->mOffset;)
-        {
+        for (i = 0; q > entry->mOffset;) {
             i++;
             q--;
             if (*q != ' ')
                 break;
         }
         if (i > 0 &&
-            (*q == '\n' || (q - 2 >= entry->mOffset && *(q - 2) == '\n')))
-        {
+            (*q == '\n' || (q - 2 >= entry->mOffset && *(q - 2) == '\n'))) {
             q += i;
             i = 0;
         }
-        if (i > 0)
-        {
-            if (*q != ' ')
-            {
+        if (i > 0) {
+            if (*q != ' ') {
                 q++;
                 i--;
             }
-            if (i > 0)
-            {
+            if (i > 0) {
                 fta_StringCpy(q, q + i);
                 eptr -= i;
                 entry->len -= i;
             }
         }
 
-        if (q + 3 < eptr && q[3] == '.')
-        {
+        if (q + 3 < eptr && q[3] == '.') {
             q[3] = ' ';
-            if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL)
-            {
-                ErrPostEx(SEV_WARNING, ERR_FORMAT_DirSubMode,
-                    "The format allowed only in DirSubMode: period after the tag");
+            if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL) {
+                ErrPostEx(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
             }
         }
-        if (was)
-        {
-            fta_StringCpy(q, q + 1);    /* requires null byte */
+        if (was) {
+            fta_StringCpy(q, q + 1); /* requires null byte */
             q--;
             eptr--;
             entry->len--;
-        }
-        else
+        } else
             was = true;
     }
 
@@ -322,43 +301,40 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
 DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 {
     DataBlkPtr entry;
-    char*    eptr;
-    char*    q;
+    char*      eptr;
+    char*      q;
     size_t     i;
 
     pp->ffbuf.current = pp->ffbuf.start + offset;
-    i = 0;
+    i                 = 0;
 
     entry = new DataBlk(
-        nullptr, 
+        nullptr,
         ParFlat_ENTRYNODE);
-    entry->len = len;
-    entry->mpNext = nullptr;                 /* assume no segment at this time */
+    entry->len     = len;
+    entry->mpNext  = nullptr;                /* assume no segment at this time */
     entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */
-    entry->len = FileReadBuf(entry->mOffset, len, pp->ffbuf);
-    entry->mpData = new EntryBlk();
+    entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
+    entry->mpData  = new EntryBlk();
 
 
-    if ((size_t)entry->len != len)  /* hardware problem */
+    if ((size_t)entry->len != len) /* hardware problem */
     {
-        ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry,
-                  "FileRead failed, in LoadEntry routine.");
+        ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
         MemFree(entry);
-        return(NULL);
+        return (NULL);
     }
 
-    eptr = entry->mOffset + entry->len;
-    bool was = false;
+    eptr       = entry->mOffset + entry->len;
+    bool  was  = false;
     char* wasx = NULL;
-    for (q = entry->mOffset; q < eptr; q++)
-    {
+    for (q = entry->mOffset; q < eptr; q++) {
         if (*q != '\n')
             continue;
 
-        if (wasx != NULL)
-        {
-            fta_StringCpy(wasx, q);     /* remove XX lines */
+        if (wasx != NULL) {
+            fta_StringCpy(wasx, q); /* remove XX lines */
             eptr -= q - wasx;
             entry->len -= q - wasx;
             q = wasx;
@@ -369,71 +345,56 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
             wasx = NULL;
     }
 
-    for (q = entry->mOffset; q < eptr; q++)
-    {
+    for (q = entry->mOffset; q < eptr; q++) {
         if (*q == 13) {
             *q = 10;
         }
-        if (*q > 126 || (*q < 32 && *q != 10))
-        {
-            ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar,
-                      "none-ASCII char, Decimal value %d, replaced by # ",
-                      (int)*q);
+        if (*q > 126 || (*q < 32 && *q != 10)) {
+            ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "none-ASCII char, Decimal value %d, replaced by # ", (int)*q);
             *q = '#';
         }
 
         /* Modified to skip empty line: Tatiana - 01/21/94
         */
-        if (*q != '\n')
-        {
+        if (*q != '\n') {
             was = false;
             continue;
         }
-        for (i = 0; q > entry->mOffset;)
-        {
+        for (i = 0; q > entry->mOffset;) {
             i++;
             q--;
             if (*q != ' ')
                 break;
         }
         if (i > 0 &&
-            (*q == '\n' || (q - 2 >= entry->mOffset && *(q - 2) == '\n')))
-        {
+            (*q == '\n' || (q - 2 >= entry->mOffset && *(q - 2) == '\n'))) {
             q += i;
             i = 0;
         }
-        if (i > 0)
-        {
-            if (*q != ' ')
-            {
+        if (i > 0) {
+            if (*q != ' ') {
                 q++;
                 i--;
             }
-            if (i > 0)
-            {
+            if (i > 0) {
                 fta_StringCpy(q, q + i);
                 eptr -= i;
                 entry->len -= i;
             }
         }
 
-        if (q + 3 < eptr && q[3] == '.')
-        {
+        if (q + 3 < eptr && q[3] == '.') {
             q[3] = ' ';
-            if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL)
-            {
-                ErrPostEx(SEV_WARNING, ERR_FORMAT_DirSubMode,
-                          "The format allowed only in DirSubMode: period after the tag");
+            if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL) {
+                ErrPostEx(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
             }
         }
-        if (was)
-        {
-            fta_StringCpy(q, q + 1);    /* requires null byte */
+        if (was) {
+            fta_StringCpy(q, q + 1); /* requires null byte */
             q--;
             eptr--;
             entry->len--;
-        }
-        else
+        } else
             was = true;
     }
     return entry;

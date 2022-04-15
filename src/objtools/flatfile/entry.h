@@ -12,41 +12,43 @@ struct Section
 //  ============================================================================
 {
     Section(
-        int type_,
+        int                   type_,
         const vector<string>& textLines) :
         mType(type_),
         mTextLines(textLines.begin(), textLines.end()),
         mpQscore(nullptr),
-        mDrop(0)
-    {
-    };
+        mDrop(0){};
 
-    ~Section() {
+    ~Section()
+    {
         delete[] mpQscore;
         for (auto subStr : mSubSections) {
             delete subStr;
         }
     }
 
-    void DumpText(ostream& ostr) const {
+    void DumpText(ostream& ostr) const
+    {
         ostr << NStr::Join(mTextLines, "\n");
-        ostr << endl << endl;
+        ostr << endl
+             << endl;
         for (auto subPtr : mSubSections) {
             for (auto line : subPtr->mTextLines) {
                 ostr << ">>  " << line << endl;
             }
-            ostr << endl << endl;
+            ostr << endl
+                 << endl;
         }
     }
 
     void xBuildSubBlock(int subtype, const char* subKw);
     void xBuildFeatureBlocks();
 
-    int mType;  // which keyword block or node type
-    vector<string> mTextLines;
+    int              mType; // which keyword block or node type
+    vector<string>   mTextLines;
     vector<Section*> mSubSections;
-    char* mpQscore;  // points to quality score buffer
-    bool mDrop;
+    char*            mpQscore; // points to quality score buffer
+    bool             mDrop;
 };
 using SectionPtr = Section*;
 
@@ -56,16 +58,19 @@ struct Entry {
     //  ============================================================================
 
     Entry(
-        ParserPtr pp,
-        const char* baseData) : mPp(pp), mBaseData(baseData) {};
+        ParserPtr   pp,
+        const char* baseData) :
+        mPp(pp), mBaseData(baseData){};
 
-    ~Entry() {
+    ~Entry()
+    {
         for (auto sectionPtr : mSections) {
             delete sectionPtr;
         }
     };
 
-    SectionPtr GetFirstSectionOfType(int type) {
+    SectionPtr GetFirstSectionOfType(int type)
+    {
         for (auto secPtr : mSections) {
             if (secPtr->mType == type) {
                 return secPtr;
@@ -74,7 +79,8 @@ struct Entry {
         return nullptr;
     }
 
-    void AppendSection(SectionPtr secPtr) {
+    void AppendSection(SectionPtr secPtr)
+    {
         if (secPtr) {
             mSections.push_back(secPtr);
         }
@@ -85,16 +91,16 @@ struct Entry {
     bool xInitNidSeqId(objects::CBioseq&, int type, int dataOffset, Parser::ESource);
     bool xInitSeqInst(const unsigned char* pConvert);
 
-    ParserPtr mPp;
-    string mBaseData;
-    list<SectionPtr> mSections;
+    ParserPtr                 mPp;
+    string                    mBaseData;
+    list<SectionPtr>          mSections;
     CRef<objects::CSeq_entry> mSeqEntry;
 };
 using EntryPtr = Entry*;
 
 
 DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len);
-EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len);
+EntryPtr   LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len);
 
 END_NCBI_SCOPE
 
