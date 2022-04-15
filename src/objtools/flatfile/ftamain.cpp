@@ -53,7 +53,7 @@
 #include "ftanet.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
-
+#include "keyword_parse.hpp"
 
 #include "flatfile_message_reporter.hpp"
 #include "ftaerr.hpp"
@@ -499,6 +499,12 @@ static CRef<CSerialObject> CloseAll(ParserPtr pp)
 
 static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=false)
 {
+    // For now.
+    // In a perfect (future?) world, this would be a method of CFlatFileParser,
+    //  and the keywordparser would be a subsystem of CFlatFileParser itself, not of
+    //  its configuration.
+    pp->InitializeKeywordParser(pp->format);
+
     if(pp->output_format == Parser::EOutput::BioseqSet)
         SetReleaseStr(pp);
     else if(pp->output_format == Parser::EOutput::Seqsubmit)

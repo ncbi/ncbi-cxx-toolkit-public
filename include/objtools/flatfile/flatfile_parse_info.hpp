@@ -46,7 +46,7 @@ struct FileBuf {
 };
 struct Indexblk;
 struct protein_block;
-
+class CKeywordParser;
 using IndexblkPtr = Indexblk*;
 typedef struct protein_block* ProtBlkPtr;
 
@@ -214,7 +214,17 @@ struct Parser {
     char* (*ff_get_entry_pp)(const char* accession, Parser* pp)                = nullptr;
     char* (*ff_get_entry_v_pp)(const char* accession, Int2 vernum, Parser* pp) = nullptr;
 
+    Parser();
     virtual ~Parser();
+
+    // not a good place but until CFlatFileParser develops, pretty much the only
+    // possible place.
+    // and unique_ptr didn't work here because of template initialization issues.
+    void InitializeKeywordParser(
+        EFormat);
+    CKeywordParser& KeywordParser();
+private:
+    CKeywordParser* mpKeywordParser;
 };
 
 using ParserPtr = Parser*;

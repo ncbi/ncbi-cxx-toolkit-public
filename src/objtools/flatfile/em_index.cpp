@@ -44,6 +44,7 @@
 #include "indx_def.h"
 #include "utilfun.h"
 #include "entry.h"
+#include "keyword_parse.hpp"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -63,73 +64,6 @@ vector<string> checkedEmblKeywords = {
     "RC", "RG", "RA", "RT", "RL", "DR", 
     "FH", "FT", "SQ", "CC", "SV", "CO", 
     "XX", "AH", "AS", "PR", "//"
-};
-
-
-struct CKeywordParser
-{
-    Parser::EFormat mFormat;
-    list<string> mKeywords;
-    bool mDataDone;
-    string mPending;
-    bool mDataClean;
-
-    CKeywordParser(
-            Parser::EFormat format): 
-        mFormat(format),
-        mDataDone(false),
-        mDataClean(false)
-    {};
-
-    ~CKeywordParser() {};
-        
-    const list<string> KeywordList() const
-    {
-        return mKeywords;
-    }
-
-    void AddDataLine(
-        const string& line)
-    {
-        if (mDataDone) {
-            // throw
-        }
-        string data(line);
-        switch(mFormat) {
-        default:
-            break;
-        case Parser::EFormat::EMBL:
-            data = NStr::TruncateSpaces(data.substr(2));
-            break;
-        }
-        if (!mPending.empty()  &&  !NStr::EndsWith(mPending, ";")) {
-            mPending += ' ';
-        }
-        mPending += data;
-        if (NStr::EndsWith(mPending, '.')) {
-            xFinalize();
-            return;
-        }
-        if (!NStr::EndsWith(mPending, ";")) {
-            mPending += ' ';
-            return;
-        }
-    }
-
-    void xFinalize()
-    {
-        list<string> words;
-        NStr::TrimSuffixInPlace(mPending, ".");
-        NStr::Split(mPending, ";", words);
-        for (auto word: words) {
-            mKeywords.push_back(NStr::TruncateSpaces(word));
-        }
-        mDataDone = true;
-    }
-
-    void Cleanup()
-    {
-    }
 };
 
 
@@ -288,8 +222,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     finfo = new FinfoBlk();
 
-    CKeywordParser keywordParser(pp->format);
-
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
     if(end_of_file)
     {
@@ -351,7 +283,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 {
                     if(pp->source == Parser::ESource::EMBL ||
                             pp->source == Parser::ESource::DDBJ) {
-                        keywordParser.AddDataLine(finfo->str);
+                        pp->KeywordParser().AddDataLine(finfo->str);
                     }
                 }
                 else if(StringNCmp(finfo->str, keywordId.c_str(), keywordId.size()) == 0)
@@ -489,7 +421,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             } /* while, end of one entry */
 
             xCheckEstStsGssTpaKeywords(
-                keywordParser.KeywordList(),
+                pp->KeywordParser().KeywordList(),
                 tpa_check,
                 entry);
 

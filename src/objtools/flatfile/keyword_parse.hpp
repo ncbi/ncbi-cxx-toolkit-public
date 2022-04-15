@@ -23,46 +23,52 @@
  *
  * ===========================================================================
  *
- * File Name: flatfile_parse_info.cpp
+ * File Name: keyword_parse.hpp
  *
- * Author: 
+ * Author: Frank Ludwig
  *
  * File Description:
- *      Main routines for parsing flat files to ASN.1 file format.
- * Available flat file format are GENBANK (LANL), EMBL, SWISS-PROT.
  *
  */
 
-#include <ncbi_pch.hpp>
+#ifndef FLATFILE__KEYWORD_PARSE__HPP
+#define FLATFILE__KEYWORD_PARSE__HPP
 
+#include "ftaerr.hpp"
 #include <objtools/flatfile/flatfile_parse_info.hpp>
-#include "keyword_parse.hpp"
-#include "indx_blk.h"
+
+ //# include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
-Parser::Parser(): 
-    mpKeywordParser(nullptr)
-{}
 
-void
-Parser::InitializeKeywordParser(
-    EFormat format)
+//  ----------------------------------------------------------------------------
+class CKeywordParser
+//  ----------------------------------------------------------------------------
 {
-    mpKeywordParser = new CKeywordParser(format);
-}
+public:
+    CKeywordParser(
+        Parser::EFormat format);
 
-CKeywordParser&
-Parser::KeywordParser()
-{
-    _ASSERT(mpKeywordParser);
-    return *mpKeywordParser;
-}
+    ~CKeywordParser();
 
-Parser::~Parser() 
-{
-    delete mpKeywordParser;
-    ResetParserStruct(this);
-}
+    const list<string> KeywordList() const;
+
+    void AddDataLine(
+        const string& line);
+
+    void Cleanup();
+
+private:
+    void xFinalize();
+
+    Parser::EFormat mFormat;
+    list<string> mKeywords;
+    bool mDataDone;
+    string mPending;
+    bool mDataClean;
+};
 
 END_NCBI_SCOPE
+
+#endif //FLATFILE__KEYWORD_PARSE__HPP

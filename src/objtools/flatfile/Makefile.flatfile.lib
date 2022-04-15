@@ -40,6 +40,7 @@ SRC     = \
     flatfile_message_reporter \
     qual_parse \
     qual_validate \
+    keyword_parse \
     flatparse_report
 
 LIB     = xflatfile
