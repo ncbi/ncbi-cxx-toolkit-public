@@ -47,6 +47,7 @@ NCBI_begin_lib(xflatfile)
     qual_parse
     qual_validate
     flatparse_report
+    keyword_parse
   )
 
   NCBI_uses_toolkit_libraries(
