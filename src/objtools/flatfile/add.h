@@ -40,53 +40,49 @@ BEGIN_NCBI_SCOPE
 
 CRef<objects::CSeq_loc> fta_get_seqloc_int_whole(objects::CSeq_id& seq_id, size_t len);
 
-char*       tata_save(char* str);
+char* tata_save(char* str);
 
-bool          no_date(Parser::EFormat format, const TSeqdescList& descrs);
-bool          no_reference(const objects::CBioseq& bioseq);
+bool no_date(Parser::EFormat format, const TSeqdescList& descrs);
+bool no_reference(const objects::CBioseq& bioseq);
 
-bool          check_cds(const DataBlk& entry, Parser::EFormat format);
-void          err_install(IndexblkPtr ibp, bool accver);
-void          SeqToDelta(objects::CBioseq& bioseq, Int2 tech);
-void          GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
-void          AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
-bool          fta_strings_same(const char* s1, const char* s2);
+bool check_cds(const DataBlk& entry, Parser::EFormat format);
+void err_install(IndexblkPtr ibp, bool accver);
+void SeqToDelta(objects::CBioseq& bioseq, Int2 tech);
+void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
+void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
+bool fta_strings_same(const char* s1, const char* s2);
 
-bool          fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& mol_info);
-                               
-bool          fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum,
-                                            Int2 vernum, size_t len, Int2 col_data, bool tpa);
-                                    
-void fta_get_project_user_object(TSeqdescList& descrs, char* offset,
-                                 Parser::EFormat format, unsigned char* drop, Parser::ESource source);
+bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& mol_info);
 
-void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset,
-                                size_t len, Parser::ESource source, unsigned char* drop,
-                                CRef<objects::CUser_object>& dbuop);
-                                    
-Uint1         fta_check_con_for_wgs(objects::CBioseq& bioseq);
+bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum, Int2 vernum, size_t len, Int2 col_data, bool tpa);
 
-    
-Int4          fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* name, bool iscon);
-void          fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs);
-char*       GetQSFromFile(FILE* fd, IndexblkPtr ibp);
-void          fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry);
-void          fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq, bool is_tsa);
-void          fta_set_molinfo_completeness(objects::CBioseq& bioseq, IndexblkPtr ibp);
-bool          fta_number_is_huge(const char* s);
+void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, unsigned char* drop, Parser::ESource source);
 
-void          fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num);
-bool          fta_if_valid_biosample(const char* id, bool dblink);
-bool          fta_if_valid_sra(const char* id, bool dblink);
-void          StripECO(char* str);
+void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, unsigned char* drop, CRef<objects::CUser_object>& dbuop);
+
+Uint1 fta_check_con_for_wgs(objects::CBioseq& bioseq);
+
+
+Int4  fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* name, bool iscon);
+void  fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs);
+char* GetQSFromFile(FILE* fd, IndexblkPtr ibp);
+void  fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry);
+void  fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq, bool is_tsa);
+void  fta_set_molinfo_completeness(objects::CBioseq& bioseq, IndexblkPtr ibp);
+bool  fta_number_is_huge(const char* s);
+
+void fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num);
+bool fta_if_valid_biosample(const char* id, bool dblink);
+bool fta_if_valid_sra(const char* id, bool dblink);
+void StripECO(char* str);
 void xStripECO(string&);
-void          fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source,
-                                 Int4 acctype, bool pricon, char* acc);
+void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, Int4 acctype, bool pricon, char* acc);
 
-char* StringRStr(char* where, const char *what);
-bool    fta_dblink_has_sra(const CRef<objects::CUser_object>& uop);
+char* StringRStr(char* where, const char* what);
+bool  fta_dblink_has_sra(const CRef<objects::CUser_object>& uop);
 
-namespace objects {
+namespace objects
+{
     class CScope;
 };
 
