@@ -101,7 +101,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-const char *magic_phrases[] = {
+const char* magic_phrases[] = {
     "*** SEQUENCING IN PROGRESS ***",
     "***SEQUENCING IN PROGRESS***",
     "WORKING DRAFT SEQUENCE",
@@ -119,44 +119,37 @@ void ShrinkSpaces(char* line)
 {
     char* p;
     char* q;
-    bool got_nl;
+    bool  got_nl;
 
     if (line == NULL || *line == '\0')
         return;
 
-    for(p = line; *p != '\0'; p++)
-    {
-        if(*p == '\t')
+    for (p = line; *p != '\0'; p++) {
+        if (*p == '\t')
             *p = ' ';
-        if((*p == ',' && p[1] == ',') || (*p == ';' && p[1] == ';'))
+        if ((*p == ',' && p[1] == ',') || (*p == ';' && p[1] == ';'))
             p[1] = ' ';
-        if((p[1] == ',' || p[1] == ';') && p[0] == ' ')
-        {
+        if ((p[1] == ',' || p[1] == ';') && p[0] == ' ') {
             p[0] = p[1];
             p[1] = ' ';
         }
     }
 
-    for (p = line, q = line; *p != '\0';)
-    {
+    for (p = line, q = line; *p != '\0';) {
         *q = *p;
-        if (*p == ' ' || *p == '\n')
-        {
-            for (got_nl = false; *p == ' ' || *p == '\n'; p++)
-            {
+        if (*p == ' ' || *p == '\n') {
+            for (got_nl = false; *p == ' ' || *p == '\n'; p++) {
                 if (*p == '\n')
                     got_nl = true;
             }
 
             if (got_nl)
                 *q = '\n';
-        }
-        else
+        } else
             p++;
         q++;
     }
-    if (q > line)
-    {
+    if (q > line) {
         for (q--; q > line && (*q == ' ' || *q == ';' || *q == '\n');)
             q--;
         if (*q != ' ' && *q != ';' && *q != '\n')
@@ -181,11 +174,10 @@ void ShrinkSpaces(char* line)
 *                                              3-18-93
 *
 **********************************************************/
-static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type,
-                                char* offset, size_t len)
+static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type, char* offset, size_t len)
 {
     DataBlk* ldp = new DataBlk(*dbp, type, offset, len);
-    if (!*dbp) {
+    if (! *dbp) {
         *dbp = ldp;
     }
 }
@@ -213,15 +205,15 @@ void xGetGenBankBlocks(Entry& entry)
     NStr::Split(entry.mBaseData, "\n", lines);
 
     vector<string> sectionLines;
-    int currentKw = ParFlat_LOCUS;
-    int nextKw = currentKw;
-    string sectionText = "";
-    for (auto line: lines) {
+    int            currentKw   = ParFlat_LOCUS;
+    int            nextKw      = currentKw;
+    string         sectionText = "";
+    for (auto line : lines) {
         nextKw = SrchKeyword(line, genbankKeywords);
         if (nextKw == ParFlat_UNKW) {
             nextKw = currentKw;
         }
-        if (nextKw != currentKw  ||  NStr::StartsWith(line, "REFERENCE")) {
+        if (nextKw != currentKw || NStr::StartsWith(line, "REFERENCE")) {
             auto secPtr = new Section(currentKw, sectionLines);
             //secPtr->DumpText(cerr);
             entry.mSections.push_back(secPtr);
@@ -235,36 +227,35 @@ void xGetGenBankBlocks(Entry& entry)
     entry.mSections.push_back(new Section(currentKw, sectionLines));
 }
 
-char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
-                        char* eptr)
+char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw, char* eptr)
 {
     char* offset;
-    int curkw;
-    int nextkw;
-    Int4    len;
+    int   curkw;
+    int   nextkw;
+    Int4  len;
 
-    len = 0;
+    len    = 0;
     offset = ptr;
-    curkw = *retkw;
+    curkw  = *retkw;
     nextkw = ParFlat_UNKW;
     nextkw = curkw;
 
-    do                          /* repeat loop until it finds next key-word */
+    do /* repeat loop until it finds next key-word */
     {
         for (; ptr < eptr && *ptr != '\n'; ptr++)
             len++;
         if (ptr >= eptr)
-            return(ptr);
+            return (ptr);
 
-        ++ptr;                          /* newline character */
+        ++ptr; /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(CTempString(ptr,eptr-ptr), genbankKeywords);
-        if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
+        nextkw = SrchKeyword(CTempString(ptr, eptr - ptr), genbankKeywords);
+        if (nextkw == ParFlat_UNKW) /* it can be "XX" line,
                                             treat as same line */
-                                            nextkw = curkw;
+            nextkw = curkw;
 
-        if (StringNCmp(ptr, "REFERENCE", 9) == 0)        /* treat as one block */
+        if (StringNCmp(ptr, "REFERENCE", 9) == 0) /* treat as one block */
             break;
     } while (nextkw == curkw);
 
@@ -272,7 +263,7 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
 
     InsertDatablkVal(chain, curkw, offset, len);
     *retkw = nextkw;
-    return(ptr);
+    return (ptr);
 }
 
 
@@ -293,9 +284,9 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw,
 **********************************************************/
 static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
 {
-    Char    str[100];
-    Char    str1[100];
-    Char    str2[100];
+    Char  str[100];
+    Char  str1[100];
+    Char  str2[100];
     char* bptr;
     char* eptr;
 
@@ -316,7 +307,7 @@ static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
         dbp->mType = ParFlat_REF_NO_TARGET;
     else if (NStr::Find(ref, str) != NPOS || NStr::Find(ref, str1) != NPOS ||
              NStr::Find(ref, str2) != NPOS)
-                dbp->mType = ParFlat_REF_END;
+        dbp->mType = ParFlat_REF_END;
     else if (NStr::Find(ref, "(sites)") != NPOS)
         dbp->mType = ParFlat_REF_SITES;
     else
@@ -337,24 +328,21 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
     char* bptr;
     char* eptr;
     char* ptr;
-    bool skip;
+    bool  skip;
 
     bptr = dbp->mOffset;
     eptr = bptr + dbp->len;
-    ptr = SrchTheChar(bptr, eptr, '\n');
+    ptr  = SrchTheChar(bptr, eptr, '\n');
 
     if (ptr == NULL)
         return;
 
     bptr = ptr + 1;
 
-    while (bptr < eptr)
-    {
-        InsertDatablkVal((DataBlkPtr*) &dbp->mpData, ParFlat_FEATBLOCK,
-                            bptr, eptr - bptr);
+    while (bptr < eptr) {
+        InsertDatablkVal((DataBlkPtr*)&dbp->mpData, ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
-        do
-        {
+        do {
             bptr = SrchTheChar(bptr, eptr, '\n');
             bptr++;
 
@@ -368,18 +356,17 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static void fta_check_mult_ids(DataBlkPtr dbp, const char *mtag,
-                                const char *ptag)
+static void fta_check_mult_ids(DataBlkPtr dbp, const char* mtag, const char* ptag)
 {
     char* p;
-    Char    ch;
-    Int4    muids;
-    Int4    pmids;
+    Char  ch;
+    Int4  muids;
+    Int4  pmids;
 
     if (dbp == NULL || dbp->mOffset == NULL || (mtag == NULL && ptag == NULL))
         return;
 
-    ch = dbp->mOffset[dbp->len];
+    ch                     = dbp->mOffset[dbp->len];
     dbp->mOffset[dbp->len] = '\0';
 
     size_t mlen = (mtag == NULL) ? 0 : StringLen(mtag);
@@ -387,8 +374,7 @@ static void fta_check_mult_ids(DataBlkPtr dbp, const char *mtag,
 
     muids = 0;
     pmids = 0;
-    for (p = dbp->mOffset;; p++)
-    {
+    for (p = dbp->mOffset;; p++) {
         p = StringChr(p, '\n');
         if (p == NULL)
             break;
@@ -399,15 +385,11 @@ static void fta_check_mult_ids(DataBlkPtr dbp, const char *mtag,
     }
     dbp->mOffset[dbp->len] = ch;
 
-    if (muids > 1)
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers,
-                    "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
+    if (muids > 1) {
+        ErrPostEx(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
     }
-    if (pmids > 1)
-    {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers,
-                    "Reference has multiple PUBMED identifiers. Ignoring all but the first.");
+    if (pmids > 1) {
+        ErrPostEx(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple PUBMED identifiers. Ignoring all but the first.");
     }
 }
 
@@ -423,15 +405,13 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
     DataBlkPtr dbp;
 
     dbp = TrackNodeType(entry, ParFlat_SOURCE);
-    if (dbp != NULL)
-    {
+    if (dbp != NULL) {
         BuildSubBlock(dbp, ParFlat_ORGANISM, "  ORGANISM");
         GetLenSubNode(dbp);
     }
 
     dbp = TrackNodeType(entry, ParFlat_REFERENCE);
-    for (; dbp != NULL; dbp = dbp->mpNext)
-    {
+    for (; dbp != NULL; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REFERENCE)
             continue;
 
@@ -449,8 +429,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
     }
 
     dbp = TrackNodeType(entry, ParFlat_FEATURES);
-    for (; dbp != NULL; dbp = dbp->mpNext)
-    {
+    for (; dbp != NULL; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_FEATURES)
             continue;
 
@@ -463,7 +442,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
 void xGetGenBankSubBlocks(Entry& entry, size_t bases)
 //  ----------------------------------------------------------------------------
 {
-    for (auto secPtr: entry.mSections) {
+    for (auto secPtr : entry.mSections) {
         auto secType = secPtr->mType;
         if (secType == ParFlat_SOURCE) {
             secPtr->xBuildSubBlock(ParFlat_ORGANISM, "  ORGANISM");
@@ -512,54 +491,52 @@ void xGetGenBankSubBlocks(Entry& entry, size_t bases)
 *                                              12-15-93
 *
 **********************************************************/
-char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw,
-                    Parser::EFormat format, char* eptr)
+char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr)
 {
     char* offset;
-    Int2    curkw;
-    Int2    nextkw;
-    bool seen_oc = false;
+    Int2  curkw;
+    Int2  nextkw;
+    bool  seen_oc = false;
 
     size_t len = 0;
-    offset = ptr;
-    curkw = *retkw;
-    nextkw = curkw;
+    offset     = ptr;
+    curkw      = *retkw;
+    nextkw     = curkw;
 
-    do                          /* repeat loop until it finds next key-word */
+    do /* repeat loop until it finds next key-word */
     {
         for (; ptr < eptr && *ptr != '\n'; ptr++)
             len++;
-        if (ptr >= eptr)
-        {
+        if (ptr >= eptr) {
             *retkw = ParFlat_END;
-            return(ptr);
+            return (ptr);
         }
-        ++ptr;                          /* newline character */
+        ++ptr; /* newline character */
         ++len;
 
         nextkw = SrchKeyword(
-            CTempString(ptr, eptr-ptr),
+            CTempString(ptr, eptr - ptr),
             (format == Parser::EFormat::SPROT) ? swissProtKeywords : emblKeywords);
-        if (nextkw == ParFlat_UNKW)      /* it can be "XX" line,
+        if (nextkw == ParFlat_UNKW) /* it can be "XX" line,
                                             treat as same line */
-                                            nextkw = curkw;
-        if (StringNCmp(ptr, "RN", 2) == 0)       /* treat each RN per block */
+            nextkw = curkw;
+        if (StringNCmp(ptr, "RN", 2) == 0) /* treat each RN per block */
             break;
-        if (StringNCmp(ptr, "ID", 2) == 0)       /* treat each ID per block */
+        if (StringNCmp(ptr, "ID", 2) == 0) /* treat each ID per block */
             break;
 
         if (StringNCmp(ptr, "OC", 2) == 0)
             seen_oc = true;
 
         if (StringNCmp(ptr, "OS", 2) == 0 && seen_oc)
-            break;                      /* treat as next OS block */
+            break; /* treat as next OS block */
 
     } while (nextkw == curkw);
 
     InsertDatablkVal(chain, curkw, offset, len);
 
     *retkw = nextkw;
-    return(ptr);
+    return (ptr);
 }
 
 /**********************************************************
@@ -579,30 +556,25 @@ static bool TrimEmblFeatBlk(DataBlkPtr dbp)
     char* bptr;
     char* eptr;
     char* ptr;
-    bool flag = false;
+    bool  flag = false;
 
     bptr = dbp->mOffset;
     eptr = bptr + dbp->len;
-    ptr = SrchTheChar(bptr, eptr, '\n');
+    ptr  = SrchTheChar(bptr, eptr, '\n');
 
-    while (ptr != NULL && ptr + 1 < eptr)
-    {
-        if (ptr[2] == 'H')
-        {
-            dbp->len = dbp->len - (ptr - dbp->mOffset + 1);
+    while (ptr != NULL && ptr + 1 < eptr) {
+        if (ptr[2] == 'H') {
+            dbp->len     = dbp->len - (ptr - dbp->mOffset + 1);
             dbp->mOffset = ptr + 1;
 
             bptr = dbp->mOffset;
             eptr = bptr + dbp->len;
-        }
-        else
-        {
+        } else {
             bptr = ptr + 1;
 
-            if (bptr[1] == 'T')
-            {
-                flag = true;
-                *bptr = ' ';
+            if (bptr[1] == 'T') {
+                flag    = true;
+                *bptr   = ' ';
                 bptr[1] = ' ';
             }
         }
@@ -610,7 +582,7 @@ static bool TrimEmblFeatBlk(DataBlkPtr dbp)
         ptr = SrchTheChar(bptr, eptr, '\n');
     }
 
-    return(flag);
+    return (flag);
 }
 
 /**********************************************************
@@ -623,19 +595,16 @@ static bool TrimEmblFeatBlk(DataBlkPtr dbp)
 *                                              6-15-93
 *
 **********************************************************/
-static bool GetSubNodeType(const char *subkw, char** retbptr,
-                                char* eptr)
+static bool GetSubNodeType(const char* subkw, char** retbptr, char* eptr)
 {
     char* bptr;
     char* ptr;
 
-    bptr = *retbptr;
+    bptr          = *retbptr;
     size_t sublen = StringLen(subkw);
 
-    while (bptr < eptr)
-    {
-        if (StringNCmp(bptr, subkw, sublen) == 0)
-        {
+    while (bptr < eptr) {
+        if (StringNCmp(bptr, subkw, sublen) == 0) {
             *retbptr = bptr;
             return true;
         }
@@ -664,7 +633,7 @@ static bool GetSubNodeType(const char *subkw, char** retbptr,
 **********************************************************/
 static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
 {
-    Char    str[100];
+    Char  str[100];
     char* ptr;
     char* bptr;
     char* eptr;
@@ -673,8 +642,7 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
     bptr = dbp->mOffset;
     eptr = bptr + dbp->len;
 
-    if (!GetSubNodeType("RP", &bptr, eptr))
-    {
+    if (! GetSubNodeType("RP", &bptr, eptr)) {
         if (source == Parser::ESource::EMBL)
             dbp->mType = ParFlat_REF_NO_TARGET;
         else
@@ -685,25 +653,21 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
     sprintf(str, " 1-%d", (int)bases);
 
     ptr = SrchTheStr(bptr, eptr, str);
-    if (ptr != NULL)
-    {
+    if (ptr != NULL) {
         dbp->mType = ParFlat_REF_END;
         return;
     }
 
-    if (source == Parser::ESource::EMBL)
-    {
+    if (source == Parser::ESource::EMBL) {
         ptr = SrchTheStr(bptr, eptr, " 0-0");
-        if (ptr != NULL)
-        {
+        if (ptr != NULL) {
             dbp->mType = ParFlat_REF_NO_TARGET;
             return;
         }
     }
 
     dbp->mType = ParFlat_REF_BTW;
-    if (source == Parser::ESource::NCBI)
-    {
+    if (source == Parser::ESource::NCBI) {
         for (sptr = bptr + 1; sptr < eptr && *sptr != 'R';)
             sptr++;
         if (SrchTheStr(bptr, sptr, "sites") != NULL)
@@ -733,8 +697,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
     EntryBlkPtr ebp;
 
     temp = TrackNodeType(entry, ParFlat_OS);
-    for (; temp != NULL; temp = temp->mpNext)
-    {
+    for (; temp != NULL; temp = temp->mpNext) {
         if (temp->mType != ParFlat_OS)
             continue;
 
@@ -744,8 +707,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
     }
 
     temp = TrackNodeType(entry, ParFlat_RN);
-    for (; temp != NULL; temp = temp->mpNext)
-    {
+    for (; temp != NULL; temp = temp->mpNext) {
         if (temp->mType != ParFlat_RN)
             continue;
 
@@ -761,31 +723,26 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(temp);
     }
 
-    ebp = (EntryBlkPtr)entry.mpData;
-    temp = (DataBlkPtr)ebp->chain;
+    ebp    = (EntryBlkPtr)entry.mpData;
+    temp   = (DataBlkPtr)ebp->chain;
     predbp = temp;
     curdbp = temp->mpNext;
-    while (curdbp != NULL)
-    {
-        if (curdbp->mType != ParFlat_FH)
-        {
+    while (curdbp != NULL) {
+        if (curdbp->mType != ParFlat_FH) {
             predbp = curdbp;
             curdbp = curdbp->mpNext;
             continue;
         }
 
-        if (TrimEmblFeatBlk(curdbp))
-        {
+        if (TrimEmblFeatBlk(curdbp)) {
             BuildFeatureBlock(curdbp);
             GetLenSubNode(curdbp);
 
             predbp = curdbp;
             curdbp = curdbp->mpNext;
-        }
-        else                            /* report error, free this node */
+        } else /* report error, free this node */
         {
-            ErrPostStr(SEV_WARNING, ERR_FEATURE_NoFeatData,
-                        "No feature data in the FH block (Embl)");
+            ErrPostStr(SEV_WARNING, ERR_FEATURE_NoFeatData, "No feature data in the FH block (Embl)");
 
             predbp->mpNext = curdbp->mpNext;
             curdbp->mpNext = NULL;
@@ -804,7 +761,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 *                                              4-7-93
 *
 **********************************************************/
-void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw)
+void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char* subkw)
 {
     char* bptr;
     char* eptr;
@@ -812,10 +769,8 @@ void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char *subkw)
     bptr = dbp->mOffset;
     eptr = bptr + dbp->len;
 
-    if (GetSubNodeType(subkw, &bptr, eptr))
-    {
-        InsertDatablkVal((DataBlkPtr*) &dbp->mpData, subtype, bptr,
-                            eptr - bptr);
+    if (GetSubNodeType(subkw, &bptr, eptr)) {
+        InsertDatablkVal((DataBlkPtr*)&dbp->mpData, subtype, bptr, eptr - bptr);
     }
 }
 
@@ -834,90 +789,81 @@ void GetLenSubNode(DataBlkPtr dbp)
     DataBlkPtr curdbp;
     DataBlkPtr ndbp;
     DataBlkPtr ldbp;
-    char*    offset;
-    char*    s;
+    char*      offset;
+    char*      s;
     Int2       n;
-    bool done = false;
+    bool       done = false;
 
-    if (dbp->mpData == NULL)               /* no sublocks in this block */
+    if (dbp->mpData == NULL) /* no sublocks in this block */
         return;
 
     offset = dbp->mOffset;
     for (s = offset; *s != '\0' && isdigit(*s) == 0;)
         s++;
-    n = atoi(s);
+    n    = atoi(s);
     ldbp = NULL;
-    for (ndbp = (DataBlkPtr)dbp->mpData; ndbp != NULL; ndbp = ndbp->mpNext)
-    {
+    for (ndbp = (DataBlkPtr)dbp->mpData; ndbp != NULL; ndbp = ndbp->mpNext) {
         size_t l = ndbp->mOffset - offset;
-        if (l > 0 && l < dbp->len)
-        {
+        if (l > 0 && l < dbp->len) {
             dbp->len = l;
-            ldbp = ndbp;
+            ldbp     = ndbp;
         }
     }
 
-    if (ldbp != dbp->mpData && ldbp != NULL)
-    {
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder,
-                    "incorrect line type order for reference %d", n);
+    if (ldbp != dbp->mpData && ldbp != NULL) {
+        ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         done = true;
     }
 
     curdbp = (DataBlkPtr)dbp->mpData;
-    for (; curdbp->mpNext != NULL; curdbp = curdbp->mpNext)
-    {
+    for (; curdbp->mpNext != NULL; curdbp = curdbp->mpNext) {
         offset = curdbp->mOffset;
-        ldbp = NULL;
-        for (ndbp = (DataBlkPtr)dbp->mpData; ndbp != NULL; ndbp = ndbp->mpNext)
-        {
+        ldbp   = NULL;
+        for (ndbp = (DataBlkPtr)dbp->mpData; ndbp != NULL; ndbp = ndbp->mpNext) {
             size_t l = ndbp->mOffset - offset;
-            if (l > 0 && l < curdbp->len)
-            {
+            if (l > 0 && l < curdbp->len) {
                 curdbp->len = l;
-                ldbp = ndbp;
+                ldbp        = ndbp;
             }
         }
-        if (ldbp != curdbp->mpNext && ldbp != NULL && !done)
-        {
-            ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder,
-                        "incorrect line type order for reference %d", n);
+        if (ldbp != curdbp->mpNext && ldbp != NULL && ! done) {
+            ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         }
     }
 }
 
 /**********************************************************/
-CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char*acc)
+CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
 {
     CRef<CPatent_seq_id> pat_id;
-    char                          *p;
-    char                          *q;
+    char*                p;
+    char*                q;
 
-    if(acc == NULL || *acc == '\0')
-        return(pat_id);
+    if (acc == NULL || *acc == '\0')
+        return (pat_id);
 
     pat_id = new CPatent_seq_id;
 
     p = StringChr(acc, '|');
 
-    q = StringChr(p + 1, '|');
+    q  = StringChr(p + 1, '|');
     *q = '\0';
     pat_id->SetCit().SetCountry(p + 1);
     *q = '|';
 
-    p = StringChr(q + 1, '|');
+    p  = StringChr(q + 1, '|');
     *p = '\0';
     pat_id->SetCit().SetId().SetNumber(q + 1);
     *p = '|';
 
-    q = StringChr(p + 1, '|');
+    q  = StringChr(p + 1, '|');
     *q = '\0';
     pat_id->SetCit().SetDoc_type(p + 1);
     *q = '|';
 
     pat_id->SetSeqid(atoi(q + 1));
 
-    return(pat_id);
+    return (pat_id);
 }
 
 /**********************************************************
@@ -933,14 +879,14 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc, bool i
 
     if (type == CSeq_id::e_Swissprot || type == CSeq_id::e_Pir || type == CSeq_id::e_Prf ||
         type == CSeq_id::e_Pdb || type == CSeq_id::e_Other)
-        return(type);
+        return (type);
 
     if (type != CSeq_id::e_Genbank && type != CSeq_id::e_Embl && type != CSeq_id::e_Ddbj &&
         type != CSeq_id::e_Tpg && type != CSeq_id::e_Tpe && type != CSeq_id::e_Tpd)
-        return(0);
+        return (0);
 
     if (accession == NULL)
-        return(type);
+        return (type);
 
     if (is_nuc)
         cho = GetNucAccOwner(accession, is_tpa);
@@ -949,14 +895,14 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc, bool i
 
     if ((type == CSeq_id::e_Genbank || type == CSeq_id::e_Tpg) &&
         (cho == CSeq_id::e_Genbank || cho == CSeq_id::e_Tpg))
-        return(cho);
+        return (cho);
     else if ((type == CSeq_id::e_Ddbj || type == CSeq_id::e_Tpd) &&
              (cho == CSeq_id::e_Ddbj || cho == CSeq_id::e_Tpd))
-                return(cho);
+        return (cho);
     else if ((type == CSeq_id::e_Embl || type == CSeq_id::e_Tpe) &&
              (cho == CSeq_id::e_Embl || cho == CSeq_id::e_Tpe))
-                return(cho);
-    return(type);
+        return (cho);
+    return (type);
 }
 
 /**********************************************************
@@ -967,8 +913,7 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc, bool i
 *                                              5-10-93
 *
 **********************************************************/
-CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver,
-                           Int2 vernum, bool is_nuc, bool is_tpa)
+CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_nuc, bool is_tpa)
 {
     CRef<CSeq_id> id;
 
@@ -1016,8 +961,7 @@ CRef<CSeq_id> MakeLocusSeqId(const char* locus, Uint1 seqtype)
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************/
-static CRef<CSeq_id> MakeSegSetSeqId(char* accession, char* locus,
-                                     Uint1 seqtype, bool is_tpa)
+static CRef<CSeq_id> MakeSegSetSeqId(char* accession, char* locus, Uint1 seqtype, bool is_tpa)
 {
     CRef<CSeq_id> res;
     if (locus == NULL || *locus == '\0')
@@ -1048,8 +992,7 @@ static CRef<CSeq_id> MakeSegSetSeqId(char* accession, char* locus,
 *                                              4-7-93
 *
 **********************************************************/
-char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype,
-                        size_t* len)
+char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len)
 {
     DataBlkPtr mdbp;
     DataBlkPtr sdbp;
@@ -1057,7 +1000,7 @@ char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype,
     *len = 0;
     mdbp = TrackNodeType(entry, type);
     if (mdbp == NULL)
-        return(NULL);
+        return (NULL);
 
     sdbp = (DataBlkPtr)mdbp->mpData;
 
@@ -1065,10 +1008,10 @@ char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype,
         sdbp = sdbp->mpNext;
 
     if (sdbp == NULL)
-        return(NULL);
+        return (NULL);
 
     *len = sdbp->len;
-    return(sdbp->mOffset);
+    return (sdbp->mOffset);
 }
 
 /**********************************************************/
@@ -1086,29 +1029,28 @@ static void SetEmptyId(CBioseq& bioseq)
 /**********************************************************/
 CRef<CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
 {
-    IndexblkPtr  ibp;
+    IndexblkPtr ibp;
 
-    char*      locus;
-    char*      acc;
-    Uint1        seqtype;
+    char* locus;
+    char* acc;
+    Uint1 seqtype;
 
     CRef<CBioseq> res(new CBioseq);
 
     /* create the entry framework
     */
 
-    ibp = pp->entrylist[pp->curindx];
+    ibp   = pp->entrylist[pp->curindx];
     locus = ibp->locusname;
-    acc = ibp->acnum;
+    acc   = ibp->acnum;
 
     /* get the SeqId
     */
-    if(pp->source == Parser::ESource::USPTO)
-    {
-        CRef<CSeq_id> id(new CSeq_id);
+    if (pp->source == Parser::ESource::USPTO) {
+        CRef<CSeq_id>        id(new CSeq_id);
         CRef<CPatent_seq_id> psip = MakeUsptoPatSeqId(acc);
         id->SetPatent(*psip);
-        return(res);
+        return (res);
     }
     if (pp->source == Parser::ESource::EMBL && ibp->is_tpa)
         seqtype = CSeq_id::e_Tpe;
@@ -1116,24 +1058,18 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
         seqtype = ValidSeqType(acc, pp->seqtype, is_nuc, ibp->is_tpa);
 
     if (seqtype == 0) {
-        if (acc && !NStr::IsBlank(acc)) {
+        if (acc && ! NStr::IsBlank(acc)) {
             auto pId = Ref(new CSeq_id(CSeq_id::e_Local, acc));
             res->SetId().push_back(move(pId));
-        }
-        else if (pp->mode == Parser::EMode::Relaxed && locus) {
+        } else if (pp->mode == Parser::EMode::Relaxed && locus) {
             auto pId = Ref(new CSeq_id(CSeq_id::e_Local, locus));
             res->SetId().push_back(move(pId));
-        }
-        else {
+        } else {
             SetEmptyId(*res);
         }
-    }
-    else if ((locus == NULL || *locus == '\0') && (acc == NULL || *acc == '\0'))
-    {
+    } else if ((locus == NULL || *locus == '\0') && (acc == NULL || *acc == '\0')) {
         SetEmptyId(*res);
-    }
-    else
-    {
+    } else {
         CRef<CTextseq_id> textId(new CTextseq_id);
 
         if (ibp->embl_new_ID == false && locus != NULL && *locus != '\0' &&
@@ -1178,21 +1114,19 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
 *                                              4-28-93
 *
 **********************************************************/
-char* GetDescrComment(char* offset, size_t len, Int2 col_data,
-                        bool is_htg, bool is_pat)
+char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool is_pat)
 {
     char* p;
     char* q;
     char* r;
     char* str;
 
-    bool within = false;
-    char* bptr = offset;
-    char* eptr = bptr + len;
-    char* com = (char*)MemNew(len + 1);
+    bool  within = false;
+    char* bptr   = offset;
+    char* eptr   = bptr + len;
+    char* com    = (char*)MemNew(len + 1);
 
-    for (str = com; bptr < eptr; bptr = p + 1)
-    {
+    for (str = com; bptr < eptr; bptr = p + 1) {
         p = SrchTheChar(bptr, eptr, '\n');
 
         /* skip HTG generated comments starting with '*'
@@ -1201,10 +1135,9 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data,
             StringNCmp(bptr, "XX", 2) == 0)
             continue;
 
-        if (!within)
-        {
+        if (! within) {
             *p = '\0';
-            r = StringStr(bptr, "-START##");
+            r  = StringStr(bptr, "-START##");
             *p = '\n';
             if (r != NULL)
                 within = true;
@@ -1217,8 +1150,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data,
             q++;
         while (*q == ' ')
             q++;
-        if (q == p)
-        {
+        if (q == p) {
             if (*(str - 1) != '~')
                 str = StringMove(str, "~");
             str = StringMove(str, "~");
@@ -1244,18 +1176,16 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data,
         else
             str = StringMove(str, " ");
 
-        if (within)
-        {
+        if (within) {
             *p = '\0';
-            r = StringStr(bptr, "-END##");
+            r  = StringStr(bptr, "-END##");
             *p = '\n';
             if (r != NULL)
                 within = false;
         }
     }
 
-    for (p = com;;)
-    {
+    for (p = com;;) {
         p = StringStr(p, "; ");
         if (p == NULL)
             break;
@@ -1270,53 +1200,47 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data,
         fta_StringCpy(com, p);
     for (p = com; *p != '\0';)
         p++;
-    if (p > com)
-    {
-        for (p--;; p--)
-        {
+    if (p > com) {
+        for (p--;; p--) {
             if (*p == ' ' || *p == '\t' || *p == ';' || *p == ',' ||
-                *p == '.' || *p == '~')
-            {
+                *p == '.' || *p == '~') {
                 if (p > com)
                     continue;
                 *p = '\0';
             }
             break;
         }
-        if (*p != '\0')
-        {
+        if (*p != '\0') {
             p++;
             if (StringNCmp(p, "...", 3) == 0)
                 p[3] = '\0';
-            else if (StringChr(p, '.') != NULL)
-            {
-                *p = '.';
+            else if (StringChr(p, '.') != NULL) {
+                *p   = '.';
                 p[1] = '\0';
-            }
-            else
+            } else
                 *p = '\0';
         }
     }
     if (*com != '\0')
-        return(com);
+        return (com);
     MemFree(com);
-    return(NULL);
+    return (NULL);
 }
 
 /**********************************************************/
 static void fta_fix_secondaries(TokenBlkPtr secs)
 {
     TokenBlkPtr tbp;
-    char*     p;
+    char*       p;
 
     if (secs == NULL || secs->next == NULL || secs->str == NULL ||
         secs->next->str == NULL || fta_if_wgs_acc(secs->str) != 0 ||
         StringCmp(secs->next->str, "-") != 0)
         return;
 
-    tbp = (TokenBlkPtr)MemNew(sizeof(TokenBlk));
-    tbp->str = StringSave(secs->str);
-    tbp->next = secs->next;
+    tbp        = (TokenBlkPtr)MemNew(sizeof(TokenBlk));
+    tbp->str   = StringSave(secs->str);
+    tbp->next  = secs->next;
     secs->next = tbp;
 
     for (p = tbp->str; *(p + 1) != '\0';)
@@ -1365,32 +1289,31 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     TokenBlkPtr tbp;
     Int4        pri_acc;
     Int4        sec_acc;
-    const char  *text;
-    char*     acc;
-    char*     p;
-    size_t i = 0;
+    const char* text;
+    char*       acc;
+    char*       p;
+    size_t      i = 0;
 
-    bool        unusual_wgs;
-    bool        unusual_wgs_msg;
-    bool        is_cp;
+    bool unusual_wgs;
+    bool unusual_wgs_msg;
+    bool is_cp;
 
-    Uint1       pri_owner;
-    Uint1       sec_owner;
+    Uint1 pri_owner;
+    Uint1 sec_owner;
 
     if (ibp->secaccs == NULL) {
         return;
     }
 
-    acc = StringSave(ibp->acnum);
-    is_cp = (acc[0] == 'C' && acc[1] == 'P');
-    pri_acc = fta_if_wgs_acc(acc);
+    acc       = StringSave(ibp->acnum);
+    is_cp     = (acc[0] == 'C' && acc[1] == 'P');
+    pri_acc   = fta_if_wgs_acc(acc);
     pri_owner = GetNucAccOwner(acc, ibp->is_tpa);
-    if (pri_acc == 1 || pri_acc == 4)
-    {
+    if (pri_acc == 1 || pri_acc == 4) {
         for (p = acc; (*p >= 'A' && *p <= 'Z') || *p == '_';)
             p++;
         *p = '\0';
-        i = StringLen(acc);
+        i  = StringLen(acc);
     }
 
     if (source == Parser::ESource::EMBL) {
@@ -1398,16 +1321,13 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     }
 
     unusual_wgs = false;
-    for (tbp = ibp->secaccs; tbp != NULL; tbp = tbp->next)
-    {
+    for (tbp = ibp->secaccs; tbp != NULL; tbp = tbp->next) {
         p = tbp->str;
-        if (p[0] == '-' && p[1] == '\0')
-        {
+        if (p[0] == '-' && p[1] == '\0') {
             tbp = tbp->next;
             if (tbp == NULL)
                 break;
-            if (!accessions.empty())
-            {
+            if (! accessions.empty()) {
                 accessions.back() += '-';
                 accessions.back() += tbp->str;
             }
@@ -1420,7 +1340,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         unusual_wgs_msg = true;
         if (sec_acc == 0 || sec_acc == 3 ||
             sec_acc == 4 || sec_acc == 6 ||
-            sec_acc == 10 || sec_acc == 12)     /*  0 = AAAA01000000,
+            sec_acc == 10 || sec_acc == 12) /*  0 = AAAA01000000,
                                                     3 = AAAA00000000,
                                                     4 = GAAA01000000,
                                                     6 = GAAA00000000,
@@ -1436,22 +1356,13 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
 
         sec_owner = GetNucAccOwner(p, ibp->is_tpa);
 
-        if (sec_acc < 0 || sec_acc == 2)
-        {
-            if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11)
-            {
-                if (!allow_uwsec)
-                {
-                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSWithNonWGS_Sec,
-                                "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". WGS/TSA/TLS records are not currently allowed to replace finished sequence records, scaffolds, etc. without human review and confirmation.",
-                                p);
+        if (sec_acc < 0 || sec_acc == 2) {
+            if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
+                if (! allow_uwsec) {
+                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". WGS/TSA/TLS records are not currently allowed to replace finished sequence records, scaffolds, etc. without human review and confirmation.", p);
                     ibp->drop = 1;
-                }
-                else
-                {
-                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_WGSWithNonWGS_Sec,
-                                "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". This is being allowed via the use of a special parser flag.",
-                                p);
+                } else {
+                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". This is being allowed via the use of a special parser flag.", p);
                 }
             }
 
@@ -1459,104 +1370,74 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
             continue;
         }
 
-        if (sec_acc == 3 || sec_acc == 6)        /* like AAAA00000000 */
+        if (sec_acc == 3 || sec_acc == 6) /* like AAAA00000000 */
         {
             if (pri_owner == CSeq_id::e_Embl && sec_owner == CSeq_id::e_Embl &&
                 (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) &&
                 source == Parser::ESource::EMBL)
                 continue;
             if (source != Parser::ESource::EMBL && source != Parser::ESource::DDBJ &&
-                source != Parser::ESource::Refseq)
-            {
-                ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSMasterAsSecondary,
-                            "WGS/TSA/TLS master accession \"%s\" is not allowed to be used as a secondary accession number.",
-                            p);
+                source != Parser::ESource::Refseq) {
+                ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSMasterAsSecondary, "WGS/TSA/TLS master accession \"%s\" is not allowed to be used as a secondary accession number.", p);
                 ibp->drop = 1;
             }
             continue;
         }
 
-        if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11)      /* WGS/TSA/TLS
+        if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) /* WGS/TSA/TLS
                                                                    contig */
         {
             i = (StringNCmp(p, "NZ_", 3) == 0) ? 7 : 4;
-            if (StringNCmp(p, ibp->acnum, i) != 0)
-            {
-                if (!allow_uwsec)
-                {
-                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary,
-                                "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
+            if (StringNCmp(p, ibp->acnum, i) != 0) {
+                if (! allow_uwsec) {
+                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
                     ibp->drop = 1;
-                }
-                else if (!is_cp || source != Parser::ESource::NCBI)
-                {
-                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary,
-                                "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA project is being replaced (either by another project or by finished sequence). This is being allowed via the use of a special parser flag.");
+                } else if (! is_cp || source != Parser::ESource::NCBI) {
+                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA project is being replaced (either by another project or by finished sequence). This is being allowed via the use of a special parser flag.");
                 }
             }
-        }
-        else if (pri_acc == 2)           /* WGS scaffold */
+        } else if (pri_acc == 2) /* WGS scaffold */
         {
-            if (sec_acc == 1 || sec_acc == 5 || sec_acc == 11)  /* WGS/TSA/TLS
+            if (sec_acc == 1 || sec_acc == 5 || sec_acc == 11) /* WGS/TSA/TLS
                                                                    contig */
             {
-                ErrPostEx(SEV_REJECT, ERR_ACCESSION_ScfldHasWGSContigSec,
-                            "This record, which appears to be a scaffold, has one or more WGS/TSA/TLS contig accessions as secondary. Currently, it does not make sense for a contig to replace a scaffold.");
+                ErrPostEx(SEV_REJECT, ERR_ACCESSION_ScfldHasWGSContigSec, "This record, which appears to be a scaffold, has one or more WGS/TSA/TLS contig accessions as secondary. Currently, it does not make sense for a contig to replace a scaffold.");
                 ibp->drop = 1;
             }
-        }
-        else if (unusual_wgs_msg)
-        {
-            if (!allow_uwsec)
-            {
-                if (!unusual_wgs)
-                {
+        } else if (unusual_wgs_msg) {
+            if (! allow_uwsec) {
+                if (! unusual_wgs) {
                     if (sec_acc == 1 || sec_acc == 5 || sec_acc == 11)
                         text = "WGS/TSA/TLS contig secondaries are present, implying that a scaffold is replacing a contig";
                     else
                         text = "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence)";
-                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary,
-                                "%s. This is not allowed without human review and confirmation.",
-                                text);
+                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "%s. This is not allowed without human review and confirmation.", text);
                 }
                 unusual_wgs = true;
-                ibp->drop = 1;
-            }
-            else if (!is_cp || source != Parser::ESource::NCBI)
-            {
-                if (!unusual_wgs)
-                {
+                ibp->drop   = 1;
+            } else if (! is_cp || source != Parser::ESource::NCBI) {
+                if (! unusual_wgs) {
                     if (sec_acc == 1 || sec_acc == 5 || sec_acc == 11)
                         text = "WGS/TSA/TLS contig secondaries are present, implying that a scaffold is replacing a contig";
                     else
                         text = "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence)";
-                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary,
-                                "%s. This is being allowed via the use of a special parser flag.",
-                                text);
+                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary, "%s. This is being allowed via the use of a special parser flag.", text);
                 }
                 unusual_wgs = true;
             }
         }
 
-        if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11)
-        {
-            if (StringNCmp(acc, p, i) == 0 && p[i] >= '0' && p[i] <= '9')
-            {
+        if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
+            if (StringNCmp(acc, p, i) == 0 && p[i] >= '0' && p[i] <= '9') {
                 if (sec_acc == 1 || sec_acc == 5 || pri_acc == 11)
                     accessions.push_back(p);
-            }
-            else if (allow_uwsec)
-            {
+            } else if (allow_uwsec) {
                 accessions.push_back(p);
             }
-        }
-        else if (pri_acc == 2)
-        {
-            if (sec_acc == 0 || sec_acc == 4)            /* like AAAA10000000 */
+        } else if (pri_acc == 2) {
+            if (sec_acc == 0 || sec_acc == 4) /* like AAAA10000000 */
                 accessions.push_back(p);
-        }
-        else if (allow_uwsec || (!unusual_wgs_msg && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL)))
-        {
+        } else if (allow_uwsec || (! unusual_wgs_msg && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL))) {
             accessions.push_back(p);
         }
     }
@@ -1576,18 +1457,15 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
 
         if (NStr::CompareNocase(key->c_str(), "TPA") == 0)
             *key = "TPA";
-        else if (StringNICmp(key->c_str(), "TPA:", 4) == 0)
-        {
+        else if (StringNICmp(key->c_str(), "TPA:", 4) == 0) {
             string buf("TPA:");
 
             for (p = key->c_str() + 4; *p == ' ' || *p == '\t';)
                 p++;
 
             buf += p;
-            if (fta_is_tpa_keyword(buf.c_str()))
-            {
-                for (string::iterator p = buf.begin() + 4; p != buf.end(); ++p)
-                {
+            if (fta_is_tpa_keyword(buf.c_str())) {
+                for (string::iterator p = buf.begin() + 4; p != buf.end(); ++p) {
                     if (*p >= 'A' && *p <= 'Z')
                         *p |= 040;
                 }
@@ -1614,17 +1492,17 @@ void xFixEMBLKeywords(
         return;
     }
     auto afterProblematic = keywordData[wgsStart + problematic.size()];
-    if (afterProblematic != ';'  && afterProblematic != '.') {
+    if (afterProblematic != ';' && afterProblematic != '.') {
         return;
     }
 
     string fixedKeywords;
     if (wgsStart > 0) {
-        auto semiBefore = keywordData.rfind(';', wgsStart -1);
+        auto semiBefore = keywordData.rfind(';', wgsStart - 1);
         if (semiBefore == string::npos) {
             return;
         }
-        for (auto i = semiBefore+1; i < wgsStart; ++i) {
+        for (auto i = semiBefore + 1; i < wgsStart; ++i) {
             if (keywordData[i] != ' ') {
                 return;
             }
@@ -1639,10 +1517,10 @@ void xFixEMBLKeywords(
 
 //  ----------------------------------------------------------------------------
 void GetSequenceOfKeywords(
-    const DataBlk& entry, 
-    int type, 
-    int col_data,
-    TKeywordList& keywords)
+    const DataBlk& entry,
+    int            type,
+    int            col_data,
+    TKeywordList&  keywords)
 //  ----------------------------------------------------------------------------
 {
     //  Expectation: Each keyword separated by ";", the last one ends with "."
@@ -1653,13 +1531,13 @@ void GetSequenceOfKeywords(
         return;
     }
     xGetBlkDataReplaceNewLine(keywordData, col_data);
-    if (true  ||  type == ParFlatSP_KW) {
+    if (true || type == ParFlatSP_KW) {
         xStripECO(keywordData);
     }
     xFixEMBLKeywords(keywordData);
 
     NStr::Split(keywordData, ";", keywords);
-    auto it = keywords.begin();
+    auto it   = keywords.begin();
     auto last = --keywords.end();
     while (it != keywords.end()) {
         auto& keyword = *it;
@@ -1670,8 +1548,7 @@ void GetSequenceOfKeywords(
         }
         if (keyword.empty()) {
             keywords.erase(it++);
-        }
-        else {
+        } else {
             it++;
         }
     }
@@ -1710,22 +1587,20 @@ void GetSequenceOfKeywords(
 *                                              7-28-93
 *
 **********************************************************/
-Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp,
-                    unsigned char* conv, Char replacechar, int* numns)
+Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned char* conv, Char replacechar, int* numns)
 {
-    Int2         blank;
-    Int2         count;
-    Uint1        residue;
-    char*      ptr;
-    static Uint1 buf[133];
-    unsigned char*   bu;
+    Int2           blank;
+    Int2           count;
+    Uint1          residue;
+    char*          ptr;
+    static Uint1   buf[133];
+    unsigned char* bu;
 
     blank = count = 0;
-    ptr = *seqptr;
+    ptr           = *seqptr;
 
     bu = buf;
-    while (*ptr != '\n' && *ptr != '\0' && blank < 6 && count < 100)
-    {
+    while (*ptr != '\n' && *ptr != '\0' && blank < 6 && count < 100) {
         if (numns != NULL && (*ptr == 'n' || *ptr == 'N'))
             (*numns)++;
 
@@ -1734,20 +1609,16 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp,
         if (*ptr == ' ')
             blank++;
 
-        if (residue > 2)
-        {
+        if (residue > 2) {
             *bu++ = residue;
             count++;
-        }
-        else if (residue == 1 && (warn || isalpha(*ptr) != 0))
-        {
+        } else if (residue == 1 && (warn || isalpha(*ptr) != 0)) {
             /* it can be punctuation or alpha character
             */
             *bu++ = replacechar;
             count++;
-            ErrPostEx(SEV_ERROR, ERR_SEQUENCE_BadResidue,
-                        "Invalid residue [%c]", *ptr);
-            return(0);
+            ErrPostEx(SEV_ERROR, ERR_SEQUENCE_BadResidue, "Invalid residue [%c]", *ptr);
+            return (0);
         }
         ptr++;
     }
@@ -1755,7 +1626,7 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp,
     *seqptr = ptr;
     std::copy(buf, bu, std::back_inserter(bsp));
     //BSWrite(bsp, buf, (Int4)(bu - buf));
-    return(count);
+    return (count);
 }
 
 /**********************************************************
@@ -1773,16 +1644,15 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp,
 *                                              04-19-94
 *
 **********************************************************/
-bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq,
-                    Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type)
+bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type)
 {
     //ByteStorePtr bp;
-    IndexblkPtr  ibp;
-    char*      seqptr;
-    char*      endptr;
-    char*      str;
-    Char         replacechar;
-    size_t len = 0;
+    IndexblkPtr ibp;
+    char*       seqptr;
+    char*       endptr;
+    char*       str;
+    Char        replacechar;
+    size_t      len = 0;
     Int4        numns;
 
     ibp = pp->entrylist[pp->curindx];
@@ -1792,21 +1662,18 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq,
     if (ibp->is_contig || ibp->is_mga)
         return true;
 
-    if (pp->format == Parser::EFormat::XML)
-    {
-        str = XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE);
+    if (pp->format == Parser::EFormat::XML) {
+        str    = XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE);
         seqptr = str;
         if (seqptr != NULL)
             len = StringLen(seqptr);
-        if(pp->source != Parser::ESource::USPTO || ibp->is_prot == false)
-            for(; *seqptr != '\0'; seqptr++)
-                if(*seqptr >= 'A' && *seqptr <= 'Z')
+        if (pp->source != Parser::ESource::USPTO || ibp->is_prot == false)
+            for (; *seqptr != '\0'; seqptr++)
+                if (*seqptr >= 'A' && *seqptr <= 'Z')
                     *seqptr |= 040;
         seqptr = str;
-    }
-    else
-    {
-        str = NULL;
+    } else {
+        str    = NULL;
         seqptr = xSrchNodeType(entry, nodetype, &len);
     }
 
@@ -1823,26 +1690,21 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq,
 
     /* the sequence data will be located in next line of nodetype
     */
-    if (pp->format == Parser::EFormat::XML)
-    {
+    if (pp->format == Parser::EFormat::XML) {
         while (*seqptr == ' ' || *seqptr == '\n' || *seqptr == '\t')
             seqptr++;
-    }
-    else
-    {
+    } else {
         while (*seqptr != '\n')
             seqptr++;
-        while (isalpha(*seqptr) == 0)   /* skip leading blanks and digits */
+        while (isalpha(*seqptr) == 0) /* skip leading blanks and digits */
             seqptr++;
     }
 
     std::vector<char> buf;
-    size_t seqlen = 0;
-    for (numns = 0; seqptr < endptr;)
-    {
+    size_t            seqlen = 0;
+    for (numns = 0; seqptr < endptr;) {
         len = ScanSequence(true, &seqptr, buf, seqconv, replacechar, &numns);
-        if (len == 0)
-        {
+        if (len == 0) {
             if (str != NULL)
                 MemFree(str);
             return false;
@@ -1853,44 +1715,30 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq,
             seqptr++;
     }
 
-    if (seqlen != bioseq.GetLength())
-    {
-        ErrPostEx(SEV_WARNING, ERR_SEQUENCE_SeqLenNotEq,
-                    "Measured seqlen [%ld] != given [%ld]",
-                    (long int)seqlen, (long int)bioseq.GetLength());
+    if (seqlen != bioseq.GetLength()) {
+        ErrPostEx(SEV_WARNING, ERR_SEQUENCE_SeqLenNotEq, "Measured seqlen [%ld] != given [%ld]", (long int)seqlen, (long int)bioseq.GetLength());
     }
 
     if (str != NULL)
         MemFree(str);
 
-    if (seq_data_type == CSeq_data::e_Iupacaa)
-    {
-        if (bioseq.GetLength() < 10)
-        {
-            if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL)
-            {
+    if (seq_data_type == CSeq_data::e_Iupacaa) {
+        if (bioseq.GetLength() < 10) {
+            if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
                 if (ibp->is_pat == false)
-                    ErrPostEx(SEV_WARNING, ERR_SEQUENCE_TooShort,
-                    "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
+                    ErrPostEx(SEV_WARNING, ERR_SEQUENCE_TooShort, "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
                 else
-                    ErrPostEx(SEV_INFO, ERR_SEQUENCE_TooShortIsPatent,
-                    "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
-            }
-            else
-            {
+                    ErrPostEx(SEV_INFO, ERR_SEQUENCE_TooShortIsPatent, "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
+            } else {
                 if (ibp->is_pat == false)
-                    ErrPostEx(SEV_REJECT, ERR_SEQUENCE_TooShort,
-                    "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
+                    ErrPostEx(SEV_REJECT, ERR_SEQUENCE_TooShort, "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
                 else
-                    ErrPostEx(SEV_REJECT, ERR_SEQUENCE_TooShortIsPatent,
-                    "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
+                    ErrPostEx(SEV_REJECT, ERR_SEQUENCE_TooShortIsPatent, "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
                 ibp->drop = 1;
             }
         }
-        if (seqlen == static_cast<Uint4>(numns))
-        {
-            ErrPostEx(SEV_REJECT, ERR_SEQUENCE_AllNs,
-                        "This nucleotide sequence for this record contains nothing but unknown (N) basepairs.");
+        if (seqlen == static_cast<Uint4>(numns)) {
+            ErrPostEx(SEV_REJECT, ERR_SEQUENCE_AllNs, "This nucleotide sequence for this record contains nothing but unknown (N) basepairs.");
             ibp->drop = 1;
         }
     }
@@ -1915,15 +1763,14 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
     unique_ptr<unsigned char[]> dnaconv(new unsigned char[255]());
     MemSet((char*)dnaconv.get(), (Uint1)1, (size_t)255);
 
-    dnaconv[32] = 0;                    /* blank */
+    dnaconv[32] = 0; /* blank */
 
     CSeqportUtil::TPair range = CSeqportUtil::GetCodeIndexFromTo(eSeq_code_type_iupacna);
-    for (CSeqportUtil::TIndex i = range.first; i <= range.second; ++i)
-    {
+    for (CSeqportUtil::TIndex i = range.first; i <= range.second; ++i) {
         const string& code = CSeqportUtil::GetCode(eSeq_code_type_iupacna, i);
 
         dnaconv[static_cast<int>(code[0])] = code[0];
-        dnaconv[(int)tolower(code[0])] = code[0];
+        dnaconv[(int)tolower(code[0])]     = code[0];
     }
 
     return dnaconv;
@@ -1940,23 +1787,22 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
 **********************************************************/
 unique_ptr<unsigned char[]> GetProteinConv(void)
 {
-   // unsigned char*        protconv;
+    // unsigned char*        protconv;
     unique_ptr<unsigned char[]> protconv(new unsigned char[255]());
 
-   // protconv = (unsigned char*)MemNew((size_t)255);                  /* proteins */
-    MemSet((char*)protconv.get(), (Uint1)1, (size_t)255);         /* everything
+    // protconv = (unsigned char*)MemNew((size_t)255);                  /* proteins */
+    MemSet((char*)protconv.get(), (Uint1)1, (size_t)255); /* everything
                                                                 an error */
-    protconv[32] = 0;                    /* blank */
+    protconv[32] = 0;                                     /* blank */
 
     CSeqportUtil::TPair range = CSeqportUtil::GetCodeIndexFromTo(eSeq_code_type_iupacaa);
-    for (CSeqportUtil::TIndex i = range.first; i <= range.second; ++i)
-    {
-        const string& code = CSeqportUtil::GetCode(eSeq_code_type_iupacaa, i);
-        protconv[(int)code[0]] = code[0];    /* swiss-prot, pir uses upper case
+    for (CSeqportUtil::TIndex i = range.first; i <= range.second; ++i) {
+        const string& code     = CSeqportUtil::GetCode(eSeq_code_type_iupacaa, i);
+        protconv[(int)code[0]] = code[0]; /* swiss-prot, pir uses upper case
                                              protein code */
     }
 
-    return(protconv);
+    return (protconv);
 }
 
 /***********************************************************/
@@ -1965,8 +1811,7 @@ static CSeq_descr::Tdata::const_iterator GetDescrByChoice(const CSeq_descr& desc
     const CSeq_descr::Tdata& descr_list = descr.Get();
 
     CSeq_descr::Tdata::const_iterator cur_descr = descr_list.begin();
-    for (; cur_descr != descr_list.end(); ++cur_descr)
-    {
+    for (; cur_descr != descr_list.end(); ++cur_descr) {
         if ((*cur_descr)->Which() == choice)
             break;
     }
@@ -1984,18 +1829,15 @@ static CSeq_descr::Tdata::const_iterator GetDescrByChoice(const CSeq_descr& desc
 *                                              10-14-93
 *
 **********************************************************/
-static void GetFirstSegDescrChoice(CBioseq& bioseq, Uint1 choice,
-                                   CSeq_descr& descr_new)
+static void GetFirstSegDescrChoice(CBioseq& bioseq, Uint1 choice, CSeq_descr& descr_new)
 {
-    CSeq_descr& descr = bioseq.SetDescr();
+    CSeq_descr&        descr      = bioseq.SetDescr();
     CSeq_descr::Tdata& descr_list = descr.Set();
 
     // Don't use GetDescrByChoice here just because GCC version does not support erase(const_iterator)
     CSeq_descr::Tdata::iterator cur_descr = descr_list.begin();
-    for (; cur_descr != descr_list.end(); ++cur_descr)
-    {
-        if ((*cur_descr)->Which() == choice)
-        {
+    for (; cur_descr != descr_list.end(); ++cur_descr) {
+        if ((*cur_descr)->Which() == choice) {
             /* found the "choice" node, isolated node
             */
             descr_new.Set().push_back(*cur_descr);
@@ -2011,21 +1853,16 @@ static void GetFirstSegDescrChoice(CBioseq& bioseq, Uint1 choice,
 // for equality according to 'PubEquivMatch' rules
 static bool SameCitation_PubEquivMatch_Logic(const CPub_equiv& a, const CPub_equiv& b)
 {
-    ITERATE (CPub_equiv::Tdata, it1, a.Get())
-    {
-        ITERATE (CPub_equiv::Tdata, it2, b.Get())
-        {
-            if ((*it1)->SameCitation(**it2))
-            {
+    ITERATE (CPub_equiv::Tdata, it1, a.Get()) {
+        ITERATE (CPub_equiv::Tdata, it2, b.Get()) {
+            if ((*it1)->SameCitation(**it2)) {
                 bool same = true;
 
-                if ((*it1)->Which() == CPub::e_Gen && (*it2)->Which() == CPub::e_Gen)
-                {
+                if ((*it1)->Which() == CPub::e_Gen && (*it2)->Which() == CPub::e_Gen) {
                     const CCit_gen& cit_a = (*it1)->GetGen();
                     const CCit_gen& cit_b = (*it2)->GetGen();
 
-                    if (cit_a.IsSetSerial_number() && cit_b.IsSetSerial_number() && cit_a.GetSerial_number() == cit_b.GetSerial_number())
-                    {
+                    if (cit_a.IsSetSerial_number() && cit_b.IsSetSerial_number() && cit_a.GetSerial_number() == cit_b.GetSerial_number()) {
                         // The special condition of 'PubEquivMatch'
                         //    a->volume == NULL && b->volume == NULL &&
                         //    a->issue == NULL && b->issue == NULL &&
@@ -2038,15 +1875,15 @@ static bool SameCitation_PubEquivMatch_Logic(const CPub_equiv& a, const CPub_equ
                         //    a->date == NULL && b->date == NULL &&
                         //    a->serial_number != -1 && b->serial_number != -1
 
-                        if (!cit_a.IsSetVolume() && !cit_b.IsSetVolume() &&
-                            !cit_a.IsSetIssue() && !cit_b.IsSetIssue() &&
-                            !cit_a.IsSetPages() && !cit_b.IsSetPages() &&
-                            !cit_a.IsSetTitle() && !cit_b.IsSetTitle() &&
-                            !cit_a.IsSetCit() && !cit_b.IsSetCit() &&
-                            !cit_a.IsSetAuthors() && !cit_b.IsSetAuthors() &&
-                            !cit_a.IsSetMuid() && !cit_b.IsSetMuid() &&
-                            !cit_a.IsSetJournal() && !cit_b.IsSetJournal() &&
-                            !cit_a.IsSetDate() && !cit_b.IsSetDate())
+                        if (! cit_a.IsSetVolume() && ! cit_b.IsSetVolume() &&
+                            ! cit_a.IsSetIssue() && ! cit_b.IsSetIssue() &&
+                            ! cit_a.IsSetPages() && ! cit_b.IsSetPages() &&
+                            ! cit_a.IsSetTitle() && ! cit_b.IsSetTitle() &&
+                            ! cit_a.IsSetCit() && ! cit_b.IsSetCit() &&
+                            ! cit_a.IsSetAuthors() && ! cit_b.IsSetAuthors() &&
+                            ! cit_a.IsSetMuid() && ! cit_b.IsSetMuid() &&
+                            ! cit_a.IsSetJournal() && ! cit_b.IsSetJournal() &&
+                            ! cit_a.IsSetDate() && ! cit_b.IsSetDate())
                             same = false; // SIC!!!
                     }
                 }
@@ -2071,20 +1908,19 @@ static bool SameCitation_PubEquivMatch_Logic(const CPub_equiv& a, const CPub_equ
 **********************************************************/
 static bool CheckSegPub(const CPubdesc& pub, TEntryList& entries, std::set<CSeqdesc*>& same_pub_descr)
 {
-    if (!pub.IsSetPub() || !pub.GetPub().IsSet() || pub.GetPub().Get().empty())
+    if (! pub.IsSetPub() || ! pub.GetPub().IsSet() || pub.GetPub().Get().empty())
         return true;
 
     CRef<CPub> pub_ref = pub.GetPub().Get().front();
 
-    if (!pub_ref->IsGen() || !pub_ref->GetGen().IsSetSerial_number())
+    if (! pub_ref->IsGen() || ! pub_ref->GetGen().IsSetSerial_number())
         return true;
 
     int num0 = pub_ref->GetGen().GetSerial_number();
 
     TEntryList::iterator next_seq = entries.begin();
-    for (++next_seq; next_seq != entries.end(); ++next_seq)
-    {
-        if (!(*next_seq)->IsSetDescr())
+    for (++next_seq; next_seq != entries.end(); ++next_seq) {
+        if (! (*next_seq)->IsSetDescr())
             continue;
 
         CSeq_descr& descr = (*next_seq)->SetDescr();
@@ -2092,30 +1928,28 @@ static bool CheckSegPub(const CPubdesc& pub, TEntryList& entries, std::set<CSeqd
         bool not_found = true;
         NON_CONST_ITERATE(CSeq_descr::Tdata, cur_descr, descr.Set())
         {
-            if (!(*cur_descr)->IsPub() || !(*cur_descr)->GetPub().IsSetPub() || !(*cur_descr)->GetPub().GetPub().IsSet() ||
+            if (! (*cur_descr)->IsPub() || ! (*cur_descr)->GetPub().IsSetPub() || ! (*cur_descr)->GetPub().GetPub().IsSet() ||
                 (*cur_descr)->GetPub().GetPub().Get().empty())
                 continue;
 
-            const CPubdesc& cur_pub = (*cur_descr)->GetPub();
-            const CPub& cur_pub_ref = *cur_pub.GetPub().Get().front();
+            const CPubdesc& cur_pub     = (*cur_descr)->GetPub();
+            const CPub&     cur_pub_ref = *cur_pub.GetPub().Get().front();
 
-            if (!cur_pub_ref.IsGen() || !cur_pub_ref.GetGen().IsSetSerial_number())
+            if (! cur_pub_ref.IsGen() || ! cur_pub_ref.GetGen().IsSetSerial_number())
                 continue;
 
             int num = cur_pub_ref.GetGen().GetSerial_number();
 
-            if (!SameCitation_PubEquivMatch_Logic(cur_pub.GetPub(), pub.GetPub()))
+            if (! SameCitation_PubEquivMatch_Logic(cur_pub.GetPub(), pub.GetPub()))
                 continue;
 
-            if (num == num0)
-            {
+            if (num == num0) {
                 same_pub_descr.insert(*cur_descr); // store pointer to the same descr for future use
                 not_found = false;
                 break;
             }
 
-            ErrPostStr(SEV_WARNING, ERR_SEGMENT_PubMatch,
-                        "Matching references with different serial numbers");
+            ErrPostStr(SEV_WARNING, ERR_SEGMENT_PubMatch, "Matching references with different serial numbers");
         }
 
         if (not_found)
@@ -2131,8 +1965,7 @@ static void RemoveDescrByChoice(CSeq_descr& descr, Uint1 choice)
 {
     CSeq_descr::Tdata& descr_list = descr.Set();
 
-    for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();)
-    {
+    for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();) {
         if ((*cur_descr)->Which() == choice)
             cur_descr = descr_list.erase(cur_descr);
         else
@@ -2168,18 +2001,14 @@ static void CleanUpSeqDescrPub(TEntryList& entries, std::set<CSeqdesc*>& to_clea
     TEntryList::iterator next_seq = entries.begin();
     ++next_seq;
 
-    for (; next_seq != entries.end(); ++next_seq)
-    {
+    for (; next_seq != entries.end(); ++next_seq) {
         CSeq_descr::Tdata& descr_list = (*next_seq)->SetDescr().Set();
-        for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();)
-        {
+        for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();) {
             std::set<CSeqdesc*>::iterator it = to_clean.find(*cur_descr);
-            if (it != to_clean.end())
-            {
+            if (it != to_clean.end()) {
                 cur_descr = descr_list.erase(cur_descr);
                 to_clean.erase(it);
-            }
-            else
+            } else
                 ++cur_descr;
         }
     }
@@ -2196,27 +2025,22 @@ static void CleanUpSeqDescrPub(TEntryList& entries, std::set<CSeqdesc*>& to_clea
 **********************************************************/
 static void GetSegPub(TEntryList& entries, CSeq_descr& descr)
 {
-    CBioseq& bioseq = (*entries.begin())->SetSeq();
+    CBioseq&           bioseq     = (*entries.begin())->SetSeq();
     CSeq_descr::Tdata& descr_list = bioseq.SetDescr().Set();
 
-    for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();)
-    {
-        if ((*cur_descr)->IsPub())
-        {
+    for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();) {
+        if ((*cur_descr)->IsPub()) {
             CPubdesc& pubdesc = (*cur_descr)->SetPub();
 
             std::set<CSeqdesc*> same_pub_descr;
-            if (CheckSegPub(pubdesc, entries, same_pub_descr))
-            {
+            if (CheckSegPub(pubdesc, entries, same_pub_descr)) {
                 descr.Set().push_back(*cur_descr);
                 cur_descr = descr_list.erase(cur_descr);
 
                 CleanUpSeqDescrPub(entries, same_pub_descr);
-            }
-            else
+            } else
                 ++cur_descr;
-        }
-        else
+        } else
             ++cur_descr;
     }
 }
@@ -2231,50 +2055,41 @@ static void GetSegPub(TEntryList& entries, CSeq_descr& descr)
 static bool CheckSegDescrChoice(const TEntryList& entries, Uint1 choice)
 {
     std::string org;
-    CDate date;
-    Int4 modif = -1;
+    CDate       date;
+    Int4        modif = -1;
 
     bool no_problem_found = true;
-    for (TEntryList::const_iterator seq = entries.begin(); seq != entries.end(); ++seq)
-    {
-        const CSeq_descr& descr = (*seq)->GetDescr();
+    for (TEntryList::const_iterator seq = entries.begin(); seq != entries.end(); ++seq) {
+        const CSeq_descr&        descr      = (*seq)->GetDescr();
         const CSeq_descr::Tdata& descr_list = descr.Get();
 
         CSeq_descr::Tdata::const_iterator cur_descr = GetDescrByChoice(descr, choice);
 
-        if (cur_descr == descr_list.end())
-        {
+        if (cur_descr == descr_list.end()) {
             no_problem_found = false;
             break;
         }
 
-        if (choice == CSeqdesc::e_Org)
-        {
+        if (choice == CSeqdesc::e_Org) {
             if (org.empty())
                 org = (*cur_descr)->GetOrg().GetTaxname();
-            else if (org != (*cur_descr)->GetOrg().GetTaxname())
-            {
+            else if (org != (*cur_descr)->GetOrg().GetTaxname()) {
                 no_problem_found = false;
                 break;
             }
-        }
-        else if (choice == CSeqdesc::e_Modif)
-        {
+        } else if (choice == CSeqdesc::e_Modif) {
             Int4 val = *(*cur_descr)->GetModif().begin();
             if (modif == -1)
                 modif = val;
-            else if (modif != val)
-            {
+            else if (modif != val) {
                 no_problem_found = false;
                 break;
             }
-        }
-        else                            /* Seq_descr_update_date */
+        } else /* Seq_descr_update_date */
         {
             if (date.Which() == CDate::e_not_set)
                 date.Assign((*cur_descr)->GetUpdate_date());
-            else if (date.Compare((*cur_descr)->GetUpdate_date()) != CDate::eCompare_same)
-            {
+            else if (date.Compare((*cur_descr)->GetUpdate_date()) != CDate::eCompare_same) {
                 no_problem_found = false;
                 break;
             }
@@ -2305,8 +2120,7 @@ static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
     const CSeq_descr::Tdata& descr_list = descr.Get();
 
     CSeq_descr::Tdata::const_iterator cur_descr = descr_list.begin();
-    for (; cur_descr != descr_list.end(); ++cur_descr)
-    {
+    for (; cur_descr != descr_list.end(); ++cur_descr) {
         if ((*cur_descr)->IsTitle())
             break;
     }
@@ -2317,18 +2131,14 @@ static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
     title = (*cur_descr)->GetTitle().c_str();
 
     ptr = StringStr(title, "complete cds");
-    if (ptr == NULL)
-    {
+    if (ptr == NULL) {
         ptr = StringStr(title, "exon");
     }
 
-    if (ptr != NULL)
-    {
+    if (ptr != NULL) {
         str = StringSave(std::string(title, ptr).c_str());
         CleanTailNoneAlphaChar(str);
-    }
-    else
-    {
+    } else {
         str = StringSave(title);
     }
 
@@ -2353,40 +2163,35 @@ static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
 **********************************************************/
 static void SrchSegDescr(TEntryList& entries, CSeq_descr& descr)
 {
-    CRef<CSeq_entry>& entry = *entries.begin();
-    CBioseq& bioseq = entry->SetSeq();
+    CRef<CSeq_entry>& entry  = *entries.begin();
+    CBioseq&          bioseq = entry->SetSeq();
 
     char* title = GetBioseqSetDescrTitle(bioseq.GetDescr());
-    if (title != NULL)
-    {
+    if (title != NULL) {
         CRef<CSeqdesc> desc_new(new CSeqdesc);
         desc_new->SetTitle(title);
         descr.Set().push_back(desc_new);
     }
 
-    if (CheckSegDescrChoice(entries, CSeqdesc::e_Org))
-    {
+    if (CheckSegDescrChoice(entries, CSeqdesc::e_Org)) {
         GetFirstSegDescrChoice(bioseq, CSeqdesc::e_Org, descr);
         CleanUpSeqDescrChoice(entries, CSeqdesc::e_Org);
     }
-    if (CheckSegDescrChoice(entries, CSeqdesc::e_Modif))
-    {
+    if (CheckSegDescrChoice(entries, CSeqdesc::e_Modif)) {
         GetFirstSegDescrChoice(bioseq, CSeqdesc::e_Modif, descr);
         CleanUpSeqDescrChoice(entries, CSeqdesc::e_Modif);
     }
 
     GetSegPub(entries, descr);
 
-    if (CheckSegDescrChoice(entries, CSeqdesc::e_Update_date))
-    {
+    if (CheckSegDescrChoice(entries, CSeqdesc::e_Update_date)) {
         GetFirstSegDescrChoice(bioseq, CSeqdesc::e_Update_date, descr);
         CleanUpSeqDescrChoice(entries, CSeqdesc::e_Update_date);
     }
 }
 
 /**********************************************************/
-static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr headsep*/,
-                            unsigned char* drop)
+static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr headsep*/, unsigned char* drop)
 {
     if (entries.empty())
         return;
@@ -2397,9 +2202,9 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
         cur_dblink;
 
     Uint4 dblink_count = 0;
-    Uint4 gpid_count = 0;
+    Uint4 gpid_count   = 0;
 
-    bool bad_gpid = false;
+    bool bad_gpid   = false;
     bool bad_dblink = false;
 
     NON_CONST_ITERATE(TEntryList, entry, entries)
@@ -2409,25 +2214,21 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
 
         CSeq_descr::Tdata& descr_list = (*entry)->SetDescr();
 
-        for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();)
-        {
-            if (!(*cur_descr)->IsUser())
-            {
+        for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();) {
+            if (! (*cur_descr)->IsUser()) {
                 ++cur_descr;
                 continue;
             }
 
             const CUser_object& user = (*cur_descr)->GetUser();
-            if (!user.CanGetType() || user.GetType().GetStr().empty())
-            {
+            if (! user.CanGetType() || user.GetType().GetStr().empty()) {
                 ++cur_descr;
                 continue;
             }
 
             std::string type_str = user.GetType().GetStr();
 
-            if (type_str == "DBLink")
-            {
+            if (type_str == "DBLink") {
                 if (cur_dblink.NotEmpty())
                     continue;
 
@@ -2438,9 +2239,7 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
                     dblink = cur_dblink;
 
                 cur_descr = descr_list.erase(cur_descr);
-            }
-            else if (type_str == "GenomeProjectsDB")
-            {
+            } else if (type_str == "GenomeProjectsDB") {
                 if (cur_gpid.NotEmpty())
                     continue;
 
@@ -2451,33 +2250,26 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
                     gpid = cur_gpid;
 
                 cur_descr = descr_list.erase(cur_descr);
-            }
-            else
+            } else
                 ++cur_descr;
         }
 
-        if (cur_dblink.NotEmpty())
-        {
+        if (cur_dblink.NotEmpty()) {
             if (dblink.Empty())
                 dblink = cur_dblink;
-            else
-            {
-                if (!cur_dblink->Equals(*dblink))
-                {
+            else {
+                if (! cur_dblink->Equals(*dblink)) {
                     bad_dblink = true;
                     break;
                 }
             }
         }
 
-        if (cur_gpid.NotEmpty())
-        {
+        if (cur_gpid.NotEmpty()) {
             if (gpid.Empty())
                 gpid = cur_gpid;
-            else
-            {
-                if (!cur_gpid->Equals(*gpid))
-                {
+            else {
+                if (! cur_gpid->Equals(*gpid)) {
                     bad_gpid = true;
                     break;
                 }
@@ -2485,25 +2277,20 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
         }
     }
 
-    if (bad_dblink == false && bad_gpid == false)
-    {
+    if (bad_dblink == false && bad_gpid == false) {
         if (dblink_count > 0 && entries.size() != dblink_count)
             bad_dblink = true;
         if (gpid_count > 0 && entries.size() != gpid_count)
             bad_gpid = true;
     }
 
-    if (bad_dblink)
-    {
-        ErrPostEx(SEV_REJECT, ERR_SEGMENT_DBLinkMissingOrNonUnique,
-                    "One or more member of segmented set has missing or non-unique DBLink user-object. Entry dropped.");
+    if (bad_dblink) {
+        ErrPostEx(SEV_REJECT, ERR_SEGMENT_DBLinkMissingOrNonUnique, "One or more member of segmented set has missing or non-unique DBLink user-object. Entry dropped.");
         *drop = 1;
     }
 
-    if (bad_gpid)
-    {
-        ErrPostEx(SEV_REJECT, ERR_SEGMENT_GPIDMissingOrNonUnique,
-                    "One or more member of segmented set has missing or non-unique GPID user-object. Entry dropped.");
+    if (bad_gpid) {
+        ErrPostEx(SEV_REJECT, ERR_SEGMENT_GPIDMissingOrNonUnique, "One or more member of segmented set has missing or non-unique GPID user-object. Entry dropped.");
         *drop = 1;
     }
 
@@ -2527,7 +2314,7 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
 **********************************************************/
 static void GetBioseqSetDescr(TEntryList& entries, CSeq_descr& descr, unsigned char* drop)
 {
-    SrchSegDescr(entries, descr);     /* get from ASN.1 tree */
+    SrchSegDescr(entries, descr); /* get from ASN.1 tree */
     GetSegSetDblink(descr, entries, drop);
 }
 
@@ -2538,19 +2325,19 @@ static void GetBioseqSetDescr(TEntryList& entries, CSeq_descr& descr, unsigned c
 *                                              6-25-93
 *
 **********************************************************/
-static const char *GetMoleculeClassString(Uint1 mol)
+static const char* GetMoleculeClassString(Uint1 mol)
 {
     if (mol == 0)
-        return("not-set");
+        return ("not-set");
     if (mol == 1)
-        return("DNA");
+        return ("DNA");
     if (mol == 2)
-        return("RNA");
+        return ("RNA");
     if (mol == 3)
-        return("AA");
+        return ("AA");
     if (mol == 4)
-        return("NA");
-    return("other");
+        return ("NA");
+    return ("other");
 }
 
 /**********************************************************
@@ -2562,19 +2349,15 @@ static const char *GetMoleculeClassString(Uint1 mol)
 **********************************************************/
 static CSeq_inst::EMol SrchSegSeqMol(const TEntryList& entries)
 {
-    const CBioseq& orig_bioseq = (*entries.begin())->GetSeq();
-    CSeq_inst::EMol mol = orig_bioseq.GetInst().GetMol();
+    const CBioseq&  orig_bioseq = (*entries.begin())->GetSeq();
+    CSeq_inst::EMol mol         = orig_bioseq.GetInst().GetMol();
 
-    ITERATE(TEntryList, entry, entries)
-    {
+    ITERATE (TEntryList, entry, entries) {
         const CBioseq& cur_bioseq = (*entry)->GetSeq();
         if (mol == cur_bioseq.GetInst().GetMol())
             continue;
 
-        ErrPostEx(SEV_WARNING, ERR_SEGMENT_DiffMolType,
-                    "Different molecule type in the segment set, \"%s\" to \"%s\"",
-                    GetMoleculeClassString(mol),
-                    GetMoleculeClassString(cur_bioseq.GetInst().GetMol()));
+        ErrPostEx(SEV_WARNING, ERR_SEGMENT_DiffMolType, "Different molecule type in the segment set, \"%s\" to \"%s\"", GetMoleculeClassString(mol), GetMoleculeClassString(cur_bioseq.GetInst().GetMol()));
 
         return CSeq_inst::eMol_na;
     }
@@ -2593,13 +2376,12 @@ static Int4 SrchSegLength(const TEntryList& entries)
 {
     Int4 length = 0;
 
-    ITERATE(TEntryList, entry, entries)
-    {
+    ITERATE (TEntryList, entry, entries) {
         const CBioseq& cur_bioseq = (*entry)->GetSeq();
         length += cur_bioseq.GetLength();
     }
 
-    return(length);
+    return (length);
 }
 
 /**********************************************************
@@ -2613,7 +2395,7 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
 {
     IndexblkPtr ibp;
 
-    ibp = pp->entrylist[pp->curindx];
+    ibp             = pp->entrylist[pp->curindx];
     char* locusname = new char[StringLen(ibp->blocusname) + 5];
     StringCpy(locusname, "SEG_");
     StringCat(locusname, ibp->blocusname);
@@ -2622,8 +2404,7 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
     bioseq->SetId().push_back(MakeSegSetSeqId(ibp->acnum, locusname, pp->seqtype, ibp->is_tpa));
     delete[] locusname;
 
-    if (pp->seg_acc)
-    {
+    if (pp->seg_acc) {
         char* locusname = new char[StringLen(ibp->acnum) + 5];
         StringCpy(locusname, "SEG_");
         StringCat(locusname, ibp->acnum);
@@ -2633,12 +2414,11 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
     }
 
     const CSeq_entry& first_entry = *(*(entries.begin()));
-    const CBioseq& original = first_entry.GetSeq();
+    const CBioseq&    original    = first_entry.GetSeq();
 
     char* title = GetBioseqSetDescrTitle(original.GetDescr());
 
-    if (title != NULL)
-    {
+    if (title != NULL) {
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetTitle(title);
 
@@ -2655,8 +2435,7 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
     CRef<CSeq_loc> null_loc(new CSeq_loc());
     null_loc->SetNull();
 
-    for (CSeq_loc::const_iterator seq_it = slp.begin(); seq_it != slp.end(); ++seq_it)
-    {
+    for (CSeq_loc::const_iterator seq_it = slp.begin(); seq_it != slp.end(); ++seq_it) {
         if (need_null)
             inst.SetExt().SetSeg().Set().push_back(null_loc);
         else
@@ -2689,8 +2468,7 @@ void GetSeqExt(ParserPtr pp, CSeq_loc& seq_loc)
 
     CRef<CSeq_id> id = MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, true, ibp->is_tpa);
 
-    if (id.NotEmpty())
-    {
+    if (id.NotEmpty()) {
         CSeq_loc loc;
         loc.SetWhole(*id);
 
@@ -2707,15 +2485,14 @@ void GetSeqExt(ParserPtr pp, CSeq_loc& seq_loc)
 *                                              2-24-94
 *
 **********************************************************/
-void BuildBioSegHeader(ParserPtr pp, TEntryList& entries,
-                       const CSeq_loc& seqloc)
+void BuildBioSegHeader(ParserPtr pp, TEntryList& entries, const CSeq_loc& seqloc)
 {
     if (entries.empty())
         return;
 
     IndexblkPtr ibp = pp->entrylist[pp->curindx];
 
-    CRef<CBioseq> bioseq = GetBioseq(pp, entries, seqloc);      /* Bioseq, ext */
+    CRef<CBioseq> bioseq = GetBioseq(pp, entries, seqloc); /* Bioseq, ext */
 
     CRef<CSeq_entry> bioseq_entry(new CSeq_entry);
     bioseq_entry->SetSeq(*bioseq);
@@ -2752,18 +2529,18 @@ void BuildBioSegHeader(ParserPtr pp, TEntryList& entries,
 **********************************************************/
 bool IsSegBioseq(const CSeq_id& id)
 {
-    if(id.Which() == CSeq_id::e_Patent)
+    if (id.Which() == CSeq_id::e_Patent)
         return false;
 
     const CTextseq_id* text_id = id.GetTextseq_Id();
 
-    if(!text_id)
-        return(false);
+    if (! text_id)
+        return (false);
 
-    if(!text_id->IsSetAccession() && text_id->IsSetName() &&
-       StringNCmp(text_id->GetName().c_str(), "SEG_", 4) == 0)
-        return(true);
-    return(false);
+    if (! text_id->IsSetAccession() && text_id->IsSetName() &&
+        StringNCmp(text_id->GetName().c_str(), "SEG_", 4) == 0)
+        return (true);
+    return (false);
 }
 // LCOV_EXCL_STOP
 
@@ -2779,256 +2556,156 @@ bool IsSegBioseq(const CSeq_id& id)
 *                                              9-09-96
 *
 **********************************************************/
-char* check_div(bool pat_acc, bool pat_ref, bool est_kwd,
-                    bool sts_kwd, bool gss_kwd, bool if_cds,
-                    char* div, unsigned char* tech, size_t bases, Parser::ESource source,
-                    bool& drop)
+char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_kwd, bool if_cds, char* div, unsigned char* tech, size_t bases, Parser::ESource source, bool& drop)
 {
     if (div == NULL)
-        return(NULL);
+        return (NULL);
 
-    if (pat_acc || pat_ref || StringCmp(div, "PAT") == 0)
-    {
-        if (pat_ref == false)
-        {
-            ErrPostEx(SEV_REJECT, ERR_DIVISION_MissingPatentRef,
-                      "Record in the patent division lacks a reference to a patent document. Entry dropped.");
+    if (pat_acc || pat_ref || StringCmp(div, "PAT") == 0) {
+        if (pat_ref == false) {
+            ErrPostEx(SEV_REJECT, ERR_DIVISION_MissingPatentRef, "Record in the patent division lacks a reference to a patent document. Entry dropped.");
             drop = true;
         }
-        if (est_kwd)
-        {
-            ErrPostEx(SEV_WARNING, ERR_DIVISION_PATHasESTKeywords,
-                        "EST keywords present on patent sequence.");
+        if (est_kwd) {
+            ErrPostEx(SEV_WARNING, ERR_DIVISION_PATHasESTKeywords, "EST keywords present on patent sequence.");
         }
-        if (sts_kwd)
-        {
-            ErrPostEx(SEV_WARNING, ERR_DIVISION_PATHasSTSKeywords,
-                        "STS keywords present on patent sequence.");
+        if (sts_kwd) {
+            ErrPostEx(SEV_WARNING, ERR_DIVISION_PATHasSTSKeywords, "STS keywords present on patent sequence.");
         }
-        if (gss_kwd)
-        {
-            ErrPostEx(SEV_WARNING, ERR_DIVISION_PATHasGSSKeywords,
-                        "GSS keywords present on patent sequence.");
+        if (gss_kwd) {
+            ErrPostEx(SEV_WARNING, ERR_DIVISION_PATHasGSSKeywords, "GSS keywords present on patent sequence.");
         }
-        if (if_cds && source != Parser::ESource::EMBL)
-        {
-            ErrPostEx(SEV_INFO, ERR_DIVISION_PATHasCDSFeature,
-                        "CDS features present on patent sequence.");
+        if (if_cds && source != Parser::ESource::EMBL) {
+            ErrPostEx(SEV_INFO, ERR_DIVISION_PATHasCDSFeature, "CDS features present on patent sequence.");
         }
-        if (StringCmp(div, "PAT") != 0)
-        {
+        if (StringCmp(div, "PAT") != 0) {
             if (pat_acc)
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_ShouldBePAT,
-                    "Based on the accession number prefix letters, this is a patent sequence, but the division code is not PAT.");
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_ShouldBePAT, "Based on the accession number prefix letters, this is a patent sequence, but the division code is not PAT.");
 
-            ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoPAT,
-                      "Division %s mapped to PAT based on %s.", div,
-                      (pat_acc == false) ? "patent reference" :
-                      "accession number");
+            ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoPAT, "Division %s mapped to PAT based on %s.", div, (pat_acc == false) ? "patent reference" : "accession number");
             StringCpy(div, "PAT");
         }
-    }
-    else if (est_kwd)
-    {
-        if (if_cds)
-        {
-            if (StringCmp(div, "EST") == 0)
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature,
-                            "Coding region features exist and division is EST; EST might not be appropriate.");
-            }
-            else
-            {
-                ErrPostEx(SEV_INFO, ERR_DIVISION_NotMappedtoEST,
-                            "EST keywords exist, but this entry was not mapped to the EST division because of the presence of CDS features.");
+    } else if (est_kwd) {
+        if (if_cds) {
+            if (StringCmp(div, "EST") == 0) {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature, "Coding region features exist and division is EST; EST might not be appropriate.");
+            } else {
+                ErrPostEx(SEV_INFO, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_est)
                     *tech = 0;
             }
-        }
-        else if (bases > 1000)
-        {
-            if (StringCmp(div, "EST") == 0)
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongESTSequence,
-                            "Division code is EST, but the length of the sequence is %ld.",
-                            bases);
-            }
-            else
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoEST,
-                            "EST keywords exist, but this entry was not mapped to the EST division because of the sequence length %ld.",
-                            bases);
+        } else if (bases > 1000) {
+            if (StringCmp(div, "EST") == 0) {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongESTSequence, "Division code is EST, but the length of the sequence is %ld.", bases);
+            } else {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the sequence length %ld.", bases);
                 if (*tech == CMolInfo::eTech_est)
                     *tech = 0;
             }
-        }
-        else
-        {
+        } else {
             if (StringCmp(div, "EST") != 0)
-                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoEST,
-                "%s division mapped to EST.", div);
+                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoEST, "%s division mapped to EST.", div);
             *tech = CMolInfo::eTech_est;
             MemFree(div);
             div = NULL;
         }
-    }
-    else if (StringCmp(div, "EST") == 0)
-    {
-        ErrPostEx(SEV_WARNING, ERR_DIVISION_MissingESTKeywords,
-                    "Division is EST, but entry lacks EST-related keywords.");
-        if (sts_kwd)
-        {
-            ErrPostEx(SEV_WARNING, ERR_DIVISION_ESTHasSTSKeywords,
-                        "STS keywords present on EST sequence.");
+    } else if (StringCmp(div, "EST") == 0) {
+        ErrPostEx(SEV_WARNING, ERR_DIVISION_MissingESTKeywords, "Division is EST, but entry lacks EST-related keywords.");
+        if (sts_kwd) {
+            ErrPostEx(SEV_WARNING, ERR_DIVISION_ESTHasSTSKeywords, "STS keywords present on EST sequence.");
         }
-        if (if_cds)
-        {
-            ErrPostEx(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature,
-                        "Coding region features exist and division is EST; EST might not be appropriate.");
+        if (if_cds) {
+            ErrPostEx(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature, "Coding region features exist and division is EST; EST might not be appropriate.");
         }
-    }
-    else if (sts_kwd)
-    {
-        if (if_cds)
-        {
-            if (StringCmp(div, "STS") == 0)
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature,
-                            "Coding region features exist and division is STS; STS might not be appropriate.");
-            }
-            else
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS,
-                            "STS keywords exist, but this entry was not mapped to the STS division because of the presence of CDS features.");
+    } else if (sts_kwd) {
+        if (if_cds) {
+            if (StringCmp(div, "STS") == 0) {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature, "Coding region features exist and division is STS; STS might not be appropriate.");
+            } else {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_sts)
                     *tech = 0;
             }
-        }
-        else if (bases > 1000)
-        {
-            if (StringCmp(div, "STS") == 0)
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongSTSSequence,
-                            "Division code is STS, but the length of the sequence is %ld.",
-                            bases);
-            }
-            else
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS,
-                            "STS keywords exist, but this entry was not mapped to the STS division because of the sequence length %ld.",
-                            bases);
+        } else if (bases > 1000) {
+            if (StringCmp(div, "STS") == 0) {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongSTSSequence, "Division code is STS, but the length of the sequence is %ld.", bases);
+            } else {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the sequence length %ld.", bases);
                 if (*tech == CMolInfo::eTech_sts)
                     *tech = 0;
             }
-        }
-        else
-        {
+        } else {
             if (StringCmp(div, "STS") != 0)
-                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoSTS,
-                "%s division mapped to STS.", div);
+                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoSTS, "%s division mapped to STS.", div);
             *tech = CMolInfo::eTech_sts;
             MemFree(div);
             div = NULL;
         }
-    }
-    else if (StringCmp(div, "STS") == 0)
-    {
-        ErrPostEx(SEV_WARNING, ERR_DIVISION_MissingSTSKeywords,
-                    "Division is STS, but entry lacks STS-related keywords.");
-        if (if_cds)
-        {
-            ErrPostEx(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature,
-                        "Coding region features exist and division is STS; STS might not be appropriate.");
+    } else if (StringCmp(div, "STS") == 0) {
+        ErrPostEx(SEV_WARNING, ERR_DIVISION_MissingSTSKeywords, "Division is STS, but entry lacks STS-related keywords.");
+        if (if_cds) {
+            ErrPostEx(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature, "Coding region features exist and division is STS; STS might not be appropriate.");
         }
-    }
-    else if (gss_kwd)
-    {
-        if (if_cds)
-        {
-            if (StringCmp(div, "GSS") == 0)
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature,
-                            "Coding region features exist and division is GSS; GSS might not be appropriate.");
-            }
-            else
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS,
-                            "GSS keywords exist, but this entry was not mapped to the GSS division because of the presence of CDS features.");
+    } else if (gss_kwd) {
+        if (if_cds) {
+            if (StringCmp(div, "GSS") == 0) {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature, "Coding region features exist and division is GSS; GSS might not be appropriate.");
+            } else {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_survey)
                     *tech = 0;
             }
-        }
-        else if (bases > 2500)
-        {
-            if (StringCmp(div, "GSS") == 0)
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongGSSSequence,
-                            "Division code is GSS, but the length of the sequence is %ld.",
-                            bases);
-            }
-            else
-            {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS,
-                            "GSS keywords exist, but this entry was not mapped to the GSS division because of the sequence length %ld.",
-                            bases);
+        } else if (bases > 2500) {
+            if (StringCmp(div, "GSS") == 0) {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongGSSSequence, "Division code is GSS, but the length of the sequence is %ld.", bases);
+            } else {
+                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the sequence length %ld.", bases);
                 if (*tech == CMolInfo::eTech_survey)
                     *tech = 0;
             }
-        }
-        else
-        {
+        } else {
             if (StringCmp(div, "GSS") != 0)
-                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoGSS,
-                "%s division mapped to GSS.", div);
+                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoGSS, "%s division mapped to GSS.", div);
             *tech = CMolInfo::eTech_survey;
             MemFree(div);
             div = NULL;
         }
-    }
-    else if (StringCmp(div, "GSS") == 0)
-    {
-        ErrPostEx(SEV_WARNING, ERR_DIVISION_MissingGSSKeywords,
-                    "Division is GSS, but entry lacks GSS-related keywords.");
-        if (if_cds)
-        {
-            ErrPostEx(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature,
-                        "Coding region features exist and division is GSS; GSS might not be appropriate.");
+    } else if (StringCmp(div, "GSS") == 0) {
+        ErrPostEx(SEV_WARNING, ERR_DIVISION_MissingGSSKeywords, "Division is GSS, but entry lacks GSS-related keywords.");
+        if (if_cds) {
+            ErrPostEx(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature, "Coding region features exist and division is GSS; GSS might not be appropriate.");
         }
-    }
-    else if (StringCmp(div, "TSA") == 0)
-    {
+    } else if (StringCmp(div, "TSA") == 0) {
         *tech = CMolInfo::eTech_tsa;
         MemFree(div);
         div = NULL;
     }
-    return(div);
+    return (div);
 }
 
 /**********************************************************/
 CRef<CSeq_id> StrToSeqId(const char* pch, bool pid)
 {
-    long        lID;
-    char*     pchEnd;
+    long  lID;
+    char* pchEnd;
 
     CRef<CSeq_id> id;
 
     /* Figure out--what source is it
     */
-    if (*pch == 'd' || *pch == 'e')
-    {
+    if (*pch == 'd' || *pch == 'e') {
         /* Get ID
         */
-        errno = 0;          /* clear errors, the error flag from stdlib */
-        lID = strtol(pch + 1, &pchEnd, 10);
+        errno = 0; /* clear errors, the error flag from stdlib */
+        lID   = strtol(pch + 1, &pchEnd, 10);
 
-        if (!((lID == 0 && pch + 1 == pchEnd) || (lID == LONG_MAX && errno == ERANGE)))
-        {
+        if (! ((lID == 0 && pch + 1 == pchEnd) || (lID == LONG_MAX && errno == ERANGE))) {
             /* Allocate new SeqId
             */
 
             id = new CSeq_id;
             CRef<CObject_id> tag(new CObject_id);
-            tag->SetStr(std::string(pch, pchEnd-pch));
+            tag->SetStr(std::string(pch, pchEnd - pch));
 
             CRef<CDbtag> dbtag(new CDbtag);
             dbtag->SetTag(*tag);
@@ -3042,22 +2719,21 @@ CRef<CSeq_id> StrToSeqId(const char* pch, bool pid)
 }
 
 /**********************************************************/
-void AddNIDSeqId(CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata,
-                    Parser::ESource source)
+void AddNIDSeqId(CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata, Parser::ESource source)
 {
     DataBlkPtr dbp;
-    char*    offset;
+    char*      offset;
 
     dbp = TrackNodeType(entry, type);
     if (dbp == NULL)
         return;
 
-    offset = dbp->mOffset + coldata;
+    offset            = dbp->mOffset + coldata;
     CRef<CSeq_id> sid = StrToSeqId(offset, false);
     if (sid.Empty())
         return;
 
-    if (!(*offset == 'g' && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL)))
+    if (! (*offset == 'g' && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL)))
         bioseq.SetId().push_back(sid);
 }
 
@@ -3066,25 +2742,22 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
-            if (bioseq->IsSetDescr())
-            {
-                CGB_block* gb_block = nullptr;
-                CMolInfo* molinfo = nullptr;
-                CMolInfo::TTech tech = 0;
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+            if (bioseq->IsSetDescr()) {
+                CGB_block*      gb_block = nullptr;
+                CMolInfo*       molinfo  = nullptr;
+                CMolInfo::TTech tech     = 0;
 
                 NON_CONST_ITERATE(TSeqdescList, descr, bioseq->SetDescr().Set())
                 {
                     if ((*descr)->IsGenbank() && gb_block == nullptr)
                         gb_block = &(*descr)->SetGenbank();
-                    else if ((*descr)->IsMolinfo() && molinfo == nullptr)
-                    {
+                    else if ((*descr)->IsMolinfo() && molinfo == nullptr) {
                         molinfo = &(*descr)->SetMolinfo();
-                        tech = molinfo->GetTech();
+                        tech    = molinfo->GetTech();
                     }
 
-                    if(gb_block != nullptr && molinfo != nullptr)
+                    if (gb_block != nullptr && molinfo != nullptr)
                         break;
                 }
 
@@ -3093,14 +2766,12 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 
                 IndexblkPtr ibp = pp->entrylist[pp->curindx];
 
-                if(tech == CMolInfo::eTech_tsa &&
-                   !NStr::CompareNocase(ibp->division, "TSA"))
+                if (tech == CMolInfo::eTech_tsa &&
+                    ! NStr::CompareNocase(ibp->division, "TSA"))
                     continue;
 
-                if (!gb_block->IsSetDiv())
-                {
-                    ErrPostEx(SEV_WARNING, ERR_DIVISION_GBBlockDivision,
-                              "input division code is preserved in GBBlock");
+                if (! gb_block->IsSetDiv()) {
+                    ErrPostEx(SEV_WARNING, ERR_DIVISION_GBBlockDivision, "input division code is preserved in GBBlock");
                     gb_block->SetDiv(ibp->division);
                 }
             }
@@ -3112,8 +2783,7 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 static const CBioSource* GetTopBiosource(const CSeq_entry& entry)
 {
     const TSeqdescList& descrs = GetDescrPointer(entry);
-    ITERATE(TSeqdescList, descr, descrs)
-    {
+    ITERATE (TSeqdescList, descr, descrs) {
         if ((*descr)->IsSource())
             return &((*descr)->GetSource());
     }
@@ -3128,7 +2798,7 @@ static bool SeqEntryCheckTaxonDiv(const CSeq_entry& entry)
     if (bio_src == NULL)
         return false;
 
-    if (!bio_src->IsSetOrg() || !bio_src->GetOrg().IsSetOrgname() || !bio_src->GetOrg().GetOrgname().IsSetDiv())
+    if (! bio_src->IsSetOrg() || ! bio_src->GetOrg().IsSetOrgname() || ! bio_src->GetOrg().GetOrgname().IsSetDiv())
         return false;
 
     return true;
@@ -3140,44 +2810,39 @@ void EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp)
     if (seq_entries.empty())
         return;
 
-    if (!SeqEntryCheckTaxonDiv(*seq_entries.front()))
-    {
+    if (! SeqEntryCheckTaxonDiv(*seq_entries.front())) {
         CheckDivCode(seq_entries, pp);
     }
 }
 
 /**********************************************************/
-void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori,
-                      bool cancelled)
+void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled)
 {
-    DataBlkPtr dbp;
-    const char **b;
-    char*    tmp;
-    char*    p;
-    char*    q;
-    char*    r;
-    Char       c;
-    Int2       count;
+    DataBlkPtr   dbp;
+    const char** b;
+    char*        tmp;
+    char*        p;
+    char*        q;
+    char*        r;
+    Char         c;
+    Int2         count;
 
     dbp = TrackNodeType(entry, what);
     if (dbp == NULL || dbp->mOffset == NULL || dbp->len < 1)
         p = NULL;
-    else
-    {
-        q = dbp->mOffset + dbp->len - 1;
-        c = *q;
-        *q = '\0';
+    else {
+        q   = dbp->mOffset + dbp->len - 1;
+        c   = *q;
+        *q  = '\0';
         tmp = StringSave(dbp->mOffset);
-        *q = c;
-        for (q = tmp; *q != '\0'; q++)
-        {
+        *q  = c;
+        for (q = tmp; *q != '\0'; q++) {
             if (*q == '\n' && StringNCmp(q + 1, "DE   ", 5) == 0)
                 fta_StringCpy(q, q + 5);
             else if (*q == '\n' || *q == '\t')
                 *q = ' ';
         }
-        for (q = tmp, p = tmp; *p != '\0'; p++)
-        {
+        for (q = tmp, p = tmp; *p != '\0'; p++) {
             if (*p == ' ' && p[1] == ' ')
                 continue;
             *q++ = *p;
@@ -3189,15 +2854,11 @@ void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori,
     }
 
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
-        tech == CMolInfo::eTech_htgs_2) && p == NULL && !cancelled)
-    {
-        ErrPostEx(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress,
-                    "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
-    }
-    else if (tech == CMolInfo::eTech_htgs_3 && p != NULL)
-    {
-        ErrPostEx(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete,
-                    "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
+         tech == CMolInfo::eTech_htgs_2) &&
+        p == NULL && ! cancelled) {
+        ErrPostEx(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
+    } else if (tech == CMolInfo::eTech_htgs_3 && p != NULL) {
+        ErrPostEx(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
     }
 
     if (tech != CMolInfo::eTech_htgs_3)
@@ -3216,14 +2877,11 @@ void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori,
             *q++ = *p;
     *q = '\0';
 
-    for (count = 0, p = r; *p != '\0'; p++)
-    {
+    for (count = 0, p = r; *p != '\0'; p++) {
         if (*p != 'n')
             count = 0;
-        else if (++count > 10)
-        {
-            ErrPostEx(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3,
-                        "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
+        else if (++count > 10) {
+            ErrPostEx(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
             break;
         }
     }
@@ -3233,12 +2891,12 @@ void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori,
 /**********************************************************/
 void XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelled)
 {
-    const char **b;
-    char*    tmp;
-    char*    p;
-    char*    q;
-    char*    r;
-    Int2       count;
+    const char** b;
+    char*        tmp;
+    char*        p;
+    char*        q;
+    char*        r;
+    Int2         count;
 
     if (entry == NULL || xip == NULL)
         return;
@@ -3246,13 +2904,11 @@ void XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelle
     tmp = XMLFindTagValue(entry, xip, INSDSEQ_DEFINITION);
     if (tmp == NULL)
         p = NULL;
-    else
-    {
+    else {
         for (q = tmp; *q != '\0'; q++)
             if (*q == '\n' || *q == '\t')
                 *q = ' ';
-        for (q = tmp, p = tmp; *p != '\0'; p++)
-        {
+        for (q = tmp, p = tmp; *p != '\0'; p++) {
             if (*p == ' ' && p[1] == ' ')
                 continue;
             *q++ = *p;
@@ -3264,15 +2920,11 @@ void XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelle
     }
 
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
-        tech == CMolInfo::eTech_htgs_2) && p == NULL && !cancelled)
-    {
-        ErrPostEx(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress,
-                    "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
-    }
-    else if (tech == CMolInfo::eTech_htgs_3 && p != NULL)
-    {
-        ErrPostEx(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete,
-                    "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
+         tech == CMolInfo::eTech_htgs_2) &&
+        p == NULL && ! cancelled) {
+        ErrPostEx(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
+    } else if (tech == CMolInfo::eTech_htgs_3 && p != NULL) {
+        ErrPostEx(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
     }
 
     if (tech != CMolInfo::eTech_htgs_3)
@@ -3282,14 +2934,11 @@ void XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelle
     if (r == NULL)
         return;
 
-    for (count = 0, p = r; *p != '\0'; p++)
-    {
+    for (count = 0, p = r; *p != '\0'; p++) {
         if (*p != 'n')
             count = 0;
-        else if (++count > 10)
-        {
-            ErrPostEx(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3,
-                        "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
+        else if (++count > 10) {
+            ErrPostEx(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
             break;
         }
     }
@@ -3299,17 +2948,12 @@ void XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelle
 /**********************************************************/
 void CheckHTGDivision(char* div, Uint1 tech)
 {
-    if (div != NULL && StringCmp(div, "HTG") == 0 && tech == CMolInfo::eTech_htgs_3)
-    {
-        ErrPostEx(SEV_WARNING, ERR_DIVISION_ShouldNotBeHTG,
-                    "This Phase 3 HTGS sequence is still in the HTG division. If truly complete, it should move to a non-HTG division.");
-    }
-    else if ((div == NULL || StringCmp(div, "HTG") != 0) &&
-             (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
-             tech == CMolInfo::eTech_htgs_2))
-    {
-        ErrPostEx(SEV_ERROR, ERR_DIVISION_ShouldBeHTG,
-                    "Phase 0, 1 or 2 HTGS sequences should have division code HTG.");
+    if (div != NULL && StringCmp(div, "HTG") == 0 && tech == CMolInfo::eTech_htgs_3) {
+        ErrPostEx(SEV_WARNING, ERR_DIVISION_ShouldNotBeHTG, "This Phase 3 HTGS sequence is still in the HTG division. If truly complete, it should move to a non-HTG division.");
+    } else if ((div == NULL || StringCmp(div, "HTG") != 0) &&
+               (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
+                tech == CMolInfo::eTech_htgs_2)) {
+        ErrPostEx(SEV_ERROR, ERR_DIVISION_ShouldBeHTG, "Phase 0, 1 or 2 HTGS sequences should have division code HTG.");
     }
 }
 
@@ -3332,18 +2976,15 @@ static void CleanVisString(std::string& str)
     for (; start_pos > str.size() && str[start_pos] <= ' '; ++start_pos)
         ;
 
-    if (start_pos == str.size())
-    {
+    if (start_pos == str.size()) {
         str.clear();
         return;
     }
 
-    str = str.substr(start_pos);
+    str            = str.substr(start_pos);
     size_t end_pos = str.size() - 1;
-    for (;; --end_pos)
-    {
-        if (str[end_pos] == ';' || str[end_pos] <= ' ')
-        {
+    for (;; --end_pos) {
+        if (str[end_pos] == ';' || str[end_pos] <= ' ') {
             if (end_pos == 0)
                 break;
             continue;
@@ -3352,8 +2993,7 @@ static void CleanVisString(std::string& str)
         break;
     }
 
-    if (str[end_pos] != ';' || end_pos == 0)
-    {
+    if (str[end_pos] != ';' || end_pos == 0) {
         if (end_pos == 0)
             str.clear();
         else
@@ -3363,8 +3003,7 @@ static void CleanVisString(std::string& str)
     }
 
     size_t amp_pos = end_pos - 1;
-    for (; amp_pos; --amp_pos)
-    {
+    for (; amp_pos; --amp_pos) {
         if (str[amp_pos] == ' ' || str[amp_pos] == '&' || str[amp_pos] == ';')
             break;
     }
@@ -3378,8 +3017,7 @@ static void CleanVisString(std::string& str)
 /**********************************************************/
 static void CleanVisStringList(std::list<std::string>& str_list)
 {
-    for (std::list<std::string>::iterator it = str_list.begin(); it != str_list.end(); )
-    {
+    for (std::list<std::string>::iterator it = str_list.begin(); it != str_list.end();) {
         CleanVisString(*it);
 
         if (it->empty())
@@ -3394,22 +3032,19 @@ static void CheckGBBlock(TSeqdescList& descrs, bool& got)
 {
     const Char* div = NULL;
 
-    ITERATE(TSeqdescList, descr, descrs)
-    {
-        if (!(*descr)->IsEmbl())
+    ITERATE (TSeqdescList, descr, descrs) {
+        if (! (*descr)->IsEmbl())
             continue;
 
-        if (!(*descr)->GetEmbl().IsSetDiv() || (*descr)->GetEmbl().GetDiv() > 15)
+        if (! (*descr)->GetEmbl().IsSetDiv() || (*descr)->GetEmbl().GetDiv() > 15)
             continue;
 
         div = GetEmblDiv((*descr)->GetEmbl().GetDiv());
         break;
     }
 
-    for (TSeqdescList::iterator descr = descrs.begin(); descr != descrs.end();)
-    {
-        if (!(*descr)->IsGenbank())
-        {
+    for (TSeqdescList::iterator descr = descrs.begin(); descr != descrs.end();) {
+        if (! (*descr)->IsGenbank()) {
             ++descr;
             continue;
         }
@@ -3418,72 +3053,60 @@ static void CheckGBBlock(TSeqdescList& descrs, bool& got)
         if (div != NULL && gb_block.IsSetDiv() && NStr::CompareNocase(div, gb_block.GetDiv().c_str()) == 0)
             gb_block.ResetDiv();
 
-        if (gb_block.IsSetSource())
-        {
+        if (gb_block.IsSetSource()) {
             got = true;
-        }
-        else if (gb_block.IsSetDiv() && gb_block.GetDiv() != "PAT" &&
-                 gb_block.GetDiv() != "SYN")
-        {
+        } else if (gb_block.IsSetDiv() && gb_block.GetDiv() != "PAT" &&
+                   gb_block.GetDiv() != "SYN") {
             got = true;
         }
 
-        if (gb_block.IsSetExtra_accessions())
-        {
+        if (gb_block.IsSetExtra_accessions()) {
             CleanVisStringList(gb_block.SetExtra_accessions());
             if (gb_block.GetExtra_accessions().empty())
                 gb_block.ResetExtra_accessions();
         }
 
 
-        if (gb_block.IsSetKeywords())
-        {
+        if (gb_block.IsSetKeywords()) {
             CleanVisStringList(gb_block.SetKeywords());
             if (gb_block.GetKeywords().empty())
                 gb_block.ResetKeywords();
         }
 
-        if (gb_block.IsSetSource())
-        {
+        if (gb_block.IsSetSource()) {
             std::string& buf = gb_block.SetSource();
             CleanVisString(buf);
             if (buf.empty())
                 gb_block.ResetSource();
         }
 
-        if (gb_block.IsSetOrigin())
-        {
+        if (gb_block.IsSetOrigin()) {
             std::string& buf = gb_block.SetOrigin();
             CleanVisString(buf);
             if (buf.empty())
                 gb_block.ResetOrigin();
         }
 
-        if (gb_block.IsSetDate())
-        {
+        if (gb_block.IsSetDate()) {
             std::string& buf = gb_block.SetDate();
             CleanVisString(buf);
             if (buf.empty())
                 gb_block.ResetDate();
         }
 
-        if (gb_block.IsSetDiv())
-        {
+        if (gb_block.IsSetDiv()) {
             std::string& buf = gb_block.SetDiv();
             CleanVisString(buf);
             if (buf.empty())
                 gb_block.ResetDiv();
         }
 
-        if (!gb_block.IsSetExtra_accessions() && !gb_block.IsSetSource() &&
-            !gb_block.IsSetKeywords() && !gb_block.IsSetOrigin() &&
-            !gb_block.IsSetDate() && !gb_block.IsSetEntry_date() &&
-            !gb_block.IsSetDiv())
-        {
+        if (! gb_block.IsSetExtra_accessions() && ! gb_block.IsSetSource() &&
+            ! gb_block.IsSetKeywords() && ! gb_block.IsSetOrigin() &&
+            ! gb_block.IsSetDate() && ! gb_block.IsSetEntry_date() &&
+            ! gb_block.IsSetDiv()) {
             descr = descrs.erase(descr);
-        }
-        else
-        {
+        } else {
             ++descr;
         }
     }
@@ -3496,32 +3119,27 @@ bool fta_EntryCheckGBBlock(TEntryList& seq_entries)
 
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 CheckGBBlock(bioseq->SetDescr().Set(), got);
         }
 
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
-        {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
             if (bio_set->IsSetDescr())
                 CheckGBBlock(bio_set->SetDescr().Set(), got);
         }
     }
 
-    return(got);
+    return (got);
 }
 
 /**********************************************************/
 static int GetSerialNumFromPubEquiv(const CPub_equiv& pub_eq)
 {
     int ret = -1;
-    ITERATE(TPubList, pub, pub_eq.Get())
-    {
-        if ((*pub)->IsGen())
-        {
-            if ((*pub)->GetGen().IsSetSerial_number())
-            {
+    ITERATE (TPubList, pub, pub_eq.Get()) {
+        if ((*pub)->IsGen()) {
+            if ((*pub)->GetGen().IsSetSerial_number()) {
                 ret = (*pub)->GetGen().GetSerial_number();
                 break;
             }
@@ -3541,29 +3159,26 @@ static bool fta_if_pubs_sorted(const CPub_equiv& pub1, const CPub_equiv& pub2)
 }
 
 /**********************************************************/
-static bool descr_cmp(const CRef<CSeqdesc> &desc1,
-                      const CRef<CSeqdesc> &desc2)
+static bool descr_cmp(const CRef<CSeqdesc>& desc1,
+                      const CRef<CSeqdesc>& desc2)
 {
-    if (desc1->Which() == desc2->Which() && desc1->IsPub())
-    {
+    if (desc1->Which() == desc2->Which() && desc1->IsPub()) {
         const CPub_equiv& pub1 = desc1->GetPub().GetPub();
         const CPub_equiv& pub2 = desc2->GetPub().GetPub();
         return fta_if_pubs_sorted(pub1, pub2);
     }
-    if (desc1->Which() == desc2->Which() && desc1->IsUser())
-    {
-        const CUser_object &uop1 = desc1->GetUser();
-        const CUser_object &uop2 = desc2->GetUser();
-        const char *str1;
-        const char *str2;
-        if(uop1.IsSetType() && uop1.GetType().IsStr() &&
-           uop2.IsSetType() && uop2.GetType().IsStr())
-        {
+    if (desc1->Which() == desc2->Which() && desc1->IsUser()) {
+        const CUser_object& uop1 = desc1->GetUser();
+        const CUser_object& uop2 = desc2->GetUser();
+        const char*         str1;
+        const char*         str2;
+        if (uop1.IsSetType() && uop1.GetType().IsStr() &&
+            uop2.IsSetType() && uop2.GetType().IsStr()) {
             str1 = uop1.GetType().GetStr().c_str();
             str2 = uop2.GetType().GetStr().c_str();
-            if(strcmp(str1, str2) <= 0)
-                return(true);
-            return(false);
+            if (strcmp(str1, str2) <= 0)
+                return (true);
+            return (false);
         }
     }
 
@@ -3575,14 +3190,12 @@ void fta_sort_descr(TEntryList& seq_entries)
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 bioseq->SetDescr().Set().sort(descr_cmp);
         }
 
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
-        {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
             if (bio_set->IsSetDescr())
                 bio_set->SetDescr().Set().sort(descr_cmp);
         }
@@ -3592,14 +3205,10 @@ void fta_sort_descr(TEntryList& seq_entries)
 /**********************************************************/
 static bool pub_cmp(const CRef<CPub>& pub1, const CRef<CPub>& pub2)
 {
-    if (pub1->Which() == pub2->Which())
-    {
-        if (pub1->IsMuid())
-        {
+    if (pub1->Which() == pub2->Which()) {
+        if (pub1->IsMuid()) {
             return pub1->GetMuid() < pub2->GetMuid();
-        }
-        else if (pub1->IsGen())
-        {
+        } else if (pub1->IsGen()) {
             const CCit_gen& cit1 = pub1->GetGen();
             const CCit_gen& cit2 = pub2->GetGen();
 
@@ -3616,20 +3225,17 @@ static void sort_feat_cit(CBioseq::TAnnot& annots)
 {
     NON_CONST_ITERATE(CBioseq::TAnnot, annot, annots)
     {
-        if ((*annot)->IsFtable())
-        {
+        if ((*annot)->IsFtable()) {
             NON_CONST_ITERATE(TSeqFeatList, feat, (*annot)->SetData().SetFtable())
             {
-                if ((*feat)->IsSetCit() && (*feat)->GetCit().IsPub())
-                {
+                if ((*feat)->IsSetCit() && (*feat)->GetCit().IsPub()) {
                     // (*feat)->SetCit().SetPub().sort(pub_cmp); TODO: may be this sort would be OK, the only difference with original one is it is stable
 
                     TPubList& pubs = (*feat)->SetCit().SetPub();
                     NON_CONST_ITERATE(TPubList, pub, pubs)
                     {
                         TPubList::iterator next_pub = pub;
-                        for (++next_pub; next_pub != pubs.end(); ++next_pub)
-                        {
+                        for (++next_pub; next_pub != pubs.end(); ++next_pub) {
                             if (pub_cmp(*next_pub, *pub))
                                 swap(*next_pub, *pub);
                         }
@@ -3645,14 +3251,12 @@ void fta_sort_seqfeat_cit(TEntryList& seq_entries)
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetAnnot())
                 sort_feat_cit(bioseq->SetAnnot());
         }
 
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
-        {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
             if (bio_set->IsSetAnnot())
                 sort_feat_cit(bio_set->SetAnnot());
         }
@@ -3662,10 +3266,9 @@ void fta_sort_seqfeat_cit(TEntryList& seq_entries)
 /**********************************************************/
 bool fta_orgref_has_taxid(const COrg_ref::TDb& dbtags)
 {
-    ITERATE (COrg_ref::TDb, tag, dbtags)
-    {
+    ITERATE (COrg_ref::TDb, tag, dbtags) {
         if ((*tag)->IsSetDb() && (*tag)->IsSetTag() &&
-            !(*tag)->GetTag().IsStr() && (*tag)->GetTag().GetId() > 0 &&
+            ! (*tag)->GetTag().IsStr() && (*tag)->GetTag().GetId() > 0 &&
             (*tag)->GetDb() == "taxon")
             return true;
     }
@@ -3675,35 +3278,31 @@ bool fta_orgref_has_taxid(const COrg_ref::TDb& dbtags)
 /**********************************************************/
 void fta_fix_orgref_div(const CBioseq::TAnnot& annots, COrg_ref& org_ref, CGB_block& gbb)
 {
-    Int4         count;
+    Int4 count;
 
-    if (!gbb.IsSetDiv())
+    if (! gbb.IsSetDiv())
         return;
 
     count = 1;
-    if (org_ref.IsSetOrgname() && !org_ref.GetOrgname().IsSetDiv() &&
-        fta_orgref_has_taxid(org_ref.GetDb()) == false)
-    {
+    if (org_ref.IsSetOrgname() && ! org_ref.GetOrgname().IsSetDiv() &&
+        fta_orgref_has_taxid(org_ref.GetDb()) == false) {
         org_ref.SetOrgname().SetDiv(gbb.GetDiv());
         count--;
     }
 
-    ITERATE (CBioseq::TAnnot, annot, annots)
-    {
-        if (!(*annot)->IsFtable())
+    ITERATE (CBioseq::TAnnot, annot, annots) {
+        if (! (*annot)->IsFtable())
             continue;
 
         const CSeq_annot::C_Data::TFtable& feats = (*annot)->GetData().GetFtable();
-        ITERATE (CSeq_annot::C_Data::TFtable, feat, feats)
-        {
-            if (!(*feat)->IsSetData() || !(*feat)->GetData().IsBiosrc())
+        ITERATE (CSeq_annot::C_Data::TFtable, feat, feats) {
+            if (! (*feat)->IsSetData() || ! (*feat)->GetData().IsBiosrc())
                 continue;
 
             count++;
 
             const CBioSource& bio_src = (*feat)->GetData().GetBiosrc();
-            if (bio_src.IsSetOrg() && fta_orgref_has_taxid(bio_src.GetOrg().GetDb()) == false)
-            {
+            if (bio_src.IsSetOrg() && fta_orgref_has_taxid(bio_src.GetOrg().GetDb()) == false) {
                 org_ref.SetOrgname().SetDiv(gbb.GetDiv());
                 count--;
             }
@@ -3723,16 +3322,15 @@ bool XMLCheckCDS(char* entry, XmlIndexPtr xip)
     XmlIndexPtr fxip;
 
     if (entry == NULL || xip == NULL)
-        return(false);
+        return (false);
 
     for (; xip != NULL; xip = xip->next)
         if (xip->tag == INSDSEQ_FEATURE_TABLE && xip->subtags != NULL)
             break;
     if (xip == NULL)
-        return(false);
+        return (false);
 
-    for (txip = xip->subtags; txip != NULL; txip = txip->next)
-    {
+    for (txip = xip->subtags; txip != NULL; txip = txip->next) {
         if (txip->subtags == NULL)
             continue;
         for (fxip = txip->subtags; fxip != NULL; fxip = fxip->next)
@@ -3744,8 +3342,8 @@ bool XMLCheckCDS(char* entry, XmlIndexPtr xip)
     }
 
     if (txip == NULL)
-        return(false);
-    return(true);
+        return (false);
+    return (true);
 }
 
 /**********************************************************/
@@ -3753,13 +3351,11 @@ void fta_set_strandedness(TEntryList& seq_entries)
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetInst() && bioseq->GetInst().IsSetStrand())
                 continue;
 
-            if (bioseq->GetInst().IsSetMol())
-            {
+            if (bioseq->GetInst().IsSetMol()) {
                 CSeq_inst::EMol mol = bioseq->GetInst().GetMol();
                 if (mol == CSeq_inst::eMol_dna)
                     bioseq->SetInst().SetStrand(CSeq_inst::eStrand_ds);
@@ -3773,14 +3369,10 @@ void fta_set_strandedness(TEntryList& seq_entries)
 /*****************************************************************************/
 static bool SwissProtIDPresent(const TEntryList& seq_entries)
 {
-    ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeConstIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
-            if (bioseq->IsSetId())
-            {
-                ITERATE(TSeqIdList, id, bioseq->GetId())
-                {
+    ITERATE (TEntryList, entry, seq_entries) {
+        for (CTypeConstIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+            if (bioseq->IsSetId()) {
+                ITERATE (TSeqIdList, id, bioseq->GetId()) {
                     if ((*id)->IsSwissprot())
                         return true;
                 }
@@ -3806,10 +3398,8 @@ static bool IsCitEmpty(const CCit_gen& cit)
 /*****************************************************************************/
 static void RemoveSerials(TPubList& pubs)
 {
-    for (TPubList::iterator pub = pubs.begin(); pub != pubs.end();)
-    {
-        if ((*pub)->IsGen())
-        {
+    for (TPubList::iterator pub = pubs.begin(); pub != pubs.end();) {
+        if ((*pub)->IsGen()) {
             if ((*pub)->GetGen().IsSetSerial_number())
                 (*pub)->SetGen().ResetSerial_number();
 
@@ -3817,8 +3407,7 @@ static void RemoveSerials(TPubList& pubs)
                 pub = pubs.erase(pub);
             else
                 ++pub;
-        }
-        else
+        } else
             ++pub;
     }
 }
@@ -3826,35 +3415,26 @@ static void RemoveSerials(TPubList& pubs)
 /*****************************************************************************/
 void StripSerialNumbers(TEntryList& seq_entries)
 {
-    if (!SwissProtIDPresent(seq_entries))
-    {
+    if (! SwissProtIDPresent(seq_entries)) {
         NON_CONST_ITERATE(TEntryList, entry, seq_entries)
         {
-            for (CTypeIterator<CPubdesc> pubdesc(Begin(*(*entry))); pubdesc; ++pubdesc)
-            {
-                if (pubdesc->IsSetPub())
-                {
+            for (CTypeIterator<CPubdesc> pubdesc(Begin(*(*entry))); pubdesc; ++pubdesc) {
+                if (pubdesc->IsSetPub()) {
                     RemoveSerials(pubdesc->SetPub().Set());
                     if (pubdesc->GetPub().Get().empty())
                         pubdesc->ResetPub();
                 }
             }
 
-            for (CTypeIterator<CSeq_feat> feat(Begin(*(*entry))); feat; ++feat)
-            {
-                if (feat->IsSetData())
-                {
-                    if (feat->GetData().IsPub())
-                    {
+            for (CTypeIterator<CSeq_feat> feat(Begin(*(*entry))); feat; ++feat) {
+                if (feat->IsSetData()) {
+                    if (feat->GetData().IsPub()) {
                         RemoveSerials(feat->SetData().SetPub().SetPub().Set());
                         if (feat->GetData().GetPub().GetPub().Get().empty())
                             feat->SetData().SetPub().ResetPub();
-                    }
-                    else if (feat->GetData().IsImp())
-                    {
+                    } else if (feat->GetData().IsImp()) {
                         CImp_feat& imp = feat->SetData().SetImp();
-                        if (imp.IsSetKey() && imp.GetKey() == "Site-ref" && feat->IsSetCit() && feat->GetCit().IsPub())
-                        {
+                        if (imp.IsSetKey() && imp.GetKey() == "Site-ref" && feat->IsSetCit() && feat->GetCit().IsPub()) {
                             RemoveSerials(feat->SetCit().SetPub());
                             if (feat->GetCit().GetPub().empty())
                                 feat->SetCit().Reset();
@@ -3869,44 +3449,42 @@ void StripSerialNumbers(TEntryList& seq_entries)
 /*****************************************************************************/
 static void PackSeqData(CSeq_data::E_Choice code, CSeq_data& seq_data)
 {
-    const std::string* seq_str = nullptr;
+    const std::string*       seq_str = nullptr;
     const std::vector<Char>* seq_vec = nullptr;
 
     CSeqUtil::ECoding old_coding = CSeqUtil::e_not_set;
-    size_t old_size = 0;
+    size_t            old_size   = 0;
 
-    switch (code)
-    {
+    switch (code) {
     case CSeq_data::e_Iupacaa:
-        seq_str = &seq_data.GetIupacaa().Get();
+        seq_str    = &seq_data.GetIupacaa().Get();
         old_coding = CSeqUtil::e_Iupacaa;
-        old_size = seq_str->size();
+        old_size   = seq_str->size();
         break;
 
     case CSeq_data::e_Ncbi8aa:
-        seq_vec = &seq_data.GetNcbi8aa().Get();
+        seq_vec    = &seq_data.GetNcbi8aa().Get();
         old_coding = CSeqUtil::e_Ncbi8aa;
-        old_size = seq_vec->size();
+        old_size   = seq_vec->size();
         break;
 
     case CSeq_data::e_Ncbistdaa:
-        seq_vec = &seq_data.GetNcbistdaa().Get();
+        seq_vec    = &seq_data.GetNcbistdaa().Get();
         old_coding = CSeqUtil::e_Ncbistdaa;
-        old_size = seq_vec->size();
+        old_size   = seq_vec->size();
         break;
 
-    default: ; // do nothing
+    default:; // do nothing
     }
 
     std::vector<Char> new_seq(old_size);
-    size_t new_size = 0;
+    size_t            new_size = 0;
     if (seq_str != nullptr)
         new_size = CSeqConvert::Convert(seq_str->c_str(), old_coding, 0, static_cast<TSeqPos>(old_size), &new_seq[0], CSeqUtil::e_Ncbieaa);
     else if (seq_vec != nullptr)
         new_size = CSeqConvert::Convert(&(*seq_vec)[0], old_coding, 0, static_cast<TSeqPos>(old_size), &new_seq[0], CSeqUtil::e_Ncbieaa);
 
-    if (!new_seq.empty())
-    {
+    if (! new_seq.empty()) {
         seq_data.SetNcbieaa().Set().assign(new_seq.begin(), new_seq.begin() + new_size);
     }
 }
@@ -3914,15 +3492,11 @@ static void PackSeqData(CSeq_data::E_Choice code, CSeq_data& seq_data)
 /*****************************************************************************/
 static void RawBioseqPack(CBioseq& bioseq)
 {
-    if (bioseq.GetInst().IsSetSeq_data())
-    {
-        if (!bioseq.GetInst().IsSetMol() || !bioseq.GetInst().IsNa())
-        {
+    if (bioseq.GetInst().IsSetSeq_data()) {
+        if (! bioseq.GetInst().IsSetMol() || ! bioseq.GetInst().IsNa()) {
             CSeq_data::E_Choice code = bioseq.GetInst().GetSeq_data().Which();
             PackSeqData(code, bioseq.SetInst().SetSeq_data());
-        }
-        else if (!bioseq.GetInst().GetSeq_data().IsGap())
-        {
+        } else if (! bioseq.GetInst().GetSeq_data().IsGap()) {
             CSeqportUtil::Pack(&bioseq.SetInst().SetSeq_data());
         }
     }
@@ -3930,12 +3504,10 @@ static void RawBioseqPack(CBioseq& bioseq)
 
 static void DeltaBioseqPack(CBioseq& bioseq)
 {
-    if (bioseq.GetInst().IsSetExt() && bioseq.GetInst().GetExt().IsDelta())
-    {
+    if (bioseq.GetInst().IsSetExt() && bioseq.GetInst().GetExt().IsDelta()) {
         NON_CONST_ITERATE(CDelta_ext::Tdata, delta, bioseq.SetInst().SetExt().SetDelta().Set())
         {
-            if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data() && !(*delta)->GetLiteral().GetSeq_data().IsGap())
-            {
+            if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data() && ! (*delta)->GetLiteral().GetSeq_data().IsGap()) {
                 CSeqportUtil::Pack(&(*delta)->SetLiteral().SetSeq_data());
             }
         }
@@ -3947,10 +3519,8 @@ void PackEntries(TEntryList& seq_entries)
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
-            if (bioseq->IsSetInst() && bioseq->GetInst().IsSetRepr())
-            {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+            if (bioseq->IsSetInst() && bioseq->GetInst().IsSetRepr()) {
                 CSeq_inst::ERepr repr = bioseq->GetInst().GetRepr();
                 if (repr == CSeq_inst::eRepr_raw || repr == CSeq_inst::eRepr_const)
                     RawBioseqPack(*bioseq);
