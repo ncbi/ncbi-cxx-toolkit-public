@@ -228,16 +228,15 @@ NCBI_define_Xcomponent(NAME LZO LIB lzo2)
 #############################################################################
 # Boost.Test.Included
 if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
-    if (EXISTS ${NCBI_ThirdParty_Boost}/include)
-        message(STATUS "Found Boost.Test.Included: ${NCBI_ThirdParty_Boost}")
-        set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
-        set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${NCBI_ThirdParty_Boost}/include)
-        set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
-        list(APPEND NCBI_ALL_COMPONENTS Boost.Test.Included)
-    else()
-        message("Component Boost.Test.Included ERROR: ${NCBI_ThirdParty_Boost}/include not found")
-        set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
-    endif()
+if (EXISTS ${NCBI_ThirdParty_Boost}/include)
+    message(STATUS "Found Boost.Test.Included: ${NCBI_ThirdParty_Boost}")
+    set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${NCBI_ThirdParty_Boost}/include)
+    set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+    list(APPEND NCBI_ALL_COMPONENTS Boost.Test.Included)
+else()
+    message("Component Boost.Test.Included ERROR: ${NCBI_ThirdParty_Boost}/include not found")
+    set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
 endif()
 
 #############################################################################
@@ -251,6 +250,7 @@ NCBI_define_Xcomponent(NAME Boost.Spirit LIB boost_thread-mt)
 #############################################################################
 # Boost.Thread
 NCBI_define_Xcomponent(NAME Boost.Thread LIB boost_thread-mt)
+endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 
 #############################################################################
 # JPEG

@@ -257,8 +257,7 @@ NCBI_define_Xcomponent(NAME LZO LIB lzo2)
 #############################################################################
 # BOOST
 if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
-    include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
-endif()
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
 
 #############################################################################
 # Boost.Test.Included
@@ -314,6 +313,7 @@ if(Boost_FOUND)
 else()
     set(NCBI_COMPONENT_Boost_FOUND NO)
 endif()
+endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 
 #############################################################################
 # JPEG

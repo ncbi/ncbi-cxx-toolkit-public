@@ -222,6 +222,7 @@ endif()
 # LZO
 NCBI_define_Wcomponent(LZO liblzo.lib)
 
+if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 #############################################################################
 # Boost.Test.Included
 NCBI_define_Wcomponent(Boost.Test.Included)
@@ -253,6 +254,7 @@ endif()
 #############################################################################
 # Boost
 NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib  boost_system.lib)
+endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 
 #############################################################################
 # JPEG
