@@ -1841,48 +1841,44 @@ static bool sIsAccPrefixChar(char c)  {
  *                                              3-4-93
  *
  **********************************************************/
-
+/*
 bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip)
 {
-    string accession;
+    string       accession;
     list<string> tokens;
-    bool get = true;
+    bool         get = true;
 
-    if((skip != 2 && parseInfo.source == Parser::ESource::Flybase) ||
-       parserInfo.source == Parser::ESource::USPTO)
+    if ((skip != 2 && parseInfo.source == Parser::ESource::Flybase) ||
+        parserInfo.source == Parser::ESource::USPTO)
         return true;
 
     NStr::Split(str, " ;", tokens, NStr::fSplit_Tokenize);
 
 
-    if (skip != 2)
-    {
+    if (skip != 2) {
         get = ParseAccessionRange(tokens, skip);
         if (get)
             get = sCheckAccession(tokens, parseInfo.source, parseInfo.mode, entry->acnum, skip);
-        if (!get) 
+        if (! get)
             entry->drop = 1;
 
-        if (tokens.size()>skip && skip<2) { // Not sure about the logic
+        if (tokens.size() > skip && skip < 2) { // Not sure about the logic
             auto it = skip ? next(tokens.begin(), skip) : tokens.begin();
             move(it, tokens.end(), entry->secondary_accessions.end());
-        } 
+        }
         return get;
     }
 
     // skip == 2
     entry->is_tpa = false;
-    if(tokens.size() < 2)
-    {
+    if (tokens.size() < 2) {
         if (parseInfo.mode != Parser::EMode::Relaxed) {
-            ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum,
-                    "No accession # for this entry, about line %ld",
-                    (long int) entry->linenum);
+            ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
             entry->drop = 1;
         }
         return false;
     }
-    
+
 
     accession = *next(tokens.begin());
     sDelNonDigitTail(accession);
@@ -1892,77 +1888,67 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
     if (parseInfo.format != Parser::EFormat::XML) {
         string temp = accession;
         if (parseInfo.accver && entry->vernum > 0) {
-            temp += "." + NStr::NumericToString(entry->vernum); 
+            temp += "." + NStr::NumericToString(entry->vernum);
         }
         if (temp.empty()) {
             if (entry->locusname[0] != '\0') {
                 temp = entry->locusname;
-            }
-            else {
+            } else {
                 temp = "???";
-            } 
+            }
         }
         FtaInstallPrefix(PREFIX_ACCESSION, temp.c_str(), NULL);
     }
 
-    if (parseInfo.source == Parser::ESource::Flybase) 
-    {
+    if (parseInfo.source == Parser::ESource::Flybase) {
         return true;
     }
 
     if (accession.size() < 2) {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
-                  "Wrong accession [%s] for this entry.", accession.c_str());
+        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [%s] for this entry.", accession.c_str());
         entry->drop = 1;
         return false;
     }
 
     if (sIsAccPrefixChar(accession[0]) && sIsAccPrefixChar(accession[1])) {
-        if (parseInfo.accpref && !IsValidAccessPrefix(accession.c_str(), parseInfo.accpref)) {
+        if (parseInfo.accpref && ! IsValidAccessPrefix(accession.c_str(), parseInfo.accpref)) {
             get = false;
         }
 
         if (sIsAccPrefixChar(accession[2]) && sIsAccPrefixChar(accession[3])) {
             if (sIsAccPrefixChar(accession[4])) {
-                accession = accession.substr(0,5);
+                accession = accession.substr(0, 5);
+            } else {
+                accession = accession.substr(0, 4);
             }
-            else {
-                accession = accession.substr(0,4);
-            }
+        } else if (accession[2] == '_') {
+            accession = accession.substr(0, 3);
+        } else {
+            accession = accession.substr(0, 2);
         }
-        else if (accession[2] == '_') {
-            accession = accession.substr(0,3);
-        }
-        else {
-            accession = accession.substr(0,2);
-        }
-    }
-    else {
-        if (parseInfo.acprefix && !StringChr(parseInfo.acprefix, accession[0])) {
+    } else {
+        if (parseInfo.acprefix && ! StringChr(parseInfo.acprefix, accession[0])) {
             get = false;
         }
-        accession = accession.substr(0,1);
+        accession = accession.substr(0, 1);
     }
 
     if (get) {
         if (tokens.size() > 2) {
-            get = ParseAccessionRange(tokens,2);
+            get = ParseAccessionRange(tokens, 2);
             if (get) {
                 get = sCheckAccession(tokens, parseInfo.source, parseInfo.mode, entry->acnum, 2);
             }
         }
-    }
-    else {
+    } else {
         string sourceName = sourceNames.at(parseInfo.source);
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
-                  "Wrong accession # prefix [%s] for this source: %s",
-                  accession.c_str(), sourceName.c_str());
+        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [%s] for this source: %s", accession.c_str(), sourceName.c_str());
     }
 
     entry->secondary_accessions.clear(); // Is this necessary?
-    move(next(tokens.begin(),2), tokens.end(), entry->secondary_accessions.begin());
+    move(next(tokens.begin(), 2), tokens.end(), entry->secondary_accessions.begin());
 
-    if (!entry->is_pat) {
+    if (! entry->is_pat) {
         entry->is_pat = IsPatentedAccPrefix(parseInfo, accession.c_str());
     }
     entry->is_tpa = IsTPAAccPrefix(parseInfo, accession.c_str());
@@ -1971,27 +1957,21 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
     IsTLSAccPrefix(parseInfo, accession.c_str(), entry);
 
     auto i = IsNewAccessFormat(entry->acnum);
-    if(i == 3 || i == 8)
-    {
+    if (i == 3 || i == 8) {
         entry->is_wgs = true;
         entry->wgs_and_gi |= 02;
-    }
-    else if(i == 5)
-    {
+    } else if (i == 5) {
         char* p = entry->acnum;
-        if(parseInfo.source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
-           StringCmp(p + 5, "0000000") != 0)
-        {
+        if (parseInfo.source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
+            StringCmp(p + 5, "0000000") != 0) {
             string sourceName = sourceNames.at(parseInfo.source);
-            ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
-                      "Wrong accession \"%s\" for this source: %s",
-                      p, sourceName.c_str());
+            ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession \"%s\" for this source: %s", p, sourceName.c_str());
             get = false;
         }
         entry->is_mga = true;
     }
 
-    if(!get)
+    if (! get)
         entry->drop = 1;
 
     return get;
