@@ -37,7 +37,7 @@
 
 /* for unknown Moltype
  */
-#define Unknown      0
+#define Unknown 0
 
 /* for Unknown Keyword type
  */
@@ -60,118 +60,111 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
 /* relative routines for tokenize string
     */
 TokenStatBlk* TokenString(char* str, Char delimiter);
-void            FreeTokenstatblk(TokenStatBlk* tsbp);
-void            FreeTokenblk(TokenBlk* tbp);
-bool            ParseAccessionRange(TokenStatBlk* tsbp, Int4 skip);
-bool            ParseAccessionRange(list<string>& tokens, int skip);
-void            UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& extra_accs, objects::CGB_block::TExtra_accessions& hist);
+void          FreeTokenstatblk(TokenStatBlk* tsbp);
+void          FreeTokenblk(TokenBlk* tbp);
+bool          ParseAccessionRange(TokenStatBlk* tsbp, Int4 skip);
+bool          ParseAccessionRange(list<string>& tokens, int skip);
+void          UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& extra_accs, objects::CGB_block::TExtra_accessions& hist);
 
 /* Return array position of the matched length of string in array_string.
     * Return -1 if no match.
     */
-Int2            fta_StringMatch(const Char **array, const Char* text);
+Int2 fta_StringMatch(const Char** array, const Char* text);
 
 /* Return array position of the matched length of string (ignored case)
     * in array_string.
     * Return -1 if no match.
     */
-Int2            StringMatchIcase(const Char **array, const Char* text);
+Int2 StringMatchIcase(const Char** array, const Char* text);
 
-char*         StringIStr(const Char* where, const Char *what);
+char* StringIStr(const Char* where, const Char* what);
 
 /* Return array position of the string in the array_string.
     * Return -1 if no match.
     */
-Int2            MatchArrayString(const Char **array, const Char *text);
-Int2            MatchArrayIString(const Char **array, const Char *text);
+Int2 MatchArrayString(const Char** array, const Char* text);
+Int2 MatchArrayIString(const Char** array, const Char* text);
 
 /* Return array position of the string in the array_string if any
     * array_string is in the substring of "text".
     * Return -1 if no match.
     */
-Int2            MatchArraySubString(const Char **array, const Char* text);
-Int2            MatchArrayISubString(const Char **array, const Char* text);
+Int2 MatchArraySubString(const Char** array, const Char* text);
+Int2 MatchArrayISubString(const Char** array, const Char* text);
 
 /* Return a string which replace newline to blank and skip "XX" line data.
     */
-char*         GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 col_data);
-void xGetBlkDataReplaceNewLine(string&, int indent);
+char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 col_data);
+void  xGetBlkDataReplaceNewLine(string&, int indent);
 
 /* Delete any tailing ' ', '\n', '\\', ',', ';', '~', '.', ':'
     * characters.
     */
-void            CleanTailNoneAlphaChar(char* str);
-void            CleanTailNoneAlphaCharInString(std::string& str);
+void CleanTailNoneAlphaChar(char* str);
+void CleanTailNoneAlphaCharInString(std::string& str);
 
-char*         PointToNextToken(char* ptr);
+char* PointToNextToken(char* ptr);
 
 /* Return the current token which ptr points to and ptr will points to
     * next token after the routine return.
     */
-char*         GetTheCurrentToken(char** ptr);
+char* GetTheCurrentToken(char** ptr);
 
 /* Search The character letter.
     * Return NULL if not found; otherwise, return a pointer points first
     * occurrence The character.
     */
-char*         SrchTheChar(char* bptr, char* eptr, Char letter);
+char* SrchTheChar(char* bptr, char* eptr, Char letter);
 
 /* Search The string.
     * Return NULL if not found; otherwise, return a pointer points first
     * occurrence The string.
     */
-char*         SrchTheStr(char* bptr, char* eptr, const char *str);
+char* SrchTheStr(char* bptr, char* eptr, const char* str);
 
-void            CpSeqId(InfoBioseq* ibp, const objects::CSeq_id& id);
+void CpSeqId(InfoBioseq* ibp, const objects::CSeq_id& id);
 
 //int SrchKeyword(const string& ptr, const vector<string>&  keywordList);
-int SrchKeyword(const CTempString& ptr, const vector<string>&  keywordList);
-bool            CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool after_origin);
-char*         SrchNodeType(DataBlk* entry, Int4 type, size_t* len);
-char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len);
-string xGetNodeData(const DataBlk& entry, int nodeType);
-DataBlk*      TrackNodeType(const DataBlk& entry, Int2 type);
+int              SrchKeyword(const CTempString& ptr, const vector<string>& keywordList);
+bool             CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool after_origin);
+char*            SrchNodeType(DataBlk* entry, Int4 type, size_t* len);
+char*            xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len);
+string           xGetNodeData(const DataBlk& entry, int nodeType);
+DataBlk*         TrackNodeType(const DataBlk& entry, Int2 type);
 const SectionPtr xTrackNodeType(const Entry&, int type);
-ValNode*      ConstructValNode(ValNode* head, Uint1 choice, void* data);
-ValNode*      ConstructValNodeInt(ValNode* head, Uint1 choice, Int4 data); 
-bool            fta_is_tpa_keyword(const char* str);
-bool            fta_tpa_keywords_check(const TKeywordList& kwds);
-bool            fta_is_tsa_keyword(char* str);
-bool            fta_is_tls_keyword(char* str);
-bool            fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source);
-bool            fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source);
-bool            fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwds);
-void            fta_StringCpy(char* dst, const char* src);
+ValNode*         ConstructValNode(ValNode* head, Uint1 choice, void* data);
+ValNode*         ConstructValNodeInt(ValNode* head, Uint1 choice, Int4 data);
+bool             fta_is_tpa_keyword(const char* str);
+bool             fta_tpa_keywords_check(const TKeywordList& kwds);
+bool             fta_is_tsa_keyword(char* str);
+bool             fta_is_tls_keyword(char* str);
+bool             fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source);
+bool             fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source);
+bool             fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwds);
+void             fta_StringCpy(char* dst, const char* src);
 
-void            fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk,
-    bool* htck, bool* flik, bool* wgsk, bool* tpak,
-    bool* envk, bool* mgak, bool* tsak, bool* tlsk);
+void fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk, bool* htck, bool* flik, bool* wgsk, bool* tpak, bool* envk, bool* mgak, bool* tsak, bool* tlsk);
 
-void            fta_remove_keywords(Uint1 tech, TKeywordList& kwds);
-void            fta_remove_tpa_keywords(TKeywordList& kwds);
-void            fta_remove_tsa_keywords(TKeywordList& kwds, Parser::ESource source);
-void            fta_remove_tls_keywords(TKeywordList& kwds, Parser::ESource source);
-void            fta_remove_env_keywords(TKeywordList& kwds);
+void fta_remove_keywords(Uint1 tech, TKeywordList& kwds);
+void fta_remove_tpa_keywords(TKeywordList& kwds);
+void fta_remove_tsa_keywords(TKeywordList& kwds, Parser::ESource source);
+void fta_remove_tls_keywords(TKeywordList& kwds, Parser::ESource source);
+void fta_remove_env_keywords(TKeywordList& kwds);
 
-bool            IsCancelled(const TKeywordList& keywords);
-bool            HasHtg(const TKeywordList& keywords);
-void            RemoveHtgPhase(TKeywordList& keywords);
-bool            HasHtc(const TKeywordList& keywords);
-bool            SetTextId(Uint1 seqtype, objects::CSeq_id& seqId, objects::CTextseq_id& textId);
+bool IsCancelled(const TKeywordList& keywords);
+bool HasHtg(const TKeywordList& keywords);
+void RemoveHtgPhase(TKeywordList& keywords);
+bool HasHtc(const TKeywordList& keywords);
+bool SetTextId(Uint1 seqtype, objects::CSeq_id& seqId, objects::CTextseq_id& textId);
 
-void            check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len,
-                                                  IndexblkPtr entry,
-                                                  bool tpa_check,
-                                                  bool &specialist_db,
-                                                  bool &inferential,
-                                                  bool &experimental,
-                                                  bool &assembly);
+void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, bool tpa_check, bool& specialist_db, bool& inferential, bool& experimental, bool& assembly);
 void xCheckEstStsGssTpaKeywords(
     const std::list<std::string> keywordList,
-    bool tpa_check,
-    IndexblkPtr entry);
+    bool                         tpa_check,
+    IndexblkPtr                  entry);
 
-namespace objects {
+namespace objects
+{
     class CScope;
 }
 

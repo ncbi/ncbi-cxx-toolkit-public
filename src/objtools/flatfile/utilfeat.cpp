@@ -65,11 +65,11 @@
 // for finding the correct amino acid letter given an abbreviation
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-char ValidAminoAcid(const string &abbrev);
+char ValidAminoAcid(const string& abbrev);
 END_SCOPE(objects)
 
 
-const char *ParFlat_GImod[] = {
+const char* ParFlat_GImod[] = {
     "Mitochondr",
     "Chloroplast",
     "Kinetoplas",
@@ -84,7 +84,7 @@ const char *ParFlat_GImod[] = {
     NULL
 };
 
-const char *valid_organelle[] = {
+const char* valid_organelle[] = {
     "apicoplast",
     "chloroplast",
     "chromatophore",
@@ -113,7 +113,7 @@ bool SeqLocHaveFuzz(const objects::CSeq_loc& loc)
     else
         flag = true;
 
-    return(flag);
+    return (flag);
 }
 
 /**********************************************************
@@ -124,19 +124,16 @@ bool SeqLocHaveFuzz(const objects::CSeq_loc& loc)
  *   "qlist"; otherwise, return NULL.
  *
  **********************************************************/
-char* CpTheQualValue(const TQualVector& qlist, const Char *qual)
+char* CpTheQualValue(const TQualVector& qlist, const Char* qual)
 {
     std::string qvalue;
-    ITERATE(TQualVector, cur, qlist)
-    {
+    ITERATE (TQualVector, cur, qlist) {
         if ((*cur)->GetQual() != qual)
             continue;
 
         const std::string& val = (*cur)->GetVal();
-        if (val == "\"\"")
-        {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling,
-                      "Empty qual %s : %s", qual, val.c_str());
+        if (val == "\"\"") {
+            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual %s : %s", qual, val.c_str());
             break;
         }
 
@@ -145,7 +142,7 @@ char* CpTheQualValue(const TQualVector& qlist, const Char *qual)
     }
 
     char* ret = NULL;
-    if (!qvalue.empty())
+    if (! qvalue.empty())
         ret = StringSave(qvalue.c_str());
     return ret;
 }
@@ -159,9 +156,9 @@ char* CpTheQualValue(const TQualVector& qlist, const Char *qual)
  *   otherwise, return NULL.
  *
  **********************************************************/
-char* GetTheQualValue(TQualVector& qlist, const Char *qual)
+char* GetTheQualValue(TQualVector& qlist, const Char* qual)
 {
-    char*   qvalue = NULL;
+    char* qvalue = NULL;
 
     NON_CONST_ITERATE(TQualVector, cur, qlist)
     {
@@ -169,10 +166,8 @@ char* GetTheQualValue(TQualVector& qlist, const Char *qual)
             continue;
 
         const std::string& val = (*cur)->GetVal();
-        if (val == "\"\"")
-        {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling,
-                      "Empty qual %s : %s", qual, val.c_str());
+        if (val == "\"\"") {
+            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual %s : %s", qual, val.c_str());
             break;
         }
 
@@ -184,7 +179,7 @@ char* GetTheQualValue(TQualVector& qlist, const Char *qual)
         break;
     }
 
-    return(qvalue);
+    return (qvalue);
 }
 
 /**********************************************************
@@ -195,13 +190,11 @@ char* GetTheQualValue(TQualVector& qlist, const Char *qual)
  *   from the "qlist".
  *
  **********************************************************/
-bool DeleteQual(TQualVector& qlist, const Char *qual)
+bool DeleteQual(TQualVector& qlist, const Char* qual)
 {
     bool got = false;
-    for (TQualVector::iterator cur = qlist.begin(); cur != qlist.end();)
-    {
-        if ((*cur)->GetQual() != qual)
-        {
+    for (TQualVector::iterator cur = qlist.begin(); cur != qlist.end();) {
+        if ((*cur)->GetQual() != qual) {
             ++cur;
             continue;
         }
@@ -210,7 +203,7 @@ bool DeleteQual(TQualVector& qlist, const Char *qual)
         got = true;
     }
 
-    return(got);
+    return (got);
 }
 
 /**********************************************************
@@ -225,54 +218,52 @@ Uint1 GetQualValueAa(char* qval, bool checkseq)
 {
     char* str;
     char* p;
-    Uint1   aa;
-    Char    ch;
+    Uint1 aa;
+    Char  ch;
 
     str = StringStr(qval, "aa:");
-    if(str == NULL)
-        return(255);
+    if (str == NULL)
+        return (255);
 
-    for(str += 3; *str == ' ';)
+    for (str += 3; *str == ' ';)
         str++;
-    for(p = str; (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z');)
+    for (p = str; (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z');)
         p++;
 
-    if(checkseq && StringStr(p, "seq:") == NULL)
-        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AntiCodonLacksSequence,
-                  "Anticodon qualifier \"%s\" lacks a 'seq' field for the sequence of the anticodon.",
-                  qval);
+    if (checkseq && StringStr(p, "seq:") == NULL)
+        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AntiCodonLacksSequence, "Anticodon qualifier \"%s\" lacks a 'seq' field for the sequence of the anticodon.", qval);
     ch = *p;
     *p = '\0';
     aa = objects::ValidAminoAcid(str);
     *p = ch;
 
-    return(aa);
+    return (aa);
 }
 
 /**********************************************************/
 bool GetGenomeInfo(objects::CBioSource& bsp, const Char* bptr)
 {
     Int4 i = StringMatchIcase(ParFlat_GImod, bptr);
-    if(i == -1)
+    if (i == -1)
         return false;
 
-    if(i == 0)
+    if (i == 0)
         bsp.SetGenome(5);
     else if (i == 1)
         bsp.SetGenome(2);
-    else if(i == 2)
+    else if (i == 2)
         bsp.SetGenome(4);
-    else if(i == 3)
+    else if (i == 3)
         bsp.SetGenome(12);
-    else if(i == 4)
+    else if (i == 4)
         bsp.SetGenome(3);
-    else if(i == 5)
+    else if (i == 5)
         bsp.SetGenome(6);
-    else if(i == 6)
+    else if (i == 6)
         bsp.SetGenome(7);
-    else if(i == 7)
+    else if (i == 7)
         bsp.SetGenome(8);
-    else if(i == 8)
+    else if (i == 8)
         bsp.SetGenome(9);
     else
         bsp.SetGenome(17);
@@ -285,42 +276,37 @@ static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, std::vector<std::stri
 {
     NON_CONST_ITERATE(TSeqdescList, descr, descrs)
     {
-        if (!(*descr)->IsSource() || !(*descr)->GetSource().IsSetOrg() ||
-            !(*descr)->GetSource().GetOrg().IsSetTaxname())
+        if (! (*descr)->IsSource() || ! (*descr)->GetSource().IsSetOrg() ||
+            ! (*descr)->GetSource().GetOrg().IsSetTaxname())
             continue;
 
         const objects::COrg_ref& org_ref = (*descr)->GetSource().GetOrg();
-        names[0] = org_ref.GetTaxname();
+        names[0]                         = org_ref.GetTaxname();
 
-        if (org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod())
-        {
-            ITERATE(objects::COrgName::TMod, mod, org_ref.GetOrgname().GetMod())
-            {
-                if (!(*mod)->IsSetSubname() || !(*mod)->IsSetSubtype())
+        if (org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod()) {
+            ITERATE (objects::COrgName::TMod, mod, org_ref.GetOrgname().GetMod()) {
+                if (! (*mod)->IsSetSubname() || ! (*mod)->IsSetSubtype())
                     continue;
 
                 int stype = (*mod)->GetSubtype();
 
-                if (stype == 254)        /* old-name */
+                if (stype == 254) /* old-name */
                     names[1] = (*mod)->GetSubname();
                 /* acronym(19), synonym(28), anamorph(29), teleomorph(30),
                 gb-acronym(32), gb-anamorph(33), gb-synonym(34) */
                 else if (stype == 19 || stype == 28 || stype == 29 ||
                          stype == 30 || stype == 32 || stype == 33 ||
-                         stype == 34)
-                {
+                         stype == 34) {
                     names.push_back((*mod)->GetSubname());
                 }
             }
         }
 
-        if ((*descr)->GetSource().IsSetSubtype())
-        {
-            ITERATE(objects::CBioSource::TSubtype, subtype, (*descr)->GetSource().GetSubtype())
-            {
+        if ((*descr)->GetSource().IsSetSubtype()) {
+            ITERATE (objects::CBioSource::TSubtype, subtype, (*descr)->GetSource().GetSubtype()) {
                 /* subtype = "other"
                 */
-                if (!(*subtype)->IsSetSubtype() || (*subtype)->GetSubtype() != 255 || !(*subtype)->IsSetName())
+                if (! (*subtype)->IsSetSubtype() || (*subtype)->GetSubtype() != 255 || ! (*subtype)->IsSetName())
                     continue;
 
                 const Char* p = StringIStr((*subtype)->GetName().c_str(), "common:");
@@ -350,14 +336,12 @@ static void GetTaxnameName(TEntryList& seq_entries, std::vector<std::string>& na
 
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
-        {
+        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
             if (bio_set->IsSetDescr())
                 GetTaxnameNameFromDescrs(bio_set->SetDescr().Set(), names);
         }
 
-        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
+        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 GetTaxnameNameFromDescrs(bioseq->SetDescr().Set(), names);
         }
@@ -369,20 +353,19 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
 {
     NON_CONST_ITERATE(TSeqdescList, descr, descrs)
     {
-        if (!(*descr)->IsGenbank())
+        if (! (*descr)->IsGenbank())
             continue;
 
-        if (!(*descr)->GetGenbank().IsSetSource())
+        if (! (*descr)->GetGenbank().IsSetSource())
             break;
 
         objects::CGB_block& gb_block = (*descr)->SetGenbank();
-        char* p = StringSave(gb_block.GetSource().c_str());
-        char* pper = 0;
+        char*               p        = StringSave(gb_block.GetSource().c_str());
+        char*               pper     = 0;
 
         size_t len = StringLen(p);
-        if (p[len - 1] == '.')
-        {
-            pper = StringSave(p);
+        if (p[len - 1] == '.') {
+            pper       = StringSave(p);
             p[len - 1] = '\0';
         }
 
@@ -390,27 +373,22 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
         if (q != NULL)
             *q = '\0';
 
-        if (StringMatchIcase(valid_organelle, p) > -1)
-        {
-            if (q != NULL)
-            {
+        if (StringMatchIcase(valid_organelle, p) > -1) {
+            if (q != NULL) {
                 for (q++; *q == ' ';)
                     q++;
                 fta_StringCpy(p, q);
             }
-        }
-        else if (q != NULL)
+        } else if (q != NULL)
             *q = ' ';
 
         std::vector<std::string>::const_iterator name = names.begin();
-        for (name += 2; name != names.end(); ++name)
-        {
+        for (name += 2; name != names.end(); ++name) {
             if (name->empty())
                 continue;
 
             len = name->size();
-            for (q = p;; q++)
-            {
+            for (q = p;; q++) {
                 q = StringChr(q, '(');
                 if (q == NULL)
                     break;
@@ -425,15 +403,13 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
                 if (*s == ' ')
                     while (*s == ' ')
                         s++;
-                if (StringNICmp(s, name->c_str(), len) == 0 && s[len] == ')')
-                {
+                if (StringNICmp(s, name->c_str(), len) == 0 && s[len] == ')') {
                     char* t = NULL;
                     for (t = s + len + 1; *t == ' ';)
                         t++;
                     if (*t != '\0')
                         fta_StringCpy(q, t);
-                    else
-                    {
+                    else {
                         if (q > p)
                             q--;
                         *q = '\0';
@@ -443,23 +419,19 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
             }
         }
 
-        if (pper != NULL)
-        {
+        if (pper != NULL) {
             MemFree(pper);
             pper = (char*)MemNew(StringLen(p) + 2);
             StringCpy(pper, p);
             StringCat(pper, ".");
         }
 
-        const std::string& first_name = names[0];
+        const std::string& first_name  = names[0];
         const std::string& second_name = names[1];
 
-        if (NStr::CompareNocase(p, first_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, first_name.c_str()) == 0))
-        {
+        if (NStr::CompareNocase(p, first_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, first_name.c_str()) == 0)) {
             gb_block.ResetSource();
-        }
-        else if (NStr::CompareNocase(p, second_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, second_name.c_str()) == 0))
-        {
+        } else if (NStr::CompareNocase(p, second_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, second_name.c_str()) == 0)) {
             gb_block.ResetSource();
         }
 
@@ -475,13 +447,11 @@ static void CheckDelGbblockSource(TEntryList& seq_entries, std::vector<std::stri
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
-        {
+        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 CheckDelGbblockSourceFromDescrs(bioseq->SetDescr().Set(), names);
         }
     }
-
 }
 
 /**********************************************************/
@@ -493,7 +463,7 @@ void MaybeCutGbblockSource(TEntryList& seq_entries)
 
     GetTaxnameName(seq_entries, names);
 
-    if (!names[0].empty())
+    if (! names[0].empty())
         CheckDelGbblockSource(seq_entries, names);
 }
 
@@ -503,8 +473,7 @@ void MakeLocStrCompatible(std::string& str)
     const static Char STR_TO_REPLACE[] = "minus";
 
     // changing brackets is for backward compatibility
-    if (!str.empty())
-    {
+    if (! str.empty()) {
         if (str[0] == '[')
             str[0] = '(';
 
@@ -515,8 +484,7 @@ void MakeLocStrCompatible(std::string& str)
 
     // for backward compatibility with C-toolkit version
     size_t pos = str.find(STR_TO_REPLACE);
-    while (pos != std::string::npos)
-    {
+    while (pos != std::string::npos) {
         str.replace(pos, sizeof(STR_TO_REPLACE) - 1, "c");
         pos = str.find(STR_TO_REPLACE);
     }

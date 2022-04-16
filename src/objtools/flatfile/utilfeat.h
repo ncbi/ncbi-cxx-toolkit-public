@@ -34,7 +34,7 @@
 #ifndef _UTILFEAT_
 #define _UTILFEAT_
 
-#define ftable 1                        /* Seq-feat type */
+#define ftable 1 /* Seq-feat type */
 
 #include "loadfeat.h"
 
@@ -42,15 +42,15 @@ BEGIN_NCBI_SCOPE
 
 bool SeqLocHaveFuzz(const objects::CSeq_loc& loc);
 
-char* CpTheQualValue(const TQualVector& qlist, const char *qual);
-char* GetTheQualValue(TQualVector& qlist, const char *qual);
-bool    DeleteQual(TQualVector& qlist, const char *qual);
+char* CpTheQualValue(const TQualVector& qlist, const char* qual);
+char* GetTheQualValue(TQualVector& qlist, const char* qual);
+bool  DeleteQual(TQualVector& qlist, const char* qual);
 
-Uint1   GetQualValueAa(char* qval, bool checkseq);
-bool    GetGenomeInfo(objects::CBioSource& bsp, const char* bptr);
-void    MaybeCutGbblockSource(TEntryList& seq_entries);
+Uint1 GetQualValueAa(char* qval, bool checkseq);
+bool  GetGenomeInfo(objects::CBioSource& bsp, const char* bptr);
+void  MaybeCutGbblockSource(TEntryList& seq_entries);
 
-void MakeLocStrCompatible(std::string& str);
+void   MakeLocStrCompatible(std::string& str);
 string location_to_string(const objects::CSeq_loc& loc);
 
 END_NCBI_SCOPE
