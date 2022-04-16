@@ -17,18 +17,18 @@ USING_NCBI_SCOPE;
 
 /* Here: LOG - for logfile, MSG - for stderr
  */
-#define EO_MSG_CODES     0001                   /* Show string codes gotten
-                                                 * from .msg file */
-#define EO_LOG_CODES     0002                   /* Show string codes gotten
-                                                 * from .msg file */
-#define EO_LOGTO_USRFILE 0004                   /* Has no effect */
-#define EO_MSG_MSGTEXT   0010                   /* Has no effect */
-#define EO_MSG_FILELINE  0020                   /* Code file name and
-                                                   line number */
-#define EO_LOG_FILELINE  0040                   /* Code file name and
-                                                   line number */
+#define EO_MSG_CODES 0001     /* Show string codes gotten \
+                               * from .msg file */
+#define EO_LOG_CODES 0002     /* Show string codes gotten \
+                               * from .msg file */
+#define EO_LOGTO_USRFILE 0004 /* Has no effect */
+#define EO_MSG_MSGTEXT   0010 /* Has no effect */
+#define EO_MSG_FILELINE  0020 /* Code file name and \
+                                 line number */
+#define EO_LOG_FILELINE 0040  /* Code file name and \
+                                 line number */
 
-#define EO_LOG_USRFILE   EO_LOGTO_USRFILE       /* Has no effect */
+#define EO_LOG_USRFILE   EO_LOGTO_USRFILE /* Has no effect */
 #define EO_SHOW_CODES    (EO_MSG_CODES | EO_LOG_CODES)
 #define EO_SHOW_FILELINE (EO_MSG_FILELINE | EO_LOG_FILELINE)
 
@@ -67,34 +67,35 @@ enum ErrSev {
     SEV_MAX
 };
 
-void   FtaErrInit(void);
-void   FtaErrFini(void);
+void FtaErrInit(void);
+void FtaErrFini(void);
 
-void   ErrSetOptFlags(int flags);
-NCBI_DEPRECATED void   ErrSetFatalLevel(ErrSev sev);
-bool   ErrSetLog(const char *logfile);
-NCBI_DEPRECATED void   ErrClear(void);
-void   ErrLogPrintStr(const char *str);
-ErrSev ErrSetLogLevel(ErrSev sev);
-ErrSev ErrSetMessageLevel(ErrSev sev);
-void   Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char *fmt, ...);
-void   Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, const char *str);
-int    Nlm_ErrSetContext(const char *module, const char *fname, int line);
+void                 ErrSetOptFlags(int flags);
+NCBI_DEPRECATED void ErrSetFatalLevel(ErrSev sev);
+bool                 ErrSetLog(const char* logfile);
+NCBI_DEPRECATED void ErrClear(void);
+void                 ErrLogPrintStr(const char* str);
+ErrSev               ErrSetLogLevel(ErrSev sev);
+ErrSev               ErrSetMessageLevel(ErrSev sev);
+void                 Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...);
+void                 Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, const char* str);
+int                  Nlm_ErrSetContext(const char* module, const char* fname, int line);
 
-void   FtaInstallPrefix(int prefix, const char *name, const char *location);
-void   FtaDeletePrefix(int prefix);
+void FtaInstallPrefix(int prefix, const char* name, const char* location);
+void FtaDeletePrefix(int prefix);
 
 /*
 #define ErrPostEx(sev, err_code, ...)                            \
     ( CNcbiDiag(DIAG_COMPILE_INFO, (EDiagSev) sev).GetRef()      \
     << ErrCode(err_code) << FtaErrMessage(__VA_ARGS__) << Endm )
 */
-#define ErrPostEx (Nlm_ErrSetContext((const char *) THIS_MODULE, \
-                                     (const char *) __FILE__,    \
-                                     __LINE__) ? 0 :       \
-                  Nlm_ErrPostEx)
+#define ErrPostEx (Nlm_ErrSetContext((const char*)THIS_MODULE, \
+                                     (const char*)__FILE__,    \
+                                     __LINE__)                 \
+                       ? 0                                     \
+                       : Nlm_ErrPostEx)
 
-#define ErrPostStr       ErrPostEx
+#define ErrPostStr ErrPostEx
 
 END_NCBI_SCOPE
 

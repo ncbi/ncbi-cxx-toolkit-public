@@ -89,25 +89,25 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 static KwordBlk PubStatus[] = {
-    {"Publication Status: Available-Online prior to print", 51},
-    {"Publication Status : Available-Online prior to print", 52},
-    {"Publication_Status: Available-Online prior to print", 51},
-    {"Publication_Status : Available-Online prior to print", 52},
-    {"Publication-Status: Available-Online prior to print", 51},
-    {"Publication-Status : Available-Online prior to print", 52},
-    {"Publication Status: Online-Only", 31},
-    {"Publication Status : Online-Only", 32},
-    {"Publication_Status: Online-Only", 31},
-    {"Publication_Status : Online-Only", 32},
-    {"Publication-Status: Online-Only", 31},
-    {"Publication-Status : Online-Only", 32},
-    {"Publication Status: Available-Online", 36},
-    {"Publication Status : Available-Online", 37},
-    {"Publication_Status: Available-Online", 36},
-    {"Publication_Status : Available-Online", 37},
-    {"Publication-Status: Available-Online", 36},
-    {"Publication-Status : Available-Online", 37},
-    {NULL, 0}
+    { "Publication Status: Available-Online prior to print", 51 },
+    { "Publication Status : Available-Online prior to print", 52 },
+    { "Publication_Status: Available-Online prior to print", 51 },
+    { "Publication_Status : Available-Online prior to print", 52 },
+    { "Publication-Status: Available-Online prior to print", 51 },
+    { "Publication-Status : Available-Online prior to print", 52 },
+    { "Publication Status: Online-Only", 31 },
+    { "Publication Status : Online-Only", 32 },
+    { "Publication_Status: Online-Only", 31 },
+    { "Publication_Status : Online-Only", 32 },
+    { "Publication-Status: Online-Only", 31 },
+    { "Publication-Status : Online-Only", 32 },
+    { "Publication Status: Available-Online", 36 },
+    { "Publication Status : Available-Online", 37 },
+    { "Publication_Status: Available-Online", 36 },
+    { "Publication_Status : Available-Online", 37 },
+    { "Publication-Status: Available-Online", 36 },
+    { "Publication-Status : Available-Online", 37 },
+    { NULL, 0 }
 };
 
 /**********************************************************/
@@ -117,14 +117,12 @@ static char* fta_strip_pub_comment(char* comment, KwordBlkPtr kbp)
     char* q;
 
     ShrinkSpaces(comment);
-    for(; kbp->str != NULL; kbp++)
-    {
-        for(;;)
-        {
+    for (; kbp->str != NULL; kbp++) {
+        for (;;) {
             p = StringIStr(comment, kbp->str);
-            if(p == NULL)
+            if (p == NULL)
                 break;
-            for(q = p + kbp->len; *q == ' ' || *q == ';';)
+            for (q = p + kbp->len; *q == ' ' || *q == ';';)
                 q++;
             fta_StringCpy(p, q);
         }
@@ -134,95 +132,84 @@ static char* fta_strip_pub_comment(char* comment, KwordBlkPtr kbp)
     p = (*comment == '\0') ? NULL : StringSave(comment);
     MemFree(comment);
 
-    if(p != NULL && (StringNICmp(p, "Publication Status", 18) == 0 ||
-                     StringNICmp(p, "Publication_Status", 18) == 0 ||
-                     StringNICmp(p, "Publication-Status", 18) == 0))
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus,
-                  "An unusual Publication Status comment exists for this record: \"%s\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.",
-                  p);
+    if (p != NULL && (StringNICmp(p, "Publication Status", 18) == 0 ||
+                      StringNICmp(p, "Publication_Status", 18) == 0 ||
+                      StringNICmp(p, "Publication-Status", 18) == 0))
+        ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus, "An unusual Publication Status comment exists for this record: \"%s\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.", p);
 
-    return(p);
+    return (p);
 }
 
 /**********************************************************/
-static void fta_fix_last_initials(CName_std &namestd,
-                                  bool initials)
+static void fta_fix_last_initials(CName_std& namestd,
+                                  bool       initials)
 {
-    char *str;
-    char *p;
+    char* str;
+    char* p;
 
-    if(initials)
-    {
-        if(!namestd.IsSetInitials())
+    if (initials) {
+        if (! namestd.IsSetInitials())
             return;
-        str = (char *) namestd.GetInitials().c_str();
-    }
-    else
-    {
-        if(!namestd.IsSetLast())
+        str = (char*)namestd.GetInitials().c_str();
+    } else {
+        if (! namestd.IsSetLast())
             return;
-        str = (char *) namestd.GetLast().c_str();
+        str = (char*)namestd.GetLast().c_str();
     }
 
     size_t i = strlen(str);
-    if(i > 5)
-    {
-        p = &str[i-5];
-        if((*p == ' ' || *p == '.') && !strcmp(p + 1, "III."))
-        {
+    if (i > 5) {
+        p = &str[i - 5];
+        if ((*p == ' ' || *p == '.') && ! strcmp(p + 1, "III.")) {
             namestd.SetSuffix("III");
-            if(*p == '.')
+            if (*p == '.')
                 p++;
             *p = '\0';
-            if(initials)
+            if (initials)
                 namestd.SetInitials(str);
             else
                 namestd.SetLast(str);
             i = 0;
         }
     }
-    if(i > 4)
-    {
-        p = &str[i-4];
-        if((*p == ' ' || *p == '.') &&
-           (!strcmp(p + 1, "III") || !strcmp(p + 1, "2nd") ||
-            !strcmp(p + 1, "Jr.") || !strcmp(p + 1, "IV.")))
-        {
-            if(!strcmp(p + 1, "III"))
+    if (i > 4) {
+        p = &str[i - 4];
+        if ((*p == ' ' || *p == '.') &&
+            (! strcmp(p + 1, "III") || ! strcmp(p + 1, "2nd") ||
+             ! strcmp(p + 1, "Jr.") || ! strcmp(p + 1, "IV."))) {
+            if (! strcmp(p + 1, "III"))
                 namestd.SetSuffix("III");
-            else if(!strcmp(p + 1, "2nd"))
+            else if (! strcmp(p + 1, "2nd"))
                 namestd.SetSuffix("II");
-            else if(!strcmp(p + 1, "Jr."))
+            else if (! strcmp(p + 1, "Jr."))
                 namestd.SetSuffix("Jr.");
             else
                 namestd.SetSuffix("IV");
-            if(*p == '.')
+            if (*p == '.')
                 p++;
             *p = '\0';
-            if(initials)
+            if (initials)
                 namestd.SetInitials(str);
             else
                 namestd.SetLast(str);
             i = 0;
         }
     }
-    if(i > 3)
-    {
-        p = &str[i-3];
-        if((*p == ' ' || *p == '.') &&
-           (!strcmp(p + 1, "Jr") || !strcmp(p + 1, "IV") ||
-            !strcmp(p + 1, "II")))
-        {
-            if(!strcmp(p + 1, "Jr"))
+    if (i > 3) {
+        p = &str[i - 3];
+        if ((*p == ' ' || *p == '.') &&
+            (! strcmp(p + 1, "Jr") || ! strcmp(p + 1, "IV") ||
+             ! strcmp(p + 1, "II"))) {
+            if (! strcmp(p + 1, "Jr"))
                 namestd.SetSuffix("Jr.");
-            else if(!strcmp(p + 1, "IV"))
+            else if (! strcmp(p + 1, "IV"))
                 namestd.SetSuffix("IV");
             else
                 namestd.SetSuffix("II");
-            if(*p == '.')
+            if (*p == '.')
                 p++;
             *p = '\0';
-            if(initials)
+            if (initials)
                 namestd.SetInitials(str);
             else
                 namestd.SetLast(str);
@@ -232,13 +219,13 @@ static void fta_fix_last_initials(CName_std &namestd,
 }
 
 /**********************************************************/
-static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
+static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
 {
     bool got_pmid = false;
 
     NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
     {
-        if(!(*pub)->IsPmid())
+        if (! (*pub)->IsPmid())
             continue;
         got_pmid = true;
         break;
@@ -247,95 +234,78 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
     NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
     {
         CAuth_list* authors;
-        if((*pub)->IsArticle())
-        {
-            CCit_art &art = (*pub)->SetArticle();
-            if(!art.IsSetAuthors() || !art.CanGetAuthors())
+        if ((*pub)->IsArticle()) {
+            CCit_art& art = (*pub)->SetArticle();
+            if (! art.IsSetAuthors() || ! art.CanGetAuthors())
                 continue;
 
             authors = &art.SetAuthors();
-        }
-        else if((*pub)->IsSub())
-        {
+        } else if ((*pub)->IsSub()) {
             CCit_sub& sub = (*pub)->SetSub();
-            if(!sub.IsSetAuthors() || !sub.CanGetAuthors())
+            if (! sub.IsSetAuthors() || ! sub.CanGetAuthors())
                 continue;
 
             authors = &sub.SetAuthors();
-        }
-        else if((*pub)->IsGen())
-        {
+        } else if ((*pub)->IsGen()) {
             CCit_gen& gen = (*pub)->SetGen();
-            if(!gen.IsSetAuthors() || !gen.CanGetAuthors())
+            if (! gen.IsSetAuthors() || ! gen.CanGetAuthors())
                 continue;
 
             authors = &gen.SetAuthors();
-        }
-        else if((*pub)->IsBook())
-        {
+        } else if ((*pub)->IsBook()) {
             CCit_book& book = (*pub)->SetBook();
-            if(!book.IsSetAuthors() || !book.CanGetAuthors())
+            if (! book.IsSetAuthors() || ! book.CanGetAuthors())
                 continue;
 
             authors = &book.SetAuthors();
-        }
-        else if((*pub)->IsMan())
-        {
+        } else if ((*pub)->IsMan()) {
             CCit_let& man = (*pub)->SetMan();
-            if(!man.IsSetCit() || !man.CanGetCit())
+            if (! man.IsSetCit() || ! man.CanGetCit())
                 continue;
 
             CCit_book& book = man.SetCit();
-            if(!book.IsSetAuthors() || !book.CanGetAuthors())
+            if (! book.IsSetAuthors() || ! book.CanGetAuthors())
                 continue;
 
             authors = &book.SetAuthors();
-        }
-        else if((*pub)->IsPatent())
-        {
+        } else if ((*pub)->IsPatent()) {
             CCit_pat& pat = (*pub)->SetPatent();
-            if(!pat.IsSetAuthors() || !pat.CanGetAuthors())
+            if (! pat.IsSetAuthors() || ! pat.CanGetAuthors())
                 continue;
 
             authors = &pat.SetAuthors();
-        }
-        else
+        } else
             continue;
 
 
-        if(authors->IsSetAffil() && authors->CanGetAffil() &&
-           authors->GetAffil().Which() == CAffil::e_Str)
-        {
+        if (authors->IsSetAffil() && authors->CanGetAffil() &&
+            authors->GetAffil().Which() == CAffil::e_Str) {
             CAffil& affil = authors->SetAffil();
-            char *aff = (char *) affil.GetStr().c_str();
+            char*   aff   = (char*)affil.GetStr().c_str();
             ShrinkSpaces(aff);
             affil.SetStr(aff);
         }
 
-        if(authors->IsSetNames() && authors->CanGetNames() &&
-           authors->GetNames().Which() == CAuth_list::TNames::e_Std)
-        {
-            CAuth_list::TNames& names = authors->SetNames();
-            CAuth_list::TNames::TStd::iterator it = (names.SetStd()).begin();
+        if (authors->IsSetNames() && authors->CanGetNames() &&
+            authors->GetNames().Which() == CAuth_list::TNames::e_Std) {
+            CAuth_list::TNames&                names  = authors->SetNames();
+            CAuth_list::TNames::TStd::iterator it     = (names.SetStd()).begin();
             CAuth_list::TNames::TStd::iterator it_end = (names.SetStd()).end();
-            for(; it != it_end; it++)
-            {
-                if((*it)->IsSetAffil() && (*it)->CanGetAffil() &&
-                   (*it)->GetAffil().Which() == CAffil::e_Str)
-                {
+            for (; it != it_end; it++) {
+                if ((*it)->IsSetAffil() && (*it)->CanGetAffil() &&
+                    (*it)->GetAffil().Which() == CAffil::e_Str) {
                     CAffil& affil = (*it)->SetAffil();
-                    char *aff = (char *) affil.GetStr().c_str();
+                    char*   aff   = (char*)affil.GetStr().c_str();
                     ShrinkSpaces(aff);
                     affil.SetStr(aff);
                 }
-                if((*it)->IsSetName() && (*it)->CanGetName() &&
-                   (*it)->GetName().IsName())
-                {
+                if ((*it)->IsSetName() && (*it)->CanGetName() &&
+                    (*it)->GetName().IsName()) {
                     CName_std& namestd = (*it)->SetName().SetName();
-                    if(namestd.IsSetSuffix())
+                    if (namestd.IsSetSuffix())
                         continue;
                     fta_fix_last_initials(namestd, true);
-                    if(!namestd.IsSetSuffix())
+                    if (! namestd.IsSetSuffix())
                         fta_fix_last_initials(namestd, false);
                 }
             }
@@ -344,59 +314,57 @@ static void fta_fix_affil(TPubList &pub_list, Parser::ESource source)
 }
 
 /**********************************************************/
-static void fta_fix_imprint_language(TPubList &pub_list)
+static void fta_fix_imprint_language(TPubList& pub_list)
 {
     NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
     {
-        if(!(*pub)->IsArticle())
+        if (! (*pub)->IsArticle())
             continue;
 
         CCit_art& art = (*pub)->SetArticle();
-        if(!art.IsSetFrom() || !art.GetFrom().IsJournal())
+        if (! art.IsSetFrom() || ! art.GetFrom().IsJournal())
             continue;
 
         CCit_jour& journal = art.SetFrom().SetJournal();
 
-        if(journal.IsSetImp() && journal.GetImp().IsSetLanguage())
-        {
+        if (journal.IsSetImp() && journal.GetImp().IsSetLanguage()) {
             string language = journal.GetImp().GetLanguage();
-            char *p;
-            char *lang = (char *) language.c_str();
-            for(p = lang; *p != '\0'; p++)
-                if(*p >= 'A' && *p <= 'Z')
-                     *p |= 040;
-           journal.SetImp().SetLanguage(lang);
-      }
+            char*  p;
+            char*  lang = (char*)language.c_str();
+            for (p = lang; *p != '\0'; p++)
+                if (*p >= 'A' && *p <= 'Z')
+                    *p |= 040;
+            journal.SetImp().SetLanguage(lang);
+        }
     }
 }
 
 /**********************************************************/
 static void fta_strip_er_remarks(CPubdesc& pub_descr)
 {
-    if (!pub_descr.IsSetComment())
+    if (! pub_descr.IsSetComment())
         return;
 
-    ITERATE(CPub_equiv::Tdata, pub, pub_descr.GetPub().Get())
-    {
-        if (!(*pub)->IsArticle())
+    ITERATE (CPub_equiv::Tdata, pub, pub_descr.GetPub().Get()) {
+        if (! (*pub)->IsArticle())
             continue;
 
         const CCit_art& art = (*pub)->GetArticle();
-        if (!art.IsSetFrom() || !art.GetFrom().IsJournal())
+        if (! art.IsSetFrom() || ! art.GetFrom().IsJournal())
             continue;
 
         const CCit_jour& journal = art.GetFrom().GetJournal();
-        
+
         int status = 0;
         if (journal.IsSetImp() && journal.GetImp().IsSetPubstatus())
             status = journal.GetImp().GetPubstatus();
 
-        if (status == 3 ||          /* epublish */
-            status == 4 ||          /* ppublish */
-            status == 10)           /* aheadofprint */
+        if (status == 3 || /* epublish */
+            status == 4 || /* ppublish */
+            status == 10)  /* aheadofprint */
         {
             char* comment = StringSave(pub_descr.GetComment().c_str());
-            comment = fta_strip_pub_comment(comment, PubStatus);
+            comment       = fta_strip_pub_comment(comment, PubStatus);
             if (comment != NULL && comment[0] != 0)
                 pub_descr.SetComment(comment);
             else
@@ -410,52 +378,39 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
 /**********************************************************/
 static Uint1 fta_init_med_server(void)
 {
-    if (!GetPubmedClient()->Init())
+    if (! GetPubmedClient()->Init())
         return (2);
-    return(1);
-
+    return (1);
 }
 
 /**********************************************************/
 static Uint1 fta_init_tax_server(void)
 {
     CTaxon1 taxon_srv;
-    if (!taxon_srv.Init())
-        return(2);
-    return(1);
+    if (! taxon_srv.Init())
+        return (2);
+    return (1);
 }
 
 /**********************************************************/
 void fta_init_servers(ParserPtr pp)
 {
-    if(pp->taxserver != 0)
-    {
+    if (pp->taxserver != 0) {
         pp->taxserver = fta_init_tax_server();
-        if(pp->taxserver == 2)
-        {
-            ErrPostEx(SEV_WARNING, ERR_SERVER_Failed,
-                      "TaxArchInit call failed.");
+        if (pp->taxserver == 2) {
+            ErrPostEx(SEV_WARNING, ERR_SERVER_Failed, "TaxArchInit call failed.");
         }
-    }
-    else
-    {
-        ErrPostEx(SEV_WARNING, ERR_SERVER_NoTaxLookup,
-                  "No taxonomy lookup will be performed.");
+    } else {
+        ErrPostEx(SEV_WARNING, ERR_SERVER_NoTaxLookup, "No taxonomy lookup will be performed.");
     }
 
-    if(pp->medserver != 0)
-    {
+    if (pp->medserver != 0) {
         pp->medserver = fta_init_med_server();
-        if(pp->medserver == 2)
-        {
-            ErrPostEx(SEV_ERROR, ERR_SERVER_Failed,
-                      "MedArchInit call failed.");
+        if (pp->medserver == 2) {
+            ErrPostEx(SEV_ERROR, ERR_SERVER_Failed, "MedArchInit call failed.");
         }
-    }
-    else
-    {
-        ErrPostEx(SEV_WARNING, ERR_SERVER_NoPubMedLookup,
-                  "No medline lookup will be performed.");
+    } else {
+        ErrPostEx(SEV_WARNING, ERR_SERVER_NoPubMedLookup, "No medline lookup will be performed.");
     }
 }
 
@@ -534,70 +489,66 @@ void fta_entrez_fetch_disable(ParserPtr pp)
 /**********************************************************/
 void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag)
 {
-    pp->fpo.always_look = !htag;
-    pp->fpo.replace_cit = !rtag;
-    pp->fpo.merge_ids = true;
+    pp->fpo.always_look = ! htag;
+    pp->fpo.replace_cit = ! rtag;
+    pp->fpo.merge_ids   = true;
 }
 
 
-class CFindPub {
+class CFindPub
+{
 
 public:
     CFindPub(Parser* pp) :
         m_pParser(pp),
-        m_pPubFixListener(new CPubFixMessageListener()) {
-            if (m_pParser) {
-                const auto& findPubOptions = m_pParser->fpo;
-                m_pPubFix.reset(new edit::CPubFix(
-                            findPubOptions.always_look,
-                            findPubOptions.replace_cit,
-                            findPubOptions.merge_ids,
-                            m_pPubFixListener.get(),
-                            GetPubmedClient()));
-            }
+        m_pPubFixListener(new CPubFixMessageListener())
+    {
+        if (m_pParser) {
+            const auto& findPubOptions = m_pParser->fpo;
+            m_pPubFix.reset(new edit::CPubFix(
+                findPubOptions.always_look,
+                findPubOptions.replace_cit,
+                findPubOptions.merge_ids,
+                m_pPubFixListener.get(),
+                GetPubmedClient()));
         }
+    }
 
     using TEntryList = list<CRef<CSeq_entry>>;
     void Apply(TEntryList& entries);
+
 private:
     void fix_pub_equiv(CPub_equiv& pub_equiv, bool er);
     void fix_pub_annot(CPub& pub, bool er);
     void find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs);
 
-    Parser* m_pParser;
+    Parser*                            m_pParser;
     unique_ptr<CPubFixMessageListener> m_pPubFixListener;
-    unique_ptr<edit::CPubFix> m_pPubFix;
+    unique_ptr<edit::CPubFix>          m_pPubFix;
 };
-
 
 
 /**********************************************************/
 static void fta_check_pub_ids(TPubList& pub_list)
 {
     bool found = false;
-    ITERATE(CPub_equiv::Tdata, pub, pub_list)
-    {
-        if ((*pub)->IsArticle())
-        {
+    ITERATE (CPub_equiv::Tdata, pub, pub_list) {
+        if ((*pub)->IsArticle()) {
             found = true;
             break;
         }
     }
-        
+
     if (found)
         return;
 
-    for (CPub_equiv::Tdata::iterator pub = pub_list.begin(); pub != pub_list.end();)
-    {
-        if (!(*pub)->IsMuid() && !(*pub)->IsPmid())
-        {
+    for (CPub_equiv::Tdata::iterator pub = pub_list.begin(); pub != pub_list.end();) {
+        if (! (*pub)->IsMuid() && ! (*pub)->IsPmid()) {
             ++pub;
             continue;
         }
 
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_ArticleIdDiscarded,
-                  "Article identifier was found for an unpublished, direct submission, book or unparsable article reference, and has been discarded : %s %d.",
-                  (*pub)->IsMuid() ? "MUID" : "PMID", (*pub)->GetMuid());
+        ErrPostEx(SEV_ERROR, ERR_REFERENCE_ArticleIdDiscarded, "Article identifier was found for an unpublished, direct submission, book or unparsable article reference, and has been discarded : %s %d.", (*pub)->IsMuid() ? "MUID" : "PMID", (*pub)->GetMuid());
 
         pub = pub_list.erase(pub);
     }
@@ -607,28 +558,25 @@ static void fta_check_pub_ids(TPubList& pub_list)
 /**********************************************************/
 void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
 {
-    if (!m_pParser)
+    if (! m_pParser)
         return;
 
     IndexblkPtr ibp = m_pParser->entrylist[m_pParser->curindx];
 
     list<CRef<CPub>> cit_arts;
-    for (auto& pPub : pub_equiv.Set())
-    {
-        if (!pPub->IsGen()) {
+    for (auto& pPub : pub_equiv.Set()) {
+        if (! pPub->IsGen()) {
             continue;
         }
         const CCit_gen& cit_gen = pPub->SetGen();
         if (cit_gen.IsSetCit() &&
-            (StringNCmp(cit_gen.GetCit().c_str(), "(er)", 4) == 0 || er))
-        {
+            (StringNCmp(cit_gen.GetCit().c_str(), "(er)", 4) == 0 || er)) {
             cit_arts.push_back(pPub);
             break;
         }
     }
 
-    if (cit_arts.empty())
-    {
+    if (cit_arts.empty()) {
         fta_check_pub_ids(pub_equiv.Set());
         m_pPubFix->FixPubEquiv(pub_equiv);
         return;
@@ -637,97 +585,74 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
     auto& cit_gen = cit_arts.front();
 
     list<CRef<CPub>> others;
-    CRef<CPub> pMuid, pPmid;
+    CRef<CPub>       pMuid, pPmid;
 
-    for (auto& pPub : pub_equiv.Set())
-    {
+    for (auto& pPub : pub_equiv.Set()) {
         if (cit_gen == pPub)
             continue;
-        if (pPub->IsMuid() && !pMuid)
+        if (pPub->IsMuid() && ! pMuid)
             pMuid = pPub;
-        else if (pPub->IsPmid() && !pPmid)
+        else if (pPub->IsPmid() && ! pPmid)
             pPmid = pPub;
-        else if (!pPub->IsArticle())
+        else if (! pPub->IsArticle())
             others.push_back(pPub);
     }
 
 
-
     TEntrezId oldpmid = pPmid ? pPmid->GetPmid() : ZERO_ENTREZ_ID;
     TEntrezId oldmuid = pMuid ? pMuid->GetMuid() : ZERO_ENTREZ_ID;
-    TEntrezId muid = ZERO_ENTREZ_ID;
-    TEntrezId pmid = ZERO_ENTREZ_ID;
+    TEntrezId muid    = ZERO_ENTREZ_ID;
+    TEntrezId pmid    = ZERO_ENTREZ_ID;
 
     CRef<CCit_art> new_cit_art;
-    if(oldpmid > ZERO_ENTREZ_ID)
-    {
+    if (oldpmid > ZERO_ENTREZ_ID) {
         new_cit_art = FetchPubPmId(oldpmid);
-        if (new_cit_art.Empty())
-        {
-            ErrPostEx(SEV_REJECT, ERR_REFERENCE_InvalidPmid,
-                      "MedArch failed to find a Cit-art for reference with pmid \"%d\".",
-                      oldpmid);
+        if (new_cit_art.Empty()) {
+            ErrPostEx(SEV_REJECT, ERR_REFERENCE_InvalidPmid, "MedArch failed to find a Cit-art for reference with pmid \"%d\".", oldpmid);
             ibp->drop = 1;
-        }
-        else
-        {
-            if (new_cit_art->IsSetIds())
-            {
-                for (const auto& pId : new_cit_art->GetIds().Get())
-                {
+        } else {
+            if (new_cit_art->IsSetIds()) {
+                for (const auto& pId : new_cit_art->GetIds().Get()) {
                     if (pId->IsPubmed()) {
                         pmid = pId->GetPubmed();
-                    }
-                    else if (pId->IsMedline()) {
+                    } else if (pId->IsMedline()) {
                         muid = pId->GetMedline();
                     }
                 }
             }
 
-            if(pmid == ZERO_ENTREZ_ID)
-            {
-                ErrPostEx(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid,
-                          "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
+            if (pmid == ZERO_ENTREZ_ID) {
+                ErrPostEx(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid, "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
+                ibp->drop = 1;
+            } else if (pmid != oldpmid) {
+                ErrPostEx(SEV_REJECT, ERR_REFERENCE_DifferentPmids, "Pmid \"%d\" used for lookup does not match pmid \"%d\" in the ArticleIdSet of the Cit-art returned by MedArch.", oldpmid, pmid);
                 ibp->drop = 1;
             }
-            else if(pmid != oldpmid)
-            {
-                ErrPostEx(SEV_REJECT, ERR_REFERENCE_DifferentPmids,
-                          "Pmid \"%d\" used for lookup does not match pmid \"%d\" in the ArticleIdSet of the Cit-art returned by MedArch.",
-                          oldpmid, pmid);
-                ibp->drop = 1;
-            }
-            if(muid > ZERO_ENTREZ_ID && oldmuid > ZERO_ENTREZ_ID && muid != oldmuid)
-            {
-                ErrPostEx(SEV_ERROR, ERR_REFERENCE_MuidPmidMissMatch,
-                          "Reference has supplied Medline UI \"%d\" but it does not match muid \"%d\" in the Cit-art returned by MedArch.",
-                          oldmuid, muid);
+            if (muid > ZERO_ENTREZ_ID && oldmuid > ZERO_ENTREZ_ID && muid != oldmuid) {
+                ErrPostEx(SEV_ERROR, ERR_REFERENCE_MuidPmidMissMatch, "Reference has supplied Medline UI \"%d\" but it does not match muid \"%d\" in the Cit-art returned by MedArch.", oldmuid, muid);
             }
         }
     }
 
-    if (new_cit_art.NotEmpty() && !ibp->drop)
-    {
+    if (new_cit_art.NotEmpty() && ! ibp->drop) {
         cit_arts.clear();
         CRef<CPub> new_pub(new CPub);
         new_pub->SetArticle(*new_cit_art);
         cit_arts.push_back(new_pub);
 
-        if (pmid > ZERO_ENTREZ_ID && !pPmid)
-        {
+        if (pmid > ZERO_ENTREZ_ID && ! pPmid) {
             pPmid = Ref(new CPub());
             pPmid->SetPmid().Set(pmid);
         }
 
-        if(muid > ZERO_ENTREZ_ID && !pMuid)
-        {
+        if (muid > ZERO_ENTREZ_ID && ! pMuid) {
             pMuid = Ref(new CPub());
             pMuid->SetMuid(muid);
         }
     }
 
     auto& pub_list = pub_equiv.Set();
-    pub_list = others;
+    pub_list       = others;
     if (pPmid) {
         pub_list.push_back(pPmid);
     }
@@ -740,11 +665,10 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
 /**********************************************************/
 void CFindPub::fix_pub_annot(CPub& pub, bool er)
 {
-    if (!m_pParser)
+    if (! m_pParser)
         return;
 
-    if (pub.IsEquiv())
-    {
+    if (pub.IsEquiv()) {
         fix_pub_equiv(pub.SetEquiv(), er);
         if (m_pParser->qamode)
             fta_fix_imprint_language(pub.SetEquiv().Set());
@@ -759,20 +683,18 @@ void CFindPub::fix_pub_annot(CPub& pub, bool er)
 /**********************************************************/
 void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
 {
-    bool er = any_of(begin(descrs.Get()), end(descrs.Get()),
-            [](CRef<CSeqdesc> pDesc) {
-                if (pDesc->IsPub()) {
-                    const auto& pubdesc = pDesc->GetPub();
-                    return (pubdesc.IsSetComment() &&
-                            fta_remark_is_er(pubdesc.GetComment().c_str()));
-                }
-                return false;
-            });
+    bool er = any_of(begin(descrs.Get()), end(descrs.Get()), [](CRef<CSeqdesc> pDesc) {
+        if (pDesc->IsPub()) {
+            const auto& pubdesc = pDesc->GetPub();
+            return (pubdesc.IsSetComment() &&
+                    fta_remark_is_er(pubdesc.GetComment().c_str()));
+        }
+        return false;
+    });
 
 
-    for (auto& pDescr : descrs.Set())
-    {
-        if (!pDescr->IsPub())
+    for (auto& pDescr : descrs.Set()) {
+        if (! pDescr->IsPub())
             continue;
 
         CPubdesc& pub_descr = pDescr->SetPub();
@@ -783,14 +705,12 @@ void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
         fta_strip_er_remarks(pub_descr);
     }
 
-    for (auto& pAnnot : annots)
-    {
-        if (!pAnnot->IsSetData() || !pAnnot->GetData().IsFtable())              /* feature table */
+    for (auto& pAnnot : annots) {
+        if (! pAnnot->IsSetData() || ! pAnnot->GetData().IsFtable()) /* feature table */
             continue;
 
-        for (auto& pFeat : pAnnot->SetData().SetFtable())
-        {
-            if (pFeat->IsSetData() && pFeat->GetData().IsPub())   /* pub feature */
+        for (auto& pFeat : pAnnot->SetData().SetFtable()) {
+            if (pFeat->IsSetData() && pFeat->GetData().IsPub()) /* pub feature */
             {
                 fix_pub_equiv(pFeat->SetData().SetPub().SetPub(), er);
                 if (m_pParser->qamode)
@@ -799,7 +719,7 @@ void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
                 fta_strip_er_remarks(pFeat->SetData().SetPub());
             }
 
-            if (!pFeat->IsSetCit()) {
+            if (! pFeat->IsSetCit()) {
                 continue;
             }
 
@@ -816,10 +736,8 @@ void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
 //static void fta_find_pub(ParserPtr pp, TEntryList& seq_entries)
 void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
 {
-    for (auto& pEntry : seq_entries)
-    {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*pEntry)); bio_set; ++bio_set)
-        {
+    for (auto& pEntry : seq_entries) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*pEntry)); bio_set; ++bio_set) {
             find_pub(bio_set->SetAnnot(), bio_set->SetDescr());
 
             if (bio_set->GetDescr().Get().empty())
@@ -829,8 +747,7 @@ void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
                 bio_set->ResetAnnot();
         }
 
-        for (CTypeIterator<CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq)
-        {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq) {
             find_pub(bioseq->SetAnnot(), bioseq->SetDescr());
 
             if (bioseq->GetDescr().Get().empty())
@@ -845,14 +762,13 @@ void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
 /**********************************************************/
 void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries)
 {
-    if(pp->medserver == 0)
+    if (pp->medserver == 0)
         return;
 
-    if(pp->medserver == 2)
+    if (pp->medserver == 2)
         pp->medserver = fta_init_med_server();
 
-    if (pp->medserver == 1)
-    {
+    if (pp->medserver == 1) {
         CFindPub find_pub(pp);
         find_pub.Apply(seq_entries);
     }
@@ -893,7 +809,7 @@ static const STimeout s_timeout = { TAX_SERVER_TIMEOUT, 0 };
 static void fix_synonyms(CTaxon1& taxon, COrg_ref& org_ref)
 {
     bool with_syns = taxon.SetSynonyms(false);
-    if (!with_syns)
+    if (! with_syns)
         org_ref.SetSyn().clear();
     else
         taxon.SetSynonyms(true);
@@ -907,41 +823,28 @@ static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, Int
     CTaxon1 taxon;
 
     bool connection_failed = false;
-    for (size_t i = 0; i < 3 && taxdata.Empty(); ++i)
-    {
-        if (taxon.Init(&s_timeout))
-        {
+    for (size_t i = 0; i < 3 && taxdata.Empty(); ++i) {
+        if (taxon.Init(&s_timeout)) {
             taxdata = taxon.GetById(TAX_ID_FROM(Int4, taxid));
-        }
-        else
-        {
+        } else {
             connection_failed = true;
             break;
         }
     }
 
     CRef<COrg_ref> ret;
-    if (taxdata.Empty())
-    {
-        if (connection_failed)
-        {
-            ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown,
-                      "Taxonomy lookup failed for taxid %d, apparently because the server is down. Cannot generate ASN.1 for this entry.",
-                      taxid);
+    if (taxdata.Empty()) {
+        if (connection_failed) {
+            ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, apparently because the server is down. Cannot generate ASN.1 for this entry.", taxid);
             *drop = 1;
-        }
-        else
-        {
-            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound,
-                      "Taxname not found: [taxid %d].", taxid);
+        } else {
+            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxname not found: [taxid %d].", taxid);
         }
         return ret;
     }
 
-    if (taxdata->GetIs_species_level() != 1 && !isoh)
-    {
-        ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel,
-                  "Taxarch hit is not on species level: [taxid %d].", taxid);
+    if (taxdata->GetIs_species_level() != 1 && ! isoh) {
+        ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel, "Taxarch hit is not on species level: [taxid %d].", taxid);
     }
 
     ret.Reset(new COrg_ref);
@@ -959,34 +862,28 @@ CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop
 {
     CRef<COrg_ref> ret;
 
-    if(taxid < 1 && pp->taxserver == 0)
+    if (taxid < 1 && pp->taxserver == 0)
         return ret;
 
-    if(pp->taxserver == 2)
+    if (pp->taxserver == 2)
         pp->taxserver = fta_init_tax_server();
 
-    if(pp->taxserver == 2)
-    {
-        ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown,
-                  "Taxonomy lookup failed for taxid %d, because the server is down. Cannot generate ASN.1 for this entry.",
-                  taxid);
+    if (pp->taxserver == 2) {
+        ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, because the server is down. Cannot generate ASN.1 for this entry.", taxid);
         *drop = 1;
         return ret;
     }
 
     ret = fta_get_orgref_byid(pp, drop, taxid, isoh);
-    if (ret.NotEmpty())
-    {
-        ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound,
-                  "Taxname _was_ found for taxid %d", taxid);
+    if (ret.NotEmpty()) {
+        ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound, "Taxname _was_ found for taxid %d", taxid);
     }
 
     return ret;
 }
 
 /**********************************************************/
-static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_ref& org_ref,
-                                      const Char* pn, int merge, Int4 attempt)
+static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_ref& org_ref, const Char* pn, int merge, Int4 attempt)
 {
     IndexblkPtr ibp = pp->entrylist[pp->curindx];
 
@@ -995,66 +892,47 @@ static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_re
     CTaxon1 taxon;
 
     bool connection_failed = true;
-    for (size_t i = 0; i < 3 && taxdata.Empty(); ++i)
-    {
-        if (taxon.Init(&s_timeout))
-        {
-            if (merge)
-            {
+    for (size_t i = 0; i < 3 && taxdata.Empty(); ++i) {
+        if (taxon.Init(&s_timeout)) {
+            if (merge) {
                 taxdata = taxon.LookupMerge(org_ref);
-            }
-            else
+            } else
                 taxdata = taxon.Lookup(org_ref);
             connection_failed = false;
             break;
-        }
-        else
+        } else
             taxon.Fini();
     }
 
     CRef<COrg_ref> ret;
 
-    if (taxdata.Empty())
-    {
-        if(attempt == 1)
+    if (taxdata.Empty()) {
+        if (attempt == 1)
             return ret;
 
-        if (connection_failed)
-        {
-            ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown,
-                      "Taxonomy lookup failed for \"%s\", apparently because the server is down. Cannot generate ASN.1 for this entry.",
-                      pn);
+        if (connection_failed) {
+            ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"%s\", apparently because the server is down. Cannot generate ASN.1 for this entry.", pn);
             *drop = 1;
-        }
-        else if(taxon.GetTaxIdByOrgRef(org_ref) < ZERO_TAX_ID)
-        {
-            if((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
-               ibp->is_pat && ibp->taxid > 0 && !ibp->organism.empty())
-            {
+        } else if (taxon.GetTaxIdByOrgRef(org_ref) < ZERO_TAX_ID) {
+            if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
+                ibp->is_pat && ibp->taxid > 0 && ! ibp->organism.empty()) {
                 ret = fta_fix_orgref_byid(pp, ibp->taxid, &ibp->drop, true);
                 if (ret.NotEmpty() && ret->IsSetTaxname() &&
-                   ret->GetTaxname() == ibp->organism)
-                {
+                    ret->GetTaxname() == ibp->organism) {
                     ibp->no_gc_warning = true;
                     return ret;
                 }
             }
-            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxIdNotUnique,
-                      "Not an unique Taxonomic Id for [%s].", pn);
-        }
-        else
-        {
-            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound,
-                      "Taxon Id not found for [%s].", pn);
+            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxIdNotUnique, "Not an unique Taxonomic Id for [%s].", pn);
+        } else {
+            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxon Id not found for [%s].", pn);
         }
         return ret;
     }
 
     if (taxdata->GetIs_species_level() != 1 && (ibp->is_pat == false ||
-       (pp->source != Parser::ESource::EMBL && pp->source != Parser::ESource::DDBJ)))
-    {
-        ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel,
-                  "Taxarch hit is not on species level for [%s].", pn);
+                                                (pp->source != Parser::ESource::EMBL && pp->source != Parser::ESource::DDBJ))) {
+        ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel, "Taxarch hit is not on species level for [%s].", pn);
     }
 
     ret.Reset(new COrg_ref);
@@ -1068,75 +946,61 @@ static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_re
 }
 
 /**********************************************************/
-void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop,
-                    char* organelle)
+void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop, char* organelle)
 {
-    Int4      attempt;
-    int       merge;
+    Int4 attempt;
+    int  merge;
 
-    if (org_ref.IsSetTaxname())
-    {
+    if (org_ref.IsSetTaxname()) {
         std::string taxname = org_ref.GetTaxname();
 
         size_t last_char = taxname.size();
-        for (; last_char; --last_char)
-        {
-            if (!isspace(taxname[last_char]))
+        for (; last_char; --last_char) {
+            if (! isspace(taxname[last_char]))
                 break;
         }
 
-        if (!isspace(taxname[last_char]))
+        if (! isspace(taxname[last_char]))
             ++last_char;
         org_ref.SetTaxname(taxname.substr(0, last_char));
     }
 
-    if(pp->taxserver == 0)
+    if (pp->taxserver == 0)
         return;
 
-    if(pp->taxserver == 2)
+    if (pp->taxserver == 2)
         pp->taxserver = fta_init_tax_server();
 
     std::string old_taxname;
-    if (organelle != NULL)
-    {
+    if (organelle != NULL) {
         std::string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "",
                     organelle_str(organelle),
                     space(taxname.size() ? " " : "");
 
         old_taxname = taxname;
-        taxname = organelle_str + space + taxname;
+        taxname     = organelle_str + space + taxname;
         org_ref.SetTaxname(taxname);
         attempt = 1;
-    }
-    else
-    {
+    } else {
         attempt = 2;
     }
 
     std::string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "";
-    if (pp->taxserver == 2)
-    {
-        ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown,
-                  "Taxonomy lookup failed for \"%s\", because the server is down. Cannot generate ASN.1 for this entry.",
-                  taxname.c_str());
+    if (pp->taxserver == 2) {
+        ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"%s\", because the server is down. Cannot generate ASN.1 for this entry.", taxname.c_str());
         *drop = 1;
-    }
-    else
-    {
+    } else {
         merge = 1;
 
         CRef<COrg_ref> new_org_ref = fta_replace_org(pp, drop, org_ref, taxname.c_str(), merge, attempt);
-        if (new_org_ref.Empty() && attempt == 1)
-        {
+        if (new_org_ref.Empty() && attempt == 1) {
             org_ref.SetTaxname(old_taxname);
             old_taxname.clear();
             new_org_ref = fta_replace_org(pp, drop, org_ref, "", merge, 2);
         }
 
-        if (new_org_ref.NotEmpty())
-        {
-            ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound,
-                      "Taxon Id _was_ found for [%s]", taxname.c_str());
+        if (new_org_ref.NotEmpty()) {
+            ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound, "Taxon Id _was_ found for [%s]", taxname.c_str());
 
             org_ref.Assign(*new_org_ref);
         }
@@ -1150,27 +1014,26 @@ void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop,
 static TGi fta_get_gi_for_seq_id(const CSeq_id& id)
 {
     TGi gi = sequence::GetGiForId(id, GetScope());
-    if(gi > ZERO_GI)
-        return(gi);
+    if (gi > ZERO_GI)
+        return (gi);
 
 
     CSeq_id test_id;
     test_id.SetGenbank().SetAccession(HEALTHY_ACC);
 
     int i = 0;
-    for (; i < 5; i++)
-    {
+    for (; i < 5; i++) {
         if (sequence::GetGiForId(test_id, GetScope()) > ZERO_GI)
             break;
         SleepSec(3);
     }
 
-    if(i == 5)
+    if (i == 5)
         return GI_CONST(-1);
 
     gi = sequence::GetGiForId(id, GetScope());
     if (gi > ZERO_GI)
-        return(gi);
+        return (gi);
 
     return ZERO_GI;
 }
@@ -1182,48 +1045,39 @@ static TGi fta_get_gi_for_seq_id(const CSeq_id& id)
  */
 Int4 fta_is_con_div(ParserPtr pp, const CSeq_id& id, const Char* acc)
 {
-    if(pp->entrez_fetch == 0)
-        return(-1);
+    if (pp->entrez_fetch == 0)
+        return (-1);
     //if (pp->entrez_fetch == 2)
     //    pp->entrez_fetch = fta_init_pubseq();
-    if(pp->entrez_fetch == 2)
-    {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary,
-                  "Failed to determine division code for secondary accession \"%s\". Entry dropped.",
-                  acc);
+    if (pp->entrez_fetch == 2) {
+        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
         pp->entrylist[pp->curindx]->drop = 1;
-        return(-1);
+        return (-1);
     }
 
     TGi gi = fta_get_gi_for_seq_id(id);
-    if(gi < ZERO_GI)
-    {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary,
-                  "Failed to determine division code for secondary accession \"%s\". Entry dropped.",
-                  acc);
+    if (gi < ZERO_GI) {
+        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
         pp->entrylist[pp->curindx]->drop = 1;
-        return(-1);
+        return (-1);
     }
 
     if (gi == ZERO_GI)
-        return(0);
+        return (0);
 #if 0 // RW-707
-    CPubseqAccess::IdGiClass id_gi;
+    CPubseqAccess::IdGiClass   id_gi;
     CPubseqAccess::IdBlobClass id_blob;
 
-    if (!s_pubseq->GetIdGiClass(gi, id_gi) || !s_pubseq->GetIdBlobClass(id_gi, id_blob) ||
-        id_blob.div[0] == '\0')
-    {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary,
-                  "Failed to determine division code for secondary accession \"%s\". Entry dropped.",
-                  acc);
+    if (! s_pubseq->GetIdGiClass(gi, id_gi) || ! s_pubseq->GetIdBlobClass(id_gi, id_blob) ||
+        id_blob.div[0] == '\0') {
+        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
         pp->entrylist[pp->curindx]->drop = 1;
-        return(-1);
+        return (-1);
     }
     if (NStr::EqualNocase(id_blob.div, "CON"))
-        return(1);
+        return (1);
 #endif
-    return(0);
+    return (0);
 }
 
 /**********************************************************/

@@ -12,7 +12,7 @@ namespace ncbi::objects::edit
 BEGIN_NCBI_SCOPE
 
 objects::edit::IPubmedUpdater* GetPubmedClient();
-CRef<objects::CCit_art> FetchPubPmId(TEntrezId pmid);
+CRef<objects::CCit_art>        FetchPubPmId(TEntrezId pmid);
 
 class CPubFixMessageListener : public CMessageListener_Basic
 {
