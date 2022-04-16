@@ -47,31 +47,31 @@
 #endif
 #define THIS_FILE "xgbparint.cpp"
 
-#define TAKE_FIRST 1
+#define TAKE_FIRST  1
 #define TAKE_SECOND 2
 
-#define GBPARSE_INT_UNKNOWN 0
-#define GBPARSE_INT_JOIN 1
-#define GBPARSE_INT_COMPL 2
-#define GBPARSE_INT_LEFT 3
-#define GBPARSE_INT_RIGHT 4
-#define GBPARSE_INT_CARET 5
-#define GBPARSE_INT_DOT_DOT 6
-#define GBPARSE_INT_ACCESSION 7
-#define GBPARSE_INT_GT 8
-#define GBPARSE_INT_LT 9
-#define GBPARSE_INT_COMMA 10
-#define GBPARSE_INT_NUMBER 11
-#define GBPARSE_INT_ORDER 12
+#define GBPARSE_INT_UNKNOWN    0
+#define GBPARSE_INT_JOIN       1
+#define GBPARSE_INT_COMPL      2
+#define GBPARSE_INT_LEFT       3
+#define GBPARSE_INT_RIGHT      4
+#define GBPARSE_INT_CARET      5
+#define GBPARSE_INT_DOT_DOT    6
+#define GBPARSE_INT_ACCESSION  7
+#define GBPARSE_INT_GT         8
+#define GBPARSE_INT_LT         9
+#define GBPARSE_INT_COMMA      10
+#define GBPARSE_INT_NUMBER     11
+#define GBPARSE_INT_ORDER      12
 #define GBPARSE_INT_SINGLE_DOT 13
-#define GBPARSE_INT_GROUP 14
-#define GBPARSE_INT_ONE_OF 15
-#define GBPARSE_INT_REPLACE 16
-#define GBPARSE_INT_SITES 17
-#define GBPARSE_INT_STRING 18
+#define GBPARSE_INT_GROUP      14
+#define GBPARSE_INT_ONE_OF     15
+#define GBPARSE_INT_REPLACE    16
+#define GBPARSE_INT_SITES      17
+#define GBPARSE_INT_STRING     18
 #define GBPARSE_INT_ONE_OF_NUM 19
-#define GBPARSE_INT_GAP 20
-#define GBPARSE_INT_UNK_GAP 21
+#define GBPARSE_INT_GAP        20
+#define GBPARSE_INT_UNK_GAP    21
 
 #define ERR_NCBIGBPARSE_LEX 1
 #define ERR_NCBIGBPARSE_INT 2
@@ -79,13 +79,12 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-const char* seqlitdbtag = "SeqLit";
+const char* seqlitdbtag    = "SeqLit";
 const char* unkseqlitdbtag = "UnkSeqLit";
 
 
-struct STokenInfo 
-{
-/*
+struct STokenInfo {
+    /*
     enum EChoice {
         eUnknown,   // 0 
         eJoin,      // 1
@@ -118,26 +117,25 @@ struct STokenInfo
     string data;
 };
 
-using TTokens = list<STokenInfo>;
-using TTokenIt = TTokens::iterator;
+using TTokens       = list<STokenInfo>;
+using TTokenIt      = TTokens::iterator;
 using TTokenConstIt = TTokens::const_iterator;
 
 
 /*--------- do_xgbparse_error () ---------------*/
 
-#define ERR_FEATURE_LocationParsing_validatr 1,5
+#define ERR_FEATURE_LocationParsing_validatr 1, 5
 
-static void do_xgbparse_error (const char* msg, const char* details)
+static void do_xgbparse_error(const char* msg, const char* details)
 {
     string errmsg = string(msg) + " at " + string(details);
     Nlm_ErrSetContext("validatr", __FILE__, __LINE__);
     Nlm_ErrPostEx(SEV_ERROR, ERR_FEATURE_LocationParsing_validatr, errmsg.c_str());
-
 }
 
-static X_gbparse_errfunc Err_func = do_xgbparse_error;
-static X_gbparse_rangefunc Range_func = NULL;
-static void* xgbparse_range_data = NULL;
+static X_gbparse_errfunc   Err_func            = do_xgbparse_error;
+static X_gbparse_rangefunc Range_func          = NULL;
+static void*               xgbparse_range_data = NULL;
 
 /*----------- xinstall_gbparse_error_handler ()-------------*/
 
@@ -150,7 +148,7 @@ void xinstall_gbparse_error_handler(X_gbparse_errfunc new_func)
 
 void xinstall_gbparse_range_func(void* data, X_gbparse_rangefunc new_func)
 {
-    Range_func = new_func;
+    Range_func          = new_func;
     xgbparse_range_data = data;
 }
 
@@ -158,9 +156,9 @@ void xinstall_gbparse_range_func(void* data, X_gbparse_rangefunc new_func)
 static string xgbparse_point(TTokenConstIt head, TTokenConstIt current)
 {
     string temp;
-    auto end_it = next(current);
-    for (auto it = head; it != end_it; ++it){
-        switch (it->choice){
+    auto   end_it = next(current);
+    for (auto it = head; it != end_it; ++it) {
+        switch (it->choice) {
         case GBPARSE_INT_JOIN:
             temp += "join";
             break;
@@ -200,7 +198,7 @@ static string xgbparse_point(TTokenConstIt head, TTokenConstIt current)
             temp += ".";
             break;
         case GBPARSE_INT_GROUP:
-            temp  += "group";
+            temp += "group";
             break;
         case GBPARSE_INT_ONE_OF:
         case GBPARSE_INT_ONE_OF_NUM:
@@ -222,7 +220,6 @@ static string xgbparse_point(TTokenConstIt head, TTokenConstIt current)
 }
 
 
-
 static void xgbparse_error(const char* front, TTokenConstIt head, TTokenConstIt current)
 {
     string details = xgbparse_point(head, current);
@@ -237,19 +234,18 @@ static void xgbparse_error(const char* front, const TTokens& tokens, TTokenConst
 
 
 /*------------------ xgbcheck_range()-------------*/
-static void xgbcheck_range(TSeqPos num, const CSeq_id& id, bool& keep_rawPt, int& num_errsPt, 
-        const TTokens& tokens, TTokenConstIt current)
+static void xgbcheck_range(TSeqPos num, const CSeq_id& id, bool& keep_rawPt, int& num_errsPt, const TTokens& tokens, TTokenConstIt current)
 {
-     if (!Range_func) {
+    if (! Range_func) {
         return;
-     }
+    }
 
-     const auto len = (*Range_func)(xgbparse_range_data, id);
-     if (len != -1 && num >= len) {
-         xgbparse_error("range error", tokens, current);
-         keep_rawPt = true;
-         ++num_errsPt;
-     }
+    const auto len = (*Range_func)(xgbparse_range_data, id);
+    if (len != -1 && num >= len) {
+        xgbparse_error("range error", tokens, current);
+        keep_rawPt = true;
+        ++num_errsPt;
+    }
 }
 
 
@@ -287,9 +283,9 @@ static void xfind_one_of_num(list<STokenInfo>& tokens)
     }
     auto current_it = begin(tokens);
     if (current_it->choice == GBPARSE_INT_ONE_OF) {
-        for (auto scanner_it = next(current_it); 
-                scanner_it != end(tokens); 
-                ++scanner_it) {
+        for (auto scanner_it = next(current_it);
+             scanner_it != end(tokens);
+             ++scanner_it) {
             if (scanner_it->choice == GBPARSE_INT_RIGHT) {
                 ++scanner_it;
                 if (scanner_it != end(tokens) &&
@@ -301,9 +297,9 @@ static void xfind_one_of_num(list<STokenInfo>& tokens)
         }
     }
 
-    for (auto current_it = begin(tokens); 
-            current_it != end(tokens); 
-            ++current_it) {
+    for (auto current_it = begin(tokens);
+         current_it != end(tokens);
+         ++current_it) {
         if (current_it->choice == GBPARSE_INT_COMMA ||
             current_it->choice == GBPARSE_INT_LEFT) {
             auto scanner_it = next(current_it);
@@ -328,26 +324,25 @@ static void xfind_one_of_num(list<STokenInfo>& tokens)
 }
 
 
-
-static void xlex_error_func(const char* msg, 
-        const string& line, 
-        const int current_col)
+static void xlex_error_func(const char*   msg,
+                            const string& line,
+                            const int     current_col)
 {
-   string temp_string = line.substr(0, current_col+1) + " ";
-   Err_func(msg, temp_string.c_str());
+    string temp_string = line.substr(0, current_col + 1) + " ";
+    Err_func(msg, temp_string.c_str());
 }
 
 
 static int advance_to(const char c, int current_pos, const string& line)
-{   
+{
     int pos = current_pos;
     while (pos < line.size()) {
-        if(line[pos] == c)  {
-           return pos-1; 
+        if (line[pos] == c) {
+            return pos - 1;
         }
         ++pos;
     }
-    return pos-1;
+    return pos - 1;
 }
 
 
@@ -357,49 +352,45 @@ static size_t xgbparse_accprefix(const char* acc)
     const char* p;
 
     if (acc == NULL || *acc == '\0')
-        return(0);
+        return (0);
 
     for (p = acc; isalpha(*p) != 0;)
         p++;
     size_t ret = p - acc;
-    if (*p == '_')
-    {
-        if (ret == 2)
-        {
+    if (*p == '_') {
+        if (ret == 2) {
             for (p++; isalpha(*p) != 0;)
                 p++;
             ret = p - acc;
             if (ret != 3 && ret != 7)
                 ret = 1;
-        }
-        else
+        } else
             ret = 1;
-    }
-    else if (p[0] != '\0' && p[0] >= '0' && p[0] <= '9' &&
-             p[1] != '\0' && p[1] >= '0' && p[1] <= '9' && p[2] == 'S')
-             ret = 7;
+    } else if (p[0] != '\0' && p[0] >= '0' && p[0] <= '9' &&
+               p[1] != '\0' && p[1] >= '0' && p[1] <= '9' && p[2] == 'S')
+        ret = 7;
     else if (ret != 1 && ret != 2 && ret != 4 && ret != 6)
         ret = 1;
-    return(ret);
+    return (ret);
 }
 
 
 static size_t sParseAccessionPrefix(const CTempString& accession)
-{   
+{
     if (accession.empty()) {
         return 0;
     }
 
     auto IsAlpha = [](char c) { return isalpha(c); };
 
-    auto it = find_if_not(begin(accession), 
-                          end(accession), 
+    auto it = find_if_not(begin(accession),
+                          end(accession),
                           IsAlpha);
 
 
     if (it == end(accession)) {
         return 1;
-    }   
+    }
 
     auto prefix_length = distance(begin(accession), it);
     if (*it == '_') {
@@ -416,11 +407,10 @@ static size_t sParseAccessionPrefix(const CTempString& accession)
             return prefix_length;
         }
         return 1;
-    }
-    else if (accession.size() >= 3 && 
-            isdigit(accession[0]) &&
-            isdigit(accession[1]) &&
-            accession[2] == 'S') {
+    } else if (accession.size() >= 3 &&
+               isdigit(accession[0]) &&
+               isdigit(accession[1]) &&
+               accession[2] == 'S') {
         return 7;
     }
 
@@ -429,7 +419,7 @@ static size_t sParseAccessionPrefix(const CTempString& accession)
         prefix_length == 4 ||
         prefix_length == 6) {
         return prefix_length;
-    }  
+    }
 
     return 1;
 }
@@ -437,56 +427,53 @@ static size_t sParseAccessionPrefix(const CTempString& accession)
 
 static int sGetAccession(string& accession, int& current_col, const string& line, bool accver)
 {
-    const auto length = line.size();
-    CTempString tempString(line.c_str() + current_col, length-current_col);
-    auto prefixLength = sParseAccessionPrefix(tempString);
-    size_t accessionLength = prefixLength;
+    const auto  length = line.size();
+    CTempString tempString(line.c_str() + current_col, length - current_col);
+    auto        prefixLength    = sParseAccessionPrefix(tempString);
+    size_t      accessionLength = prefixLength;
 
-    tempString = tempString.substr(prefixLength);
-    auto notDigitPos = tempString.find_first_not_of("0123456789"); 
+    tempString       = tempString.substr(prefixLength);
+    auto notDigitPos = tempString.find_first_not_of("0123456789");
     if (notDigitPos != NPOS) {
         accessionLength += notDigitPos;
         if (accver && tempString[notDigitPos] == '.') {
             ++accessionLength;
             if (tempString.size() > notDigitPos) {
-                tempString = tempString.substr(notDigitPos+1);
+                tempString  = tempString.substr(notDigitPos + 1);
                 notDigitPos = tempString.find_first_not_of("0123456789");
                 if (notDigitPos != NPOS) {
                     accessionLength += notDigitPos;
                 }
             }
         }
-    }
-    else {
+    } else {
         accessionLength = length - current_col;
     }
 
     int retval = 0;
     if (notDigitPos == NPOS || tempString[notDigitPos] != ':') {
         xlex_error_func("ACCESSION missing \":\"", line, current_col);
-        ++retval; 
+        ++retval;
         --current_col;
-    } 
+    }
 
     accession = string(line.c_str() + current_col, accessionLength);
     current_col += accessionLength;
     return retval;
-
 }
 
 
 /*------------- xgbparselex_ver() -----------------------*/
 
 static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
-{   
+{
     tokens.clear();
     int retval = 0;
-    if (*linein)
-    {
+    if (*linein) {
         string line{ linein };
         NStr::TruncateSpacesInPlace(line);
-        auto length = line.size();
-        int current_col = 0;
+        auto length      = line.size();
+        int  current_col = 0;
 
         while (current_col < length) {
 
@@ -498,29 +485,26 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
             STokenInfo current_token;
             if (isdigit(line[current_col])) {
                 current_token.choice = GBPARSE_INT_NUMBER;
-                CTempString tempString(line.c_str()+current_col, length-current_col);
-                auto not_digit_pos = tempString.find_first_not_of("0123456789");
-                int num_digits = (not_digit_pos == NPOS) ? 
-                    length - current_col :
-                    not_digit_pos;
-                current_token.data = string(line.c_str() + current_col, num_digits);
+                CTempString tempString(line.c_str() + current_col, length - current_col);
+                auto        not_digit_pos = tempString.find_first_not_of("0123456789");
+                int         num_digits    = (not_digit_pos == NPOS) ? length - current_col : not_digit_pos;
+                current_token.data        = string(line.c_str() + current_col, num_digits);
                 tokens.push_back(current_token);
                 current_col += num_digits;
                 continue;
             }
 
             bool skip_new_token = false;
-            switch (line[current_col]){
+            switch (line[current_col]) {
             case '\"':
                 current_token.choice = GBPARSE_INT_STRING;
-                if (auto closing_quote_pos = line.find('\"', current_col+1); 
-                        closing_quote_pos == string::npos) {
+                if (auto closing_quote_pos = line.find('\"', current_col + 1);
+                    closing_quote_pos == string::npos) {
                     xlex_error_func("unterminated string", line, current_col);
                     retval++;
-                }
-                else {
-                    size_t len = closing_quote_pos - current_col + 1;
-                    current_token.data = string(line.c_str(), + current_col);
+                } else {
+                    size_t len         = closing_quote_pos - current_col + 1;
+                    current_token.data = string(line.c_str(), +current_col);
                     current_col += len;
                 }
                 break;
@@ -529,12 +513,11 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *------*/
             case 'j':
                 current_token.choice = GBPARSE_INT_JOIN;
-                if (!NStr::StartsWith(line.c_str() + current_col, "join")){
+                if (! NStr::StartsWith(line.c_str() + current_col, "join")) {
                     xlex_error_func("\"join\" misspelled", line, current_col);
                     retval++;
                     current_col = advance_to('(', current_col, line);
-                }
-                else{
+                } else {
                     current_col += 3;
                 }
                 break;
@@ -543,19 +526,18 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *  ORDER and ONE-OF
                 *------*/
             case 'o':
-                if (!NStr::StartsWith(line.c_str() + current_col, "order")){
-                    if (!NStr::StartsWith(line.c_str() + current_col, "one-of")){
+                if (! NStr::StartsWith(line.c_str() + current_col, "order")) {
+                    if (! NStr::StartsWith(line.c_str() + current_col, "one-of")) {
                         xlex_error_func("\"order\" or \"one-of\" misspelled",
-                                line, current_col);
+                                        line,
+                                        current_col);
                         retval++;
                         current_col = advance_to('(', current_col, line);
-                    }
-                    else{
+                    } else {
                         current_token.choice = GBPARSE_INT_ONE_OF;
                         current_col += 5;
                     }
-                }
-                else{
+                } else {
                     current_token.choice = GBPARSE_INT_ORDER;
                     current_col += 4;
                 }
@@ -566,12 +548,11 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *------*/
             case 'r':
                 current_token.choice = GBPARSE_INT_REPLACE;
-                if (!NStr::StartsWith(line.c_str() + current_col, "replace")){
+                if (! NStr::StartsWith(line.c_str() + current_col, "replace")) {
                     xlex_error_func("\"replace\" misspelled", line, current_col);
                     retval++;
                     current_col = advance_to('(', current_col, line);
-                }
-                else{
+                } else {
                     current_col += 6;
                 }
                 break;
@@ -581,19 +562,17 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *------*/
             case 'g':
                 if (NStr::StartsWith(line.c_str() + current_col, "gap") &&
-                    (current_col < length-3) &&
-                    (line[current_col+3] == '(' ||
-                     line[current_col+3] == ' ' ||
-                     line[current_col+3] == '\t' ||
-                     line[current_col+3] == '\0'))
-                {
+                    (current_col < length - 3) &&
+                    (line[current_col + 3] == '(' ||
+                     line[current_col + 3] == ' ' ||
+                     line[current_col + 3] == '\t' ||
+                     line[current_col + 3] == '\0')) {
                     current_token.choice = GBPARSE_INT_GAP;
-                    current_token.data = "gap";
-                    if (NStr::StartsWith(line.c_str() + current_col+3, "(unk", NStr::eNocase))     
-                    {
+                    current_token.data   = "gap";
+                    if (NStr::StartsWith(line.c_str() + current_col + 3, "(unk", NStr::eNocase)) {
                         current_token.choice = GBPARSE_INT_UNK_GAP;
                         tokens.push_back(current_token);
-                        
+
                         current_token.choice = GBPARSE_INT_LEFT;
                         current_col += 4;
                     }
@@ -603,16 +582,16 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 if (NStr::StartsWith(line.c_str() + current_col, "gi|")) {
                     current_token.choice = GBPARSE_INT_ACCESSION;
                     current_col += 3;
-                    for (; isdigit(line[current_col]); current_col++);
+                    for (; isdigit(line[current_col]); current_col++)
+                        ;
                     break;
                 }
                 current_token.choice = GBPARSE_INT_GROUP;
-                if (!NStr::StartsWith(line.c_str() + current_col, "group")){
+                if (! NStr::StartsWith(line.c_str() + current_col, "group")) {
                     xlex_error_func("\"group\" misspelled", line, current_col);
                     retval++;
                     current_col = advance_to('(', current_col, line);
-                }
-                else{
+                } else {
                     current_col += 4;
                 }
                 break;
@@ -622,12 +601,11 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *------*/
             case 'c':
                 current_token.choice = GBPARSE_INT_COMPL;
-                if (!NStr::StartsWith(line.c_str() + current_col, "complement")){
+                if (! NStr::StartsWith(line.c_str() + current_col, "complement")) {
                     xlex_error_func("\"complement\" misspelled", line, current_col);
                     ++retval;
                     current_col = advance_to('(', current_col, line);
-                }
-                else{
+                } else {
                     current_col += 9;
                 }
                 break;
@@ -636,11 +614,10 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 * internal bases ignored
                 *---------*/
             case 'b':
-                if (!NStr::StartsWith(line.c_str() + current_col, "bases")){
+                if (! NStr::StartsWith(line.c_str() + current_col, "bases")) {
                     current_token.choice = GBPARSE_INT_ACCESSION;
                     retval += sGetAccession(current_token.data, current_col, line, accver);
-                }
-                else{
+                } else {
                     skip_new_token = true;
                     current_col += 4;
                 }
@@ -650,41 +627,36 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 *  ()^.,<>  (bases (sites
                 *------*/
             case '(':
-                if (NStr::StartsWith(line.c_str() + current_col, "(base")){
+                if (NStr::StartsWith(line.c_str() + current_col, "(base")) {
                     current_token.choice = GBPARSE_INT_JOIN;
                     current_col += 4;
-                    if (current_col < length-1 && line[current_col+1] == 's') {
+                    if (current_col < length - 1 && line[current_col + 1] == 's') {
                         current_col++;
                     }
                     tokens.push_back(current_token);
                     current_token.choice = GBPARSE_INT_LEFT;
-                }
-                else if (NStr::StartsWith(line.c_str() + current_col, "(sites")){
+                } else if (NStr::StartsWith(line.c_str() + current_col, "(sites")) {
                     current_col += 5;
-                    if (current_col < length-1)
-                    {
-                        if (line[current_col + 1] == ')'){
+                    if (current_col < length - 1) {
+                        if (line[current_col + 1] == ')') {
                             current_col++;
                             current_token.choice = GBPARSE_INT_SITES;
-                        }
-                        else{
+                        } else {
                             current_token.choice = GBPARSE_INT_SITES;
                             tokens.push_back(current_token);
                             current_token.choice = GBPARSE_INT_JOIN;
                             tokens.push_back(current_token);
                             current_token.choice = GBPARSE_INT_LEFT;
-                            if (current_col < length-1){
-                                if (line[current_col + 1] == ';'){
+                            if (current_col < length - 1) {
+                                if (line[current_col + 1] == ';') {
                                     current_col++;
-                                }
-                                else if (NStr::StartsWith(line.c_str() + current_col + 1, " ;")){
+                                } else if (NStr::StartsWith(line.c_str() + current_col + 1, " ;")) {
                                     current_col += 2;
                                 }
                             }
                         }
                     }
-                }
-                else{
+                } else {
                     current_token.choice = GBPARSE_INT_LEFT;
                 }
                 break;
@@ -701,10 +673,9 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = GBPARSE_INT_DOT_DOT;
                 break;
             case '.':
-                if (current_col==length-1 || line[current_col+1] != '.' ){
+                if (current_col == length - 1 || line[current_col + 1] != '.') {
                     current_token.choice = GBPARSE_INT_SINGLE_DOT;
-                }
-                else{
+                } else {
                     current_token.choice = GBPARSE_INT_DOT_DOT;
                     current_col++;
                 }
@@ -724,32 +695,29 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 break;
 
             case 't':
-                if (!NStr::StartsWith(line.c_str() + current_col, "to")){
+                if (! NStr::StartsWith(line.c_str() + current_col, "to")) {
                     current_token.choice = GBPARSE_INT_ACCESSION;
                     retval += sGetAccession(current_token.data, current_col, line, accver);
-                }
-                else{
+                } else {
                     current_token.choice = GBPARSE_INT_DOT_DOT;
                     current_col++;
                 }
                 break;
 
             case 's':
-                if (!NStr::StartsWith(line.c_str() + current_col, "site")){
+                if (! NStr::StartsWith(line.c_str() + current_col, "site")) {
                     current_token.choice = GBPARSE_INT_ACCESSION;
                     retval += sGetAccession(current_token.data, current_col, line, accver);
-                }
-                else{
+                } else {
                     current_token.choice = GBPARSE_INT_SITES;
                     current_col += 3;
-                    if (current_col < length-1 && line[current_col+1] == 's'){
+                    if (current_col < length - 1 && line[current_col + 1] == 's') {
                         current_col++;
                     }
-                    if (current_col < length-1){
-                        if (line[current_col + 1] == ';'){
+                    if (current_col < length - 1) {
+                        if (line[current_col + 1] == ';') {
                             current_col++;
-                        }
-                        else if (NStr::StartsWith(line.c_str() + current_col + 1, " ;")){
+                        } else if (NStr::StartsWith(line.c_str() + current_col + 1, " ;")) {
                             current_col += 2;
                         }
                     }
@@ -764,7 +732,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
 
             /*--move to past last "good" character---*/
             ++current_col;
-            if (!skip_new_token) {
+            if (! skip_new_token) {
                 tokens.push_back(current_token);
             }
         }
@@ -774,27 +742,20 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
 }
 
 
-
-
 /*----------------- xgbparse_better_be_done()-------------*/
-static void xgbparse_better_be_done(int& num_errsPt, TTokenIt current_token, 
-        const TTokens& tokens,
-        bool& keep_rawPt, int paren_count)
+static void xgbparse_better_be_done(int& num_errsPt, TTokenIt current_token, const TTokens& tokens, bool& keep_rawPt, int paren_count)
 {
-    if (current_token != end(tokens))
-    {
-        while (current_token->choice == GBPARSE_INT_RIGHT)
-        {
+    if (current_token != end(tokens)) {
+        while (current_token->choice == GBPARSE_INT_RIGHT) {
             paren_count--;
             ++current_token;
-            if (current_token == end(tokens))
-            {
-                if (paren_count)
-                {
+            if (current_token == end(tokens)) {
+                if (paren_count) {
                     char par_msg[40];
                     sprintf(par_msg, "mismatched parentheses (%d)", paren_count);
                     xgbparse_error(par_msg,
-                                   tokens, current_token);
+                                   tokens,
+                                   current_token);
                     keep_rawPt = true;
                     ++num_errsPt;
                 }
@@ -803,18 +764,18 @@ static void xgbparse_better_be_done(int& num_errsPt, TTokenIt current_token,
         }
     }
 
-    if (paren_count)
-    {
+    if (paren_count) {
         xgbparse_error("text after last legal right parenthesis",
-                       tokens, current_token);
+                       tokens,
+                       current_token);
         keep_rawPt = true;
         ++num_errsPt;
     }
 
-    if (current_token != end(tokens))
-    {
+    if (current_token != end(tokens)) {
         xgbparse_error("text after end",
-                       tokens, current_token);
+                       tokens,
+                       current_token);
         keep_rawPt = true;
         ++num_errsPt;
     }
@@ -837,8 +798,7 @@ static CRef<CSeq_loc> XGapToSeqLocEx(Int4 range, bool unknown)
         return ret;
 
     ret.Reset(new CSeq_loc);
-    if (range == 0)
-    {
+    if (range == 0) {
         ret->SetNull();
         return ret;
     }
@@ -855,9 +815,9 @@ static CRef<CSeq_loc> XGapToSeqLocEx(Int4 range, bool unknown)
 }
 
 /**********************************************************/
-static void xgbgap(TTokenIt& current_it,  TTokenConstIt end_it, CRef<CSeq_loc>& loc,  bool unknown)
+static void xgbgap(TTokenIt& current_it, TTokenConstIt end_it, CRef<CSeq_loc>& loc, bool unknown)
 {
-    auto it = next(current_it);   
+    auto it = next(current_it);
 
     if (distance(TTokenConstIt(it), end_it) < 2) {
         return;
@@ -874,14 +834,13 @@ static void xgbgap(TTokenIt& current_it,  TTokenConstIt end_it, CRef<CSeq_loc>& 
 
     if (it->choice == GBPARSE_INT_RIGHT) {
         loc->SetNull();
-    }
-    else {
+    } else {
         auto gapsize_it = it++;
         if (it == end_it || it->choice != GBPARSE_INT_RIGHT) {
             return;
         }
         auto pLoc = XGapToSeqLocEx(atoi(gapsize_it->data.c_str()), unknown);
-        if (!pLoc) {
+        if (! pLoc) {
             return;
         }
         loc = pLoc;
@@ -907,69 +866,53 @@ static void xgbpintpnt(CSeq_loc& loc)
 }
 
 
-
-static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, 
-        TTokenIt& currentPt, 
-        const TTokens& tokens,
-        int& num_errPt, int take_which)
+static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TTokenIt& currentPt, const TTokens& tokens, int& num_errPt, int take_which)
 {
-    int num_found = 0;
-    int fuzz_err = 0;
+    int  num_found       = 0;
+    int  fuzz_err        = 0;
     bool strange_sin_dot = false;
-    auto end_it = end(tokens);
+    auto end_it          = end(tokens);
 
-    if (currentPt->choice == GBPARSE_INT_CARET)
-    {
+    if (currentPt->choice == GBPARSE_INT_CARET) {
         xgbparse_error("duplicate carets", tokens, currentPt);
         keep_rawPt = true;
         ++num_errPt;
         ++currentPt;
         fuzz_err = 1;
-    }
-    else if (currentPt->choice == GBPARSE_INT_GT ||
-             currentPt->choice == GBPARSE_INT_LT)
-    {
+    } else if (currentPt->choice == GBPARSE_INT_GT ||
+               currentPt->choice == GBPARSE_INT_LT) {
         if (currentPt->choice == GBPARSE_INT_GT)
             fuzz.SetLim(CInt_fuzz::eLim_gt);
         else
             fuzz.SetLim(CInt_fuzz::eLim_lt);
 
         ++currentPt;
-    }
-    else if (currentPt->choice == GBPARSE_INT_LEFT)
-    {
+    } else if (currentPt->choice == GBPARSE_INT_LEFT) {
         strange_sin_dot = true;
         ++currentPt;
         fuzz.SetRange();
 
-        if (currentPt->choice == GBPARSE_INT_NUMBER)
-        {
+        if (currentPt->choice == GBPARSE_INT_NUMBER) {
             fuzz.SetRange().SetMin(atoi(currentPt->data.c_str()) - 1);
-            if (take_which == TAKE_FIRST)
-            {
+            if (take_which == TAKE_FIRST) {
                 numPt = fuzz.GetRange().GetMin();
             }
             ++currentPt;
             num_found = 1;
-        }
-        else
+        } else
             fuzz_err = 1;
 
         if (currentPt->choice != GBPARSE_INT_SINGLE_DOT)
             fuzz_err = 1;
-        else
-        {
+        else {
             ++currentPt;
-            if (currentPt->choice == GBPARSE_INT_NUMBER)
-            {
+            if (currentPt->choice == GBPARSE_INT_NUMBER) {
                 fuzz.SetRange().SetMax(atoi(currentPt->data.c_str()) - 1);
-                if (take_which == TAKE_SECOND)
-                {
+                if (take_which == TAKE_SECOND) {
                     numPt = fuzz.GetRange().GetMax();
                 }
                 ++currentPt;
-            }
-            else
+            } else
                 fuzz_err = 1;
 
             if (currentPt->choice == GBPARSE_INT_RIGHT)
@@ -978,28 +921,22 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt,
                 fuzz_err = 1;
         }
 
-    }
-    else if (currentPt->choice != GBPARSE_INT_NUMBER)
-    {
+    } else if (currentPt->choice != GBPARSE_INT_NUMBER) {
         /* this prevents endless cycling, unconditionally */
-        if (currentPt->choice != GBPARSE_INT_ONE_OF
-            && currentPt->choice != GBPARSE_INT_ONE_OF_NUM)
+        if (currentPt->choice != GBPARSE_INT_ONE_OF && currentPt->choice != GBPARSE_INT_ONE_OF_NUM)
             ++currentPt;
         num_found = -1;
     }
 
-    if (!strange_sin_dot)
-    {
-        if (currentPt == end_it)
-        {
+    if (! strange_sin_dot) {
+        if (currentPt == end_it) {
             xgbparse_error("unexpected end of interval tokens",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             keep_rawPt = true;
             ++num_errPt;
-        }
-        else{
-            if (currentPt->choice == GBPARSE_INT_NUMBER)
-            {
+        } else {
+            if (currentPt->choice == GBPARSE_INT_NUMBER) {
                 numPt = atoi(currentPt->data.c_str()) - 1;
                 ++currentPt;
                 num_found = 1;
@@ -1007,51 +944,39 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt,
         }
     }
 
-    if (fuzz_err)
-    {
+    if (fuzz_err) {
         xgbparse_error("Incorrect uncertainty", tokens, currentPt);
         keep_rawPt = true;
         ++num_errPt;
     }
 
-    if (num_found != 1)
-    {
+    if (num_found != 1) {
         keep_rawPt = true;
         /****************
         *
         *  10..one-of(13,15) type syntax here
         *
         ***************/
-        if (currentPt->choice == GBPARSE_INT_ONE_OF
-            || currentPt->choice == GBPARSE_INT_ONE_OF_NUM)
-        {
-            bool one_of_ok = true;
+        if (currentPt->choice == GBPARSE_INT_ONE_OF || currentPt->choice == GBPARSE_INT_ONE_OF_NUM) {
+            bool one_of_ok     = true;
             bool at_end_one_of = false;
 
             ++currentPt;
-            if (currentPt->choice != GBPARSE_INT_LEFT)
-            {
+            if (currentPt->choice != GBPARSE_INT_LEFT) {
                 one_of_ok = false;
-            }
-            else
-            {
+            } else {
                 ++currentPt;
             }
 
-            if (one_of_ok && currentPt->choice == GBPARSE_INT_NUMBER)
-            {
+            if (one_of_ok && currentPt->choice == GBPARSE_INT_NUMBER) {
                 numPt = atoi(currentPt->data.c_str()) - 1;
                 ++currentPt;
-            }
-            else
-            {
+            } else {
                 one_of_ok = false;
             }
 
-            while (one_of_ok && !at_end_one_of &&  currentPt != end_it)
-            {
-                switch (currentPt->choice)
-                {
+            while (one_of_ok && ! at_end_one_of && currentPt != end_it) {
+                switch (currentPt->choice) {
                 default:
                     one_of_ok = false;
                     break;
@@ -1066,160 +991,145 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt,
                 }
             }
 
-            if (!one_of_ok && !at_end_one_of)
-            {
-                while (!at_end_one_of && currentPt != end_it)
-                {
+            if (! one_of_ok && ! at_end_one_of) {
+                while (! at_end_one_of && currentPt != end_it) {
                     if (currentPt->choice == GBPARSE_INT_RIGHT)
                         at_end_one_of = true;
                     ++currentPt;
                 }
             }
 
-            if (!one_of_ok){
+            if (! one_of_ok) {
 
                 xgbparse_error("bad one-of() syntax as number",
-                               tokens, currentPt);
+                               tokens,
+                               currentPt);
                 ++num_errPt;
             }
-        }
-        else
-        {
+        } else {
             xgbparse_error("Number not found when expected",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             ++num_errPt;
         }
     }
 }
 
 
-
-
 /*--------------- xgbint_ver ()--------------------*/
 /* sometimes returns points */
-static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
-        TTokenIt& currentPt,
-        const TTokens& tokens,
-        int& num_errPt, const TSeqIdList& seq_ids,
-        bool accver)
+static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
+                                 TTokenIt&         currentPt,
+                                 const TTokens&    tokens,
+                                 int&              num_errPt,
+                                 const TSeqIdList& seq_ids,
+                                 bool              accver)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
 
-    bool took_choice = false;
+    bool  took_choice = false;
     char* p;
 
-    CRef<CSeq_id> new_id;
+    CRef<CSeq_id>   new_id;
     CRef<CInt_fuzz> new_fuzz;
-    auto end_it = end(tokens);
+    auto            end_it = end(tokens);
 
-    if (currentPt->choice == GBPARSE_INT_ACCESSION)
-    {
+    if (currentPt->choice == GBPARSE_INT_ACCESSION) {
         CRef<CTextseq_id> text_id(new CTextseq_id);
 
-        if (accver == false)
-        {
+        if (accver == false) {
             text_id->SetAccession(currentPt->data);
-        }
-        else
-        {
+        } else {
             vector<string> acc_ver;
             NStr::Split(currentPt->data, ".", acc_ver);
             if (acc_ver.size() == 1) {
                 text_id->SetAccession(currentPt->data);
                 xgbparse_error("Missing accession's version",
-                               tokens, currentPt);
-            }
-            else {
+                               tokens,
+                               currentPt);
+            } else {
                 text_id->SetAccession(acc_ver[0]);
                 text_id->SetVersion(atoi(acc_ver[1].c_str()));
             }
         }
 
         new_id.Reset(new CSeq_id);
-        if (!seq_ids.empty())
-        {
+        if (! seq_ids.empty()) {
             const CSeq_id& first_id = *(*seq_ids.begin());
-            if (first_id.IsEmbl())
-            {
+            if (first_id.IsEmbl()) {
                 new_id->SetEmbl(*text_id);
                 took_choice = true;
-            }
-            else if (first_id.IsDdbj())
-            {
+            } else if (first_id.IsDdbj()) {
                 new_id->SetDdbj(*text_id);
                 took_choice = true;
             }
         }
 
-        if (!took_choice) // Genbank
+        if (! took_choice) // Genbank
             new_id->SetGenbank(*text_id);
 
         ++currentPt;
-        if (currentPt == end_it)
-        {
+        if (currentPt == end_it) {
             xgbparse_error("Nothing after accession",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             new_id.Reset();
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
         }
-    }
-    else if(!seq_ids.empty())
-    {
+    } else if (! seq_ids.empty()) {
         new_id.Reset(new ncbi::CSeq_id);
         new_id->Assign(*(*seq_ids.begin()));
     }
 
-    if (currentPt->choice == GBPARSE_INT_LT)
-    {
+    if (currentPt->choice == GBPARSE_INT_LT) {
         new_fuzz.Reset(new CInt_fuzz);
         new_fuzz->SetLim(CInt_fuzz::eLim_lt);
 
         ++currentPt;
-        if (currentPt == end_it)
-        {
+        if (currentPt == end_it) {
             xgbparse_error("Nothing after \'<\'",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
         }
     }
 
-    if (!num_errPt)
-    {
-        switch (currentPt->choice)
-        {
-        case  GBPARSE_INT_ACCESSION:
-            if (new_id.NotEmpty())
-            {
+    if (! num_errPt) {
+        switch (currentPt->choice) {
+        case GBPARSE_INT_ACCESSION:
+            if (new_id.NotEmpty()) {
                 xgbparse_error("duplicate accessions",
-                                tokens, currentPt);
+                               tokens,
+                               currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
                 goto FATAL;
             }
             break;
-        case  GBPARSE_INT_CARET:
+        case GBPARSE_INT_CARET:
             xgbparse_error("caret (^) before number",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
-        case  GBPARSE_INT_LT:
-            if (new_id.NotEmpty())
-            {
+        case GBPARSE_INT_LT:
+            if (new_id.NotEmpty()) {
                 xgbparse_error("duplicate \'<\'",
-                               tokens, currentPt);
+                               tokens,
+                               currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
                 goto FATAL;
             }
             break;
-        case  GBPARSE_INT_GT:
-        case  GBPARSE_INT_NUMBER:
-        case  GBPARSE_INT_LEFT:
+        case GBPARSE_INT_GT:
+        case GBPARSE_INT_NUMBER:
+        case GBPARSE_INT_LEFT:
 
         case GBPARSE_INT_ONE_OF_NUM:
             if (new_fuzz.NotEmpty())
@@ -1227,22 +1137,17 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
             if (new_id.NotEmpty())
                 ret->SetInt().SetId(*new_id);
 
-            xgbload_number(ret->SetInt().SetFrom(), ret->SetInt().SetFuzz_from(),
-                           keep_rawPt, currentPt, tokens,
-                           num_errPt, TAKE_FIRST);
+            xgbload_number(ret->SetInt().SetFrom(), ret->SetInt().SetFuzz_from(), keep_rawPt, currentPt, tokens, num_errPt, TAKE_FIRST);
 
             if (ret->GetInt().GetFuzz_from().Which() == CInt_fuzz::e_not_set)
                 ret->SetInt().ResetFuzz_from();
 
             xgbcheck_range(ret->GetInt().GetFrom(), *new_id, keep_rawPt, num_errPt, tokens, currentPt);
 
-            if (!num_errPt)
-            {
-                if (currentPt != end_it)
-                {
+            if (! num_errPt) {
+                if (currentPt != end_it) {
                     bool in_caret = false;
-                    switch (currentPt->choice)
-                    {
+                    switch (currentPt->choice) {
                     default:
                     case GBPARSE_INT_JOIN:
                     case GBPARSE_INT_COMPL:
@@ -1251,26 +1156,31 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                     case GBPARSE_INT_GROUP:
                     case GBPARSE_INT_ACCESSION:
                         xgbparse_error("problem with 2nd number",
-                                       tokens, currentPt);
+                                       tokens,
+                                       currentPt);
                         keep_rawPt = true;
                         ++num_errPt;
                         goto FATAL;
-                    case GBPARSE_INT_COMMA: case GBPARSE_INT_RIGHT: /* valid thing to leave on*/
+                    case GBPARSE_INT_COMMA:
+                    case GBPARSE_INT_RIGHT: /* valid thing to leave on*/
                         /*--------------but have a point, not an interval----*/
                         xgbpintpnt(*ret);
                         break;
 
-                    case GBPARSE_INT_GT: case GBPARSE_INT_LT:
+                    case GBPARSE_INT_GT:
+                    case GBPARSE_INT_LT:
                         xgbparse_error("Missing \'..\'",
-                                       tokens, currentPt);;
+                                       tokens,
+                                       currentPt);
+                        ;
                         keep_rawPt = true;
                         ++num_errPt;
                         goto FATAL;
                     case GBPARSE_INT_CARET:
-                        if (ret->GetInt().IsSetFuzz_from())
-                        {
+                        if (ret->GetInt().IsSetFuzz_from()) {
                             xgbparse_error("\'<\' then \'^\'",
-                                           tokens, currentPt);
+                                           tokens,
+                                           currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
@@ -1283,10 +1193,10 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
 
                     case GBPARSE_INT_DOT_DOT:
                         ++currentPt;
-                        if (currentPt == end_it)
-                        {
+                        if (currentPt == end_it) {
                             xgbparse_error("unexpected end of usable tokens",
-                                           tokens, currentPt);
+                                           tokens,
+                                           currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
@@ -1295,23 +1205,20 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                     case GBPARSE_INT_NUMBER:
                     case GBPARSE_INT_LEFT:
 
-                    case GBPARSE_INT_ONE_OF_NUM:  /* unlikely, but ok */
+                    case GBPARSE_INT_ONE_OF_NUM: /* unlikely, but ok */
 
-                        if (currentPt->choice == GBPARSE_INT_RIGHT)
-                        {
-                            if (ret->GetInt().IsSetFuzz_from())
-                            {
+                        if (currentPt->choice == GBPARSE_INT_RIGHT) {
+                            if (ret->GetInt().IsSetFuzz_from()) {
                                 xgbparse_error("\'^\' then \'>\'",
-                                               tokens, currentPt);
+                                               tokens,
+                                               currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
                                 goto FATAL;
                             }
                         }
 
-                        xgbload_number(ret->SetInt().SetTo(), ret->SetInt().SetFuzz_to(),
-                                       keep_rawPt, currentPt, tokens,
-                                       num_errPt, TAKE_SECOND);
+                        xgbload_number(ret->SetInt().SetTo(), ret->SetInt().SetFuzz_to(), keep_rawPt, currentPt, tokens, num_errPt, TAKE_SECOND);
 
                         if (ret->GetInt().GetFuzz_to().Which() == CInt_fuzz::e_not_set)
                             ret->SetInt().ResetFuzz_to();
@@ -1322,52 +1229,42 @@ static CRef<CSeq_loc> xgbint_ver(bool& keep_rawPt,
                         *  The caret location implies a place (point) between two location.
                         *  This is not exactly captured by the ASN.1, but pretty close
                         *-------*/
-                        if (in_caret)
-                        {
+                        if (in_caret) {
                             TSeqPos to = ret->GetInt().GetTo();
 
                             xgbpintpnt(*ret);
                             CSeq_point& point = ret->SetPnt();
-                            if (point.GetPoint() + 1 == to)
-                            {
+                            if (point.GetPoint() + 1 == to) {
                                 point.SetPoint(to); /* was essentailly correct */
-                            }
-                            else
-                            {
+                            } else {
                                 point.SetFuzz().SetRange().SetMax(to);
                                 point.SetFuzz().SetRange().SetMin(point.GetPoint());
                             }
                         }
 
-                        if (ret->IsInt())
-                        {
+                        if (ret->IsInt()) {
                             if (ret->GetInt().GetFrom() == ret->GetInt().GetTo() &&
-                                !ret->GetInt().IsSetFuzz_from() &&
-                                !ret->GetInt().IsSetFuzz_to())
-                            {
+                                ! ret->GetInt().IsSetFuzz_from() &&
+                                ! ret->GetInt().IsSetFuzz_to()) {
                                 /*-------if interval really a point, make is so ----*/
                                 xgbpintpnt(*ret);
                             }
                         }
                     } /* end switch */
-                }
-                else
-                {
+                } else {
                     xgbpintpnt(*ret);
                 }
-            }
-            else
-            {
+            } else {
                 goto FATAL;
             }
             break;
         default:
             xgbparse_error("No number when expected",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
-
         }
     }
 
@@ -1381,84 +1278,77 @@ FATAL:
 }
 
 
-
-static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
-                                                      bool& sitesPt, TTokenIt& currentPt,
-                                                      const TTokens& tokens,
-                                                      int& num_errPt,
-                                                      const TSeqIdList& seq_ids, bool accver)
+static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, bool& sitesPt, TTokenIt& currentPt, const TTokens& tokens, int& num_errPt, const TSeqIdList& seq_ids, bool accver)
 {
     CRef<CSeq_loc> retval;
 
-    bool add_nulls = false;
-    auto current_token = currentPt;
+    bool add_nulls      = false;
+    auto current_token  = currentPt;
     bool did_complement = false;
     bool go_again;
     auto end_it = end(tokens);
 
-    do
-    {
+    do {
         go_again = false;
-        switch (current_token->choice)
-        {
-        case  GBPARSE_INT_COMPL:
+        switch (current_token->choice) {
+        case GBPARSE_INT_COMPL:
             ++currentPt;
-            if (currentPt == end_it){
+            if (currentPt == end_it) {
                 xgbparse_error("unexpected end of usable tokens",
-                               tokens, currentPt);
+                               tokens,
+                               currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
                 goto FATAL;
             }
-            if (currentPt->choice != GBPARSE_INT_LEFT){
+            if (currentPt->choice != GBPARSE_INT_LEFT) {
                 xgbparse_error("Missing \'(\'", /* paran match  ) */
-                               tokens, currentPt);
+                               tokens,
+                               currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
                 goto FATAL;
-            }
-            else{
-                ++parenPt; 
+            } else {
+                ++parenPt;
                 ++currentPt;
-                if (currentPt == end_it){
+                if (currentPt == end_it) {
                     xgbparse_error("illegal null contents",
-                                    tokens, currentPt);
+                                   tokens,
+                                   currentPt);
                     keep_rawPt = true;
                     ++num_errPt;
                     goto FATAL;
-                }
-                else{
-                    if (currentPt->choice == GBPARSE_INT_RIGHT){ /* paran match ( */
+                } else {
+                    if (currentPt->choice == GBPARSE_INT_RIGHT) { /* paran match ( */
                         xgbparse_error("Premature \')\'",
-                                       tokens, currentPt);
+                                       tokens,
+                                       currentPt);
                         keep_rawPt = true;
                         ++num_errPt;
                         goto FATAL;
-                    }
-                    else{
-                        retval = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt,
-                                            tokens, num_errPt, seq_ids, accver);
+                    } else {
+                        retval = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, tokens, num_errPt, seq_ids, accver);
 
                         if (retval.NotEmpty())
                             retval = sequence::SeqLocRevCmpl(*retval, nullptr);
 
                         did_complement = true;
-                        if (currentPt != end_it){
-                            if (currentPt->choice != GBPARSE_INT_RIGHT){
+                        if (currentPt != end_it) {
+                            if (currentPt->choice != GBPARSE_INT_RIGHT) {
                                 xgbparse_error("Missing \')\'",
-                                               tokens, currentPt);
+                                               tokens,
+                                               currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
                                 goto FATAL;
-                            }
-                            else{
+                            } else {
                                 --parenPt;
                                 ++currentPt;
                             }
-                        }
-                        else{
+                        } else {
                             xgbparse_error("Missing \')\'",
-                                           tokens, currentPt);
+                                           tokens,
+                                           currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
@@ -1472,17 +1362,17 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
             retval.Reset(new CSeq_loc);
             retval->SetMix();
             break;
-        case  GBPARSE_INT_ORDER:
+        case GBPARSE_INT_ORDER:
             retval.Reset(new CSeq_loc);
             retval->SetMix();
             add_nulls = true;
             break;
-        case  GBPARSE_INT_GROUP:
+        case GBPARSE_INT_GROUP:
             retval.Reset(new CSeq_loc);
             retval->SetMix();
             keep_rawPt = true;
             break;
-        case  GBPARSE_INT_ONE_OF:
+        case GBPARSE_INT_ONE_OF:
             retval.Reset(new CSeq_loc);
             retval->SetEquiv();
             break;
@@ -1490,19 +1380,21 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
             /* ERROR */
         case GBPARSE_INT_STRING:
             xgbparse_error("string in loc",
-                           tokens, current_token);
+                           tokens,
+                           current_token);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
             /*--- no break on purpose---*/
         default:
-        case  GBPARSE_INT_UNKNOWN:
-        case  GBPARSE_INT_RIGHT:
-        case  GBPARSE_INT_DOT_DOT:
-        case  GBPARSE_INT_COMMA:
-        case  GBPARSE_INT_SINGLE_DOT:
+        case GBPARSE_INT_UNKNOWN:
+        case GBPARSE_INT_RIGHT:
+        case GBPARSE_INT_DOT_DOT:
+        case GBPARSE_INT_COMMA:
+        case GBPARSE_INT_SINGLE_DOT:
             xgbparse_error("illegal initial loc token",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
@@ -1515,89 +1407,76 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
             xgbgap(currentPt, end_it, retval, true);
             break;
 
-        case  GBPARSE_INT_ACCESSION:
-        case  GBPARSE_INT_CARET:
-        case  GBPARSE_INT_GT:
-        case  GBPARSE_INT_LT:
-        case  GBPARSE_INT_NUMBER:
-        case  GBPARSE_INT_LEFT:
+        case GBPARSE_INT_ACCESSION:
+        case GBPARSE_INT_CARET:
+        case GBPARSE_INT_GT:
+        case GBPARSE_INT_LT:
+        case GBPARSE_INT_NUMBER:
+        case GBPARSE_INT_LEFT:
         case GBPARSE_INT_ONE_OF_NUM:
             retval = xgbint_ver(keep_rawPt, currentPt, tokens, num_errPt, seq_ids, accver);
             break;
 
-        case  GBPARSE_INT_REPLACE:
+        case GBPARSE_INT_REPLACE:
             /*-------illegal at this level --*/
             xgbparse_error("illegal replace",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             keep_rawPt = true;
             ++num_errPt;
             goto FATAL;
         case GBPARSE_INT_SITES:
-            sitesPt = true;
+            sitesPt  = true;
             go_again = true;
             ++currentPt;
             break;
         }
     } while (go_again && currentPt != end_it);
 
-    if (!num_errPt)
-    {
-        if (retval.NotEmpty() && !retval->IsNull())
-        {
-            if (!retval->IsInt() && !retval->IsPnt()
-                && !did_complement)
-            {
+    if (! num_errPt) {
+        if (retval.NotEmpty() && ! retval->IsNull()) {
+            if (! retval->IsInt() && ! retval->IsPnt() && ! did_complement) {
                 /*--------
                 * ONLY THE CHOICE has been set. the "join", etc. only has been noted
                 *----*/
                 ++currentPt;
-                if (currentPt == end_it)
-                {
+                if (currentPt == end_it) {
                     xgbparse_error("unexpected end of interval tokens",
-                                   tokens, currentPt);
+                                   tokens,
+                                   currentPt);
                     keep_rawPt = true;
                     ++num_errPt;
                     goto FATAL;
-                }
-                else
-                {
-                    if (currentPt->choice != GBPARSE_INT_LEFT)
-                    {
+                } else {
+                    if (currentPt->choice != GBPARSE_INT_LEFT) {
                         xgbparse_error("Missing \'(\'",
-                                        tokens, currentPt); /* paran match  ) */
+                                       tokens,
+                                       currentPt); /* paran match  ) */
                         keep_rawPt = true;
                         ++num_errPt;
                         goto FATAL;
-                    }
-                    else{
+                    } else {
                         ++parenPt;
                         ++currentPt;
-                        if (currentPt == end_it)
-                        {
+                        if (currentPt == end_it) {
                             xgbparse_error("illegal null contents",
-                                           tokens, currentPt);
+                                           tokens,
+                                           currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
-                        }
-                        else
-                        {
-                            if (currentPt->choice == GBPARSE_INT_RIGHT)
-                            { /* paran match ( */
+                        } else {
+                            if (currentPt->choice == GBPARSE_INT_RIGHT) { /* paran match ( */
                                 xgbparse_error("Premature \')\'",
-                                               tokens, currentPt);
+                                               tokens,
+                                               currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
                                 goto FATAL;
-                            }
-                            else
-                            {
-                                while (!num_errPt && currentPt != end_it)
-                                {
-                                    if (currentPt->choice == GBPARSE_INT_RIGHT)
-                                    {
-                                        while (currentPt->choice == GBPARSE_INT_RIGHT)
-                                        {
+                            } else {
+                                while (! num_errPt && currentPt != end_it) {
+                                    if (currentPt->choice == GBPARSE_INT_RIGHT) {
+                                        while (currentPt->choice == GBPARSE_INT_RIGHT) {
                                             parenPt--;
                                             ++currentPt;
                                             if (currentPt == end_it)
@@ -1609,12 +1488,9 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                                     if (currentPt == end_it)
                                         break;
 
-                                    CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt,
-                                                                                              currentPt, tokens, num_errPt,
-                                                                                              seq_ids, accver);
+                                    CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, tokens, num_errPt, seq_ids, accver);
 
-                                    if (next_loc.NotEmpty())
-                                    {
+                                    if (next_loc.NotEmpty()) {
                                         if (retval->IsMix())
                                             retval->SetMix().AddSeqLoc(*next_loc);
                                         else // equiv
@@ -1624,11 +1500,9 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                                     if (currentPt == end_it || currentPt->choice == GBPARSE_INT_RIGHT)
                                         break;
 
-                                    if (currentPt->choice == GBPARSE_INT_COMMA)
-                                    {
+                                    if (currentPt->choice == GBPARSE_INT_COMMA) {
                                         ++currentPt;
-                                        if (add_nulls)
-                                        {
+                                        if (add_nulls) {
                                             CRef<CSeq_loc> null_loc(new CSeq_loc);
                                             null_loc->SetNull();
 
@@ -1637,10 +1511,10 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                                             else // equiv
                                                 retval->SetEquiv().Add(*null_loc);
                                         }
-                                    }
-                                    else{
+                                    } else {
                                         xgbparse_error("Illegal token after interval",
-                                                       tokens, currentPt);
+                                                       tokens,
+                                                       currentPt);
                                         keep_rawPt = true;
                                         ++num_errPt;
                                         goto FATAL;
@@ -1648,26 +1522,22 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
                                 }
                             }
                         }
-                        if (currentPt == end_it)
-                        {
+                        if (currentPt == end_it) {
                             xgbparse_error("unexpected end of usable tokens",
-                                           tokens, currentPt);
+                                           tokens,
+                                           currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
                             goto FATAL;
-                        }
-                        else
-                        {
-                            if (currentPt->choice != GBPARSE_INT_RIGHT)
-                            {
+                        } else {
+                            if (currentPt->choice != GBPARSE_INT_RIGHT) {
                                 xgbparse_error("Missing \')\'" /* paran match  ) */,
-                                                tokens, currentPt);
+                                               tokens,
+                                               currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
                                 goto FATAL;
-                            }
-                            else
-                            {
+                            } else {
                                 parenPt--;
                                 ++currentPt;
                             }
@@ -1679,10 +1549,8 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt,
     }
 
 FATAL:
-    if (num_errPt)
-    {
-        if (retval.NotEmpty())
-        {
+    if (num_errPt) {
+        if (retval.NotEmpty()) {
             retval->Reset();
             retval->SetWhole().Assign(*(*seq_ids.begin()));
         }
@@ -1692,47 +1560,37 @@ FATAL:
 }
 
 
-
-
-static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt,
-        bool& sitesPt, TTokenIt& currentPt,
-        const TTokens& tokens,
-        int& num_errPt,
-        const TSeqIdList& seq_ids, bool accver)
+static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt, bool& sitesPt, TTokenIt& currentPt, const TTokens& tokens, int& num_errPt, const TSeqIdList& seq_ids, bool accver)
 {
     CRef<CSeq_loc> ret;
 
     keep_rawPt = true;
     ++currentPt;
 
-    if (currentPt->choice == GBPARSE_INT_LEFT)
-    {
+    if (currentPt->choice == GBPARSE_INT_LEFT) {
         ++currentPt;
-        ret = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, tokens,
-                         num_errPt, seq_ids, accver);
+        ret = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, tokens, num_errPt, seq_ids, accver);
 
-        if (currentPt == end(tokens))
-        {
+        if (currentPt == end(tokens)) {
             xgbparse_error("unexpected end of interval tokens",
-                           tokens, currentPt);
+                           tokens,
+                           currentPt);
             keep_rawPt = true;
             ++num_errPt;
-        }
-        else
-        {
+        } else {
 
-            if (currentPt->choice != GBPARSE_INT_COMMA)
-            {
+            if (currentPt->choice != GBPARSE_INT_COMMA) {
                 xgbparse_error("Missing comma after first location in replace",
-                               tokens, currentPt);
+                               tokens,
+                               currentPt);
                 ++num_errPt;
             }
         }
-    }
-    else
-    {
+    } else {
         xgbparse_error("Missing \'(\'" /* paran match  ) */
-                       , tokens, currentPt);
+                       ,
+                       tokens,
+                       currentPt);
         ++num_errPt;
     }
 
@@ -1740,51 +1598,43 @@ static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt,
 }
 
 
-
-
 /*---------- xgbparseint_ver()-----*/
 
-CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool& sitesPt, int& num_errsPt,
-                                                    const TSeqIdList& seq_ids, bool accver)
+CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool& sitesPt, int& num_errsPt, const TSeqIdList& seq_ids, bool accver)
 {
 
 
     keep_rawPt = false;
-    sitesPt = false;
+    sitesPt    = false;
 
 
     TTokens tokens;
     num_errsPt = xgbparselex_ver(raw_intervals, tokens, accver);
 
-    if (tokens.empty())
-    {
+    if (tokens.empty()) {
         num_errsPt = 1;
         return CRef<CSeq_loc>();
     }
 
     CRef<CSeq_loc> ret;
-    if ( !num_errsPt ) {
+    if (! num_errsPt) {
         xfind_one_of_num(tokens);
-        auto head_token = tokens.begin();
+        auto head_token    = tokens.begin();
         auto current_token = head_token;
-        auto end_it = tokens.end();
-    
-        int paren_count = 0;
+        auto end_it        = tokens.end();
+
+        int  paren_count = 0;
         bool go_again;
-        do
-        {
+        do {
             go_again = false;
-            if (current_token != end_it)
-            {
-                switch (current_token->choice)
-                {
+            if (current_token != end_it) {
+                switch (current_token->choice) {
                 case GBPARSE_INT_JOIN:
                 case GBPARSE_INT_ORDER:
                 case GBPARSE_INT_GROUP:
                 case GBPARSE_INT_ONE_OF:
                 case GBPARSE_INT_COMPL:
-                    ret = xgbloc_ver(keep_rawPt, paren_count, sitesPt, current_token,
-                                     tokens, num_errsPt, seq_ids, accver);
+                    ret = xgbloc_ver(keep_rawPt, paren_count, sitesPt, current_token, tokens, num_errsPt, seq_ids, accver);
                     /* need to check that out of tokens here */
                     xgbparse_better_be_done(num_errsPt, current_token, tokens, keep_rawPt, paren_count);
                     break;
@@ -1794,25 +1644,27 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
                     keep_rawPt = true;
                     ++num_errsPt;
                     /*  no break on purpose */
-                case  GBPARSE_INT_UNKNOWN:
+                case GBPARSE_INT_UNKNOWN:
                 default:
-                case  GBPARSE_INT_RIGHT:
-                case  GBPARSE_INT_DOT_DOT:
-                case  GBPARSE_INT_COMMA:
-                case  GBPARSE_INT_SINGLE_DOT:
+                case GBPARSE_INT_RIGHT:
+                case GBPARSE_INT_DOT_DOT:
+                case GBPARSE_INT_COMMA:
+                case GBPARSE_INT_SINGLE_DOT:
                     xgbparse_error("illegal initial token", tokens, current_token);
                     keep_rawPt = true;
                     ++num_errsPt;
                     ++current_token;
                     break;
 
-                case  GBPARSE_INT_ACCESSION:
+                case GBPARSE_INT_ACCESSION:
                     /*--- no warn, but strange ---*/
                     /*-- no break on purpose ---*/
 
-                case  GBPARSE_INT_CARET: case  GBPARSE_INT_GT:
-                case  GBPARSE_INT_LT: case  GBPARSE_INT_NUMBER:
-                case  GBPARSE_INT_LEFT:
+                case GBPARSE_INT_CARET:
+                case GBPARSE_INT_GT:
+                case GBPARSE_INT_LT:
+                case GBPARSE_INT_NUMBER:
+                case GBPARSE_INT_LEFT:
 
                 case GBPARSE_INT_ONE_OF_NUM:
 
@@ -1822,26 +1674,23 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
                     xgbparse_better_be_done(num_errsPt, current_token, tokens, keep_rawPt, paren_count);
                     break;
 
-                case  GBPARSE_INT_REPLACE:
-                    ret = xgbreplace_ver(keep_rawPt, paren_count, sitesPt, current_token,
-                                         tokens, num_errsPt, seq_ids, accver);
+                case GBPARSE_INT_REPLACE:
+                    ret        = xgbreplace_ver(keep_rawPt, paren_count, sitesPt, current_token, tokens, num_errsPt, seq_ids, accver);
                     keep_rawPt = true;
                     /*---all errors handled within this function ---*/
                     break;
                 case GBPARSE_INT_SITES:
-                    sitesPt = true;
+                    sitesPt  = true;
                     go_again = true;
                     ++current_token;
                     break;
                 }
             }
         } while (go_again && current_token != end_it);
-    }
-    else
-    {
+    } else {
         keep_rawPt = true;
     }
-    
+
 
     if (num_errsPt) {
         return CRef<CSeq_loc>();
