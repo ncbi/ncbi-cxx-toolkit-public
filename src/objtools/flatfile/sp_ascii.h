@@ -35,19 +35,19 @@
 #ifndef _SPASCII_
 #define _SPASCII_
 
-#define ParFlatSPSites       1
-#define ParFlatSPBonds       2
-#define ParFlatSPRegions     3
-#define ParFlatSPImports     4
-#define ParFlatSPInitMet     5
-#define ParFlatSPNonTer      6
-#define ParFlatSPNonCons     7
+#define ParFlatSPSites   1
+#define ParFlatSPBonds   2
+#define ParFlatSPRegions 3
+#define ParFlatSPImports 4
+#define ParFlatSPInitMet 5
+#define ParFlatSPNonTer  6
+#define ParFlatSPNonCons 7
 
 typedef struct sprot_feat_type {
-    const char *inkey;                  /* input key string */
-    Uint1      type;                    /* SITES, REGIONS, BONDS, IMPORTS */
-    Int4       keyint;                  /* output keyname for SITES, BONDS */
-    const char *keystring;              /* output keyname for REGIONS, IMPORTS,
+    const char* inkey;     /* input key string */
+    Uint1       type;      /* SITES, REGIONS, BONDS, IMPORTS */
+    Int4        keyint;    /* output keyname for SITES, BONDS */
+    const char* keystring; /* output keyname for REGIONS, IMPORTS,
                                            or description string from SITES */
 } SPFeatType, *SPFeatTypePtr;
 
