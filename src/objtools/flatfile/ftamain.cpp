@@ -78,14 +78,14 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-extern bool    XMLAscii(ParserPtr pp);
-extern void    fta_init_gbdataloader();
+extern bool XMLAscii(ParserPtr pp);
+extern void fta_init_gbdataloader();
 
 
 typedef struct ff_entries {
-    char*                offset;
-    char*                acc;
-    Int2                   vernum;
+    char*              offset;
+    char*              acc;
+    Int2               vernum;
     struct ff_entries* next;
 } FFEntries, *FFEntriesPtr;
 
@@ -110,20 +110,18 @@ FFEntriesPtr ffep = NULL;
  **********************************************************/
 static void CkSegmentSet(ParserPtr pp)
 {
-    Int4    i;
-    Int4    j;
-    Int4    bindx;
-    Int4    total;
+    Int4  i;
+    Int4  j;
+    Int4  bindx;
+    Int4  total;
     char* locus;
 
     bool flag;
     bool drop;
     bool notdrop;
 
-    for(i = 0; i < pp->indx;)
-    {
-        if(pp->entrylist[i]->segtotal == 0)
-        {
+    for (i = 0; i < pp->indx;) {
+        if (pp->entrylist[i]->segtotal == 0) {
             i++;
             continue;
         }
@@ -135,48 +133,43 @@ static void CkSegmentSet(ParserPtr pp)
 
         flag = (pp->entrylist[bindx]->segnum != 1);
 
-        for(i++; i < pp->indx &&
-            StringCmp(pp->entrylist[i]->blocusname, locus) == 0; i++)
-        {
-            if(pp->entrylist[i-1]->segnum + 1 != pp->entrylist[i]->segnum)
+        for (i++; i < pp->indx &&
+                  StringCmp(pp->entrylist[i]->blocusname, locus) == 0;
+             i++) {
+            if (pp->entrylist[i - 1]->segnum + 1 != pp->entrylist[i]->segnum)
                 flag = true;
         }
-        if(i - bindx != total)
+        if (i - bindx != total)
             flag = true;
 
-        if(flag)               /* warning the whole segment set */
+        if (flag) /* warning the whole segment set */
         {
-            ErrPostEx(SEV_ERROR, ERR_SEGMENT_MissSegEntry,
-                      "%s|%s: Missing members of segmented set.",
-                      pp->entrylist[bindx]->locusname,
-                      pp->entrylist[bindx]->acnum);
+            ErrPostEx(SEV_ERROR, ERR_SEGMENT_MissSegEntry, "%s|%s: Missing members of segmented set.", pp->entrylist[bindx]->locusname, pp->entrylist[bindx]->acnum);
 
-            for(j = bindx; j < i; j++)
-            {
+            for (j = bindx; j < i; j++) {
                 pp->curindx = j;
 
-                pp->entrylist[j]->segnum = 0;
+                pp->entrylist[j]->segnum   = 0;
                 pp->entrylist[j]->segtotal = 0;
 
-                if(pp->debug == false)
+                if (pp->debug == false)
                     pp->entrylist[j]->drop = 1;
             }
-        } /* if, flag */
-        else            /* assign all drop = 0 if they have "mix ownership" */
+        }    /* if, flag */
+        else /* assign all drop = 0 if they have "mix ownership" */
         {
-            for(j = bindx, drop = notdrop = false; j < i; j++)
-            {
-                if(pp->entrylist[j]->drop == 0)
+            for (j = bindx, drop = notdrop = false; j < i; j++) {
+                if (pp->entrylist[j]->drop == 0)
                     notdrop = true;
                 else
                     drop = true;
             }
 
-            if(drop && notdrop)       /* mix ownership */
+            if (drop && notdrop) /* mix ownership */
             {
-                for(j = bindx; j < i; j++)
+                for (j = bindx; j < i; j++)
                     pp->entrylist[j]->drop = 0;
-                if(drop)
+                if (drop)
                     pp->num_drop--;
             }
         }
@@ -216,30 +209,24 @@ static bool CompareAccsV(const IndexblkPtr& p1, const IndexblkPtr& p2)
 static bool CompareData(const IndexblkPtr& p1, const IndexblkPtr& p2)
 {
     int retval = StringCmp(p1->blocusname, p2->blocusname);
-    if (retval == 0)
-    {
-        if(p1->segtotal != 0 || p2->segtotal != 0)
-        {
-            if(p1->segtotal == p2->segtotal)
-            {
+    if (retval == 0) {
+        if (p1->segtotal != 0 || p2->segtotal != 0) {
+            if (p1->segtotal == p2->segtotal) {
                 retval = p1->segnum - p2->segnum;
 
-                if(retval == 0)
-                {
+                if (retval == 0) {
                     retval = StringCmp(p1->acnum, p2->acnum);
 
-                    if(retval == 0)
+                    if (retval == 0)
                         retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
                 }
             } /* segtotal */
             else
                 retval = p1->segtotal - p2->segtotal;
-        }
-        else
-        {
+        } else {
             retval = StringCmp(p1->acnum, p2->acnum);
 
-            if(retval == 0)
+            if (retval == 0)
                 retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
         }
     }
@@ -252,37 +239,29 @@ static bool CompareDataV(const IndexblkPtr& p1, const IndexblkPtr& p2)
 {
     int retval = StringCmp(p1->blocusname, p2->blocusname);
 
-    if (retval == 0)
-    {
-        if(p1->segtotal != 0 || p2->segtotal != 0)
-        {
-            if(p1->segtotal == p2->segtotal)
-            {
+    if (retval == 0) {
+        if (p1->segtotal != 0 || p2->segtotal != 0) {
+            if (p1->segtotal == p2->segtotal) {
                 retval = p1->segnum - p2->segnum;
 
-                if(retval == 0)
-                {
+                if (retval == 0) {
                     retval = StringCmp(p1->acnum, p2->acnum);
 
-                    if(retval == 0)
-                    {
+                    if (retval == 0) {
                         retval = p1->vernum - p2->vernum;
-                        if(retval == 0)
+                        if (retval == 0)
                             retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
                     }
                 }
             } /* segtotal */
             else
                 retval = p1->segtotal - p2->segtotal;
-        }
-        else
-        {
+        } else {
             retval = StringCmp(p1->acnum, p2->acnum);
 
-            if(retval == 0)
-            {
+            if (retval == 0) {
                 retval = p1->vernum - p2->vernum;
-                if(retval == 0)
+                if (retval == 0)
                     retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
             }
         }
@@ -294,73 +273,57 @@ static bool CompareDataV(const IndexblkPtr& p1, const IndexblkPtr& p2)
 /**********************************************************/
 static void CheckDupEntries(ParserPtr pp)
 {
-    Int4             i;
-    Int4             j;
-    IndexblkPtr      first;
-    IndexblkPtr      second;
+    Int4         i;
+    Int4         j;
+    IndexblkPtr  first;
+    IndexblkPtr  second;
     IndexblkPtr* tibp;
 
-    i = pp->indx * sizeof(IndexblkPtr);
-    tibp = (IndexblkPtr*) MemNew(i);
+    i    = pp->indx * sizeof(IndexblkPtr);
+    tibp = (IndexblkPtr*)MemNew(i);
     MemCpy(tibp, pp->entrylist, i);
 
     std::sort(tibp, tibp + pp->indx, (pp->accver ? CompareAccsV : CompareAccs));
 
-    for(i = 0; i < pp->indx; i++)
-    {
+    for (i = 0; i < pp->indx; i++) {
         first = tibp[i];
-        if(first->drop != 0)
+        if (first->drop != 0)
             continue;
-        for(j = i + 1; j < pp->indx; j++)
-        {
+        for (j = i + 1; j < pp->indx; j++) {
             second = tibp[j];
-            if(second->drop != 0)
+            if (second->drop != 0)
                 continue;
-            if(StringCmp(first->acnum, second->acnum) < 0)
+            if (StringCmp(first->acnum, second->acnum) < 0)
                 break;
 
-            if(pp->accver && first->vernum != second->vernum)
+            if (pp->accver && first->vernum != second->vernum)
                 break;
 
-            if (!first->date || !second->date) {
+            if (! first->date || ! second->date) {
                 continue;
             }
 
             CDate::ECompare dtm = first->date->Compare(*second->date);
-            if (dtm == CDate::eCompare_before)
-            {
+            if (dtm == CDate::eCompare_before) {
                 /* 2 after 1 take 2 remove 1
                  */
                 first->drop = 1;
-                ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated,
-                          "%s (%s) skipped in favor of another entry with a later update date",
-                          first->acnum, first->locusname);
-            }
-            else if (dtm == CDate::eCompare_same)
-            {
-                if(first->offset > second->offset)
-                {
+                ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry with a later update date", first->acnum, first->locusname);
+            } else if (dtm == CDate::eCompare_same) {
+                if (first->offset > second->offset) {
                     /* 1 larger than 2 take 1 remove 2
                      */
                     second->drop = 1;
-                    ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated,
-                              "%s (%s) skipped in favor of another entry located at a larger byte offset",
-                              second->acnum, second->locusname);
-                }
-                else                    /* take 2 remove 1 */
+                    ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry located at a larger byte offset", second->acnum, second->locusname);
+                } else /* take 2 remove 1 */
                 {
                     first->drop = 1;
-                    ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated,
-                              "%s (%s) skipped in favor of another entry located at a larger byte offset",
-                              first->acnum, first->locusname);
+                    ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry located at a larger byte offset", first->acnum, first->locusname);
                 }
-            }
-            else                        /* take 1 remove 2 */
+            } else /* take 1 remove 2 */
             {
                 second->drop = 1;
-                ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated,
-                          "%s (%s) skipped in favor of another entry with a later update date",
-                          second->acnum, second->locusname);
+                ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry with a later update date", second->acnum, second->locusname);
             }
         }
     }
@@ -373,13 +336,12 @@ static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 
     bio_set->SetClass(CBioseq_set::eClass_genbank);
 
-    if(!pp->release_str.empty())
+    if (! pp->release_str.empty())
         bio_set->SetRelease(pp->release_str);
 
     bio_set->SetSeq_set().splice(bio_set->SetSeq_set().end(), pp->entries);
 
-    if (!pp->qamode)
-    {
+    if (! pp->qamode) {
         bio_set->SetDate().SetToTime(CTime(CTime::eCurrent), CDate::ePrecision_day);
     }
 
@@ -389,7 +351,7 @@ static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 static CRef<CSerialObject> MakeSeqSubmit(ParserPtr pp)
 {
     CRef<CSeq_submit> seq_submit(new CSeq_submit);
-    CSubmit_block& submit_blk = seq_submit->SetSub();
+    CSubmit_block&    submit_blk = seq_submit->SetSub();
 
     submit_blk.SetCit().SetAuthors().SetNames().SetStr().push_back(pp->authors_str);
 
@@ -402,57 +364,44 @@ static CRef<CSerialObject> MakeSeqSubmit(ParserPtr pp)
 /**********************************************************/
 static void SetReleaseStr(ParserPtr pp)
 {
-    if (!pp->xml_comp)
-    {
-        if(pp->source == Parser::ESource::NCBI)
-        {
-            if(pp->format == Parser::EFormat::GenBank)
+    if (! pp->xml_comp) {
+        if (pp->source == Parser::ESource::NCBI) {
+            if (pp->format == Parser::EFormat::GenBank)
                 pp->release_str = "source:ncbi, format:genbank";
-            else if(pp->format == Parser::EFormat::EMBL)
+            else if (pp->format == Parser::EFormat::EMBL)
                 pp->release_str = "source:ncbi, format:embl";
-            else if(pp->format == Parser::EFormat::XML)
+            else if (pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:ncbi, format:xml";
-        }
-        else if(pp->source == Parser::ESource::DDBJ)
-        {
-            if(pp->format == Parser::EFormat::GenBank)
+        } else if (pp->source == Parser::ESource::DDBJ) {
+            if (pp->format == Parser::EFormat::GenBank)
                 pp->release_str = "source:ddbj, format:genbank";
-            else if(pp->format == Parser::EFormat::EMBL)
+            else if (pp->format == Parser::EFormat::EMBL)
                 pp->release_str = "source:ddbj, format:embl";
-            else if(pp->format == Parser::EFormat::XML)
+            else if (pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:ddbj, format:xml";
-        }
-        else if(pp->source == Parser::ESource::LANL)
-        {
-            if(pp->format == Parser::EFormat::XML)
+        } else if (pp->source == Parser::ESource::LANL) {
+            if (pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:lanl, format:xml";
             else
                 pp->release_str = "source:lanl, format:genbank";
-        }
-        else if(pp->source == Parser::ESource::Flybase)
-        {
-            if(pp->format == Parser::EFormat::XML)
+        } else if (pp->source == Parser::ESource::Flybase) {
+            if (pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:flybase, format:xml";
             else
                 pp->release_str = "source:flybase, format:genbank";
-        }
-        else if(pp->source == Parser::ESource::Refseq)
-        {
-            if(pp->format == Parser::EFormat::XML)
+        } else if (pp->source == Parser::ESource::Refseq) {
+            if (pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:refseq, format:xml";
             else
                 pp->release_str = "source:refseq, format:genbank";
-        }
-        else if(pp->source == Parser::ESource::EMBL)
-        {
-            if(pp->format == Parser::EFormat::XML)
+        } else if (pp->source == Parser::ESource::EMBL) {
+            if (pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:embl, format:xml";
             else
                 pp->release_str = "source:embl, format:embl";
-        }
-        else if(pp->source == Parser::ESource::SPROT)
+        } else if (pp->source == Parser::ESource::SPROT)
             pp->release_str = "source:swissprot, format:swissprot";
-        else if(pp->source == Parser::ESource::USPTO)
+        else if (pp->source == Parser::ESource::USPTO)
             pp->release_str = "source:uspto, format:xml";
         else
             pp->release_str = "source:unknown, format:unknown";
@@ -462,14 +411,14 @@ static void SetReleaseStr(ParserPtr pp)
 /**********************************************************/
 static void GetAuthorsStr(ParserPtr pp)
 {
-    if(pp->source == Parser::ESource::EMBL)
+    if (pp->source == Parser::ESource::EMBL)
         pp->authors_str = "European Nucleotide Archive";
-    else if(pp->source == Parser::ESource::DDBJ)
+    else if (pp->source == Parser::ESource::DDBJ)
         pp->authors_str = "DNA Databank of Japan";
-    else if(pp->source == Parser::ESource::NCBI || pp->source == Parser::ESource::LANL ||
-            pp->source == Parser::ESource::Refseq)
+    else if (pp->source == Parser::ESource::NCBI || pp->source == Parser::ESource::LANL ||
+             pp->source == Parser::ESource::Refseq)
         pp->authors_str = "National Center for Biotechnology Information";
-    else if(pp->source == Parser::ESource::SPROT)
+    else if (pp->source == Parser::ESource::SPROT)
         pp->authors_str = "UniProt KnowledgeBase";
     else
         pp->authors_str = "FlyBase";
@@ -482,14 +431,10 @@ static CRef<CSerialObject> CloseAll(ParserPtr pp)
 
     CRef<CSerialObject> ret;
 
-    if (!pp->entries.empty())
-    {
-        if(pp->output_format == Parser::EOutput::BioseqSet)
-        {
+    if (! pp->entries.empty()) {
+        if (pp->output_format == Parser::EOutput::BioseqSet) {
             ret = MakeBioseqSet(pp);
-        }
-        else if(pp->output_format == Parser::EOutput::Seqsubmit)
-        {
+        } else if (pp->output_format == Parser::EOutput::Seqsubmit) {
             ret = MakeSeqSubmit(pp);
         }
     }
@@ -497,7 +442,7 @@ static CRef<CSerialObject> CloseAll(ParserPtr pp)
 }
 
 
-static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=false)
+static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already = false)
 {
     // For now.
     // In a perfect (future?) world, this would be a method of CFlatFileParser,
@@ -505,23 +450,22 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=
     //  its configuration.
     pp->InitializeKeywordParser(pp->format);
 
-    if(pp->output_format == Parser::EOutput::BioseqSet)
+    if (pp->output_format == Parser::EOutput::BioseqSet)
         SetReleaseStr(pp);
-    else if(pp->output_format == Parser::EOutput::Seqsubmit)
+    else if (pp->output_format == Parser::EOutput::Seqsubmit)
         GetAuthorsStr(pp);
 
-    if (!already)
+    if (! already)
         fta_init_servers(pp);
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char *) "INDEXING", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, (char*)"INDEXING", NULL);
 
     bool good = FlatFileIndex(pp, NULL);
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if(!good)
-    {
-        if(!already)
+    if (! good) {
+        if (! already)
             fta_fini_servers(pp);
         ret = CloseAll(pp);
         return good;
@@ -530,13 +474,12 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=
     fta_init_gbdataloader();
     GetScope().AddDefaults();
 
-    if(pp->format == Parser::EFormat::SPROT)
-    {
-        FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
+    if (pp->format == Parser::EFormat::SPROT) {
+        FtaInstallPrefix(PREFIX_LOCUS, (char*)"PARSING", NULL);
 
         good = SprotAscii(pp);
 
-        if(!already)
+        if (! already)
             fta_fini_servers(pp);
 
         ret = CloseAll(pp);
@@ -546,53 +489,43 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already=
         return good;
     }
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, (char*)"SET-UP", NULL);
 
     //fta_entrez_fetch_enable(pp);
 
     /* CompareData: group all the segments data together
      */
-    if(pp->sort)
-    {
+    if (pp->sort) {
         std::sort(pp->entrylist, pp->entrylist + pp->indx, (pp->accver ? CompareDataV : CompareData));
     }
 
-    CkSegmentSet(pp);           /* check for missing entries in segment set */
+    CkSegmentSet(pp); /* check for missing entries in segment set */
 
     CheckDupEntries(pp);
 
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup,
-              "Parsing %ld entries", (size_t) pp->indx);
+    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing %ld entries", (size_t)pp->indx);
 
-    pp->pbp = new ProtBlk;
+    pp->pbp      = new ProtBlk;
     pp->pbp->ibp = new InfoBioseq;
 
-    if(pp->num_drop > 0)
-    {
-        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum,
-                  "%ld invalid accession%s skipped", (size_t) pp->num_drop,
-                  (pp->num_drop == 1) ? "" : "s");
+    if (pp->num_drop > 0) {
+        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "%ld invalid accession%s skipped", (size_t)pp->num_drop, (pp->num_drop == 1) ? "" : "s");
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-    FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, (char*)"PARSING", NULL);
 
-    if(pp->format == Parser::EFormat::GenBank)
-    {
+    if (pp->format == Parser::EFormat::GenBank) {
         good = GenBankAsciiOrig(pp);
-    }
-    else if(pp->format == Parser::EFormat::EMBL)
-    {
+    } else if (pp->format == Parser::EFormat::EMBL) {
         good = EmblAscii(pp);
-    }
-    else if(pp->format == Parser::EFormat::XML)
-    {
+    } else if (pp->format == Parser::EFormat::XML) {
         good = XMLAscii(pp);
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if(!already)
+    if (! already)
         fta_fini_servers(pp);
 
     GetScope().ResetHistory();
@@ -611,120 +544,91 @@ Int2 fta_main(ParserPtr pp, bool already)
 {
     CRef<CSerialObject> ret;
 
-    auto good = sParseFlatfile(ret, pp, already);    
+    auto good = sParseFlatfile(ret, pp, already);
 
-    return((good == false) ? 1 : 0);
+    return ((good == false) ? 1 : 0);
 }
 
 /**********************************************************/
 static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
 {
-    if (NStr::EqualNocase(source, "SPROT"))
-    {
+    if (NStr::EqualNocase(source, "SPROT")) {
         pp.acprefix = ParFlat_SPROT_AC;
-        pp.seqtype = CSeq_id::e_Swissprot;
-        pp.source = Parser::ESource::SPROT;
-    }
-    else if (NStr::EqualNocase(source, "LANL"))
-    {
-        pp.acprefix = ParFlat_LANL_AC;         /* lanl or genbank */
-        pp.seqtype = CSeq_id::e_Genbank;
-        pp.source = Parser::ESource::LANL;
-    }
-    else if (NStr::EqualNocase(source, "EMBL"))
-    {
+        pp.seqtype  = CSeq_id::e_Swissprot;
+        pp.source   = Parser::ESource::SPROT;
+    } else if (NStr::EqualNocase(source, "LANL")) {
+        pp.acprefix = ParFlat_LANL_AC; /* lanl or genbank */
+        pp.seqtype  = CSeq_id::e_Genbank;
+        pp.source   = Parser::ESource::LANL;
+    } else if (NStr::EqualNocase(source, "EMBL")) {
         pp.acprefix = ParFlat_EMBL_AC;
-        pp.seqtype = CSeq_id::e_Embl;
-        pp.source = Parser::ESource::EMBL;
-    }
-    else if (NStr::EqualNocase(source, "DDBJ"))
-    {
+        pp.seqtype  = CSeq_id::e_Embl;
+        pp.source   = Parser::ESource::EMBL;
+    } else if (NStr::EqualNocase(source, "DDBJ")) {
         pp.acprefix = ParFlat_DDBJ_AC;
-        pp.seqtype = CSeq_id::e_Ddbj;
-        pp.source = Parser::ESource::DDBJ;
-    }
-    else if (NStr::EqualNocase(source, "FLYBASE"))
-    {
-        pp.source = Parser::ESource::Flybase;
-        pp.seqtype = CSeq_id::e_Genbank;
+        pp.seqtype  = CSeq_id::e_Ddbj;
+        pp.source   = Parser::ESource::DDBJ;
+    } else if (NStr::EqualNocase(source, "FLYBASE")) {
+        pp.source   = Parser::ESource::Flybase;
+        pp.seqtype  = CSeq_id::e_Genbank;
         pp.acprefix = NULL;
-        if(pp.format != Parser::EFormat::GenBank)
-        {
-            ErrPostEx(SEV_FATAL, 0, 0,
-                      "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
+        if (pp.format != Parser::EFormat::GenBank) {
+            ErrPostEx(SEV_FATAL, 0, 0, "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
             return false;
         }
-    }
-    else if (NStr::EqualNocase(source, "REFSEQ"))
-    {
-        pp.source = Parser::ESource::Refseq;
-        pp.seqtype = CSeq_id::e_Other;
+    } else if (NStr::EqualNocase(source, "REFSEQ")) {
+        pp.source   = Parser::ESource::Refseq;
+        pp.seqtype  = CSeq_id::e_Other;
         pp.acprefix = NULL;
-        if(pp.format != Parser::EFormat::GenBank)
-        {
-            ErrPostEx(SEV_FATAL, 0, 0,
-                      "Source \"REFSEQ\" requires format \"GENBANK\" only. Cannot parse.");
+        if (pp.format != Parser::EFormat::GenBank) {
+            ErrPostEx(SEV_FATAL, 0, 0, "Source \"REFSEQ\" requires format \"GENBANK\" only. Cannot parse.");
             return false;
         }
-    }
-    else if (NStr::EqualNocase(source, "NCBI"))
-    {
+    } else if (NStr::EqualNocase(source, "NCBI")) {
         if (pp.mode == Parser::EMode::Relaxed) {
             pp.acprefix = NULL;
-            pp.accpref = NULL;
-            pp.source = Parser::ESource::NCBI;
-        }
-        else {
+            pp.accpref  = NULL;
+            pp.source   = Parser::ESource::NCBI;
+        } else {
             /* for NCBI, the legal formats are embl and genbank, and
              * filenames, etc. need to be set accordingly. For example,
              * in -i (subtool) mode, both embl and genbank format might
              * be expected.
              */
-            if(pp.format != Parser::EFormat::EMBL && pp.format != Parser::EFormat::GenBank &&
-              pp.format != Parser::EFormat::XML)
-            {
-                ErrPostEx(SEV_FATAL, 0, 0,
-                      "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
+            if (pp.format != Parser::EFormat::EMBL && pp.format != Parser::EFormat::GenBank &&
+                pp.format != Parser::EFormat::XML) {
+                ErrPostEx(SEV_FATAL, 0, 0, "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
                 return false;
             }
 
             pp.acprefix = ParFlat_NCBI_AC;
-            pp.seqtype = CSeq_id::e_Genbank;    /* even though EMBL format, make
+            pp.seqtype  = CSeq_id::e_Genbank; /* even though EMBL format, make
                                                                GenBank SEQIDS - Karl */
-            pp.source = Parser::ESource::NCBI;
+            pp.source   = Parser::ESource::NCBI;
         }
-    }
-    else if(NStr::EqualNocase(source, "USPTO"))
-    {
-        if(pp.format != Parser::EFormat::XML)
-        {
-            ErrPostEx(SEV_FATAL, 0, 0,
-                      "Source \"USPTO\" requires format \"XML\" only.");
-            return(false);
+    } else if (NStr::EqualNocase(source, "USPTO")) {
+        if (pp.format != Parser::EFormat::XML) {
+            ErrPostEx(SEV_FATAL, 0, 0, "Source \"USPTO\" requires format \"XML\" only.");
+            return (false);
         }
 
         pp.acprefix = ParFlat_SPROT_AC;
-        pp.seqtype = CSeq_id::e_Other;
-        pp.source = Parser::ESource::USPTO;
-        pp.accver = false;
-    }
-    else
-    {
-        ErrPostEx(SEV_FATAL, 0, 0,
-                  "Sorry, %s is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ, USPTO", source.c_str());
+        pp.seqtype  = CSeq_id::e_Other;
+        pp.source   = Parser::ESource::USPTO;
+        pp.accver   = false;
+    } else {
+        ErrPostEx(SEV_FATAL, 0, 0, "Sorry, %s is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ, USPTO", source.c_str());
         return false;
     }
 
     /* parse regardless of source, overwrite prefix
      */
-    if (all)
-    {
+    if (all) {
         pp.acprefix = NULL;
-        pp.all = true;
-        pp.accpref = NULL;
-    }
-    else
-        pp.accpref = (char**) GetAccArray(pp.source);
+        pp.all      = true;
+        pp.accpref  = NULL;
+    } else
+        pp.accpref = (char**)GetAccArray(pp.source);
 
     pp.citat = (pp.source != Parser::ESource::SPROT);
 
@@ -735,11 +639,10 @@ static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
 // Excluded per Mark's request on 12/14/2016
 // Must be restored to test parsing from string buffer
 /**********************************************************/
-// TODO function is not used 
-void Flat2AsnCheck(char* ffentry, char* source, char* format,
-                   bool accver, Parser::EMode mode, Int4 limit)
+// TODO function is not used
+void Flat2AsnCheck(char* ffentry, char* source, char* format, bool accver, Parser::EMode mode, Int4 limit)
 {
-    ParserPtr pp;
+    ParserPtr       pp;
     Parser::EFormat form;
 
     if (NStr::EqualNocase(format, "embl"))
@@ -750,39 +653,37 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format,
         form = Parser::EFormat::SPROT;
     else if (NStr::EqualNocase(format, "xml"))
         form = Parser::EFormat::XML;
-    else
-    {
+    else {
         ErrPostEx(SEV_ERROR, 0, 0, "Unknown format of flat entry");
         return;
     }
 
-    pp = new Parser;
+    pp         = new Parser;
     pp->format = form;
 
-    if (!FillAccsBySource(*pp, source, false))
-    {
+    if (! FillAccsBySource(*pp, source, false)) {
         delete pp;
         return;
     }
 
     /* As of June, 2004 the sequence length limitation removed
      */
-    pp->limit = 0;
-    pp->sort = true;
-    pp->accver = accver;
-    pp->mode = mode;
-    pp->convert = true;
-    pp->taxserver = 1;
-    pp->medserver = 1;
-    pp->sp_dt_seq_ver = true;
-    pp->cleanup = 1;
+    pp->limit                 = 0;
+    pp->sort                  = true;
+    pp->accver                = accver;
+    pp->mode                  = mode;
+    pp->convert               = true;
+    pp->taxserver             = 1;
+    pp->medserver             = 1;
+    pp->sp_dt_seq_ver         = true;
+    pp->cleanup               = 1;
     pp->allow_crossdb_featloc = false;
-    pp->genenull = true;
-    pp->qsfile = NULL;
-    pp->qsfd = NULL;
-    pp->qamode = false;
+    pp->genenull              = true;
+    pp->qsfile                = NULL;
+    pp->qsfd                  = NULL;
+    pp->qamode                = false;
 
-    pp->ffbuf.start = ffentry;
+    pp->ffbuf.start   = ffentry;
     pp->ffbuf.current = pp->ffbuf.start;
 
     fta_fill_find_pub_option(pp, false, false);
@@ -812,8 +713,8 @@ public:
 };
 */
 
-CFlatFileParser::CFlatFileParser(IObjtoolsListener* pMessageListener)
-    : m_pMessageListener(pMessageListener)
+CFlatFileParser::CFlatFileParser(IObjtoolsListener* pMessageListener) :
+    m_pMessageListener(pMessageListener)
 {
     FtaErrInit();
     CFlatFileMessageReporter::GetInstance().SetListener(pMessageListener);
@@ -837,7 +738,7 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo)
         return pResult;
     }
 
-   return CRef<CSerialObject>();
+    return CRef<CSerialObject>();
 }
 
 static void s_ReportFatalError(const string& msg, IObjtoolsListener* pListener)
@@ -852,12 +753,12 @@ static void s_ReportFatalError(const string& msg, IObjtoolsListener* pListener)
 CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, const string& filename)
 {
     CDirEntry dirEntry(filename);
-    if (!dirEntry.Exists()) {
+    if (! dirEntry.Exists()) {
         string msg = filename + " does not exist";
         s_ReportFatalError(msg, m_pMessageListener);
     }
 
-    if (!dirEntry.IsFile()) {
+    if (! dirEntry.IsFile()) {
         string msg = filename + " is not a valid file";
         s_ReportFatalError(msg, m_pMessageListener);
     }
@@ -868,12 +769,12 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, const string& file
         s_ReportFatalError(msg, m_pMessageListener);
     }
 
-    auto pFileMap = make_unique<CMemoryFileMap>(filename);
-    const auto fileSize = pFileMap->GetFileSize();
-    parseInfo.ffbuf.start = (const char*)pFileMap->Map(0, fileSize);
-    parseInfo.ffbuf.current =  parseInfo.ffbuf.start;
+    auto       pFileMap     = make_unique<CMemoryFileMap>(filename);
+    const auto fileSize     = pFileMap->GetFileSize();
+    parseInfo.ffbuf.start   = (const char*)pFileMap->Map(0, fileSize);
+    parseInfo.ffbuf.current = parseInfo.ffbuf.start;
 
-    if (!parseInfo.ffbuf.current) {
+    if (! parseInfo.ffbuf.current) {
         string msg = "Failed to open input file " + filename;
         s_ReportFatalError(msg, m_pMessageListener);
     }
@@ -896,7 +797,7 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr
     os << istr.rdbuf();
     string buffer = os.str();
 
-    parseInfo.ffbuf.start = buffer.c_str();
+    parseInfo.ffbuf.start   = buffer.c_str();
     parseInfo.ffbuf.current = parseInfo.ffbuf.start;
 
     CRef<CSerialObject> pResult;
@@ -915,20 +816,20 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     pp.entrez_fetch = pp.taxserver = pp.medserver = 1;
 
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, (char*)"SET-UP", NULL);
 
-    pp.ffbuf.start = buf;
+    pp.ffbuf.start   = buf;
     pp.ffbuf.current = buf;
 
     FtaDeletePrefix(PREFIX_LOCUS);
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char *) "INDEXING", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, (char*)"INDEXING", NULL);
 
     bool good = FlatFileIndex(&pp, NULL);
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (!good) {
+    if (! good) {
         ResetParserStruct(&pp);
         return pp.entries;
     }
@@ -941,7 +842,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     GetScope().AddDefaults();
 
     if (pp.format == Parser::EFormat::SPROT) {
-        FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
+        FtaInstallPrefix(PREFIX_LOCUS, (char*)"PARSING", NULL);
 
         good = SprotAscii(&pp);
 
@@ -949,17 +850,18 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
         fta_fini_servers(&pp);
 
-        if (!good) {
+        if (! good) {
             ResetParserStruct(&pp);
         }
         return pp.entries;
     }
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char *) "SET-UP", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, (char*)"SET-UP", NULL);
 
     //fta_entrez_fetch_enable(&pp);
 
-    /*if (pp->ffdb == 0)
+    /*
+    if (pp->ffdb == 0)
         fetchname = "index";
     else
         fetchname = "FFDBFetch";
@@ -981,45 +883,41 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
                                     (ObjMgrGenFunc)IndexFetch :
                                     (ObjMgrGenFunc)FFDBFetch,
                                     PROC_PRIORITY_DEFAULT);
-    }*/
+    }
+    */
 
     if (pp.sort) {
         std::sort(pp.entrylist, pp.entrylist + pp.indx, (pp.accver ? CompareDataV : CompareData));
     }
 
-    CkSegmentSet(&pp);           /* check for missing entries in segment set */
+    CkSegmentSet(&pp); /* check for missing entries in segment set */
     CheckDupEntries(&pp);
 
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup,
-              "Parsing %ld entries", (size_t)pp.indx);
+    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing %ld entries", (size_t)pp.indx);
 
     if (pp.num_drop > 0) {
-        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum,
-                  "%ld invalid accession%s skipped", (size_t)pp.num_drop,
-                  (pp.num_drop == 1) ? "" : "s");
+        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "%ld invalid accession%s skipped", (size_t)pp.num_drop, (pp.num_drop == 1) ? "" : "s");
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-    FtaInstallPrefix(PREFIX_LOCUS, (char *) "PARSING", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, (char*)"PARSING", NULL);
 
     good = false;
 
-    pp.pbp = new ProtBlk;
+    pp.pbp      = new ProtBlk;
     pp.pbp->ibp = new InfoBioseq;
 
     if (pp.format == Parser::EFormat::GenBank) {
         good = GenBankAscii(&pp);
-    }
-    else if (pp.format == Parser::EFormat::EMBL) {
+    } else if (pp.format == Parser::EFormat::EMBL) {
         good = EmblAscii(&pp);
-    }
-    else if (pp.format == Parser::EFormat::XML) {
+    } else if (pp.format == Parser::EFormat::XML) {
         good = XMLAscii(&pp);
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (!good) {
+    if (! good) {
         ResetParserStruct(&pp);
     }
 
@@ -1053,8 +951,7 @@ bool fta_set_format_source(Parser& pp, const std::string& format, const std::str
     else if (format == "xml")
         pp.format = Parser::EFormat::XML;
     else {
-        ErrPostEx(SEV_FATAL, 0, 0,
-                  "Sorry, the format is not available yet ==> available format embl, genbank, prf, sprot, xml.");
+        ErrPostEx(SEV_FATAL, 0, 0, "Sorry, the format is not available yet ==> available format embl, genbank, prf, sprot, xml.");
         return false;
     }
 
@@ -1063,56 +960,56 @@ bool fta_set_format_source(Parser& pp, const std::string& format, const std::str
 
 void fta_init_pp(Parser& pp)
 {
-	pp.ign_toks = false;
-	pp.date = false;
-	pp.convert = true;
-	pp.seg_acc = false;
-	pp.no_date = false;
-	pp.sort = true;
-	pp.debug = false;
-	pp.segment = false;
-	pp.accver = true;
-	pp.histacc = true;
-	pp.transl = false;
-	pp.entrez_fetch = 1;
-	pp.taxserver = 0;
-	pp.medserver = 0;
-	pp.ffdb = false;
+    pp.ign_toks     = false;
+    pp.date         = false;
+    pp.convert      = true;
+    pp.seg_acc      = false;
+    pp.no_date      = false;
+    pp.sort         = true;
+    pp.debug        = false;
+    pp.segment      = false;
+    pp.accver       = true;
+    pp.histacc      = true;
+    pp.transl       = false;
+    pp.entrez_fetch = 1;
+    pp.taxserver    = 0;
+    pp.medserver    = 0;
+    pp.ffdb         = false;
 
-	/* as of june, 2004 the sequence length limitation removed
+    /* as of june, 2004 the sequence length limitation removed
 	*/
-	pp.limit = 0;
-	pp.all = 0;
-	//pp.fpo = nullptr;
-	//fta_fill_find_pub_option(&pp, false, false);
+    pp.limit = 0;
+    pp.all   = 0;
+    //pp.fpo = nullptr;
+    //fta_fill_find_pub_option(&pp, false, false);
 
-	pp.indx = 0;
-	pp.entrylist = nullptr;
-	pp.curindx = 0;
-	pp.seqtype = 0;
-	pp.num_drop = 0;
-	pp.acprefix = nullptr;
-	pp.pbp = nullptr;
-	pp.citat = false;
-	pp.no_code = false;
-	pp.accpref = nullptr;
-	pp.user_data = nullptr;
-	pp.ff_get_entry = nullptr;
-	pp.ff_get_entry_v = nullptr;
-	pp.ff_get_qscore = nullptr;
-	pp.ff_get_qscore_pp = nullptr;
-	pp.ff_get_entry_pp = nullptr;
-	pp.ff_get_entry_v_pp = nullptr;
-	pp.ign_bad_qs = false;
-	pp.mode = Parser::EMode::Release;
-	pp.sp_dt_seq_ver = true;
-	pp.simple_genes = false;
-	pp.cleanup = 1;
-	pp.allow_crossdb_featloc = false;
-	pp.genenull = true;
-	pp.qsfile = nullptr;
-	pp.qsfd = nullptr;
-	pp.qamode = false;
+    pp.indx                  = 0;
+    pp.entrylist             = nullptr;
+    pp.curindx               = 0;
+    pp.seqtype               = 0;
+    pp.num_drop              = 0;
+    pp.acprefix              = nullptr;
+    pp.pbp                   = nullptr;
+    pp.citat                 = false;
+    pp.no_code               = false;
+    pp.accpref               = nullptr;
+    pp.user_data             = nullptr;
+    pp.ff_get_entry          = nullptr;
+    pp.ff_get_entry_v        = nullptr;
+    pp.ff_get_qscore         = nullptr;
+    pp.ff_get_qscore_pp      = nullptr;
+    pp.ff_get_entry_pp       = nullptr;
+    pp.ff_get_entry_v_pp     = nullptr;
+    pp.ign_bad_qs            = false;
+    pp.mode                  = Parser::EMode::Release;
+    pp.sp_dt_seq_ver         = true;
+    pp.simple_genes          = false;
+    pp.cleanup               = 1;
+    pp.allow_crossdb_featloc = false;
+    pp.genenull              = true;
+    pp.qsfile                = nullptr;
+    pp.qsfd                  = nullptr;
+    pp.qamode                = false;
 }
 
 END_NCBI_SCOPE

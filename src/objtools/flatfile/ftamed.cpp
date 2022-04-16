@@ -48,25 +48,24 @@ USING_SCOPE(objects);
 
 static const char* this_module = "medarch";
 #ifdef THIS_MODULE
-#undef THIS_MODULE
+#    undef THIS_MODULE
 #endif
 #define THIS_MODULE this_module
 
 IMessageListener::EPostResult
 CPubFixMessageListener::PostMessage(const IMessage& message)
 {
-    static const map<EDiagSev, ErrSev> sSeverityMap
-               = {{eDiag_Trace, SEV_NONE},
-                  {eDiag_Info, SEV_INFO},
-                  {eDiag_Warning, SEV_WARNING},
-                  {eDiag_Error, SEV_ERROR},
-                  {eDiag_Critical, SEV_REJECT},
-                  {eDiag_Fatal, SEV_FATAL}};
+    static const map<EDiagSev, ErrSev> sSeverityMap = { { eDiag_Trace, SEV_NONE },
+                                                        { eDiag_Info, SEV_INFO },
+                                                        { eDiag_Warning, SEV_WARNING },
+                                                        { eDiag_Error, SEV_ERROR },
+                                                        { eDiag_Critical, SEV_REJECT },
+                                                        { eDiag_Fatal, SEV_FATAL } };
 
     ErrPostEx(sSeverityMap.at(message.GetSeverity()),
-            message.GetCode(),      // fix_pub::EFixPubErrorCategory
-            message.GetSubCode(),   // fix_pub::EFixPubReferenceError
-            message.GetText().c_str());
+              message.GetCode(),    // fix_pub::EFixPubErrorCategory
+              message.GetSubCode(), // fix_pub::EFixPubReferenceError
+              message.GetText().c_str());
 
     return eHandled;
 }
