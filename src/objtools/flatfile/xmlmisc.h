@@ -34,31 +34,30 @@
 #ifndef XMLMISC_H
 #define XMLMISC_H
 
-#include "valnode.h" 
+#include "valnode.h"
 /* Simple XML Parsing */
 
 BEGIN_NCBI_SCOPE
 
 typedef struct xmlobj {
-    char*    name;
-    char*    contents;
-    short       level;
-    struct xmlobj  *attributes;
-    struct xmlobj  *children;
-    struct xmlobj  *next;
-    struct xmlobj  *parent;
-    struct xmlobj  *successor;        /* linearizes a recursive exploration */
+    char*          name;
+    char*          contents;
+    short          level;
+    struct xmlobj* attributes;
+    struct xmlobj* children;
+    struct xmlobj* next;
+    struct xmlobj* parent;
+    struct xmlobj* successor; /* linearizes a recursive exploration */
 } Nlm_XmlObj, *Nlm_XmlObjPtr;
 
-#define XmlObj Nlm_XmlObj
+#define XmlObj    Nlm_XmlObj
 #define XmlObjPtr Nlm_XmlObjPtr
 
-typedef void(*VisitXmlNodeFunc) (Nlm_XmlObjPtr xop, Nlm_XmlObjPtr parent, short level, void* userdata);
+typedef void (*VisitXmlNodeFunc)(Nlm_XmlObjPtr xop, Nlm_XmlObjPtr parent, short level, void* userdata);
 
 Nlm_XmlObjPtr ParseXmlString(const Char* str);
 Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop);
-int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, char* nodeFilter,
-                       char* parentFilter, char* attrTagFilter, char* attrValFilter, short maxDepth);
+int           VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, char* nodeFilter, char* parentFilter, char* attrTagFilter, char* attrValFilter, short maxDepth);
 
 END_NCBI_SCOPE
 

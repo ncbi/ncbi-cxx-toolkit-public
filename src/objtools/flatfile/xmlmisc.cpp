@@ -42,19 +42,19 @@
 #endif
 #define THIS_FILE "xmlmisc.cpp"
 
-#define XML_START_TAG  1
-#define XML_END_TAG    2
-#define XML_ATTRIBUTE  3
-#define XML_CONTENT    4
+#define XML_START_TAG 1
+#define XML_END_TAG   2
+#define XML_ATTRIBUTE 3
+#define XML_CONTENT   4
 
 /* function to decode ampersand-protected symbols */
 
 BEGIN_NCBI_SCOPE
 
 typedef struct xmltable {
-    const Char*  code;
-    size_t       len;
-    char     letter;
+    const Char* code;
+    size_t      len;
+    char        letter;
 } Nlm_XmlTable, *Nlm_XmlTablePtr;
 
 static Nlm_XmlTable xmlcodes[] = {
@@ -68,17 +68,18 @@ static Nlm_XmlTable xmlcodes[] = {
 
 static char* DecodeXml(char* str)
 {
-    char ch;
-    char* dst;
-    char* src;
-    short i;
-    Nlm_XmlTablePtr  xtp;
+    char            ch;
+    char*           dst;
+    char*           src;
+    short           i;
+    Nlm_XmlTablePtr xtp;
 
-    if (StringHasNoText(str)) return str;
+    if (StringHasNoText(str))
+        return str;
 
     src = str;
     dst = str;
-    ch = *src;
+    ch  = *src;
     while (ch != '\0') {
         if (ch == '&') {
             xtp = NULL;
@@ -92,14 +93,12 @@ static char* DecodeXml(char* str)
                 *dst = xtp->letter;
                 dst++;
                 src += xtp->len;
-            }
-            else {
+            } else {
                 *dst = ch;
                 dst++;
                 src++;
             }
-        }
-        else {
+        } else {
             *dst = ch;
             dst++;
             src++;
@@ -115,13 +114,13 @@ static char* DecodeXml(char* str)
 static char* TrimSpacesAroundString(char* str)
 {
     unsigned char ch;
-    char* dst;
-    char* ptr;
+    char*         dst;
+    char*         ptr;
 
     if (str != NULL && str[0] != '\0') {
         dst = str;
         ptr = str;
-        ch = *ptr;
+        ch  = *ptr;
         while (ch != '\0' && ch <= ' ') {
             ptr++;
             ch = *ptr;
@@ -133,14 +132,13 @@ static char* TrimSpacesAroundString(char* str)
             ch = *ptr;
         }
         *dst = '\0';
-        dst = NULL;
-        ptr = str;
-        ch = *ptr;
+        dst  = NULL;
+        ptr  = str;
+        ch   = *ptr;
         while (ch != '\0') {
             if (ch > ' ') {
                 dst = NULL;
-            }
-            else if (dst == NULL) {
+            } else if (dst == NULL) {
                 dst = ptr;
             }
             ptr++;
@@ -156,16 +154,18 @@ static char* TrimSpacesAroundString(char* str)
 
 static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
 {
-    char     *atr, *fst, *lst, *nxt, *ptr;
-    char        ch, cha, chf, chl, quo;
+    char *atr, *fst, *lst, *nxt, *ptr;
+    char  ch, cha, chf, chl, quo;
 
-    bool     doStart, doEnd;
+    bool doStart, doEnd;
 
-    if (headp == NULL || tailp == NULL) return;
-    if (StringHasNoText(str)) return;
+    if (headp == NULL || tailp == NULL)
+        return;
+    if (StringHasNoText(str))
+        return;
 
     ptr = str;
-    ch = *ptr;
+    ch  = *ptr;
 
     while (ch != '\0') {
         if (ch == ' ' || ch == '\r' || ch == '\n' || ch == '\t') {
@@ -173,8 +173,7 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
             ptr++;
             ch = *ptr;
 
-        }
-        else if (ch == '<') {
+        } else if (ch == '<') {
 
             /* process XML tag */
             /* skip past left angle bracket */
@@ -183,7 +182,7 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
             /* keep track of pointers to first character after < and last character before > in XML tag */
             fst = ptr;
             lst = ptr;
-            ch = *ptr;
+            ch  = *ptr;
             while (ch != '\0' && ch != '>') {
                 lst = ptr;
                 ptr++;
@@ -199,21 +198,19 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
             chl = *lst;
             if (chf == '?' || chf == '!') {
                 /* skip processing instructions */
-            }
-            else {
+            } else {
                 /* initial default - if no slashes are present, just do start tag */
                 doStart = true;
-                doEnd = false;
+                doEnd   = false;
                 /* check for slash just after < or just before > symbol */
                 if (chf == '/') {
                     /* slash after <, just do end tag */
                     fst++;
                     doStart = false;
-                    doEnd = true;
-                }
-                else if (chl == '/') {
+                    doEnd   = true;
+                } else if (chl == '/') {
                     /* slash before > - self-closing tag - do start tag and end tag - content will be empty */
-                    *lst = '\0';
+                    *lst  = '\0';
                     doEnd = true;
                 }
 
@@ -267,7 +264,7 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
                     TrimSpacesAroundString(atr);
                     ValNodeCopyStrEx(headp, tailp, XML_ATTRIBUTE, atr);
                     *nxt = cha;
-                    atr = nxt;
+                    atr  = nxt;
                 }
 
                 /* report end tag */
@@ -277,8 +274,7 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
                 }
             }
 
-        }
-        else {
+        } else {
 
             /* process content between tags */
             fst = ptr;
@@ -307,9 +303,10 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
 
 static ValNodePtr TokenizeXmlString(char* str)
 {
-    ValNodePtr  head = NULL, tail = NULL;
+    ValNodePtr head = NULL, tail = NULL;
 
-    if (StringHasNoText(str)) return NULL;
+    if (StringHasNoText(str))
+        return NULL;
 
     TokenizeXmlLine(&head, &tail, str);
 
@@ -320,30 +317,33 @@ static ValNodePtr TokenizeXmlString(char* str)
 
 static Nlm_XmlObjPtr ProcessAttribute(char* str)
 {
-    Nlm_XmlObjPtr  attr = NULL;
-    char    ch, chf, chl, quo;
-    char    *eql, *lst;
+    Nlm_XmlObjPtr attr = NULL;
+    char          ch, chf, chl, quo;
+    char *        eql, *lst;
 
-    if (StringHasNoText(str)) return NULL;
+    if (StringHasNoText(str))
+        return NULL;
 
     eql = str;
-    ch = *eql;
+    ch  = *eql;
     while (ch != '\0' && ch != '=') {
         eql++;
         ch = *eql;
     }
-    if (ch == '\0') return NULL;
+    if (ch == '\0')
+        return NULL;
 
     *eql = '\0';
     eql++;
-    ch = *eql;
+    ch  = *eql;
     quo = ch;
     if (quo == '"' || quo == '\'') {
         eql++;
         ch = *eql;
     }
     chf = *eql;
-    if (chf == '\0') return NULL;
+    if (chf == '\0')
+        return NULL;
 
     lst = eql;
     chl = *lst;
@@ -355,16 +355,18 @@ static Nlm_XmlObjPtr ProcessAttribute(char* str)
         *lst = '\0';
     }
 
-    if (StringHasNoText(str) || StringHasNoText(eql)) return NULL;
+    if (StringHasNoText(str) || StringHasNoText(eql))
+        return NULL;
 
     attr = (Nlm_XmlObjPtr)MemNew(sizeof(Nlm_XmlObj));
-    if (attr == NULL) return NULL;
+    if (attr == NULL)
+        return NULL;
 
     TrimSpacesAroundString(str);
     TrimSpacesAroundString(eql);
     DecodeXml(str);
     DecodeXml(eql);
-    attr->name = StringSave(str);
+    attr->name     = StringSave(str);
     attr->contents = StringSave(eql);
 
     return attr;
@@ -372,23 +374,25 @@ static Nlm_XmlObjPtr ProcessAttribute(char* str)
 
 static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr* curr, Nlm_XmlObjPtr parent, const Char* name)
 {
-    Nlm_XmlObjPtr  attr, child, lastattr = NULL, lastchild = NULL, xop = NULL;
-    unsigned char  choice;
-    char*    str;
-    ValNodePtr     vnp;
+    Nlm_XmlObjPtr attr, child, lastattr = NULL, lastchild = NULL, xop = NULL;
+    unsigned char choice;
+    char*         str;
+    ValNodePtr    vnp;
 
-    if (curr == NULL) return NULL;
+    if (curr == NULL)
+        return NULL;
 
     xop = (Nlm_XmlObjPtr)MemNew(sizeof(Nlm_XmlObj));
-    if (xop == NULL) return NULL;
+    if (xop == NULL)
+        return NULL;
 
-    xop->name = StringSave(name);
+    xop->name   = StringSave(name);
     xop->parent = parent;
 
     while (*curr != NULL) {
 
-        vnp = *curr;
-        str = (char*)vnp->data.ptrvalue;
+        vnp    = *curr;
+        str    = (char*)vnp->data.ptrvalue;
         choice = vnp->choice;
 
         /* advance to next token */
@@ -398,8 +402,7 @@ static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr* curr, Nlm_XmlObjPtr parent, con
 
         if (StringHasNoText(str)) {
             /* skip */
-        }
-        else if (choice == XML_START_TAG) {
+        } else if (choice == XML_START_TAG) {
 
             /* recursive call to process next level */
             child = ProcessStartTag(curr, xop, str);
@@ -414,14 +417,12 @@ static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr* curr, Nlm_XmlObjPtr parent, con
                 lastchild = child;
             }
 
-        }
-        else if (choice == XML_END_TAG) {
+        } else if (choice == XML_END_TAG) {
 
             /* pop out of recursive call */
             return xop;
 
-        }
-        else if (choice == XML_ATTRIBUTE) {
+        } else if (choice == XML_ATTRIBUTE) {
 
             /* get attributes within tag */
             attr = ProcessAttribute(str);
@@ -435,8 +436,7 @@ static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr* curr, Nlm_XmlObjPtr parent, con
                 lastattr = attr;
             }
 
-        }
-        else if (choice == XML_CONTENT) {
+        } else if (choice == XML_CONTENT) {
 
             /* get contact between start and end tags */
             xop->contents = StringSave(str);
@@ -448,9 +448,10 @@ static Nlm_XmlObjPtr ProcessStartTag(ValNodePtr* curr, Nlm_XmlObjPtr parent, con
 
 static Nlm_XmlObjPtr SetSuccessors(Nlm_XmlObjPtr xop, Nlm_XmlObjPtr prev, short level)
 {
-    Nlm_XmlObjPtr  tmp;
+    Nlm_XmlObjPtr tmp;
 
-    if (xop == NULL) return NULL;
+    if (xop == NULL)
+        return NULL;
     xop->level = level;
 
     if (prev != NULL) {
@@ -467,15 +468,17 @@ static Nlm_XmlObjPtr SetSuccessors(Nlm_XmlObjPtr xop, Nlm_XmlObjPtr prev, short 
 
 static Nlm_XmlObjPtr ParseXmlTokens(ValNodePtr head)
 {
-    ValNodePtr     curr;
-    Nlm_XmlObjPtr  xop;
+    ValNodePtr    curr;
+    Nlm_XmlObjPtr xop;
 
-    if (head == NULL) return NULL;
+    if (head == NULL)
+        return NULL;
 
     curr = head;
 
     xop = ProcessStartTag(&curr, NULL, "root");
-    if (xop == NULL) return NULL;
+    if (xop == NULL)
+        return NULL;
 
     SetSuccessors(xop, NULL, 1);
 
@@ -484,16 +487,17 @@ static Nlm_XmlObjPtr ParseXmlTokens(ValNodePtr head)
 
 Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop)
 {
-    Nlm_XmlObjPtr  curr, next;
+    Nlm_XmlObjPtr curr, next;
 
-    if (xop == NULL) return NULL;
+    if (xop == NULL)
+        return NULL;
 
     MemFree(xop->name);
     MemFree(xop->contents);
 
     curr = xop->attributes;
     while (curr != NULL) {
-        next = curr->next;
+        next       = curr->next;
         curr->next = NULL;
         FreeXmlObject(curr);
         curr = next;
@@ -501,7 +505,7 @@ Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop)
 
     curr = xop->children;
     while (curr != NULL) {
-        next = curr->next;
+        next       = curr->next;
         curr->next = NULL;
         FreeXmlObject(curr);
         curr = next;
@@ -514,24 +518,28 @@ Nlm_XmlObjPtr FreeXmlObject(Nlm_XmlObjPtr xop)
 
 Nlm_XmlObjPtr ParseXmlString(const Char* str)
 {
-    ValNodePtr     head;
-    Nlm_XmlObjPtr  root, xop;
-    char*    tmp;
+    ValNodePtr    head;
+    Nlm_XmlObjPtr root, xop;
+    char*         tmp;
 
-    if (StringHasNoText(str)) return NULL;
+    if (StringHasNoText(str))
+        return NULL;
     tmp = StringSave(str);
-    if (tmp == NULL) return NULL;
+    if (tmp == NULL)
+        return NULL;
 
     head = TokenizeXmlString(tmp);
     MemFree(tmp);
 
-    if (head == NULL) return NULL;
+    if (head == NULL)
+        return NULL;
 
     root = ParseXmlTokens(head);
     ValNodeFreeData(head);
 
-    if (root == NULL) return NULL;
-    xop = root->children;
+    if (root == NULL)
+        return NULL;
+    xop            = root->children;
     root->children = NULL;
     FreeXmlObject(root);
 
@@ -539,28 +547,29 @@ Nlm_XmlObjPtr ParseXmlString(const Char* str)
 }
 
 static int VisitXmlNodeProc(
-    Nlm_XmlObjPtr xop,
-    Nlm_XmlObjPtr parent,
-    short level,
-    void* userdata,
+    Nlm_XmlObjPtr    xop,
+    Nlm_XmlObjPtr    parent,
+    short            level,
+    void*            userdata,
     VisitXmlNodeFunc callback,
-    char* nodeFilter,
-    char* parentFilter,
-    char* attrTagFilter,
-    char* attrValFilter,
-    short maxDepth
-    )
+    char*            nodeFilter,
+    char*            parentFilter,
+    char*            attrTagFilter,
+    char*            attrValFilter,
+    short            maxDepth)
 
 {
-    Nlm_XmlObjPtr  attr, tmp;
-    int       index = 0;
+    Nlm_XmlObjPtr attr, tmp;
+    int           index = 0;
 
     bool okay;
 
-    if (xop == NULL) return index;
+    if (xop == NULL)
+        return index;
 
     /* check depth limit */
-    if (level > maxDepth) return index;
+    if (level > maxDepth)
+        return index;
 
     okay = true;
 
@@ -575,8 +584,7 @@ static int VisitXmlNodeProc(
                 }
             }
         }
-    }
-    else if (StringDoesHaveText(attrValFilter)) {
+    } else if (StringDoesHaveText(attrValFilter)) {
         okay = false;
         for (attr = xop->attributes; attr != NULL; attr = attr->next) {
             if (NStr::CompareNocase(attr->contents, attrValFilter) == 0) {
@@ -610,26 +618,24 @@ static int VisitXmlNodeProc(
 
     /* visit children */
     for (tmp = xop->children; tmp != NULL; tmp = tmp->next) {
-        index += VisitXmlNodeProc(tmp, xop, level + 1, userdata, callback, nodeFilter,
-                                  parentFilter, attrTagFilter, attrValFilter, maxDepth);
+        index += VisitXmlNodeProc(tmp, xop, level + 1, userdata, callback, nodeFilter, parentFilter, attrTagFilter, attrValFilter, maxDepth);
     }
 
     return index;
 }
 
-int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, char* nodeFilter,
-                       char* parentFilter, char* attrTagFilter, char* attrValFilter, short maxDepth)
+int VisitXmlNodes(Nlm_XmlObjPtr xop, void* userdata, VisitXmlNodeFunc callback, char* nodeFilter, char* parentFilter, char* attrTagFilter, char* attrValFilter, short maxDepth)
 {
-    int  index = 0;
+    int index = 0;
 
-    if (xop == NULL) return index;
+    if (xop == NULL)
+        return index;
 
     if (maxDepth == 0) {
         maxDepth = numeric_limits<short>::max();
     }
 
-    index += VisitXmlNodeProc(xop, NULL, 1, userdata, callback, nodeFilter,
-                              parentFilter, attrTagFilter, attrValFilter, maxDepth);
+    index += VisitXmlNodeProc(xop, NULL, 1, userdata, callback, nodeFilter, parentFilter, attrTagFilter, attrValFilter, maxDepth);
 
     return index;
 }
