@@ -36,8 +36,8 @@
 
 #include "ftablock.h"
 
-#define INSDSEQ_START                "<INSDSeq>"
-#define INSDSEQ_END                  "</INSDSeq>"
+#define INSDSEQ_START "<INSDSeq>"
+#define INSDSEQ_END   "</INSDSeq>"
 
 #define INSDSEQ_LOCUS                1
 #define INSDSEQ_LENGTH               2
@@ -71,46 +71,46 @@
 
 /* define subkeywords
  */
-#define INSDSECONDARY_ACCN           30
-#define INSDKEYWORD                  31
-#define INSDFEATURE                  32
-#define INSDFEATURE_KEY              33
-#define INSDFEATURE_LOCATION         34
-#define INSDFEATURE_INTERVALS        35
-#define INSDFEATURE_QUALS            36
-#define INSDINTERVAL                 37
-#define INSDINTERVAL_FROM            38
-#define INSDINTERVAL_TO              39
-#define INSDINTERVAL_POINT           40
-#define INSDINTERVAL_ACCESSION       41
-#define INSDQUALIFIER                42
-#define INSDQUALIFIER_NAME           43
-#define INSDQUALIFIER_VALUE          44
-#define INSDREFERENCE                45
-#define INSDREFERENCE_REFERENCE      46
-#define INSDREFERENCE_POSITION       47
-#define INSDREFERENCE_AUTHORS        48
-#define INSDREFERENCE_CONSORTIUM     49
-#define INSDREFERENCE_TITLE          50
-#define INSDREFERENCE_JOURNAL        51
-#define INSDREFERENCE_MEDLINE        52
-#define INSDREFERENCE_PUBMED         53
-#define INSDREFERENCE_REMARK         54
-#define INSDREFERENCE_XREF           55
-#define INSDXREF                     56
-#define INSDXREF_DBNAME              57
-#define INSDXREF_ID                  58
-#define INSDAUTHOR                   59
+#define INSDSECONDARY_ACCN       30
+#define INSDKEYWORD              31
+#define INSDFEATURE              32
+#define INSDFEATURE_KEY          33
+#define INSDFEATURE_LOCATION     34
+#define INSDFEATURE_INTERVALS    35
+#define INSDFEATURE_QUALS        36
+#define INSDINTERVAL             37
+#define INSDINTERVAL_FROM        38
+#define INSDINTERVAL_TO          39
+#define INSDINTERVAL_POINT       40
+#define INSDINTERVAL_ACCESSION   41
+#define INSDQUALIFIER            42
+#define INSDQUALIFIER_NAME       43
+#define INSDQUALIFIER_VALUE      44
+#define INSDREFERENCE            45
+#define INSDREFERENCE_REFERENCE  46
+#define INSDREFERENCE_POSITION   47
+#define INSDREFERENCE_AUTHORS    48
+#define INSDREFERENCE_CONSORTIUM 49
+#define INSDREFERENCE_TITLE      50
+#define INSDREFERENCE_JOURNAL    51
+#define INSDREFERENCE_MEDLINE    52
+#define INSDREFERENCE_PUBMED     53
+#define INSDREFERENCE_REMARK     54
+#define INSDREFERENCE_XREF       55
+#define INSDXREF                 56
+#define INSDXREF_DBNAME          57
+#define INSDXREF_ID              58
+#define INSDAUTHOR               59
 
-#define XML_FEATURES                 1
+#define XML_FEATURES 1
 
 BEGIN_NCBI_SCOPE
 
-char*    XMLLoadEntry(ParserPtr pp, bool err);
-char*    XMLGetTagValue(char* entry, XmlIndexPtr xip);
-char*    XMLFindTagValue(char* entry, XmlIndexPtr xip, Int4 tag);
+char*      XMLLoadEntry(ParserPtr pp, bool err);
+char*      XMLGetTagValue(char* entry, XmlIndexPtr xip);
+char*      XMLFindTagValue(char* entry, XmlIndexPtr xip, Int4 tag);
 DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, int type);
-char*    XMLConcatSubTags(char* entry, XmlIndexPtr xip, Int4 tag, Char sep);
+char*      XMLConcatSubTags(char* entry, XmlIndexPtr xip, Int4 tag, Char sep);
 void       XMLGetKeywords(char* entry, XmlIndexPtr xip, TKeywordList& keywords);
 
 END_NCBI_SCOPE
