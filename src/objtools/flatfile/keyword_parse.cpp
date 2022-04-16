@@ -42,19 +42,18 @@ BEGIN_NCBI_SCOPE
 //  ----------------------------------------------------------------------------
 CKeywordParser::CKeywordParser(
     Parser::EFormat format) :
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
     mFormat(format),
     mDataDone(false),
-    mDataClean(false)
-{};
+    mDataClean(false){};
 
 //  ----------------------------------------------------------------------------
 CKeywordParser::~CKeywordParser()
-//  ----------------------------------------------------------------------------
-{};
+    //  ----------------------------------------------------------------------------
+    {};
 
 //  ----------------------------------------------------------------------------
-const list<string> 
+const list<string>
 CKeywordParser::KeywordList() const
 //  ----------------------------------------------------------------------------
 {
@@ -62,8 +61,7 @@ CKeywordParser::KeywordList() const
 }
 
 //  ----------------------------------------------------------------------------
-void 
-CKeywordParser::AddDataLine(
+void CKeywordParser::AddDataLine(
     const string& line)
 //  ----------------------------------------------------------------------------
 {
@@ -78,7 +76,7 @@ CKeywordParser::AddDataLine(
         data = NStr::TruncateSpaces(data.substr(2));
         break;
     }
-    if (!mPending.empty() && !NStr::EndsWith(mPending, ";")) {
+    if (! mPending.empty() && ! NStr::EndsWith(mPending, ";")) {
         mPending += ' ';
     }
     mPending += data;
@@ -86,15 +84,14 @@ CKeywordParser::AddDataLine(
         xFinalize();
         return;
     }
-    if (!NStr::EndsWith(mPending, ";")) {
+    if (! NStr::EndsWith(mPending, ";")) {
         mPending += ' ';
         return;
     }
 }
 
 //  ----------------------------------------------------------------------------
-void 
-CKeywordParser::xFinalize()
+void CKeywordParser::xFinalize()
 //  ----------------------------------------------------------------------------
 {
     list<string> words;
@@ -107,8 +104,7 @@ CKeywordParser::xFinalize()
 }
 
 //  ----------------------------------------------------------------------------
-void 
-CKeywordParser::Cleanup()
+void CKeywordParser::Cleanup()
 //  ----------------------------------------------------------------------------
 {
 }

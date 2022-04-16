@@ -37,7 +37,7 @@
 #include "ftaerr.hpp"
 #include <objtools/flatfile/flatfile_parse_info.hpp>
 
- //# include <objtools/flatfile/flat2err.h>
+//# include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -63,10 +63,10 @@ private:
     void xFinalize();
 
     Parser::EFormat mFormat;
-    list<string> mKeywords;
-    bool mDataDone;
-    string mPending;
-    bool mDataClean;
+    list<string>    mKeywords;
+    bool            mDataDone;
+    string          mPending;
+    bool            mDataClean;
 };
 
 END_NCBI_SCOPE
