@@ -52,16 +52,27 @@
 BEGIN_NCBI_SCOPE
 
 vector<string> swissProtKeywords = {
-    "ID", "AC", "DT", "DE", "GN", "OS", "RN", "CC", "PE", "DR", "KW", "FT",
-    "SQ", "//",
+    "ID",
+    "AC",
+    "DT",
+    "DE",
+    "GN",
+    "OS",
+    "RN",
+    "CC",
+    "PE",
+    "DR",
+    "KW",
+    "FT",
+    "SQ",
+    "//",
 };
 
 /**********************************************************/
-static Uint1 sp_err_field(const char *name)
+static Uint1 sp_err_field(const char* name)
 {
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-              "Missing %s line, entry dropped", name);
-    return(1);
+    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Missing %s line, entry dropped", name);
+    return (1);
 }
 
 /**********************************************************/
@@ -70,22 +81,21 @@ static void SPGetVerNum(char* str, IndexblkPtr ibp)
     char* p;
     char* q;
 
-    if(str == NULL || ibp == NULL)
+    if (str == NULL || ibp == NULL)
         return;
 
     p = StringIStr(str, "sequence version");
-    if(p == NULL)
+    if (p == NULL)
         return;
 
-    for(p += 16; *p == ' ';)
+    for (p += 16; *p == ' ';)
         p++;
-    for(q = p; *p >= '0' && *p <= '9';)
+    for (q = p; *p >= '0' && *p <= '9';)
         p++;
-    if(*p == '.' && (p[1] == '\0' || p[1] == '\n'))
-    {
-        *p = '\0';
+    if (*p == '.' && (p[1] == '\0' || p[1] == '\n')) {
+        *p          = '\0';
         ibp->vernum = atoi(q);
-        *p = '.';
+        *p          = '.';
     }
 }
 
@@ -100,45 +110,42 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 {
     TokenStatBlkPtr stoken;
 
-    bool            after_AC;
-    bool            after_OS;
-    bool            after_OC;
-    bool            after_RN;
-    bool            after_SQ;
-    bool            end_of_file;
+    bool after_AC;
+    bool after_OS;
+    bool after_OC;
+    bool after_RN;
+    bool after_SQ;
+    bool end_of_file;
 
-    IndexblkPtr     entry;
-    DataBlkPtr      data;
-    Int4            i;
-    Int4            indx = 0;
-    IndBlkNextPtr   ibnp;
-    IndBlkNextPtr   tibnp;
+    IndexblkPtr   entry;
+    DataBlkPtr    data;
+    Int4          i;
+    Int4          indx = 0;
+    IndBlkNextPtr ibnp;
+    IndBlkNextPtr tibnp;
     char*         p;
 
-    bool            reviewed;
+    bool reviewed;
 
     FinfoBlk finfo;
 
     end_of_file = SkipTitleBuf(pp->ffbuf, &finfo, swissProtKeywords[ParFlatSP_ID]);
-    if(end_of_file)
-    {
+    if (end_of_file) {
         MsgSkipTitleFail("Swiss-Prot", &finfo);
         return false;
     }
 
-    ibnp = (IndBlkNextPtr) MemNew(sizeof(IndBlkNext));
+    ibnp       = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
     ibnp->next = NULL;
-    tibnp = ibnp;
+    tibnp      = ibnp;
 
-    while (!end_of_file)
-    {
+    while (! end_of_file) {
         entry = InitialEntry(pp, &finfo);
-        if(entry != NULL)
-        {
+        if (entry != NULL) {
             pp->curindx = indx;
-            tibnp->next = (IndBlkNextPtr) MemNew(sizeof(IndBlkNext));
-            tibnp = tibnp->next;
-            tibnp->ibp = entry;
+            tibnp->next = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
+            tibnp       = tibnp->next;
+            tibnp->ibp  = entry;
             tibnp->next = NULL;
 
             indx++;
@@ -149,61 +156,43 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             after_RN = false;
             after_SQ = false;
 
-            p = PointToNextToken(finfo.str + ParFlat_COL_DATA_SP);
+            p        = PointToNextToken(finfo.str + ParFlat_COL_DATA_SP);
             reviewed = (StringNICmp(p, "reviewed", 8) == 0);
 
-            while(!end_of_file &&
-                  StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_END].c_str(),
-                      swissProtKeywords[ParFlatSP_END].size()) != 0)
-            {
-                if(StringNCmp(finfo.str, "RM", 2) == 0)
-                {
-                    ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType,
-                              "RM line type has been replaced by RX, skipped %s",
-                              finfo.str);
+            while (! end_of_file &&
+                   StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_END].c_str(), swissProtKeywords[ParFlatSP_END].size()) != 0) {
+                if (StringNCmp(finfo.str, "RM", 2) == 0) {
+                    ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "RM line type has been replaced by RX, skipped %s", finfo.str);
                 }
-                if(after_SQ && isalpha(finfo.str[0]) != 0)
-                {
-                    ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd,
-                               "Missing end of the entry, entry dropped");
+                if (after_SQ && isalpha(finfo.str[0]) != 0) {
+                    ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                     entry->drop = 1;
                     break;
                 }
-                if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_SQ].c_str(),
-                    swissProtKeywords[ParFlatSP_SQ].size()) == 0)
+                if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_SQ].c_str(), swissProtKeywords[ParFlatSP_SQ].size()) == 0)
                     after_SQ = true;
 
-                if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_OS].c_str(),
-                    swissProtKeywords[ParFlatSP_OS].size()) == 0)
+                if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_OS].c_str(), swissProtKeywords[ParFlatSP_OS].size()) == 0)
                     after_OS = true;
 
-                if(StringNCmp(finfo.str, "OC", 2) == 0)
+                if (StringNCmp(finfo.str, "OC", 2) == 0)
                     after_OC = true;
 
-                if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_RN].c_str(),
-                    swissProtKeywords[ParFlatSP_RN].size()) == 0)
+                if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_RN].c_str(), swissProtKeywords[ParFlatSP_RN].size()) == 0)
                     after_RN = true;
 
-                if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_AC].c_str(),
-                    swissProtKeywords[ParFlatSP_AC].size()) == 0)
-                {
-                    if(after_AC == false)
-                    {
+                if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_AC].c_str(), swissProtKeywords[ParFlatSP_AC].size()) == 0) {
+                    if (after_AC == false) {
                         after_AC = true;
-                        if(!GetAccession(pp, finfo.str, entry, 2))
+                        if (! GetAccession(pp, finfo.str, entry, 2))
                             pp->num_drop++;
-                    }
-                    else if(entry->drop == 0 && !GetAccession(pp, finfo.str, entry, 1))
+                    } else if (entry->drop == 0 && ! GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
-                }
-                else if(StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_DT].c_str(),
-                    swissProtKeywords[ParFlatSP_DT].size()) == 0)
-                {
-                    if(reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
+                } else if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_DT].c_str(), swissProtKeywords[ParFlatSP_DT].size()) == 0) {
+                    if (reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
                         SPGetVerNum(finfo.str, entry);
                     stoken = TokenString(finfo.str, ' ');
-                    if(stoken->num > 2)
-                    {
+                    if (stoken->num > 2) {
                         entry->date = GetUpdateDate(stoken->list->next->str,
                                                     pp->source);
                     }
@@ -214,39 +203,34 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
             } /* while, end of one entry */
 
-            if(entry->drop != 1)
-            {
-                if(after_AC == false)
-                {
-                    ErrPostStr(SEV_ERROR, ERR_ACCESSION_NoAccessNum,
-                               "Missing AC (accession #) line, entry dropped");
+            if (entry->drop != 1) {
+                if (after_AC == false) {
+                    ErrPostStr(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "Missing AC (accession #) line, entry dropped");
                     entry->drop = 1;
                 }
 
-                if(after_OS == false)
+                if (after_OS == false)
                     entry->drop = sp_err_field("OS (organism)");
 
-                if(after_OC == false)
+                if (after_OC == false)
                     entry->drop = sp_err_field("OC (organism classification)");
 
-                if(after_RN == false)
+                if (after_RN == false)
                     entry->drop = sp_err_field("RN (reference data)");
 
-                if(after_SQ == false)
+                if (after_SQ == false)
                     entry->drop = sp_err_field("SQ (sequence data)");
             }
 
-            entry->len = (size_t) (pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
+            entry->len = (size_t)(pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
-            if(fun != NULL)
-            {
+            if (fun != NULL) {
                 data = LoadEntry(pp, entry->offset, entry->len);
                 (*fun)(entry, data->mOffset, static_cast<Int4>(data->len));
                 delete data;
             }
         } /* if, entry */
-        else
-        {
+        else {
             end_of_file = FindNextEntryBuf(
                 end_of_file, pp->ffbuf, &finfo, swissProtKeywords[ParFlatSP_END]);
         }
@@ -257,13 +241,12 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     pp->indx = indx;
 
-    pp->entrylist = (IndexblkPtr*) MemNew(indx* sizeof(IndexblkPtr));
-    tibnp = ibnp->next;
+    pp->entrylist = (IndexblkPtr*)MemNew(indx * sizeof(IndexblkPtr));
+    tibnp         = ibnp->next;
     MemFree(ibnp);
-    for(i = 0; i < indx && tibnp != NULL; i++, tibnp = ibnp)
-    {
+    for (i = 0; i < indx && tibnp != NULL; i++, tibnp = ibnp) {
         pp->entrylist[i] = tibnp->ibp;
-        ibnp = tibnp->next;
+        ibnp             = tibnp->next;
         MemFree(tibnp);
     }
 

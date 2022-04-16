@@ -87,7 +87,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-const char *ParFlat_SPComTopics[] = {
+const char* ParFlat_SPComTopics[] = {
     "ALLERGEN:",
     "ALTERNATIVE PRODUCTS:",
     "BIOPHYSICOCHEMICAL PROPERTIES:",
@@ -165,7 +165,7 @@ SPFeatType ParFlat_SPFeat[] = {
     { "NP_BIND", ParFlatSPSites, 21, NULL },
     { "DNA_BIND", ParFlatSPSites, 22, NULL },
     { "SITE", ParFlatSPSites, 255, NULL },
-    { "MOD_RES", ParFlatSPSites, 5, NULL },  /* 9 */
+    { "MOD_RES", ParFlatSPSites, 5, NULL }, /* 9 */
     { "MOD_RES", ParFlatSPSites, 10, "4-aspartylphosphate" },
     { "MOD_RES", ParFlatSPSites, 10, "5-glutamyl glycerylphosphorylethanolamine" },
     { "MOD_RES", ParFlatSPSites, 10, "Phosphoarginine" },
@@ -303,9 +303,9 @@ SPFeatType ParFlat_SPFeat[] = {
     { "MOD_RES", ParFlatSPSites, 14, "Hydroxyproline" },
     { "MOD_RES", ParFlatSPSites, 14, "N6-(3,6-diaminohexanoyl)-5-hydroxylysine" },
     { "MOD_RES", ParFlatSPSites, 15, "SULFATATION" },
-    { "MOD_RES", ParFlatSPSites, 15, "Sulfoserine"},
-    { "MOD_RES", ParFlatSPSites, 15, "Sulfothreonine"},
-    { "MOD_RES", ParFlatSPSites, 15, "Sulfotyrosine"},
+    { "MOD_RES", ParFlatSPSites, 15, "Sulfoserine" },
+    { "MOD_RES", ParFlatSPSites, 15, "Sulfothreonine" },
+    { "MOD_RES", ParFlatSPSites, 15, "Sulfotyrosine" },
     { "MOD_RES", ParFlatSPSites, 16, "OXIDATIVE DEAMINATION" },
     { "MOD_RES", ParFlatSPSites, 17, "Pyrrolidone carboxylic acid" },
     { "MOD_RES", ParFlatSPSites, 17, "Pyrrolidone carboxylic acid (Glu)" },
@@ -330,7 +330,7 @@ SPFeatType ParFlat_SPFeat[] = {
     { "MOD_RES", ParFlatSPSites, 19, "Blocked amino end (Val)" },
     { "MOD_RES", ParFlatSPSites, 19, "Blocked amino end (Xaa)" },
     { "MOD_RES", ParFlatSPSites, 19, "Blocked carboxyl end (Arg)" },
-    { "MOD_RES", ParFlatSPSites, 19, "Blocked carboxyl end (His)" },  /* 174 */
+    { "MOD_RES", ParFlatSPSites, 19, "Blocked carboxyl end (His)" }, /* 174 */
     { "DISULFID", ParFlatSPBonds, 1, NULL },
     { "THIOLEST", ParFlatSPBonds, 2, NULL },
     { "CROSSLNK", ParFlatSPBonds, 3, NULL },
@@ -369,11 +369,11 @@ SPFeatType ParFlat_SPFeat[] = {
 
 /* for array index, MOD_RES in the "ParFlat_SPFeat"
  */
-#define ParFlatSPSitesModB   9          /* beginning */
-#define ParFlatSPSitesModE 174          /* end */
+#define ParFlatSPSitesModB 9   /* beginning */
+#define ParFlatSPSitesModE 174 /* end */
 
-#define COPYRIGHT          "This Swiss-Prot entry is copyright."
-#define COPYRIGHT1         "Copyrighted by the UniProt Consortium,"
+#define COPYRIGHT  "This Swiss-Prot entry is copyright."
+#define COPYRIGHT1 "Copyrighted by the UniProt Consortium,"
 
 #define SPDE_RECNAME    000001
 #define SPDE_ALTNAME    000002
@@ -390,25 +390,25 @@ SPFeatType ParFlat_SPFeat[] = {
 #define SPDE_INN        010000
 
 typedef struct _char_int_len {
-    const char *str;
-    Int4       num;
-    Int4       len;
+    const char* str;
+    Int4        num;
+    Int4        len;
 } CharIntLen, *CharIntLenPtr;
 
 typedef struct _sprot_de_fields {
-    Int4                         tag;
-    char*                      start;
-    char*                      end;
+    Int4                     tag;
+    char*                    start;
+    char*                    end;
     struct _sprot_de_fields* next;
 } SPDEFields, *SPDEFieldsPtr;
 
 typedef struct sprot_feat_input {
-    std::string                  key;           /* column 6-13 */
-    std::string                  from;          /* column 15-20 */
-    std::string                  to;            /* column 22-27 */
-    std::string                  descrip;       /* column 35-75, continue
+    std::string              key;     /* column 6-13 */
+    std::string              from;    /* column 15-20 */
+    std::string              to;      /* column 22-27 */
+    std::string              descrip; /* column 35-75, continue
                                                    line if a blank key */
-    struct sprot_feat_input* next;          /* next FT */
+    struct sprot_feat_input* next;    /* next FT */
 
     sprot_feat_input() :
         next(NULL) {}
@@ -416,39 +416,40 @@ typedef struct sprot_feat_input {
 } SPFeatInput, *SPFeatInputPtr;
 
 typedef struct sprot_feat_boolean {
-    bool    initmet;
-    bool    nonter;
-    bool    noright;
-    bool    noleft;
+    bool initmet;
+    bool nonter;
+    bool noright;
+    bool noleft;
 } SPFeatBln, *SPFeatBlnPtr;
 
 /* segment location, data from NON_CONS
  */
 typedef struct sprot_seg_location {
-    Int4                           from;        /* the beginning point of the
+    Int4                       from; /* the beginning point of the
                                                    segment */
-    Int4                           len;         /* total length of the
+    Int4                       len;  /* total length of the
                                                    segment */
     struct sprot_seg_location* next;
 } SPSegLoc, *SPSegLocPtr;
 
 typedef struct set_of_syns {
-    char*                 synname;
+    char*               synname;
     struct set_of_syns* next;
 } SetOfSyns, *SetOfSynsPtr;
 
 typedef struct set_of_species {
-    char*      fullname;
-    char*      name;
+    char*        fullname;
+    char*        name;
     SetOfSynsPtr syn;
 } SetOfSpecies, *SetOfSpeciesPtr;
 
 typedef struct _viral_host {
-    Int4                    taxid;
-    char*                 name;
+    Int4                taxid;
+    char*               name;
     struct _viral_host* next;
 } ViralHost, *ViralHostPtr;
 
+// clang-format off
 CharIntLen spde_tags[] = {
     {"RecName:",    SPDE_RECNAME,     8},
     {"AltName:",    SPDE_ALTNAME,     8},
@@ -466,14 +467,14 @@ CharIntLen spde_tags[] = {
     {NULL,          0,                0},
 };
 
-const char *org_mods[] = {
+const char* org_mods[] = {
     "STRAIN",    "SUBSTRAIN", "TYPE",     "SUBTYPE",  "VAR.",     "SEROTYPE",
     "SEROGROUP", "SEROVAR",   "CULTIVAR", "PATHOVAR", "CHEMOVAR", "BIOVAR",
     "BIOTYPE",   "GROUP",     "SUBGROUP", "ISOLATE",  "ACRONYM",  "DOSAGE",
     "NAT_HOST",  "SUBSP.",    NULL
 };
 
-const char *obsolete_dbs[] = {
+const char* obsolete_dbs[] = {
     "2DBASE-ECOLI",           "AARHUS/GHENT-2DPAGE",    "AGD",
     "ANU-2DPAGE",             "BURULIST",               "CARBBANK",
     "CMR",                    "CORNEA-2DPAGE",          "DICTYDB",
@@ -492,7 +493,7 @@ const char *obsolete_dbs[] = {
     NULL
 };
 
-const char *valid_dbs[] = {
+const char* valid_dbs[] = {
     "ALLERGOME",              "ARACHNOSERVER",          "ARAPORT",
     "ARRAYEXPRESS",           "BEEBASE",                "BGD",
     "BGEE",                   "BINDINGDB",              "BIOCYC",
@@ -554,13 +555,13 @@ const char *valid_dbs[] = {
     "XENBASE",                "ZFIN",                   NULL
 };
 
-const char *SP_organelle[] = {
+const char* SP_organelle[] = {
     "CHLOROPLAST", "CYANELLE", "MITOCHONDRION", "PLASMID", "NUCLEOMORPH",
     "HYDROGENOSOME", "APICOPLAST", "CHROMATOPHORE",
     "ORGANELLAR CHROMATOPHORE", NULL
 };
 
-const char *PE_values[] = {
+const char* PE_values[] = {
     "Evidence at protein level",
     "Evidence at transcript level",
     "Inferred from homology",
@@ -568,6 +569,7 @@ const char *PE_values[] = {
     "Uncertain",
     NULL
 };
+// clang-format off
 
 /**********************************************************
  *
