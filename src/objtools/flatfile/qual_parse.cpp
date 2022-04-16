@@ -38,19 +38,19 @@
 #include "qual_parse.hpp"
 #include "ftaerr.hpp"
 
-# include <objtools/flatfile/flat2err.h>
+#include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
 //  ----------------------------------------------------------------------------
 CQualParser::CQualParser(
-    Parser::EFormat fmt,
-    const string& featKey,
-    const string& featLocation,
-    const vector<string>& qualLines): 
-//  ----------------------------------------------------------------------------
+    Parser::EFormat       fmt,
+    const string&         featKey,
+    const string&         featLocation,
+    const vector<string>& qualLines) :
+    //  ----------------------------------------------------------------------------
     mFlatFormat(fmt),
-    mFeatKey(featKey), 
+    mFeatKey(featKey),
     mFeatLocation(featLocation),
     mCleanerUpper(featKey, featLocation),
     mData(qualLines),
@@ -73,11 +73,11 @@ bool CQualParser::GetNextQualifier(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    // Note: In general, if a qualifier spans multiple lines then it's 
+    // Note: In general, if a qualifier spans multiple lines then it's
     //  surrounded by quotes. The one exception I am aware of is anticodon.
     // If there are more, or the situation gets more complicated in general,
-    //  then the code needs to be rewritten to extract values according to 
-    //  qualifier dependent rules. So key based handler lookup and stuff like 
+    //  then the code needs to be rewritten to extract values according to
+    //  qualifier dependent rules. So key based handler lookup and stuff like
     //  that.
     // Let's hope we don't have to go there.
 
@@ -88,14 +88,14 @@ bool CQualParser::GetNextQualifier(
     qualKey.clear();
     qualVal.clear();
     bool thereIsMore = false;
-    if (!xParseQualifierHead(qualKey, qualVal, thereIsMore)) {
+    if (! xParseQualifierHead(qualKey, qualVal, thereIsMore)) {
         return false;
     }
-    if (!xParseQualifierTail(qualKey, qualVal, thereIsMore)) {
+    if (! xParseQualifierTail(qualKey, qualVal, thereIsMore)) {
         return false;
     }
 
-    if (!xValidateSyntax(qualKey, qualVal)) {
+    if (! xValidateSyntax(qualKey, qualVal)) {
         // error should have been reported at lower level, fail
         return false;
     }
@@ -107,8 +107,8 @@ bool CQualParser::GetNextQualifier(
 bool CQualParser::xParseQualifierHead(
     string& qualKey,
     string& qualVal,
-    bool& thereIsMore)
-    //  ----------------------------------------------------------------------------
+    bool&   thereIsMore)
+//  ----------------------------------------------------------------------------
 {
     while (mCurrent != mData.end()) {
         if (xParseQualifierStart(false, qualKey, qualVal, thereIsMore)) {
@@ -122,32 +122,32 @@ bool CQualParser::xParseQualifierHead(
 
 //  ----------------------------------------------------------------------------
 bool CQualParser::xParseQualifierStart(
-    bool silent,
+    bool    silent,
     string& qualKey,
     string& qualVal,
-    bool& thereIsMore)
+    bool&   thereIsMore)
 //  ----------------------------------------------------------------------------
 {
-    if (!mPendingKey.empty()) {
+    if (! mPendingKey.empty()) {
         qualKey = mPendingKey, mPendingKey.clear();
         qualVal = mPendingVal, mPendingVal.clear();
         return true;
     }
 
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
-    if (!NStr::StartsWith(cleaned, '/')  ||  NStr::StartsWith(cleaned, "/ ")) {
-        if (!silent) {
+    if (! NStr::StartsWith(cleaned, '/') || NStr::StartsWith(cleaned, "/ ")) {
+        if (! silent) {
             CFlatParseReport::UnexpectedData(mFeatKey, mFeatLocation);
         }
         return false;
     }
-    auto idxEqual = cleaned.find('=', 1);
+    auto idxEqual     = cleaned.find('=', 1);
     auto maybeQualKey = cleaned.substr(1, idxEqual);
     if (idxEqual != string::npos) {
         maybeQualKey.pop_back();
     }
-    if (!sIsLegalQual(maybeQualKey)) {
-        if (!silent) {
+    if (! sIsLegalQual(maybeQualKey)) {
+        if (! silent) {
             CFlatParseReport::UnknownQualifierKey(mFeatKey, mFeatLocation, qualKey);
         }
         return false;
@@ -160,7 +160,7 @@ bool CQualParser::xParseQualifierStart(
         return true;
     }
 
-    auto tail = cleaned.substr(idxEqual + 1, string::npos);
+    auto tail            = cleaned.substr(idxEqual + 1, string::npos);
     mLastKeyForDataChunk = qualKey,
     mLastDataChunkForKey = cleaned;
 
@@ -168,13 +168,13 @@ bool CQualParser::xParseQualifierStart(
         // we can't be harsh here because the legacy flatfile parser regarded
         //  /xxx, /xxx=, and /xxx="" as the same thing.
         CFlatParseReport::NoTextAfterEqualSign(mFeatKey, mFeatLocation, qualKey);
-        qualVal = "";
+        qualVal     = "";
         thereIsMore = false;
         return true;
     }
-    if (!NStr::StartsWith(tail, '\"')) {
+    if (! NStr::StartsWith(tail, '\"')) {
         // sanity check tail?
-        qualVal = tail;
+        qualVal     = tail;
         thereIsMore = (qualKey == "anticodon");
         return true;
     }
@@ -186,7 +186,7 @@ bool CQualParser::xParseQualifierStart(
         return true;
     }
     // partial qualifier value
-    qualVal = tail.substr(1, string::npos);
+    qualVal     = tail.substr(1, string::npos);
     thereIsMore = true;
     return true;
 }
@@ -195,9 +195,9 @@ bool CQualParser::xParseQualifierStart(
 //  ----------------------------------------------------------------------------
 bool CQualParser::xParseQualifierTail(
     const string& qualKey,
-    string& qualVal,
-    bool& thereIsMore)
-    //  ----------------------------------------------------------------------------
+    string&       qualVal,
+    bool&         thereIsMore)
+//  ----------------------------------------------------------------------------
 {
     while (thereIsMore) {
         if (mCurrent == mData.end()) {
@@ -208,7 +208,7 @@ bool CQualParser::xParseQualifierTail(
             }
             return true;
         }
-        if (!xParseQualifierCont(qualKey, qualVal, thereIsMore)) {
+        if (! xParseQualifierCont(qualKey, qualVal, thereIsMore)) {
             if (qualKey != "anticodon") {
                 return false;
             }
@@ -222,17 +222,17 @@ bool CQualParser::xParseQualifierTail(
 //  ----------------------------------------------------------------------------
 bool CQualParser::xParseQualifierCont(
     const string& qualKey,
-    string& qualVal,
-    bool& thereIsMore)
+    string&       qualVal,
+    bool&         thereIsMore)
 //  ----------------------------------------------------------------------------
 {
-    if (!mPendingKey.empty()) {
+    if (! mPendingKey.empty()) {
         // report error
         return false;
     }
     bool thereShouldBeMore = thereIsMore;
     if (xParseQualifierStart(true, mPendingKey, mPendingVal, thereIsMore)) {
-        if (thereShouldBeMore  &&  qualKey != "anticodon") {
+        if (thereShouldBeMore && qualKey != "anticodon") {
             CFlatParseReport::UnbalancedQuotes(qualKey);
         }
         return false;
@@ -242,7 +242,7 @@ bool CQualParser::xParseQualifierCont(
 
     thereIsMore = true;
     if (NStr::EndsWith(cleaned, '\"')) {
-        cleaned = cleaned.substr(0, cleaned.size() - 1);
+        cleaned     = cleaned.substr(0, cleaned.size() - 1);
         thereIsMore = false;
     }
     xQualValAppendLine(qualKey, cleaned, qualVal);
@@ -259,7 +259,7 @@ bool CQualParser::xValidateSyntax(
     // sIsLegalQual should be here, but for efficieny it was done before even
     //  extracting the qualifier value.
 
-    if (!sHasBalancedQuotes(qualVal)) {
+    if (! sHasBalancedQuotes(qualVal)) {
         CFlatParseReport::UnbalancedQuotes(qualKey);
         return false;
     }
@@ -271,31 +271,30 @@ bool CQualParser::xValidateSyntax(
 void CQualParser::xQualValAppendLine(
     const string& qualKey,
     const string& line,
-    string& qualData)
+    string&       qualData)
 //  ----------------------------------------------------------------------------
 {
     // Consult notes for RW-1600 for documentation on the below.
     // Or don't --- most of the below does not derive from written specs (no such
     //  thing) but from observing what's happening out in the wild.
-    // As a primer: the main problem is to determine whether a line break is on a 
-    //  word  boundary or not. With lots of run-on chemical compound names 
+    // As a primer: the main problem is to determine whether a line break is on a
+    //  word  boundary or not. With lots of run-on chemical compound names
     //  poluting in particular the /note qualifiers that's a non-trivial problem.
     //  It's particularly tricky if a word is too long for a line by just one or
-    //  two characters. or just fits into a line and the next token is just one 
+    //  two characters. or just fits into a line and the next token is just one
     //  or two characters.
     //
 
-    //if (qualKey == "note"  &&  
+    //if (qualKey == "note"  &&
     //        qualData.find(
     //        "Catalytic activity: GTP cyclohydrolases II convert") != string::npos) {
     //    cerr << ""; //breakpoint
     //}
-    // 
+    //
     string lastDataChunkSeen = "";
     if (qualKey == mLastKeyForDataChunk) {
         lastDataChunkSeen = mLastDataChunkForKey;
-    }
-    else {
+    } else {
         mLastKeyForDataChunk = qualKey;
     }
     mLastDataChunkForKey = line;
@@ -315,34 +314,32 @@ void CQualParser::xQualValAppendLine(
         qualData += line;
         return;
     }
-    if (qualData[sizeAlready -1] == '-'  &&  qualData[sizeAlready -2] != ' ') {
+    if (qualData[sizeAlready - 1] == '-' && qualData[sizeAlready - 2] != ' ') {
         qualData += line;
         return;
     }
-    if (NStr::EndsWith(qualData, "(EC")  &&  '0' <= line[0]  &&  line[0] <= '9'  ) {
+    if (NStr::EndsWith(qualData, "(EC") && '0' <= line[0] && line[0] <= '9') {
         qualData += ' ';
         qualData += line;
         return;
     }
-    if (qualData[sizeAlready-1] == ','  &&  line[0] == '(') {
+    if (qualData[sizeAlready - 1] == ',' && line[0] == '(') {
         qualData += ' ';
         qualData += line;
         return;
     }
 
     auto lastSeenSize = lastDataChunkSeen.size();
-    auto recentBlank = lastDataChunkSeen.find(' ');
-    if (lastSeenSize == mMaxChunkSize - 1  ||  lastSeenSize == mMaxChunkSize) {
+    auto recentBlank  = lastDataChunkSeen.find(' ');
+    if (lastSeenSize == mMaxChunkSize - 1 || lastSeenSize == mMaxChunkSize) {
         if (recentBlank != string::npos) {
             qualData += ' ';
-        }
-        else {
+        } else {
             auto pendingBlank = line.find(' ');
-            if (lastSeenSize == mMaxChunkSize-1) {
+            if (lastSeenSize == mMaxChunkSize - 1) {
                 if (pendingBlank > 2) {
                     qualData += ' ';
-                }
-                else if (pendingBlank == 1) {
+                } else if (pendingBlank == 1) {
                     auto singleCharAllowed = string("+-").find(line[0]);
                     if (singleCharAllowed != string::npos) {
                         qualData += ' ';
@@ -382,20 +379,20 @@ bool CQualParser::sHasBalancedQuotes(
     const string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    int countEscapedQuotes(0);
+    int  countEscapedQuotes(0);
     auto nextEscapedQuote = qualVal.find("\"\"");
     while (nextEscapedQuote != string::npos) {
         ++countEscapedQuotes;
-        nextEscapedQuote = qualVal.find("\"\"", nextEscapedQuote+2);
+        nextEscapedQuote = qualVal.find("\"\"", nextEscapedQuote + 2);
     }
-    int countAnyQuotes(0);
+    int  countAnyQuotes(0);
     auto nextAnyQuote = qualVal.find("\"");
     while (nextAnyQuote != string::npos) {
         ++countAnyQuotes;
-        nextAnyQuote = qualVal.find("\"", nextAnyQuote+1);
+        nextAnyQuote = qualVal.find("\"", nextAnyQuote + 1);
     }
-    return (0 == countEscapedQuotes % 4  &&  
-        countAnyQuotes == 2*countEscapedQuotes);
+    return (0 == countEscapedQuotes % 4 &&
+            countAnyQuotes == 2 * countEscapedQuotes);
 }
 
 

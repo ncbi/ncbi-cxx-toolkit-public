@@ -48,9 +48,9 @@ public:
     using DATA = vector<string>;
 
     CQualParser(
-        Parser::EFormat fmt,
-        const string& featKey,
-        const string& featLocation,
+        Parser::EFormat       fmt,
+        const string&         featKey,
+        const string&         featLocation,
         const vector<string>& qualLines);
     virtual ~CQualParser();
 
@@ -64,49 +64,49 @@ private:
     bool xParseQualifierHead(
         string& qualKey,
         string& qualVal,
-        bool& thereIsMore);
+        bool&   thereIsMore);
 
     bool xParseQualifierTail(
         const string& qualKey,
-        string& qualVal,
-        bool& thereIsMore);
+        string&       qualVal,
+        bool&         thereIsMore);
 
     bool xParseQualifierStart(
-        bool silent,
+        bool    silent,
         string& qualKey,
         string& qualVal,
-        bool& thereIsMore);
+        bool&   thereIsMore);
 
     bool xParseQualifierCont(
         const string& qualKey,
-        string& qualVal,
-        bool& thereIsMore);
+        string&       qualVal,
+        bool&         thereIsMore);
 
-    bool xValidateSyntax(               //rule: 
-        const string& qualKey,          // check syntax rules in the parser
-        const string& qualVal);         // leave semantic rules for the validator
+    bool xValidateSyntax(       //rule:
+        const string& qualKey,  // check syntax rules in the parser
+        const string& qualVal); // leave semantic rules for the validator
 
     static bool sIsLegalQual(
         const string& qualKey);
     static bool sHasBalancedQuotes(
         const string& qualVal);
-    
+
     void xQualValAppendLine(
         const string& qualKey,
         const string& line,
-        string& qualData);
+        string&       qualData);
 
-    Parser::EFormat mFlatFormat;
-    const string& mFeatKey;
-    const string& mFeatLocation;
-    CQualCleanup mCleanerUpper;
-    const DATA& mData;
+    Parser::EFormat      mFlatFormat;
+    const string&        mFeatKey;
+    const string&        mFeatLocation;
+    CQualCleanup         mCleanerUpper;
+    const DATA&          mData;
     DATA::const_iterator mCurrent;
-    string mPendingKey;
-    string mPendingVal;
+    string               mPendingKey;
+    string               mPendingVal;
 
-    string mLastKeyForDataChunk;
-    string mLastDataChunkForKey;
+    string                  mLastKeyForDataChunk;
+    string                  mLastDataChunkForKey;
     const string::size_type mMaxChunkSize;
 };
 

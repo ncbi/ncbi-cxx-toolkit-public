@@ -37,15 +37,15 @@
 #include "qual_validate.hpp"
 #include "ftaerr.hpp"
 
-# include <objtools/flatfile/flat2err.h>
+#include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
 //  ----------------------------------------------------------------------------
 CQualCleanup::CQualCleanup(
     const string& featKey,
-    const string& featLocation):
-//  ---------------------------------------------------------------------------- 
+    const string& featLocation) :
+    //  ----------------------------------------------------------------------------
     mFeatKey(featKey),
     mFeatLocation(featLocation)
 {
@@ -58,14 +58,14 @@ bool CQualCleanup::CleanAndValidate(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    using VALIDATOR = bool (CQualCleanup::*)(string&, string&);
+    using VALIDATOR                          = bool (CQualCleanup::*)(string&, string&);
     static map<string, VALIDATOR> validators = {
-        {"note", &CQualCleanup::xCleanAndValidateNote},
-        {"specific_host", &CQualCleanup::xCleanAndValidateSpecificHost},
-        {"replace", &CQualCleanup::xCleanAndValidateReplace},
-        {"rpt_unit", &CQualCleanup::xCleanAndValidateRptUnit},
-        {"rpt_unit_seq", &CQualCleanup::xCleanAndValidateRptUnitSeq},
-        {"translation", &CQualCleanup::xCleanAndValidateTranslation},
+        { "note", &CQualCleanup::xCleanAndValidateNote },
+        { "specific_host", &CQualCleanup::xCleanAndValidateSpecificHost },
+        { "replace", &CQualCleanup::xCleanAndValidateReplace },
+        { "rpt_unit", &CQualCleanup::xCleanAndValidateRptUnit },
+        { "rpt_unit_seq", &CQualCleanup::xCleanAndValidateRptUnitSeq },
+        { "translation", &CQualCleanup::xCleanAndValidateTranslation },
     };
 
     //if (qualKey == "note"  && qualVal.find("C. briggsae CBR-UBC-20 protein;") != string::npos) {
@@ -93,19 +93,18 @@ bool CQualCleanup::xCleanAndValidateGeneric(
         if (shouldHaveValue) {
             CFlatParseReport::QualShouldHaveValue(mFeatKey, mFeatLocation, qualKey);
             return false;
-        }
-        else {
+        } else {
             CFlatParseReport::QualShouldNotHaveValue(mFeatKey, mFeatLocation, qualKey);
             qualVal.clear();
             return true;
         }
     }
-    if (!shouldHaveValue) {
+    if (! shouldHaveValue) {
         return true;
     }
     string firstEmbedded;
-    if (mFeatKey != "misc_feature"  &&  qualKey != "note"  && 
-            xValueContainsEmbeddedQualifier(qualVal, firstEmbedded)) {
+    if (mFeatKey != "misc_feature" && qualKey != "note" &&
+        xValueContainsEmbeddedQualifier(qualVal, firstEmbedded)) {
         CFlatParseReport::ContainsEmbeddedQualifier(
             mFeatKey, mFeatLocation, qualKey, firstEmbedded, false);
     }
@@ -119,8 +118,8 @@ bool CQualCleanup::xCleanAndValidateConsSplice(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    return xCleanAndValidateGeneric(qualKey, qualVal)  &&
-        xCleanFollowCommasWithBlanks(qualVal);
+    return xCleanAndValidateGeneric(qualKey, qualVal) &&
+           xCleanFollowCommasWithBlanks(qualVal);
 }
 
 
@@ -128,7 +127,7 @@ bool CQualCleanup::xCleanAndValidateConsSplice(
 bool CQualCleanup::xCleanAndValidateNote(
     string& qualKey,
     string& qualVal)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     if (qualVal.empty()) {
         CFlatParseReport::QualShouldHaveValue(mFeatKey, mFeatLocation, qualKey);
@@ -170,7 +169,7 @@ bool CQualCleanup::xCleanAndValidateReplace(
         return true;
     }
     return xCleanStripBlanks(qualVal) &&
-        xCleanAndValidateGeneric(qualKey, qualVal);
+           xCleanAndValidateGeneric(qualKey, qualVal);
 }
 
 
@@ -180,8 +179,8 @@ bool CQualCleanup::xCleanAndValidateRptUnit(
     string& qualVal)
 //  ----------------------------------------------------------------------------
 {
-    return xCleanAndValidateGeneric(qualKey, qualVal)  &&
-        xCleanToLower(qualVal);
+    return xCleanAndValidateGeneric(qualKey, qualVal) &&
+           xCleanToLower(qualVal);
 }
 
 
@@ -189,11 +188,11 @@ bool CQualCleanup::xCleanAndValidateRptUnit(
 bool CQualCleanup::xCleanAndValidateRptUnitSeq(
     string& qualKey,
     string& qualVal)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
-    return xCleanStripBlanks(qualVal)  &&
-        xCleanAndValidateGeneric(qualKey, qualVal) &&
-        xCleanToLower(qualVal);
+    return xCleanStripBlanks(qualVal) &&
+           xCleanAndValidateGeneric(qualKey, qualVal) &&
+           xCleanToLower(qualVal);
 }
 
 
@@ -204,7 +203,7 @@ bool CQualCleanup::xCleanAndValidateTranslation(
 //  ----------------------------------------------------------------------------
 {
     return xCleanStripBlanks(qualVal) &&
-        xCleanAndValidateGeneric(qualKey, qualVal);
+           xCleanAndValidateGeneric(qualKey, qualVal);
 }
 
 
@@ -233,12 +232,12 @@ bool CQualCleanup::xCleanFollowCommasWithBlanks(
     string& val)
 //  ----------------------------------------------------------------------------
 {
-    auto origSize = val.size();
+    auto   origSize = val.size();
     string newVal(1, val[0]);
-    newVal.reserve(2*origSize);
-    for (string::size_type i=1; i < origSize-1; ++i) {
+    newVal.reserve(2 * origSize);
+    for (string::size_type i = 1; i < origSize - 1; ++i) {
         newVal += val[i];
-        if (val[i] == ','  &&  val[i+1] != ' ') {
+        if (val[i] == ',' && val[i + 1] != ' ') {
             newVal += ' ';
         }
     }
@@ -257,12 +256,12 @@ bool xIsWordBoundary(
     //const string extraWordChars("_");
     //return extraWordChars.find(c) == string::npos;
 
-    return (c != '_'  &&  !std::isalnum(c)); //until it gets more complicated
+    return (c != '_' && ! std::isalnum(c)); //until it gets more complicated
 }
 
 string::size_type xFindWordBoundary(
     const string& val,
-    size_t offset)
+    size_t        offset)
 {
     auto boundary = std::find_if(val.begin() + offset, val.end(), xIsWordBoundary);
     if (boundary == val.end()) {
@@ -274,14 +273,14 @@ string::size_type xFindWordBoundary(
 //  ----------------------------------------------------------------------------
 bool CQualCleanup::xValueContainsEmbeddedQualifier(
     const string& val,
-    string& firstEmbedded)
-    //  ----------------------------------------------------------------------------
+    string&       firstEmbedded)
+//  ----------------------------------------------------------------------------
 {
     auto slash = val.find('/', 0);
     while (slash != string::npos) {
-        auto boundary = xFindWordBoundary(val, slash+1);
+        auto boundary  = xFindWordBoundary(val, slash + 1);
         auto inBetween = val.substr(
-            slash+1, boundary == string::npos ? boundary : boundary - slash - 1);
+            slash + 1, boundary == string::npos ? boundary : boundary - slash - 1);
         auto type = objects::CSeqFeatData::GetQualifierType(inBetween);
         if (type != objects::CSeqFeatData::eQual_bad) {
             firstEmbedded = inBetween;
@@ -297,16 +296,27 @@ bool CQualCleanup::xValueContainsEmbeddedQualifier(
 bool CQualCleanup::xValueIsMissingOrExtra(
     const string& qualKey,
     const string& qualVal,
-    bool& shouldHaveValue)
+    bool&         shouldHaveValue)
 //  ----------------------------------------------------------------------------
 {
     static const vector<string> emptyQuals = {
-        "chloroplast", "chromoplast", "cyanelle",
-        "environmental_sample", "focus", "germline", "kinetoplast",
-        "macronuclear", "metagenomic", "mitochondrion",
-        "partial", "proviral", "pseudo",
-        "rearranged", "ribosomal_slippage",
-        "trans_splicing", "transgenic",
+        "chloroplast",
+        "chromoplast",
+        "cyanelle",
+        "environmental_sample",
+        "focus",
+        "germline",
+        "kinetoplast",
+        "macronuclear",
+        "metagenomic",
+        "mitochondrion",
+        "partial",
+        "proviral",
+        "pseudo",
+        "rearranged",
+        "ribosomal_slippage",
+        "trans_splicing",
+        "transgenic",
         "virion",
     };
     auto qualIt = std::find(emptyQuals.begin(), emptyQuals.end(), qualKey);
@@ -314,7 +324,7 @@ bool CQualCleanup::xValueIsMissingOrExtra(
         shouldHaveValue = true;
         return true;
     }
-    if (qualIt != emptyQuals.end() && !qualVal.empty()) {
+    if (qualIt != emptyQuals.end() && ! qualVal.empty()) {
         shouldHaveValue = false;
         return true;
     }
