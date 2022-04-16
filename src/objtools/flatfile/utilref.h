@@ -49,17 +49,17 @@
 
 BEGIN_NCBI_SCOPE
 
-Int4         valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress);
-ValNodePtr   get_tokens(char* str, const Char *delimeter);
+Int4       valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress);
+ValNodePtr get_tokens(char* str, const Char* delimeter);
 
 void DealWithGenes(TEntryList& seq_entries, ParserPtr pp);
 
 CRef<objects::CCit_gen> get_error(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title);
-CRef<objects::CDate> get_date(const Char* year);
-void get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths);
-void get_auth(char* pt, Uint1 format, char* jour, CRef<objects::CAuth_list>& auths);
-void get_auth_from_toks(ValNodePtr tokens, Uint1 format, CRef<objects::CAuth_list>& auths);
-CRef<objects::CAuthor> get_std_auth(const Char* token, Uint1 format);
+CRef<objects::CDate>    get_date(const Char* year);
+void                    get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths);
+void                    get_auth(char* pt, Uint1 format, char* jour, CRef<objects::CAuth_list>& auths);
+void                    get_auth_from_toks(ValNodePtr tokens, Uint1 format, CRef<objects::CAuth_list>& auths);
+CRef<objects::CAuthor>  get_std_auth(const Char* token, Uint1 format);
 
 END_NCBI_SCOPE
 

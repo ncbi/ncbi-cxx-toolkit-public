@@ -44,20 +44,20 @@
 BEGIN_NCBI_SCOPE
 
 typedef union dataval {
-    void* ptrvalue;
-    int intvalue;
+    void*  ptrvalue;
+    int    intvalue;
     double realvalue;
-    bool        boolvalue;
-    int	(*funcvalue)();
-    Int8    bigintvalue;
+    bool   boolvalue;
+    int (*funcvalue)();
+    Int8 bigintvalue;
 } DataVal;
 
 typedef struct valnode {
-    unsigned char choice;          /* to pick a choice */
-    unsigned char extended;        /* extra fields reserved to NCBI allocated in structure */
-    DataVal data;              /* attached data */
-    bool    fatal;
-    struct valnode *next;  /* next in linked list */
+    unsigned char   choice;   /* to pick a choice */
+    unsigned char   extended; /* extra fields reserved to NCBI allocated in structure */
+    DataVal         data;     /* attached data */
+    bool            fatal;
+    struct valnode* next; /* next in linked list */
 } ValNode, *ValNodePtr;
 
 ValNodePtr ValNodeNew(ValNodePtr vnp);
@@ -66,7 +66,7 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp);
 ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode);
 
 ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str);
-char* ValNodeMergeStrsEx(ValNodePtr list, char* separator);
+char*      ValNodeMergeStrsEx(ValNodePtr list, char* separator);
 
 END_NCBI_SCOPE
 

@@ -55,8 +55,7 @@ ValNodePtr ValNodeNew(ValNodePtr vnp)
     ValNodePtr newnode;
 
     newnode = (ValNodePtr)MemNew(sizeof(ValNode));
-    if (vnp != NULL)
-    {
+    if (vnp != NULL) {
         while (vnp->next != NULL)
             vnp = vnp->next;
         vnp->next = newnode;
@@ -76,8 +75,7 @@ ValNodePtr ValNodeFree(ValNodePtr vnp)
 {
     ValNodePtr next;
 
-    while (vnp != NULL)
-    {
+    while (vnp != NULL) {
         next = vnp->next;
         MemFree(vnp);
         vnp = next;
@@ -97,8 +95,7 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp)
 {
     ValNodePtr next;
 
-    while (vnp != NULL)
-    {
+    while (vnp != NULL) {
         MemFree(vnp->data.ptrvalue);
         next = vnp->next;
         MemFree(vnp);
@@ -124,13 +121,11 @@ ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode)
 
     vnp = *head;
 
-    if (vnp != NULL)
-    {
+    if (vnp != NULL) {
         while (vnp->next != NULL)
             vnp = vnp->next;
         vnp->next = newnode;
-    }
-    else
+    } else
         *head = newnode;
 
     return *head;
@@ -139,15 +134,17 @@ ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode)
 
 static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str, const char* pfx, const char* sfx)
 {
-    size_t       len, pfx_len, sfx_len, str_len;
-    ValNodePtr   newnode = NULL, vnp;
-    char*  ptr;
-    char*  tmp;
+    size_t     len, pfx_len, sfx_len, str_len;
+    ValNodePtr newnode = NULL, vnp;
+    char*      ptr;
+    char*      tmp;
 
-    if (str == NULL) return NULL;
+    if (str == NULL)
+        return NULL;
 
     newnode = ValNodeNew(NULL);
-    if (newnode == NULL) return NULL;
+    if (newnode == NULL)
+        return NULL;
 
     str_len = StringLen(str);
     pfx_len = StringLen(pfx);
@@ -173,7 +170,8 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
     }
 
     ptr = (char*)MemNew(sizeof(char) * (len + 2));
-    if (ptr == NULL) return NULL;
+    if (ptr == NULL)
+        return NULL;
 
     tmp = ptr;
     if (pfx_len > 0) {
@@ -187,7 +185,7 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
     }
 
     if (newnode != NULL) {
-        newnode->choice = (unsigned char)choice;
+        newnode->choice        = (unsigned char)choice;
         newnode->data.ptrvalue = ptr;
     }
 
@@ -201,17 +199,18 @@ ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, co
 
 static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, char* sfx)
 {
-    size_t       len;
-    size_t       lens;
-    size_t       pfx_len;
-    char*  ptr;
-    char*  sep;
-    size_t       sfx_len;
-    char*  str;
-    char*  tmp;
-    ValNodePtr   vnp;
+    size_t     len;
+    size_t     lens;
+    size_t     pfx_len;
+    char*      ptr;
+    char*      sep;
+    size_t     sfx_len;
+    char*      str;
+    char*      tmp;
+    ValNodePtr vnp;
 
-    if (list == NULL) return NULL;
+    if (list == NULL)
+        return NULL;
 
     pfx_len = StringLen(pfx);
     sfx_len = StringLen(sfx);
@@ -223,11 +222,13 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, c
         len += StringLen(str);
         len += lens;
     }
-    if (len == 0) return NULL;
+    if (len == 0)
+        return NULL;
     len += pfx_len + sfx_len;
 
     ptr = (char*)MemNew(sizeof(char) * (len + 2));
-    if (ptr == NULL) return NULL;
+    if (ptr == NULL)
+        return NULL;
 
     tmp = ptr;
     if (pfx_len > 0) {
