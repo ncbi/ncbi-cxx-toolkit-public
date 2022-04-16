@@ -60,15 +60,15 @@
 
 BEGIN_NCBI_SCOPE
 
-struct GeneRefFeats
-{
-    bool valid;
+struct GeneRefFeats {
+    bool                   valid;
     TSeqFeatList::iterator first;
     TSeqFeatList::iterator last;
 
     GeneRefFeats() :
         valid(false)
-    {}
+    {
+    }
 };
 
 void CheckDupDates(TEntryList& seq_entries);
