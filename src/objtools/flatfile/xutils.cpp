@@ -66,10 +66,10 @@ USING_SCOPE(objects);
 static bool XISAGappedSeqLoc(const CSeq_loc& loc)
 {
     const CSeq_id* id = loc.GetId();
-    if (id == nullptr || !id->IsGeneral() || !id->GetGeneral().IsSetDb() || !id->GetGeneral().IsSetTag())
+    if (id == nullptr || ! id->IsGeneral() || ! id->GetGeneral().IsSetDb() || ! id->GetGeneral().IsSetTag())
         return false;
 
-    
+
     if ((id->GetGeneral().GetDb() == seqlitdbtag || id->GetGeneral().GetDb() == unkseqlitdbtag) && id->GetGeneral().GetTag().GetId() == 0)
         return true;
 
@@ -90,23 +90,19 @@ static bool XISAGappedSeqLoc(const CSeq_loc& loc)
 **********************************************************/
 void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
 {
-    ITERATE(TSeqLocList, loc, locs)
-    {
+    ITERATE (TSeqLocList, loc, locs) {
         CRef<CDelta_seq> delta(new CDelta_seq);
-        if (XISAGappedSeqLoc(*(*loc)))
-        {
+        if (XISAGappedSeqLoc(*(*loc))) {
             const CSeq_interval& interval = (*loc)->GetInt();
             delta->SetLiteral().SetLength(interval.GetTo() - interval.GetFrom() + 1);
 
             const CSeq_id* id = (*loc)->GetId();
-            if (id != nullptr)
-            {
+            if (id != nullptr) {
                 const CDbtag& tag = id->GetGeneral();
                 if (tag.GetDb() == unkseqlitdbtag)
                     delta->SetLiteral().SetFuzz().SetLim();
             }
-        }
-        else
+        } else
             delta->SetLoc().Assign(*(*loc));
 
         deltas.push_back(delta);
@@ -116,23 +112,22 @@ void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
 /**********************************************************/
 int XDateCheck(const CDate_std& date)
 {
-    Int2 	day, month, year, last;
-    static Uint1 days[12] = { 31, 28, 31, 30, 31,
-        30, 31, 31, 30, 31, 30, 31 };
+    Int2         day, month, year, last;
+    static Uint1 days[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-    if (!date.IsSetYear())
+    if (! date.IsSetYear())
         return 3;
 
     year = date.GetYear();
 
-    if (!date.IsSetMonth())
+    if (! date.IsSetMonth())
         return -2;
 
     month = date.GetMonth();
     if (month > 12)
         return 2;
 
-    if (!date.IsSetDay())
+    if (! date.IsSetDay())
         return -1;
 
     day = date.GetDay();

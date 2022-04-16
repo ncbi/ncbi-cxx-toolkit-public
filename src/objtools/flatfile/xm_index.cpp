@@ -53,11 +53,12 @@
 BEGIN_NCBI_SCOPE
 
 typedef struct _XmlKwordBlk {
-    const char *str;
-    Int4       order;
-    Int4       tag;
+    const char* str;
+    Int4        order;
+    Int4        tag;
 } XmlKwordBlk, *XmlKwordBlkPtr;
 
+// clang-format off
 XmlKwordBlk xmkwl[] = {
     {"<INSDSeq_locus>",                 1, INSDSEQ_LOCUS},
     {"<INSDSeq_length>",                2, INSDSEQ_LENGTH},
@@ -144,22 +145,23 @@ XmlKwordBlk xmsubkwl[] = {
     {"<INSDXref>",                      1, INSDXREF},
     {NULL,                             -1, -1}
 };
+// clang-format on
 
 /**********************************************************/
 static XmlIndexPtr XMLIndexNew(void)
 {
     XmlIndexPtr xip;
 
-    xip = (XmlIndexPtr) MemNew(sizeof(XmlIndex));
-    xip->tag = -1;
-    xip->order = -1;
-    xip->start = 0;
-    xip->end = 0;
+    xip             = (XmlIndexPtr)MemNew(sizeof(XmlIndex));
+    xip->tag        = -1;
+    xip->order      = -1;
+    xip->start      = 0;
+    xip->end        = 0;
     xip->start_line = -1;
-    xip->end_line = -1;
-    xip->subtags = NULL;
-    xip->next = NULL;
-    return(xip);
+    xip->end_line   = -1;
+    xip->subtags    = NULL;
+    xip->next       = NULL;
+    return (xip);
 }
 
 /**********************************************************/
@@ -168,34 +170,23 @@ static void XMLRestoreSpecialCharacters(char* buf)
     char* p;
     char* q;
 
-    for(p = buf, q = buf; *p != '\0';)
-    {
-        if(StringNCmp(p, "&lt;", 4) == 0)
-        {
+    for (p = buf, q = buf; *p != '\0';) {
+        if (StringNCmp(p, "&lt;", 4) == 0) {
             *q++ = '<';
             p += 4;
-        }
-        else if(StringNCmp(p, "&gt;", 4) == 0)
-        {
+        } else if (StringNCmp(p, "&gt;", 4) == 0) {
             *q++ = '>';
             p += 4;
-        }
-        else if(StringNCmp(p, "&amp;", 5) == 0)
-        {
+        } else if (StringNCmp(p, "&amp;", 5) == 0) {
             *q++ = '&';
             p += 5;
-        }
-        else if(StringNCmp(p, "&apos;", 6) == 0)
-        {
+        } else if (StringNCmp(p, "&apos;", 6) == 0) {
             *q++ = '\'';
             p += 6;
-        }
-        else if(StringNCmp(p, "&quot;", 6) == 0)
-        {
+        } else if (StringNCmp(p, "&quot;", 6) == 0) {
             *q++ = '\"';
             p += 6;
-        }
-        else
+        } else
             *q++ = *p++;
     }
     *q = '\0';
@@ -204,58 +195,57 @@ static void XMLRestoreSpecialCharacters(char* buf)
 /**********************************************************/
 char* XMLGetTagValue(char* entry, XmlIndexPtr xip)
 {
-    if(entry == NULL || xip == NULL || xip->start == 0 || xip->end == 0 ||
-       xip->start >= xip->end)
-        return(NULL);
+    if (entry == NULL || xip == NULL || xip->start == 0 || xip->end == 0 ||
+        xip->start >= xip->end)
+        return (NULL);
 
-    size_t i = xip->end - xip->start;
-    char* buf = (char*)MemNew(i + 1);
+    size_t i   = xip->end - xip->start;
+    char*  buf = (char*)MemNew(i + 1);
     StringNCpy(buf, entry + xip->start, i);
     buf[i] = '\0';
 
     XMLRestoreSpecialCharacters(buf);
-    return(buf);
+    return (buf);
 }
 
 /**********************************************************/
 char* XMLFindTagValue(char* entry, XmlIndexPtr xip, Int4 tag)
 {
-    for(; xip != NULL; xip = xip->next)
-        if(xip->tag == tag)
+    for (; xip != NULL; xip = xip->next)
+        if (xip->tag == tag)
             break;
-    if(xip == NULL)
-        return(NULL);
-    return(XMLGetTagValue(entry, xip));
+    if (xip == NULL)
+        return (NULL);
+    return (XMLGetTagValue(entry, xip));
 }
 
 /**********************************************************/
 static bool XMLDelSegnum(IndexblkPtr ibp, char* segnum, size_t len2)
 {
-    if(segnum == NULL)
+    if (segnum == NULL)
         return false;
     size_t len1 = StringLen(segnum);
-    if(len2 < len1)
+    if (len2 < len1)
         return false;
 
     /* check, is there enough digits to delete
      */
     size_t tlen = len1;
-    char* str = ibp->blocusname;
-    size_t i = StringLen(str) - 1;
-    for(; tlen > 0 && str[i] >= '0' && str[i] <= '9'; i--)
+    char*  str  = ibp->blocusname;
+    size_t i    = StringLen(str) - 1;
+    for (; tlen > 0 && str[i] >= '0' && str[i] <= '9'; i--)
         tlen--;
 
-    if(tlen != 0 || i < 0)
+    if (tlen != 0 || i < 0)
         return false;
 
-    if(len2 > len1 && str[i] == '0')
-    {
+    if (len2 > len1 && str[i] == '0') {
         /* check, is there enough "0" appended
          */
-        for(tlen = len2 - len1; tlen > 0 && str[i] == '0'; i--)
+        for (tlen = len2 - len1; tlen > 0 && str[i] == '0'; i--)
             tlen--;
 
-        if(tlen != 0)
+        if (tlen != 0)
             return false;
     }
 
@@ -265,15 +255,12 @@ static bool XMLDelSegnum(IndexblkPtr ibp, char* segnum, size_t len2)
         p++;
 
     i = atoi(segnum);
-    if(atoi(p) != (int) i)
-    {
-        ErrPostEx(SEV_REJECT, ERR_SEGMENT_BadLocusName,
-                  "Segment suffix in locus name \"%s\" does not match number in <INSDSEQ_segment> line = \"%d\". Entry dropped.",
-                  str, i);
+    if (atoi(p) != (int)i) {
+        ErrPostEx(SEV_REJECT, ERR_SEGMENT_BadLocusName, "Segment suffix in locus name \"%s\" does not match number in <INSDSEQ_segment> line = \"%d\". Entry dropped.", str, i);
         ibp->drop = 1;
     }
 
-    *q = '\0';                          /* strip off "len" characters */
+    *q = '\0'; /* strip off "len" characters */
     return true;
 }
 
@@ -282,44 +269,37 @@ static void XMLGetSegment(char* entry, IndexblkPtr ibp)
 {
     TokenStatBlkPtr stoken;
     XmlIndexPtr     xip;
-    char*         buf;
-    char*         segnum;
-    char*         segtotal;
+    char*           buf;
+    char*           segnum;
+    char*           segtotal;
 
-    if(entry == NULL || ibp == NULL || ibp->xip == NULL)
+    if (entry == NULL || ibp == NULL || ibp->xip == NULL)
         return;
 
-    for(xip = ibp->xip; xip != NULL; xip = xip->next)
-        if(xip->tag == INSDSEQ_SEGMENT)
+    for (xip = ibp->xip; xip != NULL; xip = xip->next)
+        if (xip->tag == INSDSEQ_SEGMENT)
             break;
-    if(xip == NULL)
+    if (xip == NULL)
         return;
 
     buf = XMLGetTagValue(entry, xip);
-    if(buf == NULL)
+    if (buf == NULL)
         return;
 
     stoken = TokenString(buf, ' ');
 
-    if(stoken->num > 2)
-    {
-        segnum = stoken->list->str;
-        segtotal = stoken->list->next->next->str;
-        ibp->segnum = (Uint2) atoi(segnum);
+    if (stoken->num > 2) {
+        segnum      = stoken->list->str;
+        segtotal    = stoken->list->next->next->str;
+        ibp->segnum = (Uint2)atoi(segnum);
 
-        if (!XMLDelSegnum(ibp, segnum, StringLen(segtotal)))
-        {
-            ErrPostEx(SEV_ERROR, ERR_SEGMENT_BadLocusName,
-                      "Bad locus name \"%s\".", ibp->blocusname);
+        if (! XMLDelSegnum(ibp, segnum, StringLen(segtotal))) {
+            ErrPostEx(SEV_ERROR, ERR_SEGMENT_BadLocusName, "Bad locus name \"%s\".", ibp->blocusname);
         }
 
-        ibp->segtotal = (Uint2) atoi(segtotal);
-    }
-    else
-    {
-        ErrPostEx(SEV_ERROR, ERR_SEGMENT_IncompSeg,
-                  "Incomplete Segment information at line %d.",
-                  xip->start_line);
+        ibp->segtotal = (Uint2)atoi(segtotal);
+    } else {
+        ErrPostEx(SEV_ERROR, ERR_SEGMENT_IncompSeg, "Incomplete Segment information at line %d.", xip->start_line);
     }
 
     FreeTokenstatblk(stoken);
@@ -327,19 +307,22 @@ static void XMLGetSegment(char* entry, IndexblkPtr ibp)
 }
 
 
-static bool s_HasInput(const Parser& config) {
+static bool s_HasInput(const Parser& config)
+{
     return (config.ffbuf.start != nullptr);
 }
 
 
-static int s_GetCharAndAdvance(Parser& config) {
+static int s_GetCharAndAdvance(Parser& config)
+{
     if (*config.ffbuf.current == '\0') {
         return -1;
     }
     return *(config.ffbuf.current++);
 }
 
-void s_SetPointer(Parser& config, int offset) {
+void s_SetPointer(Parser& config, int offset)
+{
     config.ffbuf.current = config.ffbuf.start + offset;
 }
 
@@ -351,7 +334,7 @@ static void XMLPerformIndex(ParserPtr pp)
     IndBlkNextPtr  tibnp;
     XmlIndexPtr    xip;
     IndexblkPtr    ibp;
-    char*        p;
+    char*          p;
     Char           s[60];
     Char           ch;
     size_t         count;
@@ -360,156 +343,132 @@ static void XMLPerformIndex(ParserPtr pp)
     Int4           i;
 
 
-    if (!pp || !s_HasInput(*pp)) {
+    if (! pp || ! s_HasInput(*pp)) {
         return;
     }
 
-    c = 0;
-    s[0] = '\0';
-    bool within = false;
-    tibnp = NULL;
-    ibnp = NULL;
-    ibp = NULL;
-    xip = NULL;
-    pp->indx = 0;
+    c                = 0;
+    s[0]             = '\0';
+    bool within      = false;
+    tibnp            = NULL;
+    ibnp             = NULL;
+    ibp              = NULL;
+    xip              = NULL;
+    pp->indx         = 0;
     size_t start_len = StringLen(INSDSEQ_START);
-    for(count = 0, line = 1;;)
-    {
-        if(c != '<')
-        {
+    for (count = 0, line = 1;;) {
+        if (c != '<') {
             c = s_GetCharAndAdvance(*pp);
-            if(c < 0)
+            if (c < 0)
                 break;
             count++;
-            if((Char) c == '\n')
+            if ((Char)c == '\n')
                 line++;
         }
-        if(c != '<')
+        if (c != '<')
             continue;
 
         s[0] = '<';
-        for(i = 1; i < 50; i++)
-        {
+        for (i = 1; i < 50; i++) {
             c = s_GetCharAndAdvance(*pp);
-            if(c < 0)
+            if (c < 0)
                 break;
             count++;
-            ch = (Char) c;
-            if(ch == '\n')
+            ch = (Char)c;
+            if (ch == '\n')
                 line++;
             s[i] = ch;
-            if(ch == '<' || ch == '>')
+            if (ch == '<' || ch == '>')
                 break;
         }
-        if(c < 0)
+        if (c < 0)
             break;
-        if(ch == '<')
+        if (ch == '<')
             continue;
         s[++i] = '\0';
-        if(StringCmp(s, INSDSEQ_START) == 0)
-        {
+        if (StringCmp(s, INSDSEQ_START) == 0) {
             if (within)
                 continue;
 
             within = true;
-            if(ibnp == NULL)
-            {
-                ibnp = (IndBlkNextPtr) MemNew(sizeof(IndBlkNext));
+            if (ibnp == NULL) {
+                ibnp  = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
                 tibnp = ibnp;
+            } else {
+                tibnp->next = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
+                tibnp       = tibnp->next;
             }
-            else
-            {
-                tibnp->next = (IndBlkNextPtr) MemNew(sizeof(IndBlkNext));
-                tibnp = tibnp->next;
-            }
-            tibnp->next = NULL;
-            tibnp->ibp = new Indexblk;
-            ibp = tibnp->ibp;
-            ibp->xip = NULL;
-            ibp->offset = count - start_len;
+            tibnp->next  = NULL;
+            tibnp->ibp   = new Indexblk;
+            ibp          = tibnp->ibp;
+            ibp->xip     = NULL;
+            ibp->offset  = count - start_len;
             ibp->linenum = line;
-            ibp->len = 0;
+            ibp->len     = 0;
             pp->indx++;
             continue;
         }
-        if (!within)
-        {
-            if(StringCmp(s, INSDSEQ_END) == 0)
-                ErrPostEx(SEV_ERROR, ERR_FORMAT_UnexpectedEnd,
-                          "Unexpected end tag \"%s\" of XML record found at line %d.",
-                          s, line);
+        if (! within) {
+            if (StringCmp(s, INSDSEQ_END) == 0)
+                ErrPostEx(SEV_ERROR, ERR_FORMAT_UnexpectedEnd, "Unexpected end tag \"%s\" of XML record found at line %d.", s, line);
             continue;
         }
-        if(StringCmp(s, INSDSEQ_END) == 0)
-        {
+        if (StringCmp(s, INSDSEQ_END) == 0) {
             ibp->len = count - ibp->offset;
-            within = false;
+            within   = false;
             continue;
         }
         p = s + ((s[1] == '/') ? 2 : 1);
-        for(xkbp = xmkwl; xkbp->str != NULL; xkbp++)
-            if(StringCmp(p, xkbp->str + 1) == 0)
+        for (xkbp = xmkwl; xkbp->str != NULL; xkbp++)
+            if (StringCmp(p, xkbp->str + 1) == 0)
                 break;
-        if(xkbp->str == NULL)
+        if (xkbp->str == NULL)
             continue;
-        if(ibp->xip == NULL || xip->tag != xkbp->tag)
-        {
-            if(ibp->xip == NULL)
-            {
+        if (ibp->xip == NULL || xip->tag != xkbp->tag) {
+            if (ibp->xip == NULL) {
                 ibp->xip = XMLIndexNew();
-                xip = ibp->xip;
-            }
-            else
-            {
+                xip      = ibp->xip;
+            } else {
                 xip->next = XMLIndexNew();
-                xip = xip->next;
+                xip       = xip->next;
             }
-            xip->tag = xkbp->tag;
+            xip->tag   = xkbp->tag;
             xip->order = xkbp->order;
-            if(s[1] == '/')
-            {
-                xip->end = count - i - ibp->offset;
+            if (s[1] == '/') {
+                xip->end      = count - i - ibp->offset;
                 xip->end_line = line;
-            }
-            else
-            {
-                xip->start = count - ibp->offset;
+            } else {
+                xip->start      = count - ibp->offset;
                 xip->start_line = line;
             }
             continue;
         }
-        if(s[1] == '/')
-        {
-            if(xip->end != 0)
-            {
-                xip->next = XMLIndexNew();
-                xip = xip->next;
-                xip->tag = xkbp->tag;
+        if (s[1] == '/') {
+            if (xip->end != 0) {
+                xip->next  = XMLIndexNew();
+                xip        = xip->next;
+                xip->tag   = xkbp->tag;
                 xip->order = xkbp->order;
             }
-            xip->end = count - i - ibp->offset;
+            xip->end      = count - i - ibp->offset;
             xip->end_line = line;
-        }
-        else
-        {
-            if(xip->start != 0)
-            {
-                xip->next = XMLIndexNew();
-                xip = xip->next;
-                xip->tag = xkbp->tag;
+        } else {
+            if (xip->start != 0) {
+                xip->next  = XMLIndexNew();
+                xip        = xip->next;
+                xip->tag   = xkbp->tag;
                 xip->order = xkbp->order;
             }
-            xip->start = count - ibp->offset;
+            xip->start      = count - ibp->offset;
             xip->start_line = line;
         }
     }
 
-    pp->entrylist = (IndexblkPtr*) MemNew((pp->indx + 1) *
-                                              sizeof(IndexblkPtr));
-    for(tibnp = ibnp, i = 0; tibnp != NULL; i++, tibnp = ibnp)
-    {
+    pp->entrylist = (IndexblkPtr*)MemNew((pp->indx + 1) *
+                                         sizeof(IndexblkPtr));
+    for (tibnp = ibnp, i = 0; tibnp != NULL; i++, tibnp = ibnp) {
         pp->entrylist[i] = tibnp->ibp;
-        ibnp = tibnp->next;
+        ibnp             = tibnp->next;
         MemFree(tibnp);
     }
     pp->entrylist[i] = NULL;
@@ -521,132 +480,106 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
     char* p;
     char* q;
 
-    if(line == NULL)
-    {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine,
-                  "Empty <INSDSeq_accession-version> line. Entry dropped.");
+    if (line == NULL) {
+        ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine, "Empty <INSDSeq_accession-version> line. Entry dropped.");
         ibp->drop = 1;
         return;
     }
 
-    for(p = line; *p != '\0' && *p != ' ' && *p != '\t';)
+    for (p = line; *p != '\0' && *p != ' ' && *p != '\t';)
         p++;
-    if(*p != '\0')
-    {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine,
-                  "Incorrect <INSDSeq_accession-version> line: \"%s\". Entry dropped.",
-                  line);
+    if (*p != '\0') {
+        ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine, "Incorrect <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
         ibp->drop = 1;
         return;
     }
     q = StringRChr(line, '.');
-    if(q == NULL)
-    {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum,
-                  "Missing version number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.",
-                  line);
+    if (q == NULL) {
+        ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing version number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
         ibp->drop = 1;
         return;
     }
-    for(p = q + 1; *p >= '0' && *p <= '9';)
+    for (p = q + 1; *p >= '0' && *p <= '9';)
         p++;
-    if(*p != '\0')
-    {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum,
-                  "Incorrect VERSION number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.",
-                  line);
+    if (*p != '\0') {
+        ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
         ibp->drop = 1;
         return;
     }
     *q = '\0';
-    if(ibp->acnum == NULL || StringCmp(ibp->acnum, line) != 0)
-    {
+    if (ibp->acnum == NULL || StringCmp(ibp->acnum, line) != 0) {
         *q = '.';
-        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch,
-                  "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.",
-                  line, (ibp->acnum == NULL) ? "NULL" : ibp->acnum);
+        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.", line, (ibp->acnum == NULL) ? "NULL" : ibp->acnum);
         ibp->drop = 1;
         return;
     }
-    *q++ = '.';
+    *q++        = '.';
     ibp->vernum = atoi(q);
 
-    if(ibp->vernum > 0)
+    if (ibp->vernum > 0)
         return;
 
-    ErrPostEx(SEV_FATAL, ERR_VERSION_InvalidVersion,
-              "Version number \"%d\" from Accession.Version value \"%s.%d\" is not a positive integer. Entry dropped.",
-              ibp->vernum, ibp->acnum, ibp->vernum);
+    ErrPostEx(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"%s.%d\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
     ibp->drop = 1;
 }
 
 /**********************************************************/
-static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver,
-                            Parser::ESource source)
+static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver, Parser::ESource source)
 {
     XmlIndexPtr xip;
-    char*     buf;
+    char*       buf;
 
-    if(ibp == NULL || ibp->xip == NULL || entry == NULL)
+    if (ibp == NULL || ibp->xip == NULL || entry == NULL)
         return;
     xip = ibp->xip;
 
-    if(source == Parser::ESource::USPTO)
+    if (source == Parser::ESource::USPTO)
         ibp->is_pat = true;
 
     ibp->locusname[0] = '\0';
-    ibp->acnum[0] = '\0';
-    for(xip = ibp->xip; xip != NULL; xip = xip->next)
-    {
-        if(xip->tag == INSDSEQ_LOCUS && ibp->locusname[0] == '\0')
-        {
-            if(xip->start == 0 || xip->end == 0 || xip->start >= xip->end ||
-               source == Parser::ESource::USPTO)
-            {
+    ibp->acnum[0]     = '\0';
+    for (xip = ibp->xip; xip != NULL; xip = xip->next) {
+        if (xip->tag == INSDSEQ_LOCUS && ibp->locusname[0] == '\0') {
+            if (xip->start == 0 || xip->end == 0 || xip->start >= xip->end ||
+                source == Parser::ESource::USPTO) {
                 StringCpy(ibp->locusname, "???");
                 StringCpy(ibp->blocusname, "???");
                 continue;
             }
             size_t imax = xip->end - xip->start;
-            if(imax > (int) sizeof(ibp->locusname) - 1)
+            if (imax > (int)sizeof(ibp->locusname) - 1)
                 imax = sizeof(ibp->locusname) - 1;
             StringNCpy(ibp->locusname, entry + xip->start, imax);
             ibp->locusname[imax] = '\0';
             StringCpy(ibp->blocusname, ibp->locusname);
-        }
-        else if(xip->tag == INSDSEQ_PRIMARY_ACCESSION && ibp->acnum[0] == '\0')
-        {
-            if(xip->start == 0 || xip->end == 0 || xip->start >= xip->end)
-            {
+        } else if (xip->tag == INSDSEQ_PRIMARY_ACCESSION && ibp->acnum[0] == '\0') {
+            if (xip->start == 0 || xip->end == 0 || xip->start >= xip->end) {
                 StringCpy(ibp->acnum, "???");
                 continue;
             }
             size_t imax = xip->end - xip->start;
-            if(imax > (int) sizeof(ibp->acnum) - 1)
+            if (imax > (int)sizeof(ibp->acnum) - 1)
                 imax = sizeof(ibp->acnum) - 1;
             StringNCpy(ibp->acnum, entry + xip->start, imax);
             ibp->acnum[imax] = '\0';
         }
-        if(ibp->locusname[0] != '\0' && ibp->acnum[0] != '\0')
+        if (ibp->locusname[0] != '\0' && ibp->acnum[0] != '\0')
             break;
     }
 
     FtaInstallPrefix(PREFIX_LOCUS, ibp->locusname, NULL);
-    if(ibp->acnum[0] == '\0')
+    if (ibp->acnum[0] == '\0')
         FtaInstallPrefix(PREFIX_ACCESSION, ibp->locusname, NULL);
     else
         FtaInstallPrefix(PREFIX_ACCESSION, ibp->acnum, NULL);
 
-    if(accver)
-    {
-        for(xip = ibp->xip; xip != NULL; xip = xip->next)
-        {
-            if(xip->tag != INSDSEQ_ACCESSION_VERSION)
+    if (accver) {
+        for (xip = ibp->xip; xip != NULL; xip = xip->next) {
+            if (xip->tag != INSDSEQ_ACCESSION_VERSION)
                 continue;
             buf = XMLGetTagValue(entry, xip);
             XMLParseVersion(ibp, buf);
-            if(buf != NULL)
-            {
+            if (buf != NULL) {
                 FtaInstallPrefix(PREFIX_ACCESSION, buf, NULL);
                 MemFree(buf);
             }
@@ -655,97 +588,77 @@ static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver,
     }
 
     ibp->bases = 0;
-    ibp->date = NULL;
+    ibp->date  = NULL;
     StringCpy(ibp->division, "???");
-    for(xip = ibp->xip; xip != NULL; xip = xip->next)
-    {
-        if(xip->tag == INSDSEQ_LENGTH && ibp->bases == 0)
-        {
+    for (xip = ibp->xip; xip != NULL; xip = xip->next) {
+        if (xip->tag == INSDSEQ_LENGTH && ibp->bases == 0) {
             buf = XMLGetTagValue(entry, xip);
-            if(buf == NULL)
+            if (buf == NULL)
                 continue;
-            ibp->bases = (size_t) atoi(buf);
+            ibp->bases = (size_t)atoi(buf);
             MemFree(buf);
-        }
-        else if(xip->tag == INSDSEQ_UPDATE_DATE && ibp->date == NULL)
-        {
+        } else if (xip->tag == INSDSEQ_UPDATE_DATE && ibp->date == NULL) {
             buf = XMLGetTagValue(entry, xip);
-            if(buf == NULL)
+            if (buf == NULL)
                 continue;
             ibp->date = GetUpdateDate(buf, source);
             MemFree(buf);
-        }
-        else if(xip->tag == INSDSEQ_DIVISION && ibp->division[0] == '?')
-        {
-            if(xip->start == 0 || xip->end == 0 || xip->start >= xip->end ||
-               xip->end - xip->start < 3)
+        } else if (xip->tag == INSDSEQ_DIVISION && ibp->division[0] == '?') {
+            if (xip->start == 0 || xip->end == 0 || xip->start >= xip->end ||
+                xip->end - xip->start < 3)
                 continue;
             StringNCpy(ibp->division, entry + xip->start, 3);
             ibp->division[3] = '\0';
-            if(NStr::CompareNocase(ibp->division, "EST") == 0)
+            if (NStr::CompareNocase(ibp->division, "EST") == 0)
                 ibp->EST = true;
-            else if(StringCmp(ibp->division, "STS") == 0)
+            else if (StringCmp(ibp->division, "STS") == 0)
                 ibp->STS = true;
-            else if(StringCmp(ibp->division, "GSS") == 0)
+            else if (StringCmp(ibp->division, "GSS") == 0)
                 ibp->GSS = true;
-            else if(StringCmp(ibp->division, "HTC") == 0)
+            else if (StringCmp(ibp->division, "HTC") == 0)
                 ibp->HTC = true;
-        }
-        else if(xip->tag == INSDSEQ_MOLTYPE && ibp->is_prot == false)
-        {
+        } else if (xip->tag == INSDSEQ_MOLTYPE && ibp->is_prot == false) {
             buf = XMLGetTagValue(entry, xip);
-            if(NStr::CompareNocase(buf, "AA") == 0)
+            if (NStr::CompareNocase(buf, "AA") == 0)
                 ibp->is_prot = true;
             MemFree(buf);
         }
-        if(ibp->bases > 0 && ibp->date != NULL && ibp->division[0] != '?')
+        if (ibp->bases > 0 && ibp->date != NULL && ibp->division[0] != '?')
             break;
     }
 }
 
 /**********************************************************/
-static const char *XMLStringByTag(XmlKwordBlkPtr xkbp, Int4 tag)
+static const char* XMLStringByTag(XmlKwordBlkPtr xkbp, Int4 tag)
 {
-    for(; xkbp->str != NULL; xkbp++)
-        if(xkbp->tag == tag)
+    for (; xkbp->str != NULL; xkbp++)
+        if (xkbp->tag == tag)
             break;
-    if(xkbp->str == NULL)
-        return("???");
-    return(xkbp->str);
+    if (xkbp->str == NULL)
+        return ("???");
+    return (xkbp->str);
 }
 
 /**********************************************************/
 static bool XMLTagCheck(XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
 {
     XmlIndexPtr txip;
-    bool ret = true;
-    for(txip = xip; txip != NULL; txip = txip->next)
-    {
-        if(txip->start == 0)
-        {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag,
-                      "XML record's missing start tag for \"%s\" at line %d.",
-                      XMLStringByTag(xkbp, txip->tag), txip->end_line);
+    bool        ret = true;
+    for (txip = xip; txip != NULL; txip = txip->next) {
+        if (txip->start == 0) {
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"%s\" at line %d.", XMLStringByTag(xkbp, txip->tag), txip->end_line);
             ret = false;
         }
-        if(txip->end == 0)
-        {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag,
-                      "XML record's missing end tag for \"%s\" at line %d.",
-                      XMLStringByTag(xkbp, txip->tag), txip->start_line);
+        if (txip->end == 0) {
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"%s\" at line %d.", XMLStringByTag(xkbp, txip->tag), txip->start_line);
             ret = false;
         }
-        if(txip->next != NULL && txip->order >= txip->next->order)
-        {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder,
-                      "XML tag \"%s\" at line %d is out of order.",
-                      XMLStringByTag(xkbp, txip->next->tag),
-                      (txip->next->start > 0) ? txip->next->start_line :
-                                                txip->next->end_line);
+        if (txip->next != NULL && txip->order >= txip->next->order) {
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "XML tag \"%s\" at line %d is out of order.", XMLStringByTag(xkbp, txip->next->tag), (txip->next->start > 0) ? txip->next->start_line : txip->next->end_line);
             ret = false;
         }
     }
-    return(ret);
+    return (ret);
 }
 
 /**********************************************************/
@@ -753,116 +666,99 @@ static bool XMLSameTagsCheck(XmlIndexPtr xip, char* name)
 {
     bool ret = true;
 
-    for (XmlIndexPtr txip = xip; txip != NULL; txip = txip->next)
-    {
-        if(txip->start == 0)
-        {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag,
-                      "XML record's missing start tag for \"%s\" at line %d.",
-                      name, txip->end_line);
+    for (XmlIndexPtr txip = xip; txip != NULL; txip = txip->next) {
+        if (txip->start == 0) {
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"%s\" at line %d.", name, txip->end_line);
             ret = false;
         }
-        if(txip->end == 0)
-        {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag,
-                      "XML record's missing end tag for \"%s\" at line %d.",
-                      name, txip->start_line);
+        if (txip->end == 0) {
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"%s\" at line %d.", name, txip->start_line);
             ret = false;
         }
     }
-    return(ret);
+    return (ret);
 }
 
 /**********************************************************/
-static XmlIndexPtr XMLIndexSameSubTags(char* entry, XmlIndexPtr xip,
-                                       Int4 tag)
+static XmlIndexPtr XMLIndexSameSubTags(char* entry, XmlIndexPtr xip, Int4 tag)
 {
     XmlIndexPtr xipsub;
     XmlIndexPtr txipsub;
-    char*     name;
-    char*     c;
-    char*     p;
+    char*       name;
+    char*       c;
+    char*       p;
     size_t      count;
     Char        s[60];
     Int4        line;
     Int4        i;
 
-    if(entry == NULL || xip == NULL)
-        return(NULL);
+    if (entry == NULL || xip == NULL)
+        return (NULL);
 
-    name = (char*) XMLStringByTag(xmsubkwl, tag);
-    if(name == NULL)
-        return(NULL);
+    name = (char*)XMLStringByTag(xmsubkwl, tag);
+    if (name == NULL)
+        return (NULL);
 
-    s[0] = '\0';
-    xipsub = NULL;
+    s[0]    = '\0';
+    xipsub  = NULL;
     txipsub = NULL;
-    line = xip->start_line;
-    c = entry + xip->start;
-    for(count = xip->start + 1;;)
-    {
-        if(*c != '<')
-        {
+    line    = xip->start_line;
+    c       = entry + xip->start;
+    for (count = xip->start + 1;;) {
+        if (*c != '<') {
             c++;
             count++;
-            if(*c == '\0' || count > xip->end)
+            if (*c == '\0' || count > xip->end)
                 break;
-            if(*c == '\n')
+            if (*c == '\n')
                 line++;
         }
-        if(*c != '<')
+        if (*c != '<')
             continue;
 
-        for(s[0] = '<', i = 1; i < 50; i++)
-        {
+        for (s[0] = '<', i = 1; i < 50; i++) {
             c++;
             count++;
-            if(*c == '\0' || count > xip->end)
+            if (*c == '\0' || count > xip->end)
                 break;
-            if(*c == '\n')
+            if (*c == '\n')
                 line++;
             s[i] = *c;
-            if(*c == '<' || *c == '>')
+            if (*c == '<' || *c == '>')
                 break;
         }
-        if(*c == '\0' || count > xip->end)
+        if (*c == '\0' || count > xip->end)
             break;
-        if(*c == '<')
+        if (*c == '<')
             continue;
         s[++i] = '\0';
-        p = s + ((s[1] == '/') ? 2 : 1);
-        if(StringCmp(p, name + 1) != 0)
+        p      = s + ((s[1] == '/') ? 2 : 1);
+        if (StringCmp(p, name + 1) != 0)
             continue;
 
-        if(xipsub == NULL)
-        {
-            xipsub = XMLIndexNew();
+        if (xipsub == NULL) {
+            xipsub  = XMLIndexNew();
             txipsub = xipsub;
-        }
-        else if((s[1] != '/' && txipsub->start != 0) ||
-                (s[1] == '/' && txipsub->end != 0))
-        {
+        } else if ((s[1] != '/' && txipsub->start != 0) ||
+                   (s[1] == '/' && txipsub->end != 0)) {
             txipsub->next = XMLIndexNew();
-            txipsub = txipsub->next;
+            txipsub       = txipsub->next;
         }
-        if(s[1] == '/')
-        {
-            txipsub->end = count - i;
+        if (s[1] == '/') {
+            txipsub->end      = count - i;
             txipsub->end_line = line;
-        }
-        else
-        {
-            txipsub->start = count;
+        } else {
+            txipsub->start      = count;
             txipsub->start_line = line;
         }
         txipsub->tag = tag;
     }
 
-    if(XMLSameTagsCheck(xipsub, name))
-        return(xipsub);
+    if (XMLSameTagsCheck(xipsub, name))
+        return (xipsub);
 
     XMLIndexFree(xipsub);
-    return(NULL);
+    return (NULL);
 }
 
 /**********************************************************/
@@ -870,46 +766,42 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, char* entry)
 {
     XmlIndexPtr xip;
     XmlIndexPtr xipsec;
-    char*     buf;
-    char*     p;
+    char*       buf;
+    char*       p;
 
-    bool ret = true;
+    bool   ret = true;
     size_t len = StringLen(ibp->acnum) + StringLen(XML_FAKE_ACC_TAG) + 1;
 
-    for(xip = ibp->xip; xip != NULL; xip = xip->next)
-        if(xip->tag == INSDSEQ_SECONDARY_ACCESSIONS)
+    for (xip = ibp->xip; xip != NULL; xip = xip->next)
+        if (xip->tag == INSDSEQ_SECONDARY_ACCESSIONS)
             break;
 
-    if(xip == NULL)
-    {
-        buf = (char*) MemNew(len);
+    if (xip == NULL) {
+        buf = (char*)MemNew(len);
         StringCpy(buf, XML_FAKE_ACC_TAG);
         StringCat(buf, ibp->acnum);
         ret = GetAccession(pp, buf, ibp, 2);
         MemFree(buf);
-        return(ret);
+        return (ret);
     }
 
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDSECONDARY_ACCN);
-    if(xip->subtags == NULL)
-    {
-        p = (char*) XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
-                  "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
+    if (xip->subtags == NULL) {
+        p = (char*)XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
         ibp->drop = 1;
         return false;
     }
 
-    for(xipsec = xip->subtags; xipsec != NULL; xipsec = xipsec->next)
+    for (xipsec = xip->subtags; xipsec != NULL; xipsec = xipsec->next)
         len += (xipsec->end - xipsec->start + 1);
 
-    buf = (char*) MemNew(len);
+    buf = (char*)MemNew(len);
     StringCpy(buf, XML_FAKE_ACC_TAG);
     StringCat(buf, ibp->acnum);
-    for(xipsec = xip->subtags; xipsec != NULL; xipsec = xipsec->next)
-    {
+    for (xipsec = xip->subtags; xipsec != NULL; xipsec = xipsec->next) {
         p = XMLGetTagValue(entry, xipsec);
-        if(p == NULL)
+        if (p == NULL)
             continue;
         StringCat(buf, " ");
         StringCat(buf, p);
@@ -917,7 +809,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, char* entry)
     }
     ret = GetAccession(pp, buf, ibp, 2);
     MemFree(buf);
-    return(ret);
+    return (ret);
 }
 
 /**********************************************************/
@@ -926,51 +818,46 @@ static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Parser::ESource sourc
     XmlIndexPtr xip;
     XmlIndexPtr xipkwd;
     ValNodePtr  vnp;
-    char*     buf;
-    char*     p;
+    char*       buf;
+    char*       p;
 
     bool tpa_check = (source == Parser::ESource::EMBL);
 
-    if(entry == NULL || ibp == NULL || ibp->xip == NULL)
+    if (entry == NULL || ibp == NULL || ibp->xip == NULL)
         return true;
 
-    for(xip = ibp->xip; xip != NULL; xip = xip->next)
-        if(xip->tag == INSDSEQ_KEYWORDS)
+    for (xip = ibp->xip; xip != NULL; xip = xip->next)
+        if (xip->tag == INSDSEQ_KEYWORDS)
             break;
-    if(xip == NULL)
+    if (xip == NULL)
         return true;
 
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDKEYWORD);
-    if(xip->subtags == NULL)
-    {
-        p = (char*) XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
-                  "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
+    if (xip->subtags == NULL) {
+        p = (char*)XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
         ibp->drop = 1;
         return false;
     }
 
     size_t len = 0;
-    for(xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next)
+    for (xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next)
         len += (xipkwd->end - xipkwd->start + 2);
 
-    buf = (char*) MemNew(len);
+    buf  = (char*)MemNew(len);
     *buf = '\0';
-    for(xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next)
-    {
+    for (xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next) {
         p = XMLGetTagValue(entry, xipkwd);
-        if(p == NULL)
+        if (p == NULL)
             continue;
-        if(*buf != '\0')
+        if (*buf != '\0')
             StringCat(buf, "; ");
         StringCat(buf, p);
         MemFree(p);
     }
 
     vnp = ConstructValNode(NULL, 0, buf);
-    check_est_sts_gss_tpa_kwds(vnp, len, ibp, tpa_check, ibp->specialist_db,
-                               ibp->inferential, ibp->experimental,
-                               ibp->assembly);
+    check_est_sts_gss_tpa_kwds(vnp, len, ibp, tpa_check, ibp->specialist_db, ibp->inferential, ibp->experimental, ibp->assembly);
     MemFree(buf);
     MemFree(vnp);
     return true;
@@ -979,9 +866,7 @@ static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Parser::ESource sourc
 /**********************************************************/
 static bool XMLErrField(Int4 tag)
 {
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-              "No %s data in XML format file. Entry dropped.",
-              XMLStringByTag(xmkwl, tag));
+    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "No %s data in XML format file. Entry dropped.", XMLStringByTag(xmkwl, tag));
     return false;
 }
 
@@ -989,165 +874,145 @@ static bool XMLErrField(Int4 tag)
 static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
 {
     XmlIndexPtr xip;
-    bool     got_locus = false;
-    bool     got_length = false;
-    bool     got_moltype = false;
-    bool     got_division = false;
-    bool     got_update_date = false;
-    bool     got_definition = false;
-    bool     got_accession = false;
-    bool     got_version = false;
-    bool     got_source = false;
-    bool     got_organism = false;
-    bool     got_reference = false;
-    bool     got_primary = false;
-    bool     got_features = false;
-    bool     ret = true;
+    bool        got_locus       = false;
+    bool        got_length      = false;
+    bool        got_moltype     = false;
+    bool        got_division    = false;
+    bool        got_update_date = false;
+    bool        got_definition  = false;
+    bool        got_accession   = false;
+    bool        got_version     = false;
+    bool        got_source      = false;
+    bool        got_organism    = false;
+    bool        got_reference   = false;
+    bool        got_primary     = false;
+    bool        got_features    = false;
+    bool        ret             = true;
 
-    ibp->origin = false;
+    ibp->origin    = false;
     ibp->is_contig = false;
-    for(xip = ibp->xip; xip != NULL; xip = xip->next)
-    {
-        if(xip->tag == INSDSEQ_LOCUS && pp->source != Parser::ESource::USPTO)
+    for (xip = ibp->xip; xip != NULL; xip = xip->next) {
+        if (xip->tag == INSDSEQ_LOCUS && pp->source != Parser::ESource::USPTO)
             got_locus = true;
-        else if(xip->tag == INSDSEQ_LENGTH)
+        else if (xip->tag == INSDSEQ_LENGTH)
             got_length = true;
-        else if(xip->tag == INSDSEQ_MOLTYPE)
+        else if (xip->tag == INSDSEQ_MOLTYPE)
             got_moltype = true;
-        else if(xip->tag == INSDSEQ_DIVISION)
+        else if (xip->tag == INSDSEQ_DIVISION)
             got_division = true;
-        else if(xip->tag == INSDSEQ_UPDATE_DATE)
+        else if (xip->tag == INSDSEQ_UPDATE_DATE)
             got_update_date = true;
-        else if(xip->tag == INSDSEQ_DEFINITION)
+        else if (xip->tag == INSDSEQ_DEFINITION)
             got_definition = true;
-        else if(xip->tag == INSDSEQ_PRIMARY_ACCESSION)
+        else if (xip->tag == INSDSEQ_PRIMARY_ACCESSION)
             got_accession = true;
-        else if(xip->tag == INSDSEQ_ACCESSION_VERSION)
+        else if (xip->tag == INSDSEQ_ACCESSION_VERSION)
             got_version = true;
-        else if(xip->tag == INSDSEQ_SOURCE)
+        else if (xip->tag == INSDSEQ_SOURCE)
             got_source = true;
-        else if(xip->tag == INSDSEQ_ORGANISM)
+        else if (xip->tag == INSDSEQ_ORGANISM)
             got_organism = true;
-        else if(xip->tag == INSDSEQ_REFERENCES)
+        else if (xip->tag == INSDSEQ_REFERENCES)
             got_reference = true;
-        else if(xip->tag == INSDSEQ_PRIMARY)
+        else if (xip->tag == INSDSEQ_PRIMARY)
             got_primary = true;
-        else if(xip->tag == INSDSEQ_FEATURE_TABLE)
+        else if (xip->tag == INSDSEQ_FEATURE_TABLE)
             got_features = true;
-        else if(xip->tag == INSDSEQ_CONTIG)
+        else if (xip->tag == INSDSEQ_CONTIG)
             ibp->is_contig = true;
-        else if(xip->tag == INSDSEQ_SEQUENCE)
+        else if (xip->tag == INSDSEQ_SEQUENCE)
             ibp->origin = true;
     }
 
-    if(got_locus == false && pp->source != Parser::ESource::USPTO)
+    if (got_locus == false && pp->source != Parser::ESource::USPTO)
         ret = XMLErrField(INSDSEQ_LOCUS);
-    if(got_length == false)
+    if (got_length == false)
         ret = XMLErrField(INSDSEQ_LENGTH);
-    if(got_moltype == false)
+    if (got_moltype == false)
         ret = XMLErrField(INSDSEQ_MOLTYPE);
-    if(got_division == false)
+    if (got_division == false)
         ret = XMLErrField(INSDSEQ_DIVISION);
-    if(got_update_date == false && pp->source != Parser::ESource::USPTO)
+    if (got_update_date == false && pp->source != Parser::ESource::USPTO)
         ret = XMLErrField(INSDSEQ_UPDATE_DATE);
-    if(got_definition == false)
+    if (got_definition == false)
         ret = XMLErrField(INSDSEQ_DEFINITION);
-    if(got_accession == false)
-    {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum,
-                  "No accession number for this record. Entry dropped.");
+    if (got_accession == false) {
+        ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession number for this record. Entry dropped.");
         ret = false;
     }
-    if(got_version == false)
-    {
-        if(pp->accver != false)
+    if (got_version == false) {
+        if (pp->accver != false)
             ret = XMLErrField(INSDSEQ_ACCESSION_VERSION);
-    }
-    else if(pp->source == Parser::ESource::USPTO)
-    {
-        ErrPostEx(SEV_REJECT, ERR_ENTRY_InvalidLineType,
-                  "Line type %s is not allowed for USPTO records. Entry dropped.",
-                  XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
+    } else if (pp->source == Parser::ESource::USPTO) {
+        ErrPostEx(SEV_REJECT, ERR_ENTRY_InvalidLineType, "Line type %s is not allowed for USPTO records. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
         ret = false;
     }
-    if(got_source == false)
+    if (got_source == false)
         ret = XMLErrField(INSDSEQ_SOURCE);
-    if(got_organism == false)
+    if (got_organism == false)
         ret = XMLErrField(INSDSEQ_ORGANISM);
-    if(got_reference == false && pp->source != Parser::ESource::Flybase &&
-       ibp->is_wgs == false &&
-       (pp->source != Parser::ESource::Refseq ||
-        StringNCmp(ibp->acnum, "NW_", 3) != 0))
+    if (got_reference == false && pp->source != Parser::ESource::Flybase &&
+        ibp->is_wgs == false &&
+        (pp->source != Parser::ESource::Refseq ||
+         StringNCmp(ibp->acnum, "NW_", 3) != 0))
         ret = XMLErrField(INSDSEQ_REFERENCES);
-    if (got_primary && ibp->is_tpa == false && ibp->tsa_allowed == false)
-    {
-        ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType,
-                  "Line type %s is allowed for TPA or TSA records only. Continue anyway.",
-                  XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
+    if (got_primary && ibp->is_tpa == false && ibp->tsa_allowed == false) {
+        ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type %s is allowed for TPA or TSA records only. Continue anyway.", XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
     }
-    if(got_features == false)
+    if (got_features == false)
         ret = XMLErrField(INSDSEQ_FEATURE_TABLE);
-    if(ibp->is_contig && ibp->segnum != 0)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_ContigInSegset,
-                  "%s data are not allowed for members of segmented sets. Entry dropped.",
-                  XMLStringByTag(xmkwl, INSDSEQ_CONTIG));
+    if (ibp->is_contig && ibp->segnum != 0) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_ContigInSegset, "%s data are not allowed for members of segmented sets. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_CONTIG));
         ret = false;
     }
 
     ibp->is_tpa_wgs_con = (ibp->is_contig && ibp->is_wgs && ibp->is_tpa);
 
-    return(ret);
+    return (ret);
 }
 
 /**********************************************************/
 char* XMLLoadEntry(ParserPtr pp, bool err)
 {
     IndexblkPtr ibp;
-    char*     entry;
-    char*     p;
+    char*       entry;
+    char*       p;
     size_t      i;
     Int4        c;
 
-    if (!pp || !s_HasInput(*pp)) {
+    if (! pp || ! s_HasInput(*pp)) {
         return nullptr;
     }
 
     ibp = pp->entrylist[pp->curindx];
-    if(ibp == NULL || ibp->len == 0)
-        return(NULL);
+    if (ibp == NULL || ibp->len == 0)
+        return (NULL);
 
-    entry = (char*) MemNew(ibp->len + 1);
+    entry = (char*)MemNew(ibp->len + 1);
     s_SetPointer(*pp, ibp->offset);
 
 
-    for(p = entry, i = 0; i < ibp->len; i++)
-    {
+    for (p = entry, i = 0; i < ibp->len; i++) {
         c = s_GetCharAndAdvance(*pp);
-        if(c < 0)
+        if (c < 0)
             break;
         if (c == 13) {
             c = 10;
         }
-        if(c > 126 || (c < 32 && c != 10))
-        {
+        if (c > 126 || (c < 32 && c != 10)) {
             if (err)
-                ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar,
-                          "None-ASCII character within the record which begins at line %d, decimal value %d, replaced by #.",
-                          ibp->linenum, c);
+                ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "None-ASCII character within the record which begins at line %d, decimal value %d, replaced by #.", ibp->linenum, c);
             *p++ = '#';
-        }
-        else
-            *p++ = (Char) c;
+        } else
+            *p++ = (Char)c;
     }
-    if(i != ibp->len)
-    {
+    if (i != ibp->len) {
         MemFree(entry);
-        return(NULL);
+        return (NULL);
     }
     *p = '\0';
 
-    return(entry);
+    return (entry);
 }
 
 
@@ -1156,110 +1021,95 @@ static bool XMLIndexSubTags(char* entry, XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
 {
     XmlKwordBlkPtr txkbp;
     XmlIndexPtr    xipsub;
-    char*        c;
-    char*        p;
+    char*          c;
+    char*          p;
     Char           s[60];
     size_t         count;
     Int4           line;
     Int4           i;
 
-    if(entry == NULL || xip == NULL)
+    if (entry == NULL || xip == NULL)
         return false;
 
-    s[0] = '\0';
+    s[0]   = '\0';
     xipsub = NULL;
-    line = xip->start_line;
-    c = entry + xip->start;
-    for(count = xip->start + 1;;)
-    {
-        if(*c != '<')
-        {
+    line   = xip->start_line;
+    c      = entry + xip->start;
+    for (count = xip->start + 1;;) {
+        if (*c != '<') {
             c++;
             count++;
-            if(*c == '\0' || count > xip->end)
+            if (*c == '\0' || count > xip->end)
                 break;
-            if(*c == '\n')
+            if (*c == '\n')
                 line++;
         }
-        if(*c != '<')
+        if (*c != '<')
             continue;
 
-        for(s[0] = '<', i = 1; i < 50; i++)
-        {
+        for (s[0] = '<', i = 1; i < 50; i++) {
             c++;
             count++;
-            if(*c == '\0' || count > xip->end)
+            if (*c == '\0' || count > xip->end)
                 break;
-            if(*c == '\n')
+            if (*c == '\n')
                 line++;
             s[i] = *c;
-            if(*c == '<' || *c == '>')
+            if (*c == '<' || *c == '>')
                 break;
         }
-        if(*c == '\0' || count > xip->end)
+        if (*c == '\0' || count > xip->end)
             break;
-        if(*c == '<')
+        if (*c == '<')
             continue;
         s[++i] = '\0';
-        p = s + ((s[1] == '/') ? 2 : 1);
-        for(txkbp = xkbp; txkbp->str != NULL; txkbp++)
-            if(StringCmp(p, txkbp->str + 1) == 0)
+        p      = s + ((s[1] == '/') ? 2 : 1);
+        for (txkbp = xkbp; txkbp->str != NULL; txkbp++)
+            if (StringCmp(p, txkbp->str + 1) == 0)
                 break;
-        if(txkbp->str == NULL)
+        if (txkbp->str == NULL)
             continue;
-        if(xipsub == NULL || xipsub->tag != txkbp->tag)
-        {
-            if(xipsub == NULL)
-            {
-                xipsub = XMLIndexNew();
+        if (xipsub == NULL || xipsub->tag != txkbp->tag) {
+            if (xipsub == NULL) {
+                xipsub       = XMLIndexNew();
                 xip->subtags = xipsub;
-            }
-            else
-            {
+            } else {
                 xipsub->next = XMLIndexNew();
-                xipsub = xipsub->next;
+                xipsub       = xipsub->next;
             }
-            xipsub->tag = txkbp->tag;
+            xipsub->tag   = txkbp->tag;
             xipsub->order = txkbp->order;
-            if(s[1] == '/')
-            {
-                xipsub->end = count - i;
+            if (s[1] == '/') {
+                xipsub->end      = count - i;
                 xipsub->end_line = line;
-            }
-            else
-            {
-                xipsub->start = count;
+            } else {
+                xipsub->start      = count;
                 xipsub->start_line = line;
             }
             continue;
         }
-        if(s[1] == '/')
-        {
-            if(xipsub->end != 0)
-            {
-                xipsub->next = XMLIndexNew();
-                xipsub = xipsub->next;
-                xipsub->tag = txkbp->tag;
+        if (s[1] == '/') {
+            if (xipsub->end != 0) {
+                xipsub->next  = XMLIndexNew();
+                xipsub        = xipsub->next;
+                xipsub->tag   = txkbp->tag;
                 xipsub->order = txkbp->order;
             }
-            xipsub->end = count - i;
+            xipsub->end      = count - i;
             xipsub->end_line = line;
-        }
-        else
-        {
-            if(xipsub->start != 0)
-            {
-                xipsub->next = XMLIndexNew();
-                xipsub = xipsub->next;
-                xipsub->tag = txkbp->tag;
+        } else {
+            if (xipsub->start != 0) {
+                xipsub->next  = XMLIndexNew();
+                xipsub        = xipsub->next;
+                xipsub->tag   = txkbp->tag;
                 xipsub->order = txkbp->order;
             }
-            xipsub->start = count;
+            xipsub->start      = count;
             xipsub->start_line = line;
         }
     }
 
-    if (!XMLTagCheck(xip->subtags, xkbp))
+    if (! XMLTagCheck(xip->subtags, xkbp))
         return false;
 
     return true;
@@ -1268,106 +1118,79 @@ static bool XMLIndexSubTags(char* entry, XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
 /**********************************************************/
 static bool XMLCheckRequiredFeatTags(XmlIndexPtr xip)
 {
-    bool got_key = false;
+    bool got_key      = false;
     bool got_location = false;
-    bool ret = true;
+    bool ret          = true;
 
-    for(; xip != NULL; xip = xip->next)
-    {
-        if(xip->tag == INSDFEATURE_KEY)
+    for (; xip != NULL; xip = xip->next) {
+        if (xip->tag == INSDFEATURE_KEY)
             got_key = true;
-        else if(xip->tag == INSDFEATURE_LOCATION)
+        else if (xip->tag == INSDFEATURE_LOCATION)
             got_location = true;
     }
 
-    if(!got_key)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-                  "Feature table is missing %s data in XML format file.",
-                  XMLStringByTag(xmfeatkwl, INSDFEATURE_KEY));
+    if (! got_key) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Feature table is missing %s data in XML format file.", XMLStringByTag(xmfeatkwl, INSDFEATURE_KEY));
         ret = false;
     }
 
-    if(!got_location)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-                  "Feature table is missing %s data in XML format file.",
-                  XMLStringByTag(xmfeatkwl, INSDFEATURE_LOCATION));
+    if (! got_location) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Feature table is missing %s data in XML format file.", XMLStringByTag(xmfeatkwl, INSDFEATURE_LOCATION));
         ret = false;
     }
-    return(ret);
+    return (ret);
 }
 
 /**********************************************************/
 static bool XMLCheckRequiredIntTags(XmlIndexPtr xip)
 {
-    bool got_from = false;
-    bool got_to = false;
-    bool got_point = false;
+    bool got_from      = false;
+    bool got_to        = false;
+    bool got_point     = false;
     bool got_accession = false;
-    bool ret = true;
+    bool ret           = true;
 
-    for(; xip != NULL; xip = xip->next)
-    {
-        if(xip->tag == INSDINTERVAL_FROM)
+    for (; xip != NULL; xip = xip->next) {
+        if (xip->tag == INSDINTERVAL_FROM)
             got_from = true;
-        else if(xip->tag == INSDINTERVAL_TO)
+        else if (xip->tag == INSDINTERVAL_TO)
             got_to = true;
-        else if(xip->tag == INSDINTERVAL_POINT)
+        else if (xip->tag == INSDINTERVAL_POINT)
             got_point = true;
-        else if(xip->tag == INSDINTERVAL_ACCESSION)
+        else if (xip->tag == INSDINTERVAL_ACCESSION)
             got_accession = true;
     }
 
-    if(!got_accession)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-                  "Feature's interval block is missing %s data in XML format file.",
-                  XMLStringByTag(xmintkwl, INSDINTERVAL_ACCESSION));
+    if (! got_accession) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Feature's interval block is missing %s data in XML format file.", XMLStringByTag(xmintkwl, INSDINTERVAL_ACCESSION));
         ret = false;
     }
 
-    if(got_point)
-    {
-        if(got_from || got_to)
-        {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLInvalidINSDInterval,
-                      "%s tag cannot co-exist with %s or %s or both in XML format.",
-                      XMLStringByTag(xmintkwl, INSDINTERVAL_POINT),
-                      XMLStringByTag(xmintkwl, INSDINTERVAL_FROM),
-                      XMLStringByTag(xmintkwl, INSDINTERVAL_TO));
+    if (got_point) {
+        if (got_from || got_to) {
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLInvalidINSDInterval, "%s tag cannot co-exist with %s or %s or both in XML format.", XMLStringByTag(xmintkwl, INSDINTERVAL_POINT), XMLStringByTag(xmintkwl, INSDINTERVAL_FROM), XMLStringByTag(xmintkwl, INSDINTERVAL_TO));
             ret = false;
         }
-    }
-    else if(got_from == false || got_to == false)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLInvalidINSDInterval,
-                  "%s must contain either both of %s and %s, or %s.",
-                  XMLStringByTag(xmsubkwl, INSDINTERVAL),
-                  XMLStringByTag(xmintkwl, INSDINTERVAL_FROM),
-                  XMLStringByTag(xmintkwl, INSDINTERVAL_TO),
-                  XMLStringByTag(xmintkwl, INSDINTERVAL_POINT));
+    } else if (got_from == false || got_to == false) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLInvalidINSDInterval, "%s must contain either both of %s and %s, or %s.", XMLStringByTag(xmsubkwl, INSDINTERVAL), XMLStringByTag(xmintkwl, INSDINTERVAL_FROM), XMLStringByTag(xmintkwl, INSDINTERVAL_TO), XMLStringByTag(xmintkwl, INSDINTERVAL_POINT));
         ret = false;
     }
 
-    return(ret);
+    return (ret);
 }
 
 /**********************************************************/
 static bool XMLCheckRequiredQualTags(XmlIndexPtr xip)
 {
-    for (; xip != NULL; xip = xip->next)
-    {
+    for (; xip != NULL; xip = xip->next) {
         if (xip->tag == INSDQUALIFIER_NAME)
             break;
     }
 
-    if(xip != NULL)
+    if (xip != NULL)
         return true;
 
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-              "Qualifier block is missing %s data in XML format file.",
-              XMLStringByTag(xmqualkwl, INSDQUALIFIER_NAME));
+    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Qualifier block is missing %s data in XML format file.", XMLStringByTag(xmqualkwl, INSDQUALIFIER_NAME));
     return false;
 }
 
@@ -1378,68 +1201,56 @@ static bool XMLIndexFeatures(char* entry, XmlIndexPtr xip)
     XmlIndexPtr xipsub;
     XmlIndexPtr txip;
 
-    if(xip == NULL || entry == NULL)
+    if (xip == NULL || entry == NULL)
         return true;
 
-    for (; xip != NULL; xip = xip->next)
-    {
+    for (; xip != NULL; xip = xip->next) {
         if (xip->tag == INSDSEQ_FEATURE_TABLE)
             break;
     }
 
-    if(xip == NULL)
+    if (xip == NULL)
         return true;
 
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDFEATURE);
-    if(xip->subtags == NULL)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
-                  "Incorrectly formatted \"%s\" XML block. Entry dropped.",
-                  XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
+    if (xip->subtags == NULL) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
         return false;
     }
 
-    for(xipfeat = xip->subtags; xipfeat != NULL; xipfeat = xipfeat->next)
-    {
-        if(XMLIndexSubTags(entry, xipfeat, xmfeatkwl) == false ||
-           XMLCheckRequiredFeatTags(xipfeat->subtags) == false)
+    for (xipfeat = xip->subtags; xipfeat != NULL; xipfeat = xipfeat->next) {
+        if (XMLIndexSubTags(entry, xipfeat, xmfeatkwl) == false ||
+            XMLCheckRequiredFeatTags(xipfeat->subtags) == false)
             break;
-        for(txip = xipfeat->subtags; txip != NULL; txip = txip->next)
-        {
-            if(txip->tag == INSDFEATURE_INTERVALS)
-            {
+        for (txip = xipfeat->subtags; txip != NULL; txip = txip->next) {
+            if (txip->tag == INSDFEATURE_INTERVALS) {
                 txip->subtags = XMLIndexSameSubTags(entry, txip, INSDINTERVAL);
-                if(txip->subtags == NULL)
+                if (txip->subtags == NULL)
                     break;
                 xipsub = txip->subtags;
-                for(; xipsub != NULL; xipsub = xipsub->next)
-                    if(XMLIndexSubTags(entry, xipsub, xmintkwl) == false ||
-                       XMLCheckRequiredIntTags(xipsub->subtags) == false)
+                for (; xipsub != NULL; xipsub = xipsub->next)
+                    if (XMLIndexSubTags(entry, xipsub, xmintkwl) == false ||
+                        XMLCheckRequiredIntTags(xipsub->subtags) == false)
                         break;
-            }
-            else if(txip->tag == INSDFEATURE_QUALS)
-            {
-                txip->subtags = XMLIndexSameSubTags(entry, txip,
-                                                    INSDQUALIFIER);
-                if(txip->subtags == NULL)
+            } else if (txip->tag == INSDFEATURE_QUALS) {
+                txip->subtags = XMLIndexSameSubTags(entry, txip, INSDQUALIFIER);
+                if (txip->subtags == NULL)
                     break;
                 xipsub = txip->subtags;
-                for(; xipsub != NULL; xipsub = xipsub->next)
-                    if(XMLIndexSubTags(entry, xipsub, xmqualkwl) == false ||
-                       XMLCheckRequiredQualTags(xipsub->subtags) == false)
+                for (; xipsub != NULL; xipsub = xipsub->next)
+                    if (XMLIndexSubTags(entry, xipsub, xmqualkwl) == false ||
+                        XMLCheckRequiredQualTags(xipsub->subtags) == false)
                         break;
             }
         }
-        if(txip != NULL)
+        if (txip != NULL)
             break;
     }
 
-    if(xipfeat == NULL)
+    if (xipfeat == NULL)
         return true;
 
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
-              "Incorrectly formatted \"%s\" XML block. Entry dropped.",
-              XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
+    ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
     return false;
 }
 
@@ -1447,35 +1258,26 @@ static bool XMLIndexFeatures(char* entry, XmlIndexPtr xip)
 static bool XMLCheckRequiredRefTags(XmlIndexPtr xip)
 {
     bool got_reference = false;
-    bool got_journal = false;
-    bool ret = true;
+    bool got_journal   = false;
+    bool ret           = true;
 
-    for(; xip != NULL; xip = xip->next)
-    {
-        if(xip->tag == INSDREFERENCE_REFERENCE)
+    for (; xip != NULL; xip = xip->next) {
+        if (xip->tag == INSDREFERENCE_REFERENCE)
             got_reference = true;
-        else if(xip->tag == INSDREFERENCE_JOURNAL)
+        else if (xip->tag == INSDREFERENCE_JOURNAL)
             got_journal = true;
     }
 
-    if (!got_reference)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-                  "%s block is missing %s data in XML format file.",
-                  XMLStringByTag(xmsubkwl, INSDREFERENCE),
-                  XMLStringByTag(xmrefkwl, INSDREFERENCE_REFERENCE));
+    if (! got_reference) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "%s block is missing %s data in XML format file.", XMLStringByTag(xmsubkwl, INSDREFERENCE), XMLStringByTag(xmrefkwl, INSDREFERENCE_REFERENCE));
         ret = false;
     }
 
-    if (!got_journal)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-                  "%s block is missing %s data in XML format file.",
-                  XMLStringByTag(xmsubkwl, INSDREFERENCE),
-                  XMLStringByTag(xmrefkwl, INSDREFERENCE_JOURNAL));
+    if (! got_journal) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "%s block is missing %s data in XML format file.", XMLStringByTag(xmsubkwl, INSDREFERENCE), XMLStringByTag(xmrefkwl, INSDREFERENCE_JOURNAL));
         ret = false;
     }
-    return(ret);
+    return (ret);
 }
 
 /**********************************************************/
@@ -1483,76 +1285,67 @@ static Int2 XMLGetRefTypePos(char* reftag, size_t bases)
 {
     Char str[100];
 
-    if(reftag == NULL || *reftag == '\0')
-        return(ParFlat_REF_NO_TARGET);
+    if (reftag == NULL || *reftag == '\0')
+        return (ParFlat_REF_NO_TARGET);
 
-    sprintf(str, "1..%d", (int) bases);
+    sprintf(str, "1..%d", (int)bases);
 
-    if(StringCmp(reftag, str) == 0)
-        return(ParFlat_REF_END);
-    if(StringCmp(reftag, "sites") == 0)
-        return(ParFlat_REF_SITES);
-    return(ParFlat_REF_BTW);
+    if (StringCmp(reftag, str) == 0)
+        return (ParFlat_REF_END);
+    if (StringCmp(reftag, "sites") == 0)
+        return (ParFlat_REF_SITES);
+    return (ParFlat_REF_BTW);
 }
 
 /**********************************************************/
 static Int2 XMLGetRefType(char* reftag, size_t bases)
 {
     char* p;
-    Char    str[100];
-    Char    str1[100];
+    Char  str[100];
+    Char  str1[100];
 
-    if(reftag == NULL)
-        return(ParFlat_REF_NO_TARGET);
+    if (reftag == NULL)
+        return (ParFlat_REF_NO_TARGET);
 
-    for(p = reftag; *p != '\0' && *p != '(';)
+    for (p = reftag; *p != '\0' && *p != '(';)
         p++;
-    if(*p == '\0')
-        return(ParFlat_REF_NO_TARGET);
+    if (*p == '\0')
+        return (ParFlat_REF_NO_TARGET);
 
-    sprintf(str, "(bases 1 to %d)", (int) bases);
-    sprintf(str1, "(bases 1 to %d;", (int) bases);
+    sprintf(str, "(bases 1 to %d)", (int)bases);
+    sprintf(str1, "(bases 1 to %d;", (int)bases);
 
-    if(StringStr(p, str) != NULL || StringStr(p, str1) != NULL)
-        return(ParFlat_REF_END);
-    if(StringStr(p, "(sites)") != NULL)
-        return(ParFlat_REF_SITES);
-    return(ParFlat_REF_BTW);
+    if (StringStr(p, str) != NULL || StringStr(p, str1) != NULL)
+        return (ParFlat_REF_END);
+    if (StringStr(p, "(sites)") != NULL)
+        return (ParFlat_REF_SITES);
+    return (ParFlat_REF_BTW);
 }
 
 /**********************************************************/
 static bool XMLCheckRequiredXrefTags(XmlIndexPtr xip)
 {
     bool got_dbname = false;
-    bool got_id = false;
-    bool ret = true;
+    bool got_id     = false;
+    bool ret        = true;
 
-    for(; xip != NULL; xip = xip->next)
-    {
-        if(xip->tag == INSDXREF_DBNAME)
+    for (; xip != NULL; xip = xip->next) {
+        if (xip->tag == INSDXREF_DBNAME)
             got_dbname = true;
-        else if(xip->tag == INSDXREF_ID)
+        else if (xip->tag == INSDXREF_ID)
             got_id = true;
     }
 
-    if (!got_dbname)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-                  "%s block is missing %s data in XML format file.",
-                  XMLStringByTag(xmsubkwl, INSDXREF),
-                  XMLStringByTag(xmrefkwl, INSDXREF_DBNAME));
+    if (! got_dbname) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "%s block is missing %s data in XML format file.", XMLStringByTag(xmsubkwl, INSDXREF), XMLStringByTag(xmrefkwl, INSDXREF_DBNAME));
         ret = false;
     }
 
-    if (!got_id)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField,
-                  "%s block is missing %s data in XML format file.",
-                  XMLStringByTag(xmsubkwl, INSDXREF),
-                  XMLStringByTag(xmrefkwl, INSDXREF_ID));
+    if (! got_id) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "%s block is missing %s data in XML format file.", XMLStringByTag(xmsubkwl, INSDXREF), XMLStringByTag(xmrefkwl, INSDXREF_ID));
         ret = false;
     }
-    return(ret);
+    return (ret);
 }
 
 /**********************************************************/
@@ -1561,92 +1354,77 @@ static bool XMLIndexReferences(char* entry, XmlIndexPtr xip, size_t bases)
     XmlIndexPtr xipref;
     XmlIndexPtr txip;
     XmlIndexPtr xipsub;
-    char*     reftagref;
-    char*     reftagpos;
+    char*       reftagref;
+    char*       reftagpos;
 
-    if(xip == NULL || entry == NULL)
+    if (xip == NULL || entry == NULL)
         return true;
 
-    for (; xip != NULL; xip = xip->next)
-    {
+    for (; xip != NULL; xip = xip->next) {
         if (xip->tag == INSDSEQ_REFERENCES)
             break;
     }
-    if(xip == NULL)
+    if (xip == NULL)
         return true;
 
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDREFERENCE);
-    if(xip->subtags == NULL)
-    {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
-                  "Incorrectly formatted \"%s\" XML block. Entry dropped.",
-                  XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
+    if (xip->subtags == NULL) {
+        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
         return false;
     }
 
-    for(xipref = xip->subtags; xipref != NULL; xipref = xipref->next)
-    {
-        if(XMLIndexSubTags(entry, xipref, xmrefkwl) == false ||
-           XMLCheckRequiredRefTags(xipref->subtags) == false)
+    for (xipref = xip->subtags; xipref != NULL; xipref = xipref->next) {
+        if (XMLIndexSubTags(entry, xipref, xmrefkwl) == false ||
+            XMLCheckRequiredRefTags(xipref->subtags) == false)
             break;
 
         reftagref = NULL;
         reftagpos = NULL;
-        for(txip = xipref->subtags; txip != NULL; txip = txip->next)
-        {
-            if(txip->tag == INSDREFERENCE_REFERENCE)
-            {
-                if(reftagref != NULL)
+        for (txip = xipref->subtags; txip != NULL; txip = txip->next) {
+            if (txip->tag == INSDREFERENCE_REFERENCE) {
+                if (reftagref != NULL)
                     MemFree(reftagref);
                 reftagref = XMLGetTagValue(entry, txip);
                 continue;
             }
-            if(txip->tag == INSDREFERENCE_POSITION)
-            {
-                if(reftagpos != NULL)
+            if (txip->tag == INSDREFERENCE_POSITION) {
+                if (reftagpos != NULL)
                     MemFree(reftagpos);
                 reftagpos = XMLGetTagValue(entry, txip);
                 continue;
             }
-            if(txip->tag == INSDREFERENCE_AUTHORS)
-            {
+            if (txip->tag == INSDREFERENCE_AUTHORS) {
                 txip->subtags = XMLIndexSameSubTags(entry, txip, INSDAUTHOR);
-                if(txip->subtags == NULL)
+                if (txip->subtags == NULL)
                     break;
-            }
-            else if(txip->tag == INSDREFERENCE_XREF)
-            {
+            } else if (txip->tag == INSDREFERENCE_XREF) {
                 txip->subtags = XMLIndexSameSubTags(entry, txip, INSDXREF);
-                if(txip->subtags == NULL)
+                if (txip->subtags == NULL)
                     break;
                 xipsub = txip->subtags;
-                for(; xipsub != NULL; xipsub = xipsub->next)
-                    if(XMLIndexSubTags(entry, xipsub, xmxrefkwl) == false ||
-                       XMLCheckRequiredXrefTags(xipsub->subtags) == false)
+                for (; xipsub != NULL; xipsub = xipsub->next)
+                    if (XMLIndexSubTags(entry, xipsub, xmxrefkwl) == false ||
+                        XMLCheckRequiredXrefTags(xipsub->subtags) == false)
                         break;
             }
         }
 
-        if(reftagpos != NULL)
-        {
+        if (reftagpos != NULL) {
             xipref->type = XMLGetRefTypePos(reftagpos, bases);
             MemFree(reftagpos);
-        }
-        else
+        } else
             xipref->type = XMLGetRefType(reftagref, bases);
-        if(reftagref != NULL)
+        if (reftagref != NULL)
             MemFree(reftagref);
 
-        if(txip != NULL)
+        if (txip != NULL)
             break;
     }
 
-    if(xipref == NULL)
+    if (xipref == NULL)
         return true;
 
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
-              "Incorrectly formatted \"%s\" XML block. Entry dropped.",
-              XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
+    ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
     return false;
 }
 
@@ -1654,70 +1432,56 @@ static bool XMLIndexReferences(char* entry, XmlIndexPtr xip, size_t bases)
 bool XMLIndex(ParserPtr pp)
 {
     IndexblkPtr* ibpp;
-    IndexblkPtr      ibp;
-    char*          entry;
-    
+    IndexblkPtr  ibp;
+    char*        entry;
+
     XMLPerformIndex(pp);
 
-    if(pp->indx == 0)
+    if (pp->indx == 0)
         return false;
 
     pp->curindx = 0;
-    for(ibpp = pp->entrylist; *ibpp != NULL; ibpp++, pp->curindx++)
-    {
+    for (ibpp = pp->entrylist; *ibpp != NULL; ibpp++, pp->curindx++) {
         ibp = *ibpp;
-        if(ibp->len == 0)
-        {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingEnd,
-                      "Missing end tag of XML record, which starts at line %d. Entry dropped.",
-                      ibp->linenum);
+        if (ibp->len == 0) {
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end tag of XML record, which starts at line %d. Entry dropped.", ibp->linenum);
             ibp->drop = 1;
             continue;
         }
         entry = XMLLoadEntry(pp, true);
-        if(entry == NULL)
-        {
-            ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry,
-                      "Failed ro read entry from file, which starts at line %d. Entry dropped.",
-                      ibp->linenum);
+        if (entry == NULL) {
+            ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "Failed ro read entry from file, which starts at line %d. Entry dropped.", ibp->linenum);
             ibp->drop = 1;
             continue;
         }
 
         XMLInitialEntry(ibp, entry, pp->accver, pp->source);
-        if(ibp->drop != 0)
-        {
+        if (ibp->drop != 0) {
             MemFree(entry);
             continue;
         }
-        if(XMLTagCheck(ibp->xip, xmkwl) == false)
-        {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError,
-                      "Incorrectly formatted XML record. Entry dropped.");
+        if (XMLTagCheck(ibp->xip, xmkwl) == false) {
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted XML record. Entry dropped.");
             ibp->drop = 1;
             MemFree(entry);
             continue;
         }
-        if(XMLAccessionsCheck(pp, ibp, entry) == false)
-        {
+        if (XMLAccessionsCheck(pp, ibp, entry) == false) {
             MemFree(entry);
             continue;
         }
         XMLGetSegment(entry, ibp);
-        if(XMLCheckRequiredTags(pp, ibp) == false)
-        {
+        if (XMLCheckRequiredTags(pp, ibp) == false) {
             ibp->drop = 1;
             MemFree(entry);
             continue;
         }
-        if(XMLKeywordsCheck(entry, ibp, pp->source) == false)
-        {
+        if (XMLKeywordsCheck(entry, ibp, pp->source) == false) {
             MemFree(entry);
             continue;
         }
-        if(XMLIndexFeatures(entry, ibp->xip) == false ||
-           XMLIndexReferences(entry, ibp->xip, ibp->bases) == false)
-        {
+        if (XMLIndexFeatures(entry, ibp->xip) == false ||
+            XMLIndexReferences(entry, ibp->xip, ibp->bases) == false) {
             ibp->drop = 1;
             MemFree(entry);
             continue;
@@ -1725,11 +1489,11 @@ bool XMLIndex(ParserPtr pp)
         MemFree(entry);
     }
 
-    for(pp->num_drop = 0, ibpp = pp->entrylist; *ibpp != NULL; ibpp++)
-        if((*ibpp)->drop != 0)
+    for (pp->num_drop = 0, ibpp = pp->entrylist; *ibpp != NULL; ibpp++)
+        if ((*ibpp)->drop != 0)
             pp->num_drop++;
 
-    if(pp->indx > 0)
+    if (pp->indx > 0)
         return true;
     return false;
 }
@@ -1741,56 +1505,51 @@ DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, int type)
     DataBlkPtr  dbp;
     DataBlkPtr  tdbp;
 
-    if(entry == NULL || xip == NULL)
-        return(NULL);
+    if (entry == NULL || xip == NULL)
+        return (NULL);
 
-    while(xip != NULL && xip->tag != INSDSEQ_REFERENCES)
+    while (xip != NULL && xip->tag != INSDSEQ_REFERENCES)
         xip = xip->next;
-    if(xip == NULL || xip->subtags == NULL)
-        return(NULL);
+    if (xip == NULL || xip->subtags == NULL)
+        return (NULL);
 
-    for(dbp = NULL, txip = xip->subtags; txip != NULL; txip = txip->next)
-    {
-        if(txip->type != type || txip->subtags == NULL)
+    for (dbp = NULL, txip = xip->subtags; txip != NULL; txip = txip->next) {
+        if (txip->type != type || txip->subtags == NULL)
             continue;
-        if(dbp == NULL)
-        {
-            dbp = (DataBlkPtr) MemNew(sizeof(DataBlk));
+        if (dbp == NULL) {
+            dbp  = (DataBlkPtr)MemNew(sizeof(DataBlk));
             tdbp = dbp;
+        } else {
+            tdbp->mpNext = (DataBlkPtr)MemNew(sizeof(DataBlk));
+            tdbp         = tdbp->mpNext;
         }
-        else
-        {
-            tdbp->mpNext = (DataBlkPtr) MemNew(sizeof(DataBlk));
-            tdbp = tdbp->mpNext;
-        }
-        tdbp->mType = txip->type;
+        tdbp->mType   = txip->type;
         tdbp->mOffset = entry;
-        tdbp->mpData = txip->subtags;
-        tdbp->mpNext = NULL;
+        tdbp->mpData  = txip->subtags;
+        tdbp->mpNext  = NULL;
     }
-    return(dbp);
+    return (dbp);
 }
 
 /**********************************************************/
 void XMLGetKeywords(char* entry, XmlIndexPtr xip, TKeywordList& keywords)
 {
     XmlIndexPtr xipkwd;
-    char*     p;
+    char*       p;
 
     keywords.clear();
-    if(entry == NULL || xip == NULL)
+    if (entry == NULL || xip == NULL)
         return;
 
-    for(; xip != NULL; xip = xip->next)
-        if(xip->tag == INSDSEQ_KEYWORDS && xip->subtags != NULL)
+    for (; xip != NULL; xip = xip->next)
+        if (xip->tag == INSDSEQ_KEYWORDS && xip->subtags != NULL)
             break;
-    if(xip == NULL)
+    if (xip == NULL)
         return;
 
-    for(xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next)
-    {
+    for (xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next) {
         p = XMLGetTagValue(entry, xipkwd);
-        if(p == NULL)
+        if (p == NULL)
             continue;
 
         keywords.push_back(p);
@@ -1802,40 +1561,38 @@ void XMLGetKeywords(char* entry, XmlIndexPtr xip, TKeywordList& keywords)
 char* XMLConcatSubTags(char* entry, XmlIndexPtr xip, Int4 tag, Char sep)
 {
     XmlIndexPtr txip;
-    char*     buf;
-    char*     p;
-    char*     q;
+    char*       buf;
+    char*       p;
+    char*       q;
     size_t      i;
 
-    if(entry == NULL || xip == NULL)
-        return(NULL);
+    if (entry == NULL || xip == NULL)
+        return (NULL);
 
-    while(xip != NULL && xip->tag != tag)
+    while (xip != NULL && xip->tag != tag)
         xip = xip->next;
 
-    if(xip == NULL || xip->subtags == NULL)
-        return(NULL);
+    if (xip == NULL || xip->subtags == NULL)
+        return (NULL);
 
-    for(i = 0, txip = xip->subtags; txip != NULL; txip = txip->next)
+    for (i = 0, txip = xip->subtags; txip != NULL; txip = txip->next)
         i += (txip->end - txip->start + 2);
 
-    buf = (char*) MemNew(i);
+    buf    = (char*)MemNew(i);
     buf[0] = '\0';
-    for(q = buf, txip = xip->subtags; txip != NULL; txip = txip->next)
-    {
-        if(txip->end <= txip->start)
+    for (q = buf, txip = xip->subtags; txip != NULL; txip = txip->next) {
+        if (txip->end <= txip->start)
             continue;
-        if(buf[0] != '\0')
-        {
+        if (buf[0] != '\0') {
             *q++ = sep;
             *q++ = ' ';
         }
-        for(i = txip->start, p = entry + txip->start; i < txip->end; i++)
+        for (i = txip->start, p = entry + txip->start; i < txip->end; i++)
             *q++ = *p++;
         *q = '\0';
     }
     XMLRestoreSpecialCharacters(buf);
-    return(buf);
+    return (buf);
 }
 
 END_NCBI_SCOPE
