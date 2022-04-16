@@ -41,10 +41,10 @@
 
 BEGIN_NCBI_SCOPE
 struct FeatBlk : public CFlatFileData {
-    Int4      num = 0;
-    char*   key = nullptr;
-    char*   location = nullptr;
-    Int2    spindex;
+    Int4  num      = 0;
+    char* key      = nullptr;
+    char* location = nullptr;
+    Int2  spindex;
 
     TQualVector quals;
 
@@ -58,8 +58,7 @@ int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, P
 
 void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, const DataBlk& entry, const objects::COrg_ref* org_ref);
 
-bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids,
-                    bool* hard_err, ParserPtr pp, char* name);
+bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, char* name);
 
 END_NCBI_SCOPE
 
