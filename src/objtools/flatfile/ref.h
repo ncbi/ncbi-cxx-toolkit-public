@@ -34,6 +34,7 @@
 #ifndef _REF_
 #define _REF_
 
+// clang-format off
 #define ParFlat_MISSING_JOURNAL       0
 #define ParFlat_UNPUB_JOURNAL         1
 #define ParFlat_MONOGRAPH_NOT_JOURNAL 2
@@ -89,6 +90,7 @@
 #define ParFlat_ReftypeBook           5
 #define ParFlat_ReftypePatent         6
 #define ParFlat_ReftypeUnpub          7
+// clang-format on
 
 BEGIN_NCBI_SCOPE
 

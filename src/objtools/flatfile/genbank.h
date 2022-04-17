@@ -34,6 +34,7 @@
 #ifndef _GENBANK_
 #define _GENBANK_
 
+// clang-format off
 #define ParFlat_COL_DATA   12
 
 /* datablk.type: for detecting which keyword in the datablk's chain
@@ -74,5 +75,6 @@
 #define ParFlat_MEDLINE    30
 #define ParFlat_REMARK     31
 #define ParFlat_PUBMED     32
+// clang-format on
 
 #endif

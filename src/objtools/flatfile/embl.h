@@ -35,6 +35,7 @@
 #ifndef _EMBL_
 #define _EMBL_
 
+// clang-format off
 #define ParFlat_COL_DATA_EMBL 5
 
 /* datablk.type: for detecting which keyword in the datablk's chain
@@ -69,5 +70,6 @@
 #define ParFlat_RT            27        /* reference title */
 #define ParFlat_RL            28        /* reference location */
 #define ParFlat_FT            29        /* feature table data */
+// clang-format on
 
 #endif

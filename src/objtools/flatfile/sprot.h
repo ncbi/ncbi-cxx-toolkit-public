@@ -35,6 +35,7 @@
 #ifndef _SPROT_
 #define _SPROT_
 
+// clang-format off
 #define ParFlat_COL_DATA_SP 5
 
 /* datablk.type: for detecting which keyword in the datablk's chain
@@ -69,5 +70,6 @@
 #define ParFlatSP_RG        29          /* reference consortium */
 #define ParFlatSP_RL        30          /* reference location */
 #define ParFlatSP_RT        31          /* reference Title */
+// clang-format on
 
 #endif
