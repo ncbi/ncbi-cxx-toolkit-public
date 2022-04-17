@@ -35,6 +35,7 @@
 #ifndef __MODULE_indx_err__
 #define __MODULE_indx_err__
 
+// clang-format off
 #define ERR_FORMAT                         1,0
 #define ERR_FORMAT_NonAsciiChar            1,1
 #define ERR_FORMAT_MissingEnd              1,2
@@ -122,5 +123,6 @@
 #define ERR_QSCORE_RedundantScores         17,1
 #define ERR_QSCORE_NoSequenceRecord        17,2
 #define ERR_QSCORE_NoScoreDataFound        17,3
+// clang-format on
 
 #endif

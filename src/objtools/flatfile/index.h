@@ -35,8 +35,9 @@
 #ifndef _INDEX_
 #define _INDEX_
 
-#include<objtools/flatfile/flatfile_parser.hpp>
+#include <objtools/flatfile/flatfile_parser.hpp>
 
+// clang-format off
 /* genbank format old style LOCUS line column position
  */
 #define ParFlat_COL_BASES           22
@@ -64,5 +65,6 @@
 
 #define ParFlat_COL_FEATKEY         5
 #define ParFlat_COL_FEATDAT         21
+// clang-format on
 
 #endif
