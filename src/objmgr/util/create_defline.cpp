@@ -544,8 +544,8 @@ void CDeflineGenerator::x_SetFlagsIdx (
     if (m_IsUnverified) {
         int unverified_count = 0;
         m_UnverifiedPrefix = "UNVERIFIED: ";
-        if (bsx->IsUnverifiedOrganism()) {
-            m_UnverifiedPrefix = "UNVERIFIED_ORG: ";
+        if (bsx->IsUnverifiedFeature()) {
+            m_UnverifiedPrefix = "UNVERIFIED: ";
             unverified_count++;
         }
         if (bsx->IsUnverifiedMisassembled()) {
@@ -556,12 +556,12 @@ void CDeflineGenerator::x_SetFlagsIdx (
             m_UnverifiedPrefix = "UNVERIFIED_CONTAM: ";
             unverified_count++;
         }
-        if (bsx->IsUnverifiedFeature()) {
-            m_UnverifiedPrefix = "UNVERIFIED: ";
+        if (bsx->IsUnverifiedOrganism()) {
+            m_UnverifiedPrefix = "UNVERIFIED_ORG: ";
             unverified_count++;
         }
         if (unverified_count > 1) {
-            m_UnverifiedPrefix = "UNVERIFIED: ";
+            // m_UnverifiedPrefix = "UNVERIFIED: ";
         }
     }
 
@@ -936,8 +936,9 @@ void CDeflineGenerator::x_SetFlags (
                     m_IsUnverified = true;
                     int unverified_count = 0;
                     needed_desc_choices &= ~fUser;
-                    if (user_obj.IsUnverifiedOrganism()) {
-                        m_UnverifiedPrefix = "UNVERIFIED_ORG: ";
+                    m_UnverifiedPrefix = "UNVERIFIED: ";
+                    if (user_obj.IsUnverifiedFeature()) {
+                        m_UnverifiedPrefix = "UNVERIFIED: ";
                         unverified_count++;
                     }
                     if (user_obj.IsUnverifiedMisassembled()) {
@@ -948,12 +949,12 @@ void CDeflineGenerator::x_SetFlags (
                         m_UnverifiedPrefix = "UNVERIFIED_CONTAM: ";
                         unverified_count++;
                     }
-                    if (user_obj.IsUnverifiedFeature()) {
-                        m_UnverifiedPrefix = "UNVERIFIED: ";
+                    if (user_obj.IsUnverifiedOrganism()) {
+                        m_UnverifiedPrefix = "UNVERIFIED_ORG: ";
                         unverified_count++;
                     }
                     if (unverified_count > 1) {
-                        m_UnverifiedPrefix = "UNVERIFIED: ";
+                        // m_UnverifiedPrefix = "UNVERIFIED: ";
                     }
                 } else if (user_obj.GetType().GetStr() == "AutodefOptions" ) {
                     FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, user_obj) {
