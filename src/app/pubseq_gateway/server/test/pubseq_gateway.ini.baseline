@@ -44,6 +44,8 @@ root_keyspace=psg_test_info
 
 slim_max_blob_size=10KB
 
+ProcessorMaxConcurrency=20000
+
 
 [DEBUG]
 DIAG_POST_LEVEL=Warning
