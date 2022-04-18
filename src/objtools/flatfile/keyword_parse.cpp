@@ -42,18 +42,29 @@ BEGIN_NCBI_SCOPE
 //  ----------------------------------------------------------------------------
 CKeywordParser::CKeywordParser(
     Parser::EFormat format) :
-    //  ----------------------------------------------------------------------------
-    mFormat(format),
-    mDataDone(false),
-    mDataClean(false){};
+//  ----------------------------------------------------------------------------
+    mFormat(format)
+{
+    xInitialize();
+};
 
 //  ----------------------------------------------------------------------------
 CKeywordParser::~CKeywordParser()
-    //  ----------------------------------------------------------------------------
-    {};
+//  ----------------------------------------------------------------------------
+{};
 
 //  ----------------------------------------------------------------------------
-const list<string>
+void
+CKeywordParser::xInitialize()
+//  ----------------------------------------------------------------------------
+{
+    mDataFinal = mDataClean = false;
+    mPending.clear();
+    mKeywords.clear();
+}
+
+//  ----------------------------------------------------------------------------
+const list<string> 
 CKeywordParser::KeywordList() const
 //  ----------------------------------------------------------------------------
 {
@@ -61,12 +72,16 @@ CKeywordParser::KeywordList() const
 }
 
 //  ----------------------------------------------------------------------------
-void CKeywordParser::AddDataLine(
+void 
+CKeywordParser::AddDataLine(
     const string& line)
 //  ----------------------------------------------------------------------------
 {
-    if (mDataDone) {
-        // throw
+    if (mDataFinal) {
+        // this can actually happen!
+        //  the cause would be an input file that contains multiple entries back
+        //  to back.
+        xInitialize();
     }
     string data(line);
     switch (mFormat) {
@@ -76,7 +91,7 @@ void CKeywordParser::AddDataLine(
         data = NStr::TruncateSpaces(data.substr(2));
         break;
     }
-    if (! mPending.empty() && ! NStr::EndsWith(mPending, ";")) {
+    if (!mPending.empty() && !NStr::EndsWith(mPending, ";")) {
         mPending += ' ';
     }
     mPending += data;
@@ -84,14 +99,15 @@ void CKeywordParser::AddDataLine(
         xFinalize();
         return;
     }
-    if (! NStr::EndsWith(mPending, ";")) {
+    if (!NStr::EndsWith(mPending, ";")) {
         mPending += ' ';
         return;
     }
 }
 
 //  ----------------------------------------------------------------------------
-void CKeywordParser::xFinalize()
+void 
+CKeywordParser::xFinalize()
 //  ----------------------------------------------------------------------------
 {
     list<string> words;
@@ -100,13 +116,65 @@ void CKeywordParser::xFinalize()
     for (auto word : words) {
         mKeywords.push_back(NStr::TruncateSpaces(word));
     }
-    mDataDone = true;
+    mDataFinal = true;
 }
 
 //  ----------------------------------------------------------------------------
-void CKeywordParser::Cleanup()
+void 
+CKeywordParser::Cleanup()
 //  ----------------------------------------------------------------------------
 {
+    if (mDataClean) {
+        return;
+    }
+    if (!mDataFinal) {
+        // throw
+    }
+    if (mFormat == Parser::EFormat::SPROT) {
+        xCleanupStripEco();
+    }
+    xCleanupFixWgsThirdPartyData();
+    mDataClean = true;
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CKeywordParser::xCleanupStripEco()
+//  ----------------------------------------------------------------------------
+{
+    for (auto keyword: mKeywords) {
+        auto ecoStart = keyword.find("{ECO:");
+        while (ecoStart != string::npos) {
+            auto ecoStop = keyword.find("}", ecoStart);
+            if (ecoStop == string::npos) {
+                continue; // hmmm
+            }
+            string test1 = keyword.substr(ecoStop);
+            while (keyword[ecoStop + 1] == ' ') {
+                ++ecoStop;
+            }
+            keyword = keyword.substr(0, ecoStart) + keyword.substr(ecoStop + 1);
+            ecoStart = keyword.find("{ECO:", ecoStart);
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CKeywordParser::xCleanupFixWgsThirdPartyData()
+//  ----------------------------------------------------------------------------
+{
+    const string problematic("WGS Third Party Data");
+    auto keywordIt = mKeywords.begin();
+    while (keywordIt != mKeywords.end()) {
+        string& keyword = *keywordIt;
+        if (keyword == problematic) {
+            keyword = "WGS";
+            mKeywords.insert(keywordIt, "Third Party Data");
+            ++keywordIt;
+        }
+        ++keywordIt;
+    }
 }
 
 END_NCBI_SCOPE
