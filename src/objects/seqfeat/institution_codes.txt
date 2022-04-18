@@ -3512,7 +3512,6 @@ JPMP	s	Janus Pannonius Museum
 JPU	s	Janus Pannonius University, Botany Department			
 JRAU	s	University of Johannesburg, Department of Botany and Plant Biotechnology			
 JROH	s	Jasper Ridge Biological Preserve, Stanford University			
-JRY	s	Jersey College for Girls			
 JSHC	s	Jay S. Haft Collection			
 JSMI	s	Jiangsu Marine Fisheries Research Institute			
 JSMPE	s	Joint Soviet Mongolian Paleontolgical Expedition	JRMPE		
@@ -3520,7 +3519,6 @@ JSNM	s	Jurica-Suchy Nature Museum at Benedictine University
 JSPC<CHN>	s	Shandong University, Biology Department			
 JSPC<CZE>	s	J. Rusek Collection			
 JSU	s	Jacksonville State University, Biology Department			
-JSY	s	Museum and Art Gallery of La Societe Jersiaise			
 JTNM	s	Joshua Tree National Monument			
 JTPC	s	Colorado Entomological Museum (formerly John T. Polhemus collection)			
 JU	s	Jinan University			
