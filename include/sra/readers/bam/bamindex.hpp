@@ -390,6 +390,11 @@ public:
     CBamIndex(const string& index_file_name);
     ~CBamIndex();
 
+    const string& GetFileName() const
+        {
+            return m_FileName;
+        }
+
     void Read(const string& index_file_name);
     void Read(const char* buffer_ptr, size_t buffer_size);
     void Read(CNcbiIstream& in);
@@ -687,6 +692,7 @@ public:
        }
 
 private:
+    string m_FileName;
     TRefs m_Refs;
     Uint8 m_UnmappedCount;
     Uint8 m_TotalReadBytes;
@@ -918,6 +924,10 @@ public:
     const CBamIndex& GetIndex() const
         {
             return m_Index;
+        }
+    const string& GetIndexName() const
+        {
+            return m_Index.GetFileName();
         }
     size_t GetRefIndex(const string& ref_label) const
         {

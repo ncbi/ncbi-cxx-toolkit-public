@@ -196,6 +196,8 @@ public:
     CBamDb(const CBamMgr& mgr,
            const string& db_name,
            EUseAPI use_api = eUseDefaultAPI);
+    // If idx_name is empty string or equal to db_name then CBamDb constructor
+    // will try to deduce the index file name using configurable naming conventions.
     CBamDb(const CBamMgr& mgr,
            const string& db_name,
            const string& idx_name,
@@ -499,7 +501,7 @@ private:
     struct SAADBImpl : public CObject
     {
         SAADBImpl(const CBamMgr& mgr, const string& db_name);
-        SAADBImpl(const CBamMgr& mgr, const string& db_name, const string& idx_name);
+        SAADBImpl(const CBamMgr& mgr, const string& db_name, string& idx_name);
 
         mutable CMutex m_Mutex;
         CBamRef<const AlignAccessDB> m_DB;

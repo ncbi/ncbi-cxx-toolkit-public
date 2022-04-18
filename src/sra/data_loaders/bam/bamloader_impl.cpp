@@ -628,7 +628,7 @@ void CBamFileInfo::x_Initialize(const CBAMDataLoader_Impl& impl,
     m_BamDb = CBamDb(impl.m_Mgr,
                      impl.m_DirPath+bam.m_BamName,
                      impl.m_DirPath+(bam.m_IndexName.empty()?
-                                     bam.m_BamName+".bai":
+                                     bam.m_BamName:
                                      bam.m_IndexName));
     if ( impl.m_IdMapper.get() ) {
         m_BamDb.SetIdMapper(impl.m_IdMapper.get(), eNoOwnership);

@@ -62,10 +62,16 @@ class CSeq_entry;
 static const size_t kGZipMagicLength = 2;
 static const char kGZipMagic[] = "\x1f\x8b";
 
+static const char kBamExt[] = ".bam";
+
 static const size_t kIndexMagicLength = 4;
+static const char kBaiExt[] = ".bai";
 static const char kIndexMagicBAI[] = "BAI\1";
 #ifdef BAM_SUPPORT_CSI
+static const char kCsiExt[] = ".csi";
 static const char kIndexMagicCSI[] = "CSI\1";
+NCBI_PARAM_DECL(bool, BAM, PREFER_CSI);
+NCBI_PARAM_DEF(bool, BAM, PREFER_CSI, false);
 #endif
 static const float kEstimatedCompression = 0.25;
 
@@ -417,7 +423,7 @@ const char* SBamIndexRefIndex::Read(const char* buffer_ptr, const char* buffer_e
 
 vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts() const
 {
-#if 0
+#if 1
     TSeqPos nBins = m_EstimatedLength >> GetLevelBinShift(0);
     vector<TSeqPos> aln_over_starts(nBins);
     for ( TSeqPos i = 0; i < nBins; ++i ) {
@@ -603,11 +609,21 @@ CBGZFRange SBamIndexRefIndex::GetLimitRange(COpenRange<TSeqPos>& ref_range,
         }
 #ifdef BAM_SUPPORT_CSI
         else if ( is_CSI ) {
-            TBin bin_num = GetBinNumber(ref_range.GetFrom(), 0);
-            auto bins = GetLevelBins(0);
-            auto it = lower_bound(bins.first, bins.second, bin_num);
-            if ( it != bins.second ) {
-                limit.first = it->m_Overlap;
+            for ( TIndexLevel level = 0; level <= GetMaxIndexLevel(); ++level ) {
+                TBin bin_num = GetBinNumber(ref_range.GetFrom(), level);
+                TBin bin_num_last = GetBinNumber(ref_range.GetTo(), level);
+                auto bins = GetLevelBins(level);
+                auto it = lower_bound(bins.first, bins.second, bin_num);
+                if ( it != bins.second && it->m_Bin <= bin_num_last ) {
+                    if ( it->m_Overlap ) {
+                        if ( !limit.first || it->m_Overlap < limit.first ) {
+                            limit.first = it->m_Overlap;
+                        }
+                    }
+                    if ( it->m_Bin == bin_num ) {
+                        break;
+                    }
+                }
             }
         }
 #endif
@@ -934,6 +950,7 @@ CBamIndex::~CBamIndex()
 
 void CBamIndex::Read(const string& index_file_name)
 {
+    m_FileName = index_file_name;
     m_Refs.clear();
     m_UnmappedCount = 0;
 
@@ -1572,9 +1589,56 @@ void CBamRawDb::Open(const string& bam_path)
 }
 
 
+static void s_AddReplacedExt(vector<string>& dst,
+                             const string& base_name,
+                             CTempString old_ext,
+                             CTempString new_ext)
+{
+    if ( NStr::EndsWith(base_name, old_ext) ) {
+        dst.push_back(base_name.substr(0, base_name.size()-old_ext.size())+new_ext);
+    }
+}
+
+
 void CBamRawDb::Open(const string& bam_path, const string& index_path)
 {
-    m_Index.Read(index_path);
+    vector<string> index_name_candidates;
+    if ( index_path.empty() || index_path == bam_path ) {
+#ifdef BAM_SUPPORT_CSI
+        bool prefer_csi = NCBI_PARAM_TYPE(BAM, PREFER_CSI)::GetDefault();
+        if ( prefer_csi ) {
+            index_name_candidates.push_back(bam_path+kCsiExt);
+            s_AddReplacedExt(index_name_candidates, bam_path, kBamExt, kCsiExt);
+        }
+#endif
+        index_name_candidates.push_back(bam_path+kBaiExt);
+        s_AddReplacedExt(index_name_candidates, bam_path, kBamExt, kBaiExt);
+#ifdef BAM_SUPPORT_CSI
+        if ( !prefer_csi ) {
+            index_name_candidates.push_back(bam_path+kCsiExt);
+            s_AddReplacedExt(index_name_candidates, bam_path, kBamExt, kCsiExt);
+        }
+#endif
+    }
+    else {
+        index_name_candidates.push_back(index_path);
+    }
+    for ( size_t i = 0; i < index_name_candidates.size(); ++i ) {
+        try {
+            m_Index.Read(index_name_candidates[i]);
+            break;
+        }
+        catch ( CBamException& exc ) {
+            if ( i < index_name_candidates.size()-1 &&
+                 exc.GetErrCode() == CBamException::eFileNotFound ) {
+                // try next index file name candidate
+                continue;
+            }
+            else {
+                throw;
+            }
+        }
+    }
     m_File = new CBGZFFile(bam_path);
     m_File->SetPreviousReadStatistics(m_Index.GetReadStatistics());
     CBGZFStream stream(*m_File);

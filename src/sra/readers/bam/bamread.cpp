@@ -72,6 +72,9 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
+static const char kBamExt[] = ".bam";
+static const char kBaiExt[] = ".bai";
+
 
 DEFINE_BAM_REF_TRAITS(VFSManager, );
 DEFINE_BAM_REF_TRAITS(AlignAccessMgr, const);
@@ -180,6 +183,7 @@ const char* CBamException::GetErrCodeString(void) const
     case eBadCIGAR:     return "eBadCIGAR";
     case eInvalidBAMFormat: return "eInvalidBAMFormat";
     case eInvalidBAIFormat: return "eInvalidBAIFormat";
+    case eFileNotFound: return "eFileNotFound";
     default:            return CException::GetErrCodeString();
     }
 }
@@ -861,21 +865,55 @@ CBamDb::SAADBImpl::SAADBImpl(const CBamMgr& mgr,
     }
 }
 
+
+static void s_AddReplacedExt(vector<string>& dst,
+                             const string& base_name,
+                             CTempString old_ext,
+                             CTempString new_ext)
+{
+    if ( NStr::EndsWith(base_name, old_ext) ) {
+        dst.push_back(base_name.substr(0, base_name.size()-old_ext.size())+new_ext);
+    }
+}
+
+
 CBamDb::SAADBImpl::SAADBImpl(const CBamMgr& mgr,
                              const string& db_name,
-                             const string& idx_name)
+                             string& idx_name)
 {
     AutoPtr<VPath, VPathReleaser> kdb_name (sx_GetVPath(mgr.GetVFSManager(),
                                                         db_name));
-    AutoPtr<VPath, VPathReleaser> kidx_name(sx_GetVPath(mgr.GetVFSManager(),
-                                                        idx_name));
-    if ( rc_t rc = AlignAccessMgrMakeIndexBAMDB(mgr.GetAlignAccessMgr(),
-                                                m_DB.x_InitPtr(),
-                                                kdb_name.get(),
-                                                kidx_name.get()) ) {
-        *m_DB.x_InitPtr() = 0;
-        NCBI_THROW3(CBamException, eInitFailed,
-                    "Cannot open BAM DB", rc, db_name);
+    vector<string> index_name_candidates;
+    if ( idx_name.empty() || idx_name == db_name ) {
+        index_name_candidates.push_back(db_name+kBaiExt);
+        s_AddReplacedExt(index_name_candidates, db_name, kBamExt, kBaiExt);
+    }
+    else {
+        index_name_candidates.push_back(idx_name);
+    }
+    for ( size_t i = 0; i < index_name_candidates.size(); ++i ) {
+        AutoPtr<VPath, VPathReleaser> kidx_name(sx_GetVPath(mgr.GetVFSManager(),
+                                                            index_name_candidates[i]));
+        if ( rc_t rc = AlignAccessMgrMakeIndexBAMDB(mgr.GetAlignAccessMgr(),
+                                                    m_DB.x_InitPtr(),
+                                                    kdb_name.get(),
+                                                    kidx_name.get()) ) {
+            if ( i < index_name_candidates.size()-1 &&
+                 GetRCTarget(rc) == rcFile &&
+                 GetRCState(rc) == rcNotFound ) {
+                // try next index file name candidate
+                continue;
+            }
+            else {
+                *m_DB.x_InitPtr() = 0;
+                NCBI_THROW3(CBamException, eInitFailed,
+                            "Cannot open BAM DB", rc, db_name);
+            }
+        }
+        else {
+            idx_name = index_name_candidates[i];
+            break;
+        }
     }
 }
 
@@ -904,10 +942,11 @@ CBamDb::CBamDb(const CBamMgr& mgr,
 {
     s_UpdateVDBRequestContext();
     if ( UseRawIndex(use_api) ) {
-        m_RawDB = new CObjectFor<CBamRawDb>(db_name, idx_name);
+        m_RawDB = new CObjectFor<CBamRawDb>(db_name, m_IndexName);
+        m_IndexName = m_RawDB->GetData().GetIndexName();
     }
     else {
-        m_AADB = new SAADBImpl(mgr, db_name, idx_name);
+        m_AADB = new SAADBImpl(mgr, db_name, m_IndexName);
     }
 }
 

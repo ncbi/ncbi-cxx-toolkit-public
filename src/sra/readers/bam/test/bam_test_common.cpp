@@ -190,7 +190,7 @@ bool CBAMTestCommon::ParseCommonArgs(const CArgs& args)
             index_path = args["index"].AsString();
         }
         else {
-            index_path = path+".bai";
+            index_path = path;
         }
     }
     
