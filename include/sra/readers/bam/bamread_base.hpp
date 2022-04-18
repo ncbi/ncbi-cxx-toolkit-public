@@ -102,7 +102,8 @@ public:
         eNoData,        ///< Data not found
         eBadCIGAR,      ///< Bad CIGAR string
         eInvalidBAMFormat, ///< Invalid data in BAM file
-        eInvalidBAIFormat  ///< Invalid data in BAM index file
+        eInvalidBAIFormat, ///< Invalid data in BAM index file
+        eFileNotFound   ///< File not found
     };
     /// Constructors.
     CBamException(const CDiagCompileInfo& info,

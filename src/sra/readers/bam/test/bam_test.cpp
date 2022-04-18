@@ -530,9 +530,11 @@ int CBAMTestApp::Run(void)
         
         if ( index_path.empty() ) {
             bam_db = CBamDb(mgr, path);
+            out << "No index" << NcbiEndl;
         }
         else {
             bam_db = CBamDb(mgr, path, index_path);
+            out << "Index: " << bam_db.GetIndexName() << NcbiEndl;
         }
 
         if ( id_mapper.get() ) {

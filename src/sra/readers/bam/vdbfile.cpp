@@ -146,7 +146,7 @@ CBamVDBFile::CBamVDBFile(const string& path)
 void CBamVDBFile::x_Init(const CBamVFSManager& mgr, const CBamVDBPath& path)
 {
     if ( rc_t rc = VFSManagerOpenFileRead(mgr, x_InitPtr(), path) ) {
-        NCBI_THROW2_FMT(CBamException, eInitFailed,
+        NCBI_THROW2_FMT(CBamException, eFileNotFound,
                         "CBamVDBFile("<<path.GetString()<<"): "
                         "cannot open KFile", rc);
     }

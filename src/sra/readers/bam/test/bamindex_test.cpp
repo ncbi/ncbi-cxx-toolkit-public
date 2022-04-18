@@ -241,7 +241,7 @@ int s_CollectOverlaps(CBamRawDb& bam_raw_db)
             overstart1 = (overstart1 >> bin_shift) << bin_shift;
             if ( overstart0 != overstart1 ) {
                 cout << "overstart["<<bin_pos<<"] = "
-                     << overstart1 << " != " << overstart0
+                     << overstart1 << " != actual " << overstart0
                      << endl;
                 error_code = 1;
             }
@@ -293,6 +293,8 @@ int CBamIndexTestApp::Run(void)
     sw.Restart();
     CBamRawDb bam_raw_db(path, index_path);
     cout << "Opened bam file in "<<sw.Elapsed()<<"s"<<endl;
+    out << "File: " << path << NcbiEndl;
+    out << "Index: " << bam_raw_db.GetIndexName() << NcbiEndl;
     
     CBamIndex::TIndexLevel level1 = 0;
     CBamIndex::TIndexLevel level2 = bam_raw_db.GetIndex().GetMaxIndexLevel();
@@ -547,6 +549,8 @@ int CBamIndexTestApp::Run(void)
                                             << "] = " << ref_size
                                             << " " << it.GetCIGAR()
                                             << " Q: " << int(it.GetMapQuality())
+                                            << " bin: " << it.GetIndexBin()
+                                            << " @: " << it.GetFilePos()
                                             << '\n';
                                        if ( got_level < level1 || got_level > level2 ) {
                                            cout << "Wrong index level: " << got_level << endl;
