@@ -86,6 +86,7 @@
 #include "xgbparint.h"
 #include "xutils.h"
 #include "fta_xml.h"
+#include "keyword_parse.hpp"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -1023,11 +1024,8 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     if (ibp->psip.NotEmpty())
         pat_ref = true;
 
-    if (! ibp->keywords.empty()) {
-        keywords.swap(ibp->keywords);
-        ibp->keywords.clear();
-    } else
-        GetSequenceOfKeywords(entry, ParFlat_KW, ParFlat_COL_DATA_EMBL, keywords);
+    pp->KeywordParser().Cleanup();
+    keywords = pp->KeywordParser().KeywordList();
 
     embl->SetKeywords() = keywords;
     if (ibp->is_tpa && ! fta_tpa_keywords_check(keywords)) {
@@ -1389,11 +1387,8 @@ static CRef<CGB_block> GetEmblGBBlock(ParserPtr pp, const DataBlk& entry, char* 
     if (pp->source == Parser::ESource::NCBI) {
         ibp->wgssec[0] = '\0';
         GetExtraAccession(ibp, pp->allow_uwsec, pp->source, gbb->SetExtra_accessions());
-        if (! ibp->keywords.empty()) {
-            gbb->SetKeywords().swap(ibp->keywords);
-            ibp->keywords.clear();
-        } else
-            GetSequenceOfKeywords(entry, ParFlat_KW, ParFlat_COL_DATA_EMBL, gbb->SetKeywords());
+        pp->KeywordParser().Cleanup();
+        gbb->SetKeywords() = pp->KeywordParser().KeywordList();
     }
 
     if (gbdiv) {

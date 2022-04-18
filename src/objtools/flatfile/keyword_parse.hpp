@@ -60,13 +60,17 @@ public:
     void Cleanup();
 
 private:
+    void xInitialize();
     void xFinalize();
 
+    void xCleanupStripEco();
+    void xCleanupFixWgsThirdPartyData();
+
     Parser::EFormat mFormat;
-    list<string>    mKeywords;
-    bool            mDataDone;
-    string          mPending;
-    bool            mDataClean;
+    list<string> mKeywords;
+    string mPending;
+    bool mDataFinal;
+    bool mDataClean;
 };
 
 END_NCBI_SCOPE
