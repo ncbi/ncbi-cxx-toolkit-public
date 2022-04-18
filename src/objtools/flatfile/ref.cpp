@@ -219,15 +219,6 @@ static char* clean_up(char* str)
     return (newp);
 }
 
-/**********************************************************
-*
-*   static ValNodePtr get_num(str):
-*
-*      Get gb serial number and put it to PUB_Gen.
-*
-*                                              12-4-93
-*
-**********************************************************/
 static CRef<CPub> get_num(char* str)
 {
     int serial_num = NStr::StringToInt(str, NStr::fAllowTrailingSymbols);
@@ -238,15 +229,6 @@ static CRef<CPub> get_num(char* str)
     return ret;
 }
 
-/**********************************************************
- *
- *   static ValNodePtr get_muid(str, format):
- *
- *      Get gb MUID and put it to PUB_Gen.
- *
- *                                              12-4-93
- *
- **********************************************************/
 static CRef<CPub> get_muid(char* str, Parser::EFormat format)
 {
     char* p;
@@ -1485,14 +1467,6 @@ static CRef<CCit_gen> fta_get_citgen(char* bptr, CRef<CAuth_list>& auth_list, CR
     return cit_gen;
 }
 
-/**********************************************************
- *
- *   ValNodePtr journal(pp, bptr, eptr, auth, title,
- *                      has_muid, cit_art, er):
- *
- *      Return a ValNodePtr.
- *
- **********************************************************/
 CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, bool has_muid, CRef<CCit_art>& cit_art, Int4 er)
 {
     int   pre = 0;

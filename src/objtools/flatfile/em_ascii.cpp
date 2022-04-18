@@ -354,13 +354,6 @@ static bool OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& seq_entries)
     return true;
 }
 
-/**********************************************************
- *
- *   static ValNodePtr GetXrefObjId(vnp, str):
- *
- *      A ValNode which points to a ObjectId.
- *
- **********************************************************/
 static void SetXrefObjId(CEMBL_xref& xref, const std::string& str)
 {
     if (str.empty())

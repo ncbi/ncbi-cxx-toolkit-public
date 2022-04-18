@@ -216,8 +216,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     char*         line_sv;
     char*         p;
     char*         q;
-    ValNodePtr    kwds;
-    ValNodePtr    tkwds;
 
     finfo = new FinfoBlk();
 
@@ -233,7 +231,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     ibnp->next = NULL;
     tibnp      = ibnp;
 
-    kwds = NULL;
     while (! end_of_file) {
         entry = InitialEntry(pp, finfo);
 
@@ -259,10 +256,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             after_DT         = false;
 
             line_sv = NULL;
-            if (kwds != NULL)
-                kwds = ValNodeFreeData(kwds);
-            tkwds             = NULL;
-            size_t kwds_len   = 0;
             auto   keywordEnd = emblKeywords[ParFlatEM_END];
             auto   keywordId  = emblKeywords[ParFlat_ID];
             auto   keywordNi  = emblKeywords[ParFlat_NI];

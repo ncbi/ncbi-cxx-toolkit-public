@@ -905,19 +905,6 @@ static void FilterDb_xref(CSeq_feat& feat, Parser::ESource source)
         feat.ResetDbxref();
 }
 
-/**********************************************************
- *
- *   bool GetSeqLocation(sfp, location, ids,
- *                          hard_err, pp, name):
- *
- *      Return locmap = TRUE if mapping location rules not
- *   work, then SeqLocPtr->whole = ids[0].
- *      sfp->location is a SeqLocPtr which is defined
- *   as a ValNodePtr.
- *
- *                                              7-26-93
- *
- **********************************************************/
 bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, char* name)
 {
     bool sitesmap;
@@ -3772,53 +3759,6 @@ static bool CheckLegalQual(const Char* val, Char ch, std::string* qual)
         *qual = qual_name;
 
     return true;
-}
-
-/**********************************************************/
-static void fta_set_merge_marks(char* val, size_t quallen, size_t vallen)
-{
-    char* start;
-    char* p;
-    char* q;
-    bool  first;
-
-    if (val == NULL || *val == '\0')
-        return;
-
-    p = StringChr(val, '\n');
-    if (p == NULL)
-        return;
-
-    for (first = true, start = val; p != NULL;) {
-        if ((p - 1) >= start && *(p - 1) == '-' &&
-            (p - 2) >= start && *(p - 2) != ' ') {
-            *p    = '\t';
-            start = ++p;
-            p     = StringChr(p, '\n');
-            continue;
-        }
-        if ((p - 3) >= start && StringNCmp(p - 3, "(EC", 3) == 0 &&
-            p[1] >= '0' && p[1] <= '9') {
-            start = ++p;
-            p     = StringChr(p, '\n');
-            continue;
-        }
-        if (p[1] == '(' || ((p - 1) >= start && *(p - 1) == ',')) {
-            start = ++p;
-            p     = StringChr(p, '\n');
-            continue;
-        }
-        *p         = '\0';
-        q          = StringChr(start, ' ');
-        size_t len = StringLen(start);
-        if (first) {
-            first = false;
-            len += quallen;
-        }
-        *p    = (q == NULL && len == vallen) ? '\t' : '\n';
-        start = ++p;
-        p     = StringChr(p, '\n');
-    }
 }
 
 /**********************************************************/

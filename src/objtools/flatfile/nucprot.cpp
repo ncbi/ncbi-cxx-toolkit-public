@@ -567,20 +567,6 @@ static void StripCDSComment(CSeq_feat& feat)
     MemFree(comment);
 }
 
-/**********************************************************
-*
-*   static SeqAnnotPtr GetProtRefAnnot(ibp, sfp, seqid,
-*                                      length):
-*
-*      "product" qualifier ==> prp->name.
-*      "note" or "gene" or "standard_name" or
-*   "label" ==> prp->desc.
-*      "EC_number" qualifier ==> a ValNodePtr in
-*   ProtRefPtr, prp->ec.
-*      "function" qualifier ==> a ValNodePtr in
-*   ProtRefPtr, prp->activity.
-*
-**********************************************************/
 static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
 {
     char* qval;
