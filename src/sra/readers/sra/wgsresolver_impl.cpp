@@ -40,8 +40,6 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/data_loader.hpp>
 
 BEGIN_NCBI_NAMESPACE;
 
