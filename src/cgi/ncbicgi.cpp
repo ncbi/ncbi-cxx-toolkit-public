@@ -42,13 +42,14 @@
 #include <corelib/ncbi_strings.h>
 
 #include <cgi/cgi_exception.hpp>
-#include <cgi/ncbicgi.hpp>
 #include <cgi/cgi_serial.hpp>
 #include <cgi/cgi_session.hpp>
 #include <cgi/error_codes.hpp>
 #include <cgi/impl/cgi_entry_reader.hpp>
 #include <util/checksum.hpp>
 #include <util/ncbi_url.hpp>
+
+#include "cgi_impl.hpp"
 
 #include <algorithm>
 
@@ -960,24 +961,6 @@ static void s_AddEntry(TCgiEntries& entries, const string& name,
     entries.insert(TCgiEntries::value_type
                    (name, CCgiEntry(value, filename, position, type)));
 }
-
-
-class CCgiEntries_Parser : public CUrlArgs_Parser
-{
-public:
-    CCgiEntries_Parser(TCgiEntries* entries,
-                       TCgiIndexes* indexes,
-                       bool indexes_as_entries);
-protected:
-    virtual void AddArgument(unsigned int position,
-                             const string& name,
-                             const string& value,
-                             EArgType arg_type);
-private:
-    TCgiEntries* m_Entries;
-    TCgiIndexes* m_Indexes;
-    bool         m_IndexesAsEntries;
-};
 
 
 CCgiEntries_Parser::CCgiEntries_Parser(TCgiEntries* entries,
