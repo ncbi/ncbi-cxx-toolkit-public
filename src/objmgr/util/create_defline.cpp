@@ -1491,12 +1491,15 @@ static string s_RemoveWhiteSpace(string str)
 
 
 static void s_AddVoucherAndIsolate(const CTempString& taxname,
+        const CTempString& strain,
         const CTempString& specimen_voucher,
         const CTempString& isolate,
         CDefLineJoiner& joiner)
 {
     if (!specimen_voucher.empty()) {
-        joiner.Add("voucher", specimen_voucher);
+        if (strain.empty() || (s_RemoveColonsAndWhiteSpace(strain) != s_RemoveColonsAndWhiteSpace(specimen_voucher))) {
+            joiner.Add("voucher", specimen_voucher);
+        }
     }
 
     if (!isolate.empty() && (isolate != specimen_voucher)) {
@@ -1535,7 +1538,7 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
         joiner.Add("cultivar", m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
 
-    s_AddVoucherAndIsolate(m_Taxname, m_SpecimenVoucher, m_Isolate, joiner);
+    s_AddVoucherAndIsolate(m_Taxname, m_Strain, m_SpecimenVoucher, m_Isolate, joiner);
 
     if (! m_Chromosome.empty()) {
         joiner.Add("location", "chromosome", eHideType);
@@ -2679,7 +2682,7 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
         joiner.Add("cultivar", m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
 
-    s_AddVoucherAndIsolate(m_Taxname, m_SpecimenVoucher, m_Isolate, joiner);
+    s_AddVoucherAndIsolate(m_Taxname, m_Strain, m_SpecimenVoucher, m_Isolate, joiner);
 
     if (! m_Chromosome.empty()) {
         joiner.Add("chromosome", m_Chromosome);
