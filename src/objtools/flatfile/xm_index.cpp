@@ -236,7 +236,7 @@ static bool XMLDelSegnum(IndexblkPtr ibp, char* segnum, size_t len2)
     for (; tlen > 0 && str[i] >= '0' && str[i] <= '9'; i--)
         tlen--;
 
-    if (tlen != 0 || i < 0)
+    if (tlen != 0)
         return false;
 
     if (len2 > len1 && str[i] == '0') {
