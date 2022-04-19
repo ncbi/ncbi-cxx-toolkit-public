@@ -113,7 +113,7 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
     // Parse into entries
     string mid_seps = "=&";
     string end_seps = "&";
-    if (!m_SemicolonIsNotArgDelimiter)
+    if (m_Flags & fSemicolonIsArgDelimiter)
     {
         mid_seps += ';';
         end_seps += ';';
@@ -129,7 +129,7 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
             continue;
         }
         // Alternative separator - ';'
-        else if (!m_SemicolonIsNotArgDelimiter  &&  query[beg] == ';')
+        else if ((m_Flags & fSemicolonIsArgDelimiter)  &&  query[beg] == ';')
         {
             ++beg;
             continue;
@@ -176,24 +176,27 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
 // CUrlArgs
 //
 
-CUrlArgs::CUrlArgs(void)
-    : m_Case(NStr::eNocase),
+CUrlArgs::CUrlArgs(TFlags flags)
+    : CUrlArgs_Parser(flags),
+      m_Case(NStr::eNocase),
       m_IsIndex(false)
 {
     return;
 }
 
 
-CUrlArgs::CUrlArgs(const string& query, NStr::EUrlEncode decode)
-    : m_Case(NStr::eNocase),
+CUrlArgs::CUrlArgs(const string& query, NStr::EUrlEncode decode, TFlags flags)
+    : CUrlArgs_Parser(flags),
+      m_Case(NStr::eNocase),
       m_IsIndex(false)
 {
     SetQueryString(query, decode);
 }
 
 
-CUrlArgs::CUrlArgs(const string& query, const IUrlEncoder* encoder)
-    : m_Case(NStr::eNocase),
+CUrlArgs::CUrlArgs(const string& query, const IUrlEncoder* encoder, TFlags flags)
+    : CUrlArgs_Parser(flags),
+      m_Case(NStr::eNocase),
       m_IsIndex(false)
 {
     SetQueryString(query, encoder);

@@ -169,7 +169,15 @@ private:
 class NCBI_XNCBI_EXPORT CUrlArgs_Parser
 {
 public:
-    CUrlArgs_Parser(void) : m_SemicolonIsNotArgDelimiter(false) {}
+    /// An inverted subset of CCgiRequest::TFlags
+    /// @sa CCgiRequest
+    typedef int TFlags;
+    enum Flags {
+        /// Treat semicolon as query string argument separator
+        fSemicolonIsArgDelimiter    = (1 << 11),
+    };
+
+    CUrlArgs_Parser(TFlags flags = 0) : m_Flags(flags) {}
     virtual ~CUrlArgs_Parser(void) {}
 
     /// Parse query string, call AddArgument() to store each value.
@@ -181,7 +189,11 @@ public:
     /// Treat semicolon as query string argument separator
     void SetSemicolonIsNotArgDelimiter(bool enable = true)
     {
-        m_SemicolonIsNotArgDelimiter = enable;
+        if (enable) {
+            m_Flags &= ~fSemicolonIsArgDelimiter;
+        } else {
+            m_Flags |= fSemicolonIsArgDelimiter;
+        }
     }
 
 protected:
@@ -206,11 +218,12 @@ protected:
                              const string& name,
                              const string& value,
                              EArgType      arg_type = eArg_Index) = 0;
+
+    TFlags m_Flags;
+
 private:
     void x_SetIndexString(const string& query,
                           const IUrlEncoder& encoder);
-
-    bool m_SemicolonIsNotArgDelimiter;
 };
 
 
@@ -225,11 +238,11 @@ class NCBI_XNCBI_EXPORT CUrlArgs : public CUrlArgs_Parser
 {
 public:
     /// Create an empty arguments set.
-    CUrlArgs(void);
+    CUrlArgs(TFlags flags = 0);
     /// Parse the query string, store the arguments.
-    CUrlArgs(const string& query, NStr::EUrlEncode decode);
+    CUrlArgs(const string& query, NStr::EUrlEncode decode, TFlags flags = 0);
     /// Parse the query string, store the arguments.
-    CUrlArgs(const string& query, const IUrlEncoder* encoder = 0);
+    CUrlArgs(const string& query, const IUrlEncoder* encoder = 0, TFlags flags = 0);
 
     /// Ampersand encoding for composed URLs
     enum EAmpEncoding {

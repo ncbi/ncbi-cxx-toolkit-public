@@ -39,16 +39,18 @@ class NCBI_XCGI_EXPORT CCgiEntries_Parser : public CUrlArgs_Parser
 public:
     CCgiEntries_Parser(TCgiEntries* entries,
                        TCgiIndexes* indexes,
-                       bool indexes_as_entries);
+                       CCgiRequest::TFlags flags);
 protected:
     virtual void AddArgument(unsigned int position,
                              const string& name,
                              const string& value,
                              EArgType arg_type);
 private:
+    static CCgiRequest::TFlags TFlagsToCCgiRequestTFlags(TFlags flags) { return ~flags; }
+    static TFlags CCgiRequestTFlagsToTFlags(CCgiRequest::TFlags flags) { return ~flags; }
+
     TCgiEntries* m_Entries;
     TCgiIndexes* m_Indexes;
-    bool         m_IndexesAsEntries;
 };
 
 

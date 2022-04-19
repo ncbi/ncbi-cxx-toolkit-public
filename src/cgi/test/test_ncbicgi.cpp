@@ -453,8 +453,7 @@ BOOST_AUTO_TEST_CASE(Test_CCgiEntries_Parser)
 
         TCgiEntries parsed_entries;
         TCgiIndexes parsed_indexes;
-        CCgiEntries_Parser parser(&parsed_entries, &parsed_indexes, !(flags & N));
-        parser.SetSemicolonIsNotArgDelimiter(flags & S);
+        CCgiEntries_Parser parser(&parsed_entries, &parsed_indexes, flags);
         parser.SetQueryString(source);
 
         if (parsed_entries.size() != expected_entries.size()) {

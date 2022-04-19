@@ -965,10 +965,10 @@ static void s_AddEntry(TCgiEntries& entries, const string& name,
 
 CCgiEntries_Parser::CCgiEntries_Parser(TCgiEntries* entries,
                                        TCgiIndexes* indexes,
-                                       bool indexes_as_entries)
-    : m_Entries(entries),
-      m_Indexes(indexes),
-      m_IndexesAsEntries(indexes_as_entries  ||  !indexes)
+                                       CCgiRequest::TFlags flags)
+    : CUrlArgs_Parser(CCgiRequestTFlagsToTFlags(flags & ~(indexes ? 0 : CCgiRequest::fIndexesNotEntries))),
+      m_Entries(entries),
+      m_Indexes(indexes)
 {
     return;
 }
@@ -980,7 +980,7 @@ void CCgiEntries_Parser::AddArgument(unsigned int position,
                                      EArgType arg_type)
 {
     if (m_Entries  &&
-        (arg_type == eArg_Value  ||  m_IndexesAsEntries)) {
+        (arg_type == eArg_Value  ||  !(TFlagsToCCgiRequestTFlags(m_Flags) & CCgiRequest::fIndexesNotEntries))) {
         m_Entries->insert(TCgiEntries::value_type(
             name, CCgiEntry(value, kEmptyStr, position, kEmptyStr)));
     }
@@ -1310,11 +1310,7 @@ void CCgiRequest::x_ProcessQueryString(TFlags flags, const CNcbiArguments* args)
         }
 
         if ( query_string ) {
-            CCgiEntries_Parser parser(&m_Entries, &m_Indexes,
-                (flags & fIndexesNotEntries) == 0);
-            if (flags & fSemicolonIsNotArgDelimiter) {
-                parser.SetSemicolonIsNotArgDelimiter(true);
-            }
+            CCgiEntries_Parser parser(&m_Entries, &m_Indexes, flags);
             parser.SetQueryString(*query_string);
         }
     }
@@ -1521,7 +1517,7 @@ void CCgiRequest::SetInputStream(CNcbiIstream* is, bool own, int fd)
 
 SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
 {
-    CCgiEntries_Parser parser(&entries, 0, true);
+    CCgiEntries_Parser parser(&entries, 0, 0);
     try {
         parser.SetQueryString(str);
     }
@@ -1534,7 +1530,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
 
 SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
 {
-    CCgiEntries_Parser parser(0, &indexes, false);
+    CCgiEntries_Parser parser(0, &indexes, fIndexesNotEntries);
     try {
         parser.SetQueryString(str);
     }
