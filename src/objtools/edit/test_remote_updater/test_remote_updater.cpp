@@ -20,15 +20,26 @@ class CTestRemoteUpdaterApplication : public CNcbiApplication
     {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
         arg_desc->SetUsageContext("", "Test CRemoteUpdater using medarch/eutils");
-        arg_desc->AddOptionalKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
+        arg_desc->AddKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
         arg_desc->AddOptionalKey("source", "source", "Source of data", CArgDescriptions::eString);
         arg_desc->SetConstraint("source", &(*new CArgAllow_Strings, "medarch", "eutils"));
+        arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
         SetupArgDescriptions(arg_desc.release());
     }
 
     int Run() override
     {
         const CArgs& args = GetArgs();
+
+        TEntrezId pmid = ZERO_ENTREZ_ID;
+        if (args["id"]) {
+            TIntId id = args["id"].AsIntId();
+            pmid = ENTREZ_ID_FROM(TIntId, id);
+        }
+        if (pmid <= ZERO_ENTREZ_ID) {
+            return 1;
+        }
+
         bool bTypeMLA = false;
         if (args["source"]) {
             string s = args["source"].AsString();
@@ -38,17 +49,25 @@ class CTestRemoteUpdaterApplication : public CNcbiApplication
                 bTypeMLA = false;
             }
         }
-        if (args["id"]) {
-            TIntId id = args["id"].AsIntId();
-            TEntrezId pmid = ENTREZ_ID_FROM(TIntId, id);
-            CRemoteUpdater upd(nullptr, bTypeMLA ? edit::EPubmedSource::eMLA : edit::EPubmedSource::eEUtils);
-            CRef<CPub> pub(new CPub);
-            pub->SetPmid().Set(pmid);
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            desc->SetPub().SetPub().Set().push_back(pub);
-            // cout << MSerial_AsnText << *desc;
-            upd.UpdatePubReferences(*desc);
-            cout << MSerial_AsnText << *desc;
+
+        ostream* output = nullptr;
+        if (args["o"]) {
+            output = &args["o"].AsOutputFile();
+        } else {
+            output = &NcbiCout;
+        }
+
+        CRemoteUpdater upd(nullptr, bTypeMLA ? edit::EPubmedSource::eMLA : edit::EPubmedSource::eEUtils);
+        CRef<CPub> pub(new CPub);
+        pub->SetPmid().Set(pmid);
+        CRef<CSeqdesc> desc(new CSeqdesc);
+        desc->SetPub().SetPub().Set().push_back(pub);
+        // *output << MSerial_AsnText << *desc;
+        upd.UpdatePubReferences(*desc);
+        *output << MSerial_AsnText << *desc;
+
+        if (args["o"]) {
+            args["o"].CloseFile();
         }
 
         return 0;
