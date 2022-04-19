@@ -1800,13 +1800,10 @@ bool GenBankAsciiOrig(ParserPtr pp)
 }
 bool GenBankAscii(ParserPtr pp)
 {
-    Int2              curkw;
     int               imax;
-    int               segindx;
     int               total         = 0;
     int               total_long    = 0;
     int               total_dropped = 0;
-    const char*       ptr;
     unique_ptr<Entry> pEntry;
     unsigned char*    conv;
 
@@ -1814,14 +1811,10 @@ bool GenBankAscii(ParserPtr pp)
 
     CSeq_loc locs;
 
-    bool seq_long = false;
-
     IndexblkPtr ibp;
 
     auto dnaconv  = GetDNAConv();     /* set up sequence alphabets */
     auto protconv = GetProteinConv(); /* set up sequence alphabets */
-
-    segindx = -1;
 
     imax = pp->indx;
     for (int i = 0; i < imax; i++) {
@@ -1829,9 +1822,6 @@ bool GenBankAscii(ParserPtr pp)
         ibp         = pp->entrylist[i];
 
         err_install(ibp, pp->accver);
-
-        if (ibp->segnum == 1)
-            segindx = i;
 
         if (ibp->drop == 1 && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1845,8 +1835,6 @@ bool GenBankAscii(ParserPtr pp)
             return false;
         }
 
-        ptr   = pEntry->mBaseData.c_str();
-        curkw = ParFlat_LOCUS;
         xGetGenBankBlocks(*pEntry);
 
         if (pp->entrylist[pp->curindx]->lc.div > -1) {

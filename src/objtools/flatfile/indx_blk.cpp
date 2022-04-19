@@ -62,10 +62,6 @@ static const char* XML_TPG_array[] = {
     "   ", "Linear", "Circular", "Tandem", NULL
 };
 
-static const char* ParFlat_STRAND_array[] = {
-    "   ", "ss-", "ds-", "ms-", NULL
-};
-
 static const char* ParFlat_NA_array_DDBJ[] = {
     "cDNA", NULL
 };
@@ -98,14 +94,6 @@ static const char* embl_accpref[] = {
 
 static const char* lanl_accpref[] = {
     "AD", NULL
-};
-
-static const char* pir_accpref[] = {
-    "CC", NULL
-};
-
-static const char* prf_accpref[] = {
-    "XX", NULL
 };
 
 static const char* sprot_accpref[] = {
@@ -180,22 +168,6 @@ static const set<string> k_WgsScaffoldPrefix = {
     "JH", "KB", "KD", "KE", "KI", "KK",
     "KL", "KN", "KQ", "KV", "KZ", "LD",
     "ML", "MU" };
-
-//static const char *wgs_scfld_pref[] =
-
-static const char* source[11] = {
-    "unknown",
-    "EMBL",
-    "GENBANK",
-    "Swiss-Prot",
-    "NCBI",
-    "GSDB",
-    "DDBJ",
-    "FlyBase",
-    "RefSeq",
-    "unknown"
-};
-
 
 static const map<Parser::ESource, string> sourceNames = {
     { Parser::ESource::unknown, "unknown" },
@@ -361,7 +333,7 @@ bool XReadFileBuf(FileBuf& fbuf, FinfoBlkPtr finfo)
  *                                              3-5-93
  *
  **********************************************************/
-bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const char* str, Int2 len)
+bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const char* str, size_t len)
 {
     bool end_of_file = XReadFile(fp, finfo);
     while (! end_of_file && StringNCmp(finfo->str, str, len) != 0)
