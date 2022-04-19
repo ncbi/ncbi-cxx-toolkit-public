@@ -91,5 +91,7 @@ util/xregexp
 util/compress
 util/checksum
 
-sra
+sra$
+sra/readers$
+sra/readers/sra
 
