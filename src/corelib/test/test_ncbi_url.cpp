@@ -512,9 +512,9 @@ BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
 BOOST_AUTO_TEST_CASE(s_UrlArgsTest)
 {
     enum { eQuery, eFlags, eExpected };
-    const auto S = 1;
+    const auto S = CUrlArgs::fSemicolonIsArgDelimiter;
 
-    vector<tuple<string, int, CUrlArgs::TArgs>> checks =
+    vector<tuple<string, CUrlArgs::TFlags, CUrlArgs::TArgs>> checks =
     {
         { "",            0,     {                                                             } },
         { "a=",          0,     { { "a",     ""     },                                        } },
@@ -720,9 +720,7 @@ BOOST_AUTO_TEST_CASE(s_UrlArgsTest)
         const auto& source = get<eQuery>(check);
         const auto flags = get<eFlags>(check);
         const auto& expected = get<eExpected>(check);
-        CUrlArgs args;
-        args.SetSemicolonIsNotArgDelimiter(!flags);
-        args.SetQueryString(source);
+        CUrlArgs args(source, nullptr, flags);
         const auto& parsed = args.GetArgs();
 
         if (parsed.size() != expected.size()) {
