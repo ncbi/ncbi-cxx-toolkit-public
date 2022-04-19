@@ -38,7 +38,7 @@ objtools/pubseq_gateway/protobuf
 objtools/cdd
 objtools/readers/sra
 objtools/logging
-
+objtools/readers$ update-only
 objtools/data_loaders$
 objtools/data_loaders/cdd$
 objtools/data_loaders/cdd/cdd_access
@@ -94,4 +94,6 @@ util/checksum
 sra$
 sra/readers$
 sra/readers/sra
+
+objmgr
 
