@@ -17,16 +17,27 @@ class CTestPubmedApplication : public CNcbiApplication
     {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
         arg_desc->SetUsageContext("", "Retrieve publications data from medarch/eutils and display in ASN");
-        arg_desc->AddOptionalKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
+        arg_desc->AddKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
         arg_desc->AddOptionalKey("source", "source", "Source of data", CArgDescriptions::eString);
         arg_desc->SetConstraint("source", &(*new CArgAllow_Strings, "medarch", "eutils"));
 //      arg_desc->AddOptionalKey("url", "url", "eutils URL (eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi by default)", CArgDescriptions::eString);
+        arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
         SetupArgDescriptions(arg_desc.release());
     }
 
     int Run() override
     {
         const CArgs& args = GetArgs();
+
+        TEntrezId pmid = ZERO_ENTREZ_ID;
+        if (args["id"]) {
+            TIntId id = args["id"].AsIntId();
+            pmid = ENTREZ_ID_FROM(TIntId, id);
+        }
+        if (pmid <= ZERO_ENTREZ_ID) {
+            return 1;
+        }
+
         bool bTypeMLA = false;
         if (args["source"]) {
             string s = args["source"].AsString();
@@ -36,23 +47,32 @@ class CTestPubmedApplication : public CNcbiApplication
                 bTypeMLA = false;
             }
         }
-/*
+
+#if 0
         string url;
         if (args["url"]) {
             url = args["url"].AsString();
         }
-*/
-        if (args["id"]) {
-            TIntId id = args["id"].AsIntId();
-            TEntrezId pmid = ENTREZ_ID_FROM(TIntId, id);
-            unique_ptr<IPubmedUpdater> upd;
-            if (bTypeMLA) {
-                upd.reset(new CMLAUpdater());
-            } else {
-                upd.reset(new CEUtilsUpdater(/*url*/));
-            }
-            CRef<CPub> pub(upd->GetPub(pmid));
-            cout << MSerial_AsnText << *pub;
+#endif
+
+        ostream* output = nullptr;
+        if (args["o"]) {
+            output = &args["o"].AsOutputFile();
+        } else {
+            output = &NcbiCout;
+        }
+
+        unique_ptr<IPubmedUpdater> upd;
+        if (bTypeMLA) {
+            upd.reset(new CMLAUpdater());
+        } else {
+            upd.reset(new CEUtilsUpdater(/*url*/));
+        }
+        CRef<CPub> pub(upd->GetPub(pmid));
+        *output << MSerial_AsnText << *pub;
+
+        if (args["o"]) {
+            args["o"].CloseFile();
         }
 
         return 0;
