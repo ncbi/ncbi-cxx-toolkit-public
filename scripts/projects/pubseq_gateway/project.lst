@@ -37,6 +37,7 @@ objtools/pubseq_gateway/cache
 objtools/pubseq_gateway/protobuf
 objtools/cdd
 objtools/readers
+objtools/logging
 
 objtools/data_loaders$
 objtools/data_loaders/cdd$
