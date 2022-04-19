@@ -175,6 +175,8 @@ public:
     enum Flags {
         /// Treat semicolon as query string argument separator
         fSemicolonIsArgDelimiter    = (1 << 11),
+        /// Enable parsing input as 'indexed' query (RFC3875) when no '=' is present
+        fEnableParsingAsIndex       = (1 << 14),
     };
 
     CUrlArgs_Parser(TFlags flags = 0) : m_Flags(flags) {}

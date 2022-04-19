@@ -737,7 +737,9 @@ public:
         /// When parsing input on demand iterate all existing entries (e.g. those
         /// read from QUERY_STRING) before parsing POST data.
         /// @sa fParseInputOnDemand
-        fIncludePreparsedEntries = (1 << 13)
+        fIncludePreparsedEntries    = (1 << 13),
+        /// Disable parsing input as 'indexed' query (RFC3875) even if no '=' is present
+        fDisableParsingAsIndex      = (1 << 14),
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,

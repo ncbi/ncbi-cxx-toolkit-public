@@ -37,6 +37,10 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_PARAM_DECL(bool, CUrl, enable_parsing_as_index);
+NCBI_PARAM_DEF(bool, CUrl, enable_parsing_as_index, false);
+typedef NCBI_PARAM_TYPE(CUrl, enable_parsing_as_index) TCUrlEnableParsingAsIndex;
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // CUrlArgs_Parser
@@ -105,7 +109,7 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
 
     // If no '=' present in the parsed string then try to parse it as ISINDEX
     // RFC3875
-    if (query.find("=") == NPOS) {
+    if (((m_Flags & fEnableParsingAsIndex) || TCUrlEnableParsingAsIndex::GetDefault()) && (query.find("=") == NPOS)) {
         x_SetIndexString(query, *encoder);
         return;
     }
