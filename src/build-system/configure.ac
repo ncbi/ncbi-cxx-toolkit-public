@@ -6299,6 +6299,11 @@ if test "$with_ncbi_c" != "no" ; then
    fi
 
    NCBI_C_INCLUDE="-I$NCBI_C_PATH/include${bit64_sfx}"
+   if test "$want_gi32" = "yes"; then
+     NCBI_C_INCLUDE="$NCBI_C_INCLUDE -DUSE_BIGINT_IDS=0"
+   else
+     NCBI_C_INCLUDE="$NCBI_C_INCLUDE -DUSE_BIGINT_IDS=1"
+   fi
    if test "$with_debug" = "no" ; then
      NCBI_C_LIBPATH="$NCBI_C_PATH/lib${bit64_sfx}"
    else
