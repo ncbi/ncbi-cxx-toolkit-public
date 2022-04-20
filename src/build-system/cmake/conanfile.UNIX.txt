@@ -5,10 +5,17 @@
 backward-cpp/1.6@#1b6cbe0def1f1622a9809dfb4911209c
 libunwind/1.6.2
 libdb/5.3.28@#355aa134e9ee1bda60fa224f8b54c913
+#
 # boost/1.72.0 because of https://github.com/boostorg/test/issues/272
 # the problem first showed up in 1.73.0
 # tested 1.77.0  - does not fix it
-boost/1.72.0@#095225d6ff9d70fd3c3eccb88ed06747
+#
+# boost/1.72.0@#095225d6ff9d70fd3c3eccb88ed06747
+# - temporary disabled because test_wgs_loader_mt fails to link 
+#   for a core builds with unknown reason. 
+#   Conancenter 1.76.0 fails with the same errors. 
+#   Internal 1.76.0-ncbi1 works fine.
+#
 bzip2/1.0.8@#493645787acdd3909523a6a2773b1b36
 cassandra-cpp-driver/2.15.3@#27c46dd9dfbb2a3afef30aa2e914f00a
 giflib/5.2.1@#75a273d91a6c63bc0d8a93799ce19acc
