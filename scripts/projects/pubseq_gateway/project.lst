@@ -80,6 +80,8 @@ objects/submit$
 objects/taxon3$
 objects/valid$
 objects/variation$
+objects/dbsnp
+-objects/dbsnp/primary_track/test
 
 serial$
 serial/datatool$
@@ -94,6 +96,7 @@ util/checksum
 sra$
 sra/readers$
 sra/readers/sra
+-sra/readers/sra/test
 
 objmgr
 -objmgr/test
