@@ -6881,6 +6881,7 @@ SWE	s	Chandos House, Stowe School
 SWF	s	Florida Gulf Coast University			
 SWFC	s	Southwest Forestry College			
 SWFSC	s	Southwest Fisheries Science Center			
+SWFU	s	Southwest Forestry University			
 SWGC	s	Grenfell Campus, Memorial University of Newfoundland			
 SWIBASC	s	Academia Sinica			
 SWJTU	s	Southwest Jiaotong University			

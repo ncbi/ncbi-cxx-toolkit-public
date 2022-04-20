@@ -6914,6 +6914,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SWF\ts\tFlorida Gulf Coast University\t\t\t",
 "SWFC\ts\tSouthwest Forestry College\t\t\t",
 "SWFSC\ts\tSouthwest Fisheries Science Center\t\t\t",
+"SWFU\ts\tSouthwest Forestry University\t\t\t",
 "SWGC\ts\tGrenfell Campus, Memorial University of Newfoundland\t\t\t",
 "SWIBASC\ts\tAcademia Sinica\t\t\t",
 "SWJTU\ts\tSouthwest Jiaotong University\t\t\t",
