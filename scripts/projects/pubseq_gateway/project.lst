@@ -96,6 +96,7 @@ sra/readers$
 sra/readers/sra
 
 objmgr
+-objmgr/test
 -objmgr/split
 -objmgr/util
 
