@@ -85,6 +85,7 @@ objects/dbsnp
 
 serial$
 serial/datatool$
+serial/grpc_integration
 util$
 util/bitset$
 util/cache$
