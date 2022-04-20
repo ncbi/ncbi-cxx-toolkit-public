@@ -1978,7 +1978,9 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         deflFastaSeq = "gi|" + NStr::NumericToString(sdl->gi);
         deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
         sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
-    }       
+    }     
+    string combinedSeqID = CAlignFormatUtil::GetBareId(*sdl->id); // for pir|, prf| will hav pri|acc| for others just acc
+
     SSeqDBTaxInfo taxInfo;
     x_GetTaxonomyInfoForTaxID(sdl, taxInfo);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
@@ -2002,6 +2004,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     //If gnl - deflFrmID=number, deflId=ti:number,deflFastaSeq=gnl|xxx
     //like  "268252125","ti:268252125","gnl|ti|961433.m" or "961433.m" and "GNOMON:961433.m" "gnl|GNOMON|961433.m"
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_id",deflId);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnComb_id",combinedSeqID);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFrm_id",deflFrmID);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFASTA_id",deflFastaSeq);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnAccs",deflAccs);
