@@ -72,6 +72,7 @@ static const char kParamEnabledCDD[] = "enabled_cdd";
 static const char kParamEnabledSNP[] = "enabled_snp";
 static const char kParamEnabledWGS[] = "enabled_wgs";
 static const char kParamAsyncProcessing[] = "async_processing";
+static const char kParamWaitBeforeOSG[] = "wait_before_osg";
 
 // Default configuration parameters' values
 static const char kDefaultServiceName[] = "ID2_SNP2";
@@ -96,6 +97,7 @@ static const COSGConnectionPool::TEnabledFlags kDefaultEnabledFlags =
     (kDefaultEnabledSNP? CPSGS_OSGProcessorBase::fEnabledSNP: 0) |
     (kDefaultEnabledCDD? CPSGS_OSGProcessorBase::fEnabledCDD: 0);
 static const bool kDefaultAsyncProcessing = true;
+static const bool kDefaultWaitBeforeOSG = true;
     
 
 static const int kNonResolutionTimeout = 5;
@@ -307,6 +309,7 @@ COSGConnectionPool::COSGConnectionPool()
       m_RetryCount(kDefaultRetryCount),
       m_DefaultEnabledFlags(kDefaultEnabledFlags),
       m_AsyncProcessing(kDefaultAsyncProcessing),
+      m_WaitBeforeOSG(kDefaultWaitBeforeOSG),
       m_WaitConnectionSlot(0, kMax_Int),
       m_NextConnectionID(1),
       m_ConnectionCount(0),
@@ -434,6 +437,10 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
     m_AsyncProcessing = registry.GetBool(section,
                                          kParamAsyncProcessing,
                                          kDefaultAsyncProcessing);
+
+    m_WaitBeforeOSG = registry.GetBool(section,
+                                       kParamWaitBeforeOSG,
+                                       kDefaultWaitBeforeOSG);
 }
 
 
