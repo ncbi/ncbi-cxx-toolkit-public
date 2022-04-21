@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import xml.etree.ElementTree as ET
 
 class RequestGenerator:
     def __init__(self):
@@ -307,6 +308,144 @@ def generate_cmd(args):
     except StopIteration:
         sys.exit(f'"{args.INPUT_FILE.name}" has no [appropriate] IDs to generate {args.TYPE} requests')
 
+def cgi_help_cmd(args):
+    class Params(dict):
+        def add(self, param_name, param_type, param_desc, req_name):
+            r = self.setdefault((param_name, param_desc), {'type': param_type})
+            r.setdefault('requests', []).append(req_name)
+
+    class Requests(dict):
+        def add(self, req_name, req_desc, require, exclude):
+            self.setdefault(req_name, {}).update({'description': req_desc, 'require': require, 'exclude': exclude})
+
+        def param(self, req_name, param_name, param_desc):
+            r = self.setdefault(req_name, {})
+            r.setdefault('params', []).append((param_name, param_desc))
+
+    ns = {'ns': 'ncbi:application'}
+    show_requests = ['biodata', 'blob', 'chunk', 'named_annot', 'resolve']
+    hide_keys = ['conffile', 'debug-printout', 'id-file', 'io-threads', 'logfile', 'max-streams', 'requests-per-io', 'worker-threads']
+    hide_flags = ['dryrun', 'latency', 'server-mode']
+    tse_flags = ['no-tse', 'slim-tse', 'smart-tse', 'whole-tse', 'orig-tse']
+
+    check_binary(args)
+    result = subprocess.run([args.binary, '-xmlhelp'], text=True, capture_output=True)
+    parsed = ET.fromstring(result.stdout)
+
+    params = Params()
+    requests = Requests()
+
+    for request in parsed.iterfind('ns:command', ns):
+        req_name = request.find('ns:name', ns).text
+
+        if req_name not in show_requests:
+            continue
+
+        req_desc = request.find('ns:description', ns).text
+
+        for arg in request.iterfind('ns:arguments', ns):
+            require = {}
+            exclude = {}
+
+            for dep in arg.iterfind('ns:dependencies', ns):
+                for data in dep.iterfind('ns:first_requires_second', ns):
+                    arg1 = data.find('ns:arg1', ns).text
+                    arg2 = data.find('ns:arg2', ns).text
+                    require.setdefault(arg1, {}).setdefault(arg2, None)
+
+                for data in dep.iterfind('ns:first_excludes_second', ns):
+                    arg1 = data.find('ns:arg1', ns).text
+                    arg2 = data.find('ns:arg2', ns).text
+                    exclude.setdefault(arg1, {}).setdefault(arg2, None)
+
+            require = {name:list(data.keys()) for name, data in require.items()}
+            exclude = {name:list(data.keys()) for name, data in exclude.items()}
+            requests.add(req_name, req_desc, require, exclude)
+
+            for pos in arg.iterfind('ns:positional', ns):
+                pos_name = pos.get('name').lower()
+                pos_desc = pos.find('ns:description', ns).text
+                params.add(pos_name, 'mandatory', pos_desc, req_name)
+                requests.param(req_name, pos_name, pos_desc)
+
+            for key in arg.iterfind('ns:key', ns):
+                key_name = key.get('name')
+                key_optional = key.get('optional')
+
+                if key_name in hide_keys:
+                    continue
+
+                values = []
+                constraint = key.find('ns:constraint', ns)
+                if constraint is not None:
+                    for val in constraint.find('ns:Strings', ns).iterfind('ns:value', ns):
+                        values.append(val.text)
+                values = ', (accepts: ' + '|'.join(values) + ')' if values else ''
+
+                default = key.find('ns:default', ns)
+                default = '' if default is None else f', (default: {default.text})'
+
+                key_type = 'optional' if key_optional == 'true' else 'mandatory'
+                key_desc = key.find('ns:description', ns).text + values + default
+                params.add(key_name, key_type, key_desc, req_name)
+                requests.param(req_name, key_name, key_desc)
+
+            for flag in arg.iterfind('ns:flag', ns):
+                flag_name = flag.get('name')
+
+                if flag_name in hide_flags:
+                    continue
+
+                flag_desc = flag.find('ns:description', ns).text
+                params.add(flag_name, 'flags', flag_desc, req_name)
+                requests.param(req_name, flag_name, flag_desc)
+
+    result_reqs = {}
+    common_params = {}
+
+    for req_name, req_data in requests.items():
+        result_data = {'description': req_data['description']}
+        result_req_data = result_reqs.setdefault(req_name, {})
+        result_req_data['description'] = req_data['description']
+
+        for param in req_data['params']:
+            param_data = params[param]
+            param_name, param_desc = param
+            param_type = param_data['type']
+
+            if param_data['requests'] == show_requests:
+                data = common_params.setdefault(param_type, {})
+            else:
+                data = result_req_data.setdefault('Request-specific Parameters', {}).setdefault(param_type, {})
+
+                # Add TSE flags together, in particular order
+                if param_name in tse_flags:
+                    if data.get(param_name) is None:
+                        data.update({name: '' for name in tse_flags})
+
+                require = req_data['require'].get(param_name)
+                if require:
+                    param_desc += ', (requires: ' + ','.join(require) + ')'
+
+                exclude = req_data['exclude'].get(param_name)
+                if exclude:
+                    param_desc += ', (excludes: ' + ','.join(exclude) + ')'
+
+            data[param_name] = param_desc
+
+    # Update description for resolve (add POST batch-resolve)
+    get_resolve = result_reqs.pop('resolve')
+    resolve_params = get_resolve.pop('Request-specific Parameters')
+    resolve_mandatory = resolve_params.pop('mandatory')
+    post_resolve = get_resolve.copy()
+    get_resolve['Method-specific Parameters'] = {'mandatory': resolve_mandatory}
+    post_resolve['description'] = 'Batch request biodata info by bio IDs'
+    post_resolve['Method-specific Parameters'] = {'mandatory': {'List of bio IDs': 'One bio ID per line in the request body'}}
+
+    result_reqs['resolve'] = {'method': {'GET': get_resolve, 'POST': post_resolve}, 'Request-specific Parameters': resolve_params}
+    result = {'request': result_reqs, 'Common Parameters': common_params}
+    json.dump(result, args.output_file, indent=2)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='available commands', metavar='COMMAND', required=True, dest='command')
@@ -325,6 +464,11 @@ if __name__ == '__main__':
     parser_generate.add_argument('INPUT_FILE', help='CSV file with bio IDs "BioID[,Type]" or named annotations "BioID,NamedAnnotID[,NamedAnnotID]..."', type=argparse.FileType())
     parser_generate.add_argument('TYPE', help='Type of requests (resolve, biodata, blob, named_annot or chunk)', metavar='TYPE', choices=['resolve', 'biodata', 'blob', 'named_annot', 'chunk'])
     parser_generate.add_argument('NUMBER', help='Max number of requests', type=int)
+
+    parser_cgi_help = subparsers.add_parser('cgi_help', help='Generate JSON help for pubseq_gateway.cgi (by parsing psg_client help)', description='Generate JSON help for pubseq_gateway.cgi (by parsing psg_client help)')
+    parser_cgi_help.set_defaults(func=cgi_help_cmd)
+    parser_cgi_help.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
+    parser_cgi_help.add_argument('-output-file', help='Output file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType('w'))
 
     args = parser.parse_args()
     args.func(args)
