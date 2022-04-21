@@ -145,6 +145,10 @@ public:
         return m_AsyncProcessing;
     }
 
+    bool GetWaitBeforeOSG() const {
+        return m_WaitBeforeOSG;
+    }
+    
 protected:
     friend class COSGConnection;
 
@@ -161,6 +165,7 @@ private:
     double m_CDDRetryTimeout;
     int m_RetryCount;
     TEnabledFlags m_DefaultEnabledFlags;
+    bool m_WaitBeforeOSG;
     bool m_AsyncProcessing;
     CMutex m_Mutex;
     CSemaphore m_WaitConnectionSlot;

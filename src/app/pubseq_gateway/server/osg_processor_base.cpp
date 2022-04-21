@@ -306,7 +306,17 @@ void CPSGS_OSGProcessorBase::DoProcess()
                     continue;
                 }
             }
-        
+            
+            if ( m_ConnectionPool->GetAsyncProcessing() &&
+                 m_ConnectionPool->GetWaitBeforeOSG()) {
+                WaitForOtherProcessors();
+                if ( IsCanceled() ) {
+                    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() canceled 1: "<<State());
+                    caller.ReleaseConnection();
+                    return;
+                }
+            }
+            
             if ( IsCanceled() ) {
                 SEND_TRACE_FMT("OSG: DoProcess() canceled 2, releasing connection: "<<caller.GetConnectionID());
                 caller.ReleaseConnection();
