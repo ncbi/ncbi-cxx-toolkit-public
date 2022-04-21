@@ -1196,8 +1196,16 @@
         mbedtls_pk_write_pubkey_pem_ncbicxx_2_28_0
 #define mbedtls_platform_setup \
         mbedtls_platform_setup_ncbicxx_2_28_0
+#define mbedtls_platform_set_snprintf \
+        mbedtls_platform_set_snprintf_ncbicxx_2_28_0
+#define mbedtls_platform_set_vsnprintf \
+        mbedtls_platform_set_vsnprintf_ncbicxx_2_28_0
 #define mbedtls_platform_teardown \
         mbedtls_platform_teardown_ncbicxx_2_28_0
+#define mbedtls_snprintf \
+        mbedtls_snprintf_ncbicxx_2_28_0
+#define mbedtls_vsnprintf \
+        mbedtls_vsnprintf_ncbicxx_2_28_0
 #define mbedtls_platform_gmtime_r \
         mbedtls_platform_gmtime_r_ncbicxx_2_28_0
 #define mbedtls_platform_zeroize \
