@@ -1,0 +1,136 @@
+{
+  "request": {
+    "biodata": {
+      "description": "Request biodata info and data by bio ID",
+      "Request-specific Parameters": {
+        "mandatory": {
+          "id": "ID part of Bio ID"
+        },
+        "optional": {
+          "acc-substitution": "ACC substitution",
+          "exclude-blob": "Exclude blob by its ID",
+          "output-fmt": "Format for blob data to return in (instead of raw data), (accepts: asn|asnb|json|xml), (requires: blob-only)",
+          "type": "Type part of bio ID"
+        },
+        "flags": {
+          "blob-only": "Output blob data only",
+          "no-tse": "Return only the info, (excludes: slim-tse,smart-tse,whole-tse,orig-tse)",
+          "slim-tse": "Return split info blob if available, or nothing, (excludes: no-tse,smart-tse,whole-tse,orig-tse)",
+          "smart-tse": "Return split info blob if available, or original blob, (excludes: no-tse,slim-tse,whole-tse,orig-tse)",
+          "whole-tse": "Return all split blobs if available, or original blob, (excludes: no-tse,slim-tse,smart-tse,orig-tse)",
+          "orig-tse": "Return original blob, (excludes: no-tse,slim-tse,smart-tse,whole-tse)"
+        }
+      }
+    },
+    "blob": {
+      "description": "Request blob by blob ID",
+      "Request-specific Parameters": {
+        "mandatory": {
+          "id": "Blob ID"
+        },
+        "optional": {
+          "last-modified": "LastModified",
+          "output-fmt": "Format for blob data to return in (instead of raw data), (accepts: asn|asnb|json|xml), (requires: blob-only)"
+        },
+        "flags": {
+          "blob-only": "Output blob data only",
+          "no-tse": "Return only the info, (excludes: slim-tse,smart-tse,whole-tse,orig-tse)",
+          "slim-tse": "Return split info blob if available, or nothing, (excludes: no-tse,smart-tse,whole-tse,orig-tse)",
+          "smart-tse": "Return split info blob if available, or original blob, (excludes: no-tse,slim-tse,whole-tse,orig-tse)",
+          "whole-tse": "Return all split blobs if available, or original blob, (excludes: no-tse,slim-tse,smart-tse,orig-tse)",
+          "orig-tse": "Return original blob, (excludes: no-tse,slim-tse,smart-tse,whole-tse)"
+        }
+      }
+    },
+    "chunk": {
+      "description": "Request blob data chunk by chunk ID",
+      "Request-specific Parameters": {
+        "mandatory": {
+          "id2_chunk": "ID2 chunk number",
+          "id2_info": "ID2 info"
+        },
+        "optional": {
+          "output-fmt": "Format for blob data to return in (instead of raw data), (accepts: asn|asnb|json|xml), (requires: blob-only)"
+        },
+        "flags": {
+          "blob-only": "Output blob data only"
+        }
+      }
+    },
+    "named_annot": {
+      "description": "Request named annotations info by bio ID",
+      "Request-specific Parameters": {
+        "mandatory": {
+          "id": "ID part of Bio ID",
+          "na": "Named annotation"
+        },
+        "optional": {
+          "acc-substitution": "ACC substitution",
+          "output-fmt": "Format for blob data to return in (instead of raw data), (accepts: asn|asnb|json|xml), (requires: annot-only)",
+          "type": "Type part of bio ID"
+        },
+        "flags": {
+          "annot-only": "Output annot info only",
+          "no-tse": "Return only the info, (excludes: slim-tse,smart-tse,whole-tse,orig-tse)",
+          "slim-tse": "Return split info blob if available, or nothing, (excludes: no-tse,smart-tse,whole-tse,orig-tse)",
+          "smart-tse": "Return split info blob if available, or original blob, (excludes: no-tse,slim-tse,whole-tse,orig-tse)",
+          "whole-tse": "Return all split blobs if available, or original blob, (excludes: no-tse,slim-tse,smart-tse,orig-tse)",
+          "orig-tse": "Return original blob, (excludes: no-tse,slim-tse,smart-tse,whole-tse)"
+        }
+      }
+    },
+    "resolve": {
+      "method": {
+        "GET": {
+          "description": "Request biodata info by bio ID",
+          "Method-specific Parameters": {
+            "mandatory": {
+              "id": "Bio ID"
+            }
+          }
+        },
+        "POST": {
+          "description": "Batch request biodata info by bio IDs",
+          "Method-specific Parameters": {
+            "mandatory": {
+              "List of bio IDs": "One bio ID per line in the request body"
+            }
+          }
+        }
+      },
+      "Request-specific Parameters": {
+        "optional": {
+          "acc-substitution": "ACC substitution",
+          "type": "Type of bio ID(s)"
+        },
+        "flags": {
+          "all-info-except": "Return all info except explicitly specified by other flags",
+          "blob-id": "Return blob ID info",
+          "canonical-id": "Return canonical ID info",
+          "chain-state": "Return chain state info (in seq_state pair)",
+          "date-changed": "Return date changed info",
+          "gi": "Return GI",
+          "hash": "Return hash info",
+          "length": "Return length info",
+          "molecule-type": "Return molecule type info",
+          "name": "Use name for canonical ID info, if returned",
+          "other-ids": "Return other IDs info",
+          "state": "Return state info",
+          "tax-id": "Return tax ID info"
+        }
+      }
+    }
+  },
+  "Common Parameters": {
+    "optional": {
+      "service": "PSG service name or host:port pair, (default: PSG2)",
+      "timeout": "Set request timeout (in seconds)",
+      "use-cache": "Whether to use LMDB cache (no|yes|default)",
+      "user-args": "Arbitrary request URL arguments (queue-wide)"
+    },
+    "flags": {
+      "https": "Enable HTTPS",
+      "verbose": "Verbose output"
+    }
+  }
+}

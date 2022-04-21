@@ -32,6 +32,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
+#include <html/html.hpp>
 
 #include "processing.hpp"
 #include "performance.hpp"
@@ -265,6 +266,9 @@ void SResponse::Success()
     }
 
     m_Response.WriteHeader() << m_Out.rdbuf();
+
+    // Output debug if there is any
+    cerr << m_Err.rdbuf();
 }
 
 void SResponse::Error(int status)
@@ -286,9 +290,20 @@ class CPsgCgiApp : public CCgiApplication
 {
     void Init() override;
     int ProcessRequest(CCgiContext& ctx) override;
+    int Help(const string& request, bool json, CCgiResponse& response);
 
     static void SetPsgDefaults(const SPsgCgiEntries& entries);
     static int GetStatus(int rv);
+    static void AddParamsTable(CHTML_body* body, const string& name, const CJson_ConstObject_pair& params);
+
+    template <class TChild, class TParent, class... TArgs>
+    static TChild* NewChild(TParent* parent, TArgs&&... args)
+    {
+        _ASSERT(parent);
+        auto child = new TChild(forward<TArgs>(args)...);
+        parent->AppendChild(child);
+        return child;
+    }
 };
 
 void CPsgCgiApp::Init()
@@ -300,6 +315,12 @@ int CPsgCgiApp::ProcessRequest(CCgiContext& ctx)
 {
     const auto& request = ctx.GetRequest();
     SPsgCgiEntries entries = request.GetEntries();
+    const auto type = entries.GetString("request");
+
+    if (type.empty() || entries.Has("help")) {
+        return Help(type, entries.Has("json"), ctx.GetResponse());
+    }
+
     SetPsgDefaults(entries);
 
     int rv;
@@ -310,17 +331,97 @@ int CPsgCgiApp::ProcessRequest(CCgiContext& ctx)
     } else {
         const auto builder = NParamsBuilder::SOneRequest(entries);
 
-        const auto type = entries.GetString("request");
-        auto request = SRequestBuilder::Build(type, entries);
-
         response.DataOnly(builder.data_only);
-        rv = CProcessing::OneRequest(builder, move(request));
+        rv = CProcessing::OneRequest(builder, SRequestBuilder::Build(type, entries));
     }
 
     const auto status = GetStatus(rv);
     SetHTTPStatus(status);
     response(status);
     return rv;
+}
+
+int CPsgCgiApp::Help(const string& request, bool json, CCgiResponse& response)
+{
+    CJson_Document help_doc;
+
+    if (!help_doc.Read("pubseq_gateway.json")) {
+        SetHTTPStatus(CRequestStatus::e500_InternalServerError);
+        response.WriteHeader() << "Missing 'pubseq_gateway.json'\n";
+        return 0;
+    }
+
+    auto help_obj = help_doc.SetObject();
+    auto request_obj = help_obj["request"].SetObject();
+
+    // Do not display unrelated requests
+    if (request_obj.has(request)) {
+        auto i = request_obj.begin();
+
+        while (i != request_obj.end()) {
+            if (i->name != request) {
+                i = request_obj.erase(i);
+            } else {
+                ++i;
+            }
+        }
+    }
+
+    if (json) {
+        response.SetContentType("application/json");
+        response.WriteHeader() << help_doc;
+        return 0;
+    }
+
+    CRef<CHTML_html> html(new CHTML_html);
+    NewChild<CHTML_title>(html.GetPointer())->AppendPlainText("help");
+    auto body = NewChild<CHTML_body>(html.GetPointer());
+
+    NewChild<CHTML_h2>(body)->AppendPlainText("pubseq_gateway.cgi");
+    NewChild<CHTMLPlainText>(body, "A user-friendly CGI gateway to PSG.");
+
+    auto i = help_obj.find("Common Parameters");
+
+    if (i != help_obj.end()) {
+        AddParamsTable(body, i->name, *i);
+    }
+
+    for (const auto& r : request_obj) {
+        NewChild<CHTML_hr>(body);
+
+        auto h2 = NewChild<CHTML_h2>(body);
+        NewChild<CHTML_i>(h2)->AppendPlainText("request");
+        h2->AppendPlainText(string("=") + r.name);
+
+        auto r_obj = r.value.GetObject();
+        auto i = r_obj.find("method");
+
+        if (i != r_obj.end()) {
+            for (const auto& m : i->value.GetObject()) {
+                auto m_obj = m.value.GetObject();
+                NewChild<CHTML_h3>(body, m.name + string(":"));
+                NewChild<CHTMLPlainText>(body, m_obj["description"].GetValue().GetString());
+
+                auto j = m_obj.find("Method-specific Parameters");
+
+                if (j != m_obj.end()) {
+                    AddParamsTable(body, m.name + string("-specific Parameters"), *j);
+                }
+            }
+        } else {
+            NewChild<CHTMLPlainText>(body, r_obj["description"].GetValue().GetString());
+        }
+
+        auto j = r_obj.find("Request-specific Parameters");
+
+        if (j != r_obj.end()) {
+            AddParamsTable(body, j->name, *j);
+        }
+    }
+
+    html->Print(response.WriteHeader());
+    response.Flush();
+    return 0;
 }
 
 void CPsgCgiApp::SetPsgDefaults(const SPsgCgiEntries& entries)
@@ -350,6 +451,27 @@ int CPsgCgiApp::GetStatus(int rv)
         case int(EPSG_Status::eNotFound):  return CRequestStatus::e404_NotFound;
         case int(EPSG_Status::eForbidden): return CRequestStatus::e403_Forbidden;
         default:                           return CRequestStatus::e400_BadRequest;
+    }
+}
+
+void CPsgCgiApp::AddParamsTable(CHTML_body* body, const string& name, const CJson_ConstObject_pair& params)
+{
+    NewChild<CHTML_h4>(body, name);
+    auto table = NewChild<CHTML_table>(body);
+
+    auto r = 0;
+
+    for (const auto& type : params.value.GetObject()) {
+        auto header = table->HeaderCell(r, 0);
+        header->AppendPlainText(type.name);
+        header->SetColSpan(2);
+        ++r;
+
+        for (const auto& param : type.value.GetObject()) {
+            NewChild<CHTML_i>(table->DataCell(r, 0))->AppendPlainText(param.name);
+            table->DataCell(r, 1)->AppendPlainText(param.value.GetValue().GetString());
+            ++r;
+        }
     }
 }
 
