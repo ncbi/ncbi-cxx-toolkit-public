@@ -598,7 +598,7 @@ BJM	s	Beijing Natural History Museum
 BJRI<BGD>	b	Gene bank at Bangladesh Jute Research Institute			
 BJTC	s	Capital Normal University, Biology Department			
 BK	s	Bangkok Herbarium			
-BKF	s	The Forest Herbarium			
+BKF	s	Forest Herbarium, Department of National Parks, Wildlife and Plant  Conservation			
 BKL	s	Brooklyn Botanic Garden			
 BKNU	s	Kunsan National University			
 BLA	s	Fundacao Estadual de Pesquisa Agropecuaria			
@@ -3125,7 +3125,7 @@ IGM<MEX>	s	Instituto de Geologia
 IGM<MNG>	s	Geological Institute, Mongolian Academy of Sciences			
 IGPH	s	Institut fuer Geologie und Palaeontologie der Universitat Hannover			
 IGUS	s	Universitat des Saarlandes			
-IGWH	s	Institut fuer Geowissenschaften aus dem Martin-Lurther- Universitat			
+IGWH	s	Institut fur Geowissenschaften aus dem Martin-Lurther- Universitat			
 IH	s	Instituto de Segunda Ensenanza de La Habana			
 IHASW	s	Institute of Hydrobiology, Academia Sinica			
 IHB	s	Institute of Hydrobiology, Chinese Academy of Sciences			
@@ -3269,7 +3269,7 @@ IPEE RAS	s	A.N. Severtzov Institute of Ecology and Evolution, Russian Academy of
 IPEF	s	Institut fuer Pflanzenschutzforschung			
 IPFUB	s	Institute for Paleontology of the Freie Universitat			
 IPGR<BGR>	b	Institute for Plant Genetic Resources			
-IPHG	s	Institut fur Palaeontologie und Historische Geologie			
+IPHG	s	Institut fur Palaontologie und Historische Geologie			
 IPK	sb	Leibniz Institute of Plant Genetics and Crop Plant Research			
 IPKUP	s	Paleontologiscsky Institute			
 IPLA	c	Instituto de Productos Lacteos de Asturias			
@@ -5738,7 +5738,7 @@ PICRC	s	Palau International Coral Reef Center
 PIHG	s	Florida Department of Agriculture and Consumer Services			
 PIHU	s	Paleontological Institut of Helsingfors			
 PIKN	s	Koronivia Research Station			
-PIMUI	s	Palaeontologische Institut und Museum der Universitaet in Innsbruck			
+PIMUI	s	Palaontologische Institut und Museum der Universitat in Innsbruck			
 PIMUZ	s	Palaontologisches Institut und Museum der Universitat Zurich			
 PIN<GBR>	s	Philosophical Institution of Newport			
 PIN<RUS>	s	Paleontological Institute, Russian Academy of Sciences			
@@ -5875,7 +5875,7 @@ PSM	s	James R. Slater Museum of Natural History
 PSO	s	Universidad de Narino			
 PSP	s	Parasitic Seed Plants			
 PSS<GBR>	s	Philosophical Society of Southampton			
-PSS<MNG>	s	Paleontology and Stratigraphic Section of the Geological Institute of the Mongolian Academy of Sciences			
+PSS<MNG>	s	Paleontology and Stratigraphic Section of the  Geological Institute of the Mongolian Academy of Sciences			
 PSU<THA>	s	Prince of Songkla University, Biology Department			
 PSU<USA-OR>	s	Portland State University, Vertebrate Biology Museum			
 PSU<USA-OR>:Mamm	s	Portland State University, Vertebrate Biology Museum, Mammal Collection		
@@ -7136,7 +7136,6 @@ TOU	s	University of Tours
 TOYA	s	Toyama Science Museum, Botany Department			
 TPI	s	The Pirbright Institute			
 TPI:ENT	s	The Pirbright Institute, Entomology collection		
-TPII	s	Thanksgiving Point Institute			
 TPNG	s	Department of Primary Industry			
 TPV	s	Prairie View A & M University, Biology Department			
 TR	s	Museo Tridentino di Scienze Naturali			
