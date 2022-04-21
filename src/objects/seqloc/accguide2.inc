@@ -1339,7 +1339,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  ON  gb_dirsub",
     "2+8  ON  gb_other_nuc",
     "2+10 ON  gb_other_nuc",
-    "2+6  OO  gb_other_nuc",
+    "2+6  OO  gb_patent",
     "2+8  OO  gb_other_nuc",
     "2+10 OO  gb_other_nuc",
     "2+6  OP  gb_other_nuc",
