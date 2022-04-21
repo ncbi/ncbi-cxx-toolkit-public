@@ -44,13 +44,14 @@ struct SPsgCgiEntries
 
     SPsgCgiEntries(const TCgiEntries& e) : entries(e) {}
 
+    bool Has(const string& key) const { return entries.find(key) != entries.end(); }
+
     template <typename TF>
     invoke_result_t<TF, const string&> Get(const string& key, TF f, invoke_result_t<TF, const string&> def_value) const;
 
     template <typename T>
     T GetNumeric(const string& key) const { return Get(key, [](const auto& v) { return NStr::StringToNumeric<T>(v); }, T()); }
     const string& GetString(const string& key) const { return Get(key, [](const auto& v) -> const auto& { return v; }, kEmptyStr); }
-    bool GetBool(const string& key) const { return Get(key, NStr::StringToBool, false); }
     auto GetStringList(const string& key) const;
 };
 
@@ -83,7 +84,7 @@ struct SBase : TParams
             forward<TInitArgs>(init_args)...
         }
     {
-        TParams::verbose = entries.GetBool("verbose");
+        TParams::verbose = entries.Has("verbose");
     }
 
     static auto GetService(const SPsgCgiEntries& entries)
@@ -100,7 +101,7 @@ struct SOneRequest : SBase<SOneRequestParams>
             entries,
             false,
             false,
-            entries.GetBool("blob-only") || entries.GetBool("annot-only"),
+            entries.Has("blob-only") || entries.Has("annot-only"),
             true,
             GetDataOnlyOutputFormat(entries)
         }
@@ -171,7 +172,7 @@ struct SRequestBuilder::SReader<SPsgCgiEntries>
 SRequestBuilder::TSpecified SRequestBuilder::SReader<SPsgCgiEntries>::GetSpecified() const
 {
     return [&](const string& name) {
-        return input.entries.find(name) != input.entries.end();
+        return input.Has(name);
     };
 }
 
@@ -292,7 +293,7 @@ class CPsgCgiApp : public CCgiApplication
 
 void CPsgCgiApp::Init()
 {
-    SetRequestFlags(CCgiRequest::fDoNotParseContent);
+    SetRequestFlags(CCgiRequest::fDoNotParseContent | CCgiRequest::fDisableParsingAsIndex);
 }
 
 int CPsgCgiApp::ProcessRequest(CCgiContext& ctx)
@@ -336,7 +337,7 @@ void CPsgCgiApp::SetPsgDefaults(const SPsgCgiEntries& entries)
         TPSG_RequestTimeout::SetDefault(timeout);
     }
 
-    if (entries.GetBool("https")) {
+    if (entries.Has("https")) {
         TPSG_Https::SetDefault(true);
     }
 }
