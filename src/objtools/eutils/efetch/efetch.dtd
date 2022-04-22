@@ -1,6 +1,6 @@
 <!--
 
-2017-10-06
+2018-09-01
 
 This DTD supports both the E-utilities and ftp service data dissemination methods. 
 It is based on http://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_190101.dtd
@@ -12,6 +12,13 @@ Additions/Changes since 180601 DTD:
 			<Reference>
 			<Citation>
 	2.  Removed <CitationString> from book records.
+	3. Added four values to CommentsCorrections/@RefType
+	       CorrectedandRepublishedIn
+	       CorrectedandRepublishedFrom
+	       RetractedandRepublishedIn
+	       RetractedandRepublishedFrom
+	4. Added "plain-language-summary" to allowed values for @Type on 
+	    <OtherAbstract>
 
 	NOTE:  The use of "Medline" in a DTD or element name does not mean the record
 	represents a citation from a MEDLINE-selected journal.  When the NLM DTDs and
@@ -186,11 +193,20 @@ Additions/Changes since 180601 DTD:
 
 <!ELEMENT	CommentsCorrections (RefSource,PMID?,Note?) >
 <!ATTLIST	CommentsCorrections 
-		     RefType (AssociatedDataset | AssociatedPublication | CommentOn | CommentIn | ErratumIn | 
-		             ErratumFor | ExpressionOfConcernIn | ExpressionOfConcernFor | 
-		             RepublishedFrom | RepublishedIn | 
-		             RetractionOf | RetractionIn | UpdateIn | UpdateOf | SummaryForPatientsIn | 
-		             OriginalReportIn | ReprintOf | ReprintIn | Cites)      #REQUIRED    >
+		     RefType (AssociatedDataset | 
+		             AssociatedPublication | 
+		             CommentIn | CommentOn | 
+		             CorrectedandRepublishedIn | CorrectedandRepublishedFrom |
+		             ErratumIn | ErratumFor | 
+		             ExpressionOfConcernIn | ExpressionOfConcernFor | 
+		             RepublishedIn | RepublishedFrom |  
+		             RetractedandRepublishedIn | RetractedandRepublishedFrom |
+		             RetractionIn | RetractionOf |  
+		             UpdateIn | UpdateOf | 
+		             SummaryForPatientsIn | 
+		             OriginalReportIn | 
+		             ReprintIn | ReprintOf |  
+		             Cites)      #REQUIRED    >
 		             
 <!ELEMENT	CommentsCorrectionsList (CommentsCorrections+) >
 
@@ -346,7 +362,8 @@ Additions/Changes since 180601 DTD:
 <!ELEMENT	OtherAbstract (AbstractText+, CopyrightInformation?) >
 
 <!ATTLIST	OtherAbstract 
-		    Type (AAMC | AIDS | KIE | PIP | NASA | Publisher) #REQUIRED
+		    Type (AAMC | AIDS | KIE | PIP | NASA | Publisher | 
+		    plain-language-summary) #REQUIRED
 		    Language CDATA "eng" >
 		    
 <!ELEMENT	OtherID (#PCDATA) >
