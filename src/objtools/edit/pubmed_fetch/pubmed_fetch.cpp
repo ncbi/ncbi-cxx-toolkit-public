@@ -20,7 +20,7 @@ class CPubmedFetchApplication : public CNcbiApplication
         arg_desc->AddKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
         arg_desc->AddDefaultKey("source", "source", "Source of data", CArgDescriptions::eString, "eutils");
         arg_desc->SetConstraint("source", &(*new CArgAllow_Strings, "medarch", "eutils"));
-//      arg_desc->AddOptionalKey("url", "url", "eutils URL (eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi by default)", CArgDescriptions::eString);
+        arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
         SetupArgDescriptions(arg_desc.release());
     }
@@ -45,15 +45,12 @@ class CPubmedFetchApplication : public CNcbiApplication
                 bTypeMLA = true;
             } else if (s == "eutils") {
                 bTypeMLA = false;
+                if (args["url"]) {
+                    string url = args["url"].AsString();
+                    CEUtils_Request::SetBaseURL(url);
+                }
             }
         }
-
-#if 0
-        string url;
-        if (args["url"]) {
-            url = args["url"].AsString();
-        }
-#endif
 
         ostream* output = nullptr;
         if (args["o"]) {
@@ -66,7 +63,7 @@ class CPubmedFetchApplication : public CNcbiApplication
         if (bTypeMLA) {
             upd.reset(new CMLAUpdater());
         } else {
-            upd.reset(new CEUtilsUpdater(/*url*/));
+            upd.reset(new CEUtilsUpdater());
         }
         CRef<CPub> pub(upd->GetPub(pmid));
         *output << MSerial_AsnText << *pub;
