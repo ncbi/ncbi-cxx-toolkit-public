@@ -1440,7 +1440,6 @@ CRCM	s	Washington State University, Charles R. Conner Museum
 CRCM:Bird	s	Washington State University, Charles R. Conner Museum, bird collection		
 CRCM:Mammal	s	Washington State University, Charles R. Conner Museum, Mammal Collection		
 CRD	s	Instituto Politecnico Nacional, Coleccion Cientifica de Fauna Silvestre (Mexico)			
-CRE<CRI>	s	Costa Rica Expeditions			
 CRE<USA-CA>	s	University of Southern California			
 CREA-AA	c	 Consiglio per la ricerca in agricoltura e lanalisi delleconomia agraria - Centro di Ricerca Agricoltura e Ambiente	CRA-CIN		
 CREG	s	Instituto Tecnologico Agropecuario de Jalisco			
@@ -1634,7 +1633,6 @@ DCMB	s	Universidade do Amazonas
 DCMD	s	Derby City Museum and Art Gallery			
 DCMP	s	Universidade Federal do Parana			
 DCN-UNRC	s	Departamento de Ciencias Naturales, Universidad Nacional de Rio Cuarto			
-DCPC	s	DominicusCirillus[deceased]			
 DCR	s	Doncaster Museum and Art Gallery			
 DCSR	s	University of Belgrade, Institute of Chemistry, Technology and Metallurgy			
 DD	s	Forest Research Institute, Indian Council of Forestry Research and Education, Systematic Botany Discipline			
@@ -3344,7 +3342,7 @@ ISMAR	s	Consiglio Nazionale delle Ricerche, Istituto di Scienze  Marine
 ISMC	s	Indiana Department of Natural Resources			
 ISNHC	s	State Historical Society of Iowa			
 ISNP	s	Istituto Sperimentale per la Nutrizione delle Piante			
-ISP	c	International Cooperative Project for Description and Deposition of Type Cultures			
+ISP	c	International Cooperative Project for Description and Deposition of Type Cultures of Streptomyces			
 ISPaVe	c	Istituto Sperimentale per la Patologia Vegetale	CRA-PAV		
 ISRA	s	Royal Academy			
 ISRI	c	Indonesian Sugar Research Institute, Pusat Penelitian Perkebunan Gula Indonesia			
