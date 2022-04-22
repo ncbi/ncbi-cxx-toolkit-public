@@ -175,7 +175,7 @@ bool Entry::xInitSeqInst(const unsigned char* pConvert)
     if (strand > 0)
         seqInst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
 
-    auto codeType = (ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna);
+    //auto codeType = (ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna);
     //if (!GetSeqData(pp, entry, bioseq, ParFlat_ORIGIN, dnaconv, codeType))
     //    return false;
 

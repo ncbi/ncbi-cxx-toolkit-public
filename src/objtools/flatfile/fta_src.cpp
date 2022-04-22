@@ -1256,7 +1256,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
         return (0);
 
     name = NULL;
-    sprintf(pat, "1..%ld", len);
+    sprintf(pat, "1..%ld", long(len));
     for (tsfbp = sfbp; tsfbp != NULL; tsfbp = tsfbp->next) {
         if (tsfbp->name == NULL || tsfbp->location == NULL ||
             tsfbp->skip)
@@ -1854,7 +1854,6 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
 {
     const char** b;
     const char*  q;
-    char*        line;
     char*        p;
 
     CRef<CDbtag> tag;
