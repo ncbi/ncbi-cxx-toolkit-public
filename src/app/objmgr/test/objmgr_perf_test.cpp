@@ -43,6 +43,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/feat_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <sstream>
@@ -90,6 +91,7 @@ private:
     bool m_PrintBlobId = false;
     bool m_PrintData = false;
     bool m_AllIds = false;
+    string m_NamedAnnots;
     string m_Bulk;
 
     CFastMutex m_IdsMutex;
@@ -182,6 +184,10 @@ void CPerfTestApp::Init(void)
     arg_desc->AddFlag("print_data", "print TSE");
     arg_desc->AddFlag("all_ids", "fetch all seq-ids from each thread");
 
+    arg_desc->AddOptionalKey("na", "AnnotName",
+        "Test named-annot loading",
+        CArgDescriptions::eString);
+
     arg_desc->AddOptionalKey("bulk", "what", "test bulk retrieval", CArgDescriptions::eString);
     arg_desc->SetConstraint("bulk", &(*new CArgAllow_Strings,
         "gi", "acc", "data", "bioseq"));
@@ -230,6 +236,7 @@ int CPerfTestApp::Run(void)
     m_PrintBlobId = args["print_blob_id"];
     m_PrintData = args["print_data"];
     m_AllIds = args["all_ids"];
+    if (args["na"]) m_NamedAnnots = args["na"].AsString();
 
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     m_Scope.Reset(new CScope(*om));
@@ -305,7 +312,7 @@ int CPerfTestApp::Run(void)
         }
         TGi gi_from = GI_FROM(TIntId, args["gi_from"].AsIntId());
         TGi gi_to = GI_FROM(TIntId, args["gi_to"].AsIntId());
-        for (TGi gi = gi_from; gi < gi_to; ++gi) {
+        for (TGi gi = gi_from; gi <= gi_to; ++gi) {
             m_Ids.insert(CSeq_id_Handle::GetGiHandle(gi));
         }
     }
@@ -633,6 +640,18 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
         atomic_out << "ID: " << idh.AsString() << endl;
     }
     try {
+        if (!m_NamedAnnots.empty()) {
+            CSeq_loc loc;
+            loc.SetWhole().Assign(*idh.GetSeqId());
+            SAnnotSelector sel;
+            sel.IncludeNamedAnnotAccession(m_NamedAnnots);
+            sel.AddNamedAnnots(m_NamedAnnots);
+            CFeat_CI fit(*m_Scope, loc, sel);
+            if (m_PrintInfo || m_PrintData) {
+                atomic_out << "Loaded " << fit.GetSize() << m_NamedAnnots << " annotations" << endl;
+            }
+            return;
+        }
         if (m_GetInfo) {
             CScope::TIds ids = m_Scope->GetIds(idh);
             if (ids.empty()) {
