@@ -224,11 +224,11 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     }
     ch = *q;
     *q = '\0';
-    if (entry->acnum == NULL || StringCmp(entry->acnum, line) != 0) {
+    if (StringCmp(entry->acnum, line) != 0) {
         *q = ch;
         *p = ch1;
         if (mode != Parser::EMode::Relaxed) {
-            ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in VERSION and ACCESSION lines don't match: \"%s\" vs \"%s\".", line, (entry->acnum == NULL) ? "NULL" : entry->acnum);
+            ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in VERSION and ACCESSION lines don't match: \"%s\" vs \"%s\".", line, entry->acnum);
             entry->drop = 1;
         }
         return;

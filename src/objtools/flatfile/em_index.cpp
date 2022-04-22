@@ -138,8 +138,8 @@ static void ParseEmblVersion(IndexblkPtr entry, char* line)
         entry->drop = 1;
         return;
     }
-    if (entry->acnum == NULL || StringCmp(entry->acnum, line) != 0) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in SV and AC lines don't match: \"%s\" vs \"%s\".", line, (entry->acnum == NULL) ? "NULL" : entry->acnum);
+    if (StringCmp(entry->acnum, line) != 0) {
+        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in SV and AC lines don't match: \"%s\" vs \"%s\".", line, entry->acnum);
         entry->drop = 1;
         return;
     }

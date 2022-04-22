@@ -507,9 +507,9 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
         return;
     }
     *q = '\0';
-    if (ibp->acnum == NULL || StringCmp(ibp->acnum, line) != 0) {
+    if (StringCmp(ibp->acnum, line) != 0) {
         *q = '.';
-        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.", line, (ibp->acnum == NULL) ? "NULL" : ibp->acnum);
+        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.", line, ibp->acnum);
         ibp->drop = 1;
         return;
     }
