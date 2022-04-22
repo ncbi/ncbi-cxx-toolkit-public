@@ -248,7 +248,10 @@ void CAsnvalApp::Init()
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddOptionalKey
-        ("p", "Directory", "Path to ASN.1 Files",
+        ("indir", "Directory", "Path to ASN.1 Files",
+        CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey
+        ("p", "Directory", "Deprecated Path to ASN.1 Files",
         CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey
         ("i", "InFile", "Single Input File",
@@ -618,7 +621,10 @@ int CAsnvalApp::Run()
     try {
         ConstructOutputStreams();
 
-        if (args["p"]) {
+        if (args["indir"]) {
+            ValidateOneDirectory(args["indir"].AsString(), args["u"]);
+        } else if (args["p"]) {
+            // -p is deprecated in favor of -indir
             ValidateOneDirectory(args["p"].AsString(), args["u"]);
         } else if (args["i"]) {
             ValidateOneFile(args["i"].AsString());
