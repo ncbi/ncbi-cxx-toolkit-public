@@ -11,14 +11,14 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(edit);
 
-class CTestPubmedApplication : public CNcbiApplication
+class CPubmedFetchApplication : public CNcbiApplication
 {
     void Init() override
     {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
         arg_desc->SetUsageContext("", "Retrieve publications data from medarch/eutils and display in ASN");
         arg_desc->AddKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
-        arg_desc->AddOptionalKey("source", "source", "Source of data", CArgDescriptions::eString);
+        arg_desc->AddDefaultKey("source", "source", "Source of data", CArgDescriptions::eString, "eutils");
         arg_desc->SetConstraint("source", &(*new CArgAllow_Strings, "medarch", "eutils"));
 //      arg_desc->AddOptionalKey("url", "url", "eutils URL (eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
@@ -81,5 +81,5 @@ class CTestPubmedApplication : public CNcbiApplication
 
 int main(int argc, const char* argv[])
 {
-    return CTestPubmedApplication().AppMain(argc, argv);
+    return CPubmedFetchApplication().AppMain(argc, argv);
 }
