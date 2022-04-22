@@ -21,7 +21,7 @@ class CTestRemoteUpdaterApplication : public CNcbiApplication
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
         arg_desc->SetUsageContext("", "Test CRemoteUpdater using medarch/eutils");
         arg_desc->AddKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
-        arg_desc->AddOptionalKey("source", "source", "Source of data", CArgDescriptions::eString);
+        arg_desc->AddDefaultKey("source", "source", "Source of data", CArgDescriptions::eString, "eutils");
         arg_desc->SetConstraint("source", &(*new CArgAllow_Strings, "medarch", "eutils"));
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
         SetupArgDescriptions(arg_desc.release());
