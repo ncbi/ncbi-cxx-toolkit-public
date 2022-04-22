@@ -252,7 +252,8 @@ void CAsnvalApp::Init()
         CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey
         ("p", "Directory", "Deprecated Path to ASN.1 Files",
-        CArgDescriptions::eInputFile);
+        CArgDescriptions::eInputFile, CArgDescriptions::fHidden);
+
     arg_desc->AddOptionalKey
         ("i", "InFile", "Single Input File",
         CArgDescriptions::eInputFile);
