@@ -375,7 +375,7 @@ SNgHttp2_Session::SNgHttp2_Session(void* user_data, uint32_t max_streams,
         nghttp2_on_data_chunk_recv_callback on_data,
         nghttp2_on_stream_close_callback    on_stream_close,
         nghttp2_on_header_callback          on_header,
-        nghttp2_error_callback              on_error,
+        nghttp2_error_callback2             on_error,
         nghttp2_on_frame_recv_callback      on_frame_recv) :
     m_UserData(user_data),
     m_OnData(on_data),
@@ -398,7 +398,7 @@ int SNgHttp2_Session::Init()
     nghttp2_session_callbacks_set_on_data_chunk_recv_callback(callbacks, m_OnData);
     nghttp2_session_callbacks_set_on_stream_close_callback(   callbacks, m_OnStreamClose);
     nghttp2_session_callbacks_set_on_header_callback(         callbacks, m_OnHeader);
-    nghttp2_session_callbacks_set_error_callback(             callbacks, m_OnError);
+    nghttp2_session_callbacks_set_error_callback2(            callbacks, m_OnError);
     if (m_OnFrameRecv) nghttp2_session_callbacks_set_on_frame_recv_callback(callbacks, m_OnFrameRecv);
 
     nghttp2_session_client_new(&m_Session, callbacks, m_UserData);
@@ -875,6 +875,12 @@ bool SUvNgHttp2_SessionBase::Send()
     }
 
     return false;
+}
+
+int SUvNgHttp2_SessionBase::OnError(nghttp2_session*, int lib_error_code, const char* msg, size_t len)
+{
+    NCBI_UVNGHTTP2_SESSION_TRACE(this << " error: " << SUvNgHttp2_Error::NgHttp2Str(lib_error_code) << ". " << CTempString(msg, len));
+    return 0;
 }
 
 void SUvNgHttp2_SessionBase::OnConnect(int status)
