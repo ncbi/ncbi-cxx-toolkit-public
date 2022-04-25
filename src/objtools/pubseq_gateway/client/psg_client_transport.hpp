@@ -605,7 +605,6 @@ protected:
     int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
     int OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
             const uint8_t* value, size_t valuelen, uint8_t flags);
-    int OnError(nghttp2_session*, const char* msg, size_t) { Reset(msg); return 0; }
 
 private:
     enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };

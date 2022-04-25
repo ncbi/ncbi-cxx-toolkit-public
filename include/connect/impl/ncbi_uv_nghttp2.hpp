@@ -370,7 +370,7 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
             nghttp2_on_data_chunk_recv_callback on_data,
             nghttp2_on_stream_close_callback    on_stream_close,
             nghttp2_on_header_callback          on_header,
-            nghttp2_error_callback              on_error,
+            nghttp2_error_callback2             on_error,
             nghttp2_on_frame_recv_callback      on_frame_recv = nullptr);
 
     void Del();
@@ -404,7 +404,7 @@ private:
     nghttp2_on_data_chunk_recv_callback m_OnData;
     nghttp2_on_stream_close_callback    m_OnStreamClose;
     nghttp2_on_header_callback          m_OnHeader;
-    nghttp2_error_callback              m_OnError;
+    nghttp2_error_callback2             m_OnError;
     nghttp2_on_frame_recv_callback      m_OnFrameRecv;
     pair<uint32_t, const uint32_t> m_MaxStreams;
 };
@@ -448,6 +448,7 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 
 protected:
     bool Send();
+    int OnError(nghttp2_session* session, int lib_error_code, const char* msg, size_t len);
 
     const string m_Authority;
     SUv_Tcp m_Tcp;
@@ -498,9 +499,9 @@ private:
         return GetThat(user_data)->OnHeader(session, frame, name, namelen, value, valuelen, flags);
     }
 
-    static int s_OnError(nghttp2_session* session, const char* msg, size_t len, void* user_data)
+    static int s_OnError(nghttp2_session* session, int lib_error_code, const char* msg, size_t len, void* user_data)
     {
-        return GetThat(user_data)->OnError(session, msg, len);
+        return GetThat(user_data)->OnError(session, lib_error_code, msg, len);
     }
 };
 
