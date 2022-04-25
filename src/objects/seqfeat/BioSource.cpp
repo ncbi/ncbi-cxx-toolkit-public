@@ -1361,6 +1361,7 @@ static const char* const s_StopWords[] = {
     "not provided",
     "not recorded",
     "null",
+    "restricted access",
     "unk",
     "unknown",
     "unspecified"
