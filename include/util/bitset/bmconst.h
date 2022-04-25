@@ -151,11 +151,11 @@ enum strategy
    @brief copy strategy
    @ingroup bvector
 */
-enum finalization
+enum class finalization
 {
-    BM_UNDEFINED = 0,
-    BM_READONLY = 1,   //!<  immutable (read-only object)
-    BM_READWRITE = 2,  //!<  mutable (read-write object)
+    UNDEFINED = 0,
+    READONLY = 1,   //!<  immutable (read-only object)
+    READWRITE = 2,  //!<  mutable (read-write object)
 };
 
 
@@ -242,11 +242,11 @@ template<bool T> struct _copyright
 };
 
 #define BM_VERSION_MAJOR 7
-#define BM_VERSION_MINOR 10
-#define BM_VERSION_PATCH 4
+#define BM_VERSION_MINOR 11
+#define BM_VERSION_PATCH 2
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.7.10.4 (c) 2002-2022 Anatoliy Kuznetsov.";
+    "BitMagic Library. v.7.11.2 (c) 2002-2022 Anatoliy Kuznetsov.";
 template<bool T> const unsigned _copyright<T>::_v[3] =
                     { BM_VERSION_MAJOR, BM_VERSION_MINOR, BM_VERSION_PATCH };
 
