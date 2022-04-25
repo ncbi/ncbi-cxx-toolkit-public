@@ -1025,7 +1025,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                  const TSeqIdList& seq_ids,
                                  bool              accver)
 {
-    CRef<CSeq_loc> ret(new CSeq_loc);
+    auto ret = Ref(new CSeq_loc());
 
     bool  took_choice = false;
     char* p;
@@ -1076,7 +1076,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
             new_id.Reset();
             keep_rawPt = true;
             ++num_errPt;
-            goto FATAL;
+            return CRef<CSeq_loc>();
         }
     } else if (! seq_ids.empty()) {
         new_id.Reset(new ncbi::CSeq_id);
@@ -1094,7 +1094,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                            currentPt);
             keep_rawPt = true;
             ++num_errPt;
-            goto FATAL;
+            return CRef<CSeq_loc>();
         }
     }
 
@@ -1107,7 +1107,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
-                goto FATAL;
+                return CRef<CSeq_loc>();
             }
             break;
         case GBPARSE_INT_CARET:
@@ -1116,7 +1116,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                            currentPt);
             keep_rawPt = true;
             ++num_errPt;
-            goto FATAL;
+            return CRef<CSeq_loc>();
         case GBPARSE_INT_LT:
             if (new_id.NotEmpty()) {
                 xgbparse_error("duplicate \'<\'",
@@ -1124,7 +1124,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                currentPt);
                 keep_rawPt = true;
                 ++num_errPt;
-                goto FATAL;
+                return CRef<CSeq_loc>();
             }
             break;
         case GBPARSE_INT_GT:
@@ -1160,7 +1160,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                        currentPt);
                         keep_rawPt = true;
                         ++num_errPt;
-                        goto FATAL;
+                        return CRef<CSeq_loc>();
                     case GBPARSE_INT_COMMA:
                     case GBPARSE_INT_RIGHT: /* valid thing to leave on*/
                         /*--------------but have a point, not an interval----*/
@@ -1175,7 +1175,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                         ;
                         keep_rawPt = true;
                         ++num_errPt;
-                        goto FATAL;
+                        return CRef<CSeq_loc>();
                     case GBPARSE_INT_CARET:
                         if (ret->GetInt().IsSetFuzz_from()) {
                             xgbparse_error("\'<\' then \'^\'",
@@ -1183,7 +1183,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                            currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
-                            goto FATAL;
+                            return CRef<CSeq_loc>();
                         }
 
                         ret->SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_tl);
@@ -1199,7 +1199,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                            currentPt);
                             keep_rawPt = true;
                             ++num_errPt;
-                            goto FATAL;
+                            return CRef<CSeq_loc>();
                         }
                         /*--no break on purpose here ---*/
                     case GBPARSE_INT_NUMBER:
@@ -1214,7 +1214,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                                currentPt);
                                 keep_rawPt = true;
                                 ++num_errPt;
-                                goto FATAL;
+                                return CRef<CSeq_loc>();
                             }
                         }
 
@@ -1255,7 +1255,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                     xgbpintpnt(*ret);
                 }
             } else {
-                goto FATAL;
+                return CRef<CSeq_loc>();
             }
             break;
         default:
@@ -1264,17 +1264,11 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                            currentPt);
             keep_rawPt = true;
             ++num_errPt;
-            goto FATAL;
+            return CRef<CSeq_loc>();
         }
     }
 
-
-RETURN:
     return ret;
-
-FATAL:
-    ret.Reset();
-    goto RETURN;
 }
 
 
@@ -1359,21 +1353,21 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, bool& sitesPt, 
             break;
             /* REAL LOCS */
         case GBPARSE_INT_JOIN:
-            retval.Reset(new CSeq_loc);
+            retval = Ref(new CSeq_loc());
             retval->SetMix();
             break;
         case GBPARSE_INT_ORDER:
-            retval.Reset(new CSeq_loc);
+            retval = Ref(new CSeq_loc);
             retval->SetMix();
             add_nulls = true;
             break;
         case GBPARSE_INT_GROUP:
-            retval.Reset(new CSeq_loc);
+            retval = Ref(new CSeq_loc);
             retval->SetMix();
             keep_rawPt = true;
             break;
         case GBPARSE_INT_ONE_OF:
-            retval.Reset(new CSeq_loc);
+            retval = Ref(new CSeq_loc);
             retval->SetEquiv();
             break;
 
