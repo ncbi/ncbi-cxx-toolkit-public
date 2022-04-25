@@ -346,35 +346,6 @@ static int advance_to(const char c, int current_pos, const string& line)
 }
 
 
-/**********************************************************/
-static size_t xgbparse_accprefix(const char* acc)
-{
-    const char* p;
-
-    if (acc == NULL || *acc == '\0')
-        return (0);
-
-    for (p = acc; isalpha(*p) != 0;)
-        p++;
-    size_t ret = p - acc;
-    if (*p == '_') {
-        if (ret == 2) {
-            for (p++; isalpha(*p) != 0;)
-                p++;
-            ret = p - acc;
-            if (ret != 3 && ret != 7)
-                ret = 1;
-        } else
-            ret = 1;
-    } else if (p[0] != '\0' && p[0] >= '0' && p[0] <= '9' &&
-               p[1] != '\0' && p[1] >= '0' && p[1] <= '9' && p[2] == 'S')
-        ret = 7;
-    else if (ret != 1 && ret != 2 && ret != 4 && ret != 6)
-        ret = 1;
-    return (ret);
-}
-
-
 static size_t sParseAccessionPrefix(const CTempString& accession)
 {
     if (accession.empty()) {
@@ -848,9 +819,9 @@ static void xgbgap(TTokenIt& current_it, TTokenConstIt end_it, CRef<CSeq_loc>& l
     current_it = next(it);
 }
 
-/*------------------- xgbpintpnt()-----------*/
+/*------------------- sConvertIntToPoint()-----------*/
 
-static void xgbpintpnt(CSeq_loc& loc)
+static void sConvertIntToPoint(CSeq_loc& loc)
 {
     CRef<CSeq_point> point(new CSeq_point);
 
@@ -1164,7 +1135,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                     case GBPARSE_INT_COMMA:
                     case GBPARSE_INT_RIGHT: /* valid thing to leave on*/
                         /*--------------but have a point, not an interval----*/
-                        xgbpintpnt(*ret);
+                        sConvertIntToPoint(*ret);
                         break;
 
                     case GBPARSE_INT_GT:
@@ -1232,7 +1203,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                         if (in_caret) {
                             TSeqPos to = ret->GetInt().GetTo();
 
-                            xgbpintpnt(*ret);
+                            sConvertIntToPoint(*ret);
                             CSeq_point& point = ret->SetPnt();
                             if (point.GetPoint() + 1 == to) {
                                 point.SetPoint(to); /* was essentailly correct */
@@ -1242,17 +1213,16 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                             }
                         }
 
-                        if (ret->IsInt()) {
-                            if (ret->GetInt().GetFrom() == ret->GetInt().GetTo() &&
-                                ! ret->GetInt().IsSetFuzz_from() &&
-                                ! ret->GetInt().IsSetFuzz_to()) {
-                                /*-------if interval really a point, make is so ----*/
-                                xgbpintpnt(*ret);
-                            }
+                        if (ret->IsInt() &&
+                            ret->GetInt().GetFrom() == ret->GetInt().GetTo() &&
+                            ! ret->GetInt().IsSetFuzz_from() &&
+                            ! ret->GetInt().IsSetFuzz_to()) {
+                            /*-------if interval really a point, make is so ----*/
+                            sConvertIntToPoint(*ret);
                         }
                     } /* end switch */
                 } else {
-                    xgbpintpnt(*ret);
+                    sConvertIntToPoint(*ret);
                 }
             } else {
                 return CRef<CSeq_loc>();
