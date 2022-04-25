@@ -32,14 +32,6 @@
 */
 #define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
-#include <sra/data_loaders/bam/bamloader.hpp>
-#include <sra/readers/ncbi_traces_path.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objmgr/graph_ci.hpp>
-#include <objtools/readers/idmapper.hpp>
-#include <objects/seqalign/seqalign__.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <thread>
 
@@ -62,7 +54,6 @@
 
 
 USING_NCBI_SCOPE;
-USING_SCOPE(objects);
 
 void CheckRc(rc_t rc, const char* code, const char* file, int line)
 {
