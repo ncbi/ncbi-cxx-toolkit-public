@@ -631,9 +631,11 @@ bool SPSG_Request::StatePrefix(const char*& data, size_t& len)
     }
 
     // Check failed
-    const auto remaining = min(len, kPrefix.size() - index);
-    const auto wrong_prefix(NStr::PrintableString(string(data, remaining)));
-    ERR_POST("Prefix mismatch: " << (index ? "offending part " : "") << '\'' << wrong_prefix << '\'');
+    const auto matched = CTempString(kPrefix, 0, index);
+    const auto different = CTempString(data, min(len, kPrefix.size() - index));
+    stringstream ss;
+    ss << "Protocol error: prefix mismatch, expected '" << kPrefix << "' vs received '" << matched << different << '\'';
+    reply->reply_item.GetLock()->state.AddError(ss.str());
     return false;
 }
 
@@ -885,9 +887,7 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     auto it = m_Requests.find(stream_id);
 
     if (it != m_Requests.end()) {
-        if (!it->second->OnReplyData((const char*)data, len)) {
-            Reset("Failed to parse response data");
-        }
+        it->second->OnReplyData((const char*)data, len);
     }
 
     return 0;

@@ -416,15 +416,9 @@ struct SPSG_Request
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
-    bool OnReplyData(const char* data, size_t len)
+    void OnReplyData(const char* data, size_t len)
     {
-        while (len) {
-            if (!(this->*m_State)(data, len)) {
-                return false;
-            }
-        }
-
-        return true;
+        while (len && (this->*m_State)(data, len));
     }
 
     unsigned GetRetries()
