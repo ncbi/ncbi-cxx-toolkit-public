@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = pubmed_fetch
+
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
