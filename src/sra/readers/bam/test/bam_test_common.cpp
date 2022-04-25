@@ -102,6 +102,9 @@ void CBAMTestCommon::InitCommonArgs(CArgDescriptions& args,
                         "Query variants: chr1, chr1:123-432, separate queries by commas",
                         CArgDescriptions::eString);
     args.AddFlag("by-start", "Search by alignment start position only");
+    args.AddOptionalKey("check_count", "CheckCount",
+                        "Check found alignments count",
+                        CArgDescriptions::eInteger);
     args.AddFlag("verbose", "Verbose program run");
             
     args.AddDefaultKey("o", "OutputFile",
@@ -133,8 +136,8 @@ bool CBAMTestCommon::ParseCommonArgs(const CArgs& args)
             reps.push_back(string(NCBI_GetTestDataPath()));
             reps.push_back(string(NCBI_GetTestDataPath())+"/traces02");
             reps.push_back(string(NCBI_GetTestDataPath())+"/traces04");
-            reps.push_back(NCBI_TRACES02_PATH);
-            reps.push_back(NCBI_TRACES04_PATH);
+            //reps.push_back(NCBI_TRACES02_PATH);
+            //reps.push_back(NCBI_TRACES04_PATH);
             vector<string> subdirs;
             subdirs.push_back("");
             subdirs.push_back(BAM_DIR1);
@@ -253,5 +256,11 @@ bool CBAMTestCommon::ParseCommonArgs(const CArgs& args)
     }
     
     by_start = args["by-start"];
+    if ( args["check_count"] ) {
+        check_count = args["check_count"].AsInteger();
+    }
+    else {
+        check_count = -1;
+    }
     return true;
 }
