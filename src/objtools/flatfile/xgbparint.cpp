@@ -1242,6 +1242,10 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
 }
 
 
+class CGBLocException : exception 
+{
+};
+
 static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, bool& sitesPt, TTokenIt& currentPt, const TTokens& tokens, int& num_errPt, const TSeqIdList& seq_ids, bool accver)
 {
     CRef<CSeq_loc> retval;
@@ -1252,256 +1256,224 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, bool& sitesPt, 
     bool go_again;
     auto end_it = end(tokens);
 
-    do {
-        go_again = false;
-        switch (current_token->choice) {
-        case GBPARSE_INT_COMPL:
-            ++currentPt;
-            if (currentPt == end_it) {
-                xgbparse_error("unexpected end of usable tokens",
-                               tokens,
-                               currentPt);
-                keep_rawPt = true;
-                ++num_errPt;
-                goto FATAL;
-            }
-            if (currentPt->choice != GBPARSE_INT_LEFT) {
-                xgbparse_error("Missing \'(\'", /* paran match  ) */
-                               tokens,
-                               currentPt);
-                keep_rawPt = true;
-                ++num_errPt;
-                goto FATAL;
-            } else {
+    try {
+        do {
+            go_again = false;
+            switch (current_token->choice) {
+            case GBPARSE_INT_COMPL:
+                ++currentPt;
+                if (currentPt == end_it) {
+                    xgbparse_error("unexpected end of usable tokens",
+                                    tokens,
+                                    currentPt);
+                    throw CGBLocException();
+                }
+                if (currentPt->choice != GBPARSE_INT_LEFT) {
+                    xgbparse_error("Missing \'(\'", /* paran match  ) */
+                                    tokens,
+                                    currentPt);
+                    throw CGBLocException();
+                }
+
                 ++parenPt;
                 ++currentPt;
                 if (currentPt == end_it) {
                     xgbparse_error("illegal null contents",
-                                   tokens,
-                                   currentPt);
-                    keep_rawPt = true;
-                    ++num_errPt;
-                    goto FATAL;
-                } else {
-                    if (currentPt->choice == GBPARSE_INT_RIGHT) { /* paran match ( */
-                        xgbparse_error("Premature \')\'",
-                                       tokens,
-                                       currentPt);
-                        keep_rawPt = true;
-                        ++num_errPt;
-                        goto FATAL;
-                    } else {
-                        retval = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, tokens, num_errPt, seq_ids, accver);
-
-                        if (retval.NotEmpty())
-                            retval = sequence::SeqLocRevCmpl(*retval, nullptr);
-
-                        did_complement = true;
-                        if (currentPt != end_it) {
-                            if (currentPt->choice != GBPARSE_INT_RIGHT) {
-                                xgbparse_error("Missing \')\'",
-                                               tokens,
-                                               currentPt);
-                                keep_rawPt = true;
-                                ++num_errPt;
-                                goto FATAL;
-                            } else {
-                                --parenPt;
-                                ++currentPt;
-                            }
-                        } else {
-                            xgbparse_error("Missing \')\'",
-                                           tokens,
-                                           currentPt);
-                            keep_rawPt = true;
-                            ++num_errPt;
-                            goto FATAL;
-                        }
-                    }
+                                    tokens,
+                                    currentPt);
+                    throw CGBLocException();
                 }
-            }
-            break;
-            /* REAL LOCS */
-        case GBPARSE_INT_JOIN:
-            retval = Ref(new CSeq_loc());
-            retval->SetMix();
-            break;
-        case GBPARSE_INT_ORDER:
-            retval = Ref(new CSeq_loc);
-            retval->SetMix();
-            add_nulls = true;
-            break;
-        case GBPARSE_INT_GROUP:
-            retval = Ref(new CSeq_loc);
-            retval->SetMix();
-            keep_rawPt = true;
-            break;
-        case GBPARSE_INT_ONE_OF:
-            retval = Ref(new CSeq_loc);
-            retval->SetEquiv();
-            break;
+
+                if (currentPt->choice == GBPARSE_INT_RIGHT) { /* paran match ( */
+                    xgbparse_error("Premature \')\'",
+                                    tokens,
+                                    currentPt);
+                    throw CGBLocException();
+                } 
+                retval = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, tokens, num_errPt, seq_ids, accver);
+
+                if (retval.NotEmpty())
+                    retval = sequence::SeqLocRevCmpl(*retval, nullptr);
+
+                did_complement = true;
+                if (currentPt != end_it) {
+                    if (currentPt->choice != GBPARSE_INT_RIGHT) {
+                        xgbparse_error("Missing \')\'",
+                                        tokens,
+                                        currentPt);
+                        throw CGBLocException();
+                    } 
+                    --parenPt;
+                    ++currentPt;
+                } else {
+                    xgbparse_error("Missing \')\'",
+                                    tokens,
+                                    currentPt);
+                    throw CGBLocException();
+                }
+                break;
+                /* REAL LOCS */
+            case GBPARSE_INT_JOIN:
+                retval = Ref(new CSeq_loc());
+                retval->SetMix();
+                break;
+            case GBPARSE_INT_ORDER:
+                retval = Ref(new CSeq_loc);
+                retval->SetMix();
+                add_nulls = true;
+                break;
+            case GBPARSE_INT_GROUP:
+                retval = Ref(new CSeq_loc);
+                retval->SetMix();
+                keep_rawPt = true;
+                break;
+            case GBPARSE_INT_ONE_OF:
+                retval = Ref(new CSeq_loc);
+                retval->SetEquiv();
+                break;
 
             /* ERROR */
-        case GBPARSE_INT_STRING:
-            xgbparse_error("string in loc",
-                           tokens,
-                           current_token);
-            keep_rawPt = true;
-            ++num_errPt;
-            goto FATAL;
+            case GBPARSE_INT_STRING:
+                xgbparse_error("string in loc",
+                                tokens,
+                                current_token);
+                throw CGBLocException();
             /*--- no break on purpose---*/
-        default:
-        case GBPARSE_INT_UNKNOWN:
-        case GBPARSE_INT_RIGHT:
-        case GBPARSE_INT_DOT_DOT:
-        case GBPARSE_INT_COMMA:
-        case GBPARSE_INT_SINGLE_DOT:
-            xgbparse_error("illegal initial loc token",
-                           tokens,
-                           currentPt);
-            keep_rawPt = true;
-            ++num_errPt;
-            goto FATAL;
+            default:
+            case GBPARSE_INT_UNKNOWN:
+            case GBPARSE_INT_RIGHT:
+            case GBPARSE_INT_DOT_DOT:
+            case GBPARSE_INT_COMMA:
+            case GBPARSE_INT_SINGLE_DOT:
+                xgbparse_error("illegal initial loc token",
+                                tokens,
+                                currentPt);
+                throw CGBLocException();
 
             /* Interval, occurs on recursion */
-        case GBPARSE_INT_GAP:
-            xgbgap(currentPt, end_it, retval, false);
-            break;
-        case GBPARSE_INT_UNK_GAP:
-            xgbgap(currentPt, end_it, retval, true);
-            break;
+            case GBPARSE_INT_GAP:
+                xgbgap(currentPt, end_it, retval, false);
+                break;
+            case GBPARSE_INT_UNK_GAP:
+                xgbgap(currentPt, end_it, retval, true);
+                break;
 
-        case GBPARSE_INT_ACCESSION:
-        case GBPARSE_INT_CARET:
-        case GBPARSE_INT_GT:
-        case GBPARSE_INT_LT:
-        case GBPARSE_INT_NUMBER:
-        case GBPARSE_INT_LEFT:
-        case GBPARSE_INT_ONE_OF_NUM:
-            retval = xgbint_ver(keep_rawPt, currentPt, tokens, num_errPt, seq_ids, accver);
-            break;
+            case GBPARSE_INT_ACCESSION:
+            case GBPARSE_INT_CARET:
+            case GBPARSE_INT_GT:
+            case GBPARSE_INT_LT:
+            case GBPARSE_INT_NUMBER:
+            case GBPARSE_INT_LEFT:
+            case GBPARSE_INT_ONE_OF_NUM:
+                retval = xgbint_ver(keep_rawPt, currentPt, tokens, num_errPt, seq_ids, accver);
+                break;
 
-        case GBPARSE_INT_REPLACE:
-            /*-------illegal at this level --*/
-            xgbparse_error("illegal replace",
-                           tokens,
-                           currentPt);
-            keep_rawPt = true;
-            ++num_errPt;
-            goto FATAL;
-        case GBPARSE_INT_SITES:
-            sitesPt  = true;
-            go_again = true;
-            ++currentPt;
-            break;
-        }
-    } while (go_again && currentPt != end_it);
+            case GBPARSE_INT_REPLACE:
+                /*-------illegal at this level --*/
+                xgbparse_error("illegal replace",
+                                tokens,
+                                currentPt);
+                throw CGBLocException();
+            case GBPARSE_INT_SITES:
+                sitesPt  = true;
+                go_again = true;
+                ++currentPt;
+                break;
+            }
+        } while (go_again && currentPt != end_it);
 
-    if (! num_errPt) {
-        if (retval.NotEmpty() && ! retval->IsNull()) {
-            if (! retval->IsInt() && ! retval->IsPnt() && ! did_complement) {
+        if (! num_errPt) {
+            if (retval.NotEmpty() && ! retval->IsNull()) {
+                if (! retval->IsInt() && ! retval->IsPnt() && ! did_complement) {
                 /*--------
                 * ONLY THE CHOICE has been set. the "join", etc. only has been noted
                 *----*/
-                ++currentPt;
-                if (currentPt == end_it) {
-                    xgbparse_error("unexpected end of interval tokens",
-                                   tokens,
-                                   currentPt);
-                    keep_rawPt = true;
-                    ++num_errPt;
-                    goto FATAL;
-                } else {
-                    if (currentPt->choice != GBPARSE_INT_LEFT) {
-                        xgbparse_error("Missing \'(\'",
-                                       tokens,
-                                       currentPt); /* paran match  ) */
-                        keep_rawPt = true;
-                        ++num_errPt;
-                        goto FATAL;
+                    ++currentPt;
+                    if (currentPt == end_it) {
+                        xgbparse_error("unexpected end of interval tokens",
+                                        tokens,
+                                        currentPt);
+                        throw CGBLocException();
                     } else {
-                        ++parenPt;
-                        ++currentPt;
-                        if (currentPt == end_it) {
-                            xgbparse_error("illegal null contents",
-                                           tokens,
-                                           currentPt);
-                            keep_rawPt = true;
-                            ++num_errPt;
-                            goto FATAL;
+                        if (currentPt->choice != GBPARSE_INT_LEFT) {
+                            xgbparse_error("Missing \'(\'",
+                                            tokens,
+                                            currentPt); /* paran match  ) */
+                            throw CGBLocException();
                         } else {
-                            if (currentPt->choice == GBPARSE_INT_RIGHT) { /* paran match ( */
-                                xgbparse_error("Premature \')\'",
-                                               tokens,
-                                               currentPt);
-                                keep_rawPt = true;
-                                ++num_errPt;
-                                goto FATAL;
+                            ++parenPt;
+                            ++currentPt;
+                            if (currentPt == end_it) {
+                                xgbparse_error("illegal null contents",
+                                                tokens,
+                                                currentPt);
+                                throw CGBLocException();
                             } else {
-                                while (! num_errPt && currentPt != end_it) {
-                                    if (currentPt->choice == GBPARSE_INT_RIGHT) {
-                                        while (currentPt->choice == GBPARSE_INT_RIGHT) {
-                                            parenPt--;
-                                            ++currentPt;
-                                            if (currentPt == end_it)
-                                                break;
+                                if (currentPt->choice == GBPARSE_INT_RIGHT) { /* paran match ( */
+                                    xgbparse_error("Premature \')\'",
+                                                    tokens,
+                                                    currentPt);
+                                    throw CGBLocException();
+                                } else {
+                                    while (! num_errPt && currentPt != end_it) {
+                                        if (currentPt->choice == GBPARSE_INT_RIGHT) {
+                                            while (currentPt->choice == GBPARSE_INT_RIGHT) {
+                                                parenPt--;
+                                                ++currentPt;
+                                                if (currentPt == end_it)
+                                                    break;
+                                            }
+                                            break;
                                         }
-                                        break;
-                                    }
 
-                                    if (currentPt == end_it)
-                                        break;
+                                        if (currentPt == end_it)
+                                            break;
 
-                                    CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, tokens, num_errPt, seq_ids, accver);
+                                        CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, 
+                                                                             tokens, num_errPt, seq_ids, accver);
 
-                                    if (next_loc.NotEmpty()) {
-                                        if (retval->IsMix())
-                                            retval->SetMix().AddSeqLoc(*next_loc);
-                                        else // equiv
-                                            retval->SetEquiv().Add(*next_loc);
-                                    }
-
-                                    if (currentPt == end_it || currentPt->choice == GBPARSE_INT_RIGHT)
-                                        break;
-
-                                    if (currentPt->choice == GBPARSE_INT_COMMA) {
-                                        ++currentPt;
-                                        if (add_nulls) {
-                                            CRef<CSeq_loc> null_loc(new CSeq_loc);
-                                            null_loc->SetNull();
-
+                                        if (next_loc.NotEmpty()) {
                                             if (retval->IsMix())
-                                                retval->SetMix().AddSeqLoc(*null_loc);
+                                                retval->SetMix().AddSeqLoc(*next_loc);
                                             else // equiv
-                                                retval->SetEquiv().Add(*null_loc);
+                                                retval->SetEquiv().Add(*next_loc);
                                         }
-                                    } else {
-                                        xgbparse_error("Illegal token after interval",
-                                                       tokens,
-                                                       currentPt);
-                                        keep_rawPt = true;
-                                        ++num_errPt;
-                                        goto FATAL;
+
+                                        if (currentPt == end_it || currentPt->choice == GBPARSE_INT_RIGHT)
+                                            break;
+
+                                        if (currentPt->choice == GBPARSE_INT_COMMA) {
+                                            ++currentPt;
+                                            if (add_nulls) {
+                                                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                                                null_loc->SetNull();
+
+                                                if (retval->IsMix())
+                                                    retval->SetMix().AddSeqLoc(*null_loc);
+                                                else // equiv
+                                                    retval->SetEquiv().Add(*null_loc);
+                                            }
+                                        } else {
+                                            xgbparse_error("Illegal token after interval",
+                                                            tokens,
+                                                            currentPt);
+                                            throw CGBLocException();
+                                        }
                                     }
                                 }
                             }
-                        }
-                        if (currentPt == end_it) {
-                            xgbparse_error("unexpected end of usable tokens",
-                                           tokens,
-                                           currentPt);
-                            keep_rawPt = true;
-                            ++num_errPt;
-                            goto FATAL;
-                        } else {
-                            if (currentPt->choice != GBPARSE_INT_RIGHT) {
-                                xgbparse_error("Missing \')\'" /* paran match  ) */,
-                                               tokens,
-                                               currentPt);
-                                keep_rawPt = true;
-                                ++num_errPt;
-                                goto FATAL;
+                            if (currentPt == end_it) {
+                                xgbparse_error("unexpected end of usable tokens",
+                                                tokens,
+                                                currentPt);
+                                throw CGBLocException();
                             } else {
+                                if (currentPt->choice != GBPARSE_INT_RIGHT) {
+                                    xgbparse_error("Missing \')\'" /* paran match  ) */,
+                                                    tokens,
+                                                    currentPt);
+                                    throw CGBLocException();
+                                } 
                                 parenPt--;
                                 ++currentPt;
                             }
@@ -1511,10 +1483,10 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, bool& sitesPt, 
             }
         }
     }
-
-FATAL:
-    if (num_errPt) {
-        if (retval.NotEmpty()) {
+    catch (CGBLocException&) {
+        keep_rawPt = true;
+        ++num_errPt;
+        if (retval) {
             retval->Reset();
             retval->SetWhole().Assign(*(*seq_ids.begin()));
         }
