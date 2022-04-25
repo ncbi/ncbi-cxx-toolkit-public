@@ -174,6 +174,11 @@ void CPerfTestApp::Init(void)
     // For genbank use id1/id2 vs pubseqos/pubseqos2
     arg_desc->AddFlag("pubseqos", "use pubseqos (with genbank only)");
 
+    // List of other data loaders as plugins
+    arg_desc->AddOptionalKey("other_loaders", "OtherLoaders",
+                             "Extra data loaders as plugins (comma separated)",
+                             CArgDescriptions::eString);
+
     // Split vs unsplit (id1/id2, pubseqos/pubseqos2, psg tse option).
     arg_desc->AddFlag("no_split", "get only unsplit data");
 
@@ -284,7 +289,24 @@ int CPerfTestApp::Run(void)
         GetRWConfig().Set("psg_loader", "no_split", args["no_split"] ? "t" : "f");
         CGBDataLoader::RegisterInObjectManager(*om);
     }
+    vector<string> other_loaders;
+    if ( args["other_loaders"] ) {
+        vector<string> names;
+        NStr::Split(args["other_loaders"].AsString(), ",", names);
+        for ( auto& name : names ) {
+            AutoPtr<TPluginManagerParamTree> all_params;
+            TPluginManagerParamTree* params = 0;
+            if ( auto app = CNcbiApplication::InstanceGuard() ) {
+                all_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
+                params = all_params->FindSubNode(name);
+            }
+            other_loaders.push_back(CObjectManager::GetInstance()->RegisterDataLoader(params, name)->GetName());
+        }
+    }
     m_Scope->AddDefaults();
+    for ( auto& loader_name : other_loaders ) {
+        m_Scope->AddDataLoader(loader_name);
+    }
 
     if (args["ids"]) {
         string ids_file = args["ids"].AsString();
