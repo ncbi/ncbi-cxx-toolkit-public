@@ -4,7 +4,7 @@
 ##################################
 
 LIB_PROJ = edit
-SUB_PROJ = unit_test
+SUB_PROJ = unit_test pubmed_fetch
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
