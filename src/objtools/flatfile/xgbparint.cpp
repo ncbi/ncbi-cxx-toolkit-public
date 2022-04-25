@@ -1253,12 +1253,12 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, bool& sitesPt, 
     bool add_nulls      = false;
     auto current_token  = currentPt;
     bool did_complement = false;
-    bool go_again;
+    bool in_sites;
     auto end_it = end(tokens);
 
     try {
         do {
-            go_again = false;
+            in_sites = false;
             switch (current_token->choice) {
             case GBPARSE_INT_COMPL:
                 ++currentPt;
@@ -1376,111 +1376,108 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, bool& sitesPt, 
                 throw CGBLocException();
             case GBPARSE_INT_SITES:
                 sitesPt  = true;
-                go_again = true;
+                in_sites = true;
                 ++currentPt;
                 break;
             }
-        } while (go_again && currentPt != end_it);
+        } while (in_sites && currentPt != end_it);
 
-        if (! num_errPt) {
-            if (retval.NotEmpty() && ! retval->IsNull()) {
-                if (! retval->IsInt() && ! retval->IsPnt() && ! did_complement) {
-                /*--------
-                * ONLY THE CHOICE has been set. the "join", etc. only has been noted
-                *----*/
-                    ++currentPt;
-                    if (currentPt == end_it) {
-                        xgbparse_error("unexpected end of interval tokens",
-                                        tokens,
-                                        currentPt);
+
+        if (!num_errPt && !did_complement && retval && 
+            !retval->IsNull() && !retval->IsInt() && ! retval->IsPnt()) {
+            /*--------
+            * ONLY THE CHOICE has been set. the "join", etc. only has been noted
+            *----*/
+            ++currentPt;
+            if (currentPt == end_it) {
+                xgbparse_error("unexpected end of interval tokens",
+                                tokens,
+                                currentPt);
+                throw CGBLocException();
+            } 
+                    
+            if (currentPt->choice != GBPARSE_INT_LEFT) {
+                xgbparse_error("Missing \'(\'",
+                                tokens,
+                                currentPt); /* paran match  ) */
+                throw CGBLocException();
+            }
+
+            ++parenPt;
+            ++currentPt;
+            if (currentPt == end_it) {
+                xgbparse_error("illegal null contents",
+                                tokens,
+                                currentPt);
+                throw CGBLocException();
+            } 
+
+            if (currentPt->choice == GBPARSE_INT_RIGHT) { /* paran match ( */
+                xgbparse_error("Premature \')\'",
+                                tokens,
+                                currentPt);
                         throw CGBLocException();
-                    } else {
-                        if (currentPt->choice != GBPARSE_INT_LEFT) {
-                            xgbparse_error("Missing \'(\'",
-                                            tokens,
-                                            currentPt); /* paran match  ) */
-                            throw CGBLocException();
-                        } else {
-                            ++parenPt;
-                            ++currentPt;
-                            if (currentPt == end_it) {
-                                xgbparse_error("illegal null contents",
-                                                tokens,
-                                                currentPt);
-                                throw CGBLocException();
-                            } else {
-                                if (currentPt->choice == GBPARSE_INT_RIGHT) { /* paran match ( */
-                                    xgbparse_error("Premature \')\'",
-                                                    tokens,
-                                                    currentPt);
-                                    throw CGBLocException();
-                                } else {
-                                    while (! num_errPt && currentPt != end_it) {
-                                        if (currentPt->choice == GBPARSE_INT_RIGHT) {
-                                            while (currentPt->choice == GBPARSE_INT_RIGHT) {
-                                                parenPt--;
-                                                ++currentPt;
-                                                if (currentPt == end_it)
-                                                    break;
-                                            }
-                                            break;
-                                        }
+            }
 
-                                        if (currentPt == end_it)
-                                            break;
-
-                                        CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, 
-                                                                             tokens, num_errPt, seq_ids, accver);
-
-                                        if (next_loc.NotEmpty()) {
-                                            if (retval->IsMix())
-                                                retval->SetMix().AddSeqLoc(*next_loc);
-                                            else // equiv
-                                                retval->SetEquiv().Add(*next_loc);
-                                        }
-
-                                        if (currentPt == end_it || currentPt->choice == GBPARSE_INT_RIGHT)
-                                            break;
-
-                                        if (currentPt->choice == GBPARSE_INT_COMMA) {
-                                            ++currentPt;
-                                            if (add_nulls) {
-                                                CRef<CSeq_loc> null_loc(new CSeq_loc);
-                                                null_loc->SetNull();
-
-                                                if (retval->IsMix())
-                                                    retval->SetMix().AddSeqLoc(*null_loc);
-                                                else // equiv
-                                                    retval->SetEquiv().Add(*null_loc);
-                                            }
-                                        } else {
-                                            xgbparse_error("Illegal token after interval",
-                                                            tokens,
-                                                            currentPt);
-                                            throw CGBLocException();
-                                        }
-                                    }
-                                }
-                            }
-                            if (currentPt == end_it) {
-                                xgbparse_error("unexpected end of usable tokens",
-                                                tokens,
-                                                currentPt);
-                                throw CGBLocException();
-                            } else {
-                                if (currentPt->choice != GBPARSE_INT_RIGHT) {
-                                    xgbparse_error("Missing \')\'" /* paran match  ) */,
-                                                    tokens,
-                                                    currentPt);
-                                    throw CGBLocException();
-                                } 
-                                parenPt--;
-                                ++currentPt;
-                            }
-                        }
+            while (! num_errPt && currentPt != end_it) {
+                if (currentPt->choice == GBPARSE_INT_RIGHT) {
+                    while (currentPt != end_it && 
+                           currentPt->choice == GBPARSE_INT_RIGHT) {
+                        --parenPt;
                     }
+                    break;
+                }
+
+                if (currentPt == end_it)
+                    break;
+
+                CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, sitesPt, currentPt, 
+                                                     tokens, num_errPt, seq_ids, accver);
+
+                if (next_loc.NotEmpty()) {
+                    if (retval->IsMix())
+                        retval->SetMix().AddSeqLoc(*next_loc);
+                    else // equiv
+                        retval->SetEquiv().Add(*next_loc);
+                }
+
+                if (currentPt == end_it || currentPt->choice == GBPARSE_INT_RIGHT)
+                    break;
+
+                if (currentPt->choice == GBPARSE_INT_COMMA) {
+                    ++currentPt;
+                    if (add_nulls) {
+                        CRef<CSeq_loc> null_loc(new CSeq_loc);
+                        null_loc->SetNull();
+
+                        if (retval->IsMix())
+                            retval->SetMix().AddSeqLoc(*null_loc);
+                        else // equiv
+                            retval->SetEquiv().Add(*null_loc);
+                    }
+                } else {
+                    xgbparse_error("Illegal token after interval",
+                                    tokens,
+                                    currentPt);
+                    throw CGBLocException();
                 }
             }
+
+            if (currentPt == end_it) {
+                xgbparse_error("unexpected end of usable tokens",
+                                tokens,
+                                currentPt);
+                throw CGBLocException();
+            } 
+            
+            if (currentPt->choice != GBPARSE_INT_RIGHT) {
+                xgbparse_error("Missing \')\'" /* paran match  ) */,
+                                tokens,
+                                currentPt);
+                throw CGBLocException();
+            } 
+            --parenPt;
+            ++currentPt;
         }
     }
     catch (CGBLocException&) {
@@ -1560,9 +1557,9 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
         auto end_it        = tokens.end();
 
         int  paren_count = 0;
-        bool go_again;
+        bool in_sites;
         do {
-            go_again = false;
+            in_sites = false;
             if (current_token != end_it) {
                 switch (current_token->choice) {
                 case GBPARSE_INT_JOIN:
@@ -1617,12 +1614,12 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, bool
                     break;
                 case GBPARSE_INT_SITES:
                     sitesPt  = true;
-                    go_again = true;
+                    in_sites = true;
                     ++current_token;
                     break;
                 }
             }
-        } while (go_again && current_token != end_it);
+        } while (in_sites && current_token != end_it);
     } else {
         keep_rawPt = true;
     }
