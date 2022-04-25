@@ -521,7 +521,8 @@ int CBAMTestApp::Run(void)
 
     bool no_spot_id_detector = args["no_spot_id_detector"];
     bool no_conflict_detector = args["no_conflict_detector"];
-    
+
+    int failed = 0;
     for ( int cycle = 0; cycle < 1; ++cycle ) {
         if ( cycle ) path = "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam";
         out << "File: " << path << NcbiEndl;
@@ -920,6 +921,10 @@ int CBAMTestApp::Run(void)
                 if ( limit_count > 0 && count == limit_count ) break;
             }
             out << "Loaded: " << count << " alignments." << NcbiEndl;
+            if ( check_count >= 0 && check_count != count ) {
+                out << "Expected count: "<<check_count<<NcbiEndl;
+                failed = 1;
+            }
             if ( range_only ) {
                 out << "Range: " << ref_min << "-" << ref_max-1 << NcbiEndl;
             }
@@ -995,7 +1000,7 @@ int CBAMTestApp::Run(void)
         }
     }
     out << "Exiting" << NcbiEndl;
-    return 0;
+    return failed;
 }
 
 

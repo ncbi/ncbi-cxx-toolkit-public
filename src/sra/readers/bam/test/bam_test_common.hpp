@@ -72,6 +72,7 @@ public:
     };
     vector<SQuery> queries;
     bool by_start;
+    int check_count;
 };
 
 #endif // BAM_TEST_COMMON__H
