@@ -15,4 +15,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
-WATCHERS = foleyjp
+WATCHERS = foleyjp stakhovv
