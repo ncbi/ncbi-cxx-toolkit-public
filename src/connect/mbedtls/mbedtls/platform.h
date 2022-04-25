@@ -239,6 +239,9 @@ extern int (*mbedtls_snprintf)( char * s, size_t n, const char * format, ... );
 int mbedtls_platform_set_snprintf( int (*snprintf_func)( char * s, size_t n,
                                                  const char * format, ... ) );
 #else /* MBEDTLS_PLATFORM_SNPRINTF_ALT */
+#if defined(mbedtls_snprintf)
+#undef mbedtls_snprintf
+#endif
 #if defined(MBEDTLS_PLATFORM_SNPRINTF_MACRO)
 #define mbedtls_snprintf   MBEDTLS_PLATFORM_SNPRINTF_MACRO
 #else
@@ -275,6 +278,9 @@ extern int (*mbedtls_vsnprintf)( char * s, size_t n, const char * format, va_lis
 int mbedtls_platform_set_vsnprintf( int (*vsnprintf_func)( char * s, size_t n,
                                                  const char * format, va_list arg ) );
 #else /* MBEDTLS_PLATFORM_VSNPRINTF_ALT */
+#if defined(mbedtls_vsnprintf)
+#undef mbedtls_vsnprintf
+#endif
 #if defined(MBEDTLS_PLATFORM_VSNPRINTF_MACRO)
 #define mbedtls_vsnprintf   MBEDTLS_PLATFORM_VSNPRINTF_MACRO
 #else
