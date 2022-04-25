@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
     unit_test_util::SetOrgMod(*biosample, COrgMod::eSubtype_strain, "Cj3");
     biosample->SetOrg().SetOrgname().SetLineage("Bacteria; Proteobacteria; Epsilonproteobacteria;  Campylobacterales; Campylobacteraceae; Campylobacter");
     biosample->SetOrg().SetOrgname().SetGcode(11);
-    biosample->SetOrg().SetOrgname().SetDiv("BCT");
+    biosample->SetOrg().SetOrgname().SetDiv("restricted access");
     unit_test_util::SetSubSource(*biosample, CSubSource::eSubtype_country, "Thailand");
     unit_test_util::SetSubSource(*biosample, CSubSource::eSubtype_isolation_source, "stool");
  
@@ -200,6 +200,7 @@ BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
     TFieldDiffList diff_list = src->GetBiosampleDiffs(*biosample);
     TFieldDiffList expected;
     CheckDiffs(expected, diff_list);
+    BOOST_CHECK_EQUAL(src->GetOrg().GetOrgname().GetDiv(), "BCT");
 
 }
 
