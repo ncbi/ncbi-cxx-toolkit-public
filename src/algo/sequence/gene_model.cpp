@@ -3889,11 +3889,14 @@ x_AddSelectMarkup(const CSeq_align &align,
         if (desc->IsGenbank() && desc->GetGenbank().IsSetKeywords()) {
             for (const string &keyword : desc->GetGenbank().GetKeywords()) {
                 if (m_flags & fDropManeMarkup &&
-                    (keyword == "MANE Select" || keyword == "MANE Plus"))
+                    (keyword == "MANE Select" || keyword == "MANE Plus"
+                                     || keyword == "MANE Plus Clinical"))
                 {
                     drop = true;
                     if (keyword == "MANE Select") {
                         keywords.push_back("RefSeq Select");
+                    } else if (keyword == "MANE Plus Clinical") {
+                        keywords.push_back("RefSeq Plus Clinical");
                     }
                 } else {
                     keywords.push_back(keyword);
