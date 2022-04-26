@@ -986,14 +986,26 @@ void CDeflineGenerator::x_SetFlags (
         }
 
         case CSeqdesc::e_Source:
+            {
             if ((needed_desc_choices & fSource) != 0) {
                 m_Source.Reset(&desc_it->GetSource());
                 // take first, then skip remainder
                 needed_desc_choices &= ~fSource;
             }
+            const CBioSource &bsrc = desc_it->GetSource();
+            if (! bsrc.IsSetOrgname()) break;
+            FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, bsrc) {
+                const COrgMod& omd = **omd_itr;
+                if (! omd.IsSetSubname()) continue;
+                const string& str = omd.GetSubname();
+                COrgMod::TSubtype subtype = omd.GetSubtype();
+                if (subtype == COrgMod::eSubtype_metagenome_source) {
+                    if (m_MetaGenomeSource.empty()) {
+                        m_MetaGenomeSource = str;
+                    }
+                }
+            }
             if (m_IsWP) {
-                const CBioSource &bsrc = desc_it->GetSource();
-                if (! bsrc.IsSetOrgname()) break;
                 const COrgName& onp = bsrc.GetOrgname();
                 if (! onp.IsSetName()) break;
                 const COrgName::TName& nam = onp.GetName();
@@ -1021,6 +1033,7 @@ void CDeflineGenerator::x_SetFlags (
                         m_IsCrossKingdom = true;
                     }
                 }
+            }
             }
             break;
 
