@@ -55,7 +55,7 @@ USING_SCOPE(objects);
 const char* seqlitdbtag    = "SeqLit";
 const char* unkseqlitdbtag = "UnkSeqLit";
 
-enum struct ETokenType 
+enum class ETokenType 
 {
     eUnknown,   
     eJoin,      
