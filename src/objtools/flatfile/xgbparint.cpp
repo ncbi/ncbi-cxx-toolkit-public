@@ -998,9 +998,6 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
 {
     auto ret = Ref(new CSeq_loc());
 
-    bool  took_choice = false;
-    char* p;
-
     CRef<CSeq_id>   new_id;
     CRef<CInt_fuzz> new_fuzz;
     auto            end_it = end(tokens);
