@@ -414,7 +414,7 @@ void CPerfTestApp::x_LoadIds(CNcbiIstream& in)
         string line;
         getline(in, line);
         NStr::TruncateSpacesInPlace(line);
-        if (line.empty()) continue;
+        if (line.empty() || NStr::StartsWith(line, '#')) continue;
         CSeq_id id(line);
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
         m_Ids.insert(idh);
