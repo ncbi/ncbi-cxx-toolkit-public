@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = test_remote_updater
+
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
