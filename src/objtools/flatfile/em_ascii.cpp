@@ -796,7 +796,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
         MemFree(pp->buf);
     pp->buf = NULL;
 
-    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
+    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, numerr, bioseq.GetId(), pp->accver);
 
     if (loc.NotEmpty() && loc->IsMix()) {
         allow_crossdb_featloc     = pp->allow_crossdb_featloc;

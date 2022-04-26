@@ -129,7 +129,6 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp, CBioseq& bioseq, P
     char* q;
     char* r;
     bool  locmap;
-    bool  sitemap;
     bool  allow_crossdb_featloc;
     Int4  i;
     int   numerr;
@@ -157,7 +156,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp, CBioseq& bioseq, P
         MemFree(pp->buf);
     pp->buf = NULL;
 
-    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bioseq.GetId(), pp->accver);
+    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, numerr, bioseq.GetId(), pp->accver);
 
     if (loc.Empty()) {
         MemFree(p);

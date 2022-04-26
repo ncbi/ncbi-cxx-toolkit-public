@@ -1133,10 +1133,9 @@ static void GetCdRegionCB(InfoBioseqPtr ibp, CSeq_feat& feat, TCodeBreakList& co
             char* pos = SimpleValuePos(qval);
 
             int  num_errs = 0;
-            bool locmap   = false,
-                 sitesmap = false;
+            bool locmap   = false;
 
-            CRef<CSeq_loc> location = xgbparseint_ver(pos, locmap, sitesmap, num_errs, ibp->ids, accver);
+            CRef<CSeq_loc> location = xgbparseint_ver(pos, locmap, num_errs, ibp->ids, accver);
             if (location.NotEmpty())
                 code_break->SetLoc(*location);
 
