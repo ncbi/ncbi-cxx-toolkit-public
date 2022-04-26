@@ -994,11 +994,12 @@ void CDeflineGenerator::x_SetFlags (
             }
             const CBioSource &bsrc = desc_it->GetSource();
             if (! bsrc.IsSetOrgname()) break;
-            FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, bsrc) {
-                const COrgMod& omd = **omd_itr;
-                if (! omd.IsSetSubname()) continue;
-                const string& str = omd.GetSubname();
-                COrgMod::TSubtype subtype = omd.GetSubtype();
+            const COrgName &onp = bsrc.GetOrgname();
+            if (! onp.IsSetMod()) break;
+            for (auto& omd : onp.GetMod()) {
+                if (! omd->IsSetSubname()) continue;
+                const string& str = omd->GetSubname();
+                COrgMod::TSubtype subtype = omd->GetSubtype();
                 if (subtype == COrgMod::eSubtype_metagenome_source) {
                     if (m_MetaGenomeSource.empty()) {
                         m_MetaGenomeSource = str;
