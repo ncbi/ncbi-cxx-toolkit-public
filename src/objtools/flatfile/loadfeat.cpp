@@ -907,14 +907,13 @@ static void FilterDb_xref(CSeq_feat& feat, Parser::ESource source)
 
 bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, char* name)
 {
-    bool sitesmap;
     bool locmap = true;
     int  num_errs;
 
     *hard_err = false;
     num_errs  = 0;
 
-    CRef<CSeq_loc> loc = xgbparseint_ver(location, locmap, sitesmap, num_errs, ids, pp->accver);
+    CRef<CSeq_loc> loc = xgbparseint_ver(location, locmap, num_errs, ids, pp->accver);
 
     if (loc.NotEmpty()) {
         TSeqLocList locs;
@@ -1344,7 +1343,6 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
     char* p;
     char* q;
     bool  fake1;
-    bool  fake2;
     Int4  range;
     Int4  pars;
     Char  ch;
@@ -1382,7 +1380,7 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
     *p      = ch;
 
     xinstall_gbparse_error_handler(fta_fake_gbparse_err_handler);
-    ret = xgbparseint_ver(loc_str, fake1, fake2, fake3, seqids, accver);
+    ret = xgbparseint_ver(loc_str, fake1, fake3, seqids, accver);
     xinstall_gbparse_error_handler(NULL);
 
     if (ret.Empty()) {

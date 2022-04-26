@@ -177,7 +177,7 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
         MemFree(pp->buf);
     pp->buf = NULL;
 
-    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, sitemap, numerr, bsp.GetId(), pp->accver);
+    CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, numerr, bsp.GetId(), pp->accver);
     if (loc.Empty()) {
         MemFree(p);
         return true;
