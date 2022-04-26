@@ -52,6 +52,8 @@ static inline bool x_IsThrowable(EIO_Status status)
     ||  defined(NCBI_COMPILER_ANY_CLANG)
     // For C++ STLs that have a bug that sentry ctor does not include try/catch
     // so exceptions leak instead of setting badbit as the standard requires.
+    // https://bugs.llvm.org/show_bug.cgi?id=48912
+    // https://github.com/llvm/llvm-project/issues/48256
     return false;
 #else
     return status != eIO_Timeout ? true : false;
