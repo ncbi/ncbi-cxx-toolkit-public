@@ -81,6 +81,10 @@ public:
             return m_Refs;
         }
 
+    size_t GetRefCount() const
+        {
+            return m_Refs.size();
+        }
     size_t GetRefIndex(const string& name) const;
     const string& GetRefName(size_t index) const
         {
@@ -114,6 +118,20 @@ struct SBamIndexDefs
     };
     typedef uint32_t TBin;
     typedef uint8_t TIndexLevel;
+    // Unfortunately, the bins and index levels are reversly ordered
+    // smallest by size bins are at min index level (0) and has largest bin numbers
+    //   bin size = smallest, index level = smallest (=0), bin numbers = largest
+    // the largest by size bin is at max index level (variable) and has bin number = 0
+    //   bin size = largest, index level = largest, bin number = smallest (=0)
+    //
+    // To avoid ambiguity we use Min and Max always with Bin and {Index}Level
+    // MinBin refers to bins smallest size (unfortunately with largest bin numbers)
+    // MaxBin refers to the bin with largest size (unfortunately with smallest bin number = 0)
+    // Min{Index}Level refers to index level 0 (largest bin numbers, but smallest bin size)
+    // Max{Index}Level refers to max index level (smallest bin number, but largest bin size)
+    static const TBin kMaxBinNumber = 0; // single max bin (largest in size)
+    static const TIndexLevel kMinBinIndexLevel = 0; // there're multiple min bins (smallest in size)
+    
     typedef uint8_t TShift;
     static const TShift kLevelStepBinShift = 3;
     static const TShift kBAI_min_shift = 14;
@@ -121,7 +139,7 @@ struct SBamIndexDefs
 
     enum EIndexLevel : uint8_t {
         // number of index levels
-        kMinLevel = 0,
+        kMinLevel = 0, // bins smallest in size
         kLevel0 = kMinLevel,
         kLevel1 = kLevel0+1,
         kMaxLevel = kBAI_depth // special value, to be treated as actual max level
@@ -182,13 +200,28 @@ struct SBamIndexParams : public SBamIndexDefs
     {
         return GetBinSize(ToIndexLevel(level));
     }
+    constexpr TShift GetMinBinShift() const
+    {
+        return GetLevelBinShift(kMinBinIndexLevel);
+    }
     constexpr TSeqPos GetMinBinSize() const
     {
-        return GetBinSize(0);
+        return GetBinSize(kMinBinIndexLevel);
     }
     constexpr TSeqPos GetMaxBinSize() const
     {
         return GetBinSize(GetMaxIndexLevel());
+    }
+
+    // Min bin size is page size
+    constexpr TSeqPos GetPageSize() const
+    {
+        return GetMinBinSize();
+    }
+    // number of bits to shift to convert between page and position
+    constexpr TShift GetPageShift() const
+    {
+        return GetMinBinShift();
     }
 
     // normal TIndexLevel=0 - has smallest bin sizes and bins numbers are biggest
@@ -211,22 +244,34 @@ struct SBamIndexParams : public SBamIndexDefs
         return GetBinNumberBase(ToIndexLevel(level));
     }
     // base for bin numbers calculation
-    constexpr TBin GetBinNumberBase() const
+    constexpr TBin GetMinBinNumberBase() const
     {
         // kBinNumberBase == 4681 == 011111 in octal for 5 levels with 3 bits per level
-        return GetBinNumberBase(0);
+        return GetBinNumberBase(kMinBinIndexLevel);
     }
-    constexpr TBin GetFirstOverflowBin() const
+    constexpr TBin GetFirstOverflowBin(TIndexLevel level = 0) const
     {
-        return GetBinNumberBase(-1);
+        return GetBinNumberBase(level-1);
+    }
+    constexpr TBin GetFirstBin(TIndexLevel level) const
+    {
+        return GetBinNumberBase(level);
+    }
+    constexpr TBin GetLastBin(TIndexLevel level) const
+    {
+        return GetBinNumberBase(level-1)-1;
     }
     constexpr TBin GetPseudoBin() const
     {
         return GetFirstOverflowBin()+1;
     }
-    bool IsOverflowBin(TBin bin) const
+    bool IsOverflowBin(TBin bin, TIndexLevel level = 0) const
     {
-        return bin >= GetFirstOverflowBin();
+        return bin >= GetFirstOverflowBin(level);
+    }
+    bool IsOverflowPos(TSeqPos pos) const
+    {
+        return pos < GetMaxBinSize();
     }
     TBin GetBinNumberOffset(TSeqPos pos, TIndexLevel level) const
     {
@@ -244,13 +289,18 @@ struct SBamIndexParams : public SBamIndexDefs
     {
         return GetBinNumber(pos, ToIndexLevel(level));
     }
+    // return range of bins from an index level covering a sequence range
+    // the range may be empty (second < first) if sequence range is beyond index
+    pair<TBin, TBin> GetBinRange(COpenRange<TSeqPos> ref_range,
+                                 TIndexLevel index_level) const;
     TBin GetUpperBinNumber(TBin bin) const
     {
+        _ASSERT(bin != 0);
         return IsOverflowBin(bin)? 0: (bin-1)>>kLevelStepBinShift;
     }
-    TIndexLevel GetBinNumberIndexLevel(TBin bin) const
+    TIndexLevel Bin2IndexLevel(TBin bin) const
     {
-        TBin bin_start = GetBinNumberBase();
+        TBin bin_start = GetMinBinNumberBase();
         for ( TIndexLevel level = 0; ; ++level, bin_start >>= kLevelStepBinShift ) {
             if ( bin >= bin_start ) {
                 return level;
@@ -263,7 +313,7 @@ struct SBamIndexParams : public SBamIndexDefs
         auto local_min_shift = GetMinLevelBinShift();
         TSeqPos pos1 = range.GetFrom() >> local_min_shift;
         TSeqPos pos2 = range.GetTo() >> local_min_shift;
-        while ( pos1 != pos2 ) {
+        while ( level < GetMaxIndexLevel() && pos1 != pos2 ) {
             ++level;
             pos1 >>= kLevelStepBinShift;
             pos2 >>= kLevelStepBinShift;
@@ -273,7 +323,7 @@ struct SBamIndexParams : public SBamIndexDefs
 
     COpenRange<TSeqPos> GetSeqRange(TBin bin) const
     {
-        TIndexLevel level = GetBinNumberIndexLevel(bin);
+        TIndexLevel level = Bin2IndexLevel(bin);
         TSeqPos len = GetBinSize(level);
         TSeqPos index = bin - GetBinNumberBase(level);
         TSeqPos pos = index*len;
@@ -333,18 +383,6 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexParams
     // also adjusts argument ref_range to be within reference sequence
     CBGZFRange GetLimitRange(COpenRange<TSeqPos>& ref_range,
                              ESearchMode search_mode) const;
-    // add file ranges with alignments from specific index level
-    void AddLevelFileRanges(vector<CBGZFRange>& ranges,
-                            CBGZFRange limit_file_range,
-                            COpenRange<TSeqPos> ref_range,
-                            TIndexLevel index_level) const;
-    void AddLevelFileRanges(vector<CBGZFRange>& ranges,
-                            CBGZFRange limit_file_range,
-                            COpenRange<TSeqPos> ref_range,
-                            EIndexLevel index_level) const
-        {
-            AddLevelFileRanges(ranges, limit_file_range, ref_range, ToIndexLevel(index_level));
-        }
 
     CBGZFRange GetFileRange() const;
     vector<uint64_t> CollectEstimatedCoverage(TIndexLevel min_index_level,
@@ -372,6 +410,12 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexParams
         {
             return GetLevelBins(ToIndexLevel(level));
         }
+    // add file ranges with alignments from specific index level
+    // return first existing bin in the range
+    TBinsIter AddLevelFileRanges(vector<CBGZFRange>& ranges,
+                                 CBGZFRange limit_file_range,
+                                 pair<TBin, TBin> bin_range) const;
+    TBinsIter GetFirstExistingBin(pair<TBin, TBin> bin_range) const;
     
     TBins m_Bins;
     CBGZFRange m_UnmappedChunk;
@@ -929,6 +973,10 @@ public:
         {
             return m_Index.GetFileName();
         }
+    size_t GetRefCount() const
+        {
+            return GetHeader().GetRefCount();
+        }
     size_t GetRefIndex(const string& ref_label) const
         {
             return GetHeader().GetRefIndex(ref_label);
@@ -1480,7 +1528,7 @@ public:
         }
     TIndexLevel GetIndexLevel() const
         {
-            return GetBinNumberIndexLevel(GetIndexBin());
+            return Bin2IndexLevel(GetIndexBin());
         }
     
     Uint2 GetFlags() const
