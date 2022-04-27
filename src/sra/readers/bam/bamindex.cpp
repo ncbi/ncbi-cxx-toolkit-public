@@ -424,7 +424,7 @@ const char* SBamIndexRefIndex::Read(const char* buffer_ptr, const char* buffer_e
 vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts() const
 {
 #if 1
-    TSeqPos nBins = m_EstimatedLength >> GetLevelBinShift(0);
+    TSeqPos nBins = m_EstimatedLength >> GetMinLevelBinShift();
     vector<TSeqPos> aln_over_starts(nBins);
     for ( TSeqPos i = 0; i < nBins; ++i ) {
         // set limits
@@ -596,8 +596,6 @@ CBGZFRange SBamIndexRefIndex::GetLimitRange(COpenRange<TSeqPos>& ref_range,
     if ( ref_range.Empty() ) {
         return limit;
     }
-    //_ASSERT(ref_range.GetFrom() < GetMaxBinSize());
-    //_ASSERT(ref_range.GetToOpen() <= GetMaxBinSize()); not valid for BAI and len > 2^29
 
     if ( search_mode == eSearchByOverlap ) {
         if ( !m_Overlaps.empty() ) {
@@ -654,19 +652,59 @@ CBGZFRange SBamIndexRefIndex::GetLimitRange(COpenRange<TSeqPos>& ref_range,
 }
 
 
-void SBamIndexRefIndex::AddLevelFileRanges(vector<CBGZFRange>& ranges,
-                                           CBGZFRange limit_file_range,
-                                           COpenRange<TSeqPos> ref_range,
-                                           TIndexLevel index_level) const
+pair<SBamIndexRefIndex::TBin, SBamIndexRefIndex::TBin>
+SBamIndexParams::GetBinRange(COpenRange<TSeqPos> ref_range,
+                             TIndexLevel index_level) const
 {
-    TBin bin1 = GetBinNumber(ref_range.GetFrom(), index_level);
-    TBin bin2 = GetBinNumber(ref_range.GetTo(), index_level);
-    for ( auto it = lower_bound(m_Bins.begin(), m_Bins.end(), bin1); it != m_Bins.end() && it->m_Bin <= bin2; ++it ) {
+    pair<TBin, TBin> bin_range;
+    bin_range.first = GetBinNumber(ref_range.GetFrom(), index_level);
+    if ( IsOverflowBin(bin_range.first, index_level) ) {
+        // position is beyond index limit (can happen with BAI index)
+        // only min and max levels exist, and max level is always root bin
+        if ( index_level == GetMaxIndexLevel() ) {
+            bin_range.first = kMaxBinNumber;
+            bin_range.second = kMaxBinNumber;
+            return bin_range;
+        }
+        else if ( index_level != kMinBinIndexLevel ) {
+            // start bin is neither min nor max level - no bins to scan
+            bin_range.second = bin_range.first-1;
+            return bin_range;
+        }
+    }
+    bin_range.second = GetBinNumber(ref_range.GetTo(), index_level);
+    if ( IsOverflowBin(bin_range.second, index_level) ) {
+        // position is beyond index limit (can happen with BAI index)
+        // only min and max levels exist, and max level is always root bin
+        if ( index_level == GetMaxIndexLevel() ) {
+            bin_range.second = kMaxBinNumber;
+        }
+        else if ( index_level != kMinBinIndexLevel ) {
+            // end bin is neither min nor max level - scan to the end of bins of the level
+            bin_range.second = GetLastBin(index_level);
+        }
+    }
+    return bin_range;
+}
+
+
+SBamIndexRefIndex::TBins::const_iterator
+SBamIndexRefIndex::AddLevelFileRanges(vector<CBGZFRange>& ranges,
+                                      CBGZFRange limit_file_range,
+                                      pair<TBin, TBin> bin_range) const
+{
+    TBins::const_iterator ret = m_Bins.end();
+    for ( auto it = lower_bound(m_Bins.begin(), m_Bins.end(), bin_range.first);
+          it != m_Bins.end() && it->m_Bin <= bin_range.second;
+          ++it ) {
+        if ( ret == m_Bins.end() ) {
+            ret = it;
+        }
         for ( auto c : it->m_Chunks ) {
             if ( c.first < limit_file_range.first ) {
                 c.first = limit_file_range.first;
             }
-            if ( limit_file_range.second < c.second ) {
+            if ( limit_file_range.second && limit_file_range.second < c.second ) {
                 c.second = limit_file_range.second;
             }
             if ( c.first < c.second ) {
@@ -674,6 +712,21 @@ void SBamIndexRefIndex::AddLevelFileRanges(vector<CBGZFRange>& ranges,
             }
         }
     }
+    return ret;
+}
+
+
+SBamIndexRefIndex::TBinsIter
+SBamIndexRefIndex::GetFirstExistingBin(pair<TBin, TBin> bin_range) const
+{
+    TBinsIter ret = m_Bins.end();
+    for ( auto it = lower_bound(m_Bins.begin(), m_Bins.end(), bin_range.first);
+          it != m_Bins.end() && it->m_Bin <= bin_range.second;
+          ++it ) {
+        ret = it;
+        break;
+    }
+    return ret;
 }
 
 
@@ -1471,10 +1524,11 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
                                  size_t ref_index,
                                  COpenRange<TSeqPos> ref_range,
                                  TIndexLevel min_index_level,
-                                 TIndexLevel /*max_index_level*/,
+                                 TIndexLevel max_index_level,
                                  ESearchMode search_mode)
 {
     const SBamIndexRefIndex& ref = index.GetRef(ref_index);
+#if 0
     // set limits
     CBGZFRange limit = ref.GetLimitRange(ref_range, search_mode);
     if ( ref_range.Empty() ) {
@@ -1482,8 +1536,58 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
     }
     vector<CBGZFRange> ranges;
     for ( TIndexLevel level = min_index_level; level <= index.GetMaxIndexLevel(); ++level ) {
-        ref.AddLevelFileRanges(ranges, limit, ref_range, level);
+        ref.AddLevelFileRanges(ranges, limit, index.GetBinRange(ref_range, level));
     }
+#else
+    vector<CBGZFRange> ranges;
+    CBGZFRange limit;
+    // iterate index levels starting with 0 to set limits correctly
+    // iterate index levels till the end because alignments may be moved up
+    for ( TIndexLevel level = 0; level <= index.GetMaxIndexLevel(); ++level ) {
+        // omit ranges from lower index levels because they contain only low-level alignments
+        auto bin_range = index.GetBinRange(ref_range, level);
+        SBamIndexRefIndex::TBinsIter first_bin = ref.m_Bins.end();
+        if ( level >= min_index_level ) {
+            first_bin = ref.AddLevelFileRanges(ranges, limit, bin_range);
+        }
+        else {
+            first_bin = ref.GetFirstExistingBin(bin_range);
+        }
+        // update limit range
+        if ( search_mode == eSearchByOverlap ) {
+            // set file range limit from overlap fields
+            // most limiting overlap is on lowest index level, set it once
+            if ( !limit.first ) {
+                if ( index.is_CSI ) {
+                    // CSI overlaps are in bins
+                    if ( first_bin != ref.m_Bins.end() &&
+                         first_bin->m_Bin == bin_range.first ) {
+                        limit.first = first_bin->m_Overlap;
+                    }
+                }
+                else {
+                    // BAI overlaps are in a separate array, reflecting min level
+                    if ( level == kMinBinIndexLevel && !ref.m_Overlaps.empty() ) {
+                        size_t bin_index = bin_range.first-index.GetFirstBin(kMinBinIndexLevel);
+                        if ( bin_index < ref.m_Overlaps.size() ) {
+                            limit.first = ref.m_Overlaps[bin_index];
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            // set file range limit from previous bins
+            // limits from all levels matter, choose the most limiting one
+            if ( first_bin != ref.m_Bins.end() && first_bin != ref.m_Bins.begin() ) {
+                auto prev_bin = prev(first_bin);
+                if ( prev_bin->m_Bin >= index.GetFirstBin(level) ) {
+                    limit.first = max(limit.first, prev_bin->GetEndFilePos());
+                }
+            }
+        }
+    }
+#endif
     gfx::timsort(ranges.begin(), ranges.end());
     AddSortedRanges(ranges);
 }
