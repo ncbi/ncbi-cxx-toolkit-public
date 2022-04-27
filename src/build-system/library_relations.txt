@@ -1231,7 +1231,7 @@ pathogen_ctl_utils needs $(GPIPE_COMMON_LIBS)
 pathogen_ctl_utils needs bag_access
 pathogen_ctl_utils needs gpinit_access
 pathogen_ctl_utils needs gpipe_kmer
-pathogen_ctl_utils needs pathogen_connection
+pathogen_ctl_utils needs sra_cache
 pathogen_ctl_utils needs xvalidate
 pathogen_fill_taxa needs gpipe_common
 pathogen_target_loader needs gpinit_register
