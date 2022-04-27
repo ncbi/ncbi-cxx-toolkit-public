@@ -92,6 +92,10 @@ void CBamIndexTestApp::Init(void)
                             CArgDescriptions::eInteger,
                             "1");
 
+    arg_desc->AddOptionalKey("scan_for_long_alignments", "ScanForLongAlignments",
+                            "Scan for alignments longer than the argument",
+                            CArgDescriptions::eInteger);
+    
     arg_desc->AddOptionalKey("title", "Title",
                              "Title of generated Seq-graph",
                              CArgDescriptions::eString);
@@ -457,10 +461,47 @@ int CBamIndexTestApp::Run(void)
         }
     }
 
+    if ( args["scan_for_long_alignments"] ) {
+        TSeqPos min_length = args["scan_for_long_alignments"].AsInteger();
+        CBamIndex::TIndexLevel min_level = 0;
+        CBamIndex::TIndexLevel max_level = bam_raw_db.GetIndex().GetMaxIndexLevel();
+        while ( min_level < max_level &&
+                bam_raw_db.GetIndex().GetBinSize(min_level) < min_length ) {
+            ++min_level;
+        }
+        size_t total_long_count = 0;
+        for ( size_t ref_index = 0; ref_index < bam_raw_db.GetRefCount(); ++ref_index ) {
+            cout << "Scanning "<<bam_raw_db.GetRefName(ref_index)<<": "<<flush;
+            size_t long_count = 0;
+            for ( CBamRawAlignIterator it(bam_raw_db, bam_raw_db.GetRefName(ref_index),
+                                          CRange<TSeqPos>::GetWhole(),
+                                          min_level, max_level, CBamIndex::eSearchByStart);
+                  it; ++it ) {
+                if ( it.GetCIGARRefSize() < min_length ) {
+                    continue;
+                }
+                ++long_count;
+            }
+            if ( long_count ) {
+                cout << "found "<<long_count<<" long alignements"<<endl;
+                total_long_count += long_count;
+            }
+            else {
+                cout << "no long alignments found"<<endl;
+            }
+        }
+        if ( total_long_count ) {
+            cout << "found "<<total_long_count<<" long alignements in the whole file"<<endl;
+        }
+        else {
+            cout << "no long alignements found in the whole file"<<endl;
+        }
+    }
+    
     CBamMgr mgr;
     CBamDb bam_db;
     if ( args["sra"] ) {
-        bam_db = CBamDb(mgr, path, index_path);
+        bam_db = CBamDb(mgr, path, index_path, CBamDb::eUseAlignAccess);
     }
     bool single_thread = args["ST"];
     int min_quality = args["min_quality"].AsInteger();
