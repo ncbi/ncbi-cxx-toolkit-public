@@ -458,7 +458,17 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 if (asn_type == "Bioseq-set") {
                     ProcessBSSReleaseFile();
                 } else if (asn_type == "Seq-submit") {
-                    ProcessSSMReleaseFile();
+                    const auto commandLineOptions = m_Options;
+                    m_Options |= CValidator::eVal_seqsubmit_parent;
+                    try {
+                        ProcessSSMReleaseFile();
+                    }
+                    catch (CException& e) {
+                        m_Options = commandLineOptions;
+                        throw;
+                    }
+                    m_Options = commandLineOptions;
+
                 } else {
                     LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is neither a Seq-submit nor Bioseq-set; do not use -batch to process.");
                 }
