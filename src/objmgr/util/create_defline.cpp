@@ -995,20 +995,20 @@ void CDeflineGenerator::x_SetFlags (
             const CBioSource &bsrc = desc_it->GetSource();
             if (! bsrc.IsSetOrgname()) break;
             const COrgName &onp = bsrc.GetOrgname();
-            if (! onp.IsSetMod()) break;
-            for (auto& omd : onp.GetMod()) {
-                if (! omd->IsSetSubname()) continue;
-                const string& str = omd->GetSubname();
-                COrgMod::TSubtype subtype = omd->GetSubtype();
-                if (subtype == COrgMod::eSubtype_metagenome_source) {
-                    if (m_MetaGenomeSource.empty()) {
-                        m_MetaGenomeSource = str;
+            if (onp.IsSetMod()) {
+                for (auto& omd : onp.GetMod()) {
+                    if (omd->IsSetSubname()) {
+                        const string& str = omd->GetSubname();
+                        COrgMod::TSubtype subtype = omd->GetSubtype();
+                        if (subtype == COrgMod::eSubtype_metagenome_source) {
+                            if (m_MetaGenomeSource.empty()) {
+                                m_MetaGenomeSource = str;
+                            }
+                        }
                     }
                 }
             }
             if (m_IsWP) {
-                const COrgName& onp = bsrc.GetOrgname();
-                if (! onp.IsSetName()) break;
                 const COrgName::TName& nam = onp.GetName();
                 if (! nam.IsPartial()) break;
                 const CPartialOrgName& pon = nam.GetPartial();
