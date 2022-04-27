@@ -51,145 +51,183 @@ struct SRangeQuery {
     int countHi;
 };
 
-static bool s_Test(const char* description,
-                   const char* bam_name, const char* ref_name,
-                   const char* index_suffix,
-                   CBamDb::EUseAPI api,
-                   CBamAlignIterator::ESearchMode search_mode,
-                   const SRangeQuery& query)
+
+static bool s_TestOnce(bool goodAll,
+                       CBamDb& bam, const char* ref_name,
+                       CBamAlignIterator::ESearchMode search_mode,
+                       const SRangeQuery& query,
+                       int min_level = -1,
+                       int max_level = -1)
+{
+    int count = 0;
+    CBamAlignIterator it;
+    int expected = 0;
+    if ( min_level <= 0 && (max_level == -1 || max_level >= 0) ) {
+        expected += query.count0;
+    }
+    if ( min_level <= 1 && (max_level == -1 || max_level >= 1) ) {
+        expected += query.count1;
+    }
+    if ( min_level <= 2 && (max_level == -1 || max_level >= 2) ) {
+        expected += query.countHi;
+    }
+    if ( min_level == -1 ) {
+        it = CBamAlignIterator(bam, ref_name, query.pos, query.end-query.pos, search_mode);
+    }
+    else {
+        it = CBamAlignIterator(bam, ref_name, query.pos, query.end-query.pos,
+                               min_level == -1? CBamIndex::kMinLevel: CBamIndex::EIndexLevel(min_level),
+                               max_level == -1? CBamIndex::kMaxLevel: CBamIndex::EIndexLevel(max_level),
+                               search_mode);
+        
+    }
+    for ( ; it; ++it ) {
+        ++count;
+    }
+    BOOST_CHECK_EQUAL(count, expected);
+    bool good = count == expected;
+    goodAll &= good;
+    return good;
+}
+
+
+static bool s_TestAllLevels(const char* description,
+                            const char* bam_name, const char* ref_name,
+                            const char* index_suffix,
+                            CBamDb::EUseAPI api,
+                            CBamAlignIterator::ESearchMode search_mode,
+                            const SRangeQuery& query)
 {
     LOG_POST("Testing "<<description<<" in "<<bam_name<<" with "<<index_suffix);
     bool good = true;
     string bam_path = CFile::MakePath(NCBI_GetTestDataPath(), bam_name);
     CBamMgr mgr;
     CBamDb bam(mgr, bam_path, bam_path+index_suffix, api);
-    TSeqPos pos = query.pos;
-    TSeqPos window = query.end-pos;
-    {{
-        int count = 0;
-        for ( CBamAlignIterator it(bam, ref_name, pos, window, search_mode); it; ++it ) {
-            ++count;
-        }
-        int expectedAll = query.count0 + query.count1 + query.countHi;
-        BOOST_CHECK_EQUAL(count, expectedAll);
-        good &= (count == expectedAll);
-    }}
+    BOOST_CHECK(s_TestOnce(good, bam, ref_name, search_mode, query));
     if ( !bam.UsesRawIndex() ) {
         return good;
     }
-    {{
-        int count = 0;
-        for ( CBamAlignIterator it(bam, ref_name, pos, window,
-                                   CBamIndex::kLevel0, CBamIndex::kLevel0, search_mode);
-              it; ++it ) {
-            ++count;
-        }
-        int expected0 = query.count0;
-        BOOST_CHECK_EQUAL(count, expected0);
-        good &= (count == expected0);
-    }}
-    {{
-        int count = 0;
-        for ( CBamAlignIterator it(bam, ref_name, pos, window,
-                                   CBamIndex::kLevel1, CBamIndex::kLevel1, search_mode);
-              it; ++it ) {
-            ++count;
-        }
-        int expected1 = query.count1;
-        BOOST_CHECK_EQUAL(count, expected1);
-        good &= (count == expected1);
-    }}
-    {{
-        int count = 0;
-        for ( CBamAlignIterator it(bam, ref_name, pos, window,
-                                   CBamIndex::kLevel1, CBamIndex::kMaxLevel, search_mode);
-              it; ++it ) {
-            ++count;
-        }
-        int expected1Up = query.count1 + query.countHi;
-        BOOST_CHECK_EQUAL(count, expected1Up);
-        good &= (count == expected1Up);
-    }}
-    {{
-        int count = 0;
-        for ( CBamAlignIterator it(bam, ref_name, pos, window,
-                                   CBamIndex::kLevel0, CBamIndex::kLevel1, search_mode);
-              it; ++it ) {
-            ++count;
-        }
-        int expected01 = query.count0 + query.count1;
-        BOOST_CHECK_EQUAL(count, expected01);
-        good &= (count == expected01);
-    }}
-    {{
-        int count = 0;
-        for ( CBamAlignIterator it(bam, ref_name, pos, window,
-                                   CBamIndex::kLevel0, CBamIndex::kMaxLevel, search_mode);
-              it; ++it ) {
-            ++count;
-        }
-        int expected0Up = query.count0 + query.count1 + query.countHi;
-        BOOST_CHECK_EQUAL(count, expected0Up);
-        good &= (count == expected0Up);
-    }}
+    BOOST_CHECK(s_TestOnce(good, bam, ref_name, search_mode, query, 0, 0));
+    BOOST_CHECK(s_TestOnce(good, bam, ref_name, search_mode, query, 1, 1));
+    BOOST_CHECK(s_TestOnce(good, bam, ref_name, search_mode, query, 1));
+    BOOST_CHECK(s_TestOnce(good, bam, ref_name, search_mode, query, 0, 1));
+    BOOST_CHECK(s_TestOnce(good, bam, ref_name, search_mode, query, 0));
     return good;
 }
 
-BOOST_AUTO_TEST_CASE(BamQuery1AO)
+
+static bool s_TestAllAPI(const char* description,
+                         const char* bam_name, const char* ref_name,
+                         CBamAlignIterator::ESearchMode search_mode,
+                         const SRangeQuery& query)
 {
-    BOOST_CHECK(s_Test("lookup of alignments crossing bin border",
-                       "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
-                       ".bai", CBamDb::eUseAlignAccess,
-                       CBamAlignIterator::eSearchByOverlap,
-                       { 16398, 32768, 2, 1 }));
+    bool goodA = s_TestAllLevels(description, bam_name, ref_name,
+                                 ".bai", CBamDb::eUseAlignAccess,
+                                 search_mode, query);
+    BOOST_CHECK(goodA);
+    bool goodB = s_TestAllLevels(description, bam_name, ref_name,
+                                 ".bai", CBamDb::eUseRawIndex,
+                                 search_mode, query);
+    BOOST_CHECK(goodB);
+    bool goodC = s_TestAllLevels(description, bam_name, ref_name,
+                                 ".csi", CBamDb::eUseRawIndex,
+                                 search_mode, query);
+    BOOST_CHECK(goodC);
+    return goodA & goodB & goodC;
 }
 
 
-BOOST_AUTO_TEST_CASE(BamQuery1BO)
+BOOST_AUTO_TEST_CASE(BamQuery0Overlap)
 {
-    BOOST_CHECK(s_Test("lookup of alignments crossing bin border",
-                       "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
-                       ".bai", CBamDb::eUseRawIndex,
-                       CBamAlignIterator::eSearchByOverlap,
-                       { 16398, 32768, 2, 1 }));
+    BOOST_CHECK(s_TestAllAPI("lookup of alignments within bin",
+                             "traces04/1000genomes3/ftp/data/NA19240/exome_alignment/"
+                             "NA19240.mapped.SOLID.bfast.YRI.exome.20111114.bam", "GL000207.1",
+                             CBamAlignIterator::eSearchByOverlap,
+                             { 50, 150, 2, 0, 0 }));
 }
 
 
-BOOST_AUTO_TEST_CASE(BamQuery1CO)
+BOOST_AUTO_TEST_CASE(BamQuery0Start)
 {
-    BOOST_CHECK(s_Test("lookup of alignments crossing bin border",
-                       "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
-                       ".csi", CBamDb::eUseRawIndex,
-                       CBamAlignIterator::eSearchByOverlap,
-                       { 16398, 32768, 2, 1 }));
+    BOOST_CHECK(s_TestAllAPI("lookup of alignments within bin",
+                             "traces04/1000genomes3/ftp/data/NA19240/exome_alignment/"
+                             "NA19240.mapped.SOLID.bfast.YRI.exome.20111114.bam", "GL000207.1",
+                             CBamAlignIterator::eSearchByStart,
+                             { 50, 150, 1, 0, 0 }));
 }
 
 
-BOOST_AUTO_TEST_CASE(BamQuery1AS)
+BOOST_AUTO_TEST_CASE(BamQuery1Overlap)
 {
-    BOOST_CHECK(s_Test("lookup of alignments crossing bin border",
-                       "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
-                       ".bai", CBamDb::eUseAlignAccess,
-                       CBamAlignIterator::eSearchByStart,
-                       { 16398, 32768, 2, 0 }));
+    BOOST_CHECK(s_TestAllAPI("lookup of alignments crossing bin border",
+                             "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
+                             CBamAlignIterator::eSearchByOverlap,
+                             { 16398, 32768, 2, 1 }));
 }
 
 
-BOOST_AUTO_TEST_CASE(BamQuery1BS)
+BOOST_AUTO_TEST_CASE(BamQuery1Start)
 {
-    BOOST_CHECK(s_Test("lookup of alignments crossing bin border",
-                       "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
-                       ".bai", CBamDb::eUseRawIndex,
-                       CBamAlignIterator::eSearchByStart,
-                       { 16398, 32768, 2, 0 }));
+    BOOST_CHECK(s_TestAllAPI("lookup of alignments crossing bin border",
+                             "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
+                             CBamAlignIterator::eSearchByStart,
+                             { 16398, 32768, 2, 0 }));
 }
 
 
-BOOST_AUTO_TEST_CASE(BamQuery1CS)
+BOOST_AUTO_TEST_CASE(BamQuery2Overlap)
 {
-    BOOST_CHECK(s_Test("lookup of alignments crossing bin border",
-                       "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
-                       ".csi", CBamDb::eUseRawIndex,
-                       CBamAlignIterator::eSearchByStart,
-                       { 16398, 32768, 2, 0 }));
+    BOOST_CHECK(s_TestAllAPI("lookup of long alignments crossing bin border",
+                             "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
+                             CBamAlignIterator::eSearchByOverlap,
+                             { 243499772, 243500032, 0, 0, 108 }));
+}
+
+
+BOOST_AUTO_TEST_CASE(BamQuery2Start)
+{
+    BOOST_CHECK(s_TestAllAPI("lookup of long alignments crossing bin border",
+                             "bam/hs108_sra.fil_sort.chr1.bam", "NC_000001.11",
+                             CBamAlignIterator::eSearchByStart,
+                             { 243499772, 243500032, 0, 0, 2 }));
+}
+
+
+BOOST_AUTO_TEST_CASE(BamQuery3Overlap)
+{
+    BOOST_CHECK(s_TestAllAPI("lookup of alignments crossing bin border",
+                             "traces04/1000genomes3/ftp/data/NA10851/alignment/"
+                             "NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam", "20",
+                             CBamAlignIterator::eSearchByOverlap,
+                             { 114719, 200000, 14533, 28, 7 }));
+}
+
+
+BOOST_AUTO_TEST_CASE(BamQuery3Start)
+{
+    BOOST_CHECK(s_TestAllAPI("lookup of alignments crossing bin border",
+                             "traces04/1000genomes3/ftp/data/NA10851/alignment/"
+                             "NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam", "20",
+                             CBamAlignIterator::eSearchByStart,
+                             { 114719, 200000, 14530, 26, 7 }));
+}
+
+
+BOOST_AUTO_TEST_CASE(BamQuery4Overlap)
+{
+    BOOST_CHECK(s_TestAllAPI("lookup of alignments crossing bin border",
+                             "traces04/1000genomes3/ftp/data/NA10851/alignment/"
+                             "NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam", "20",
+                             CBamAlignIterator::eSearchByOverlap,
+                             { 131077, 200000, 11928, 26, 6 }));
+}
+
+
+BOOST_AUTO_TEST_CASE(BamQuery4Start)
+{
+    BOOST_CHECK(s_TestAllAPI("lookup of alignments crossing bin border",
+                             "traces04/1000genomes3/ftp/data/NA10851/alignment/"
+                             "NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam", "20",
+                             CBamAlignIterator::eSearchByStart,
+                             { 131077, 200000, 11928, 26, 0 }));
 }
