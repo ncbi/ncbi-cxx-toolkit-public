@@ -291,17 +291,17 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
     }
 
     const auto& pp = pas.GetPP().GetPP();
-    if (!pp.empty()) {
+    if (! pp.empty()) {
         const auto& ppf = *pp.front();
         if (ppf.IsPubmedArticle()) {
             const eutils::CPubmedArticle& article = ppf.GetPubmedArticle();
             CRef<CPubmed_entry> pme = article.ToPubmed_entry();
             if (pme->IsSetMedent()) {
-                CMedline_entry& mle = pme->SetMedent();
+                const CMedline_entry& mle = pme->GetMedent();
                 if (mle.IsSetCit()) {
                     CRef<CPub> cit_art;
                     cit_art.Reset(new CPub);
-                    cit_art->SetArticle(mle.SetCit());
+                    cit_art->SetArticle().Assign(mle.GetCit());
                     return cit_art;
                 }
             }
