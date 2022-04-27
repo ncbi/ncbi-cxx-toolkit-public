@@ -121,9 +121,6 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
     if (args["w"]) {
         options |= CValidator::eVal_seqsubmit_parent;
     }
-    if ( NStr::Equal(args["a"].AsString(), "u")) {
-        options |= CValidator::eVal_seqsubmit_parent;
-    }
     if (args["q"]) {
         options |= CValidator::eVal_do_tax_lookup;
     }
