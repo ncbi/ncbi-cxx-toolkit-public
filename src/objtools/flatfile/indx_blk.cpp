@@ -978,44 +978,57 @@ static void sDelNonDigitTail(string& str)
  * 0 - all others
  *
  */
+
+static bool sIsUpperAlpha(char c) {
+    return (c >= 'A' && c <= 'Z');
+}
+
+
 Int4 IsNewAccessFormat(const Char* acnum)
 {
     const Char* p = acnum;
 
-    if (p == NULL || *p == '\0')
-        return (0);
+    if (!p || *p == '\0')
+        return 0;
 
-    if (p[0] >= 'A' && p[0] <= 'Z' && p[1] >= 'A' && p[1] <= 'Z') {
-        if (p[2] >= '0' && p[2] <= '9')
-            return (1);
+    if (sIsUpperAlpha(p[0]) && sIsUpperAlpha(p[1])) {
+        if (isdigit(p[2]))
+            return 1;
+
         if (p[2] == '_') {
-            if (p[3] >= '0' && p[3] <= '9')
-                return (2);
-            if (p[3] >= 'A' && p[3] <= 'Z' && p[4] >= 'A' && p[4] <= 'Z') {
-                if (p[5] >= 'A' && p[5] <= 'Z' && p[6] >= 'A' && p[6] <= 'Z' &&
-                    p[7] >= '0' && p[7] <= '9')
-                    return (4);
-                if (p[5] >= '0' && p[5] <= '9')
-                    return (6);
+            if (isdigit(p[3])) {
+                return 2;
             }
+            if (sIsUpperAlpha(p[3]) && sIsUpperAlpha(p[4])) {
+                if (sIsUpperAlpha(p[5]) && sIsUpperAlpha(p[6]) &&
+                    isdigit(p[7]))
+                    return 4;
+                if (isdigit(p[5]))
+                    return 6;
+            }
+            return 0;
         }
-        if (p[2] >= 'A' && p[2] <= 'Z' && p[3] >= 'A' && p[3] <= 'Z') {
-            if (p[4] >= 'A' && p[4] <= 'Z' && p[5] >= 'A' && p[5] <= 'Z' &&
-                p[6] >= '0' && p[6] <= '9')
-                return (8);
-            if (p[4] >= '0' && p[4] <= '9') {
-                if (p[5] >= '0' && p[5] <= '9' && p[6] == 'S' &&
-                    p[7] >= '0' && p[7] <= '9')
-                    return (7);
-                return (3);
+
+        if (sIsUpperAlpha(p[2]) && sIsUpperAlpha(p[3])) {
+            if (sIsUpperAlpha(p[4]) && sIsUpperAlpha(p[5]) &&
+                isdigit(p[6]))
+                return 8;
+
+            if (isdigit(p[4])) {
+                if (isdigit(p[5]) && p[6] == 'S' &&
+                    isdigit(p[7])) {
+                    return 7;
+                }
+                return 3;
             }
 
-            if (p[4] >= 'A' && p[4] <= 'Z' && p[5] >= '0' && p[6] <= '9')
-                return (5);
+            if (sIsUpperAlpha(p[4]) && isdigit(p[5]))
+                return 5;
         }
     }
-    return (0);
+    return 0;
 }
+
 
 /**********************************************************/
 static bool IsValidAccessPrefix(const char* acc, char** accpref)
