@@ -967,14 +967,15 @@ static void sDelNonDigitTail(string& str)
  * Here X is an alpha character, N - numeric one.
  * Return values:
  *
- * 1 - XXN      (AB123456)
- * 2 - XX_N     (NZ_123456)
- * 3 - XXXXN    (AAAA01000001)
- * 4 - XX_XXXXN (NZ_AAAA01000001)
- * 5 - XXXXXN   (AAAAA1234512)
- * 6 - XX_XXN   (NZ_AB123456)
- * 7 - XXXXNNSN (AAAA01S000001 - scaffolds)
- * 8 - XXXXXXN  (AAAAAA010000001)
+ * 1 - XXN        (AB123456)
+ * 2 - XX_N       (NZ_123456)
+ * 3 - XXXXN      (AAAA01000001)
+ * 4 - XX_XXXXN   (NZ_AAAA01000001)
+ * 5 - XXXXXN     (AAAAA1234512)
+ * 6 - XX_XXN     (NZ_AB123456)
+ * 7 - XXXXNNSN   (AAAA01S000001 - scaffolds)
+ * 8 - XXXXXXN    (AAAAAA010000001)
+ * 9 - XXXXXXNNSN (AAAAAA01S0000001 - scaffolds)
  * 0 - all others
  *
  */
@@ -982,7 +983,6 @@ static void sDelNonDigitTail(string& str)
 static bool sIsUpperAlpha(char c) {
     return (c >= 'A' && c <= 'Z');
 }
-
 
 Int4 IsNewAccessFormat(const Char* acnum)
 {
@@ -1011,8 +1011,13 @@ Int4 IsNewAccessFormat(const Char* acnum)
 
         if (sIsUpperAlpha(p[2]) && sIsUpperAlpha(p[3])) {
             if (sIsUpperAlpha(p[4]) && sIsUpperAlpha(p[5]) &&
-                isdigit(p[6]))
+                isdigit(p[6])) {
+                if(isdigit(p[7]) && p[8] == 'S' &&
+                   isdigit(p[9])) {
+                    return 9;
+                }
                 return 8;
+            }
 
             if (isdigit(p[4])) {
                 if (isdigit(p[5]) && p[6] == 'S' &&
@@ -1037,7 +1042,7 @@ static bool IsValidAccessPrefix(const char* acc, char** accpref)
     if (i == 0 || accpref == NULL)
         return false;
 
-    if (i > 2 && i < 9)
+    if (i > 2 && i < 10)
         return true;
 
     char** b = accpref;
@@ -1602,7 +1607,19 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
                     if (acnum[i] < '0' || acnum[i] > '9')
                         badac = true;
             }
-        } else if (accformat == 0) {
+        } else if (accformat == 9) {
+            if (len < 16 || len > 17) {
+                badac = true;
+            } 
+            else {
+                for (i = 9; i< len && badac == false; ++i) {
+                    if (!isdigit(acnum[i])) {
+                        badac = true;
+                    }
+                }
+            }
+        } 
+        else if (accformat == 0) {
             if (len != 6 && len != 10)
                 badac = true;
             else if (acnum[0] >= 'A' && acnum[0] <= 'Z') {
