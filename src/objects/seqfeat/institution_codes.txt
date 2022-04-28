@@ -1258,7 +1258,6 @@ CMBY	s	Camberley Museum
 CMC<MEX>	s	Coleccion Mastozoologica del Centro de Investigacion en Biodiversidad y Conservacion,Universidad Autonoma del Estado de Morelos			
 CMC<USA-MI>	s	Central Michigan University, Department of Biology			
 CMCC	c	National Center for Medical Culture Collections			
-CMCNA	s	Museo de Ciencias Naturales y Antropologicas "Prof. A. Serrano"			
 CMEI	s	Clements' Museum of Exotic Insects			
 CMERSC	s	Central Minerals and Environmental Resources Science Center			
 CMFRI	s	Central Marine Fisheries Research Institute	FMRI		
@@ -1266,7 +1265,7 @@ CMGP	s	Central Museum of Geological Prospecting
 CMH	s	Canadian Museum of History			
 CMIZASDPRK	s	Custody Museum			
 CMKKU	c	Clinical Diagnostic Microbiology Srinagarind Hospital, Faculty of Medicine			
-CML	s	Universidad Nacional de Tucuman, Coleccion de Mamiferos Lillo (Argentina)			
+CML	s	Universidad Nacional de Tucuman, Coleccion de Mamiferos Lillo			
 CML<BRA>	c	Colecao Micologica de Lavras			
 CMM	s	Bradford Art Galleries and Museums, Natural Sciences Department			
 CMM<BRA>	c	Culture Collection of Phytopathogenic Fungi  (Colecao de Culturas de Fungos Fitopatogenicos Prof. Maria Menezes)			
@@ -2085,7 +2084,6 @@ FDG	s	Guyana Forestry Commission
 FDLW	s	University of Wisconsin Center, Biology Department			
 FDNR	s	Florida Department of Natural Resources			
 FDUC	s	Fairleigh Dickinson University [collection transferred to FSCA].			
-FDVC	s	De La Villa, Francisco			
 FEN	s	Lycee Felix Esclangon, Region PACA			
 FER	s	Universita de Ferrara, Dipartimento di Biologia - Sezione di Botanica			
 FERM	c	Patent and Bio-Resource Center, National Institute of Advanced Industrial Science and Technology (AIST)			
@@ -2103,7 +2101,6 @@ FG	s	Palaontologische Hauptsammlung der Bergakadmie
 FGC	s	Grassland Research Institute, Chinese Academy of Agricultural Sciences			
 FGG	s	Faculty of Geology and Geophysis			
 FGGUB	s	Facultatea de Geologie si Geofisca			
-FGIC	s	Francois Genier			
 FGSC	c	Fungal Genetics Stock Center			
 FH	s	The Farlow Herbarium, Harvard University Herbaria			
 FHI	s	Forestry Research Institute of Nigeria			
@@ -5187,7 +5184,6 @@ NKME	s	Naturkundemuseum Erfurt
 NKMU<CHN>	s	Nankai University Museum			
 NKU	s	Nankai University, Biology Department			
 NKUM	s	Nankai University			
-NLEC	s	Neal L. Evenhuis			
 NLH	s	Agricultural University of Norway, Department of Biology and Nature Conservation			
 NLHD	s	Niedersachsisches Landesmuseum			
 NLPS	s	Nottingham Literary and Philosophical Society			
