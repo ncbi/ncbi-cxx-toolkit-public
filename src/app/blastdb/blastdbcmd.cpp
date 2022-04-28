@@ -250,7 +250,6 @@ CBlastDBCmdApp::x_ProcessEntry(CBlastDB_Formatter & fmt)
    		               "Entry or entries not found in BLAST database");
    		}
     }
-
    	return (err_found) ? 1:0;
 }
 
@@ -350,6 +349,7 @@ CBlastDBCmdApp::x_InitBlastDB_TaxIdList()
    		m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype));
    	}
 }
+
 
 int
 CBlastDBCmdApp::x_ProcessBatchEntry_NoDup(CBlastDB_Formatter & fmt)
@@ -506,15 +506,8 @@ CBlastDBCmdApp::x_InitBlastDB()
     const CArgs& args = GetArgs();
 
     CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(args[kArgDbType].AsString());
-    if (args["OidMask"].AsBoolean()) {
-    	CRef<CSeqDBGiList> oid_list(new CSeqDBGiList());
-    	oid_list->SetMaskOpts(EOidMaskType::fExcludeModel);
-   		m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype, oid_list.GetPointer()));
-    }
-    else {
-    	m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype));
-    	m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
-    }
+    m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype));
+    m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
 }
 
 void
@@ -891,9 +884,6 @@ void CBlastDBCmdApp::Init()
                      ":\n\te.g.: 555, AC147927, 'gnl|dbname|tag', or 'all' "
                      "to select all\n\tsequences in the database",
                      CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("id_type", "id_type",
-                     "id type",
-                     CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("entry_batch", "input_file",
                  "Input file for batch processing (Format: one entry per line, seq id \n"
@@ -956,6 +946,7 @@ void CBlastDBCmdApp::Init()
         arg_desc->SetDependency("metadata", CArgDescriptions::eExcludes,
                                 string(exclusions_m[i]));
     }
+
     arg_desc->AddOptionalKey("metadata_output_prefix", "",
     						"Path prefix for location of database files in metadata", CArgDescriptions::eString);
     arg_desc->SetDependency("metadata_output_prefix", CArgDescriptions::eRequires, "metadata");
@@ -1121,9 +1112,6 @@ void CBlastDBCmdApp::Init()
                             "info");
     arg_desc->AddFlag("long_seqids", "Use long seq id for fasta deflines", true);
     arg_desc->SetDependency("long_seqids", CArgDescriptions::eExcludes, "info");
-
-    arg_desc->AddFlag("OidMask", "Apply Oid Mask", true);
-
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -1158,17 +1146,6 @@ int CBlastDBCmdApp::Run(void)
                 out << blastdb_fmt.Write(*db) << NcbiEndl;
             }
             return status;
-        }
-
-        if (args["id_type"].HasValue()) {
-        	CSeq_id id(args["id_type"].AsString());
-        	if (id.IdentifyAccession() & CSeq_id::fAcc_predicted) {
-        		cerr << "Predicted" << endl;
-        	}
-        	else {
-        		cerr << "Not Predicted" << endl;
-        	}
-        	return status;
         }
 
         if (args["info"]) {
