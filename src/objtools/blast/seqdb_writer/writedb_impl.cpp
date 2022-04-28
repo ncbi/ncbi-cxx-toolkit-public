@@ -61,7 +61,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
                              bool           long_ids,
                              bool           use_gi_mask,
                              EBlastDbVersion    dbver,
-                             bool           limit_defline)
+                             bool           limit_defline,
+                             Uint8          oid_masks)
     : m_Dbname           (dbname),
       m_Protein          (protein),
       m_Title            (title),
@@ -79,7 +80,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_HaveSequence     (false),
       m_LongSeqId        (long_ids),
       m_LmdbOid          (0),
-      m_limitDefline     (protein? limit_defline: false)
+      m_limitDefline     (protein? limit_defline: false),
+      m_OidMasks         (oid_masks)
 {
     CTime now(CTime::eCurrent);
 
@@ -1185,7 +1187,8 @@ void CWriteDB_Impl::x_Publish()
                                                m_MaxFileSize,
                                                m_MaxVolumeLetters,
                                                m_Indices,
-                                               m_DbVersion));
+                                               m_DbVersion,
+                                               m_OidMasks));
 
             m_VolumeList.push_back(m_Volume);
 

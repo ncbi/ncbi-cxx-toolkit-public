@@ -160,7 +160,8 @@ public:
              bool           long_ids = false,
              bool           use_gi_mask = false,
              EBlastDbVersion    dbver = eBDB_Version4,
-             bool			limit_defline = false);
+             bool			limit_defline = false,
+             Uint8          oid_masks = EOidMaskType::fNone);
 
     /// Destructor.
     ///

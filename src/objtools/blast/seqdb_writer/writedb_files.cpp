@@ -221,6 +221,17 @@ unsigned int CWriteDB_File::Write(const CTempString & data)
     return m_Offset;
 }
 
+unsigned int CWriteDB_File::Write(const char *  data, int length)
+{
+    _ASSERT(m_Created);
+    m_RealFile.write(data, length);
+
+    m_Offset += length;
+    return m_Offset;
+}
+
+
+
 string CWriteDB_File::MakeShortName(const string & base, int index)
 {
     ostringstream fns;

@@ -97,6 +97,41 @@ private:
     vector<TGi> m_Gi;
 };
 
+class CWriteDB_OidList : public CWriteDB_File {
+public:
+
+    CWriteDB_OidList(const string & dbname,
+                     bool           protein,
+                     int            index,
+                     Uint8          max_fsize,
+                     EOidMaskType   mask_type);
+
+    ~CWriteDB_OidList() {
+    	if (m_Map) {
+    		delete [] m_Map;
+    	}
+    };
+
+    void AddOid(int oid) {
+        m_OidList.push_back((uint32_t)oid);
+    }
+    /// Total num of oids in db or vol
+    void Close( int total_oids) {
+    	m_TotalOids = total_oids;
+    	CWriteDB_File::Close();
+    }
+private:
+    void x_Flush();
+    void x_CreateBitMap(int num_oids);
+    void x_CreateMaskFile();
+
+    EOidMaskType m_Type;
+    vector<uint32_t> m_OidList;
+    int m_TotalOids;
+    uint8_t * m_Map;
+    size_t m_MapSize;
+};
+
 
 /// CWriteDB_Volume class
 ///
@@ -133,7 +168,8 @@ public:
                     Uint8              max_file_size,
                     Uint8              max_letters,
                     EIndexType         indices,
-                    EBlastDbVersion dbver = eBDB_Version4);
+                    EBlastDbVersion dbver = eBDB_Version5,
+                    Uint8              oid_masks = EOidMaskType::fNone);
                     
 
     /// Destructor.
@@ -252,6 +288,7 @@ private:
     int              m_Index;       ///< Index of this volume (1 based).
     EIndexType       m_Indices;     ///< Indices are sparse, full, or disabled.
     EBlastDbVersion  m_DbVersion;   ///< Blast DB version
+    Uint8            m_OidMasks;    ///< Oid masks
 
     // Status.
 
@@ -270,6 +307,7 @@ private:
     CRef<CWriteDB_Isam> m_TraceIsam; ///< Trace ID index (pti+ptd or nti+ntd).
     CRef<CWriteDB_Isam> m_HashIsam;  ///< Hash index (phi+phd or nhi+nhd).
     CRef<CWriteDB_GiIndex> m_GiIndex;///< OID->GI lookup (pgx or ngx).
+    CRef<CWriteDB_OidList> m_ExModelList;
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )

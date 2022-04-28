@@ -323,6 +323,9 @@ void CMakeBlastDBApp::Init()
              CArgDescriptions::eInputFile);
     arg_desc->SetDependency("taxid_map", CArgDescriptions::eRequires, "parse_seqids");
 
+    arg_desc->AddOptionalKey("oid_masks", "oid_masks",
+    		                 "0x01 Exclude Model", CArgDescriptions::eInteger);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -1149,6 +1152,10 @@ void CMakeBlastDBApp::x_BuildDatabase()
     	limit_defline = true;
     }
 #endif
+    Uint8 oid_masks = 0;
+    if(args["oid_masks"]) {
+    	oid_masks = args["oid_masks"].AsInteger();
+    }
     m_DB.Reset(new CBuildDatabase(dbname,
                                   title,
                                   is_protein,
@@ -1157,7 +1164,8 @@ void CMakeBlastDBApp::x_BuildDatabase()
                                   m_LogFile,
                                   long_seqids,
                                   dbver,
-                                  limit_defline));
+                                  limit_defline,
+                                  oid_masks));
 
 #if _BLAST_DEBUG
     if (args["verbose"]) {

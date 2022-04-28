@@ -49,7 +49,8 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                  Uint8          max_file_size,
                                  Uint8          max_letters,
                                  EIndexType     indices,
-                                 EBlastDbVersion dbver)                                 
+                                 EBlastDbVersion dbver,
+                                 Uint8           oid_masks)
     : m_DbName      (dbname),
       m_Protein     (protein),
       m_Title       (title),
@@ -57,6 +58,7 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
       m_Index       (index),
       m_Indices     (indices),
       m_DbVersion   (dbver),
+      m_OidMasks    (oid_masks),
       m_OID         (0),
       m_Open        (true)
 {
@@ -130,7 +132,14 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                              protein,
                                              index,
                                              max_file_size));
+    }
 
+    if (m_OidMasks & EOidMaskType::fExcludeModel) {
+    	m_ExModelList.Reset(new CWriteDB_OidList(dbname,
+       		                                     protein,
+       		                                     index,
+       		                                     max_file_size,
+       		                                     EOidMaskType::fExcludeModel));
     }
 }
 
@@ -281,6 +290,22 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
         }
     }
 
+    if (m_ExModelList.NotEmpty()) {
+    	size_t model_id_count = 0;
+    	size_t num_accs = 0;
+    	ITERATE(TIdList, id, idlist) {
+    		if ((*id)->IsGi()) {
+    			continue;
+    		}
+    		if ((*id)->IdentifyAccession() & CSeq_id::fAcc_predicted) {
+    			model_id_count ++;
+    		}
+    		num_accs ++;
+    	}
+    	if(model_id_count == num_accs) {
+    		m_ExModelList->AddOid(m_OID);
+    	}
+    }
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     for(int col_i = 0; col_i < (int)m_Columns.size(); col_i++) {
@@ -335,6 +360,11 @@ void CWriteDB_Volume::Close()
         }
     }
 
+    if (m_ExModelList.NotEmpty()) {
+    	m_ExModelList->Close(GetOID());
+    }
+
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     NON_CONST_ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
@@ -369,6 +399,11 @@ void CWriteDB_Volume::RenameSingle()
             m_HashIsam->RenameSingle();
         }
     }
+
+    if (m_ExModelList.NotEmpty()) {
+    	m_ExModelList->RenameSingle();
+    }
+
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
@@ -407,6 +442,10 @@ void CWriteDB_Volume::RenameFileIndex(unsigned int num_digits)
         if (m_HashIsam.NotEmpty()) {
             m_HashIsam->RenameFileIndex(num_digits);
         }
+    }
+
+    if (m_ExModelList.NotEmpty()) {
+    	m_ExModelList->RenameFileIndex(num_digits);
     }
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -448,6 +487,11 @@ void CWriteDB_Volume::ListFiles(vector<string> & files) const
     if (m_GiIndex.NotEmpty()) {
         files.push_back(m_GiIndex->GetFilename());
     }
+
+    if (m_ExModelList.NotEmpty()) {
+    	files.push_back(m_ExModelList->GetFilename());
+    }
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     ITERATE(vector< CRef<CWriteDB_Column> >, iter, m_Columns) {
@@ -524,6 +568,87 @@ void CWriteDB_Volume::AddColumnMetaData(int            col_id,
     m_Columns[col_id]->AddMetaData(key, value);
 }
 #endif
+
+CWriteDB_OidList::CWriteDB_OidList(const string & dbname,
+                     	 	       bool           protein,
+                                   int            index,
+                                   Uint8          max_fsize,
+                                   EOidMaskType   mask_type)
+    : CWriteDB_File (dbname, SeqDB_GetOidMaskFileExt(protein, mask_type), index, max_fsize, false),
+      m_Type(mask_type), m_TotalOids(0), m_Map(NULL), m_MapSize(0) { }
+
+void CWriteDB_OidList::x_CreateBitMap(int num_oids)
+{
+    const uint32_t BITWIDTH = 8U * sizeof(uint8_t);
+    m_MapSize = (size_t) ((num_oids - 1U) / BITWIDTH + 1U);
+
+    if (m_Map != NULL) {
+    	NCBI_THROW(CWriteDBException, eArgErr, "Bit map exists");
+    }
+
+    try {
+    	m_Map = new uint8_t[m_MapSize];
+    }
+    catch (CException & e) {
+    	NCBI_THROW(CWriteDBException, eArgErr, "Error allocatong memory for bit map");
+    }
+
+    memset(m_Map, 0xFF, m_MapSize);
+
+	// Define bitmask.
+	const int BITSHIFT = 3;
+	const uint32_t BITMASK = (1U << BITSHIFT) - 1U;    // 0b111 = 0x7
+
+	// Get address of mask and its allocated length in bytes.
+	uint8_t* mask = (uint8_t*) m_Map;
+
+	// For each oid in the set...
+	ITERATE(vector<uint32_t>, oid, m_OidList) {
+
+	    // Calculate byte offset into mask.
+	    size_t offset = *oid >> BITSHIFT;
+
+	    // Check for overrun of the mask memory.
+	    if (offset >= m_MapSize) {
+	        // Bail out.
+	        NCBI_THROW(CWriteDBException, eArgErr, "overrun of mask memory");
+	    }
+
+	    // Create byte mask.
+	    // First oid of each group of 8 gets MSB (bit 7),
+	    // and last of 8 gets LSB (bit 0).
+	    uint8_t mask_bit = (uint8_t) (1U << (7U - *oid & BITMASK));
+
+	    // OR byte mask into mask array.
+	    if (m_Type & (EOidMaskType::fExcludeModel)) {
+	    	mask[offset] &=(~mask_bit);
+    	}
+	}
+
+}
+
+void CWriteDB_OidList::x_CreateMaskFile()
+{
+    // Write max oid in big-endian form to mask file.
+    uint8_t buffer[sizeof(uint32_t)];
+    uint32_t max_oid = m_TotalOids - 1U;
+    Create();
+    WriteInt4(max_oid); // This api writes Big Endian
+    Write((char *) m_Map, m_MapSize);
+}
+
+void CWriteDB_OidList::x_Flush() {
+
+    Int4 num_oids = m_OidList.size();
+
+    LOG_POST(Info << "Num of excluded oids" << num_oids);
+    if (!num_oids || !m_TotalOids ){
+    	LOG_POST(Info<< "No oid list created for mode " << m_Type);
+    	return;
+    }
+    x_CreateBitMap(m_TotalOids);
+    x_CreateMaskFile();
+}
 
 END_NCBI_SCOPE
 

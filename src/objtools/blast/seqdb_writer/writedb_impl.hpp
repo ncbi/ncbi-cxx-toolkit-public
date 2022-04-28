@@ -83,8 +83,9 @@ public:
                   bool               parse_ids,
                   bool               long_ids,
                   bool               use_gi_mask,
-                  EBlastDbVersion dbver = eBDB_Version4,
-                  bool               limit_defline = false);
+                  EBlastDbVersion    dbver = eBDB_Version4,
+                  bool               limit_defline = false,
+                  Uint8              oid_masks = EOidMaskType::fNone);
 
     /// Destructor.
     ~CWriteDB_Impl();
@@ -381,6 +382,7 @@ private:
     bool          m_ParseIDs;         ///< Generate ISAM files
     bool          m_UseGiMask;        ///< Generate GI-based mask files
     EBlastDbVersion m_DbVersion;      ///< BLASTDB version
+    Uint8         m_OidMasks;
 
     /// Column titles.
     vector<string> m_ColumnTitles;

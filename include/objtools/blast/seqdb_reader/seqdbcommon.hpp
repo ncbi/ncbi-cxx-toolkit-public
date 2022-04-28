@@ -150,6 +150,11 @@ struct NCBI_XOBJREAD_EXPORT SBlastSeqIdListInfo {
 		string db_vol_names;
 };
 
+enum EOidMaskType{
+	fNone = 0x0,
+ 	fExcludeModel = 0x01
+ };
+
 /// CSeqDBGiList
 ///
 /// This class defines an interface to a list of GI,OID pairs.  It is
@@ -373,10 +378,14 @@ public:
         return (int) m_PigsOids.size();
     }
 
+    Uint8 GetMaskOpts() const {
+    	return m_MaskOpts;
+    }
+
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumSis() || GetNumTis() || GetNumTaxIds() || GetNumPigs());
+        return ! (GetNumGis() || GetNumSis() || GetNumTis() || GetNumTaxIds() || GetNumPigs() || GetMaskOpts());
     }
 
     /// Return true if there are elements present.
@@ -568,6 +577,11 @@ public:
         	m_SisOids.push_back(*itr);
         }
     }
+
+    void SetMaskOpts(EOidMaskType mask_opts) {
+    	m_MaskOpts|=mask_opts;
+    }
+
 protected:
     /// Indicates the current sort order, if any, of this container.
     ESortOrder m_CurrentOrder;
@@ -586,6 +600,8 @@ protected:
     STaxIdsOids m_TaxIdsOids;
 
     SBlastSeqIdListInfo m_ListInfo;
+
+    Uint8 m_MaskOpts;
 
 private:
     // The following disabled methods are reasonable things to do in
@@ -2030,9 +2046,18 @@ void SeqDB_GetMetadataFileExtension(bool db_is_protein, string & extn);
 NCBI_XOBJREAD_EXPORT
 bool IsStringId(const CSeq_id & id);
 
+
 /// Return ID string as stored in lmdb
 NCBI_XOBJREAD_EXPORT
 string GetBlastSeqIdString(const CSeq_id & seqid, bool version);
+
+
+NCBI_XOBJREAD_EXPORT
+const string SeqDB_GetOidMaskFileExt(bool db_is_protein, EOidMaskType t);
+
+
+
+
 
 END_NCBI_SCOPE
 

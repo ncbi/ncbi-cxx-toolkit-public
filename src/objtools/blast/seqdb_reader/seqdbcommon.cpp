@@ -507,7 +507,7 @@ void SeqDB_JoinDelim(string & a, const string & b, const string & delim)
 
 
 CSeqDBGiList::CSeqDBGiList()
-    : m_CurrentOrder(eNone)
+    : m_CurrentOrder(eNone), m_MaskOpts(0)
 {
 }
 
@@ -2701,6 +2701,19 @@ string GetBlastSeqIdString(const CSeq_id & seqid, bool version)
 
 	return seqid.GetSeqIdString(version);
 }
+
+const string SeqDB_GetOidMaskFileExt(bool db_is_protein, EOidMaskType t)
+{
+	switch (t) {
+		case EOidMaskType::fExcludeModel:
+			return  (db_is_protein ? "pxm":"nxm");
+		break;
+		default:
+			NCBI_THROW(CSeqDBException, eArgErr, "Invalid oid mask type.");
+		break;
+	}
+}
+
 
 END_NCBI_SCOPE
 
