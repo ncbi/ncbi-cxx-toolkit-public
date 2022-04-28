@@ -1083,7 +1083,7 @@ BlastHSPList * s_GetHSPList(int num_hsps, int oid, int len, int range_len)
 
 
 BOOST_AUTO_TEST_CASE(testSetupPartialFetching) {
-	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit("data/long_seqs", false);
+	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit("/am/ncbiapdata/test_data/blast/algo/unit_tests/api/data/long_seqs", false);
     const int k_num_hsps = 6;
 	BlastHSPList* hsp_list = (BlastHSPList*) calloc(1, sizeof(BlastHSPList));
 	hsp_list->oid = 4;
@@ -1120,7 +1120,7 @@ BOOST_AUTO_TEST_CASE(testSetupPartialFetching) {
 }
 
 BOOST_AUTO_TEST_CASE(testPartialFetchingMT) {
-	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit("data/long_seqs", false);
+	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit("/am/ncbiapdata/test_data/blast/algo/unit_tests/api/data/long_seqs", false);
     const int kMaxNum = 36;
     const int kRangeLen = 10000;
     int kOid = 4;
