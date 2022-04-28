@@ -1231,7 +1231,7 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
     }
 
     {
-        bool nuc = args["og"] || args["on"];
+        bool nuc = args["og"] || args["or"] || args["on"];
         bool prot = args["op"];
         if (nuc && prot) {
             cfg.SetViewAll();
