@@ -116,6 +116,7 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet       & volset,
     while(m_NumOIDs && (! x_IsSet(m_NumOIDs - 1))) {
         -- m_NumOIDs;
     }
+    LOG_POST(Info << "Num Of Oids: " << m_NumOIDs);
 }
 
 CRef<CSeqDB_BitSet>
@@ -266,8 +267,26 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
         filter->IntersectWith(*f, true);
     }
     
+    if (gis.GetUserMaskOpts()) {
+
+   		const CSeqDBVol * v = vol.Vol();
+    	bool is_protein= v->GetSeqType() == 'p' ? true : false;
+    	string p_str = v->GetVolName()+ ".";
+
+    	if ( gis.GetUserMaskOpts() & EOidMaskType::fExcludeModel ) {
+    		string path_str(p_str + SeqDB_GetOidMaskFileExt(is_protein, EOidMaskType::fExcludeModel));
+    		CSeqDB_Path mask_path(path_str);
+    		CFile check_file(path_str);
+    		if (!check_file.Exists()) {
+    			NCBI_THROW(CSeqDBException, eArgErr, "Oid Mask file not found");
+    		}
+
+    		CRef<CSeqDB_BitSet> m = x_GetOidMask( mask_path,vol_start,vol_end);
+    		filter->IntersectWith (*m,true);
+    	}
+    }
+
     volume_map->IntersectWith(*filter, true);
-    
     return volume_map;
 }
 
@@ -476,7 +495,6 @@ CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
         bitend = bitmap + (((num_oids + 31) / 32) * 4);
     }
     CRef<CSeqDB_BitSet> bitset(new CSeqDB_BitSet(vol_start, vol_end, bitmap, bitend));
-    
     
     // Disable any enabled bits occuring after the volume end point
     // [this should not normally occur.]

@@ -161,7 +161,8 @@ public:
                    ostream              * logfile,
                    bool                   long_seqids = false,
                    EBlastDbVersion        dbver = eBDB_Version4,
-                   bool                   limit_defline = false);
+                   bool                   limit_defline = false,
+                   Uint8                  oid_masks = EOidMaskType::fNone);
 
     // Note -- should deprecate (or just remove) the following one:
     // - sparse does nothing
@@ -193,7 +194,8 @@ public:
                    ostream              * logfil,
                    bool                   long_seqids = false,
                    EBlastDbVersion dbver = eBDB_Version4,
-                   bool                   limit_defline = false);
+                   bool                   limit_defline = false,
+                   Uint8                  oid_masks = EOidMaskType::fNone);
 
     ~CBuildDatabase();
 

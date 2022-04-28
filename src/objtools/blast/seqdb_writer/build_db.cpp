@@ -1078,7 +1078,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                ostream              * logfile,
                                bool                   long_seqids,
                                EBlastDbVersion        dbver,
-                               bool                   limit_defline)
+                               bool                   limit_defline,
+                               Uint8                  oid_masks)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
@@ -1121,7 +1122,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                   m_LongIDs,
                                   use_gi_mask,
                                   dbver,
-                                  limit_defline));
+                                  limit_defline,
+                                  oid_masks));
 
     // Standard 1 GB limit
 
@@ -1138,7 +1140,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                ostream      * logfile,
                                bool           long_seqids,
                                EBlastDbVersion        dbver,
-                               bool           limit_defline)
+                               bool           limit_defline,
+                               Uint8          oid_masks)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
@@ -1184,7 +1187,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                   long_seqids,
                                   use_gi_mask,
                                   dbver,
-                                  limit_defline));
+                                  limit_defline,
+                                  oid_masks));
 
     // Standard 1 GB limit
 

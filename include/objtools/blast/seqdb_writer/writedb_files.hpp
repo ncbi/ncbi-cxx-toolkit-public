@@ -95,6 +95,8 @@ public:
     /// @return File offset after write.
     unsigned int Write(const CTempString & data);
 
+    unsigned int Write(const char *  data, int length);
+
     /// Write an Int4 (in bigendian order) to the file.
     /// @param data String to write.
     /// @return File offset after write.

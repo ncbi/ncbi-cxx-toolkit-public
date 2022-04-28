@@ -1915,6 +1915,19 @@ bool s_IncludeDefline_Taxid(const CBlast_def_line & def, const set<TTaxId> & use
 	return false;
 }
 
+bool s_IncludeDefline_MaskFilter(const CBlast_def_line & def, Uint8 mask)
+{
+    ITERATE(list< CRef<CSeq_id> >, seqid, def.GetSeqid()) {
+    	if (mask & EOidMaskType::fExcludeModel) {
+    		if((*seqid)->IdentifyAccession() & CSeq_id::fAcc_predicted) {
+    			return false;
+    		}
+    	}
+    }
+	return true;
+}
+
+
 bool s_IncludeDefline_NegativeTaxid(const CBlast_def_line & def, const set<TTaxId> & user_tax_ids)
 {
 	CBlast_def_line::TTaxIds taxid_set = def.GetTaxIds();
@@ -2013,6 +2026,10 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
 
             	if(have_memb && (!m_NegativeList.Empty()) && (m_NegativeList->GetNumTaxIds() > 0)) {
                		have_memb = s_IncludeDefline_NegativeTaxid(defline, m_NegativeList->GetTaxIdsList());
+            	}
+
+            	if(have_memb && (!m_UserGiList.Empty()) && (m_UserGiList->GetMaskOpts() != 0)) {
+               		have_memb = s_IncludeDefline_MaskFilter(defline, m_UserGiList->GetMaskOpts());
             	}
             }
 
@@ -2126,6 +2143,11 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
             	if(have_memb && (!m_NegativeList.Empty()) && (m_NegativeList->GetNumTaxIds() > 0)) {
                		have_memb = s_IncludeDefline_NegativeTaxid(defline, m_NegativeList->GetTaxIdsList());
             	}
+
+            	if(have_memb && (!m_UserGiList.Empty()) && (m_UserGiList->GetMaskOpts() != 0)) {
+               		have_memb = s_IncludeDefline_MaskFilter(defline, m_UserGiList->GetMaskOpts());
+            	}
+
             }
 
             if (! have_memb) {

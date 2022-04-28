@@ -125,6 +125,12 @@ public:
                            EGiListType         list_type,
                            CSeqDBLockHold    & locked);
     
+    Uint8 GetUserMaskOpts() {
+    	if(m_UserList.NotEmpty()) {
+    		return m_UserList->GetMaskOpts();
+    	}
+    	return 0;
+    }
 private:
     /// Translate a volume gilist from the user gilist.
     ///
