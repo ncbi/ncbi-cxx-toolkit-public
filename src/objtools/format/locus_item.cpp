@@ -553,40 +553,37 @@ static CTempString x_GetDivisionProcIdx(const CBioseqContext& ctx, const CBioseq
         }
     }
     if ( is_prot ) {
-        CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
-        if (sfxp) {
-            CSeq_feat_Handle hdl = sfxp->GetSeqFeatHandle();
-            if (hdl) {
-                const CSeq_loc & cds_loc = hdl.GetLocation();
-                const CSeq_id *pSeqId = cds_loc.GetId();
-                CBioseq_Handle nuc;
-                if( pSeqId ) {
-                    nuc = bsh.GetScope().GetBioseqHandle(*pSeqId);
-                } else {
-                    // fall back on first Seq-id in location that is local to this Seq-entry
-                    // (example where this code is needed to prevent a crash: AL772325.4 proteins)
-                    ITERATE( CSeq_loc, cds_loc_iter, cds_loc ) {
-                        try {
-                            CSeq_id_Handle cds_loc_piece_id = cds_loc_iter.GetSeq_id_Handle();
-                            if( cds_loc_piece_id ) {
-                                nuc = bsh.GetScope().GetBioseqHandleFromTSE(
-                                    cds_loc_piece_id, bsh );
-                                if( nuc ) {
-                                    break;
-                                }
+        const CSeq_feat* cds = GetCDSForProduct(bsh);
+        if ( cds ) {
+            const CSeq_loc & cds_loc = cds->GetLocation();
+            const CSeq_id *pSeqId = cds_loc.GetId();
+            CBioseq_Handle nuc;
+            if( pSeqId ) {
+                nuc = bsh.GetScope().GetBioseqHandle(*pSeqId);
+            } else {
+                // fall back on first Seq-id in location that is local to this Seq-entry
+                // (example where this code is needed to prevent a crash: AL772325.4 proteins)
+                ITERATE( CSeq_loc, cds_loc_iter, cds_loc ) {
+                    try {
+                        CSeq_id_Handle cds_loc_piece_id = cds_loc_iter.GetSeq_id_Handle();
+                        if( cds_loc_piece_id ) {
+                            nuc = bsh.GetScope().GetBioseqHandleFromTSE(
+                                cds_loc_piece_id, bsh );
+                            if( nuc ) {
+                                break;
                             }
-                        } catch(...) {
-                            // ignore exceptions because it's common for us to fail
-                            // to find something since we're only looking locally
                         }
+                    } catch(...) {
+                        // ignore exceptions because it's common for us to fail
+                        // to find something since we're only looking locally
                     }
                 }
-                if( nuc ) {
-                    ITERATE (CBioseq_Handle::TId, iter, nuc.GetId()) {
-                        if (*iter  &&  iter->GetSeqId()->IsPatent()) {
-                            division = "PAT";
-                            break;
-                        }
+            }
+            if( nuc ) {
+                ITERATE (CBioseq_Handle::TId, iter, nuc.GetId()) {
+                    if (*iter  &&  iter->GetSeqId()->IsPatent()) {
+                        division = "PAT";
+                        break;
                     }
                 }
             }
