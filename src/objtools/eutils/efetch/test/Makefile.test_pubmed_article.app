@@ -8,4 +8,9 @@ LIB = efetch pubmed medline biblio general xser xutil xncbi
 
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
+CHECK_COPY = data
+
+CHECK_CMD = test_pubmed_article -f data/pubmed11748933.xml -set
+CHECK_CMD = test_pubmed_article -f data/pubmed11748934.xml
+
 WATCHERS = grichenk
