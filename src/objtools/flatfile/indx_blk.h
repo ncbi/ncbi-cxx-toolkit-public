@@ -85,7 +85,8 @@ Int2 CheckNA(char* str);
 bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool is_mga);
 
 const Char**               GetAccArray(Parser::ESource source);
-objects::CSeq_id::E_Choice GetNucAccOwner(const char* accession, bool is_tpa);
+bool                       isSupportedAccession(objects::CSeq_id::E_Choice type);
+objects::CSeq_id::E_Choice GetNucAccOwner(const char* accession);
 Uint1                      GetProtAccOwner(const char* acc);
 //void    FreeParser(ParserPtr pp);
 END_NCBI_SCOPE
