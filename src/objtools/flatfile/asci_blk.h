@@ -41,10 +41,10 @@
 BEGIN_NCBI_SCOPE
 
 CRef<objects::CSeq_id>        StrToSeqId(const char* pch, bool pid);
-CRef<objects::CSeq_id>        MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_nuc, bool is_tpa);
+CRef<objects::CSeq_id>        MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum);
 CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(const char* acc);
 CRef<objects::CSeq_id>        MakeLocusSeqId(const char* locus, Uint1 seqtype);
-CRef<objects::CBioseq>        CreateEntryBioseq(ParserPtr pp, bool is_nuc);
+CRef<objects::CBioseq>        CreateEntryBioseq(ParserPtr pp);
 
 void StripSerialNumbers(TEntryList& seq_entries);
 void PackEntries(TEntryList& seq_entries);

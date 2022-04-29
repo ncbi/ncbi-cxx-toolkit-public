@@ -1465,7 +1465,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
         }
         GetGenBankSubBlock(*pEntry, ibp->bases);
 
-        CRef<CBioseq> bioseq = CreateEntryBioseq(pp, true);
+        CRef<CBioseq> bioseq = CreateEntryBioseq(pp);
         ebp->seq_entry.Reset(new CSeq_entry);
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
@@ -1865,7 +1865,7 @@ bool GenBankAscii(ParserPtr pp)
         }
         xGetGenBankSubBlocks(*pEntry, ibp->bases);
 
-        CRef<CBioseq> pBioseq = CreateEntryBioseq(pp, true);
+        CRef<CBioseq> pBioseq = CreateEntryBioseq(pp);
         pEntry->mSeqEntry.Reset(new CSeq_entry);
         pEntry->mSeqEntry->SetSeq(*pBioseq);
         GetScope().AddBioseq(*pBioseq);

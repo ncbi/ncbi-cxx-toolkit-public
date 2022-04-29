@@ -873,9 +873,9 @@ CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
 *                                              9-16-93
 *
 **********************************************************/
-static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc)
+static Uint1 ValidSeqType(const char* accession, Uint1 type)
 {
-    Uint1 cho;
+//    Uint1 cho;
 
     if (type == CSeq_id::e_Swissprot || type == CSeq_id::e_Pir || type == CSeq_id::e_Prf ||
         type == CSeq_id::e_Pdb || type == CSeq_id::e_Other)
@@ -888,11 +888,13 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc)
     if (accession == NULL)
         return (type);
 
+    const auto cho = CSeq_id::GetAccType(CSeq_id::IdentifyAccession(accession));
+/*
     if (is_nuc)
         cho = GetNucAccOwner(accession);
     else
         cho = GetProtAccOwner(accession);
-
+*/
     if ((type == CSeq_id::e_Genbank || type == CSeq_id::e_Tpg) &&
         (cho == CSeq_id::e_Genbank || cho == CSeq_id::e_Tpg))
         return (cho);
@@ -902,7 +904,7 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc)
     else if ((type == CSeq_id::e_Embl || type == CSeq_id::e_Tpe) &&
              (cho == CSeq_id::e_Embl || cho == CSeq_id::e_Tpe))
         return (cho);
-    return (type);
+    return type;
 }
 
 /**********************************************************
@@ -913,14 +915,14 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc)
 *                                              5-10-93
 *
 **********************************************************/
-CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_nuc, bool is_tpa)
+CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum)
 {
     CRef<CSeq_id> id;
 
     if (acc == NULL || *acc == '\0')
         return id;
 
-    seqtype = ValidSeqType(acc, seqtype, is_nuc);
+    seqtype = ValidSeqType(acc, seqtype);
 
     if (seqtype == 0)
         return id;
@@ -967,7 +969,7 @@ static CRef<CSeq_id> MakeSegSetSeqId(char* accession, char* locus, Uint1 seqtype
     if (locus == NULL || *locus == '\0')
         return res;
 
-    seqtype = ValidSeqType(accession, seqtype, true);
+    seqtype = ValidSeqType(accession, seqtype);
 
     if (seqtype == 0)
         return res;
@@ -1027,7 +1029,7 @@ static void SetEmptyId(CBioseq& bioseq)
 }
 
 /**********************************************************/
-CRef<CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
+CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
 {
     IndexblkPtr ibp;
 
@@ -1055,7 +1057,7 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
     if (pp->source == Parser::ESource::EMBL && ibp->is_tpa)
         seqtype = CSeq_id::e_Tpe;
     else
-        seqtype = ValidSeqType(acc, pp->seqtype, is_nuc);
+        seqtype = ValidSeqType(acc, pp->seqtype);
 
     if (seqtype == 0) {
         if (acc && ! NStr::IsBlank(acc)) {
@@ -2466,7 +2468,7 @@ void GetSeqExt(ParserPtr pp, CSeq_loc& seq_loc)
 
     ibp = pp->entrylist[pp->curindx];
 
-    CRef<CSeq_id> id = MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, true, ibp->is_tpa);
+    CRef<CSeq_id> id = MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum);
 
     if (id.NotEmpty()) {
         CSeq_loc loc;

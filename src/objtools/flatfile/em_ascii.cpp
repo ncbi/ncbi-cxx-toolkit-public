@@ -2238,7 +2238,7 @@ bool EmblAscii(ParserPtr pp)
             }
             GetEmblSubBlock(ibp->bases, pp->source, *pEntry);
 
-            CRef<CBioseq> bioseq = CreateEntryBioseq(pp, true);
+            CRef<CBioseq> bioseq = CreateEntryBioseq(pp);
             AddNIDSeqId(*bioseq, *pEntry, ParFlat_NI, ParFlat_COL_DATA_EMBL, pp->source);
 
             ebp->seq_entry.Reset(new CSeq_entry);
