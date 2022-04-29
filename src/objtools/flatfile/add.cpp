@@ -807,7 +807,7 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
         if (accessionString.empty())
             continue;
 
-        const auto idChoice = GetNucAccOwner(accessionString.c_str(), ibp->is_tpa);
+        const auto idChoice = GetNucAccOwner(accessionString.c_str());
         if (idChoice == CSeq_id::e_not_set) {
             continue;
         }
@@ -1111,7 +1111,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     if (offset == NULL || acnum == NULL || len < 2)
         return false;
 
-    choice = GetNucAccOwner(acnum, tpa);
+    choice = GetNucAccOwner(acnum);
 
     if (col_data == 0) /* HACK: XML format */
     {
@@ -1218,7 +1218,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 break;
             }
         } else {
-            tftbp->sicho = GetNucAccOwner(tftbp->accession, false);
+            tftbp->sicho = GetNucAccOwner(tftbp->accession);
             if ((tftbp->sicho != CSeq_id::e_Genbank && tftbp->sicho != CSeq_id::e_Embl &&
                  tftbp->sicho != CSeq_id::e_Ddbj &&
                  (tftbp->sicho != CSeq_id::e_Tpg || tpa == false))) {
@@ -2117,7 +2117,6 @@ Uint1 fta_check_con_for_wgs(CBioseq& bioseq)
 /**********************************************************/
 static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* location, char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
-    Uint1 accowner;
     Int4  i;
     Char  ch;
 
@@ -2188,18 +2187,14 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
         }
     }
 
-    accowner = GetNucAccOwner(accession, ibp->is_tpa);
-    if (accowner == 0)
-        accowner = GetProtAccOwner(accession);
-
-    if (accowner != 0) {
-        if (accowner != id.Which()) {
+    if (auto type = CSeq_id::GetAccType(CSeq_id::IdentifyAccession(text_id->GetAccession()));
+        isSupportedAccession(type)) {
+        if (type != id.Which()) {
             CRef<CTextseq_id> new_text_id(new CTextseq_id);
             new_text_id->Assign(*text_id);
-            SetTextId(accowner, id, *new_text_id);
+            SetTextId(type, id, *new_text_id);
         }
     }
-
     else if (source == Parser::ESource::Flybase) {
         std::string acc(accession);
         id.SetGeneral().SetDb("FlyBase");

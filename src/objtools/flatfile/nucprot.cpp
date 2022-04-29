@@ -456,7 +456,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
              cho != CSeq_id::e_Tpg)
         r = "NCBI";
     else {
-        ncho = GetNucAccOwner(text_id->GetAccession().c_str(), pp->entrylist[pp->curindx]->is_tpa);
+        ncho = GetNucAccOwner(text_id->GetAccession().c_str());
         if (ncho == CSeq_id::e_Tpe && cho == CSeq_id::e_Embl)
             cho = ncho;
     }

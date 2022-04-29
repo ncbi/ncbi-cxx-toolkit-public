@@ -873,7 +873,7 @@ CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
 *                                              9-16-93
 *
 **********************************************************/
-static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc, bool is_tpa)
+static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc)
 {
     Uint1 cho;
 
@@ -889,7 +889,7 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_nuc, bool i
         return (type);
 
     if (is_nuc)
-        cho = GetNucAccOwner(accession, is_tpa);
+        cho = GetNucAccOwner(accession);
     else
         cho = GetProtAccOwner(accession);
 
@@ -920,7 +920,7 @@ CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 ver
     if (acc == NULL || *acc == '\0')
         return id;
 
-    seqtype = ValidSeqType(acc, seqtype, is_nuc, is_tpa);
+    seqtype = ValidSeqType(acc, seqtype, is_nuc);
 
     if (seqtype == 0)
         return id;
@@ -967,7 +967,7 @@ static CRef<CSeq_id> MakeSegSetSeqId(char* accession, char* locus, Uint1 seqtype
     if (locus == NULL || *locus == '\0')
         return res;
 
-    seqtype = ValidSeqType(accession, seqtype, true, is_tpa);
+    seqtype = ValidSeqType(accession, seqtype, true);
 
     if (seqtype == 0)
         return res;
@@ -1055,7 +1055,7 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp, bool is_nuc)
     if (pp->source == Parser::ESource::EMBL && ibp->is_tpa)
         seqtype = CSeq_id::e_Tpe;
     else
-        seqtype = ValidSeqType(acc, pp->seqtype, is_nuc, ibp->is_tpa);
+        seqtype = ValidSeqType(acc, pp->seqtype, is_nuc);
 
     if (seqtype == 0) {
         if (acc && ! NStr::IsBlank(acc)) {
@@ -1308,7 +1308,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     acc       = StringSave(ibp->acnum);
     is_cp     = (acc[0] == 'C' && acc[1] == 'P');
     pri_acc   = fta_if_wgs_acc(acc);
-    pri_owner = GetNucAccOwner(acc, ibp->is_tpa);
+    pri_owner = GetNucAccOwner(acc);
     if (pri_acc == 1 || pri_acc == 4) {
         for (p = acc; (*p >= 'A' && *p <= 'Z') || *p == '_';)
             p++;
@@ -1354,7 +1354,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                 ibp->wgssec = p;
         }
 
-        sec_owner = GetNucAccOwner(p, ibp->is_tpa);
+        sec_owner = GetNucAccOwner(p);
 
         if (sec_acc < 0 || sec_acc == 2) {
             if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {

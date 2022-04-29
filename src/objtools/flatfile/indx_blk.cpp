@@ -2294,15 +2294,40 @@ const char** GetAccArray(Parser::ESource source)
     return (NULL);
 }
 
+bool isSupportedAccession(CSeq_id::E_Choice type)
+{
+    switch(type)
+    {
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Ddbj:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Other:
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpd:
+        case CSeq_id::e_Tpe:
+            return true;
+        default:
+            break;
+    }
+
+    return false;
+}
+
+
 /**********************************************************/
-CSeq_id::E_Choice GetNucAccOwner(const char* acc, bool is_tpa)
+CSeq_id::E_Choice GetNucAccOwner(const char* acc)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
         return CSeq_id::e_not_set;
     }   
 
-    return CSeq_id::GetAccType(info);
+    if (auto type = CSeq_id::GetAccType(info);
+        isSupportedAccession(type)) {
+        return type;
+    }
+
+    return CSeq_id::e_not_set;
 }
 
 
@@ -2311,7 +2336,10 @@ Uint1 GetProtAccOwner(const Char* acc)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
-        return CSeq_id::GetAccType(info);
+        if (auto type = CSeq_id::GetAccType(info);
+            isSupportedAccession(type)) {
+            return type;
+        }
     }   
 
     return 0;

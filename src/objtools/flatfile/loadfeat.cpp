@@ -2951,7 +2951,7 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
                             p++;
                         if (*p == '\0') {
                             *q = '\0';
-                            if (GetNucAccOwner(val_str.c_str(), is_tpa) > 0)
+                            if (GetNucAccOwner(val_str.c_str()) > 0)
                                 badcom = false;
                             *q = '.';
                         }
@@ -3045,7 +3045,7 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
                 *r = '\0';
             else
                 *p = '\0';
-            i = GetNucAccOwner(q, ibp->is_tpa);
+            i = GetNucAccOwner(q);
             if (r != NULL)
                 *r = '.';
             else
