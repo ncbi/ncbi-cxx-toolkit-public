@@ -2,40 +2,29 @@
 #  NCBI C++ Toolkit requirements for Conan/UNIX
 
 [requires]
-backward-cpp/1.6@#1b6cbe0def1f1622a9809dfb4911209c
+backward-cpp/1.6
 libunwind/1.6.2
-libdb/5.3.28@#355aa134e9ee1bda60fa224f8b54c913
-#
-# boost/1.72.0 because of https://github.com/boostorg/test/issues/272
-# the problem first showed up in 1.73.0
-# tested 1.77.0  - does not fix it
-#
-# boost/1.72.0@#095225d6ff9d70fd3c3eccb88ed06747
-# - temporary disabled because test_wgs_loader_mt fails to link 
-#   for a core builds with unknown reason. 
-#   Conancenter 1.76.0 fails with the same errors. 
-#   Internal 1.76.0-ncbi1 works fine.
-#
-bzip2/1.0.8@#493645787acdd3909523a6a2773b1b36
-cassandra-cpp-driver/2.15.3@#27c46dd9dfbb2a3afef30aa2e914f00a
-giflib/5.2.1@#75a273d91a6c63bc0d8a93799ce19acc
-grpc/1.39.1@#9f7bb930dc09f8ca1a8bcc870d037f8f
-libjpeg/9d@#956b5e73632aac77088571f574d766c0
-lmdb/0.9.29@#3bdb51ff4c3649bd865ee3857f0f2e07
-lzo/2.10@#76a80652793ae478a12f6f9a8eb17a89
-libmysqlclient/8.0.25@#bbe62517865849c442c032cc7aecfd57
-libnghttp2/1.45.1@#cef166f78349143079e1c667d823b25a
-pcre/8.45@#b6bae758d36ca2050bb8527ea408eb75
-libpng/1.6.37@#8b23717a9884a2b06884c599072955f4
-protobuf/3.17.1@#8aaa20a95bb223cedc99111f9072cd76
-sqlite3/3.36.0@#567836d4f4b7b58a4e834bf98288d609
-libtiff/4.3.0@#28ac662980826ae8ffe8d6236cdd9735
-libxml2/2.9.12@#9817dd585ffc6de1479da6d5bcf01fc0
-libxslt/1.1.34@#47946f5c7abe03d18179b55be67bbabe
-libuv/1.42.0@#e1801aae9570062012d94db20338451b
-zlib/1.2.11@#683857dbd5377d65f26795d4023858f9
-openssl/1.1.1l@#98215f1d057178dfd8c867950e16a0fe
-zstd/1.5.0@#2797bc9a304b2c45e2239c0d4ad15207
+libdb/5.3.28
+#boost/1.78.0
+bzip2/1.0.8
+cassandra-cpp-driver/2.15.3
+giflib/5.2.1
+grpc/1.43.2
+libjpeg/9d
+lmdb/0.9.29
+lzo/2.10
+libmysqlclient/8.0.25
+libnghttp2/1.47.0
+pcre/8.45
+libpng/1.6.37
+protobuf/3.20.0
+sqlite3/3.38.1
+libtiff/4.3.0
+libxml2/2.9.13
+libxslt/1.1.34
+libuv/1.44.1
+zlib/1.2.12
+openssl/1.1.1n
 
 [options]
 libnghttp2:with_app = False
