@@ -4859,7 +4859,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     ibp = pp->entrylist[pp->curindx];
 
     CRef<CSeq_id> seq_id =
-        MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, true, ibp->is_tpa);
+        MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum);
     if (pp->source == Parser::ESource::USPTO) {
         pat_seq_id                  = new CSeq_id;
         CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(ibp->acnum);

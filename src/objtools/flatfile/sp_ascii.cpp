@@ -1971,7 +1971,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             if (ntype == 0) {
                 ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"%s\". Skipped...", token2);
             } else if (AddToList(&acc_list, token2)) {
-                CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, false, 0, true, false));
+                CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, false, 0));
                 if (id.NotEmpty())
                     spb.SetSeqref().push_back(id);
             }
@@ -2013,7 +2013,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
                 id = AddPIDToSeqId(token3, token2);
             else {
                 *p++ = '\0';
-                id   = MakeAccSeqId(token3, ptype, true, (Int2)atoi(p), false, false);
+                id   = MakeAccSeqId(token3, ptype, true, (Int2)atoi(p));
             }
 
             if (id.NotEmpty())
@@ -2072,7 +2072,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
                 continue;
 
             *p++ = '\0';
-            CRef<CSeq_id> id(MakeAccSeqId(token2, ptype, true, (Int2)atoi(p), false, false));
+            CRef<CSeq_id> id(MakeAccSeqId(token2, ptype, true, (Int2)atoi(p)));
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         } else {
@@ -3319,7 +3319,7 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
         CSeq_point& point_a = bond.SetA();
 
         point_a.SetPoint(from);
-        point_a.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, false, false));
+        point_a.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum));
 
         if (fuzzfrom)
             GetIntFuzzPtr(4, 2, 0, point_a.SetFuzz());
@@ -3327,7 +3327,7 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
         if (from != to) {
             CSeq_point& point_b = bond.SetB();
             point_b.SetPoint(to);
-            point_b.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, false, false));
+            point_b.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum));
 
             if (fuzzto)
                 GetIntFuzzPtr(4, 1, 0, point_b.SetFuzz());
@@ -3336,7 +3336,7 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
         CSeq_interval& interval = loc->SetInt();
         interval.SetFrom(from);
         interval.SetTo(to);
-        interval.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, false, false));
+        interval.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum));
 
         if (fuzzfrom)
             GetIntFuzzPtr(4, 2, 0, interval.SetFuzz_from()); /* lim, lt, no-min */
@@ -3352,7 +3352,7 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
     } else {
         CSeq_point& point = loc->SetPnt();
         point.SetPoint(from);
-        point.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, false, false));
+        point.SetId(*MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum));
 
         if (pntfuzz) {
             GetIntFuzzPtr(2, to, from, point.SetFuzz()); /* range, max, min */
@@ -3798,7 +3798,7 @@ static CRef<CSeq_loc> GetSeqLocIntSP(size_t seqlen, char* acnum, bool accver, In
 
     interval.SetFrom(0);
     interval.SetTo(static_cast<TSeqPos>(seqlen) - 1);
-    interval.SetId(*MakeAccSeqId(acnum, CSeq_id::e_Swissprot, accver, vernum, false, false));
+    interval.SetId(*MakeAccSeqId(acnum, CSeq_id::e_Swissprot, accver, vernum));
 
     return loc;
 }
@@ -4851,7 +4851,7 @@ static void SpPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protco
         SpAddToIndexBlk(entry, pp->entrylist[pp->curindx]);
     }
 
-    CRef<CBioseq> bioseq = CreateEntryBioseq(pp, false);
+    CRef<CBioseq> bioseq = CreateEntryBioseq(pp);
     ebp->seq_entry.Reset(new CSeq_entry);
     ebp->seq_entry->SetSeq(*bioseq);
     GetScope().AddBioseq(*bioseq);

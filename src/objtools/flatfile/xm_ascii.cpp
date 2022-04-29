@@ -1206,7 +1206,7 @@ bool XMLAscii(ParserPtr pp)
 
         ebp = new EntryBlk();
 
-        CRef<CBioseq> bioseq = CreateEntryBioseq(pp, true);
+        CRef<CBioseq> bioseq = CreateEntryBioseq(pp);
         ebp->seq_entry.Reset(new CSeq_entry);
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
