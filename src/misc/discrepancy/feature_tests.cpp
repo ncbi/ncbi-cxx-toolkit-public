@@ -34,6 +34,7 @@
 
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
@@ -1319,19 +1320,8 @@ DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, FEAT, eDisc | eSmart | eFatal, " Only a sel
                 if (feat.GetExcept_text().find("ribosomal slippage") != string::npos) {
                     //string product = GetProductForCDS(feat, context.GetScope()); // sema: may need to change when we start using CFeatTree
                     string product = context.GetProdForFeature(feat);
-                    static string ignore1[] = { "transposase", "chain release" };
-                    static string ignore2[] = { "IS150 protein InsAB", "PCRF domain-containing protein" };
-                    static size_t len1 = ArraySize(ignore1);
-                    static size_t len2 = ArraySize(ignore2);
-                    for (size_t n = 0; n < len1; n++) {
-                        if (product.find(ignore1[n]) != string::npos) {
-                            return;
-                        }
-                    }
-                    for (size_t n = 0; n < len2; n++) {
-                        if (product == ignore2[n]) {
-                            return;
-                        }
+                    if (CSeqFeatData::IsLegalProductNameForRibosomalSlippage(product)) {
+                        continue; // note: used to be "return" but that seems wrong
                     }
                     m_Objs["[n] coding region[s] [has] unexpected ribosomal slippage"].Fatal().Add(*context.SeqFeatObjRef(feat));
                 }

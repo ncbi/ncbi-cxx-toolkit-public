@@ -4694,6 +4694,26 @@ bool CSeqFeatData::FixImportKey(string& key)
 }
 
 
+bool CSeqFeatData::IsLegalProductNameForRibosomalSlippage(
+    const string& productName)
+{
+    static vector<string> matchPhrases{ "IS150 protein InsAB", "PCRF domain-containing protein" };
+    static vector<string> containedPhrases{ "transposase", "chain release" };
+
+    for (const auto& phrase: matchPhrases) {
+        if (phrase == productName) {
+            return true;
+        }
+    }
+    for (const auto& phrase: containedPhrases) {
+        if (phrase.find(productName) != string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
