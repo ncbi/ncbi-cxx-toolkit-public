@@ -1064,7 +1064,7 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
     }
 
     GENE_ID geneId;
-.    const auto& geneRef = geneFeat.GetData().GetGene();
+    const auto& geneRef = geneFeat.GetData().GetGene();
 
     geneId = mf.GetNamedQual("gene_id");
     if (geneId.empty()  &&  geneRef.IsSetLocus_tag()) {
