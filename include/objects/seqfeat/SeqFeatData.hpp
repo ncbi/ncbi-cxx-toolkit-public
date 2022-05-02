@@ -527,7 +527,7 @@ public:
     static bool ProhibitXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2);
 
     static bool FixImportKey(string& key);
-
+    static bool IsLegalProductNameForRibosomalSlippage(const string& product_name);
     // Internal structure to hold additional info
     struct SFeatDataInfo
     {
