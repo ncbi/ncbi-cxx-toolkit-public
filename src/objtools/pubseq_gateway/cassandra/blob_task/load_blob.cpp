@@ -123,8 +123,8 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_Modified(m_Blob->GetModified())
     , m_LoadChunks(load_chunks)
     , m_PropsFound(true)
-{
-}
+    , m_ExplicitBlob(true)
+{}
 
 CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     shared_ptr<CCassConnection> conn,
