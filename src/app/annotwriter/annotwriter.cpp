@@ -388,6 +388,20 @@ int CAnnotWriterApp::Run()
 
     xSetupIdResolving(args);
 
+    //auto& scope = *m_pScope;
+    //CGtfWriter writer(scope, cout, CGtfWriter::fGenerateMissingTranscripts);
+    //writer.SetAnnotSelector()
+    //    .ExcludeNamedAnnots("SNP")
+    //    .ExcludeNamedAnnots("STS")
+    //    .ExcludeNamedAnnots("CDD")
+    //    .SetResolveAll()
+    //    .SetAdaptiveDepth(true);
+    //CBioseq_Handle handle = scope.GetBioseqHandle(
+    //    CSeq_id_Handle::GetHandle("NC_003280.10"));
+    //writer.WriteBioseqHandle(handle);
+    //return 0;
+
+
     try {
         CNcbiOstream* pOs = xInitOutputStream(args);
         m_pWriter.Reset(xInitWriter(args, pOs));
