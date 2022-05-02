@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_SUITE(seqalignfilter)
 
 BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
 {
-    string fname_in = "data/in_test.txt";
+    string fname_in = "/am/ncbiapdata/test_data/blast/algo/unit_tests/blast_format/data/in_test.txt";
     string fname_out = "data/out_test.txt";
     string fname_gis = "data/gilist_test.txt";
 
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
 
 BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
 {
-    string fname_in = "data/in_test.txt";
+    string fname_in = "/am/ncbiapdata/test_data/blast/algo/unit_tests/blast_format/data/in_test.txt"; 
     string fname_out = "data/out_test.txt";
     string fname_gis = "data/gilist_test.txt";
 
