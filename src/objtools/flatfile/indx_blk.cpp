@@ -1485,6 +1485,12 @@ static bool sCheckAccession(const list<string>& tokens,
 }
 */
 
+
+static bool sNotAllDigits(const char* first, const char* last) 
+{
+    return any_of(first, last, [](char c) { return !isdigit(c); });
+}
+
 /**********************************************************
  *
  *   static bool CheckAccession(stoken, source, entryacc,
@@ -1542,96 +1548,35 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
         }
         badac = false;
         if (accformat == 1) {
-            if (len != 8 && len != 10)
-                badac = true;
-            else {
-                for (i = 2; i < 8 && badac == false; i++)
-                    if (acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
+            badac = (len != 8 && len != 10) || sNotAllDigits(acnum+2, acnum+8);
         } else if (accformat == 2) {
-            if (len != 9 && len != 12)
-                badac = true;
-            else {
-                for (i = 3; i < len && badac == false; i++)
-                    if (acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
+            badac = (len != 9 && len != 12) || sNotAllDigits(acnum+3, acnum+len);
         } else if (accformat == 3) {
-            if (len < 12 || len > 14)
-                badac = true;
-            else {
-                for (i = 4; i < len && badac == false; i++)
-                    if (acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
+            badac = (len < 12 || len > 14) || sNotAllDigits(acnum+4, acnum+len);
         } else if (accformat == 8) {
-            if (len < 15 || len > 17)
-                badac = true;
-            else {
-                for (i = 6; i < len && ! badac; i++)
-                    if (acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
+            badac = (len < 15 || len > 17) || sNotAllDigits(acnum+6, acnum+len);
         } else if (accformat == 4) {
-            if (len < 15 || len > 17)
-                badac = true;
-            else {
-                for (i = 7; i < len && badac == false; i++)
-                    if (acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
+            badac = (len < 15 || len > 17) || sNotAllDigits(acnum+7, acnum+len);
         } else if (accformat == 5) {
-            if (len != 12)
-                badac = true;
-            else {
-                for (i = 5; i < len && badac == false; i++)
-                    if (acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
+            badac = (len != 12) || sNotAllDigits(acnum+5, acnum+len);
         } else if (accformat == 6) {
-            if (len != 11 || acnum[0] != 'N' || acnum[1] != 'Z' ||
+            badac = (len != 11 || acnum[0] != 'N' || acnum[1] != 'Z' ||
                 acnum[2] != '_' || acnum[3] < 'A' || acnum[3] > 'Z' ||
-                acnum[4] < 'A' || acnum[4] > 'Z')
-                badac = true;
-            else {
-                for (i = 5; i < len && badac == false; i++)
-                    if (acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
+                acnum[4] < 'A' || acnum[4] > 'Z') || sNotAllDigits(acnum+5, acnum+len);
         } else if (accformat == 7) {
-            if (len < 13 || len > 15)
-                badac = true;
-            else {
-                for (i = 7; i < len && badac == false; i++)
-                    if (acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
+            badac = (len < 13 || len > 15) || sNotAllDigits(acnum+7, acnum+len);
         } else if (accformat == 9) {
-            if (len < 16 || len > 17) {
-                badac = true;
-            } 
-            else {
-                for (i = 9; i< len && badac == false; ++i) {
-                    if (!isdigit(acnum[i])) {
-                        badac = true;
-                    }
-                }
-            }
+            badac = (len < 16 || len > 17) ||sNotAllDigits(acnum+9, acnum+len);
         } 
         else if (accformat == 0) {
             if (len != 6 && len != 10)
                 badac = true;
-            else if (acnum[0] >= 'A' && acnum[0] <= 'Z') {
+            else if (sIsUpperAlpha(acnum[0])) {
                 if (source == Parser::ESource::SPROT) {
                     if (! IsSPROTAccession(acnum))
                         badac = true;
-                } else if (len == 10) {
-                    badac = true;
-                } else {
-                    for (i = 1; i < 6 && badac == false; i++)
-                        if (acnum[i] < '0' || acnum[i] > '9')
-                            badac = true;
+                } else { 
+                    badac = (len == 10) || sNotAllDigits(acnum+1, acnum+6);
                 }
             } else
                 badac = true;
