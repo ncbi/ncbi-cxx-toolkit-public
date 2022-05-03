@@ -115,7 +115,7 @@ private:
                             CRequestStatus::ECode  status);
     CRequestStatus::ECode
     x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const;
-    void x_SendTrace(bool  need_trace, const string &  msg,
+    void x_SendTrace(const string &  msg,
                      shared_ptr<CPSGS_Request> request,
                      shared_ptr<CPSGS_Reply> reply);
     void x_SendProgressMessage(IPSGS_Processor::EPSGS_Status  finish_status,
@@ -159,7 +159,7 @@ private:
     // Auxiliary structure to store the group of processors data
     struct SProcessorGroup
     {
-        list<SProcessorData>        m_Processors;
+        vector<SProcessorData>        m_Processors;
         uv_timer_t *                m_RequestTimer;
         bool                        m_TimerActive;
         // true if the reply has been already flushed and finished
@@ -170,7 +170,9 @@ private:
         SProcessorGroup() :
             m_TimerActive(false), m_FlushedAndFinished(false),
             m_StartedProcessing(nullptr)
-        {}
+        {
+            m_Processors.reserve(MAX_PROCESSOR_GROUPS);
+        }
 
         ~SProcessorGroup()
         {
@@ -236,10 +238,11 @@ private:
     // The dispatcher owns the created processors. The map below makes a
     // correspondance between the request id (size_t; generated in the request
     // constructor) and a list of processors with their properties.
-    map<size_t, unique_ptr<SProcessorGroup>>    m_ProcessorGroups;
-    mutex                                       m_GroupsLock;
+    unordered_map<size_t,
+                  unique_ptr<SProcessorGroup>>      m_ProcessorGroups;
+    mutex                                           m_GroupsLock;
 
-    uint64_t                                    m_RequestTimeoutMillisec;
+    uint64_t                                        m_RequestTimeoutMillisec;
 
 private:
     // Processor concurrency support:
@@ -252,11 +255,53 @@ private:
     {
         size_t                  m_Limit;
         size_t                  m_CurrentCount;
-        mutex                   m_CountLock;
+        size_t                  m_LimitReachedCount;
+        mutable atomic<bool>    m_CountLock;
 
         SProcessorConcurrency() :
-            m_Limit(0), m_CurrentCount(0)
+            m_Limit(0), m_CurrentCount(0), m_LimitReachedCount(0),
+            m_CountLock(false)
         {}
+
+        size_t GetCurrentCount(void) const
+        {
+            size_t  ret;
+            while (m_CountLock.exchange(true)) {}   // get lock
+            ret = m_CurrentCount;
+            m_CountLock = false;                    // unlock
+            return ret;
+        }
+
+        void IncrementLimitReachedCount(void)
+        {
+            while (m_CountLock.exchange(true)) {}   // get lock
+            ++m_LimitReachedCount;
+            m_CountLock = false;                    // unlock
+        }
+
+        void IncrementCurrentCount(void)
+        {
+            while (m_CountLock.exchange(true)) {}   // get lock
+            ++m_CurrentCount;
+            m_CountLock = false;                    // unlock
+        }
+
+        void DecrementCurrentCount(void)
+        {
+            while (m_CountLock.exchange(true)) {}   // get lock
+            --m_CurrentCount;
+            m_CountLock = false;                    // unlock
+        }
+
+        void Lock(void)
+        {
+            while (m_CountLock.exchange(true)) {}
+        }
+
+        void Unlock(void)
+        {
+            m_CountLock = false;
+        }
     };
 
     SProcessorConcurrency       m_ProcessorConcurrency[MAX_PROCESSOR_GROUPS];
