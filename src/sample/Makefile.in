@@ -4,3 +4,4 @@ SUB_PROJ = app lib
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
+
