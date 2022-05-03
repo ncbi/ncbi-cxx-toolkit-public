@@ -179,4 +179,26 @@ TEST_F(CBlobTaskLoadBlobTest, LoadBigBlobData) {
     EXPECT_EQ(blob->GetChunk(0)[0], 0x78);
 }
 
+// Fake explicit blob retrieval should fail on blob_chunk CQL not blob_prop
+TEST_F(CBlobTaskLoadBlobTest, ExplicitBlobProperties) {
+    int call_count{0};
+    static auto error_function =
+    [&call_count]
+    (CRequestStatus::ECode status, int, EDiagSev, const string &message)
+    {
+        ++call_count;
+        EXPECT_EQ(500, status);
+        EXPECT_NE(message.find("SELECT data FROM fake_keyspace.blob_chunk WHERE sat_key"), string::npos);
+    };
+    auto blob_prop = make_unique<CBlobRecord>();
+    blob_prop->SetKey(numeric_limits<CBlobRecord::TSatKey>::max());
+    blob_prop->SetNChunks(1);
+    CCassBlobTaskLoadBlob fetch(m_Connection, "fake_keyspace", move(blob_prop), true, error_function);
+    wait_function(fetch);
+    EXPECT_TRUE(fetch.IsBlobPropsFound());
+    EXPECT_EQ(call_count, 1);
+    EXPECT_TRUE(fetch.BlobPropsProvided());
+    EXPECT_TRUE(fetch.HasError());
+}
+
 }  // namespace
