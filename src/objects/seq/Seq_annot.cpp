@@ -253,25 +253,9 @@ bool CSeq_annot::ExtractZoomLevel(const string& full_name, string* acc_ptr, int*
 
 string CSeq_annot::CombineWithZoomLevel(const string& acc, int zoom_level)
 {
-    int incl_level;
-    if ( !ExtractZoomLevel(acc, 0, &incl_level) ) {
-        if ( zoom_level == -1 ) {
-            // wildcard
-            return acc + NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX "*";
-        }
-        else {
-            return acc +
-                NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX +
-                NStr::IntToString(zoom_level);
-        }
-    }
-    else if ( incl_level != zoom_level ) {
-        // different zoom level
-        NCBI_THROW_FMT(CSeqAnnotException, eZoom,
-                       "AddZoomLevel: Incompatible zoom levels: "
-                       <<acc<<" vs "<<zoom_level);
-    }
-    return acc;
+    string ret = acc;
+    AddZoomLevel(ret, zoom_level);
+    return ret;
 }
 
 
