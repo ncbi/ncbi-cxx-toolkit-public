@@ -732,8 +732,6 @@ string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_re
     ostringstream os;
     user_request->x_GetAbsPathRef(os);
 
-    if (const auto hops = user_request->m_Hops) os << "&hops=" << hops;
-
     os << other_args;
     m_UserArgsBuilder.GetLock()->Build(os, user_request->m_UserArgs);
     return os.str();

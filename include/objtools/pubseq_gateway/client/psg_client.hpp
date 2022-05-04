@@ -135,10 +135,6 @@ public:
     // Get request ID
     string GetId() const { return x_GetId(); }
 
-    /// Set hops
-    /// @deprecated use SetUserArgs instead
-    NCBI_DEPRECATED void SetHops(unsigned hops) { m_Hops = hops; }
-
     /// Set arbitrary URL arguments to add to this request.
     /// @code
     /// request->SetUserArgs("param1=value1&param1=value2&param2=value3");
@@ -164,7 +160,6 @@ private:
 
     shared_ptr<void> m_UserContext;
     CRef<CRequestContext> m_RequestContext;
-    unsigned m_Hops = 0;
     SPSG_UserArgs m_UserArgs;
 
     friend class CPSG_Queue;
