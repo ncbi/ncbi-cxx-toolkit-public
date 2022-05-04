@@ -262,11 +262,6 @@ public:
     CRef<CSNPSeqInfo> GetSeqInfo(size_t seq_index);
     CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
 
-    CMutex& GetMutex(void) const
-    {
-        return m_SNPMutex;
-    }
-
     objects::CSNPDb& GetDb(void)
     {
         return m_SNPDb;
@@ -290,7 +285,6 @@ protected:
     string m_FileName; // external VDB file access string
     string m_Accession; // OM named annot accession (without filter index)
     string m_AnnotName; // OM annot name (without filter index)
-    mutable CMutex m_SNPMutex;
     objects::CSNPDb m_SNPDb;
     TSeqById m_SeqById;
     TSeqByIdx m_SeqByIdx;
