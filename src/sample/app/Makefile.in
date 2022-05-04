@@ -12,4 +12,3 @@ REQUIRES = app
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
-
