@@ -778,7 +778,6 @@ void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
     }
 
     os << s_GetAccSubstitution(m_AccSubstitution);
-    os << s_GetAutoBlobSkipping(m_AutoBlobSkipping);
 
     if (m_ResendTimeout.IsInfinite()) {
         NCBI_THROW(CPSG_Exception, eParameterMissing, "Infinite resend timeout is not supported");
