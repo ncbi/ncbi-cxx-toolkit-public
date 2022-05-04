@@ -55,6 +55,37 @@ using namespace objects;
 
 //////////////////////////////////////////////////////////////////////////////
 
+namespace edirect {
+
+    // Authors: Jonathan Kans, Aaron Ucko
+
+    string Execute (
+        const string& cmmd,
+        const vector<string>& args,
+        const string& data
+    )
+
+    {
+        static const STimeout five_seconds = { 5, 0 };
+        CConn_PipeStream ps(cmmd.c_str(), args, CPipe::fStdErr_Share, 0, &five_seconds);
+
+        if ( ! data.empty() ) {
+            ps << data;
+            if (! NStr::EndsWith(data, "\n")) {
+                ps << "\n";
+            }
+        }
+
+        ps.flush();
+        ps.GetPipe().CloseHandle(CPipe::fStdIn);
+
+        string str;
+        NcbiStreamToString(&str, ps);
+
+        return str;
+    }
+}
+
 
 static const char*
 s_GetErrCodeString(CEUtilsException::TErrCode err_code)

@@ -44,6 +44,18 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 
+namespace edirect {
+
+    // Provides simplified access to Entrez Direct scripts
+
+    string Execute (
+        const string& cmmd,
+        const vector<string>& args,
+        const string& data = kEmptyStr
+    );
+}
+
+
 class CEUtilsException : public CException
 {
 public:
