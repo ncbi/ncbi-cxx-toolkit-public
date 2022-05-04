@@ -2508,10 +2508,10 @@ static string s_CodonVariation(const CSeq_align &align, TSeqPos pos,
         }
         if (snp_count == 1) {
             pos += (strand == eNa_strand_minus ? -1 : 1) * snp_pos;
-            variation = NStr::NumericToString(pos) + query[snp_pos] + '/'
+            variation = NStr::NumericToString(pos) + query[snp_pos] + '>'
                                                    + subject[snp_pos];
         } else {
-            variation = NStr::NumericToString(pos) + query + '/' + subject;
+            variation = NStr::NumericToString(pos) + query + '>' + subject;
         }
     }
     return variation;
