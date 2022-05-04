@@ -1168,7 +1168,6 @@ static string s_GetAuthorMedlineName(const CAuthor& author)
             initials = utf8_to_wstring(lfis.GetInitials());
         else if (lfis.IsSetForeName())
             initials = s_GetInitialsFromForeName(utf8_to_wstring(lfis.GetForeName()));
-        s_ToUpper(initials);
         if (!initials.empty())
             author_medline_name.append(L" " + initials);
         if (lfis.IsSetSuffix())
