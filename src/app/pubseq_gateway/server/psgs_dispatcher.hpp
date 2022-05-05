@@ -40,6 +40,7 @@
 // Must be more than the processor groups registered via the AddProcessor()
 // call
 #define MAX_PROCESSOR_GROUPS    16
+#define PROC_BUCKETS            100
 
 // libuv request timer callback
 void request_timer_cb(uv_timer_t *  handle);
@@ -159,7 +160,7 @@ private:
     // Auxiliary structure to store the group of processors data
     struct SProcessorGroup
     {
-        vector<SProcessorData>        m_Processors;
+        vector<SProcessorData>      m_Processors;
         uv_timer_t *                m_RequestTimer;
         bool                        m_TimerActive;
         // true if the reply has been already flushed and finished
@@ -235,12 +236,21 @@ private:
         }
     };
 
-    // The dispatcher owns the created processors. The map below makes a
-    // correspondance between the request id (size_t; generated in the request
-    // constructor) and a list of processors with their properties.
+    // Note: the data are spread between buckets so that there is less
+    // contention on the data protecting mutexes
+
+    size_t  x_GetBucketIndex(size_t  request_id) const
+    {
+        return request_id % PROC_BUCKETS;
+    }
+
+    // The dispatcher shares the created processors with pending operation.
+    // The map below makes a correspondance between the request id (size_t;
+    // generated in the request constructor) and a list of processors with
+    // their properties.
     unordered_map<size_t,
-                  unique_ptr<SProcessorGroup>>      m_ProcessorGroups;
-    mutex                                           m_GroupsLock;
+                  unique_ptr<SProcessorGroup>>      m_ProcessorGroups[PROC_BUCKETS];
+    mutex                                           m_GroupsLock[PROC_BUCKETS];
 
     uint64_t                                        m_RequestTimeoutMillisec;
 
