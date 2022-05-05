@@ -185,6 +185,7 @@ TSvrRef CPoolBalancer::x_GetServer(const void* params, IBalanceable** conn)
             Uint2          port         = (*conn)->Port();
             double         excess;
             bool           keep         = true;
+            string         penalty_note;
             conn_key = CEndpointKey(host, port);
             auto it = m_Endpoints.find(conn_key);
             if (it == m_Endpoints.end()) {
@@ -199,12 +200,26 @@ TSvrRef CPoolBalancer::x_GetServer(const void* params, IBalanceable** conn)
                 excess = (it->second.actual_count
                           - it->second.effective_ranking * scale_factor);
                 result.Reset(&*it->second.ref);
+                if (it->second.penalty_level > 0) {
+                    auto min_penalty = it->second.penalty_level;
+                    for (auto it2 : m_Endpoints) {
+                        min_penalty = min(min_penalty,
+                                          it2.second.penalty_level);
+                    }
+                    if (min_penalty < it->second.penalty_level) {
+                        keep = false;
+                        penalty_note = FORMAT(
+                            "; penalty level " << it->second.penalty_level
+                            << " exceeds minimum value " << min_penalty);
+                    }
+                }
             }
             _TRACE_X(5,
                      "Considering connection to " << conn_key << " ("
                      << server_name
-                     << ") for turnover; projected excess count " << excess);
-            if (excess > 0.0) {
+                     << ") for turnover; projected excess count " << excess
+                     << penalty_note);
+            if (keep  &&  excess > 0.0) {
                 unsigned int pool_max = x_GetPoolMax(params);
                 if (pool_max == 0u) {
                     pool_max = m_TotalCount * 2;
