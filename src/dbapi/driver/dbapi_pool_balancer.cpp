@@ -70,7 +70,8 @@ CDBPoolBalancer::CDBPoolBalancer(IDBServiceInfo& service_info,
                     driver_ctx != nullptr
                     &&  !NStr::StartsWith(driver_ctx->GetDriverName(),
                                           "ftds")),
-      m_ServiceInfo(&service_info), m_DriverCtx(driver_ctx)
+      m_ServiceInfo(&service_info), m_PoolName(pool_name),
+      m_DriverCtx(driver_ctx)
 {
     x_ReinitFromCounts();
 }
