@@ -2,7 +2,7 @@
 {
     "status": "NotFound",
     "errors": [
-        "No matching processors found to serve the request"
+        "No matching processors found or processor limits exceeded to serve the request"
     ]
 }
 ]
