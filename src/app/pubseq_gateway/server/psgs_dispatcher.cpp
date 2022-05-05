@@ -66,6 +66,8 @@ void erase_processor_group_cb(void *  user_data)
 void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 {
     if (m_RegisteredProcessors.size() >= MAX_PROCESSOR_GROUPS) {
+        // This check is only for the development time when new processors are
+        // added. It will never happened in deployment.
         ERR_POST(Critical << "Max number of processor groups to be registered "
                  "has been reached. Please increase the MAX_PROCESSOR_GROUPS "
                  "value. Exiting.");
@@ -79,6 +81,8 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
                           m_RegisteredProcessorGroups.end(),
                           processor_group_name);
     if (it != m_RegisteredProcessorGroups.end()) {
+        // This check is only for the development time when new processors are
+        // added. It will never happened in deployment.
         ERR_POST(Critical << "Each processor group must be registered once. "
                  "The group '" << processor_group_name << "' is tried to be "
                  "registered more than once. Exiting.");
@@ -182,9 +186,11 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
              unique_ptr<SProcessorGroup>>   req_grp = make_pair(request_id,
                                                                 unique_ptr<SProcessorGroup>(grp));
 
-        m_GroupsLock.lock();
-        m_ProcessorGroups.insert(m_ProcessorGroups.end(), move(req_grp));
-        m_GroupsLock.unlock();
+        size_t      bucket_index = x_GetBucketIndex(request_id);
+        m_GroupsLock[bucket_index].lock();
+        m_ProcessorGroups[bucket_index].insert(m_ProcessorGroups[bucket_index].end(),
+                                               move(req_grp));
+        m_GroupsLock[bucket_index].unlock();
     }
 
     return ret;
@@ -198,7 +204,9 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     // processors.
     bool                        need_trace = processor->GetRequest()->NeedTrace();
     size_t                      request_id = processor->GetRequest()->GetRequestId();
-    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
+    size_t                      bucket_index = x_GetBucketIndex(request_id);
+    IPSGS_Processor *           current_proc = nullptr;
+    vector<IPSGS_Processor *>   to_be_canceled;     // To avoid calling Cancel()
                                                     // under the lock
 
     // NOTE: there is no need to do anything with the request timer.
@@ -206,7 +214,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     //       request timer is triggered the last activity will be checked.
     //       Basing on the check results the request timer may be restarted.
 
-    m_GroupsLock.lock();
+    m_GroupsLock[bucket_index].lock();
 
     if (need_trace) {
         // Trace sending is under a lock intentionally: to avoid changes in the
@@ -222,10 +230,10 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
             false);
     }
 
-    auto    procs = m_ProcessorGroups.find(request_id);
-    if (procs == m_ProcessorGroups.end()) {
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs == m_ProcessorGroups[bucket_index].end()) {
         // The processors group does not exist anymore
-        m_GroupsLock.unlock();
+        m_GroupsLock[bucket_index].unlock();
         return IPSGS_Processor::ePSGS_Cancel;
     }
 
@@ -234,7 +242,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
         if (proc.m_Processor.get() == processor) {
             if (proc.m_DispatchStatus == ePSGS_Canceled) {
                 // The other processor has already called Cancel() for this one
-                m_GroupsLock.unlock();
+                m_GroupsLock[bucket_index].unlock();
                 return IPSGS_Processor::ePSGS_Cancel;
             }
             if (proc.m_DispatchStatus != ePSGS_Up) {
@@ -248,18 +256,20 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     // Everything looks OK; this is the first processor who started to send
     // data to the client so the other processors should be canceled
     for (auto &  proc: procs->second->m_Processors) {
-        if (proc.m_Processor.get() == processor)
-            continue;
-        if (proc.m_DispatchStatus == ePSGS_Up) {
-            proc.m_DispatchStatus = ePSGS_Canceled;
-            to_be_canceled.push_back(proc.m_Processor.get());
+        current_proc = proc.m_Processor.get();
+
+        if (current_proc != processor) {
+            if (proc.m_DispatchStatus == ePSGS_Up) {
+                proc.m_DispatchStatus = ePSGS_Canceled;
+                to_be_canceled.push_back(current_proc);
+            }
         }
     }
 
     // Memorize which processor succeeded with starting supplying data
     procs->second->m_StartedProcessing = processor;
 
-    m_GroupsLock.unlock();
+    m_GroupsLock[bucket_index].unlock();
 
     // Call the other processor's Cancel() out of the lock
     for (auto & proc: to_be_canceled) {
@@ -278,6 +288,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     return IPSGS_Processor::ePSGS_Proceed;
 }
 
+
 void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                               EPSGS_SignalSource  source)
 {
@@ -288,6 +299,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     auto                            reply = processor->GetReply();
     auto                            request = processor->GetRequest();
     size_t                          request_id = request->GetRequestId();
+    size_t                          bucket_index = x_GetBucketIndex(request_id);
     IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
     IPSGS_Processor::EPSGS_Status   processor_status = processor->GetStatus();
     bool                            need_trace = request->NeedTrace();
@@ -295,16 +307,6 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
     size_t                          finishing_count = 0;
     size_t                          finished_count = 0;
-
-    m_GroupsLock.lock();
-
-    auto    procs = m_ProcessorGroups.find(request_id);
-    if (procs == m_ProcessorGroups.end()) {
-        // The processors group does not exist any more
-        // Basically this should never happened
-        m_GroupsLock.unlock();
-        return;
-    }
 
     if (processor_status == IPSGS_Processor::ePSGS_InProgress) {
         // Call by mistake? The processor reports status as in progress and
@@ -320,8 +322,16 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 ". Ignore this call and continue.",
                 request, reply);
         }
+        return;
+    }
 
-        m_GroupsLock.unlock();
+    m_GroupsLock[bucket_index].lock();
+
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs == m_ProcessorGroups[bucket_index].end()) {
+        // The processors group does not exist any more
+        // Basically this should never happened
+        m_GroupsLock[bucket_index].unlock();
         return;
     }
 
@@ -461,6 +471,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     size_t  total_count = procs->second->m_Processors.size();
     bool    pre_finished = (finished_count + finishing_count) == total_count;
     bool    fully_finished = finished_count == total_count;
+    bool    need_unlock = true;
 
     if (pre_finished) {
         // The reply needs to be flushed if it has not been done yet
@@ -488,9 +499,18 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             // This will switch the stream to the finished state, i.e.
             // IsFinished() will return true
             procs->second->m_FlushedAndFinished = true;
+
+            // To avoid flushing and stopping request under a lock
+            m_GroupsLock[bucket_index].unlock();
+            need_unlock = false;
+
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
             x_PrintRequestStop(request, request_status);
         }
+    }
+
+    if (need_unlock) {
+        m_GroupsLock[bucket_index].unlock();
     }
 
     if (fully_finished) {
@@ -505,8 +525,6 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                                         (void*)(request_id));
         }
     }
-
-    m_GroupsLock.unlock();
 }
 
 
@@ -516,14 +534,15 @@ void CPSGS_Dispatcher::SignalConnectionCanceled(size_t      request_id)
     // send anything over the connection. So basically what is needed to do is
     // to cancel processors which have not been canceled yet.
 
-    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
-                                                    // under the lock
+    size_t                          bucket_index = x_GetBucketIndex(request_id);
+    vector<IPSGS_Processor *>       to_be_canceled;     // To avoid calling Cancel()
+                                                        // under the lock
 
-    m_GroupsLock.lock();
-    auto    procs = m_ProcessorGroups.find(request_id);
-    if (procs == m_ProcessorGroups.end()) {
+    m_GroupsLock[bucket_index].lock();
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs == m_ProcessorGroups[bucket_index].end()) {
         // The processors group does not exist any more
-        m_GroupsLock.unlock();
+        m_GroupsLock[bucket_index].unlock();
         return;
     }
 
@@ -533,7 +552,7 @@ void CPSGS_Dispatcher::SignalConnectionCanceled(size_t      request_id)
             to_be_canceled.push_back(proc.m_Processor.get());
         }
     }
-    m_GroupsLock.unlock();
+    m_GroupsLock[bucket_index].unlock();
 
     for (auto & proc: to_be_canceled) {
         proc->Cancel();
@@ -605,15 +624,14 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
     // provided request id. So check if the processors group is still held.
 
 
-    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
+    size_t                      bucket_index = x_GetBucketIndex(request_id);
+    vector<IPSGS_Processor *>   to_be_canceled;     // To avoid calling Cancel()
                                                     // under the lock
 
-    m_GroupsLock.lock();
+    m_GroupsLock[bucket_index].lock();
 
-    auto    procs = m_ProcessorGroups.find(request_id);
-    if (procs == m_ProcessorGroups.end()) {
-        // The processors group does not exist any more
-    } else {
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs != m_ProcessorGroups[bucket_index].end()) {
         // Remove the group because the low level request structures have
         // already been dismissed
 
@@ -637,7 +655,7 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
         }
     }
 
-    m_GroupsLock.unlock();
+    m_GroupsLock[bucket_index].unlock();
 
     for (auto & proc: to_be_canceled) {
         proc->Cancel();
@@ -648,36 +666,41 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
 // Used when shutdown is timed out
 void CPSGS_Dispatcher::CancelAll(void)
 {
-    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
+    vector<IPSGS_Processor *>   to_be_canceled;     // To avoid calling Cancel()
                                                     // under the lock
 
-    m_GroupsLock.lock();
+    for (size_t  bucket_index = 0; bucket_index < PROC_BUCKETS; ++bucket_index) {
+        m_GroupsLock[bucket_index].lock();
 
-    for (auto & procs :  m_ProcessorGroups) {
-        for (auto &  proc: procs.second->m_Processors) {
-            if (proc.m_DispatchStatus == ePSGS_Up) {
-                to_be_canceled.push_back(proc.m_Processor.get());
+        for (auto & procs :  m_ProcessorGroups[bucket_index]) {
+            for (auto &  proc: procs.second->m_Processors) {
+                if (proc.m_DispatchStatus == ePSGS_Up) {
+                    to_be_canceled.push_back(proc.m_Processor.get());
+                }
             }
         }
-    }
 
-    m_GroupsLock.unlock();
+        m_GroupsLock[bucket_index].unlock();
 
-    for (auto & proc: to_be_canceled) {
-        proc->Cancel();
+        for (auto & proc: to_be_canceled) {
+            proc->Cancel();
+        }
+        to_be_canceled.clear();
     }
 }
 
 
 void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
 {
-    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
+    size_t                      bucket_index = x_GetBucketIndex(request_id);
+    vector<IPSGS_Processor *>   to_be_canceled;     // To avoid calling Cancel()
                                                     // under the lock
-    m_GroupsLock.lock();
 
-    auto    procs = m_ProcessorGroups.find(request_id);
-    if (procs == m_ProcessorGroups.end()) {
-        m_GroupsLock.unlock();
+    m_GroupsLock[bucket_index].lock();
+
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs == m_ProcessorGroups[bucket_index].end()) {
+        m_GroupsLock[bucket_index].unlock();
         return;
     }
 
@@ -707,7 +730,7 @@ void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
         uint64_t    timeout = m_RequestTimeoutMillisec - from_last_activity_to_now_ms;
         procs->second->RestartTimer(timeout);
 
-        m_GroupsLock.unlock();
+        m_GroupsLock[bucket_index].unlock();
     } else {
         // The request timer is over
         if (request->NeedTrace()) {
@@ -731,7 +754,7 @@ void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
             }
         }
 
-        m_GroupsLock.unlock();
+        m_GroupsLock[bucket_index].unlock();
 
         for (auto & proc: to_be_canceled) {
             proc->Cancel();
@@ -742,20 +765,21 @@ void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
 
 void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
 {
+    size_t              bucket_index = x_GetBucketIndex(request_id);
     SProcessorGroup *   group = nullptr;
 
-    m_GroupsLock.lock();
+    m_GroupsLock[bucket_index].lock();
 
-    auto    procs = m_ProcessorGroups.find(request_id);
-    if (procs != m_ProcessorGroups.end()) {
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs != m_ProcessorGroups[bucket_index].end()) {
         group = procs->second.release();
 
-        // Without releasing the pointer it may lead to some processor
+        // Without releasing the pointer it may lead to a processor
         // destruction under the lock. This causes a contention on the mutex
         // and performance degrades.
-        m_ProcessorGroups.erase(procs);
+        m_ProcessorGroups[bucket_index].erase(procs);
     }
-    m_GroupsLock.unlock();
+    m_GroupsLock[bucket_index].unlock();
 
     if (group != nullptr)
         delete group;
