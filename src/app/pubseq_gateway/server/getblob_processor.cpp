@@ -258,13 +258,18 @@ void CPSGS_GetBlobProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         return;
     }
 
-    if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
-        return;
+    if (is_found) {
+        if (SignalStartProcessing() == EPSGS_StartProcessing::ePSGS_Cancel) {
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
+            return;
+        }
     }
 
-    // If the other processor waits then let it go but after sending the signal
-    // of the good data (it may cancel the other processors)
+    // NOTE: getblob processor should unlock waiting processors regardless if
+    // the blob properties are found or not.
+    // - if found => the other processors will be canceled
+    // - if not found => the blob will not be retrieved anyway without the blob
+    //   props so the other processors may continue
     UnlockWaitingProcessor();
 
     CPSGS_CassBlobBase::OnGetBlobProp(fetch_details, blob, is_found);
