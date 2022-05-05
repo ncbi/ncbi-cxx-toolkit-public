@@ -338,10 +338,17 @@ static bool s_ShouldRemoveRef
         CReferenceItem::FormatAuthors(prev_ref.GetAuthors(), auth2);
     }
     const bool authorsSame = NStr::EqualNocase(auth1, auth2);
+    const bool locationsEqual = curr_ref.GetLoc().Equals( prev_ref.GetLoc() );
+
+    // both submission citations
+    if ( curr_ref.GetCategory() == CReferenceItem::eSubmission && prev_ref.GetCategory() == CReferenceItem::eSubmission ) {
+        if ( authorsSame && locationsEqual && curr_ref.GetRemark() != prev_ref.GetRemark() ) {
+            return false;
+        }
+    }
 
     const string& curr_unique_str = curr_ref.GetUniqueStr();
     const string& prev_unique_str = prev_ref.GetUniqueStr();
-    const bool locationsEqual = curr_ref.GetLoc().Equals( prev_ref.GetLoc() );
     if( NStr::EqualNocase( curr_unique_str, prev_unique_str ) &&
         locationsEqual &&
         authorsSame ) {
