@@ -308,8 +308,8 @@ COSGConnectionPool::COSGConnectionPool()
       m_CDDRetryTimeout(kDefaultCDDRetryTimeout),
       m_RetryCount(kDefaultRetryCount),
       m_DefaultEnabledFlags(kDefaultEnabledFlags),
-      m_AsyncProcessing(kDefaultAsyncProcessing),
       m_WaitBeforeOSG(kDefaultWaitBeforeOSG),
+      m_AsyncProcessing(kDefaultAsyncProcessing),
       m_WaitConnectionSlot(0, kMax_Int),
       m_NextConnectionID(1),
       m_ConnectionCount(0),
@@ -441,6 +441,28 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
     m_WaitBeforeOSG = registry.GetBool(section,
                                        kParamWaitBeforeOSG,
                                        kDefaultWaitBeforeOSG);
+
+    if ( 1 ) {
+        // pre-load CSeq_id accession type table
+        CSeq_id::IdentifyAccession("AAAA01000001");
+    }
+
+    if ( 1 ) {
+        // pre-open first OSG connection
+        for ( auto t = GetRetryCount(); t--;  ) {
+            try {
+                auto conn = AllocateConnection();
+                ReleaseConnection(conn);
+                break;
+            }
+            catch (exception& exc) {
+                ERR_POST("OSG: failed to open initial connection: "<<exc);
+                if ( !t ) {
+                    throw;
+                }
+            }
+        }
+    }
 }
 
 
