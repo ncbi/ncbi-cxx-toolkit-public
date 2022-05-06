@@ -1,0 +1,13 @@
+#############################################################################
+#  $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_citmatch)
+  NCBI_sources(unit_test_citmatch)
+  NCBI_uses_toolkit_libraries(
+    xobjedit xunittestutil test_boost
+  )
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test()
+  NCBI_project_watchers(stakhovv)
+NCBI_end_app()
