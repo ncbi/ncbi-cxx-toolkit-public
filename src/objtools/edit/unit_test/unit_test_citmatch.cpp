@@ -130,6 +130,16 @@ BOOST_AUTO_TEST_CASE(Test1)
     }
 }
 
+BOOST_AUTO_TEST_CASE(Test_Known_PMID)
+{
+    TEntrezId pmid = ENTREZ_ID_CONST(12'345);
+    for (auto upd : updaters) {
+        auto      pub      = upd->GetPub(pmid);
+        TEntrezId pmid_new = upd->CitMatch(*pub);
+        BOOST_CHECK_EQUAL(pmid, pmid_new);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(Test2_ASN)
 {
     static const string TEST_PUB = R"(
@@ -155,17 +165,6 @@ Pub ::= article {
     for (auto upd : updaters) {
         TEntrezId pmid = upd->CitMatch(pub);
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'253'208));
-        break; // TODO
-    }
-}
-
-BOOST_AUTO_TEST_CASE(Test_Known_PMID)
-{
-    TEntrezId pmid0 = ENTREZ_ID_CONST(12'345);
-    for (auto upd : updaters) {
-        auto      pub   = upd->GetPub(pmid0);
-        TEntrezId pmid1 = upd->CitMatch(*pub);
-        BOOST_CHECK_EQUAL(pmid0, pmid1);
         break; // TODO
     }
 }
