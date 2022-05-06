@@ -71,7 +71,7 @@ static const char kIndexMagicBAI[] = "BAI\1";
 static const char kCsiExt[] = ".csi";
 static const char kIndexMagicCSI[] = "CSI\1";
 NCBI_PARAM_DECL(bool, BAM, PREFER_CSI);
-NCBI_PARAM_DEF(bool, BAM, PREFER_CSI, false);
+NCBI_PARAM_DEF_EX(bool, BAM, PREFER_CSI, false, eParam_NoThread, BAM_PREFER_CSI);
 #endif
 static const float kEstimatedCompression = 0.25;
 
@@ -277,6 +277,73 @@ struct PByStartFilePos {
         }
 };
 
+
+struct PByEndFilePos {
+    bool operator()(const CBGZFPos p1, const CBGZFRange& p2) const
+        {
+            return p1 < p2.second;
+        }
+    bool operator()(const CBGZFRange& p1, const CBGZFPos p2) const
+        {
+            return p1.second < p2;
+        }
+};
+
+
+void SBamIndexRefIndex::SetLengthFromHeader(TSeqPos length)
+{
+    if ( length != kInvalidSeqPos ) {
+        TSeqPos rounded_length = (length+GetMinBinSize()-1)&~(GetMinBinSize()-1);
+        m_EstimatedLength = max(m_EstimatedLength, rounded_length);
+    }
+}
+
+
+bool SBamIndexRefIndex::ProcessPseudoBin(SBamIndexBinInfo& bin)
+{
+    if ( bin.m_Chunks.size() != 2 ) {
+        NCBI_THROW(CBamException, eInvalidBAIFormat,
+                   "Bad unmapped bin format");
+    }
+    m_UnmappedChunk = bin.m_Chunks[0];
+    m_MappedCount = bin.m_Chunks[1].first.GetVirtualPos();
+    m_UnmappedCount = bin.m_Chunks[1].second.GetVirtualPos();
+    bin.m_Chunks.erase(bin.m_Chunks.begin(), bin.m_Chunks.begin()+2);
+    return bin.m_Chunks.empty();
+}
+
+
+void SBamIndexRefIndex::ProcessBin(const SBamIndexBinInfo& bin)
+{
+    if ( bin.m_Chunks.empty() ) {
+        NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
+                       "No chunks in bin "<<bin.m_Bin);
+    }
+    for ( size_t i = 0; i < bin.m_Chunks.size(); ++i ) {
+        auto& range = bin.m_Chunks[i];
+        if ( range.first >= range.second ) {
+            NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
+                           "Empty BAM BGZF range in bin "<<bin.m_Bin<<
+                           ": "<<range.first<<" - "<<range.second);
+        }
+        if ( i && bin.m_Chunks[i-1].second >= range.first ) {
+            NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
+                           "Overlapping BAM BGZF ranges in bin "<<bin.m_Bin<<
+                           ": "<<bin.m_Chunks[i-1].second<<" over "<<range.first);
+        }
+    }
+    auto range = bin.GetSeqRange(*this);
+    TSeqPos min_end = range.GetFrom();
+    if ( range.GetLength() != GetMinBinSize() ) {
+        // at least 1 sub-range
+        min_end += range.GetLength() >> kLevelStepBinShift;
+    }
+    // at least 1 minimal page
+    min_end += GetMinBinSize();
+    m_EstimatedLength = max(m_EstimatedLength, min_end);
+}
+
+
 void SBamIndexRefIndex::Read(CNcbiIstream& in,
                              SBamIndexParams params,
                              int32_t ref_index)
@@ -290,44 +357,11 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in,
     for ( int32_t i_bin = 0; i_bin < n_bin; ++i_bin ) {
         SBamIndexBinInfo& bin = m_Bins[bin_count++];
         bin.Read(in, *this);
-        if ( bin.m_Bin == kPseudoBin ) {
-            if ( bin.m_Chunks.size() != 2 ) {
-                NCBI_THROW(CBamException, eInvalidBAIFormat,
-                           "Bad unmapped bin format");
-            }
-            m_UnmappedChunk = bin.m_Chunks[0];
-            m_MappedCount = bin.m_Chunks[1].first.GetVirtualPos();
-            m_UnmappedCount = bin.m_Chunks[1].second.GetVirtualPos();
+        if ( bin.m_Bin == kPseudoBin && ProcessPseudoBin(bin) ) {
             --bin_count;
+            continue;
         }
-        else {
-            if ( bin.m_Chunks.empty() ) {
-                NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
-                               "No chunks in bin "<<bin.m_Bin);
-            }
-            for ( size_t i = 0; i < bin.m_Chunks.size(); ++i ) {
-                auto& range = bin.m_Chunks[i];
-                if ( range.first >= range.second ) {
-                    NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
-                                   "Empty BAM BGZF range in bin "<<bin.m_Bin<<
-                                   ": "<<range.first<<" - "<<range.second);
-                }
-                if ( i && bin.m_Chunks[i-1].second >= range.first ) {
-                    NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
-                                   "Overlapping BAM BGZF ranges in bin "<<bin.m_Bin<<
-                                   ": "<<bin.m_Chunks[i-1].second<<" over "<<range.first);
-                }
-            }
-            auto range = bin.GetSeqRange(*this);
-            TSeqPos min_end = range.GetFrom();
-            if ( range.GetLength() != GetMinBinSize() ) {
-                // at least 1 sub-range
-                min_end += range.GetLength() >> kLevelStepBinShift;
-            }
-            // at least 1 minimal page
-            min_end += GetMinBinSize();
-            m_EstimatedLength = max(m_EstimatedLength, min_end);
-        }
+        ProcessBin(bin);
     }
     m_Bins.resize(bin_count);
     gfx::timsort(m_Bins.begin(), m_Bins.end());
@@ -354,58 +388,17 @@ const char* SBamIndexRefIndex::Read(const char* buffer_ptr, const char* buffer_e
     size_t n_bin = SBamUtil::MakeUint4(s_Read(buffer_ptr, buffer_end, 4));
     m_Bins.resize(n_bin);
     const TBin kPseudoBin = GetPseudoBin();
-    bool need_to_sort = false;
     for ( size_t i_bin = 0; i_bin < n_bin; ++i_bin ) {
         SBamIndexBinInfo& bin = m_Bins[bin_count++];
         buffer_ptr = bin.Read(buffer_ptr, buffer_end, *this);
-        if ( bin.m_Bin == kPseudoBin ) {
-            if ( bin.m_Chunks.size() < 2 ) {
-                NCBI_THROW(CBamException, eInvalidBAIFormat,
-                           "Bad unmapped bin format");
-            }
-            m_UnmappedChunk = bin.m_Chunks[0];
-            m_MappedCount = bin.m_Chunks[1].first.GetVirtualPos();
-            m_UnmappedCount = bin.m_Chunks[1].second.GetVirtualPos();
-            bin.m_Chunks.erase(bin.m_Chunks.begin(), bin.m_Chunks.begin()+2);
-            if ( bin.m_Chunks.empty() ) {
-                --bin_count;
-                continue;
-            }
+        if ( bin.m_Bin == kPseudoBin && ProcessPseudoBin(bin) ) {
+            --bin_count;
+            continue;
         }
-        if ( bin_count >= 2 && !(m_Bins[bin_count-2] < bin) ) {
-            need_to_sort = true;
-        }
-        if ( bin.m_Chunks.empty() ) {
-            NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
-                           "No chunks in bin "<<bin.m_Bin);
-        }
-        for ( size_t i = 0; i < bin.m_Chunks.size(); ++i ) {
-            auto& range = bin.m_Chunks[i];
-            if ( range.first >= range.second ) {
-                NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
-                               "Empty BAM BGZF range in bin "<<bin.m_Bin<<
-                               ": "<<range.first<<" - "<<range.second);
-            }
-            if ( i && bin.m_Chunks[i-1].second >= range.first ) {
-                NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
-                               "Overlapping BAM BGZF ranges in bin "<<bin.m_Bin<<
-                               ": "<<bin.m_Chunks[i-1].second<<" over "<<range.first);
-            }
-        }
-        auto range = bin.GetSeqRange(*this);
-        TSeqPos min_end = range.GetFrom();
-        if ( range.GetLength() != GetMinBinSize() ) {
-            // at least 1 sub-range
-            min_end += range.GetLength() >> kLevelStepBinShift;
-        }
-        // at least 1 minimal page
-        min_end += GetMinBinSize();
-        m_EstimatedLength = max(m_EstimatedLength, min_end);
+        ProcessBin(bin);
     }
     m_Bins.resize(bin_count);
-    if ( need_to_sort ) {
-        gfx::timsort(m_Bins.begin(), m_Bins.end());
-    }
+    gfx::timsort(m_Bins.begin(), m_Bins.end());
 
     if ( !is_CSI ) {
         size_t n_intv = SBamUtil::MakeUint4(s_Read(buffer_ptr, buffer_end, 4));
@@ -421,9 +414,92 @@ const char* SBamIndexRefIndex::Read(const char* buffer_ptr, const char* buffer_e
 }
 
 
+static
+COpenRange<TSeqPos>
+s_GetSeqRange(SBamIndexParams params,
+              const pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter>& iters)
+{
+    if ( iters.first == iters.second ) {
+        return COpenRange<TSeqPos>::GetEmpty();
+    }
+    else if ( !params.is_CSI && iters.first->m_Bin == params.kMaxBinNumber ) {
+        // special case for BAI index of too long sequence
+        return COpenRange<TSeqPos>::GetWhole();
+    }
+    else {
+        return iters.first->GetSeqRange(params);
+    }
+}
+
+
+static
+CBGZFPos
+s_GetOverlap(const pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter>& iters)
+{
+    if ( iters.first == iters.second ) {
+        return CBGZFPos::GetInvalid();
+    }
+    else {
+        return iters.first->m_Overlap;
+    }
+}
+
+
+static
+CBGZFPos
+s_GetFilePos(const pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter>& iters)
+{
+    auto iter = iters.first;
+    if ( iter == iters.second ) {
+        return CBGZFPos::GetInvalid();
+    }
+    return iter->GetStartFilePos();
+}
+
+
+static
+CBGZFPos
+s_GetNextFilePos(const pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter>& iters)
+{
+    auto iter = iters.first;
+    if ( iter == iters.second ) {
+        return CBGZFPos::GetInvalid();
+    }
+    ++iter;
+    if ( iter == iters.second ) {
+        return CBGZFPos::GetInvalid();
+    }
+    return iter->GetStartFilePos();
+}
+
+/*
+static
+CBGZFPos
+s_GetFileEnd(const pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter>& iters)
+{
+    if ( iters.first == iters.second ) {
+        return CBGZFPos::GetInvalid();
+    }
+    else {
+        return iters.first->GetEndFilePos();
+    }
+}
+*/
+
+NCBI_PARAM_DECL(int, BAM, OVERLAP_MODE);
+NCBI_PARAM_DEF_EX(int, BAM, OVERLAP_MODE, 2, eParam_NoThread, BAM_OVERLAP_MODE);
+
+
+static int s_GetOverlapMode()
+{
+    static int value = NCBI_PARAM_TYPE(BAM, OVERLAP_MODE)::GetDefault();
+    return value;
+}
+
+
 vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts() const
 {
-#if 1
+if ( s_GetOverlapMode() == 0 ) {
     TSeqPos nBins = m_EstimatedLength >> GetMinLevelBinShift();
     vector<TSeqPos> aln_over_starts(nBins);
     for ( TSeqPos i = 0; i < nBins; ++i ) {
@@ -483,7 +559,8 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts() const
         aln_over_starts[i] = min_aln_start;
     }
     return aln_over_starts;
-#else
+}
+else if ( s_GetOverlapMode() == 1 ) {
     size_t nBins = m_Overlaps.size();
     vector<TSeqPos> aln_over_starts(nBins);
     // next_bin_it points to a low-level bin that starts after current position
@@ -533,7 +610,122 @@ vector<TSeqPos> SBamIndexRefIndex::GetAlnOverStarts() const
         aln_over_starts[i] = min_aln_start;
     }
     return aln_over_starts;
-#endif
+}
+else {
+    TSeqPos nBins = m_EstimatedLength >> GetMinLevelBinShift();
+    vector<TSeqPos> aln_over_starts(nBins);
+    vector<pair<TBinsIter, TBinsIter>> levelBins;
+    vector<COpenRange<TSeqPos>> levelBinSeqRange;
+    vector<CBGZFPos> levelPrevOverlap;
+    if ( is_CSI ) {
+        levelPrevOverlap.resize(GetMaxIndexLevel()+1);
+    }
+    CBGZFPos minfp = CBGZFPos::GetInvalid();
+    for ( TIndexLevel level = 0; level <= GetMaxIndexLevel(); ++level ) {
+        levelBins.push_back(GetLevelBins(level));
+        levelBinSeqRange.push_back(s_GetSeqRange(*this, levelBins.back()));
+        minfp = min(minfp, s_GetFilePos(levelBins.back()));
+    }
+    if ( minfp.IsInvalid() ) {
+        // no file data -> no overlaps
+        return aln_over_starts;
+    }
+    map<TSeqPos, CBGZFPos> sp2minfp; // map seqpos to the earliest filepos it could appear
+    for ( auto& bin : m_Bins ) {
+        auto sp = bin.GetSeqRange(*this).GetFrom();
+        auto fp = bin.GetStartFilePos();
+        auto ins = sp2minfp.insert(make_pair(sp, fp));
+        if ( !ins.second ) {
+            // uptade with minimum
+            auto& minfp = ins.first->second;
+            minfp = min(minfp, fp);
+        }
+    }
+    map<CBGZFPos, TSeqPos> fp2sp; // map filepos to seqpos that certainly appear at or after
+    for ( auto p : sp2minfp ) {
+        auto ins = fp2sp.insert(make_pair(p.second, p.first));
+        if ( ins.second ) {
+            auto iter = ins.first;
+            ++iter;
+            while ( iter != fp2sp.end() && iter->second < p.first ) {
+                iter = fp2sp.erase(iter);
+            }
+        }
+    }
+    for ( TSeqPos b = 0; b < nBins; ++b ) {
+        TSeqPos seqPos = b << GetMinLevelBinShift();
+        CBGZFPos overlap_fp = CBGZFPos::GetInvalid();
+        if ( b < m_Overlaps.size() ) { // BAI overlap table
+            overlap_fp = m_Overlaps[b];
+        }
+        CBGZFPos prev_overlap_fp; // max overlap of previous bins on all levels
+        for ( TIndexLevel level = 0; level <= GetMaxIndexLevel(); ++level ) {
+            // advance to next bin on level if necessary
+            while ( levelBinSeqRange[level].GetToOpen() <= seqPos ) {
+                if ( is_CSI ) {
+                    levelPrevOverlap[level] = s_GetOverlap(levelBins[level]);
+                }
+                ++(levelBins[level].first);
+                levelBinSeqRange[level] = s_GetSeqRange(*this, levelBins[level]);
+            }
+            if ( is_CSI ) {
+                CBGZFPos overlap_fp;
+                if ( seqPos >= levelBinSeqRange[level].GetFrom() ) {
+                    overlap_fp = s_GetOverlap(levelBins[level]);
+                }
+                else {
+                    overlap_fp = levelPrevOverlap[level];
+                }
+                prev_overlap_fp = max(prev_overlap_fp, overlap_fp);
+            }
+        }        
+        CBGZFPos found_fp = CBGZFPos::GetInvalid(); // earliest filepos of overlapping alignment
+        CBGZFPos limit_fp = CBGZFPos::GetInvalid(); // filepos after this page to break the lookup
+        for ( TIndexLevel level = 0; level <= GetMaxIndexLevel(); ++level ) {
+            // advance to next bin on level if necessary
+            while ( levelBinSeqRange[level].GetToOpen() <= seqPos ) {
+                if ( is_CSI ) {
+                    levelPrevOverlap[level] = s_GetOverlap(levelBins[level]);
+                }
+                ++(levelBins[level].first);
+                levelBinSeqRange[level] = s_GetSeqRange(*this, levelBins[level]);
+            }
+            if ( seqPos < levelBinSeqRange[level].GetFrom() ) {
+                // not in the bin yet
+                continue;
+            }
+            if ( is_CSI && overlap_fp.IsInvalid() ) {
+                // CSI overlap info from bin
+                overlap_fp = max(prev_overlap_fp, levelBins[level].first->m_Overlap);
+            }
+            // update limit file pos from next bin on the level
+            limit_fp = min(limit_fp, s_GetNextFilePos(levelBins[level]));
+            // locate overlapping chunk
+            auto& chunks = levelBins[level].first->m_Chunks;
+            auto it = upper_bound(chunks.begin(), chunks.end(), overlap_fp, PByEndFilePos());
+            if ( it != chunks.end() && it->first < min(found_fp, limit_fp) ) {
+                // found suitable chunk
+                found_fp = max(it->first, overlap_fp);
+                if ( found_fp <= overlap_fp ) {
+                    // found minimum, no more searching
+                    break;
+                }
+            }
+        }
+        if ( found_fp.IsInvalid() ) {
+            aln_over_starts[b] = seqPos;
+        }
+        else {
+            // find minmal seq pos at this file pos
+            auto iter = fp2sp.upper_bound(found_fp);
+            _ASSERT(iter != fp2sp.begin());
+            // it could be after current page
+            auto osp = min(seqPos, prev(iter)->second);
+            aln_over_starts[b] = osp;
+        }
+    }
+    return aln_over_starts;
+}
 }
 
 
@@ -688,18 +880,14 @@ SBamIndexParams::GetBinRange(COpenRange<TSeqPos> ref_range,
 }
 
 
-SBamIndexRefIndex::TBins::const_iterator
+pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter>
 SBamIndexRefIndex::AddLevelFileRanges(vector<CBGZFRange>& ranges,
                                       CBGZFRange limit_file_range,
                                       pair<TBin, TBin> bin_range) const
 {
-    TBins::const_iterator ret = m_Bins.end();
-    for ( auto it = lower_bound(m_Bins.begin(), m_Bins.end(), bin_range.first);
-          it != m_Bins.end() && it->m_Bin <= bin_range.second;
-          ++it ) {
-        if ( ret == m_Bins.end() ) {
-            ret = it;
-        }
+    TBinsIter first = lower_bound(m_Bins.begin(), m_Bins.end(), bin_range.first);
+    TBinsIter it = first;
+    for ( ; it != m_Bins.end() && it->m_Bin <= bin_range.second; ++it ) {
         for ( auto c : it->m_Chunks ) {
             if ( c.first < limit_file_range.first ) {
                 c.first = limit_file_range.first;
@@ -712,21 +900,16 @@ SBamIndexRefIndex::AddLevelFileRanges(vector<CBGZFRange>& ranges,
             }
         }
     }
-    return ret;
+    return make_pair(first, it);
 }
 
 
-SBamIndexRefIndex::TBinsIter
-SBamIndexRefIndex::GetFirstExistingBin(pair<TBin, TBin> bin_range) const
+pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter>
+SBamIndexRefIndex::GetBinsIterRange(pair<TBin, TBin> bin_range) const
 {
-    TBinsIter ret = m_Bins.end();
-    for ( auto it = lower_bound(m_Bins.begin(), m_Bins.end(), bin_range.first);
-          it != m_Bins.end() && it->m_Bin <= bin_range.second;
-          ++it ) {
-        ret = it;
-        break;
-    }
-    return ret;
+    TBinsIter first = lower_bound(m_Bins.begin(), m_Bins.end(), bin_range.first);
+    TBinsIter it = upper_bound(first, m_Bins.end(), bin_range.second);
+    return make_pair(first, it);
 }
 
 
@@ -1090,7 +1273,7 @@ void CBamIndex::Read(CNcbiIstream& in)
     }
 #endif
     else {
-        NCBI_THROW_FMT(CBGZFException, eFormatError,
+        NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
                        "Bad file magic: "<<NStr::PrintableString(string(magic, magic+kIndexMagicLength)));
     }
     int32_t n_ref = s_ReadInt32(in);
@@ -1154,7 +1337,7 @@ void CBamIndex::Read(const char* buffer_ptr, size_t buffer_size)
     }
 #endif
     else {
-        NCBI_THROW_FMT(CBGZFException, eFormatError,
+        NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
                        "Bad file magic: "<<NStr::PrintableString(string(magic, magic+kIndexMagicLength)));
     }
     const char* header = s_Read(buffer_ptr, buffer_end, 4);
@@ -1181,6 +1364,19 @@ const SBamIndexRefIndex& CBamIndex::GetRef(size_t ref_index) const
                    "Bad reference sequence index");
     }
     return m_Refs[ref_index];
+}
+
+
+void CBamIndex::SetLengthFromHeader(const CBamHeader& header)
+{
+    if ( GetRefCount() != header.GetRefCount() ) {
+        NCBI_THROW_FMT(CBamException, eInvalidBAIFormat,
+                       "Wrong index ref count: "<<
+                       GetRefCount()<<" <> "<<header.GetRefCount());
+    }
+    for ( size_t i = 0; i < GetRefCount(); ++i ) {
+        m_Refs[i].SetLengthFromHeader(header.GetRef(i).m_Length);
+    }
 }
 
 
@@ -1396,6 +1592,16 @@ void CBamHeader::Read(CBGZFStream& stream)
 }
 
 
+const SBamHeaderRefInfo& CBamHeader::GetRef(size_t ref_index) const
+{
+    if ( ref_index >= GetRefCount() ) {
+        NCBI_THROW(CBamException, eInvalidArg,
+                   "Bad reference sequence index");
+    }
+    return m_Refs[ref_index];
+}
+
+
 size_t CBamHeader::GetRefIndex(const string& name) const
 {
     auto iter = m_RefByName.find(name);
@@ -1520,6 +1726,17 @@ void CBamFileRangeSet::AddSortedRanges(const vector<CBGZFRange>& ranges)
 }
 
 
+NCBI_PARAM_DECL(int, BAM, RANGES_MODE);
+NCBI_PARAM_DEF_EX(int, BAM, RANGES_MODE, 1, eParam_NoThread, BAM_RANGES_MODE);
+
+
+static int s_GetRangesMode()
+{
+    static int value = NCBI_PARAM_TYPE(BAM, RANGES_MODE)::GetDefault();
+    return value;
+}
+
+
 void CBamFileRangeSet::AddRanges(const CBamIndex& index,
                                  size_t ref_index,
                                  COpenRange<TSeqPos> ref_range,
@@ -1527,67 +1744,92 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
                                  TIndexLevel max_index_level,
                                  ESearchMode search_mode)
 {
+    vector<CBGZFRange> ranges;
     const SBamIndexRefIndex& ref = index.GetRef(ref_index);
-#if 0
+if ( s_GetRangesMode() == 0 ) {
     // set limits
     CBGZFRange limit = ref.GetLimitRange(ref_range, search_mode);
     if ( ref_range.Empty() ) {
         return;
     }
-    vector<CBGZFRange> ranges;
     for ( TIndexLevel level = min_index_level; level <= index.GetMaxIndexLevel(); ++level ) {
         ref.AddLevelFileRanges(ranges, limit, index.GetBinRange(ref_range, level));
     }
-#else
-    vector<CBGZFRange> ranges;
-    CBGZFRange limit;
+}
+else {
+    CBGZFRange limit(CBGZFPos(), CBGZFPos::GetInvalid());
     // iterate index levels starting with 0 to set limits correctly
     // iterate index levels till the end because alignments may be moved up
+    TSeqPos set_limit_by_overlap_at = 0;
     for ( TIndexLevel level = 0; level <= index.GetMaxIndexLevel(); ++level ) {
         // omit ranges from lower index levels because they contain only low-level alignments
         auto bin_range = index.GetBinRange(ref_range, level);
-        SBamIndexRefIndex::TBinsIter first_bin = ref.m_Bins.end();
+        pair<SBamIndexRefIndex::TBinsIter, SBamIndexRefIndex::TBinsIter> iter_range;
         if ( level >= min_index_level ) {
-            first_bin = ref.AddLevelFileRanges(ranges, limit, bin_range);
+            iter_range = ref.AddLevelFileRanges(ranges, limit, bin_range);
+            _ASSERT(iter_range == ref.GetBinsIterRange(bin_range));
         }
         else {
-            first_bin = ref.GetFirstExistingBin(bin_range);
+            iter_range = ref.GetBinsIterRange(bin_range);
         }
-        // update limit range
-        if ( search_mode == eSearchByOverlap ) {
-            // set file range limit from overlap fields
-            // most limiting overlap is on lowest index level, set it once
-            if ( !limit.first ) {
-                if ( index.is_CSI ) {
-                    // CSI overlaps are in bins
-                    if ( first_bin != ref.m_Bins.end() &&
-                         first_bin->m_Bin == bin_range.first ) {
-                        limit.first = first_bin->m_Overlap;
-                    }
-                }
-                else {
-                    // BAI overlaps are in a separate array, reflecting min level
-                    if ( level == kMinBinIndexLevel && !ref.m_Overlaps.empty() ) {
-                        size_t bin_index = bin_range.first-index.GetFirstBin(kMinBinIndexLevel);
-                        if ( bin_index < ref.m_Overlaps.size() ) {
-                            limit.first = ref.m_Overlaps[bin_index];
-                        }
-                    }
+        // set file range limit from overlap fields
+        // the most limiting overlap is on the lowest existing index level, so set it once
+        // this limit is valid for both search modes
+        if ( index.is_CSI ) {
+            // CSI overlaps are in bins
+            auto first_bin = iter_range.first;
+            if ( (first_bin == ref.m_Bins.end() ||
+                  first_bin->m_Bin != bin_range.first) &&
+                 first_bin != ref.m_Bins.begin() ) {
+                --first_bin;
+            }
+            if ( first_bin != ref.m_Bins.end() &&
+                 first_bin->m_Bin <= bin_range.first &&
+                 first_bin->m_Bin >= index.GetFirstBin(level) ) {
+                // the bin is at or before the first one and at the same level
+                TSeqPos pos = first_bin->GetSeqRange(index).GetFrom();
+                if ( pos > set_limit_by_overlap_at ) {
+                    // better limit
+                    set_limit_by_overlap_at = pos;
+                    limit.first = max(limit.first, first_bin->m_Overlap);
                 }
             }
         }
         else {
+            // BAI overlaps are in a separate array, reflecting min level
+            if ( level == kMinBinIndexLevel && !ref.m_Overlaps.empty() ) {
+                size_t bin_index = bin_range.first-index.GetFirstBin(kMinBinIndexLevel);
+                if ( bin_index < ref.m_Overlaps.size() ) {
+                    limit.first = max(limit.first, ref.m_Overlaps[bin_index]);
+                }
+            }
+        }
+        // in eSearchByStart mode we can set lower limit of file positions
+        // from the end of previous bin on the same level
+        // these limits are combined
+        if ( search_mode == eSearchByStart ) {
             // set file range limit from previous bins
             // limits from all levels matter, choose the most limiting one
-            if ( first_bin != ref.m_Bins.end() && first_bin != ref.m_Bins.begin() ) {
+            auto first_bin = iter_range.first;
+            if ( first_bin != ref.m_Bins.begin() ) {
                 auto prev_bin = prev(first_bin);
+                _ASSERT(prev_bin->m_Bin < bin_range.first);
                 if ( prev_bin->m_Bin >= index.GetFirstBin(level) ) {
+                    // prev bin is on the same level
                     limit.first = max(limit.first, prev_bin->GetEndFilePos());
                 }
             }
         }
+        // in all search modes we can limit end of search range by next bin on the same level
+        // update cutoff file pos from the first next bin
+        auto next_bin = iter_range.second;
+        if ( next_bin != ref.m_Bins.end() &&
+             next_bin->m_Bin < index.GetFirstBin(level-1) ) {
+            // next bin is on the same level
+            limit.second = min(limit.second, next_bin->GetStartFilePos());
+        } 
     }
-#endif
+}
     gfx::timsort(ranges.begin(), ranges.end());
     AddSortedRanges(ranges);
 }
@@ -1659,7 +1901,7 @@ void CBamFileRangeSet::SetRanges(const CBamIndex& index,
 }
 
 
-Uint8 CBamFileRangeSet::GetFileSize(CBGZFRange range) const
+Uint8 CBamFileRangeSet::GetFileSize(CBGZFRange range)
 {
     return s_EstimatedSize(range);
 }
@@ -1747,6 +1989,7 @@ void CBamRawDb::Open(const string& bam_path, const string& index_path)
     m_File->SetPreviousReadStatistics(m_Index.GetReadStatistics());
     CBGZFStream stream(*m_File);
     m_Header.Read(stream);
+    m_Index.SetLengthFromHeader(m_Header);
 }
 
 
