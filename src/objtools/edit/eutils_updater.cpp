@@ -137,7 +137,7 @@ public:
             bdata << GetYear();
         }
         bdata << '|';
-        bdata << GetVol() << '|';
+        bdata << NStr::URLEncode(GetVol(), NStr::eUrlEnc_ProcessMarkChars) << '|';
         bdata << GetPage() << '|';
         bdata << NStr::URLEncode(GetAuthor(), NStr::eUrlEnc_ProcessMarkChars) << '|';
         bdata << '|';
@@ -299,8 +299,7 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
             if (pme->IsSetMedent()) {
                 const CMedline_entry& mle = pme->GetMedent();
                 if (mle.IsSetCit()) {
-                    CRef<CPub> cit_art;
-                    cit_art.Reset(new CPub);
+                    CRef<CPub> cit_art(new CPub);
                     cit_art->SetArticle().Assign(mle.GetCit());
                     return cit_art;
                 }
