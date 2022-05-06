@@ -85,6 +85,7 @@ public:
         {
             return m_Refs.size();
         }
+    const SBamHeaderRefInfo& GetRef(size_t ref_index) const;
     size_t GetRefIndex(const string& name) const;
     const string& GetRefName(size_t index) const
         {
@@ -350,15 +351,6 @@ struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo : public SBamIndexDefs
 #endif
     vector<CBGZFRange> m_Chunks;
 
-    bool operator<(const SBamIndexBinInfo& b) const
-        {
-            return m_Bin < b.m_Bin;
-        }
-    bool operator<(TBin b) const
-        {
-            return m_Bin < b;
-        }
-
     CBGZFPos GetStartFilePos() const
         {
             return m_Chunks.front().first;
@@ -368,6 +360,18 @@ struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo : public SBamIndexDefs
             return m_Chunks.back().second;
         }
 };
+static inline bool operator<(const SBamIndexBinInfo& b1, const SBamIndexBinInfo& b2)
+{
+    return b1.m_Bin < b2.m_Bin;
+}
+static inline bool operator<(const SBamIndexBinInfo& b1, SBamIndexBinInfo::TBin b2)
+{
+    return b1.m_Bin < b2;
+}
+static inline bool operator<(SBamIndexBinInfo::TBin b1, const SBamIndexBinInfo& b2)
+{
+    return b1 < b2.m_Bin;
+}
 
 
 struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexParams
@@ -411,17 +415,23 @@ struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex : public SBamIndexParams
             return GetLevelBins(ToIndexLevel(level));
         }
     // add file ranges with alignments from specific index level
-    // return first existing bin in the range
-    TBinsIter AddLevelFileRanges(vector<CBGZFRange>& ranges,
-                                 CBGZFRange limit_file_range,
-                                 pair<TBin, TBin> bin_range) const;
-    TBinsIter GetFirstExistingBin(pair<TBin, TBin> bin_range) const;
+    // return first bin in the range, and first bin iter after the range
+    // the TBinsIter range is always valid, if no bins in the range both iters are the same
+    pair<TBinsIter, TBinsIter> AddLevelFileRanges(vector<CBGZFRange>& ranges,
+                                                  CBGZFRange limit_file_range,
+                                                  pair<TBin, TBin> bin_range) const;
+    pair<TBinsIter, TBinsIter> GetBinsIterRange(pair<TBin, TBin> bin_range) const;
+
+    void SetLengthFromHeader(TSeqPos length);
+    void ProcessBin(const SBamIndexBinInfo& bin);
+    bool ProcessPseudoBin(SBamIndexBinInfo& bin);
     
     TBins m_Bins;
     CBGZFRange m_UnmappedChunk;
     Uint8 m_MappedCount;
     Uint8 m_UnmappedCount;
     vector<CBGZFPos> m_Overlaps;
+    // estimation of sequence length for practical use, rounded to min bin size
     TSeqPos m_EstimatedLength;
 };
 
@@ -453,6 +463,7 @@ public:
             return m_Refs.size();
         }
     const SBamIndexRefIndex& GetRef(size_t ref_index) const;
+    void SetLengthFromHeader(const CBamHeader& header);
 
     CBGZFRange GetTotalFileRange(size_t ref_index) const;
 
@@ -760,6 +771,10 @@ public:
         {
             m_Ranges.clear();
         }
+    bool empty() const
+        {
+            return m_Ranges.empty();
+        }
     const_iterator begin() const
         {
             return m_Ranges.begin();
@@ -928,7 +943,7 @@ public:
             return m_Ranges.end();
         }
 
-    Uint8 GetFileSize(CBGZFRange range) const;
+    static Uint8 GetFileSize(CBGZFRange range);
     Uint8 GetFileSize() const;
 
 protected:

@@ -61,6 +61,11 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
+
+    bool check_file_range;
+    int s_CheckOverlaps(CBamRawDb& bam);
+    int s_CheckOverstart(CBamRawDb& bam);
+    int s_CheckOverend(CBamRawDb& bam);
 };
 
 
@@ -83,9 +88,8 @@ void CBamIndexTestApp::Init(void)
                              "RefSeq Seq-id",
                              CArgDescriptions::eString);
     arg_desc->AddOptionalKey("l", "IndexLevel",
-                             "Level of BAM index to scan",
-                             CArgDescriptions::eInteger);
-    arg_desc->SetConstraint("l", new CArgAllow_Integers(0, 12));
+                             "Level(s) of BAM index to scan",
+                             CArgDescriptions::eString);
     
     arg_desc->AddDefaultKey("min_quality", "MinQuality",
                             "Minimal quality of alignments to check",
@@ -127,6 +131,30 @@ void CBamIndexTestApp::Init(void)
 /////////////////////////////////////////////////////////////////////////////
 
 
+static inline Uint8 s_GetSize(CBGZFRange range)
+{
+    return CBamFileRangeSet::GetFileSize(range);
+}
+
+
+static inline TSeqPos s_BinIndex(TSeqPos pos, TSeqPos bin_size)
+{
+    return pos/bin_size;
+}
+
+
+static inline TSeqPos s_BinStart(TSeqPos pos, TSeqPos bin_size)
+{
+    return s_BinIndex(pos, bin_size)*bin_size;
+}
+
+
+static inline TSeqPos s_BinEnd(TSeqPos pos, TSeqPos bin_size)
+{
+    return s_BinStart(pos, bin_size)+bin_size-1;
+}
+
+
 void s_DumpIndex(const CBamIndex& index,
                  size_t ref_index)
 {
@@ -135,27 +163,30 @@ void s_DumpIndex(const CBamIndex& index,
     for ( size_t i = ref_index; i <= ref_index; ++i ) {
         const SBamIndexRefIndex& r = index.GetRef(i);
         for ( size_t k = 0; k < r.m_Overlaps.size(); ++k ) {
-            cout << "ref["<<i<<"] linear["<<k<<" = "<<k*kBlockSize<<"] FP = "
+            cout << "ref["<<i<<"] linear["<<k<<" = "<<k*kBlockSize<<"] oFP = "
                  << r.m_Overlaps[k]
                  << endl;
         }
         for ( auto& b : r.m_Bins ) {
 #ifdef BAM_SUPPORT_CSI
             if ( index.is_CSI && b.m_Overlap ) {
-                cout << "ref["<<i<<"] bin["<<b.m_Bin<<" = "<<b.GetSeqRange(index)<<"] FP = "
+                cout << "ref["<<i<<"] bin["<<b.m_Bin<<" = "<<b.GetSeqRange(index)<<"] oFP = "
                      << b.m_Overlap
                      << endl;
             }
 #endif
+            size_t total_size = 0;
             for ( auto& c : b.m_Chunks ) {
                 cc.push_back(make_pair(c, make_pair(i, b.m_Bin)));
+                total_size += s_GetSize(c);
             }
+            cout << "Bin("<<b.m_Bin<<") = "<<index.GetSeqRange(b.m_Bin)<<" size: "<<total_size<<endl;
         }
     }
     sort(cc.begin(), cc.end());
     CBGZFPos prev(0);
     for ( auto& v : cc ) {
-        cout << "FP( " << v.first.first << " - " << v.first.second
+        cout << "FP( " << v.first.first << " - " << v.first.second << " size="<<s_GetSize(v.first)
              << " ) : ref[" << v.second.first << "] bin(" << v.second.second << ") = "
              << index.GetSeqRange(v.second.second)
              << '\n';
@@ -170,10 +201,11 @@ void s_DumpIndex(const CBamIndex& index,
 }
 
 
-int s_CollectOverlaps(CBamRawDb& bam_raw_db)
+int CBamIndexTestApp::s_CheckOverlaps(CBamRawDb& bam_raw_db)
 {
     int error_code = 0;
     const auto bin_shift = bam_raw_db.GetIndex().GetMinLevelBinShift();
+    const TSeqPos bin_size = 1u << bin_shift;
     
     struct SBinOverlapInfo {
         CBGZFPos min_file_pos;
@@ -185,16 +217,25 @@ int s_CollectOverlaps(CBamRawDb& bam_raw_db)
     int32_t current_seq = -1;
     vector<SBinOverlapInfo> current_seq_overlaps;
     size_t unmapped_count = 0;
+    size_t nocigar_count = 0;
+    size_t total_count = 0;
     for ( CBamRawAlignIterator it(bam_raw_db); it; ++it ) {
+        ++total_count;
         auto seq = it.GetRefSeqIndex();
-        if ( seq == -1 ) {
+        if ( !it.IsMapped() ) {
             ++unmapped_count;
+            continue;
+        }
+        if ( !it.GetCIGAROpsCount() ) {
+            ++nocigar_count;
             continue;
         }
         if ( seq != current_seq ) {
             if ( current_seq >= 0 ) {
                 overlaps[current_seq].swap(current_seq_overlaps);
             }
+            cout <<"Start collecting overstart data for ref["<<seq<<"] = "
+                 <<bam_raw_db.GetRefName(seq)<<endl;
             current_seq = seq;
             current_seq_overlaps.clear();
             TSeqPos seq_length = bam_raw_db.GetIndex().GetRef(seq).m_EstimatedLength;
@@ -229,54 +270,291 @@ int s_CollectOverlaps(CBamRawDb& bam_raw_db)
         }
     }
     cout <<"Collected all real overlap data in "<<sw.Elapsed()<<"s"<<endl;
+    cout <<"Total alignments: "<<total_count
+         <<", unmapped: "<<unmapped_count
+         <<", no CIGAR: "<<nocigar_count
+         <<endl;
 
     for ( auto& ref_it : overlaps ) {
         auto ref_index = ref_it.first;
         auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
         sw.Restart();
         const auto& overstart = ref.GetAlnOverStarts();
-        cout <<"Collected overstart data for "<<ref_index<<" in "<<sw.Elapsed()<<"s"<<endl;
+        cout <<"Collected overstart data for ref["<<ref_index<<"] = "
+             <<bam_raw_db.GetRefName(ref_index)<<" in "<<sw.Elapsed()<<"s"<<endl;
         auto bin_count = max(overstart.size(), ref_it.second.size());
+        size_t wrong_start_count = 0;
+        size_t decrease_start_count = 0;
+        TSeqPos prev_calculated_start = 0;
+        size_t excess_pages_count = 0;
         for ( size_t i = 0; i < bin_count; ++i ) {
             TSeqPos bin_pos = TSeqPos(i<<bin_shift);
-            TSeqPos overstart0 = (i<ref_it.second.size())? ref_it.second[i].min_ref_pos: bin_pos;
-            TSeqPos overstart1 = (i<overstart.size())? overstart[i]: bin_pos;
-            overstart0 = (overstart0 >> bin_shift) << bin_shift;
-            overstart1 = (overstart1 >> bin_shift) << bin_shift;
-            if ( overstart0 != overstart1 ) {
-                cout << "overstart["<<bin_pos<<"] = "
-                     << overstart1 << " != actual " << overstart0
+            TSeqPos actual_start = (i<ref_it.second.size())? ref_it.second[i].min_ref_pos: bin_pos;
+            TSeqPos calculated_start = (i<overstart.size())? overstart[i]: bin_pos;
+            actual_start = (actual_start >> bin_shift) << bin_shift;
+            calculated_start = (calculated_start >> bin_shift) << bin_shift;
+            if ( actual_start < calculated_start ) {
+                cout << "wrong overstart["<<bin_pos<<"] = "
+                     << calculated_start << " > actual " << actual_start
                      << endl;
+                ++wrong_start_count;
                 error_code = 1;
             }
+            else if ( actual_start > calculated_start ) {
+                TSeqPos excess = (actual_start-calculated_start)/bin_size;
+                excess_pages_count += excess;
+                if ( verbose ) {
+                    cout << "inexact overstart["<<bin_pos<<"] = "
+                         << calculated_start << " < actual " << actual_start
+                         << " by " << excess << " pages"
+                         << endl;
+                }
+            }
+            if ( calculated_start < prev_calculated_start ) {
+                cout << "wrong decrease overstart["<<bin_pos<<"] = "
+                     << calculated_start
+                     << " < overstart["<<(bin_pos-bin_size)<<"] = "
+                     << prev_calculated_start
+                     << endl;
+                ++decrease_start_count;
+                error_code = 1;
+            }
+            prev_calculated_start = calculated_start;
+        }
+        cout <<"Done verifying overend data for ref["<<ref_index<<"] = "
+             <<bam_raw_db.GetRefName(ref_index)<<" ("<<excess_pages_count<<" excess pages) - ";
+        if ( wrong_start_count || decrease_start_count ) {
+            cout <<"ERRORS:"<<endl;
+            if ( wrong_start_count ) {
+                cout << "  wrong start in "<<wrong_start_count<<" bins"<<endl;
+            }
+            if ( decrease_start_count ) {
+                cout << "  decreased start in "<<decrease_start_count<<" bins"<<endl;
+            }
+        }
+        else {
+            cout <<"no errors."<<endl;
         }
     }
     return error_code;
 }
 
 
+int CBamIndexTestApp::s_CheckOverstart(CBamRawDb& bam_raw_db)
+{
+    int error_code = 0;
+    Uint8 total_file_scan_size = 0;
+    Uint8 total_chunks_file_scan_size = 0;
+    for ( auto& q : queries ) {
+        TSeqPos bin_size = bam_raw_db.GetIndex().GetMinBinSize();
+        auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
+        auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
+        auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
+        CStopWatch sw(CStopWatch::eStart);
+        const auto& overstart = ref.GetAlnOverStarts();
+        cout <<"Collected overstart data in "<<sw.Restart()<<"s"<<endl;
+        cout <<"Verifying..."<<endl;
+        size_t wrong_start_count = 0;
+        size_t decrease_start_count = 0;
+        TSeqPos prev_calculated_start = 0;
+        size_t total_alignment_count = 0;
+        size_t excess_pages_count = 0;
+        for ( TSeqPos pos = s_BinStart(q.refseq_range.GetFrom(), bin_size);
+              pos < q.refseq_range.GetToOpen() && pos < ref_len;
+              pos += bin_size ) {
+            TSeqPos actual_start = s_BinStart(pos, bin_size);
+            CStopWatch sw2;
+            if ( verbose ) {
+                sw2.Start();
+            }
+            if ( check_file_range ) {
+                CBamFileRangeSet rs;
+                rs.AddRanges(bam_raw_db.GetIndex(),
+                             bam_raw_db.GetRefIndex(q.refseq_id),
+                             COpenRange<TSeqPos>(pos, pos+bin_size),
+                             CBamRawAlignIterator::eSearchByOverlap);
+                if ( !rs.GetRanges().empty() ) {
+                    auto chunks_size = rs.GetFileSize();
+                    auto total_size = 
+                        CBamFileRangeSet::GetFileSize(CBGZFRange(rs.begin()->first,
+                                                                 prev(rs.end())->second));
+                    total_chunks_file_scan_size += chunks_size;
+                    total_file_scan_size += total_size;
+                    if ( verbose ) {
+                        cout << "File sizes @"<<pos<<": "<<total_size<<" "<<chunks_size<<endl;
+                    }
+                }
+            }
+            for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size, CBamRawAlignIterator::eSearchByOverlap); it; ++it ) {
+                ++total_alignment_count;
+                TSeqPos start = it.GetRefSeqPos();
+                actual_start = min(actual_start, s_BinStart(start, bin_size));
+            }
+            if ( verbose ) {
+                cout <<"Collected real overstart data @"<<pos<<" in "<<sw2.Elapsed()*1e3<<"ms"<<endl;
+            }
+            TSeqPos k = s_BinIndex(pos, bin_size);
+            TSeqPos calculated_start = k < overstart.size()? overstart[k]: s_BinStart(pos, bin_size);
+            if ( actual_start < calculated_start ) {
+                cout << "wrong overstart["<<pos<<"] = "
+                     << calculated_start << " > actual " << actual_start
+                     << endl;
+                ++wrong_start_count;
+                error_code = 1;
+            }
+            else if ( actual_start > calculated_start ) {
+                TSeqPos excess = (actual_start-calculated_start)/bin_size;
+                excess_pages_count += excess;
+                if ( verbose ) {
+                    cout << "inexact overstart["<<pos<<"] = "
+                         << calculated_start << " < actual " << actual_start
+                         << " by " << excess << " pages"
+                         << endl;
+                }
+            }
+            if ( calculated_start < prev_calculated_start ) {
+                cout << "wrong decrease overstart["<<pos<<"] = "
+                     << calculated_start
+                     << " < overstart["<<(pos-bin_size)<<"] = "
+                     << prev_calculated_start
+                     << endl;
+                ++decrease_start_count;
+                error_code = 1;
+            }
+            prev_calculated_start = calculated_start;
+        }
+        cout <<"Collected real overstart data in "<<sw.Elapsed()<<"s"<<endl;
+        cout <<"Done verifying overend data ("<<total_alignment_count<<" alignments, "<<excess_pages_count<<" excess pages) - ";
+        if ( wrong_start_count || decrease_start_count ) {
+            cout <<"ERRORS:"<<endl;
+            if ( wrong_start_count ) {
+                cout << "  wrong start in "<<wrong_start_count<<" bins"<<endl;
+            }
+            if ( decrease_start_count ) {
+                cout << "  decreased start in "<<decrease_start_count<<" bins"<<endl;
+            }
+        }
+        else {
+            cout <<"no errors."<<endl;
+        }
+    }
+    if ( check_file_range ) {
+        cout <<"Total file scan size: "<<total_file_scan_size
+             <<" chunks: "<<total_chunks_file_scan_size
+             <<endl;
+    }
+    return error_code;
+}
+
+
+int CBamIndexTestApp::s_CheckOverend(CBamRawDb& bam_raw_db)
+{
+    int error_code = 0;
+    Uint8 total_file_scan_size = 0;
+    Uint8 total_chunks_file_scan_size = 0;
+    for ( auto& q : queries ) {
+        TSeqPos bin_size = bam_raw_db.GetIndex().GetMinBinSize();
+        auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
+        auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
+        auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
+        CStopWatch sw(CStopWatch::eStart);
+        const auto& overend = ref.GetAlnOverEnds();
+        cout <<"Collected overend data in "<<sw.Restart()<<"s"<<endl;
+        cout <<"Verifying..."<<endl;
+        size_t wrong_end_count = 0;
+        size_t decrease_end_count = 0;
+        TSeqPos prev_calculated_end = 0;
+        size_t total_alignment_count = 0;
+        size_t excess_pages_count = 0;
+        for ( TSeqPos pos = s_BinStart(q.refseq_range.GetFrom(), bin_size);
+              pos < q.refseq_range.GetToOpen() && pos < ref_len;
+              pos += bin_size ) {
+            TSeqPos actual_end = s_BinEnd(pos, bin_size);
+            CStopWatch sw2;
+            if ( verbose ) {
+                sw2.Start();
+            }
+            if ( check_file_range ) {
+                CBamFileRangeSet rs;
+                rs.AddRanges(bam_raw_db.GetIndex(),
+                             bam_raw_db.GetRefIndex(q.refseq_id),
+                             COpenRange<TSeqPos>(pos, pos+bin_size),
+                             CBamRawAlignIterator::eSearchByStart);
+                if ( !rs.GetRanges().empty() ) {
+                    auto chunks_size = rs.GetFileSize();
+                    auto total_size = 
+                        CBamFileRangeSet::GetFileSize(CBGZFRange(rs.begin()->first,
+                                                                 prev(rs.end())->second));
+                    total_chunks_file_scan_size += chunks_size;
+                    total_file_scan_size += total_size;
+                    if ( verbose ) {
+                        cout << "File sizes @"<<pos<<": "<<total_size<<" "<<chunks_size<<endl;
+                    }
+                }
+            }
+            for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size, CBamRawAlignIterator::eSearchByStart); it; ++it ) {
+                ++total_alignment_count;
+                TSeqPos end = it.GetRefSeqPos()+max(1u, it.GetCIGARRefSize())-1;
+                actual_end = max(actual_end, s_BinEnd(end, bin_size));
+            }
+            if ( verbose ) {
+                cout <<"Collected real overend data @"<<pos<<" in "<<sw2.Elapsed()*1e3<<"ms"<<endl;
+            }
+            TSeqPos k = s_BinIndex(pos, bin_size);
+            TSeqPos calculated_end = k < overend.size()? overend[k]: s_BinEnd(pos, bin_size);
+            if ( actual_end > calculated_end ) {
+                cout << "wrong overend["<<pos<<"] = "
+                     << calculated_end << " < " << actual_end
+                     << endl;
+                ++wrong_end_count;
+                error_code = 1;
+            }
+            else if ( actual_end < calculated_end ) {
+                TSeqPos excess = (calculated_end-actual_end)/bin_size;
+                excess_pages_count += excess;
+                if ( verbose ) {
+                    cout << "inexact overend["<<pos<<"] = "
+                         << calculated_end << " > " << actual_end
+                         << " by " << excess << " pages"
+                         << endl;
+                }
+            }
+            if ( calculated_end < prev_calculated_end ) {
+                cout << "wrong decrease overend["<<pos<<"] = "
+                     << calculated_end
+                     << " < overend["<<(pos-bin_size)<<"] = "
+                     << prev_calculated_end
+                     << endl;
+                ++decrease_end_count;
+                error_code = 1;
+            }
+            prev_calculated_end = calculated_end;
+        }
+        cout <<"Collected real overend data in "<<sw.Elapsed()<<"s"<<endl;
+        cout <<"Done verifying overend data ("<<total_alignment_count<<" alignments, "<<excess_pages_count<<" excess pages) - ";
+        if ( wrong_end_count || decrease_end_count ) {
+            cout << "ERRORS:"<<endl;
+            if ( wrong_end_count ) {
+                cout << "  wrong end in "<<wrong_end_count<<" bins"<<endl;
+            }
+            if ( decrease_end_count ) {
+                cout << "  decreased end in "<<decrease_end_count<<" bins"<<endl;
+            }
+        }
+        else {
+            cout <<"no errors."<<endl;
+        }
+    }
+    if ( check_file_range ) {
+        cout <<"Total file scan size: "<<total_file_scan_size
+             <<" chunks: "<<total_chunks_file_scan_size
+             <<endl;
+    }
+    return error_code;
+}
+
+
 DEFINE_STATIC_MUTEX(s_Mutex);
-
-
-static inline
-TSeqPos s_BinIndex(TSeqPos pos, TSeqPos bin_size)
-{
-    return pos/bin_size;
-}
-
-
-static inline
-TSeqPos s_BinStart(TSeqPos pos, TSeqPos bin_size)
-{
-    return s_BinIndex(pos, bin_size)*bin_size;
-}
-
-
-static inline
-TSeqPos s_BinEnd(TSeqPos pos, TSeqPos bin_size)
-{
-    return s_BinStart(pos, bin_size)+bin_size-1;
-}
 
 
 int CBamIndexTestApp::Run(void)
@@ -290,6 +568,7 @@ int CBamIndexTestApp::Run(void)
     if ( !ParseCommonArgs(args) ) {
         return 1;
     }
+    check_file_range = args["file-range"];
 
     Uint8 limit_count = args["limit_count"].AsInteger();
     
@@ -303,7 +582,15 @@ int CBamIndexTestApp::Run(void)
     CBamIndex::TIndexLevel level1 = 0;
     CBamIndex::TIndexLevel level2 = bam_raw_db.GetIndex().GetMaxIndexLevel();
     if ( args["l"] ) {
-        level1 = level2 = CBamIndex::TIndexLevel(args["l"].AsInteger());
+        string levels = args["l"].AsString();
+        SIZE_TYPE dash = levels.find('-');
+        if ( dash != NPOS ) {
+            level1 = CBamIndex::TIndexLevel(NStr::StringToInt(levels.substr(0, dash)));
+            level2 = CBamIndex::TIndexLevel(NStr::StringToInt(levels.substr(dash+1)));
+        }
+        else {
+            level1 = level2 = CBamIndex::TIndexLevel(NStr::StringToInt(levels));
+        }
     }
 
     if ( refseq_table ) {
@@ -316,7 +603,9 @@ int CBamIndexTestApp::Run(void)
     }
 
     if ( args["overlap"] ) {
-        s_CollectOverlaps(bam_raw_db);
+        if ( s_CheckOverlaps(bam_raw_db) != 0 ) {
+            error_code = 1;
+        }
     }
     
     for ( auto& q : queries ) {
@@ -354,7 +643,7 @@ int CBamIndexTestApp::Run(void)
 
     CBamRawAlignIterator::ESearchMode search_mode = CBamRawAlignIterator::ESearchMode(by_start);
     
-    if ( args["file-range"] ) {
+    if ( check_file_range ) {
         for ( auto& q : queries ) {
             CBamFileRangeSet rs;
             if ( level1 != 0 ||
@@ -388,76 +677,14 @@ int CBamIndexTestApp::Run(void)
     }
 
     if ( args["overstart"] ) {
-        for ( auto& q : queries ) {
-            TSeqPos bin_size = bam_raw_db.GetIndex().GetMinBinSize();
-            auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
-            auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
-            auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
-            sw.Restart();
-            const auto& overstart = ref.GetAlnOverStarts();
-            cout <<"Collected overstart data in "<<sw.Elapsed()<<"s"<<endl;
-            cout <<"Verifying..."<<endl;
-            for ( TSeqPos pos = s_BinStart(q.refseq_range.GetFrom(), bin_size);
-                  pos < q.refseq_range.GetToOpen() && pos < ref_len;
-                  pos += bin_size ) {
-                TSeqPos actual_start = s_BinStart(pos, bin_size);
-                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size, search_mode); it; ++it ) {
-                    TSeqPos start = it.GetRefSeqPos();
-                    actual_start = min(actual_start, s_BinStart(start, bin_size));
-                }
-                TSeqPos k = s_BinIndex(pos, bin_size);
-                TSeqPos calculated_start = k < overstart.size()? overstart[k]: s_BinStart(pos, bin_size);
-                if ( actual_start < calculated_start ) {
-                    cout << "overstart["<<pos<<"] = "
-                         << calculated_start << " != " << actual_start
-                         << endl;
-                    error_code = 1;
-                }
-                else if ( verbose && actual_start != calculated_start ) {
-                    cout << "inexact overstart["<<pos<<"] = "
-                         << calculated_start << " != " << actual_start
-                         << " by " << (actual_start-calculated_start)
-                         << endl;
-                }
-            }
-            cout <<"Done verifying overstart data."<<endl;
+        if ( s_CheckOverstart(bam_raw_db) != 0 ) {
+            error_code = 1;
         }
     }
 
     if ( args["overend"] ) {
-        for ( auto& q : queries ) {
-            TSeqPos bin_size = bam_raw_db.GetIndex().GetMinBinSize();
-            auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
-            auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
-            auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
-            sw.Restart();
-            const auto& overend = ref.GetAlnOverEnds();
-            cout <<"Collected overend data in "<<sw.Elapsed()<<"s"<<endl;
-            cout <<"Verifying..."<<endl;
-            for ( TSeqPos pos = s_BinStart(q.refseq_range.GetFrom(), bin_size);
-                  pos < q.refseq_range.GetToOpen() && pos < ref_len;
-                  pos += bin_size ) {
-                TSeqPos actual_end = s_BinEnd(pos, bin_size);
-                for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size, search_mode); it; ++it ) {
-                    TSeqPos end = it.GetRefSeqPos()+it.GetCIGARRefSize()-1;
-                    actual_end = max(actual_end, s_BinEnd(end, bin_size));
-                }
-                TSeqPos k = s_BinIndex(pos, bin_size);
-                TSeqPos calculated_end = k < overend.size()? overend[k]: s_BinEnd(pos, bin_size);
-                if ( actual_end > calculated_end ) {
-                    cout << "overend["<<pos<<"] = "
-                         << calculated_end << " != " << actual_end
-                         << endl;
-                    error_code = 1;
-                }
-                else if ( verbose && actual_end != calculated_end ) {
-                    cout << "inexact overend["<<pos<<"] = "
-                         << calculated_end << " != " << actual_end
-                         << " by " << (calculated_end-actual_end)
-                         << endl;
-                }
-            }
-            cout <<"Done verifying overend data."<<endl;
+        if ( s_CheckOverend(bam_raw_db) != 0 ) {
+            error_code = 1;
         }
     }
 
@@ -515,129 +742,129 @@ int CBamIndexTestApp::Run(void)
         tt[i] =
             thread([&]
                    (SQuery q)
-                   {
-                       CMutexGuard guard(eEmptyGuard);
-                       if ( single_thread ) {
-                           guard.Guard(s_Mutex);
-                       }
-                       Uint8 align_count = 0, skipped_min_quality = 0;
-                       Uint8 wrong_level_count = 0, wrong_indexed_level_count = 0;
-                       Uint8 wrong_range_count = 0;
-                       try {
-                           if ( bam_db ) {
-                               for ( CBamAlignIterator it(bam_db, q.refseq_id,
-                                                          q.refseq_range.GetFrom(),
-                                                          q.refseq_range.GetLength(),
-                                                          CBamAlignIterator::ESearchMode(search_mode)); it; ++it ) {
-                                   if ( min_quality && it.GetMapQuality() < min_quality ) {
-                                       ++skipped_min_quality;
-                                       continue;
-                                   }
-                                   TSeqPos ref_pos = it.GetRefSeqPos();
-                                   TSeqPos ref_size = it.GetCIGARRefSize();
-                                   TSeqPos ref_end = ref_pos + ref_size;
-                                   if ( verbose ||
-                                        ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
-                                       cout << "Ref: " << q.refseq_id
-                                            << " at [" << ref_pos
-                                            << " - " << (ref_end-1)
-                                            << "] = " << ref_size
-                                            << '\n';
-                                       if ( ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
-                                           cout << "Wrong range" << endl;
-                                           ++wrong_range_count;
-                                       }
-                                   }
-                                   ++align_count;
-                                   if ( limit_count && align_count >= limit_count ) {
-                                       break;
-                                   }
-                               }
-                           }
-                           else {
-                               for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id,
-                                                             q.refseq_range, level1, level2, search_mode); it; ++it ) {
-                                   if ( min_quality && it.GetMapQuality() < min_quality ) {
-                                       ++skipped_min_quality;
-                                       continue;
-                                   }
-                                   TSeqPos ref_pos = it.GetRefSeqPos();
-                                   TSeqPos ref_size = it.GetCIGARRefSize();
-                                   TSeqPos ref_end = ref_pos + ref_size;
-                                   unsigned pos_level = 0;
-                                   if ( ref_size ) {
-                                       TSeqPos pos1 = ref_pos >> bam_raw_db.GetIndex().GetLevelBinShift(0);
-                                       TSeqPos pos2 = (ref_end-1) >> bam_raw_db.GetIndex().GetLevelBinShift(0);
-                                       while ( pos1 != pos2 ) {
-                                           ++pos_level;
-                                           pos1 >>= CBamIndex::kLevelStepBinShift;
-                                           pos2 >>= CBamIndex::kLevelStepBinShift;
-                                       }
-                                   }
-                                   unsigned got_level = it.GetIndexLevel();
-                                   if ( bam_raw_db.GetIndex().GetMinLevelBinShift() != SBamIndexDefs::kBAI_min_shift ||
-                                        bam_raw_db.GetIndex().GetMaxIndexLevel() != SBamIndexDefs::kBAI_depth ) {
-                                       // in-BAM bin level is valid for standard BAI parameters
-                                       got_level = pos_level;
-                                   }
-                                   if ( verbose ||
-                                        got_level < level1 || got_level > level2 ||
-                                        got_level != pos_level ||
-                                        ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
-                                       cout << "Ref: " << q.refseq_id
-                                            << " at [" << ref_pos
-                                            << " - " << (ref_end-1)
-                                            << "] = " << ref_size
-                                            << " " << it.GetCIGAR()
-                                            << " Q: " << int(it.GetMapQuality())
-                                            << " bin: " << it.GetIndexBin()
-                                            << " @: " << it.GetFilePos()
-                                            << '\n';
-                                       if ( got_level < level1 || got_level > level2 ) {
-                                           cout << "Wrong index level: " << got_level << endl;
-                                           ++wrong_level_count;
-                                       }
-                                       if ( pos_level != got_level ) {
-                                           cout << "Alignment indexed in wrong level: " << got_level << " vs " << pos_level << endl;
-                                           ++wrong_indexed_level_count;
-                                       }
-                                       if ( ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
-                                           cout << "Wrong range" << endl;
-                                           ++wrong_range_count;
-                                       }
-                                   }
-                                   ++align_count;
-                                   if ( limit_count && align_count >= limit_count ) {
-                                       break;
-                                   }
-                               }
-                           }
-                       }
-                       catch ( exception& exc ) {
-                           ERR_POST("Run("<<q.refseq_id<<"): Exception: "<<exc.what());
-                       }
-                       {
-                           CMutexGuard guard(s_Mutex);
-                           LOG_POST("Run("<<q.refseq_id<<"): count "<<align_count);
-                           if ( wrong_level_count ) {
-                               LOG_POST("Run("<<q.refseq_id<<"): wrong level count "<<wrong_level_count);
-                           }
-                           if ( wrong_indexed_level_count ) {
-                               LOG_POST("Run("<<q.refseq_id<<"): wrong indexed level count "<<wrong_indexed_level_count);
-                           }
-                           if ( wrong_range_count ) {
-                               LOG_POST("Run("<<q.refseq_id<<"): wrong range count "<<wrong_range_count);
-                           }
-                           if ( skipped_min_quality ) {
-                               LOG_POST("Run("<<q.refseq_id<<"): skipped low quality count "<<skipped_min_quality);
-                           }
-                           total_align_count += align_count;
-                           total_skipped_min_quality += skipped_min_quality;
-                           total_wrong_indexed_level_count += wrong_indexed_level_count;
-                           total_wrong_level_count += wrong_level_count;
-                           total_wrong_range_count += wrong_range_count;
-                       }
-                   }, queries[i]);
+                {
+                    CMutexGuard guard(eEmptyGuard);
+                    if ( single_thread ) {
+                        guard.Guard(s_Mutex);
+                    }
+                    Uint8 align_count = 0, skipped_min_quality = 0;
+                    Uint8 wrong_level_count = 0, wrong_indexed_level_count = 0;
+                    Uint8 wrong_range_count = 0;
+                    try {
+                        if ( bam_db ) {
+                            for ( CBamAlignIterator it(bam_db, q.refseq_id,
+                                                       q.refseq_range.GetFrom(),
+                                                       q.refseq_range.GetLength(),
+                                                       CBamAlignIterator::ESearchMode(search_mode)); it; ++it ) {
+                                if ( min_quality && it.GetMapQuality() < min_quality ) {
+                                    ++skipped_min_quality;
+                                    continue;
+                                }
+                                TSeqPos ref_pos = it.GetRefSeqPos();
+                                TSeqPos ref_size = it.GetCIGARRefSize();
+                                TSeqPos ref_end = ref_pos + ref_size;
+                                if ( verbose ||
+                                     ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
+                                    cout << "Ref: " << q.refseq_id
+                                         << " at [" << ref_pos
+                                         << " - " << (ref_end-1)
+                                         << "] = " << ref_size
+                                         << '\n';
+                                    if ( ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
+                                        cout << "Wrong range" << endl;
+                                        ++wrong_range_count;
+                                    }
+                                }
+                                ++align_count;
+                                if ( limit_count && align_count >= limit_count ) {
+                                    break;
+                                }
+                            }
+                        }
+                        else {
+                            for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id,
+                                                          q.refseq_range, level1, level2, search_mode); it; ++it ) {
+                                if ( min_quality && it.GetMapQuality() < min_quality ) {
+                                    ++skipped_min_quality;
+                                    continue;
+                                }
+                                TSeqPos ref_pos = it.GetRefSeqPos();
+                                TSeqPos ref_size = it.GetCIGARRefSize();
+                                TSeqPos ref_end = ref_pos + ref_size;
+                                unsigned pos_level = 0;
+                                if ( ref_size ) {
+                                    TSeqPos pos1 = ref_pos >> bam_raw_db.GetIndex().GetLevelBinShift(0);
+                                    TSeqPos pos2 = (ref_end-1) >> bam_raw_db.GetIndex().GetLevelBinShift(0);
+                                    while ( pos1 != pos2 ) {
+                                        ++pos_level;
+                                        pos1 >>= CBamIndex::kLevelStepBinShift;
+                                        pos2 >>= CBamIndex::kLevelStepBinShift;
+                                    }
+                                }
+                                unsigned got_level = it.GetIndexLevel();
+                                if ( bam_raw_db.GetIndex().GetMinLevelBinShift() != SBamIndexDefs::kBAI_min_shift ||
+                                     bam_raw_db.GetIndex().GetMaxIndexLevel() != SBamIndexDefs::kBAI_depth ) {
+                                    // in-BAM bin level is valid for standard BAI parameters
+                                    got_level = pos_level;
+                                }
+                                if ( verbose ||
+                                     got_level < level1 || got_level > level2 ||
+                                     got_level != pos_level ||
+                                     ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
+                                    cout << "Ref: " << q.refseq_id
+                                         << " at [" << ref_pos
+                                         << " - " << (ref_end-1)
+                                         << "] = " << ref_size
+                                         << " " << it.GetCIGAR()
+                                         << " Q: " << int(it.GetMapQuality())
+                                         << " bin: " << it.GetIndexBin()
+                                         << " @: " << it.GetFilePos()
+                                         << '\n';
+                                    if ( got_level < level1 || got_level > level2 ) {
+                                        cout << "Wrong index level: " << got_level << endl;
+                                        ++wrong_level_count;
+                                    }
+                                    if ( pos_level != got_level ) {
+                                        cout << "Alignment indexed in wrong level: " << got_level << " vs " << pos_level << endl;
+                                        ++wrong_indexed_level_count;
+                                    }
+                                    if ( ref_pos > q.refseq_range.GetTo() || ref_end <= q.refseq_range.GetFrom() ) {
+                                        cout << "Wrong range" << endl;
+                                        ++wrong_range_count;
+                                    }
+                                }
+                                ++align_count;
+                                if ( limit_count && align_count >= limit_count ) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch ( exception& exc ) {
+                        ERR_POST("Run("<<q.refseq_id<<"): Exception: "<<exc.what());
+                    }
+                    {
+                        CMutexGuard guard(s_Mutex);
+                        LOG_POST("Run("<<q.refseq_id<<"): count "<<align_count);
+                        if ( wrong_level_count ) {
+                            LOG_POST("Run("<<q.refseq_id<<"): wrong level count "<<wrong_level_count);
+                        }
+                        if ( wrong_indexed_level_count ) {
+                            LOG_POST("Run("<<q.refseq_id<<"): wrong indexed level count "<<wrong_indexed_level_count);
+                        }
+                        if ( wrong_range_count ) {
+                            LOG_POST("Run("<<q.refseq_id<<"): wrong range count "<<wrong_range_count);
+                        }
+                        if ( skipped_min_quality ) {
+                            LOG_POST("Run("<<q.refseq_id<<"): skipped low quality count "<<skipped_min_quality);
+                        }
+                        total_align_count += align_count;
+                        total_skipped_min_quality += skipped_min_quality;
+                        total_wrong_indexed_level_count += wrong_indexed_level_count;
+                        total_wrong_level_count += wrong_level_count;
+                        total_wrong_range_count += wrong_range_count;
+                    }
+                }, queries[i]);
     }
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i].join();
