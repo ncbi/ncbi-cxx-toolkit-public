@@ -356,9 +356,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
             unique_ptr<CCassBlobFetch>  fetch_details;
             fetch_details.reset(new CCassBlobFetch(chunk_request, chunk_blob_id));
             CCassBlobTaskLoadBlob *         load_task =
-                new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                          app->GetCassandraMaxRetries(),
-                                          app->GetCassandraConnection(),
+                new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                           chunk_blob_id.m_Keyspace,
                                           move(blob_record),
                                           true, nullptr);
@@ -423,9 +421,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                                                    m_IdModVerId2Info->GetTSEId(),
                                                    m_IdModVerId2Info->GetSplitVersion()));
     CCassBlobTaskFetchSplitHistory *   load_task =
-        new  CCassBlobTaskFetchSplitHistory(app->GetCassandraTimeout(),
-                                            app->GetCassandraMaxRetries(),
-                                            app->GetCassandraConnection(),
+        new  CCassBlobTaskFetchSplitHistory(app->GetCassandraConnection(),
                                             m_IdModVerId2Info->GetTSEId().m_Keyspace,
                                             m_IdModVerId2Info->GetTSEId().m_SatKey,
                                             m_IdModVerId2Info->GetSplitVersion(),
@@ -518,17 +514,13 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
     CCassBlobTaskLoadBlob *         load_task = nullptr;
     if (tse_blob_prop_cache_lookup_result != ePSGS_CacheHit) {
         // Cassandra should look for blob props as well
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                              app->GetCassandraMaxRetries(),
-                                              app->GetCassandraConnection(),
+        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                               chunk_blob_id.m_Keyspace,
                                               chunk_blob_id.m_SatKey,
                                               true, nullptr);
     } else {
         // Blob props are already here
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                              app->GetCassandraMaxRetries(),
-                                              app->GetCassandraConnection(),
+        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                               chunk_blob_id.m_Keyspace,
                                               move(blob_record),
                                               true, nullptr);
@@ -911,16 +903,12 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
 
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraTimeout(),
-                            app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
                             chunk_blob_id.m_Keyspace,
                             move(blob_record),
                             true, nullptr);
     } else {
         load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraTimeout(),
-                            app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
                             chunk_blob_id.m_Keyspace,
                             chunk_blob_id.m_SatKey,

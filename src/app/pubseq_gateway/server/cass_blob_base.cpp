@@ -316,9 +316,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     // Create the cass async loader
     unique_ptr<CBlobRecord>             blob_record(new CBlobRecord(blob));
     CCassBlobTaskLoadBlob *             load_task =
-        new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                  app->GetCassandraMaxRetries(),
-                                  app->GetCassandraConnection(),
+        new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                   cass_blob_id.m_Keyspace,
                                   move(blob_record),
                                   true, nullptr);
@@ -420,8 +418,6 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraTimeout(),
-                            app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
                             info_blob_id.m_Keyspace,
                             move(blob_record),
@@ -457,8 +453,6 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraTimeout(),
-                            app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
                             info_blob_id.m_Keyspace,
                             info_blob_id.m_SatKey,
@@ -559,8 +553,6 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraTimeout(),
-                            app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
                             chunks_blob_id.m_Keyspace,
                             move(blob_record),
@@ -596,8 +588,6 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraTimeout(),
-                            app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
                             chunks_blob_id.m_Keyspace,
                             chunks_blob_id.m_SatKey,
@@ -807,8 +797,6 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraTimeout(),
-                            app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
                             chunks_blob_id.m_Keyspace,
                             move(blob_record),
@@ -842,8 +830,6 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraTimeout(),
-                            app->GetCassandraMaxRetries(),
                             app->GetCassandraConnection(),
                             chunks_blob_id.m_Keyspace,
                             chunks_blob_id.m_SatKey,
@@ -1223,9 +1209,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         }
 
         CCassStatusHistoryTaskGetPublicComment *    load_task =
-            new CCassStatusHistoryTaskGetPublicComment(app->GetCassandraTimeout(),
-                                                       app->GetCassandraMaxRetries(),
-                                                       app->GetCassandraConnection(),
+            new CCassStatusHistoryTaskGetPublicComment(app->GetCassandraConnection(),
                                                        blob_fetch_details->GetBlobId().m_Keyspace,
                                                        blob, nullptr);
         comment_fetch_details->SetLoader(load_task);

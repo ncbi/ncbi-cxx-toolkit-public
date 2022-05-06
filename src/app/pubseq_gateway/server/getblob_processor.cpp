@@ -166,9 +166,7 @@ void CPSGS_GetBlobProcessor::Process(void)
 
     CCassBlobTaskLoadBlob *     load_task = nullptr;
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                              app->GetCassandraMaxRetries(),
-                                              app->GetCassandraConnection(),
+        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                               m_BlobId.m_Keyspace,
                                               move(blob_record),
                                               false, nullptr);
@@ -203,17 +201,13 @@ void CPSGS_GetBlobProcessor::Process(void)
         }
 
         if (m_BlobRequest->m_LastModified == INT64_MIN) {
-            load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                                  app->GetCassandraMaxRetries(),
-                                                  app->GetCassandraConnection(),
+            load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                                   m_BlobId.m_Keyspace,
                                                   m_BlobId.m_SatKey,
                                                   false, nullptr);
             fetch_details->SetLoader(load_task);
         } else {
-            load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                                  app->GetCassandraMaxRetries(),
-                                                  app->GetCassandraConnection(),
+            load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                                   m_BlobId.m_Keyspace,
                                                   m_BlobId.m_SatKey,
                                                   m_BlobRequest->m_LastModified,
