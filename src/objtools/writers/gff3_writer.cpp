@@ -1490,12 +1490,38 @@ sGetWrapInfo(
     if (subInts.empty()) {
         return;
     }
-    if (!fc.BioseqHandle().CanGetInst_Length()) {
+
+    // no wrapping for linear sequences:
+    auto bioH = fc.BioseqHandle();
+    if (bioH.CanGetInst_Topology()) {
+        auto topology = bioH.GetInst_Topology();
+        if (topology == CSeq_inst::eTopology_linear) {
+            return;
+        }
+    }
+
+    // if we can't get a strand or they aren't all the same strand then don't 
+    // touch it (second best is better than wrong):
+    const auto& front = *subInts.front();
+    if (!front.CanGetStrand()) {
         return;
     }
-    wrapSize = fc.BioseqHandle().GetInst_Length();
-    const auto& front = *subInts.front();
-    wrapPoint = (front.CanGetStrand()  &&  front.GetStrand() == eNa_strand_minus) ?
+    auto frontStrand = front.GetStrand();
+    auto pCompare = subInts.begin()++;
+    while (pCompare != subInts.end()) {
+        const auto& interval = **pCompare;
+        if (!interval.CanGetStrand()  ||  interval.GetStrand() != frontStrand) {
+            return;
+        }
+        ++pCompare;
+    }
+
+    
+    if (!bioH.CanGetInst_Length()) {
+        return;
+    }
+    wrapSize = bioH.GetInst_Length();
+    wrapPoint = (frontStrand == eNa_strand_minus) ?
         subInts.back()->GetFrom() :
         subInts.front()->GetFrom();
 }
@@ -2638,6 +2664,15 @@ bool CGff3Writer::xWriteFeatureRna(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    auto subtype = mf.GetFeatSubtype();
+    //const auto& range = mf.GetLocationTotalRange();
+    //auto from = range.GetFrom();
+    //auto to = range.GetTo();
+    //const auto& loc = mf.GetLocation();
+    //if (from == 21360389  &&  to == 21377398) {
+    //    cerr << "";
+    //}
+
     CRef<CGff3FeatureRecord> pRna(new CGff3FeatureRecord());
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
@@ -2646,11 +2681,11 @@ bool CGff3Writer::xWriteFeatureRna(
     if (!xWriteRecord(*pRna)) {
         return false;
     }
-    if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
+    if (subtype == CSeqFeatData::eSubtype_mRNA) {
         m_MrnaMapNew[mf] = pRna;
     }
     else
-    if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_preRNA) {
+    if (subtype == CSeqFeatData::eSubtype_preRNA) {
         m_PrernaMapNew[mf] = pRna;
     }
 
@@ -3056,7 +3091,8 @@ bool CGff3Writer::xWriteRecord(
     m_Os << record.StrScore() << '\t';
     m_Os << record.StrStrand() << '\t';
     m_Os << record.StrPhase() << '\t';
-    m_Os << record.StrAttributes() << '\n';
+    m_Os << record.StrAttributes();
+    m_Os << '\n';
     return true;
 }
 
