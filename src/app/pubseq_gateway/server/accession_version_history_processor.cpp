@@ -172,9 +172,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
     // However the request must be done using the original accession and
     // seq_id_type
     CCassAccVerHistoryTaskFetch *  fetch_task =
-        new CCassAccVerHistoryTaskFetch(app->GetCassandraTimeout(),
-                                        app->GetCassandraMaxRetries(),
-                                        app->GetCassandraConnection(),
+        new CCassAccVerHistoryTaskFetch(app->GetCassandraConnection(),
                                         app->GetBioseqKeyspace(),
                                         bioseq_resolution.GetOriginalAccession(),
                                         nullptr, nullptr,

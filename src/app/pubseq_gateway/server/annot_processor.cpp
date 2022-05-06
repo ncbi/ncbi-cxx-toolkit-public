@@ -211,9 +211,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
         // info record. However the request must be done using the original
         // accession and seq_id_type
         CCassNAnnotTaskFetch *  fetch_task =
-                new CCassNAnnotTaskFetch(app->GetCassandraTimeout(),
-                                         app->GetCassandraMaxRetries(),
-                                         app->GetCassandraConnection(),
+                new CCassNAnnotTaskFetch(app->GetCassandraConnection(),
                                          bioseq_na_keyspace.first,
                                          bioseq_resolution.GetOriginalAccession(),
                                          bioseq_resolution.GetBioseqInfo().GetVersion(),
@@ -565,9 +563,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
 
     CCassBlobTaskLoadBlob *     load_task = nullptr;
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                              app->GetCassandraMaxRetries(),
-                                              app->GetCassandraConnection(),
+        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                               m_BlobId.m_Keyspace,
                                               move(blob_record),
                                               false, nullptr);
@@ -592,9 +588,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
             return;
         }
 
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
-                                              app->GetCassandraMaxRetries(),
-                                              app->GetCassandraConnection(),
+        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
                                               blob_id.m_Keyspace,
                                               blob_id.m_SatKey,
                                               last_modified,

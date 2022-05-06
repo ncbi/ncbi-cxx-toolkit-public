@@ -673,7 +673,7 @@ string ToJsonString(const CCassBlobTaskLoadBlob &  request)
         .append(kSep)
         .append(kSatNameItem)
         .append(1, '"')
-        .append(request.GetKeyspace())
+        .append(request.GetKeySpace())
         .append(1, '"');
 
     len = PSGToString(request.GetSatKey(), buf);
@@ -725,7 +725,7 @@ string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request)
         .append(kSep)
         .append(kSatNameItem)
         .append(1, '"')
-        .append(request.GetKeyspace())
+        .append(request.GetKeySpace())
         .append(1, '"');
 
     len = PSGToString(request.GetKey(), buf);
@@ -763,7 +763,7 @@ string ToJsonString(const CCassNAnnotTaskFetch &  request)
         .append(kSep)
         .append(kSatNameItem)
         .append(1, '"')
-        .append(request.GetKeyspace())
+        .append(request.GetKeySpace())
         .append(1, '"')
 
         .append(kSep)
@@ -817,7 +817,7 @@ string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request)
         .append(request.GetKeySpace())
         .append(1, '"');
 
-    len = PSGToString(request.key(), buf);
+    len = PSGToString(request.GetKey(), buf);
     json.append(kSep)
         .append(kSatKeyItem)
         .append(buf, len);
@@ -840,7 +840,7 @@ string ToJsonString(const CCassAccVerHistoryTaskFetch &  request)
         .append(kSep)
         .append(kSatNameItem)
         .append(1, '"')
-        .append(request.GetKeyspace())
+        .append(request.GetKeySpace())
         .append(1, '"')
 
         .append(kSep)

@@ -389,8 +389,6 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
     auto    app = CPubseqGatewayApp::GetInstance();
     CCassBioseqInfoTaskFetch *  fetch_task =
             new CCassBioseqInfoTaskFetch(
-                    app->GetCassandraTimeout(),
-                    app->GetCassandraMaxRetries(),
                     app->GetCassandraConnection(),
                     app->GetBioseqKeyspace(),
                     bioseq_info_request,
@@ -450,8 +448,6 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
     auto    app = CPubseqGatewayApp::GetInstance();
     CCassSI2CSITaskFetch *  fetch_task =
             new CCassSI2CSITaskFetch(
-                    app->GetCassandraTimeout(),
-                    app->GetCassandraMaxRetries(),
                     app->GetCassandraConnection(),
                     app->GetBioseqKeyspace(),
                     si2csi_request,

@@ -97,8 +97,6 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
     auto    app = CPubseqGatewayApp::GetInstance();
     CCassBioseqInfoTaskFetch *  fetch_task =
             new CCassBioseqInfoTaskFetch(
-                    app->GetCassandraTimeout(),
-                    app->GetCassandraMaxRetries(),
                     app->GetCassandraConnection(),
                     app->GetBioseqKeyspace(),
                     bioseq_info_request,
