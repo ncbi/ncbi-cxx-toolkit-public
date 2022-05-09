@@ -293,7 +293,7 @@ bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
     }
     if (IsValue("string") || IsValue("token") || IsValue("QName") ||
         IsValue("language") ||
-        IsValue("anyType") || IsValue("anyURI") ||
+        IsValue("anyType") || IsValue("anyURI") || IsValue("NCName") ||
         IsValue("dateTime") || IsValue("time") || IsValue("date")) {
         attrib.SetType(DTDAttribute::eString);
     } else if (IsValue("ID")) {
@@ -663,7 +663,8 @@ string XSDParser::ParseGroup(DTDElement* owner, int emb)
         node.SetQualified(owner->IsQualified());
         SetCommentsIfEmpty(&(node.Comments()));
 
-        if (m_ResolveTypes) {
+        bool already_there = find(m_StackLexerName.begin(), m_StackLexerName.end(), id) != m_StackLexerName.end();
+        if (m_ResolveTypes && !already_there) {
             PushEntityLexer(id);
             ParseGroupRef(node);
         } else {
