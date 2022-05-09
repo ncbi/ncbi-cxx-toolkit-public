@@ -1247,6 +1247,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                             if (typeStr) {
                                 ITERATE ( TMembers, ir, typeStr->m_Members ) {
                                     if (ir->simple) {
+                                        if (!ir->dataType || !ir->dataType->IsPrimitive()) {
+                                            continue;
+                                        }
                                         string ircType(ir->type->GetCType(
                                             code.GetNamespace()));
                                         if (CClassCode::GetDoxygenComments()) {
