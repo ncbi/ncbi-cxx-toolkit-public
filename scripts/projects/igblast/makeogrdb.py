@@ -39,7 +39,7 @@ import json
 from functools import cmp_to_key
 import subprocess
 
-print(len(sys.argv))
+
 if (len(sys.argv) <3): 
     print("Please supply the germline set JSON file name and the output file name for blast database\n")
     print("Usage: ./makeogrdb.py germline_set_file_name blast_db_output_file_name\n")
@@ -61,7 +61,7 @@ infile.close()
 outfile.close()
 
 
-os.system("/usr/bin/makeblastdb  -in " + outfile_name + " -dbtype prot -parse_seqids " + " -title " + "\"" + data['GermlineSet']["germline_set_name"] + " " + data["GermlineSet"]["germline_set_ref"] + "\"")
+os.system("./makeblastdb  -in " + outfile_name + " -dbtype prot -parse_seqids " + " -title " + "\"" + data['GermlineSet']["germline_set_name"] + " " + data["GermlineSet"]["germline_set_ref"] + "\"")
   
 exit(0)
 
