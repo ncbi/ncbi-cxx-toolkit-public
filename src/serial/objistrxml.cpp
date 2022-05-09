@@ -596,6 +596,12 @@ string CObjectIStreamXml::ReadFileHeader(void)
     }
     
     m_Doctype_found = false;
+    if (GetStackDepth() > 0) {
+        const CObjectStack::TFrame& top = TopFrame();
+        if (top.HasTypeInfo()) {
+            m_Doctype_found = top.GetTypeInfo()->GetDataSpec() == EDataSpec::eDTD;
+        }
+    }
     for ( ;; ) {
         switch ( BeginOpeningTag() ) {
         case '?':
@@ -606,7 +612,7 @@ string CObjectIStreamXml::ReadFileHeader(void)
                 m_Input.SkipChar();
                 CTempString tagName = ReadName(m_Input.PeekChar());
                 if ( tagName == "DOCTYPE" ) {
-                    m_Doctype_found = true;
+//                    m_Doctype_found = true;
                     ReadName(SkipWS());
                     // skip the rest of !DOCTYPE
                     for ( ;; ) {
@@ -2293,7 +2299,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
 
     TMemberIndex ind = classType->GetMembers().Find(tagName);
     if (ind == kInvalidMember) {
-        ind = classType->GetMembers().FindDeep(tagName);
+        ind = classType->GetMembers().FindDeep(tagName, pos);
         if (ind != kInvalidMember && ind >= pos) {
             TopFrame().SetNotag();
             UndoClassMember();
