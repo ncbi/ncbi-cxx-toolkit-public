@@ -1473,6 +1473,11 @@ void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
             } else {
                 needTag = !id.HasNotag() && !id.HasAnyContent() && type != eTypeFamilyContainer;
                 m_SkipNextTag = type != eTypeFamilyPrimitive && type != eTypeFamilyContainer;
+                if (needTag && m_SkipNextTag) {
+                    if (memberType->HasNamespaceName() && m_NsNameToPrefix.find(memberType->GetNamespaceName()) == m_NsNameToPrefix.end()) {
+                        needTag = m_SkipNextTag = false;
+                    }
+                }
             }
             if (needTag) {
                 OpenStackTag(0);
@@ -1619,6 +1624,12 @@ void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
         } else {
             needTag = !id.HasNotag() && !id.HasAnyContent() && type != eTypeFamilyContainer;
             m_SkipNextTag = type != eTypeFamilyPrimitive && type != eTypeFamilyContainer;
+            if (needTag && m_SkipNextTag) {
+                TTypeInfo var_type = choiceType->GetItemInfo(id.GetName())->GetTypeInfo();
+                if (var_type->HasNamespaceName() && m_NsNameToPrefix.find(var_type->GetNamespaceName()) == m_NsNameToPrefix.end()) {
+                    needTag = m_SkipNextTag = false;
+                }
+            }
         }
         if (needTag) {
             OpenStackTag(0);
