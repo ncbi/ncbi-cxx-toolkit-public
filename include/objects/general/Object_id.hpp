@@ -89,9 +89,9 @@ public:
     void SetId8(TId8 value);
 
     bool IsGi(void) const;
-    TIntId GetGi(void) const;
-    NCBI_WARN_UNUSED_RESULT bool GetGi(TIntId& value) const;
-    void SetGi(TIntId value);
+    TGi GetGi(void) const;
+    NCBI_WARN_UNUSED_RESULT bool GetGi(TGi& value) const;
+    void SetGi(TGi value);
 
     // Set integer id part if the argument is a positive integer without leading zeros
     // otherwise set str part.
@@ -143,13 +143,16 @@ bool CObject_id::IsId8(void) const
 
 NCBI_WARN_UNUSED_RESULT
 inline
-bool CObject_id::GetGi(TIntId& value) const
+bool CObject_id::GetGi(TGi& value) const
 {
 #ifdef NCBI_INT8_GI
-    return GetId8(value);
+    TId8 id8;
+    bool ret = GetId8(id8);
+    if (ret) value = GI_FROM(TId8, id8);
+    return ret;
 #else
     if ( IsId() ) {
-        value = GetId();
+        value = GI_FROM(TId, GetId());
         return true;
     }
     return false;
@@ -169,23 +172,23 @@ bool CObject_id::IsGi(void) const
 
 
 inline
-TIntId CObject_id::GetGi(void) const
+TGi CObject_id::GetGi(void) const
 {
 #ifdef NCBI_INT8_GI
-    return GetId8();
+    return GI_FROM(TId8, GetId8());
 #else
-    return GetId();
+    return GI_FROM(TId, GetId());
 #endif
 }
 
 
 inline
-void CObject_id::SetGi(TIntId value)
+void CObject_id::SetGi(TGi value)
 {
 #ifdef NCBI_INT8_GI
-    SetId8(value);
+    SetId8(GI_TO(TId8, value));
 #else
-    SetId(value);
+    SetId(GI_TO(TId8, value));
 #endif
 }
 
