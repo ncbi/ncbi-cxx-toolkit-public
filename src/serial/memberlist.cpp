@@ -287,6 +287,28 @@ TMemberIndex CItemsInfo::FindDeep(const CTempString& name, bool search_attlist,
     return kInvalidMember;
 }
 
+TMemberIndex CItemsInfo::FindDeep(const CTempString& name, TMemberIndex pos) const
+{
+    TMemberIndex ind = Find(name, pos);
+    if (ind != kInvalidMember) {
+        return ind;
+    }
+    for (CIterator item(*this, pos); item.Valid(); ++item) {
+        const CItemInfo* info = GetItemInfo(item);
+        const CMemberId& id = info->GetId();
+        const CClassTypeInfoBase* classType =
+            dynamic_cast<const CClassTypeInfoBase*>(
+                FindRealTypeInfo(info->GetTypeInfo()));
+        if (classType) {
+            if (classType->GetItems().FindDeep(name)
+                != kInvalidMember) {
+                return *item;
+            }
+        }
+    }
+    return kInvalidMember;
+}
+
 const CTypeInfo* CItemsInfo::FindRealTypeInfo(const CTypeInfo* info)
 {
     const CTypeInfo* type;
@@ -313,15 +335,7 @@ const CTypeInfo* CItemsInfo::FindRealTypeInfo(const CTypeInfo* info)
 const CItemInfo* CItemsInfo::FindNextMandatory(const CItemInfo* info)
 {
     if (!info->GetId().HasNotag() && !info->GetId().IsAttlist()) {
-#if 0
-        const CMemberInfo* mem = dynamic_cast<const CMemberInfo*>(info);
-        if (mem && mem->Optional()) {
-            return 0;
-        }
-        return info;
-#else
         return info->Optional() ? 0 : info;
-#endif
     }
     return FindNextMandatory(info->GetTypeInfo());
 }
@@ -353,6 +367,8 @@ const CItemInfo* CItemsInfo::FindNextMandatory(const CTypeInfo* info)
                 if (item->NonEmpty()) {
                     found = FindNextMandatory( item );
                 }
+            } else if (item_family == eTypeFamilyPrimitive) {
+                found = item->Optional() ? 0 : item;
             } else {
                 found = FindNextMandatory( item );
             }

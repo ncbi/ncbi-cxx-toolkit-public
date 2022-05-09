@@ -87,6 +87,7 @@ public:
     TMemberIndex Find(const CTempString& name) const;
     TMemberIndex FindDeep(const CTempString& name, bool search_attlist = false,
         const CClassTypeInfoBase** classInfo = nullptr) const;
+    TMemberIndex FindDeep(const CTempString& name, TMemberIndex pos) const;
     TMemberIndex FindEmpty(void) const;
     TMemberIndex Find(const CTempString& name, TMemberIndex pos) const;
     TMemberIndex Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass) const;
