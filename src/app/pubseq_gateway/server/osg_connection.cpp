@@ -447,20 +447,14 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
         CSeq_id::IdentifyAccession("AAAA01000001");
     }
 
-    if ( 1 ) {
+    if ( GetDefaultEnabledFlags() ) {
         // pre-open first OSG connection
-        for ( auto t = GetRetryCount(); t--;  ) {
-            try {
-                auto conn = AllocateConnection();
-                ReleaseConnection(conn);
-                break;
-            }
-            catch (exception& exc) {
-                ERR_POST("OSG: failed to open initial connection: "<<exc);
-                if ( !t ) {
-                    throw;
-                }
-            }
+        try {
+            auto conn = AllocateConnection();
+            ReleaseConnection(conn);
+        }
+        catch (exception& exc) {
+            ERR_POST(Warning<<"OSG: failed to open initial connection: "<<exc);
         }
     }
 }
