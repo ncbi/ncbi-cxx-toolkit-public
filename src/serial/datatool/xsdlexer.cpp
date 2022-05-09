@@ -215,7 +215,7 @@ TToken XSDLexer::LookupLexeme(void)
                 break;
             }
         }
-        if (c == '=') {
+        if (c == '=' && cOpen == '\0') {
             if (att) {
                 LexerError("Invalid format of an attribute");
             }
