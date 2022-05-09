@@ -1833,7 +1833,17 @@ const CNamespace& CClassRefTypeStrings::GetNamespace(void) const
 
 void CClassRefTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
-    ctx.HPPIncludes().insert(m_FileName);
+    const CDataType* dt = DataType();
+    const CClassTypeStrings* tstr = nullptr;
+    while (dt != nullptr) {
+        tstr = dt->GetTypeStr();
+        dt = dt->GetParentType();
+    }
+    if (tstr && tstr->GetClassNameDT() == m_ClassName) {
+        ctx.AddForwardDeclaration(m_ClassName, m_Namespace);
+    } else {
+        ctx.HPPIncludes().insert(m_FileName);
+    }
 }
 
 void CClassRefTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
