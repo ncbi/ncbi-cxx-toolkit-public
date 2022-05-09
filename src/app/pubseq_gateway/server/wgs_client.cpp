@@ -280,7 +280,7 @@ bool CWGSClient::CanProcessRequest(CPSGS_Request& request)
 {
     auto req_type = request.GetRequestType();
     string seq_id;
-    int seq_id_type;
+    int seq_id_type = -1;
     CRef<CID2_Blob_Id> blob_id;
 
     switch ( req_type ) {
