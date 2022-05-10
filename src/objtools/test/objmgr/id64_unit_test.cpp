@@ -287,46 +287,28 @@ struct SBioseqInfo
 
 static const SBioseqInfo s_BioseqInfos[] = {
     {
-        "NC_054141",
-        "gi|2500000002;ref|NC_054141.5",
-        30432563,
-        30432563
+        "JAJALB010000060",
+        "gb|JAJALB010000060.1;gi|2209563612;gnl|WGS:JAJALB01|270_pilon",
+        57616,
+        57616
     },
     {
-        "2500000002",
-        "gi|2500000002;ref|NC_054141.5",
-        30432563,
-        30432563
+        "2209563612",
+        "gb|JAJALB010000060.1;gi|2209563612;gnl|WGS:JAJALB01|270_pilon",
+        57616,
+        57616
     },
     {
-        "2500000205",
-        "gi|2500000205;ref|NG_073896.1",
-        1767,
-        1767
+        "2209563628",
+        "gb|KAI1044389.1;gi|2209563628;gnl|WGS:JAJALB|LB504_013148-RA",
+        758,
+        758
     },
     {
-        "NM_001393667",
-        "gi|2500000206;ref|NM_001393667.1",
-        9061,
-        9061
-    },
-    {
-        "2500000207",
-        "gi|2500000207;ref|NP_001380596.1",
-        870,
-        870
-    },
-    {
-        "2500000012",
-        "gi|2500000012;gb|QTV22642.1",
-        338,
-        338
-    },
-    {
-        "gb|QTV22642.1",
-        "gi|2500000012;gb|QTV22642.1",
-        338,
-        338
+        "KAI1044389.1",
+        "gb|KAI1044389.1;gi|2209563628;gnl|WGS:JAJALB|LB504_013148-RA",
+        758,
+        758
     },
 };
 
@@ -1038,13 +1020,19 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 {
     LOG_POST("Checking WGS master sequence descriptors 1");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("JAFLJK010000001"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("JAJALB010000060"));
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1060,17 +1048,17 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
             break;
         }
     }
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 1);
+    BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 1u);
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 8);
 }
 
 
@@ -1078,13 +1066,19 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
 {
     LOG_POST("Checking WGS master sequence descriptors 2");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("2500000191"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("2209563612"));
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1100,17 +1094,16 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
             break;
         }
     }
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 1);
+    BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 1u);
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
 }
 
 
@@ -1118,14 +1111,20 @@ BOOST_AUTO_TEST_CASE(CheckWGSScaffold)
 {
     LOG_POST("Checking WGS scaffold");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("CM029356"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("MU279811"));
     //auto core = SerialClone(*bh.GetObjectCore());
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1147,13 +1146,16 @@ BOOST_AUTO_TEST_CASE(CheckWGSScaffold)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 1);
+    BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 1u);
+    BOOST_CHECK_EQUAL(user_count.size(), 3u);
+    BOOST_CHECK_EQUAL(user_count["AutodefOptions"], 1);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 4u);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 4u);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    BOOST_CHECK_EQUAL(total_count, 13);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 161u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 161u);
     TSeqPos len = bh.GetBioseqLength();
     BOOST_CHECK(bh.GetSeqVector().CanGetRange(0, len));
     string data;
@@ -1165,13 +1167,19 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt1)
 {
     LOG_POST("Checking VDB WGS nuc-prot set by GI");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2500000217));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2209563628));
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1191,9 +1199,12 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt1)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
-    BOOST_CHECK_EQUAL(pub_count, 0);
+    BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
-    BOOST_CHECK_EQUAL(user_count.size(), 0u);
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 9);
     BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
     BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 1u);
     TSeqPos len = bh.GetBioseqLength();
@@ -1207,13 +1218,19 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt2)
 {
     LOG_POST("Checking VDB WGS nuc-prot set by acc");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("KAG5512581"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("KAI1044389"));
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
     int comment_count = 0;
     int pub_count = 0;
+    int total_count = 0;
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
         desc_mask |= 1<<it->Which();
         switch ( it->Which() ) {
         case CSeqdesc::e_Comment:
@@ -1233,9 +1250,12 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt2)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
-    BOOST_CHECK_EQUAL(pub_count, 0);
+    BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
-    BOOST_CHECK_EQUAL(user_count.size(), 0u);
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 9);
     BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
     BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 1u);
     TSeqPos len = bh.GetBioseqLength();
@@ -1276,7 +1296,7 @@ BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
 {
     LOG_POST("Checking split Seq-data access");
     CRef<CScope> scope = s_InitScope();
-    s_CheckSplitSeqData(*scope, "CM029356", eInst_ext);
+    s_CheckSplitSeqData(*scope, "JAJALB010000061", eInst_ext);
 }
 
 
@@ -1295,13 +1315,14 @@ BOOST_AUTO_TEST_CASE(CheckSplitNucProtSet)
 {
     LOG_POST("Checking split nuc-prot set");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("CP071864"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("CP043588"));
+    BOOST_REQUIRE(bh);
     auto core = bh.GetTopLevelEntry().GetObjectCore();
-    BOOST_CHECK_LT(s_CountObjects<CSeqdesc>(*core), 527u);
+    BOOST_CHECK_LT(s_CountObjects<CSeqdesc>(*core), 14704u);
     BOOST_CHECK_EQUAL(s_CountObjects<CSeq_feat>(*core), 0u);
     auto complete = bh.GetTopLevelEntry().GetCompleteObject();
-    BOOST_CHECK_EQUAL(s_CountObjects<CSeqdesc>(*complete), 527u);
-    BOOST_CHECK_EQUAL(s_CountObjects<CSeq_feat>(*complete), 625u);
+    BOOST_CHECK_EQUAL(s_CountObjects<CSeqdesc>(*complete), 14704u);
+    BOOST_CHECK_EQUAL(s_CountObjects<CSeq_feat>(*complete), 15112u);
 }
 
 
@@ -1454,14 +1475,15 @@ NCBITEST_INIT_TREE()
     if (CGBDataLoader::IsUsingPSGLoader()) {
         //NCBITEST_DISABLE(CheckExtSTS);
     }
-    if ( !s_HaveNA() ) {
+    if ( 1 || !s_HaveNA() ) { // TEMP !!!!!!!!!!!!!!!!!!!!!!!!!
+        NCBITEST_DISABLE(CheckNAZoom);
         NCBITEST_DISABLE(CheckNAZoom10);
     }
     if ( !s_HaveSplit() ) {
         NCBITEST_DISABLE(CheckSplitSeqData);
         NCBITEST_DISABLE(CheckSplitNucProtSet);
     }
-    if ( !s_HaveVDBSNP() ) {
+    if ( 1 || !s_HaveVDBSNP() ) { // TEMP !!!!!!!!!!!!!!!!!!!!!
         NCBITEST_DISABLE(CheckExtSNP);
         NCBITEST_DISABLE(CheckExtSNPGraph);
         NCBITEST_DISABLE(CheckExtSNPNAGraph5000);
