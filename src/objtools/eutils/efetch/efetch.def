@@ -1,5 +1,8 @@
 [Object]
 _class=CPubmedObject
 
+[Title]
+_class=CPubmedTitle
+
 [-]
 _namespace=eutils

@@ -1,6 +1,6 @@
 # $Id$
 
-DTD_PROJ = efetch
+XSD_PROJ = efetch
 
 SUB_PROJ = test
 
