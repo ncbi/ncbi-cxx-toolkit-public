@@ -92,6 +92,9 @@ public:
     TGi GetGi(void) const;
     NCBI_WARN_UNUSED_RESULT bool GetGi(TGi& value) const;
     void SetGi(TGi value);
+#ifdef NCBI_STRICT_GI
+    void SetGi(TIntId value);
+#endif
 
     // Set integer id part if the argument is a positive integer without leading zeros
     // otherwise set str part.
@@ -191,6 +194,14 @@ void CObject_id::SetGi(TGi value)
     SetId(GI_TO(TId8, value));
 #endif
 }
+
+#ifdef NCBI_STRICT_GI
+inline
+void CObject_id::SetGi(TIntId value)
+{
+    SetId8(value);
+}
+#endif
 
 
 /////////////////// end of CObject_id inline methods
