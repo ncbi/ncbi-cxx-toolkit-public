@@ -162,7 +162,7 @@ void s_ForeachToken(container_type& container, check_type f, proc_type proc)
 }
 
 
-static const char* s_UTF8LocaleName = "en_US.UTF8";
+static const char* s_UTF8LocaleName = "en_US.UTF-8";
 
 string wstring_to_utf8(const wstring& str)
 {
