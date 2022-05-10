@@ -191,3 +191,7 @@ Added support of CStrictId
 Corrected RPC client code generation to fully honor named reply types
 Fixed processing line endings in data specifications comments on Cygwin.
 Corrected reading JSON data files.
+
+May 10, 2022
+version 2.22.0, CXX-12461
+Fixed handling recursive type definitions.
