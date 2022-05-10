@@ -12,7 +12,7 @@ class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public IPubmedUpdater
 {
 public:
     CEUtilsUpdater();
-    TEntrezId CitMatch(const CPub&) override;
+    TEntrezId CitMatch(const CPub&, EPubmedError* = nullptr) override;
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
     string GetTitle(const string&) override;
 private:

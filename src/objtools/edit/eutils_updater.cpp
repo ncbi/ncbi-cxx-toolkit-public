@@ -341,7 +341,7 @@ CEUtilsUpdater::CEUtilsUpdater()
 }
 
 
-TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub)
+TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
 {
     unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
 
@@ -350,6 +350,9 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub)
     if (pub.IsArticle()) {
         req->SetFromArticle(pub.GetArticle());
     } else {
+        if (perr) {
+            *perr = eError_val_not_found;
+        }
         return ZERO_ENTREZ_ID;
     }
 
@@ -360,6 +363,10 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub)
         if (pmid != ZERO_ENTREZ_ID) {
             return pmid;
         }
+    }
+
+    if (perr) {
+        *perr = req->GetError();
     }
     return ZERO_ENTREZ_ID;
 }

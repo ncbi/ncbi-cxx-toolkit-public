@@ -40,13 +40,19 @@ void CMLAUpdater::SetClient(CMLAClient* mla)
     m_mlac.Reset(mla);
 }
 
-TEntrezId CMLAUpdater::CitMatch(const CPub& pub)
+TEntrezId CMLAUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
 {
+    CMLAClient::TReply reply;
+
     try {
-        return ENTREZ_ID_FROM(int, m_mlac->AskCitmatchpmid(pub));
+        return ENTREZ_ID_FROM(int, m_mlac->AskCitmatchpmid(pub, &reply));
     } catch (CException&) {
     }
 
+    if (perr) {
+        EError_val mlaErrorVal = reply.GetError();
+        *perr = mlaErrorVal;
+    }
     return ZERO_ENTREZ_ID;
 }
 
@@ -57,12 +63,12 @@ CRef<CPub> CMLAUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
     try {
         return m_mlac->AskGetpubpmid(CPubMedId(pmid), &reply);
     } catch (CException&) {
-        if (perr) {
-            EError_val mlaErrorVal = reply.GetError();
-            *perr = mlaErrorVal;
-        }
     }
 
+    if (perr) {
+        EError_val mlaErrorVal = reply.GetError();
+        *perr = mlaErrorVal;
+    }
     return {};
 }
 
@@ -89,7 +95,7 @@ string CMLAUpdater::GetTitle(const string& title)
         for (const auto& item : msg_list_new->GetTitles()) {
             const CTitle& cur_title = item->GetTitle();
             if (cur_title.IsSet()) {
-                const auto& title_list = cur_title.Get();
+                const CTitle::Tdata& title_list = cur_title.Get();
                 auto jta_title = find_if(title_list.begin(), title_list.end(), is_jta);
                 if (jta_title != title_list.end()) {
                     return (*jta_title)->GetIso_jta();

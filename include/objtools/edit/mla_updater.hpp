@@ -16,7 +16,7 @@ public:
     CMLAUpdater();
     bool Init() override;
     void Fini() override;
-    TEntrezId CitMatch(const CPub&) override;
+    TEntrezId CitMatch(const CPub&, EPubmedError* = nullptr) override;
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
     string GetTitle(const string&) override;
 
