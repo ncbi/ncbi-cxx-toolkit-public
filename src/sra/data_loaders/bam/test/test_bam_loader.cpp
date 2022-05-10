@@ -1654,6 +1654,41 @@ vector<TQuery> s_GetQueries3full()
     return queries;
 }
 
+vector<TQuery> s_GetQueries4()
+{
+    vector<TQuery> queries;
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 100000,  100000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 200000,  200000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 300000,  300000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 400000,  400000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 500000,  500000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 600000,  600000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 700000,  700000), false, 3, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 800000,  800000), false, 2, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>( 900000,  900000), false, 5, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1000000, 1000000), false, 6, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1100000, 1100000), false, 4, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1200000, 1200000), false, 5, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1300000, 1300000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1400000, 1400000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1500000, 1500000), false, 8, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1600000, 1600000), false, 4, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1700000, 1700000), false, 3, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1800000, 1800000), false, 10, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(1900000, 1900000), false, 5, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2000000, 2000000), false, 2, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2100000, 2100000), false, 7, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2200000, 2200000), false, 8, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2300000, 2300000), false, 5, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2400000, 2400000), false, 5, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2500000, 2500000), false, 6, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2600000, 2600000), false, 0, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2700000, 2700000), false, 6, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2800000, 2800000), false, 6, 0));
+    queries.push_back(make_tuple("lcl|1", CRange<TSeqPos>(2900000, 2900000), false, 7, 0));
+    return queries;
+}
+
 BOOST_AUTO_TEST_CASE(FetchSeqST1)
 {
     CBAMDataLoader::SetPileupGraphsParamDefault(true);
@@ -1829,7 +1864,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT1)
                            }
                        }
                        if ( !get<4>(query) || count != get<4>(query) ) {
-                           BOOST_CHECK_EQUAL(count, get<3>(query));
+                           BOOST_CHECK_EQUAL_MT_SAFE(count, get<3>(query));
                        }
                    }, queries[i]);
     }
@@ -1898,7 +1933,7 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT2)
                                }
                            }
                            if ( !get<4>(query) || count != get<4>(query) ) {
-                               BOOST_CHECK_EQUAL(count, get<3>(query));
+                               BOOST_CHECK_EQUAL_MT_SAFE(count, get<3>(query));
                            }
                        }, queries[i]);
         }
@@ -1994,13 +2029,78 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT3)
                                }
                            }
                            if ( count != get<4>(query) ) {
-                               BOOST_CHECK_EQUAL(count, get<3>(query));
+                               BOOST_CHECK_EQUAL_MT_SAFE(count, get<3>(query));
                            }
                        }, queries[i]);
         }
         for ( size_t i = 0; i < NQ; ++i ) {
             tt[i].join();
         }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeqMT4)
+{
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name;
+
+    {
+        params.m_DirPath =
+            sx_GetPath("/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment");
+        bam_name = "NA10851.SLX.maq.SRP000031.2009_08.bam";
+    }
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    vector<TQuery> queries = s_GetQueries4();
+    
+    const size_t NQ = queries.size();
+    
+    vector<thread> tt(NQ);
+    for ( size_t i = 0; i < NQ; ++i ) {
+        tt[i] =
+            thread([&]
+                   (const TQuery& query)
+                   {
+                       SAnnotSelector sel;
+                       sel.SetSearchUnresolved();
+
+                       CRef<CSeq_id> seqid(new CSeq_id(get<0>(query)));
+                       CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+                       CRef<CSeq_loc> loc(new CSeq_loc);
+                       loc->SetInt().SetId(*seqid);
+                       loc->SetInt().SetFrom(get<1>(query).GetFrom());
+                       loc->SetInt().SetTo(get<1>(query).GetTo());
+                       size_t count = 0;
+                       if ( get<2>(query) ) {
+                           for ( CGraph_CI it(scope, *loc, sel); it; ++it ) {
+                               ++count;
+                           }
+                       }
+                       else {
+                           for ( CAlign_CI it(scope, *loc, sel); it; ++it ) {
+                               ++count;
+                           }
+                       }
+                       if ( !get<4>(query) || count != get<4>(query) ) {
+                           BOOST_CHECK_EQUAL_MT_SAFE(count, get<3>(query));
+                       }
+                   }, queries[i]);
+    }
+    for ( size_t i = 0; i < NQ; ++i ) {
+        tt[i].join();
     }
 }
 
@@ -2210,10 +2310,10 @@ BOOST_AUTO_TEST_CASE(FetchSeq1GI64)
     CRef<CObjectManager> om = sx_GetOM();
 
     CBAMDataLoader::SLoaderParams params;
-    string bam_name = sx_GetPath("test.2500000002.bam", "bam");
+    string bam_name = sx_GetPath("test.2216570557.bam", "bam");
     params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
     
-    string id = "NC_054141.5";
+    string id = "CP043588.1";
     TSeqPos from = 100000, to = 200000;
     size_t align_count = 23;
     size_t graph_count = 1;
