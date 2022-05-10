@@ -131,15 +131,32 @@ public:
             args += "&retmode=" + NStr::URLEncode(x_GetRetModeName(), NStr::eUrlEnc_ProcessMarkChars);
         }
 
+        // "journal_title|year|volume|first_page|author_name|your_key|"
         ostringstream bdata;
-        bdata << NStr::URLEncode(GetJournal(), NStr::eUrlEnc_ProcessMarkChars) << '|';
+
+        // Journal
+        bdata << NStr::URLEncode(GetJournal(), NStr::eUrlEnc_ProcessMarkChars);
+        bdata << '|';
+
+        // Year
         if (GetYear() > 0) {
             bdata << GetYear();
         }
         bdata << '|';
-        bdata << NStr::URLEncode(GetVol(), NStr::eUrlEnc_ProcessMarkChars) << '|';
-        bdata << GetPage() << '|';
-        bdata << NStr::URLEncode(GetAuthor(), NStr::eUrlEnc_ProcessMarkChars) << '|';
+
+        // Volume
+        bdata << NStr::URLEncode(GetVol(), NStr::eUrlEnc_ProcessMarkChars);
+        bdata << '|';
+
+        // Page
+        bdata << GetPage();
+        bdata << '|';
+
+        // Author
+        bdata << NStr::URLEncode(GetAuthor(), NStr::eUrlEnc_ProcessMarkChars);
+        bdata << '|';
+
+        // Key
         bdata << '|';
 
         args += "&bdata=";
@@ -155,7 +172,7 @@ public:
                 const auto& N = Au.GetNames();
                 if (N.IsStd()) {
                     const auto& names = N.GetStd();
-                    if (!names.empty()) {
+                    if (! names.empty()) {
                         const CAuthor& first_author = *names.front();
                         if (first_author.IsSetName()) {
                             const CPerson_id& id = first_author.GetName();
@@ -169,7 +186,7 @@ public:
                     }
                 } else if (N.IsMl()) {
                     const auto& names = N.GetMl();
-                    if (!names.empty()) {
+                    if (! names.empty()) {
                         this->SetAuthor(names.front());
                     }
                 }
@@ -179,7 +196,7 @@ public:
             const CCit_jour& J = A.GetFrom().GetJournal();
             if (J.IsSetTitle()) {
                 const CTitle& T = J.GetTitle();
-                if (T.IsSet() && !T.Get().empty()) {
+                if (T.IsSet() && ! T.Get().empty()) {
                     this->SetJournal(T.GetTitle());
                 }
             }
@@ -203,13 +220,51 @@ public:
         }
     }
 
+    TEntrezId GetResponse()
+    {
+        string resp;
+        try {
+            string content;
+            this->Read(&content);
+            NStr::TruncateSpacesInPlace(content);
+            vector<string> v;
+            NStr::Split(content, "|", v);
+            if (v.size() >= 7) {
+                resp = NStr::TruncateSpaces(v[6]);
+            }
+        } catch (...) {
+        }
+
+        if (! resp.empty()) {
+            if (! isalpha(resp.front())) {
+                TIntId pmid;
+                if (NStr::StringToNumeric(resp, &pmid, NStr::fConvErr_NoThrow)) {
+                    return ENTREZ_ID_FROM(TIntId, pmid);
+                } else {
+                    m_error = eError_val_operational_error;
+                }
+            } else {
+                if (NStr::StartsWith(resp, "NOT_FOUND", NStr::eNocase)) {
+                    m_error = eError_val_not_found;
+                } else if (NStr::StartsWith(resp, "AMBIGUOUS", NStr::eNocase)) {
+                    m_error = eError_val_citation_ambiguous;
+                }
+            }
+        }
+
+        return ZERO_ENTREZ_ID;
+    }
+
+    EPubmedError GetError() const { return m_error; }
+
 private:
-    string m_author;
-    string m_journal;
-    int m_year = 0;
-    string m_vol;
-    string m_page;
-    ERetMode m_RetMode = eRetMode_none;
+    string         m_author;
+    string         m_journal;
+    int            m_year = 0;
+    string         m_vol;
+    string         m_page;
+    ERetMode       m_RetMode = eRetMode_none;
+    EPubmedError   m_error;
 
     const char* x_GetRetModeName() const
     {
@@ -242,29 +297,8 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub)
         req->SetFromArticle(pub.GetArticle());
     }
 
-    string resp;
-    try {
-        string content;
-        req->Read(&content);
-        NStr::TruncateSpacesInPlace(content);
-        vector<string> v;
-        NStr::Split(content, "|", v);
-        if (v.size() >= 7) {
-            resp = NStr::TruncateSpaces(v[6]);
-        }
-    } catch (...) {
-    }
-
-    if (!resp.empty()) {
-        if (!isalpha(resp.front())) {
-            TIntId pmid;
-            if (NStr::StringToNumeric(resp, &pmid, NStr::fConvErr_NoThrow)) {
-                return ENTREZ_ID_FROM(TIntId, pmid);
-            }
-        }
-    }
-
-    return ZERO_ENTREZ_ID;
+    TEntrezId pmid = req->GetResponse();
+    return pmid;
 }
 
 
