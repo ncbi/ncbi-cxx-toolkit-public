@@ -59,8 +59,10 @@ BOOST_AUTO_TEST_CASE(Test_Empty)
     J.SetImp().SetDate().SetStd().SetYear(0);
 
     for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(pub);
+        EPubmedError err;
+        TEntrezId pmid = upd->CitMatch(pub, &err);
         BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
+        BOOST_CHECK_EQUAL(err, eError_val_citation_not_found);
     }
 }
 
