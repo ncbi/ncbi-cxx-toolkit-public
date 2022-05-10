@@ -51,10 +51,28 @@
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 
+#include <array>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
+
+enum eCitMatchFlags {
+    e_J = 1 << 0, // Journal
+    e_V = 1 << 1, // Volume
+    e_P = 1 << 2, // Page
+    e_Y = 1 << 3, // Year
+    e_A = 1 << 4, // Author
+#if 0
+    e_I = 1 << 5, // Issue
+    e_T = 1 << 6, // Title
+#endif
+};
+
+eCitMatchFlags constexpr operator|(eCitMatchFlags a, eCitMatchFlags b)
+{
+    return static_cast<eCitMatchFlags>(static_cast<int>(a) | static_cast<int>(b));
+}
 
 
 class CECitMatch_Request : public CEUtils_Request
@@ -135,25 +153,33 @@ public:
         ostringstream bdata;
 
         // Journal
-        bdata << NStr::URLEncode(GetJournal(), NStr::eUrlEnc_ProcessMarkChars);
+        if (m_rule & e_J) {
+            bdata << NStr::URLEncode(GetJournal(), NStr::eUrlEnc_ProcessMarkChars);
+        }
         bdata << '|';
 
         // Year
-        if (GetYear() > 0) {
+        if (m_rule & e_Y) {
             bdata << GetYear();
         }
         bdata << '|';
 
         // Volume
-        bdata << NStr::URLEncode(GetVol(), NStr::eUrlEnc_ProcessMarkChars);
+        if (m_rule & e_V) {
+            bdata << NStr::URLEncode(GetVol(), NStr::eUrlEnc_ProcessMarkChars);
+        }
         bdata << '|';
 
         // Page
-        bdata << GetPage();
+        if (m_rule & e_P) {
+            bdata << GetPage();
+        }
         bdata << '|';
 
         // Author
-        bdata << NStr::URLEncode(GetAuthor(), NStr::eUrlEnc_ProcessMarkChars);
+        if (m_rule & e_A) {
+            bdata << NStr::URLEncode(GetAuthor(), NStr::eUrlEnc_ProcessMarkChars);
+        }
         bdata << '|';
 
         // Key
@@ -220,8 +246,35 @@ public:
         }
     }
 
-    TEntrezId GetResponse()
+    bool SetRule(eCitMatchFlags rule)
     {
+        if ((rule & e_J) && this->GetJournal().empty()) {
+            return false;
+        }
+        if ((rule & e_V) && this->GetVol().empty()) {
+            return false;
+        }
+        if ((rule & e_P) && this->GetPage().empty()) {
+            return false;
+        }
+        if ((rule & e_Y) && this->GetYear() <= 0) {
+            return false;
+        }
+        if ((rule & e_A) && this->GetAuthor().empty()) {
+            return false;
+        }
+
+        m_rule = rule;
+        return true;
+    }
+
+    TEntrezId GetResponse(eCitMatchFlags rule)
+    {
+        if (! this->SetRule(rule)) {
+            m_error = eError_val_citation_not_found;
+            return ZERO_ENTREZ_ID;
+        }
+
         string resp;
         try {
             string content;
@@ -264,6 +317,7 @@ private:
     string         m_vol;
     string         m_page;
     ERetMode       m_RetMode = eRetMode_none;
+    eCitMatchFlags m_rule    = e_J | e_V | e_P | e_Y | e_A;
     EPubmedError   m_error;
 
     const char* x_GetRetModeName() const
@@ -295,10 +349,19 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub)
     req->SetRetMode(CECitMatch_Request::eRetMode_text);
     if (pub.IsArticle()) {
         req->SetFromArticle(pub.GetArticle());
+    } else {
+        return ZERO_ENTREZ_ID;
     }
 
-    TEntrezId pmid = req->GetResponse();
-    return pmid;
+    constexpr array<eCitMatchFlags, 2> ruleset = { e_J | e_V | e_P | e_A, e_J | e_V | e_P };
+
+    for (eCitMatchFlags r : ruleset) {
+        TEntrezId pmid = req->GetResponse(r);
+        if (pmid != ZERO_ENTREZ_ID) {
+            return pmid;
+        }
+    }
+    return ZERO_ENTREZ_ID;
 }
 
 
