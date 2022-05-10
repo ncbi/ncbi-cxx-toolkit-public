@@ -165,6 +165,5 @@ Pub ::= article {
     for (auto upd : updaters) {
         TEntrezId pmid = upd->CitMatch(pub);
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'253'208));
-        break; // TODO
     }
 }
