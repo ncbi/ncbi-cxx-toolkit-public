@@ -1,0 +1,3405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    $Id$
+    Simplified MathML 3.0 Schema
+    https://www.w3.org/Math/XMLSchema/mathml3
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:mml="http://www.w3.org/1998/Math/MathML"
+           elementFormDefault="qualified"
+           targetNamespace="http://www.w3.org/1998/Math/MathML">
+  <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+<!--
+    MathML 3.0
+    
+    This is the Mathematical Markup Language (MathML) 3.0, an XML
+    application for describing mathematical notation and capturing
+    both its structure and content.
+    
+    Copyright 1998-2014 W3C (MIT, ERCIM, Keio, Beihang), All Rights 
+    Reserved. W3C liability, trademark, document use and software
+    licensing rules apply. 
+    
+    Permission to use, copy, modify and distribute the MathML 3.0 DTD and
+    its accompanying documentation for any purpose and without fee is
+    hereby granted in perpetuity, provided that the above copyright notice
+    and this paragraph appear in all copies.  The copyright holders make
+    no representation about the suitability of the DTD for any purpose.
+    
+    It is provided "as is" without expressed or implied warranty.
+  -->
+  <xs:group name="MalignExpression">
+    <xs:choice>
+      <xs:element ref="mml:maligngroup"/>
+      <xs:element ref="mml:malignmark"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="TokenExpression">
+    <xs:choice>
+      <xs:element ref="mml:mi"/>
+      <xs:element ref="mml:mn"/>
+      <xs:element ref="mml:mo"/>
+      <xs:element ref="mml:mtext"/>
+      <xs:element ref="mml:mspace"/>
+      <xs:element ref="mml:ms"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="PresentationExpression">
+    <xs:choice>
+      <xs:group ref="mml:TokenExpression"/>
+      <xs:group ref="mml:MalignExpression"/>
+      <xs:element ref="mml:mrow"/>
+      <xs:element ref="mml:mfrac"/>
+      <xs:element ref="mml:msqrt"/>
+      <xs:element ref="mml:mroot"/>
+      <xs:element ref="mml:mstyle"/>
+      <xs:element ref="mml:merror"/>
+      <xs:element ref="mml:mpadded"/>
+      <xs:element ref="mml:mphantom"/>
+      <xs:element ref="mml:mfenced"/>
+      <xs:element ref="mml:menclose"/>
+      <xs:element ref="mml:msub"/>
+      <xs:element ref="mml:msup"/>
+      <xs:element ref="mml:msubsup"/>
+      <xs:element ref="mml:munder"/>
+      <xs:element ref="mml:mover"/>
+      <xs:element ref="mml:munderover"/>
+      <xs:element ref="mml:mmultiscripts"/>
+      <xs:element ref="mml:mtable"/>
+      <xs:element ref="mml:mstack"/>
+      <xs:element ref="mml:mlongdiv"/>
+      <xs:element ref="mml:maction"/>
+    </xs:choice>
+  </xs:group>
+  <!-- end of mathml3-strict-content.rng -->
+  <xs:complexType name="cn.content" mixed="true">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="mml:mglyph"/>
+      <xs:element ref="mml:sep"/>
+      <xs:group ref="mml:PresentationExpression"/>
+    </xs:choice>
+  </xs:complexType>
+  <!-- start of mathml3-content.rng -->
+  <!-- start of mathml3-strict-content.rng -->
+  <xs:element name="cn">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:cn.content">
+          <xs:attributeGroup ref="mml:mml.cn.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="ci.content" mixed="true">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="mml:mglyph"/>
+      <xs:group ref="mml:PresentationExpression"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:element name="ci">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:ci.content">
+          <xs:attributeGroup ref="mml:mml.ci.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="csymbol.content" mixed="true">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="mml:mglyph"/>
+      <xs:group ref="mml:PresentationExpression"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:element name="csymbol">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:csymbol.content">
+          <xs:attributeGroup ref="mml:mml.csymbol.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:group name="BvarQ">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="mml:bvar"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="DomainQ">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="mml:domainofapplication"/>
+        <xs:element ref="mml:condition"/>
+        <xs:sequence>
+          <xs:element ref="mml:lowlimit"/>
+          <xs:element minOccurs="0" ref="mml:uplimit"/>
+        </xs:sequence>
+      </xs:choice>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="constant-arith.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:exponentiale"/>
+      <xs:element ref="mml:imaginaryi"/>
+      <xs:element ref="mml:notanumber"/>
+      <xs:element ref="mml:true"/>
+      <xs:element ref="mml:false"/>
+      <xs:element ref="mml:pi"/>
+      <xs:element ref="mml:eulergamma"/>
+      <xs:element ref="mml:infinity"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="constant-set.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:integers"/>
+      <xs:element ref="mml:reals"/>
+      <xs:element ref="mml:rationals"/>
+      <xs:element ref="mml:naturalnumbers"/>
+      <xs:element ref="mml:complexes"/>
+      <xs:element ref="mml:primes"/>
+      <xs:element ref="mml:emptyset"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="binary-linalg.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:vectorproduct"/>
+      <xs:element ref="mml:scalarproduct"/>
+      <xs:element ref="mml:outerproduct"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-linalg.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:selector"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="unary-linalg.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:determinant"/>
+      <xs:element ref="mml:transpose"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-constructor.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:vector"/>
+      <xs:element ref="mml:matrix"/>
+      <xs:element ref="mml:matrixrow"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-stats.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:mean"/>
+      <xs:element ref="mml:sdev"/>
+      <xs:element ref="mml:variance"/>
+      <xs:element ref="mml:median"/>
+      <xs:element ref="mml:mode"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="unary-elementary.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:sin"/>
+      <xs:element ref="mml:cos"/>
+      <xs:element ref="mml:tan"/>
+      <xs:element ref="mml:sec"/>
+      <xs:element ref="mml:csc"/>
+      <xs:element ref="mml:cot"/>
+      <xs:element ref="mml:sinh"/>
+      <xs:element ref="mml:cosh"/>
+      <xs:element ref="mml:tanh"/>
+      <xs:element ref="mml:sech"/>
+      <xs:element ref="mml:csch"/>
+      <xs:element ref="mml:coth"/>
+      <xs:element ref="mml:arcsin"/>
+      <xs:element ref="mml:arccos"/>
+      <xs:element ref="mml:arctan"/>
+      <xs:element ref="mml:arccosh"/>
+      <xs:element ref="mml:arccot"/>
+      <xs:element ref="mml:arccoth"/>
+      <xs:element ref="mml:arccsc"/>
+      <xs:element ref="mml:arccsch"/>
+      <xs:element ref="mml:arcsec"/>
+      <xs:element ref="mml:arcsech"/>
+      <xs:element ref="mml:arcsinh"/>
+      <xs:element ref="mml:arctanh"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="limit.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:limit"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="product.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:product"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="sum.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:sum"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="unary-set.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:card"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="nary-set-reln.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:subset"/>
+      <xs:element ref="mml:prsubset"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="binary-set.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:in"/>
+      <xs:element ref="mml:notin"/>
+      <xs:element ref="mml:notsubset"/>
+      <xs:element ref="mml:notprsubset"/>
+      <xs:element ref="mml:setdiff"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-set.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:union"/>
+      <xs:element ref="mml:intersect"/>
+      <xs:element ref="mml:cartesianproduct"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-setlist-constructor.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:set"/>
+      <xs:element ref="mml:list"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="unary-veccalc.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:divergence"/>
+      <xs:element ref="mml:grad"/>
+      <xs:element ref="mml:curl"/>
+      <xs:element ref="mml:laplacian"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="partialdiff.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:partialdiff"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="Differential-Operator.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:diff"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="int.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:int"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="binary-reln.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:neq"/>
+      <xs:element ref="mml:approx"/>
+      <xs:element ref="mml:factorof"/>
+      <xs:element ref="mml:tendsto"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-reln.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:eq"/>
+      <xs:element ref="mml:gt"/>
+      <xs:element ref="mml:lt"/>
+      <xs:element ref="mml:geq"/>
+      <xs:element ref="mml:leq"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="quantifier.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:forall"/>
+      <xs:element ref="mml:exists"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="binary-logical.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:implies"/>
+      <xs:element ref="mml:equivalent"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="unary-logical.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:not"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="nary-logical.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:and"/>
+      <xs:element ref="mml:or"/>
+      <xs:element ref="mml:xor"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-arith.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:plus"/>
+      <xs:element ref="mml:times"/>
+      <xs:element ref="mml:gcd"/>
+      <xs:element ref="mml:lcm"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-minmax.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:max"/>
+      <xs:element ref="mml:min"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="unary-arith.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:factorial"/>
+      <xs:element ref="mml:abs"/>
+      <xs:element ref="mml:conjugate"/>
+      <xs:element ref="mml:arg"/>
+      <xs:element ref="mml:real"/>
+      <xs:element ref="mml:imaginary"/>
+      <xs:element ref="mml:floor"/>
+      <xs:element ref="mml:ceiling"/>
+      <xs:element ref="mml:exp"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="binary-arith.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:quotient"/>
+      <xs:element ref="mml:divide"/>
+      <xs:element ref="mml:minus"/>
+      <xs:element ref="mml:power"/>
+      <xs:element ref="mml:rem"/>
+      <xs:element ref="mml:root"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="nary-functional.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:compose"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="lambda.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:lambda"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="unary-functional.mmlclass">
+    <xs:choice>
+      <xs:element ref="mml:inverse"/>
+      <xs:element ref="mml:ident"/>
+      <xs:element ref="mml:domain"/>
+      <xs:element ref="mml:codomain"/>
+      <xs:element ref="mml:image"/>
+      <xs:element ref="mml:ln"/>
+      <xs:element ref="mml:log"/>
+      <xs:element ref="mml:moment"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="interval.mmlclass">
+    <xs:sequence>
+      <xs:element ref="mml:interval"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="DeprecatedContExp">
+    <xs:choice>
+      <xs:element ref="mml:reln"/>
+      <xs:element ref="mml:fn"/>
+      <xs:element ref="mml:declare"/>
+    </xs:choice>
+  </xs:group>
+  <xs:attributeGroup name="CommonDeprecatedAtt">
+    <xs:attribute name="other"/>
+  </xs:attributeGroup>
+  <xs:group name="Qualifier">
+    <xs:choice>
+      <xs:group ref="mml:DomainQ"/>
+      <xs:element ref="mml:degree"/>
+      <xs:element ref="mml:momentabout"/>
+      <xs:element ref="mml:logbase"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="ContExp">
+    <xs:choice>
+      <xs:element ref="mml:piecewise"/>
+      <xs:group ref="mml:DeprecatedContExp"/>
+      <xs:group ref="mml:interval.mmlclass"/>
+      <xs:group ref="mml:unary-functional.mmlclass"/>
+      <xs:group ref="mml:lambda.mmlclass"/>
+      <xs:group ref="mml:nary-functional.mmlclass"/>
+      <xs:group ref="mml:binary-arith.mmlclass"/>
+      <xs:group ref="mml:unary-arith.mmlclass"/>
+      <xs:group ref="mml:nary-minmax.mmlclass"/>
+      <xs:group ref="mml:nary-arith.mmlclass"/>
+      <xs:group ref="mml:nary-logical.mmlclass"/>
+      <xs:group ref="mml:unary-logical.mmlclass"/>
+      <xs:group ref="mml:binary-logical.mmlclass"/>
+      <xs:group ref="mml:quantifier.mmlclass"/>
+      <xs:group ref="mml:nary-reln.mmlclass"/>
+      <xs:group ref="mml:binary-reln.mmlclass"/>
+      <xs:group ref="mml:int.mmlclass"/>
+      <xs:group ref="mml:Differential-Operator.mmlclass"/>
+      <xs:group ref="mml:partialdiff.mmlclass"/>
+      <xs:group ref="mml:unary-veccalc.mmlclass"/>
+      <xs:group ref="mml:nary-setlist-constructor.mmlclass"/>
+      <xs:group ref="mml:nary-set.mmlclass"/>
+      <xs:group ref="mml:binary-set.mmlclass"/>
+      <xs:group ref="mml:nary-set-reln.mmlclass"/>
+      <xs:group ref="mml:unary-set.mmlclass"/>
+      <xs:group ref="mml:sum.mmlclass"/>
+      <xs:group ref="mml:product.mmlclass"/>
+      <xs:group ref="mml:limit.mmlclass"/>
+      <xs:group ref="mml:unary-elementary.mmlclass"/>
+      <xs:group ref="mml:nary-stats.mmlclass"/>
+      <xs:group ref="mml:nary-constructor.mmlclass"/>
+      <xs:group ref="mml:unary-linalg.mmlclass"/>
+      <xs:group ref="mml:nary-linalg.mmlclass"/>
+      <xs:group ref="mml:binary-linalg.mmlclass"/>
+      <xs:group ref="mml:constant-set.mmlclass"/>
+      <xs:group ref="mml:constant-arith.mmlclass"/>
+      <xs:element ref="mml:semantics"/>
+      <xs:element ref="mml:cn"/>
+      <xs:element ref="mml:ci"/>
+      <xs:element ref="mml:csymbol"/>
+      <xs:element ref="mml:apply"/>
+      <xs:element ref="mml:bind"/>
+      <xs:element ref="mml:share"/>
+      <xs:element ref="mml:cerror"/>
+      <xs:element ref="mml:cbytes"/>
+      <xs:element ref="mml:cs"/>
+    </xs:choice>
+  </xs:group>
+   <xs:attributeGroup name="CommonAtt">
+      <xs:attribute name="id" type="xs:ID"/>
+      <xs:attribute name="xref"/>
+      <xs:attribute name="class" type="xs:NMTOKENS"/>
+      <xs:attribute name="style" type="xs:string"/>
+      <xs:attribute name="href" type="xs:anyURI"/>
+      <xs:anyAttribute namespace="##other" processContents="skip"/>
+   </xs:attributeGroup>
+  <xs:complexType name="apply.content">
+    <xs:sequence>
+      <xs:group ref="mml:ContExp"/>
+      <xs:group ref="mml:BvarQ"/>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:Qualifier"/>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:ContExp"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="apply">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:apply.content">
+          <xs:attributeGroup ref="mml:mml.apply.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.apply.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+  </xs:attributeGroup>
+  <xs:complexType name="bind.content">
+    <xs:complexContent>
+      <xs:extension base="mml:apply.content"/>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="bind">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:bind.content">
+          <xs:attributeGroup ref="mml:mml.bind.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.bind.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="src">
+    <xs:attribute name="src"/>
+  </xs:attributeGroup>
+  <xs:element name="share">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.share.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.share.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:src"/>
+  </xs:attributeGroup>
+  <xs:element name="cerror">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="mml:csymbol"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:ContExp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.cerror.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.cerror.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="cbytes">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attributeGroup ref="mml:mml.cbytes.attlist"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="cs">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attributeGroup ref="mml:mml.cs.attlist"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="DefEncAtt">
+    <xs:attribute name="encoding"/>
+    <xs:attribute name="definitionURL"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.cn.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="type"/>
+    <xs:attribute name="base"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.ci.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="type"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.csymbol.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="type"/>
+    <xs:attribute name="cd"/>
+  </xs:attributeGroup>
+  <xs:element name="bvar">
+    <xs:complexType>
+      <xs:choice>
+        <xs:sequence>
+          <xs:element ref="mml:degree"/>
+          <xs:choice>
+            <xs:element ref="mml:ci"/>
+            <xs:element ref="mml:semantics"/>
+          </xs:choice>
+        </xs:sequence>
+        <xs:sequence>
+          <xs:choice>
+            <xs:element ref="mml:ci"/>
+            <xs:element ref="mml:semantics"/>
+          </xs:choice>
+          <xs:element minOccurs="0" ref="mml:degree"/>
+        </xs:sequence>
+      </xs:choice>
+      <xs:attributeGroup ref="mml:mml.bvar.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.bvar.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.cbytes.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.cs.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="sep">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="domainofapplication">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="condition">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="uplimit">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="lowlimit">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="degree">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="momentabout">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="logbase">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="piecewise">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="mml:piece"/>
+        <xs:element ref="mml:otherwise"/>
+      </xs:choice>
+      <xs:attributeGroup ref="mml:mml.piecewise.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.piecewise.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="piece">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:ContExp"/>
+      <xs:attributeGroup ref="mml:mml.piece.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.piece.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="otherwise">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+      <xs:attributeGroup ref="mml:mml.otherwise.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.otherwise.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="reln">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="fn">
+    <xs:complexType>
+      <xs:group ref="mml:ContExp"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="declare">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:ContExp"/>
+      <xs:attributeGroup ref="mml:mml.declare.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.declare.attlist">
+    <xs:attribute name="type"/>
+    <xs:attribute name="scope"/>
+    <xs:attribute name="nargs"/>
+    <xs:attribute name="occurrence">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="prefix"/>
+          <xs:enumeration value="infix"/>
+          <xs:enumeration value="function-model"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="interval">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:ContExp"/>
+      <xs:attributeGroup ref="mml:mml.interval.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.interval.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="closure"/>
+  </xs:attributeGroup>
+  <xs:element name="inverse">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.inverse.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.inverse.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="ident">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.ident.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.ident.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="domain">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.domain.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.domain.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="codomain">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.codomain.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.codomain.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="image">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.image.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.image.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="ln">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.ln.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.ln.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="log">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.log.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.log.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="moment">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.moment.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.moment.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="lambda">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group ref="mml:BvarQ"/>
+        <xs:group ref="mml:DomainQ"/>
+        <xs:group ref="mml:ContExp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.lambda.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.lambda.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="compose">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.compose.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.compose.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="quotient">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.quotient.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.quotient.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="divide">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.divide.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.divide.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="minus">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.minus.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.minus.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="power">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.power.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.power.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="rem">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.rem.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.rem.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="root">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.root.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.root.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="factorial">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.factorial.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.factorial.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="abs">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.abs.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.abs.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="conjugate">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.conjugate.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.conjugate.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arg">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arg.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arg.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="real">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.real.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.real.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="imaginary">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.imaginary.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.imaginary.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="floor">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.floor.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.floor.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="ceiling">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.ceiling.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.ceiling.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="exp">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.exp.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.exp.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="max">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.max.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.max.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="min">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.min.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.min.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="plus">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.plus.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.plus.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="times">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.times.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.times.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="gcd">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.gcd.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.gcd.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="lcm">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.lcm.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.lcm.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="and">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.and.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.and.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="or">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.or.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.or.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="xor">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.xor.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.xor.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="not">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.not.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.not.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="implies">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.implies.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.implies.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="equivalent">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.equivalent.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.equivalent.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="forall">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.forall.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.forall.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="exists">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.exists.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.exists.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="eq">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.eq.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.eq.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="gt">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.gt.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.gt.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="lt">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.lt.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.lt.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="geq">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.geq.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.geq.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="leq">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.leq.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.leq.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="neq">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.neq.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.neq.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="approx">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.approx.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.approx.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="factorof">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.factorof.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.factorof.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="tendsto">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.tendsto.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.tendsto.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="type"/>
+  </xs:attributeGroup>
+  <xs:element name="int">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.int.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.int.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="diff">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.diff.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.diff.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="partialdiff">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.partialdiff.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.partialdiff.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="divergence">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.divergence.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.divergence.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="grad">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.grad.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.grad.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="curl">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.curl.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.curl.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="laplacian">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.laplacian.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.laplacian.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="set">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:BvarQ"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:DomainQ"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:ContExp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.set.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.set.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="type"/>
+  </xs:attributeGroup>
+  <xs:element name="list">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:BvarQ"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:DomainQ"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:ContExp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.list.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.list.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="order">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="numeric"/>
+          <xs:enumeration value="lexicographic"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="union">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.union.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.union.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="intersect">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.intersect.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.intersect.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="cartesianproduct">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.cartesianproduct.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.cartesianproduct.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="in">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.in.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.in.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="notin">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.notin.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.notin.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="notsubset">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.notsubset.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.notsubset.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="notprsubset">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.notprsubset.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.notprsubset.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="setdiff">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.setdiff.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.setdiff.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="subset">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.subset.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.subset.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="prsubset">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.prsubset.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.prsubset.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="card">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.card.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.card.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="sum">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.sum.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.sum.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="product">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.product.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.product.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="limit">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.limit.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.limit.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="sin">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.sin.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.sin.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="cos">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.cos.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.cos.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="tan">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.tan.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.tan.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="sec">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.sec.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.sec.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="csc">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.csc.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.csc.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="cot">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.cot.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.cot.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="sinh">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.sinh.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.sinh.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="cosh">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.cosh.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.cosh.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="tanh">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.tanh.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.tanh.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="sech">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.sech.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.sech.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="csch">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.csch.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.csch.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="coth">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.coth.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.coth.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arcsin">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arcsin.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arcsin.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arccos">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arccos.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arccos.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arctan">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arctan.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arctan.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arccosh">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arccosh.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arccosh.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arccot">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arccot.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arccot.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arccoth">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arccoth.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arccoth.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arccsc">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arccsc.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arccsc.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arccsch">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arccsch.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arccsch.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arcsec">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arcsec.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arcsec.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arcsech">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arcsech.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arcsech.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arcsinh">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arcsinh.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arcsinh.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="arctanh">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.arctanh.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.arctanh.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mean">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.mean.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mean.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="sdev">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.sdev.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.sdev.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="variance">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.variance.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.variance.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="median">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.median.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.median.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mode">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.mode.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mode.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="vector">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group ref="mml:BvarQ"/>
+        <xs:group ref="mml:DomainQ"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:ContExp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.vector.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.vector.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="matrix">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group ref="mml:BvarQ"/>
+        <xs:group ref="mml:DomainQ"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:ContExp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.matrix.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.matrix.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="matrixrow">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group ref="mml:BvarQ"/>
+        <xs:group ref="mml:DomainQ"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:ContExp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.matrixrow.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.matrixrow.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="determinant">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.determinant.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.determinant.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="transpose">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.transpose.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.transpose.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="selector">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.selector.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.selector.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="vectorproduct">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.vectorproduct.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.vectorproduct.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="scalarproduct">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.scalarproduct.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.scalarproduct.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="outerproduct">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.outerproduct.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.outerproduct.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="integers">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.integers.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.integers.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="reals">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.reals.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.reals.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="rationals">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.rationals.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.rationals.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="naturalnumbers">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.naturalnumbers.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.naturalnumbers.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="complexes">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.complexes.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.complexes.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="primes">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.primes.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.primes.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="emptyset">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.emptyset.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.emptyset.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="exponentiale">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.exponentiale.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.exponentiale.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="imaginaryi">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.imaginaryi.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.imaginaryi.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="notanumber">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.notanumber.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.notanumber.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="true">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.true.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.true.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="false">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.false.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.false.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="pi">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.pi.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.pi.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="eulergamma">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.eulergamma.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.eulergamma.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="infinity">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.infinity.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.infinity.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+  </xs:attributeGroup>
+  <!-- end of mathml3-common.rng -->
+  <xs:group name="MathExpression">
+    <xs:choice>
+      <xs:group ref="mml:ContExp"/>
+      <xs:group ref="mml:PresentationExpression"/>
+    </xs:choice>
+  </xs:group>
+  <!-- end of mathml3-content.rng -->
+  <!-- start of mathml3-presentation.rng -->
+  <xs:complexType name="ImpliedMrow">
+    <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MathExpression"/>
+  </xs:complexType>
+  <xs:group name="TableRowExpression">
+    <xs:choice>
+      <xs:element ref="mml:mtr"/>
+      <xs:element ref="mml:mlabeledtr"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="TableCellExpression">
+    <xs:sequence>
+      <xs:element ref="mml:mtd"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="MstackExpression">
+    <xs:choice>
+      <xs:group ref="mml:MathExpression"/>
+      <xs:element ref="mml:mscarries"/>
+      <xs:element ref="mml:msline"/>
+      <xs:element ref="mml:msrow"/>
+      <xs:element ref="mml:msgroup"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="MsrowExpression">
+    <xs:choice>
+      <xs:group ref="mml:MathExpression"/>
+      <xs:element ref="mml:none"/>
+    </xs:choice>
+  </xs:group>
+  <xs:group name="MultiScriptExpression">
+    <xs:sequence>
+      <xs:choice>
+        <xs:group ref="mml:MathExpression"/>
+        <xs:element ref="mml:none"/>
+      </xs:choice>
+      <xs:choice>
+        <xs:group ref="mml:MathExpression"/>
+        <xs:element ref="mml:none"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:group>
+  <xs:simpleType name="mpadded-length">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:simpleType name="linestyle">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="solid"/>
+      <xs:enumeration value="dashed"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="columnalignstyle">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="left"/>
+      <xs:enumeration value="center"/>
+      <xs:enumeration value="right"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="unsigned-integer">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:simpleType name="integer">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:simpleType name="number">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:simpleType name="character">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:simpleType name="color">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:simpleType name="positive-integer">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:group name="token.content">
+    <xs:sequence>
+      <xs:choice minOccurs="0">
+        <xs:element ref="mml:mglyph"/>
+        <xs:element ref="mml:malignmark"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:group>
+  <xs:element name="mi">
+    <xs:complexType mixed="true">
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:attributeGroup ref="mml:mml.mi.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:simpleType name="length">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+  <xs:attributeGroup name="DeprecatedTokenAtt">
+    <xs:attribute name="fontfamily"/>
+    <xs:attribute name="fontweight">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="normal"/>
+          <xs:enumeration value="bold"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="fontstyle">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="normal"/>
+          <xs:enumeration value="italic"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="fontsize" type="mml:length"/>
+    <xs:attribute name="color" type="mml:color"/>
+    <xs:attribute name="background"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="TokenAtt">
+    <xs:attribute name="mathvariant">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="normal"/>
+          <xs:enumeration value="bold"/>
+          <xs:enumeration value="italic"/>
+          <xs:enumeration value="bold-italic"/>
+          <xs:enumeration value="double-struck"/>
+          <xs:enumeration value="bold-fraktur"/>
+          <xs:enumeration value="script"/>
+          <xs:enumeration value="bold-script"/>
+          <xs:enumeration value="fraktur"/>
+          <xs:enumeration value="sans-serif"/>
+          <xs:enumeration value="bold-sans-serif"/>
+          <xs:enumeration value="sans-serif-italic"/>
+          <xs:enumeration value="sans-serif-bold-italic"/>
+          <xs:enumeration value="monospace"/>
+          <xs:enumeration value="initial"/>
+          <xs:enumeration value="tailed"/>
+          <xs:enumeration value="looped"/>
+          <xs:enumeration value="stretched"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="mathsize"/>
+    <xs:attribute name="dir">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="ltr"/>
+          <xs:enumeration value="rtl"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attributeGroup ref="mml:DeprecatedTokenAtt"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="CommonPresAtt">
+    <xs:attribute name="mathcolor" type="mml:color"/>
+    <xs:attribute name="mathbackground"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.mi.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attributeGroup ref="mml:TokenAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mn">
+    <xs:complexType mixed="true">
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:attributeGroup ref="mml:mml.mn.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mn.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attributeGroup ref="mml:TokenAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mo">
+    <xs:complexType mixed="true">
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:attributeGroup ref="mml:mml.mo.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mo.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attributeGroup ref="mml:TokenAtt"/>
+    <xs:attribute name="form">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="prefix"/>
+          <xs:enumeration value="infix"/>
+          <xs:enumeration value="postfix"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="fence">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="separator">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="lspace" type="mml:length"/>
+    <xs:attribute name="rspace" type="mml:length"/>
+    <xs:attribute name="stretchy">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="symmetric">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="maxsize"/>
+    <xs:attribute name="minsize" type="mml:length"/>
+    <xs:attribute name="largeop">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="movablelimits">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="accent">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="linebreak">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="newline"/>
+          <xs:enumeration value="nobreak"/>
+          <xs:enumeration value="goodbreak"/>
+          <xs:enumeration value="badbreak"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="lineleading" type="mml:length"/>
+    <xs:attribute name="linebreakstyle">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="before"/>
+          <xs:enumeration value="after"/>
+          <xs:enumeration value="duplicate"/>
+          <xs:enumeration value="infixlinebreakstyle"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="linebreakmultchar"/>
+    <xs:attribute name="indentalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentshift" type="mml:length"/>
+    <xs:attribute name="indenttarget"/>
+    <xs:attribute name="indentalignfirst">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+          <xs:enumeration value="indentalign"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentshiftfirst"/>
+    <xs:attribute name="indentalignlast">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+          <xs:enumeration value="indentalign"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentshiftlast"/>
+  </xs:attributeGroup>
+  <xs:element name="mtext">
+    <xs:complexType mixed="true">
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:attributeGroup ref="mml:mml.mtext.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mtext.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attributeGroup ref="mml:TokenAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mspace">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.mspace.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mspace.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attributeGroup ref="mml:TokenAtt"/>
+    <xs:attribute name="width" type="mml:length"/>
+    <xs:attribute name="height" type="mml:length"/>
+    <xs:attribute name="depth" type="mml:length"/>
+    <xs:attribute name="linebreak">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="newline"/>
+          <xs:enumeration value="nobreak"/>
+          <xs:enumeration value="goodbreak"/>
+          <xs:enumeration value="badbreak"/>
+          <xs:enumeration value="indentingnewline"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentshift" type="mml:length"/>
+    <xs:attribute name="indenttarget"/>
+    <xs:attribute name="indentalignfirst">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+          <xs:enumeration value="indentalign"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentshiftfirst"/>
+    <xs:attribute name="indentalignlast">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+          <xs:enumeration value="indentalign"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentshiftlast"/>
+  </xs:attributeGroup>
+  <xs:element name="ms">
+    <xs:complexType mixed="true">
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:attributeGroup ref="mml:mml.ms.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.ms.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attributeGroup ref="mml:TokenAtt"/>
+    <xs:attribute name="lquote"/>
+    <xs:attribute name="rquote"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mglyph.deprecatedattributes">
+    <xs:attribute name="index" type="mml:integer"/>
+    <xs:attribute name="mathvariant">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="normal"/>
+          <xs:enumeration value="bold"/>
+          <xs:enumeration value="italic"/>
+          <xs:enumeration value="bold-italic"/>
+          <xs:enumeration value="double-struck"/>
+          <xs:enumeration value="bold-fraktur"/>
+          <xs:enumeration value="script"/>
+          <xs:enumeration value="bold-script"/>
+          <xs:enumeration value="fraktur"/>
+          <xs:enumeration value="sans-serif"/>
+          <xs:enumeration value="bold-sans-serif"/>
+          <xs:enumeration value="sans-serif-italic"/>
+          <xs:enumeration value="sans-serif-bold-italic"/>
+          <xs:enumeration value="monospace"/>
+          <xs:enumeration value="initial"/>
+          <xs:enumeration value="tailed"/>
+          <xs:enumeration value="looped"/>
+          <xs:enumeration value="stretched"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="mathsize"/>
+    <xs:attributeGroup ref="mml:DeprecatedTokenAtt"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mglyph.attributes">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="src"/>
+    <xs:attribute name="width" type="mml:length"/>
+    <xs:attribute name="height" type="mml:length"/>
+    <xs:attribute name="valign" type="mml:length"/>
+    <xs:attribute name="alt"/>
+  </xs:attributeGroup>
+  <xs:element name="mglyph">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.mglyph.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mglyph.attlist">
+    <xs:attributeGroup ref="mml:mglyph.attributes"/>
+    <xs:attributeGroup ref="mml:mglyph.deprecatedattributes"/>
+  </xs:attributeGroup>
+  <xs:element name="msline">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.msline.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.msline.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="position" type="mml:integer"/>
+    <xs:attribute name="length" type="mml:unsigned-integer"/>
+    <xs:attribute name="leftoverhang" type="mml:length"/>
+    <xs:attribute name="rightoverhang" type="mml:length"/>
+    <xs:attribute name="mslinethickness"/>
+  </xs:attributeGroup>
+  <xs:element name="none">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.none.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.none.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mprescripts">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.mprescripts.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mprescripts.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="malignmark">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.malignmark.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.malignmark.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="edge">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="right"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="maligngroup">
+    <xs:complexType>
+      <xs:attributeGroup ref="mml:mml.maligngroup.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.maligngroup.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="groupalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="decimalpoint"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="mrow">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.mrow.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mrow.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="dir">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="ltr"/>
+          <xs:enumeration value="rtl"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="mfrac">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.mfrac.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mfrac.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="linethickness"/>
+    <xs:attribute name="numalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="denomalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="bevelled">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="msqrt">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:ImpliedMrow">
+          <xs:attributeGroup ref="mml:mml.msqrt.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.msqrt.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mroot">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.mroot.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mroot.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mstyle">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:ImpliedMrow">
+          <xs:attributeGroup ref="mml:mml.mstyle.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mstyle.deprecatedattributes">
+    <xs:attributeGroup ref="mml:DeprecatedTokenAtt"/>
+    <xs:attribute name="veryverythinmathspace" type="mml:length"/>
+    <xs:attribute name="verythinmathspace" type="mml:length"/>
+    <xs:attribute name="thinmathspace" type="mml:length"/>
+    <xs:attribute name="mediummathspace" type="mml:length"/>
+    <xs:attribute name="thickmathspace" type="mml:length"/>
+    <xs:attribute name="verythickmathspace" type="mml:length"/>
+    <xs:attribute name="veryverythickmathspace" type="mml:length"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mstyle.generalattributes">
+    <xs:attribute name="accent">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="accentunder">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="align">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="center"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="alignmentscope"/>
+    <xs:attribute name="bevelled">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="charalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="charspacing"/>
+    <xs:attribute name="close"/>
+    <xs:attribute name="columnalign"/>
+    <xs:attribute name="columnlines"/>
+    <xs:attribute name="columnspacing"/>
+    <xs:attribute name="columnspan" type="mml:positive-integer"/>
+    <xs:attribute name="columnwidth"/>
+    <xs:attribute name="crossout"/>
+    <xs:attribute name="denomalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="depth" type="mml:length"/>
+    <xs:attribute name="dir">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="ltr"/>
+          <xs:enumeration value="rtl"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="edge">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="right"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="equalcolumns">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="equalrows">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="fence">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="form">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="prefix"/>
+          <xs:enumeration value="infix"/>
+          <xs:enumeration value="postfix"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="frame" type="mml:linestyle"/>
+    <xs:attribute name="framespacing"/>
+    <xs:attribute name="groupalign"/>
+    <xs:attribute name="height" type="mml:length"/>
+    <xs:attribute name="indentalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentalignfirst">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+          <xs:enumeration value="indentalign"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentalignlast">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="id"/>
+          <xs:enumeration value="indentalign"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="indentshift" type="mml:length"/>
+    <xs:attribute name="indentshiftfirst"/>
+    <xs:attribute name="indentshiftlast"/>
+    <xs:attribute name="indenttarget"/>
+    <xs:attribute name="largeop">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="leftoverhang" type="mml:length"/>
+    <xs:attribute name="length" type="mml:unsigned-integer"/>
+    <xs:attribute name="linebreak">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="auto"/>
+          <xs:enumeration value="newline"/>
+          <xs:enumeration value="nobreak"/>
+          <xs:enumeration value="goodbreak"/>
+          <xs:enumeration value="badbreak"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="linebreakmultchar"/>
+    <xs:attribute name="linebreakstyle">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="before"/>
+          <xs:enumeration value="after"/>
+          <xs:enumeration value="duplicate"/>
+          <xs:enumeration value="infixlinebreakstyle"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="lineleading" type="mml:length"/>
+    <xs:attribute name="linethickness"/>
+    <xs:attribute name="location">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="w"/>
+          <xs:enumeration value="nw"/>
+          <xs:enumeration value="n"/>
+          <xs:enumeration value="ne"/>
+          <xs:enumeration value="e"/>
+          <xs:enumeration value="se"/>
+          <xs:enumeration value="s"/>
+          <xs:enumeration value="sw"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="longdivstyle"/>
+    <xs:attribute name="lquote"/>
+    <xs:attribute name="lspace" type="mml:length"/>
+    <xs:attribute name="mathsize"/>
+    <xs:attribute name="mathvariant">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="normal"/>
+          <xs:enumeration value="bold"/>
+          <xs:enumeration value="italic"/>
+          <xs:enumeration value="bold-italic"/>
+          <xs:enumeration value="double-struck"/>
+          <xs:enumeration value="bold-fraktur"/>
+          <xs:enumeration value="script"/>
+          <xs:enumeration value="bold-script"/>
+          <xs:enumeration value="fraktur"/>
+          <xs:enumeration value="sans-serif"/>
+          <xs:enumeration value="bold-sans-serif"/>
+          <xs:enumeration value="sans-serif-italic"/>
+          <xs:enumeration value="sans-serif-bold-italic"/>
+          <xs:enumeration value="monospace"/>
+          <xs:enumeration value="initial"/>
+          <xs:enumeration value="tailed"/>
+          <xs:enumeration value="looped"/>
+          <xs:enumeration value="stretched"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="maxsize"/>
+    <xs:attribute name="minlabelspacing" type="mml:length"/>
+    <xs:attribute name="minsize" type="mml:length"/>
+    <xs:attribute name="movablelimits">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="mslinethickness"/>
+    <xs:attribute name="notation"/>
+    <xs:attribute name="numalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="open"/>
+    <xs:attribute name="position" type="mml:integer"/>
+    <xs:attribute name="rightoverhang" type="mml:length"/>
+    <xs:attribute name="rowalign"/>
+    <xs:attribute name="rowlines"/>
+    <xs:attribute name="rowspacing"/>
+    <xs:attribute name="rowspan" type="mml:positive-integer"/>
+    <xs:attribute name="rquote"/>
+    <xs:attribute name="rspace" type="mml:length"/>
+    <xs:attribute name="selection" type="mml:positive-integer"/>
+    <xs:attribute name="separator">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="separators"/>
+    <xs:attribute name="shift" type="mml:integer"/>
+    <xs:attribute name="side">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="leftoverlap"/>
+          <xs:enumeration value="rightoverlap"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="stackalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="decimalpoint"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="stretchy">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="subscriptshift" type="mml:length"/>
+    <xs:attribute name="superscriptshift" type="mml:length"/>
+    <xs:attribute name="symmetric">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="valign" type="mml:length"/>
+    <xs:attribute name="width" type="mml:length"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mstyle.specificattributes">
+    <xs:attribute name="scriptlevel" type="mml:integer"/>
+    <xs:attribute name="displaystyle">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="scriptsizemultiplier" type="mml:number"/>
+    <xs:attribute name="scriptminsize" type="mml:length"/>
+    <xs:attribute name="infixlinebreakstyle">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="before"/>
+          <xs:enumeration value="after"/>
+          <xs:enumeration value="duplicate"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="decimalpoint" type="mml:character"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.mstyle.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attributeGroup ref="mml:mstyle.specificattributes"/>
+    <xs:attributeGroup ref="mml:mstyle.generalattributes"/>
+    <xs:attributeGroup ref="mml:mstyle.deprecatedattributes"/>
+  </xs:attributeGroup>
+  <xs:element name="merror">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:ImpliedMrow">
+          <xs:attributeGroup ref="mml:mml.merror.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.merror.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mpadded">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:ImpliedMrow">
+          <xs:attributeGroup ref="mml:mml.mpadded.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mpadded.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="height" type="mml:mpadded-length"/>
+    <xs:attribute name="depth" type="mml:mpadded-length"/>
+    <xs:attribute name="width" type="mml:mpadded-length"/>
+    <xs:attribute name="lspace" type="mml:mpadded-length"/>
+    <xs:attribute name="voffset" type="mml:mpadded-length"/>
+  </xs:attributeGroup>
+  <xs:element name="mphantom">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:ImpliedMrow">
+          <xs:attributeGroup ref="mml:mml.mphantom.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mphantom.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+  </xs:attributeGroup>
+  <xs:element name="mfenced">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.mfenced.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mfenced.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="open"/>
+    <xs:attribute name="close"/>
+    <xs:attribute name="separators"/>
+  </xs:attributeGroup>
+  <xs:element name="menclose">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:ImpliedMrow">
+          <xs:attributeGroup ref="mml:mml.menclose.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.menclose.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="notation"/>
+  </xs:attributeGroup>
+  <xs:element name="msub">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.msub.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.msub.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="subscriptshift" type="mml:length"/>
+  </xs:attributeGroup>
+  <xs:element name="msup">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.msup.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.msup.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="superscriptshift" type="mml:length"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="msubsup.attributes">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="subscriptshift" type="mml:length"/>
+    <xs:attribute name="superscriptshift" type="mml:length"/>
+  </xs:attributeGroup>
+  <xs:element name="msubsup">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.msubsup.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.msubsup.attlist">
+    <xs:attributeGroup ref="mml:msubsup.attributes"/>
+  </xs:attributeGroup>
+  <xs:element name="munder">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.munder.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.munder.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="accentunder">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="align">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="center"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="mover">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.mover.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mover.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="accent">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="align">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="center"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="munderover">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.munderover.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.munderover.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="accent">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="accentunder">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="align">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="center"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:element name="mmultiscripts">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group ref="mml:MathExpression"/>
+        <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MultiScriptExpression"/>
+        <xs:sequence minOccurs="0">
+          <xs:element ref="mml:mprescripts"/>
+          <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MultiScriptExpression"/>
+        </xs:sequence>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.mmultiscripts.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mmultiscripts.attlist">
+    <xs:attributeGroup ref="mml:msubsup.attributes"/>
+  </xs:attributeGroup>
+  <xs:element name="mtable">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:TableRowExpression"/>
+      <xs:attributeGroup ref="mml:mml.mtable.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mtable.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="align"/>
+    <xs:attribute name="rowalign"/>
+    <xs:attribute name="columnalign"/>
+    <xs:attribute name="groupalign"/>
+    <xs:attribute name="alignmentscope"/>
+    <xs:attribute name="columnwidth"/>
+    <xs:attribute name="width"/>
+    <xs:attribute name="rowspacing"/>
+    <xs:attribute name="columnspacing"/>
+    <xs:attribute name="rowlines"/>
+    <xs:attribute name="columnlines"/>
+    <xs:attribute name="frame" type="mml:linestyle"/>
+    <xs:attribute name="framespacing"/>
+    <xs:attribute name="equalrows">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="equalcolumns">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="displaystyle">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="side">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="leftoverlap"/>
+          <xs:enumeration value="rightoverlap"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="minlabelspacing" type="mml:length"/>
+  </xs:attributeGroup>
+  <xs:element name="mlabeledtr">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:TableCellExpression"/>
+      <xs:attributeGroup ref="mml:mml.mlabeledtr.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mtr.attributes">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="rowalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="top"/>
+          <xs:enumeration value="bottom"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="baseline"/>
+          <xs:enumeration value="axis"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="columnalign"/>
+    <xs:attribute name="groupalign"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.mlabeledtr.attlist">
+    <xs:attributeGroup ref="mml:mtr.attributes"/>
+  </xs:attributeGroup>
+  <xs:element name="mtr">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:TableCellExpression"/>
+      <xs:attributeGroup ref="mml:mml.mtr.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mtr.attlist">
+    <xs:attributeGroup ref="mml:mtr.attributes"/>
+  </xs:attributeGroup>
+  <xs:element name="mtd">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mml:ImpliedMrow">
+          <xs:attributeGroup ref="mml:mml.mtd.attlist"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mtd.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="rowspan" type="mml:positive-integer"/>
+    <xs:attribute name="columnspan" type="mml:positive-integer"/>
+    <xs:attribute name="rowalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="top"/>
+          <xs:enumeration value="bottom"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="baseline"/>
+          <xs:enumeration value="axis"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="columnalign" type="mml:columnalignstyle"/>
+    <xs:attribute name="groupalign"/>
+  </xs:attributeGroup>
+  <xs:element name="mstack">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MstackExpression"/>
+      <xs:attributeGroup ref="mml:mml.mstack.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mstack.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="align"/>
+    <xs:attribute name="stackalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+          <xs:enumeration value="decimalpoint"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="charalign">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="left"/>
+          <xs:enumeration value="center"/>
+          <xs:enumeration value="right"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="charspacing"/>
+  </xs:attributeGroup>
+  <xs:element name="mlongdiv">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MstackExpression"/>
+      <xs:attributeGroup ref="mml:mml.mlongdiv.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="msgroup.attributes">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="position" type="mml:integer"/>
+    <xs:attribute name="shift" type="mml:integer"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.mlongdiv.attlist">
+    <xs:attributeGroup ref="mml:msgroup.attributes"/>
+    <xs:attribute name="longdivstyle"/>
+  </xs:attributeGroup>
+  <xs:element name="msgroup">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MstackExpression"/>
+      <xs:attributeGroup ref="mml:mml.msgroup.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.msgroup.attlist">
+    <xs:attributeGroup ref="mml:msgroup.attributes"/>
+  </xs:attributeGroup>
+  <xs:element name="msrow">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MsrowExpression"/>
+      <xs:attributeGroup ref="mml:mml.msrow.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.msrow.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="position" type="mml:integer"/>
+  </xs:attributeGroup>
+  <xs:element name="mscarries">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="mml:MsrowExpression"/>
+        <xs:element ref="mml:mscarry"/>
+      </xs:choice>
+      <xs:attributeGroup ref="mml:mml.mscarries.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mscarries.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="position" type="mml:integer"/>
+    <xs:attribute name="location">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="w"/>
+          <xs:enumeration value="nw"/>
+          <xs:enumeration value="n"/>
+          <xs:enumeration value="ne"/>
+          <xs:enumeration value="e"/>
+          <xs:enumeration value="se"/>
+          <xs:enumeration value="s"/>
+          <xs:enumeration value="sw"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="crossout"/>
+    <xs:attribute name="scriptsizemultiplier" type="mml:number"/>
+  </xs:attributeGroup>
+  <xs:element name="mscarry">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MsrowExpression"/>
+      <xs:attributeGroup ref="mml:mml.mscarry.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.mscarry.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="location">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="w"/>
+          <xs:enumeration value="nw"/>
+          <xs:enumeration value="n"/>
+          <xs:enumeration value="ne"/>
+          <xs:enumeration value="e"/>
+          <xs:enumeration value="se"/>
+          <xs:enumeration value="s"/>
+          <xs:enumeration value="sw"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="crossout"/>
+  </xs:attributeGroup>
+  <xs:element name="maction">
+    <xs:complexType>
+      <xs:group maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.maction.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.maction.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attribute name="actiontype" use="required"/>
+    <xs:attribute name="selection" type="mml:positive-integer"/>
+  </xs:attributeGroup>
+  <!-- end of mathml3-presentation.rng -->
+  <!-- start of mathml3-common.rng -->
+  <xs:element name="math">
+    <xs:complexType>
+      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:MathExpression"/>
+      <xs:attributeGroup ref="mml:mml.math.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="math.deprecatedattributes">
+    <xs:attribute name="mode"/>
+    <xs:attribute name="macros"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="mml.math.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attribute name="display">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="block"/>
+          <xs:enumeration value="inline"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="maxwidth" type="mml:length"/>
+    <xs:attribute name="overflow">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="linebreak"/>
+          <xs:enumeration value="scroll"/>
+          <xs:enumeration value="elide"/>
+          <xs:enumeration value="truncate"/>
+          <xs:enumeration value="scale"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="altimg"/>
+    <xs:attribute name="altimg-width" type="mml:length"/>
+    <xs:attribute name="altimg-height" type="mml:length"/>
+    <xs:attribute name="altimg-valign"/>
+    <xs:attribute name="alttext"/>
+    <xs:attribute name="cdgroup"/>
+    <xs:attributeGroup ref="mml:math.deprecatedattributes"/>
+    <xs:attributeGroup ref="mml:CommonPresAtt"/>
+    <xs:attributeGroup ref="mml:mstyle.specificattributes"/>
+    <xs:attributeGroup ref="mml:mstyle.generalattributes"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="annotation.attributes">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attribute name="cd"/>
+    <xs:attribute name="name"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="src"/>
+  </xs:attributeGroup>
+  <xs:element name="annotation">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attributeGroup ref="mml:mml.annotation.attlist"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.annotation.attlist">
+    <xs:attributeGroup ref="mml:annotation.attributes"/>
+  </xs:attributeGroup>
+  <xs:element name="annotation-xml">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attributeGroup ref="mml:mml.annotation-xml.attlist"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.annotation-xml.attlist">
+    <xs:attributeGroup ref="mml:annotation.attributes"/>
+  </xs:attributeGroup>
+  <xs:element name="semantics">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:group ref="mml:MathExpression"/>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="mml:annotation"/>
+          <xs:element ref="mml:annotation-xml"/>
+        </xs:choice>
+      </xs:sequence>
+      <xs:attributeGroup ref="mml:mml.semantics.attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="mml.semantics.attlist">
+    <xs:attributeGroup ref="mml:CommonAtt"/>
+    <xs:attributeGroup ref="mml:DefEncAtt"/>
+    <xs:attribute name="cd"/>
+    <xs:attribute name="name"/>
+  </xs:attributeGroup>
+</xs:schema>

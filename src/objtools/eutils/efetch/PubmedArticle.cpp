@@ -40,6 +40,7 @@
 #include <numeric>
 #include <regex>
 #include <unordered_map>
+#include <serial/iterator.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
@@ -1085,28 +1086,9 @@ template<class TE>
 string s_TextToString(const list<CRef<TE>>& text_list)
 {
     string ret;
-    for (auto it : text_list) {
-        switch (it->Which()) {
-        case TE::e__CharData:
-            ret.append(it->Get_CharData());
-            break;
-        case TE::e_B:
-            ret.append(s_TextToString(it->GetB().Get()));
-            break;
-        case TE::e_I:
-            ret.append(s_TextToString(it->GetI().Get()));
-            break;
-        case TE::e_Sup:
-            ret.append("(" + s_TextToString(it->GetSup().Get()) + ")");
-            break;
-        case TE::e_Sub:
-            ret.append(s_TextToString(it->GetSub().Get()));
-            break;
-        case TE::e_U:
-            ret.append(s_TextToString(it->GetU().Get()));
-            break;
-        default:
-            continue;
+    for (const auto& it : text_list) {
+        for (CStdTypeConstIterator<string> j(Begin(*it)); j; ++j) {
+            ret.append(*j);
         }
     }
     return ret;
@@ -1154,7 +1136,7 @@ static string s_GetAuthorMedlineName(const CAuthor& author)
 {
     wstring author_medline_name;
     if (author.GetLC().IsCollectiveName()) {
-        author_medline_name = s_TextToWstring(author.GetLC().GetCollectiveName().Get());
+        author_medline_name = s_TextToWstring(author.GetLC().GetCollectiveName().GetText());
         if (!author_medline_name.empty() && author_medline_name.back() != L'.')
             author_medline_name.append(L".");
     }
@@ -1171,7 +1153,7 @@ static string s_GetAuthorMedlineName(const CAuthor& author)
         if (!initials.empty())
             author_medline_name.append(L" " + initials);
         if (lfis.IsSetSuffix())
-            author_medline_name.append(L" " + s_TextToWstring(lfis.GetSuffix().Get()));
+            author_medline_name.append(L" " + s_TextToWstring(lfis.GetSuffix().GetText()));
     }
     return s_TranslateToAscii(author_medline_name);
 }
@@ -1201,12 +1183,12 @@ static pubmed_date_t s_GetPubmedDate(const CPubDate& pub_date)
     try {
         if (pub_date.IsYM()) {
             auto& ym = pub_date.GetYM();
-            pubmed_date._year = NStr::StringToNumeric<int>(ym.GetYear());
+            pubmed_date._year = NStr::StringToNumeric<int>(ym.GetYear().Get());
             if (ym.IsSetMS() && ym.GetMS().IsMD()) {
                 auto& md = ym.GetMS().GetMD();
                 pubmed_date._month = s_TranslateMonth(md.GetMonth());
                 if (pubmed_date._month >= 1 && pubmed_date._month <= 12 && md.IsSetDay()) {
-                    pubmed_date._day = NStr::StringToNumeric<int>(md.GetDay());
+                    pubmed_date._day = NStr::StringToNumeric<int>(md.GetDay().Get());
                 }
             }
         }
@@ -1264,15 +1246,15 @@ static CRef<CDate> s_GetDateFromArticleDate(const CArticleDate& adate)
     try {
         // Try integer values
         CDate_std& std_date = date->SetStd();
-        std_date.SetYear(NStr::StringToNumeric<CDate_std::TYear>(adate.GetYear()));
-        std_date.SetMonth(NStr::StringToNumeric<CDate_std::TMonth>(adate.GetMonth()));
-        std_date.SetDay(NStr::StringToNumeric<CDate_std::TDay>(adate.GetDay()));
+        std_date.SetYear(NStr::StringToNumeric<CDate_std::TYear>(adate.GetYear().Get()));
+        std_date.SetMonth(NStr::StringToNumeric<CDate_std::TMonth>(adate.GetMonth().Get()));
+        std_date.SetDay(NStr::StringToNumeric<CDate_std::TDay>(adate.GetDay().Get()));
     }
     catch (...) {
         // Use string values
         string str_date = adate.GetYear();
-        if (!adate.GetMonth().empty()) str_date += " " + adate.GetMonth();
-        if (!adate.GetDay().empty()) str_date += " " + adate.GetDay();
+        if (!adate.GetMonth().Get().empty()) str_date += " " + adate.GetMonth();
+        if (!adate.GetDay().Get().empty()) str_date += " " + adate.GetDay();
         date->SetStr(str_date);
     }
     return date;
@@ -1285,19 +1267,19 @@ static CRef<CDate> s_GetDateFromPubDate(const CPubMedPubDate& pdate)
     try {
         // Try integer values
         CDate_std& std_date = date->SetStd();
-        std_date.SetYear(NStr::StringToNumeric<CDate_std::TYear>(pdate.GetYear()));
-        std_date.SetMonth(NStr::StringToNumeric<CDate_std::TMonth>(pdate.GetMonth()));
-        std_date.SetDay(NStr::StringToNumeric<CDate_std::TDay>(pdate.GetDay()));
+        std_date.SetYear(NStr::StringToNumeric<CDate_std::TYear>(pdate.GetYear().Get()));
+        std_date.SetMonth(NStr::StringToNumeric<CDate_std::TMonth>(pdate.GetMonth().Get()));
+        std_date.SetDay(NStr::StringToNumeric<CDate_std::TDay>(pdate.GetDay().Get()));
         if (pdate.IsSetHM()) {
             try {
                 // Try integer time, ignore on error
                 auto& hm = pdate.GetHM();
-                std_date.SetHour(NStr::StringToNumeric<CDate_std::THour>(hm.GetHour()));
+                std_date.SetHour(NStr::StringToNumeric<CDate_std::THour>(hm.GetHour().Get()));
                 if (hm.IsSetMS()) {
                     auto& ms = hm.GetMS();
-                    std_date.SetMinute(NStr::StringToNumeric<CDate_std::TMinute>(ms.GetMinute()));
+                    std_date.SetMinute(NStr::StringToNumeric<CDate_std::TMinute>(ms.GetMinute().Get()));
                     if (ms.IsSetSecond()) {
-                        std_date.SetSecond(NStr::StringToNumeric<CDate_std::TSecond>(ms.GetSecond()));
+                        std_date.SetSecond(NStr::StringToNumeric<CDate_std::TSecond>(ms.GetSecond().Get()));
                     }
                 }
             }
@@ -1307,8 +1289,8 @@ static CRef<CDate> s_GetDateFromPubDate(const CPubMedPubDate& pdate)
     catch (...) {
         // Use string values
         string str_date = pdate.GetYear();
-        if (!pdate.GetMonth().empty()) str_date += " " + pdate.GetMonth();
-        if (!pdate.GetDay().empty()) str_date += " " + pdate.GetDay();
+        if (!pdate.GetMonth().Get().empty()) str_date += " " + pdate.GetMonth();
+        if (!pdate.GetDay().Get().empty()) str_date += " " + pdate.GetDay();
         date->SetStr(str_date);
     }
     return date;
@@ -1466,7 +1448,7 @@ static CRef<CImprint> s_GetImprint(const CPubmedArticle& pubmed_article)
         FindName(article.GetAttlist().GetPubModel(), false);
     if (pub_model == "Electronic-Print" || pub_model == "Electronic-eCollection") {
         for (auto d : article.GetArticleDate()) {
-            if (d->GetAttlist().IsSetDateType() && d->GetAttlist().GetDateType() == "Electronic") {
+            if (d->GetAttlist().IsSetDateType() && d->GetAttlist().GetDateType() == CArticleDate::C_Attlist::eAttlist_DateType_Electronic) {
                 imprint->SetDate(*s_GetDateFromArticleDate(*d));
                 break;
             }
@@ -1476,10 +1458,10 @@ static CRef<CImprint> s_GetImprint(const CPubmedArticle& pubmed_article)
         imprint->SetDate(*s_GetDateFromPubDate(jissue.GetPubDate()));
     }
 
-    string volume = jissue.IsSetVolume() ? jissue.GetVolume() : "";
+    string volume = jissue.IsSetVolume() ? jissue.GetVolume().Get() : "";
     if (!volume.empty()) imprint->SetVolume(volume);
 
-    string issue = jissue.IsSetIssue() ? jissue.GetIssue() : "";
+    string issue = jissue.IsSetIssue() ? jissue.GetIssue().Get() : "";
     if (!issue.empty()) imprint->SetIssue(issue);
 
     string pages = article.GetPE_2().IsPE() ? s_GetPagination(article.GetPE_2().GetPE().GetPagination()) : "";
@@ -1488,8 +1470,8 @@ static CRef<CImprint> s_GetImprint(const CPubmedArticle& pubmed_article)
     auto list_language = medline_citation.GetArticle().GetLanguage();
     string languages;
     if (!list_language.empty())
-        languages = accumulate(next(list_language.begin()), list_language.end(), list_language.front(),
-            [](const string& s, const string& e) -> string { return s + "," + e; });
+        languages = accumulate(next(list_language.begin()), list_language.end(), list_language.front()->Get(),
+            [](const auto& s, const auto& e) -> string { return s + "," + e->Get(); });
     imprint->SetLanguage(languages);
 
     if (medline_citation.IsSetCommentsCorrectionsList()) {
@@ -1556,7 +1538,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                     CRef<CPerson_id> person(new CPerson_id());
                     if (author->GetLC().IsCollectiveName()) {
                         person->SetConsortium(s_TranslateToAscii(
-                            s_TextToWstring(author->GetLC().GetCollectiveName().Get())));
+                            s_TextToWstring(author->GetLC().GetCollectiveName().GetText())));
                     }
                     else {
                         person->SetMl(s_TranslateToAscii(utf8_to_wstring(s_GetAuthorMedlineName(*author))));
@@ -1568,7 +1550,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                         list<string> affiliations;
                         for (auto affiliation_info : list_affiliation_info) {
                             string affiliation = s_TranslateToAscii(
-                                s_TextToWstring(affiliation_info->GetAffiliation().Get()));
+                                s_TextToWstring(affiliation_info->GetAffiliation().GetText()));
                             if (!affiliation.empty()) affiliations.emplace_back(move(affiliation));
                         }
                         if (!affiliations.empty()) {
@@ -1793,7 +1775,7 @@ static void s_FillXref(CMedline_entry::TXref& refs, const CDataBankList& databan
                 for (auto& accession_number_it : databank_it->GetAccessionNumberList().GetAccessionNumber()) {
                     CRef<CMedline_si> si(new CMedline_si());
                     si->SetType((CMedline_si::EType)type_id);
-                    si->SetCit(accession_number_it);
+                    si->SetCit(accession_number_it->Get());
                     refs.push_back(si);
                 }
             }
@@ -1815,7 +1797,7 @@ static void s_FillGrants(CMedline_entry::TIdnum& id_nums, const CGrantList& gran
             id = utf8_to_wstring(grant_it->GetGrantID());
         if (grant_it->IsSetAcronym())
             id += id.empty() ? utf8_to_wstring(grant_it->GetAcronym()) : L"/" + utf8_to_wstring(grant_it->GetAcronym());
-        if (grant_it->IsSetAgency() && !grant_it->GetAgency().empty())
+        if (grant_it->IsSetAgency() && !grant_it->GetAgency().Get().empty())
             id += id.empty() ? utf8_to_wstring(grant_it->GetAgency()) : L"/" + utf8_to_wstring(grant_it->GetAgency());
         string id2 = s_TranslateToAscii(id);
         if (!id2.empty())
@@ -1827,7 +1809,7 @@ static void s_FillGrants(CMedline_entry::TIdnum& id_nums, const CGrantList& gran
 static void s_FillGenes(CMedline_entry::TGene& mgenes, const CGeneSymbolList& gene_symbol_list)
 {
     for (auto& gene_symbol_it : gene_symbol_list.GetGeneSymbol()) {
-        mgenes.push_back(gene_symbol_it);
+        mgenes.push_back(gene_symbol_it->Get());
     }
 }
 

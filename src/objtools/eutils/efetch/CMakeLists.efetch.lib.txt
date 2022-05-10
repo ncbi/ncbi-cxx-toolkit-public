@@ -1,8 +1,12 @@
 # $Id$
 
 NCBI_begin_lib(efetch)
-  NCBI_dataspecs(efetch.dtd)
+  NCBI_dataspecs(efetch.xsd)
   NCBI_uses_toolkit_libraries(pubmed medline biblio general xser xutil xncbi)
   NCBI_project_watchers(gotvyans)
-NCBI_end_lib()
+NCBI_end_lib(_result)
+
+if(_result AND MSVC)
+    target_compile_options(efetch PRIVATE /bigobj)
+endif()
 
