@@ -670,7 +670,7 @@ void CPerfTestApp::TestId(CSeq_id_Handle idh)
             sel.AddNamedAnnots(m_NamedAnnots);
             CFeat_CI fit(*m_Scope, loc, sel);
             if (m_PrintInfo || m_PrintData) {
-                atomic_out << "Loaded " << fit.GetSize() << m_NamedAnnots << " annotations" << endl;
+                atomic_out << "Loaded " << fit.GetSize() << " " << m_NamedAnnots << " annotations" << endl;
             }
             return;
         }
