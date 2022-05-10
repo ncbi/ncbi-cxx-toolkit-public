@@ -1630,14 +1630,21 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
         //
         // 1. No range is specified by the user.
         // 2. We have cached ranges.
-
-        TRangeCache::iterator rciter = m_RangeCache.find(oid);
+        TRangeList range_set;
         bool use_range_set = true;
+        {
+    	CFastMutexGuard mtx_guard(m_MtxCachedRange);
+        TRangeCache::iterator rciter = m_RangeCache.find(oid);
         if (region
          || rciter == m_RangeCache.end()
          || rciter->second->GetRanges().empty()
-         || CSeqDBRangeList::ImmediateLength() >= base_length)
+         || CSeqDBRangeList::ImmediateLength() >= base_length) {
             use_range_set = false;
+        }
+        else {
+            range_set = rciter->second->GetRanges();
+        }
+        }
 
         if (!use_range_set) {
             s_SeqDBMapNA2ToNA8(tmp, seq, range);
@@ -1648,8 +1655,6 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
         } else {
 
             _ASSERT (!region);
-            const TRangeList & range_set = rciter->second->GetRanges();
-
             // Place 'fence' sentinel bytes around each range; this is done
             // before any of the range data is mapped so that the range data
             // is free to replace the sentinel bytes if needed; that would
