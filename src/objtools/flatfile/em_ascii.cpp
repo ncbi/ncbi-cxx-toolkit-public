@@ -97,6 +97,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+// clang-format off
+
 /* For new stile of ID line in EMBL data check the "data class"
  * field first to figure out division code
  */
@@ -107,15 +109,21 @@ static const char* ParFlat_Embl_dataclass_array[] = {
 /* order by EMBL-block in asn.all
  */
 static const char* ParFlat_Embl_DIV_array[] = {
-    "FUN", "INV", "MAM", "ORG", "PHG", "PLN", "PRI", "PRO", "ROD", "SYN", "UNA", "VRL", "VRT", "PAT", "EST", "STS", "UNC", "GSS", "HUM", "HTG", "HTC", "CON", "ENV", "MUS", "TGN", "TSA", NULL
+    "FUN", "INV", "MAM", "ORG", "PHG", "PLN", "PRI", "PRO", "ROD",
+    "SYN", "UNA", "VRL", "VRT", "PAT", "EST", "STS", "UNC", "GSS",
+    "HUM", "HTG", "HTC", "CON", "ENV", "MUS", "TGN", "TSA", NULL
 };
 
 /* correspond "DIV" genbank string. Must have the same number
  * of elements !
  */
 static const char* ParFlat_GBDIV_array[] = {
-    "PLN", "INV", "MAM", "UNA", "PHG", "PLN", "PRI", "BCT", "ROD", "SYN", "UNA", "VRL", "VRT", "PAT", "EST", "STS", "UNA", "GSS", "PRI", "HTG", "HTC", "CON", "ENV", "ROD", "SYN", "TSA", NULL
+    "PLN", "INV", "MAM", "UNA", "PHG", "PLN", "PRI", "BCT", "ROD",
+    "SYN", "UNA", "VRL", "VRT", "PAT", "EST", "STS", "UNA", "GSS",
+    "PRI", "HTG", "HTC", "CON", "ENV", "ROD", "SYN", "TSA", NULL
 };
+
+// clang-format on
 
 static const char* ParFlat_DBname_array[] = {
     "EMBL",
@@ -750,7 +758,6 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
     char* q;
     char* r;
     bool  locmap;
-    bool  sitemap;
 
     bool allow_crossdb_featloc;
     int  numerr;
@@ -970,7 +977,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     if (ibp->embl_new_ID == false) {
         if (StringNICmp(bptr, "standard", 8) == 0) {
-            ; // embl->SetClass(CEMBL_block::eClass_standard);
+            // embl->SetClass(CEMBL_block::eClass_standard);
         } else if (StringNICmp(bptr, "unannotated", 11) == 0) {
             embl->SetClass(CEMBL_block::eClass_unannotated);
         } else if (StringNICmp(bptr, "unreviewed", 10) == 0 ||
