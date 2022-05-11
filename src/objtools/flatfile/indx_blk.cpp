@@ -54,6 +54,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+// clang-format off
 static const char* XML_STRAND_array[] = {
     "   ", "single", "double", "mixed", NULL
 };
@@ -135,9 +136,11 @@ static const char* refseq_accpref[] = {
     "NZ_", NULL
 };
 
+/*
 static const char* refseq_prot_accpref[] = {
     "AP_", "NP_", "WP_", "XP_", "YP_", "ZP_", NULL
 };
+*/
 
 static const char* acc_tsa_allowed[] = {
     "AF", "AY", "DQ", "EF", "EU", "FJ", "GQ", "HQ", "JF", "JN", "JQ", "JX",
@@ -207,6 +210,7 @@ static const char* ValidMolTypes[] = {
     "viral cRNA",
     NULL
 };
+// clang-format on
 
 // functions below are implemented in different source files
 bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
@@ -594,13 +598,13 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 }
 
 /**********************************************************
-    *
-    *   CRef<CDate_std> GetUpdateDate(ptr, source):
-    *
-    *      Return NULL if ptr does not have dd-mmm-yyyy format
-    *   or "NODATE"; otherwise, return Date-std pointer.
-    *
-    **********************************************************/
+ *
+ *   CRef<CDate_std> GetUpdateDate(ptr, source):
+ *
+ *      Return NULL if ptr does not have dd-mmm-yyyy format
+ *   or "NODATE"; otherwise, return Date-std pointer.
+ *
+ **********************************************************/
 CRef<CDate_std> GetUpdateDate(char* ptr, Parser::ESource source)
 {
     Char date[12];
@@ -980,7 +984,8 @@ static void sDelNonDigitTail(string& str)
  *
  */
 
-static bool sIsUpperAlpha(char c) {
+static bool sIsUpperAlpha(char c)
+{
     return (c >= 'A' && c <= 'Z');
 }
 
@@ -1296,7 +1301,7 @@ bool IsSPROTAccession(const char* acc)
 
 
 /*
-static bool sCheckAccession(const list<string>& tokens, 
+static bool sCheckAccession(const list<string>& tokens,
                             Parser::ESource source,
                             Parser::EMode mode,
                             const char* priacc, int skip)
@@ -1517,7 +1522,6 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
     Int4        accformat;
     Int4        priformat;
     Int4        count;
-    size_t      i;
 
     if (priacc == NULL || mode == Parser::EMode::Relaxed)
         return true;
@@ -2044,10 +2048,8 @@ bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
                 acc[2] = '\0';
             }
         } else {
-            /* Processing of accession numbers in old format
-            */
-            /* check valid prefix accession number
-            */
+            /* Processing of accession numbers in old format */
+            /* check valid prefix accession number */
             if (pp->acprefix != NULL && StringChr(pp->acprefix, *acc) == NULL)
                 get = false;
             acc[1] = '\0';

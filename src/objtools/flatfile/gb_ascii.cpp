@@ -141,7 +141,6 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
     char* r;
 
     bool locmap;
-    bool sitemap;
 
     bool allow_crossdb_featloc;
     Int4 i;
@@ -725,16 +724,12 @@ static CRef<CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry, cons
 
     if (StringNCmp(bptr, "EST", 3) == 0)
         mol_info->SetTech(CMolInfo::eTech_est);
-
     else if (StringNCmp(bptr, "STS", 3) == 0)
         mol_info->SetTech(CMolInfo::eTech_sts);
-
     else if (StringNCmp(bptr, "GSS", 3) == 0)
         mol_info->SetTech(CMolInfo::eTech_survey);
-
     else if (StringNCmp(bptr, "HTG", 3) == 0)
         mol_info->SetTech(CMolInfo::eTech_htgs_1);
-
     else if (ibp->is_wgs) {
         if (ibp->is_tsa)
             mol_info->SetTech(CMolInfo::eTech_tsa);
@@ -742,14 +737,10 @@ static CRef<CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry, cons
             mol_info->SetTech(CMolInfo::eTech_targeted);
         else
             mol_info->SetTech(CMolInfo::eTech_wgs);
-    }
-
-    else if (ibp->is_tsa)
+    } else if (ibp->is_tsa)
         mol_info->SetTech(CMolInfo::eTech_tsa);
-
     else if (ibp->is_tls)
         mol_info->SetTech(CMolInfo::eTech_targeted);
-
     else if (ibp->is_mga) {
         mol_info->SetTech(CMolInfo::eTech_other);
         mol_info->SetTechexp("cage");
