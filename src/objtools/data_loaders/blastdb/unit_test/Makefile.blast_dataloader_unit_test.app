@@ -13,5 +13,6 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(C
 
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = blast_dataloader_unit_test
+CHECK_COPY = data
 
 WATCHERS = madden camacho fongah2
