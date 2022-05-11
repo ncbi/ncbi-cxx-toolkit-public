@@ -647,6 +647,17 @@ int CAsn2FlatApp::Run()
 
     bool propagate = args[ "p" ];
 
+    // do -batch mode before checking -huge flag
+    if ( args[ "batch" ] ) {
+        s_INSDSetOpen ( is_insdseq, m_Os );
+        CGBReleaseFile in( *is.release(), propagate );
+        in.RegisterHandler( this );
+        in.Read();  // HandleSeqEntry will be called from this function
+        s_INSDSetClose ( is_insdseq, m_Os );
+        if (m_Exception) return -1;
+        return 0;
+    }
+
     bool use_huge_files = ( args[ "huge" ] );
     if (use_huge_files && !args["i"]) {
         NcbiCerr << "Use of -huge mode also requires use of the -i argument. Disabling -huge mode." << endl;
@@ -656,7 +667,7 @@ int CAsn2FlatApp::Run()
         NcbiCerr << "Use of -huge mode is incompatible with -i /dev/stdin. Disabling -huge mode." << endl;
         use_huge_files = false;
     }
-    
+
     // -huge flag plus -i input file (not piped) sets huge mode for all data types
     if (use_huge_files)
     {
@@ -672,27 +683,6 @@ int CAsn2FlatApp::Run()
     if ( args[ "sub" ] ) {
         s_INSDSetOpen ( is_insdseq, m_Os );
         HandleSeqSubmit( *is );
-        s_INSDSetClose ( is_insdseq, m_Os );
-        if (m_Exception) return -1;
-        return 0;
-    }
-
-    if ( args[ "batch" ] ) {
-        s_INSDSetOpen ( is_insdseq, m_Os );
-        if (! use_huge_files) {
-            // for -batch mode also check configuration file setting if -huge flag is not set
-            use_huge_files = GetConfig().GetBool("asn2flat", "UseHugeFiles", false);
-        }
-        if (use_huge_files)
-        {
-            is.reset();
-            CNewGBReleaseFile in ( args["i"].AsString(), propagate );
-            in.Read([this](CRef<CSeq_entry> se) { this->HandleSeqEntry(se); });
-        } else {
-            CGBReleaseFile in( *is.release(), propagate );
-            in.RegisterHandler( this );
-            in.Read();  // HandleSeqEntry will be called from this function
-        }
         s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
