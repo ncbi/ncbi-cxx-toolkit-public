@@ -3,7 +3,7 @@
 
 [requires]
 #libdb/5.3.28
-#boost/1.78.0
+boost/1.79.0
 bzip2/1.0.8
 #cassandra-cpp-driver/2.15.3
 giflib/5.2.1
