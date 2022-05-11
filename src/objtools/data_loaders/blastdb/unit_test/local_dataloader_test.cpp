@@ -49,7 +49,9 @@
 #include <objmgr/bioseq_handle.hpp>
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
-
+#include "../local_blastdb_adapter.hpp"
+#include <util/random_gen.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 
 
 // This macro should be defined before inclusion of test_boost.hpp in all
@@ -286,6 +288,115 @@ BOOST_AUTO_TEST_CASE(FetchNonRedundantEntry)
      BOOST_REQUIRE(monkey_handle);
      BOOST_REQUIRE_EQUAL(kExpectedLength, monkey_handle.GetInst().GetLength());
      BOOST_CHECK_EQUAL(TAX_ID_CONST(9598), scope.GetTaxId(monkey_id));
+}
+
+#ifdef NCBI_THREADS
+
+class CLocalAdapterThread : public CThread
+{
+public:
+    CLocalAdapterThread(CRef<CSeqDB> seq_db)
+        : m_SeqDB(seq_db) {
+    }
+
+    virtual void* Main() {
+    	CLocalBlastDbAdapter ldb(m_SeqDB);
+
+    	TSeqPos length_0 = ldb.GetSeqLength(0);
+    	TSeqPos length_1 = ldb.GetSeqLength(1);
+    	CRandom r;
+    	for(int i=0; i < 100; i++) {
+    		ldb.GetSequence(0);
+    		{
+    			TSeqPos from = r.GetRand(0, length_0 -100);
+    			TSeqPos to = r.GetRand(from, length_0);
+    			ldb.GetSequence(0, from, to);
+    		}
+    		{
+    			TSeqPos from = r.GetRand(0, length_1 -100);
+    			TSeqPos to = r.GetRand(from, length_1);
+    			ldb.GetSequence(1, from, to);
+    		}
+    	}
+        return (void*)0;
+    }
+
+private:
+    CRef<CSeqDB> m_SeqDB;
+};
+
+BOOST_AUTO_TEST_CASE(LocalBlastDbAdapterMT)
+{
+	string dbname("data/testdb");
+	typedef vector< CRef<CLocalAdapterThread> > TTesterThreads;
+	const TSeqPos kNumThreads = 48;
+	TTesterThreads the_threads(kNumThreads);
+
+	CRef<CSeqDB> seqdb(new CSeqDB(dbname, CSeqDB::eNucleotide));
+	for (TSeqPos i = 0; i < kNumThreads; i++) {
+	    the_threads[i].Reset(new CLocalAdapterThread(seqdb));
+	    BOOST_REQUIRE(the_threads[i].NotEmpty());
+	}
+
+	NON_CONST_ITERATE(TTesterThreads, thread, the_threads) {
+	    (*thread)->Run();
+	}
+
+	NON_CONST_ITERATE(TTesterThreads, thread, the_threads) {
+	    long result = 0;
+	    (*thread)->Join(reinterpret_cast<void**>(&result));
+	    BOOST_REQUIRE_EQUAL(0L, result);
+	}
+
+	for (TSeqPos i = 0; i < kNumThreads; i++) {
+	    the_threads[i].Reset();
+	}
+
+}
+
+#endif
+
+BOOST_AUTO_TEST_CASE(BlastDbAdapterGetSequenceWithRange)
+{
+	string dbname("data/testdb");
+	const string s1("GTTTTCAATAAT");
+	const string s2("ACCGTTTCACAAGTAGGGCGTAGCGCATTTGCAG");
+	const string s3("AATTGGCTGTTTTTGAACTACTGTA");
+	const string s4("AGATTAATTATCATTTGCAG");
+
+	CRef<CSeqDB> seqdb(new CSeqDB(dbname, CSeqDB::eNucleotide));
+	CLocalBlastDbAdapter ldb(seqdb);
+	{
+		CRef<CSeq_data>  d1 = ldb.GetSequence(0, 1233, 1245);
+		string t1;
+		vector<char> ncbi4na = d1->GetNcbi4na().Get();
+		CSeqConvert::Convert(ncbi4na, CSeqUtil::e_Ncbi4na, 0, s1.size(), t1, CSeqUtil::e_Iupacna);
+		BOOST_REQUIRE_EQUAL(t1, s1);
+	}
+
+	{
+		CRef<CSeq_data>  d2 = ldb.GetSequence(1, 98764, 98798);
+		string t2;
+		vector<char> ncbi4na = d2->GetNcbi4na().Get();
+		CSeqConvert::Convert(ncbi4na, CSeqUtil::e_Ncbi4na, 0, s2.size(), t2, CSeqUtil::e_Iupacna);
+		BOOST_REQUIRE_EQUAL(t2, s2);
+	}
+	{
+		CRef<CSeq_data>  d3 = ldb.GetSequence(1, 100245, 100270);
+		string t3;
+		vector<char> ncbi4na = d3->GetNcbi4na().Get();
+		CSeqConvert::Convert(ncbi4na, CSeqUtil::e_Ncbi4na, 0, s3.size(), t3, CSeqUtil::e_Iupacna);
+		BOOST_REQUIRE_EQUAL(t3, s3);
+	}
+	{
+		CRef<CSeq_data>  d4 = ldb.GetSequence(0, 12439, 12459);
+		string t4;
+		vector<char> ncbi4na = d4->GetNcbi4na().Get();
+		CSeqConvert::Convert(ncbi4na, CSeqUtil::e_Ncbi4na, 0, s4.size(), t4, CSeqUtil::e_Iupacna);
+		BOOST_REQUIRE_EQUAL(t4, s4);
+	}
+
+
 }
 
 END_SCOPE(blast)
