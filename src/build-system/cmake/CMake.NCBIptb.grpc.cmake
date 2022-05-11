@@ -167,7 +167,7 @@ endfunction()
 
 #############################################################################
 NCBI_register_hook(DATASPEC NCBI_internal_process_proto_dataspec ".proto")
-NCBI_register_hook(TARGET_ADDED NCBI_internal_adjust_proto_target)
+#NCBI_register_hook(TARGET_ADDED NCBI_internal_adjust_proto_target)
 
 if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_GENERATESRC_GRPC   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/CMakeFiles/generate_sources.grpc)
