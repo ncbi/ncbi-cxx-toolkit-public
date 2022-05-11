@@ -1102,9 +1102,15 @@ wstring s_TextToWstring(const list<CRef<TE>>& text_list)
 }
 
 
+template<class TCD>
+wstring s_TextOrCharDataToWstring(const TCD& tcd) {
+    return tcd.IsSetText() ? s_TextToWstring(tcd.GetText()) : utf8_to_wstring(tcd.Get_CharData());
+}
+
+
 static wstring s_GetInitialsFromForeName(wstring fore_name)
 {
-    static const locale s_Locale("en_US.utf8");
+    static const locale s_Locale(s_UTF8LocaleName);
     static const auto& s_CType = use_facet<ctype<wchar_t>>(s_Locale);
     s_ToUpper(fore_name, s_Locale);
     vector<wstring> tokens;
@@ -1136,7 +1142,7 @@ static string s_GetAuthorMedlineName(const CAuthor& author)
 {
     wstring author_medline_name;
     if (author.GetLC().IsCollectiveName()) {
-        author_medline_name = s_TextToWstring(author.GetLC().GetCollectiveName().GetText());
+        author_medline_name = s_TextOrCharDataToWstring(author.GetLC().GetCollectiveName());
         if (!author_medline_name.empty() && author_medline_name.back() != L'.')
             author_medline_name.append(L".");
     }
@@ -1153,7 +1159,7 @@ static string s_GetAuthorMedlineName(const CAuthor& author)
         if (!initials.empty())
             author_medline_name.append(L" " + initials);
         if (lfis.IsSetSuffix())
-            author_medline_name.append(L" " + s_TextToWstring(lfis.GetSuffix().GetText()));
+            author_medline_name.append(L" " + s_TextOrCharDataToWstring(lfis.GetSuffix()));
     }
     return s_TranslateToAscii(author_medline_name);
 }
@@ -1538,7 +1544,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                     CRef<CPerson_id> person(new CPerson_id());
                     if (author->GetLC().IsCollectiveName()) {
                         person->SetConsortium(s_TranslateToAscii(
-                            s_TextToWstring(author->GetLC().GetCollectiveName().GetText())));
+                            s_TextOrCharDataToWstring(author->GetLC().GetCollectiveName())));
                     }
                     else {
                         person->SetMl(s_TranslateToAscii(utf8_to_wstring(s_GetAuthorMedlineName(*author))));
@@ -1550,7 +1556,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                         list<string> affiliations;
                         for (auto affiliation_info : list_affiliation_info) {
                             string affiliation = s_TranslateToAscii(
-                                s_TextToWstring(affiliation_info->GetAffiliation().GetText()));
+                                s_TextOrCharDataToWstring(affiliation_info->GetAffiliation()));
                             if (!affiliation.empty()) affiliations.emplace_back(move(affiliation));
                         }
                         if (!affiliations.empty()) {
