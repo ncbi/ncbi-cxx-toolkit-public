@@ -4789,6 +4789,7 @@ MTKKU	c	Department of Clinical Microbiology, Faculty of Medical Technology
 MTL	s	Musee Toulouse Lautrec d'Albi			
 MTMG	s	McGill University, Macdonald Campus, Plant Science Department			
 MTN	s	Malton Field Naturalists' Society			
+MTP	s	Michigan State University			
 MTQA	s	Museum of Tropical Queensland	MTQ		
 MTRO	s	Museum de Troyes			
 MTSN	s	Trento Museum of Natural Sciences			

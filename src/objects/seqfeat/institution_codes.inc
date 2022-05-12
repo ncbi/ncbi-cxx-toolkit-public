@@ -4822,6 +4822,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MTL\ts\tMusee Toulouse Lautrec d'Albi\t\t\t",
 "MTMG\ts\tMcGill University, Macdonald Campus, Plant Science Department\t\t\t",
 "MTN\ts\tMalton Field Naturalists' Society\t\t\t",
+"MTP\ts\tMichigan State University\t\t\t",
 "MTQA\ts\tMuseum of Tropical Queensland\tMTQ\t\t",
 "MTRO\ts\tMuseum de Troyes\t\t\t",
 "MTSN\ts\tTrento Museum of Natural Sciences\t\t\t",
