@@ -416,7 +416,7 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
 
     // cross-match master sequence and structure
     if (objects.size() == 1 && !MatchSequenceToMoleculeInObject(master, objects.front())) {
-        ERRORMSG("MatchSequenceToMoleculeInObject() - can't find molecule in object "
+        ERRORMSG("MatchSequenceToMoleculeInObject() - can't find molecule in object, sequence identifers don't match."
             << objects.front()->GetPDBID() << " to match master sequence "
             << master->identifier->ToString());
         return;
@@ -893,8 +893,8 @@ void StructureSet::CenterViewOnStructure(void)
 bool StructureSet::CenterViewOnAlignedResidues(void)
 {
     const BlockMultipleAlignment *alignment = alignmentManager->GetCurrentMultipleAlignment();
-    if (!alignment || !alignment->GetSequenceOfRow(0) || !alignment->GetSequenceOfRow(0))
-        return false;;                     // no alignment
+    if (!alignment || !alignment->GetSequenceOfRow(0))  // || !alignment->GetSequenceOfRow(0))
+        return false;                     // no alignment
     const Molecule *masterMolecule = alignment->GetSequenceOfRow(0)->molecule;
     if (!masterMolecule) return false;    // no structured master
     const StructureObject *masterObject;
