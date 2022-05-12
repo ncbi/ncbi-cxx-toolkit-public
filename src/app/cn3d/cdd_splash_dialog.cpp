@@ -203,14 +203,18 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
                         s, se = structureSet->sequenceSet->sequences.end();
                     for (s=structureSet->sequenceSet->sequences.begin(); s!=se; ++s) {
                         if ((*s)->identifier == m->second->identifier) {
-                            descr.Printf("%s: gi %ld (%s)", m->second->identifier->ToString().c_str(),
-                                (*s)->identifier->gi, (*s)->GetDescription().c_str());
+                            string gi_str = NStr::NumericToString((*s)->identifier->gi);
+                            descr.Printf("%s: gi %s (%s)", m->second->identifier->ToString().c_str(),
+                                gi_str.c_str(), (*s)->GetDescription().c_str());
                             break;
                         }
                     }
-                    if (s == se)
-                        descr.Printf("%s: gi %ld", m->second->identifier->ToString().c_str(),
-                            m->second->identifier->gi);
+
+                    if (s == se) {
+                        string gi_str = NStr::NumericToString(m->second->identifier->gi);
+                        descr.Printf("%s: gi %s", m->second->identifier->ToString().c_str(), gi_str.c_str());
+                    }
+
                     chainList.push_back(WX_TO_STD(descr));
                 } else if (m->second->IsHeterogen()) {
                     // get name from local graph name of first (should be only) residue
@@ -312,23 +316,23 @@ wxSizer *SetupCDDSplashDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     wxStaticText *item3 = new wxStaticText( parent, ID_ST_NAME, "", wxDefaultPosition, wxDefaultSize, 0 );
     item1->Add( item3, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item0->Add(item1, 0, wxGROW | wxALL, 5);
 
     wxTextCtrl *item4 = new wxTextCtrl( parent, ID_T_DESCR, "", wxDefaultPosition, wxSize(-1,100), wxTE_MULTILINE|wxTE_READONLY );
-    item0->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item0->Add(item4, 0, wxGROW | wxALL, 5);
 
     wxBoxSizer *item5 = new wxBoxSizer( wxHORIZONTAL );
 
     wxButton *item6 = new wxButton( parent, ID_B_ANNOT, "Show Annotations Panel", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item6, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item5->Add( item6, 0, wxGROW | wxALL, 5 );
 
     wxButton *item7 = new wxButton( parent, ID_B_REF, "Show References Panel", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item7, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item5->Add(item7, 0, wxGROW | wxALL, 5);
 
-    item5->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item5->Add( 20, 20, 0, wxALIGN_CENTRE| wxALL, 5 );
 
     wxButton *item8 = new wxButton( parent, ID_B_DONE, "Dismiss", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item8, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item5->Add( item8, 0, wxGROW | wxALL, 5 );
 
     item0->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
 

@@ -1,519 +1,497 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="UTF-8"?>
+<Project
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="Current">
+  <PropertyGroup><PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals"><ProjectGuid>{BB57FAAE-2EFE-46A0-8157-8879C5AC76C9}</ProjectGuid><Keyword>Win32Proj</Keyword><ProjectName>datatool.exe</ProjectName><WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="ReleaseDLL|Win32">
-      <Configuration>ReleaseDLL</Configuration>
-      <Platform>Win32</Platform>
+    <ProjectConfiguration Include="DebugDLL|x64">
+      <Configuration>DebugDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugMT|x64">
+      <Configuration>DebugMT</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="ReleaseDLL|x64">
       <Configuration>ReleaseDLL</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseMT|x64">
+      <Configuration>ReleaseMT</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
-  <PropertyGroup Label="Globals">
-    <ProjectGuid>{BB57FAAE-2EFE-46A0-8157-8879C5AC76C9}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;" Label="Configuration"><ConfigurationType>Application</ConfigurationType><CharacterSet>MultiByte</CharacterSet><PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;" Label="Configuration"><ConfigurationType>Application</ConfigurationType><CharacterSet>MultiByte</CharacterSet><PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;" Label="Configuration"><ConfigurationType>Application</ConfigurationType><CharacterSet>MultiByte</CharacterSet><PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;" Label="Configuration"><ConfigurationType>Application</ConfigurationType><CharacterSet>MultiByte</CharacterSet><PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+  <ImportGroup Label="ExtensionSettings"></ImportGroup>
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;" Label="PropertySheets">
+    <Import Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Label="LocalAppDataPlatform"/>
+    <Import Project="$(ProjectDir)..\..\ncbi_sln.DebugDLL.user.props"/>
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;" Label="PropertySheets">
+    <Import Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Label="LocalAppDataPlatform"/>
+    <Import Project="$(ProjectDir)..\..\ncbi_sln.DebugMT.user.props"/>
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;" Label="PropertySheets">
+    <Import Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Label="LocalAppDataPlatform"/>
+    <Import Project="$(ProjectDir)..\..\ncbi_sln.ReleaseDLL.user.props"/>
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">..\..\..\bin\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">$(Configuration)\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">..\..\..\bin\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">$(Configuration)\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">datatool</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">datatool</TargetName>
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;" Label="PropertySheets">
+    <Import Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Label="LocalAppDataPlatform"/>
+    <Import Project="$(ProjectDir)..\..\ncbi_sln.ReleaseMT.user.props"/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros"></PropertyGroup>
+  <PropertyGroup><OutDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">..\..\..\bin\$(Configuration)\</OutDir><IntDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">$(Configuration)\$(TargetName)\</IntDir><TargetName
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">datatool</TargetName><LinkIncremental
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">false</LinkIncremental><GenerateManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">true</GenerateManifest><EmbedManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">false</EmbedManifest><OutDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">..\..\..\bin\$(Configuration)\</OutDir><IntDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">$(Configuration)\$(TargetName)\</IntDir><TargetName
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">datatool</TargetName><LinkIncremental
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">false</LinkIncremental><GenerateManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">true</GenerateManifest><EmbedManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">false</EmbedManifest><OutDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">..\..\..\bin\$(Configuration)\</OutDir><IntDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">$(Configuration)\$(TargetName)\</IntDir><TargetName
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">datatool</TargetName><LinkIncremental
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">false</LinkIncremental><GenerateManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">true</GenerateManifest><EmbedManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">false</EmbedManifest><OutDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">..\..\..\bin\$(Configuration)\</OutDir><IntDir
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">$(Configuration)\$(TargetName)\</IntDir><TargetName
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">datatool</TargetName><LinkIncremental
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">false</LinkIncremental><GenerateManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">true</GenerateManifest><EmbedManifest
+        Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">false</EmbedManifest>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
-    <ClCompile>
-      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <Optimization>MaxSpeed</Optimization>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <StringPooling>false</StringPooling>
-      <MinimalRebuild>false</MinimalRebuild>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <ProgramDataBaseFileName>$(IntDir)datatool.pdb</ProgramDataBaseFileName>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <BrowseInformation>
-      </BrowseInformation>
-      <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
-      <CallingConvention>Cdecl</CallingConvention>
-      <CompileAs>Default</CompileAs>
-      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-    </ClCompile>
-    <ResourceCompile>
-      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Link>
-      <AdditionalOptions>ws2_32.lib dbghelp.lib %(AdditionalOptions)</AdditionalOptions>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <IgnoreSpecificDefaultLibraries>FALSE;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(OutDir)datatool.pdb</ProgramDatabaseFile>
-      <SubSystem>Console</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <ImportLibrary>$(OutDir)datatool.lib</ImportLibrary>
-      <TargetMachine>MachineX86</TargetMachine>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
-    <ClCompile>
-      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <Optimization>MaxSpeed</Optimization>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <StringPooling>false</StringPooling>
-      <MinimalRebuild>false</MinimalRebuild>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <ProgramDataBaseFileName>$(IntDir)datatool.pdb</ProgramDataBaseFileName>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <BrowseInformation>
-      </BrowseInformation>
-      <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
-      <CallingConvention>Cdecl</CallingConvention>
-      <CompileAs>Default</CompileAs>
-      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+    <ClCompile><AdditionalIncludeDirectories>..\..\..\inc\$(Configuration)\;..\..\..\..\..\..\include\;..\..\..\..\..\..\include\internal\</AdditionalIncludeDirectories><PrecompiledHeader>Use</PrecompiledHeader><PrecompiledHeaderFile>ncbi_pch.hpp</PrecompiledHeaderFile><PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;NCBI_APP_BUILT_AS=$(TargetName);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ResourceCompile>
-      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\..\..\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Link>
-      <AdditionalOptions>ws2_32.lib dbghelp.lib %(AdditionalOptions)</AdditionalOptions>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <IgnoreSpecificDefaultLibraries>FALSE;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(OutDir)datatool.pdb</ProgramDatabaseFile>
-      <SubSystem>Console</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <ImportLibrary>$(OutDir)datatool.lib</ImportLibrary>
-      <TargetMachine>MachineX64</TargetMachine>
+    <Link><AdditionalOptions>dbghelp.lib ws2_32.lib</AdditionalOptions>
     </Link>
+    <Lib></Lib>
+    <ResourceCompile><AdditionalIncludeDirectories>..\..\..\inc\$(Configuration)\;..\..\..\..\..\..\include\;..\..\..\..\..\..\include\internal\</AdditionalIncludeDirectories><PreprocessorDefinitions>_DEBUG;</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile><AdditionalIncludeDirectories>..\..\..\inc\$(Configuration)\;..\..\..\..\..\..\include\;..\..\..\..\..\..\include\internal\</AdditionalIncludeDirectories><PrecompiledHeader>Use</PrecompiledHeader><PrecompiledHeaderFile>ncbi_pch.hpp</PrecompiledHeaderFile><PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;NCBI_APP_BUILT_AS=$(TargetName);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link><AdditionalOptions>dbghelp.lib ws2_32.lib</AdditionalOptions>
+    </Link>
+    <Lib></Lib>
+    <ResourceCompile><AdditionalIncludeDirectories>..\..\..\inc\$(Configuration)\;..\..\..\..\..\..\include\;..\..\..\..\..\..\include\internal\</AdditionalIncludeDirectories><PreprocessorDefinitions>_DEBUG;</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile><AdditionalIncludeDirectories>..\..\..\inc\$(Configuration)\;..\..\..\..\..\..\include\;..\..\..\..\..\..\include\internal\</AdditionalIncludeDirectories><PrecompiledHeader>Use</PrecompiledHeader><PrecompiledHeaderFile>ncbi_pch.hpp</PrecompiledHeaderFile><PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;NCBI_APP_BUILT_AS=$(TargetName);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link><AdditionalOptions>dbghelp.lib ws2_32.lib</AdditionalOptions>
+    </Link>
+    <Lib></Lib>
+    <ResourceCompile><AdditionalIncludeDirectories>..\..\..\inc\$(Configuration)\;..\..\..\..\..\..\include\;..\..\..\..\..\..\include\internal\</AdditionalIncludeDirectories><PreprocessorDefinitions>NDEBUG;</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile><AdditionalIncludeDirectories>..\..\..\inc\$(Configuration)\;..\..\..\..\..\..\include\;..\..\..\..\..\..\include\internal\</AdditionalIncludeDirectories><PrecompiledHeader>Use</PrecompiledHeader><PrecompiledHeaderFile>ncbi_pch.hpp</PrecompiledHeaderFile><PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;NCBI_APP_BUILT_AS=$(TargetName);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link><AdditionalOptions>dbghelp.lib ws2_32.lib</AdditionalOptions>
+    </Link>
+    <Lib></Lib>
+    <ResourceCompile><AdditionalIncludeDirectories>..\..\..\inc\$(Configuration)\;..\..\..\..\..\..\include\;..\..\..\..\..\..\include\internal\</AdditionalIncludeDirectories><PreprocessorDefinitions>NDEBUG;</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\alexer.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\alexer.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PrecompiledHeader
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">Create</PrecompiledHeader><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PrecompiledHeader
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">Create</PrecompiledHeader><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PrecompiledHeader
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">Create</PrecompiledHeader><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PrecompiledHeader
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\aliasstr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\aliasstr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\aparser.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\aparser.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\blocktype.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\blocktype.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\choiceptrstr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\choiceptrstr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\choicestr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\choicestr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\choicetype.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\choicetype.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\classstr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\classstr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\code.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\code.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\comments.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\comments.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\datatool.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\datatool.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\dtdaux.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\dtdaux.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\dtdlexer.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\dtdlexer.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\dtdparser.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\dtdparser.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\enumstr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\enumstr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\enumtype.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\enumtype.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\exceptions.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\exceptions.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\filecode.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\filecode.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\fileutil.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\fileutil.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\generate.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\generate.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\lexer.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\jsdlexer.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\mcontainer.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\jsdparser.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\module.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\lexer.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\moduleset.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\mcontainer.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\namespace.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\module.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\parser.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\moduleset.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\ptrstr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\namespace.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\reftype.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\parser.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\rpcgen.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\ptrstr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\srcutil.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\reftype.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\statictype.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\rpcgen.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\stdstr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\srcutil.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\stlstr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\statictype.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\type.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\stdstr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\typestr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\stlstr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\unitype.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_code_generator.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\value.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_merger.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\xsdlexer.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_node.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\xsdparser.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_pattern_match_callback.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\jsdlexer.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_spec_file_parser.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\jsdparser.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\type.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\wsdllexer.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\typestr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\wsdlparser.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\unitype.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\wsdlstr.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\value.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_code_generator.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\wsdllexer.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_merger.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\wsdlparser.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_node.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\wsdlstr.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_pattern_match_callback.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\xsdlexer.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\traversal_spec_file_parser.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    <ClCompile Include="..\..\..\..\..\..\src\serial\datatool\xsdparser.cpp"><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;DebugMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions><PreprocessorDefinitions
+          Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseMT|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\alexer.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\aliasstr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\aparser.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\atoken.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\blocktype.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\choiceptrstr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\choicestr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\choicetype.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\classctx.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\classstr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\code.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\comments.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\datatool.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\dtdaux.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\dtdlexer.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\dtdparser.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\enumstr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\enumtype.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\exceptions.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\filecode.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\fileutil.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\generate.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\lexer.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\mcontainer.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\module.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\moduleset.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\namespace.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\parser.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\ptrstr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\reftype.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\rpcgen.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\srcutil.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\statictype.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\stdstr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\stlstr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\tokens.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\type.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\typestr.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\unitype.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\include\serial\datatool\value.hpp" />
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\alexer.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\aliasstr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\aparser.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\atoken.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\blocktype.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\choiceptrstr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\choicestr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\choicetype.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\classctx.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\classstr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\code.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\comments.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\datatool.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\dtdaux.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\dtdlexer.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\dtdparser.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\enumstr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\enumtype.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\exceptions.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\filecode.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\fileutil.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\generate.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\jsdlexer.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\jsdparser.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\lexer.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\mcontainer.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\module.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\moduleset.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\namespace.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\parser.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\ptrstr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\reftype.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\rpcgen.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\srcutil.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\statictype.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\stdstr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\stlstr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\tokens.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\traversal_code_generator.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\traversal_merger.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\traversal_node.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\traversal_pattern_match_callback.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\traversal_spec_file_parser.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\type.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\typestr.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\unitype.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\value.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\wsdllexer.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\wsdlparser.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\xsdlexer.hpp"></ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\src\serial\datatool\xsdparser.hpp"></ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\..\ncbi.rc" />
+    <ResourceCompile Include="..\..\..\..\ncbi.rc"></ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\corelib\xncbi.lib.vcxproj">
-      <Project>{1edb6a26-adb9-4591-b907-505e8d1a8157}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\util\xutil.lib.vcxproj">
-      <Project>{1dce18cd-4a7e-43b8-b7af-48972efe51e7}</Project>
+      <Project>{1DCE18CD-4A7E-43B8-B7AF-48972EFE51E7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\corelib\xncbi.lib.vcxproj">
+      <Project>{1EDB6A26-ADB9-4591-B907-505E8D1A8157}</Project>
     </ProjectReference>
     <ProjectReference Include="..\xser.lib.vcxproj">
-      <Project>{1f5bcb57-26a5-46c7-b87c-fa74072cf5f6}</Project>
+      <Project>{1F5BCB57-26A5-46C7-B87C-FA74072CF5F6}</Project>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <ImportGroup Label="ExtensionTargets"></ImportGroup>
 </Project>
