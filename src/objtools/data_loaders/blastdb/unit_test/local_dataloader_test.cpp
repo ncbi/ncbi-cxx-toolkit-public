@@ -306,16 +306,16 @@ public:
     	TSeqPos length_1 = ldb.GetSeqLength(1);
     	CRandom r;
     	for(int i=0; i < 100; i++) {
-    		ldb.GetSequence(0);
+    		CRef<CSeq_data> s1 = ldb.GetSequence(0);
     		{
     			TSeqPos from = r.GetRand(0, length_0 -100);
     			TSeqPos to = r.GetRand(from, length_0);
-    			ldb.GetSequence(0, from, to);
+    			 CRef<CSeq_data> s2 = ldb.GetSequence(0, from, to);
     		}
     		{
     			TSeqPos from = r.GetRand(0, length_1 -100);
     			TSeqPos to = r.GetRand(from, length_1);
-    			ldb.GetSequence(1, from, to);
+    			CRef<CSeq_data> s3 = ldb.GetSequence(1, from, to);
     		}
     	}
         return (void*)0;
