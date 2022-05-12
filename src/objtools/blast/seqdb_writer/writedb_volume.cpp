@@ -617,7 +617,7 @@ void CWriteDB_OidList::x_CreateBitMap(int num_oids)
 	    // Create byte mask.
 	    // First oid of each group of 8 gets MSB (bit 7),
 	    // and last of 8 gets LSB (bit 0).
-	    uint8_t mask_bit = (uint8_t) (1U << (7U - *oid & BITMASK));
+	    uint8_t mask_bit = (uint8_t) (1U << (7U - (*oid & BITMASK)));
 
 	    // OR byte mask into mask array.
 	    if (m_Type & (EOidMaskType::fExcludeModel)) {
@@ -630,7 +630,6 @@ void CWriteDB_OidList::x_CreateBitMap(int num_oids)
 void CWriteDB_OidList::x_CreateMaskFile()
 {
     // Write max oid in big-endian form to mask file.
-    uint8_t buffer[sizeof(uint32_t)];
     uint32_t max_oid = m_TotalOids - 1U;
     Create();
     WriteInt4(max_oid); // This api writes Big Endian

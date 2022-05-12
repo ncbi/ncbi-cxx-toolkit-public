@@ -382,7 +382,6 @@ private:
     bool          m_ParseIDs;         ///< Generate ISAM files
     bool          m_UseGiMask;        ///< Generate GI-based mask files
     EBlastDbVersion m_DbVersion;      ///< BLASTDB version
-    Uint8         m_OidMasks;
 
     /// Column titles.
     vector<string> m_ColumnTitles;
@@ -645,6 +644,7 @@ private:
     int m_LmdbOid;
 
     bool m_limitDefline;
+    Uint8 m_OidMasks;
 };
 
 END_NCBI_SCOPE
