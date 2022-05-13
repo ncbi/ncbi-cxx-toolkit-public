@@ -345,9 +345,6 @@ egenedb needs $(CONNEXT)
 egenedb needs dbapi_driver_wrap_s
 egenedb needs entrezgene
 egenedb needs taxon1
-egenedomains needs $(OBJMGR_LIBS)
-egenedomains needs entrezgene
-egenedomains needs3party $(GENBANK_THIRD_PARTY_LIBS)
 egquery needs xser
 ehistory needs xser
 einfo needs xser
