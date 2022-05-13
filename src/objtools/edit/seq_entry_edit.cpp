@@ -52,6 +52,7 @@
 #include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/feature_edit.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -2122,6 +2123,42 @@ void s_BasicValidation(CBioseq_Handle bsh,
     }
 }
 
+static TRange s_GetRetainedRange(const TCuts& sorted_merged_cuts, TSeqPos seqLength) 
+{
+    const auto num_cuts = sorted_merged_cuts.size();
+    _ASSERT(num_cuts==1 || num_cuts==2); // Should only include terminal cuts
+
+    TRange range;
+    const auto& first_cut = sorted_merged_cuts[0];
+    if (num_cuts == 1) {
+        if (first_cut.GetFrom() == 0) {
+            range.SetFrom(first_cut.GetTo()+1);
+            range.SetTo(seqLength-1);
+        }
+        else {
+            range.SetFrom(0);
+            range.SetTo(first_cut.GetFrom()-1);
+        }
+        return range;
+    }
+
+    // num_cuts==2 case:
+    _ASSERT(first_cut.GetFrom() > 0);
+    range.SetTo(first_cut.GetFrom()-1);
+    range.SetFrom(sorted_merged_cuts[1].GetTo()+1);
+/*
+    if (first_cut.GetFrom() == 0) {
+        range.SetFrom(first_cut.GetTo()+1);
+    }
+    if (num_cuts == 1) {
+        range.SetTo(seqLength-1);
+        return range;
+    } // else
+    range.SetTo(sorted_merged_cuts[1].GetFrom()-1);
+*/
+    return range;
+}
+
 
 /// Implementation detail: first trim all associated annotation, then
 /// trim sequence data
@@ -2150,6 +2187,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
     CFeat_CI feat_ci(bsh, feat_sel);
     for (; feat_ci; ++feat_ci) {
         // Make a copy of the feature
+        const auto& original_feat = feat_ci->GetOriginalFeature();
         CRef<CSeq_feat> copy_feat(new CSeq_feat());
         copy_feat->Assign(feat_ci->GetOriginalFeature());
 
@@ -2162,6 +2200,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
         // Modify the copy of the feature
         bool isPartialStart = false;
         bool isPartialStop = false;
+        auto cds_range = copy_feat->GetLocation().GetTotalRange();
         TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed, isPartialStart, isPartialStop);
 
         if (bFeatureDeleted) {
@@ -2185,8 +2224,10 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
                 if (bsh.GetInst().CanGetLength()) {
                     original_nuc_len = bsh.GetInst().GetLength();
                 }
-                AdjustCdregionFrame(original_nuc_len, copy_feat, sorted_cuts);
-
+                
+                const auto retainedRange = s_GetRetainedRange(sorted_cuts, original_nuc_len);
+                auto new_frame = sequence::CFeatTrim::GetCdsFrame(original_feat, retainedRange);
+                copy_feat->SetData().SetCdregion().SetFrame(new_frame);
                 // Retranslate the coding region using the new nuc sequence
                 RetranslateCdregion(bsh, isPartialStart, isPartialStop, copy_inst, copy_feat, sorted_cuts);
             }
@@ -3205,13 +3246,16 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
     // Get partialness and strand of location before cutting
     bool bIsPartialStart = false;
     CSeq_loc::TStrand eStrand = eNa_strand_unknown;
+    TRange cds_range; 
     if (cds->CanGetLocation()) {
         bIsPartialStart = cds->GetLocation().IsPartialStart(eExtreme_Biological);
         eStrand = cds->GetLocation().GetStrand();
+        cds_range = cds->GetLocation().GetTotalRange();
     }
 
     for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
         const TRange& cut = sorted_cuts[ii];
+
         TSeqPos from = cut.GetFrom();
         TSeqPos to = cut.GetTo();
 
@@ -3237,7 +3281,7 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
                 if (old_frame == 0) {
                     old_frame = 1;
                 }
-
+                
                 TSignedSeqPos new_frame = old_frame - ((to - from + 1) % 3);
                 if (new_frame < 1) {
                     new_frame += 3;
@@ -3248,6 +3292,8 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
             // Update the original
             cds->SetData().SetCdregion(*new_cdregion);
         }
+
+
     }
 }
 

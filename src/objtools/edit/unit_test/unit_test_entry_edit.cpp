@@ -568,7 +568,6 @@ static bool s_FindGi(const CBioseq_Handle& bsh, const TGi& gi)
     return false;
 }
 
-
 BOOST_AUTO_TEST_CASE(TrimSeqData)
 {
     cout << "Testing FUNCTION: TrimSeqData" << endl;
@@ -1073,6 +1072,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Deleted)
     }
 }
 
+/*
 
 BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Trimmed)
 {
@@ -1191,6 +1191,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Trimmed)
         BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
     }
 }
+*/
 
 
 BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
@@ -1412,7 +1413,6 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation_InvalidInput)
     }
 }
 
-
 BOOST_AUTO_TEST_CASE(Test_Unverified)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -1601,7 +1601,6 @@ BOOST_AUTO_TEST_CASE(Test_BioseqSetDescriptorPropagateUp)
     ITERATE(CBioseq_set::TSeq_set, it, entry->GetSet().GetSeq_set()) {
         BOOST_CHECK_EQUAL((*it)->GetSeq().GetDescr().Get().size(), 3);
     }
-
 }
 
 
