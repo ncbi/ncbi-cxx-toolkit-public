@@ -2125,6 +2125,7 @@ static const char* const kBuiltInGuide[] = {
     "special  CAKMNX000000000-CAKMRG999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAKMRL000000000-CAKMRN999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAKNFQ000000000-CAKNSC999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CALNEE000000000-CALNHU999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc # 4+8",
