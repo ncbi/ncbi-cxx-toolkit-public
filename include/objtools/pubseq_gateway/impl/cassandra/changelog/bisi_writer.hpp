@@ -83,7 +83,7 @@ class CBiSiChangelogWriter
         query.BindInt16(2, record.GetVersion());
         query.BindInt16(3, record.GetSeqIdType());
         query.BindInt64(4, record.GetGi());
-        query.BindInt8(5, static_cast<TBiSiChangelogOperationBase>(TBiSiChangelogOperation::eChangeLogOpInsert));
+        query.BindInt8(5, record.GetOperationBase());
         query.Execute(CASS_CONSISTENCY_LOCAL_QUORUM, true);
     }
 
