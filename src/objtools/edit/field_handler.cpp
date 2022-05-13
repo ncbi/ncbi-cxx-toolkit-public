@@ -273,13 +273,22 @@ vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSe
             ITERATE (sequence::TFeatScores, it, scores) {
                 feat_list.push_back(it->second);
             }
-        } else if (obj_type == CSeqFeatData::eSubtype_cdregion
+        }
+        else if (obj_type == CSeqFeatData::eSubtype_cdregion
             && constraint_type == CSeqFeatData::eSubtype_mRNA) {
             CConstRef<CSeq_feat> f = sequence::GetBestMrnaForCds(obj_feat, *scope);
             if (f) {
                 feat_list.push_back(f);
             }
-        } else if (constraint_type == CSeqFeatData::eSubtype_any || constraint_type == obj_type) {
+        } 
+        else if (obj_type == CSeqFeatData::eSubtype_mRNA
+            && constraint_type == CSeqFeatData::eSubtype_cdregion) {
+            CConstRef<CSeq_feat> f = sequence::GetBestCdsForMrna(obj_feat, *scope);
+            if (f) {
+                feat_list.push_back(f);
+            }
+        } 
+        else if (constraint_type == CSeqFeatData::eSubtype_any || constraint_type == obj_type) {
             CConstRef<CSeq_feat> f(&obj_feat);
             feat_list.push_back(f);
         }
