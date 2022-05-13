@@ -294,7 +294,7 @@ void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h);
 
 /// Secondary function needed after trimming Seq-feat.
 /// If TrimSeqFeat()'s bFeatureTrimmed returns true, then adjust cdregion frame.
-NCBI_XOBJEDIT_EXPORT
+NCBI_STD_DEPRECATED("AdjustCdregionFrame() doesn't work and needs to be removed.") NCBI_XOBJEDIT_EXPORT
 void AdjustCdregionFrame(TSeqPos original_nuc_len,
                          CRef<CSeq_feat> cds,
                          const TCuts& sorted_cuts);
