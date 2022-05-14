@@ -157,13 +157,13 @@ public:
 
     /// Quote argument.
     ///
-    /// Enclose argument in quotes if necessary.
-    /// Used for concatenation arguments into command line.
+    /// Enclose the command argument in quotes if necessary.
+    /// Used for concatenation of arguments into a command line.
     /// @note
-    ///   Do not use this function with Spawn*() methods. Im most cases they
-    ///   don't need it, because all parameters passes to system separately, 
-    ///   and automatically use more advanced and OS-specific algorithm for this
-    ///   if quoting is really necessary.
+    ///   Do not use this function with the Spawn*() methods.  In most cases
+    ///   they don't need it, because the arguments are passed to the system
+    ///   disjointly, and hence they can automatically use more a advanced
+    ///   and OS-specific algorithm for quoting if really necessary.
     /// @sa System
     static string QuoteArg(const string& arg);
 
