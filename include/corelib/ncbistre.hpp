@@ -148,7 +148,9 @@ typedef IO_PREFIX::ostream       CNcbiOstream;
 /// Portable alias for iostream.
 typedef IO_PREFIX::iostream      CNcbiIostream;
 
+
 #ifndef NCBI_SHUN_OSTRSTREAM
+
 /// Portable alias for strstreambuf.
 //typedef IO_PREFIX::strstreambuf  CNcbiStrstreambuf;
 
@@ -285,7 +287,8 @@ template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::ostrstream, IOS_
 template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::strstream,  IOS_BASE::in | IOS_BASE::out>;
 #endif
 
-#else
+#else  // NCBI_SHUN_OSTRSTREAM
+
 #if 0
 //typedef IO_PREFIX::stringbuf      CNcbiStrstreambuf;
 typedef IO_PREFIX::istringstream  CNcbiIstrstream;
@@ -359,7 +362,9 @@ template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::ostringstream, I
 template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::stringstream,  IOS_BASE::in | IOS_BASE::out>;
 #endif
 #endif
-#endif
+
+#endif  // NCBI_SHUN_OSTRSTREAM
+
 
 /// Portable alias for filebuf.
 typedef IO_PREFIX::filebuf       CNcbiFilebuf;
