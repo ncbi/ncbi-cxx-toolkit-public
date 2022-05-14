@@ -176,6 +176,8 @@ static string s_ReadLine(CPipe& pipe)
         if (status != eIO_Success)
             break;
     }
+    ERR_POST(Info << str.size() << " byte(s) read from pipe"
+             + string(str.size() ? ":\n" : "") + str);
     return str;
 }
 
@@ -542,6 +544,22 @@ int CTest::Run(void)
         ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
     } else
         ERR_POST(Warning << "Pipe closed okay because of an extended delay");
+
+
+    // ExecWait() with a corner case
+    ERR_POST(Info << "TEST:  ExecWait()");
+    istringstream in("ABCDEF");
+    in.exceptions(NcbiFailbit | NcbiBadbit);
+    try {
+        in.clear(NcbiFailbit);
+    } catch (...) {
+        ;
+    }
+    CPipe::EFinish finish = CPipe::ExecWait("echo", { "Hello, world!" },
+                                            in, cout, cerr, exitcode);
+    ERR_POST(Info << "Command completed with exit code " << exitcode);
+    _ASSERT(finish == CPipe::eDone);
+
 
     // Done
     ERR_POST(Info << "TEST completed successfully");
