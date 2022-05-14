@@ -230,7 +230,7 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
 string CExec::QuoteArg(const string& arg)
 {
     // Enclose argument in quotes if it is empty,
-    // or contains spaces and not contains quotes.
+    // or contains spaces and does not contain quotes.
     if ( arg.empty()  ||
         (arg.find(' ') != NPOS  &&  arg.find('"') == NPOS) ) {
         return '"' + arg + '"';
