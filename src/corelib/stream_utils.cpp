@@ -510,14 +510,14 @@ static streamsize s_Readsome(CNcbiIstream& is,
     if (save)
         is.exceptions(NcbiGoodbit);
     is.read(buf, avail);
-    // readsome() is not supposed to set a failbit on a stream initially good
-    is.clear(is.rdstate() & ~NcbiFailbit);
-    if (save)
-        is.exceptions(save);
     streamsize count = is.gcount();
+    // readsome() is not supposed to set failbit on an initially good stream
+    is.clear(is.rdstate() & ~NcbiFailbit);
     // Reset "eof" flag if some data have been read
     if (count  &&  is.eof()  &&  !is.bad())
         is.clear();
+    if (save)
+        is.exceptions(save);
     return count;
 #else
     // Try to read data
@@ -536,16 +536,19 @@ static streamsize s_Readsome(CNcbiIstream& is,
     if (save)
         is.exceptions(NcbiGoodbit);
     is.read(buf, 1);
-    // readsome is not supposed to set a failbit on a stream initially good
+    streamsize count = is.gcount();
+    // readsome() is not supposed to set failbit on an initially good stream
     is.clear(is.rdstate() & ~NcbiFailbit);
+    if (count  &&  buf_size > 1) {
+        _ASSERT(is.good()  &&  count == 1);
+        // Read more data (up to "buf_size" bytes)
+        count += x_Readsome(is, buf + 1, buf_size - 1);
+        if (!is.good()  &&  !is.bad())
+            is.clear();
+    }
     if (save)
         is.exceptions(save);
-    if ( !is.good() )
-        return 0;
-    if (buf_size == 1)
-        return 1; // do not need more data
-    // Read more data (up to "buf_size" bytes)
-    return x_Readsome(is, buf + 1, buf_size - 1) + 1;
+    return count;
 #endif //NCBI_NO_READSOME
 }
 
