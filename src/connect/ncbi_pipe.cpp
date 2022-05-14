@@ -38,6 +38,7 @@
 #define  _FORTIFY_SOURCE 0
 #include "ncbi_priv.h"
 #include <connect/error_codes.hpp>
+#include <corelib/ncbiexec.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -46,7 +47,6 @@
 #ifdef NCBI_OS_MSWIN
 
 #  include <windows.h>
-#  include <corelib/ncbiexec.hpp>
 
 #elif defined NCBI_OS_UNIX
 
@@ -211,6 +211,19 @@ static string x_GetHandleName(CPipe::EChildIOHandle handle)
 }
 
 
+static string x_CommandLine(const string&         cmd,
+                            const vector<string>& args)
+{
+    // Enclose command elements in quotes if necessary.
+    string cmd_line(CExec::QuoteArg(cmd));
+    for (auto&& arg : args) {
+        cmd_line += ' ';
+        cmd_line += CExec::QuoteArg(arg);
+    }
+    return cmd_line;
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -332,15 +345,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
     try {
         // Prepare command line to run
-        string cmd_line(cmd);
-        for (auto arg : args) {
-            // Add argument to command line.
-            // Escape it with quotes if necessary.
-            if (!cmd_line.empty()) {
-                cmd_line += ' ';
-            }
-            cmd_line += CExec::QuoteArg(arg);
-        }
+        string cmd_line = x_CommandLine(cmd, args);
 
         // Convert environment array to block form
         AutoPtr< TXChar, ArrayDeleter<TXChar> > env_block;
@@ -468,7 +473,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              &sinfo, &pinfo)) {
             status = eIO_Closed;
             PIPE_THROW(::GetLastError(),
-                       "Failed CreateProcess(\"" + cmd_line + "\")");
+                       "Failed CreateProcess('" + cmd_line + "')");
         }
         ::CloseHandle(pinfo.hThread);
         m_ProcHandle = pinfo.hProcess;
@@ -1009,22 +1014,24 @@ static void s_Exit(int status, int fd)
 // On success, execve() does not return, on error -1 is returned,
 // and errno is set appropriately.
 
-static int s_ExecShell(const char* executable,
+static int s_ExecShell(const char* command,
                        char *const argv[], char *const envp[])
 {
     static const char kShell[] = "/bin/sh";
 
     // Count number of arguments
-    int i;
+    size_t i;
     for (i = 0;  argv[i];  ++i);
-    ++i; // copy last zero element also
+    ++i; // last NULL element
+    _ASSERT(i > 1);
 
     // Construct argument list for the shell
     const char** args = new const char*[i + 1];
     AutoPtr< const char*, ArrayDeleter<const char*> > args_ptr(args);
 
     args[0] = kShell;
-    args[1] = executable;
+    args[1] = command;
+    // NB: skip argv[0]
     for (;  i > 1;  --i) {
         args[i] = argv[i - 1];
     }
@@ -1097,7 +1104,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         }
         switch (error) {
         case EACCES:
-            // Permission denied. Memorize this thing and try next path.
+            // Permission denied. Memorize this fact and try next path.
             eacces_err = true;
         case ENOENT:
         case ENOTDIR:
@@ -1296,8 +1303,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             const char** x_args = new const char*[args.size() + 2];
             AutoPtr< const char*, ArrayDeleter<const char*> > p_args(x_args);
             x_args[i = 0] = cmd.c_str();
-            ITERATE (vector<string>, arg, args) {
-                x_args[++i] = arg->c_str();
+            for (auto&& arg : args) {
+                x_args[++i] = arg.c_str();
             }
             x_args[++i] = 0;
 
@@ -1356,7 +1363,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             status = eIO_Closed;
             ::waitpid(m_Pid, NULL, 0);
             PIPE_THROW((size_t) n < sizeof(errcode) ? 0 : errcode,
-                       "Failed to execute \"" + cmd + '"');
+                       "Failed to execute '" + x_CommandLine(cmd, args) +'\'');
         }
 
         return eIO_Success;
@@ -2123,7 +2130,8 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                                   current_dir, env);
     if (status != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen,
-                   "[CPipe::ExecWait]  Cannot execute \"" + cmd + '"');
+                   "[CPipe::ExecWait]  Cannot execute '"
+                   + x_CommandLine(cmd, args) + '\'');
     }
     _ASSERT(pipe.m_PipeHandle);
 
@@ -2159,19 +2167,21 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
 
             if ((rmask & fStdIn)  ||  load_in) {
                 bool done_in = false;
-                if (bytes_in_inbuf == 0) {
-                    bytes_in_inbuf  = (size_t)
-                        CStreamUtils::Readsome(in, inbuf.get(), buf_size);
-                    load_in = false;
-                    if (bytes_in_inbuf) {
+                if (!bytes_in_inbuf) {
+                    if (!in.good()) {
+                        done_in = true;
+                    } else if ((bytes_in_inbuf =
+                                (size_t) CStreamUtils::Readsome
+                                (in, inbuf.get(), buf_size)) != 0) {
                         bytes_written = 0;
+                        load_in = false;
                     } else if (!in.good()) {
                         done_in = true;
                     } else if (!(rmask & ~fStdIn)) {
                         SleepMilliSec(NcbiTimeoutToMs(&kWait) / 100);
                     }
                 }
-                if ((rmask & fStdIn)  &&  bytes_in_inbuf) {
+                if (bytes_in_inbuf  &&  (rmask & fStdIn)) {
                     size_t x_written;
                     status = pipe.Write(inbuf.get() + bytes_written,
                                         bytes_in_inbuf, &x_written);
@@ -2181,8 +2191,9 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                             ERR_POST_X(5,
                                        s_FormatErrorMessage
                                        ("ExecWait",
-                                        "Cannot send all data to child process"
-                                        ": " + string(IO_StatusStr(status))));
+                                        "Cannot pass input data to '"
+                                        + x_CommandLine(cmd, args) + "': "
+                                        + string(IO_StatusStr(status))));
                         }
                         done_in = true;
                     } else if (!bytes_in_inbuf) {
@@ -2194,7 +2205,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                 if (done_in) {
                     pipe.CloseHandle(eStdIn);
                     mask &= ~fStdIn;
-                    assert(!load_in);
+                    load_in = false;
                 }
             }
 
