@@ -806,6 +806,8 @@ void CFlatFileGenerator::Generate
         sw.Reset();
     }
 
+    const string accn_filt = cfg.GetSingleAccession();
+
     // internal Bioseq iterator loop moved up from x_GatherSeqEntry
     for (CBioseq_CI bioseq_it(entry);  bioseq_it;  ++bioseq_it) {
 
@@ -815,6 +817,38 @@ void CFlatFileGenerator::Generate
 
         CBioseq_Handle bsh = *bioseq_it;
         if (! bsh) continue;
+
+        if ( ! accn_filt.empty()) {
+            bool okay = false;
+            const CBioseq& bsp = *bsh.GetBioseqCore();
+            for (auto& sid : bsp.GetId()) {
+                switch (sid->Which()) {
+                    case NCBI_SEQID(Genbank):
+                    case NCBI_SEQID(Embl):
+                    case NCBI_SEQID(Ddbj):
+                    case NCBI_SEQID(Tpg):
+                    case NCBI_SEQID(Tpe):
+                    case NCBI_SEQID(Tpd):
+                    case NCBI_SEQID(Local):
+                    case NCBI_SEQID(General):
+                    case NCBI_SEQID(Other):
+                    case NCBI_SEQID(Gpipe):
+                    {
+                        const string accn_string = sid->GetSeqIdString();
+                        if ( accn_string == accn_filt ) {
+                            okay = true;
+                        }
+                        break;
+                    }
+                     default:
+                       break;
+                }
+            }
+            if ( ! okay) {
+                continue;
+            }
+        }
+
         CSeq_id_Handle sidh = bsh.GetAccessSeq_id_Handle();
         if (showDebugTiming) {
             NcbiCerr << "Accession: " << sidh << ", ";

@@ -657,11 +657,15 @@ public:
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
 
-  int GetFeatDepth(void) const { return m_FeatDepth; }
-  void SetFeatDepth(const int featDepth) { m_FeatDepth = featDepth; }
+    // -- Single Accession filter
+    void SetSingleAccession(const string& accn) { m_SingleAccession = accn; }
+    const string& GetSingleAccession(void) const { return m_SingleAccession; }
 
-  int GetGapDepth(void) const { return m_GapDepth; }
-  void SetGapDepth(const int gapDepth) { m_GapDepth = gapDepth; }
+    int GetFeatDepth(void) const { return m_FeatDepth; }
+    void SetFeatDepth(const int featDepth) { m_FeatDepth = featDepth; }
+
+    int GetGapDepth(void) const { return m_GapDepth; }
+    void SetGapDepth(const int gapDepth) { m_GapDepth = gapDepth; }
 
 
     void SetGenbankBlocks(const TGenbankBlocks& genbank_blocks)
@@ -751,6 +755,7 @@ private:
     TCustom     m_Custom;
     int         m_FeatDepth;
     int         m_GapDepth;
+    string      m_SingleAccession;
     CRef<IHTMLFormatter> m_html_formatter;
 };
 

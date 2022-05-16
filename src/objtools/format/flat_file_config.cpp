@@ -1081,6 +1081,10 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
         int gapDepth = args["gap-depth"].AsInteger();
         SetGapDepth(gapDepth);
     }
+    if (args["accn"]) {
+        string singleAccn = args["accn"].AsString();
+        SetSingleAccession(singleAccn);
+    }
 }
 
 void CHTMLEmptyFormatter::FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const
