@@ -41,6 +41,7 @@ class CObjectIStream;
 namespace objects
 {
     class CSeq_entry;
+    class CFlatFileGenerator;
 };
 class CNewGBReleaseFileImpl;
 
@@ -49,7 +50,8 @@ class CNewGBReleaseFile
 public:
 
     /// constructors
-    CNewGBReleaseFile(const string& file_name, bool propagate=false);
+    CNewGBReleaseFile(objects::CFlatFileGenerator& generator,
+            const string& file_name, bool propagate=false);
 
     /// destructor
     virtual ~CNewGBReleaseFile(void);
