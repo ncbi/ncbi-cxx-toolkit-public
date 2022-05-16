@@ -673,7 +673,7 @@ int CAsn2FlatApp::Run()
     {
         s_INSDSetOpen ( is_insdseq, m_Os );
         is.reset();
-        CNewGBReleaseFile in ( args["i"].AsString(), propagate );
+        CNewGBReleaseFile in (*m_FFGenerator, args["i"].AsString(), propagate );
         in.Read([this](CRef<CSeq_entry> se) { this->HandleSeqEntry(se); });
         s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
@@ -829,7 +829,6 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         CCleanup cleanup;
         cleanup.BasicCleanup(sub);
     }
-
     // NB: though the spec specifies a submission may contain multiple entries
     // this is not the case. A submission should only have a single Top-level
     // Seq-entry

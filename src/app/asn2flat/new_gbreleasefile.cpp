@@ -43,7 +43,7 @@
 
 #include <objtools/edit/huge_file.hpp>
 #include <objtools/edit/huge_asn_reader.hpp>
-
+#include <objtools/format/flat_file_generator.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -52,8 +52,9 @@ USING_SCOPE(edit);
 class CNewGBReleaseFileImpl
 {
 public:
-    CNewGBReleaseFileImpl(const string& file_name)
+    CNewGBReleaseFileImpl(CFlatFileGenerator& generator, const string& file_name)
     : m_file{new CHugeFile},
+      m_FFGenerator{generator},
       m_reader{new CHugeAsnReader}
     {
         static set<TTypeInfo> supported_types =
@@ -101,6 +102,8 @@ public:
             }
         }
 
+
+
         if ((m_flattened.size() == 1) && (m_reader->GetBiosets().size()>1))
         {// exposing the whole top entry
             auto top = m_reader->GetBiosets().begin();
@@ -113,6 +116,9 @@ public:
                 m_flattened.push_back(*top);
             }
         }
+        else if (m_reader->GetSubmit() && m_reader->GetSubmit()->IsSetSub()) {
+            m_FFGenerator.SetSubmit(m_reader->GetSubmit()->GetSub());
+        }   
 
         m_current = m_flattened.begin();
     }
@@ -121,12 +127,13 @@ private:
     unique_ptr<CHugeFile> m_file;
     CHugeAsnReader::TBioseqSetIndex m_flattened;
     CHugeAsnReader::TBioseqSetIndex::iterator m_current;
+    CFlatFileGenerator& m_FFGenerator;
 public:
     unique_ptr<CHugeAsnReader> m_reader;
 };
 
-CNewGBReleaseFile::CNewGBReleaseFile(const string& file_name, bool propagate)
-    :m_Impl{new CNewGBReleaseFileImpl(file_name)}
+CNewGBReleaseFile::CNewGBReleaseFile(CFlatFileGenerator& generator, const string& file_name, bool propagate)
+    :m_Impl{new CNewGBReleaseFileImpl(generator, file_name)}
 {
 }
 
