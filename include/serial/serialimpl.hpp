@@ -296,7 +296,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
         info = s_info; \
         if ( !info ) { \
             DECLARE_BASE_OBJECT(CClass); \
-            s_info = info = Code; \
+            info = Code; \
             NCBI_NS_NCBI::RegisterTypeInfoObject(info);
 #define BEGIN_TYPE_INFO(ClassName, Method, InfoType, Code) \
     BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
