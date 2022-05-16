@@ -47,6 +47,8 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seq/seq_macros.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
+
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
@@ -418,6 +420,10 @@ void CAsn2FlatApp::Init()
          arg_desc->AddOptionalKey("ids", "IDFile",
                                   "FIle of IDs to display, one per line",
                                   CArgDescriptions::eInputFile);
+         // accn
+         arg_desc->AddOptionalKey("accn", "AccnFilter",
+                                  "Limit to specific accession",
+                                  CArgDescriptions::eString);
 
          // input type:
          arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
@@ -961,9 +967,44 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
 
     m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
 
+    string accn_filt = "";
+    if (args["accn"]) {
+        accn_filt = args["accn"].AsString();
+    }
+
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+
+        if ( ! accn_filt.empty() && bsr) {
+            bool okay = false;
+            for (auto& sid : bsr->GetId()) {
+                switch (sid->Which()) {
+                    case NCBI_SEQID(Genbank):
+                    case NCBI_SEQID(Embl):
+                    case NCBI_SEQID(Ddbj):
+                    case NCBI_SEQID(Tpg):
+                    case NCBI_SEQID(Tpe):
+                    case NCBI_SEQID(Tpd):
+                    case NCBI_SEQID(Local):
+                    case NCBI_SEQID(General):
+                    case NCBI_SEQID(Other):
+                    case NCBI_SEQID(Gpipe):
+                    {
+                        const string accn_string = sid->GetSeqIdString();
+                        if ( accn_string == accn_filt ) {
+                            okay = true;
+                        }
+                        break;
+                    }
+                     default:
+                       break;
+                }
+            }
+            if ( ! okay) {
+                continue;
+            }
+        }
 
         CNcbiOstream* flatfile_os = nullptr;
 
