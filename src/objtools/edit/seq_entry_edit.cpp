@@ -2130,7 +2130,7 @@ static TRange s_GetRetainedRange(const TCuts& sorted_merged_cuts, TSeqPos seqLen
 
     TRange range;
     const auto& first_cut = sorted_merged_cuts[0];
-    if (num_cuts == 1) {
+    if (num_cuts == 1) { // Need to figure out which end was cut
         if (first_cut.GetFrom() == 0) {
             range.SetFrom(first_cut.GetTo()+1);
             range.SetTo(seqLength-1);
@@ -2146,16 +2146,6 @@ static TRange s_GetRetainedRange(const TCuts& sorted_merged_cuts, TSeqPos seqLen
     _ASSERT(first_cut.GetFrom() > 0);
     range.SetTo(first_cut.GetFrom()-1);
     range.SetFrom(sorted_merged_cuts[1].GetTo()+1);
-/*
-    if (first_cut.GetFrom() == 0) {
-        range.SetFrom(first_cut.GetTo()+1);
-    }
-    if (num_cuts == 1) {
-        range.SetTo(seqLength-1);
-        return range;
-    } // else
-    range.SetTo(sorted_merged_cuts[1].GetFrom()-1);
-*/
     return range;
 }
 
