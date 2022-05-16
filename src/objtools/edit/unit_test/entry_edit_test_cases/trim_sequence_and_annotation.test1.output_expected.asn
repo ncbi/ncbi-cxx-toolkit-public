@@ -325,8 +325,8 @@ C1DBD09F47D4B8E20ECFACFD4DCD8E099C0D378218'H
         repr raw,
         mol aa,
         length 62,
-        seq-data ncbieaa "GTITLQSDYL*SVAFGRPKDFRVNGGFTQPKICRCNSFKLHFQ**ECIGISI
-YR*SAKSSED"
+        seq-data iupacaa "EQLLFKAITYNQWLLVGRKTFESMGALPNRKYAVVTRSSFTSSDENVLVFPS
+IDEALNHLKT"
       },
       annot {
         {
@@ -356,7 +356,7 @@ YR*SAKSSED"
       data ftable {
         {
           data cdregion {
-            frame one,
+            frame two,
             code {
               id 11
             }

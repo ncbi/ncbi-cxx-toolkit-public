@@ -3020,7 +3020,7 @@ FFFFFFF0'H
         repr raw,
         mol aa,
         length 22,
-        seq-data ncbieaa "V**ELWKVPRGVQAVVLEGRSL"
+        seq-data iupacaa "AFDESFGKFHEACKPWCLRDDH"
       },
       annot {
         {
@@ -3735,7 +3735,7 @@ NLIVAFVLEAFFAEMDLKSSDNFEEQDKVGSCPALIISI"
         {
           id local id 2778,
           data cdregion {
-            frame three,
+            frame one,
             code {
               id 1
             }
