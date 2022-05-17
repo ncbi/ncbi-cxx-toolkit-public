@@ -6,7 +6,13 @@ NCBI_begin_lib(efetch)
   NCBI_project_watchers(gotvyans)
 NCBI_end_lib(_result)
 
-if(_result AND MSVC)
+if(_result)
+  if(MSVC)
     target_compile_options(efetch PRIVATE /bigobj)
+  elseif(CYGWIN AND "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    # Already have -Wa,-mbig-obj globally, but it's no longer enough.
+    set_source_files_properties(${NCBI_CURRENT_SOURCE_DIR}/efetch___.cpp
+        PROPERTIES COMPILE_OPTIONS "-O")
+  endif()
 endif()
 
