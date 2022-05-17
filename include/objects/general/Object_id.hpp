@@ -94,6 +94,7 @@ public:
     void SetGi(TGi value);
 #ifdef NCBI_STRICT_GI
     void SetGi(TIntId value);
+    NCBI_WARN_UNUSED_RESULT bool GetGi(TIntId& value) const;
 #endif
 
     // Set integer id part if the argument is a positive integer without leading zeros
@@ -200,6 +201,22 @@ inline
 void CObject_id::SetGi(TIntId value)
 {
     SetId8(value);
+}
+
+NCBI_WARN_UNUSED_RESULT
+inline
+bool CObject_id::GetGi(TIntId& value) const
+{
+#ifdef NCBI_INT8_GI
+    TId8 id8;
+    return GetId8(value);
+#else
+    if ( IsId() ) {
+        value = GetId();
+        return true;
+    }
+    return false;
+#endif
 }
 #endif
 
