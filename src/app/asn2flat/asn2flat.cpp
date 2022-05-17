@@ -992,7 +992,11 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
                     case NCBI_SEQID(Gpipe):
                     {
                         const string accn_string = sid->GetSeqIdString();
-                        if ( accn_string == accn_filt ) {
+                        if ( accn_filt == accn_string ) {
+                            okay = true;
+                        }
+                        const string fasta_str = sid->AsFastaString();
+                        if ( accn_filt == fasta_str ) {
                             okay = true;
                         }
                         break;
