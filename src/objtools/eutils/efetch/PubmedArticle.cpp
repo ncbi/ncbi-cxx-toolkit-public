@@ -1082,13 +1082,55 @@ static string s_TranslateToAscii(const wstring& str)
 }
 
 
+template<class TE> string s_CTextListToString(const list<CRef<TE>>& text_list);
+
+template<class TCD> string s_CTextOrCharDataToString(const TCD& tcd) {
+    return tcd.IsSetText() ? s_CTextListToString(tcd.GetText()) : tcd.Get_CharData();
+}
+
+
+string s_TextToString(const CText& text) {
+    const auto& txt = text.GetEBISSU();
+    switch (txt.Which()) {
+    case CText::TEBISSU::e_B:
+        return s_CTextOrCharDataToString(txt.GetB());
+    case CText::TEBISSU::e_I:
+        return s_CTextOrCharDataToString(txt.GetI());
+    case CText::TEBISSU::e_Sup:
+        return "(" + s_CTextOrCharDataToString(txt.GetSup()) + ")";
+    case CText::TEBISSU::e_Sub:
+        return s_CTextOrCharDataToString(txt.GetSub());
+    case CText::TEBISSU::e_U:
+        return s_CTextOrCharDataToString(txt.GetU());
+    default:
+        return "";
+    }
+}
+
+
 template<class TE>
-string s_TextToString(const list<CRef<TE>>& text_list)
+string s_CTextListToString(const list<CRef<TE>>& text_list)
 {
     string ret;
-    for (const auto& it : text_list) {
-        for (CStdTypeConstIterator<string> j(Begin(*it)); j; ++j) {
-            ret.append(*j);
+    for (auto it : text_list) {
+        ret.append(s_TextToString(*it));
+    }
+    return ret;
+}
+
+
+template<class TE>
+string s_TextListToString(const list<CRef<TE>>& text_list)
+{
+    string ret;
+    for (auto it : text_list) {
+        if (it->IsText()) {
+            ret.append(s_TextToString(it->GetText()));
+        }
+        else {
+            for (CStdTypeConstIterator<string> j(Begin(*it)); j; ++j) {
+                ret.append(*j);
+            }
         }
     }
     return ret;
@@ -1096,15 +1138,15 @@ string s_TextToString(const list<CRef<TE>>& text_list)
 
 
 template<class TE>
-wstring s_TextToWstring(const list<CRef<TE>>& text_list)
+wstring s_TextListToWstring(const list<CRef<TE>>& text_list)
 {
-    return utf8_to_wstring(s_TextToString(text_list));
+    return utf8_to_wstring(s_TextListToString(text_list));
 }
 
 
 template<class TCD>
 wstring s_TextOrCharDataToWstring(const TCD& tcd) {
-    return tcd.IsSetText() ? s_TextToWstring(tcd.GetText()) : utf8_to_wstring(tcd.Get_CharData());
+    return utf8_to_wstring(s_CTextOrCharDataToString(tcd));
 }
 
 
@@ -1306,11 +1348,11 @@ static CRef<CDate> s_GetDateFromPubDate(const CPubMedPubDate& pdate)
 static CRef<CTitle> s_GetTitle(const CMedlineCitation& medlineCitation)
 {
     CRef<CTitle> title;
-    string title_str = s_TranslateToAscii(s_TextToWstring(
+    string title_str = s_TranslateToAscii(s_TextListToWstring(
         medlineCitation.GetArticle().GetArticleTitle().GetArticleTitle()));
     string vernacular_title_str;
     if (medlineCitation.GetArticle().IsSetVernacularTitle()) {
-        vernacular_title_str = s_TranslateToAscii(s_TextToWstring(
+        vernacular_title_str = s_TranslateToAscii(s_TextListToWstring(
             medlineCitation.GetArticle().GetVernacularTitle().Get()));
     }
     if (!title_str.empty() || !vernacular_title_str.empty()) {
@@ -1851,7 +1893,7 @@ static string s_GetAbstractText(const CAbstract& abstr)
         string label = abstract_text_it->GetAttlist().IsSetLabel() ?
             abstract_text_it->GetAttlist().GetLabel() + ": " : "";
         if (!abstract_text.empty()) abstract_text.append(" ");
-        abstract_text.append(label + s_TextToString(abstract_text_it->GetAbstractText()));
+        abstract_text.append(label + s_TextListToString(abstract_text_it->GetAbstractText()));
     }
     return abstract_text;
 }
