@@ -197,7 +197,7 @@ TEST_F(CPsgCacheBlobPropTest, EnumerateBlobProp)
             return true;
         }
     );
-    EXPECT_EQ(20, rows);
+    EXPECT_EQ(1020, rows);
 }
 
 END_SCOPE()
