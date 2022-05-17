@@ -355,6 +355,12 @@ const CItemInfo* CItemsInfo::FindNextMandatory(const CTypeInfo* info)
         for (i = items.FirstIndex(); i <= items.LastIndex(); ++i) {
 
             const CItemInfo* item = classType->GetItems().GetItemInfo(i);
+            if (item->Optional()) {
+                continue;
+            }
+            if (!item->GetId().HasNotag()) {
+                return item;
+            }
             ETypeFamily item_family = item->GetTypeInfo()->GetTypeFamily();
             if (item_family == eTypeFamilyPointer) {
                 const CPointerTypeInfo* ptr =
