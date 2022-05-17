@@ -4706,7 +4706,7 @@ bool CSeqFeatData::IsLegalProductNameForRibosomalSlippage(
         }
     }
     for (const auto& phrase: containedPhrases) {
-        if (phrase.find(productName) != string::npos) {
+        if (productName.find(phrase) != string::npos) {
             return true;
         }
     }
