@@ -680,7 +680,19 @@ int CAsn2FlatApp::Run()
         s_INSDSetOpen ( is_insdseq, m_Os );
         is.reset();
         CNewGBReleaseFile in (*m_FFGenerator, args["i"].AsString(), propagate );
-        in.Read([this](CRef<CSeq_entry> se) { this->HandleSeqEntry(se); });
+        CRef<CSeq_id> seqid;
+        if (args["accn"]) {
+            string accn_filt;
+            accn_filt = args["accn"].AsString();
+            if (!accn_filt.empty())
+                {
+                    CBioseq::TId ids;
+                    CSeq_id::ParseIDs(ids, accn_filt);
+                    if (!ids.empty())
+                        seqid = ids.front();
+                }
+        }
+        in.Read([this](CRef<CSeq_entry> se) { this->HandleSeqEntry(se); }, seqid);
         s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;

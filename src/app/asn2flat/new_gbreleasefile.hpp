@@ -42,6 +42,7 @@ namespace objects
 {
     class CSeq_entry;
     class CFlatFileGenerator;
+    class CSeq_id;
 };
 class CNewGBReleaseFileImpl;
 
@@ -58,7 +59,7 @@ public:
 
     using THandler = std::function<void(CRef<objects::CSeq_entry>)>;
     /// Read the release file
-    void Read(THandler handler);
+    void Read(THandler handler, CRef<objects::CSeq_id> seqid);
 
 private:
     CNewGBReleaseFileImpl& x_GetImpl(void);

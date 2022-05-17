@@ -34,6 +34,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -48,6 +49,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(edit);
+
+//#define REPORT_TIMING
 
 class CNewGBReleaseFileImpl
 {
@@ -118,7 +121,7 @@ public:
         }
         else if (m_reader->GetSubmit() && m_reader->GetSubmit()->IsSetSub()) {
             m_FFGenerator.SetSubmit(m_reader->GetSubmit()->GetSub());
-        }   
+        }
 
         m_current = m_flattened.begin();
     }
@@ -141,11 +144,13 @@ CNewGBReleaseFile::~CNewGBReleaseFile(void)
 {
 }
 
-void CNewGBReleaseFile::Read(THandler handler)
+void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
 {
     size_t i = 0;
     auto& cfg = CNcbiApplicationAPI::Instance()->GetConfig();
+    #ifdef REPORT_TIMING
     auto thresold = cfg.GetInt("asn2flat", "report_thresold", -1);
+    #endif
     auto s_allowed  = cfg.GetString("asn2flat", "allowed_indices", "");
     std::vector<CTempString> v_allowed;
     std::set<size_t> allowed;
@@ -166,25 +171,41 @@ void CNewGBReleaseFile::Read(THandler handler)
         {
             ++i;
             entry.Reset();
+            #ifdef REPORT_TIMING
             auto started = std::chrono::system_clock::now();
-            entry = m_Impl->GetNextEntry();
+            #endif
+
+            if (seqid.Empty())
+                entry = m_Impl->GetNextEntry();
+            else
+            {
+                auto seq = m_Impl->m_reader->LoadBioseq(seqid);
+                if (seq.NotEmpty())
+                {
+                    entry = Ref(new CSeq_entry);
+                    entry->SetSeq(*seq);
+                }
+            }
+
             if (entry)
             {
                 if (allowed.empty() || allowed.find(i) != allowed.end())
                 {
                     handler(entry);
+                    #ifdef REPORT_TIMING
                     auto stopped = std::chrono::system_clock::now();
 
                     auto lapsed = (stopped - started)/1ms;
                     if (thresold >=0 && lapsed >= thresold)
                         std::cerr << i << ":" << lapsed << "ms\n";
+                    #endif
                 }
 
             }
         }
-        while ( entry );
+        while ( entry && seqid.Empty());
     }
-    std::cerr << "Total seqs:" << i << "\n";
+    //std::cerr << "Total seqs:" << i << "\n";
 }
 
 
