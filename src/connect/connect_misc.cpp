@@ -279,7 +279,8 @@ CLogLatencyReport::~CLogLatencyReport()
         const auto latencies = Parse(*m_Handler);
 
         for (const auto& server : latencies) {
-            const auto& server_name = server.first;
+            const auto address = SSocketAddress::Parse(server.first);
+            const auto server_name = address ? address.AsString() : server.first;
             const auto& server_side = get<TServerSide>(server.second);
             ostringstream os;
             os << "server=" << server_name << "&latency=" << get<TLatency>(server.second).count();
