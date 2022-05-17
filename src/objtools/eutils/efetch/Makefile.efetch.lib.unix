@@ -1,0 +1,5 @@
+# $Id$
+
+ifeq "$(OSTYPE)" "cygwin"
+  efetch___.o: CXXFLAGS = -O $(ORIG_CXXFLAGS)
+endif
