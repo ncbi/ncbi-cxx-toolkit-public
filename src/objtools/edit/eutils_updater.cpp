@@ -190,34 +190,54 @@ public:
         return args;
     }
 
-    void SetFromArticle(const CCit_art& A)
+    static string GetFirstAuthor(const CAuth_list& authors)
     {
-        if (A.IsSetAuthors()) {
-            const CAuth_list& Au = A.GetAuthors();
-            if (Au.IsSetNames()) {
-                const auto& N = Au.GetNames();
-                if (N.IsStd()) {
-                    const auto& names = N.GetStd();
-                    if (! names.empty()) {
-                        const CAuthor& first_author = *names.front();
-                        if (first_author.IsSetName()) {
-                            const CPerson_id& id = first_author.GetName();
-                            if (id.IsName()) {
-                                const CName_std& std_name = id.GetName();
-                                if (std_name.IsSetLast()) {
-                                    this->SetAuthor(std_name.GetLast());
+        if (authors.IsSetNames()) {
+            const auto& N(authors.GetNames());
+            if (N.IsStd()) {
+                if (! N.GetStd().empty()) {
+                    const CAuthor& first_author(*N.GetStd().front());
+                    if (first_author.IsSetName()) {
+                        const CPerson_id& person(first_author.GetName());
+                        if (person.IsName()) {
+                            const CName_std& name_std(person.GetName());
+                            if (name_std.IsSetLast()) {
+                                string name(name_std.GetLast());
+                                if (name_std.IsSetInitials()) {
+                                    name += ' ';
+                                    for (char c : name_std.GetInitials()) {
+                                        if (isalpha(c)) {
+                                            if (islower(c)) {
+                                                c = toupper(c);
+                                            }
+                                            name += c;
+                                        }
+                                    }
                                 }
+                                return name;
                             }
                         }
                     }
-                } else if (N.IsMl()) {
-                    const auto& names = N.GetMl();
-                    if (! names.empty()) {
-                        this->SetAuthor(names.front());
-                    }
+                }
+            } else if (N.IsMl()) {
+                if (! N.GetMl().empty()) {
+                    return N.GetMl().front();
                 }
             }
         }
+
+        return {};
+    }
+
+    void SetFromArticle(const CCit_art& A)
+    {
+        if (A.IsSetAuthors()) {
+            string author = GetFirstAuthor(A.GetAuthors());
+            if (! author.empty()) {
+                this->SetAuthor(author);
+            }
+        }
+
         if (A.IsSetFrom() && A.GetFrom().IsJournal()) {
             const CCit_jour& J = A.GetFrom().GetJournal();
             if (J.IsSetTitle()) {
