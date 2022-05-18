@@ -160,6 +160,7 @@ private:
     bool x_Is5SList(CFeat_CI feat_ci);
     bool x_IsSingleMiscFeat(CFeat_CI feat_ci);
     string x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_object& comment);
+    string x_GetHumanSTRv2FeatureClauses(CBioseq_Handle bh, const CUser_object& comment);
     bool x_IsHumanSTR(const CUser_object& obj);
 
     string x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome_val);

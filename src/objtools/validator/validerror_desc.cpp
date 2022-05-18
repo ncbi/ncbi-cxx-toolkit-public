@@ -493,6 +493,9 @@ bool CValidError_desc::ValidateStructuredComment
     }
 
     // find prefix
+    if (prefix == "HumanSTR" && usr.HasField("Sequence attribution")) {
+        prefix = "HumanSTRv2";
+    }
     try {
         CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
         if (comment_rules) {
