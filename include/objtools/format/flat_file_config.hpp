@@ -676,7 +676,7 @@ public:
     // check if the given section is shown
     bool IsShownGenbankBlock(FGenbankBlocks fTGenbankBlocksMask) const
     {
-        return (m_fGenbankBlocks & fTGenbankBlocksMask) == fTGenbankBlocksMask;
+        return m_fGenbankBlocks & fTGenbankBlocksMask;
     }
 
     // set the given section to be shown
