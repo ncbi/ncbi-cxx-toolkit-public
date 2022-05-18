@@ -338,7 +338,7 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
             // find rule for this field
             CConstRef<CField_rule> real_field_rule = FindFieldRuleRef(encountered_field);
             if (!real_field_rule) {
-                if (!IsSetAllow_unlisted()) {
+                if (!GetAllow_unlisted()) {
                     // field not found, not legitimate field name
                     errors.push_back(TError(eSeverity_level_error,
                         encountered_field + " is not a valid field name"));
@@ -383,7 +383,7 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
                                             "Multiple values for " + label + " field"));
                 }
             } else {
-                if (!IsSetAllow_unlisted()) {
+                if (GetAllow_unlisted()) {
                     // field not found, not legitimate field name
                     errors.push_back(TError(eSeverity_level_error,
                                             label + " is not a valid field name"));
