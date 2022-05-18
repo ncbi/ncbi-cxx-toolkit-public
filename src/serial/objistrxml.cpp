@@ -2237,6 +2237,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                 TMemberIndex ind = first+1;
                 if (classType->GetMemberInfo(ind)->GetId().HasNotag()) {
                     TopFrame().SetNotag();
+                    if (x_IsStdXml() && !GetEnforcedStdXml()) {
+                        ETypeFamily type = GetRealTypeFamily(classType->GetMemberInfo(ind)->GetTypeInfo());
+                        m_SkipNextTag = type != eTypeFamilyPrimitive && type != eTypeFamilyContainer;
+                    }
                     return ind;
                 }
                 if ( NextTagIsClosing() )
