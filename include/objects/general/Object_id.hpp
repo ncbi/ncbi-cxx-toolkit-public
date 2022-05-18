@@ -208,7 +208,6 @@ inline
 bool CObject_id::GetGi(TIntId& value) const
 {
 #ifdef NCBI_INT8_GI
-    TId8 id8;
     return GetId8(value);
 #else
     if ( IsId() ) {
