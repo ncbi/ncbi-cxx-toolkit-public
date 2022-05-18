@@ -399,7 +399,7 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
     );
 
     req->SetRequestMethod(CEUtils_Request::eHttp_Get);
-    req->GetId().AddId(to_string(pmid));
+    req->GetId().AddId(NStr::NumericToString(pmid));
     req->SetRetMode(CEFetch_Request::eRetMode_xml);
 
     eutils::CPubmedArticleSet pas;
