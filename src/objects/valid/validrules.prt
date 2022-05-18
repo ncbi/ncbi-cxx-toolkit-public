@@ -1110,6 +1110,70 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
     allow-unlisted FALSE
   },
   {
+    prefix "##HumanSTRv2-START##" ,
+    fields {
+      {
+        field-name "Sequence attribution" ,
+        required TRUE } ,
+      {
+        field-name "STR locus name" ,
+        required TRUE } ,
+      {
+        field-name "Length-based allele" ,
+        required TRUE } ,
+      {
+        field-name "Minimum range bracket" ,
+        required TRUE } ,
+      {
+        field-name "Bracketed record seq." ,
+        required FALSE } ,
+      {
+        field-name "Sequencing technology" ,
+        required FALSE } ,
+      {
+        field-name "Sequencing assay code" ,
+        required FALSE } ,
+      {
+        field-name "Coverage" ,
+        required FALSE } ,
+      {
+        field-name "Length-based tech." ,
+        required FALSE } ,
+      {
+        field-name "Assembly" ,
+        required FALSE } ,
+      {
+        field-name "Chromosome" ,
+        required FALSE } ,
+      {
+        field-name "RefSeq Accession" ,
+        required FALSE } ,
+      {
+        field-name "Chrom. Location" ,
+        required FALSE } ,
+      {
+        field-name "ISFG minimum range" ,
+        required FALSE } ,
+      {
+        field-name "ISFG min. range code" ,
+        required FALSE } ,
+      {
+        field-name "Frequency reference" ,
+        required FALSE } ,
+      {
+        field-name "STR locus alt name" ,
+        required FALSE } ,
+      {
+        field-name "Historical bracketing" ,
+        required FALSE } ,
+      {
+        field-name "Notes" ,
+        required FALSE }
+    } ,
+    require-order TRUE ,
+    allow-unlisted FALSE
+  },
+  {
     prefix "##SymbiotaSpecimenReference-START##" ,
     fields {
       {

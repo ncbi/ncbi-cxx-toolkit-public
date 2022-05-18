@@ -549,8 +549,13 @@ string CAutoDef::x_GetFeatureClauses(const CBioseq_Handle& bh)
 
     CSeqdesc_CI d(bh, CSeqdesc::e_User);
     while (d) {
-        if (x_IsHumanSTR(d->GetUser())) {
-            return x_GetHumanSTRFeatureClauses(bh, d->GetUser());
+        const auto& uo = d->GetUser();
+        if (x_IsHumanSTR(uo)) {
+            return (
+                uo.HasField("Sequence attribution") ?
+                    x_GetHumanSTRv2FeatureClauses(bh, uo) :
+                    x_GetHumanSTRFeatureClauses(bh, uo)
+            );
         }
         ++d;
     }
@@ -1256,6 +1261,45 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
     }
     if (assay != "") {
         clause += " " + assay;
+    }
+    clause += " sequence";
+    return clause;
+}
+
+
+string CAutoDef::x_GetHumanSTRv2FeatureClauses(CBioseq_Handle bh, const CUser_object& comment)
+{
+    string locusName;
+    string lengthBasedAllele;
+    string bracketedRecordSeq;
+    string assayCode;
+
+    if (comment.IsSetData()) {
+        ITERATE(CUser_object::TData, it, comment.GetData()) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsStr() &&
+                (*it)->IsSetLabel() && (*it)->GetLabel().IsStr()) {
+
+                const string& label = (*it)->GetLabel().GetStr();
+                if (NStr::EqualNocase(label, "STR locus name")) {
+                    locusName = (*it)->GetData().GetStr();
+                }
+                else if (NStr::EqualNocase(label, "Length-based allele")) {
+                    lengthBasedAllele = (*it)->GetData().GetStr();
+                }
+                else if (NStr::EqualNocase(label, "Bracketed record seq.")) {
+                    bracketedRecordSeq = (*it)->GetData().GetStr();
+                }
+                else if (NStr::EqualNocase(label, "Sequencing assay code")) {
+                    assayCode = (*it)->GetData().GetStr();
+                }
+            }
+        }
+    }
+
+    string clause = "microsatellite " + locusName + " " + lengthBasedAllele + 
+        " " + bracketedRecordSeq;
+    if (assayCode != "") {
+        clause += " " + assayCode;
     }
     clause += " sequence";
     return clause;
