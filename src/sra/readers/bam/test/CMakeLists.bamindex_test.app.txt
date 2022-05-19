@@ -5,7 +5,7 @@ NCBI_begin_app(bamindex_test)
   NCBI_uses_toolkit_libraries(bamread xobjreadex)
   NCBI_project_watchers(vasilche)
 
-  NCBI_set_test_requires(in-house-resources -MSWin)
+  NCBI_set_test_requires(in-house-resources)
   NCBI_begin_test(bamindex_test_bai1)
     NCBI_set_test_command(bamindex_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam -index_type bai -q 20 -overlap -limit_count 1)
   NCBI_end_test()
