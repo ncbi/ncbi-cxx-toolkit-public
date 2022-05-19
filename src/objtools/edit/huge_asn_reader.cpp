@@ -134,8 +134,10 @@ CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
 
 CRef<CBioseq> CHugeAsnReader::LoadBioseq(CConstRef<CSeq_id> seqid) const
 {
-    auto it = m_bioseq_index.find(seqid);
+    auto it = m_bioseq_index.lower_bound(seqid);
     if (it == m_bioseq_index.end())
+        return {};
+    if (it->first->Compare(*seqid) != CSeq_id::E_SIC::e_YES)
         return {};
 
     auto obj_stream = x_MakeObjStream(it->second->m_pos);
