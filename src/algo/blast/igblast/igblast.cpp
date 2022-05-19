@@ -61,6 +61,9 @@ static int max_J_length = 70;
 static int max_allowed_V_end_to_J_end = max_allowed_VJ_distance_with_D + max_J_length;
 static int max_v_j_overlap = 7;
 static int j_wordsize = 7;
+static int min_J_position_diff = 100;
+static double reliable_J_match_factor = 0.5;
+static CRef<CScope> static_scope(0);
 
 static void s_ReadLinesFromFile(const string& fn, vector<string>& lines)
 {
@@ -492,6 +495,46 @@ CIgBlast::Run()
     x_SetAnnotation(annots, final_results);
 
     return final_results;
+};
+
+static bool s_CompareSeqAlignByScoreAndPosition(const CRef<CSeq_align> &x, const CRef<CSeq_align> &y)
+{
+    
+    int lx = x->GetAlignLength(), ly = y->GetAlignLength();
+    int jx_start = x->GetSeqStart(0);
+    int jy_start = y->GetSeqStart(0);
+    int sx = 0, sy = 0;
+    x->GetNamedScore(CSeq_align::eScore_Score, sx);
+    y->GetNamedScore(CSeq_align::eScore_Score, sy);
+    
+    int reliable_J_match = reliable_J_match_factor*
+        (static_scope->GetBioseqHandle(x->GetSeq_id(1)).GetBioseqLength() +
+         static_scope->GetBioseqHandle(y->GetSeq_id(1)).GetBioseqLength())/2;
+
+
+    //if there are additional J genes, consider using the 5' one if conditions met.
+    //this reflect the case where rearrangement is followed by downstream J's
+    if (lx > reliable_J_match && ly > reliable_J_match && abs(jx_start - jy_start) > min_J_position_diff) {
+        if (x->GetSeqStrand(0) == eNa_strand_minus){
+            return (jx_start > jy_start + min_J_position_diff && 
+                    sx>sy*reliable_J_match_factor);
+        } else {
+            return (jx_start < jy_start - min_J_position_diff && 
+                    sx>sy*reliable_J_match_factor);
+        }
+    } else if (sx != sy) {
+        return (sx > sy);
+    } else if (lx != ly) {
+        return (lx >= ly);
+    }
+ 
+    string x_id = NcbiEmptyString;
+    string y_id = NcbiEmptyString;
+    x->GetSeq_id(1).GetLabel(&x_id, CSeq_id::eContent);
+    y->GetSeq_id(1).GetLabel(&y_id, CSeq_id::eContent);
+
+    return (x_id < y_id);
+    
 };
 
 // Compare two seqaligns according to their evalue and coverage and name 
@@ -1081,7 +1124,8 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 else ++it;
             }
             /* sort according to score */
-            align_list.sort(s_CompareSeqAlignByScoreAndName);
+            static_scope = m_Scope;
+            align_list.sort(s_CompareSeqAlignByScoreAndPosition);
         }
 
         /* which one to keep, D or J? */
