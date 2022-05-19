@@ -21,6 +21,7 @@ build-toolkit:
     - echo "Building toolkit"
     - CI_CONAN_PATH=`echo ${CI_PROJECT_PATH}|sed 's|/|+|g'`
     - CI_CONAN_VERSION=`git describe --tag`
+    - CI_CONAN_VERSION=0.0.0
     - CI_CONAN_CHANNEL=${CI_COMMIT_BRANCH}
     - conan install . --build missing
     - cmake .
