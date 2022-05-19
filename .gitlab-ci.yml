@@ -4,4 +4,4 @@ push-build:
 artifacts:
   when: always
   paths:
-    - .
+    - ./
