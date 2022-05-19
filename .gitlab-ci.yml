@@ -1,0 +1,32 @@
+image:
+  name: ${CI_REGISTRY}/pd/do/images/base/production:latest
+  entrypoint: ["/bin/bash", "-c"]
+
+build-toolkit:
+  stage: build
+  script:
+    - git --version
+    - echo "Setting up conan"
+    - export PATH=~/.local/bin:$PATH
+    - pip install --upgrade --user pip
+    - pip install --user conan==${NCBI_CONAN_VERSION}
+    - conan install / || /bin/true
+    - conan profile update settings.compiler.libcxx=libstdc++11 default
+    - echo "Adding package repositories"
+    - echo "* our NCBI packages"
+    - conan remote add artifactory_virtual https://artifactory.ncbi.nlm.nih.gov/artifactory/api/conan/EXP-DO-CXX-DEP-MNG
+    - conan user -p "${NCBI_CONAN_UPLOADER_PASSWORD}" -r artifactory_virtual conan_uploader
+    - echo "Enabling GCC 7.3.0 stdlib. Necessary until CI-533 is closed."
+    - export LD_LIBRARY_PATH=/opt/ncbi/gcc/7.3.0/lib64/:$LD_LIBRARY_PATH
+    - echo "Building toolkit"
+    - CI_CONAN_PATH=`echo ${CI_PROJECT_PATH}|sed 's|/|+|g'`
+    - CI_CONAN_VERSION=`git describe --tag`
+    - CI_CONAN_CHANNEL=${CI_COMMIT_BRANCH}
+    - conan install . --build missing
+    - cmake .
+    - make VERBOSE=1
+    - conan create conanfile.py ${CI_PROJECT_NAME}/${CI_CONAN_VERSION}@${CI_CONAN_PATH}/${CI_CONAN_CHANNEL} --build missing
+    - conan upload ${CI_PROJECT_NAME}/${CI_CONAN_VERSION} -c -r artifactory_internal --all
+variables:
+  NCBI_CONAN_VERSION: $NCBI_CONAN_VERSION
+  NCBI_CONAN_UPLOADER_PASSWORD: $NCBI_CONAN_UPLOADER_PASSWORD
