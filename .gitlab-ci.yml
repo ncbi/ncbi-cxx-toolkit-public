@@ -1,5 +1,5 @@
 push-build:
-  stage: deploy
+  stage: build
   trigger: pd/cxxtk/cxx/ncbi-cxx-toolkit-core-conan
   artifacts:
     when: always
