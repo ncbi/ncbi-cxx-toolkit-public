@@ -17,7 +17,7 @@ REQUIRES = objects
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-CHECK_REQUIRES = -AIX -BSD -MSWin
+CHECK_REQUIRES = in-house-resources -AIX -BSD
 #CHECK_CMD = csra_test_mt
 
 WATCHERS = vasilche
