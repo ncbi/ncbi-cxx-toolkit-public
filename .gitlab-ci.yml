@@ -20,7 +20,6 @@ build-toolkit:
     - export LD_LIBRARY_PATH=/opt/ncbi/gcc/7.3.0/lib64/:$LD_LIBRARY_PATH
     - echo "Building toolkit"
     - CI_CONAN_PATH=`echo ${CI_PROJECT_PATH}|sed 's|/|+|g'`
-    - CI_CONAN_VERSION=`git describe --tag`
     - CI_CONAN_VERSION=0.0.0
     - CI_CONAN_CHANNEL=${CI_COMMIT_BRANCH}
     - conan install . --build missing
