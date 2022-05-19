@@ -655,7 +655,7 @@ else {
     for ( TSeqPos b = 0; b < nBins; ++b ) {
         TSeqPos seqPos = b << GetMinLevelBinShift();
         CBGZFPos overlap_fp = CBGZFPos::GetInvalid();
-        if ( b < m_Overlaps.size() ) { // BAI overlap table
+        if ( b < m_Overlaps.size() && m_Overlaps[b] ) { // BAI overlap table
             overlap_fp = m_Overlaps[b];
         }
         CBGZFPos prev_overlap_fp; // max overlap of previous bins on all levels
@@ -721,6 +721,11 @@ else {
             _ASSERT(iter != fp2sp.begin());
             // it could be after current page
             auto osp = min(seqPos, prev(iter)->second);
+            if ( b > 0 ) {
+                // overlap may overshot in case of empty previous bins
+                // that were explicitly marked as having no overlap
+                osp = max(osp, aln_over_starts[b-1]);
+            }
             aln_over_starts[b] = osp;
         }
     }
