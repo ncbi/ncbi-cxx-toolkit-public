@@ -216,11 +216,11 @@ int CBamIndexTestApp::s_CheckOverlaps(CBamRawDb& bam_raw_db)
     CStopWatch sw(CStopWatch::eStart);
     int32_t current_seq = -1;
     vector<SBinOverlapInfo> current_seq_overlaps;
+    size_t total_alignment_count = 0;
     size_t unmapped_count = 0;
     size_t nocigar_count = 0;
-    size_t total_count = 0;
     for ( CBamRawAlignIterator it(bam_raw_db); it; ++it ) {
-        ++total_count;
+        ++total_alignment_count;
         auto seq = it.GetRefSeqIndex();
         if ( !it.IsMapped() ) {
             ++unmapped_count;
@@ -234,7 +234,7 @@ int CBamIndexTestApp::s_CheckOverlaps(CBamRawDb& bam_raw_db)
             if ( current_seq >= 0 ) {
                 overlaps[current_seq].swap(current_seq_overlaps);
             }
-            cout <<"Start collecting overstart data for ref["<<seq<<"] = "
+            cout <<"Start collecting overlap data for ref["<<seq<<"] = "
                  <<bam_raw_db.GetRefName(seq)<<endl;
             current_seq = seq;
             current_seq_overlaps.clear();
@@ -270,18 +270,21 @@ int CBamIndexTestApp::s_CheckOverlaps(CBamRawDb& bam_raw_db)
         }
     }
     cout <<"Collected all real overlap data in "<<sw.Elapsed()<<"s"<<endl;
-    cout <<"Total alignments: "<<total_count
+    cout <<"Total alignments: "<<total_alignment_count
          <<", unmapped: "<<unmapped_count
          <<", no CIGAR: "<<nocigar_count
          <<endl;
 
+    size_t total_wrong_start_count = 0;
+    size_t total_decrease_start_count = 0;
+    size_t total_excess_page_count = 0;
     for ( auto& ref_it : overlaps ) {
         auto ref_index = ref_it.first;
         auto& ref = bam_raw_db.GetIndex().GetRef(ref_index);
         sw.Restart();
         const auto& overstart = ref.GetAlnOverStarts();
-        cout <<"Collected overstart data for ref["<<ref_index<<"] = "
-             <<bam_raw_db.GetRefName(ref_index)<<" in "<<sw.Elapsed()<<"s"<<endl;
+        cout <<"Collected overlap data for ref["<<ref_index<<"] = "
+             <<bam_raw_db.GetRefName(ref_index)<<" in "<<(sw.Elapsed()*1e3)<<"ms"<<endl;
         auto bin_count = max(overstart.size(), ref_it.second.size());
         size_t wrong_start_count = 0;
         size_t decrease_start_count = 0;
@@ -321,8 +324,9 @@ int CBamIndexTestApp::s_CheckOverlaps(CBamRawDb& bam_raw_db)
             }
             prev_calculated_start = calculated_start;
         }
-        cout <<"Done verifying overend data for ref["<<ref_index<<"] = "
-             <<bam_raw_db.GetRefName(ref_index)<<" ("<<excess_pages_count<<" excess pages) - ";
+        cout <<"Done verifying overlap data for ref["<<ref_index<<"] = "
+             <<bam_raw_db.GetRefName(ref_index)<<" ("
+             <<excess_pages_count<<" excess pages) - ";
         if ( wrong_start_count || decrease_start_count ) {
             cout <<"ERRORS:"<<endl;
             if ( wrong_start_count ) {
@@ -330,6 +334,26 @@ int CBamIndexTestApp::s_CheckOverlaps(CBamRawDb& bam_raw_db)
             }
             if ( decrease_start_count ) {
                 cout << "  decreased start in "<<decrease_start_count<<" bins"<<endl;
+            }
+        }
+        else {
+            cout <<"no errors."<<endl;
+        }
+        total_excess_page_count += excess_pages_count;
+        total_wrong_start_count += wrong_start_count;
+        total_decrease_start_count += decrease_start_count;
+    }
+    if ( overlaps.size() > 1 ) {
+        cout <<"Done verifying all overlap data ("
+             <<total_alignment_count<<" alignments, "
+             <<total_excess_page_count<<" excess pages) - ";
+        if ( total_wrong_start_count || total_decrease_start_count ) {
+            cout <<"ERRORS:"<<endl;
+            if ( total_wrong_start_count ) {
+                cout << "  wrong start in "<<total_wrong_start_count<<" bins"<<endl;
+            }
+            if ( total_decrease_start_count ) {
+                cout << "  decreased start in "<<total_decrease_start_count<<" bins"<<endl;
             }
         }
         else {
@@ -345,6 +369,10 @@ int CBamIndexTestApp::s_CheckOverstart(CBamRawDb& bam_raw_db)
     int error_code = 0;
     Uint8 total_file_scan_size = 0;
     Uint8 total_chunks_file_scan_size = 0;
+    size_t total_alignment_count = 0;
+    size_t total_wrong_start_count = 0;
+    size_t total_decrease_start_count = 0;
+    size_t total_excess_page_count = 0;
     for ( auto& q : queries ) {
         TSeqPos bin_size = bam_raw_db.GetIndex().GetMinBinSize();
         auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
@@ -352,12 +380,13 @@ int CBamIndexTestApp::s_CheckOverstart(CBamRawDb& bam_raw_db)
         auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
         CStopWatch sw(CStopWatch::eStart);
         const auto& overstart = ref.GetAlnOverStarts();
-        cout <<"Collected overstart data in "<<sw.Restart()<<"s"<<endl;
+        cout <<"Collected overstart data for ref["<<ref_index<<"] = "
+             <<bam_raw_db.GetRefName(ref_index)<<" in "<<(sw.Restart()*1e3)<<"ms"<<endl;
         cout <<"Verifying..."<<endl;
         size_t wrong_start_count = 0;
         size_t decrease_start_count = 0;
         TSeqPos prev_calculated_start = 0;
-        size_t total_alignment_count = 0;
+        size_t alignment_count = 0;
         size_t excess_pages_count = 0;
         for ( TSeqPos pos = s_BinStart(q.refseq_range.GetFrom(), bin_size);
               pos < q.refseq_range.GetToOpen() && pos < ref_len;
@@ -386,12 +415,12 @@ int CBamIndexTestApp::s_CheckOverstart(CBamRawDb& bam_raw_db)
                 }
             }
             for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size, CBamRawAlignIterator::eSearchByOverlap); it; ++it ) {
-                ++total_alignment_count;
+                ++alignment_count;
                 TSeqPos start = it.GetRefSeqPos();
                 actual_start = min(actual_start, s_BinStart(start, bin_size));
             }
             if ( verbose ) {
-                cout <<"Collected real overstart data @"<<pos<<" in "<<sw2.Elapsed()*1e3<<"ms"<<endl;
+                cout <<"Collected real overstart data @"<<pos<<" in "<<(sw2.Elapsed()*1e3)<<"ms"<<endl;
             }
             TSeqPos k = s_BinIndex(pos, bin_size);
             TSeqPos calculated_start = k < overstart.size()? overstart[k]: s_BinStart(pos, bin_size);
@@ -424,7 +453,9 @@ int CBamIndexTestApp::s_CheckOverstart(CBamRawDb& bam_raw_db)
             prev_calculated_start = calculated_start;
         }
         cout <<"Collected real overstart data in "<<sw.Elapsed()<<"s"<<endl;
-        cout <<"Done verifying overend data ("<<total_alignment_count<<" alignments, "<<excess_pages_count<<" excess pages) - ";
+        cout <<"Done verifying overstart data ("
+             <<alignment_count<<" alignments, "
+             <<excess_pages_count<<" excess pages) - ";
         if ( wrong_start_count || decrease_start_count ) {
             cout <<"ERRORS:"<<endl;
             if ( wrong_start_count ) {
@@ -432,6 +463,27 @@ int CBamIndexTestApp::s_CheckOverstart(CBamRawDb& bam_raw_db)
             }
             if ( decrease_start_count ) {
                 cout << "  decreased start in "<<decrease_start_count<<" bins"<<endl;
+            }
+        }
+        else {
+            cout <<"no errors."<<endl;
+        }
+        total_alignment_count += alignment_count;
+        total_excess_page_count += excess_pages_count;
+        total_wrong_start_count += wrong_start_count;
+        total_decrease_start_count += decrease_start_count;
+    }
+    if ( queries.size() > 1 ) {
+        cout <<"Done verifying all overstart data ("
+             <<total_alignment_count<<" alignments, "
+             <<total_excess_page_count<<" excess pages) - ";
+        if ( total_wrong_start_count || total_decrease_start_count ) {
+            cout <<"ERRORS:"<<endl;
+            if ( total_wrong_start_count ) {
+                cout << "  wrong start in "<<total_wrong_start_count<<" bins"<<endl;
+            }
+            if ( total_decrease_start_count ) {
+                cout << "  decreased start in "<<total_decrease_start_count<<" bins"<<endl;
             }
         }
         else {
@@ -452,6 +504,10 @@ int CBamIndexTestApp::s_CheckOverend(CBamRawDb& bam_raw_db)
     int error_code = 0;
     Uint8 total_file_scan_size = 0;
     Uint8 total_chunks_file_scan_size = 0;
+    size_t total_alignment_count = 0;
+    size_t total_wrong_end_count = 0;
+    size_t total_decrease_end_count = 0;
+    size_t total_excess_page_count = 0;
     for ( auto& q : queries ) {
         TSeqPos bin_size = bam_raw_db.GetIndex().GetMinBinSize();
         auto ref_index = bam_raw_db.GetRefIndex(q.refseq_id);
@@ -459,12 +515,13 @@ int CBamIndexTestApp::s_CheckOverend(CBamRawDb& bam_raw_db)
         auto ref_len = bam_raw_db.GetRefSeqLength(ref_index);
         CStopWatch sw(CStopWatch::eStart);
         const auto& overend = ref.GetAlnOverEnds();
-        cout <<"Collected overend data in "<<sw.Restart()<<"s"<<endl;
+        cout <<"Collected overend data for ref["<<ref_index<<"] = "
+             <<bam_raw_db.GetRefName(ref_index)<<" in "<<(sw.Restart()*1e3)<<"ms"<<endl;
         cout <<"Verifying..."<<endl;
         size_t wrong_end_count = 0;
         size_t decrease_end_count = 0;
         TSeqPos prev_calculated_end = 0;
-        size_t total_alignment_count = 0;
+        size_t alignment_count = 0;
         size_t excess_pages_count = 0;
         for ( TSeqPos pos = s_BinStart(q.refseq_range.GetFrom(), bin_size);
               pos < q.refseq_range.GetToOpen() && pos < ref_len;
@@ -493,12 +550,12 @@ int CBamIndexTestApp::s_CheckOverend(CBamRawDb& bam_raw_db)
                 }
             }
             for ( CBamRawAlignIterator it(bam_raw_db, q.refseq_id, pos, bin_size, CBamRawAlignIterator::eSearchByStart); it; ++it ) {
-                ++total_alignment_count;
+                ++alignment_count;
                 TSeqPos end = it.GetRefSeqPos()+max(1u, it.GetCIGARRefSize())-1;
                 actual_end = max(actual_end, s_BinEnd(end, bin_size));
             }
             if ( verbose ) {
-                cout <<"Collected real overend data @"<<pos<<" in "<<sw2.Elapsed()*1e3<<"ms"<<endl;
+                cout <<"Collected real overend data @"<<pos<<" in "<<(sw2.Elapsed()*1e3)<<"ms"<<endl;
             }
             TSeqPos k = s_BinIndex(pos, bin_size);
             TSeqPos calculated_end = k < overend.size()? overend[k]: s_BinEnd(pos, bin_size);
@@ -531,7 +588,9 @@ int CBamIndexTestApp::s_CheckOverend(CBamRawDb& bam_raw_db)
             prev_calculated_end = calculated_end;
         }
         cout <<"Collected real overend data in "<<sw.Elapsed()<<"s"<<endl;
-        cout <<"Done verifying overend data ("<<total_alignment_count<<" alignments, "<<excess_pages_count<<" excess pages) - ";
+        cout <<"Done verifying overend data ("
+             <<alignment_count<<" alignments, "
+             <<excess_pages_count<<" excess pages) - ";
         if ( wrong_end_count || decrease_end_count ) {
             cout << "ERRORS:"<<endl;
             if ( wrong_end_count ) {
@@ -539,6 +598,27 @@ int CBamIndexTestApp::s_CheckOverend(CBamRawDb& bam_raw_db)
             }
             if ( decrease_end_count ) {
                 cout << "  decreased end in "<<decrease_end_count<<" bins"<<endl;
+            }
+        }
+        else {
+            cout <<"no errors."<<endl;
+        }
+        total_alignment_count += alignment_count;
+        total_excess_page_count += excess_pages_count;
+        total_wrong_end_count += wrong_end_count;
+        total_decrease_end_count += decrease_end_count;
+    }
+    if ( queries.size() > 1 ) {
+        cout <<"Done verifying all overend data ("
+             <<total_alignment_count<<" alignments, "
+             <<total_excess_page_count<<" excess pages) - ";
+        if ( total_wrong_end_count || total_decrease_end_count ) {
+            cout <<"ERRORS:"<<endl;
+            if ( total_wrong_end_count ) {
+                cout << "  wrong end in "<<total_wrong_end_count<<" bins"<<endl;
+            }
+            if ( total_decrease_end_count ) {
+                cout << "  decreased end in "<<total_decrease_end_count<<" bins"<<endl;
             }
         }
         else {
