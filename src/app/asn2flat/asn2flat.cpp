@@ -372,6 +372,8 @@ private:
     bool                        m_Exception;
     bool                        m_FetchFail;
     bool                        m_PSGMode;
+    bool                        m_HugeFileMode;
+    string                      m_AccessionFilter;
 #ifdef USE_SNPLOADER
     CRef<CSNPDataLoader>        m_SNPDataLoader;
     unique_ptr<ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::Stub> m_SNPTrackStub;
@@ -537,6 +539,8 @@ int CAsn2FlatApp::Run()
 
     m_Exception = false;
     m_FetchFail = false;
+    m_HugeFileMode = false;
+    m_AccessionFilter.clear();
 
     // initialize conn library
     CONNECT_Init(&GetConfig());
@@ -653,6 +657,10 @@ int CAsn2FlatApp::Run()
 
     bool propagate = args[ "p" ];
 
+    if (args["accn"]) {
+        m_AccessionFilter = args["accn"].AsString();
+    }
+
     // do -batch mode before checking -huge flag
     if ( args[ "batch" ] ) {
         s_INSDSetOpen ( is_insdseq, m_Os );
@@ -664,33 +672,29 @@ int CAsn2FlatApp::Run()
         return 0;
     }
 
-    bool use_huge_files = ( args[ "huge" ] );
-    if (use_huge_files && !args["i"]) {
+    m_HugeFileMode = ( args[ "huge" ] );
+    if (m_HugeFileMode && !args["i"]) {
         NcbiCerr << "Use of -huge mode also requires use of the -i argument. Disabling -huge mode." << endl;
-        use_huge_files = false;
+        m_HugeFileMode = false;
     }
-    if (use_huge_files && args["i"].AsString() == "/dev/stdin") {
+    if (m_HugeFileMode && args["i"].AsString() == "/dev/stdin") {
         NcbiCerr << "Use of -huge mode is incompatible with -i /dev/stdin. Disabling -huge mode." << endl;
-        use_huge_files = false;
+        m_HugeFileMode = false;
     }
 
     // -huge flag plus -i input file (not piped) sets huge mode for all data types
-    if (use_huge_files)
+    if (m_HugeFileMode)
     {
         s_INSDSetOpen ( is_insdseq, m_Os );
         is.reset();
         CNewGBReleaseFile in (*m_FFGenerator, args["i"].AsString(), propagate );
         CRef<CSeq_id> seqid;
-        if (args["accn"]) {
-            string accn_filt;
-            accn_filt = args["accn"].AsString();
-            if (!accn_filt.empty())
-                {
-                    CBioseq::TId ids;
-                    CSeq_id::ParseIDs(ids, accn_filt);
-                    if (!ids.empty())
-                        seqid = ids.front();
-                }
+        if (!m_AccessionFilter.empty()) {
+            CBioseq::TId ids;
+            CSeq_id::ParseIDs(ids, m_AccessionFilter);
+            if (!ids.empty()) {
+                seqid = ids.front();
+            }
         }
         in.Read([this](CRef<CSeq_entry> se) { this->HandleSeqEntry(se); }, seqid);
         s_INSDSetClose ( is_insdseq, m_Os );
@@ -979,16 +983,11 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
 
     m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
 
-    string accn_filt = "";
-    if (args["accn"]) {
-        accn_filt = args["accn"].AsString();
-    }
-
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
 
-        if ( ! accn_filt.empty() && bsr) {
+        if ( ! m_AccessionFilter.empty() && bsr && ! m_HugeFileMode) {
             bool okay = false;
             for (auto& sid : bsr->GetId()) {
                 switch (sid->Which()) {
@@ -1004,11 +1003,11 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
                     case NCBI_SEQID(Gpipe):
                     {
                         const string accn_string = sid->GetSeqIdString();
-                        if ( accn_filt == accn_string ) {
+                        if ( m_AccessionFilter == accn_string ) {
                             okay = true;
                         }
                         const string fasta_str = sid->AsFastaString();
-                        if ( accn_filt == fasta_str ) {
+                        if ( m_AccessionFilter == fasta_str ) {
                             okay = true;
                         }
                         break;
