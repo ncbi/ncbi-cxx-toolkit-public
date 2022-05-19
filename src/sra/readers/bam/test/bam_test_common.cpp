@@ -74,6 +74,12 @@ void CBAMTestCommon::InitCommonArgs(CArgDescriptions& args,
     args.AddOptionalKey("index", "IndexFile",
                         "Explicit path to BAM index file",
                         CArgDescriptions::eString);
+    args.AddOptionalKey("index_type", "IndexType",
+                        "Type of BAM index to use",
+                        CArgDescriptions::eString);
+    args.SetConstraint("index_type",
+                       &(*new CArgAllow_Strings,
+                         "bai", "csi"));
     args.AddFlag("no_index", "Access BAM file without index");
     args.AddFlag("refseq_table", "Dump RefSeq table");
             
@@ -83,7 +89,6 @@ void CBAMTestCommon::InitCommonArgs(CArgDescriptions& args,
     args.AddDefaultKey("genome", "Genome",
                        "UCSC build number",
                        CArgDescriptions::eString, "");
-            
     args.AddOptionalKey("refseq", "RefSeqId",
                         "RefSeq id",
                         CArgDescriptions::eString);
@@ -136,6 +141,7 @@ bool CBAMTestCommon::ParseCommonArgs(const CArgs& args)
             reps.push_back(string(NCBI_GetTestDataPath()));
             reps.push_back(string(NCBI_GetTestDataPath())+"/traces02");
             reps.push_back(string(NCBI_GetTestDataPath())+"/traces04");
+            reps.push_back(string(NCBI_GetTestDataPath())+"/bam");
             //reps.push_back(NCBI_TRACES02_PATH);
             //reps.push_back(NCBI_TRACES04_PATH);
             vector<string> subdirs;
@@ -191,6 +197,9 @@ bool CBAMTestCommon::ParseCommonArgs(const CArgs& args)
     if ( !args["no_index"] ) {
         if ( args["index"] ) {
             index_path = args["index"].AsString();
+        }
+        else if ( args["index_type"] ) {
+            index_path = path+'.'+args["index_type"].AsString();
         }
         else {
             index_path = path;
