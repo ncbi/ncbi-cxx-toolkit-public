@@ -63,6 +63,7 @@ Section "DefaultSection" SecDflt
   File "igblastn.exe"
   File "igblastp.exe"
   File "edit_imgt_file.pl"
+  File "makeogrdb.py"
   File "ncbi-vdb-md.dll"
   File "makeblastdb.exe"
   File "blastdbcmd.exe"   
