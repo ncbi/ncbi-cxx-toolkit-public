@@ -3704,6 +3704,7 @@ KRMS	s	Sternwarte Kremsmuenster, Stift
 KRP	sb	Kebun Raya Purwodadi (Purwodadi Botanic Gardens, Indonesia)			
 KRSF	s	Koronivia Research Station			
 KRSU	s	Krasnoyarsk State University, Department of Biogeocoenology			
+KSA	s	Sejong National Arboretum			
 KSAN	s	Kimberley South African National Parks Herbarium			
 KSBS	s	Lawrence, University of Kansas, State Biological Survey of Kansas			
 KSC	s	Kansas State University			
@@ -7393,7 +7394,8 @@ UFG	s	Universidade Federal de Goias, Unidade de Conservacao
 UFH	s	University of Fort Hare, Botany Department			
 UFHNH	s	Utah Field House of Natural History State Park			
 UFJF	s	Universidade Federal de Juiz de Fora			
-UFMA	s	Universidade Federal do Maranhao, Curso de Farmacia			
+UFMA	sc	Universidade Federal do Maranhao, Curso de Farmacia			
+UFMA:LMBA	c	Universidade Federal do Maranhao, Curso de Farmacia,  Laboratorio de Microbiologia Basica e Aplicada do Departamento de Patologia	
 UFMG<BRA>	s	Universidade Federal de Minas Gerais			
 UFMI	s	Universidade Federal de Mato Grosso, Instituto de Biociencias			
 UFMT	s	Universidade Federal de Mato Grosso, Herbario Central			
