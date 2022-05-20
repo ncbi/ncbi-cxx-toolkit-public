@@ -1796,6 +1796,21 @@ void CFeatureItem::x_AddQualsIdx(
                 ft = bsx->GetFeatIndex (m_Feat);
                 if (! ft) {
                     ft = bsx->GetFeatureForProduct();
+                    if (! ft) {
+                        // RW-1646
+                        CBioseq_Handle hdl = ctx.GetHandle();
+                        CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+                        const CRef<CSeqMasterIndex>& midx = idx->GetMasterIndex();
+                        CRef<feature::CFeatTree> ftree = midx->GetFeatTree();
+                        ftree->AddGenesForFeat(m_Feat, ctx.GetAnnotSelector());
+                        try {
+                            const CMappedFeat mf = ftree->GetBestGene(m_Feat);
+                            if (mf) {
+                                gene_feat = &(mf.GetMappedFeature());
+                                gene_ref = &(mf.GetData().GetGene());
+                            }
+                        } catch (CException&) {}
+                    }
                 }
             }
             if (ft && (! is_mapped)) {
