@@ -251,7 +251,7 @@ public:
     CConstRef<CSeq_entry> GetTopSEP (void) const { return m_Tsep; }
     CConstRef<CSubmit_block> GetSbtBlk (void) const { return m_SbtBlk; }
     CConstRef<CSeq_descr> GetTopDescr (void) const { return m_TopDescr; }
-    CRef<feature::CFeatTree> GetFeatTree (void) { return m_FeatTree; }
+    CRef<feature::CFeatTree> GetFeatTree (void) const { return m_FeatTree; }
 
     const vector<CRef<CBioseqIndex>>& GetBioseqIndices(void);
 
