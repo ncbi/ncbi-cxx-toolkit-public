@@ -148,6 +148,7 @@ check_function_exists(vasprintf HAVE_VASPRINTF)
 check_function_exists(vprintf HAVE_VPRINTF)
 check_function_exists(vsnprintf HAVE_VSNPRINTF)
 check_function_exists(writev HAVE_WRITEV)
+check_function_exists(iconv_open HAVE_LIBICONV)
 
 # TODO Need to check the number of arguments for gethostbyaddr_r, gethostbyname_r, getservbyname_r 
 check_function_exists(gethostbyaddr_r NCBI_HAVE_GETHOSTBYADDR_R)
