@@ -231,6 +231,12 @@ void WriteErrors(const CValidError& eval, bool debug_mode)
 void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors)
 {
+    //static int count(1);
+    //if (count == 1367) {
+    //    cerr << "";
+    //}
+    //cerr << count++ << "\n";
+
     bool   problem_found = false;
 
     if (s_debugMode) {
@@ -424,6 +430,73 @@ void AddChromosomeNoLocation(vector< CExpectedError *>& expected_errors, CRef<CS
 
 
 // new case test ground
+
+BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeqdesc> sdesc(new CSeqdesc());
+    sdesc->SetUser().SetType().SetStr("StructuredComment");
+    entry->SetSeq().SetDescr().Set().push_back(sdesc);
+
+    sdesc->SetUser().AddField("StructuredCommentPrefix", "##MIGS-Data-START##", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("alt_elev", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("assembly", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("collection_date", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("country", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("depth", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("environment", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("investigation_type", "eukaryote", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("isol_growth_condt", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("sequencing_meth", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("project_name", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("ploidy", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("num_replicons", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("estimated_size", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("trophic_level", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("propagation", "foo", CUser_object::eParse_String);
+    sdesc->SetUser().AddField("lat_lon", "foo", CUser_object::eParse_String);
+
+    CRef<CSeqdesc> gdesc(new CSeqdesc());
+    gdesc->SetGenbank().SetKeywords().push_back("GSC:MIGS:2.1");
+    entry->SetSeq().SetDescr().Set().push_back(gdesc);
+
+    STANDARD_SETUP
+
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadKeywordForStrucComm",
+            "Structured Comment is non-compliant, keyword should be removed"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommMissingField",
+        "Required field finishing_strategy is missing when investigation_type has value 'eukaryote'"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid; the field value and/or name are incorrect"));
+    //AddChromosomeNoLocation(expected_errors, entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // if no keyword, no badkeyword error
+    entry->SetSeq().SetDescr().Set().pop_back();
+    delete expected_errors[0];
+    expected_errors[0] = nullptr;
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+        // make the comment valid, should complain about missing keyword
+        sdesc->SetUser().AddField("finishing_strategy", "foo", CUser_object::eParse_String);
+    //AddChromosomeNoLocation(expected_errors, entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+        // put keyword back, should have no errors
+        entry->SetSeq().SetDescr().Set().push_back(gdesc);
+    //AddChromosomeNoLocation(expected_errors, entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Descr_LatLonValue)
 {
     // prepare entry
@@ -9281,6 +9354,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 
     eval = validator.Validate(seh, options);
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadStrucCommInvalidFieldName",
+        "Sequencing Technology is not a valid field name"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadStrucCommMissingField",
         "Required field STR locus name is missing"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadStrucCommMissingField",
@@ -9462,72 +9537,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
     //no error if dna
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
     CLEAR_ERRORS
-    //AddChromosomeNoLocation(expected_errors, entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-    CLEAR_ERRORS
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
-{
-    // prepare entry
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CRef<CSeqdesc> sdesc(new CSeqdesc());
-    sdesc->SetUser().SetType().SetStr("StructuredComment");
-    entry->SetSeq().SetDescr().Set().push_back(sdesc);
-
-    sdesc->SetUser().AddField("StructuredCommentPrefix", "##MIGS-Data-START##", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("alt_elev", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("assembly", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("collection_date", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("country", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("depth", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("environment", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("investigation_type", "eukaryote", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("isol_growth_condt", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("sequencing_meth", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("project_name", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("ploidy", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("num_replicons", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("estimated_size", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("trophic_level", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("propagation", "foo", CUser_object::eParse_String);
-    sdesc->SetUser().AddField("lat_lon", "foo", CUser_object::eParse_String);
-
-    CRef<CSeqdesc> gdesc(new CSeqdesc());
-    gdesc->SetGenbank().SetKeywords().push_back("GSC:MIGS:2.1");
-    entry->SetSeq().SetDescr().Set().push_back(gdesc);
-
-    STANDARD_SETUP
-
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadKeywordForStrucComm",
-                                                 "Structured Comment is non-compliant, keyword should be removed"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommMissingField",
-                                                 "Required field finishing_strategy is missing when investigation_type has value 'eukaryote'"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid; the field value and/or name are incorrect"));
-    //AddChromosomeNoLocation(expected_errors, entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    // if no keyword, no badkeyword error
-    entry->SetSeq().SetDescr().Set().pop_back();
-    delete expected_errors[0];
-    expected_errors[0] = nullptr;
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-
-    // make the comment valid, should complain about missing keyword
-    sdesc->SetUser().AddField("finishing_strategy", "foo", CUser_object::eParse_String);
-    //AddChromosomeNoLocation(expected_errors, entry);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-    // put keyword back, should have no errors
-    entry->SetSeq().SetDescr().Set().push_back(gdesc);
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
