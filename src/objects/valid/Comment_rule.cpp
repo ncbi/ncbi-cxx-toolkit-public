@@ -383,7 +383,7 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
                                             "Multiple values for " + label + " field"));
                 }
             } else {
-                if (GetAllow_unlisted()) {
+                if (!GetAllow_unlisted()) {
                     // field not found, not legitimate field name
                     errors.push_back(TError(eSeverity_level_error,
                                             label + " is not a valid field name"));
