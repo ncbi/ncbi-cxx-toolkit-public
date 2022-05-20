@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(s_TestDescription)
 
     // Data comes from gene type
     s_GetObject("4511", eg_obj);
-    BOOST_CHECK_EQUAL(eg_obj.GetDescription(), "tRNA");
+    BOOST_CHECK_EQUAL(eg_obj.GetDescription(), "tRNA-Cys");
 }
 
 BOOST_AUTO_TEST_CASE(s_TestNomenclature)
