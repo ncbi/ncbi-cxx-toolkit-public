@@ -431,6 +431,9 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
         }
     }
 
+    if (perr) {
+        *perr = EError_val::eError_val_citation_not_found;
+    }
     return {};
 }
 
