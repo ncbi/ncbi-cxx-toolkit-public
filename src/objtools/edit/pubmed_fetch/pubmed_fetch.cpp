@@ -65,11 +65,20 @@ class CPubmedFetchApplication : public CNcbiApplication
         } else {
             upd.reset(new CEUtilsUpdater());
         }
-        CRef<CPub> pub(upd->GetPub(pmid));
-        *output << MSerial_AsnText << *pub;
+
+        EPubmedError err;
+        CRef<CPub>   pub(upd->GetPub(pmid, &err));
+        if (pub) {
+            *output << MSerial_AsnText << *pub;
+        }
 
         if (args["o"]) {
             args["o"].CloseFile();
+        }
+
+        if (! pub) {
+            cerr << "Error: " << err << endl;
+            return 1;
         }
 
         return 0;
