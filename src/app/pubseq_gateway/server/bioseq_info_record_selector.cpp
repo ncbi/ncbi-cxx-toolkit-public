@@ -50,7 +50,7 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
     CBioseqInfoRecord::TDateChanged     date_changed = 0;
 
     // First try: select among those which have seq_state as alive
-    // Pick the max version record (ans max date changed if more than one with
+    // Pick the max version record (and max date changed if more than one with
     // max version)
     for (size_t  k = 0; k < records.size(); ++k) {
         if (records[k].GetSeqState() != ncbi::psg::retrieval::SEQ_STATE_LIVE)
@@ -82,7 +82,7 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
     if (index != -1)
         return index;
 
-    // Second try: all records are not SEQ_STATE_ALIVE so select basing on
+    // Second try: all records are not SEQ_STATE_LIVE so select basing on
     // the max version (and max date changed if more than one with the max
     // version)
     index = 0;

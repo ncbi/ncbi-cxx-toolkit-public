@@ -36,6 +36,9 @@
 
 USING_IDBLOB_SCOPE;
 
+// Returns:
+// >= 0 => index of the record to be used
+// < 0  => it is impossible to choose
 ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records);
 
 #endif
