@@ -203,6 +203,26 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     // Here: there are more than one records so a record will be picked for
     // sure.
     ssize_t     index = SelectBioseqInfoRecord(records);
+    if (index < 0) {
+        // More than one and it was impossible to make a choice
+        app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
+                                  m_BioseqRequestStart);
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
+
+        if (m_NeedTrace)
+            m_Reply->SendTrace(
+                to_string(records.size()) + " bioseq info records were found however "
+                "it was impossible to choose one of them. So report as not found",
+                m_Request->GetStartTimestamp());
+
+        m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
+        m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
+                  eDiag_Error, "Could not resolve seq_id " +
+                  m_BioseqResolution.GetBioseqInfo().GetAccession() +
+                  " (many bioseq info records found and not able to choose one)",
+                  ePSGS_SkipLogging);
+        return;
+    }
 
     if (m_NeedTrace) {
         m_Reply->SendTrace(
