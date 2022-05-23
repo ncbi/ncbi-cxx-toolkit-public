@@ -104,6 +104,20 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
             default:
                 // More than one record; may be need to pick the latest version
                 ssize_t     index_to_pick = SelectBioseqInfoRecord(records);
+                if (index_to_pick < 0) {
+                    // Many found and could not select one => treat as not
+                    // found
+                    if (m_NeedTrace) {
+                        m_Reply->SendTrace(
+                            to_string(records.size()) + " bioseq info records "
+                            "were found in cache however it was impossible "
+                            "to choose one of them. So treat it as not found",
+                            m_Request->GetStartTimestamp());
+                    }
+                    cache_hit = false;
+                    break;
+                }
+
                 if (m_NeedTrace) {
                     m_Reply->SendTrace(
                         "Record with max version (and max date changed if "

@@ -542,9 +542,18 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     ssize_t  index_to_pick = 0;
     if (record_count > 1) {
         index_to_pick = SelectBioseqInfoRecord(records);
-
-        // Pretend there was exactly one record
-        record_count = 1;
+        if (index_to_pick < 0) {
+            if (m_Request->NeedTrace()) {
+                m_Reply->SendTrace(
+                    to_string(records.size()) + " bioseq info records were "
+                    "found however it was impossible to choose one of them. "
+                    "So report as not found",
+                    m_Request->GetStartTimestamp());
+            }
+        } else {
+            // Pretend there was exactly one record
+            record_count = 1;
+        }
     }
 
     if (record_count != 1) {
