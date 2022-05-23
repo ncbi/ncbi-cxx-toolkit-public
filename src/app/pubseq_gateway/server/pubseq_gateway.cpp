@@ -64,7 +64,7 @@ USING_NCBI_SCOPE;
 
 const unsigned short    kWorkersMin = 1;
 const unsigned short    kWorkersMax = 100;
-const unsigned short    kWorkersDefault = 32;
+const unsigned short    kWorkersDefault = 64;
 const unsigned short    kHttpPortMin = 1;
 const unsigned short    kHttpPortMax = 65534;
 const unsigned int      kListenerBacklogMin = 5;
@@ -106,7 +106,7 @@ const string            kDefaultSSLKeyFile = "";
 const string            kDefaultSSLCiphers = "EECDH+aRSA+AESGCM EDH+aRSA+AESGCM EECDH+aRSA EDH+aRSA !SHA !SHA256 !SHA384";
 const size_t            kDefaultShutdownIfTooManyOpenFDforHTTP = 0;
 const size_t            kDefaultShutdownIfTooManyOpenFDforHTTPS = 8000;
-const size_t            kDefaultProcessorMaxConcurrency = 200;
+const size_t            kDefaultProcessorMaxConcurrency = 800;
 
 static const string     kDaemonizeArgName = "daemonize";
 
