@@ -552,7 +552,7 @@ string CAutoDef::x_GetFeatureClauses(const CBioseq_Handle& bh)
         const auto& uo = d->GetUser();
         if (x_IsHumanSTR(uo)) {
             return (
-                uo.HasField("Sequence attribution") ?
+                uo.HasField("Bracketed record seq.", "") ?
                     x_GetHumanSTRv2FeatureClauses(bh, uo) :
                     x_GetHumanSTRFeatureClauses(bh, uo)
             );

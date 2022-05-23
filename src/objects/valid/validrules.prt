@@ -1114,7 +1114,7 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
     fields {
       {
         field-name "Sequence attribution" ,
-        required TRUE } ,
+        required FALSE } ,
       {
         field-name "STR locus name" ,
         required TRUE } ,
@@ -1123,16 +1123,16 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
         required TRUE } ,
       {
         field-name "Minimum range bracket" ,
-        required TRUE } ,
+        required FALSE } ,
       {
         field-name "Bracketed record seq." ,
-        required FALSE } ,
+        required TRUE } ,
       {
         field-name "Sequencing technology" ,
         required FALSE } ,
       {
         field-name "Sequencing assay code" ,
-        required FALSE } ,
+        required TRUE } ,
       {
         field-name "Coverage" ,
         required FALSE } ,
@@ -1146,10 +1146,10 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
         field-name "Chromosome" ,
         required FALSE } ,
       {
-        field-name "RefSeq Accession" ,
+        field-name "Ref. seq. accession" ,
         required FALSE } ,
       {
-        field-name "Chrom. Location" ,
+        field-name "Chrom. location" ,
         required FALSE } ,
       {
         field-name "ISFG minimum range" ,

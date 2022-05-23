@@ -493,7 +493,7 @@ bool CValidError_desc::ValidateStructuredComment
     }
 
     // find prefix
-    if (prefix == "HumanSTR" && usr.HasField("Sequence attribution")) {
+    if (prefix == "HumanSTR" && usr.HasField("Bracketed record seq.", "")) {
         prefix = "HumanSTRv2";
     }
     try {
