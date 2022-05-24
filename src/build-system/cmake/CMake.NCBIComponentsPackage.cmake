@@ -142,6 +142,14 @@ NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
 #############################################################################
+# Iconv
+if(DEFINED CONAN_LIBICONV_ROOT)
+    set(ICONV_LIBS ${CONAN_LIBS_LIBICONV})
+    set(HAVE_LIBICONV 1)
+    set(NCBI_REQUIRE_Iconv_FOUND YES)
+endif()
+
+#############################################################################
 # LMDB
 NCBI_define_Pkgcomponent(NAME LMDB PACKAGE lmdb)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
