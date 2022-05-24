@@ -297,11 +297,6 @@ net_ngs_base=/net/snowman/vol/projects/trace_software/ngs/ngs-versions
 
 # : ${ODBC_PATH:="/opt/machine/merant"}
 
-case "$ncbi_platform" in
-    *MAC ) ;;
-    * ) : ${OPENGL_PATH=$NCBI/Mesa-7.0.2-ncbi2} ;;
-esac
-
 : ${OPENTRACING_PATH=$NCBI/opentracing-cpp-1.6.0}
 
 case "$ncbi_platform" in
