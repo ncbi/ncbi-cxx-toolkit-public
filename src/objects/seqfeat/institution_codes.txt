@@ -8312,6 +8312,7 @@ ZFSN	s	Laboratoire de Zoologie de la Faculte Des Sciences
 ZGC	s	The Zamorin's Guruvayurappan College			
 ZGLC	s	Natural History Museum, Limassol			
 ZHAN	s	Zhanjiang Teachers College, Biology Department			
+ZHKUCC	sc	Zhongkai University of Agriculture and Engineering			
 ZhM	s	Zhejinag Museum			
 ZHR	s	Zhiguli State Nature Reserve			
 ZIA	s	National Academy of Sciences of Armenia			

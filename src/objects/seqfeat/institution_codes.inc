@@ -8345,6 +8345,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZGC\ts\tThe Zamorin's Guruvayurappan College\t\t\t",
 "ZGLC\ts\tNatural History Museum, Limassol\t\t\t",
 "ZHAN\ts\tZhanjiang Teachers College, Biology Department\t\t\t",
+"ZHKUCC\tsc\tZhongkai University of Agriculture and Engineering\t\t\t",
 "ZhM\ts\tZhejinag Museum\t\t\t",
 "ZHR\ts\tZhiguli State Nature Reserve\t\t\t",
 "ZIA\ts\tNational Academy of Sciences of Armenia\t\t\t",
