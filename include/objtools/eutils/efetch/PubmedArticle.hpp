@@ -39,12 +39,24 @@
 #ifndef eutils__OBJTOOLS_EUTILS_EFETCH_PUBMEDARTICLE_HPP
 #define eutils__OBJTOOLS_EUTILS_EFETCH_PUBMEDARTICLE_HPP
 
-#include <objects/pubmed/Pubmed_entry.hpp>
+#include <locale>
+#include <serial/iterator.hpp>
 
 // generated includes
 #include <objtools/eutils/efetch/PubmedArticle_.hpp>
 
 // generated classes
+
+BEGIN_NCBI_NAMESPACE;
+BEGIN_NAMESPACE(objects);
+class CPubmed_entry;
+class CDate;
+class CTitle;
+class CArticleIdSet;
+END_NAMESPACE(objects);
+END_NAMESPACE(ncbi);
+
+
 
 BEGIN_eutils_SCOPE // namespace eutils::
 
@@ -77,6 +89,108 @@ CPubmedArticle::CPubmedArticle(void)
 
 
 /////////////////// end of CPubmedArticle inline methods
+
+
+/////////////////// Helper classes and functions also used by CPubmedBookArticle
+
+class CPubDate;
+
+static std::string s_CleanupText(std::string str);
+static ncbi::CRef<ncbi::objects::CDate> s_GetDateFromPubDate(const CPubDate& pub_date);
+static ncbi::CRef<ncbi::objects::CDate> s_GetDateFromPubMedPubDate(const CPubMedPubDate& pdate);
+static std::string s_GetArticleTitleStr(const CArticleTitle& article_title);
+static std::string s_GetVernacularTitleStr(const CVernacularTitle& vernacular_title);
+static ncbi::CRef<ncbi::objects::CTitle> s_MakeTitle(
+    const std::string& title_str,
+    const std::string& vernacular_title_str);
+static std::string s_GetAuthorMedlineName(const CAuthor& author);
+static std::string s_GetPagination(const CPagination& pagination);
+static ncbi::CRef<ncbi::objects::CArticleIdSet> s_GetArticleIdSet(
+    const CArticleIdList& article_id_list,
+    const CArticle* article);
+static void s_FillGrants(std::list<std::string>& id_nums, const CGrantList& grant_list);
+
+
+template <class CharT>
+inline auto get_ctype_facet() -> decltype(std::use_facet<std::ctype<CharT>>(std::locale()))
+{
+    static const std::locale s_Locale("C");
+    static const auto& s_CType = std::use_facet<std::ctype<CharT>>(s_Locale);
+    return s_CType;
+}
+
+
+template <class CharT>
+inline auto get_ctype_facet(const std::locale& loc) -> decltype(std::use_facet<std::ctype<CharT>>(std::locale()))
+{
+    static const auto& s_CType = std::use_facet<std::ctype<CharT>>(loc);
+    return s_CType;
+}
+
+
+static std::string s_TextToString(const CText& text);
+
+template<class TE>
+typename std::enable_if<std::is_member_function_pointer<decltype(&TE::IsText)>::value, std::string>::type
+s_TextOrOtherToString(const TE& te) {
+    if (te.IsText()) {
+        return s_TextToString(te.GetText());
+    }
+    else {
+        std::string ret;
+        for (ncbi::CStdTypeConstIterator<std::string> j(Begin(te)); j; ++j) {
+            ret.append(*j);
+        }
+        return ret;
+    }
+}
+
+template<class TE>
+typename std::enable_if<std::is_member_function_pointer<decltype(&TE::IsSetText)>::value, std::string>::type
+s_TextOrOtherToString(const TE& te) {
+    if (te.IsSetText()) {
+        return s_TextListToString(te.GetText());
+    }
+    else {
+        std::string ret;
+        for (ncbi::CStdTypeConstIterator<std::string> j(Begin(te)); j; ++j) {
+            ret.append(*j);
+        }
+        return ret;
+    }
+}
+
+template<class TE>
+std::string s_TextListToString(const std::list<ncbi::CRef<TE>>& text_list)
+{
+    std::string ret;
+    for (auto it : text_list) {
+        ret.append(s_TextToString(*it));
+    }
+    return ret;
+}
+
+template<class TE>
+std::string s_TextOrOtherListToString(const std::list<ncbi::CRef<TE>>& text_list)
+{
+    std::string ret;
+    for (auto it : text_list) {
+        ret.append(s_TextOrOtherToString(*it));
+    }
+    return ret;
+}
+
+
+template<class D> ncbi::CRef<ncbi::objects::CTitle> s_GetTitle(const D& doc)
+{
+    std::string title_str;
+    if (doc.IsSetArticleTitle()) title_str = s_GetArticleTitleStr(doc.GetArticleTitle());
+    std::string vernacular_title_str;
+    if (doc.IsSetVernacularTitle()) {
+        vernacular_title_str = s_GetVernacularTitleStr(doc.GetVernacularTitle());
+    }
+    return s_MakeTitle(title_str, vernacular_title_str);
+}
 
 
 END_eutils_SCOPE // namespace eutils::

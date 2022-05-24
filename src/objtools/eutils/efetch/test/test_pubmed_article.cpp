@@ -55,9 +55,6 @@ public:
 
     virtual void Init(void);
     virtual int Run(void);
-
-private:
-    void x_ProcessArticle(const eutils::CPubmedArticle& article, const MSerial_Format& fmt) const;
 };
 
 
@@ -73,6 +70,8 @@ void CTestApplication::Init(void)
     args->SetConstraint("ofmt", &(*new CArgAllow_Strings, "xml", "asn", "asnb", "json"));
 
     args->AddFlag("set", "Read CPubmedArticleSet");
+    args->AddFlag("book", "Read CPubmedBookArticle objects");
+    args->SetDependency("set", CArgDescriptions::eExcludes, "book");
 
     args->SetUsageContext(GetArguments().GetProgramBasename(), "test_pubmed_article", false);
 
@@ -81,10 +80,11 @@ void CTestApplication::Init(void)
 }
 
 
-void CTestApplication::x_ProcessArticle(const eutils::CPubmedArticle& article, const MSerial_Format& fmt) const
+template<class TA>
+void ProcessArticle(const TA& article, const MSerial_Format& ofmt)
 {
     auto entry = article.ToPubmed_entry();
-    cout << fmt << *entry;
+    cout << ofmt << *entry;
 }
 
 
@@ -109,14 +109,25 @@ int CTestApplication::Run(void)
         eutils::CPubmedArticleSet articles;
         in >> *ifmt >> articles;
         for (auto& it : articles.GetPP().GetPP()) {
-            if (!it->IsPubmedArticle()) continue;
-            x_ProcessArticle(it->GetPubmedArticle(), *ofmt);
+            if (it->IsPubmedArticle()) {
+                ProcessArticle<eutils::CPubmedArticle>(it->GetPubmedArticle(), *ofmt);
+            }
+            else if (it->IsPubmedBookArticle()) {
+                ProcessArticle(it->GetPubmedBookArticle(), *ofmt);
+            }
         }
     }
     else {
-        eutils::CPubmedArticle article;
-        in >> *ifmt >> article;
-        x_ProcessArticle(article, *ofmt);
+        if (args["book"].AsBoolean()) {
+            eutils::CPubmedBookArticle book_article;
+            in >> *ifmt >> book_article;
+            ProcessArticle(book_article, *ofmt);
+        }
+        else {
+            eutils::CPubmedArticle article;
+            in >> *ifmt >> article;
+            ProcessArticle(article, *ofmt);
+        }
     }
     return 0;
 }
