@@ -382,15 +382,13 @@ string(APPEND _info "${NCBITEST_NAME}\n")
 string(APPEND _info "======================================================================\n")
 string(APPEND _info "\nCommand line: ${_test_cmd} ${_test_args}\n\n")
 if (WIN32)
-   string(APPEND _info "\nPATH=ENV{PATH}\n\n")
+   string(APPEND _info "\nPATH=$ENV{PATH}\n\n")
    execute_process(
             COMMAND          python --version
             OUTPUT_VARIABLE  _output
             RESULT_VARIABLE  _retcode
    )
-   if (${_retcode} EQUAL 0)
-        string(APPEND _info "python found: ${_output}\n")
-   endif()
+   string(APPEND _info "python --version: retcode=${_retcode}: ${_output}\n\n")
 endif()
 string(APPEND _info ${_out})
 string(APPEND _info "Start time   : ${_test_start}\n")
