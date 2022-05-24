@@ -182,7 +182,7 @@ bool SNetServiceIterator_OmitPenalized::Next()
 }
 
 DEFINE_STATIC_FAST_MUTEX(s_RndLock);
-static CRandom s_RandomIteratorGen((CRandom::TValue) time(NULL));
+static struct R : CRandom { R() { Randomize(); } } s_RandomIteratorGen;
 
 static CRandom::TValue
 s_GetRand(CRandom::TValue max_value)
