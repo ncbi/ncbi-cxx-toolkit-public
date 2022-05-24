@@ -41,6 +41,7 @@
 #include <regex>
 #include <unordered_map>
 #include <serial/iterator.hpp>
+#include <objects/pubmed/Pubmed_entry.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
@@ -71,22 +72,6 @@ CPubmedArticle::~CPubmedArticle(void)
 
 BEGIN_LOCAL_NAMESPACE;
 
-template <class CharT>
-inline auto get_ctype_facet() -> decltype(use_facet<ctype<CharT>>(locale()))
-{
-    static const locale s_Locale("C");
-    static const auto& s_CType = use_facet<ctype<CharT>>(s_Locale);
-    return s_CType;
-}
-
-template <class CharT>
-inline auto get_ctype_facet(const locale& loc) -> decltype(use_facet<ctype<CharT>>(locale()))
-{
-    static const auto& s_CType = use_facet<ctype<CharT>>(loc);
-    return s_CType;
-}
-
-
 template <typename StringT>
 void s_ToLower(StringT& str) {
     static const auto& s_Facet = get_ctype_facet<typename StringT::value_type>(locale());
@@ -105,7 +90,7 @@ void s_ToUpper(StringT& str, const locale& loc = locale("C")) {
 }
 
 
-bool s_StringToInt(const string& str, int& i)
+static bool s_StringToInt(const string& str, int& i)
 {
     static const auto& s_Facet = get_ctype_facet<char>();
     i = 0;
@@ -165,7 +150,7 @@ void s_ForeachToken(container_type& container, check_type f, proc_type proc)
 
 static const char* s_UTF8LocaleName = "en_US.UTF-8";
 
-string wstring_to_utf8(const wstring& str)
+static string wstring_to_utf8(const wstring& str)
 {
     typedef codecvt<wchar_t, char, mbstate_t> facet_type;
     locale mylocale(s_UTF8LocaleName);
@@ -178,7 +163,7 @@ string wstring_to_utf8(const wstring& str)
     return string(str2.get(), dptr - str2.get());
 }
 
-wstring utf8_to_wstring(const string& str)
+static wstring utf8_to_wstring(const string& str)
 {
     typedef codecvt<wchar_t, char, mbstate_t> facet_type;
     locale mylocale(s_UTF8LocaleName);
@@ -1064,6 +1049,7 @@ static unordered_map<wchar_t, const wchar_t*> s_AsciiConvTable{
     {0xFB03, L" ffi "}, {0xFB04, L" ffl "}
 };
 
+
 static string s_TranslateToAscii(const wstring& str)
 {
     wstring result;
@@ -1082,71 +1068,16 @@ static string s_TranslateToAscii(const wstring& str)
 }
 
 
-template<class TE> string s_CTextListToString(const list<CRef<TE>>& text_list);
-
-template<class TCD> string s_CTextOrCharDataToString(const TCD& tcd) {
-    return tcd.IsSetText() ? s_CTextListToString(tcd.GetText()) : tcd.Get_CharData();
-}
-
-
-string s_TextToString(const CText& text) {
-    const auto& txt = text.GetEBISSU();
-    switch (txt.Which()) {
-    case CText::TEBISSU::e_B:
-        return s_CTextOrCharDataToString(txt.GetB());
-    case CText::TEBISSU::e_I:
-        return s_CTextOrCharDataToString(txt.GetI());
-    case CText::TEBISSU::e_Sup:
-        return "(" + s_CTextOrCharDataToString(txt.GetSup()) + ")";
-    case CText::TEBISSU::e_Sub:
-        return s_CTextOrCharDataToString(txt.GetSub());
-    case CText::TEBISSU::e_U:
-        return s_CTextOrCharDataToString(txt.GetU());
-    default:
-        return "";
-    }
-}
-
-
 template<class TE>
-string s_CTextListToString(const list<CRef<TE>>& text_list)
+std::wstring s_TextOrOtherListToWstring(const std::list<ncbi::CRef<TE>>& text_list)
 {
-    string ret;
-    for (auto it : text_list) {
-        ret.append(s_TextToString(*it));
-    }
-    return ret;
-}
-
-
-template<class TE>
-string s_TextListToString(const list<CRef<TE>>& text_list)
-{
-    string ret;
-    for (auto it : text_list) {
-        if (it->IsText()) {
-            ret.append(s_TextToString(it->GetText()));
-        }
-        else {
-            for (CStdTypeConstIterator<string> j(Begin(*it)); j; ++j) {
-                ret.append(*j);
-            }
-        }
-    }
-    return ret;
-}
-
-
-template<class TE>
-wstring s_TextListToWstring(const list<CRef<TE>>& text_list)
-{
-    return utf8_to_wstring(s_TextListToString(text_list));
+    return utf8_to_wstring(s_TextOrOtherListToString(text_list));
 }
 
 
 template<class TCD>
-wstring s_TextOrCharDataToWstring(const TCD& tcd) {
-    return utf8_to_wstring(s_CTextOrCharDataToString(tcd));
+std::wstring s_TextOrOtherToWstring(const TCD& tcd) {
+    return utf8_to_wstring(s_TextOrOtherToString(tcd));
 }
 
 
@@ -1177,43 +1108,6 @@ static wstring s_GetInitialsFromForeName(wstring fore_name)
             return tokens.front().substr(0, 1);
     }
     return L"";
-}
-
-
-static string s_GetAuthorMedlineName(const CAuthor& author)
-{
-    wstring author_medline_name;
-    if (author.GetLC().IsCollectiveName()) {
-        author_medline_name = s_TextOrCharDataToWstring(author.GetLC().GetCollectiveName());
-        if (!author_medline_name.empty() && author_medline_name.back() != L'.')
-            author_medline_name.append(L".");
-    }
-    else if (author.GetLC().IsLFIS()) {
-        // Personal name;
-        auto& lfis = author.GetLC().GetLFIS();
-        author_medline_name = utf8_to_wstring(lfis.GetLastName());
-        // Initials
-        wstring initials;
-        if (lfis.IsSetInitials())
-            initials = utf8_to_wstring(lfis.GetInitials());
-        else if (lfis.IsSetForeName())
-            initials = s_GetInitialsFromForeName(utf8_to_wstring(lfis.GetForeName()));
-        if (!initials.empty())
-            author_medline_name.append(L" " + initials);
-        if (lfis.IsSetSuffix())
-            author_medline_name.append(L" " + s_TextOrCharDataToWstring(lfis.GetSuffix()));
-    }
-    return s_TranslateToAscii(author_medline_name);
-}
-
-
-static string s_CleanupText(string str)
-{
-    for (char& cch : str) {
-        if (cch == '\r' || cch == '\n' || cch == '\t')
-            cch = ' ';
-    }
-    return str;
 }
 
 
@@ -1267,27 +1161,6 @@ static pubmed_date_t s_GetPubmedDate(const CPubDate& pub_date)
 }
 
 
-static CRef<CDate> s_GetDateFromPubDate(const CPubDate& pub_date)
-{
-    static const char* s_SeasonTab[] = { "Winter", "Spring", "Summer", "Autumn" };
-    pubmed_date_t pm_pub_date = s_GetPubmedDate(pub_date);
-    CRef<CDate> date(new CDate());
-    CDate_std& date_std = date->SetStd();
-    date_std.SetYear(pm_pub_date._year);
-    if (pm_pub_date._month != 0) {
-        if (pm_pub_date._month < 13) {
-            date_std.SetMonth(pm_pub_date._month);
-            if (pm_pub_date._day != 0)
-                date_std.SetDay(pm_pub_date._day);
-        }
-        else {
-            date_std.SetSeason(s_SeasonTab[pm_pub_date._month - 13]);
-        }
-    }
-    return date;
-}
-
-
 static CRef<CDate> s_GetDateFromArticleDate(const CArticleDate& adate)
 {
     CRef<CDate> date(new CDate());
@@ -1306,69 +1179,6 @@ static CRef<CDate> s_GetDateFromArticleDate(const CArticleDate& adate)
         date->SetStr(str_date);
     }
     return date;
-}
-
-
-static CRef<CDate> s_GetDateFromPubDate(const CPubMedPubDate& pdate)
-{
-    CRef<CDate> date(new CDate());
-    try {
-        // Try integer values
-        CDate_std& std_date = date->SetStd();
-        std_date.SetYear(NStr::StringToNumeric<CDate_std::TYear>(pdate.GetYear().Get()));
-        std_date.SetMonth(NStr::StringToNumeric<CDate_std::TMonth>(pdate.GetMonth().Get()));
-        std_date.SetDay(NStr::StringToNumeric<CDate_std::TDay>(pdate.GetDay().Get()));
-        if (pdate.IsSetHM()) {
-            try {
-                // Try integer time, ignore on error
-                auto& hm = pdate.GetHM();
-                std_date.SetHour(NStr::StringToNumeric<CDate_std::THour>(hm.GetHour().Get()));
-                if (hm.IsSetMS()) {
-                    auto& ms = hm.GetMS();
-                    std_date.SetMinute(NStr::StringToNumeric<CDate_std::TMinute>(ms.GetMinute().Get()));
-                    if (ms.IsSetSecond()) {
-                        std_date.SetSecond(NStr::StringToNumeric<CDate_std::TSecond>(ms.GetSecond().Get()));
-                    }
-                }
-            }
-            catch (...) {}
-        }
-    }
-    catch (...) {
-        // Use string values
-        string str_date = pdate.GetYear();
-        if (!pdate.GetMonth().Get().empty()) str_date += " " + pdate.GetMonth();
-        if (!pdate.GetDay().Get().empty()) str_date += " " + pdate.GetDay();
-        date->SetStr(str_date);
-    }
-    return date;
-}
-
-
-static CRef<CTitle> s_GetTitle(const CMedlineCitation& medlineCitation)
-{
-    CRef<CTitle> title;
-    string title_str = s_TranslateToAscii(s_TextListToWstring(
-        medlineCitation.GetArticle().GetArticleTitle().GetArticleTitle()));
-    string vernacular_title_str;
-    if (medlineCitation.GetArticle().IsSetVernacularTitle()) {
-        vernacular_title_str = s_TranslateToAscii(s_TextListToWstring(
-            medlineCitation.GetArticle().GetVernacularTitle().Get()));
-    }
-    if (!title_str.empty() || !vernacular_title_str.empty()) {
-        title.Reset(new CTitle());
-        if (!title_str.empty()) {
-            CRef<CTitle::C_E> name(new CTitle::C_E());
-            name->SetName(title_str);
-            title->Set().push_back(name);
-        }
-        if (!vernacular_title_str.empty()) {
-            CRef<CTitle::C_E> name(new CTitle::C_E());
-            name->SetTrans(vernacular_title_str);
-            title->Set().push_back(name);
-        }
-    }
-    return title;
 }
 
 
@@ -1401,38 +1211,6 @@ static CRef<CTitle> s_GetJournalTitle(const CPubmedArticle& pubmed_article)
     }
 
     return title;
-}
-
-
-static string s_GetPagination(const CPagination& pagination)
-{
-    if (pagination.IsSEM()) {
-        auto& sem = pagination.GetSEM();
-        if (sem.IsSetStartPage()) {
-            if (sem.IsSetEndPage()) return sem.GetStartPage() + "-" + sem.GetEndPage();
-            else return sem.GetStartPage();
-        }
-    }
-
-    string pages = pagination.GetMedlinePgn();
-    list<string> parts;
-    s_ForeachToken(pages, [](char cch) -> bool { return cch != ','; },
-        [&parts](string::iterator p, string::iterator q)->string::iterator {
-        string x(p, q);
-        x = regex_replace(x, regex("\\s+"), "");
-        if (!x.empty()) {
-            regex r("^(.*?)-(.*)$");
-            smatch ma;
-            regex_search(x, ma, r);
-            if (ma.empty() || ma.str(1).length() <= ma.str(2).length())
-                parts.push_back(x);
-            else
-                parts.push_back(ma.str(1) + "-" + ma.str(1).substr(0, ma.str(1).length() - ma.str(2).length()) + ma.str(2));
-        }
-        return q;
-    });
-    return parts.empty() ? "" : accumulate(next(parts.begin()), parts.end(), parts.front(),
-            [](const string& s1, const string& s2)->string { return s1 + ',' + s2; });
 }
 
 
@@ -1541,7 +1319,7 @@ static CRef<CImprint> s_GetImprint(const CPubmedArticle& pubmed_article)
             string pub_status = CPubMedPubDate::C_Attlist::GetTypeInfo_enum_EAttlist_PubStatus()->
                 FindName(pub_date->GetAttlist().GetPubStatus(), false);
             pub_stat_date->SetPubstatus(s_GetPublicationStatusId(pub_status));
-            pub_stat_date->SetDate(*s_GetDateFromPubDate(*pub_date));
+            pub_stat_date->SetDate(*s_GetDateFromPubMedPubDate(*pub_date));
             date_set->Set().push_back(pub_stat_date);
         }
         imprint->SetHistory(*date_set);
@@ -1586,7 +1364,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                     CRef<CPerson_id> person(new CPerson_id());
                     if (author->GetLC().IsCollectiveName()) {
                         person->SetConsortium(s_TranslateToAscii(
-                            s_TextOrCharDataToWstring(author->GetLC().GetCollectiveName())));
+                            s_TextOrOtherToWstring(author->GetLC().GetCollectiveName())));
                     }
                     else {
                         person->SetMl(s_TranslateToAscii(utf8_to_wstring(s_GetAuthorMedlineName(*author))));
@@ -1598,7 +1376,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                         list<string> affiliations;
                         for (auto affiliation_info : list_affiliation_info) {
                             string affiliation = s_TranslateToAscii(
-                                s_TextOrCharDataToWstring(affiliation_info->GetAffiliation()));
+                                s_TextOrOtherToWstring(affiliation_info->GetAffiliation()));
                             if (!affiliation.empty()) affiliations.emplace_back(move(affiliation));
                         }
                         if (!affiliations.empty()) {
@@ -1652,87 +1430,11 @@ static objects::CArticleId::E_Choice s_GetArticleIdTypeId(const CArticleId& arti
 }
 
 
-static CRef<CArticleIdSet> s_GetArticleIdSet(
-    const CArticleIdList& article_id_list,
-    const CArticle& article)
-{
-    CRef<CArticleIdSet> id_set(new CArticleIdSet());
-    for (auto article_id_it : article_id_list.GetArticleId()) {
-        CRef<objects::CArticleId> id(new objects::CArticleId());
-        try {
-            const string& str_id = article_id_it->GetArticleId();
-            switch (s_GetArticleIdTypeId(*article_id_it)) {
-            case objects::CArticleId::e_Pubmed:
-                id->SetPubmed(CPubMedId(NStr::StringToNumeric<TEntrezId>(str_id)));
-                break;
-            case objects::CArticleId::e_Medline:
-                continue;
-            case objects::CArticleId::e_Doi:
-                id->SetDoi(CDOI(str_id));
-                break;
-            case objects::CArticleId::e_Pii:
-                id->SetPii(CPII(str_id));
-                break;
-            case objects::CArticleId::e_Pmcid:
-                id->SetPmcid(CPmcID(NStr::StringToNumeric<TEntrezId>(str_id)));
-                break;
-            case objects::CArticleId::e_Pmcpid:
-                id->SetPmcpid(CPmcPid(str_id));
-                break;
-            case objects::CArticleId::e_Pmpid:
-                id->SetPmpid(CPmPid(str_id));
-                break;
-            case objects::CArticleId::e_Other: {
-                string db = CArticleId::C_Attlist::GetTypeInfo_enum_EAttlist_IdType()->
-                    FindName(article_id_it->GetAttlist().GetIdType(), false);
-                CRef<CDbtag> db_tag(new CDbtag());
-                db_tag->SetDb(db);
-                CRef<CObject_id> obj_id(new CObject_id());
-                obj_id->SetStr(str_id);
-                db_tag->SetTag(*obj_id);
-                id->SetOther(*db_tag);
-                break;
-            }
-            default:
-                continue;
-            }
-            id_set->Set().push_back(id);
-        }
-        catch (...) {}
-    }
-    // JIRA: PM-966
-    const list<CRef<CELocationID>>* eloc_ids = nullptr;
-    if (article.GetPE_2().IsELocationID()) {
-        eloc_ids = &article.GetPE_2().GetELocationID();
-    }
-    else {
-        if (article.GetPE_2().GetPE().IsSetELocationID()) eloc_ids = &article.GetPE_2().GetPE().GetELocationID();
-    }
-    if (eloc_ids) {
-        for (auto elocation_id_it : *eloc_ids) {
-            string str_eid_type = CELocationID::C_Attlist::GetTypeInfo_enum_EAttlist_EIdType()->
-                FindName(elocation_id_it->GetAttlist().GetEIdType(), false);
-            string type = "ELocationID " + str_eid_type;
-            string value = elocation_id_it->GetELocationID();
-            CRef<objects::CArticleId> id(new objects::CArticleId());
-            CRef<CDbtag> db_tag(new CDbtag());
-            db_tag->SetDb(type);
-            CRef<CObject_id> obj_id(new CObject_id());
-            obj_id->SetStr(value);
-            db_tag->SetTag(*obj_id);
-            id->SetOther(*db_tag);
-            id_set->Set().push_back(id);
-        }
-    }
-    return id_set;
-}
-
-
 static CRef<CCit_art> s_GetCitation(const CPubmedArticle& pubmed_article)
 {
     auto& medline_citation = pubmed_article.GetMedlineCitation();
     CRef<CCit_art> cit_article(new CCit_art());
-    CRef<CTitle> title = s_GetTitle(medline_citation);
+    CRef<CTitle> title = s_GetTitle(medline_citation.GetArticle());
     if (title) cit_article->SetTitle(*title);
     auto author_list = s_GetAuthorList(medline_citation.GetArticle());
     if (author_list) cit_article->SetAuthors(*author_list);
@@ -1740,7 +1442,8 @@ static CRef<CCit_art> s_GetCitation(const CPubmedArticle& pubmed_article)
     from->SetJournal(*s_GetJournalCitation(pubmed_article));
     cit_article->SetFrom(*from);
     cit_article->SetIds(*s_GetArticleIdSet(
-        pubmed_article.GetPubmedData().GetArticleIdList(), pubmed_article.GetMedlineCitation().GetArticle()));
+        pubmed_article.GetPubmedData().GetArticleIdList(),
+        &pubmed_article.GetMedlineCitation().GetArticle()));
     return cit_article;
 }
 
@@ -1837,23 +1540,6 @@ static void s_FillXref(CMedline_entry::TXref& refs, const CDataBankList& databan
 }
 
 
-static void s_FillGrants(CMedline_entry::TIdnum& id_nums, const CGrantList& grant_list)
-{
-    for (auto grant_it : grant_list.GetGrant()) {
-        wstring id;
-        if (grant_it->IsSetGrantID())
-            id = utf8_to_wstring(grant_it->GetGrantID());
-        if (grant_it->IsSetAcronym())
-            id += id.empty() ? utf8_to_wstring(grant_it->GetAcronym()) : L"/" + utf8_to_wstring(grant_it->GetAcronym());
-        if (grant_it->IsSetAgency() && !grant_it->GetAgency().Get().empty())
-            id += id.empty() ? utf8_to_wstring(grant_it->GetAgency()) : L"/" + utf8_to_wstring(grant_it->GetAgency());
-        string id2 = s_TranslateToAscii(id);
-        if (!id2.empty())
-            id_nums.push_back(id2);
-    }
-}
-
-
 static void s_FillGenes(CMedline_entry::TGene& mgenes, const CGeneSymbolList& gene_symbol_list)
 {
     for (auto& gene_symbol_it : gene_symbol_list.GetGeneSymbol()) {
@@ -1893,7 +1579,7 @@ static string s_GetAbstractText(const CAbstract& abstr)
         string label = abstract_text_it->GetAttlist().IsSetLabel() ?
             abstract_text_it->GetAttlist().GetLabel() + ": " : "";
         if (!abstract_text.empty()) abstract_text.append(" ");
-        abstract_text.append(label + s_TextListToString(abstract_text_it->GetAbstractText()));
+        abstract_text.append(label + s_TextOrOtherListToString(abstract_text_it->GetAbstractText()));
     }
     return abstract_text;
 }
@@ -1911,13 +1597,12 @@ static CRef<CMedline_entry> s_GetMedlineEntry(const CPubmedArticle& pubmed_artic
             CPubMedPubDate::C_Attlist::eAttlist_PubStatus_pubmed);
     }
     if (entrez_date)
-        medline_entry->SetEm(*s_GetDateFromPubDate(*entrez_date));
+        medline_entry->SetEm(*s_GetDateFromPubMedPubDate(*entrez_date));
     medline_entry->SetCit(*s_GetCitation(pubmed_article));
 
     auto& cit = pubmed_article.GetMedlineCitation();
     if (cit.GetArticle().IsSetAbstract())
-        medline_entry->SetAbstract(s_CleanupText(s_TranslateToAscii(utf8_to_wstring(
-            s_GetAbstractText(cit.GetArticle().GetAbstract())))));
+        medline_entry->SetAbstract(s_CleanupText(s_GetAbstractText(cit.GetArticle().GetAbstract())));
     if (cit.IsSetMeshHeadingList())
         s_FillMesh(medline_entry->SetMesh(), cit.GetMeshHeadingList());
     if (cit.IsSetChemicalList())
@@ -1944,6 +1629,279 @@ static CRef<CMedline_entry> s_GetMedlineEntry(const CPubmedArticle& pubmed_artic
 };
 
 END_LOCAL_NAMESPACE;
+
+
+string s_CleanupText(string str)
+{
+    str = s_TranslateToAscii(utf8_to_wstring(str));
+    for (char& cch : str) {
+        if (cch == '\r' || cch == '\n' || cch == '\t')
+            cch = ' ';
+    }
+    return str;
+}
+
+
+string s_TextToString(const CText& text)
+{
+    const auto& txt = text.GetEBISSU();
+    switch (txt.Which()) {
+    case CText::TEBISSU::e_B:
+        return s_TextOrOtherToString(txt.GetB());
+    case CText::TEBISSU::e_I:
+        return s_TextOrOtherToString(txt.GetI());
+    case CText::TEBISSU::e_Sup:
+        return "(" + s_TextOrOtherToString(txt.GetSup()) + ")";
+    case CText::TEBISSU::e_Sub:
+        return s_TextOrOtherToString(txt.GetSub());
+    case CText::TEBISSU::e_U:
+        return s_TextOrOtherToString(txt.GetU());
+    default:
+        return "";
+    }
+}
+
+
+CRef<CDate> s_GetDateFromPubDate(const CPubDate& pub_date)
+{
+    static const char* s_SeasonTab[] = { "Winter", "Spring", "Summer", "Autumn" };
+    pubmed_date_t pm_pub_date = s_GetPubmedDate(pub_date);
+    CRef<CDate> date(new CDate());
+    CDate_std& date_std = date->SetStd();
+    date_std.SetYear(pm_pub_date._year);
+    if (pm_pub_date._month != 0) {
+        if (pm_pub_date._month < 13) {
+            date_std.SetMonth(pm_pub_date._month);
+            if (pm_pub_date._day != 0)
+                date_std.SetDay(pm_pub_date._day);
+        }
+        else {
+            date_std.SetSeason(s_SeasonTab[pm_pub_date._month - 13]);
+        }
+    }
+    return date;
+}
+
+
+CRef<CDate> s_GetDateFromPubMedPubDate(const CPubMedPubDate& pdate)
+{
+    CRef<CDate> date(new CDate());
+    try {
+        // Try integer values
+        CDate_std& std_date = date->SetStd();
+        std_date.SetYear(NStr::StringToNumeric<CDate_std::TYear>(pdate.GetYear().Get()));
+        std_date.SetMonth(NStr::StringToNumeric<CDate_std::TMonth>(pdate.GetMonth().Get()));
+        std_date.SetDay(NStr::StringToNumeric<CDate_std::TDay>(pdate.GetDay().Get()));
+        if (pdate.IsSetHM()) {
+            try {
+                // Try integer time, ignore on error
+                auto& hm = pdate.GetHM();
+                std_date.SetHour(NStr::StringToNumeric<CDate_std::THour>(hm.GetHour().Get()));
+                if (hm.IsSetMS()) {
+                    auto& ms = hm.GetMS();
+                    std_date.SetMinute(NStr::StringToNumeric<CDate_std::TMinute>(ms.GetMinute().Get()));
+                    if (ms.IsSetSecond()) {
+                        std_date.SetSecond(NStr::StringToNumeric<CDate_std::TSecond>(ms.GetSecond().Get()));
+                    }
+                }
+            }
+            catch (...) {}
+        }
+    }
+    catch (...) {
+        // Use string values
+        string str_date = pdate.GetYear();
+        if (!pdate.GetMonth().Get().empty()) str_date += " " + pdate.GetMonth();
+        if (!pdate.GetDay().Get().empty()) str_date += " " + pdate.GetDay();
+        date->SetStr(str_date);
+    }
+    return date;
+}
+
+
+string s_GetArticleTitleStr(const CArticleTitle& article_title)
+{
+    return article_title.IsSetArticleTitle() ?
+        s_TranslateToAscii(s_TextOrOtherListToWstring(article_title.GetArticleTitle())) : "";
+}
+
+
+string s_GetVernacularTitleStr(const CVernacularTitle& vernacular_title)
+{
+    return s_TranslateToAscii(s_TextOrOtherListToWstring(vernacular_title.Get()));
+}
+
+
+CRef<CTitle> s_MakeTitle(const string& title_str, const string& vernacular_title_str)
+{
+    CRef<CTitle> title;
+    if (!title_str.empty() || !vernacular_title_str.empty()) {
+        title.Reset(new CTitle());
+        if (!title_str.empty()) {
+            CRef<CTitle::C_E> name(new CTitle::C_E());
+            name->SetName(title_str);
+            title->Set().push_back(name);
+        }
+        if (!vernacular_title_str.empty()) {
+            CRef<CTitle::C_E> name(new CTitle::C_E());
+            name->SetTrans(vernacular_title_str);
+            title->Set().push_back(name);
+        }
+    }
+    return title;
+}
+
+
+string s_GetAuthorMedlineName(const CAuthor& author)
+{
+    wstring author_medline_name;
+    if (author.GetLC().IsCollectiveName()) {
+        author_medline_name = s_TextOrOtherToWstring(author.GetLC().GetCollectiveName());
+        if (!author_medline_name.empty() && author_medline_name.back() != L'.')
+            author_medline_name.append(L".");
+    }
+    else if (author.GetLC().IsLFIS()) {
+        // Personal name;
+        auto& lfis = author.GetLC().GetLFIS();
+        author_medline_name = utf8_to_wstring(lfis.GetLastName());
+        // Initials
+        wstring initials;
+        if (lfis.IsSetInitials())
+            initials = utf8_to_wstring(lfis.GetInitials());
+        else if (lfis.IsSetForeName())
+            initials = s_GetInitialsFromForeName(utf8_to_wstring(lfis.GetForeName()));
+        if (!initials.empty())
+            author_medline_name.append(L" " + initials);
+        if (lfis.IsSetSuffix())
+            author_medline_name.append(L" " + s_TextOrOtherToWstring(lfis.GetSuffix()));
+    }
+    return s_TranslateToAscii(author_medline_name);
+}
+
+
+string s_GetPagination(const CPagination& pagination)
+{
+    if (pagination.IsSEM()) {
+        auto& sem = pagination.GetSEM();
+        if (sem.IsSetStartPage()) {
+            if (sem.IsSetEndPage()) return sem.GetStartPage() + "-" + sem.GetEndPage();
+            else return sem.GetStartPage();
+        }
+    }
+
+    string pages = pagination.GetMedlinePgn();
+    list<string> parts;
+    s_ForeachToken(pages, [](char cch) -> bool { return cch != ','; },
+        [&parts](string::iterator p, string::iterator q)->string::iterator {
+        string x(p, q);
+        x = regex_replace(x, regex("\\s+"), "");
+        if (!x.empty()) {
+            regex r("^(.*?)-(.*)$");
+            smatch ma;
+            regex_search(x, ma, r);
+            if (ma.empty() || ma.str(1).length() <= ma.str(2).length())
+                parts.push_back(x);
+            else
+                parts.push_back(ma.str(1) + "-" + ma.str(1).substr(0, ma.str(1).length() - ma.str(2).length()) + ma.str(2));
+        }
+        return q;
+    });
+    return parts.empty() ? "" : accumulate(next(parts.begin()), parts.end(), parts.front(),
+            [](const string& s1, const string& s2)->string { return s1 + ',' + s2; });
+}
+
+
+CRef<CArticleIdSet> s_GetArticleIdSet(const CArticleIdList& article_id_list, const CArticle* article)
+{
+    CRef<CArticleIdSet> id_set(new CArticleIdSet());
+    for (auto article_id_it : article_id_list.GetArticleId()) {
+        CRef<objects::CArticleId> id(new objects::CArticleId());
+        try {
+            const string& str_id = article_id_it->GetArticleId();
+            switch (s_GetArticleIdTypeId(*article_id_it)) {
+            case objects::CArticleId::e_Pubmed:
+                id->SetPubmed(CPubMedId(NStr::StringToNumeric<TEntrezId>(str_id)));
+                break;
+            case objects::CArticleId::e_Medline:
+                continue;
+            case objects::CArticleId::e_Doi:
+                id->SetDoi(CDOI(str_id));
+                break;
+            case objects::CArticleId::e_Pii:
+                id->SetPii(CPII(str_id));
+                break;
+            case objects::CArticleId::e_Pmcid:
+                id->SetPmcid(CPmcID(NStr::StringToNumeric<TEntrezId>(str_id)));
+                break;
+            case objects::CArticleId::e_Pmcpid:
+                id->SetPmcpid(CPmcPid(str_id));
+                break;
+            case objects::CArticleId::e_Pmpid:
+                id->SetPmpid(CPmPid(str_id));
+                break;
+            case objects::CArticleId::e_Other: {
+                string db = CArticleId::C_Attlist::GetTypeInfo_enum_EAttlist_IdType()->
+                    FindName(article_id_it->GetAttlist().GetIdType(), false);
+                CRef<CDbtag> db_tag(new CDbtag());
+                db_tag->SetDb(db);
+                CRef<CObject_id> obj_id(new CObject_id());
+                obj_id->SetStr(str_id);
+                db_tag->SetTag(*obj_id);
+                id->SetOther(*db_tag);
+                break;
+            }
+            default:
+                continue;
+            }
+            id_set->Set().push_back(id);
+        }
+        catch (...) {}
+    }
+    if (article) {
+        // JIRA: PM-966
+        const list<CRef<CELocationID>>* eloc_ids = nullptr;
+        if (article->GetPE_2().IsELocationID()) {
+            eloc_ids = &article->GetPE_2().GetELocationID();
+        }
+        else {
+            if (article->GetPE_2().GetPE().IsSetELocationID()) eloc_ids = &article->GetPE_2().GetPE().GetELocationID();
+        }
+        if (eloc_ids) {
+            for (auto elocation_id_it : *eloc_ids) {
+                string str_eid_type = CELocationID::C_Attlist::GetTypeInfo_enum_EAttlist_EIdType()->
+                    FindName(elocation_id_it->GetAttlist().GetEIdType(), false);
+                string type = "ELocationID " + str_eid_type;
+                string value = elocation_id_it->GetELocationID();
+                CRef<objects::CArticleId> id(new objects::CArticleId());
+                CRef<CDbtag> db_tag(new CDbtag());
+                db_tag->SetDb(type);
+                CRef<CObject_id> obj_id(new CObject_id());
+                obj_id->SetStr(value);
+                db_tag->SetTag(*obj_id);
+                id->SetOther(*db_tag);
+                id_set->Set().push_back(id);
+            }
+        }
+    }
+    return id_set;
+}
+
+
+void s_FillGrants(list<string>& id_nums, const CGrantList& grant_list)
+{
+    for (auto grant_it : grant_list.GetGrant()) {
+        wstring id;
+        if (grant_it->IsSetGrantID())
+            id = utf8_to_wstring(grant_it->GetGrantID());
+        if (grant_it->IsSetAcronym())
+            id += id.empty() ? utf8_to_wstring(grant_it->GetAcronym()) : L"/" + utf8_to_wstring(grant_it->GetAcronym());
+        if (grant_it->IsSetAgency() && !grant_it->GetAgency().Get().empty())
+            id += id.empty() ? utf8_to_wstring(grant_it->GetAgency()) : L"/" + utf8_to_wstring(grant_it->GetAgency());
+        string id2 = s_TranslateToAscii(id);
+        if (!id2.empty())
+            id_nums.push_back(id2);
+    }
+}
 
 
 CRef<CPubmed_entry> CPubmedArticle::ToPubmed_entry(void) const

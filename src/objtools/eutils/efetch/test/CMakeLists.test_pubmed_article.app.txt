@@ -9,5 +9,6 @@ NCBI_begin_app(test_pubmed_article)
 
   NCBI_add_test(test_pubmed_article -f data/pubmed11748933.xml -set)
   NCBI_add_test(test_pubmed_article -f data/pubmed11748934.xml)
+  NCBI_add_test(test_pubmed_article -f data/pubmed28211659.xml -set)
 
 NCBI_end_app()
