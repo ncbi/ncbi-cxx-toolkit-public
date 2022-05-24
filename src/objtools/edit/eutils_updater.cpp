@@ -36,6 +36,8 @@
 
 #include <objtools/eutils/efetch/PubmedArticle.hpp>
 #include <objtools/eutils/efetch/PubmedArticleSet.hpp>
+#include <objtools/eutils/efetch/PubmedBookArticle.hpp>
+#include <objtools/eutils/efetch/PubmedBookArticleSet.hpp>
 #include <objtools/eutils/api/efetch.hpp>
 #include <objects/pubmed/Pubmed_entry.hpp>
 #include <objects/medline/Medline_entry.hpp>
@@ -419,6 +421,17 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
         const auto& ppf = *pp.front();
         if (ppf.IsPubmedArticle()) {
             const eutils::CPubmedArticle& article = ppf.GetPubmedArticle();
+            CRef<CPubmed_entry> pme = article.ToPubmed_entry();
+            if (pme->IsSetMedent()) {
+                const CMedline_entry& mle = pme->GetMedent();
+                if (mle.IsSetCit()) {
+                    CRef<CPub> cit_art(new CPub);
+                    cit_art->SetArticle().Assign(mle.GetCit());
+                    return cit_art;
+                }
+            }
+        } else if (ppf.IsPubmedArticle()) {
+            const eutils::CPubmedBookArticle& article = ppf.GetPubmedBookArticle();
             CRef<CPubmed_entry> pme = article.ToPubmed_entry();
             if (pme->IsSetMedent()) {
                 const CMedline_entry& mle = pme->GetMedent();
