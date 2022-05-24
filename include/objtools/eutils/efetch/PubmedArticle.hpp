@@ -94,6 +94,15 @@ CPubmedArticle::CPubmedArticle(void)
 /////////////////// Helper classes and functions also used by CPubmedBookArticle
 
 class CPubDate;
+class CPubMedPubDate;
+class CArticleTitle;
+class CVernacularTitle;
+class CAuthor;
+class CPagination;
+class CArticleIdList;
+class CArticle;
+class CGrantList;
+class CText;
 
 static std::string s_CleanupText(std::string str);
 static ncbi::CRef<ncbi::objects::CDate> s_GetDateFromPubDate(const CPubDate& pub_date);
