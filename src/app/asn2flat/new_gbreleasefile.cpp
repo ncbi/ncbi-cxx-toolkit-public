@@ -106,6 +106,32 @@ public:
         }
 
 
+        if (m_reader->GetBiosets().size()>1)
+        {
+            auto top = next(m_reader->GetBiosets().begin());
+            if (m_flattened.size() == 1) {
+                // exposing the whole top entry
+                if (m_reader->GetSubmit().NotEmpty()
+                    || (top->m_class != CBioseq_set::eClass_genbank)
+                    || top->m_descr.NotEmpty())
+                {
+                    m_flattened.clear();
+                    m_flattened.push_back(*top);
+                }
+            }
+            else { // m_flattened.size() > 1)
+                m_top_entry = Ref(new CSeq_entry());
+                m_top_entry->SetSet().SetClass() = top->m_class;
+                if (top->m_descr) {
+                    m_top_entry->SetSet().SetDescr().Assign(*top->m_descr);
+                }
+            }
+        }
+        
+/*
+        if (m_reader->GetSubmit() && m_reader->GetSubmit()->IsSetSub()) {
+            m_FFGenerator.SetSubmit(m_reader->GetSubmit()->GetSub());
+        }
 
         if ((m_flattened.size() == 1) && (m_reader->GetBiosets().size()>1))
         {// exposing the whole top entry
@@ -122,8 +148,13 @@ public:
         else if (m_reader->GetSubmit() && m_reader->GetSubmit()->IsSetSub()) {
             m_FFGenerator.SetSubmit(m_reader->GetSubmit()->GetSub());
         }
+        */
 
         m_current = m_flattened.begin();
+    }
+
+    void SetSubmitBlock(const CSubmit_block& block) {
+        m_FFGenerator.SetSubmit(block);
     }
 
 private:
@@ -132,6 +163,7 @@ private:
     CHugeAsnReader::TBioseqSetIndex::iterator m_current;
     CFlatFileGenerator& m_FFGenerator;
 public:
+    CRef<CSeq_entry> m_top_entry;
     unique_ptr<CHugeAsnReader> m_reader;
 };
 
@@ -189,6 +221,17 @@ void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
 
             if (entry)
             {
+                if (m_Impl->m_reader->GetSubmit() && m_Impl->m_reader->GetSubmit()->IsSetSub()) {
+                    m_Impl->SetSubmitBlock(m_Impl->m_reader->GetSubmit()->GetSub());
+                }
+
+                if (m_Impl->m_top_entry) {
+                    auto pNewEntry = Ref(new CSeq_entry());
+                    pNewEntry->Assign(*m_Impl->m_top_entry);
+                    pNewEntry->SetSet().SetSeq_set().push_back(entry);
+                    entry = pNewEntry;
+                }
+
                 if (allowed.empty() || allowed.find(i) != allowed.end())
                 {
                     handler(entry);
