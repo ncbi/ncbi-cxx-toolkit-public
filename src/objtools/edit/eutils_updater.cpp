@@ -430,7 +430,7 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
                     return cit_art;
                 }
             }
-        } else if (ppf.IsPubmedArticle()) {
+        } else if (ppf.IsPubmedBookArticle()) {
             const eutils::CPubmedBookArticle& article = ppf.GetPubmedBookArticle();
             CRef<CPubmed_entry> pme = article.ToPubmed_entry();
             if (pme->IsSetMedent()) {
