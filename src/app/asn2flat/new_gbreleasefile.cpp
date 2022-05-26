@@ -50,8 +50,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(edit);
 
-//#define REPORT_TIMING
-
 class CNewGBReleaseFileImpl
 {
 public:
@@ -127,7 +125,7 @@ public:
                 }
             }
         }
-        
+
 
         m_current = m_flattened.begin();
     }
@@ -157,22 +155,6 @@ CNewGBReleaseFile::~CNewGBReleaseFile(void)
 
 void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
 {
-    size_t i = 0;
-    auto& cfg = CNcbiApplicationAPI::Instance()->GetConfig();
-    #ifdef REPORT_TIMING
-    auto thresold = cfg.GetInt("asn2flat", "report_thresold", -1);
-    #endif
-    auto s_allowed  = cfg.GetString("asn2flat", "allowed_indices", "");
-    std::vector<CTempString> v_allowed;
-    std::set<size_t> allowed;
-    NStr::Split(s_allowed, ",", v_allowed);
-    for (auto& rec: v_allowed)
-    {
-        size_t v;
-        NStr::StringToNumeric(rec, &v);
-        allowed.insert(v);
-    }
-
     while (m_Impl->m_reader->GetNextBlob())
     {
         m_Impl->FlattenGenbankSet();
@@ -185,11 +167,7 @@ void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
 
         do
         {
-            ++i;
             entry.Reset();
-            #ifdef REPORT_TIMING
-            auto started = std::chrono::system_clock::now();
-            #endif
 
             if (seqid.Empty())
                 entry = m_Impl->GetNextEntry();
@@ -212,18 +190,7 @@ void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
                     entry = pNewEntry;
                 }
 
-                if (allowed.empty() || allowed.find(i) != allowed.end())
-                {
-                    handler(pSubmitBlock, entry);
-                    #ifdef REPORT_TIMING
-                    auto stopped = std::chrono::system_clock::now();
-
-                    auto lapsed = (stopped - started)/1ms;
-                    if (thresold >=0 && lapsed >= thresold)
-                        std::cerr << i << ":" << lapsed << "ms\n";
-                    #endif
-                }
-
+                handler(pSubmitBlock, entry);
             }
         }
         while ( entry && seqid.Empty());
