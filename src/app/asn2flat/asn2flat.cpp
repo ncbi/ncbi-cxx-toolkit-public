@@ -706,7 +706,6 @@ int CAsn2FlatApp::Run()
                                 this->HandleSeqSubmit(*pSubmit);
                            }
                            else {
-                                cout << "Calling handler on entry" << endl;
                                 this->HandleSeqEntry(pEntry);
                            }
                        };
