@@ -36,6 +36,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -71,7 +72,7 @@ void CHugeAsnReader::x_ResetIndex()
     m_total_seqs = 0;
     m_total_sets = 0;
     m_max_local_id = 0;
-    m_submit.Reset();
+    m_submit_block.Reset();
     m_bioseq_list.clear();
     m_bioseq_index.clear();
     m_bioseq_set_index.clear();
@@ -187,12 +188,10 @@ void CHugeAsnReader::x_IndexNextAsn1()
 
     CObjectTypeInfo bioseq_info = CType<CBioseq>();
     CObjectTypeInfo bioseq_set_info = CType<CBioseq_set>();
-    CObjectTypeInfo seqsubmit_info = CType<CSeq_submit>();
     CObjectTypeInfo seqinst_info = CType<CSeq_inst>();
 
     auto bioseq_id_mi = bioseq_info.FindMember("id");
     auto bioseqset_class_mi = bioseq_set_info.FindMember("class");
-    auto seqsubmit_data_mi = seqsubmit_info.FindMember("data");
     auto bioseqset_descr_mi = bioseq_set_info.FindMember("descr");
     auto seqinst_len_mi = seqinst_info.FindMember("length");
     auto bioseq_descr_mi = bioseq_info.FindMember("descr");
@@ -299,22 +298,12 @@ void CHugeAsnReader::x_IndexNextAsn1()
         context.bioseq_set_stack.pop_back();
     });
 
-    SetLocalSkipHook(seqsubmit_info, *obj_stream,
+    SetLocalSkipHook(CType<CSubmit_block>(), *obj_stream,
         [this](CObjectIStream& in, const CObjectTypeInfo& type)
     {
-        auto submit = Ref(new CSeq_submit);
-        in.Read(submit, CSeq_submit::GetTypeInfo(), CObjectIStream::eNoFileHeader);
-        m_submit = submit;
-    });
-
-    SetLocalReadHook(seqsubmit_data_mi, *obj_stream,
-        [this, &context](CObjectIStream& in, const CObjectInfoMI& member)
-    {
-        auto submit = CTypeConverter<CSeq_submit>::SafeCast(member.GetClassObject().GetObjectPtr());
-        //submit->SetData().SetEntrys().clear();
-        submit->ResetData();
-        //std::cout << MSerial_AsnText << MSerial_VerifyNo << *submit << std::endl;
-        in.SkipObject(member.GetMemberType());
+        auto submit_block = Ref(new CSubmit_block);
+        in.Read(submit_block, CSubmit_block::GetTypeInfo(), CObjectIStream::eNoFileHeader);
+        m_submit_block = submit_block;
     });
 
     // Ensure there is at least on bioseq_set_info object exists

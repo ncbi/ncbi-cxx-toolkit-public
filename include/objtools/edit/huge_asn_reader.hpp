@@ -64,7 +64,7 @@ public:
     void Open(CHugeFile* file, ILineErrorListener * pMessageListener) override;
     bool GetNextBlob() override;
     CRef<CSeq_entry> GetNextSeqEntry() override;
-    CConstRef<CSeq_submit> GetSubmit() override { return m_submit; };
+    CConstRef<CSubmit_block> GetSubmitBlock() override { return m_submit_block; };
 
     struct TBioseqInfo;
     struct TBioseqSetInfo;
@@ -124,7 +124,7 @@ private:
 
     TBioseqList m_bioseq_list;
     TBioseqIndex m_bioseq_index;
-    CConstRef<CSeq_submit> m_submit;
+    CConstRef<CSubmit_block> m_submit_block;
 protected:
     TBioseqSetIndex m_bioseq_set_index;
 };
