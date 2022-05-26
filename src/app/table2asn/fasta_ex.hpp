@@ -47,7 +47,7 @@ public:
     bool GetNextBlob() override;
     CRef<objects::CSeq_entry> GetNextSeqEntry() override;
     bool IsMultiSequence() override { return m_is_multi; }
-    CConstRef<objects::CSeq_submit> GetSubmit() override { return {}; };
+    CConstRef<objects::CSubmit_block> GetSubmitBlock() override;
 protected:
     bool m_is_multi = false;
     CRef<objects::CSeq_entry> xLoadNextSeq();

@@ -56,7 +56,7 @@ public:
     /// destructor
     virtual ~CNewGBReleaseFile(void);
 
-    using THandler = std::function<void(CRef<objects::CSubmit_block>, CRef<objects::CSeq_entry>)>;
+    using THandler = std::function<void(CConstRef<objects::CSubmit_block>, CRef<objects::CSeq_entry>)>;
     /// Read the release file
     void Read(THandler handler, CRef<objects::CSeq_id> seqid);
 

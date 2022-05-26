@@ -39,6 +39,7 @@
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -254,5 +255,9 @@ CRef<objects::CSeq_entry> CHugeFastaReader::xLoadNextSeq()
     return result;
 }
 
+CConstRef<objects::CSubmit_block> CHugeFastaReader::GetSubmitBlock()
+{
+    return {};
+}
 
 END_NCBI_SCOPE

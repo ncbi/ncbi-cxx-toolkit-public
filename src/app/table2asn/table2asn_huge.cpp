@@ -45,6 +45,7 @@
 #include <serial/objectio.hpp>
 
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/remote_updater.hpp>
@@ -160,7 +161,7 @@ void CFlattenedAsn::FlattenGenbankSet()
     {// exposing the whole top entry
         auto top = GetBiosets().begin();
         top++;
-        if (GetSubmit().NotEmpty()
+        if (GetSubmitBlock().NotEmpty()
             || (top->m_class != CBioseq_set::eClass_genbank)
             || top->m_descr.NotEmpty())
         {
@@ -347,10 +348,10 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             else
                 topobject.Reset(&context.topentry->SetSeq());
         } else {
-            if (context.source->GetSubmit())
+            if (context.source->GetSubmitBlock())
             {
                 context.submit.Reset(new CSeq_submit);
-                context.submit->Assign(*context.source->GetSubmit());
+                context.submit->SetSub().Assign(*context.source->GetSubmitBlock());
 
                 context.submit->SetData().SetEntrys().clear();
                 context.submit->SetData().SetEntrys().push_back(context.topentry);

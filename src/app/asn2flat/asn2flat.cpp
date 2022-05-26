@@ -697,11 +697,11 @@ int CAsn2FlatApp::Run()
             }
         }
 
-        auto handler = [this](CRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry)
+        auto handler = [this](CConstRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry)
                        {
                            if (pSubmitBlock) {
                                 auto pSubmit = Ref(new CSeq_submit());
-                                pSubmit->SetSub(*pSubmitBlock);
+                                pSubmit->SetSub().Assign(*pSubmitBlock);
                                 pSubmit->SetData().SetEntrys().push_back(pEntry);
                                 this->HandleSeqSubmit(*pSubmit);
                            }

@@ -34,17 +34,15 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <corelib/ncbiapp_api.hpp>
-#include <chrono>
 
 #include <objtools/edit/huge_file.hpp>
 #include <objtools/edit/huge_asn_reader.hpp>
-#include <objtools/format/flat_file_generator.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -108,7 +106,7 @@ public:
             auto top = next(m_reader->GetBiosets().begin());
             if (m_flattened.size() == 1) {
                 // exposing the whole top entry
-                if (m_reader->GetSubmit().NotEmpty()
+                if (m_reader->GetSubmitBlock().NotEmpty()
                     || (top->m_class != CBioseq_set::eClass_genbank)
                     || top->m_descr.NotEmpty())
                 {
@@ -153,11 +151,6 @@ void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
     {
         m_Impl->FlattenGenbankSet();
         CRef<CSeq_entry> entry;
-        CRef<CSubmit_block> pSubmitBlock;
-        if (m_Impl->m_reader->GetSubmit() && m_Impl->m_reader->GetSubmit()->IsSetSub()) {
-            pSubmitBlock = Ref(new CSubmit_block());
-            pSubmitBlock->Assign(m_Impl->m_reader->GetSubmit()->GetSub());
-        }
 
         do
         {
@@ -184,12 +177,11 @@ void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
                     entry = pNewEntry;
                 }
 
-                handler(pSubmitBlock, entry);
+                handler(m_Impl->m_reader->GetSubmitBlock(), entry);
             }
         }
         while ( entry && seqid.Empty());
     }
-    //std::cerr << "Total seqs:" << i << "\n";
 }
 
 
