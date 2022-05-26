@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 class CObjectIStream;
 namespace objects
 {
+    class CSubmit_block;
     class CSeq_entry;
     class CFlatFileGenerator;
     class CSeq_id;
@@ -57,7 +58,7 @@ public:
     /// destructor
     virtual ~CNewGBReleaseFile(void);
 
-    using THandler = std::function<void(CRef<objects::CSeq_entry>)>;
+    using THandler = std::function<void(CRef<objects::CSubmit_block>, CRef<objects::CSeq_entry>)>;
     /// Read the release file
     void Read(THandler handler, CRef<objects::CSeq_id> seqid);
 

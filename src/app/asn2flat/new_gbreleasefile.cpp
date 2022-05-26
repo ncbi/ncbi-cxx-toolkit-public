@@ -128,27 +128,6 @@ public:
             }
         }
         
-/*
-        if (m_reader->GetSubmit() && m_reader->GetSubmit()->IsSetSub()) {
-            m_FFGenerator.SetSubmit(m_reader->GetSubmit()->GetSub());
-        }
-
-        if ((m_flattened.size() == 1) && (m_reader->GetBiosets().size()>1))
-        {// exposing the whole top entry
-            auto top = m_reader->GetBiosets().begin();
-            top++;
-            if (m_reader->GetSubmit().NotEmpty()
-                || (top->m_class != CBioseq_set::eClass_genbank)
-                || top->m_descr.NotEmpty())
-            {
-                m_flattened.clear();
-                m_flattened.push_back(*top);
-            }
-        }
-        else if (m_reader->GetSubmit() && m_reader->GetSubmit()->IsSetSub()) {
-            m_FFGenerator.SetSubmit(m_reader->GetSubmit()->GetSub());
-        }
-        */
 
         m_current = m_flattened.begin();
     }
@@ -197,7 +176,12 @@ void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
     while (m_Impl->m_reader->GetNextBlob())
     {
         m_Impl->FlattenGenbankSet();
-        CRef<objects::CSeq_entry> entry;
+        CRef<CSeq_entry> entry;
+        CRef<CSubmit_block> pSubmitBlock;
+        if (m_Impl->m_reader->GetSubmit() && m_Impl->m_reader->GetSubmit()->IsSetSub()) {
+            pSubmitBlock = Ref(new CSubmit_block());
+            pSubmitBlock->Assign(m_Impl->m_reader->GetSubmit()->GetSub());
+        }
 
         do
         {
@@ -221,10 +205,6 @@ void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
 
             if (entry)
             {
-                if (m_Impl->m_reader->GetSubmit() && m_Impl->m_reader->GetSubmit()->IsSetSub()) {
-                    m_Impl->SetSubmitBlock(m_Impl->m_reader->GetSubmit()->GetSub());
-                }
-
                 if (m_Impl->m_top_entry) {
                     auto pNewEntry = Ref(new CSeq_entry());
                     pNewEntry->Assign(*m_Impl->m_top_entry);
@@ -234,7 +214,7 @@ void CNewGBReleaseFile::Read(THandler handler, CRef<CSeq_id> seqid)
 
                 if (allowed.empty() || allowed.find(i) != allowed.end())
                 {
-                    handler(entry);
+                    handler(pSubmitBlock, entry);
                     #ifdef REPORT_TIMING
                     auto stopped = std::chrono::system_clock::now();
 
