@@ -104,20 +104,21 @@ class CArticle;
 class CGrantList;
 class CText;
 
-static std::string s_CleanupText(std::string str);
-static ncbi::CRef<ncbi::objects::CDate> s_GetDateFromPubDate(const CPubDate& pub_date);
-static ncbi::CRef<ncbi::objects::CDate> s_GetDateFromPubMedPubDate(const CPubMedPubDate& pdate);
-static std::string s_GetArticleTitleStr(const CArticleTitle& article_title);
-static std::string s_GetVernacularTitleStr(const CVernacularTitle& vernacular_title);
-static ncbi::CRef<ncbi::objects::CTitle> s_MakeTitle(
+std::string s_CleanupText(std::string str);
+ncbi::CRef<ncbi::objects::CDate> s_GetDateFromPubDate(const CPubDate& pub_date);
+ncbi::CRef<ncbi::objects::CDate> s_GetDateFromPubMedPubDate(const CPubMedPubDate& pdate);
+std::string s_GetArticleTitleStr(const CArticleTitle& article_title);
+std::string s_GetVernacularTitleStr(const CVernacularTitle& vernacular_title);
+ncbi::CRef<ncbi::objects::CTitle> s_MakeTitle(
     const std::string& title_str,
     const std::string& vernacular_title_str);
-static std::string s_GetAuthorMedlineName(const CAuthor& author);
-static std::string s_GetPagination(const CPagination& pagination);
-static ncbi::CRef<ncbi::objects::CArticleIdSet> s_GetArticleIdSet(
+std::string s_GetAuthorMedlineName(const CAuthor& author);
+std::string s_GetPagination(const CPagination& pagination);
+ncbi::CRef<ncbi::objects::CArticleIdSet> s_GetArticleIdSet(
     const CArticleIdList& article_id_list,
     const CArticle* article);
-static void s_FillGrants(std::list<std::string>& id_nums, const CGrantList& grant_list);
+void s_FillGrants(std::list<std::string>& id_nums, const CGrantList& grant_list);
+std::string s_TextToString(const CText& text);
 
 
 template <class CharT>
@@ -137,8 +138,6 @@ inline auto get_ctype_facet(const std::locale& loc) -> decltype(std::use_facet<s
 }
 
 
-static std::string s_TextToString(const CText& text);
-
 template<class TE>
 typename std::enable_if<std::is_member_function_pointer<decltype(&TE::IsText)>::value, std::string>::type
 s_TextOrOtherToString(const TE& te) {
@@ -153,6 +152,7 @@ s_TextOrOtherToString(const TE& te) {
         return ret;
     }
 }
+
 
 template<class TE>
 typename std::enable_if<std::is_member_function_pointer<decltype(&TE::IsSetText)>::value, std::string>::type
@@ -169,6 +169,7 @@ s_TextOrOtherToString(const TE& te) {
     }
 }
 
+
 template<class TE>
 std::string s_TextListToString(const std::list<ncbi::CRef<TE>>& text_list)
 {
@@ -178,6 +179,7 @@ std::string s_TextListToString(const std::list<ncbi::CRef<TE>>& text_list)
     }
     return ret;
 }
+
 
 template<class TE>
 std::string s_TextOrOtherListToString(const std::list<ncbi::CRef<TE>>& text_list)
