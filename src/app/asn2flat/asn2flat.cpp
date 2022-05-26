@@ -696,7 +696,22 @@ int CAsn2FlatApp::Run()
                 seqid = ids.front();
             }
         }
-        in.Read([this](CRef<CSeq_entry> se) { this->HandleSeqEntry(se); }, seqid);
+
+        auto handler = [this](CRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry)
+                       {
+                           if (pSubmitBlock) {
+                                auto pSubmit = Ref(new CSeq_submit());
+                                pSubmit->SetSub(*pSubmitBlock);
+                                pSubmit->SetData().SetEntrys().push_back(pEntry);
+                                this->HandleSeqSubmit(*pSubmit);
+                           }
+                           else {
+                                cout << "Calling handler on entry" << endl;
+                                this->HandleSeqEntry(pEntry);
+                           }
+                       };
+
+        in.Read(handler, seqid);
         s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
