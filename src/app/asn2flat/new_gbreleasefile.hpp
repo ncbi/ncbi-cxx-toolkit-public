@@ -42,7 +42,6 @@ namespace objects
 {
     class CSubmit_block;
     class CSeq_entry;
-    class CFlatFileGenerator;
     class CSeq_id;
 };
 class CNewGBReleaseFileImpl;
@@ -52,8 +51,7 @@ class CNewGBReleaseFile
 public:
 
     /// constructors
-    CNewGBReleaseFile(objects::CFlatFileGenerator& generator,
-            const string& file_name, bool propagate=false);
+    CNewGBReleaseFile(const string& file_name, bool propagate=false);
 
     /// destructor
     virtual ~CNewGBReleaseFile(void);

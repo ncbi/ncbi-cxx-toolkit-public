@@ -53,9 +53,8 @@ USING_SCOPE(edit);
 class CNewGBReleaseFileImpl
 {
 public:
-    CNewGBReleaseFileImpl(CFlatFileGenerator& generator, const string& file_name)
+    CNewGBReleaseFileImpl(const string& file_name)
     : m_file{new CHugeFile},
-      m_FFGenerator{generator},
       m_reader{new CHugeAsnReader}
     {
         static set<TTypeInfo> supported_types =
@@ -130,22 +129,17 @@ public:
         m_current = m_flattened.begin();
     }
 
-    void SetSubmitBlock(const CSubmit_block& block) {
-        m_FFGenerator.SetSubmit(block);
-    }
-
 private:
     unique_ptr<CHugeFile> m_file;
     CHugeAsnReader::TBioseqSetIndex m_flattened;
     CHugeAsnReader::TBioseqSetIndex::iterator m_current;
-    CFlatFileGenerator& m_FFGenerator;
 public:
     CRef<CSeq_entry> m_top_entry;
     unique_ptr<CHugeAsnReader> m_reader;
 };
 
-CNewGBReleaseFile::CNewGBReleaseFile(CFlatFileGenerator& generator, const string& file_name, bool propagate)
-    :m_Impl{new CNewGBReleaseFileImpl(generator, file_name)}
+CNewGBReleaseFile::CNewGBReleaseFile(const string& file_name, bool propagate)
+    :m_Impl{new CNewGBReleaseFileImpl(file_name)}
 {
 }
 

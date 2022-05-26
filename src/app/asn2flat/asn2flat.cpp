@@ -687,7 +687,7 @@ int CAsn2FlatApp::Run()
     {
         s_INSDSetOpen ( is_insdseq, m_Os );
         is.reset();
-        CNewGBReleaseFile in (*m_FFGenerator, args["i"].AsString(), propagate );
+        CNewGBReleaseFile in (args["i"].AsString(), propagate );
         CRef<CSeq_id> seqid;
         if (!m_AccessionFilter.empty()) {
             CBioseq::TId ids;
