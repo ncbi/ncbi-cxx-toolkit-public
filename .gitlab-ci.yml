@@ -10,7 +10,8 @@ build:
  stage: build
  script:
   - echo "Building toolkit using cmake"
-  - cmake .
+  - ./cmake-configure
+  - cd CMake-GCC730-Debug/build
   - make VERBOSE=1
 
 push-build:
