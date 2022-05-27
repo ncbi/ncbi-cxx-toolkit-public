@@ -379,9 +379,7 @@ void CPSGS_AccessionVersionHistoryProcessor::x_Peek(bool  need_wait)
     // Ready packets needs to be send only once when everything is finished
     if (overall_final_state) {
         if (AreAllFinishedRead()) {
-            if (IPSGS_Processor::m_Reply->IsOutputReady()) {
-                IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
-            }
+            IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
             CPSGS_CassProcessorBase::SignalFinishProcessing();
         }
     }

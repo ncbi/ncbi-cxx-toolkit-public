@@ -735,8 +735,7 @@ void CPSGS_SNPProcessor::x_Peek(bool  need_wait)
     }
 
     // Blob specific: ready packets need to be sent right away
-    if (GetReply()->IsOutputReady())
-        GetReply()->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
+    GetReply()->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 
     // Blob specific: deal with exclude blob cache
     if (AreAllFinishedRead()) {

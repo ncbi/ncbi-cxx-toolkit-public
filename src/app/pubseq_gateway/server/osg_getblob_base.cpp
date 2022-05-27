@@ -152,26 +152,26 @@ void CPSGS_OSGGetBlobBase::x_SetBlobState(CBlobRecord& blob_props,
 
 void CPSGS_OSGGetBlobBase::SendExcludedBlob(const string& psg_blob_id)
 {
-    size_t item_id = GetReply()->GetItemId();
+    size_t item_id = m_Reply->GetItemId();
     if ( GetDebugLevel() >= eDebug_exchange ) {
         LOG_POST(GetDiagSeverity() << "OSG: "
                  "Sending blob excluded: "<<psg_blob_id);
     }
-    GetReply()->PrepareBlobExcluded(item_id, GetName(), psg_blob_id, ePSGS_BlobExcluded);
+    m_Reply->PrepareBlobExcluded(item_id, GetName(), psg_blob_id, ePSGS_BlobExcluded);
 }
 
 
 void CPSGS_OSGGetBlobBase::x_SendBlobProps(const string& psg_blob_id,
                                            CBlobRecord& blob_props)
 {
-    size_t item_id = GetReply()->GetItemId();
+    size_t item_id = m_Reply->GetItemId();
     string data_to_send = ToJsonString(blob_props);
     if ( GetDebugLevel() >= eDebug_exchange ) {
         LOG_POST(GetDiagSeverity() << "OSG: "
                  "Sending blob_prop("<<psg_blob_id<<"): "<<data_to_send);
     }
-    GetReply()->PrepareBlobPropData(item_id, GetName(), psg_blob_id, data_to_send);
-    GetReply()->PrepareBlobPropCompletion(item_id, GetName(), 2);
+    m_Reply->PrepareBlobPropData(item_id, GetName(), psg_blob_id, data_to_send);
+    m_Reply->PrepareBlobPropCompletion(item_id, GetName(), 2);
 }
 
 
@@ -179,27 +179,28 @@ void CPSGS_OSGGetBlobBase::x_SendChunkBlobProps(const string& id2_info,
                                                 TID2ChunkId chunk_id,
                                                 CBlobRecord& blob_props)
 {
-    size_t item_id = GetReply()->GetItemId();
+    size_t item_id = m_Reply->GetItemId();
     string data_to_send = ToJsonString(blob_props);
     if ( GetDebugLevel() >= eDebug_exchange ) {
         LOG_POST(GetDiagSeverity() << "OSG: "
                  "Sending chunk blob_prop("<<id2_info<<','<<chunk_id<<"): "<<data_to_send);
     }
-    GetReply()->PrepareTSEBlobPropData(item_id, GetName(), chunk_id, id2_info, data_to_send);
-    GetReply()->PrepareBlobPropCompletion(item_id, GetName(), 2);
+    m_Reply->PrepareTSEBlobPropData(item_id, GetName(), chunk_id, id2_info, data_to_send);
+    m_Reply->PrepareBlobPropCompletion(item_id, GetName(), 2);
 }
 
 
 void CPSGS_OSGGetBlobBase::x_SendBlobData(const string& psg_blob_id,
                                           const CID2_Reply_Data& data)
 {
-    size_t item_id = GetReply()->GetItemId();
+    size_t item_id = m_Reply->GetItemId();
     int chunk_no = 0;
     for ( auto& chunk : data.GetData() ) {
-        GetReply()->PrepareBlobData(item_id, GetName(), psg_blob_id,
-                                    (const unsigned char*)chunk->data(), chunk->size(), chunk_no++);
+        m_Reply->PrepareBlobData(item_id, GetName(), psg_blob_id,
+                                 (const unsigned char*)chunk->data(), chunk->size(), chunk_no++);
     }
-    GetReply()->PrepareBlobCompletion(item_id, GetName(), chunk_no+1);
+    m_Reply->PrepareBlobCompletion(item_id, GetName(), chunk_no+1);
+    m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 }
 
 
@@ -207,14 +208,15 @@ void CPSGS_OSGGetBlobBase::x_SendChunkBlobData(const string& id2_info,
                                                TID2ChunkId chunk_id,
                                                const CID2_Reply_Data& data)
 {
-    size_t item_id = GetReply()->GetItemId();
+    size_t item_id = m_Reply->GetItemId();
     int chunk_no = 0;
     for ( auto& chunk : data.GetData() ) {
-        GetReply()->PrepareTSEBlobData(item_id, GetName(),
-                                       (const unsigned char*)chunk->data(), chunk->size(), chunk_no++,
-                                       chunk_id, id2_info);
+        m_Reply->PrepareTSEBlobData(item_id, GetName(),
+                                    (const unsigned char*)chunk->data(), chunk->size(), chunk_no++,
+                                    chunk_id, id2_info);
     }
-    GetReply()->PrepareTSEBlobCompletion(item_id, GetName(), chunk_no+1);
+    m_Reply->PrepareTSEBlobCompletion(item_id, GetName(), chunk_no+1);
+    m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 }
 
 

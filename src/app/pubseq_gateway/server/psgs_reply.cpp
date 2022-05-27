@@ -56,19 +56,20 @@ void CPSGS_Reply::ConnectionCancel(void)
 
 void CPSGS_Reply::Flush(EPSGS_ReplyFlush  how)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
-    // Grab the lock
-    while (m_ChunksLock.exchange(true)) {}
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
+    if (!m_Reply->IsOutputReady()) {
+        return;
+    }
 
     if (how == ePSGS_SendAccumulated) {
         // Only chunks
         if (m_Chunks.empty()) {
             // There is nothing to send
-            m_ChunksLock = false;
             return;
         }
 
@@ -81,7 +82,6 @@ void CPSGS_Reply::Flush(EPSGS_ReplyFlush  how)
     }
 
     m_Chunks.clear();
-    m_ChunksLock = false;
 }
 
 void CPSGS_Reply::SetCompleted(void)
@@ -111,13 +111,12 @@ bool CPSGS_Reply::IsOutputReady(void) const
 
 void CPSGS_Reply::Clear(void)
 {
+    lock_guard<mutex>       guard(m_ChunksLock);
     x_UpdateLastActivity();
 
-    while (m_ChunksLock.exchange(true)) {}
     m_Chunks.clear();
     m_Reply = nullptr;
     m_TotalSentReplyChunks = 0;
-    m_ChunksLock = false;
 }
 
 
@@ -146,10 +145,10 @@ void CPSGS_Reply::SetContentLength(uint64_t  content_length)
 
 void CPSGS_Reply::SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->SendOk(payload, payload_len, is_persist);
 
@@ -164,10 +163,10 @@ void CPSGS_Reply::SendOk(const char *  payload, size_t  payload_len, bool  is_pe
 
 void CPSGS_Reply::Send202(const char *  payload, size_t  payload_len)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->Send202(payload, payload_len);
 
@@ -182,10 +181,10 @@ void CPSGS_Reply::Send202(const char *  payload, size_t  payload_len)
 
 void CPSGS_Reply::Send400(const char *  payload)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->Send400(payload);
 
@@ -200,10 +199,10 @@ void CPSGS_Reply::Send400(const char *  payload)
 
 void CPSGS_Reply::Send401(const char *  payload)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->Send401(payload);
 
@@ -218,10 +217,10 @@ void CPSGS_Reply::Send401(const char *  payload)
 
 void CPSGS_Reply::Send404(const char *  payload)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->Send404(payload);
 
@@ -236,10 +235,10 @@ void CPSGS_Reply::Send404(const char *  payload)
 
 void CPSGS_Reply::Send409(const char *  payload)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->Send409(payload);
 
@@ -254,10 +253,10 @@ void CPSGS_Reply::Send409(const char *  payload)
 
 void CPSGS_Reply::Send500(const char *  payload)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->Send500(payload);
 
@@ -272,10 +271,10 @@ void CPSGS_Reply::Send500(const char *  payload)
 
 void CPSGS_Reply::Send502(const char *  payload)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->Send502(payload);
 
@@ -290,10 +289,10 @@ void CPSGS_Reply::Send502(const char *  payload)
 
 void CPSGS_Reply::Send503(const char *  payload)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
+
+    x_UpdateLastActivity();
 
     m_Reply->Send503(payload);
 
@@ -313,21 +312,21 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
                                        int  err_code,
                                        EDiagSev  severity)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  header = GetBioseqMessageHeader(item_id, processor_id,
                                             msg.size(), status,
                                             err_code, severity);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -338,20 +337,20 @@ void CPSGS_Reply::PrepareBioseqData(
                     const string &  content,
                     SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetBioseqInfoHeader(item_id, processor_id,
                                              content.size(), output_format);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(content.data()), content.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -359,20 +358,20 @@ void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
                                           const string &  processor_id,
                                           size_t  chunk_count)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      bioseq_meta = GetBioseqCompletionHeader(item_id,
                                                         processor_id,
                                                         chunk_count);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(bioseq_meta.data()),
                 bioseq_meta.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -383,21 +382,21 @@ void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetBlobPropMessageHeader(item_id, processor_id,
                                                   msg.size(), status, err_code,
                                                   severity);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -410,21 +409,21 @@ void CPSGS_Reply::x_PrepareTSEBlobPropMessage(size_t                 item_id,
                                               int                    err_code,
                                               EDiagSev               severity)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetTSEBlobPropMessageHeader(
                                 item_id, processor_id, id2_chunk, id2_info,
                                 msg.size(), status, err_code, severity);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -435,8 +434,6 @@ void CPSGS_Reply::PrepareBlobPropMessage(CCassBlobFetch *       fetch_details,
                                          int                    err_code,
                                          EDiagSev               severity)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -455,8 +452,6 @@ void CPSGS_Reply::PrepareTSEBlobPropMessage(CCassBlobFetch *       fetch_details
                                             int                    err_code,
                                             EDiagSev               severity)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -473,24 +468,21 @@ void CPSGS_Reply::PrepareBlobPropData(size_t                   item_id,
                                       const string &           content,
                                       CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
-    string  header = GetBlobPropHeader(item_id,
-                                       processor_id,
-                                       blob_id,
-                                       content.size(),
-                                       last_modified);
-    while (m_ChunksLock.exchange(true)) {}
+    string  header = GetBlobPropHeader(item_id, processor_id, blob_id,
+                                       content.size(), last_modified);
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(content.data()),
                     content.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -499,8 +491,6 @@ void CPSGS_Reply::PrepareBlobPropData(CCassBlobFetch *         fetch_details,
                                       const string &           content,
                                       CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -519,8 +509,6 @@ void CPSGS_Reply::PrepareTSEBlobPropData(CCassBlobFetch *  fetch_details,
                                          const string &    id2_info,
                                          const string &    content)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -536,8 +524,6 @@ void CPSGS_Reply::PrepareTSEBlobPropData(size_t  item_id,
                                          const string &    id2_info,
                                          const string &    content)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -545,14 +531,16 @@ void CPSGS_Reply::PrepareTSEBlobPropData(size_t  item_id,
                                           processor_id,
                                           id2_chunk, id2_info,
                                           content.size());
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(content.data()),
                     content.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -564,27 +552,23 @@ void CPSGS_Reply::PrepareBlobData(size_t                   item_id,
                                   int                      chunk_no,
                                   CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     ++m_TotalSentReplyChunks;
 
-    string  header = GetBlobChunkHeader(
-                            item_id,
-                            processor_id,
-                            blob_id,
-                            data_size, chunk_no,
-                            last_modified);
-    while (m_ChunksLock.exchange(true)) {}
+    string  header = GetBlobChunkHeader(item_id, processor_id, blob_id,
+                                        data_size, chunk_no, last_modified);
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()),
                     header.size()));
 
     if (data_size > 0 && chunk_data != nullptr)
         m_Chunks.push_back(m_Reply->PrepareChunk(chunk_data, data_size));
-    m_ChunksLock = false;
 }
 
 
@@ -595,8 +579,6 @@ void CPSGS_Reply::PrepareBlobData(CCassBlobFetch *         fetch_details,
                                   int                      chunk_no,
                                   CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -617,26 +599,23 @@ void CPSGS_Reply::PrepareTSEBlobData(size_t                 item_id,
                                      int64_t                id2_chunk,
                                      const string &         id2_info)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     ++m_TotalSentReplyChunks;
 
-    string  header = GetTSEBlobChunkHeader(
-                            item_id,
-                            processor_id,
-                            data_size, chunk_no,
-                            id2_chunk, id2_info);
-    while (m_ChunksLock.exchange(true)) {}
+    string  header = GetTSEBlobChunkHeader(item_id, processor_id, data_size,
+                                           chunk_no, id2_chunk, id2_info);
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()),
                     header.size()));
 
     if (data_size > 0 && chunk_data != nullptr)
         m_Chunks.push_back(m_Reply->PrepareChunk(chunk_data, data_size));
-    m_ChunksLock = false;
 }
 
 
@@ -648,8 +627,6 @@ void CPSGS_Reply::PrepareTSEBlobData(CCassBlobFetch *  fetch_details,
                                      int64_t  id2_chunk,
                                      const string &  id2_info)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -665,20 +642,20 @@ void CPSGS_Reply::PrepareBlobPropCompletion(size_t  item_id,
                                             const string &  processor_id,
                                             size_t  chunk_count)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      blob_prop_meta = GetBlobPropCompletionHeader(item_id,
                                                              processor_id,
                                                              chunk_count);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(blob_prop_meta.data()),
                     blob_prop_meta.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -692,20 +669,20 @@ void CPSGS_Reply::x_PrepareTSEBlobPropCompletion(size_t          item_id,
     string      blob_prop_meta = GetTSEBlobPropCompletionHeader(item_id,
                                                                 processor_id,
                                                                 chunk_count);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(blob_prop_meta.data()),
                     blob_prop_meta.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
 void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
                                             const string &  processor_id)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -723,8 +700,6 @@ void CPSGS_Reply::PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details,
 void CPSGS_Reply::PrepareTSEBlobPropCompletion(CCassBlobFetch *  fetch_details,
                                                const string &  processor_id)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -748,8 +723,6 @@ void CPSGS_Reply::PrepareBlobMessage(size_t                   item_id,
                                      EDiagSev                 severity,
                                      CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -757,13 +730,15 @@ void CPSGS_Reply::PrepareBlobMessage(size_t                   item_id,
                                               blob_id, msg.size(),
                                               status, err_code, severity,
                                               last_modified);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -775,8 +750,6 @@ void CPSGS_Reply::PrepareBlobMessage(CCassBlobFetch *         fetch_details,
                                      EDiagSev                 severity,
                                      CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -803,13 +776,15 @@ void CPSGS_Reply::x_PrepareTSEBlobMessage(size_t  item_id,
     string      header = GetTSEBlobMessageHeader(item_id, processor_id,
                                                  id2_chunk, id2_info, msg.size(),
                                                  status, err_code, severity);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -821,8 +796,6 @@ void CPSGS_Reply::PrepareTSEBlobMessage(CCassBlobFetch *  fetch_details,
                                         CRequestStatus::ECode  status, int  err_code,
                                         EDiagSev  severity)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -837,27 +810,25 @@ void CPSGS_Reply::PrepareBlobCompletion(size_t                   item_id,
                                         const string &           processor_id,
                                         size_t                   chunk_count)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string completion = GetBlobCompletionHeader(item_id, processor_id,
                                                 chunk_count);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(completion.data()),
                     completion.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
 void CPSGS_Reply::PrepareTSEBlobCompletion(CCassBlobFetch *  fetch_details,
                                            const string &  processor_id)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -873,19 +844,19 @@ void CPSGS_Reply::PrepareTSEBlobCompletion(size_t  item_id,
                                            const string &  processor_id,
                                            size_t  chunk_count)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string completion = GetTSEBlobCompletionHeader(item_id, processor_id,
                                                    chunk_count);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(completion.data()),
                     completion.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -894,19 +865,19 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &           blob_id,
                                       EPSGS_BlobSkipReason     skip_reason,
                                       CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id,
                                            blob_id, skip_reason, last_modified);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -916,21 +887,20 @@ void CPSGS_Reply::PrepareBlobExcluded(const string &  blob_id,
                                       unsigned long  until_resend_mks,
                                       CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  exclude = GetBlobExcludeHeader(GetItemId(), processor_id, blob_id,
-                                           sent_mks_ago,
-                                           until_resend_mks,
+                                           sent_mks_ago, until_resend_mks,
                                            last_modified);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -939,19 +909,19 @@ void CPSGS_Reply::PrepareBlobExcluded(size_t                item_id,
                                       const string &        blob_id,
                                       EPSGS_BlobSkipReason  skip_reason)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string  exclude = GetBlobExcludeHeader(item_id, processor_id,
                                            blob_id, skip_reason);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -962,20 +932,20 @@ void CPSGS_Reply::PrepareTSEBlobExcluded(const string &        processor_id,
                                          int64_t               id2_chunk,
                                          const string &        id2_info)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     // NOTE: the blob id argument is temporary to satisfy the older clients
     string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id, blob_id,
                                               skip_reason, id2_chunk, id2_info);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -987,31 +957,27 @@ void CPSGS_Reply::PrepareTSEBlobExcluded(const string &  blob_id,
                                          unsigned long  sent_mks_ago,
                                          unsigned long  until_resend_mks)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     // NOTE: the blob id argument is temporary to satisfy the older clients
     string  exclude = GetTSEBlobExcludeHeader(GetItemId(), processor_id,
-                                              blob_id,
-                                              id2_chunk, id2_info,
-                                              sent_mks_ago,
-                                              until_resend_mks);
-    while (m_ChunksLock.exchange(true)) {}
+                                              blob_id, id2_chunk, id2_info,
+                                              sent_mks_ago, until_resend_mks);
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(exclude.data()),
                     exclude.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
 void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
                                         const string &    processor_id)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1028,20 +994,20 @@ void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
                                       int                    err_code,
                                       EDiagSev               severity)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
     string      header = GetReplyMessageHeader(msg.size(),
                                                status, err_code, severity);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -1052,8 +1018,6 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
                                           int                    err_code,
                                           EDiagSev               severity)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1063,7 +1027,10 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
     string      completion = GetProcessorMessageCompletionHeader(item_id,
                                                                  processor_id,
                                                                  2);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -1073,7 +1040,6 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(completion.data()), completion.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -1082,8 +1048,6 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
                                        const string &  blob_id,
                                        CBlobRecord::TTimestamp  last_modified)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1093,7 +1057,10 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
     string      completion = GetPublicCommentCompletionHeader(item_id,
                                                               processor_id,
                                                               2);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -1103,7 +1070,6 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(completion.data()), completion.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -1112,8 +1078,6 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
                                        int64_t  id2_chunk,
                                        const string &  id2_info)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1123,7 +1087,10 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
     string      completion = GetPublicCommentCompletionHeader(item_id,
                                                               processor_id,
                                                               2);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -1133,7 +1100,6 @@ void CPSGS_Reply::PreparePublicComment(const string &  processor_id,
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(completion.data()), completion.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -1141,8 +1107,6 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
                                              const string &  processor_id,
                                              const string &  content)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1153,7 +1117,10 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
     string      bioseq_na_meta = GetNamedAnnotationCompletionHeader(item_id,
                                                                     processor_id,
                                                                     2);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -1164,15 +1131,12 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
                 (const unsigned char *)(bioseq_na_meta.data()),
                 bioseq_na_meta.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
 void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
                                            const string &  content)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
 
@@ -1184,7 +1148,10 @@ void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
     string      acc_ver_hist_meta = GetAccVerHistCompletionHeader(item_id,
                                                                   processor_id,
                                                                   2);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -1195,7 +1162,6 @@ void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
                 (const unsigned char *)(acc_ver_hist_meta.data()),
                 acc_ver_hist_meta.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -1211,13 +1177,13 @@ void CPSGS_Reply::PrepareRequestTimeoutMessage(const string &  msg)
     string      header = GetReplyMessageHeader(msg.size(),
                                                CRequestStatus::e504_GatewayTimeout,
                                                ePSGS_RequestTimeout, eDiag_Error);
-    while (m_ChunksLock.exchange(true)) {}
+
+    lock_guard<mutex>       guard(m_ChunksLock);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
@@ -1234,24 +1200,23 @@ void CPSGS_Reply::PrepareProcessorProgressMessage(const string &  processor_id,
                                                            processor_id,
                                                            progress_status);
 
-    while (m_ChunksLock.exchange(true)) {}
+    lock_guard<mutex>       guard(m_ChunksLock);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     ++m_TotalSentReplyChunks;
-    m_ChunksLock = false;
 }
 
 
 void CPSGS_Reply::PrepareReplyCompletion(const psg_time_point_t &  create_timestamp)
 {
-    x_UpdateLastActivity();
-
     if (m_ConnectionCanceled || IsFinished())
         return;
     if (m_Reply->IsClosed())
         return;
 
-    while (m_ChunksLock.exchange(true)) {}
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
     ++m_TotalSentReplyChunks;
 
     string  reply_completion = GetReplyCompletionHeader(m_TotalSentReplyChunks,
@@ -1259,7 +1224,6 @@ void CPSGS_Reply::PrepareReplyCompletion(const psg_time_point_t &  create_timest
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(reply_completion.data()),
                 reply_completion.size()));
-    m_ChunksLock = false;
 }
 
 

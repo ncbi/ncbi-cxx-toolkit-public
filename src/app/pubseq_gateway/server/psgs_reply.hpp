@@ -63,7 +63,6 @@ public:
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
-        m_ChunksLock(false),
         m_ConnectionCanceled(false),
         m_RequestId(0),
         m_LastActivityTimestamp(psg_clock_t::now())
@@ -79,7 +78,6 @@ public:
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
-        m_ChunksLock(false),
         m_ConnectionCanceled(false),
         m_RequestId(0),
         m_LastActivityTimestamp(psg_clock_t::now())
@@ -363,7 +361,7 @@ private:
     atomic<bool>                        m_NextItemIdLock;
     size_t                              m_NextItemId;
     int32_t                             m_TotalSentReplyChunks;
-    atomic<bool>                        m_ChunksLock;
+    mutex                               m_ChunksLock;
     vector<h2o_iovec_t>                 m_Chunks;
     volatile bool                       m_ConnectionCanceled;
     size_t                              m_RequestId;
