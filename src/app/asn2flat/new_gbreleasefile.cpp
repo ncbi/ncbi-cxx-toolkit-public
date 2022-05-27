@@ -86,17 +86,25 @@ public:
     {
         m_flattened.clear();
 
+
         for (auto& rec: m_reader->GetBioseqs())
         {
             auto parent = rec.m_parent_set;
-            auto _class = parent->m_class;
-            if ((_class == CBioseq_set::eClass_not_set) ||
-                (_class == CBioseq_set::eClass_genbank))
+            
+            if (auto _class = parent->m_class; 
+                    x_ShouldSplitSet(_class))
             { // create fake bioseq_set
                 m_flattened.push_back({rec.m_pos, m_reader->GetBiosets().end(), objects::CBioseq_set::eClass_not_set, {} });
-            } else {
-                if (m_flattened.empty() || (m_flattened.back().m_pos != parent->m_pos))
-                    m_flattened.push_back(*parent);
+                continue;
+            }
+         
+            auto grandParent = parent->m_parent_set;
+            while (!x_ShouldSplitSet(grandParent->m_class)) {
+                parent = grandParent;
+                grandParent = grandParent->m_parent_set;
+            }  
+            if (m_flattened.empty() || (m_flattened.back().m_pos != parent->m_pos)) {
+                m_flattened.push_back(*parent);
             }
         }
 
@@ -128,6 +136,12 @@ public:
     }
 
 private:
+
+    static bool x_ShouldSplitSet(CBioseq_set::EClass setClass) {
+        return setClass == CBioseq_set::eClass_not_set ||
+               setClass == CBioseq_set::eClass_genbank;
+    }
+
     unique_ptr<CHugeFile> m_file;
     CHugeAsnReader::TBioseqSetIndex m_flattened;
     CHugeAsnReader::TBioseqSetIndex::iterator m_current;
