@@ -155,7 +155,7 @@ public:
 
         m_Req = nullptr;
         m_RespGenerator = {0};
-        m_OutputIsReady = false;
+        m_OutputIsReady = true;
         m_OutputFinished = false;
         m_Postponed = false;
         m_Canceled = false;

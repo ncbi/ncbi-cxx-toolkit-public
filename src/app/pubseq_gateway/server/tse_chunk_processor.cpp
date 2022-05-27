@@ -1091,8 +1091,7 @@ void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
     }
 
     // TSE chunk: ready packets need to be sent right away
-    if (IPSGS_Processor::m_Reply->IsOutputReady())
-        IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
+    IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 
     if (AreAllFinishedRead()) {
         CPSGS_CassProcessorBase::SignalFinishProcessing();

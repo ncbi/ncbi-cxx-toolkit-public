@@ -173,6 +173,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
                                    ePSGS_NoProcessor, eDiag_Error);
         reply->PrepareReplyCompletion(request->GetStartTimestamp());
+
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
         x_PrintRequestStop(request, CRequestStatus::e404_NotFound);
