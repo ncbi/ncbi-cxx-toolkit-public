@@ -3,9 +3,11 @@ stages:
  - push-build
 
 build:
+ stage: build
  - echo "Building toolkit using cmake"
  - cmake .
  - make VERBOSE=1
+
 push-build:
   stage: build
   trigger: pd/cxxtk/cxx/ncbi-cxx-toolkit-core-conan
