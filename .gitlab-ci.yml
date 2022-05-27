@@ -1,3 +1,7 @@
+image:
+ name: ${CI_REGISTRY}/pd/do/images/base/production:latest
+ entrypoint: ["/bin/bash", "-c"]
+
 stages:
  - build
  - push-build
