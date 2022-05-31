@@ -263,6 +263,9 @@ protected:
         const TReaderData&,
         CSeq_annot&);
 
+    virtual void xValidateAnnot(
+        const CSeq_annot&) {};
+
     virtual bool xGetLine(
         ILineReader&,
         string&);

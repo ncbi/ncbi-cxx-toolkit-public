@@ -183,6 +183,9 @@ protected:
     void xVerifyCdsParents(
         const CGff2Record&);
 
+    virtual void xValidateAnnot(
+        const CSeq_annot&);
+
     virtual bool xFeatureSetXrefGrandParent(
         const string&,
         CRef<CSeq_feat>);

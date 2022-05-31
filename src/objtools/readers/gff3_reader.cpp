@@ -1127,5 +1127,14 @@ TSeqPos CGff3Reader::GetSequenceSize(
     return mpLocations->GetSequenceSize(seqId);
 }
 
+//  ----------------------------------------------------------------------------
+void CGff3Reader::xValidateAnnot(
+    const CSeq_annot& )
+//  ----------------------------------------------------------------------------
+{
+    mpLocations->Validate();
+}
+
+
 END_objects_SCOPE
 END_NCBI_SCOPE
