@@ -4903,6 +4903,7 @@ MZH	s	Zoolgical Museum, Finnish Museum of Natural History
 MZKI	c	Microbial Culture Collection of National Institute of Chemistry			
 MZL	s	Musee Zoologique	MZLS		
 MZLU	s	Lund University Museum			
+MZMU	s	Departmental Museum of Zoology, Mizoram University			
 MZN	s	Musee Zoologie			
 MZNA	s	Universidad de Navarra, Museum of Zoology			
 MZNC	s	Universidad Nacional de Cordoba, Museo de Zoolog&iacutea			
