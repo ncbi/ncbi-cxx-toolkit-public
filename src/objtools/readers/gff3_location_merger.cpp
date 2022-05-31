@@ -95,6 +95,44 @@ CGff3LocationRecord::ComparePositions(
 
 
 //  ============================================================================
+void CGffIdTracker::AddRecord(
+    string id,
+    const CGff2Record& record)
+//  ============================================================================
+{
+    CReaderMessage errorDuplicateId(
+        eDiag_Error,
+        0,
+        string("Bad data line: record ID \"") + id + "\" is used multiple times");
+
+    CGffIdTrackRecord trackRecord(record);
+    auto mapIt = mIds.find(id);
+    if (mapIt == mIds.end()) {
+        mapIt = mIds.emplace(id, list<CGffIdTrackRecord>()).first;
+        mapIt->second.push_back(trackRecord);
+        return;
+    }
+    auto& recordList = mapIt->second;
+    auto pendingType = record.NormalizedType();
+    if (pendingType == "exon") {
+        recordList.push_back(trackRecord);
+        return;
+    } 
+
+    _ASSERT(!recordList.empty());
+    auto expectedType = recordList.front().mSeqType;
+    if (pendingType != expectedType) {
+        throw errorDuplicateId;
+    }
+    auto pendingSeqId = record.Id();
+    auto expectedSeqId = recordList.front().mSeqId;
+    if (pendingSeqId != expectedSeqId) {
+        throw errorDuplicateId;
+    }
+    recordList.push_back(trackRecord);
+}
+
+//  ============================================================================
 CGff3LocationMerger::CGff3LocationMerger(
     unsigned int flags,
     CGff3ReadRecord::SeqIdResolver idResolver,
@@ -172,19 +210,21 @@ CGff3LocationMerger::AddRecordForId(
 //  ============================================================================
 {
     VerifyRecordLocation(record);
-    
+    mIdTracker.AddRecord(id, record);
+
     auto existingEntry = mMapIdToLocations.find(id);
     if (existingEntry == mMapIdToLocations.end()) {
         existingEntry = mMapIdToLocations.emplace(id, LOCATIONS()).first;
     }
     LOCATIONS& locations = existingEntry->second;
     // special case: gene
-    if (locations.size() == 1  &&  locations.front().mType == "gene") {
+    if (locations.size() == 1 && locations.front().mType == "gene") {
         return;
     }
     CGff3LocationRecord location(record, mFlags, mIdResolver);
     existingEntry->second.push_front(location);
 }
+
 
 //  ============================================================================
 bool CGff3LocationMerger::xGetLocationIds(
