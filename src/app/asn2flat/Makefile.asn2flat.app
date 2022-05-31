@@ -7,7 +7,7 @@
 #################################
 
 APP = asn2flat
-SRC = asn2flat new_gbreleasefile
+SRC = asn2flat 
 
 CDD_LIB = ncbi_xloader_cdd cdd_access
 SNP_LIB = $(ncbi_xloader_snp) dbsnp_ptis grpc_integration
@@ -28,4 +28,4 @@ POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects BerkeleyDB SQLITE3
 
-WATCHERS = ludwigf gotvyans dondosha
+WATCHERS = ludwigf gotvyans dondosha foleyjp

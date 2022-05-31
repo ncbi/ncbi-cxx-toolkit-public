@@ -1,8 +1,8 @@
 # $Id$
 
 NCBI_begin_app(asn2flat)
-  NCBI_project_watchers(ludwigf gotvyans)
-  NCBI_sources(asn2flat new_gbreleasefile)
+  NCBI_project_watchers(ludwigf gotvyans foleyjp)
+  NCBI_sources(asn2flat)
   NCBI_uses_toolkit_libraries(data_loaders_util xformat)
 
   NCBI_optional_components(GRPC VDB)
