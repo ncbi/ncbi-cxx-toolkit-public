@@ -1,6 +1,15 @@
 #include <ncbi_pch.hpp>
 #include <objtools/edit/mla_updater.hpp>
 
+#include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
+#include <objects/general/Name_std.hpp>
+#include <objects/general/Person_id.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Imprint.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/mla/Title_msg.hpp>
 #include <objects/mla/Title_msg_list.hpp>
@@ -54,6 +63,54 @@ TEntrezId CMLAUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
         *perr = mlaErrorVal;
     }
     return ZERO_ENTREZ_ID;
+}
+
+static void SetArticle(CCit_art& art, const SCitMatch& cm)
+{
+    CCit_jour& J = art.SetFrom().SetJournal();
+
+    if (! cm.Journal.empty()) {
+        CRef<CTitle::C_E> t(new CTitle::C_E);
+        t->SetName(cm.Journal);
+        J.SetTitle().Set().push_back(t);
+    }
+
+    if (! cm.Volume.empty()) {
+        J.SetImp().SetVolume(cm.Volume);
+    }
+
+    if (! cm.Page.empty()) {
+        J.SetImp().SetPages(cm.Page);
+    }
+
+    int year = 0;
+    if (! cm.Year.empty()) {
+        NStr::StringToNumeric(cm.Year, &year, NStr::fConvErr_NoThrow);
+    }
+    J.SetImp().SetDate().SetStd().SetYear(year);
+
+    if (! cm.Author.empty()) {
+        CRef<CAuthor> author(new CAuthor);
+        author->SetName().SetMl(cm.Author);
+        art.SetAuthors().SetNames().SetMl().push_back(cm.Author);
+    }
+
+    if (! cm.Issue.empty()) {
+        J.SetImp().SetIssue(cm.Issue);
+    }
+
+    if (! cm.Title.empty()) {
+        CRef<CTitle::C_E> title(new CTitle::C_E);
+        title->SetName(cm.Title);
+        art.SetTitle().Set().push_back(title);
+    }
+}
+
+TEntrezId CMLAUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
+{
+    CPub pub;
+    SetArticle(pub.SetArticle(), cm);
+    return this->CitMatch(pub, perr);
 }
 
 CRef<CPub> CMLAUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
