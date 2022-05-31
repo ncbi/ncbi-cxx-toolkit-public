@@ -67,7 +67,7 @@
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include "new_gbreleasefile.hpp"
+#include <objtools/edit/huge_file_process.hpp>
 
 #define USE_CDDLOADER
 
@@ -687,7 +687,7 @@ int CAsn2FlatApp::Run()
     {
         s_INSDSetOpen ( is_insdseq, m_Os );
         is.reset();
-        CNewGBReleaseFile in (args["i"].AsString(), propagate );
+        edit::CHugeFileProcess in (args["i"].AsString());
         CRef<CSeq_id> seqid;
         if (!m_AccessionFilter.empty()) {
             CBioseq::TId ids;
