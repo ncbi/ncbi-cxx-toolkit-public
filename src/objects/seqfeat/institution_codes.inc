@@ -4936,6 +4936,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MZKI\tc\tMicrobial Culture Collection of National Institute of Chemistry\t\t\t",
 "MZL\ts\tMusee Zoologique\tMZLS\t\t",
 "MZLU\ts\tLund University Museum\t\t\t",
+"MZMU\ts\tDepartmental Museum of Zoology, Mizoram University\t\t\t",
 "MZN\ts\tMusee Zoologie\t\t\t",
 "MZNA\ts\tUniversidad de Navarra, Museum of Zoology\t\t\t",
 "MZNC\ts\tUniversidad Nacional de Cordoba, Museo de Zoolog&iacutea\t\t\t",
