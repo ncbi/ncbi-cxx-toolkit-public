@@ -14,13 +14,15 @@ class NCBI_XOBJEDIT_EXPORT CMLAUpdater : public IPubmedUpdater
 {
 public:
     CMLAUpdater();
-    bool Init() override;
-    void Fini() override;
-    TEntrezId CitMatch(const CPub&, EPubmedError* = nullptr) override;
+    bool       Init() override;
+    void       Fini() override;
+    TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
+    TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) override;
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
-    string GetTitle(const string&) override;
+    string     GetTitle(const string&) override;
 
     void SetClient(CMLAClient*);
+
 private:
     CRef<CMLAClient> m_mlac;
 };

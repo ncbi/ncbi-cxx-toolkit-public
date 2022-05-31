@@ -86,39 +86,10 @@ public:
         SetDatabase("pubmed");
     }
 
-    const string& GetAuthor() const { return m_author; }
-    void SetAuthor(const string& s)
+    void SetRequestParams(const SCitMatch& cm)
     {
         Disconnect();
-        m_author = s;
-    }
-
-    const string& GetJournal() const { return m_journal; }
-    void SetJournal(const string& s)
-    {
-        Disconnect();
-        m_journal = s;
-    }
-
-    int GetYear() const { return m_year; }
-    void SetYear(int n)
-    {
-        Disconnect();
-        m_year = n;
-    }
-
-    string GetVol() const { return m_vol; }
-    void SetVol(string s)
-    {
-        Disconnect();
-        m_vol = s;
-    }
-
-    string GetPage() const { return m_page; }
-    void SetPage(string s)
-    {
-        Disconnect();
-        m_page = s;
+        m_req = cm;
     }
 
     enum ERetMode {
@@ -156,31 +127,31 @@ public:
 
         // Journal
         if (m_rule & e_J) {
-            bdata << NStr::URLEncode(GetJournal(), NStr::eUrlEnc_ProcessMarkChars);
+            bdata << NStr::URLEncode(m_req.Journal, NStr::eUrlEnc_ProcessMarkChars);
         }
         bdata << '|';
 
         // Year
         if (m_rule & e_Y) {
-            bdata << GetYear();
+            bdata << m_req.Year;
         }
         bdata << '|';
 
         // Volume
         if (m_rule & e_V) {
-            bdata << NStr::URLEncode(GetVol(), NStr::eUrlEnc_ProcessMarkChars);
+            bdata << NStr::URLEncode(m_req.Volume, NStr::eUrlEnc_ProcessMarkChars);
         }
         bdata << '|';
 
         // Page
         if (m_rule & e_P) {
-            bdata << GetPage();
+            bdata << m_req.Page;
         }
         bdata << '|';
 
         // Author
         if (m_rule & e_A) {
-            bdata << NStr::URLEncode(GetAuthor(), NStr::eUrlEnc_ProcessMarkChars);
+            bdata << NStr::URLEncode(m_req.Author, NStr::eUrlEnc_ProcessMarkChars);
         }
         bdata << '|';
 
@@ -231,13 +202,10 @@ public:
         return {};
     }
 
-    void SetFromArticle(const CCit_art& A)
+    static void FillFromArticle(SCitMatch& cm, const CCit_art& A)
     {
         if (A.IsSetAuthors()) {
-            string author = GetFirstAuthor(A.GetAuthors());
-            if (! author.empty()) {
-                this->SetAuthor(author);
-            }
+            cm.Author = GetFirstAuthor(A.GetAuthors());
         }
 
         if (A.IsSetFrom() && A.GetFrom().IsJournal()) {
@@ -245,7 +213,7 @@ public:
             if (J.IsSetTitle()) {
                 const CTitle& T = J.GetTitle();
                 if (T.IsSet() && ! T.Get().empty()) {
-                    this->SetJournal(T.GetTitle());
+                    cm.Journal = T.GetTitle();
                 }
             }
             if (J.IsSetImp()) {
@@ -253,16 +221,19 @@ public:
                 if (I.IsSetDate()) {
                     const CDate& D = I.GetDate();
                     if (D.IsStd()) {
-                        this->SetYear(D.GetStd().GetYear());
+                        auto year = D.GetStd().GetYear();
+                        if (year > 0) {
+                            cm.Year = to_string(year);
+                        }
                     }
                 }
                 if (I.IsSetVolume()) {
-                    this->SetVol(I.GetVolume());
+                    cm.Volume = I.GetVolume();
                 }
                 if (I.IsSetPages()) {
                     string page, page_end;
                     NStr::SplitInTwo(I.GetPages(), "-", page, page_end);
-                    this->SetPage(page);
+                    cm.Page = page;
                 }
             }
         }
@@ -270,19 +241,19 @@ public:
 
     bool SetRule(eCitMatchFlags rule)
     {
-        if ((rule & e_J) && this->GetJournal().empty()) {
+        if ((rule & e_J) && m_req.Journal.empty()) {
             return false;
         }
-        if ((rule & e_V) && this->GetVol().empty()) {
+        if ((rule & e_V) && m_req.Volume.empty()) {
             return false;
         }
-        if ((rule & e_P) && this->GetPage().empty()) {
+        if ((rule & e_P) && m_req.Page.empty()) {
             return false;
         }
-        if ((rule & e_Y) && this->GetYear() <= 0) {
+        if ((rule & e_Y) && m_req.Year.empty()) {
             return false;
         }
-        if ((rule & e_A) && this->GetAuthor().empty()) {
+        if ((rule & e_A) && m_req.Author.empty()) {
             return false;
         }
 
@@ -333,11 +304,7 @@ public:
     EPubmedError GetError() const { return m_error; }
 
 private:
-    string         m_author;
-    string         m_journal;
-    int            m_year = 0;
-    string         m_vol;
-    string         m_page;
+    SCitMatch      m_req;
     ERetMode       m_RetMode = eRetMode_none;
     eCitMatchFlags m_rule    = e_J | e_V | e_P | e_Y | e_A;
     EPubmedError   m_error;
@@ -365,18 +332,25 @@ CEUtilsUpdater::CEUtilsUpdater()
 
 TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
 {
-    unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
-
-    req->SetRequestMethod(CEUtils_Request::eHttp_Get);
-    req->SetRetMode(CECitMatch_Request::eRetMode_text);
     if (pub.IsArticle()) {
-        req->SetFromArticle(pub.GetArticle());
+        SCitMatch cm;
+        CECitMatch_Request::FillFromArticle(cm, pub.GetArticle());
+        return CitMatch(cm, perr);
     } else {
         if (perr) {
             *perr = eError_val_not_found;
         }
         return ZERO_ENTREZ_ID;
     }
+}
+
+TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
+{
+    unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
+
+    req->SetRequestMethod(CEUtils_Request::eHttp_Get);
+    req->SetRetMode(CECitMatch_Request::eRetMode_text);
+    req->SetRequestParams(cm);
 
     constexpr array<eCitMatchFlags, 2> ruleset = { e_J | e_V | e_P | e_A, e_J | e_V | e_P };
 

@@ -47,15 +47,26 @@ BEGIN_SCOPE(edit)
 
 using EPubmedError = EError_val;
 
+struct NCBI_XOBJEDIT_EXPORT SCitMatch {
+    string Journal;
+    string Volume;
+    string Page;
+    string Year;
+    string Author;
+    string Issue;
+    string Title;
+};
+
 class NCBI_XOBJEDIT_EXPORT IPubmedUpdater
 {
 public:
     virtual ~IPubmedUpdater() {}
-    virtual bool Init() { return true; }
-    virtual void Fini() {}
-    virtual TEntrezId CitMatch(const CPub&, EPubmedError* = nullptr) = 0;
-    virtual CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) = 0;
-    virtual string GetTitle(const string&) = 0;
+    virtual bool       Init() { return true; }
+    virtual void       Fini() {}
+    virtual TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr)      = 0;
+    virtual TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) = 0;
+    virtual CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr)     = 0;
+    virtual string     GetTitle(const string&)                             = 0;
 };
 
 END_SCOPE(edit)
