@@ -157,7 +157,7 @@ void CGffIdTracker::CheckAndIndexRecord(
     auto pendingSeqId = record.Id();
     auto expectedSeqId = recordList.front().mSeqId;
     if (pendingSeqId != expectedSeqId) {
-        //throw errorDuplicateId;
+        throw errorDuplicateId;
     }
     if (!parentId.empty()) {
         mParentIds.emplace(parentId);
