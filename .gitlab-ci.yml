@@ -18,6 +18,7 @@ build:
   paths:
    - config.log
    - build.log
+   - distcc.log
   expire_in: never
 
 push-build:
