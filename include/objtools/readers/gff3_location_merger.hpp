@@ -97,12 +97,18 @@ class CGffIdTracker
 //  ============================================================================
 {
 public:
-    void AddRecord(
+    void CheckAndIndexRecord(
         string id,
         const CGff2Record& record);
 
+    void CheckAndIndexRecord(
+        const CGff2Record& record);
+
+    void CheckIntegrity();
+
 private:
     map<string, list<CGffIdTrackRecord>> mIds;
+    set<string> mParentIds;
 };
 
 
@@ -158,6 +164,8 @@ public:
 
     TSeqPos GetSequenceSize(
         const string&) const;
+
+    void Validate();
 
 private:
     static bool xGetLocationIds(

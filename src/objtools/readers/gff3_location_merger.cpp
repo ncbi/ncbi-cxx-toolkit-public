@@ -95,9 +95,31 @@ CGff3LocationRecord::ComparePositions(
 
 
 //  ============================================================================
-void CGffIdTracker::AddRecord(
+void CGffIdTracker::CheckAndIndexRecord(
+    const CGff2Record& record)
+//  ============================================================================
+{
+    CReaderMessage errorMissingId(
+        eDiag_Error,
+        0,
+        string("Bad data line: missing record ID"));
+
+    string id;
+    record.GetAttribute("ID", id);
+    if (id.empty()) {
+        throw errorMissingId;
+    }
+    CheckAndIndexRecord(id, record);
+}
+
+
+//  ============================================================================
+void CGffIdTracker::CheckAndIndexRecord(
     string id,
     const CGff2Record& record)
+//  Add the given record to an index used for checking the validity og GFF3 IDs.
+//  Will do ammediate chack against the records that are indexed already (in the
+//  spirit of catching obvious problems early).
 //  ============================================================================
 {
     CReaderMessage errorDuplicateId(
@@ -106,16 +128,24 @@ void CGffIdTracker::AddRecord(
         string("Bad data line: record ID \"") + id + "\" is used multiple times");
 
     CGffIdTrackRecord trackRecord(record);
+    string parentId;
+    record.GetAttribute("Parent", parentId);
     auto mapIt = mIds.find(id);
     if (mapIt == mIds.end()) {
         mapIt = mIds.emplace(id, list<CGffIdTrackRecord>()).first;
         mapIt->second.push_back(trackRecord);
+        if (!parentId.empty()) {
+            mParentIds.emplace(parentId);
+        }
         return;
     }
     auto& recordList = mapIt->second;
     auto pendingType = record.NormalizedType();
     if (pendingType == "exon") {
         recordList.push_back(trackRecord);
+        if (!parentId.empty()) {
+            mParentIds.emplace(parentId);
+        }
         return;
     } 
 
@@ -127,10 +157,34 @@ void CGffIdTracker::AddRecord(
     auto pendingSeqId = record.Id();
     auto expectedSeqId = recordList.front().mSeqId;
     if (pendingSeqId != expectedSeqId) {
-        throw errorDuplicateId;
+        //throw errorDuplicateId;
+    }
+    if (!parentId.empty()) {
+        mParentIds.emplace(parentId);
     }
     recordList.push_back(trackRecord);
 }
+
+//  ============================================================================
+void CGffIdTracker::CheckIntegrity()
+// Check validity of GFF3 feature and parent IDs based on the assumption that 
+// all GFF3 records in the input have been seen and indexed.
+// =============================================================================
+{
+    // make sure there is an ID for every ParentID:
+    for (const auto& parentId: mParentIds) {
+        if (mIds.find(parentId) == mIds.end()) {
+            CReaderMessage errorBadParentId(
+                eDiag_Error,
+                0,
+                string("Bad data line: Parent \"" + parentId + 
+                    "\" does not refer to a GFF3 record ID"));
+            throw errorBadParentId;
+        }
+    }
+    cerr << "\n\n";
+}
+
 
 //  ============================================================================
 CGff3LocationMerger::CGff3LocationMerger(
@@ -186,6 +240,8 @@ CGff3LocationMerger::AddRecord(
     const CGff2Record& record)
 //  ============================================================================
 {
+    mIdTracker.CheckAndIndexRecord(record);
+
     if (record.NormalizedType() == "cds") {
         VerifyRecordLocation(record);
         return true;
@@ -210,7 +266,6 @@ CGff3LocationMerger::AddRecordForId(
 //  ============================================================================
 {
     VerifyRecordLocation(record);
-    mIdTracker.AddRecord(id, record);
 
     auto existingEntry = mMapIdToLocations.find(id);
     if (existingEntry == mMapIdToLocations.end()) {
@@ -384,6 +439,16 @@ CGff3LocationMerger::MergeLocation(
     const auto& front = locations.front();
     frame = front.mFrame;
 }
+
+
+//  ============================================================================
+void 
+CGff3LocationMerger::Validate()
+//  ============================================================================
+{
+    mIdTracker.CheckIntegrity();
+}
+
 
 //  =============================================================================
 void

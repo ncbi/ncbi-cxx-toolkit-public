@@ -245,6 +245,7 @@ CReaderBase::ReadSeqAnnot(
         xGuardedProcessData(readerData, *pAnnot, pEL);
         xGuardedGetData(lr, readerData, pEL);
     }
+    xValidateAnnot(*pAnnot);
     xPostProcessAnnot(*pAnnot);
     return pAnnot;
 }
