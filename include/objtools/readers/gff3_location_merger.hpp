@@ -72,6 +72,41 @@ public:
 };
 
 //  ============================================================================
+class CGffIdTrackRecord
+//  ============================================================================
+{
+public:
+    CGffIdTrackRecord(
+        const CGff2Record& record):
+        mSeqType(record.NormalizedType()),
+        mSeqId(record.Id()),
+        mSeqStart(record.SeqStart()),
+        mSeqStop(record.SeqStop()),
+        mSeqStrand(record.Strand())
+    {};
+
+    string mSeqType;
+    string mSeqId;
+    TSeqPos mSeqStart;
+    TSeqPos mSeqStop;
+    ENa_strand mSeqStrand;
+};
+
+//  ============================================================================
+class CGffIdTracker
+//  ============================================================================
+{
+public:
+    void AddRecord(
+        string id,
+        const CGff2Record& record);
+
+private:
+    map<string, list<CGffIdTrackRecord>> mIds;
+};
+
+
+//  ============================================================================
 class NCBI_XOBJREAD_EXPORT CGff3LocationMerger
 //  ============================================================================
 {
@@ -140,6 +175,7 @@ private:
     CGff3ReadRecord::SeqIdResolver mIdResolver;
 
     LOCATION_MAP mMapIdToLocations;
+    CGffIdTracker mIdTracker;
 };
 
 END_SCOPE(objects)
