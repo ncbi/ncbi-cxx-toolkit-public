@@ -56,6 +56,9 @@
 
 #include <objmgr/seqdesc_ci.hpp>
 #include <util/sgml_entity.hpp>
+#include <util/strsearch.hpp>
+
+#include <mutex>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Validator
 
@@ -64,10 +67,9 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 using namespace sequence;
 
-const string kInvalidReplyMsg = "Taxonomy service returned invalid reply";
+static const string kInvalidReplyMsg = "Taxonomy service returned invalid reply";
 
-unique_ptr<CTextFsa> CValidError_imp::m_SourceQualTags;
-
+static unique_ptr<CTextFsa> m_SourceQualTags;
 
 static bool s_UnbalancedParentheses(string str)
 {
@@ -428,9 +430,9 @@ static bool s_ReportUndefinedSpeciesId(const CBioseq& bioseq)
 }
 
 
-static bool s_IsChromosome(const CBioSource& biosource) 
+static bool s_IsChromosome(const CBioSource& biosource)
 {
-    return biosource.IsSetGenome() && 
+    return biosource.IsSetGenome() &&
         biosource.GetGenome() == CBioSource::eGenome_chromosome;
 }
 
@@ -2235,8 +2237,8 @@ bool CValidError_imp::IsTransgenic(const CBioSource& bsrc)
     return false;
 }
 
-
-const string CValidError_imp::sm_SourceQualPrefixes[] = {
+std::string_view sm_SourceQualPrefixes[] =
+{
     "acronym:",
     "altitude:",
     "anamorph:",
@@ -2326,11 +2328,17 @@ const string CValidError_imp::sm_SourceQualPrefixes[] = {
 
 void CValidError_imp::InitializeSourceQualTags()
 {
-    m_SourceQualTags.reset(new CTextFsa(true));
-    size_t size = sizeof(sm_SourceQualPrefixes) / sizeof(string);
+    static std::mutex m;
 
-    for (size_t i = 0; i < size; ++i) {
-        m_SourceQualTags->AddWord(sm_SourceQualPrefixes[i]);
+    std::lock_guard g(m);
+
+    if (m_SourceQualTags)
+        return;
+
+    m_SourceQualTags.reset(new CTextFsa(true));
+
+    for (auto rec: sm_SourceQualPrefixes) {
+        m_SourceQualTags->AddWord(string(rec));
     }
 
     m_SourceQualTags->Prime();
@@ -2351,7 +2359,7 @@ const CSeq_entry *ctx)
     for (size_t i = 0; i < str_len; ++i) {
         state = m_SourceQualTags->GetNextState(state, str[i]);
         if (m_SourceQualTags->IsMatchFound(state)) {
-            string match = m_SourceQualTags->GetMatches(state)[0];
+            auto match = m_SourceQualTags->GetMatches(state)[0];
             if (match.empty()) {
                 match = "?";
             }

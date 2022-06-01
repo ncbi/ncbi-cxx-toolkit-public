@@ -42,7 +42,6 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/GIBB_mol.hpp>
-#include <util/strsearch.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
@@ -591,14 +590,6 @@ private:
 
     // list of publication serial numbers
     vector< int > m_PubSerialNumbers;
-
-    // legal dbxref database strings
-    static const string legalDbXrefs[];
-    static const string legalRefSeqDbXrefs[];
-
-    // source qulalifiers prefixes
-    static const string sm_SourceQualPrefixes[];
-    static unique_ptr<CTextFsa> m_SourceQualTags;
 
     CValidator::TProgressCallback m_PrgCallback;
     CValidator::CProgressInfo     m_PrgInfo;
