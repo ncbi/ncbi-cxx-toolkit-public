@@ -120,7 +120,7 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
                 'whole-tse',
                 'orig-tse'
             ],
-            'exclude_blobs': [None] + list(random.choices(blob_ids_only, k=i) for i in range(4)),
+            'exclude_blobs': [None] + (list(random.choices(blob_ids_only, k=i) for i in range(4)) if blob_ids_only else []),
             'acc_substitution': [
                 None,
                 'default',
