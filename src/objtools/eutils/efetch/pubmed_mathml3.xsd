@@ -1970,7 +1970,9 @@
   </xs:group>
   <xs:element name="mi">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="mml:token.content"/>
+      </xs:choice>
       <xs:attributeGroup ref="mml:mml.mi.attlist"/>
     </xs:complexType>
   </xs:element>
@@ -2046,7 +2048,9 @@
   </xs:attributeGroup>
   <xs:element name="mn">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="mml:token.content"/>
+      </xs:choice>
       <xs:attributeGroup ref="mml:mml.mn.attlist"/>
     </xs:complexType>
   </xs:element>
@@ -2057,7 +2061,9 @@
   </xs:attributeGroup>
   <xs:element name="mo">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="mml:token.content"/>
+      </xs:choice>
       <xs:attributeGroup ref="mml:mml.mo.attlist"/>
     </xs:complexType>
   </xs:element>
@@ -2199,7 +2205,9 @@
   </xs:attributeGroup>
   <xs:element name="mtext">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="mml:token.content"/>
+      </xs:choice>
       <xs:attributeGroup ref="mml:mml.mtext.attlist"/>
     </xs:complexType>
   </xs:element>
@@ -2274,7 +2282,9 @@
   </xs:attributeGroup>
   <xs:element name="ms">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="mml:token.content"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="mml:token.content"/>
+      </xs:choice>
       <xs:attributeGroup ref="mml:mml.ms.attlist"/>
     </xs:complexType>
   </xs:element>

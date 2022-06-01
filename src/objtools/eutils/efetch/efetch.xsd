@@ -49,15 +49,13 @@
   <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
 
   <xs:group name="text">
-    <xs:sequence>
-      <xs:choice minOccurs="0">
+      <xs:choice>
         <xs:element ref="b"/>
         <xs:element ref="i"/>
         <xs:element ref="sup"/>
         <xs:element ref="sub"/>
         <xs:element ref="u"/>
       </xs:choice>
-    </xs:sequence>
   </xs:group>
   <xs:attributeGroup name="booklinkatts">
     <xs:attribute name="book" type="xs:string"/>
@@ -313,7 +311,9 @@
   <xs:element name="Acronym" type="xs:string"/>
   <xs:element name="Affiliation">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="AffiliationInfo">
@@ -454,7 +454,9 @@
   <!-- bold -->
   <xs:element name="b">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="BeginningDate">
@@ -530,7 +532,9 @@
   <xs:element name="CitationSubset" type="xs:string"/>
   <xs:element name="CoiStatement">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="CollectionTitle">
@@ -547,7 +551,9 @@
   </xs:attributeGroup>
   <xs:element name="CollectiveName">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="CommentsCorrections">
@@ -801,7 +807,9 @@
   <!-- italic -->
   <xs:element name="i">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="Identifier">
@@ -1106,7 +1114,9 @@
   </xs:element>
   <xs:element name="Param">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
       <xs:attributeGroup ref="Param.attlist"/>
     </xs:complexType>
   </xs:element>
@@ -1217,7 +1227,9 @@
   <xs:element name="PublisherLocation" type="xs:string"/>
   <xs:element name="PublisherName">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="QualifierName">
@@ -1277,7 +1289,9 @@
   </xs:element>
   <xs:element name="SectionTitle">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
       <xs:attributeGroup ref="SectionTitle.attlist"/>
     </xs:complexType>
   </xs:element>
@@ -1289,18 +1303,24 @@
   <!-- subscript -->
   <xs:element name="sub">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="Suffix">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <!-- superscript -->
   <xs:element name="sup">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="SupplMeshList">
@@ -1332,7 +1352,9 @@
   <!-- underline -->
   <xs:element name="u">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="URL">
@@ -1414,7 +1436,9 @@
   <xs:element name="Volume" type="xs:string"/>
   <xs:element name="VolumeTitle">
     <xs:complexType mixed="true">
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="text"/>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:group ref="text"/>
+      </xs:choice>
     </xs:complexType>
   </xs:element>
   <xs:element name="Year" type="xs:string"/>
