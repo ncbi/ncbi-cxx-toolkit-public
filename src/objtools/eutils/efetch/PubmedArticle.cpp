@@ -1069,15 +1069,9 @@ static string s_TranslateToAscii(const wstring& str)
 
 
 template<class TE>
-std::wstring s_TextOrOtherListToWstring(const std::list<ncbi::CRef<TE>>& text_list)
+wstring s_TextListToWstring(const list<CRef<TE>>& text_list)
 {
-    return utf8_to_wstring(s_TextOrOtherListToString(text_list));
-}
-
-
-template<class TCD>
-std::wstring s_TextOrOtherToWstring(const TCD& tcd) {
-    return utf8_to_wstring(s_TextOrOtherToString(tcd));
+    return utf8_to_wstring(s_TextListToString(text_list));
 }
 
 
@@ -1364,7 +1358,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                     CRef<CPerson_id> person(new CPerson_id());
                     if (author->GetLC().IsCollectiveName()) {
                         person->SetConsortium(s_TranslateToAscii(
-                            s_TextOrOtherToWstring(author->GetLC().GetCollectiveName())));
+                            s_TextListToWstring(author->GetLC().GetCollectiveName().Get())));
                     }
                     else {
                         person->SetMl(s_TranslateToAscii(utf8_to_wstring(s_GetAuthorMedlineName(*author))));
@@ -1376,7 +1370,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                         list<string> affiliations;
                         for (auto affiliation_info : list_affiliation_info) {
                             string affiliation = s_TranslateToAscii(
-                                s_TextOrOtherToWstring(affiliation_info->GetAffiliation()));
+                                s_TextListToWstring(affiliation_info->GetAffiliation().Get()));
                             if (!affiliation.empty()) affiliations.emplace_back(move(affiliation));
                         }
                         if (!affiliations.empty()) {
@@ -1579,7 +1573,7 @@ static string s_GetAbstractText(const CAbstract& abstr)
         string label = abstract_text_it->GetAttlist().IsSetLabel() ?
             abstract_text_it->GetAttlist().GetLabel() + ": " : "";
         if (!abstract_text.empty()) abstract_text.append(" ");
-        abstract_text.append(label + s_TextOrOtherListToString(abstract_text_it->GetAbstractText()));
+        abstract_text.append(label + s_TextListToString(abstract_text_it->GetAbstractText()));
     }
     return abstract_text;
 }
@@ -1639,26 +1633,6 @@ string s_CleanupText(string str)
             cch = ' ';
     }
     return str;
-}
-
-
-string s_TextToString(const CText& text)
-{
-    const auto& txt = text.GetEBISSU();
-    switch (txt.Which()) {
-    case CText::TEBISSU::e_B:
-        return s_TextOrOtherToString(txt.GetB());
-    case CText::TEBISSU::e_I:
-        return s_TextOrOtherToString(txt.GetI());
-    case CText::TEBISSU::e_Sup:
-        return "(" + s_TextOrOtherToString(txt.GetSup()) + ")";
-    case CText::TEBISSU::e_Sub:
-        return s_TextOrOtherToString(txt.GetSub());
-    case CText::TEBISSU::e_U:
-        return s_TextOrOtherToString(txt.GetU());
-    default:
-        return "";
-    }
 }
 
 
@@ -1722,13 +1696,13 @@ CRef<CDate> s_GetDateFromPubMedPubDate(const CPubMedPubDate& pdate)
 string s_GetArticleTitleStr(const CArticleTitle& article_title)
 {
     return article_title.IsSetArticleTitle() ?
-        s_TranslateToAscii(s_TextOrOtherListToWstring(article_title.GetArticleTitle())) : "";
+        s_TranslateToAscii(s_TextListToWstring(article_title.GetArticleTitle())) : "";
 }
 
 
 string s_GetVernacularTitleStr(const CVernacularTitle& vernacular_title)
 {
-    return s_TranslateToAscii(s_TextOrOtherListToWstring(vernacular_title.Get()));
+    return s_TranslateToAscii(s_TextListToWstring(vernacular_title.Get()));
 }
 
 
@@ -1756,7 +1730,7 @@ string s_GetAuthorMedlineName(const CAuthor& author)
 {
     wstring author_medline_name;
     if (author.GetLC().IsCollectiveName()) {
-        author_medline_name = s_TextOrOtherToWstring(author.GetLC().GetCollectiveName());
+        author_medline_name = s_TextListToWstring(author.GetLC().GetCollectiveName().Get());
         if (!author_medline_name.empty() && author_medline_name.back() != L'.')
             author_medline_name.append(L".");
     }
@@ -1773,7 +1747,7 @@ string s_GetAuthorMedlineName(const CAuthor& author)
         if (!initials.empty())
             author_medline_name.append(L" " + initials);
         if (lfis.IsSetSuffix())
-            author_medline_name.append(L" " + s_TextOrOtherToWstring(lfis.GetSuffix()));
+            author_medline_name.append(L" " + s_TextListToWstring(lfis.GetSuffix().Get()));
     }
     return s_TranslateToAscii(author_medline_name);
 }
