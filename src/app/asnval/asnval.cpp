@@ -58,6 +58,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objtools/validator/validator.hpp>
@@ -85,10 +86,11 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#include <objtools/edit/huge_file_process.hpp>
 
 using namespace ncbi;
-using namespace objects;
-using namespace validator;
+USING_SCOPE(objects);
+USING_SCOPE(validator);
 
 #define USE_XMLWRAPP_LIBS
 
@@ -121,6 +123,7 @@ private:
 
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
     CConstRef<CValidError> ProcessSeqEntry();
+    CConstRef<CValidError> ProcessHugeFileSeqEntry();
     CConstRef<CValidError> ProcessSeqSubmit();
     CConstRef<CValidError> ProcessSeqAnnot();
     CConstRef<CValidError> ProcessSeqFeat();
@@ -167,6 +170,7 @@ private:
     CRef<CObjectManager> m_ObjMgr;
     unique_ptr<CObjectIStream> m_In;
     unsigned int m_Options;
+    bool m_HugeFile = false;
     bool m_Continue;
     bool m_OnlyAnnots;
     bool m_Quiet;
@@ -340,6 +344,8 @@ void CAsnvalApp::Init()
 
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
     arg_desc->AddFlag("batch", "Process NCBI release file (Seq-submit or Bioseq-set only)");
+    arg_desc->AddFlag("huge", "Execute in huge-file mode (currently only applies to Seq-entry input)");
+    arg_desc->SetDependency("huge", CArgDescriptions::eRequires, "i"); // RW-1665 - temporary dependency while I perform initial testing
 
     arg_desc->AddOptionalKey(
         "D", "String", "Path to lat_lon country data files",
@@ -384,6 +390,9 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput()
     if (asn_type == "Seq-submit") {                 // Seq-submit
         eval = ProcessSeqSubmit();
     } else if (asn_type == "Seq-entry") {           // Seq-entry
+        if (m_HugeFile) {
+            return ProcessHugeFileSeqEntry();
+        }
         eval = ProcessSeqEntry();
     } else if (asn_type == "Seq-annot") {           // Seq-annot
         eval = ProcessSeqAnnot();
@@ -888,6 +897,30 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry()
     return ProcessSeqEntry(*se);
 }
 
+
+CConstRef<CValidError> CAsnvalApp::ProcessHugeFileSeqEntry()
+{
+    const CArgs& args = GetArgs();
+
+    CRef<CValidError> pTotalErrors = Ref(new CValidError());
+
+    auto handler = [&pTotalErrors, this](CConstRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry) {
+        auto pCurrentErrors = this->ProcessSeqEntry(*pEntry);       
+        for (CValidError_CI vit(*pCurrentErrors); vit; ++vit) {
+            auto pErrorItem = Ref(new CValidErrItem());
+            pErrorItem->Assign(*vit);
+            pTotalErrors->AddValidErrItem(pErrorItem);
+        }
+    };
+    
+    edit::CHugeFileProcess hugeFileProcessor(args["i"].AsString());
+    hugeFileProcessor.Read(handler, CRef<CSeq_id>());
+
+    return pTotalErrors;
+}
+
+
+
 CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
 {
     // Validate Seq-entry
@@ -921,7 +954,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
     CConstRef<CValidError> eval = validator.Validate(se, scope, m_Options);
     m_NumRecords++;
     return eval;
-    }
+}
 
 
 CRef<CSeq_feat> CAsnvalApp::ReadSeqFeat()
@@ -1132,6 +1165,7 @@ void CAsnvalApp::Setup(const CArgs& args)
                                          CDataLoadersUtil::fGenbankOffByDefault);
 
     m_OnlyAnnots = args["annot"];
+    m_HugeFile = args["huge"];
 
     // Set validator options
     m_Options = CValidatorArgUtil::ArgsToValidatorOptions(args);
