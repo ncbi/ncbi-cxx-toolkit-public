@@ -792,7 +792,7 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
 void CParallelProcessing::Interactive::ReplyComplete::All(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     const auto request = reply->GetRequest();
-    CRequestContextGuard_Base guard(request->GetRequestContext());
+    CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
     guard.SetStatus(s_PsgStatusToRequestStatus(status));
 
     const auto& request_id = *request->GetUserContext<string>();
