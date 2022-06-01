@@ -1,9 +1,40 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Vitaly Stakhovsky, NCBI
+ *
+ * File Description:
+ *  Test CitMatch implementations: MedArch vs EUtils
+ *
+ */
+
 #include <ncbi_pch.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
-#include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_jour.hpp>
@@ -60,7 +91,7 @@ BOOST_AUTO_TEST_CASE(Test_Empty)
 
     for (auto upd : updaters) {
         EPubmedError err;
-        TEntrezId pmid = upd->CitMatch(pub, &err);
+        TEntrezId    pmid = upd->CitMatch(pub, &err);
         BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
         BOOST_CHECK_EQUAL(err, eError_val_citation_not_found);
     }
@@ -96,38 +127,14 @@ Pub ::= article {
 
 BOOST_AUTO_TEST_CASE(Test1)
 {
-    string title = "Virus Res.";
-    int    year  = 2007;
-    int    vol   = 130;
-    int    page  = 162;
-
-    CPub pub;
-    {
-        CCit_art& A = pub.SetArticle();
-        {
-            CCit_jour& J = A.SetFrom().SetJournal();
-            {
-                CTitle& T = J.SetTitle();
-                {
-                    CRef<CTitle::C_E> t(new CTitle::C_E);
-                    t->SetName(title);
-                    T.Set().push_back(t);
-                }
-            }
-            {
-                CImprint& I = J.SetImp();
-                {
-                    CDate& D = I.SetDate();
-                    D.SetStd().SetYear(year);
-                }
-                I.SetVolume(to_string(vol));
-                I.SetPages(to_string(page));
-            }
-        }
-    }
+    SCitMatch cm;
+    cm.Journal = "Virus Res.";
+    cm.Year    = "2007";
+    cm.Volume  = "130";
+    cm.Page    = "162";
 
     for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(pub);
+        TEntrezId pmid = upd->CitMatch(cm);
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(17'659'802));
     }
 }
@@ -138,34 +145,20 @@ BOOST_AUTO_TEST_CASE(Test_Known_PMID)
     for (auto upd : updaters) {
         auto      pub      = upd->GetPub(pmid);
         TEntrezId pmid_new = upd->CitMatch(*pub);
-        BOOST_CHECK_EQUAL(pmid, pmid_new);
+        BOOST_CHECK_EQUAL(pmid_new, pmid);
     }
 }
 
-BOOST_AUTO_TEST_CASE(Test2_ASN)
+BOOST_AUTO_TEST_CASE(Test2)
 {
-    static const string TEST_PUB = R"(
-Pub ::= article {
-  from journal {
-    title {
-      name "Science"
-    },
-    imp {
-      date std {
-        year 1996
-      },
-      volume "291",
-      pages "252"
-    }
-  }
-}
-)";
-
-    CPub pub;
-    TEST_PUB >> pub;
+    SCitMatch cm;
+    cm.Journal = "Science";
+    cm.Year    = "1996";
+    cm.Volume  = "291";
+    cm.Page    = "252";
 
     for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(pub);
+        TEntrezId pmid = upd->CitMatch(cm);
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'253'208));
     }
 }
