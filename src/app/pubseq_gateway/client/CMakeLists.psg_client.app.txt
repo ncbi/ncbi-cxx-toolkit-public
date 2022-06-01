@@ -5,7 +5,7 @@ NCBI_begin_app(psg_client)
   NCBI_uses_toolkit_libraries(psg_client seqset xcompress)
 
   NCBI_begin_test(psg_client.py)
-    NCBI_set_test_command(python)
+    NCBI_set_test_command(python3)
     NCBI_set_test_arguments(psg_client.py test)
     NCBI_set_test_assets(psg_client.py)
     NCBI_set_test_requires(in-house-resources)
