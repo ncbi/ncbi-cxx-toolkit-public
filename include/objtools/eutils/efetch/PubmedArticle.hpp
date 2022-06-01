@@ -118,7 +118,6 @@ ncbi::CRef<ncbi::objects::CArticleIdSet> s_GetArticleIdSet(
     const CArticleIdList& article_id_list,
     const CArticle* article);
 void s_FillGrants(std::list<std::string>& id_nums, const CGrantList& grant_list);
-std::string s_TextToString(const CText& text);
 
 
 template <class CharT>
@@ -137,56 +136,34 @@ inline auto get_ctype_facet(const std::locale& loc) -> decltype(std::use_facet<s
     return s_CType;
 }
 
-
 template<class TE>
-typename std::enable_if<std::is_member_function_pointer<decltype(&TE::IsText)>::value, std::string>::type
-s_TextOrOtherToString(const TE& te) {
-    if (te.IsText()) {
-        return s_TextToString(te.GetText());
-    }
-    else {
-        std::string ret;
-        for (ncbi::CStdTypeConstIterator<std::string> j(Begin(te)); j; ++j) {
-            ret.append(*j);
+std::string s_TextToString(const TE& text_item)
+{
+    string ret;
+    if (text_item.Is_CharData()) {
+        ret.append(text_item.Get_CharData());
+    } else {
+        if (text_item.GetText().IsB()) {
+            ret.append(s_TextListToString(text_item.GetText().GetB().Get()));
+        } else if (text_item.GetText().IsI()) {
+            ret.append(s_TextListToString(text_item.GetText().GetI().Get()));
+        } else if (text_item.GetText().IsSup()) {
+            ret.append(s_TextListToString(text_item.GetText().GetSup().Get()));
+        } else if (text_item.GetText().IsSub()) {
+            ret.append(s_TextListToString(text_item.GetText().GetSub().Get()));
+        } else if (text_item.GetText().IsU()) {
+            ret.append(s_TextListToString(text_item.GetText().GetU().Get()));
         }
-        return ret;
     }
+	return ret;
 }
-
-
-template<class TE>
-typename std::enable_if<std::is_member_function_pointer<decltype(&TE::IsSetText)>::value, std::string>::type
-s_TextOrOtherToString(const TE& te) {
-    if (te.IsSetText()) {
-        return s_TextListToString(te.GetText());
-    }
-    else {
-        std::string ret;
-        for (ncbi::CStdTypeConstIterator<std::string> j(Begin(te)); j; ++j) {
-            ret.append(*j);
-        }
-        return ret;
-    }
-}
-
 
 template<class TE>
 std::string s_TextListToString(const std::list<ncbi::CRef<TE>>& text_list)
 {
     std::string ret;
-    for (auto it : text_list) {
+    for (const auto& it : text_list) {
         ret.append(s_TextToString(*it));
-    }
-    return ret;
-}
-
-
-template<class TE>
-std::string s_TextOrOtherListToString(const std::list<ncbi::CRef<TE>>& text_list)
-{
-    std::string ret;
-    for (auto it : text_list) {
-        ret.append(s_TextOrOtherToString(*it));
     }
     return ret;
 }

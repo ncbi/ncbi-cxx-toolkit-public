@@ -81,7 +81,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CBookDocument::TAuthorList& list_a
             CRef<CPerson_id> person(new CPerson_id());
             if (author_element->GetLC().IsCollectiveName()) {
                 person->SetConsortium(s_CleanupText(
-                    s_TextOrOtherToString(author_element->GetLC().GetCollectiveName())));
+                    s_TextListToString(author_element->GetLC().GetCollectiveName().Get())));
                 CRef<objects::CAuthor> auth(new objects::CAuthor());
                 auth->SetName(*person);
                 if (author_list_element->GetAttlist().GetType() == CAuthorList::C_Attlist::eAttlist_Type_editors)
@@ -114,7 +114,7 @@ static CRef<CTitle> s_GetBookTitle(const CPubmedBookArticle& pubmed_article)
 {
     CRef<CTitle> title(new CTitle());
     const auto& book = pubmed_article.GetBookDocument().GetBook();
-    string title_str = s_TextOrOtherListToString(book.GetBookTitle().GetBookTitle());
+    string title_str = s_TextListToString(book.GetBookTitle().GetBookTitle());
     CRef<CTitle::C_E> name(new CTitle::C_E());
     name->SetName(s_CleanupText(title_str));
     title->Set().push_back(name);
@@ -203,7 +203,7 @@ static CRef<CCit_book> s_GetBook(const CPubmedBookArticle& pubmed_article)
     if (pubmed_article.GetBookDocument().GetBook().IsSetCollectionTitle()) {
         CRef<CTitle::C_E> name(new CTitle::C_E());
         name->SetName(s_CleanupText(
-            s_TextOrOtherListToString(pubmed_article.GetBookDocument().GetBook().GetCollectionTitle().GetCollectionTitle())));
+            s_TextListToString(pubmed_article.GetBookDocument().GetBook().GetCollectionTitle().GetCollectionTitle())));
         CRef<CTitle> title(new CTitle());
         title->Set().push_back(name);
         cit_book->SetColl(*title);
