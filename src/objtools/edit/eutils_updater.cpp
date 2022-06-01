@@ -99,7 +99,7 @@ public:
     };
 
     ERetMode GetRetMode() const { return m_RetMode; }
-    void SetRetMode(ERetMode retmode)
+    void     SetRetMode(ERetMode retmode)
     {
         Disconnect();
         m_RetMode = retmode;
@@ -122,52 +122,23 @@ public:
             args += "&retmode=" + NStr::URLEncode(x_GetRetModeName(), NStr::eUrlEnc_ProcessMarkChars);
         }
 
-        // "journal_title|year|volume|first_page|author_name|your_key|"
-        ostringstream bdata;
-
-        // Journal
-        if (m_rule & e_J) {
-            bdata << NStr::URLEncode(m_req.Journal, NStr::eUrlEnc_ProcessMarkChars);
-        }
-        bdata << '|';
-
-        // Year
-        if (m_rule & e_Y) {
-            bdata << m_req.Year;
-        }
-        bdata << '|';
-
-        // Volume
-        if (m_rule & e_V) {
-            bdata << NStr::URLEncode(m_req.Volume, NStr::eUrlEnc_ProcessMarkChars);
-        }
-        bdata << '|';
-
-        // Page
-        if (m_rule & e_P) {
-            bdata << m_req.Page;
-        }
-        bdata << '|';
-
-        // Author
-        if (m_rule & e_A) {
-            bdata << NStr::URLEncode(m_req.Author, NStr::eUrlEnc_ProcessMarkChars);
-        }
-        bdata << '|';
-
-        // Key
-        bdata << '|';
-
+        string bdata = BuildSearchTerm(m_req, m_rule);
         args += "&bdata=";
-        args += bdata.str();
+        args += bdata;
         return args;
     }
+
 
     static string GetFirstAuthor(const CAuth_list& authors)
     {
         if (authors.IsSetNames()) {
             const auto& N(authors.GetNames());
-            if (N.IsStd()) {
+            if (N.IsMl()) {
+                if (! N.GetMl().empty()) {
+                    return N.GetMl().front();
+                }
+            } else if (N.IsStd()) {
+                // convert to ML
                 if (! N.GetStd().empty()) {
                     const CAuthor& first_author(*N.GetStd().front());
                     if (first_author.IsSetName()) {
@@ -191,10 +162,6 @@ public:
                             }
                         }
                     }
-                }
-            } else if (N.IsMl()) {
-                if (! N.GetMl().empty()) {
-                    return N.GetMl().front();
                 }
             }
         }
@@ -231,10 +198,22 @@ public:
                     cm.Volume = I.GetVolume();
                 }
                 if (I.IsSetPages()) {
-                    string page, page_end;
-                    NStr::SplitInTwo(I.GetPages(), "-", page, page_end);
-                    cm.Page = page;
+                    cm.Page = I.GetPages();
+                    auto pos = cm.Page.find('-');
+                    if (pos != string::npos) {
+                        cm.Page.resize(pos);
+                    }
                 }
+                if (I.IsSetIssue()) {
+                    cm.Issue = I.GetIssue();
+                }
+            }
+        }
+
+        if (A.IsSetTitle()) {
+            const CTitle& T = A.GetTitle();
+            if (T.IsSet() && ! T.Get().empty()) {
+                cm.Title = T.GetTitle();
             }
         }
     }
@@ -256,9 +235,58 @@ public:
         if ((rule & e_A) && m_req.Author.empty()) {
             return false;
         }
+#if 0
+        if ((rule & e_I) && m_req.Issue.empty()) {
+            return false;
+        }
+        if ((rule & e_T) && m_req.Title.empty()) {
+            return false;
+        }
+#endif
 
         m_rule = rule;
         return true;
+    }
+
+    static string BuildSearchTerm(const SCitMatch& cm, eCitMatchFlags rule)
+    {
+        // "journal_title|year|volume|first_page|author_name|your_key|"
+        ostringstream bdata;
+
+        // Journal
+        if (rule & e_J) {
+            bdata << NStr::URLEncode(cm.Journal, NStr::eUrlEnc_ProcessMarkChars);
+        }
+        bdata << '|';
+
+        // Year
+        if (rule & e_Y) {
+            bdata << cm.Year;
+        }
+        bdata << '|';
+
+        // Volume
+        if (rule & e_V) {
+            bdata << NStr::URLEncode(cm.Volume, NStr::eUrlEnc_ProcessMarkChars);
+        }
+        bdata << '|';
+
+        // Page
+        if (rule & e_P) {
+            bdata << cm.Page;
+        }
+        bdata << '|';
+
+        // Author
+        if (rule & e_A) {
+            bdata << NStr::URLEncode(cm.Author, NStr::eUrlEnc_ProcessMarkChars);
+        }
+        bdata << '|';
+
+        // Key
+        bdata << '|';
+
+        return bdata.str();
     }
 
     TEntrezId GetResponse(eCitMatchFlags rule)
@@ -352,9 +380,15 @@ TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
     req->SetRetMode(CECitMatch_Request::eRetMode_text);
     req->SetRequestParams(cm);
 
-    constexpr array<eCitMatchFlags, 2> ruleset = { e_J | e_V | e_P | e_A, e_J | e_V | e_P };
+    // clang-format off
+    constexpr array<eCitMatchFlags, 3> ruleset_single = {
+        e_J | e_V | e_P       | e_A,
+        e_J | e_V | e_P,
+        e_J       | e_P | e_Y | e_A,
+    };
+    // clang-format on
 
-    for (eCitMatchFlags r : ruleset) {
+    for (eCitMatchFlags r : ruleset_single) {
         TEntrezId pmid = req->GetResponse(r);
         if (pmid != ZERO_ENTREZ_ID) {
             return pmid;
