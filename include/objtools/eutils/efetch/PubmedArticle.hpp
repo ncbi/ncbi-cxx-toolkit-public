@@ -139,7 +139,7 @@ inline auto get_ctype_facet(const std::locale& loc) -> decltype(std::use_facet<s
 template<class TE>
 std::string s_TextToString(const TE& text_item)
 {
-    string ret;
+    std::string ret;
     if (text_item.Is_CharData()) {
         ret.append(text_item.Get_CharData());
     } else {
