@@ -17,7 +17,6 @@
 APP: igblastp igblastn makeblastdb blastdbcmd
 
 COPY: $srcdir/src/app/igblast/edit_imgt_file.pl $installdir/bin
-COPY: $srcdir/src/app/igblast/makeogrdb.py $installdir/bin
 COPY: $srcdir/src/app/igblast/internal_data  $installdir
 COPY: $srcdir/src/app/igblast/optional_file  $installdir
 
