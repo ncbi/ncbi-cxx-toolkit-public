@@ -197,9 +197,7 @@ void CValidError_imp::x_Init(Uint4 options)
     SetOptions(options);
     Reset();
 
-    if (!m_SourceQualTags) {
-        InitializeSourceQualTags();
-    }
+    InitializeSourceQualTags();
 }
 
 // Destructor
