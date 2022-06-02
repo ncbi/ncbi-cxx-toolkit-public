@@ -59,7 +59,7 @@ public:
 
     using THandler = std::function<void(CConstRef<CSubmit_block>, CRef<CSeq_entry>)>;
     
-    void Read(THandler handler, CRef<CSeq_id> seqid);
+    bool Read(THandler handler, CRef<CSeq_id> seqid);
 
 private:
     CHugeFileProcessImpl& x_GetImpl(void);
