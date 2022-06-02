@@ -46,6 +46,7 @@
 #include <corelib/ncbitime.hpp>
 
 #include <util/row_reader_ncbi_tsv.hpp>
+#include <mutex>
 
 // generated classes
 
@@ -121,7 +122,7 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
 bool CSubSource::IsValidSubtypeName(const string& str,
                                     EVocabulary vocabulary)
 {
-    
+
     string name = NStr::TruncateSpaces(str);
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
@@ -135,12 +136,12 @@ bool CSubSource::IsValidSubtypeName(const string& str,
     }
     if (vocabulary == eVocabulary_insdc) {
         // consider a table if more special cases arise.
-        if (name == "insertion-seq" || 
-            name == "plasmid" || 
-            name == "transposon" || 
+        if (name == "insertion-seq" ||
+            name == "plasmid" ||
+            name == "transposon" ||
             name == "sub-clone") {
             return true;
-        } 
+        }
     }
     return ENUM_METHOD_NAME(ESubtype)()->IsValidName(name);
 }
@@ -315,7 +316,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
     if (NStr::IsBlank(year)) {
         NCBI_THROW (CException, eUnknown,
                         "collection-date string is improperly formatted");
-    } 
+    }
 
     int year_val = 0;
     try {
@@ -357,7 +358,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
     if (day_val > 0) {
         date->SetStd().SetDay (day_val);
     }
-    
+
     time_t t;
 
     time(&t);
@@ -454,7 +455,7 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
             }
         }
 
-        if (!bad_format) {         
+        if (!bad_format) {
             time_t t;
 
             time(&t);
@@ -703,7 +704,7 @@ bool CSubSource::IsISOFormatDateOnly (const string& cpy)
             if (month < 1 || month > 12) {
                 rval = false;
             }
-            if (cpy.length() == 10) { // has day 
+            if (cpy.length() == 10) { // has day
                 int day = NStr::StringToInt(cpy.substr(8, 2));
                 if (!IsDayValueOkForMonth(day, month, year)) {
                     rval = false;
@@ -832,7 +833,7 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
 
     // reattach 'st', 'nd', 'rd', and 'th' to numbers if present
     if (tokens.size() > 3) {
-        vector<string>::iterator p = tokens.begin();  
+        vector<string>::iterator p = tokens.begin();
         bool prev_is_number = isdigit((unsigned char)(*p)[0]);
         vector<string>::iterator s = p;
         ++s;
@@ -860,7 +861,7 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
 bool s_ChooseMonthAndDay(const string& token1, const string& token2, bool month_first, string& month, int& day, bool& month_ambiguous)
 {
     try {
-        int val1 = NStr::StringToInt (token1); 
+        int val1 = NStr::StringToInt (token1);
         int val2 = NStr::StringToInt (token2);
         if (val1 > 12 && val2 > 12) {
             // both numbers too big for month
@@ -914,17 +915,17 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
 
     month_ambiguous = false;
     vector<string> tokens = x_GetDateTokens(orig_date);
-    
+
     num_original_tokens = tokens.size();
     if (tokens.size() < 1 || tokens.size() > 3) {
         // no tokens or too many tokens
         return kEmptyStr;
     }
 
-    string one_token;    
+    string one_token;
     vector<string>::iterator it = tokens.begin();
     while (it != tokens.end()) {
-        one_token = *it;        
+        one_token = *it;
         bool found = false;
         if (NStr::EqualNocase(one_token, "1st") || NStr::EqualNocase(one_token, "first")) {
             day = 1;
@@ -1031,7 +1032,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             int val1 = 0;
             int val2 = 0;
             try {
-                val1 = NStr::StringToInt (tokens[0]); 
+                val1 = NStr::StringToInt (tokens[0]);
                 val2 = NStr::StringToInt (tokens[1]);
             } catch (CException& /*e*/) {
                 // not actually numbers
@@ -1052,14 +1053,14 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 day = val2;
                 year = val1 + 2000;
             } else {
-                int month_num = CTime::MonthNameToNum(month); 
+                int month_num = CTime::MonthNameToNum(month);
                 if (IsDayValueOkForMonth(val1, month_num, val2 + 2000)) {
                     day = val1;
                     year = val2 + 2000;
                 } else {
                     day = val2;
                     year = val1 + 2000;
-                }                
+                }
             }
         } else {
             return kEmptyStr;
@@ -1081,7 +1082,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             return kEmptyStr;
         }
     }
-        
+
     if (year > 0 && year < 100 && num_original_tokens > 1) {
         // try to guess year from two-digit year provided,
         // only if it could not possibly be a day of the month
@@ -1141,7 +1142,7 @@ void CSubSource::DetectDateFormat(const string& orig_date, bool& ambiguous, bool
     positions.push_back(0);
     positions.push_back(0);
     positions.push_back(0);
-    
+
     int token_pos = 1;
     ITERATE(vector<int>, it, nums) {
         if (*it > 31) {
@@ -1223,8 +1224,8 @@ void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bo
 
             size_t len = strlen (reformatted);
             if (NStr::StartsWith(lat_lon, reformatted)
-                && (len == lat_lon.length() 
-                  || (len < lat_lon.length() 
+                && (len == lat_lon.length()
+                  || (len < lat_lon.length()
                       && lat_lon[len] == ';'))) {
                 format_correct = true;
                 if (ns <= 90 && ns >= 0) {
@@ -1278,20 +1279,20 @@ string CSubSource::FixLatLonPrecision(const string& orig)
 }
 
 /*
-1. String should be converted to UTF8 string, this will get rid of \xC0 and similar substrings 
+1. String should be converted to UTF8 string, this will get rid of \xC0 and similar substrings
 2. Every codepoint (note that this is not regular ascii "char") that is not a digit or a decimal point or a letter should be prepended with a space.
    Transitions from alpha to digit/point and from digit/point to alpha should also be prepended with a space.
-3. NStr::Split is called with space as a separator and Tokenize flag - need to check if Split works with UTF8 strings properly. 
-4. After this we should have a vector of tokens, some of which are numbers and others are "modifiers" such as ', '', degrees, N, S, E, W, etc. 
+3. NStr::Split is called with space as a separator and Tokenize flag - need to check if Split works with UTF8 strings properly.
+4. After this we should have a vector of tokens, some of which are numbers and others are "modifiers" such as ', '', degrees, N, S, E, W, etc.
 5. A pattern string is created where each number is replaced with "1" and modifiers are normalized to "lat", or "N"; the actual numerical values are kept in a separate vector
-5. Based on the pattern the vector of numbers is parsed into degrees, minutes, or seconds, 
+5. Based on the pattern the vector of numbers is parsed into degrees, minutes, or seconds,
 6. NSEW and "lattitude/longitude" are applied to degrees in the order of appearance, if none are present other heuristic to determine which is latitude and which is longitude
 */
 
 static string s_InsertSpacesBetweenTokens(const string &old_str)
 {
     string new_str;
-    for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i) 
+    for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i)
     {
         TUnicodeSymbol sym = CUtf8::Decode(i);
         if (sym < 0x80)
@@ -1301,8 +1302,8 @@ static string s_InsertSpacesBetweenTokens(const string &old_str)
             {
                 new_str += ' ';
             }
-            else if (!new_str.empty() && 
-                 ((isalpha(new_str.back()) && !isalpha(c)) || 
+            else if (!new_str.empty() &&
+                 ((isalpha(new_str.back()) && !isalpha(c)) ||
                   (!isalpha(new_str.back()) && isalpha(c))))
             {
                 new_str += ' ';
@@ -1316,7 +1317,7 @@ static string s_InsertSpacesBetweenTokens(const string &old_str)
         else
         {
             new_str += ' ';
-        }        
+        }
     }
     return new_str;
 }
@@ -1325,13 +1326,13 @@ static string s_RemoveSpacesWithinNumbers(const string &old_str)
 {
     string new_str;
     bool is_number = true;
-    for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i) 
+    for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i)
     {
         TUnicodeSymbol sym = CUtf8::Decode(i);
         if (sym < 0x80)
         {
             char c = static_cast<char>(sym);
-                size_t j = new_str.size();            
+                size_t j = new_str.size();
                 if (j >= 4 &&  new_str[j-1] == ' ' && new_str[j-2] == '.' && new_str[j-3] == ' ' && isdigit(new_str[j-4]) && isdigit(c))
                 {
                     new_str.pop_back();
@@ -1348,7 +1349,7 @@ static string s_RemoveSpacesWithinNumbers(const string &old_str)
         {
             new_str += ' ';
             is_number = false;
-        }    
+        }
     }
     if (is_number)
     {
@@ -1361,7 +1362,7 @@ static string s_RemoveSpacesWithinNumbers(const string &old_str)
 static bool s_IsNumber(const string &token, double *result = NULL)
 {
     double num = NStr::StringToDouble(token, NStr::fConvErr_NoThrow);
-    if (!num && errno) 
+    if (!num && errno)
     {
         return false;
     }
@@ -1377,7 +1378,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
     for (size_t i = 0; i < tokens.size(); i++)
     {
         string &token = tokens[i];
-    
+
         double num;
         if (s_IsNumber(token, &num))
         {
@@ -1423,7 +1424,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
         {
             token = "degrees";
             pattern.push_back("degrees");
-        }       
+        }
         else if ( token == "\'"  || NStr::EqualNocase(token, "min") || NStr::EqualNocase(token, "min.") || NStr::EqualNocase(token, "minute") || NStr::EqualNocase(token, "minutes"))
         {
             token  = "\'";
@@ -1610,7 +1611,7 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     }
     else if ((pattern == "1 1 \" 1 1 '" ||
           pattern == "1 degrees 1 \" N 1 degrees 1 ' N")
-         && numbers[1] < 60 && numbers[3] < 60 
+         && numbers[1] < 60 && numbers[3] < 60
              && numbers[1] >= 0 && numbers[3] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
@@ -1631,7 +1632,7 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
         prec[0] = max(precision[0], precision[1] + 2);
         prec[1] = precision[2];
         }
-    else if (pattern == "1 1 ' 1 \" 1" 
+    else if (pattern == "1 1 ' 1 \" 1"
          && numbers[1] < 60 && numbers[2] < 60
              && numbers[1] >= 0 && numbers[2] >= 0)
     {
@@ -1655,8 +1656,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
         prec[1] = max(precision[3], precision[4] + 2);
     }
     else if (( pattern == "1 1 ' 1 \" 1 1 ' 1 \"" ||
-           pattern == "1 1 ' 1 \" N 1 1 ' 1 \" N" || 
-           pattern == "1 degrees 1 ' 1 \" 1 degrees 1 ' 1 \"" || 
+           pattern == "1 1 ' 1 \" N 1 1 ' 1 \" N" ||
+           pattern == "1 degrees 1 ' 1 \" 1 degrees 1 ' 1 \"" ||
            pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \" N" ||
            pattern == "N 1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \"" ||
            pattern == "1 degrees 1 ' 1 N 1 degrees 1 ' 1 N" ||
@@ -1725,8 +1726,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
         degrees[1] = sign2*(fabs(numbers[1]) + numbers[2] / 60 + numbers[3] / 3600);
         prec[0] = precision[0];
         prec[1] = max(max(precision[1], precision[2] + 2), precision[3] + 4);
-    }  
-    else if (pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 \" N"  
+    }
+    else if (pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 \" N"
          && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60
              && numbers[1] >= 0 && numbers[2] >= 0 && numbers[4] >= 0)
     {
@@ -1736,7 +1737,7 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
         degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 3600);
         prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
         prec[1] = max(precision[3], precision[4] + 4);
-    }   
+    }
     else
     {
         degrees.clear();
@@ -1809,7 +1810,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
         NStr::TrimPrefixInPlace(old_str, "\"");
         NStr::TrimSuffixInPlace(old_str, "\"");
     }
-    NStr::ReplaceInPlace(old_str, "\'\'", "\""); 
+    NStr::ReplaceInPlace(old_str, "\'\'", "\"");
     string fixed_str = s_RemoveSpacesWithinNumbers(old_str);
     string new_str = s_InsertSpacesBetweenTokens(fixed_str);
     NStr::Sanitize(new_str);
@@ -1828,7 +1829,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
 
 string CSubSource::MakeLatLon(double lat_value, double lon_value, int lat_precision, int lon_precision )
-{   
+{
     char ns = 'N';
     if (lat_value < 0) {
         ns = 'S';
@@ -1841,7 +1842,7 @@ string CSubSource::MakeLatLon(double lat_value, double lon_value, int lat_precis
     }
     string lat = NStr::DoubleToString(lat_value, lat_precision);
     string lon = NStr::DoubleToString(lon_value, lon_precision);
-  
+
     NStr::TrimSuffixInPlace(lat, ".");
     NStr::TrimSuffixInPlace(lon, ".");
     string res = lat + " " + ns + " " + lon + " " + ew;
@@ -1884,7 +1885,7 @@ CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_val
                 id->SetClosestCountry(guess->GetLevel0());
                 id->SetClosestProvince(guess->GetLevel1());
                 id->SetLandDistance(m_LatLonCountryMap->AdjustAndRoundDistance (landdistance));
-                if (NStr::EqualNocase(country, id->GetClosestCountry()) 
+                if (NStr::EqualNocase(country, id->GetClosestCountry())
                     && (NStr::IsBlank(province) || NStr::EqualNocase(province, guess->GetLevel1()))) {
                     goodmatch = true;
                 }
@@ -1926,7 +1927,7 @@ CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_val
                 id->SetGuessCountry(country);
                 id->SetGuessProvince(province);
                 id->SetFullGuess(guess->GetCountry());
-            } else {            
+            } else {
                 id->SetClaimedFull(guess->GetCountry());
                 id->SetClaimedDistance(m_LatLonCountryMap->AdjustAndRoundDistance (distance));
             }
@@ -2046,11 +2047,17 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         return kEmptyStr;
     }
 
-    if ( m_LatLonCountryMap.get() == 0 ) {
-        m_LatLonCountryMap.reset (new CLatLonCountryMap(false));
-    }
-    if ( m_LatLonWaterMap.get() == 0 ) {
-        m_LatLonWaterMap.reset (new CLatLonCountryMap(true));
+    {
+        static std::mutex m;
+
+        std::lock_guard g(m);
+
+        if ( m_LatLonCountryMap.get() == 0 ) {
+            m_LatLonCountryMap.reset (new CLatLonCountryMap(false));
+        }
+        if ( m_LatLonWaterMap.get() == 0 ) {
+            m_LatLonWaterMap.reset (new CLatLonCountryMap(true));
+        }
     }
 
     // only do these checks if the latlon format is good
@@ -2229,7 +2236,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
             error = "Latitude and longitude values appear to be exchanged";
             lat_lon = MakeLatLon(lon_value, lat_value);
         } else if (adjustment == CLatLonCountryMap::fNegateLat) {
-            errcode = eLatLonCountryErr_Value;  
+            errcode = eLatLonCountryErr_Value;
             if (lat_value < 0.0) {
                 error = "Latitude should be set to N (northern hemisphere)";
             } else {
@@ -2311,7 +2318,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
                     error = "Lat_lon '" + lat_lon + "' is closest to " + phrase + "'" + reportregion + "' at distance "
                             + NStr::IntToString(id->GetLandDistance())
                             + " km, but in water '" + id->GetGuessWater()
-                            + "' - claimed region '" + id->GetClaimedFull() 
+                            + "' - claimed region '" + id->GetClaimedFull()
                             + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km";
                 } else {
                     error = "Lat_lon '" + lat_lon + "' is closest to " + phrase + "'" + reportregion
@@ -2319,7 +2326,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
                             + id->GetGuessWater() + "'";
                 }
             }
-        } else if (neardist > 0.0) { 
+        } else if (neardist > 0.0) {
             errcode = eLatLonCountryErr_Water;
             error = "Lat_lon '" + lat_lon + "' is in water '" + id->GetGuessWater() + "', '"
                         + countryname + "' is " + NStr::IntToString(m_LatLonCountryMap->AdjustAndRoundDistance(neardist)) + " km away";
@@ -2343,7 +2350,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
             if (NStr::IsBlank(province)) {
                 errcode = eLatLonCountryErr_Country;
                 error = "Lat_lon '" + lat_lon + "' maps to '" + id->GetFullGuess() + "' instead of '"
-                            + country + "' - claimed region '" + id->GetClaimedFull() 
+                            + country + "' - claimed region '" + id->GetClaimedFull()
                             + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km";
             } else {
                 errcode = eLatLonCountryErr_Country;
@@ -2352,7 +2359,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
                 }
                 if (errcode == eLatLonCountryErr_Country || check_state) {
                     error = "Lat_lon '" + lat_lon + "' maps to '" + id->GetFullGuess() + "' instead of '"
-                                + countryname + "' - claimed region '" + id->GetClaimedFull() 
+                                + countryname + "' - claimed region '" + id->GetClaimedFull()
                                 + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km";
                 } else {
                     errcode = eLatLonCountryErr_None;
@@ -2638,8 +2645,8 @@ string CSubSource::FixAltitude (const string& value)
         val *= 0.3048;
         number = x_FormatWithPrecision(val, precision);
         units = "m";
-    } 
-    
+    }
+
     string rval = kEmptyStr;
     if (NStr::Equal(units, "m.")
         || NStr::Equal(units, "meters")
@@ -2709,7 +2716,7 @@ bool CSubSource::IsEndogenousVirusNameValid(const string& value)
 //   18. Must not contain the phrase "linkage-group" (ignoring case)
 static bool s_FailsGenusOrSpeciesTest(const string& value, const string& taxname)
 { // See RW-1436
-    if (NStr::IsBlank(taxname) || 
+    if (NStr::IsBlank(taxname) ||
         NStr::StartsWith(taxname, "Plasmid ", NStr::eNocase) ||
         NStr::StartsWith(taxname, "IncQ plasmid", NStr::eNocase)) {
         return false;
@@ -2818,18 +2825,18 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
     }
 
     if (NStr::FindNoCase(value,"plasmid") != NPOS) {
-        static const set<string, PNocase_Conditional> s_PlasmidNameExceptions = 
+        static const set<string, PNocase_Conditional> s_PlasmidNameExceptions =
         { // This list comes from RW-1436/RW-1430
             "Plasmid F",
             "Plasmid R",
-            "Plasmid pIP630",   
-            "Plasmid pNG2",     
-            "Plasmid pGT633",   
-            "Plasmid pE5",      
-            "Plasmid pIP1527",  
+            "Plasmid pIP630",
+            "Plasmid pNG2",
+            "Plasmid pGT633",
+            "Plasmid pE5",
+            "Plasmid pIP1527",
             "Plasmid pAM77",
-            "Plasmid pAZ1",     
-            "Plasmid RP4" 
+            "Plasmid pAZ1",
+            "Plasmid RP4"
         };
 
         if (s_PlasmidNameExceptions.find(value) != end(s_PlasmidNameExceptions)) {
@@ -2874,7 +2881,7 @@ static void s_InitializeCellLineContaminationMap(void)
     }
 
     // read table
-    
+
     size_t count = sizeof(kCellLine) / sizeof (*kCellLine);
     const char * const * start = kCellLine;
     while (count--) {
@@ -3786,14 +3793,14 @@ string CCountries::WholeCountryFix(string country)
 bool CCountries::IsSubstringOfStringInList(const string& phrase, const string& country1, size_t pos1)
 {
     bool r = false;
-    ITERATE ( TCStrSet, c, s_CountriesSet ) 
+    ITERATE ( TCStrSet, c, s_CountriesSet )
     {
         string country2(*c);
         if (country2.length() > country1.length() && NStr::FindNoCase(country2,country1) != NPOS)
         {
             SIZE_TYPE pos2 = NStr::FindNoCase(phrase,country2);
             while (pos2 != NPOS)
-            { 
+            {
                 if (pos2 <= pos1 && pos2+country2.length() >= pos1+country1.length())
                     r = true;
                 pos2 = NStr::FindNoCase(phrase,country2,pos2+country2.length());
@@ -3806,7 +3813,7 @@ bool CCountries::IsSubstringOfStringInList(const string& phrase, const string& c
 bool CCountries::ContainsMultipleCountryNames (const string &phrase)
 {
     int num_matches = 0;
-    ITERATE ( TCStrSet, c, s_CountriesSet ) 
+    ITERATE ( TCStrSet, c, s_CountriesSet )
     {
         string country(*c);
         size_t pos = NStr::FindNoCase(phrase,country);
@@ -3841,14 +3848,14 @@ void CCountries::x_RemoveDelimitersFromEnds(string& val, bool except_paren)
     bool any_found = true;
     while (!val.empty() && any_found) {
         any_found = false;
-        if (NStr::StartsWith(val, ",") 
-            || NStr::StartsWith(val, ":") 
+        if (NStr::StartsWith(val, ",")
+            || NStr::StartsWith(val, ":")
             || NStr::StartsWith(val, ".")
             || (!except_paren && NStr::StartsWith(val, ")"))) {
             val = val.substr(1);
             any_found = true;
             NStr::TruncateSpacesInPlace(val);
-        } else if (NStr::EndsWith(val, ",") 
+        } else if (NStr::EndsWith(val, ",")
             || NStr::EndsWith(val, ":")
             || (!except_paren && NStr::EndsWith(val, "("))) {
             val = val.substr(0, val.length() - 1);
@@ -3880,7 +3887,7 @@ void CCountries::x_RemoveDelimitersFromEnds(string& val, bool except_paren)
                     any_found = true;
                 }
             }
-        }           
+        }
     }
 }
 
@@ -3926,7 +3933,7 @@ bool s_ContainsWholeWord(const CTempString test, const CTempString word, NStr::E
     size_t pos = NStr::Find(test, word, case_sense);
     while (pos != NPOS) {
         size_t p = start + pos;
-        if ( (p == 0           || !isalpha((unsigned char)test[p - 1]))  && 
+        if ( (p == 0           || !isalpha((unsigned char)test[p - 1]))  &&
              (p + wlen >= tlen || !isalpha((unsigned char)test[p + wlen])) ) {
             return true;
         }
@@ -3950,9 +3957,9 @@ bool s_SuppressCountryFix(const string& test)
 
 void CCountries::x_FindCountryName
 (const TCStringPairsMap& fix_map,
- const vector<string>& countries, 
- string& valid_country, 
- string& orig_valid_country, 
+ const vector<string>& countries,
+ string& valid_country,
+ string& orig_valid_country,
  bool& too_many_countries,
  bool& bad_cap)
 {
@@ -4412,7 +4419,7 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
     // bool any_modified = false;
     int num_states = 0;
     int match = -1;
-  
+
     // string* first = 0;
     // string* last = 0;
 
@@ -4625,7 +4632,7 @@ string CCountries::NewFixCountry (const string& test, bool us_territories)
     string new_country = WholeCountryFix(input);
     if (!new_country.empty())
         return new_country;
-    
+
     bool too_many_countries = false;
     bool bad_cap = false;
     vector<string> countries = x_Tokenize(input);
@@ -4637,10 +4644,10 @@ string CCountries::NewFixCountry (const string& test, bool us_territories)
         x_FindCountryName(k_subregion_fixes, countries, valid_country, orig_valid_country, too_many_countries, bad_cap);
     }
 
-    if (!valid_country.empty() && !too_many_countries) 
+    if (!valid_country.empty() && !too_many_countries)
         too_many_countries = ContainsMultipleCountryNames (input);
-  
-    if (!valid_country.empty() && too_many_countries && valid_country == input) 
+
+    if (!valid_country.empty() && too_many_countries && valid_country == input)
     {
         string str1,str2;
         NStr::SplitInTwo(valid_country,":",str1,str2);
@@ -4648,14 +4655,14 @@ string CCountries::NewFixCountry (const string& test, bool us_territories)
             new_country = str1+": "+str2;
 
         CCountries::ChangeExtraColonsToCommas(new_country);
-    }   
+    }
     else if(!valid_country.empty() && !too_many_countries)
     {
         // find valid_country in input
         size_t pos = NStr::Find(input,orig_valid_country);
         // save preceeding string without trailing spaces or delimiters ":,"
         string before = input.substr(0,pos);
-        
+
         x_RemoveDelimitersFromEnds(before);
         NStr::TruncateSpacesInPlace(before);
         // save trailing string without initial spaces or delimiters
@@ -4710,7 +4717,7 @@ string CCountries::CountryFixupItem(const string &input, bool capitalize_after_c
     if (country_end_pos != NPOS)
     {
         SIZE_TYPE pos = country_end_pos;
-        while (country[pos] == ','  ||  country[pos] == ':'  ||  isspace((unsigned char)country[pos])) 
+        while (country[pos] == ','  ||  country[pos] == ':'  ||  isspace((unsigned char)country[pos]))
         {
             pos++;
         }
@@ -4721,7 +4728,7 @@ string CCountries::CountryFixupItem(const string &input, bool capitalize_after_c
             }
         } else {
             NStr::TruncateSpacesInPlace(after,NStr::eTrunc_Begin);
-            if (capitalize_after_colon) 
+            if (capitalize_after_colon)
                 after = CapitalizeFirstLetterOfEveryWord (after);
             new_country = country.substr(0,country_end_pos);
             new_country += ": " + after;
@@ -4794,8 +4801,8 @@ static void s_ProcessQualMapLine(const CTempString& line, TQualFixMap& qual_map)
 }
 
 
-void s_AddOneDataFile(const string& file_name, const string& data_name, 
-                      const char **built_in, size_t num_built_in, 
+void s_AddOneDataFile(const string& file_name, const string& data_name,
+                      const char **built_in, size_t num_built_in,
                       TQualFixMap& qual_map)
 {
     string file = g_FindDataFile(file_name);
@@ -5013,7 +5020,7 @@ void CSubSource::AutoFix()
         }
     }
 }
-   
+
 
 
 // NOTE (for two arrays below): If string A is a prefix of string B, string B should be placed
@@ -5129,7 +5136,7 @@ void CSubSource::RemoveCultureNotes (bool is_species_level)
 
 
 // CCountryLine
-CCountryLine::CCountryLine 
+CCountryLine::CCountryLine
 (const string & country_name, double y, double min_x, double max_x, double scale)
 : m_CountryName(country_name) ,
   m_Scale (scale)
@@ -5148,7 +5155,7 @@ CCountryLine::~CCountryLine (void)
 
 #define EPSILON 0.001
 
-int CCountryLine::ConvertLat (double y, double scale) 
+int CCountryLine::ConvertLat (double y, double scale)
 {
 
     int  val = 0;
@@ -5170,12 +5177,12 @@ int CCountryLine::ConvertLat (double y, double scale)
 }
 
 
-int CCountryLine::x_ConvertLat (double y) 
+int CCountryLine::x_ConvertLat (double y)
 {
     return ConvertLat(y, m_Scale);
 }
 
-int CCountryLine::ConvertLon (double x, double scale) 
+int CCountryLine::ConvertLon (double x, double scale)
 {
 
   int  val = 0;
@@ -5197,7 +5204,7 @@ int CCountryLine::ConvertLon (double x, double scale)
 }
 
 
-int CCountryLine::x_ConvertLon (double x) 
+int CCountryLine::x_ConvertLon (double x)
 {
     return ConvertLon(x, m_Scale);
 }
@@ -5227,47 +5234,47 @@ CCountryExtreme::~CCountryExtreme (void)
 }
 
 
-bool CCountryExtreme::SetMinX(int min_x) 
-{ 
-    if (min_x < m_MinX) { 
-        m_MinX = min_x; 
+bool CCountryExtreme::SetMinX(int min_x)
+{
+    if (min_x < m_MinX) {
+        m_MinX = min_x;
         return true;
-    } else { 
-        return false; 
-    } 
+    } else {
+        return false;
+    }
 }
 
 
-bool CCountryExtreme::SetMaxX(int max_x) 
-{ 
-    if (max_x > m_MaxX) { 
-        m_MaxX = max_x; 
+bool CCountryExtreme::SetMaxX(int max_x)
+{
+    if (max_x > m_MaxX) {
+        m_MaxX = max_x;
         return true;
-    } else { 
-        return false; 
-    } 
+    } else {
+        return false;
+    }
 }
 
 
-bool CCountryExtreme::SetMinY(int min_y) 
-{ 
-    if (min_y < m_MinY) { 
-        m_MinY = min_y; 
+bool CCountryExtreme::SetMinY(int min_y)
+{
+    if (min_y < m_MinY) {
+        m_MinY = min_y;
         return true;
-    } else { 
-        return false; 
-    } 
+    } else {
+        return false;
+    }
 }
 
 
-bool CCountryExtreme::SetMaxY(int max_y) 
-{ 
-    if (max_y > m_MaxY) { 
-        m_MaxY = max_y; 
+bool CCountryExtreme::SetMaxY(int max_y)
+{
+    if (max_y > m_MaxY) {
+        m_MaxY = max_y;
         return true;
-    } else { 
-        return false; 
-    } 
+    } else {
+        return false;
+    }
 }
 
 
@@ -5313,8 +5320,8 @@ bool CCountryExtreme::PreferTo(const CCountryExtreme* other_block, const string 
     if (NStr::IsBlank(country)) {
         return prefer_new;
     }
-    
-    // if match to preferred country 
+
+    // if match to preferred country
     if (NStr::EqualNocase(country, m_Level0)) {
         // if best was not preferred country, take new match
         if (!NStr::EqualNocase(country, other_block->GetLevel0())) {
@@ -5327,7 +5334,7 @@ bool CCountryExtreme::PreferTo(const CCountryExtreme* other_block, const string 
                 return true;
             }
         }
-            
+
         // if both match province, or neither does, or no preferred province, take smallest
         return prefer_new;
     }
@@ -5439,7 +5446,7 @@ void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
             current_country = line;
         } else if (isdigit ((unsigned char)line[0])) {
             m_Scale = NStr::StringToDouble(line);
-        } else {          
+        } else {
             vector<string> tokens;
              NStr::Split(line, "\t", tokens);
             if (tokens.size() > 3) {
@@ -5472,7 +5479,7 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
         string current_country;
 
         // make sure to clear before using.  in this outer
-        // scope in the interest of speed (avoid repeated 
+        // scope in the interest of speed (avoid repeated
         // construction/destruction)
         vector<SIZE_TYPE> tab_positions;
 
@@ -5485,7 +5492,7 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
                 current_country = line;
             } else if (isdigit ((unsigned char)line[0])) {
                 m_Scale = NStr::StringToDouble(line);
-            } else {          
+            } else {
                 // NStr::Tokenize would be much simpler, but
                 // it's just too slow in this case, especially
                 // in debug mode.
@@ -5587,7 +5594,7 @@ bool CLatLonCountryMap::
 }
 
 
-CLatLonCountryMap::CLatLonCountryMap (bool is_water) 
+CLatLonCountryMap::CLatLonCountryMap (bool is_water)
 {
     // initialize list of country lines
     m_CountryLineList.clear();
@@ -5653,7 +5660,7 @@ CLatLonCountryMap::CLatLonCountryMap (bool is_water)
             m_CountryExtremes[ext - 1]->AddLine(m_CountryLineList[i]);
         } else {
             m_CountryExtremes.push_back(new CCountryExtreme(m_CountryLineList[i]->GetCountry(),
-                                                m_CountryLineList[i]->GetMinX(), 
+                                                m_CountryLineList[i]->GetMinX(),
                                                 m_CountryLineList[i]->GetY(),
                                                 m_CountryLineList[i]->GetMaxX(),
                                                 m_CountryLineList[i]->GetY()));
@@ -5686,7 +5693,7 @@ CLatLonCountryMap::~CLatLonCountryMap (void)
 
 
 bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
-                                          double lon)
+                                          double lon) const
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLat(lat, m_Scale);
@@ -5705,7 +5712,7 @@ bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
         } else if (cmp > 0) {
             R = mid;
         } else {
-            while (mid > 0 
+            while (mid > 0
                    && NStr::Compare(m_CountryLineList[mid - 1]->GetCountry(), country) == 0
                    && m_CountryLineList[mid - 1]->GetY() >= y) {
                 mid--;
@@ -5715,32 +5722,32 @@ bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
         }
     }
 
-    while (R < m_CountryLineList.size() 
+    while (R < m_CountryLineList.size()
            && NStr::EqualNocase(country, m_CountryLineList[R]->GetCountry())
            && m_CountryLineList[R]->GetY() < y) {
         R++;
     }
 
-    while (R < m_CountryLineList.size() 
+    while (R < m_CountryLineList.size()
            && NStr::EqualNocase(country, m_CountryLineList[R]->GetCountry())
            && m_CountryLineList[R]->GetY() == y
            && m_CountryLineList[R]->GetMaxX() < x) {
         R++;
     }
-    if (R < m_CountryLineList.size() 
+    if (R < m_CountryLineList.size()
            && NStr::EqualNocase(country, m_CountryLineList[R]->GetCountry())
            && m_CountryLineList[R]->GetY() == y
-           && m_CountryLineList[R]->GetMinX() <= x 
+           && m_CountryLineList[R]->GetMinX() <= x
            && m_CountryLineList[R]->GetMaxX() >= x) {
         return true;
     } else {
         return false;
-    }    
+    }
 }
 
 
 const CCountryExtreme *
-CLatLonCountryMap::x_FindCountryExtreme(const string& country)
+CLatLonCountryMap::x_FindCountryExtreme(const string& country) const
 {
     size_t L, R, mid;
 
@@ -5765,7 +5772,7 @@ CLatLonCountryMap::x_FindCountryExtreme(const string& country)
 }
 
 
-bool CLatLonCountryMap::HaveLatLonForRegion(const string& region)
+bool CLatLonCountryMap::HaveLatLonForRegion(const string& region) const
 {
     if (x_FindCountryExtreme(region) == NULL) {
         return false;
@@ -5775,7 +5782,7 @@ bool CLatLonCountryMap::HaveLatLonForRegion(const string& region)
 }
 
 
-size_t CLatLonCountryMap::x_GetLatStartIndex (int y)
+size_t CLatLonCountryMap::x_GetLatStartIndex (int y) const
 {
     size_t L, R, mid;
 
@@ -5804,7 +5811,7 @@ size_t CLatLonCountryMap::x_GetLatStartIndex (int y)
 const CCountryExtreme *
 CLatLonCountryMap::GuessRegionForLatLon(double lat, double lon,
                                         const string& country,
-                                        const string& province)
+                                        const string& province) const
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
@@ -5814,7 +5821,7 @@ CLatLonCountryMap::GuessRegionForLatLon(double lat, double lon,
     const CCountryExtreme *best = NULL;
 
     while (R < m_LatLonSortedList.size() && m_LatLonSortedList[R]->GetY() == y) {
-            if (m_LatLonSortedList[R]->GetMinX() <= x 
+            if (m_LatLonSortedList[R]->GetMinX() <= x
             && m_LatLonSortedList[R]->GetMaxX() >= x) {
             const CCountryExtreme *other = m_LatLonSortedList[R]->GetBlock();
             if (best == NULL) {
@@ -5892,7 +5899,7 @@ double ErrorDistance (
    c = 2 * atan2 (sqrt (a), sqrt (1 - a));
 
   return (double) (EARTH_RADIUS * c);
-  
+
 }
 
 
@@ -5929,8 +5936,8 @@ const CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon(double lat,
                 end = lon;
             }
             double dist = DistanceOnGlobe (lat, lon, m_LatLonSortedList[R]->GetLat(), end);
-            if (rval == NULL || closest > dist 
-                || (closest == dist 
+            if (rval == NULL || closest > dist
+                || (closest == dist
                     && (rval->GetArea() > m_LatLonSortedList[R]->GetBlock()->GetArea()
                         || (rval->GetArea() == m_LatLonSortedList[R]->GetBlock()->GetArea()
                             && NStr::IsBlank(rval->GetLevel1())
@@ -5948,7 +5955,7 @@ const CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon(double lat,
 
 bool CLatLonCountryMap::IsClosestToLatLon(const string& comp_country,
                                           double lat, double lon,
-                                          double range, double &distance)
+                                          double range, double &distance) const
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
@@ -5990,8 +5997,8 @@ bool CLatLonCountryMap::IsClosestToLatLon(const string& comp_country,
                     // keep country we're searching for
                 } else if (!NStr::Equal(m_LatLonSortedList[R]->GetCountry(), country)) {
                     const CCountryExtreme * ext = x_FindCountryExtreme(m_LatLonSortedList[R]->GetCountry());
-                    if (ext 
-                        && (ext->GetArea() < smallest_area 
+                    if (ext
+                        && (ext->GetArea() < smallest_area
                             || NStr::Equal(m_LatLonSortedList[R]->GetCountry(), comp_country))) {
                         country = m_LatLonSortedList[R]->GetCountry();
                         smallest_area = ext->GetArea();
@@ -6010,7 +6017,7 @@ const CCountryExtreme * CLatLonCountryMap::IsNearLatLon(double lat, double lon,
                                                         double range,
                                                         double &distance,
                                                         const string& country,
-                                                        const string& province)
+                                                        const string& province) const
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLat(lat, m_Scale);
@@ -6042,7 +6049,7 @@ const CCountryExtreme * CLatLonCountryMap::IsNearLatLon(double lat, double lon,
                 end = lon;
             }
             double dist = DistanceOnGlobe (lat, lon, m_LatLonSortedList[R]->GetLat(), end);
-            if (closest < 0.0 ||  closest > dist) { 
+            if (closest < 0.0 ||  closest > dist) {
                 closest = dist;
                 ext = m_LatLonSortedList[R]->GetBlock();
             }
@@ -6058,7 +6065,7 @@ const CCountryExtreme * CLatLonCountryMap::IsNearLatLon(double lat, double lon,
 
 
 bool CLatLonCountryMap::DoCountryBoxesOverlap(const string& country1,
-                                              const string& country2)
+                                              const string& country2) const
 {
     if (NStr::IsBlank (country1) || NStr::IsBlank(country2)) return false;
 
@@ -6091,7 +6098,7 @@ int CLatLonCountryMap::AdjustAndRoundDistance (double distance, double scale)
 }
 
 
-int CLatLonCountryMap::AdjustAndRoundDistance (double distance)
+int CLatLonCountryMap::AdjustAndRoundDistance (double distance) const
 
 {
   return AdjustAndRoundDistance (distance, m_Scale);
