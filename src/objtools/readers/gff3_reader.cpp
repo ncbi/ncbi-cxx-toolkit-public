@@ -113,7 +113,7 @@ bool CGff3ReadRecord::AssignFromGff(
     GetAttribute("ID", id);
     GetAttribute("Parent", parent);
     if (id.empty()  &&  parent.empty()) {
-        m_Attributes["ID"] = CGff3Reader::xNextGenericId();
+        //m_Attributes["ID"] = CGff3Reader::xNextGenericId();
     }
     if (m_strType == "pseudogene") {
         SetType("gene");

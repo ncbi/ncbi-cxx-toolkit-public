@@ -106,7 +106,9 @@ void CGffIdTracker::CheckAndIndexRecord(
 
     string id;
     record.GetAttribute("ID", id);
-    if (id.empty()) {
+    auto recType = record.Type();
+    auto idRequired = recType == "gene"  ||  NStr::EndsWith(recType, "rna");
+    if (id.empty()  &&  idRequired) {
         throw errorMissingId;
     }
     CheckAndIndexRecord(id, record);
