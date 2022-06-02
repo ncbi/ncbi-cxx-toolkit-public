@@ -90,7 +90,7 @@ public:
 
     // tests whether GetSubtypeName is expected to throw an exception
     static bool IsValidSubtypeName(const string& str,
-                                   EVocabulary vocabulary = eVocabulary_raw);              
+                                   EVocabulary vocabulary = eVocabulary_raw);
 
     static bool IsMultipleValuesAllowed(TSubtype);
 
@@ -146,8 +146,8 @@ public:
     /// Of the tokens that are generated, look for a token that contains letters.
     /// If there is such a token, this token is assumed to be the month, and will
     /// be checked to see if it begins with any of the three-letter abbreviations
-    /// for months (Jan, Feb, Mar, etc.). If so, the month is known. If none of 
-    /// the abbreviations produce a match, fail and return an empty string. If 
+    /// for months (Jan, Feb, Mar, etc.). If so, the month is known. If none of
+    /// the abbreviations produce a match, fail and return an empty string. If
     /// more than one token that contains letters is found, return an empty string.
     /// If there are no tokens that contain letters, try to determine which token is
     /// the month by eliminating tokens that would be year or day.
@@ -155,10 +155,10 @@ public:
     /// to be the year. If there is more than one such token, return an empty string.
     /// After making this initial pass, try to guess the identities of the remaining tokens.
     /// Numbers between 1 and 12 could be considered months, if no month token containing
-    /// letters was already identified. If two or more such tokens are found, the date is 
+    /// letters was already identified. If two or more such tokens are found, the date is
     /// ambiguous: return an empty string, unless one of these two conditions are met:
     ///   a) the numbers are equal, in which case ambiguity about placement is irrelevant
-    ///   b) if one token is NOT zero-padded and less than 10, and the other is 
+    ///   b) if one token is NOT zero-padded and less than 10, and the other is
     ///      either 10 or more or IS zero-padded, then the token that is not padded and
     ///      less than 10 is the day, and the other is the year, to which we should add 2000
     /// If a number is between 1 and 31, it could be considered the day. If two such tokens
@@ -167,7 +167,7 @@ public:
     /// year. If the year is less than 100, this may be a two-digit representation. If
     /// 2000 + the value is not in the future, use this as the year, otherwise use
     /// 1900 + the value for the year.
-    /// If all tokens can be identified, arrange them in the output string in one of the 
+    /// If all tokens can be identified, arrange them in the output string in one of the
     /// following formats:
     /// YYYY
     /// Mmm-YYYY
@@ -190,7 +190,7 @@ public:
         eLatLonCountryErr_Water,
         eLatLonCountryErr_Value
     };
-    
+
     static string ValidateLatLonCountry (const string& countryname, string& lat_lon, bool check_state, ELatLonCountryErr& errcode);
 
     static bool IsValidSexQualifierValue (const string& value);
@@ -430,9 +430,9 @@ public:
     enum EClassificationFlags {
         fCountryMatch    = (1),
         fProvinceMatch   = (1 << 1),
-        fWaterMatch      = (1 << 2), 
-        fOverlap         = (1 << 3), 
-        fCountryClosest  = (1 << 4), 
+        fWaterMatch      = (1 << 2),
+        fOverlap         = (1 << 3),
+        fCountryClosest  = (1 << 4),
         fProvinceClosest = (1 << 5),
         fWaterClosest    = (1 << 6)
     };
@@ -463,23 +463,23 @@ class NCBI_SEQFEAT_EXPORT CLatLonCountryMap
 public:
     CLatLonCountryMap(bool is_water);
     ~CLatLonCountryMap(void);
-    bool IsCountryInLatLon(const string& country, double lat, double lon);
+    bool IsCountryInLatLon(const string& country, double lat, double lon) const;
     const CCountryExtreme * GuessRegionForLatLon(double lat, double lon,
                                             const string& country = kEmptyStr,
-                                            const string& province = kEmptyStr);
+                                            const string& province = kEmptyStr) const;
     const CCountryExtreme * FindClosestToLatLon(double lat, double lon,
                                                 double range, double& distance);
     bool IsClosestToLatLon(const string& country, double lat, double lon,
-                           double range, double& distance);
-    bool HaveLatLonForRegion(const string& country);
-    bool DoCountryBoxesOverlap(const string& country1, const string& country2);
+                           double range, double& distance) const;
+    bool HaveLatLonForRegion(const string& country)  const;
+    bool DoCountryBoxesOverlap(const string& country1, const string& country2) const;
     const CCountryExtreme * IsNearLatLon(double lat, double lon, double range,
                                          double& distance,
                                          const string& country,
-                                         const string& province = kEmptyStr);
-    double GetScale (void) { return m_Scale; }
+                                         const string& province = kEmptyStr)  const;
+    double GetScale (void) const { return m_Scale; }
     static int AdjustAndRoundDistance (double distance, double scale);
-    int AdjustAndRoundDistance (double distance);
+    int AdjustAndRoundDistance (double distance) const;
 
     enum ELatLonAdjustFlags {
       fNone      = 0 ,
@@ -500,26 +500,23 @@ private:
     static bool s_CompareTwoLinesByLatLonThenCountry(const CCountryLine* line1,
                                     const CCountryLine* line2);
 
-    size_t x_GetLatStartIndex (int y);
-    const CCountryExtreme * x_FindCountryExtreme (const string& country);
+    size_t x_GetLatStartIndex (int y) const;
+    const CCountryExtreme * x_FindCountryExtreme (const string& country) const;
 
 
     typedef vector <CCountryLine *> TCountryLineList;
-    typedef TCountryLineList::const_iterator TCountryLineList_iter; 
+    typedef TCountryLineList::const_iterator TCountryLineList_iter;
 
     TCountryLineList m_CountryLineList;
     TCountryLineList m_LatLonSortedList;
     double m_Scale;
 
     typedef vector <CCountryExtreme *> TCountryExtremeList;
-    typedef TCountryExtremeList::const_iterator TCountryExtremeList_iter; 
+    typedef TCountryExtremeList::const_iterator TCountryExtremeList_iter;
     TCountryExtremeList m_CountryExtremes;
 
 
-      static const string sm_BodiesOfWater[];
-
-
-
+    static const string sm_BodiesOfWater[];
 };
 
 NCBI_SEQFEAT_EXPORT double ErrorDistance (
