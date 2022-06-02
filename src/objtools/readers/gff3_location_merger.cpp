@@ -182,7 +182,6 @@ void CGffIdTracker::CheckIntegrity()
             throw errorBadParentId;
         }
     }
-    cerr << "\n\n";
 }
 
 
