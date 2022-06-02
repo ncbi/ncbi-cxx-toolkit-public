@@ -2076,7 +2076,7 @@ bool CPubseqGatewayApp::x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
                                          CRequestStatus::e503_ServiceUnavailable,
                                          ePSGS_ShuttingDown,
                                          eDiag_Error);
-        PSG_ERROR(msg);
+        PSG_WARNING(msg);
         return true;
     }
     return false;
