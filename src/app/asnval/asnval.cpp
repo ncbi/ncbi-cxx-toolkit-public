@@ -193,6 +193,7 @@ private:
     EVerbosity m_verbosity;
     bool m_batch = false;
 
+    unique_ptr<edit::CHugeFileProcess> m_pHugeFileProcess = nullptr;
     CNcbiOstream* m_ValidErrorStream;
 #ifdef USE_XMLWRAPP_LIBS
     unique_ptr<CValXMLStream> m_ostr_xml;
@@ -912,9 +913,12 @@ CConstRef<CValidError> CAsnvalApp::ProcessHugeFileSeqEntry()
             pTotalErrors->AddValidErrItem(pErrorItem);
         }
     };
+
+    if (!m_pHugeFileProcess) {
+        m_pHugeFileProcess.reset(new edit::CHugeFileProcess(args["i"].AsString()));
+    }
     
-    edit::CHugeFileProcess hugeFileProcessor(args["i"].AsString());
-    hugeFileProcessor.Read(handler, CRef<CSeq_id>());
+    m_pHugeFileProcess->Read(handler, CRef<CSeq_id>());
 
     return pTotalErrors;
 }
