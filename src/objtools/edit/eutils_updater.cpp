@@ -90,6 +90,13 @@ public:
     {
         Disconnect();
         m_req = cm;
+
+        if (! m_req.Page.empty()) {
+            auto pos = m_req.Page.find('-');
+            if (pos != string::npos) {
+                m_req.Page.resize(pos);
+            }
+        }
     }
 
     enum ERetMode {
