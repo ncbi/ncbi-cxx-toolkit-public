@@ -918,7 +918,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessHugeFileSeqEntry()
         m_pHugeFileProcess.reset(new edit::CHugeFileProcess(args["i"].AsString()));
     }
     
-    m_pHugeFileProcess->Read(handler, CRef<CSeq_id>());
+    if (!m_pHugeFileProcess->Read(handler, CRef<CSeq_id>())) {
+        NCBI_THROW(CException, eUnknown, "Unable to process object");
+    }
 
     return pTotalErrors;
 }
