@@ -159,9 +159,13 @@ CHugeFileProcess::~CHugeFileProcess(void)
 {
 }
 
-void CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
+bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
 {
-    while (m_Impl->m_reader->GetNextBlob())
+    if (!m_Impl->m_reader->GetNextBlob()) {
+        return false;
+    }   
+
+    do
     {
         m_Impl->FlattenGenbankSet();
         CRef<CSeq_entry> entry;
@@ -195,7 +199,9 @@ void CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
             }
         }
         while ( entry && seqid.Empty());
-    }
+    } while (m_Impl->m_reader->GetNextBlob());
+
+    return true;
 }
 
 END_SCOPE(edit)
