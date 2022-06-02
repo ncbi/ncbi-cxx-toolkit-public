@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Test1)
     cm.Journal = "Virus Res.";
     cm.Year    = "2007";
     cm.Volume  = "130";
-    cm.Page    = "162";
+    cm.Page    = "162-166";
 
     for (auto upd : updaters) {
         TEntrezId pmid = upd->CitMatch(cm);
