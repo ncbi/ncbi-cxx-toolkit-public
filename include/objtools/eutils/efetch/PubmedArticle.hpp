@@ -139,29 +139,26 @@ inline auto get_ctype_facet(const std::locale& loc) -> decltype(std::use_facet<s
 template<class TE>
 std::string s_TextToString(const TE& text_item)
 {
-    std::string ret;
     if (text_item.Is_CharData()) {
-        ret.append(text_item.Get_CharData());
+        return text_item.Get_CharData();
     } else if (text_item.IsText()) {
         if (text_item.GetText().IsB()) {
-            ret.append(s_TextListToString(text_item.GetText().GetB().Get()));
+            return s_TextListToString(text_item.GetText().GetB().Get());
         } else if (text_item.GetText().IsI()) {
-            ret.append(s_TextListToString(text_item.GetText().GetI().Get()));
+            return s_TextListToString(text_item.GetText().GetI().Get());
         } else if (text_item.GetText().IsSup()) {
-            ret.append(s_TextListToString(text_item.GetText().GetSup().Get()));
+            return s_TextListToString(text_item.GetText().GetSup().Get());
         } else if (text_item.GetText().IsSub()) {
-            ret.append(s_TextListToString(text_item.GetText().GetSub().Get()));
+            return s_TextListToString(text_item.GetText().GetSub().Get());
         } else if (text_item.GetText().IsU()) {
-            ret.append(s_TextListToString(text_item.GetText().GetU().Get()));
+            return s_TextListToString(text_item.GetText().GetU().Get());
         }
-    } else {
-        std::string ret;
-        for (ncbi::CStdTypeConstIterator<std::string> j(Begin(text_item)); j; ++j) {
-            ret.append(*j);
-        }
-        return ret;
     }
-	return ret;
+    std::string ret;
+    for (ncbi::CStdTypeConstIterator<std::string> j(Begin(text_item)); j; ++j) {
+        ret.append(*j);
+    }
+    return ret;
 }
 
 template<class TE>
