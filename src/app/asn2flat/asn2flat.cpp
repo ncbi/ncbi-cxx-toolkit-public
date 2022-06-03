@@ -710,9 +710,9 @@ int CAsn2FlatApp::Run()
                            }
                        };
 
-        in.Read(handler, seqid);
+        auto success = in.Read(handler, seqid);
         s_INSDSetClose ( is_insdseq, m_Os );
-        if (m_Exception) return -1;
+        if (!success || m_Exception) return -1;
         return 0;
     }
 
