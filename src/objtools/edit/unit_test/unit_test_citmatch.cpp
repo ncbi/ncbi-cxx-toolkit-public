@@ -162,3 +162,16 @@ BOOST_AUTO_TEST_CASE(Test2)
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'253'208));
     }
 }
+
+BOOST_AUTO_TEST_CASE(Test3)
+{
+    SCitMatch cm;
+    cm.Journal = "Genome Announc";
+    cm.Title   = "Hansenula";
+    cm.Author  = "Freel KC";
+
+    for (auto upd : updaters) {
+        TEntrezId pmid = upd->CitMatch(cm);
+        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(25'103'752));
+    }
+}

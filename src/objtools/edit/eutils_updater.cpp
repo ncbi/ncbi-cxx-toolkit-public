@@ -39,6 +39,8 @@
 #include <objtools/eutils/efetch/PubmedBookArticle.hpp>
 #include <objtools/eutils/efetch/PubmedBookArticleSet.hpp>
 #include <objtools/eutils/api/efetch.hpp>
+#include <objtools/eutils/api/esearch.hpp>
+#include <objtools/eutils/esearch/IdList.hpp>
 #include <objects/pubmed/Pubmed_entry.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/pub/Pub.hpp>
@@ -65,10 +67,8 @@ enum eCitMatchFlags {
     e_P = 1 << 2, // Page
     e_Y = 1 << 3, // Year
     e_A = 1 << 4, // Author
-#if 0
     e_I = 1 << 5, // Issue
     e_T = 1 << 6, // Title
-#endif
 };
 
 eCitMatchFlags constexpr operator|(eCitMatchFlags a, eCitMatchFlags b)
@@ -77,64 +77,13 @@ eCitMatchFlags constexpr operator|(eCitMatchFlags a, eCitMatchFlags b)
 }
 
 
-class CECitMatch_Request : public CEUtils_Request
+class CECitMatch_Request : public CESearch_Request
 {
 public:
-    CECitMatch_Request(CRef<CEUtils_ConnContext>& ctx)
-      : CEUtils_Request(ctx, "ecitmatch.cgi")
+    CECitMatch_Request(CRef<CEUtils_ConnContext>& ctx) :
+        CESearch_Request("pubmed", ctx)
     {
-        SetDatabase("pubmed");
     }
-
-    void SetRequestParams(const SCitMatch& cm)
-    {
-        Disconnect();
-        m_req = cm;
-
-        if (! m_req.Page.empty()) {
-            auto pos = m_req.Page.find('-');
-            if (pos != string::npos) {
-                m_req.Page.resize(pos);
-            }
-        }
-    }
-
-    enum ERetMode {
-        eRetMode_none = 0,
-        eRetMode_xml,
-        eRetMode_text,
-    };
-
-    ERetMode GetRetMode() const { return m_RetMode; }
-    void     SetRetMode(ERetMode retmode)
-    {
-        Disconnect();
-        m_RetMode = retmode;
-    }
-
-    ESerialDataFormat GetSerialDataFormat() const override
-    {
-        switch (m_RetMode) {
-        case eRetMode_xml:
-            return eSerial_Xml;
-        default:
-            return eSerial_None;
-        }
-    }
-
-    string GetQueryString() const override
-    {
-        string args = CEUtils_Request::GetQueryString();
-        if (m_RetMode != eRetMode_none) {
-            args += "&retmode=" + NStr::URLEncode(x_GetRetModeName(), NStr::eUrlEnc_ProcessMarkChars);
-        }
-
-        string bdata = BuildSearchTerm(m_req, m_rule);
-        args += "&bdata=";
-        args += bdata;
-        return args;
-    }
-
 
     static string GetFirstAuthor(const CAuth_list& authors)
     {
@@ -205,7 +154,7 @@ public:
                     cm.Volume = I.GetVolume();
                 }
                 if (I.IsSetPages()) {
-                    cm.Page = I.GetPages();
+                    cm.Page  = I.GetPages();
                     auto pos = cm.Page.find('-');
                     if (pos != string::npos) {
                         cm.Page.resize(pos);
@@ -225,136 +174,92 @@ public:
         }
     }
 
-    bool SetRule(eCitMatchFlags rule)
+    static bool BuildSearchTerm(const SCitMatch& cm, eCitMatchFlags rule, string& term)
     {
-        if ((rule & e_J) && m_req.Journal.empty()) {
+        if ((rule & e_J) && cm.Journal.empty()) {
             return false;
         }
-        if ((rule & e_V) && m_req.Volume.empty()) {
+        if ((rule & e_Y) && cm.Year.empty()) {
             return false;
         }
-        if ((rule & e_P) && m_req.Page.empty()) {
+        if ((rule & e_V) && cm.Volume.empty()) {
             return false;
         }
-        if ((rule & e_Y) && m_req.Year.empty()) {
+        if ((rule & e_P) && cm.Page.empty()) {
             return false;
         }
-        if ((rule & e_A) && m_req.Author.empty()) {
+        if ((rule & e_A) && cm.Author.empty()) {
             return false;
         }
-#if 0
-        if ((rule & e_I) && m_req.Issue.empty()) {
+        if ((rule & e_I) && cm.Issue.empty()) {
             return false;
         }
-        if ((rule & e_T) && m_req.Title.empty()) {
+        if ((rule & e_T) && cm.Title.empty()) {
             return false;
         }
-#endif
 
-        m_rule = rule;
+        vector<string> v;
+        if (rule & e_J) {
+            v.push_back(cm.Journal + "[Journal]");
+        }
+        if (rule & e_Y) {
+            v.push_back(cm.Year + "[pdat]");
+        }
+        if (rule & e_V) {
+            v.push_back(cm.Volume + "[vol]");
+        }
+        if (rule & e_P) {
+            string page = cm.Page;
+            auto   pos  = page.find('-');
+            if (pos != string::npos) {
+                page.resize(pos);
+            }
+            v.push_back(page + "[page]");
+        }
+        if (rule & e_A) {
+            v.push_back(cm.Author + "[auth]");
+        }
+        if (rule & e_I) {
+            v.push_back(cm.Issue + "[iss]");
+        }
+        if (rule & e_T) {
+            v.push_back(cm.Title + "[title]");
+        }
+        term = NStr::Join(v, " AND ");
         return true;
     }
 
-    static string BuildSearchTerm(const SCitMatch& cm, eCitMatchFlags rule)
+    TEntrezId GetResponse(EPubmedError& err)
     {
-        // "journal_title|year|volume|first_page|author_name|your_key|"
-        ostringstream bdata;
+        err = eError_val_operational_error;
 
-        // Journal
-        if (rule & e_J) {
-            bdata << NStr::URLEncode(cm.Journal, NStr::eUrlEnc_ProcessMarkChars);
-        }
-        bdata << '|';
-
-        // Year
-        if (rule & e_Y) {
-            bdata << cm.Year;
-        }
-        bdata << '|';
-
-        // Volume
-        if (rule & e_V) {
-            bdata << NStr::URLEncode(cm.Volume, NStr::eUrlEnc_ProcessMarkChars);
-        }
-        bdata << '|';
-
-        // Page
-        if (rule & e_P) {
-            bdata << cm.Page;
-        }
-        bdata << '|';
-
-        // Author
-        if (rule & e_A) {
-            bdata << NStr::URLEncode(cm.Author, NStr::eUrlEnc_ProcessMarkChars);
-        }
-        bdata << '|';
-
-        // Key
-        bdata << '|';
-
-        return bdata.str();
-    }
-
-    TEntrezId GetResponse(eCitMatchFlags rule)
-    {
-        if (! this->SetRule(rule)) {
-            m_error = eError_val_citation_not_found;
-            return ZERO_ENTREZ_ID;
-        }
-
-        string resp;
-        try {
-            string content;
-            this->Read(&content);
-            NStr::TruncateSpacesInPlace(content);
-            vector<string> v;
-            NStr::Split(content, "|", v);
-            if (v.size() >= 7) {
-                resp = NStr::TruncateSpaces(v[6]);
-            }
-        } catch (...) {
-        }
-
-        if (! resp.empty()) {
-            if (! isalpha(resp.front())) {
-                TIntId pmid;
-                if (NStr::StringToNumeric(resp, &pmid, NStr::fConvErr_NoThrow)) {
-                    return ENTREZ_ID_FROM(TIntId, pmid);
+        CRef<esearch::CESearchResult> result = this->GetESearchResult();
+        if (result && result->IsSetData()) {
+            auto& D = result->GetData();
+            if (D.IsInfo() && D.GetInfo().IsSetContent() && D.GetInfo().GetContent().IsSetIdList()) {
+                const auto& idList = D.GetInfo().GetContent().GetIdList();
+                if (idList.IsSetId()) {
+                    const auto& ids = idList.GetId();
+                    if (ids.size() == 0) {
+                        err = eError_val_not_found;
+                    } else if (ids.size() == 1) {
+                        string id = ids.front();
+                        TIntId pmid;
+                        if (NStr::StringToNumeric(id, &pmid, NStr::fConvErr_NoThrow)) {
+                            return ENTREZ_ID_FROM(TIntId, pmid);
+                        } else {
+                            err = eError_val_not_found;
+                        }
+                    } else {
+                        err = eError_val_citation_ambiguous;
+                    }
                 } else {
-                    m_error = eError_val_operational_error;
-                }
-            } else {
-                if (NStr::StartsWith(resp, "NOT_FOUND", NStr::eNocase)) {
-                    m_error = eError_val_not_found;
-                } else if (NStr::StartsWith(resp, "AMBIGUOUS", NStr::eNocase)) {
-                    m_error = eError_val_citation_ambiguous;
+                    err = eError_val_not_found;
                 }
             }
         }
 
         return ZERO_ENTREZ_ID;
-    }
-
-    EPubmedError GetError() const { return m_error; }
-
-private:
-    SCitMatch      m_req;
-    ERetMode       m_RetMode = eRetMode_none;
-    eCitMatchFlags m_rule    = e_J | e_V | e_P | e_Y | e_A;
-    EPubmedError   m_error;
-
-    const char* x_GetRetModeName() const
-    {
-        switch (m_RetMode) {
-        default:
-        case eRetMode_none:
-            return "none";
-        case eRetMode_xml:
-            return "xml";
-        case eRetMode_text:
-            return "text";
-        }
     }
 };
 
@@ -382,28 +287,36 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
 TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 {
     unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
-
-    req->SetRequestMethod(CEUtils_Request::eHttp_Get);
-    req->SetRetMode(CECitMatch_Request::eRetMode_text);
-    req->SetRequestParams(cm);
+    req->SetRetMax(2);
+    req->SetUseHistory(false);
+    EPubmedError err = eError_val_citation_not_found;
 
     // clang-format off
-    constexpr array<eCitMatchFlags, 3> ruleset_single = {
+    constexpr array<eCitMatchFlags, 5> ruleset_single = {
+        e_J | e_V | e_P       | e_A | e_I,
         e_J | e_V | e_P       | e_A,
         e_J | e_V | e_P,
         e_J       | e_P | e_Y | e_A,
+        e_J                   | e_A       | e_T,
     };
     // clang-format on
 
-    for (eCitMatchFlags r : ruleset_single) {
-        TEntrezId pmid = req->GetResponse(r);
-        if (pmid != ZERO_ENTREZ_ID) {
-            return pmid;
+    const auto& ruleset = ruleset_single;
+
+    for (eCitMatchFlags r : ruleset) {
+        string term;
+        if (CECitMatch_Request::BuildSearchTerm(cm, r, term)) {
+            req->SetArgument("term", term);
+            req->SetRetType(CESearch_Request::eRetType_uilist);
+            TEntrezId pmid = req->GetResponse(err);
+            if (pmid != ZERO_ENTREZ_ID) {
+                return pmid;
+            }
         }
     }
 
     if (perr) {
-        *perr = req->GetError();
+        *perr = err;
     }
     return ZERO_ENTREZ_ID;
 }
