@@ -3339,7 +3339,7 @@ static bool s_WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
 }
 
 
-static int s_GetMaxRealSeqStretch(const CSeqVector& vec)
+static int s_GetMaxRealSeqStretchOrThreshold(const CSeqVector& vec, int threshold)
 {
     int max_stretch = 0;
     auto IsN = [](char c) { return c == 'N'; };
@@ -3348,6 +3348,10 @@ static int s_GetMaxRealSeqStretch(const CSeqVector& vec)
     while(begin_it != end(vec)) {
         auto end_it = find_if(begin_it, end(vec), IsN);
         const auto current_stretch = distance(begin_it, end_it); 
+        if (current_stretch >= threshold) {
+            return threshold;
+        }
+
         if (current_stretch > max_stretch) {
             max_stretch = current_stretch;
         } 
@@ -3355,6 +3359,7 @@ static int s_GetMaxRealSeqStretch(const CSeqVector& vec)
     }
     return max_stretch;
 }
+
 
 
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
@@ -3394,7 +3399,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             return;
         }
 
-        if (const int max_length = s_GetMaxRealSeqStretch(vec); max_length < 10) {
+        if (const int max_length = s_GetMaxRealSeqStretchOrThreshold(vec, 10); max_length < 10) {
             PostErr(eDiag_Error, eErr_SEQ_INST_ContigsTooShort, 
                     "Maximum contig length is " + NStr::IntToString(max_length) + " bases", seq);
         }
