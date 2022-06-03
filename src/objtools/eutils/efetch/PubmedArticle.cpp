@@ -40,7 +40,6 @@
 #include <numeric>
 #include <regex>
 #include <unordered_map>
-#include <serial/iterator.hpp>
 #include <objects/pubmed/Pubmed_entry.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/general/Date.hpp>
