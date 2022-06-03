@@ -142,7 +142,7 @@ std::string s_TextToString(const TE& text_item)
     std::string ret;
     if (text_item.Is_CharData()) {
         ret.append(text_item.Get_CharData());
-    } else {
+    } else if (text_item.IsText()) {
         if (text_item.GetText().IsB()) {
             ret.append(s_TextListToString(text_item.GetText().GetB().Get()));
         } else if (text_item.GetText().IsI()) {
@@ -154,6 +154,12 @@ std::string s_TextToString(const TE& text_item)
         } else if (text_item.GetText().IsU()) {
             ret.append(s_TextListToString(text_item.GetText().GetU().Get()));
         }
+    } else {
+        std::string ret;
+        for (ncbi::CStdTypeConstIterator<std::string> j(Begin(text_item)); j; ++j) {
+            ret.append(*j);
+        }
+        return ret;
     }
 	return ret;
 }
