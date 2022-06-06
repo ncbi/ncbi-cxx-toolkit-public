@@ -413,6 +413,54 @@ private:
         
 };
 
+class ScorePositionSort{
+    CRef<CScope> m_scope;
+    int min_J_position_diff = 100;
+    double reliable_J_match_factor = 0.5;
+public:
+    ScorePositionSort(CRef<CScope> scope){ m_scope = scope; }
+    bool operator()(CRef<CSeq_align> &x, CRef<CSeq_align> &y) {
+        return s_CompareSeqAlignByScoreAndPosition(x, y, m_scope);
+    }
+    bool s_CompareSeqAlignByScoreAndPosition(const CRef<CSeq_align> &x, const CRef<CSeq_align> &y, 
+                                             CRef<CScope> scope){
+        int lx = x->GetAlignLength(), ly = y->GetAlignLength();
+        int jx_start = x->GetSeqStart(0);
+        int jy_start = y->GetSeqStart(0);
+        int sx = 0, sy = 0;
+        x->GetNamedScore(CSeq_align::eScore_Score, sx);
+        y->GetNamedScore(CSeq_align::eScore_Score, sy);
+        
+        int reliable_J_match = reliable_J_match_factor*
+            (scope->GetBioseqHandle(x->GetSeq_id(1)).GetBioseqLength() +
+             scope->GetBioseqHandle(y->GetSeq_id(1)).GetBioseqLength())/2;
+
+        
+        //if there are additional J genes, consider using the 5' one if conditions met.
+        //this reflect the case where rearrangement is followed by downstream J's
+        if (lx > reliable_J_match && ly > reliable_J_match && abs(jx_start - jy_start) > min_J_position_diff) {
+            if (x->GetSeqStrand(0) == eNa_strand_minus){
+                return (jx_start > jy_start + min_J_position_diff && sx>sy*reliable_J_match_factor);
+            } else {
+                return (jx_start < jy_start - min_J_position_diff && sx>sy*reliable_J_match_factor);
+                
+            }
+        } else if (sx != sy) {
+            return (sx > sy);
+        } else if (lx != ly) {
+            return (lx >= ly);
+        }
+        
+        string x_id = NcbiEmptyString;
+        string y_id = NcbiEmptyString;
+        x->GetSeq_id(1).GetLabel(&x_id, CSeq_id::eContent);
+        y->GetSeq_id(1).GetLabel(&y_id, CSeq_id::eContent);
+        
+        return (x_id < y_id);
+        
+    }
+};
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
