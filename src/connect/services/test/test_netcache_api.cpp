@@ -902,7 +902,7 @@ static void s_AllowedServicesTest()
 {
     const string kService0 = TNetCache_ServiceName::GetDefault();
     const string kService1 = "NC_Test";
-    const string kService2 = "NC_TestRes";
+    const string kService2 = "NC_NoQuorum_Test";
     string key, short_key;
 
 
