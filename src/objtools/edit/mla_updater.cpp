@@ -104,6 +104,10 @@ static void SetArticle(CCit_art& art, const SCitMatch& cm)
         title->SetName(cm.Title);
         art.SetTitle().Set().push_back(title);
     }
+
+    if (cm.InPress) {
+        J.SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    }
 }
 
 TEntrezId CMLAUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
