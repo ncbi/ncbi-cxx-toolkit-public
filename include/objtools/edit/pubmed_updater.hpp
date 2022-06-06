@@ -55,6 +55,7 @@ struct NCBI_XOBJEDIT_EXPORT SCitMatch {
     string Author;
     string Issue;
     string Title;
+    bool   InPress = false;
 };
 
 class NCBI_XOBJEDIT_EXPORT IPubmedUpdater

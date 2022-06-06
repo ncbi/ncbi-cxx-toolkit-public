@@ -163,6 +163,9 @@ public:
                 if (I.IsSetIssue()) {
                     cm.Issue = I.GetIssue();
                 }
+                if (I.IsSetPrepub()) {
+                    cm.InPress = (I.GetPrepub() == CImprint::ePrepub_in_press);
+                }
             }
         }
 
@@ -299,9 +302,17 @@ TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
         e_J       | e_P | e_Y | e_A,
         e_J                   | e_A       | e_T,
     };
+
+    constexpr array<eCitMatchFlags, 5> ruleset_in_press = {
+        e_J | e_V | e_P | e_Y | e_A,
+        e_J | e_V | e_P | e_Y,
+        e_J | e_V       | e_Y | e_A       | e_T,
+        e_J | e_V       | e_Y             | e_T,
+        e_J             | e_Y | e_A       | e_T,
+    };
     // clang-format on
 
-    const auto& ruleset = ruleset_single;
+    const auto& ruleset = cm.InPress ? ruleset_in_press : ruleset_single;
 
     for (eCitMatchFlags r : ruleset) {
         string term;
