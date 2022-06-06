@@ -1,4 +1,4 @@
-                Fatal
+                Error
 Line:           205
-Problem:        Bad data line:  Duplicate feature ID "Ga0133913_1000067839".
+Problem:        Bad data line: record ID "Ga0133913_1000067839" is used multiple times
 
