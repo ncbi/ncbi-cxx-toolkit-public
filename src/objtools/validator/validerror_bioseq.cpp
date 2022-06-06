@@ -3341,25 +3341,25 @@ static bool s_WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
 
 static int s_GetMaxRealSeqStretchOrThreshold(const CSeqVector& vec, int threshold)
 {
-    int max_stretch = 0;
 
+    int max_stretch = 0;
     auto IsN = [](char c) { return c == 'N'; };
 
-    auto begin_it = find_if_not(begin(vec), end(vec), IsN);
-    auto distanceToEnd = distance(begin_it, end(vec));
-    while(distanceToEnd > 0) {
+    for (auto begin_it = find_if_not(begin(vec), end(vec), IsN);
+         begin_it != end(vec);) {
+        auto distanceToEnd = distance(begin_it, end(vec));
+        // check a sequence interval no longer than the threshold length
         auto interval = (distanceToEnd > threshold) ? threshold : distanceToEnd;
         auto end_it = find_if(begin_it, next(begin_it, interval), IsN);
         const auto current_stretch = distance(begin_it, end_it); 
-        if (current_stretch >= threshold) {
-            return threshold;
+        if (current_stretch >= threshold) { // No Ns in the interval
+            return threshold;               
         }
 
         if (current_stretch > max_stretch) {
             max_stretch = current_stretch;
         } 
         begin_it = find_if_not(end_it, end(vec), IsN);
-        distanceToEnd = distance(begin_it, end(vec));
     }
     return max_stretch;
 }
