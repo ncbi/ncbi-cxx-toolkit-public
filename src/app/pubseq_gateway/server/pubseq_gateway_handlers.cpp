@@ -1385,9 +1385,16 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
 
         CJsonNode                       status(CJsonNode::NewObjectNode());
 
-        m_Counters.AppendValueNode(
-            status, CPSGSCounters::ePSGS_CassandraActiveStatements,
-            static_cast<uint64_t>(m_CassConnection->GetActiveStatements()));
+        if (m_CassConnection) {
+            m_Counters.AppendValueNode(
+                status, CPSGSCounters::ePSGS_CassandraActiveStatements,
+                static_cast<uint64_t>(m_CassConnection->GetActiveStatements()));
+        } else {
+            // No cassandra connection
+            m_Counters.AppendValueNode(
+                status, CPSGSCounters::ePSGS_CassandraActiveStatements,
+                static_cast<uint64_t>(0));
+        }
         m_Counters.AppendValueNode(
             status, CPSGSCounters::ePSGS_NumberOfConnections,
             static_cast<uint64_t>(m_TcpDaemon->NumOfConnections()));
