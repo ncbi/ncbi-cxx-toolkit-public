@@ -175,3 +175,25 @@ BOOST_AUTO_TEST_CASE(Test3)
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(25'103'752));
     }
 }
+
+BOOST_AUTO_TEST_CASE(Test4)
+{
+    SCitMatch cm;
+    cm.Journal = "J.Gen.Virol.";
+    cm.Title   = "Human herpesvirus 6 (strain U1102) encodes homologues of the conserved herpesvirus glycoprotein gM and the alphaherpesvirus origin-binding protein";
+    cm.Author  = "Lawrence GL";
+    cm.Year    = "1994";
+    cm.Volume  = "0";
+
+    for (auto upd : updaters) {
+        EPubmedError err;
+
+        cm.InPress = false;
+        TEntrezId pmid = upd->CitMatch(cm);
+        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(7'844'524));
+
+        cm.InPress = true;
+        pmid = upd->CitMatch(cm, &err);
+        BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
+    }
+}
