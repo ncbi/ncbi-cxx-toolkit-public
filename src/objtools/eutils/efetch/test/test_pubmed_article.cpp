@@ -84,7 +84,7 @@ template<class TA>
 void ProcessArticle(const TA& article, const MSerial_Format& ofmt)
 {
     auto entry = article.ToPubmed_entry();
-    cout << ofmt << *entry;
+    cout << ofmt << MSerial_FixNonPrint(eFNP_Replace) << *entry;
 }
 
 
