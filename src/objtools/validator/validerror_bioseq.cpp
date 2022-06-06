@@ -128,13 +128,11 @@
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/seq_feat_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
-
 #include <objtools/error_codes.hpp>
 #include <objtools/edit/struc_comm_field.hpp>
-
 #include <algorithm>
-
 #include <objmgr/seq_loc_mapper.hpp>
+#include <optional>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Validator
 
@@ -3339,9 +3337,8 @@ static bool s_WillReportTerminalGap(const CBioseq& seq, CBioseq_Handle bsh)
 }
 
 
-static int s_GetMaxRealSeqStretchOrThreshold(const CSeqVector& vec, int threshold)
+static optional<int> s_MaxSeqStretchIfLessThanThreshold(const CSeqVector& vec, int threshold)
 {
-
     int max_stretch = 0;
     auto IsN = [](char c) { return c == 'N'; };
 
@@ -3353,7 +3350,7 @@ static int s_GetMaxRealSeqStretchOrThreshold(const CSeqVector& vec, int threshol
         auto end_it = find_if(begin_it, next(begin_it, interval), IsN);
         const auto current_stretch = distance(begin_it, end_it); 
         if (current_stretch >= threshold) { // No Ns in the interval
-            return threshold;               
+            return {};               
         }
 
         if (current_stretch > max_stretch) {
@@ -3363,7 +3360,6 @@ static int s_GetMaxRealSeqStretchOrThreshold(const CSeqVector& vec, int threshol
     }
     return max_stretch;
 }
-
 
 
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
@@ -3403,9 +3399,9 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             return;
         }
 
-        if (const int max_length = s_GetMaxRealSeqStretchOrThreshold(vec, 10); max_length < 10) {
+        if (const auto oMaxLength = s_MaxSeqStretchIfLessThanThreshold(vec, 10); oMaxLength.has_value()) {
             PostErr(eDiag_Error, eErr_SEQ_INST_ContigsTooShort, 
-                    "Maximum contig length is " + NStr::IntToString(max_length) + " bases", seq);
+                    "Maximum contig length is " + NStr::IntToString(*oMaxLength) + " bases", seq);
         }
 
         EBioseqEndIsType begin_n = eBioseqEndIsType_None;
