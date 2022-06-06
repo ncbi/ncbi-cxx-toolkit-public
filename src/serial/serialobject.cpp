@@ -42,6 +42,10 @@
 #include <serial/objistr.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/objistrxml.hpp>
+#include <serial/objistrasn.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
 
 #include <serial/impl/classinfob.hpp>
 #include <serial/error_codes.hpp>
@@ -489,10 +493,28 @@ CAnyContentObject::GetAttributes(void) const
 #define  eEncoding_All    (255l << 16)
 #define  eFmtFlags_All    (255l << 24)
 
+#define eFixNonPrint_Default        0
+#define eFixNonPrint_Skip           1
+#define eFixNonPrint_Allow          2
+#define eFixNonPrint_Replace        3
+#define eFixNonPrint_ReplaceAndWarn 4
+#define eFixNonPrint_Throw          5
+#define eFixNonPrint_Abort          6
+
+#define eFixNonPrint_All            7
+
+#define eSerIndex_Format 0
+#define eSerIndex_Verify 0
+#define eSerIndex_SkipUnkMembers 0
+#define eSerIndex_SkipUnkVariants 0
+#define eSerIndex_Encoding 0
+#define eSerIndex_FixNonPrint 1
+#define eSerIndex_Count 2
+
 static
-long& s_SerFlags(CNcbiIos& io)
+long& s_SerFlags(CNcbiIos& io, size_t idx)
 {
-    static int s_SerIndex;
+    static int s_SerIndex[eSerIndex_Count];
     static bool s_HaveIndex = false;
 
     if ( !s_HaveIndex ) {
@@ -500,17 +522,20 @@ long& s_SerFlags(CNcbiIos& io)
         DEFINE_STATIC_FAST_MUTEX(s_IndexMutex);
         CFastMutexGuard guard(s_IndexMutex);
         if ( !s_HaveIndex ) {
-            s_SerIndex = CNcbiIos::xalloc();
+            for (int i = 0; i < eSerIndex_Count; ++i) {
+                s_SerIndex[i] = CNcbiIos::xalloc();
+            }
             s_HaveIndex = true;
         }
     }
 
-    return io.iword(s_SerIndex);
+    _ASSERT(idx < eSerIndex_Count);
+    return io.iword(s_SerIndex[idx]);
 }
 static
 ESerialDataFormat s_FlagsToFormat(CNcbiIos& io)
 {
-    switch (s_SerFlags(io) & eFmt_All) {
+    switch (s_SerFlags(io, eSerIndex_Format) & eFmt_All) {
     case eFmt_AsnText:     return eSerial_AsnText;
     case eFmt_AsnBinary:   return eSerial_AsnBinary;
     case eFmt_Xml:         return eSerial_Xml;
@@ -533,7 +558,7 @@ long s_FormatToFlags(ESerialDataFormat fmt)
 static
 ESerialVerifyData s_FlagsToVerify(CNcbiIos& io)
 {
-    switch (s_SerFlags(io) & eVerify_All) {
+    switch (s_SerFlags(io, eSerIndex_Verify) & eVerify_All) {
     case eVerify_No:       return eSerialVerifyData_No;
     case eVerify_Yes:      return eSerialVerifyData_Yes;
     case eVerify_DefValue: return eSerialVerifyData_DefValue;
@@ -558,7 +583,7 @@ long s_VerifyToFlags(ESerialVerifyData fmt)
 static
 ESerialSkipUnknown s_FlagsToSkipUnkMembers(CNcbiIos& io)
 {
-    switch (s_SerFlags(io) & eSkipUnkMembers_All) {
+    switch (s_SerFlags(io, eSerIndex_SkipUnkMembers) & eSkipUnkMembers_All) {
     case eSkipUnkMembers_No:   return eSerialSkipUnknown_No;
     case eSkipUnkMembers_Yes:  return eSerialSkipUnknown_Yes;
     default:                   return eSerialSkipUnknown_Default;
@@ -579,7 +604,7 @@ long s_SkipUnkMembersToFlags(ESerialSkipUnknown fmt)
 static
 ESerialSkipUnknown s_FlagsToSkipUnkVariants(CNcbiIos& io)
 {
-    switch (s_SerFlags(io) & eSkipUnkVariants_All) {
+    switch (s_SerFlags(io, eSerIndex_SkipUnkVariants) & eSkipUnkVariants_All) {
     case eSkipUnkVariants_No:  return eSerialSkipUnknown_No;
     case eSkipUnkVariants_Yes: return eSerialSkipUnknown_Yes;
     default:                   return eSerialSkipUnknown_Default;
@@ -601,7 +626,7 @@ long s_SkipUnkVariantsToFlags(ESerialSkipUnknown fmt)
 static
 EEncoding s_FlagsToEncoding(CNcbiIos& io)
 {
-    long enc = (s_SerFlags(io) & eEncoding_All) >> 16;
+    long enc = (s_SerFlags(io, eSerIndex_Encoding) & eEncoding_All) >> 16;
     switch (enc) {
     default: return eEncoding_Unknown;
     case 1:  return eEncoding_UTF8;
@@ -626,9 +651,39 @@ long s_EncodingToFlags(EEncoding fmt)
 }
 
 static
+EFixNonPrint s_FlagsToFixNonPrint(CNcbiIos& io)
+{
+    long fnp = s_SerFlags(io, eSerIndex_FixNonPrint) & eFixNonPrint_All;
+    switch (fnp) {
+    case eFixNonPrint_Skip:  return eFNP_Skip;
+    case eFixNonPrint_Allow:  return eFNP_Allow;
+    case eFixNonPrint_Replace:  return eFNP_Replace;
+    case eFixNonPrint_ReplaceAndWarn:  return eFNP_ReplaceAndWarn;
+    case eFixNonPrint_Throw:  return eFNP_Throw;
+    case eFixNonPrint_Abort:  return eFNP_Abort;
+    default: return eFNP_Default;
+    }
+}
+
+static long s_FixNonPrintToFlags(EFixNonPrint fnp)
+{
+    switch (fnp) {
+    case eFNP_Default: return eFixNonPrint_Default;
+    case eFNP_Skip: return eFixNonPrint_Skip;
+    case eFNP_Allow: return eFixNonPrint_Allow;
+    case eFNP_Replace: return eFixNonPrint_Replace;
+    case eFNP_ReplaceAndWarn: return eFixNonPrint_ReplaceAndWarn;
+    case eFNP_Throw: return eFixNonPrint_Throw;
+    case eFNP_Abort: return eFixNonPrint_Abort;
+    default: break;
+    }
+    return 0;
+}
+
+static
 TSerial_Format_Flags s_FlagsToFormatFlags(CNcbiIos& io)
 {
-    TSerial_Format_Flags t = (TSerial_Format_Flags)(s_SerFlags(io) & eFmtFlags_All);
+    TSerial_Format_Flags t = (TSerial_Format_Flags)(s_SerFlags(io, eSerIndex_Format) & eFmtFlags_All);
     return t >> 24;
 }
 
@@ -643,13 +698,13 @@ bool MSerial_Flags::HasSerialFormatting(CNcbiIos& io)
     return s_FlagsToFormat(io) != eSerial_None;
 }
 
-MSerial_Flags::MSerial_Flags(unsigned long all, unsigned long flags)
-    : m_All(all), m_Flags(flags)
+MSerial_Flags::MSerial_Flags(unsigned long all, unsigned long flags, int idx)
+    : m_Index(idx), m_All(all), m_Flags(flags)
 {
 }
 void MSerial_Flags::SetFlags(CNcbiIos& io) const
 {
-    s_SerFlags(io) = (s_SerFlags(io) & ~m_All) | m_Flags;
+    s_SerFlags(io, m_Index) = (s_SerFlags(io, m_Index) & ~m_All) | m_Flags;
 }
 
 void MSerial_Flags::SetFormatFlags(unsigned long flags)
@@ -659,7 +714,7 @@ void MSerial_Flags::SetFormatFlags(unsigned long flags)
 
 MSerial_Format::MSerial_Format(ESerialDataFormat fmt, TSerial_Format_Flags flags)
     : MSerial_Flags(eFmt_All | eFmtFlags_All,
-        s_FormatToFlags(fmt) | s_FormatFlagsToFlags(flags))
+        s_FormatToFlags(fmt) | s_FormatFlagsToFlags(flags), eSerIndex_Format)
 {
 }
 
@@ -680,29 +735,36 @@ MSerial_Format& MSerial_Format_Json::operator()(TSerial_Json_Flags flags)
 }
 
 MSerial_VerifyData::MSerial_VerifyData(ESerialVerifyData fmt)
-    : MSerial_Flags(eVerify_All, s_VerifyToFlags(fmt))
+    : MSerial_Flags(eVerify_All, s_VerifyToFlags(fmt), eSerIndex_Verify)
 {
 }
 
 MSerial_SkipUnknownMembers::MSerial_SkipUnknownMembers(ESerialSkipUnknown fmt)
-    : MSerial_Flags(eSkipUnkMembers_All, s_SkipUnkMembersToFlags(fmt))
+    : MSerial_Flags(eSkipUnkMembers_All, s_SkipUnkMembersToFlags(fmt), eSerIndex_SkipUnkMembers)
 {
 }
 
 MSerial_SkipUnknownVariants::MSerial_SkipUnknownVariants(ESerialSkipUnknown fmt)
-    : MSerial_Flags(eSkipUnkVariants_All, s_SkipUnkVariantsToFlags(fmt))
+    : MSerial_Flags(eSkipUnkVariants_All, s_SkipUnkVariantsToFlags(fmt), eSerIndex_SkipUnkVariants)
 {
 }
 
 MSerialXml_DefaultStringEncoding::MSerialXml_DefaultStringEncoding(EEncoding fmt)
-    : MSerial_Flags(eEncoding_All, s_EncodingToFlags(fmt))
+    : MSerial_Flags(eEncoding_All, s_EncodingToFlags(fmt), eSerIndex_Encoding)
+{
+}
+
+MSerial_FixNonPrint::MSerial_FixNonPrint(EFixNonPrint fnp)
+    : MSerial_Flags(eFixNonPrint_All, s_FixNonPrintToFlags(fnp), eSerIndex_FixNonPrint)
 {
 }
 
 CNcbiIos& MSerial_None(CNcbiIos& io)
 {
 //    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All);
-    s_SerFlags(io) = 0;
+    for (int i = 0; i < eSerIndex_Count; ++i) {
+        s_SerFlags(io, i) = 0;
+    }
     return io;
 }
 
@@ -710,22 +772,22 @@ CNcbiIos& MSerial_None(CNcbiIos& io)
 // Class member assignment verification
 CNcbiIos& MSerial_VerifyDefault(CNcbiIos& io)
 {
-    s_SerFlags(io) = (s_SerFlags(io) & ~eVerify_All);
+    s_SerFlags(io, eSerIndex_Verify) = (s_SerFlags(io, eSerIndex_Verify) & ~eVerify_All);
     return io;
 }
 CNcbiIos& MSerial_VerifyNo(CNcbiIos& io)
 {
-    s_SerFlags(io) = (s_SerFlags(io) & ~eVerify_All) | eVerify_No;
+    s_SerFlags(io, eSerIndex_Verify) = (s_SerFlags(io, eSerIndex_Verify) & ~eVerify_All) | eVerify_No;
     return io;
 }
 CNcbiIos& MSerial_VerifyYes(CNcbiIos& io)
 {
-    s_SerFlags(io) = (s_SerFlags(io) & ~eVerify_All) | eVerify_Yes;
+    s_SerFlags(io, eSerIndex_Verify) = (s_SerFlags(io, eSerIndex_Verify) & ~eVerify_All) | eVerify_Yes;
     return io;
 }
 CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io)
 {
-    s_SerFlags(io) = (s_SerFlags(io) & ~eVerify_All) | eVerify_DefValue;
+    s_SerFlags(io, eSerIndex_Verify) = (s_SerFlags(io, eSerIndex_Verify) & ~eVerify_All) | eVerify_DefValue;
     return io;
 }
 
@@ -760,6 +822,7 @@ CNcbiOstream& WriteObject(CNcbiOstream& os, TConstObjectPtr ptr, TTypeInfo info)
         dynamic_cast<CObjectOStreamXml*>(ostr.get())->
             SetDefaultStringEncoding( s_FlagsToEncoding(os) );
     }
+    ostr->FixNonPrint(s_FlagsToFixNonPrint(os));
     ostr->Write(ptr,info);
     return os;
 }
@@ -778,6 +841,7 @@ CNcbiIstream& ReadObject(CNcbiIstream& is, TObjectPtr ptr, TTypeInfo info)
         dynamic_cast<CObjectIStreamXml*>(istr.get())->
             SetDefaultStringEncoding( s_FlagsToEncoding(is) );
     }
+    istr->FixNonPrint(s_FlagsToFixNonPrint(is));
     istr->Read(ptr,info);
     return is;
 }

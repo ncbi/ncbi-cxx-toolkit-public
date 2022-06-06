@@ -529,8 +529,8 @@ public:
     static bool HasSerialFormatting(CNcbiIos& io);
 
 protected:
-    MSerial_Flags(unsigned long all, unsigned long flags);
-    MSerial_Flags(const MSerial_Flags& o) {m_All=o.m_All; m_Flags=o.m_Flags;}
+    MSerial_Flags(unsigned long all, unsigned long flags, int idx);
+    MSerial_Flags(const MSerial_Flags& o) { m_Index = o.m_Index; m_All = o.m_All; m_Flags = o.m_Flags; }
 
     void SetFlags(CNcbiIos& io) const;
     void SetFormatFlags(unsigned long flags);
@@ -542,6 +542,7 @@ private:
     MSerial_Flags(void);
     MSerial_Flags& operator= (const MSerial_Flags&);
 
+    int           m_Index;
     unsigned long m_All;
     unsigned long m_Flags;
 };
@@ -666,6 +667,21 @@ class NCBI_XSERIAL_EXPORT MSerialXml_DefaultStringEncoding : public MSerial_Flag
 public:
     explicit MSerialXml_DefaultStringEncoding(EEncoding fmt);
 };
+
+/// MSerial_FixNonPrint --
+///
+///   I/O stream manipulators. Defines processing of non-printing characters in the ASN VisibleString.
+///   For example:
+///     cout << MSerial_Format(eSerial_AsnText)
+///          << MSerial_FixNonPrint(eFNP_Replace)
+///          << obj;
+///   @sa EFixNonPrint
+class NCBI_XSERIAL_EXPORT MSerial_FixNonPrint : public MSerial_Flags
+{
+public:
+    explicit MSerial_FixNonPrint(EFixNonPrint fnp);
+};
+
 
 /// I/O stream manipulators --
 ///
