@@ -964,9 +964,8 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         s_ThreadData.SetValue(data, CDiagContext::sx_ThreadDataTlsCleanup,
             !CThread::IsMain() ? 0 : (void*)(1),
             CTlsBase::eDoCleanup);
+        s_ThreadDataState = eInitialized;
     }
-
-    s_ThreadDataState = eInitialized;
 
     return *data;
 }
