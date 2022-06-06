@@ -360,6 +360,21 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
             m_Removed_Bioseqs.clear();
             m_AnnotIdsFlags = 0;
         }
+        else if ( HasSplitInfo() &&
+                  GetSplitInfo().x_HasDelayedMainChunk() &&
+                  GetSplitInfo().GetChunk(CTSE_Chunk_Info::kDelayedMain_ChunkId).NotLoaded()) {
+            // special reset for incomplete main chunk load
+            if ( m_Contents ) {
+                x_DetachContents();
+                m_Contents.Reset();
+            }
+            m_Which = CSeq_entry::e_not_set;
+            m_Object.Reset();
+            m_RequestedId.Reset();
+            m_Removed_Bioseq_sets.clear();
+            m_Removed_Bioseqs.clear();
+            m_AnnotIdsFlags = 0;
+        }
     }
 
     entry.Parentize();
