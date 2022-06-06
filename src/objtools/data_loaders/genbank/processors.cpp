@@ -898,14 +898,14 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
                        "CProcessor_ID1_SNP: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
     }
-    CTSE_SetObjectInfo set_info;
+    CRef<CTSE_SetObjectInfo> set_info(new CTSE_SetObjectInfo);
     CID1server_back reply;
     {{
         CReaderRequestResultRecursion r(result);
             
         CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
                                           Begin(reply),
-                                          set_info);
+                                          *set_info);
             
         LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadSNPBlob,
@@ -922,7 +922,7 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
     
     CWriter* writer = GetWriter(result);
     if ( writer && version >= 0 ) {
-        if ( set_info.m_Seq_annot_InfoMap.empty() || !entry.first ) {
+        if ( set_info->m_Seq_annot_InfoMap.empty() || !entry.first ) {
             const CProcessor_ID1* prc =
                 dynamic_cast<const CProcessor_ID1*>
                 (&m_Dispatcher->GetProcessor(eType_ID1));
@@ -936,7 +936,7 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
                 (&m_Dispatcher->GetProcessor(eType_St_Seq_entry_SNPT));
             if ( prc ) {
                 prc->SaveSNPBlob(result, blob_id, chunk_id, writer,
-                                 *entry.first, entry.second, set_info);
+                                 *entry.first, entry.second, *set_info);
             }
         }
     }
@@ -944,8 +944,8 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
     CLoadLockSetter setter(blob);
     if ( !setter.IsLoaded() ) {
         if ( entry.first ) {
-            OffsetAllGisToOM(*entry.first, &set_info);
-            setter.SetSeq_entry(*entry.first, &set_info);
+            OffsetAllGisToOM(*entry.first, set_info);
+            setter.SetSeq_entry(*entry.first, set_info);
         }
         setter.SetLoaded();
     }
@@ -1096,7 +1096,7 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
                        "CProcessor_SE_SNP: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
     }
-    CTSE_SetObjectInfo set_info;
+    CRef<CTSE_SetObjectInfo> set_info(new CTSE_SetObjectInfo);
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     {{
         CWriter* writer = x_GetWriterToSaveBlob(result, blob_id, setter, "SE_SNP");
@@ -1106,7 +1106,7 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
             
             CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
                                               Begin(*seq_entry),
-                                              set_info);
+                                              *set_info);
             
             LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_ParseSNPBlob,
@@ -1115,7 +1115,7 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
         }}
 
         if ( writer ) {
-            if ( set_info.m_Seq_annot_InfoMap.empty() || !seq_entry ) {
+            if ( set_info->m_Seq_annot_InfoMap.empty() || !seq_entry ) {
                 const CProcessor_St_SE* prc =
                     dynamic_cast<const CProcessor_St_SE*>
                     (&m_Dispatcher->GetProcessor(eType_St_Seq_entry));
@@ -1136,13 +1136,13 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
                     (&m_Dispatcher->GetProcessor(eType_St_Seq_entry_SNPT));
                 if ( prc ) {
                     prc->SaveSNPBlob(result, blob_id, chunk_id, writer,
-                                     *seq_entry, setter.GetBlobState(), set_info);
+                                     *seq_entry, setter.GetBlobState(), *set_info);
                 }
             }
         }
     }}
-    OffsetAllGisToOM(*seq_entry, &set_info);
-    setter.SetSeq_entry(*seq_entry, &set_info);
+    OffsetAllGisToOM(*seq_entry, set_info);
+    setter.SetSeq_entry(*seq_entry, set_info);
     setter.SetLoaded();
 }
 
@@ -1400,13 +1400,13 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
     result.SetAndSaveBlobState(blob_id, blob_state);
 
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
-    CTSE_SetObjectInfo set_info;
+    CRef<CTSE_SetObjectInfo> set_info(new CTSE_SetObjectInfo);
 
     {{
         CReaderRequestResultRecursion r(result);
         Int8 size = NcbiStreamposToInt8(stream.tellg());
         
-        CSeq_annot_SNP_Info_Reader::Read(stream, Begin(*seq_entry), set_info);
+        CSeq_annot_SNP_Info_Reader::Read(stream, Begin(*seq_entry), *set_info);
 
         size = NcbiStreamposToInt8(stream.tellg()) - size;
         LogStat(r, blob_id,
@@ -1417,10 +1417,10 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
     
     CWriter* writer = GetWriter(result);
     if ( writer ) {
-        SaveSNPBlob(result, blob_id, chunk_id, writer, *seq_entry, blob_state, set_info);
+        SaveSNPBlob(result, blob_id, chunk_id, writer, *seq_entry, blob_state, *set_info);
     }
-    OffsetAllGisToOM(*seq_entry, &set_info);
-    setter.SetSeq_entry(*seq_entry, &set_info);
+    OffsetAllGisToOM(*seq_entry, set_info);
+    setter.SetSeq_entry(*seq_entry, set_info);
     setter.SetLoaded();
 }
 
