@@ -1,4 +1,4 @@
 Line No    : 205
-Severity   : Fatal
-Message    : Bad data line:  Duplicate feature ID "Ga0133913_1000067839".
+Severity   : Error
+Message    : Bad data line: record ID "Ga0133913_1000067839" is used multiple times
 
