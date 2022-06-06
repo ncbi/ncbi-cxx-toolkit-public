@@ -63,7 +63,7 @@ void CassMonitorThreadedFunction(void)
         switch (app->GetStartupDataState()) {
             case ePSGS_NoCassConnection:
                 if (app->OpenCass()) {
-                    // Public comments mapping (populated once)
+                    // Public comments mapping (populated once, check is inside)
                     app->PopulatePublicCommentsMapping();
 
                     // true => the 'accept' alert is set if sucessfull
@@ -73,14 +73,23 @@ void CassMonitorThreadedFunction(void)
                 }
                 break;
             case ePSGS_NoValidCassMapping:
+                // Public comments mapping (populated once, check is inside)
+                app->PopulatePublicCommentsMapping();
+
                 // true => the 'accept' alert is set if sucessfull
                 if (app->PopulateCassandraMapping(true))
                     app->OpenCache();
                 break;
             case ePSGS_NoCassCache:
+                // Public comments mapping (populated once, check is inside)
+                app->PopulatePublicCommentsMapping();
+
                 app->OpenCache();
                 break;
             case ePSGS_StartupDataOK:
+                // Public comments mapping (populated once, check is inside)
+                app->PopulatePublicCommentsMapping();
+
                 app->CheckCassMapping();
                 break;
         }

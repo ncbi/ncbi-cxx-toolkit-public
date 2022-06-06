@@ -1540,17 +1540,26 @@ void CPubseqGatewayApp::PopulatePublicCommentsMapping(void)
 
         if (!FetchMessages(m_RootKeyspace, m_CassConnection,
                            *m_PublicComments.get(), err_msg)) {
+            // Allow another try later
+            m_PublicComments.reset(nullptr);
+
             err_msg = "Error populating cassandra public comments mapping: " + err_msg;
             PSG_ERROR(err_msg);
             m_Alerts.Register(ePSGS_NoCassandraPublicCommentsMapping, err_msg);
         }
     } catch (const exception &  exc) {
+        // Allow another try later
+        m_PublicComments.reset(nullptr);
+
         string      err_msg = "Cannot populate public comments mapping from Cassandra";
         PSG_ERROR(exc);
         PSG_ERROR(err_msg);
         m_Alerts.Register(ePSGS_NoCassandraPublicCommentsMapping,
                           err_msg + ". " + exc.what());
     } catch (...) {
+        // Allow another try later
+        m_PublicComments.reset(nullptr);
+
         string      err_msg = "Unknown error while populating "
                               "public comments mapping from Cassandra";
         PSG_ERROR(err_msg);
