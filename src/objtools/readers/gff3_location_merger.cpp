@@ -151,16 +151,18 @@ void CGffIdTracker::CheckAndIndexRecord(
         return;
     } 
 
-    _ASSERT(!recordList.empty());
-    auto expectedType = recordList.front().mSeqType;
-    if (pendingType != expectedType) {
-        throw errorDuplicateId;
-    }
-    auto pendingSeqId = record.Id();
-    auto expectedSeqId = recordList.front().mSeqId;
-    if (pendingSeqId != expectedSeqId) {
-        throw errorDuplicateId;
-    }
+	if (!id.empty()) {
+    	_ASSERT(!recordList.empty());
+    	auto expectedType = recordList.front().mSeqType;
+    	if (pendingType != expectedType) {
+        	throw errorDuplicateId;
+    	}
+    	auto pendingSeqId = record.Id();
+    	auto expectedSeqId = recordList.front().mSeqId;
+    	if (pendingSeqId != expectedSeqId) {
+        	throw errorDuplicateId;
+    	}
+	}
     if (!parentId.empty()) {
         mParentIds.emplace(parentId);
     }
