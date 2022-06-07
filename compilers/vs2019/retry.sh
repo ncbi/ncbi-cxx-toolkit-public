@@ -65,9 +65,14 @@ do
         exit 1
 
     fi 
-    # Check on a system errors (TRACKER, access denied)
-    grep "TRACKER : error TRK0002:.*Access is denied" $logfile > /dev/null 2>&1
-    if [ $? -ne 0 ] ; then
+
+    tryagain=false
+    grep "TRACKER : error TRK0002:.*Access is denied" $logfile > /dev/null 2>&1  &&  tryagain=true
+
+    if [ !$tryagain ] ; then
+        grep "fatal error C1090: PDB API call failed" $logfile > /dev/null 2>&1  &&  tryagain=true
+    fi
+    if [ !$tryagain ] ; then
         # Some other error
         exit $status
     fi
