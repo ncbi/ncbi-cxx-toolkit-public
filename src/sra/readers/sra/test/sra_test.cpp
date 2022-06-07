@@ -38,6 +38,7 @@
 
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
@@ -94,6 +95,9 @@ void CSRATestApp::Init(void)
                             "Output file of ASN.1",
                             CArgDescriptions::eOutputFile,
                             "-");
+    arg_desc->AddOptionalKey("save", "SaveFile",
+                             "Save new reference entry ASN.1",
+                             CArgDescriptions::eOutputFile);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -198,7 +202,7 @@ int CSRATestApp::Run(void)
                 return 0;
             }
             if ( !bh ) {
-                string file_name = string(NCBI_GetTestDataPath())+"/sra/"+sra+".asn";
+                string file_name = string(NCBI_GetTestDataPath())+"/sra/"+sra+".lite.asn";
                 NcbiCout << "Loading GenBank version of "<<sra<<" from "<<file_name << NcbiEndl;
                 CNcbiIfstream in(file_name.c_str());
                 if ( in ) {
@@ -215,6 +219,24 @@ int CSRATestApp::Run(void)
             }
             all_entries = bh.GetTSE_Handle().GetCompleteTSE();
         }}
+        if ( args["save"] ) {
+            CSraRun run;
+            CRef<CSeq_entry> new_entries(new CSeq_entry);
+            new_entries->SetSet().SetLevel(0);
+            new_entries->SetSet().SetClass(CBioseq_set::eClass_other);
+            new_entries->SetSet().SetDescr().Assign(all_entries->GetSet().GetDescr());
+            ITERATE(CBioseq_set::TSeq_set, it, all_entries->GetSet().GetSeq_set()){
+                const CSeq_entry& e1 = **it;
+                const CBioseq& seq = e1.IsSeq()? e1.GetSeq():
+                    e1.GetSet().GetSeq_set().front()->GetSeq();
+                string tag = seq.GetId().front()->GetGeneral().GetTag().GetStr();
+                string sar = tag.substr(0, tag.rfind('.'));
+                CRef<CSeq_entry> e2 = mgr.GetSpotEntry(sar, run);
+                new_entries->SetSet().SetSeq_set().push_back(e2);
+            }
+            NcbiCout << "Saving reference into "<<args["save"].AsString()<<NcbiEndl;
+            args["save"].AsOutputFile() << MSerial_AsnText << *new_entries << NcbiFlush;
+        }
         NcbiCout << "Scanning data." << NcbiEndl;
         size_t count = 0;
         CSraRun run;
