@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(Test3)
 {
     SCitMatch cm;
     cm.Journal = "Genome Announc";
-    cm.Title   = "Hansenula";
+    cm.Title   = "(Hansenula fabianii)";
     cm.Author  = "Freel KC";
 
     for (auto upd : updaters) {

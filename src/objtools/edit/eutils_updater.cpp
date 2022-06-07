@@ -177,6 +177,27 @@ public:
         }
     }
 
+    static void NormalizeTitle(string& s)
+    {
+        for (char& c : s) {
+            switch (c) {
+            case '.':
+            case '"':
+            case '(':
+            case ')':
+            case '[':
+            case ']':
+                c = ' ';
+                break;
+            default:
+                if (isupper(c)) {
+                    c = tolower(c);
+                }
+                break;
+            }
+        }
+    }
+
     static bool BuildSearchTerm(const SCitMatch& cm, eCitMatchFlags rule, string& term)
     {
         if ((rule & e_J) && cm.Journal.empty()) {
@@ -226,7 +247,9 @@ public:
             v.push_back(cm.Issue + "[iss]");
         }
         if (rule & e_T) {
-            v.push_back(cm.Title + "[title]");
+            string title = cm.Title;
+            NormalizeTitle(title);
+            v.push_back(title + "[title]");
         }
         term = NStr::Join(v, " AND ");
         return true;
