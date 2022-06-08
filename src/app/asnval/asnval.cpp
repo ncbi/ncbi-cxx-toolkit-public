@@ -741,7 +741,7 @@ void CAsnvalApp::ReadClassMember
                         m_LongestId = m_CurrentId;
                     }
                     //if (m_ValidErrorStream) {
-                    //    *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << endl;
+                    //    *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << "\n";
                     //}
                     if ( eval ) {
                         PrintValidError(eval, GetArgs());
@@ -1251,7 +1251,7 @@ void CAsnvalApp::PrintValidError
         }
         PrintValidErrItem(*vit);
     }
-    m_ValidErrorStream->flush();
+    //m_ValidErrorStream->flush();
 }
 
 
@@ -1282,7 +1282,7 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
         if (item.IsSetObjDesc()) {
             os << " " << item.GetObjDesc();
         }
-        os << endl;
+        os << "\n";
         break;
     case eVerbosity_Spaced:
     {
@@ -1299,7 +1299,7 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
     case eVerbosity_Tabbed:
         os << item.GetAccnver() << "\t"
             << s_GetSeverityLabel(item.GetSeverity()) << "\t"
-            << item.GetErrGroup() << "_" << item.GetErrCode() << endl;
+            << item.GetErrGroup() << "_" << item.GetErrCode() << "\n";
         break;
 #ifdef USE_XMLWRAPP_LIBS
     case eVerbosity_XML:
@@ -1315,12 +1315,12 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
                 << "\" seq-id=\"" << item.GetAccnver()
                 << "\" feat-id=\"" << item.GetFeatureId()
                 << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
-                << "\">" << msg << "</message>" << endl;
+                << "\">" << msg << "</message>" << "\n";
         } else {
             os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
                 << "\" seq-id=\"" << item.GetAccnver()
                 << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
-                << "\">" << msg << "</message>" << endl;
+                << "\">" << msg << "</message>" << "\n";
         }
     }
 #endif
@@ -1381,14 +1381,14 @@ void CAsnvalApp::ConstructOutputStreams()
         m_ostr_xml->SetUseIndentation(true);
         m_ostr_xml->Flush();
 
-        *m_ValidErrorStream << endl << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
+        *m_ValidErrorStream << "\n" << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
         << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
-        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << endl;
+        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << "\n";
         m_ValidErrorStream->flush();
 #else
         *m_ValidErrorStream << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
         << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
-        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << endl;
+        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << "\n";
 #endif
     }
 }
@@ -1399,7 +1399,7 @@ void CAsnvalApp::DestroyOutputStreams()
     if (m_ostr_xml)
     {
         m_ostr_xml.reset();
-        *m_ValidErrorStream << "</asnvalidate>" << endl;
+        *m_ValidErrorStream << "</asnvalidate>" << "\n";
     }
 #endif
     m_ValidErrorStream = nullptr;
