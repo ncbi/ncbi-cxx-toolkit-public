@@ -158,7 +158,7 @@ struct SOneRequestParams : SParams
 {
     struct SLatency
     {
-        const bool enabled;
+        const CLogLatencies::EWhich which;
         const bool debug;
     };
 
@@ -172,9 +172,9 @@ struct SOneRequestParams : SParams
     SLatency latency;
     SDataOnly data_only;
 
-    SOneRequestParams(string s, SPSG_UserArgs ua, bool le, bool ld, bool de, bool dm, ESerialDataFormat df) :
+    SOneRequestParams(string s, SPSG_UserArgs ua, CLogLatencies::EWhich lw, bool ld, bool de, bool dm, ESerialDataFormat df) :
         SParams(move(s), move(ua)),
-        latency{le, ld},
+        latency{lw, ld},
         data_only{de, dm, df}
     {}
 };
