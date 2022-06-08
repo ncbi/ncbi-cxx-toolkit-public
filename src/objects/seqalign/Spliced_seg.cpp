@@ -116,9 +116,54 @@ void CSpliced_seg::Validate(bool /*full_test*/) const
                    "CSpliced_seg::Validate(): Spiced-seg is empty (has no exons)");
     }
 
+    TSeqPos last_gen_start = kInvalidSeqPos;
+    TSeqPos last_gen_end = kInvalidSeqPos;
+    TSeqPos last_prod_start = kInvalidSeqPos;
+    TSeqPos last_prod_end = kInvalidSeqPos;
+    bool gen_rev = CanGetGenomic_strand() && IsReverse(GetGenomic_strand());
+    bool prod_rev = CanGetProduct_strand() && IsReverse(GetProduct_strand());
+
     ITERATE (CSpliced_seg::TExons, exon_it, GetExons()) {
 
         const CSpliced_exon& exon = **exon_it;
+
+        if (last_gen_start != kInvalidSeqPos) {
+            if (gen_rev || (exon.CanGetGenomic_strand() && IsReverse(exon.GetGenomic_strand()))) {
+                if (exon.GetGenomic_end() > last_gen_start) {
+                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           "CSpliced_seg::Validate(): wrong order of genomic coordinates on minus strand");
+                }
+            }
+            else {
+                if (exon.GetGenomic_start() < last_gen_end) {
+                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           "CSpliced_seg::Validate(): wrong order of genomic coordanates on plus strand");
+                }
+            }
+        }
+        last_gen_start = exon.GetGenomic_start();
+        last_gen_end = exon.GetGenomic_end();
+
+        const auto& pstart = exon.GetProduct_start();
+        const auto& pend = exon.GetProduct_end();
+        auto prod_start = pstart.IsNucpos() ? pstart.GetNucpos() : pstart.GetProtpos().GetAmin() * 3 + pstart.GetProtpos().GetFrame() - 1;
+        auto prod_end = pend.IsNucpos() ? pend.GetNucpos() : pend.GetProtpos().GetAmin() * 3 + pend.GetProtpos().GetFrame() - 1;
+        if (last_prod_start != kInvalidSeqPos) {
+            if (prod_rev || (exon.CanGetProduct_strand() && IsReverse(exon.GetProduct_strand()))) {
+                if (prod_end > last_prod_start) {
+                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           "CSpliced_seg::Validate(): wrong order of product coordinates on minus strand");
+                }
+            }
+            else {
+                if (prod_start < last_prod_end) {
+                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           "CSpliced_seg::Validate(): wrong order of product coordinates on plus strand");
+                }
+            }
+        }
+        last_prod_start = prod_start;
+        last_prod_end = prod_end;
 
         /// Positions
         TSeqPos product_start = exon.GetProduct_start().AsSeqPos();
