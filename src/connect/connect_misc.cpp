@@ -251,6 +251,8 @@ CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
     }
 
     TResult latencies;
+    auto extremum = m_Which == eLast ? system_clock::time_point::min() : system_clock::time_point::max();
+    auto extremum_it = latencies.end();
 
     for (const auto& server : servers) {
         const auto& server_name = server.first;
@@ -260,11 +262,16 @@ CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
             const auto& start = get<TTimePoints>(server_data)[fStart];
             const auto& stop = get<TTimePoints>(server_data)[fStop];
             const auto& server_side = get<TServerSide>(server_data);
-            latencies.try_emplace(server_name, duration_cast<microseconds>(stop - start), server_side);
+            auto result = latencies.try_emplace(server_name, duration_cast<microseconds>(stop - start), server_side);
+
+            if (((m_Which == eLast) && (start > extremum)) || ((m_Which == eFirst) && (start < extremum))) {
+                extremum = start;
+                extremum_it = result.first;
+            }
         }
     }
 
-    return latencies;
+    return extremum_it == latencies.end() ? latencies : TResult(extremum_it, next(extremum_it));
 }
 
 CLogLatencyReport::~CLogLatencyReport()
@@ -294,13 +301,14 @@ CLogLatencyReport::~CLogLatencyReport()
     }
 }
 
-void CLogLatencyReport::Start()
+void CLogLatencyReport::Start(EWhich which)
 {
     // If it has already been started
     if (m_Handler) {
         return;
     }
 
+    SetWhich(which);
     m_Handler.reset(new SHandler);
     GetDiagContext().SetOldPostFormat(false);
     SetDiagFilter(eDiagFilter_All, m_Filter.c_str());

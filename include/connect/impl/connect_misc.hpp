@@ -147,6 +147,8 @@ private:
 class NCBI_XCONNECT_EXPORT CLogLatencies
 {
 public:
+    enum EWhich { eOff, eFirst, eLast, eAll };
+
     struct SRegex : regex
     {
         template <size_t SIZE> SRegex(const char (&s)[SIZE]) : regex(s, SIZE - 1) {}
@@ -158,19 +160,21 @@ public:
         m_ServerSide(move(server_side))
     {}
 
+    void SetWhich(EWhich which) { m_Which = which; }
     void SetDebug(bool debug) { m_Debug = debug; }
 
     using TData = deque<SDiagMessage>;
     using TLatency = chrono::microseconds;
     using TServerSide = string;
     using TServerResult = tuple<TLatency, TServerSide>;
-    using TResult = unordered_map<string, TServerResult>;
+    using TResult = map<string, TServerResult>;
     TResult Parse(const TData& data);
 
 private:
     regex m_Start;
     regex m_Stop;
     std::optional<regex> m_ServerSide;
+    EWhich m_Which = eOff;
     bool m_Debug = false;
 };
 
@@ -182,7 +186,7 @@ public:
 
     ~CLogLatencyReport();
 
-    void Start();
+    void Start(EWhich which);
     explicit operator bool() const { return m_Handler.get(); }
 
 private:

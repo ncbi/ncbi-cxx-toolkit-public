@@ -152,6 +152,24 @@ void s_InitDataFlags(CArgDescriptions& arg_desc)
     }
 }
 
+void s_AddLatencyOptions(CArgDescriptions& arg_desc)
+{
+    auto names = { "First", "Last", "All" };
+    auto option = [](string option) { return NStr::ToLower(option) + "-latency"; };
+
+    for (string name : names) {
+        arg_desc.AddFlag(option(name), name + " latency output", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
+
+        for (string excluded : names) {
+            if (name != excluded) {
+                arg_desc.SetDependency(option(name), CArgDescriptions::eExcludes, option(excluded));
+            }
+        }
+    }
+
+    arg_desc.AddAlias("latency", "last-latency");
+}
+
 void s_InitPsgOptions(CArgDescriptions& arg_desc)
 {
     arg_desc.AddDefaultKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString, "PSG2");
@@ -163,7 +181,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("user-args", "USER_ARGS", "Arbitrary request URL arguments (queue-wide)", CArgDescriptions::eString);
     arg_desc.AddFlag("https", "Enable HTTPS");
-    arg_desc.AddFlag("latency", "Latency output", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
+    s_AddLatencyOptions(arg_desc);
     arg_desc.AddFlag("verbose", "Verbose output");
 }
 
@@ -323,13 +341,21 @@ struct SOneRequest : SBase<SOneRequestParams>
     SOneRequest(const CArgs& args) :
         SBase{
             args,
-            args["latency"].HasValue(),
+            GetLatency(args),
             args["debug-printout"].HasValue(),
             GetDataOnlyEnabled(args),
             false,
             GetDataOnlyOutputFormat(args)
         }
     {
+    }
+
+    CLogLatencies::EWhich GetLatency(const CArgs& args)
+    {
+        if (args["first-latency"].HasValue()) return CLogLatencies::eFirst;
+        if (args["last-latency"].HasValue())  return CLogLatencies::eLast;
+        if (args["all-latency"].HasValue())   return CLogLatencies::eAll;
+        return CLogLatencies::eOff;
     }
 
     static bool GetDataOnlyEnabled(const CArgs& args)

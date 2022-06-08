@@ -1277,6 +1277,25 @@ COutputFileHelper::~COutputFileHelper()
     }
 }
 
+CLogLatencies::EWhich s_GetLatency(const char* arg)
+{
+    if (!strcmp(arg, "--latency")) {
+        return CLogLatencies::eLast;
+
+    } else if (!strcmp(arg, "--first-latency")) {
+        return CLogLatencies::eFirst;
+
+    } else if (!strcmp(arg, "--last-latency")) {
+        return CLogLatencies::eLast;
+
+    } else if (!strcmp(arg, "--all-latency")) {
+        return CLogLatencies::eAll;
+
+    } else {
+        return CLogLatencies::eOff;
+    }
+}
+
 int CGridCommandLineInterfaceApp::Run()
 {
     // Override connection defaults.
@@ -1317,8 +1336,8 @@ int CGridCommandLineInterfaceApp::Run()
                 m_AdminMode = true;
             else if (strcmp(*argv, "--debug") == 0)
                 debug = true;
-            else if (strcmp(*argv, "--latency") == 0) {
-                latency_report.Start();
+            else if (auto latency = s_GetLatency(*argv)) {
+                latency_report.Start(latency);
             } else {
                 ++argv;
                 continue;

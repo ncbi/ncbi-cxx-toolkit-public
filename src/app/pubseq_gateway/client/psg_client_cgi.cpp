@@ -100,7 +100,7 @@ struct SOneRequest : SBase<SOneRequestParams>
     SOneRequest(const SPsgCgiEntries& entries) :
         SBase{
             entries,
-            false,
+            CLogLatencies::eOff,
             false,
             entries.Has("blob-only") || entries.Has("annot-only"),
             true,

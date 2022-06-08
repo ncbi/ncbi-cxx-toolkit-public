@@ -659,8 +659,8 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
         R"(\S+: \S+&item_type=reply&\S+&exec_time=([0-9]+)\\n)"
     };
 
-    if (params.latency.enabled) {
-        latency_report.Start();
+    if (params.latency.which) {
+        latency_report.Start(params.latency.which);
         latency_report.SetDebug(params.latency.debug);
         TPSG_DebugPrintout::SetDefault(TPSG_DebugPrintout::TValue::eSome);
     }
