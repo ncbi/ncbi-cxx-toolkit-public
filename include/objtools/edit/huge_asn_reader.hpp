@@ -68,21 +68,22 @@ public:
 
     struct TBioseqInfo;
     struct TBioseqSetInfo;
-    using TBioseqSetIndex = std::list<TBioseqSetInfo>;
+    using TBioseqSetList = std::list<TBioseqSetInfo>;
     using TBioseqList  = std::list<TBioseqInfo>;
 
     struct TBioseqInfo
     {
         TFileSize m_pos;
-        TBioseqSetIndex::iterator m_parent_set;
+        TBioseqSetList::const_iterator m_parent_set;
         TSeqPos   m_length  = -1;
-        CRef<CSeq_descr> m_descr;
+        CConstRef<CSeq_descr> m_descr;
+        std::list<CConstRef<CSeq_id>> m_ids;
     };
 
     struct TBioseqSetInfo
     {
         TFileSize m_pos;
-        TBioseqSetIndex::iterator m_parent_set;
+        TBioseqSetList::const_iterator m_parent_set;
         CBioseq_set::TClass m_class = CBioseq_set::eClass_not_set;
         CConstRef<CSeq_descr> m_descr;
     };
@@ -91,28 +92,28 @@ public:
     using CRefLess = PPtrLess<CConstRef<CSeq_id>>;
 
 
-    using TBioseqIndex = std::map<CConstRef<CSeq_id>, TBioseqList::iterator, CRefLess>;
+    using TBioseqIndex = std::map<CConstRef<CSeq_id>, TBioseqList::const_iterator, CRefLess>;
+    using TBioseqSetIndex = std::map<CConstRef<CSeq_id>, TBioseqSetList::const_iterator, CRefLess>;
 
-    TBioseqList& GetBioseqs() { return m_bioseq_list; };
-    TBioseqSetIndex& GetBiosets() { return m_bioseq_set_index; };
+    auto& GetBioseqs() const { return m_bioseq_list; };
+    auto& GetBiosets() const { return m_bioseq_set_list; };
     auto GetFormat() const { return m_file->m_format; };
     auto GetMaxLocalId() const { return m_max_local_id; };
 
     // These metods are for CDataLoader, each top object is a 'blob'
-    size_t FindTopObject(CConstRef<CSeq_id> seqid) const;
-    //CRef<CSeq_entry> LoadSeqEntry(size_t id) const;
+    const TBioseqSetInfo* FindTopObject(CConstRef<CSeq_id> seqid) const;
     CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info) const;
 
     // Direct loading methods
     CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> seqid) const;
     CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;
 
-    void PrintAllSeqIds() const;
     bool IsMultiSequence() override { return m_bioseq_index.size()>1; }
 
     void FlattenGenbankSet();
-    CRef<CSeq_entry> GetNextEntry();
-    CRef<CSeq_entry> GetTopEntry() const;
+    CConstRef<CSeq_entry> GetTopEntry() const { return m_top_entry; }
+    auto& GetFlattenedIndex() const { return m_FlattenedIndex; }
+    auto& GetTopIds() const { return m_top_ids; }
 protected:
 private:
     void x_ResetIndex();
@@ -120,20 +121,22 @@ private:
     unique_ptr<CObjectIStream> x_MakeObjStream(TFileSize pos) const;
 
     ILineErrorListener * mp_MessageListener = nullptr;
-    CHugeFile*  m_file = nullptr;
-    size_t      m_total_seqs = 0;
-    size_t      m_total_sets = 0;
-    int         m_max_local_id = 0;
     std::streampos m_streampos = 0;
+    CHugeFile*     m_file = nullptr;
+    int            m_max_local_id = 0;
 
-    TBioseqList m_bioseq_list;
-    TBioseqIndex m_bioseq_index;
+// global lists, readonly after indexing
+    TBioseqList               m_bioseq_list;
+    TBioseqSetList            m_bioseq_set_list;
     CConstRef<CSubmit_block>  m_submit_block;
-    TBioseqSetIndex           m_FlattenedSets;
-    TBioseqSetIndex::iterator m_Current;
-    CRef<CSeq_entry>          m_top_entry;
-protected:
-    TBioseqSetIndex           m_bioseq_set_index;
+
+// flattenization structures, readonly after flattenization, accept m_Current
+    TBioseqIndex              m_bioseq_index;
+    TBioseqSetIndex           m_FlattenedIndex;
+    CConstRef<CSeq_entry>     m_top_entry;
+    std::list<CConstRef<CSeq_id>> m_top_ids;
+    TBioseqSetList            m_FlattenedSets;
+    TBioseqSetList::const_iterator  m_Current;
 };
 
 END_SCOPE(edit)

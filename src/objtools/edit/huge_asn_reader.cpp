@@ -69,13 +69,11 @@ CHugeAsnReader::CHugeAsnReader(CHugeFile* file, ILineErrorListener * pMessageLis
 
 void CHugeAsnReader::x_ResetIndex()
 {
-    m_total_seqs = 0;
-    m_total_sets = 0;
     m_max_local_id = 0;
     m_submit_block.Reset();
     m_bioseq_list.clear();
     m_bioseq_index.clear();
-    m_bioseq_set_index.clear();
+    m_bioseq_set_list.clear();
 }
 
 void CHugeAsnReader::Open(CHugeFile* file, ILineErrorListener * pMessageListener)
@@ -86,38 +84,15 @@ void CHugeAsnReader::Open(CHugeFile* file, ILineErrorListener * pMessageListener
     mp_MessageListener = pMessageListener;
 }
 
-void CHugeAsnReader::PrintAllSeqIds() const
+const CHugeAsnReader::TBioseqSetInfo* CHugeAsnReader::FindTopObject(CConstRef<CSeq_id> seqid) const
 {
-    char report_buffer[80];
-    for (auto& rec: m_bioseq_index)
-    {
-        sprintf(report_buffer, "%15ld:%s\n", rec.second->m_pos, rec.first->AsFastaString().c_str());
-        std::cout << report_buffer;
-        #if 0
-        #if 0
-            auto bioseq = LoadBioseq(rec.first);
-        #else
-            auto entry = LoadSeqEntry(rec.first);
-            auto bioseq = Ref(&entry->GetSet().GetSeq_set().front()->GetSeq());4
-            std::cout << entry->GetSet().GetClass() << ":";
-        #endif
-        std::cout <<
-            (bioseq->IsNa()? "na" : "-") << ":" <<
-            (bioseq->IsAa()? "aa" : "-") << ":" <<
-            (bioseq->IsSetLength()? bioseq->GetLength() : 0) <<
-            "\n";
-        #endif
-    }
-    std::cout << "Total seqids:" << m_total_seqs << ":" << m_bioseq_index.size() << std::endl;
-}
+    auto it = m_FlattenedIndex.lower_bound(seqid);
+    if (it == m_FlattenedIndex.end())
+        return nullptr;
+    if (it->first->Compare(*seqid) != CSeq_id::E_SIC::e_YES)
+        return nullptr;
 
-size_t CHugeAsnReader::FindTopObject(CConstRef<CSeq_id> seqid) const
-{
-    auto it = m_bioseq_index.find(seqid);
-    if (it == m_bioseq_index.end())
-        return std::numeric_limits<size_t>::max();
-    else
-        return std::numeric_limits<size_t>::max(); //it->second->m_parent_set;
+    return &*it->second;
 }
 
 CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
@@ -165,11 +140,6 @@ unique_ptr<CObjectIStream> CHugeAsnReader::x_MakeObjStream(TFileSize pos) const
     return str;
 }
 
-CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
-{
-    return {};
-}
-
 bool CHugeAsnReader::GetNextBlob()
 {
     if (m_streampos >= m_file->m_filesize)
@@ -199,7 +169,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
     // temporal structure for indexing
     struct TBioseqInfoRec
     {
-        CBioseq::TId m_ids;
+        std::list<CConstRef<CSeq_id>> m_ids;
         TSeqPos      m_length  = 0;
         CRef<CSeq_descr> m_descr;
     };
@@ -207,7 +177,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
     struct TContext
     {
         std::deque<TBioseqInfoRec> bioseq_stack;
-        std::deque<TBioseqSetIndex::iterator> bioseq_set_stack;
+        std::deque<TBioseqSetList::iterator> bioseq_set_stack;
     };
 
     TContext context;
@@ -263,7 +233,6 @@ void CHugeAsnReader::x_IndexNextAsn1()
     SetLocalSkipHook(bioseq_info, *obj_stream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
-        m_total_seqs++;
         auto pos = in.GetStreamPos() + m_streampos;
 
         context.bioseq_stack.push_back({});
@@ -272,26 +241,19 @@ void CHugeAsnReader::x_IndexNextAsn1()
         type.GetTypeInfo()->DefaultSkipData(in);
 
         auto& bioseqinfo = context.bioseq_stack.back();
-        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr});
-        auto last = --m_bioseq_list.end();
-
-        for (auto& id: bioseqinfo.m_ids)
-        {
-            m_bioseq_index[id] = last;
-        }
+        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids});
         context.bioseq_stack.pop_back();
     });
 
     SetLocalSkipHook(bioseq_set_info, *obj_stream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
-        m_total_sets++;
         auto pos = in.GetStreamPos() + m_streampos;
 
         auto parent = context.bioseq_set_stack.back();
-        m_bioseq_set_index.push_back({pos, parent});
+        m_bioseq_set_list.push_back({pos, parent});
 
-        auto last = --(m_bioseq_set_index.end());
+        auto last = --(m_bioseq_set_list.end());
 
         context.bioseq_set_stack.push_back(last);
         type.GetTypeInfo()->DefaultSkipData(in);
@@ -308,74 +270,78 @@ void CHugeAsnReader::x_IndexNextAsn1()
 
     // Ensure there is at least on bioseq_set_info object exists
     obj_stream->SkipFileHeader(object_type);
-    m_bioseq_set_index.push_back({ 0, m_bioseq_set_index.end() });
-    context.bioseq_set_stack.push_back(m_bioseq_set_index.begin());
+    m_bioseq_set_list.push_back({ 0, m_bioseq_set_list.end() });
+    context.bioseq_set_stack.push_back(m_bioseq_set_list.begin());
     obj_stream->Skip(object_type, CObjectIStream::eNoFileHeader);
     obj_stream->EndOfData(); // force to SkipWhiteSpace
     m_streampos += obj_stream->GetStreamPos();
 }
-
-
 
 static bool s_ShouldSplitSet(CBioseq_set::EClass setClass) {
     return setClass == CBioseq_set::eClass_not_set ||
            setClass == CBioseq_set::eClass_genbank;
 }
 
-
 void CHugeAsnReader::FlattenGenbankSet()
 {
     m_FlattenedSets.clear();
+    m_top_ids.clear();
+    m_FlattenedIndex.clear();
 
-    for (auto& rec: GetBioseqs())
+    for (auto& rec: m_bioseq_list)
     {
         auto parent = rec.m_parent_set;
-            
-        if (auto _class = parent->m_class; 
+
+        if (auto _class = parent->m_class;
                 s_ShouldSplitSet(_class))
             { // create fake bioseq_set
-                m_FlattenedSets.push_back({rec.m_pos, GetBiosets().end(), objects::CBioseq_set::eClass_not_set, {} });
-                continue;
-            }
-         
-            auto grandParent = parent->m_parent_set;
-            while (!s_ShouldSplitSet(grandParent->m_class)) {
-                parent = grandParent;
-                grandParent = grandParent->m_parent_set;
-            }  
-            if (m_FlattenedSets.empty() || (m_FlattenedSets.back().m_pos != parent->m_pos)) {
-                m_FlattenedSets.push_back(*parent);
+                m_FlattenedSets.push_back({rec.m_pos, m_FlattenedSets.cend(), objects::CBioseq_set::eClass_not_set});
+                m_top_ids.push_back(rec.m_ids.front());
+            } else {
+
+                auto grandParent = parent->m_parent_set;
+                while (!s_ShouldSplitSet(grandParent->m_class)) {
+                    parent = grandParent;
+                    grandParent = grandParent->m_parent_set;
+                }
+                if (m_FlattenedSets.empty() || (m_FlattenedSets.back().m_pos != parent->m_pos)) {
+                    m_FlattenedSets.push_back(*parent);
+                    m_top_ids.push_back(rec.m_ids.front());
+                }
+        }
+        auto last = --m_FlattenedSets.end();
+        for (auto id: rec.m_ids)
+            m_FlattenedIndex[id] = last;
+    }
+
+    if (GetBiosets().size()>1)
+    {
+        auto top = next(GetBiosets().begin());
+        if (m_FlattenedSets.size() == 1) {
+            // exposing the whole top entry
+            if (GetSubmitBlock().NotEmpty()
+                || (top->m_class != CBioseq_set::eClass_genbank)
+                || top->m_descr.NotEmpty())
+            {
+                m_FlattenedSets.clear();
+                m_FlattenedSets.push_back(*top);
             }
         }
-
-
-        if (GetBiosets().size()>1)
-        {
-            auto top = next(GetBiosets().begin());
-            if (m_FlattenedSets.size() == 1) {
-                // exposing the whole top entry
-                if (GetSubmitBlock().NotEmpty()
-                    || (top->m_class != CBioseq_set::eClass_genbank)
-                    || top->m_descr.NotEmpty())
-                {
-                    m_FlattenedSets.clear();
-                    m_FlattenedSets.push_back(*top);
-                }
+        else { // m_FlattenedSets.size() > 1)
+            auto top_entry = Ref(new CSeq_entry());
+            top_entry->SetSet().SetClass() = top->m_class;
+            if (top->m_descr) {
+                top_entry->SetSet().SetDescr().Assign(*top->m_descr);
             }
-            else { // m_FlattenedSets.size() > 1)
-                m_top_entry = Ref(new CSeq_entry());
-                m_top_entry->SetSet().SetClass() = top->m_class;
-                if (top->m_descr) {
-                    m_top_entry->SetSet().SetDescr().Assign(*top->m_descr);
-                }
-            }
+            m_top_entry = top_entry;
         }
+    }
 
-        m_Current = m_FlattenedSets.begin();
+    m_Current = m_FlattenedSets.begin();
 }
 
 
-CRef<CSeq_entry> CHugeAsnReader::GetNextEntry()
+CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
 {
     if (m_Current == end(m_FlattenedSets)) {
         m_FlattenedSets.clear();
@@ -385,12 +351,6 @@ CRef<CSeq_entry> CHugeAsnReader::GetNextEntry()
 
     return LoadSeqEntry(*m_Current++);
 }
-
-CRef<CSeq_entry> CHugeAsnReader::GetTopEntry() const
-{
-    return m_top_entry;
-}
-
 
 END_SCOPE(edit)
 END_SCOPE(objects)
