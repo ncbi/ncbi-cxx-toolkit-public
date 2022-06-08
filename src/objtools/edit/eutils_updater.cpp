@@ -187,6 +187,7 @@ public:
             case ')':
             case '[':
             case ']':
+            case ':':
                 c = ' ';
                 break;
             default:

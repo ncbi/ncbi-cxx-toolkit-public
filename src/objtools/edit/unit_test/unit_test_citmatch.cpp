@@ -197,3 +197,19 @@ BOOST_AUTO_TEST_CASE(Test4)
         BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
     }
 }
+
+BOOST_AUTO_TEST_CASE(Test5)
+{
+    SCitMatch cm;
+    cm.Journal = "J. Mol. Evol.";
+    cm.Volume  = "57";
+    cm.Page    = "3";
+    cm.Year    = "2003";
+    cm.Author  = "Nilsson MA";
+    cm.Title   = "Radiation of marsupials after the K/T boundary"; // ": evidence from complete mitochondrial genomes";
+
+    for (auto upd : updaters) {
+        TEntrezId pmid = upd->CitMatch(cm);
+        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(15'008'398));
+    }
+}
