@@ -48,112 +48,24 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-class CHugeFileProcessImpl
-{
-public:
-    CHugeFileProcessImpl(const string& file_name)
-    : m_file{new CHugeFile},
-      m_reader{new CHugeAsnReader}
-    {
-        static set<TTypeInfo> supported_types =
-        {
-            CBioseq_set::GetTypeInfo(),
-            CBioseq::GetTypeInfo(),
-            CSeq_entry::GetTypeInfo(),
-            CSeq_submit::GetTypeInfo(),
-        };
-        m_file->m_supported_types = &supported_types;
-
-        m_file->Open(file_name);
-        m_reader->Open(m_file.get(), nullptr);
-    }
-
-    CRef<CSeq_entry> GetNextEntry()
-    {
-        if (m_current == m_flattened.end())
-        {
-            m_flattened.clear();
-            m_current = m_flattened.end();
-            return {};
-        }
-        else
-        {
-            return m_reader->LoadSeqEntry(*m_current++);
-        }
-    }
-
-    void FlattenGenbankSet()
-    {
-        m_flattened.clear();
-
-
-        for (auto& rec: m_reader->GetBioseqs())
-        {
-            auto parent = rec.m_parent_set;
-            
-            if (auto _class = parent->m_class; 
-                    x_ShouldSplitSet(_class))
-            { // create fake bioseq_set
-                m_flattened.push_back({rec.m_pos, m_reader->GetBiosets().end(), objects::CBioseq_set::eClass_not_set, {} });
-                continue;
-            }
-         
-            auto grandParent = parent->m_parent_set;
-            while (!x_ShouldSplitSet(grandParent->m_class)) {
-                parent = grandParent;
-                grandParent = grandParent->m_parent_set;
-            }  
-            if (m_flattened.empty() || (m_flattened.back().m_pos != parent->m_pos)) {
-                m_flattened.push_back(*parent);
-            }
-        }
-
-
-        if (m_reader->GetBiosets().size()>1)
-        {
-            auto top = next(m_reader->GetBiosets().begin());
-            if (m_flattened.size() == 1) {
-                // exposing the whole top entry
-                if (m_reader->GetSubmitBlock().NotEmpty()
-                    || (top->m_class != CBioseq_set::eClass_genbank)
-                    || top->m_descr.NotEmpty())
-                {
-                    m_flattened.clear();
-                    m_flattened.push_back(*top);
-                }
-            }
-            else { // m_flattened.size() > 1)
-                m_top_entry = Ref(new CSeq_entry());
-                m_top_entry->SetSet().SetClass() = top->m_class;
-                if (top->m_descr) {
-                    m_top_entry->SetSet().SetDescr().Assign(*top->m_descr);
-                }
-            }
-        }
-
-
-        m_current = m_flattened.begin();
-    }
-
-private:
-
-    static bool x_ShouldSplitSet(CBioseq_set::EClass setClass) {
-        return setClass == CBioseq_set::eClass_not_set ||
-               setClass == CBioseq_set::eClass_genbank;
-    }
-
-    unique_ptr<CHugeFile> m_file;
-    CHugeAsnReader::TBioseqSetIndex m_flattened;
-    CHugeAsnReader::TBioseqSetIndex::iterator m_current;
-public:
-    CRef<CSeq_entry> m_top_entry;
-    unique_ptr<CHugeAsnReader> m_reader;
-};
 
 CHugeFileProcess::CHugeFileProcess(const string& file_name)
-    :m_Impl{new CHugeFileProcessImpl(file_name)}
+    :   m_pHugeFile { new CHugeFile },
+        m_pReader{ new CHugeAsnReader }
 {
+    static set<TTypeInfo> supported_types =
+    {
+        CBioseq_set::GetTypeInfo(),
+        CBioseq::GetTypeInfo(),
+        CSeq_entry::GetTypeInfo(),
+        CSeq_submit::GetTypeInfo(),
+    };
+    m_pHugeFile->m_supported_types = &supported_types;
+
+    m_pHugeFile->Open(file_name);
+    m_pReader->Open(m_pHugeFile.get(), nullptr);
 }
+
 
 CHugeFileProcess::~CHugeFileProcess(void)
 {
@@ -161,24 +73,23 @@ CHugeFileProcess::~CHugeFileProcess(void)
 
 bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
 {
-    if (!m_Impl->m_reader->GetNextBlob()) {
+    if (!m_pReader->GetNextBlob()) {
         return false;
     }   
 
     do
     {
-        m_Impl->FlattenGenbankSet();
+        m_pReader->FlattenGenbankSet();
         CRef<CSeq_entry> entry;
-
         do
         {
             entry.Reset();
 
             if (seqid.Empty())
-                entry = m_Impl->GetNextEntry();
+                entry = m_pReader->GetNextEntry();
             else
             {
-                auto seq = m_Impl->m_reader->LoadBioseq(seqid);
+                auto seq = m_pReader->LoadBioseq(seqid);
                 if (seq.NotEmpty())
                 {
                     entry = Ref(new CSeq_entry);
@@ -188,18 +99,18 @@ bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
 
             if (entry)
             {
-                if (m_Impl->m_top_entry) {
+                if (auto pTopEntry = m_pReader->GetTopEntry(); pTopEntry) {
                     auto pNewEntry = Ref(new CSeq_entry());
-                    pNewEntry->Assign(*m_Impl->m_top_entry);
+                    pNewEntry->Assign(*pTopEntry);
                     pNewEntry->SetSet().SetSeq_set().push_back(entry);
                     entry = pNewEntry;
                 }
 
-                handler(m_Impl->m_reader->GetSubmitBlock(), entry);
+                handler(m_pReader->GetSubmitBlock(), entry);
             }
         }
         while ( entry && seqid.Empty());
-    } while (m_Impl->m_reader->GetNextBlob());
+    } while (m_pReader->GetNextBlob());
 
     return true;
 }
