@@ -72,10 +72,8 @@ do
     if [ !$tryagain ] ; then
         grep "fatal error C1090: PDB API call failed" $logfile > /dev/null 2>&1  &&  tryagain=true
     fi
-    if [ !$tryagain ] ; then
-        # Some other error
-        exit $status
-    fi
+    # Stop on any other error
+    $tryagain  ||  exit $status
 
     # Try again
     echo "$0: Retrying after $attempt failed attempt$s.";
