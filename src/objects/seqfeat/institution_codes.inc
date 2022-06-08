@@ -369,6 +369,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ASUV\tc\tSymbiotic Algae Collection at the University of Valencia (Coleccion de algas simbioticas de la Universitat de Valencia)\t\t\t",
 "ASW\ts\tSouth Valley University, Botany Department\t\t\t",
 "ASW<AUT>\tc\tCulture Collection of Algae at the University of Vienna\t\t\t",
+"ASYA\tc\tIstanbul Medeniyet University Antarctic Microalgae Culture Collection\t\t\t",
 "ATA\ts\tAtatuerk Ueniversitesi\t\t\t",
 "ATB\ts\tAging Tissue Bank\t\t\t",
 "ATCC\tcb\tAmerican Type Culture Collection\t\thttps://www.atcc.org/Products/All/&spec;.aspx\t",

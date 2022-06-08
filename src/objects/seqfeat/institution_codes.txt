@@ -336,6 +336,7 @@ ASUT	s	Frank M. Hasbrouck Insect Collection
 ASUV	c	Symbiotic Algae Collection at the University of Valencia (Coleccion de algas simbioticas de la Universitat de Valencia)			
 ASW	s	South Valley University, Botany Department			
 ASW<AUT>	c	Culture Collection of Algae at the University of Vienna			
+ASYA	c	Istanbul Medeniyet University Antarctic Microalgae Culture Collection			
 ATA	s	Atatuerk Ueniversitesi			
 ATB	s	Aging Tissue Bank			
 ATCC	cb	American Type Culture Collection		https://www.atcc.org/Products/All/&spec;.aspx	
