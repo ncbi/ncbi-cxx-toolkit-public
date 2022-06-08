@@ -75,7 +75,7 @@ bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
 {
     if (!m_pReader->GetNextBlob()) {
         return false;
-    }   
+    }
 
     do
     {
@@ -86,7 +86,7 @@ bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
             entry.Reset();
 
             if (seqid.Empty())
-                entry = m_pReader->GetNextEntry();
+                entry = m_pReader->GetNextSeqEntry();
             else
             {
                 auto seq = m_pReader->LoadBioseq(seqid);

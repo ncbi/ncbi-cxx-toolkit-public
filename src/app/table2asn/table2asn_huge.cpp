@@ -85,7 +85,7 @@ namespace
             else
             {
 #ifdef _DEBUG
-                if (m_current->m_parent_set != m_bioseq_set_index.end())
+                if (m_current->m_parent_set != GetBiosets().end())
                 {
                     if (m_current->m_parent_set->m_descr.NotEmpty())
                         std::cerr << "Has top parent: " << m_current->m_pos << m_current->m_parent_set->m_class << std::endl;
@@ -135,8 +135,8 @@ namespace
     protected:
         void FlattenGenbankSet();
 
-        TBioseqSetIndex m_flattened;
-        TBioseqSetIndex::iterator m_current;
+        TBioseqSetList m_flattened;
+        TBioseqSetList::iterator m_current;
     };
 
 void CFlattenedAsn::FlattenGenbankSet()
@@ -150,7 +150,7 @@ void CFlattenedAsn::FlattenGenbankSet()
         if ((_class == CBioseq_set::eClass_not_set) ||
             (_class == CBioseq_set::eClass_genbank))
         { // create fake bioseq_set
-            m_flattened.push_back({rec.m_pos, GetBiosets().end(), objects::CBioseq_set::eClass_not_set, {} });
+            m_flattened.push_back({rec.m_pos, m_flattened.end(), objects::CBioseq_set::eClass_not_set });
         } else {
             if (m_flattened.empty() || (m_flattened.back().m_pos != parent->m_pos))
                 m_flattened.push_back(*parent);
