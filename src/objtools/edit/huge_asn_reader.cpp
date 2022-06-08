@@ -315,6 +315,83 @@ void CHugeAsnReader::x_IndexNextAsn1()
     m_streampos += obj_stream->GetStreamPos();
 }
 
+
+
+static bool s_ShouldSplitSet(CBioseq_set::EClass setClass) {
+    return setClass == CBioseq_set::eClass_not_set ||
+           setClass == CBioseq_set::eClass_genbank;
+}
+
+
+void CHugeAsnReader::FlattenGenbankSet()
+{
+    m_FlattenedSets.clear();
+
+    for (auto& rec: GetBioseqs())
+    {
+        auto parent = rec.m_parent_set;
+            
+        if (auto _class = parent->m_class; 
+                s_ShouldSplitSet(_class))
+            { // create fake bioseq_set
+                m_FlattenedSets.push_back({rec.m_pos, GetBiosets().end(), objects::CBioseq_set::eClass_not_set, {} });
+                continue;
+            }
+         
+            auto grandParent = parent->m_parent_set;
+            while (!s_ShouldSplitSet(grandParent->m_class)) {
+                parent = grandParent;
+                grandParent = grandParent->m_parent_set;
+            }  
+            if (m_FlattenedSets.empty() || (m_FlattenedSets.back().m_pos != parent->m_pos)) {
+                m_FlattenedSets.push_back(*parent);
+            }
+        }
+
+
+        if (GetBiosets().size()>1)
+        {
+            auto top = next(GetBiosets().begin());
+            if (m_FlattenedSets.size() == 1) {
+                // exposing the whole top entry
+                if (GetSubmitBlock().NotEmpty()
+                    || (top->m_class != CBioseq_set::eClass_genbank)
+                    || top->m_descr.NotEmpty())
+                {
+                    m_FlattenedSets.clear();
+                    m_FlattenedSets.push_back(*top);
+                }
+            }
+            else { // m_FlattenedSets.size() > 1)
+                m_top_entry = Ref(new CSeq_entry());
+                m_top_entry->SetSet().SetClass() = top->m_class;
+                if (top->m_descr) {
+                    m_top_entry->SetSet().SetDescr().Assign(*top->m_descr);
+                }
+            }
+        }
+
+        m_Current = m_FlattenedSets.begin();
+}
+
+
+CRef<CSeq_entry> CHugeAsnReader::GetNextEntry()
+{
+    if (m_Current == end(m_FlattenedSets)) {
+        m_FlattenedSets.clear();
+        m_Current = m_FlattenedSets.end();
+        return {};
+    }
+
+    return LoadSeqEntry(*m_Current++);
+}
+
+CRef<CSeq_entry> CHugeAsnReader::GetTopEntry() const
+{
+    return m_top_entry;
+}
+
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

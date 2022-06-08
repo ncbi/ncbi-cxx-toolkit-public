@@ -109,6 +109,10 @@ public:
 
     void PrintAllSeqIds() const;
     bool IsMultiSequence() override { return m_bioseq_index.size()>1; }
+
+    void FlattenGenbankSet();
+    CRef<CSeq_entry> GetNextEntry();
+    CRef<CSeq_entry> GetTopEntry() const;
 protected:
 private:
     void x_ResetIndex();
@@ -124,9 +128,12 @@ private:
 
     TBioseqList m_bioseq_list;
     TBioseqIndex m_bioseq_index;
-    CConstRef<CSubmit_block> m_submit_block;
+    CConstRef<CSubmit_block>  m_submit_block;
+    TBioseqSetIndex           m_FlattenedSets;
+    TBioseqSetIndex::iterator m_Current;
+    CRef<CSeq_entry>          m_top_entry;
 protected:
-    TBioseqSetIndex m_bioseq_set_index;
+    TBioseqSetIndex           m_bioseq_set_index;
 };
 
 END_SCOPE(edit)

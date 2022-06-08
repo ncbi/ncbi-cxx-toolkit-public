@@ -45,7 +45,8 @@ class CSeq_entry;
 class CSeq_id;
 
 BEGIN_SCOPE(edit)
-class CHugeFileProcessImpl;
+class CHugeFile;
+class CHugeAsnReader;
 
 class NCBI_XOBJEDIT_EXPORT CHugeFileProcess
 {
@@ -62,8 +63,8 @@ public:
     [[nodiscard]] bool Read(THandler handler, CRef<CSeq_id> seqid);
 
 private:
-    CHugeFileProcessImpl& x_GetImpl(void);
-    unique_ptr<CHugeFileProcessImpl>  m_Impl;
+    unique_ptr<CHugeFile> m_pHugeFile;
+    unique_ptr<CHugeAsnReader> m_pReader;
 };
 
 END_SCOPE(edit)
