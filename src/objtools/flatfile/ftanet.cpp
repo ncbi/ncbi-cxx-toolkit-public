@@ -376,11 +376,12 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
 }
 
 /**********************************************************/
-static Uint1 fta_init_med_server(void)
+static Uint1 fta_init_med_server(bool use_eutils)
 {
+    InitPubmedClient(use_eutils);
     if (! GetPubmedClient()->Init())
-        return (2);
-    return (1);
+        return 2;
+    return 1;
 }
 
 /**********************************************************/
@@ -405,7 +406,7 @@ void fta_init_servers(ParserPtr pp)
     }
 
     if (pp->medserver != 0) {
-        pp->medserver = fta_init_med_server();
+        pp->medserver = fta_init_med_server(pp->use_eutils);
         if (pp->medserver == 2) {
             ErrPostEx(SEV_ERROR, ERR_SERVER_Failed, "MedArchInit call failed.");
         }
@@ -766,7 +767,7 @@ void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries)
         return;
 
     if (pp->medserver == 2)
-        pp->medserver = fta_init_med_server();
+        pp->medserver = fta_init_med_server(pp->use_eutils);
 
     if (pp->medserver == 1) {
         CFindPub find_pub(pp);

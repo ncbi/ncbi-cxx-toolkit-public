@@ -108,6 +108,14 @@ static bool InitConfig(const CArgs& args, Parser& config)
     config.entrez_fetch = args["z"].AsBoolean() ? 1 : 0;
     config.taxserver = args["O"].AsBoolean() ? 0 : 1;
     config.medserver = args["u"].AsBoolean() ? 0 : 1;
+    if (args["pubmed"]) {
+        string s = args["pubmed"].AsString();
+        if (s == "medarch") {
+            config.use_eutils = false;
+        } else if (s == "eutils") {
+            config.use_eutils = true;
+        }
+    }
     config.ign_bad_qs = false;
     config.cleanup = args["C"].AsInteger();
     config.allow_crossdb_featloc = args["d"].AsBoolean();
@@ -240,6 +248,8 @@ void CFlat2AsnApp::Init()
             &(*new CArgAllow_Strings, "embl", "ddbj", "lanl", "ncbi", "sprot", "flybase", "refseq", "uspto"));
 
     arg_descrs->AddDefaultKey("u", "AvoidMuidLookup", "Avoid MUID lookup", ncbi::CArgDescriptions::eBoolean, "F");
+    arg_descrs->AddDefaultKey("pubmed", "pubmed", "Source of pubmed data", CArgDescriptions::eString, "medarch");
+    arg_descrs->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
     arg_descrs->AddDefaultKey("h", "AvoidReferencesLookup", "Avoid lookup of references which already have muids", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("r", "AvoidReferencesReplacement", "Avoid replacement of references with MedArch server versions", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("t", "TranslationReplacement", "Replace original translation with parser generated version", ncbi::CArgDescriptions::eBoolean, "F");

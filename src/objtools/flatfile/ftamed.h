@@ -11,6 +11,7 @@ namespace ncbi::objects::edit
 
 BEGIN_NCBI_SCOPE
 
+void                           InitPubmedClient(bool use_eutils);
 objects::edit::IPubmedUpdater* GetPubmedClient();
 CRef<objects::CCit_art>        FetchPubPmId(TEntrezId pmid);
 
