@@ -7,7 +7,7 @@
 #################################
 
 APP = asnvalidate
-SRC = asnval
+SRC = asnval huge_asn_loader
 LIB = xvalidate taxon1 xmlwrapp $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil \
       valerr tables xregexp $(PCRE_LIB) $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS)
 LIBS = $(LIBXSLT_LIBS) $(DATA_LOADERS_UTIL_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
