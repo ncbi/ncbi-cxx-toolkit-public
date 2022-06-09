@@ -316,6 +316,7 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
     : m_Mgr(mgr),
       m_DbPath(path_or_acc)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     // SNP VDB are multi-table VDB objects.
     // However, there could be other VDBs in the same namespace (NA*)
     // so we have to check this situation and return normal eNotFoundDb error.
@@ -539,6 +540,7 @@ CSNPDb_Impl::x_Update(TSeqInfoList::const_iterator seq)
         return;
     }
     CMutexGuard guard(m_Mutex);
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     size_t seq_index = seq-m_SeqList.begin();
     SSeqInfo& info = m_SeqList[seq_index];
     if ( info.m_Seq_id ) {
@@ -1127,6 +1129,7 @@ void x_CollectOverviewGraph(SGraphMaker& g,
                             SGraphMaker::EGraphSet graph_set,
                             SGraphMaker::EGapsType gaps_type)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     g.Start(seq_it, range, kOverviewZoom, graph_set, gaps_type);
     for ( CSNPDbGraphIterator it(seq_it, range); it; ++it ) {
         g.AddValue(it.GetTotalValue());
@@ -1139,6 +1142,7 @@ void x_CollectCoverageGraph(SGraphMaker& g,
                             CRange<TSeqPos> range,
                             SGraphMaker::EGraphSet graph_set)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     g.Start(seq_it, range, kCoverageZoom, graph_set);
     for ( CSNPDbGraphIterator it(seq_it, range); it; ++it ) {
         CRange<TSeqPos> page = it.GetPageRange();
@@ -1809,6 +1813,7 @@ CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
                                       const SFilter& filter,
                                       TFlags flags) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     x_AdjustRange(range, *this);
     SSeqTableConverter cvt(*this);
     SSelector sel(eSearchByStart, filter);
