@@ -953,8 +953,8 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
 {
     bool have_na = s_HaveNA();
     LOG_POST("Checking NA Tracks");
-    string id = "NC_054141.5";
-    string na_acc = "NA001000000.1";
+    string id = "NC_059425.1";
+    string na_acc = "NA000358513.1";
 
     for ( int t = 0; t < 4; ++t ) {
         SAnnotSelector sel;
@@ -999,8 +999,8 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
 BOOST_AUTO_TEST_CASE(CheckNAZoom10)
 {
     LOG_POST("Checking NA Graph Track");
-    string id = "NC_054141.5";
-    string na_acc = "NA001000000.1";
+    string id = "2231916682";
+    string na_acc = "NA000358513.1";
 
     for ( int t = 0; t < 2; ++t ) {
         SAnnotSelector sel;
@@ -1475,7 +1475,7 @@ NCBITEST_INIT_TREE()
     if (CGBDataLoader::IsUsingPSGLoader()) {
         //NCBITEST_DISABLE(CheckExtSTS);
     }
-    if ( 1 || !s_HaveNA() ) { // TEMP !!!!!!!!!!!!!!!!!!!!!!!!!
+    if ( !s_HaveNA() ) {
         NCBITEST_DISABLE(CheckNAZoom);
         NCBITEST_DISABLE(CheckNAZoom10);
     }
