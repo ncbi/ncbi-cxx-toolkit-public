@@ -588,9 +588,25 @@ static CKConfig s_InitProxyConfig()
 static DECLARE_TLS_VAR(const CRequestContext*, s_LastRequestContext);
 static DECLARE_TLS_VAR(CRequestContext::TVersion, s_LastRequestContextVersion);
 
+/*
+// Performance collecting code
+static struct SReport {
+    size_t count;
+    double time;
+    SReport() : count(0), time(0) {}
+    ~SReport() {
+        LOG_POST("GetRequestContext() called "<<count<<" times, spent "<<time<<"s");
+    }
+} dummy;
+*/
+
 static void s_UpdateVDBRequestContext(void)
 {
+    // Performance collecting code
+    // CStopWatch sw(CStopWatch::eStart);
     CRequestContext& req_ctx = CDiagContext::GetRequestContext();
+    // Performance collecting code
+    // dummy.count += 1; dummy.time += sw.Elapsed();
     auto req_ctx_version = req_ctx.GetVersion();
     if ( &req_ctx == s_LastRequestContext && req_ctx_version == s_LastRequestContextVersion ) {
         return;
@@ -694,6 +710,28 @@ static void s_VDBInit()
 // end of VDB library initialization code
 /////////////////////////////////////////////////////////////////////////////
         
+
+static DECLARE_TLS_VAR(size_t, s_RequestContextUpdaterRecursion);
+
+
+CVDBMgr::CRequestContextUpdater::CRequestContextUpdater()
+{
+    size_t r = s_RequestContextUpdaterRecursion;
+    s_RequestContextUpdaterRecursion = r+1;
+    if ( r == 0 ) {
+        DECLARE_SDK_GUARD();
+        s_UpdateVDBRequestContext();
+    }
+}
+
+
+CVDBMgr::CRequestContextUpdater::~CRequestContextUpdater()
+{
+    size_t r = s_RequestContextUpdaterRecursion;
+    s_RequestContextUpdaterRecursion = r-1;
+}
+
+
 void CVDBMgr::x_Init(void)
 {
     s_VDBInit();
@@ -755,7 +793,7 @@ CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
     : m_Name(acc_or_path)
 {
     DECLARE_SDK_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
     if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0, "%.*s",
                                         int(path.size()), path.data()) ) {
@@ -819,7 +857,7 @@ CVDBTable::CVDBTable(const CVDB& db,
       m_Name(table_name)
 {
     DECLARE_SDK_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( rc_t rc = VDatabaseOpenTableRead(db, x_InitPtr(), table_name) ) {
         *x_InitPtr() = 0;
         RCState rc_state = GetRCState(rc);
@@ -850,7 +888,7 @@ CVDBTable::CVDBTable(const CVDBMgr& mgr,
 {
     *x_InitPtr() = 0;
     DECLARE_SDK_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
     if ( rc_t rc = VDBManagerOpenTableRead(mgr, x_InitPtr(), 0, "%.*s",
                                            int(path.size()), path.data()) ) {
@@ -917,7 +955,7 @@ CVDBTableIndex::CVDBTableIndex(const CVDBTable& table,
     : m_Table(table),
       m_Name(index_name)
 {
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( rc_t rc = VTableOpenIndexRead(table, x_InitPtr(), index_name) ) {
         *x_InitPtr() = 0;
         if ( GetRCObject(rc) == RCObject(rcIndex) &&
@@ -981,7 +1019,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBCursor& obj)
 
 void CVDBCursor::Init(const CVDBTable& table)
 {
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( *this ) {
         NCBI_THROW2(CSraException, eInvalidState,
                     "Cannot init VDB cursor again",
@@ -1020,7 +1058,7 @@ void CVDBCursor::CloseRow(void)
 rc_t CVDBCursor::OpenRowRc(TVDBRowId row_id)
 {
     CloseRow();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( rc_t rc = VCursorSetRowId(*this, row_id) ) {
         return rc;
     }
@@ -1063,7 +1101,7 @@ TVDBRowId CVDBCursor::GetMaxRowId(void) const
 
 void CVDBCursor::SetParam(const char* name, const CTempString& value) const
 {
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( rc_t rc = VCursorParamsSet
          ((struct VCursorParams *)GetPointer(),
           name, "%.*s", value.size(), value.data()) ) {
@@ -1078,7 +1116,7 @@ uint32_t CVDBCursor::GetElementCount(TVDBRowId row, const CVDBColumn& column,
                                      uint32_t elem_bits) const
 {
     DECLARE_SDK_GET_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     uint32_t read_count, remaining_count;
     if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
                                          elem_bits, 0, 0, 0, 0,
@@ -1097,7 +1135,7 @@ void CVDBCursor::ReadElements(TVDBRowId row, const CVDBColumn& column,
                               void* buffer) const
 {
     DECLARE_SDK_GET_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     uint32_t read_count, remaining_count;
     if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
                                          elem_bits, start, buffer, 0, count,
@@ -1210,7 +1248,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
                       EMissing missing)
 {
     DECLARE_SDK_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     m_Name = name;
     if ( rc_t rc = VCursorAddColumn(cursor, &m_Index, name) ) {
         if ( backup_name &&
@@ -1296,7 +1334,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBValue& obj)
 void CVDBValue::x_Get(const CVDBCursor& cursor, const CVDBColumn& column)
 {
     DECLARE_SDK_GET_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellData(cursor, column.GetIndex(),
                                    &bit_length, &m_Data, &bit_offset,
@@ -1320,7 +1358,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor,
                       EMissing missing)
 {
     DECLARE_SDK_GET_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
                                          &bit_length, &m_Data, &bit_offset,
@@ -1434,7 +1472,7 @@ void CVDBValueFor4Bits::x_Get(const CVDBCursor& cursor,
                               const CVDBColumn& column)
 {
     DECLARE_SDK_GET_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     uint32_t bit_offset, bit_length, elem_count;
     const void* data;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
@@ -1515,7 +1553,7 @@ void CVDBValueFor2Bits::x_Get(const CVDBCursor& cursor,
                               const CVDBColumn& column)
 {
     DECLARE_SDK_GET_GUARD();
-    s_UpdateVDBRequestContext();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     uint32_t bit_offset, bit_length, elem_count;
     const void* data;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),

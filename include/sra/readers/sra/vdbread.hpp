@@ -238,6 +238,14 @@ public:
     // Commit configuration changes into config file
     void CommitConfig() const;
 
+    // Update VDB request context from Corelib's one
+    class CRequestContextUpdater {
+    public:
+        CRequestContextUpdater();
+        ~CRequestContextUpdater();
+        CRequestContextUpdater(const CRequestContextUpdater&) = delete;
+    };
+
 protected:
     void x_Init(void);
 
