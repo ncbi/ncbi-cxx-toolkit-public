@@ -770,15 +770,13 @@ static int sGetPrefixLength(const CTempString& accession)
                       [](char c) { return ! (isalpha(c) || c == '_'); });
 
     _ASSERT(it != accession.end());
-    return distance(accession.begin(), it);
+    return int(distance(accession.begin(), it));
 }
 
 
 /**********************************************************/
 void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, Int4 acctype, bool pricon, char* acc)
 {
-    IndexblkPtr ibp;
-
     Int4 pri_acc;
     Int4 sec_acc;
 
@@ -794,7 +792,7 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
     if (hist.empty())
         return;
 
-    ibp = pp->entrylist[pp->curindx];
+    // IndexblkPtr ibp = pp->entrylist[pp->curindx];
 
     pri_acc = fta_if_wgs_acc(acc);
 

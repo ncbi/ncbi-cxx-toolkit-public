@@ -2434,7 +2434,7 @@ static char* CheckPcrPrimersTag(char* str)
 /**********************************************************/
 static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
 {
-    PcrPrimersPtr tppp;
+    PcrPrimersPtr tppp = nullptr;
 
     char* str_fs;
     char* str_rs;
@@ -2577,7 +2577,7 @@ static void PcrPrimersFree(PcrPrimersPtr ppp)
 static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
 {
     PcrPrimersPtr ppp;
-    PcrPrimersPtr tppp;
+    PcrPrimersPtr tppp = nullptr;
 
     char* p;
     char* q;
@@ -2825,18 +2825,18 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
     const char** b;
     const char*  q;
 
-    char* p;
-    char* r;
-    char* val;
-    Int4  year;
-    Int4  month;
-    Int4  day;
-    Int4  bad;
-    Int4  num_slash;
-    Int4  num_T;
-    Int4  num_colon;
-    Int4  num_Z;
-    Int4  len;
+    char*  p;
+    char*  r;
+    char*  val;
+    Int4   year;
+    Int4   month;
+    Int4   day;
+    Int4   bad;
+    Int4   num_slash;
+    Int4   num_T;
+    Int4   num_colon;
+    Int4   num_Z;
+    size_t len;
 
     CTime     time(CTime::eCurrent);
     CDate_std date(time);
