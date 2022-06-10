@@ -3483,7 +3483,7 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
     char*       p;
     Uint1       type;
     Int2        indx;
-    bool        err;
+    bool        err = false;
 
     descrip.assign(CpTheQualValue(fbp->quals, "note"));
 

@@ -881,7 +881,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
                                            buffer */
     char* def_title;               /* title parsed from the quality
                                            score defline */
-    Uint4 def_len;                 /* sequence length parsed from the
+    Uint4 def_len = 0;             /* sequence length parsed from the
                                            quality score defline */
     Uint1 def_max = 0;             /* maximum quality score parsed from
                                            the quality score defline */
