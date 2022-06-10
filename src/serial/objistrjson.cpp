@@ -102,9 +102,10 @@ bool CObjectIStreamJson::EndOfData(void)
     return false;
 }
 
-string CObjectIStreamJson::GetPosition(void) const
+void CObjectIStreamJson::Location(string& loc_type, size_t& loc) const
 {
-    return "line "+NStr::SizetToString(m_Input.GetLine());
+    loc_type = "line";
+    loc = m_Input.GetLine();
 }
 
 void CObjectIStreamJson::SetDefaultStringEncoding(EEncoding enc)
