@@ -488,7 +488,7 @@ ErrSev ErrSetMessageLevel(ErrSev sev)
 }
 
 /**********************************************************/
-int Nlm_ErrSetContext(const char* module, const char* fname, int line)
+void Nlm_ErrSetContext(const char* module, const char* fname, int line)
 {
     if (! bmp)
         FtaErrInit();
@@ -496,7 +496,6 @@ int Nlm_ErrSetContext(const char* module, const char* fname, int line)
     fec.module = module;
     fec.fname  = fname;
     fec.line   = line;
-    return (0);
 }
 
 /**********************************************************/
