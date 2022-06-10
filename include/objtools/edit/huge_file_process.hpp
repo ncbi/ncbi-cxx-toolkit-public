@@ -62,7 +62,6 @@ public:
     using THandlerTopIds = std::function<void(CHugeAsnReader&, const std::list<CConstRef<CSeq_id>>&)>;
 
     [[nodiscard]] bool Read(THandler handler, CRef<CSeq_id> seqid);
-    void ReadTopIds(THandlerTopIds handler);
 
     CHugeAsnReader& GetReader() { return *m_pReader; }
 
