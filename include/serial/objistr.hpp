@@ -494,6 +494,13 @@ public:
     ///   string
     virtual string GetPosition(void) const override;
 
+    /// Get current stream location as tuple (positiontype:string, size_t).
+    /// Useful for customized diagnostic and information messages.
+    /// The meaning of positiontype depends on the implementation and coincides
+    /// with the prefix of the string returned by GetPosition().
+    ///
+    virtual void Location(string&, size_t&) const;
+
 //---------------------------------------------------------------------------
 // Local read hooks
     void SetPathReadObjectHook( const string& path, CReadObjectHook*        hook);

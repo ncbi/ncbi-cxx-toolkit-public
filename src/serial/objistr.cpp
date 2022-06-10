@@ -796,10 +796,20 @@ void CObjectIStream::SetStreamPos(CNcbiStreampos pos)
 
 string CObjectIStream::GetPosition(void) const
 {
-    return "byte "+NStr::Int8ToString(NcbiStreamposToInt8(GetStreamPos()));
+    string loc_type;
+    size_t loc_pos;
+    Location(loc_type, loc_pos);
+    return loc_type+" "+NStr::Int8ToString(NcbiStreamposToInt8(loc_pos));
 }
 
-void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info, 
+void CObjectIStream::Location(string& loc_type, size_t& loc) const
+{
+    loc_type = "byte";
+    loc = NcbiStreamposToInt8(GetStreamPos());
+}
+
+
+void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info,
                                  TFailFlags flags, const char* message)
 {
     ThrowError1(diag_info, flags, string(message));

@@ -128,9 +128,10 @@ bool CObjectIStreamXml::EndOfData(void)
     return false;
 }
 
-string CObjectIStreamXml::GetPosition(void) const
+void CObjectIStreamXml::Location(string& loc_type, size_t& loc) const
 {
-    return "line "+NStr::SizetToString(m_Input.GetLine());
+    loc_type = "line";
+    loc = m_Input.GetLine();
 }
 
 void CObjectIStreamXml::SetEnforcedStdXml(bool set)

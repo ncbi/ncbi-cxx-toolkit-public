@@ -114,13 +114,13 @@ public:
     ///   TRUE if there is no more data
     virtual bool EndOfData(void) override;
 
-    /// Get current stream position as string.
-    /// Useful for diagnostic and information messages.
-    ///
-    /// @return
-    ///   string
-    virtual string GetPosition(void) const override;
 
+    /// Get current stream location as tuple (positiontype:string, size_t).
+    /// Useful for customized diagnostic and information messages.
+    /// The meaning of positiontype depends on the implementation and coincides
+    /// with the prefix of the string returned by GetPosition().
+    ///
+    virtual void Location(string&, size_t&) const override;
 
     virtual string ReadFileHeader(void) override;
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values) override;

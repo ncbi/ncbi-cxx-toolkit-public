@@ -108,11 +108,12 @@ bool CObjectIStreamAsn::EndOfData(void)
     return false;
 }
 
-string CObjectIStreamAsn::GetPosition(void) const
+void CObjectIStreamAsn::Location(string& loc_type, size_t& loc) const
 {
-    return "line "+NStr::SizetToString(m_Input.GetLine());
+    loc_type = "line";
+    loc = m_Input.GetLine();
 }
-
+ 
 inline
 bool CObjectIStreamAsn::FirstIdChar(char c)
 {
