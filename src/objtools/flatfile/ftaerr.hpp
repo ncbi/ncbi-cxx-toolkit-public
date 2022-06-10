@@ -79,7 +79,7 @@ ErrSev               ErrSetLogLevel(ErrSev sev);
 ErrSev               ErrSetMessageLevel(ErrSev sev);
 void                 Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...);
 void                 Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, const char* str);
-int                  Nlm_ErrSetContext(const char* module, const char* fname, int line);
+void                 Nlm_ErrSetContext(const char* module, const char* fname, int line);
 
 void FtaInstallPrefix(int prefix, const char* name, const char* location);
 void FtaDeletePrefix(int prefix);
@@ -89,11 +89,10 @@ void FtaDeletePrefix(int prefix);
     ( CNcbiDiag(DIAG_COMPILE_INFO, (EDiagSev) sev).GetRef()      \
     << ErrCode(err_code) << FtaErrMessage(__VA_ARGS__) << Endm )
 */
-#define ErrPostEx (Nlm_ErrSetContext((const char*)THIS_MODULE, \
-                                     (const char*)__FILE__,    \
-                                     __LINE__)                 \
-                       ? 0                                     \
-                       : Nlm_ErrPostEx)
+#define ErrPostEx (Nlm_ErrSetContext(THIS_MODULE, \
+                                     __FILE__,    \
+                                     __LINE__),   \
+                   Nlm_ErrPostEx)
 
 #define ErrPostStr ErrPostEx
 
