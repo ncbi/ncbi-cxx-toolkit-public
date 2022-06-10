@@ -115,15 +115,6 @@ bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
     return true;
 }
 
-void CHugeFileProcess::ReadTopIds(THandlerTopIds handler)
-{
-    while (m_pReader->GetNextBlob())
-    {
-        m_pReader->FlattenGenbankSet();
-        handler(*m_pReader, m_pReader->GetTopIds());
-    }
-}
-
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
