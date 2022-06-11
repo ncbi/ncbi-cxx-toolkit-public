@@ -44,6 +44,7 @@
 #include <objects/id2/ID2_Reply_Data.hpp>
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
+#include <util/thread_pool.hpp>
 #include <cmath>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
@@ -365,6 +366,8 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
                         kDefaultMaxConnectionCount);
     CHECK_PARAM_MIN(m_MaxConnectionCount, kParamMaxConnectionCount, kMinMaxConnectionCount);
 
+    m_ThreadPool.reset(new CThreadPool(kMax_UInt, m_MaxConnectionCount));
+
     m_ExpirationTimeout =
         registry.GetDouble(section,
                            kParamExpirationTimeout,
@@ -463,6 +466,12 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
 void COSGConnectionPool::SetLogging(EDiagSev severity)
 {
     SetDiagSeverity(severity);
+}
+
+
+void COSGConnectionPool::Queue(CRef<CThreadPool_Task> task)
+{
+    m_ThreadPool->AddTask(task);
 }
 
 

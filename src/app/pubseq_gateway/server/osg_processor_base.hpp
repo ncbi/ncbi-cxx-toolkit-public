@@ -59,7 +59,7 @@ class COSGFetch;
 class COSGConnectionPool;
 class COSGConnection;
 class CPSGS_OSGProcessorBase;
-
+class COSGCallDoProcessTask;
 
 enum EDebugLevel {
     eDebug_none     = 0,
@@ -170,7 +170,50 @@ protected:
     // decrement background processing counter and notify dispatcher if zero
     void SignalEndOfBackgroundProcessing();
 
-    class CBackgroundProcessingGuard
+    void SignalStartOfUVLoop();
+    void SignalEndOfUVLoop();
+    
+    class CUVLoopGuard
+    {
+    public:
+        explicit CUVLoopGuard(CPSGS_OSGProcessorBase* processor)
+            : m_ProcessorPtr(processor)
+            {
+                x_Start();
+            }
+        ~CUVLoopGuard()
+            {
+                x_End();
+            }
+        CUVLoopGuard(const CUVLoopGuard& guard) = delete;
+        CUVLoopGuard& operator=(const CUVLoopGuard& guard) = delete;
+    private:
+        friend class CPSGS_OSGProcessorBase;
+        void x_Start()
+            {
+                if ( m_ProcessorPtr ) {
+                    m_ProcessorPtr->SignalStartOfUVLoop();
+                }
+            }
+        void x_End()
+            {
+                if ( m_ProcessorPtr ) {
+                    m_ProcessorPtr->SignalEndOfUVLoop();
+                }
+            }
+        void x_Start(CPSGS_OSGProcessorBase* processor)
+            {
+                if ( processor != m_ProcessorPtr ) {
+                    x_End();
+                    m_ProcessorPtr = processor;
+                    x_Start();
+                }
+            }
+        CPSGS_OSGProcessorBase* m_ProcessorPtr;
+    };
+    friend class CUVLoopGuard;
+
+    class CBackgroundProcessingGuard : public CObject
     {
     public:
         explicit CBackgroundProcessingGuard(CPSGS_OSGProcessorBase* processor)
@@ -183,6 +226,9 @@ protected:
                 x_End();
             }
         
+        CBackgroundProcessingGuard(const CBackgroundProcessingGuard& guard) = delete;
+        CBackgroundProcessingGuard& operator=(const CBackgroundProcessingGuard& guard) = delete;
+        /*
         CBackgroundProcessingGuard(const CBackgroundProcessingGuard& guard)
             : m_ProcessorPtr(guard.m_ProcessorPtr)
             {
@@ -195,6 +241,7 @@ protected:
                 }
                 return *this;
             }
+        */
 
         CPSGS_OSGProcessorBase* GetGuardedProcessor() const
             {
@@ -227,19 +274,42 @@ protected:
         CPSGS_OSGProcessorBase* m_ProcessorPtr;
     };
     friend class CBackgroundProcessingGuard;
-
+    typedef AutoPtr<CBackgroundProcessingGuard> TBGProcToken;
+    TBGProcToken x_CreateBGProcToken();
+    static bool x_Valid(const TBGProcToken& token)
+        {
+            return token && token->GetGuardedProcessor();
+        }
+    static CPSGS_OSGProcessorBase* x_GetProcessor(const TBGProcToken& token)
+        {
+            return token->GetGuardedProcessor();
+        }
+    static void* x_BGProcTokenToVoidP(TBGProcToken& token)
+        {
+            return token.release();
+        }
+    static TBGProcToken x_BGProcTokenFromVoidP(void* ptr)
+        {
+            return TBGProcToken(static_cast<CBackgroundProcessingGuard*>(ptr));
+        }
+    void x_SignalFinishProcessing(const char* from);
+    
     void CallDoProcess();
     void CallDoProcessSync();
     void CallDoProcessAsync();
-    void CallDoProcessCallback(const CBackgroundProcessingGuard& guard_in);
-    void DoProcess();
+    void CallDoProcessCallback(TBGProcToken token);
+    void DoProcess(TBGProcToken token);
 
-    void CallDoProcessReplies();
+    void CallDoProcessReplies(TBGProcToken token);
     void CallDoProcessRepliesSync();
-    void CallDoProcessRepliesAsync();
-    void CallDoProcessRepliesCallback(const CBackgroundProcessingGuard& guard_in);
+    void CallDoProcessRepliesAsync(TBGProcToken token);
+    void CallDoProcessRepliesCallback(TBGProcToken token);
     static void s_CallDoProcessRepliesUvCallback(void* proc);
     void DoProcessReplies();
+
+    friend class COSGCallDoProcessTask;
+
+    static void s_CallFinalizeUvCallback(void *data);
     
     friend class COSGStateReporter;
     COSGStateReporter State() const
@@ -265,6 +335,7 @@ private:
     CMutex m_StatusMutex;
     EPSGS_Status m_Status;
     int m_BackgroundProcesing;
+    int m_UVLoop;
     bool m_NeedTrace;
 };
 

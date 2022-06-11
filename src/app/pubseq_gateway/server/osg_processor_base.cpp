@@ -44,6 +44,7 @@
 #include <objects/id2/ID2_Params.hpp>
 #include <objects/id2/ID2_Param.hpp>
 #include <objects/id2/ID2_Reply.hpp>
+#include <util/thread_pool.hpp>
 #include "pubseq_gateway.hpp"
 #include <thread>
 
@@ -85,6 +86,7 @@ CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
       m_EnabledFlags(enabled_flags),
       m_Status(IPSGS_Processor::ePSGS_InProgress),
       m_BackgroundProcesing(0),
+      m_UVLoop(0),
       m_NeedTrace(request->NeedTrace())
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CPSGS_OSGProcessorBase()");
@@ -140,6 +142,7 @@ CPSGS_OSGProcessorBase::~CPSGS_OSGProcessorBase()
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() status: "<<State());
     _ASSERT(m_Status != IPSGS_Processor::ePSGS_InProgress);
     _ASSERT(!m_BackgroundProcesing);
+    _ASSERT(m_FinishSignalled);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::~CPSGS_OSGProcessorBase() return: "<<State());
 }
 
@@ -184,9 +187,11 @@ void CPSGS_OSGProcessorBase::StopAsyncThread()
 
 void CPSGS_OSGProcessorBase::Process()
 {
-    SEND_TRACE("OSG: Process() called");
     CRequestContextResetter     context_resetter;
     GetRequest()->SetRequestContext();
+    CUVLoopGuard uv_loop_guard(this);
+    
+    SEND_TRACE("OSG: Process() called");
 
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process(): "<<State());
     if ( IsCanceled() ) {
@@ -221,39 +226,66 @@ void CPSGS_OSGProcessorBase::CallDoProcess()
 void CPSGS_OSGProcessorBase::CallDoProcessSync()
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessSync() start: "<<State());
-    DoProcess();
+    DoProcess(nullptr);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessSync() return: "<<State());
 }
 
 
-void CPSGS_OSGProcessorBase::CallDoProcessCallback(const CBackgroundProcessingGuard& guard_in)
+void CPSGS_OSGProcessorBase::CallDoProcessCallback(TBGProcToken token)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    CBackgroundProcessingGuard guard(guard_in);
-    if ( !guard.GetGuardedProcessor() ) {
+    
+    if ( !x_Valid(token) ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() canceled: "<<State());
         return;
     }
-    _ASSERT(guard.GetGuardedProcessor() == this);
+    _ASSERT(x_GetProcessor(token) == this);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() start: "<<State());
-    DoProcess();
+    DoProcess(token);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessCallback() return: "<<State());
 }
+
+
+CPSGS_OSGProcessorBase::TBGProcToken CPSGS_OSGProcessorBase::x_CreateBGProcToken()
+{
+    return TBGProcToken(new CBackgroundProcessingGuard(this));
+}
+
+
+class COSGCallDoProcessTask : public CThreadPool_Task
+{
+public:
+    COSGCallDoProcessTask(CPSGS_OSGProcessorBase::TBGProcToken token)
+        : m_Token(token)
+        {
+        }
+
+    virtual EStatus Execute(void) override
+        {
+            CPSGS_OSGProcessorBase::x_GetProcessor(m_Token)->CallDoProcessCallback(m_Token);
+            return eCompleted;
+        }
+
+protected:
+    CPSGS_OSGProcessorBase::TBGProcToken m_Token;
+};
 
 
 void CPSGS_OSGProcessorBase::CallDoProcessAsync()
 {
     SEND_TRACE("OSG: switching Process() to background thread");
     try {
-        CBackgroundProcessingGuard guard(this);
-        if ( !guard.GetGuardedProcessor() ) {
+        TBGProcToken token = x_CreateBGProcToken();
+        if ( !x_Valid(token) ) {
             tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync(): canceled: "<<State());
             return;
         }
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync(): starting: "<<State());
-        thread(bind(&CPSGS_OSGProcessorBase::CallDoProcessCallback, this, guard)).detach();
+        m_ConnectionPool->Queue(Ref(new COSGCallDoProcessTask(token)));
+        //thread(bind(&CPSGS_OSGProcessorBase::CallDoProcessCallback, this, token)).detach();
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync() started: "<<State());
+        //SleepMilliSec(10);
     }
     catch (exception& exc) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessAsync() failed: "<<exc.what()<<": "<<State());
@@ -263,7 +295,7 @@ void CPSGS_OSGProcessorBase::CallDoProcessAsync()
 }
 
 
-void CPSGS_OSGProcessorBase::DoProcess()
+void CPSGS_OSGProcessorBase::DoProcess(TBGProcToken token)
 {
     SEND_TRACE("OSG: DoProcess() started");
     try {
@@ -311,7 +343,7 @@ void CPSGS_OSGProcessorBase::DoProcess()
                  m_ConnectionPool->GetWaitBeforeOSG()) {
                 WaitForOtherProcessors();
                 if ( IsCanceled() ) {
-                    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() canceled 1: "<<State());
+                    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcess() canceled 1: "<<State());
                     caller.ReleaseConnection();
                     return;
                 }
@@ -360,12 +392,12 @@ void CPSGS_OSGProcessorBase::DoProcess()
         if ( m_ConnectionPool->GetAsyncProcessing() ) {
             WaitForOtherProcessors();
             if ( IsCanceled() ) {
-                tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() canceled: "<<State());
+                tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::DoProcess() canceled: "<<State());
                 return;
             }
         }
 
-        CallDoProcessReplies();
+        CallDoProcessReplies(token);
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Process() done: "<<State());
     }
     catch ( exception& exc ) {
@@ -385,10 +417,10 @@ void CPSGS_OSGProcessorBase::DoProcessReplies()
 }
 
 
-void CPSGS_OSGProcessorBase::CallDoProcessReplies()
+void CPSGS_OSGProcessorBase::CallDoProcessReplies(TBGProcToken token)
 {
-    if ( 1 ) {
-        CallDoProcessRepliesAsync();
+    if ( x_Valid(token) ) {
+        CallDoProcessRepliesAsync(token);
     }
     else {
         CallDoProcessRepliesSync();
@@ -404,16 +436,17 @@ void CPSGS_OSGProcessorBase::CallDoProcessRepliesSync()
 }
 
 
-void CPSGS_OSGProcessorBase::CallDoProcessRepliesCallback(const CBackgroundProcessingGuard& guard_in)
+void CPSGS_OSGProcessorBase::CallDoProcessRepliesCallback(TBGProcToken token)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    CBackgroundProcessingGuard guard(guard_in);
-    if ( !guard.GetGuardedProcessor() ) {
+    CUVLoopGuard uv_loop_guard(this);
+    
+    if ( !x_Valid(token) ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() canceled: "<<State());
         return;
     }
-    _ASSERT(guard.GetGuardedProcessor() == this);
+    _ASSERT(x_GetProcessor(token) == this);
     try {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() signal start: "<<State());
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() start: "<<State());
@@ -430,22 +463,22 @@ void CPSGS_OSGProcessorBase::CallDoProcessRepliesCallback(const CBackgroundProce
 
 void CPSGS_OSGProcessorBase::s_CallDoProcessRepliesUvCallback(void *data)
 {
-    unique_ptr<CBackgroundProcessingGuard> guard(static_cast<CBackgroundProcessingGuard*>(data));
-    guard->GetGuardedProcessor()->CallDoProcessRepliesCallback(*guard);
+    TBGProcToken token = x_BGProcTokenFromVoidP(data);
+    x_GetProcessor(token)->CallDoProcessRepliesCallback(token);
 }
 
 
-void CPSGS_OSGProcessorBase::CallDoProcessRepliesAsync()
+void CPSGS_OSGProcessorBase::CallDoProcessRepliesAsync(TBGProcToken token)
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() start: "<<State());
     SEND_TRACE("OSG: scheduling ProcessReplies() to UV loop");
-    unique_ptr<CBackgroundProcessingGuard> guard = make_unique<CBackgroundProcessingGuard>(this);
-    if ( !guard->GetGuardedProcessor() ) {
+    if ( !x_Valid(token) ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() canceled: "<<State());
         return;
     }
-    GetUvLoopBinder().PostponeInvoke(s_CallDoProcessRepliesUvCallback, guard.release());
+    GetUvLoopBinder().PostponeInvoke(s_CallDoProcessRepliesUvCallback, x_BGProcTokenToVoidP(token));
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() return: "<<State());
+    //SleepMilliSec(10);
 }
 
 
@@ -461,9 +494,10 @@ void CPSGS_OSGProcessorBase::Cancel()
 
 CNcbiOstream& COSGStateReporter::Print(CNcbiOstream& out) const
 {
-    return out << m_ProcessorPtr->m_Status << ' '
-               << m_ProcessorPtr->m_BackgroundProcesing << ' '
-               << m_ProcessorPtr->m_FinishSignalled;
+    return out << "ST=" << m_ProcessorPtr->m_Status
+               << " BG=" << m_ProcessorPtr->m_BackgroundProcesing
+               << " UV=" << m_ProcessorPtr->m_UVLoop
+               << " FS=" << m_ProcessorPtr->m_FinishSignalled;
 }
 
 
@@ -524,10 +558,7 @@ void CPSGS_OSGProcessorBase::FinalizeResult()
     CMutexGuard guard(m_StatusMutex);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): state: "<<State());
     _ASSERT(m_Status != ePSGS_InProgress);
-    if ( !m_BackgroundProcesing ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::FinalizeResult(): signal: "<<State());
-        SignalFinishProcessing();
-    }
+    x_SignalFinishProcessing("FinalizeResult");
 }
 
 
@@ -551,16 +582,56 @@ bool CPSGS_OSGProcessorBase::SignalStartOfBackgroundProcessing()
 }
 
 
+void CPSGS_OSGProcessorBase::x_SignalFinishProcessing(const char* from)
+{
+    if ( m_UVLoop > 0 &&
+         m_BackgroundProcesing == 0 &&
+         m_Status != IPSGS_Processor::ePSGS_InProgress &&
+         !m_FinishSignalled ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): signal: "<<State());
+        SignalFinishProcessing();
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): return: "<<State());
+        _ASSERT(m_FinishSignalled);
+    }
+}
+
+
+void CPSGS_OSGProcessorBase::s_CallFinalizeUvCallback(void *data)
+{
+    CUVLoopGuard uv_loop_guard(static_cast<CPSGS_OSGProcessorBase*>(data));
+}
+
+
 void CPSGS_OSGProcessorBase::SignalEndOfBackgroundProcessing()
 {
     CMutexGuard guard(m_StatusMutex);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): "<<State());
     _ASSERT(m_BackgroundProcesing > 0);
-    if ( --m_BackgroundProcesing == 0 ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): signal: "<<State());
-        SignalFinishProcessing();
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): return: "<<State());
+    --m_BackgroundProcesing;
+    x_SignalFinishProcessing("SignalEndOfBackgroundProcessing");
+    if ( !m_FinishSignalled ) {
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): sending to uv-loop "<<State());
+        GetUvLoopBinder().PostponeInvoke(s_CallFinalizeUvCallback, this);
+        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): sent to uv-loop "<<State());
     }
+}
+
+
+void CPSGS_OSGProcessorBase::SignalStartOfUVLoop()
+{
+    CMutexGuard guard(m_StatusMutex);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalStartOfUVLoop(): "<<State());
+    ++m_UVLoop;
+    x_SignalFinishProcessing("SignalStartOfUVLoop");
+}
+
+
+void CPSGS_OSGProcessorBase::SignalEndOfUVLoop()
+{
+    CMutexGuard guard(m_StatusMutex);
+    tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfUVLoop(): "<<State());
+    _ASSERT(m_UVLoop > 0);
+    --m_UVLoop;
 }
 
 
