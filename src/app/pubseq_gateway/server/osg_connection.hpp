@@ -42,6 +42,8 @@ BEGIN_NCBI_NAMESPACE;
 class CNcbiRegistry;
 class CArgs;
 class CConn_IOStream;
+class CThreadPool;
+class CThreadPool_Task;
 
 BEGIN_NAMESPACE(objects);
 
@@ -148,6 +150,8 @@ public:
     bool GetWaitBeforeOSG() const {
         return m_WaitBeforeOSG;
     }
+
+    void Queue(CRef<CThreadPool_Task> task);
     
 protected:
     friend class COSGConnection;
@@ -176,6 +180,7 @@ private:
     CRef<COSGServiceMapper> m_Mapper;
     CRef<CPoolBalancer>  m_Balancer;
     unique_ptr<CDeadline>  m_NonresolutionRetryDeadline;
+    unique_ptr<CThreadPool> m_ThreadPool;
 };
 
 
