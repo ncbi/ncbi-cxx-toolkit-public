@@ -693,7 +693,8 @@ void CValidError_imp::PostErr
     string desc;
     AppendBioseqLabel(desc, sq, m_SuppressContext);
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&sq, nullptr, *m_Scope, &version);
+    const string& accession = GetAccessionFromBioseq(sq, &version);
+    // GetAccessionFromObjects(&sq, nullptr, *m_Scope, &version);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, accession, version);
 }
 
@@ -716,7 +717,8 @@ void CValidError_imp::PostErr
 
     // Append Bioseq_set label
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&st, nullptr, *m_Scope, &version);
+    const string& accession = GetAccessionFromBioseqSet(st, &version);
+        //GetAccessionFromObjects(&st, nullptr, *m_Scope, &version);
     string desc = CValidErrorFormat::GetBioseqSetLabel(st, m_Scope, m_SuppressContext);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, accession, version);
 }
