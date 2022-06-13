@@ -45,11 +45,11 @@
 
 BEGIN_NCBI_SCOPE
 /*****************************************************************************
-*
-*   ValNodeNew(vnp)
-*      adds after last node in list if vnp not NULL
-*
-*****************************************************************************/
+ *
+ *   ValNodeNew(vnp)
+ *      adds after last node in list if vnp not NULL
+ *
+ *****************************************************************************/
 ValNodePtr ValNodeNew(ValNodePtr vnp)
 {
     ValNodePtr newnode;
@@ -64,13 +64,13 @@ ValNodePtr ValNodeNew(ValNodePtr vnp)
 }
 
 /*****************************************************************************
-*
-*   ValNodeFree(vnp)
-*   	frees whole chain of ValNodes
-*       Does NOT free associated data pointers
-*           see ValNodeFreeData()
-*
-*****************************************************************************/
+ *
+ *   ValNodeFree(vnp)
+ *      frees whole chain of ValNodes
+ *       Does NOT free associated data pointers
+ *           see ValNodeFreeData()
+ *
+ *****************************************************************************/
 ValNodePtr ValNodeFree(ValNodePtr vnp)
 {
     ValNodePtr next;
@@ -84,13 +84,13 @@ ValNodePtr ValNodeFree(ValNodePtr vnp)
 }
 
 /*****************************************************************************
-*
-*   ValNodeFreeData(vnp)
-*   	frees whole chain of ValNodes
-*       frees associated data pointers - BEWARE of this if these are not
-*           allocated single memory block structures.
-*
-*****************************************************************************/
+ *
+ *   ValNodeFreeData(vnp)
+ *      frees whole chain of ValNodes
+ *       frees associated data pointers - BEWARE of this if these are not
+ *           allocated single memory block structures.
+ *
+ *****************************************************************************/
 ValNodePtr ValNodeFreeData(ValNodePtr vnp)
 {
     ValNodePtr next;
@@ -105,13 +105,13 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp)
 }
 
 /*****************************************************************************
-*
-*   ValNodeLink(head, newnode)
-*      adds newnode at end of chain
-*      if (*head == NULL) *head = newnode
-*      ALWAYS returns pointer to START of chain
-*
-*****************************************************************************/
+ *
+ *   ValNodeLink(head, newnode)
+ *      adds newnode at end of chain
+ *      if (*head == NULL) *head = newnode
+ *      ALWAYS returns pointer to START of chain
+ *
+ *****************************************************************************/
 ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode)
 {
     ValNodePtr vnp;

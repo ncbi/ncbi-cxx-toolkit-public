@@ -963,12 +963,12 @@ void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
 }
 
 /**********************************************************
-    *
-    *   CRef<CDate_std> get_full_date(s, is_ref, source):
-    *
-    *      Get year, month, day and return CRef<CDate_std>.
-    *
-    **********************************************************/
+ *
+ *   CRef<CDate_std> get_full_date(s, is_ref, source):
+ *
+ *      Get year, month, day and return CRef<CDate_std>.
+ *
+ **********************************************************/
 CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source)
 {
     CRef<CDate_std> date;
@@ -1468,10 +1468,10 @@ void xCheckEstStsGssTpaKeywords(
     const std::list<std::string> keywordList,
     bool                         tpa_check,
     IndexblkPtr                  entry
-    //bool& specialist_db,
-    //bool& inferential,
-    //bool& experimental,
-    //bool& assembly
+    // bool& specialist_db,
+    // bool& inferential,
+    // bool& experimental,
+    // bool& assembly
 )
 {
     if (keywordList.empty()) {

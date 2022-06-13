@@ -54,15 +54,15 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /**********************************************************
-*
-*   NLM_EXTERN bool LIBCALL ISAGappedSeqLoc(slp):
-*
-*      Looks at a single SeqLoc item. If it has the SeqId
-*   of type GENERAL with Dbtag.db == $(seqlitdbtag) and
-*   Dbtag.tag.id == 0, then returns TRUE, otherwise
-*   returns FALSE.
-*
-**********************************************************/
+ *
+ *   NLM_EXTERN bool LIBCALL ISAGappedSeqLoc(slp):
+ *
+ *      Looks at a single SeqLoc item. If it has the SeqId
+ *   of type GENERAL with Dbtag.db == $(seqlitdbtag) and
+ *   Dbtag.tag.id == 0, then returns TRUE, otherwise
+ *   returns FALSE.
+ *
+ **********************************************************/
 static bool XISAGappedSeqLoc(const CSeq_loc& loc)
 {
     const CSeq_id* id = loc.GetId();
@@ -77,17 +77,17 @@ static bool XISAGappedSeqLoc(const CSeq_loc& loc)
 }
 
 /**********************************************************
-*
-*   NLM_EXTERN DeltaSeqPtr LIBCALL GappedSeqLocsToDeltaSeqs(slp):
-*
-*      This functions is used only in the case, if ISAGappedSeqLoc()
-*   has returned TRUE.
-*      Converts SeqLoc set to the sequence of DeltaSeqs.
-*   Gbtag'ed SeqLocs it turns into SeqLits with the only "length"
-*   element. The regular SeqLocs saves as they are. Returns
-*   obtained DeltaSeq.
-*
-**********************************************************/
+ *
+ *   NLM_EXTERN DeltaSeqPtr LIBCALL GappedSeqLocsToDeltaSeqs(slp):
+ *
+ *      This functions is used only in the case, if ISAGappedSeqLoc()
+ *   has returned TRUE.
+ *      Converts SeqLoc set to the sequence of DeltaSeqs.
+ *   Gbtag'ed SeqLocs it turns into SeqLits with the only "length"
+ *   element. The regular SeqLocs saves as they are. Returns
+ *   obtained DeltaSeq.
+ *
+ **********************************************************/
 void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
 {
     ITERATE (TSeqLocList, loc, locs) {

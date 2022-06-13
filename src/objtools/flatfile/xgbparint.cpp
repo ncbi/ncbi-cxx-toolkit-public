@@ -1,25 +1,25 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
@@ -55,35 +55,34 @@ USING_SCOPE(objects);
 const char* seqlitdbtag    = "SeqLit";
 const char* unkseqlitdbtag = "UnkSeqLit";
 
-enum class ETokenType 
-{
-    eUnknown,   
-    eJoin,      
-    eCompl,     
-    eLeft,      
-    eRight,     
-    eCaret,     
-    eDotDot,    
-    eAccession, 
-    eGt,        
-    eLt,        
-    eComma,     
-    eNumber,    
-    eOrder,     
-    eSingleDot, 
-    eGroup,     
-    eOneOf,     
-    eReplace,   
-    eSites,     
-    eString,    
-    eOneOfNum,  
-    eGap,       
-    eUnkGap     
+enum class ETokenType {
+    eUnknown,
+    eJoin,
+    eCompl,
+    eLeft,
+    eRight,
+    eCaret,
+    eDotDot,
+    eAccession,
+    eGt,
+    eLt,
+    eComma,
+    eNumber,
+    eOrder,
+    eSingleDot,
+    eGroup,
+    eOneOf,
+    eReplace,
+    eSites,
+    eString,
+    eOneOfNum,
+    eGap,
+    eUnkGap
 };
 
 struct STokenInfo {
     ETokenType choice;
-    string data;
+    string     data;
 };
 
 using TTokens       = list<STokenInfo>;
@@ -220,7 +219,6 @@ static void xgbcheck_range(TSeqPos num, const CSeq_id& id, bool& keep_rawPt, int
 
 /*--------- xfind_one_of_num()------------*/
 /*
- 
 Consider these for locations:
          misc_signal     join(57..one-of(67,75),one-of(100,110)..200)
      misc_signal     join(57..one-of(67,75),one-of(100,110..120),200)
@@ -230,7 +228,7 @@ Consider these for locations:
 
 In the first three, the one-of() is functioning as an alternative set
 of numbers, in the last, as an alternative set of locations (even
-though the locations are points).  
+though the locations are points).
 [yes the one-of(100,110..115).. is illegal]
 
   here is one more case:one-of(18,30)..470 so if the location
@@ -449,8 +447,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 }
                 break;
                 /*------
-                *  JOIN
-                *------*/
+                 *  JOIN
+                 *------*/
             case 'j':
                 current_token.choice = ETokenType::eJoin;
                 if (! NStr::StartsWith(line.c_str() + current_col, "join")) {
@@ -463,8 +461,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 break;
 
                 /*------
-                *  ORDER and ONE-OF
-                *------*/
+                 *  ORDER and ONE-OF
+                 *------*/
             case 'o':
                 if (! NStr::StartsWith(line.c_str() + current_col, "order")) {
                     if (! NStr::StartsWith(line.c_str() + current_col, "one-of")) {
@@ -484,8 +482,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 break;
 
                 /*------
-                *  REPLACE
-                *------*/
+                 *  REPLACE
+                 *------*/
             case 'r':
                 current_token.choice = ETokenType::eReplace;
                 if (! NStr::StartsWith(line.c_str() + current_col, "replace")) {
@@ -498,8 +496,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 break;
 
                 /*------
-                *  GAP or GROUP or GI
-                *------*/
+                 *  GAP or GROUP or GI
+                 *------*/
             case 'g':
                 if (NStr::StartsWith(line.c_str() + current_col, "gap") &&
                     (current_col < length - 3) &&
@@ -537,8 +535,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 break;
 
                 /*------
-                *  COMPLEMENT
-                *------*/
+                 *  COMPLEMENT
+                 *------*/
             case 'c':
                 current_token.choice = ETokenType::eCompl;
                 if (! NStr::StartsWith(line.c_str() + current_col, "complement")) {
@@ -551,8 +549,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 break;
 
                 /*-------
-                * internal bases ignored
-                *---------*/
+                 * internal bases ignored
+                 *---------*/
             case 'b':
                 if (! NStr::StartsWith(line.c_str() + current_col, "bases")) {
                     current_token.choice = ETokenType::eAccession;
@@ -564,8 +562,8 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 break;
 
                 /*------
-                *  ()^.,<>  (bases (sites
-                *------*/
+                 *  ()^.,<>  (bases (sites
+                 *------*/
             case '(':
                 if (NStr::StartsWith(line.c_str() + current_col, "(base")) {
                     current_token.choice = ETokenType::eJoin;
@@ -723,13 +721,13 @@ static void xgbparse_better_be_done(int& numErrors, TTokenIt current_token, cons
 
 
 /**********************************************************
-*
-*   CRef<CSeq_loc> XGapToSeqLocEx(range, unknown):
-*
-*      Gets the size of gap and constructs SeqLoc block with
-*   $(seqlitdbtag) value as Dbtag.db and Dbtag.tag.id = 0.
-*
-**********************************************************/
+ *
+ *   CRef<CSeq_loc> XGapToSeqLocEx(range, unknown):
+ *
+ *      Gets the size of gap and constructs SeqLoc block with
+ *   $(seqlitdbtag) value as Dbtag.db and Dbtag.tag.id = 0.
+ *
+ **********************************************************/
 static CRef<CSeq_loc> XGapToSeqLocEx(Int4 range, bool unknown)
 {
     CRef<CSeq_loc> ret;
@@ -893,10 +891,10 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
     if (num_found != 1) {
         keep_rawPt = true;
         /****************
-        *
-        *  10..one-of(13,15) type syntax here
-        *
-        ***************/
+         *
+         *  10..one-of(13,15) type syntax here
+         *
+         ***************/
         if (currentPt->choice == ETokenType::eOneOf || currentPt->choice == ETokenType::eOneOfNum) {
             bool one_of_ok     = true;
             bool at_end_one_of = false;
@@ -1057,7 +1055,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                 ret->SetInt().ResetFuzz_from();
 
             xgbcheck_range(ret->GetInt().GetFrom(), *new_id, keep_rawPt, numErrors, tokens, currentPt);
-            
+
             if (numErrors) {
                 return CRef<CSeq_loc>();
             }
@@ -1111,13 +1109,13 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                     ++currentPt;
                     if (currentPt == end_it) {
                         xgbparse_error("unexpected end of usable tokens",
-                                        tokens,
-                                        currentPt);
+                                       tokens,
+                                       currentPt);
                         keep_rawPt = true;
                         ++numErrors;
                         return CRef<CSeq_loc>();
                     }
-                        /*--no break on purpose here ---*/
+                    /*--no break on purpose here ---*/
                 case ETokenType::eNumber:
                 case ETokenType::eLeft:
 
@@ -1141,9 +1139,9 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                     xgbcheck_range(ret->GetInt().GetTo(), *new_id, keep_rawPt, numErrors, tokens, currentPt);
 
                     /*----------
-                    *  The caret location implies a place (point) between two location.
-                    *  This is not exactly captured by the ASN.1, but pretty close
-                    *-------*/
+                     *  The caret location implies a place (point) between two location.
+                     *  This is not exactly captured by the ASN.1, but pretty close
+                     *-------*/
                     if (in_caret) {
                         TSeqPos to = ret->GetInt().GetTo();
 
@@ -1167,7 +1165,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                 } /* end switch */
             } else {
                 sConvertIntToPoint(*ret);
-            } 
+            }
             break;
         default:
             xgbparse_error("No number when expected",
@@ -1183,7 +1181,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
 }
 
 
-class CGBLocException : exception 
+class CGBLocException : exception
 {
 };
 
@@ -1326,8 +1324,8 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
         if (!numErrors && !did_complement && retval && 
             !retval->IsNull() && !retval->IsInt() && ! retval->IsPnt()) {
             /*--------
-            * ONLY THE CHOICE has been set. the "join", etc. only has been noted
-            *----*/
+             * ONLY THE CHOICE has been set. the "join", etc. only has been noted
+             *----*/
             ++currentPt;
             if (currentPt == end_it) {
                 xgbparse_error("unexpected end of interval tokens",
@@ -1514,7 +1512,7 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, int&
                 xgbparse_error("string in loc", tokens, current_token);
                 keep_rawPt = true;
                 ++numErrors;
-                    /*  no break on purpose */
+                /*  no break on purpose */
             case ETokenType::eUnknown:
             default:
             case ETokenType::eRight:

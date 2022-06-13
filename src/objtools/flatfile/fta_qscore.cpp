@@ -444,36 +444,36 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc, char* def_ver, ch
 }
 
 /*****************************************************************************
-*
-*  Function:	QSbuf_ParseScores
-*
-*  Description:	Parse a line of data from a Quality Score buffer that supposedly
-*	        contains a series of integer scores separated by whitespace.
-*		Populate an array of Uint1 with their values. This is a destructive
-*		parse in the sense that \0 are inserted into score_buf between the
-*		integer tokens.
-*
-*  Arguments:	score_buf: buffer containing integer-value Quality Scores; must be
-*		  null-terminated
-*		scores: array of Uint1 to hold the scores parsed from score_buf
-*		  (pointer to first element of a Uint1 array alloc'd by the caller)
-*		max_toks: maximum number of score tokens that are expected in score_buf
-*		  should equal or exceed the number of elements in the scores array
-*		max_score: maximum score value encountered in score_buf (actually,
-*		  the max that is encountered from multiple calls to QSbuf_ParseScores).
-*		  caller should initialize to 0
-*		min_score: minimum score value encountered in score_buf (actually,
-*		  the min that is encountered from multiple calls to QSbuf_ParseScores).
-*		  caller should initialize to 255
-*		allow_na: when set to true, allow values of 'NA' in score_buf in
-*		  addition to integers, and interpret them as scores of zero
-*
-*  Returns:	the number of scores that were written to the scores array;
-*		zero is returned for empty score_buf, or a score_buf that
-*		contains no scores; a negative value indicates that there was a
-*		problem parsing the data in score_buf
-*
-*****************************************************************************/
+ *
+ *  Function:	QSbuf_ParseScores
+ *
+ *  Description:	Parse a line of data from a Quality Score buffer that supposedly
+ *	        contains a series of integer scores separated by whitespace.
+ *		Populate an array of Uint1 with their values. This is a destructive
+ *		parse in the sense that \0 are inserted into score_buf between the
+ *		integer tokens.
+ *
+ *  Arguments:	score_buf: buffer containing integer-value Quality Scores; must be
+ *		  null-terminated
+ *		scores: array of Uint1 to hold the scores parsed from score_buf
+ *		  (pointer to first element of a Uint1 array alloc'd by the caller)
+ *		max_toks: maximum number of score tokens that are expected in score_buf
+ *		  should equal or exceed the number of elements in the scores array
+ *		max_score: maximum score value encountered in score_buf (actually,
+ *		  the max that is encountered from multiple calls to QSbuf_ParseScores).
+ *		  caller should initialize to 0
+ *		min_score: minimum score value encountered in score_buf (actually,
+ *		  the min that is encountered from multiple calls to QSbuf_ParseScores).
+ *		  caller should initialize to 255
+ *		allow_na: when set to true, allow values of 'NA' in score_buf in
+ *		  addition to integers, and interpret them as scores of zero
+ *
+ *  Returns:	the number of scores that were written to the scores array;
+ *		zero is returned for empty score_buf, or a score_buf that
+ *		contains no scores; a negative value indicates that there was a
+ *		problem parsing the data in score_buf
+ *
+ *****************************************************************************/
 static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores, Int4 max_toks, unsigned char* max_score, unsigned char* min_score, bool allow_na)
 {
     Char  ch;
@@ -503,7 +503,6 @@ static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores, Int4 max_t
      of zero for the score values that fall in the gaps between contigs.
      So use function IS_DIGIT_OR_NA() rather than IS_DIGIT(), then check
      the returned token to see if it is "NA". If so, treat it as zero.
-     
   */
 
     p  = score_buf;
@@ -1046,8 +1045,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
         }
     }
 
-    /* if a problem has been encountered, free the SeqGraph and return NULL
-    */
+    /* if a problem has been encountered, free the SeqGraph and return NULL */
     if (problem) {
         MemFree(my_buf);
         MemFree(def_title);
@@ -1068,11 +1066,9 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
      * score buffer applies
      */
 
-    /* no scaling of values
-     */
+    /* no scaling of values */
 
-    /* Seq-graph type is "byte"
-     */
+    /* Seq-graph type is "byte" */
     graph->SetGraph().SetByte().SetValues().swap(scores_str);
 
     /* Establish the byte-graph values
