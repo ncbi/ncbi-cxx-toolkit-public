@@ -817,7 +817,7 @@ static void fix_synonyms(CTaxon1& taxon, COrg_ref& org_ref)
 }
 
 /**********************************************************/
-static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, Int4 taxid, bool isoh)
+static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, TTaxId taxid, bool isoh)
 {
     CConstRef<CTaxon2_data> taxdata;
 
@@ -826,7 +826,7 @@ static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, Int
     bool connection_failed = false;
     for (size_t i = 0; i < 3 && taxdata.Empty(); ++i) {
         if (taxon.Init(&s_timeout)) {
-            taxdata = taxon.GetById(TAX_ID_FROM(Int4, taxid));
+            taxdata = taxon.GetById(taxid);
         } else {
             connection_failed = true;
             break;
@@ -836,16 +836,16 @@ static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, Int
     CRef<COrg_ref> ret;
     if (taxdata.Empty()) {
         if (connection_failed) {
-            ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, apparently because the server is down. Cannot generate ASN.1 for this entry.", taxid);
+            ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, apparently because the server is down. Cannot generate ASN.1 for this entry.", TAX_ID_TO(int, taxid));
             *drop = 1;
         } else {
-            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxname not found: [taxid %d].", taxid);
+            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxname not found: [taxid %d].", TAX_ID_TO(int, taxid));
         }
         return ret;
     }
 
     if (taxdata->GetIs_species_level() != 1 && ! isoh) {
-        ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel, "Taxarch hit is not on species level: [taxid %d].", taxid);
+        ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel, "Taxarch hit is not on species level: [taxid %d].", TAX_ID_TO(int, taxid));
     }
 
     ret.Reset(new COrg_ref);
@@ -859,25 +859,25 @@ static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, Int
 }
 
 /**********************************************************/
-CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop, bool isoh)
+CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, unsigned char* drop, bool isoh)
 {
     CRef<COrg_ref> ret;
 
-    if (taxid < 1 && pp->taxserver == 0)
+    if (taxid <= ZERO_TAX_ID && pp->taxserver == 0)
         return ret;
 
     if (pp->taxserver == 2)
         pp->taxserver = fta_init_tax_server();
 
     if (pp->taxserver == 2) {
-        ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, because the server is down. Cannot generate ASN.1 for this entry.", taxid);
+        ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, because the server is down. Cannot generate ASN.1 for this entry.", TAX_ID_TO(int, taxid));
         *drop = 1;
         return ret;
     }
 
     ret = fta_get_orgref_byid(pp, drop, taxid, isoh);
     if (ret.NotEmpty()) {
-        ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound, "Taxname _was_ found for taxid %d", taxid);
+        ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound, "Taxname _was_ found for taxid %d", TAX_ID_TO(int, taxid));
     }
 
     return ret;
@@ -916,7 +916,7 @@ static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_re
             *drop = 1;
         } else if (taxon.GetTaxIdByOrgRef(org_ref) < ZERO_TAX_ID) {
             if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
-                ibp->is_pat && ibp->taxid > 0 && ! ibp->organism.empty()) {
+                ibp->is_pat && ibp->taxid > ZERO_TAX_ID && ! ibp->organism.empty()) {
                 ret = fta_fix_orgref_byid(pp, ibp->taxid, &ibp->drop, true);
                 if (ret.NotEmpty() && ret->IsSetTaxname() &&
                     ret->GetTaxname() == ibp->organism) {

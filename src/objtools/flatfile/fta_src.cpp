@@ -602,8 +602,8 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
                     continue;
                 *q = '\0';
                 if (NStr::CompareNocase(val_ptr, "taxon") == 0)
-                    if (ibp->taxid < 1)
-                        ibp->taxid = atoi(q + 1);
+                    if (ibp->taxid <= ZERO_TAX_ID)
+                        ibp->taxid = TAX_ID_FROM(int, atoi(q + 1));
                 *q = ':';
                 continue;
             }

@@ -236,8 +236,8 @@ struct Indexblk {
                                                    feature has /environmental_sample
                                                    qualifier */
     bool         is_prot         = false;
-    string       organism;              /* The value of /organism qualifier */
-    Int4         taxid         = 0;     /* The value gotten from source feature
+    string       organism;                    /* The value of /organism qualifier */
+    TTaxId       taxid         = ZERO_TAX_ID; /* The value gotten from source feature
                                                 /db_xref qualifier if any */
     bool         no_gc_warning = false; /* If TRUE then suppress
                                                    ERR_SERVER_GcFromSuppliedLineage
