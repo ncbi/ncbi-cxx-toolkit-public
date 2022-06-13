@@ -1464,6 +1464,8 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            " masked in the lookup table",
                            CArgDescriptions::eInteger,
                            NStr::IntToString(MAX_DB_WORD_COUNT_MAPPER));
+    arg_desc.SetConstraint(kArgMaxDbWordCount,
+                           new CArgAllowValuesBetween(2, 255, true));
     arg_desc.AddDefaultKey(kArgLookupStride, "num", "Number of words to skip "
 			    "after collecting one while creating a lookup table",
                  CArgDescriptions::eInteger, "0");
