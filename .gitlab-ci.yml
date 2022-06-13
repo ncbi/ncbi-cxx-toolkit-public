@@ -4,7 +4,6 @@ image:
 
 stages:
  - build
- - push-build
 
 build:
  stage: build
@@ -21,6 +20,3 @@ build:
    - distcc.log
   expire_in: never
 
-push-build:
-  stage: build
-  trigger: pd/cxxtk/cxx/ncbi-cxx-toolkit-core-conan
