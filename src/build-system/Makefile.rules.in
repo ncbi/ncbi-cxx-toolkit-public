@@ -81,6 +81,18 @@ ifneq "" "$(filter-out 0 N% n% F% f% OFF Off off, $(USE_FULL_PATHS))"
   HERE = $(CURDIR)/
 endif
 
+STD_SRC = $(filter-out $(OVERRIDDEN_SRC),$(SRC) $(UNIX_SRC))
+CPP_OBJ_HERE := $(patsubst $(HERE)%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.cpp)))
+CC_OBJ_HERE := $(patsubst $(HERE)%.cc,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.cc)))
+C_OBJ_HERE := $(patsubst $(HERE)%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.c)))
+ifneq "$(srcdir)" "."
+  CPP_OBJ_THERE := $(patsubst $(srcdir)/%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.cpp)))
+  CC_OBJ_THERE := $(patsubst $(srcdir)/%.cc,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.cc)))
+  C_OBJ_THERE := $(patsubst $(srcdir)/%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.c)))
+endif
+CXX_OBJ = $(CPP_OBJ_HERE) $(CPP_OBJ_THERE) $(CC_OBJ_HERE) $(CC_OBJ_THERE)
+C_OBJ   = $(C_OBJ_HERE) $(C_OBJ_THERE)
+
 ifeq "" "$(OBJ_DIRS)"
   %@obj_ext@: $(HERE)%.cpp $(config_status)
 	$(make_cpp)
@@ -104,15 +116,6 @@ else
   list-dirs:
 	@-echo $(OBJ_DIRS:%/.exists=%) > .$(TMPL).dirs
 
-  STD_SRC = $(filter-out $(OVERRIDDEN_SRC),$(SRC) $(UNIX_SRC))
-  CPP_OBJ_HERE = $(patsubst $(HERE)%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.cpp)))
-  CC_OBJ_HERE = $(patsubst $(HERE)%.cc,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.cc)))
-  C_OBJ_HERE = $(patsubst $(HERE)%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(HERE)%.c)))
-  ifneq "$(srcdir)" "."
-    CPP_OBJ_THERE = $(patsubst $(srcdir)/%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.cpp)))
-    CC_OBJ_THERE = $(patsubst $(srcdir)/%.cc,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.cc)))
-    C_OBJ_THERE = $(patsubst $(srcdir)/%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.c)))
-  endif
   $(CPP_OBJ_HERE): %@obj_ext@: $(HERE)%.cpp $(config_status)
 	$(make_cpp)
   $(CPP_OBJ_THERE): %@obj_ext@: $(srcdir)/%.cpp $(config_status) $(OBJ_DIRS)
@@ -125,6 +128,46 @@ else
 	$(make_c)
   $(C_OBJ_THERE): %@obj_ext@: $(srcdir)/%.c $(config_status) $(OBJ_DIRS)
 	$(make_c)
+
+endif
+
+empty :=
+space := $(empty) $(empty)
+
+ifneq "" "$(CXX_OBJ)"
+  prev_make_cpp_stamp   := $(wildcard make_cpp-$(TMPL).$(PROJ_TYPE)-*)
+  make_cpp_stamp_status := $(shell ls -t $(prev_make_cpp_stamp) $(builddir)/Makefile.mk)
+  ifeq "$(prev_make_cpp_stamp)" "$(firstword $(make_cpp_stamp_status))"
+    make_cpp_stamp = $(prev_make_cpp_stamp)
+  else
+    make_cpp_ = $(make_cpp:-DNCBI_BUILD_SESSION_ID%=)
+    make_cpp_stamp_ := make_cpp-$(TMPL).$(PROJ_TYPE)-$(shell echo '$(make_cpp_)' | cksum)
+    make_cpp_stamp := $(subst $(space),-,$(make_cpp_stamp_))
+    ifneq "$(make_cpp_stamp)" "$(prev_make_cpp_stamp)"
+      $(make_cpp_stamp):
+	@-$(RM) make_cpp-$(TMPL).$(PROJ_TYPE)-*
+	@$(TOUCH) $@
+    endif
+  endif
+  $(CXX_OBJ): $(make_cpp_stamp)
+endif
+
+ifneq "" "$(C_OBJ)"
+  prev_make_c_stamp   := $(wildcard make_c-$(TMPL).$(PROJ_TYPE)-*)
+  make_c_stamp_status := $(shell ls -t $(prev_make_c_stamp) $(builddir)/Makefile.mk)
+  ifeq "$(prev_make_c_stamp)" "$(firstword $(make_c_stamp_status))"
+    make_c_stamp = $(prev_make_c_stamp)
+  else
+    make_c_ = $(make_c:-DNCBI_BUILD_SESSION_ID%=)
+    make_c_stamp_ := make_c-$(TMPL).$(PROJ_TYPE)-$(shell echo '$(make_c_)' | cksum)
+    make_c_stamp := $(subst $(space),-,$(make_c_stamp_))
+    ifneq "$(make_cpp_stamp)" "$(prev_make_cpp_stamp)"
+      $(make_c_stamp):
+	@-$(RM) make_c-$(TMPL).$(PROJ_TYPE)-*
+	@$(TOUCH) $@
+    endif
+  endif
+  $(C_OBJ): $(make_c_stamp)
 endif
 
 ifneq "" "$(NCBI_BUILD_SESSION_ID)"
@@ -153,6 +196,7 @@ clean-common:
 	-$(RMDIR) ti_files
 	-$(RM) .make.state
 	-$(RM) $(SOURCES:=.d) $(SOURCES:=.gcda) $(SOURCES:=.gcno)
+	-$(RM) $(make_c_stamp) $(make_cpp_stamp)
 	-$(RM) ir.out
 ifeq "$(APP)" ""
 	-$(RM) $(status_dir)/.$(LIB).disabled
