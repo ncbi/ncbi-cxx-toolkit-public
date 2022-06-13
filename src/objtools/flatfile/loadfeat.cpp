@@ -25,7 +25,7 @@
  *
  * File Name: loadfeat.cpp
  *
- * Author: Karl Sirotkin, Hsiu-Chuan Chen 
+ * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
  *      Parse features block to subblock.
@@ -661,7 +661,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
 
         if (use_indx >= pp->indx) {
             // entry is not present in this file use remote fetch function
-            //use_indx = pp->curindx;
+            // use_indx = pp->curindx;
             //
             size_t len = (! pp->ffdb) ? -1 : CheckOutsideEntry(pp, text_id_acc.c_str(), text_id_ver);
             if (len != static_cast<size_t>(-1))
@@ -983,11 +983,11 @@ static char* CheckLocStr(const Char* str)
 }
 
 /*****************************************************************************
-*
-*   bool SeqIntCheckCpp(loc) is instead of C-toolkit 'bool SeqIntCheck(sip)'
-*       checks that a seq interval is valid
-*
-*****************************************************************************/
+ *
+ *   bool SeqIntCheckCpp(loc) is instead of C-toolkit 'bool SeqIntCheck(sip)'
+ *       checks that a seq interval is valid
+ *
+ *****************************************************************************/
 static bool SeqIntCheckCpp(const CSeq_loc& loc)
 {
     Uint4 len = numeric_limits<unsigned int>::max();
@@ -1000,11 +1000,11 @@ static bool SeqIntCheckCpp(const CSeq_loc& loc)
 }
 
 /*****************************************************************************
-*
-*   bool SeqPntCheckCpp(loc) is instead of C-toolkit 'Boolean SeqPntCheck(SeqPntPtr spp)'
-*       checks that a seq point is valid
-*
-*****************************************************************************/
+ *
+ *   bool SeqPntCheckCpp(loc) is instead of C-toolkit 'Boolean SeqPntCheck(SeqPntPtr spp)'
+ *       checks that a seq point is valid
+ *
+ *****************************************************************************/
 static bool SeqPntCheckCpp(const CSeq_loc& loc)
 {
     Uint4 len = numeric_limits<unsigned int>::max();
@@ -1017,10 +1017,10 @@ static bool SeqPntCheckCpp(const CSeq_loc& loc)
 }
 
 /*****************************************************************************
-*
-*   bool PackSeqPntCheck(loc) is instead of C-toolkit 'Boolean PackSeqPntCheck (pspp)'
-*
-*****************************************************************************/
+ *
+ *   bool PackSeqPntCheck(loc) is instead of C-toolkit 'Boolean PackSeqPntCheck (pspp)'
+ *
+ *****************************************************************************/
 static bool PackSeqPntCheckCpp(const CSeq_loc& loc)
 {
     Uint4 len = numeric_limits<unsigned int>::max();
@@ -1907,7 +1907,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
 
     if (type != CRNA_ref::eType_premsg && type != CRNA_ref::eType_tRNA) /* mRNA, snRNA, scRNA or other */
     {
-        qval = GetTheQualValue(feat.SetQual(), "product"); //may return newly allocated memory!!!
+        qval = GetTheQualValue(feat.SetQual(), "product"); // may return newly allocated memory!!!
         if (qval != NULL) {
             p = GetTheQualValue(feat.SetQual(), "product");
             if (p != NULL && p[0] != 0) {
@@ -3827,7 +3827,7 @@ static void ParseQualifiers(
 {
     string bstr(bptr, eptr);
     NStr::TruncateSpacesInPlace(bstr);
-    //cerr << "bstr:\n" << bstr.c_str() << "\n\n";
+    // cerr << "bstr:\n" << bstr.c_str() << "\n\n";
     vector<string> qualLines;
     xSplitLines(bstr, qualLines);
 
@@ -3837,8 +3837,8 @@ static void ParseQualifiers(
     CQualParser qualParser(format, featKey, featLocation, qualLines);
     while (! qualParser.Done()) {
         if (qualParser.GetNextQualifier(qualKey, qualVal)) {
-            //cerr << "Key:   " << qualKey.c_str() << "\n";
-            //cerr << "Val:   " << qualVal.c_str() << "\n";
+            // cerr << "Key:   " << qualKey.c_str() << "\n";
+            // cerr << "Val:   " << qualVal.c_str() << "\n";
             CRef<CGb_qual> pQual(new CGb_qual);
             pQual->SetQual(qualKey);
             pQual->SetVal(qualVal);
@@ -4216,9 +4216,9 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
         CSeqFeatData::ESubtype subtype = CSeqFeatData::SubtypeNameToValue(fbp->key);
 
         /* bsv hack: exclude CONFLICT, REGION, SITE, UNSURE UniProt flatfile
- *           features from valid GenBank ones: for USPTO only
- * Needs better workaround
- */
+         *           features from valid GenBank ones: for USPTO only
+         * Needs better workaround
+         */
         if (source == Parser::ESource::USPTO &&
             (subtype == CSeqFeatData::eSubtype_conflict ||
              subtype == CSeqFeatData::eSubtype_region ||

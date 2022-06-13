@@ -1,10 +1,10 @@
 /***************************************************************************
-*   gbfeat.c:
-*   -- all routines for checking genbank feature table
-*   -- all extern variables are in gbftglob.c
-*                                                                  10-11-93
-*
-****************************************************************************/
+ *   gbfeat.c:
+ *   -- all routines for checking genbank feature table
+ *   -- all extern variables are in gbftglob.c
+ *                                                                  10-11-93
+ *
+ ****************************************************************************/
 
 #include <ncbi_pch.hpp>
 
@@ -104,11 +104,11 @@ const Char* GBQual_names_split_ignore[ParFlat_SPLIT_IGNORE] = {
 
 /*------------------------- GBQualSplit() ------------------------*/
 /****************************************************************************
-*  GBQualSplit:
-*  -- return index of the GBQual_names_split_ignore array if it is a valid
-*     qualifier (ignore case), qual; otherwise return (-1) 
-*                                                                   10-12-93
-*****************************************************************************/
+ *  GBQualSplit:
+ *  -- return index of the GBQual_names_split_ignore array if it is a valid
+ *     qualifier (ignore case), qual; otherwise return (-1)
+ *                                                                   10-12-93
+ *****************************************************************************/
 static Int2 GBQualSplit(const Char* qual)
 {
     Int2 i;
@@ -124,12 +124,12 @@ static Int2 GBQualSplit(const Char* qual)
 
 /*--------------------------- GBFeatKeyQualValid() -----------------------*/
 /***************************************************************************
-*  GBFeatKeyQualValid:
-*  -- returns error severity level.
-*    error dealt with here.  Messages output if parameter 'error_msgs' set,
-*    repair done if 'perform_corrections' set 
-*                                                                   10-11-93
-*****************************************************************************/
+ *  GBFeatKeyQualValid:
+ *  -- returns error severity level.
+ *    error dealt with here.  Messages output if parameter 'error_msgs' set,
+ *    repair done if 'perform_corrections' set
+ *                                                                   10-11-93
+ *****************************************************************************/
 int XGBFeatKeyQualValid(objects::CSeqFeatData::ESubtype subtype, TQualVector& quals, bool error_msgs, bool perform_corrections)
 {
     bool fqual  = false;
@@ -217,10 +217,10 @@ int XGBFeatKeyQualValid(objects::CSeqFeatData::ESubtype subtype, TQualVector& qu
 
 /*-------------------------- SplitMultiValQual() ------------------------*/
 /***************************************************************************
-*  SplitMultiValQual:
-*
-*     
-****************************************************************************/
+ *  SplitMultiValQual:
+ *
+ *
+ ****************************************************************************/
 static int SplitMultiValQual(TQualVector& quals)
 {
     Int2 val /*, len -- UNUSED */;
@@ -471,14 +471,14 @@ const Char* ParFlat_RptString[] = {
 
 /*-------------------------- GBQualSemanticValid() ------------------------*/
 /***************************************************************************
-*  GBQualSemanticValid:
-*  -- returns GB_ERR level, outputs error messages if
-*      'error_msgs', set
-*
-*  -- routine also drop out any unknown qualifier, if
-*      'perform_corrections' is set  10-11-93
-*     
-****************************************************************************/
+ *  GBQualSemanticValid:
+ *  -- returns GB_ERR level, outputs error messages if
+ *      'error_msgs', set
+ *
+ *  -- routine also drop out any unknown qualifier, if
+ *      'perform_corrections' is set  10-11-93
+ *
+ ****************************************************************************/
 static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform_corrections)
 {
     int retval = GB_FEAT_ERR_NONE,
@@ -629,12 +629,12 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
 
 /*------------------------------ CkQualPosSeqaa() -------------------------*/
 /***************************************************************************
-*  CkQualPosSeqaa:  (called by CkQaulPosaa and ChQualSeqaa)
-*  
-*  -- format       (...aa:amino_acid)
-*  -- example     aa:Phe)
-*                                          -Karl 1/28/94
-****************************************************************************/
+ *  CkQualPosSeqaa:  (called by CkQaulPosaa and ChQualSeqaa)
+ *
+ *  -- format       (...aa:amino_acid)
+ *  -- example     aa:Phe)
+ *                                          -Karl 1/28/94
+ ****************************************************************************/
 
 static int CkQualPosSeqaa(objects::CGb_qual& cur, bool error_msgs, std::string& aa, const Char* eptr)
 {
@@ -677,13 +677,13 @@ static int CkQualPosSeqaa(objects::CGb_qual& cur, bool error_msgs, std::string& 
 
 /*------------------------------ CkQualPosaa() -------------------------*/
 /***************************************************************************
-*  CkQualPosaa:
-*  
-*  -- format       (pos:base_range, aa:amino_acid)
-*  -- example      /anticodon=(pos:34..36,aa:Phe)
-*                  /anticodon=(pos: 34..36, aa: Phe)
-*                                                                 10-12-93
-****************************************************************************/
+ *  CkQualPosaa:
+ *
+ *  -- format       (pos:base_range, aa:amino_acid)
+ *  -- example      /anticodon=(pos:34..36,aa:Phe)
+ *                  /anticodon=(pos: 34..36, aa: Phe)
+ *                                                                 10-12-93
+ ****************************************************************************/
 static int CkQualPosaa(objects::CGb_qual& cur, bool error_msgs)
 {
     const Char* eptr;
@@ -748,14 +748,14 @@ static int CkQualPosaa(objects::CGb_qual& cur, bool error_msgs)
 *  CkQualNote:
 *  -- example: testfile  gbp63.seq gbp88.seq, gbp76.seq
 *     /bound_moiety="repressor"
-*     /note="Dinucleotide repeat, polymorphic among these rat 
-      strains:LOU/N>F344/N=BUF/N=MNR/N=WBB1/N=WBB2/N=MR/N=LER/N=ACI/N=SR/Jr= 
+*     /note="Dinucleotide repeat, polymorphic among these rat
+      strains:LOU/N>F344/N=BUF/N=MNR/N=WBB1/N=WBB2/N=MR/N=LER/N=ACI/N=SR/Jr=
       SHR/N=WKY/N>BN/SsN=LEW/N (the size of the allelesindicated)."
 *     /note="guanine nucleotide-binding protein /hgml-locus_uid='LJ0088P'"
-*     /note=" /map='6p21.3' /hgml_locus_uid='LU0011B'" 
+*     /note=" /map='6p21.3' /hgml_locus_uid='LU0011B'"
 *
 *  -- embedded qualifer
-*     -- convert all double quotes to single qutoes 
+*     -- convert all double quotes to single qutoes
 *        (this is unnecessary for the flat2asn parser program, because
 *        it only grep first close double quote when "ParseQualifiers" routine
 *        build GBQualPtr link list, but it would have post out message if
@@ -786,12 +786,12 @@ static int CkQualNote(objects::CGb_qual& cur, bool error_msgs, bool perform_corr
 
 /*----------------------- ScanEmbedQual() -----------------------------*/
 /****************************************************************************
-*  ScanEmbedQual:
-*  -- retun NULL if no embedded qualifiers found; otherwise, return the
-*     embedded qualifier.
-*  -- scan embedded valid qualifier
-*                                                                  6-29-93
-*****************************************************************************/
+ *  ScanEmbedQual:
+ *  -- retun NULL if no embedded qualifiers found; otherwise, return the
+ *     embedded qualifier.
+ *  -- scan embedded valid qualifier
+ *                                                                  6-29-93
+ *****************************************************************************/
 static bool ScanEmbedQual(const Char* value)
 {
     const Char* bptr;
@@ -819,13 +819,13 @@ static bool ScanEmbedQual(const Char* value)
 
 /*------------------------------ CkQualText() -------------------------*/
 /***************************************************************************
-*  CkQualText:
-*  -- return error severity
-*  -- also check if embedded qualifier
-*  -- format      "text"
-*  if called from /note, ="" will cause qualifier to be dropped.
-*  all others no error, all other, if no qualifier, will add "" value                                                        
-****************************************************************************/
+ *  CkQualText:
+ *  -- return error severity
+ *  -- also check if embedded qualifier
+ *  -- format      "text"
+ *  if called from /note, ="" will cause qualifier to be dropped.
+ *  all others no error, all other, if no qualifier, will add "" value
+ ****************************************************************************/
 static int CkQualText(objects::CGb_qual& cur,
                       bool*              has_embedded,
                       bool               from_note,
@@ -896,12 +896,12 @@ static int CkQualText(objects::CGb_qual& cur,
 
 /*------------------------- CkQualSeqaa() --------------------------*/
 /***************************************************************************
-*  CkQualSeqaa:
-*  -- format       (seq:"codon-sequence", aa:amino_acid)
-*  -- example      /codon=(seq:"ttt",aa:Leu)
-*                  /codon=(seq: "ttt", aa: Leu )
-*                                                                  6-29-93
-***************************************************************************/
+ *  CkQualSeqaa:
+ *  -- format       (seq:"codon-sequence", aa:amino_acid)
+ *  -- example      /codon=(seq:"ttt",aa:Leu)
+ *                  /codon=(seq: "ttt", aa: Leu )
+ *                                                                  6-29-93
+ ***************************************************************************/
 static int CkQualSeqaa(objects::CGb_qual& cur, bool error_msgs)
 {
     int retval = GB_FEAT_ERR_NONE;
@@ -961,9 +961,9 @@ static int CkQualSeqaa(objects::CGb_qual& cur, bool error_msgs)
 
 /*------------------------- () -------------------------*/
 /*****************************************************************************
-*  CkQualMatchToken:
-*                                                                6-29-93
-*****************************************************************************/
+ *  CkQualMatchToken:
+ *                                                                6-29-93
+ *****************************************************************************/
 static int CkQualMatchToken(objects::CGb_qual& cur, bool error_msgs, const Char* array_string[], Int2 totalstr)
 {
     const Char* bptr;
@@ -1016,11 +1016,11 @@ static int CkQualMatchToken(objects::CGb_qual& cur, bool error_msgs, const Char*
 
 /*------------------------- CkQualEcnum() ---------------------------*/
 /***************************************************************************
-*   CkQualEcnum:
-*   -- Ec_num has text format,
-*      but the text only allow digits, period, and hyphen (-)
-*                                                                12-10-93
-****************************************************************************/
+ *   CkQualEcnum:
+ *   -- Ec_num has text format,
+ *      but the text only allow digits, period, and hyphen (-)
+ *                                                                12-10-93
+ ****************************************************************************/
 static int CkQualEcnum(objects::CGb_qual& cur, bool error_msgs, bool perform_corrections)
 {
     const Char* str;
@@ -1051,11 +1051,11 @@ static int CkQualEcnum(objects::CGb_qual& cur, bool error_msgs, bool perform_cor
 
 /*------------------------- CkQualSite() --------------------------*/
 /***************************************************************************
-*  CkQualSite:
-*  -- format       (5'site:bool, 3'site:bool)
-*  -- example      /cons_splice=(5'site:YES, 3'site:NO)
-*                                                                  6-29-93
-***************************************************************************/
+ *  CkQualSite:
+ *  -- format       (5'site:bool, 3'site:bool)
+ *  -- example      /cons_splice=(5'site:YES, 3'site:NO)
+ *                                                                  6-29-93
+ ***************************************************************************/
 static int CkQualSite(objects::CGb_qual& cur, bool error_msgs)
 {
     int         retval = GB_FEAT_ERR_NONE;
@@ -1139,20 +1139,20 @@ static int CkQualSite(objects::CGb_qual& cur, bool error_msgs)
 
 /*------------------------- CkQualTokenType() --------------------------*/
 /***************************************************************************
-*  CkQualTokenType:
-*  -- format   single token
-*  -- example  ParFlat_Stoken_type        /label=Albl_exonl  /mod_base=m5c
-*              ParFlat_BracketInt_type    /citation=[3] or /citation= ([1],[3])
-*              ParFlat_Integer_type           /transl_table=4
-*				ParFlat_Number_type			/number=4b
-*  -- not implemented yet, treat as ParFlat_Stoken_type:
-*     -- feature_label or base_range              
-*                 /rpt_unit=Alu_rpt1   /rpt_unit=202..245
-*     -- Accession-number:feature-name or
-*                            Database_name:Acc_number:feature_label
-*        /usedin=X10087:proteinx
-*                                                                 10-12-93
-***************************************************************************/
+ *  CkQualTokenType:
+ *  -- format   single token
+ *  -- example  ParFlat_Stoken_type        /label=Albl_exonl  /mod_base=m5c
+ *              ParFlat_BracketInt_type    /citation=[3] or /citation= ([1],[3])
+ *              ParFlat_Integer_type           /transl_table=4
+ *              ParFlat_Number_type        /number=4b
+ *  -- not implemented yet, treat as ParFlat_Stoken_type:
+ *     -- feature_label or base_range
+ *                 /rpt_unit=Alu_rpt1   /rpt_unit=202..245
+ *     -- Accession-number:feature-name or
+ *                            Database_name:Acc_number:feature_label
+ *        /usedin=X10087:proteinx
+ *                                                                 10-12-93
+ ***************************************************************************/
 static int CkQualTokenType(objects::CGb_qual& cur, bool error_msgs, Uint1 type)
 {
     const Char* bptr;
@@ -1246,12 +1246,12 @@ static int CkQualTokenType(objects::CGb_qual& cur, bool error_msgs, Uint1 type)
 
 /*------------------------ CkBracketType() --------------------*/
 /*****************************************************************************
-*   CkBracketType:
-*	checks /citation=([1],[3])
-*     May be we should check for only single value here like
-*	/citation=[digit]
-*                                                          -Tatiana 1/28/95
-******************************************************************************/
+ *   CkBracketType:
+ *      checks /citation=([1],[3])
+ *     May be we should check for only single value here like
+ *      /citation=[digit]
+ *                                                          -Tatiana 1/28/95
+ ******************************************************************************/
 static const Char* CkBracketType(const Char* str)
 {
     if (str == NULL)
@@ -1280,11 +1280,11 @@ static const Char* CkBracketType(const Char* str)
 
 /*------------------------ CkNumberType() --------------------*/
 /*****************************************************************************
-*   CkNumberType:
-*	checks /number=single_token  - numbers and letters
-*	/number=4 or /number=6b
-*                                                          -Tatiana 2/1/00
-******************************************************************************/
+ *   CkNumberType:
+ *      checks /number=single_token  - numbers and letters
+ *      /number=4 or /number=6b
+ *                                                          -Tatiana 2/1/00
+ ******************************************************************************/
 static const Char* CkNumberType(const Char* str)
 {
     for (; *str != '\0' && ! isalnum(*str); str++)
@@ -1297,10 +1297,10 @@ static const Char* CkNumberType(const Char* str)
 
 /*------------------------ CkLabelType() --------------------*/
 /*****************************************************************************
-*   CkLabelType:
-*	checks /label=,feature_label> or /label=<base_range>
-*                                                          -Tatiana 1/28/95
-******************************************************************************/
+ *   CkLabelType:
+ *      checks /label=,feature_label> or /label=<base_range>
+ *                                                          -Tatiana 1/28/95
+ ******************************************************************************/
 static const Char* CkLabelType(const Char* str)
 {
     bool        range = true, label = true;
