@@ -719,7 +719,13 @@ void CValidError_imp::PostErr
     int version = 0;
     const string& accession = GetAccessionFromBioseqSet(st, &version);
         //GetAccessionFromObjects(&st, nullptr, *m_Scope, &version);
-    string desc = CValidErrorFormat::GetBioseqSetLabel(st, m_Scope, m_SuppressContext);
+
+    const auto isSetClass = st.IsSetClass();
+
+    //string desc = CValidErrorFormat::GetBioseqSetLabel(st, m_SuppressContext);
+    string desc = CValidErrorFormat::GetBioseqSetLabel(accession, 
+            isSetClass ? st.GetClass() : CBioseq_set::eClass_not_set, 
+            isSetClass ? m_SuppressContext : true);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, accession, version);
 }
 
