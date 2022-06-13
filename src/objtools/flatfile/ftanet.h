@@ -45,7 +45,7 @@ namespace objects
     class CCit_art;
 };
 
-CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, Int4 taxid, unsigned char* drop, bool isoh);
+CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, unsigned char* drop, bool isoh);
 
 void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries);
 void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag);

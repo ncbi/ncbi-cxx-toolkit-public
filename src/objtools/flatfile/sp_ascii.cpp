@@ -444,7 +444,7 @@ typedef struct set_of_species {
 } SetOfSpecies, *SetOfSpeciesPtr;
 
 typedef struct _viral_host {
-    Int4                taxid;
+    TTaxId              taxid;
     char*               name;
     struct _viral_host* next;
 } ViralHost, *ViralHostPtr;
@@ -1345,7 +1345,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
 
     vhp        = (ViralHostPtr)MemNew(sizeof(ViralHost));
     vhp->name  = NULL;
-    vhp->taxid = 0;
+    vhp->taxid = ZERO_TAX_ID;
     vhp->next  = NULL;
     tvhp       = vhp;
 
@@ -1394,9 +1394,9 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
             *p = '\0';
             if (r != p) {
                 ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID in OH line : \"%s\".", q);
-                tvhp->taxid = 0;
+                tvhp->taxid = ZERO_TAX_ID;
             } else
-                tvhp->taxid = atoi(q);
+                tvhp->taxid = TAX_ID_FROM(int, atoi(q));
             for (p++; *p == ' ' || *p == ';';)
                 p++;
             r = StringChr(p, '\n');
@@ -1435,7 +1435,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static Int4 GetTaxIdFrom_OX(DataBlkPtr dbp)
+static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
 {
     DataBlkPtr subdbp;
     char*      line;
@@ -1443,9 +1443,9 @@ static Int4 GetTaxIdFrom_OX(DataBlkPtr dbp)
     char*      q;
     bool       got;
     Char       ch;
-    Int4       taxid;
+    TTaxId     taxid;
 
-    for (got = false, taxid = 0; dbp != NULL; dbp = dbp->mpNext) {
+    for (got = false, taxid = ZERO_TAX_ID; dbp != NULL; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
@@ -1487,8 +1487,8 @@ static Int4 GetTaxIdFrom_OX(DataBlkPtr dbp)
             for (q = p; *q >= '0' && *q <= '9';)
                 q++;
             if (*q == ' ' || *q == '\0')
-                taxid = atoi(p);
-            if (taxid < 1 || (*q != ' ' && *q != '\0')) {
+                taxid = TAX_ID_FROM(int, atoi(p));
+            if (taxid <= ZERO_TAX_ID || (*q != ' ' && *q != '\0')) {
                 ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID on OX line : \"%s\" : Ignored.", p);
             }
             MemFree(line);
@@ -1497,7 +1497,7 @@ static Int4 GetTaxIdFrom_OX(DataBlkPtr dbp)
         break;
     }
 
-    if (got && taxid < 1)
+    if (got && taxid <= ZERO_TAX_ID)
         ErrPostEx(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxID found on OX line : will use organism names for lookup instead.");
 
     return (taxid);
@@ -2590,7 +2590,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
     char*      offset;
     Uint1      gmod;
     bool       fragment = false;
-    Int4       taxid;
+    TTaxId     taxid;
 
     IndexblkPtr  ibp;
     ViralHostPtr vhp;
@@ -2684,10 +2684,10 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
         CRef<CBioSource> bio_src;
 
         taxid = GetTaxIdFrom_OX(dbp);
-        if (taxid > 0) {
+        if (taxid > ZERO_TAX_ID) {
             CRef<COrg_ref> org_ref = fta_fix_orgref_byid(pp, taxid, &ibp->drop, false);
             if (org_ref.Empty())
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "NCBI TaxID lookup for %d failed : will use organism name for lookup instead.", taxid);
+                ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "NCBI TaxID lookup for %d failed : will use organism name for lookup instead.", TAX_ID_TO(int, taxid));
             else {
                 bio_src.Reset(new CBioSource);
 
@@ -2728,7 +2728,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                 mod->SetSubname(tvhp->name);
                 orgname.SetMod().push_back(mod);
 
-                if (tvhp->taxid < 1) {
+                if (tvhp->taxid <= ZERO_TAX_ID) {
                     MemFree(tvhp);
                     continue;
                 }
@@ -2738,9 +2738,9 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                 CRef<COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, tvhp->taxid, &gmod, true);
                 if (org_ref_cur.Empty()) {
                     if (gmod == 0)
-                        ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "OH-line TaxId \"%d\" was not found via the NCBI TaxArch service.", tvhp->taxid);
+                        ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "OH-line TaxId \"%d\" was not found via the NCBI TaxArch service.", TAX_ID_TO(int, tvhp->taxid));
                     else
-                        ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"%d\" failed.", tvhp->taxid);
+                        ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"%d\" failed.", TAX_ID_TO(int, tvhp->taxid));
                 } else {
                     std::vector<Char> org_taxname;
                     if (org_ref_cur->IsSetTaxname()) {
@@ -2756,7 +2756,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                                   "OH-line HostName \"%s\" does not match NCBI organism name \"%s\" obtained by lookup of NCBI TaxID \"%d\".",
                                   tvhp->name,
                                   &org_taxname[0],
-                                  tvhp->taxid);
+                                  TAX_ID_TO(int, tvhp->taxid));
                 }
                 MemFree(tvhp);
             }
