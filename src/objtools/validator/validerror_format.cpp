@@ -1049,54 +1049,41 @@ string CValidErrorFormat::GetBioseqLabel (CBioseq_Handle bh)
 }
 
 
-string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> scope, bool suppress_context)
+string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> /*dummy*/, bool suppress_context)
 {
-    string str;
-    // GetLabel for CBioseq_set does not follow C Toolkit conventions
-    // AND is a horrible performance hit for sets with lots of sequences
-
-    const CBioseq* best = nullptr;
-    CTypeConstIterator<CBioseq> si(ConstBegin(st));
-    if (si) {
-        best = &(*si);
-    }
-    // Add content to label.
-    if (!best) {
-        str += "BIOSEQ-SET: ";
-        if (!suppress_context && st.IsSetClass()) {
-            const CEnumeratedTypeValues* tv =
-                CBioseq_set::GetTypeInfo_enum_EClass();
-            const string& cn = tv->FindName(st.GetClass(), true);
-            str += cn;
-            str += ": ";
-        }
-
-        str += "(No Bioseqs)";
-    } else if (st.IsSetClass()) {
-        str += "BIOSEQ-SET: ";
-        if (!suppress_context) {
-            const CEnumeratedTypeValues* tv =
-                CBioseq_set::GetTypeInfo_enum_EClass();
-            const string& cn = tv->FindName(st.GetClass(), true);
-            str += cn;
-            str += ": ";
-        }
-        if (scope) {
-            string content;
-            int version = 0;
-            const string& accn = GetAccessionFromObjects(&st, nullptr, *scope, &version);
-            content += accn;
-            // best->GetLabel(&content, CBioseq::eContent, supress_context);
-            // fix problems with label
-            s_FixBioseqLabelProblems(content);
-            str += content;
-        }
-    } else {
-        AppendBioseqLabel(str, *best, suppress_context);
-    }
-    return str;
+    return GetBioseqSetLabel(st, suppress_context);
 }
 
+
+string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, bool suppress_context)
+{
+    const auto isSetClass = st.IsSetClass();
+    suppress_context = suppress_context || !isSetClass;
+
+    int version = 0;
+    const string& accession = GetAccessionFromBioseqSet(st, &version);
+    return GetBioseqSetLabel(accession, isSetClass ? st.GetClass() : CBioseq_set::eClass_not_set, suppress_context);
+}
+
+
+string CValidErrorFormat::GetBioseqSetLabel(string accession, CBioseq_set::EClass setClass, bool suppress_context)
+{
+    string str = "BIOSEQ-SET: ";
+    if (!suppress_context) {
+        const auto* tv = CBioseq_set::GetTypeInfo_enum_EClass();
+        const string& context = tv->FindName(setClass, true);
+        str += context;
+        str += ": ";
+    }
+
+    if(NStr::IsBlank(accession)) {
+        str += "(No Bioseqs)";
+        return str;
+    }
+    s_FixBioseqLabelProblems(accession);
+    str += accession;
+    return str;
+}
 
 //LCOV_EXCL_START
 //not used
@@ -1116,7 +1103,7 @@ string CValidErrorFormat::GetObjectLabel(const CObject& obj, const CSeq_entry& c
     } else if (b) {
         label = GetBioseqLabel(scope->GetBioseqHandle(*b));
     } else if (set) {
-        label = GetBioseqSetLabel(*set, scope, suppress_context);
+        label = GetBioseqSetLabel(*set, suppress_context);
     }
     return label;
 }
