@@ -632,7 +632,9 @@ void CCDDClientPool::x_DiscardClient(TClient& client)
 string CCDDClientPool::BlobIdToString(const TBlobId& blob_id)
 {
     ostringstream s;
-    s << blob_id.GetSat() << '/' << blob_id.GetSub_sat() << '.' << blob_id.GetSat_key();
+    s << (unsigned int)blob_id.GetSat() << '/'
+        << (unsigned int)blob_id.GetSub_sat() << '.'
+        << (unsigned int)blob_id.GetSat_key();
     return s.str();
 }
 
@@ -644,9 +646,9 @@ CRef<CCDDClientPool::TBlobId> CCDDClientPool::StringToBlobId(const string& s)
         NStr::Split(s, "/.", parts);
         if (parts.size() != 3) return ret;
         CRef<TBlobId> blob_id(new TBlobId);
-        blob_id->SetSat(NStr::StringToNumeric<TBlobId::TSat>(parts[0]));
-        blob_id->SetSub_sat(NStr::StringToNumeric<TBlobId::TSat>(parts[1]));
-        blob_id->SetSat_key(NStr::StringToNumeric<TBlobId::TSat>(parts[2]));
+        blob_id->SetSat((TBlobId::TSat)NStr::StringToNumeric<unsigned int>(parts[0]));
+        blob_id->SetSub_sat((TBlobId::TSub_sat)NStr::StringToNumeric<unsigned int>(parts[1]));
+        blob_id->SetSat_key((TBlobId::TSat_key)NStr::StringToNumeric<unsigned int>(parts[2]));
         ret = blob_id;
     }
     catch (...) {}
