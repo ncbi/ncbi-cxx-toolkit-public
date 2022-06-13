@@ -88,6 +88,10 @@ inline
 bool IsResidue(unsigned char residue) { return residue <= 250; }
 CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScope& scope);
 string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope, int* version);
+string GetAccessionFromBioseq(const CBioseq& bioseq, int* version);
+string GetAccessionFromBioseqSet(const CBioseq_set& bsst, int* version);
+
+
 
 CBioseq_set_Handle GetSetParent (const CBioseq_set_Handle& set, CBioseq_set::TClass set_class);
 CBioseq_set_Handle GetSetParent (const CBioseq_Handle& bioseq, CBioseq_set::TClass set_class);
