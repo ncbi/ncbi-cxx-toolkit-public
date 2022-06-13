@@ -4,6 +4,7 @@ image:
 
 stages:
  - build
+ - test
 
 build:
  stage: build
@@ -21,3 +22,16 @@ build:
    - distcc.log
   expire_in: never
 
+test:
+ stage: test
+ timeout: 5 hours
+ parallel: 2
+ script:
+  - pwd
+  - ls
+  - cd CMake-GCC730-DebugDLL/build
+  - make check_r VERBOSE=1 2>&1 | tee test.log
+ artifacts:
+  paths:
+   - test.log
+  expire_in: never
