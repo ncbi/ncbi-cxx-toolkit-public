@@ -134,13 +134,13 @@ const char* RSExceptionQualVals[] = {
 };
 
 /**********************************************************
-*
-*   bool FindTheQual(qlist, qual):
-*
-*      Finds qual in the "qlist" return TRUE.
-*   Otherwise, return FALSE.
-*
-**********************************************************/
+ *
+ *   bool FindTheQual(qlist, qual):
+ *
+ *      Finds qual in the "qlist" return TRUE.
+ *   Otherwise, return FALSE.
+ *
+ **********************************************************/
 static bool FindTheQual(const CSeq_feat& feat, const Char* qual_to_find)
 {
     ITERATE (TQualVector, qual, feat.GetQual()) {
@@ -152,15 +152,15 @@ static bool FindTheQual(const CSeq_feat& feat, const Char* qual_to_find)
 }
 
 /**********************************************************
-*
-*   static char* CpTheQualValueNext(qlist, retq, qual):
-*
-*      Return qual's value if found the "qual" in the
-*   "qlist", and retq points to next available searching
-*   list; Otherwise, return NULL value and retq points
-*   to NULL.
-*
-**********************************************************/
+ *
+ *   static char* CpTheQualValueNext(qlist, retq, qual):
+ *
+ *      Return qual's value if found the "qual" in the
+ *   "qlist", and retq points to next available searching
+ *   list; Otherwise, return NULL value and retq points
+ *   to NULL.
+ *
+ **********************************************************/
 static char* CpTheQualValueNext(TQualVector::iterator& cur_qual, const TQualVector::iterator& end_qual, const char* qual)
 {
     std::string qvalue;
@@ -263,8 +263,8 @@ static void ProtBlkFree(ProtBlkPtr pbp)
     pbp->feats.clear();
 
     pbp->entries.clear();
-    //delete pbp->ibp;
-    //pbp->ibp = nullptr;
+    // delete pbp->ibp;
+    // pbp->ibp = nullptr;
     pbp->ibp->ids.clear();
 }
 
@@ -310,14 +310,14 @@ static void AssignBioseqSetLevel(TEntryList& seq_entries)
 }
 
 /**********************************************************
-*
-*   static bool check_short_CDS(pp, sfp, err_msg):
-*
-*      If CDS location contains one of the sequence ends
-*   return TRUE, e.g. it's short do not create protein
-*   bioseq, copy prot-ref to Xref.
-*
-**********************************************************/
+ *
+ *   static bool check_short_CDS(pp, sfp, err_msg):
+ *
+ *      If CDS location contains one of the sequence ends
+ *   return TRUE, e.g. it's short do not create protein
+ *   bioseq, copy prot-ref to Xref.
+ *
+ **********************************************************/
 static bool check_short_CDS(ParserPtr pp, const CSeq_feat& feat, bool err_msg)
 {
     const CSeq_interval& interval = feat.GetLocation().GetInt();
@@ -824,30 +824,30 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
 }
 
 /**********************************************************
-*
-*   Function:
-*      static SeqIdPtr QualsToSeqID(pSeqFeat, source)
-*
-*   Purpose:
-*      Searches all /db_xref qualifiers make from them
-*      corresponding SeqId and removing found qualifiers
-*      from given SeqFeature.
-*
-*      Tatiana: /db_xref qualifiers were already processed
-*               sfp->dbxref in loadfeat.c
-*
-*   Parameters:
-*      pSeqFeat - pointer to SeqFeat structure which have
-*                 to be processed.
-*
-*   Return:
-*      Pointer to resultant SeqId chain if successful,
-*      otherwise NULL.
-*
-*   Note:
-*      Returned SeqId must be freed by caller.
-*
-**********************************************************/
+ *
+ *   Function:
+ *      static SeqIdPtr QualsToSeqID(pSeqFeat, source)
+ *
+ *   Purpose:
+ *      Searches all /db_xref qualifiers make from them
+ *      corresponding SeqId and removing found qualifiers
+ *      from given SeqFeature.
+ *
+ *      Tatiana: /db_xref qualifiers were already processed
+ *               sfp->dbxref in loadfeat.c
+ *
+ *   Parameters:
+ *      pSeqFeat - pointer to SeqFeat structure which have
+ *                 to be processed.
+ *
+ *   Return:
+ *      Pointer to resultant SeqId chain if successful,
+ *      otherwise NULL.
+ *
+ *   Note:
+ *      Returned SeqId must be freed by caller.
+ *
+ **********************************************************/
 static void QualsToSeqID(CSeq_feat& feat, Parser::ESource source, TSeqIdList& ids)
 {
     char* p;
@@ -883,29 +883,29 @@ static void QualsToSeqID(CSeq_feat& feat, Parser::ESource source, TSeqIdList& id
 }
 
 /**********************************************************
-*
-*   Function:
-*      static SeqIdPtr ValidateQualSeqId(pSeqID)
-*
-*   Purpose:
-*      Validates consistency of SeqId list obtained from
-*      /db_xref in following maner. The number of SeqId
-*      must be not more then 3. Each SeqId must refer to
-*      a different GenBank. If two or more SeqId's refer
-*      to the same GenBank only first is taken in account
-*      and other ones are abandoned.
-*      During validating the function drop corresponding
-*      error messages if something wrong occured.
-*
-*   Parameters:
-*      pSeqFeat - pointer to SeqFeat structure which have
-*                 to be processed;
-*
-*   Return:
-*      Pointer to resultant SeqId chain. If pointer is
-*      NULL it means that there is no good SeqId.
-*
-**********************************************************/
+ *
+ *   Function:
+ *      static SeqIdPtr ValidateQualSeqId(pSeqID)
+ *
+ *   Purpose:
+ *      Validates consistency of SeqId list obtained from
+ *      /db_xref in following maner. The number of SeqId
+ *      must be not more then 3. Each SeqId must refer to
+ *      a different GenBank. If two or more SeqId's refer
+ *      to the same GenBank only first is taken in account
+ *      and other ones are abandoned.
+ *      During validating the function drop corresponding
+ *      error messages if something wrong occured.
+ *
+ *   Parameters:
+ *      pSeqFeat - pointer to SeqFeat structure which have
+ *                 to be processed;
+ *
+ *   Return:
+ *      Pointer to resultant SeqId chain. If pointer is
+ *      NULL it means that there is no good SeqId.
+ *
+ **********************************************************/
 static void ValidateQualSeqId(TSeqIdList& ids)
 {
     bool abGenBanks[3] = { false, false, false };
@@ -933,8 +933,7 @@ static void ValidateQualSeqId(TSeqIdList& ids)
             continue;
 
         if (abGenBanks[num]) {
-            /* PID of this type already exist, ignore it
-            */
+            /* PID of this type already exist, ignore it */
             ErrPostEx(SEV_WARNING, ERR_CDREGION_Multiple_PID, "/db_xref=\"pid:%c%i\" refer the same data base", ch, (*id)->GetGeneral().GetTag().GetId());
 
             id = ids.erase(id);
@@ -992,29 +991,29 @@ static void DbxrefToSeqID(CSeq_feat& feat, Parser::ESource source, TSeqIdList& i
 }
 
 /**********************************************************
-*
-*   Function:
-*      static void ProcessForDbxref(pBioseq, pSeqFeat,
-*                                   source)
-*
-*   Purpose:
-*      Finds all qualifiers corresponding to /db_xref,
-*      makes from them SeqId and remove them from further
-*      processing. Also the function looks for PID which
-*      can be found in /note (pSeqFeat->comment) and
-*      removes PID record from /note.
-*
-*   Parameters:
-*      pBioseq  - pointer or a Bioseq structure which will
-*                 hold resultant list of SeqId;
-*      pSeqFeat - pointer to SeqFeat structure which have
-*                 to processed.
-*      source   - source of sequence.
-*
-*   Return:
-*      void
-*
-**********************************************************/
+ *
+ *   Function:
+ *      static void ProcessForDbxref(pBioseq, pSeqFeat,
+ *                                   source)
+ *
+ *   Purpose:
+ *      Finds all qualifiers corresponding to /db_xref,
+ *      makes from them SeqId and remove them from further
+ *      processing. Also the function looks for PID which
+ *      can be found in /note (pSeqFeat->comment) and
+ *      removes PID record from /note.
+ *
+ *   Parameters:
+ *      pBioseq  - pointer or a Bioseq structure which will
+ *                 hold resultant list of SeqId;
+ *      pSeqFeat - pointer to SeqFeat structure which have
+ *                 to processed.
+ *      source   - source of sequence.
+ *
+ *   Return:
+ *      void
+ *
+ **********************************************************/
 static void ProcessForDbxref(CBioseq& bioseq, CSeq_feat& feat, Parser::ESource source)
 {
     TSeqIdList ids;
@@ -1057,8 +1056,7 @@ static CRef<CBioseq> BldProtRefSeqEntry(ProtBlkPtr pbp, CSeq_feat& feat, std::st
     new_bioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
     new_bioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
 
-    /* Seq_code always ncbieaa  08.08.96
-    */
+    /* Seq_code always ncbieaa  08.08.96 */
     CRef<CSeq_data> data(new CSeq_data(seq_data, CSeq_data::e_Ncbieaa));
     new_bioseq->SetInst().SetSeq_data(*data);
 
@@ -1093,19 +1091,19 @@ static char* SimpleValuePos(char* qval)
 }
 
 /**********************************************************
-*
-*   static CodeBreakPtr GetCdRegionCB(ibp, sfp, accver):
-*
-*      If protein translation (InternalStopCodon) O.K.,
-*   then this qualifier will be deleted ==> different from
-*   Karl's parser.
-*      For transl_except of type OTHER, use the ncibeaa
-*   code 'X' for Code-break.aa.
-*      CodeBreakPtr->aa.choice = 1  ==>  for ncbieaa;
-*      CodeBreakPtr->aa.value.intvalue = (Int4)'X'  ==>
-*   for unknown.
-*
-**********************************************************/
+ *
+ *   static CodeBreakPtr GetCdRegionCB(ibp, sfp, accver):
+ *
+ *      If protein translation (InternalStopCodon) O.K.,
+ *   then this qualifier will be deleted ==> different from
+ *   Karl's parser.
+ *      For transl_except of type OTHER, use the ncibeaa
+ *   code 'X' for Code-break.aa.
+ *      CodeBreakPtr->aa.choice = 1  ==>  for ncbieaa;
+ *      CodeBreakPtr->aa.value.intvalue = (Int4)'X'  ==>
+ *   for unknown.
+ *
+ **********************************************************/
 static void GetCdRegionCB(InfoBioseqPtr ibp, CSeq_feat& feat, TCodeBreakList& code_breaks, unsigned char* dif, bool accver)
 {
     Int4 feat_start = -1;
@@ -1232,13 +1230,13 @@ static void check_end_internal(size_t protlen, const CSeq_feat& feat, Uint1 dif)
 }
 
 /**********************************************************
-*
-*   static void ErrByteStorePtr(ibp, sfp, bsp):
-*
-*      For debugging, put to error logfile, it needs
-*   to delete for "buildcds.c program.
-*
-**********************************************************/
+ *
+ *   static void ErrByteStorePtr(ibp, sfp, bsp):
+ *
+ *      For debugging, put to error logfile, it needs
+ *   to delete for "buildcds.c program.
+ *
+ **********************************************************/
 static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const std::string& prot)
 {
     char* qval;
@@ -1259,18 +1257,18 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const std:
 }
 
 /**********************************************************
-*
-*   static ByteStorePtr CkProteinTransl(pp, ibp, bsp, sfp,
-*                                       qval, intercodon,
-*                                       gcode, method):
-*
-*      If bsp != translation's value, then take
-*   translation's value and print out warning message.
-*      If the only diff is start codon and bsp has "M"
-*   take bsp.
-*      If intercodon = TRUE, then no comparison.
-*
-**********************************************************/
+ *
+ *   static ByteStorePtr CkProteinTransl(pp, ibp, bsp, sfp,
+ *                                       qval, intercodon,
+ *                                       gcode, method):
+ *
+ *      If bsp != translation's value, then take
+ *   translation's value and print out warning message.
+ *      If the only diff is start codon and bsp has "M"
+ *   take bsp.
+ *      If intercodon = TRUE, then no comparison.
+ *
+ **********************************************************/
 static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, std::string& prot, CSeq_feat& feat, char* qval, bool intercodon, char* gcode, unsigned char* method)
 {
     char*  ptr;
@@ -1386,12 +1384,12 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, std::string& prot, 
 }
 
 /**********************************************************
-*
-*   static bool check_translation(bsp, qval):
-*
-*      If bsp != translation's value return FALSE.
-*
-**********************************************************/
+ *
+ *   static bool check_translation(bsp, qval):
+ *
+ *      If bsp != translation's value return FALSE.
+ *
+ **********************************************************/
 static bool check_translation(std::string& prot, char* qval)
 {
     size_t len  = 0;
@@ -1468,19 +1466,19 @@ static bool Translate(CSeq_feat& feat, std::string& prot)
 }
 
 /**********************************************************
-*
-*   static Int2 EndAdded(sfp, gene):
-*
-*      From EndStopCodonBaseAdded:
-*      Return 0 if no bases added, no end stop codon found
-*   after added one or two bases, or can not add
-*   (substract) any bases at end because it is really
-*   a partial.
-*      Return -1 if something bad.
-*      Return +1 if it found end stop codon after bases
-*   added.
-*
-**********************************************************/
+ *
+ *   static Int2 EndAdded(sfp, gene):
+ *
+ *      From EndStopCodonBaseAdded:
+ *      Return 0 if no bases added, no end stop codon found
+ *   after added one or two bases, or can not add
+ *   (substract) any bases at end because it is really
+ *   a partial.
+ *      Return -1 if something bad.
+ *      Return +1 if it found end stop codon after bases
+ *   added.
+ *
+ **********************************************************/
 static Int2 EndAdded(CSeq_feat& feat, GeneRefFeats& gene_refs)
 {
     Int4 pos;
@@ -1678,19 +1676,19 @@ static void fta_check_codon_quals(CSeq_feat& feat)
 }
 
 /**********************************************************
-*
-*   static ByteStorePtr InternalStopCodon(pp, ibp, sfp,
-*                                         method, gene):
-*
-*      Return NULL if there is no protein sequence, or
-*   there is no translation qualifier and protein sequence
-*   has internal stop codon; otherwise, return a protein
-*   sequence.
-*      In the embl format, it may not have "translation"
-*   qualifier, take protein sequence (without
-*   end_stop_codon) instead.
-*
-**********************************************************/
+ *
+ *   static ByteStorePtr InternalStopCodon(pp, ibp, sfp,
+ *                                         method, gene):
+ *
+ *      Return NULL if there is no protein sequence, or
+ *   there is no translation qualifier and protein sequence
+ *   has internal stop codon; otherwise, return a protein
+ *   sequence.
+ *      In the embl format, it may not have "translation"
+ *   qualifier, take protein sequence (without
+ *   end_stop_codon) instead.
+ *
+ **********************************************************/
 static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, unsigned char* method, Uint1 dif, GeneRefFeats& gene_refs, std::string& seq_data)
 {
     char* qval;
@@ -1800,8 +1798,8 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 
             if ((! feat.IsSetPartial() || feat.GetPartial() == false) && ! SeqLocHaveFuzz(feat.GetLocation())) {
                 /* if there is no partial qualifier and location
-                * doesn't have "fuzz" then output message
-                */
+                 * doesn't have "fuzz" then output message
+                 */
                 if (! feat.IsSetExcept() || feat.GetExcept() == false) {
                     ErrPostEx(SEV_ERROR, ERR_CDREGION_TerminalStopCodonMissing, "No end stop codon found for CDS: %s", loc.c_str());
                 }
@@ -1819,8 +1817,8 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
             residue = prot[residue_idx];
             if (aa == 1 && residue == '-') {
                 /* if unrecognized start of translation,
-                * a ncbigap character is inserted
-                */
+                 * a ncbigap character is inserted
+                 */
                 if (! feat.IsSetExcept() || feat.GetExcept() == false) {
                     ErrPostEx(SEV_WARNING, ERR_CDREGION_IllegalStart, "unrecognized initiation codon from CDS: %s", loc.c_str());
                 }
@@ -1876,8 +1874,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
         return;
     }
 
-    /* no translation qual and internal stop codon
-    */
+    /* no translation qual and internal stop codon */
     if (intercodon) {
         cdregion.SetStops(num);
         if (! feat.IsSetExcept() || feat.GetExcept() == false) {
@@ -2058,20 +2055,20 @@ static bool fta_check_exception(CSeq_feat& feat, Parser::ESource source)
 }
 
 /**********************************************************
-*
-*   static Int2 CkCdRegion(pp, sfp, bsq, num, gene):
-*
-*      Routine returns 0, and
-*   sfp->data.choice = SEQFEAT_IMP :
-*   - if ambiguous frame number and no "codon_start"
-*     qualifier;
-*   - if there is a "pseudo" qualifier;
-*   - if the range of the "transl_except" qualifier is
-*     wrong;
-*      Otherwise return 1, and
-*   sfp->data.choice = SEQFEAT_CDREGION
-*
-**********************************************************/
+ *
+ *   static Int2 CkCdRegion(pp, sfp, bsq, num, gene):
+ *
+ *      Routine returns 0, and
+ *   sfp->data.choice = SEQFEAT_IMP :
+ *   - if ambiguous frame number and no "codon_start"
+ *     qualifier;
+ *   - if there is a "pseudo" qualifier;
+ *   - if the range of the "transl_except" qualifier is
+ *     wrong;
+ *      Otherwise return 1, and
+ *   sfp->data.choice = SEQFEAT_CDREGION
+ *
+ **********************************************************/
 static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bioseq, int* num, GeneRefFeats& gene_refs)
 {
     ProtBlkPtr  pbp;
@@ -2184,8 +2181,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
         return (i);
     }
 
-    /* check exception qualifier
-    */
+    /* check exception qualifier */
     if (! fta_check_exception(cds, pp->source))
         return (-1);
 
@@ -2275,8 +2271,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
 
         scope.AddBioseq(*new_bioseq);
 
-        /* remove qualifiers which were processed before
-        */
+        /* remove qualifiers which were processed before */
         DeleteQual(cds.SetQual(), "codon_start");
         DeleteQual(cds.SetQual(), "transl_except");
         DeleteQual(cds.SetQual(), "translation");
@@ -2286,8 +2281,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
             cds.ResetQual();
 
         if (sequence_data.size() < 6 && pp->accver == false && check_short_CDS(pp, cds, true)) {
-            /* make xref from prot-ref for short CDS only
-            */
+            /* make xref from prot-ref for short CDS only */
             if (new_bioseq->IsSetAnnot()) {
                 NON_CONST_ITERATE(CBioseq::TAnnot, annot, new_bioseq->SetAnnot())
                 {
@@ -2317,8 +2311,8 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     }
 
     /* no protein sequence, or there is no translation qualifier
-    * and protein sequence has internal stop codon
-    */
+     * and protein sequence has internal stop codon
+     */
 
     cds.SetExcept(false);
     if (cds.IsSetExcept_text())
@@ -2336,12 +2330,12 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
 }
 
 /**********************************************************
-*
-*   static SeqFeatPtr SrchCdRegion(pp, bsp, sfp, gene):
-*
-*      Return a link list of SeqFeatPtr of type CDREGION.
-*
-**********************************************************/
+ *
+ *   static SeqFeatPtr SrchCdRegion(pp, bsp, sfp, gene):
+ *
+ *      Return a link list of SeqFeatPtr of type CDREGION.
+ *
+ **********************************************************/
 static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_annot& annot, GeneRefFeats& gene_refs)
 {
     Int4 num = 0;
@@ -2363,8 +2357,7 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
             continue;
         }
 
-        /* remove asn2ff_generated comments
-        */
+        /* remove asn2ff_generated comments */
         StripCDSComment(*(*feat));
 
         const CSeq_loc& loc = (*feat)->GetLocation();
@@ -2392,8 +2385,7 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
             continue;
         }
 
-        /* prepare cdregion to link list, for nuc-prot level
-        */
+        /* prepare cdregion to link list, for nuc-prot level */
         pp->pbp->feats.push_back(*feat);
 
         feat = annot.SetData().SetFtable().erase(feat);
@@ -2543,8 +2535,7 @@ static void BuildProtBioseqSet(ProtBlkPtr pbp, TEntryList& entries)
     CBioseq_set&     seq_set = entry->SetSet();
     seq_set.SetClass(CBioseq_set::eClass_nuc_prot);
 
-    /* add descr if nuc-prot
-    */
+    /* add descr if nuc-prot */
     GetBioseqSetDescr(pbp, seq_set.SetDescr().Set()); /* get from ASN.1 tree */
     if (seq_set.GetDescr().Get().empty())
         seq_set.ResetDescr();

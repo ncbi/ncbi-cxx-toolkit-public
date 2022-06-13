@@ -164,16 +164,16 @@ void ShrinkSpaces(char* line)
 }
 
 /**********************************************************
-*
-*   static void InsertDatablkVal(dbp, type, offset, len):
-*
-*      Allocate a memory, then assign data-block value
-*   to a new node.
-*      dbp points to the new node if dbp is NULL.
-*
-*                                              3-18-93
-*
-**********************************************************/
+ *
+ *   static void InsertDatablkVal(dbp, type, offset, len):
+ *
+ *      Allocate a memory, then assign data-block value
+ *   to a new node.
+ *      dbp points to the new node if dbp is NULL.
+ *
+ *                                              3-18-93
+ *
+ **********************************************************/
 static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type, char* offset, size_t len)
 {
     DataBlk* ldp = new DataBlk(*dbp, type, offset, len);
@@ -183,22 +183,22 @@ static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type, char* offset, size_t le
 }
 
 /**********************************************************
-*
-*   char* GetGenBankBlock(chain, ptr, retkw, eptr):
-*
-*      Enters knowing current keyword.type and offset,
-*   finds the length of the current keyword block,
-*   and builds the block to "chain".
-*      Since each key-word block always start at first
-*   column of the line, the loop stops when it found the
-*   first none (blank, newline, or tab) character after
-*   the newline character.
-*      Each data block will append to the "chain".
-*      Return a pointer points to next key-word block.
-*
-*                                              3-21-93
-*
-**********************************************************/
+ *
+ *   char* GetGenBankBlock(chain, ptr, retkw, eptr):
+ *
+ *      Enters knowing current keyword.type and offset,
+ *   finds the length of the current keyword block,
+ *   and builds the block to "chain".
+ *      Since each key-word block always start at first
+ *   column of the line, the loop stops when it found the
+ *   first none (blank, newline, or tab) character after
+ *   the newline character.
+ *      Each data block will append to the "chain".
+ *      Return a pointer points to next key-word block.
+ *
+ *                                              3-21-93
+ *
+ **********************************************************/
 void xGetGenBankBlocks(Entry& entry)
 {
     vector<string> lines;
@@ -215,7 +215,7 @@ void xGetGenBankBlocks(Entry& entry)
         }
         if (nextKw != currentKw || NStr::StartsWith(line, "REFERENCE")) {
             auto secPtr = new Section(currentKw, sectionLines);
-            //secPtr->DumpText(cerr);
+            // secPtr->DumpText(cerr);
             entry.mSections.push_back(secPtr);
             currentKw = nextKw;
             sectionLines.clear();
@@ -268,20 +268,20 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw, char* eptr)
 
 
 /**********************************************************
-*
-*   static void GetGenBankRefType(dbp, bases):
-*
-*      Check the data in the "REFERENCE" line,
-*      - ParFlat_REF_END if it contains
-*        "(bases 1 to endbases)", pub for "descr"
-*        or no base range at all;
-*      - ParFlat_REF_SITES if it contains "(sites)",
-*        for ImpFeatPub;
-*      - ParFlat_REF_BTW, otherwise, for SeqFeatPub.
-*
-*                                              5-19-93
-*
-**********************************************************/
+ *
+ *   static void GetGenBankRefType(dbp, bases):
+ *
+ *      Check the data in the "REFERENCE" line,
+ *      - ParFlat_REF_END if it contains
+ *        "(bases 1 to endbases)", pub for "descr"
+ *        or no base range at all;
+ *      - ParFlat_REF_SITES if it contains "(sites)",
+ *        for ImpFeatPub;
+ *      - ParFlat_REF_BTW, otherwise, for SeqFeatPub.
+ *
+ *                                              5-19-93
+ *
+ **********************************************************/
 static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
 {
     Char  str[100];
@@ -315,14 +315,14 @@ static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
 }
 
 /**********************************************************
-*
-*   static void BuildFeatureBlock(dbp):
-*
-*      The feature key in column 6-20.
-*
-*                                              5-3-93
-*
-**********************************************************/
+ *
+ *   static void BuildFeatureBlock(dbp):
+ *
+ *      The feature key in column 6-20.
+ *
+ *                                              5-3-93
+ *
+ **********************************************************/
 static void BuildFeatureBlock(DataBlkPtr dbp)
 {
     char* bptr;
@@ -394,12 +394,12 @@ static void fta_check_mult_ids(DataBlkPtr dbp, const char* mtag, const char* pta
 }
 
 /**********************************************************
-*
-*   void GetGenBankSubBlock(entry, bases):
-*
-*                                              4-7-93
-*
-**********************************************************/
+ *
+ *   void GetGenBankSubBlock(entry, bases):
+ *
+ *                                              4-7-93
+ *
+ **********************************************************/
 void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
 {
     DataBlkPtr dbp;
@@ -446,10 +446,10 @@ void xGetGenBankSubBlocks(Entry& entry, size_t bases)
         auto secType = secPtr->mType;
         if (secType == ParFlat_SOURCE) {
             secPtr->xBuildSubBlock(ParFlat_ORGANISM, "  ORGANISM");
-            //GetLenSubNode(dbp);
+            // GetLenSubNode(dbp);
         }
         if (secType == ParFlat_REFERENCE) {
-            //fta_check_mult_ids(dbp, "  MEDLINE", "   PUBMED");
+            // fta_check_mult_ids(dbp, "  MEDLINE", "   PUBMED");
             secPtr->xBuildSubBlock(ParFlat_AUTHORS, "  AUTHORS");
             secPtr->xBuildSubBlock(ParFlat_CONSRTM, "  CONSRTM");
             secPtr->xBuildSubBlock(ParFlat_TITLE, "  TITLE");
@@ -458,39 +458,39 @@ void xGetGenBankSubBlocks(Entry& entry, size_t bases)
             secPtr->xBuildSubBlock(ParFlat_PUBMED, "   PUBMED");
             secPtr->xBuildSubBlock(ParFlat_STANDARD, "  STANDARD");
             secPtr->xBuildSubBlock(ParFlat_REMARK, "  REMARK");
-            //GetLenSubNode(dbp);
-            //GetGenBankRefType(dbp, bases);
+            // GetLenSubNode(dbp);
+            // GetGenBankRefType(dbp, bases);
         }
         if (secType == ParFlat_FEATURES) {
             secPtr->xBuildFeatureBlocks();
-            //GetLenSubNode(dbp);
+            // GetLenSubNode(dbp);
         }
     }
 }
 
 /**********************************************************
-*
-*   char* GetEmblBlock(chain, ptr, retkw, format, eptr):
-*
-*      Enters knowing current keyword.type and offset,
-*   finds the length of the current keyword block, and
-*   builds the block to "chain".
-*      Loop will continue until it finds the next keyword
-*   or next "RN" after the newline character.
-*      Each data block will append to the "chain".
-*      Return a pointer points to next key-word block.
-*
-*                                              3-21-93
-*
-*      The OS block can be
-*      - OS OS OC OC XX OG  ==> this normal
-*        or
-*      - OS OC OC XX OS OS OC OC XX OG  ==> this hybrids
-*      For case 2, it need to make two OS block.
-*
-*                                              12-15-93
-*
-**********************************************************/
+ *
+ *   char* GetEmblBlock(chain, ptr, retkw, format, eptr):
+ *
+ *      Enters knowing current keyword.type and offset,
+ *   finds the length of the current keyword block, and
+ *   builds the block to "chain".
+ *      Loop will continue until it finds the next keyword
+ *   or next "RN" after the newline character.
+ *      Each data block will append to the "chain".
+ *      Return a pointer points to next key-word block.
+ *
+ *                                              3-21-93
+ *
+ *      The OS block can be
+ *      - OS OS OC OC XX OG  ==> this normal
+ *        or
+ *      - OS OC OC XX OS OS OC OC XX OG  ==> this hybrids
+ *      For case 2, it need to make two OS block.
+ *
+ *                                              12-15-93
+ *
+ **********************************************************/
 char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr)
 {
     char* offset;
@@ -540,17 +540,17 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat f
 }
 
 /**********************************************************
-*
-*   static bool TrimEmblFeatBlk(dbp):
-*
-*      Routine return TRUE if found FT data.
-*      The routine do the following things:
-*      - only leave last one FH line;
-*      - replace all "FT" to "  " in the beginning of line.
-*
-*                                              6-15-93
-*
-**********************************************************/
+ *
+ *   static bool TrimEmblFeatBlk(dbp):
+ *
+ *      Routine return TRUE if found FT data.
+ *      The routine do the following things:
+ *      - only leave last one FH line;
+ *      - replace all "FT" to "  " in the beginning of line.
+ *
+ *                                              6-15-93
+ *
+ **********************************************************/
 static bool TrimEmblFeatBlk(DataBlkPtr dbp)
 {
     char* bptr;
@@ -586,15 +586,15 @@ static bool TrimEmblFeatBlk(DataBlkPtr dbp)
 }
 
 /**********************************************************
-*
-*   static bool GetSubNodeType(subkw, retbptr, eptr):
-*
-*      Return TRUE and memory location which has
-*   the "subkw".
-*
-*                                              6-15-93
-*
-**********************************************************/
+ *
+ *   static bool GetSubNodeType(subkw, retbptr, eptr):
+ *
+ *      Return TRUE and memory location which has
+ *   the "subkw".
+ *
+ *                                              6-15-93
+ *
+ **********************************************************/
 static bool GetSubNodeType(const char* subkw, char** retbptr, char* eptr)
 {
     char* bptr;
@@ -620,17 +620,17 @@ static bool GetSubNodeType(const char* subkw, char** retbptr, char* eptr)
 }
 
 /**********************************************************
-*
-*   static void GetEmblRefType(bases, source, dbp):
-*
-*      If there is no "RP" line, default, or there is "RP"
-*   line and it contains "1-endbases", then
-*   type = ParFlat_REF_END, pub for "descr".
-*      Otherwise, ParFlat_REF_BTW, for SeqFeatPub.
-*
-*                                              6-15-93
-*
-**********************************************************/
+ *
+ *   static void GetEmblRefType(bases, source, dbp):
+ *
+ *      If there is no "RP" line, default, or there is "RP"
+ *   line and it contains "1-endbases", then
+ *   type = ParFlat_REF_END, pub for "descr".
+ *      Otherwise, ParFlat_REF_BTW, for SeqFeatPub.
+ *
+ *                                              6-15-93
+ *
+ **********************************************************/
 static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
 {
     Char  str[100];
@@ -676,19 +676,19 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
 }
 
 /**********************************************************
-*
-*   void GetEmblSubBlock(bases, source, entry):
-*
-*      To build feature block:
-*      - report error if no FT data in the FH block;
-*      - to fit genbank feature table parsing:
-*        - only leave first FH line;
-*        - replace "FT" to "  ";
-*        - delete any XX blocks.
-*
-*                                              5-27-93
-*
-**********************************************************/
+ *
+ *   void GetEmblSubBlock(bases, source, entry):
+ *
+ *      To build feature block:
+ *      - report error if no FT data in the FH block;
+ *      - to fit genbank feature table parsing:
+ *        - only leave first FH line;
+ *        - replace "FT" to "  ";
+ *        - delete any XX blocks.
+ *
+ *                                              5-27-93
+ *
+ **********************************************************/
 void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 {
     DataBlkPtr  temp;
@@ -753,14 +753,14 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 }
 
 /**********************************************************
-*
-*   void BuildSubBlock(dbp, subtype, subkw):
-*
-*      Some of sub-keyword may not be exist in every entry.
-*
-*                                              4-7-93
-*
-**********************************************************/
+ *
+ *   void BuildSubBlock(dbp, subtype, subkw):
+ *
+ *      Some of sub-keyword may not be exist in every entry.
+ *
+ *                                              4-7-93
+ *
+ **********************************************************/
 void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char* subkw)
 {
     char* bptr;
@@ -775,15 +775,15 @@ void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char* subkw)
 }
 
 /**********************************************************
-*
-*   void GetLenSubNode(dbp):
-*
-*      Recalculate the length for the node which has
-*   subkeywords.
-*
-*                                              4-7-93
-*
-**********************************************************/
+ *
+ *   void GetLenSubNode(dbp):
+ *
+ *      Recalculate the length for the node which has
+ *   subkeywords.
+ *
+ *                                              4-7-93
+ *
+ **********************************************************/
 void GetLenSubNode(DataBlkPtr dbp)
 {
     DataBlkPtr curdbp;
@@ -867,15 +867,15 @@ CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
 }
 
 /**********************************************************
-*
-*   static Uint ValidSeqType(accession, type, is_nuc, is_tpa):
-*
-*                                              9-16-93
-*
-**********************************************************/
+ *
+ *   static Uint ValidSeqType(accession, type, is_nuc, is_tpa):
+ *
+ *                                              9-16-93
+ *
+ **********************************************************/
 static Uint1 ValidSeqType(const char* accession, Uint1 type)
 {
-//    Uint1 cho;
+    //    Uint1 cho;
 
     if (type == CSeq_id::e_Swissprot || type == CSeq_id::e_Pir || type == CSeq_id::e_Prf ||
         type == CSeq_id::e_Pdb || type == CSeq_id::e_Other)
@@ -889,7 +889,7 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type)
         return (type);
 
     const auto cho = CSeq_id::GetAccType(CSeq_id::IdentifyAccession(accession));
-/*
+    /*
     if (is_nuc)
         cho = GetNucAccOwner(accession);
     else
@@ -908,13 +908,13 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type)
 }
 
 /**********************************************************
-*
-*   CRef<CSeq_id> MakeAccSeqId(acc, seqtype, accver, vernum,
-*                                                   is_nuc, is_tpa):
-*
-*                                              5-10-93
-*
-**********************************************************/
+ *
+ *   CRef<CSeq_id> MakeAccSeqId(acc, seqtype, accver, vernum,
+ *                                                   is_nuc, is_tpa):
+ *
+ *                                              5-10-93
+ *
+ **********************************************************/
 CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum)
 {
     CRef<CSeq_id> id;
@@ -939,12 +939,12 @@ CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 ver
 }
 
 /**********************************************************
-*
-*   SeqIdPtr MakeLocusSeqId(locus, seqtype):
-*
-*                                              5-13-93
-*
-**********************************************************/
+ *
+ *   SeqIdPtr MakeLocusSeqId(locus, seqtype):
+ *
+ *                                              5-13-93
+ *
+ **********************************************************/
 CRef<CSeq_id> MakeLocusSeqId(const char* locus, Uint1 seqtype)
 {
     CRef<CSeq_id> res;
@@ -985,15 +985,15 @@ static CRef<CSeq_id> MakeSegSetSeqId(char* accession, char* locus, Uint1 seqtype
 // LCOV_EXCL_STOP
 
 /**********************************************************
-*
-*   char* SrchNodeSubType(entry, type, subtype, len):
-*
-*      Return a memory location of the node which has
-*   the "subtype".
-*
-*                                              4-7-93
-*
-**********************************************************/
+ *
+ *   char* SrchNodeSubType(entry, type, subtype, len):
+ *
+ *      Return a memory location of the node which has
+ *   the "subtype".
+ *
+ *                                              4-7-93
+ *
+ **********************************************************/
 char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len)
 {
     DataBlkPtr mdbp;
@@ -1039,15 +1039,13 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
 
     CRef<CBioseq> res(new CBioseq);
 
-    /* create the entry framework
-    */
+    /* create the entry framework */
 
     ibp   = pp->entrylist[pp->curindx];
     locus = ibp->locusname;
     acc   = ibp->acnum;
 
-    /* get the SeqId
-    */
+    /* get the SeqId */
     if (pp->source == Parser::ESource::USPTO) {
         CRef<CSeq_id>        id(new CSeq_id);
         CRef<CPatent_seq_id> psip = MakeUsptoPatSeqId(acc);
@@ -1095,27 +1093,27 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
 }
 
 /**********************************************************
-*
-*   char* GetDescrComment(offset, len, col_data, is_htg):
-*
-*      Return a pointer to a string comment.
-*      Strip tailing or leading blanks, unless the
-*   following rules occurrs (all the length will count
-*   leading or tailing blanks):
-*      - replace "\n" to "~~ ~~" if the length of a
-*        line <= 12, except first blank line;
-*      - if the column 13 is blank in the current line
-*        and the previous line does not be added "~" at
-*        end, then add "~" the beginning of the line
-*        (indent format);
-*      - replace "\n" to "~" if the length of a
-*        line < 50 and (not a last line or not a first
-*        line);
-*     -- otherwise, change "\n" to a space.
-*
-*                                              4-28-93
-*
-**********************************************************/
+ *
+ *   char* GetDescrComment(offset, len, col_data, is_htg):
+ *
+ *      Return a pointer to a string comment.
+ *      Strip tailing or leading blanks, unless the
+ *   following rules occurrs (all the length will count
+ *   leading or tailing blanks):
+ *      - replace "\n" to "~~ ~~" if the length of a
+ *        line <= 12, except first blank line;
+ *      - if the column 13 is blank in the current line
+ *        and the previous line does not be added "~" at
+ *        end, then add "~" the beginning of the line
+ *        (indent format);
+ *      - replace "\n" to "~" if the length of a
+ *        line < 50 and (not a last line or not a first
+ *        line);
+ *     -- otherwise, change "\n" to a space.
+ *
+ *                                              4-28-93
+ *
+ **********************************************************/
 char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool is_pat)
 {
     char* p;
@@ -1131,8 +1129,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
     for (str = com; bptr < eptr; bptr = p + 1) {
         p = SrchTheChar(bptr, eptr, '\n');
 
-        /* skip HTG generated comments starting with '*'
-        */
+        /* skip HTG generated comments starting with '*' */
         if ((is_htg && bptr[col_data] == '*') ||
             StringNCmp(bptr, "XX", 2) == 0)
             continue;
@@ -1278,14 +1275,14 @@ static void fta_fix_secondaries(list<string>& secondaries)
 */
 
 /**********************************************************
-*
-*   void GetExtraAccession(ibp, allow_uwsec, source, accessions):
-*
-*      Skip first accession, put remaining accessions
-*   to link list 'accessions'.
-*      Each accession separated by ";" or blanks.
-*
-**********************************************************/
+ *
+ *   void GetExtraAccession(ibp, allow_uwsec, source, accessions):
+ *
+ *      Skip first accession, put remaining accessions
+ *   to link list 'accessions'.
+ *      Each accession separated by ";" or blanks.
+ *
+ **********************************************************/
 void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions)
 {
     TokenBlkPtr tbp;
@@ -1560,35 +1557,35 @@ void GetSequenceOfKeywords(
 
 
 /**********************************************************
-*
-*   Int4 ScanSequence(warn, seqptr, bsp, conv,
-*                     replacechar, numns):
-*
-*      Scans a block of text converting characters to
-*   sequence and storing in the ByteStorePtr bsp.
-*      conv is a 255 Uint1 array where cells are indexed
-*   by the ASCII value of the character in ptr:
-*      - a value of 0 indicates skip;
-*      - a value of 1 indicates an character is
-*        unexpected (error);
-*      - otherwise, it is a IUPACaa (protein) or a IUPACna
-*        (nucleic acid) letter.
-*      Function returns count of valid characters
-*   converted to sequence.
-*
-*      When sequence is presented in columns, this
-*   function should be called once per line, so that
-*   numbers can be recognized as errors.
-*
-*                                              3-30-93
-*
-*      In order to skip the input flatfile put residue
-*   label count at end, add blank variable to assume each
-*   line only allow 6 blanks between residue.
-*
-*                                              7-28-93
-*
-**********************************************************/
+ *
+ *   Int4 ScanSequence(warn, seqptr, bsp, conv,
+ *                     replacechar, numns):
+ *
+ *      Scans a block of text converting characters to
+ *   sequence and storing in the ByteStorePtr bsp.
+ *      conv is a 255 Uint1 array where cells are indexed
+ *   by the ASCII value of the character in ptr:
+ *      - a value of 0 indicates skip;
+ *      - a value of 1 indicates an character is
+ *        unexpected (error);
+ *      - otherwise, it is a IUPACaa (protein) or a IUPACna
+ *        (nucleic acid) letter.
+ *      Function returns count of valid characters
+ *   converted to sequence.
+ *
+ *      When sequence is presented in columns, this
+ *   function should be called once per line, so that
+ *   numbers can be recognized as errors.
+ *
+ *                                              3-30-93
+ *
+ *      In order to skip the input flatfile put residue
+ *   label count at end, add blank variable to assume each
+ *   line only allow 6 blanks between residue.
+ *
+ *                                              7-28-93
+ *
+ **********************************************************/
 Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned char* conv, Char replacechar, int* numns)
 {
     Int2           blank;
@@ -1615,8 +1612,7 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned cha
             *bu++ = residue;
             count++;
         } else if (residue == 1 && (warn || isalpha(*ptr) != 0)) {
-            /* it can be punctuation or alpha character
-            */
+            /* it can be punctuation or alpha character */
             *bu++ = replacechar;
             count++;
             ErrPostEx(SEV_ERROR, ERR_SEQUENCE_BadResidue, "Invalid residue [%c]", *ptr);
@@ -1627,28 +1623,28 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned cha
 
     *seqptr = ptr;
     std::copy(buf, bu, std::back_inserter(bsp));
-    //BSWrite(bsp, buf, (Int4)(bu - buf));
+    // BSWrite(bsp, buf, (Int4)(bu - buf));
     return (count);
 }
 
 /**********************************************************
-*
-*   bool GetSeqData(pp, entry, bsp, nodetype, seqconv,
-*                      seq_data_type):
-*
-*      Replace any bad residue to "N" if DNA sequence,
-*   "X" if protein sequence.
-*      PIR format allow punctuation in the sequence data,
-*   so no warning message if found punctuation in the
-*   sequence data.
-*                           Tatiana (mv from ScanSequence)
-*
-*                                              04-19-94
-*
-**********************************************************/
+ *
+ *   bool GetSeqData(pp, entry, bsp, nodetype, seqconv,
+ *                      seq_data_type):
+ *
+ *      Replace any bad residue to "N" if DNA sequence,
+ *   "X" if protein sequence.
+ *      PIR format allow punctuation in the sequence data,
+ *   so no warning message if found punctuation in the
+ *   sequence data.
+ *                           Tatiana (mv from ScanSequence)
+ *
+ *                                              04-19-94
+ *
+ **********************************************************/
 bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type)
 {
-    //ByteStorePtr bp;
+    // ByteStorePtr bp;
     IndexblkPtr ibp;
     char*       seqptr;
     char*       endptr;
@@ -1690,8 +1686,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
     else
         replacechar = 'X';
 
-    /* the sequence data will be located in next line of nodetype
-    */
+    /* the sequence data will be located in next line of nodetype */
     if (pp->format == Parser::EFormat::XML) {
         while (*seqptr == ' ' || *seqptr == '\n' || *seqptr == '\t')
             seqptr++;
@@ -1751,14 +1746,14 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
 }
 
 /**********************************************************
-*
-*   unsigned char* GetDNAConv():
-*
-*      DNA conversion table array.
-*
-*                                              3-29-93
-*
-**********************************************************/
+ *
+ *   unsigned char* GetDNAConv():
+ *
+ *      DNA conversion table array.
+ *
+ *                                              3-29-93
+ *
+ **********************************************************/
 unique_ptr<unsigned char[]> GetDNAConv(void)
 {
 
@@ -1779,14 +1774,14 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
 }
 
 /**********************************************************
-*
-*   unsigned char* GetProteinConv():
-*
-*      Protein conversion table array.
-*
-*                                              3-29-93
-*
-**********************************************************/
+ *
+ *   unsigned char* GetProteinConv():
+ *
+ *      Protein conversion table array.
+ *
+ *                                              3-29-93
+ *
+ **********************************************************/
 unique_ptr<unsigned char[]> GetProteinConv(void)
 {
     // unsigned char*        protconv;
@@ -1824,13 +1819,13 @@ static CSeq_descr::Tdata::const_iterator GetDescrByChoice(const CSeq_descr& desc
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************
-*
-*   static void GetFirstSegDescrChoice(bio_set, choice,
-*                                      descr_new):
-*
-*                                              10-14-93
-*
-**********************************************************/
+ *
+ *   static void GetFirstSegDescrChoice(bio_set, choice,
+ *                                      descr_new):
+ *
+ *                                              10-14-93
+ *
+ **********************************************************/
 static void GetFirstSegDescrChoice(CBioseq& bioseq, Uint1 choice, CSeq_descr& descr_new)
 {
     CSeq_descr&        descr      = bioseq.SetDescr();
@@ -1840,8 +1835,7 @@ static void GetFirstSegDescrChoice(CBioseq& bioseq, Uint1 choice, CSeq_descr& de
     CSeq_descr::Tdata::iterator cur_descr = descr_list.begin();
     for (; cur_descr != descr_list.end(); ++cur_descr) {
         if ((*cur_descr)->Which() == choice) {
-            /* found the "choice" node, isolated node
-            */
+            /* found the "choice" node, isolated node */
             descr_new.Set().push_back(*cur_descr);
             descr_list.erase(cur_descr);
             break;
@@ -1902,12 +1896,12 @@ static bool SameCitation_PubEquivMatch_Logic(const CPub_equiv& a, const CPub_equ
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************
-*
-*   static bool CheckSegPub(pub, entries, same_pub_descr):
-*
-*                                              5-21-93
-*
-**********************************************************/
+ *
+ *   static bool CheckSegPub(pub, entries, same_pub_descr):
+ *
+ *                                              5-21-93
+ *
+ **********************************************************/
 static bool CheckSegPub(const CPubdesc& pub, TEntryList& entries, std::set<CSeqdesc*>& same_pub_descr)
 {
     if (! pub.IsSetPub() || ! pub.GetPub().IsSet() || pub.GetPub().Get().empty())
@@ -1976,12 +1970,12 @@ static void RemoveDescrByChoice(CSeq_descr& descr, Uint1 choice)
 }
 
 /**********************************************************
-*
-*   static void CleanUpSeqDescrChoice(entries, choice):
-*
-*                                              5-21-93
-*
-**********************************************************/
+ *
+ *   static void CleanUpSeqDescrChoice(entries, choice):
+ *
+ *                                              5-21-93
+ *
+ **********************************************************/
 static void CleanUpSeqDescrChoice(TEntryList& entries, Uint1 choice)
 {
     TEntryList::iterator next_seq = entries.begin();
@@ -1992,12 +1986,12 @@ static void CleanUpSeqDescrChoice(TEntryList& entries, Uint1 choice)
 }
 
 /**********************************************************
-*
-*   static void CleanUpSeqDescrPub(entries, to_clean):
-*
-*                                              1-13-16
-*
-**********************************************************/
+ *
+ *   static void CleanUpSeqDescrPub(entries, to_clean):
+ *
+ *                                              1-13-16
+ *
+ **********************************************************/
 static void CleanUpSeqDescrPub(TEntryList& entries, std::set<CSeqdesc*>& to_clean)
 {
     TEntryList::iterator next_seq = entries.begin();
@@ -2019,12 +2013,12 @@ static void CleanUpSeqDescrPub(TEntryList& entries, std::set<CSeqdesc*>& to_clea
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************
-*
-*   static void GetSegPub(entries, descr):
-*
-*                                              5-21-93
-*
-**********************************************************/
+ *
+ *   static void GetSegPub(entries, descr):
+ *
+ *                                              5-21-93
+ *
+ **********************************************************/
 static void GetSegPub(TEntryList& entries, CSeq_descr& descr)
 {
     CBioseq&           bioseq     = (*entries.begin())->SetSeq();
@@ -2048,12 +2042,12 @@ static void GetSegPub(TEntryList& entries, CSeq_descr& descr)
 }
 
 /**********************************************************
-*
-*   static bool CheckSegDescrChoice(entry, choice):
-*
-*                                              5-18-93
-*
-**********************************************************/
+ *
+ *   static bool CheckSegDescrChoice(entry, choice):
+ *
+ *                                              5-18-93
+ *
+ **********************************************************/
 static bool CheckSegDescrChoice(const TEntryList& entries, Uint1 choice)
 {
     std::string org;
@@ -2103,15 +2097,15 @@ static bool CheckSegDescrChoice(const TEntryList& entries, Uint1 choice)
 // LCOV_EXCL_STOP
 
 /**********************************************************
-*
-*   static char* GetBioseqSetDescrTitle(descr):
-*
-*      Copy title from the first one, truncate before
-*   "complete cds" or "exon".
-*
-*                                              5-18-93
-*
-**********************************************************/
+ *
+ *   static char* GetBioseqSetDescrTitle(descr):
+ *
+ *      Copy title from the first one, truncate before
+ *   "complete cds" or "exon".
+ *
+ *                                              5-18-93
+ *
+ **********************************************************/
 static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
 {
     const Char* title;
@@ -2150,19 +2144,19 @@ static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************
-*
-*   static void SrchSegDescr(TEntryList& entries, CSeq_descr& descr):
-*
-*      Copy title from first one, truncate before
-*   "complete cds" or "exon"
-*      org, if they are all from one organism, then move
-*   the data to this set, and make NULL to the sep chains
-*   in which sep->mpData->descr->choice = Seq_descr_org.
-*      modif, if they are all same modifier, then move
-*   the data to this set, and make NULL to the sep chains
-*   in which sep->mpData->descr->choice = Seq_descr_modif.
-*
-**********************************************************/
+ *
+ *   static void SrchSegDescr(TEntryList& entries, CSeq_descr& descr):
+ *
+ *      Copy title from first one, truncate before
+ *   "complete cds" or "exon"
+ *      org, if they are all from one organism, then move
+ *   the data to this set, and make NULL to the sep chains
+ *   in which sep->mpData->descr->choice = Seq_descr_org.
+ *      modif, if they are all same modifier, then move
+ *   the data to this set, and make NULL to the sep chains
+ *   in which sep->mpData->descr->choice = Seq_descr_modif.
+ *
+ **********************************************************/
 static void SrchSegDescr(TEntryList& entries, CSeq_descr& descr)
 {
     CRef<CSeq_entry>& entry  = *entries.begin();
@@ -2308,12 +2302,12 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
 }
 
 /**********************************************************
-*
-*   static void GetBioseqSetDescr(entries, descr, drop)
-*
-*                                              1-20-16
-*
-**********************************************************/
+ *
+ *   static void GetBioseqSetDescr(entries, descr, drop)
+ *
+ *                                              1-20-16
+ *
+ **********************************************************/
 static void GetBioseqSetDescr(TEntryList& entries, CSeq_descr& descr, unsigned char* drop)
 {
     SrchSegDescr(entries, descr); /* get from ASN.1 tree */
@@ -2321,12 +2315,12 @@ static void GetBioseqSetDescr(TEntryList& entries, CSeq_descr& descr, unsigned c
 }
 
 /**********************************************************
-*
-*   static const char *GetMoleculeClassString(mol):
-*
-*                                              6-25-93
-*
-**********************************************************/
+ *
+ *   static const char *GetMoleculeClassString(mol):
+ *
+ *                                              6-25-93
+ *
+ **********************************************************/
 static const char* GetMoleculeClassString(Uint1 mol)
 {
     if (mol == 0)
@@ -2343,12 +2337,12 @@ static const char* GetMoleculeClassString(Uint1 mol)
 }
 
 /**********************************************************
-*
-*   static CSeq_inst::EMol SrchSegSeqMol(entries):
-*
-*                                              5-14-93
-*
-**********************************************************/
+ *
+ *   static CSeq_inst::EMol SrchSegSeqMol(entries):
+ *
+ *                                              5-14-93
+ *
+ **********************************************************/
 static CSeq_inst::EMol SrchSegSeqMol(const TEntryList& entries)
 {
     const CBioseq&  orig_bioseq = (*entries.begin())->GetSeq();
@@ -2368,12 +2362,12 @@ static CSeq_inst::EMol SrchSegSeqMol(const TEntryList& entries)
 }
 
 /**********************************************************
-*
-*   static Int4 SrchSegLength(entries):
-*
-*                                              5-14-93
-*
-**********************************************************/
+ *
+ *   static Int4 SrchSegLength(entries):
+ *
+ *                                              5-14-93
+ *
+ **********************************************************/
 static Int4 SrchSegLength(const TEntryList& entries)
 {
     Int4 length = 0;
@@ -2387,12 +2381,12 @@ static Int4 SrchSegLength(const TEntryList& entries)
 }
 
 /**********************************************************
-*
-*   static CRef<CBioseq> GetBioseq(pp, orig_bioseq, slp):
-*
-*                                              5-12-93
-*
-**********************************************************/
+ *
+ *   static CRef<CBioseq> GetBioseq(pp, orig_bioseq, slp):
+ *
+ *                                              5-12-93
+ *
+ **********************************************************/
 static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CSeq_loc& slp)
 {
     IndexblkPtr ibp;
@@ -2456,12 +2450,12 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
 // LCOV_EXCL_STOP
 
 /**********************************************************
-*
-*   void GetSeqExt(pp, slp):
-*
-*                                              5-12-93
-*
-**********************************************************/
+ *
+ *   void GetSeqExt(pp, slp):
+ *
+ *                                              5-12-93
+ *
+ **********************************************************/
 void GetSeqExt(ParserPtr pp, CSeq_loc& seq_loc)
 {
     IndexblkPtr ibp;
@@ -2481,12 +2475,12 @@ void GetSeqExt(ParserPtr pp, CSeq_loc& seq_loc)
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************
-*
-*   SeqEntryPtr BuildBioSegHeader(pp, headsep, seqloc):
-*
-*                                              2-24-94
-*
-**********************************************************/
+ *
+ *   SeqEntryPtr BuildBioSegHeader(pp, headsep, seqloc):
+ *
+ *                                              2-24-94
+ *
+ **********************************************************/
 void BuildBioSegHeader(ParserPtr pp, TEntryList& entries, const CSeq_loc& seqloc)
 {
     if (entries.empty())
@@ -2523,12 +2517,12 @@ void BuildBioSegHeader(ParserPtr pp, TEntryList& entries, const CSeq_loc& seqloc
 }
 
 /**********************************************************
-*
-*   bool IsSegBioseq(const CSeq_id& id):
-*
-*                                              8-16-93
-*
-**********************************************************/
+ *
+ *   bool IsSegBioseq(const CSeq_id& id):
+ *
+ *                                              8-16-93
+ *
+ **********************************************************/
 bool IsSegBioseq(const CSeq_id& id)
 {
     if (id.Which() == CSeq_id::e_Patent)
@@ -2547,17 +2541,17 @@ bool IsSegBioseq(const CSeq_id& id)
 // LCOV_EXCL_STOP
 
 /**********************************************************
-*
-*   char* check_div(pat_acc, pat_ref, est_kwd, sts_kwd,
-*                     gss_kwd, if_cds, div, tech, bases,
-*                     source, drop):
-*
-*                                              8-16-93
-*
-*      gss and 1000 limit added.
-*                                              9-09-96
-*
-**********************************************************/
+ *
+ *   char* check_div(pat_acc, pat_ref, est_kwd, sts_kwd,
+ *                     gss_kwd, if_cds, div, tech, bases,
+ *                     source, drop):
+ *
+ *                                              8-16-93
+ *
+ *      gss and 1000 limit added.
+ *                                              9-09-96
+ *
+ **********************************************************/
 char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_kwd, bool if_cds, char* div, unsigned char* tech, size_t bases, Parser::ESource source, bool& drop)
 {
     if (div == NULL)
@@ -2693,17 +2687,14 @@ CRef<CSeq_id> StrToSeqId(const char* pch, bool pid)
 
     CRef<CSeq_id> id;
 
-    /* Figure out--what source is it
-    */
+    /* Figure out--what source is it */
     if (*pch == 'd' || *pch == 'e') {
-        /* Get ID
-        */
+        /* Get ID */
         errno = 0; /* clear errors, the error flag from stdlib */
         lID   = strtol(pch + 1, &pchEnd, 10);
 
         if (! ((lID == 0 && pch + 1 == pchEnd) || (lID == LONG_MAX && errno == ERANGE))) {
-            /* Allocate new SeqId
-            */
+            /* Allocate new SeqId */
 
             id = new CSeq_id;
             CRef<CObject_id> tag(new CObject_id);
