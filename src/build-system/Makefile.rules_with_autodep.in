@@ -118,6 +118,9 @@ else
 	$(make_c_dep)
 endif
 
+$(CPP_OBJ:%@obj_ext@=%.d): $(make_cpp_stamp)
+$(C_OBJ:%@obj_ext@=%.d):   $(make_c_stamp)
+
 $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE): $(pchsrc)
 	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
 
