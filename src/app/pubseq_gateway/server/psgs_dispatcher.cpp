@@ -309,6 +309,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                   "thread (and libuv loop). "
                   "Current thread: " << uv_thread_self() <<
                   " Assigned thread: " << processor->GetUVThreadId() <<
+                  " Processor: " << processor->GetName() <<
                   " Call source: " << CPSGS_Dispatcher::SignalSourceToString(source));
     }
 
