@@ -70,6 +70,7 @@ public:
     TDim CheckNumRows(void)                   const {
         return 2;
     }
+    bool IsConsistentBiologicalOrder(void) const;
 
     /// GetSeqRange
     /// NB: In case the product-type is protein, these only return the

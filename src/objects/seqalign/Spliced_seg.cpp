@@ -84,6 +84,78 @@ CSpliced_seg::GetSeqStrand(TDim row) const
     }
 }
 
+
+bool CSpliced_seg::IsConsistentBiologicalOrder(void) const
+{
+    TSeqPos last_gen_start = kInvalidSeqPos;
+    TSeqPos last_gen_end = kInvalidSeqPos;
+    TSeqPos last_prod_start = kInvalidSeqPos;
+    TSeqPos last_prod_end = kInvalidSeqPos;
+    bool aln_gen_rev = CanGetGenomic_strand() && IsReverse(GetGenomic_strand());
+    bool aln_prod_rev = CanGetProduct_strand() && IsReverse(GetProduct_strand());
+    bool last_exon_gen_rev = false;
+    bool last_exon_prod_rev = false;
+
+    ITERATE (CSpliced_seg::TExons, exon_it, GetExons()) {
+        const CSpliced_exon& exon = **exon_it;
+
+        // Check for strand consistency
+        bool exon_gen_rev = false;
+        if (exon.CanGetGenomic_strand()) {
+            exon_gen_rev = IsReverse(exon.GetGenomic_strand());
+            if (CanGetGenomic_strand() && exon_gen_rev != aln_gen_rev) return false;
+        }
+        else {
+            exon_gen_rev = aln_gen_rev;
+        }
+        if (exon_it != GetExons().begin() && last_exon_gen_rev != exon_gen_rev) return false;
+        last_exon_gen_rev = exon_gen_rev;
+
+        bool exon_prod_rev = false;
+        if (exon.CanGetProduct_strand()) {
+            exon_prod_rev = IsReverse(exon.GetProduct_strand());
+            if (CanGetProduct_strand() && exon_prod_rev != aln_prod_rev) return false;
+        }
+        else {
+            exon_prod_rev = aln_prod_rev;
+        }
+        if (exon_it != GetExons().begin() && last_exon_prod_rev != exon_prod_rev) return false;
+        last_exon_prod_rev = exon_prod_rev;
+
+        // Check the order of exons. This check may fail on valid alignments, e.g.
+        // for a cross-origin location on a circular sequence.
+        if (last_gen_start != kInvalidSeqPos) {
+            if (exon_gen_rev) {
+                if (exon.GetGenomic_end() > last_gen_start) return false;
+            }
+            else {
+                if (exon.GetGenomic_start() < last_gen_end) return false;
+            }
+        }
+        last_gen_start = exon.GetGenomic_start();
+        last_gen_end = exon.GetGenomic_end();
+
+        const auto& pstart = exon.GetProduct_start();
+        const auto& pend = exon.GetProduct_end();
+        auto prod_start = pstart.IsNucpos() ? pstart.GetNucpos() :
+            pstart.GetProtpos().GetAmin() * 3 + pstart.GetProtpos().GetFrame() - 1;
+        auto prod_end = pend.IsNucpos() ? pend.GetNucpos() :
+            pend.GetProtpos().GetAmin() * 3 + pend.GetProtpos().GetFrame() - 1;
+        if (last_prod_start != kInvalidSeqPos) {
+            if (exon_prod_rev || (exon.CanGetProduct_strand() && IsReverse(exon.GetProduct_strand()))) {
+                if (prod_end > last_prod_start) return false;
+            }
+            else {
+                if (prod_start < last_prod_end) return false;
+            }
+        }
+        last_prod_start = prod_start;
+        last_prod_end = prod_end;
+    }
+    return true;
+}
+
+
 void CSpliced_seg::Validate(bool /*full_test*/) const
 {
     bool prot = GetProduct_type() == eProduct_type_protein;
@@ -126,44 +198,6 @@ void CSpliced_seg::Validate(bool /*full_test*/) const
     ITERATE (CSpliced_seg::TExons, exon_it, GetExons()) {
 
         const CSpliced_exon& exon = **exon_it;
-
-        if (last_gen_start != kInvalidSeqPos) {
-            if (gen_rev || (exon.CanGetGenomic_strand() && IsReverse(exon.GetGenomic_strand()))) {
-                if (exon.GetGenomic_end() > last_gen_start) {
-                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                           "CSpliced_seg::Validate(): wrong order of genomic coordinates on minus strand");
-                }
-            }
-            else {
-                if (exon.GetGenomic_start() < last_gen_end) {
-                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                           "CSpliced_seg::Validate(): wrong order of genomic coordanates on plus strand");
-                }
-            }
-        }
-        last_gen_start = exon.GetGenomic_start();
-        last_gen_end = exon.GetGenomic_end();
-
-        const auto& pstart = exon.GetProduct_start();
-        const auto& pend = exon.GetProduct_end();
-        auto prod_start = pstart.IsNucpos() ? pstart.GetNucpos() : pstart.GetProtpos().GetAmin() * 3 + pstart.GetProtpos().GetFrame() - 1;
-        auto prod_end = pend.IsNucpos() ? pend.GetNucpos() : pend.GetProtpos().GetAmin() * 3 + pend.GetProtpos().GetFrame() - 1;
-        if (last_prod_start != kInvalidSeqPos) {
-            if (prod_rev || (exon.CanGetProduct_strand() && IsReverse(exon.GetProduct_strand()))) {
-                if (prod_end > last_prod_start) {
-                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                           "CSpliced_seg::Validate(): wrong order of product coordinates on minus strand");
-                }
-            }
-            else {
-                if (prod_start < last_prod_end) {
-                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                           "CSpliced_seg::Validate(): wrong order of product coordinates on plus strand");
-                }
-            }
-        }
-        last_prod_start = prod_start;
-        last_prod_end = prod_end;
 
         /// Positions
         TSeqPos product_start = exon.GetProduct_start().AsSeqPos();
