@@ -143,27 +143,7 @@ public:
     ~CHttpReply()
     {
         PSG_TRACE("~CHttpReply");
-        Clear();
-    }
-
-    void Clear(void)
-    {
-        for (auto req: m_PendingReqs) {
-            req = nullptr;
-        }
-        m_PendingReqs.clear();
-
-        m_Req = nullptr;
-        m_RespGenerator = {0};
-        m_OutputIsReady = true;
-        m_OutputFinished = false;
-        m_Postponed = false;
-        m_Canceled = false;
-        m_Completed = false;
-        m_State = eReplyInitialized;
-        m_HttpProto = nullptr;
-        m_HttpConn = nullptr;
-        m_ReplyContentType = ePSGS_NotSet;
+        x_Clear();
     }
 
     void AssignPendingReq(unique_ptr<P> pending_req)
@@ -686,6 +666,26 @@ private:
         }
     }
 
+    void x_Clear(void)
+    {
+        for (auto req: m_PendingReqs) {
+            req = nullptr;
+        }
+        m_PendingReqs.clear();
+
+        m_Req = nullptr;
+        m_RespGenerator = {0};
+        m_OutputIsReady = true;
+        m_OutputFinished = false;
+        m_Postponed = false;
+        m_Canceled = false;
+        m_Completed = false;
+        m_State = eReplyInitialized;
+        m_HttpProto = nullptr;
+        m_HttpConn = nullptr;
+        m_ReplyContentType = ePSGS_NotSet;
+    }
+
     h2o_req_t *                     m_Req;
     h2o_generator_t                 m_RespGenerator;
     bool                            m_OutputIsReady;
@@ -1056,6 +1056,7 @@ private:
     CHttpRequestParser *        m_GetParser;
     bool                        m_ParamParsed;
 };
+
 
 
 template<typename P>
