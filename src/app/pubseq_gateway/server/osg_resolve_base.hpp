@@ -69,6 +69,8 @@ protected:
     CBioseqInfoRecord m_BioseqInfo;
     string m_BlobId;
     TBioseqInfoFlags m_BioseqInfoFlags;
+    bool m_Withdrawn;
+    bool m_Confidential;
     
     void ProcessResolveReply(const CID2_Reply& reply);
     EOutputFormat GetOutputFormat(EOutputFormat format);

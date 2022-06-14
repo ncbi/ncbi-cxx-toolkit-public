@@ -356,6 +356,15 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
         SendExcludedBlob(m_BlobId);
         FinalizeResult(ePSGS_Done);
     }
+    else if ( Forbidden() ) {
+        if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            FinalizeResult(ePSGS_Canceled);
+            return;
+        }
+        SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
+        SendForbiddenBlob();
+        FinalizeResult(ePSGS_Done);
+    }
     else {
         PSG_ERROR(GetName()<<": Unexpected missing blob");
         FinalizeResult(ePSGS_NotFound);
