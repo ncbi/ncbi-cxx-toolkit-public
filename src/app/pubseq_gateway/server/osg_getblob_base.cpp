@@ -161,6 +161,42 @@ void CPSGS_OSGGetBlobBase::SendExcludedBlob(const string& psg_blob_id)
 }
 
 
+void CPSGS_OSGGetBlobBase::SendForbiddenBlob()
+{
+    if ( m_SplitInfo ) {
+        x_SendForbiddenBlob(m_SplitInfo->GetBlob_id(), m_SplitInfo->GetBlob_state());
+    }
+    else if ( m_Blob ) {
+        x_SendForbiddenBlob(m_Blob->GetBlob_id(), m_Blob->GetBlob_state());
+    }
+}
+
+
+void CPSGS_OSGGetBlobBase::x_SendForbiddenBlob(const CID2_Blob_Id& osg_blob_id,
+                                               TID2BlobState blob_state)
+{
+    string psg_blob_id = GetPSGBlobId(osg_blob_id);
+    if ( GetDebugLevel() >= eDebug_exchange ) {
+        LOG_POST(GetDiagSeverity() << "OSG: "
+                 "Sending blob forbidden: "<<psg_blob_id);
+    }
+
+    CBlobRecord blob_props;
+    x_SetBlobVersion(blob_props, osg_blob_id);
+    x_SetBlobState(blob_props, blob_state);
+    x_SendBlobProps(psg_blob_id, blob_props);
+
+    size_t item_id = m_Reply->GetItemId();
+    m_Reply->PrepareBlobMessage(item_id, GetName(),
+                                psg_blob_id,
+                                "Blob retrieval is not authorized",
+                                CRequestStatus::e403_Forbidden,
+                                ePSGS_BlobRetrievalIsNotAuthorized,
+                                eDiag_Error);
+    m_Reply->PrepareBlobCompletion(item_id, GetName(), 2);
+}
+
+
 void CPSGS_OSGGetBlobBase::x_SendBlobProps(const string& psg_blob_id,
                                            CBlobRecord& blob_props)
 {
@@ -302,10 +338,41 @@ bool CPSGS_OSGGetBlobBase::HasBlob() const
 }
 
 
+static bool x_Forbidden(CPSGS_OSGGetBlobBase::TID2BlobState blob_state)
+{
+    if ( blob_state & (1<<eID2_Blob_State_withdrawn) ) {
+        return true;
+    }
+    if ( blob_state & (1<<eID2_Blob_State_protected) ) {
+        return true;
+    }
+    return false;
+}
+
+
+bool CPSGS_OSGGetBlobBase::Forbidden() const
+{
+    if ( HasBlob() ) {
+        return false;
+    }
+    if ( m_SplitInfo ) {
+        return x_Forbidden(m_SplitInfo->GetBlob_state());
+    }
+    else if ( m_Blob ) {
+        return x_Forbidden(m_Blob->GetBlob_state());
+    }
+    return false;
+}
+
+
 void CPSGS_OSGGetBlobBase::SendBlob()
 {
     IPSGS_Processor::EPSGS_Status status;
-    if ( m_SplitInfo && !m_Blob ) {
+    if ( !HasBlob() && Forbidden() ) {
+        SendForbiddenBlob();
+        status = ePSGS_Done;
+    }
+    else if ( m_SplitInfo && !m_Blob ) {
         // split_info with blob inside
         x_SetSplitVersion(m_SplitInfo->GetBlob_id(), m_SplitInfo->GetSplit_version());
         x_SendSplitInfo(m_SplitInfo->GetBlob_id(),

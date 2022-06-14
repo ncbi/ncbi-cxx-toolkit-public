@@ -51,7 +51,9 @@ BEGIN_NAMESPACE(osg);
 
 
 CPSGS_OSGResolveBase::CPSGS_OSGResolveBase()
-    : m_BioseqInfoFlags(0)
+    : m_BioseqInfoFlags(0),
+      m_Withdrawn(false),
+      m_Confidential(false)
 {
 }
 
@@ -202,15 +204,29 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
             if ( reply_ids.IsSetBlob_state() ) {
                 id2_state = reply_ids.GetBlob_state();
             }
-            int psg_state = 0;
-            if ( id2_state == 0 ) {
-                psg_state = 10;
+            enum EState {
+                eDead     =  0,
+                eSought   =  1,
+                eReserved =  5,
+                eMerged   =  7,
+                eLive     = 10
+            };
+            int psg_state = eDead;
+            if ( id2_state == 0 ||
+                 (id2_state & (1<<eID2_Blob_State_suppressed)) ) {
+                psg_state = eLive;
             }
-            else if ( id2_state & 4 ) {
-                psg_state = 5;
+            else if ( id2_state & (1<<eID2_Blob_State_suppressed) ) {
+                psg_state = eReserved;
             }
-            else if ( id2_state & 8 ) {
-                psg_state = 0;
+            else if ( id2_state & (1<<eID2_Blob_State_dead) ) {
+                psg_state = eDead;
+            }
+            else if ( id2_state & (1<<eID2_Blob_State_withdrawn) ) {
+                m_Withdrawn = true;
+            }
+            else if ( id2_state & (1<<eID2_Blob_State_protected) ) {
+                m_Confidential = true;
             }
             m_BioseqInfo.SetState(psg_state);
             m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_State;

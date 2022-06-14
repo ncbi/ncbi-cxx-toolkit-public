@@ -102,7 +102,9 @@ public:
 protected:
     void ProcessBlobReply(const CID2_Reply& reply);
     bool HasBlob() const;
+    bool Forbidden() const;
     void SendExcludedBlob(const string& psg_blob_id);
+    void SendForbiddenBlob();
     void SendBlob();
     
     static string x_GetSplitInfoPSGBlobId(const string& main_blob_id);
@@ -145,6 +147,9 @@ protected:
     void x_SendChunk(const CID2_Blob_Id& osg_blob_id,
                      TID2ChunkId chunk_id,
                      const CID2_Reply_Data& data);
+
+    void x_SendForbiddenBlob(const CID2_Blob_Id& osg_blob_id,
+                             TID2BlobState blob_state);
 
     void x_SetSplitVersion(const CID2_Blob_Id& osg_blob_id,
                            TID2SplitVersion split_version);
