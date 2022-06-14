@@ -836,6 +836,10 @@ enum EThreadDataState {
 };
 
 static atomic<EThreadDataState> s_ThreadDataState(eUninitialized);
+#define USE_TLS_DATA_CACHE
+#ifdef USE_TLS_DATA_CACHE
+static thread_local CDiagContextThreadData* s_ThreadDataCache;
+#endif
 
 static void s_ThreadDataSafeStaticCleanup(void*)
 {
@@ -867,6 +871,11 @@ CDiagContextThreadData::CDiagContextThreadData(void)
 
 CDiagContextThreadData::~CDiagContextThreadData(void)
 {
+#ifdef USE_TLS_DATA_CACHE
+    if ( s_ThreadDataCache == this ) {
+        s_ThreadDataCache = 0;
+    }
+#endif
 }
 
 
@@ -909,6 +918,12 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 
     static volatile TThreadSystemID s_LastThreadID
         = THREAD_SYSTEM_ID_INITIALIZER;
+ #ifdef USE_TLS_DATA_CACHE
+    if ( CDiagContextThreadData* data = s_ThreadDataCache ) {
+        return *data;
+    }
+#endif
+
 
     if (s_ThreadDataState != eInitialized) {
         // Avoid false positives, while also taking care not to call
@@ -967,6 +982,9 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         s_ThreadDataState = eInitialized;
     }
 
+#ifdef USE_TLS_DATA_CACHE
+    s_ThreadDataCache = data;
+#endif
     return *data;
 }
 
