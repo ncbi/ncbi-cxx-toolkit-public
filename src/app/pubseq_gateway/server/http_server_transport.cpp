@@ -438,6 +438,10 @@ void CHttpConnection<P>::PostponedStart(shared_ptr<CPSGS_Reply>  reply)
     for (auto req: http_reply->GetPendingReqs())
         req->SendProcessorStartMessage();
 
+    // Start the request timer
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->GetProcessorDispatcher()->StartRequestTimer(reply->GetRequestId());
+
     // Now start the processors
     for (auto req: http_reply->GetPendingReqs())
         req->Start();

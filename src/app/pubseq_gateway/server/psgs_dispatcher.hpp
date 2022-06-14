@@ -44,7 +44,6 @@
 
 // libuv request timer callback
 void request_timer_cb(uv_timer_t *  handle);
-void request_timer_close_cb(uv_handle_t *  handle);
 
 
 /// Based on various attributes of the request: {{seq_id}}; NA name;
@@ -106,6 +105,7 @@ public:
     void CancelAll(void);
 
     void OnRequestTimer(size_t  request_id);
+    void StartRequestTimer(size_t  request_id);
 
     void EraseProcessorGroup(size_t  request_id);
 
@@ -160,15 +160,17 @@ private:
     // Auxiliary structure to store the group of processors data
     struct SProcessorGroup
     {
+        size_t                      m_RequestId;
         vector<SProcessorData>      m_Processors;
-        uv_timer_t *                m_RequestTimer;
+        uv_timer_t                  m_RequestTimer;
         bool                        m_TimerActive;
         // true if the reply has been already flushed and finished
         bool                        m_FlushedAndFinished;
         // A processor which has started to supply data
         IPSGS_Processor *           m_StartedProcessing;
 
-        SProcessorGroup() :
+        SProcessorGroup(size_t  request_id) :
+            m_RequestId(request_id),
             m_TimerActive(false), m_FlushedAndFinished(false),
             m_StartedProcessing(nullptr)
         {
@@ -177,28 +179,32 @@ private:
 
         ~SProcessorGroup()
         {
-            StopRequestTimer();
+            if (m_TimerActive) {
+                PSG_ERROR("The request timer (request id: " +
+                          to_string(m_RequestId) +
+                          ") must be stopped before the processor group "
+                          "is destroyed");
+            }
         }
 
         void StartRequestTimer(uv_loop_t *  uv_loop,
-                               uint64_t  timer_millisec,
-                               size_t  request_id)
+                               uint64_t  timer_millisec)
         {
-            // NOTE: deallocation of memory is done in request_timer_close_cb()
-            m_RequestTimer = new uv_timer_t;
+            if (m_TimerActive)
+                NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
+                           "Request timer cannot be started twice (request id: " +
+                           to_string(m_RequestId) + ")");
 
-            int     ret = uv_timer_init(uv_loop, m_RequestTimer);
+            int     ret = uv_timer_init(uv_loop, &m_RequestTimer);
             if (ret < 0) {
-                delete m_RequestTimer;
                 NCBI_THROW(CPubseqGatewayException, eInvalidTimerInit,
                            uv_strerror(ret));
             }
-            m_RequestTimer->data = (void *)(request_id);
+            m_RequestTimer.data = (void *)(m_RequestId);
 
-            ret = uv_timer_start(m_RequestTimer, request_timer_cb,
+            ret = uv_timer_start(&m_RequestTimer, request_timer_cb,
                                  timer_millisec, 0);
             if (ret < 0) {
-                delete m_RequestTimer;
                 NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
                            uv_strerror(ret));
             }
@@ -210,14 +216,13 @@ private:
             if (m_TimerActive) {
                 m_TimerActive = false;
 
-                int     ret = uv_timer_stop(m_RequestTimer);
+                int     ret = uv_timer_stop(&m_RequestTimer);
                 if (ret < 0) {
                     PSG_ERROR("Stop request timer error: " +
                               string(uv_strerror(ret)));
                 }
 
-                uv_close(reinterpret_cast<uv_handle_t*>(m_RequestTimer),
-                         request_timer_close_cb);
+                uv_close(reinterpret_cast<uv_handle_t*>(&m_RequestTimer), NULL);
             }
         }
 
@@ -225,10 +230,9 @@ private:
         {
             if (m_TimerActive) {
                 // Consequent call just updates the timer
-                int     ret = uv_timer_start(m_RequestTimer, request_timer_cb,
+                int     ret = uv_timer_start(&m_RequestTimer, request_timer_cb,
                                              timer_millisec, 0);
                 if (ret < 0) {
-                    delete m_RequestTimer;
                     NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
                                uv_strerror(ret));
                 }

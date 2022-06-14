@@ -46,15 +46,6 @@ void request_timer_cb(uv_timer_t *  handle)
     app->GetProcessorDispatcher()->OnRequestTimer(request_id);
 }
 
-// the libuv handle memory can only be freed in the close_cb or after it was
-// called. See the libuv documentation
-void request_timer_close_cb(uv_handle_t *  handle)
-{
-    uv_timer_t *    uv_timer = reinterpret_cast<uv_timer_t *>(handle);
-    delete uv_timer;
-}
-
-
 void erase_processor_group_cb(void *  user_data)
 {
     auto *      app = CPubseqGatewayApp::GetInstance();
@@ -107,7 +98,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     size_t                              proc_count = m_RegisteredProcessors.size();
     TProcessorPriority                  priority = proc_count;
     auto                                request_id = request->GetRequestId();
-    unique_ptr<SProcessorGroup>         procs(new SProcessorGroup());
+    unique_ptr<SProcessorGroup>         procs(new SProcessorGroup(request_id));
 
     for (auto const &  proc : m_RegisteredProcessors) {
         // First check the limit for the number of processors
@@ -178,10 +169,6 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         reply->SetCompleted();
         x_PrintRequestStop(request, CRequestStatus::e404_NotFound);
     } else {
-        auto *      app = CPubseqGatewayApp::GetInstance();
-        procs->StartRequestTimer(app->GetUVLoop(), m_RequestTimeoutMillisec,
-                                 request_id);
-
         auto *  grp = procs.release();
         pair<size_t,
              unique_ptr<SProcessorGroup>>   req_grp = make_pair(request_id,
@@ -195,6 +182,26 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     }
 
     return ret;
+}
+
+
+// Start of the timer is done at http_server_transport.cpp PostponedStart
+// This guarantees that the timer is created in the same uv loop (i.e. working
+// thread) as the processors will use regardless of:
+// - the request started processed right away
+// - the request was postponed and started later from a postopned list
+void CPSGS_Dispatcher::StartRequestTimer(size_t  request_id)
+{
+    size_t                      bucket_index = x_GetBucketIndex(request_id);
+    m_GroupsLock[bucket_index].lock();
+
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs != m_ProcessorGroups[bucket_index].end()) {
+        auto *      app = CPubseqGatewayApp::GetInstance();
+        procs->second->StartRequestTimer(app->GetUVLoop(), m_RequestTimeoutMillisec);
+    }
+
+    m_GroupsLock[bucket_index].unlock();
 }
 
 
@@ -296,6 +303,14 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     // It needs to check if all the processors finished.
     // If so then the best finish status is used, sent to the client and the
     // group is deleted
+
+    if (uv_thread_self() != processor->GetUVThreadId()) {
+        PSG_ERROR("SignalFinishProcessing() is called not from an assigned "
+                  "thread (and libuv loop). "
+                  "Current thread: " << uv_thread_self() <<
+                  " Assigned thread: " << processor->GetUVThreadId() <<
+                  " Call source: " << CPSGS_Dispatcher::SignalSourceToString(source));
+    }
 
     auto                            reply = processor->GetReply();
     auto                            request = processor->GetRequest();
@@ -473,9 +488,14 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     bool    pre_finished = (finished_count + finishing_count) == total_count;
     bool    fully_finished = finished_count == total_count;
     bool    need_unlock = true;
+    bool    flushed = false;
 
     if (pre_finished) {
         // The reply needs to be flushed if it has not been done yet
+
+        // Timer is not needed anymore
+        procs->second->StopRequestTimer();
+
 
         if (procs->second->m_StartedProcessing == nullptr) {
             // 1. There is no start data notification in case of annotation
@@ -500,6 +520,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             // This will switch the stream to the finished state, i.e.
             // IsFinished() will return true
             procs->second->m_FlushedAndFinished = true;
+            flushed = true;
 
             // To avoid flushing and stopping request under a lock
             m_GroupsLock[bucket_index].unlock();
@@ -514,7 +535,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         m_GroupsLock[bucket_index].unlock();
     }
 
-    if (fully_finished) {
+    if (fully_finished && flushed) {
         // Clear the group after the final chunk is sent
         if (!reply->IsCompleted() && reply->IsFinished()) {
             reply->SetCompleted();
@@ -773,6 +794,7 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
 
     auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
     if (procs != m_ProcessorGroups[bucket_index].end()) {
+
         group = procs->second.release();
 
         // Without releasing the pointer it may lead to a processor
