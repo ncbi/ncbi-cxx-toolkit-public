@@ -100,7 +100,7 @@ NCBI_PARAM_DEF_EX(string, GENBANK, ID2_PROCESSOR, "",
                   eParam_NoThread, GENBANK_ID2_PROCESSOR);
 NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_WGS, true,
                   eParam_NoThread, GENBANK_VDB_WGS);
-NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_SNP, false,
+NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_SNP, true,
                   eParam_NoThread, GENBANK_VDB_SNP);
 NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_CDD, true,
     eParam_NoThread, GENBANK_VDB_CDD);
