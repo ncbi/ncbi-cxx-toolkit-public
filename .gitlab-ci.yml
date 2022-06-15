@@ -16,11 +16,11 @@ build:
   - cd CMake-GCC730-DebugDLL/build
   - DISTCC_VERBOSE=1 DISTCC_LOG=`pwd`/distcc.log  make VERBOSE=0 -j 8 2>&1 | tee build.log
  artifacts:
+  untracked: true
   paths:
    - config.log
    - build.log
    - distcc.log
-   - CMake-GCC730-DebugDLL/
   expire_in: never
 
 test:
