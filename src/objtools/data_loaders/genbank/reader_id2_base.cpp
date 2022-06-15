@@ -102,7 +102,7 @@ NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_WGS, true,
                   eParam_NoThread, GENBANK_VDB_WGS);
 NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_SNP, true,
                   eParam_NoThread, GENBANK_VDB_SNP);
-NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_CDD, true,
+NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_CDD, false,
     eParam_NoThread, GENBANK_VDB_CDD);
 
 int CId2ReaderBase::GetDebugLevel(void)
