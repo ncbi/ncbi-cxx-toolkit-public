@@ -23,4 +23,4 @@ REQUIRES = Boost.Test.Included SQLITE3
 
 CHECK_CMD = test_hgvs_reader
 
-WATCHERS = ludwigf meric
+WATCHERS = ludwigf
