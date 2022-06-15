@@ -105,29 +105,42 @@ int CTestApplication::Run(void)
     unique_ptr<MSerial_Format> ofmt(GetSerialFormat(args["ofmt"].AsString()));
 
     CNcbiIstream& in = args["f"].AsInputFile();
-    if (args["set"]) {
-        eutils::CPubmedArticleSet articles;
-        in >> *ifmt >> articles;
-        for (auto& it : articles.GetPP().GetPP()) {
-            if (it->IsPubmedArticle()) {
-                ProcessArticle<eutils::CPubmedArticle>(it->GetPubmedArticle(), *ofmt);
+    try {
+        if (args["set"]) {
+            eutils::CPubmedArticleSet articles;
+            in >> *ifmt >> articles;
+            for (auto& it : articles.GetPP().GetPP()) {
+                if (it->IsPubmedArticle()) {
+                    ProcessArticle<eutils::CPubmedArticle>(it->GetPubmedArticle(), *ofmt);
+                }
+                else if (it->IsPubmedBookArticle()) {
+                    ProcessArticle(it->GetPubmedBookArticle(), *ofmt);
+                }
             }
-            else if (it->IsPubmedBookArticle()) {
-                ProcessArticle(it->GetPubmedBookArticle(), *ofmt);
+        }
+        else {
+            if (args["book"].AsBoolean()) {
+                eutils::CPubmedBookArticle book_article;
+                in >> *ifmt >> book_article;
+                ProcessArticle(book_article, *ofmt);
+            }
+            else {
+                eutils::CPubmedArticle article;
+                in >> *ifmt >> article;
+                ProcessArticle(article, *ofmt);
             }
         }
     }
-    else {
-        if (args["book"].AsBoolean()) {
-            eutils::CPubmedBookArticle book_article;
-            in >> *ifmt >> book_article;
-            ProcessArticle(book_article, *ofmt);
+    catch (exception& e) {
+        string msg = e.what();
+#if defined(NCBI_OS_MSWIN) && defined(NDEBUG)
+        if (msg.find("locale") != NPOS) {
+            cout << "This test is disabled because of unsupported locale." << endl
+                << "NCBI_UNITTEST_DISABLED" << endl;
+            return 0;
         }
-        else {
-            eutils::CPubmedArticle article;
-            in >> *ifmt >> article;
-            ProcessArticle(article, *ofmt);
-        }
+#endif
+        throw;
     }
     return 0;
 }
