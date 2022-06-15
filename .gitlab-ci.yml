@@ -36,3 +36,6 @@ test:
   paths:
    - test.log
   expire_in: never
+ cache:
+  paths:
+   - CMake-GCC730-DebugDLL
