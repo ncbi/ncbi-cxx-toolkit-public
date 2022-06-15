@@ -20,6 +20,7 @@ build:
    - config.log
    - build.log
    - distcc.log
+   - CMake-GCC730-DebugDLL/
   expire_in: never
 
 test:
