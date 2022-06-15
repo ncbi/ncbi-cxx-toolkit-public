@@ -22,7 +22,7 @@ build:
    - distcc.log
   expire_in: never
  cache:
-  unracked: true
+  untracked: true
 
 test:
  stage: test
