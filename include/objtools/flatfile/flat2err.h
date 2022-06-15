@@ -34,6 +34,7 @@
 #ifndef __MODULE_flat2asn__
 #define __MODULE_flat2asn__
 
+// clang-format off
 #define ERR_FORMAT                                     1,0
 #define ERR_FORMAT_MissingEnd                          1,2
 #define ERR_FORMAT_LineTypeOrder                       1,6
@@ -610,5 +611,6 @@
 #define ERR_DBLINK                                     36,0
 #define ERR_DBLINK_InvalidIdentifier                   36,1
 #define ERR_DBLINK_DuplicateIdentifierRemoved          36,2
+// clang-format on
 
 #endif
