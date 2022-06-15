@@ -204,7 +204,7 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
             if ( reply_ids.IsSetBlob_state() ) {
                 id2_state = reply_ids.GetBlob_state();
             }
-            enum EState {
+            enum EPSGBioseqState {
                 eDead     =  0,
                 eSought   =  1,
                 eReserved =  5,
@@ -213,7 +213,7 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
             };
             int psg_state = eDead;
             if ( id2_state == 0 ||
-                 (id2_state & (1<<eID2_Blob_State_suppressed)) ) {
+                 (id2_state & (1<<eID2_Blob_State_live)) ) {
                 psg_state = eLive;
             }
             else if ( id2_state & (1<<eID2_Blob_State_suppressed) ) {
