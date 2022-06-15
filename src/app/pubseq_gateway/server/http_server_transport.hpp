@@ -84,6 +84,10 @@ void GetSSLSettings(bool &  enabled,
 void NotifyRequestFinished(size_t  request_id);
 void CheckFDLimit(void);
 
+void IncrementBackloggedCounter(void);
+void IncrementTooManyRequestsCounter(void);
+
+
 #if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
     h2o_socket_t *  Geth2oConnectionSocketForRequest(h2o_req_t *  req);
 #endif
@@ -806,10 +810,14 @@ public:
             }
         } else if (m_Backlog.size() < kHttpMaxBacklog) {
             x_RegisterPending(reply, m_Backlog);
+            IncrementBackloggedCounter();
+
             for (auto & pending_req: pending_reqs) {
                 reply->GetHttpReply()->AssignPendingReq(move(pending_req));
             }
         } else {
+            IncrementTooManyRequestsCounter();
+
             reply->SetContentType(ePSGS_PSGMime);
             reply->PrepareReplyMessage("Too many pending requests",
                                        CRequestStatus::e503_ServiceUnavailable,

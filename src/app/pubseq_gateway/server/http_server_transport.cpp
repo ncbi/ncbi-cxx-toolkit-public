@@ -447,6 +447,21 @@ void CHttpConnection<P>::PostponedStart(shared_ptr<CPSGS_Reply>  reply)
         req->Start();
 }
 
+
+void IncrementBackloggedCounter(void)
+{
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_BackloggedRequests);
+}
+
+
+void IncrementTooManyRequestsCounter(void)
+{
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_TooManyRequests);
+}
+
+
 // Explicit instantiation due to PostponedStart() method is in the .cpp file
 template class CHttpConnection<CPendingOperation>;
 

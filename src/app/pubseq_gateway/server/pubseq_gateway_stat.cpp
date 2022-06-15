@@ -270,6 +270,16 @@ CPSGSCounters::CPSGSCounters()
             "BioseqInfoError", "bioseq info Cassandra query execution error counter",
             "Number of times a Cassandra bioseq info query resulted in an error",
             true, true, false);
+    m_Counters[ePSGS_BackloggedRequests] =
+        new SCounterInfo(
+            "BackloggedRequests", "Backlogged requests counter",
+            "Number of times a request has been put into a backlog list",
+            true, false, false);
+    m_Counters[ePSGS_TooManyRequests] =
+        new SCounterInfo(
+            "TooManyRequests", "Too many requests counter",
+            "Number of times a request has been rejected because currently there are too many in serving",
+            true, false, false);
     m_Counters[ePSGS_100] =
         new SCounterInfo(
             "RequestStop100", "Request stop counter with status 100",
