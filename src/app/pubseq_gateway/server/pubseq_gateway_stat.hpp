@@ -88,6 +88,8 @@ class CPSGSCounters
             ePSGS_BioseqInfoFoundMany,
             ePSGS_Si2csiError,
             ePSGS_BioseqInfoError,
+            ePSGS_BackloggedRequests,
+            ePSGS_TooManyRequests,
 
             // Request stop statuses
             ePSGS_100,
