@@ -132,8 +132,8 @@ int CTestApplication::Run(void)
         }
     }
     catch (exception& e) {
-        string msg = e.what();
 #if defined(NCBI_OS_MSWIN) && defined(NDEBUG)
+        string msg = e.what();
         if (msg.find("locale") != NPOS) {
             cout << "This test is disabled because of unsupported locale." << endl
                 << "NCBI_UNITTEST_DISABLED" << endl;
