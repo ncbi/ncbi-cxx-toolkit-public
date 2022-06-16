@@ -99,14 +99,20 @@ void CCassBioseqInfoTaskDelete::Wait1()
                 m_QueryArr[0].query = m_Conn->NewQuery();
                 m_QueryArr[0].restart_count = 0;
                 auto qry = m_QueryArr[0].query;
-                string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_info WHERE accession = ? AND version = ? AND seq_id_type = ? AND gi = ?";
+                string writetime = (m_Writetime > 0) ? " USING TIMESTAMP ?":"";
+                string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_info" + writetime
+                    + " WHERE accession = ? AND version = ? AND seq_id_type = ? AND gi = ?";
                 qry->NewBatch();
 
-                qry->SetSQL(sql, 4);
-                qry->BindStr(0, m_Accession);
-                qry->BindInt16(1, m_Version);
-                qry->BindInt16(2, m_SeqIdType);
-                qry->BindInt64(3, m_GI);
+                int param{0};
+                qry->SetSQL(sql, 4 + (m_Writetime > 0));
+                if (m_Writetime > 0) {
+                    qry->BindInt64(param++, m_Writetime);
+                }
+                qry->BindStr(param++, m_Accession);
+                qry->BindInt16(param++, m_Version);
+                qry->BindInt16(param++, m_SeqIdType);
+                qry->BindInt64(param++, m_GI);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();

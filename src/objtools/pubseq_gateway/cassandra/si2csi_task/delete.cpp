@@ -90,12 +90,17 @@ void CCassSI2CSITaskDelete::Wait1()
                 m_QueryArr[0].query = m_Conn->NewQuery();
                 m_QueryArr[0].restart_count = 0;
                 auto qry = m_QueryArr[0].query;
-                string sql = "DELETE FROM " + GetKeySpace() + ".si2csi WHERE sec_seq_id = ? AND sec_seq_id_type = ?";
+                string writetime = (m_Writetime > 0) ? " USING TIMESTAMP ?":"";
+                string sql = "DELETE FROM " + GetKeySpace() + ".si2csi" + writetime + " WHERE sec_seq_id = ? AND sec_seq_id_type = ?";
                 qry->NewBatch();
 
-                qry->SetSQL(sql, 2);
-                qry->BindStr(0, m_SecSeqId);
-                qry->BindInt16(1, m_SecSeqIdType);
+                int param{0};
+                qry->SetSQL(sql, 2 + (m_Writetime > 0));
+                if (m_Writetime > 0) {
+                    qry->BindInt64(param++, m_Writetime);
+                }
+                qry->BindStr(param++, m_SecSeqId);
+                qry->BindInt16(param++, m_SecSeqIdType);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();

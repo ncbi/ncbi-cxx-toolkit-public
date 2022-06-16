@@ -78,12 +78,20 @@ class CCassNAnnotTaskDelete
         TDataErrorCallback data_error_cb
     );
 
+    void SetWritetime(CNAnnotRecord::TWritetime value)
+    {
+        if (value > 0) {
+            m_Writetime = value;
+        }
+    }
+
  protected:
     virtual void Wait1() override;
 
  private:
     CNAnnotRecord * m_Annot{nullptr};
     unique_ptr<CCassBlobTaskDelete> m_BlobDeleteTask;
+    CNAnnotRecord::TWritetime m_Writetime{0};
 };
 
 END_IDBLOB_SCOPE
