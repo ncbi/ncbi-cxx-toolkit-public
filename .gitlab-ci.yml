@@ -15,7 +15,7 @@ build:
   - cd CMake-GCC730-DebugDLL/build
   - DISTCC_VERBOSE=1 DISTCC_LOG=`pwd`/distcc.log  make VERBOSE=0 -j 8 2>&1 | tee build.log
   - echo "Running tests"
-  - make check_r VERBOSE=1 2>&1 | tee test.log
+  - make check VERBOSE=1 2>&1 | tee test.log
  artifacts:
   paths:
    - config.log
