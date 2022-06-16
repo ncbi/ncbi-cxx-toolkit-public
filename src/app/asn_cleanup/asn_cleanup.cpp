@@ -1166,6 +1166,9 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
             se->ReassignConflictingIds();
             entryHandle = m_Scope->AddTopLevelSeqEntry(*se);
         }
+        else {
+            throw;
+        }
     }
     if (!entryHandle) {
         NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
