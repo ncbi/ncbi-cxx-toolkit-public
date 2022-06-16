@@ -802,21 +802,17 @@ void xGetBlkDataReplaceNewLine(string& instr, int indent)
 /**********************************************************/
 static size_t SeekLastAlphaChar(const Char* str, size_t len)
 {
-    size_t ret = 0;
     if (str != NULL && len != 0) {
-        for (ret = len - 1; ret >= 0; --ret) {
-            if (str[ret] != ' ' && str[ret] != '\n' && str[ret] != '\\' && str[ret] != ',' &&
-                str[ret] != ';' && str[ret] != '~' && str[ret] != '.' && str[ret] != ':') {
-                ++ret;
-                break;
+        for (size_t ret = len; ret > 0;) {
+            char c = str[--ret];
+            if (c != ' ' && c != '\n' && c != '\\' && c != ',' &&
+                c != ';' && c != '~' && c != '.' && c != ':') {
+                return ret + 1;
             }
         }
-
-        if (ret < 0)
-            ret = 0;
     }
 
-    return ret;
+    return 0;
 }
 
 /**********************************************************/
