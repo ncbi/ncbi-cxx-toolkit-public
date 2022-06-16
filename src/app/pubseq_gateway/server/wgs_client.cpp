@@ -377,6 +377,11 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
 
     SWGSSeqInfo seq0 = ResolveBlobId(*parsed_id2info.tse_id);
     if ( !seq0 ) return ret;
+    
+    ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
+    ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
+    ret->m_Id2BlobState = GetID2BlobState(seq0);
+    if ( ret->IsForbidden() ) return ret;
 
     SWGSSeqInfo& seq = GetRootSeq(seq0);
     if ( seq.IsContig() ) {
@@ -385,9 +390,6 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
         CWGSSeqIterator::TFlags flags = it.fDefaultFlags & ~it.fMasterDescr;
         ret = make_shared<SWGSData>();
         ret->m_Data = new CAsnBinData(*it.GetChunkData(chunk_id, flags));
-        ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
-        ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
-        ret->m_Id2BlobState = GetID2BlobState(seq0);
         ret->m_Compress = GetCompress(m_Config.m_CompressData, seq, *ret->m_Data);
     }
     return ret;
@@ -1454,6 +1456,12 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
         data = make_shared<SWGSData>();
     }
     SWGSSeqInfo& seq = GetRootSeq(seq0);
+    
+    if ( !data->m_Id2BlobId ) data->m_Id2BlobId.Reset(&GetBlobId(seq0));
+    if ( data->m_BlobId.empty() ) data->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*data->m_Id2BlobId);
+    data->m_Id2BlobState = GetID2BlobState(seq0);
+    if ( data->IsForbidden() ) return;
+    
     if ( seq.IsMaster() ) {
         data->m_Data = new CAsnBinData(*GetWGSDb(seq)->GetMasterSeq_entry());
     }
@@ -1501,14 +1509,47 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
         data->m_Data = new CAsnBinData(*it.GetSeq_entry(flags));
     }
     if ( data->m_Data ) {
-        if ( !data->m_Id2BlobId ) data->m_Id2BlobId.Reset(&GetBlobId(seq0));
-        if ( data->m_BlobId.empty() ) data->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*data->m_Id2BlobId);
-        data->m_Id2BlobState = GetID2BlobState(seq0);
         data->m_Compress = GetCompress(m_Config.m_CompressData, seq, *data->m_Data);
     }
     else {
         data.reset();
     }
+}
+
+
+int SWGSData::GetPSGBioseqState() const
+{
+    if ( m_Id2BlobState == 0 ||
+         (m_Id2BlobState & (1<<eID2_Blob_State_live)) ) {
+        return eLive;
+    }
+    else if ( m_Id2BlobState & (1<<eID2_Blob_State_suppressed) ) {
+        return eReserved;
+    }
+    else if ( m_Id2BlobState & (1<<eID2_Blob_State_dead) ) {
+        return eDead;
+    }
+    else if ( m_Id2BlobState & (1<<eID2_Blob_State_withdrawn) ) {
+        return eDead; // assume withdrawn as dead ???
+    }
+    else if ( m_Id2BlobState & (1<<eID2_Blob_State_protected) ) {
+        return eDead; // assume protected (unauthorized) as dead ???
+    }
+    else {
+        return eDead;
+    }
+}
+
+
+bool SWGSData::IsForbidden() const
+{
+    if ( m_Id2BlobState & (1<<eID2_Blob_State_withdrawn) ) {
+        return true;
+    }
+    else if ( m_Id2BlobState & (1<<eID2_Blob_State_protected) ) {
+        return true;
+    }
+    return false;
 }
 
 

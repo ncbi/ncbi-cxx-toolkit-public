@@ -71,13 +71,18 @@ struct SWGSProcessor_Config
 struct SWGSData
 {
     typedef SPSGS_ResolveRequest::TPSGS_BioseqIncludeData TBioseqInfoFlags;
-
+    
+    enum EPSGBioseqState {
+        eDead     =  0,
+        eSought   =  1,
+        eReserved =  5,
+        eMerged   =  7,
+        eLive     = 10
+    };
+    
     int GetID2BlobState(void) const { return m_Id2BlobState; }
-    int GetPSGBioseqState() const {
-        if ( m_Id2BlobState == 0 ) return 10;
-        else if ( m_Id2BlobState & 4 ) return 5;
-        return 0;
-    }
+    int GetPSGBioseqState() const;
+    bool IsForbidden() const;
 
     string                          m_BlobId;
     CRef<objects::CID2_Blob_Id>     m_Id2BlobId;
