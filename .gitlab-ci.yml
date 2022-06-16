@@ -11,11 +11,11 @@ build:
  timeout: 5 hours
  script:
   - echo "Building toolkit using cmake"
-  - ./cmake-configure --with-dll 2>&1 | tee config.log
+  - ./cmake-configure --with-dll 2>&1 | tee "${CI_PROJECT_DIR}/config.log"
   - cd CMake-GCC730-DebugDLL/build
-  - DISTCC_VERBOSE=1 DISTCC_LOG=`pwd`/distcc.log  make VERBOSE=0 -j 8 2>&1 | tee build.log
+  - DISTCC_VERBOSE=1 DISTCC_LOG="${CI_PROJECT_DIR}/distcc.log"  make VERBOSE=0 -j 8 2>&1 | tee "${CI_PROJECT_DIR}/build.log"
   - echo "Running tests"
-  - make check VERBOSE=1 2>&1 | tee test.log
+  - make check VERBOSE=1 2>&1 | tee "${CI_PROJECT_DIR}/test.log"
  artifacts:
   paths:
    - config.log
