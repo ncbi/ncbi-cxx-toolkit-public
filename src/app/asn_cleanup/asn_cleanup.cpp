@@ -1155,22 +1155,31 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     if (!se) {
         return false;
     }
-
-    CSeq_entry_Handle entry = m_Scope->AddTopLevelSeqEntry(*se);
-    if ( !entry ) {
+    
+    CSeq_entry_Handle entryHandle;
+    try { 
+        entryHandle = m_Scope->AddTopLevelSeqEntry(*se);
+    }
+    catch (const CObjMgrException& e)
+    {
+        if (e.GetErrCode() == CObjMgrException::eAddDataError) {
+            se->ReassignConflictingIds();
+            entryHandle = m_Scope->AddTopLevelSeqEntry(*se);
+        }
+    }
+    if (!entryHandle) {
         NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
     }
 
-    if (HandleSeqEntry(entry)) {
-        if (entry.GetCompleteSeq_entry().GetPointer() != se.GetPointer()) {
-            se->Assign(*entry.GetCompleteSeq_entry());
+    if (HandleSeqEntry(entryHandle)) {
+        if (entryHandle.GetCompleteSeq_entry().GetPointer() != se.GetPointer()) {
+            se->Assign(*entryHandle.GetCompleteSeq_entry());
         }
-        m_Scope->RemoveTopLevelSeqEntry(entry);
+        m_Scope->RemoveTopLevelSeqEntry(entryHandle);
         return true;
-    } else {
-        m_Scope->RemoveTopLevelSeqEntry(entry);
-        return false;
-    }
+    } 
+    m_Scope->RemoveTopLevelSeqEntry(entryHandle);
+    return false;
 }
 
 
