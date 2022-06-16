@@ -164,10 +164,10 @@ void CPSGS_OSGGetBlobBase::SendExcludedBlob(const string& psg_blob_id)
 void CPSGS_OSGGetBlobBase::SendForbiddenBlob()
 {
     if ( m_SplitInfo ) {
-        x_SendForbiddenBlob(m_SplitInfo->GetBlob_id(), m_SplitInfo->GetBlob_state());
+        x_SendForbiddenBlob(m_SplitInfo->GetBlob_id(), x_GetBlobState(*m_SplitInfo));
     }
     else if ( m_Blob ) {
-        x_SendForbiddenBlob(m_Blob->GetBlob_id(), m_Blob->GetBlob_state());
+        x_SendForbiddenBlob(m_Blob->GetBlob_id(), x_GetBlobState(*m_Blob));
     }
 }
 
@@ -356,10 +356,10 @@ bool CPSGS_OSGGetBlobBase::Forbidden() const
         return false;
     }
     if ( m_SplitInfo ) {
-        return x_Forbidden(m_SplitInfo->GetBlob_state());
+        return x_Forbidden(x_GetBlobState(*m_SplitInfo));
     }
     else if ( m_Blob ) {
-        return x_Forbidden(m_Blob->GetBlob_state());
+        return x_Forbidden(x_GetBlobState(*m_Blob));
     }
     return false;
 }
