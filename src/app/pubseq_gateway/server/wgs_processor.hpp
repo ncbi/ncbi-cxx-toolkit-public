@@ -111,6 +111,7 @@ private:
     void x_SendResult(const string& data_to_send, EOutputFormat output_format);
     void x_SendBioseqInfo(void);
     void x_SendBlobProps(const string& psg_blob_id, CBlobRecord& blob_props);
+    void x_SendBlobForbidden(const string& psg_blob_id);
     void x_SendBlobData(const string& psg_blob_id, const objects::CID2_Reply_Data& data);
     void x_SendChunkBlobProps(const string& id2_info,
                               TID2ChunkId chunk_id,
@@ -121,6 +122,7 @@ private:
     void x_SendSplitInfo(void);
     void x_SendMainEntry(void);
     void x_SendExcluded(void);
+    void x_SendForbidden(void);
     void x_SendBlob(void);
     void x_SendChunk(void);
     void x_WriteData(objects::CID2_Reply_Data& data,

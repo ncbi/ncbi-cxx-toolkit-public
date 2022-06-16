@@ -394,7 +394,16 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
     }
     try {
         x_SendBioseqInfo();
-        x_SendBlob();
+        if ( m_WGSData->IsForbidden() ) {
+            x_SendForbidden();
+        }
+        else if ( m_WGSData->m_Data ) {
+            x_SendBlob();
+        }
+        else {
+            x_Finish(ePSGS_NotFound);
+            return;
+        }
     }
     catch (...) {
         x_Finish(ePSGS_Error);
@@ -445,7 +454,7 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
     if ( x_IsCanceled() ) {
         return;
     }
-    if ( !m_WGSData  ||  !m_WGSData->m_Data ) {
+    if ( !m_WGSData ) {
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -453,7 +462,16 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
         return;
     }
     try {
-        x_SendBlob();
+        if ( m_WGSData->IsForbidden() ) {
+            x_SendForbidden();
+        }
+        else if ( m_WGSData->m_Data ) {
+            x_SendBlob();
+        }
+        else {
+            x_Finish(ePSGS_NotFound);
+            return;
+        }
     }
     catch (...) {
         x_Finish(ePSGS_Error);
@@ -505,7 +523,7 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
     if ( x_IsCanceled() ) {
         return;
     }
-    if ( !m_WGSData  ||  !m_WGSData->m_Data ) {
+    if ( !m_WGSData ) {
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -513,7 +531,12 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
         return;
     }
     try {
-        x_SendChunk();
+        if ( m_WGSData->IsForbidden() ) {
+            x_SendForbidden();
+        }
+        else {
+            x_SendChunk();
+        }
     }
     catch (...) {
         x_Finish(ePSGS_Error);
@@ -597,6 +620,20 @@ void CPSGS_WGSProcessor::x_SendBlobProps(const string& psg_blob_id, CBlobRecord&
     string data_to_send = ToJsonString(blob_props);
     reply.PrepareBlobPropData(item_id, GetName(), psg_blob_id, data_to_send);
     reply.PrepareBlobPropCompletion(item_id, GetName(), 2);
+}
+
+
+void CPSGS_WGSProcessor::x_SendBlobForbidden(const string& psg_blob_id)
+{
+    auto& reply = *GetReply();
+    size_t item_id = reply.GetItemId();
+    reply.PrepareBlobMessage(item_id, GetName(),
+                             psg_blob_id,
+                             "Blob retrieval is not authorized",
+                             CRequestStatus::e403_Forbidden,
+                             ePSGS_BlobRetrievalIsNotAuthorized,
+                             eDiag_Error);
+    reply.PrepareBlobCompletion(item_id, GetName(), 2);
 }
 
 
@@ -685,6 +722,19 @@ void CPSGS_WGSProcessor::x_SendExcluded(void)
 {
     size_t item_id = GetReply()->GetItemId();
     GetReply()->PrepareBlobExcluded(item_id, GetName(), m_WGSData->m_BlobId, ePSGS_BlobExcluded);
+}
+
+
+void CPSGS_WGSProcessor::x_SendForbidden(void)
+{
+    CID2_Blob_Id& id2_blob_id = *m_WGSData->m_Id2BlobId;
+    const string& psg_blob_id = m_WGSData->m_BlobId;
+
+    CBlobRecord blob_props;
+    s_SetBlobVersion(blob_props, id2_blob_id);
+    s_SetBlobState(blob_props, m_WGSData->GetID2BlobState());
+    x_SendBlobProps(psg_blob_id, blob_props);
+    x_SendBlobForbidden(psg_blob_id);
 }
 
 
