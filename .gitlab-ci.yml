@@ -24,7 +24,7 @@ build:
   expire_in: never
  cache:
   paths:
-   - CMake-GCC730-DebugDLL
+   - build.log
 
 test:
  stage: test
@@ -32,7 +32,7 @@ test:
  script:
   - pwd
   - ls
-  - cd CMake-GCC730-DebugDLL/build
+  - if false; then cd CMake-GCC730-DebugDLL/build ; fi
   - if false; then make check_r VERBOSE=1 2>&1 | tee test.log; fi
  artifacts:
   paths:
@@ -40,4 +40,4 @@ test:
   expire_in: never
  cache:
   paths:
-   - CMake-GCC730-DebugDLL
+   - build.log
