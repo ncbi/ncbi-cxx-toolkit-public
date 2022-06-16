@@ -53,10 +53,11 @@ class NCBI_XOBJEDIT_EXPORT CHugeFileProcess
 public:
 
     /// constructors
-    CHugeFileProcess(const string& file_name);
-
+    CHugeFileProcess();
+    CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types = nullptr);
     /// destructor
     virtual ~CHugeFileProcess(void);
+    void Open(const string& file_name, const set<TTypeInfo>* types = nullptr);
 
     using THandler = std::function<void(CConstRef<CSubmit_block>, CRef<CSeq_entry>)>;
     using THandlerTopIds = std::function<void(CHugeAsnReader&, const std::list<CConstRef<CSeq_id>>&)>;
@@ -64,6 +65,8 @@ public:
     [[nodiscard]] bool Read(THandler handler, CRef<CSeq_id> seqid);
 
     CHugeAsnReader& GetReader() { return *m_pReader; }
+    CHugeFile& GetFile() { return *m_pHugeFile; }
+    static bool IsSupported(TTypeInfo info);
 
 private:
     unique_ptr<CHugeFile> m_pHugeFile;

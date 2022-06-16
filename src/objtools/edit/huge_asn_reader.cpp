@@ -98,7 +98,7 @@ const CHugeAsnReader::TBioseqSetInfo* CHugeAsnReader::FindTopObject(CConstRef<CS
 CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
 {
     auto entry = Ref(new CSeq_entry);
-    auto obj_stream = x_MakeObjStream(info.m_pos);
+    auto obj_stream = MakeObjStream(info.m_pos);
     if (info.m_class == CBioseq_set::eClass_not_set)
     {
         obj_stream->Read(&entry->SetSeq(), CBioseq::GetTypeInfo(), CObjectIStream::eNoFileHeader);
@@ -116,13 +116,13 @@ CRef<CBioseq> CHugeAsnReader::LoadBioseq(CConstRef<CSeq_id> seqid) const
     if (it->first->Compare(*seqid) != CSeq_id::E_SIC::e_YES)
         return {};
 
-    auto obj_stream = x_MakeObjStream(it->second->m_pos);
+    auto obj_stream = MakeObjStream(it->second->m_pos);
     auto bioseq = Ref(new CBioseq);
     obj_stream->Read(bioseq, CBioseq::GetTypeInfo(), CObjectIStream::eNoFileHeader);
     return bioseq;
 }
 
-unique_ptr<CObjectIStream> CHugeAsnReader::x_MakeObjStream(TFileSize pos) const
+unique_ptr<CObjectIStream> CHugeAsnReader::MakeObjStream(TFileSize pos) const
 {
     unique_ptr<CObjectIStream> str;
 
@@ -154,7 +154,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
     x_ResetIndex();
     auto object_type = m_file->RecognizeContent(m_streampos);
 
-    auto obj_stream = x_MakeObjStream(m_streampos);
+    auto obj_stream = MakeObjStream(m_streampos);
 
     CObjectTypeInfo bioseq_info = CType<CBioseq>();
     CObjectTypeInfo bioseq_set_info = CType<CBioseq_set>();
@@ -275,6 +275,26 @@ void CHugeAsnReader::x_IndexNextAsn1()
     obj_stream->Skip(object_type, CObjectIStream::eNoFileHeader);
     obj_stream->EndOfData(); // force to SkipWhiteSpace
     m_streampos += obj_stream->GetStreamPos();
+}
+
+CRef<CObject> CHugeAsnReader::ReadAny()
+{
+    if (m_streampos >= m_file->m_filesize)
+        return {};
+
+    x_ResetIndex();
+    auto object_type = m_file->RecognizeContent(m_streampos);
+    if (object_type == nullptr || !object_type->IsCObject())
+        return {};
+
+    auto obj_stream = MakeObjStream(m_streampos);
+
+    auto obj_info = obj_stream->Read(object_type);
+    CRef<CObject> serial(static_cast<CObject*>(obj_info.GetObjectPtr()));
+    obj_stream->EndOfData(); // force to SkipWhiteSpace
+    m_streampos += obj_stream->GetStreamPos();
+
+    return serial;
 }
 
 static bool s_ShouldSplitSet(CBioseq_set::EClass setClass) {

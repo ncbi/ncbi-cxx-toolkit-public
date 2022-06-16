@@ -57,7 +57,7 @@ class NCBI_XOBJEDIT_EXPORT CHugeFile
 public:
     CHugeFile();
     virtual ~CHugeFile();
-    set<TTypeInfo>*                 m_supported_types = nullptr;
+    const set<TTypeInfo>*           m_supported_types = nullptr;
     std::unique_ptr<CMemoryFile>    m_memfile;
     std::unique_ptr<std::istream>   m_stream;
     std::unique_ptr<std::streambuf> m_streambuf;
@@ -84,6 +84,18 @@ public:
 private:
     bool x_TryOpenStreamFile(const string& filename);
     bool x_TryOpenMemoryFile(const string& filename);
+};
+
+class NCBI_XOBJEDIT_EXPORT CHugeFileException : public CException
+{
+public:
+    enum EErrCode
+    {
+        eDuplicateSeqIds,
+        eDuplicateFeatureIds,
+    };
+    //virtual const char* GetErrCodeString(void) const override;
+    NCBI_EXCEPTION_DEFAULT(CHugeFileException,CException);
 };
 
 class NCBI_XOBJEDIT_EXPORT IHugeAsnSource

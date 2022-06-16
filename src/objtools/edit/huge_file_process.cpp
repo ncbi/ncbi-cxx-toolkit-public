@@ -48,19 +48,36 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-
-CHugeFileProcess::CHugeFileProcess(const string& file_name)
-    :   m_pHugeFile { new CHugeFile },
-        m_pReader{ new CHugeAsnReader }
+namespace
 {
-    static set<TTypeInfo> supported_types =
+    static const set<TTypeInfo> s_supported_types =
     {
         CBioseq_set::GetTypeInfo(),
         CBioseq::GetTypeInfo(),
         CSeq_entry::GetTypeInfo(),
         CSeq_submit::GetTypeInfo(),
     };
-    m_pHugeFile->m_supported_types = &supported_types;
+}
+
+CHugeFileProcess::CHugeFileProcess():
+    m_pHugeFile { new CHugeFile },
+    m_pReader{ new CHugeAsnReader }
+{}
+
+CHugeFileProcess::CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types)
+: CHugeFileProcess()
+{
+    Open(file_name, types);
+}
+
+bool CHugeFileProcess::IsSupported(TTypeInfo info)
+{
+    return s_supported_types.find(info) != s_supported_types.end();
+}
+
+void CHugeFileProcess::Open(const string& file_name, const set<TTypeInfo>* types)
+{
+    m_pHugeFile->m_supported_types = types ? types : &s_supported_types;
 
     m_pHugeFile->Open(file_name);
     m_pReader->Open(m_pHugeFile.get(), nullptr);
