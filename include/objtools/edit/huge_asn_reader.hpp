@@ -65,6 +65,7 @@ public:
     bool GetNextBlob() override;
     CRef<CSeq_entry> GetNextSeqEntry() override;
     CConstRef<CSubmit_block> GetSubmitBlock() override { return m_submit_block; };
+    CRef<CObject> ReadAny();
 
     struct TBioseqInfo;
     struct TBioseqSetInfo;
@@ -114,11 +115,11 @@ public:
     CConstRef<CSeq_entry> GetTopEntry() const { return m_top_entry; }
     auto& GetFlattenedIndex() const { return m_FlattenedIndex; }
     auto& GetTopIds() const { return m_top_ids; }
+    unique_ptr<CObjectIStream> MakeObjStream(TFileSize pos) const;
 protected:
 private:
     void x_ResetIndex();
     void x_IndexNextAsn1();
-    unique_ptr<CObjectIStream> x_MakeObjStream(TFileSize pos) const;
 
     ILineErrorListener * mp_MessageListener = nullptr;
     std::streampos m_streampos = 0;
