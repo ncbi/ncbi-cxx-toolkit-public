@@ -21,6 +21,8 @@ build:
    - config.log
    - build.log
    - distcc.log
+   - test.log
+  when: always
   expire_in: never
  cache:
   paths:
