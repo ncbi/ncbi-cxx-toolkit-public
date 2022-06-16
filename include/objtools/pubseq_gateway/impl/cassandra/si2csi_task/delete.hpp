@@ -73,12 +73,20 @@ public:
         TDataErrorCallback data_error_cb
     );
 
+    void SetWritetime(CSI2CSIRecord::TWritetime value)
+    {
+        if (value > 0) {
+            m_Writetime = value;
+        }
+    }
+
 protected:
     virtual void Wait1() override;
 
 private:
     CSI2CSIRecord::TSecSeqId m_SecSeqId;
     CSI2CSIRecord::TSecSeqIdType m_SecSeqIdType{0};
+    CSI2CSIRecord::TWritetime m_Writetime{0};
 };
 
 END_IDBLOB_SCOPE

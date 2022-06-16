@@ -77,6 +77,13 @@ public:
         TDataErrorCallback data_error_cb
     );
 
+    void SetWritetime(CBioseqInfoRecord::TWritetime value)
+    {
+        if (value > 0) {
+            m_Writetime = value;
+        }
+    }
+
 protected:
     virtual void Wait1() override;
 
@@ -85,6 +92,7 @@ private:
     CBioseqInfoRecord::TVersion m_Version{0};
     CBioseqInfoRecord::TSeqIdType m_SeqIdType{0};
     CBioseqInfoRecord::TGI m_GI{0};
+    CBioseqInfoRecord::TWritetime m_Writetime{0};
 };
 
 END_IDBLOB_SCOPE

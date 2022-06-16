@@ -543,7 +543,7 @@ TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo) {
                     EXPECT_EQ(entry.GetStart(), 6616);
                     EXPECT_EQ(entry.GetStop(), 41589);
                     EXPECT_EQ(entry.GetSatKey(), 500);
-                    EXPECT_EQ(entry.GetAnnotInfoModified(), 1567710575270);
+                    EXPECT_EQ(entry.GetAnnotInfoModified(), 1652276051850);
                     EXPECT_FALSE(entry.GetSeqAnnotInfo().empty());
                     EXPECT_EQ(gGetSeqAnnotInfoString(&entry),
                         "ID2S-Seq-annot-Info ::= {name \"NA000122202.1\",feat {{type 13}},seq-loc gi-interval {gi 1142972004,start 6616,length 34974}}\n"
@@ -585,7 +585,7 @@ TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo2) {
                     EXPECT_EQ(entry.GetStart(), 14153);
                     EXPECT_EQ(entry.GetStop(), 77991);
                     EXPECT_EQ(entry.GetSatKey(), 26395559);
-                    EXPECT_EQ(entry.GetAnnotInfoModified(), 1567919439853);
+                    EXPECT_EQ(entry.GetAnnotInfoModified(), 1652726171060);
                     EXPECT_FALSE(entry.GetSeqAnnotInfo().empty());
                     EXPECT_EQ(gGetSeqAnnotInfoString(&entry),
                         "ID2S-Seq-annot-Info ::= {name \"NA000156740.1\",feat {{type 8,subtypes {56}}},seq-loc gi-interval {gi 1385009444,start 14153,length 63839}}\n"

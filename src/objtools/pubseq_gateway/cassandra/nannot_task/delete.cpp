@@ -109,27 +109,34 @@ void CCassNAnnotTaskDelete::Wait1()
                 if (CheckReady(m_QueryArr[0])) {
                     auto query = m_QueryArr[0].query;
                     query->Close();
+                    string writetime = (m_Writetime > 0) ? "USING TIMESTAMP ? ":"";
                     if (m_Annot->GetSatKey() == 0) {
-                        string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
+                        string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na " + writetime +
                             "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
                             "IF last_modified = ?";
-                        query->SetSQL(sql, 5);
+                        query->SetSQL(sql, 5 + (m_Writetime > 0));
                     } else {
-                        string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
+                        string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na " + writetime +
                             "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
                             "IF sat_key = ? AND last_modified = ?";
-                        query->SetSQL(sql, 6);
+                        query->SetSQL(sql, 6 + (m_Writetime > 0));
                     }
                     query->SetSerialConsistency(CASS_CONSISTENCY_LOCAL_SERIAL);
-                    query->BindStr(0, m_Annot->GetAccession());
-                    query->BindInt16(1, m_Annot->GetVersion());
-                    query->BindInt16(2, m_Annot->GetSeqIdType());
-                    query->BindStr(3, m_Annot->GetAnnotName());
+
+                    int param{0};
+                    if (m_Writetime > 0) {
+                        query->BindInt64(param++, m_Writetime);
+                    }
+
+                    query->BindStr(param++, m_Annot->GetAccession());
+                    query->BindInt16(param++, m_Annot->GetVersion());
+                    query->BindInt16(param++, m_Annot->GetSeqIdType());
+                    query->BindStr(param++, m_Annot->GetAnnotName());
                     if (m_Annot->GetSatKey() == 0) {
-                        query->BindInt64(4, m_Annot->GetModified());
+                        query->BindInt64(param++, m_Annot->GetModified());
                     } else {
-                        query->BindInt32(4, m_Annot->GetSatKey());
-                        query->BindInt64(5, m_Annot->GetModified());
+                        query->BindInt32(param++, m_Annot->GetSatKey());
+                        query->BindInt64(param++, m_Annot->GetModified());
                     }
 
                     SetupQueryCB3(query);
