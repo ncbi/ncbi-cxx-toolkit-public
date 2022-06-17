@@ -387,7 +387,7 @@ AZB	s	Herbario Ruy Telles Palhinha - Universidade Dos Acores
 AZTI	sc	AZTI Tecnalia			
 AZU	s	Universidade dos Acores, Departamento de Ciencias Agrarias			
 AZUS	s	Citrus College, Biological Sciences Department			
-B	s	Berlin Botanic Garden and Botanical Museum (Herbarium Berolinense)	BGBM	http://herbarium.bgbm.org/object/B	
+B	s	Herbarium Berolinense	BGBM	http://herbarium.bgbm.org/object/B	
 BA	s	Museo Argentino de Ciencias Naturales Bernardino Rivadavia			
 BAA	s	Universidad de Buenos Aires, Facultad de Agronomia			
 BAAC	s	Musee de Beni Abbes			
