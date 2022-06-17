@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_app(wgs_resolver_test)
+  NCBI_sources(wgs_resolver_test)
+  NCBI_uses_toolkit_libraries(sraread)
+  NCBI_requires(MT)
+
+  NCBI_set_test_requires(in-house-resources)
+
+  NCBI_project_watchers(vasilche)
+
+NCBI_end_app()

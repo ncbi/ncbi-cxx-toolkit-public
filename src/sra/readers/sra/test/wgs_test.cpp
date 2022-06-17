@@ -256,12 +256,12 @@ void* read_thread_func(void* arg)
 int LowLevelTest(void)
 {
     if ( 1 ) {
-        cout << "LowLevelTest for CSHW01000012.1 gap info..." << endl;
+        cout << "LowLevelTest for 64K bases from JAGHKL010000020.1..." << endl;
         const VDBManager* mgr = 0;
         CALL(VDBManagerMakeRead(&mgr, 0));
         
         const VDatabase* db = 0;
-        CALL(VDBManagerOpenDBRead(mgr, &db, 0, "CSHW01"));
+        CALL(VDBManagerOpenDBRead(mgr, &db, 0, "JAGHKL01"));
         
         const VTable* table = 0;
         CALL(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
@@ -270,21 +270,31 @@ int LowLevelTest(void)
         CALL(VTableCreateCursorRead(table, &cursor));
         CALL(VCursorPermitPostOpenAdd(cursor));
         CALL(VCursorOpen(cursor));
-        
-        uint32_t col_GAP_PROPS;
-        CALL(VCursorAddColumn(cursor, &col_GAP_PROPS, "GAP_PROPS"));
 
-        const void* data;
-        uint32_t bit_offset, bit_length;
-        uint32_t elem_count;
-        CALL(VCursorCellDataDirect(cursor, 12, col_GAP_PROPS,
-                                   &bit_length, &data, &bit_offset,
-                                   &elem_count));
-        cout << "GAP_PROPS:";
-        for ( uint32_t i = 0; i < elem_count; ++i ) {
-            cout << ' ' << ((int16_t*)data)[i];
+        int base_bits = getenv("USE_NA_BITS")? NStr::StringToInt(getenv("USE_NA_BITS")): 2;
+        const char* col_name = 0;
+        switch ( base_bits ) {
+        case 2: col_name = "(INSDC:2na:packed)READ"; break;
+        case 4: col_name = "(INSDC:4na:packed)READ"; break;
+        case 8: col_name = "(INSDC:4na:bin)READ"; break;
+        default:
+            ERR_POST("Bad USE_NA_BITS="<<getenv("USE_NA_BITS"));
+            exit(1);
         }
-        cout << endl;
+        uint32_t col_READ;
+        CALL(VCursorAddColumn(cursor, &col_READ, col_name));
+
+        vector<char> buffer(64*1024);
+        uint32_t read_count, remaining_count;
+        CALL(VCursorReadBitsDirect(cursor, 20, col_READ,
+                                   base_bits, 0, buffer.data(), 0, 64*1024,
+                                   &read_count, &remaining_count));
+        cout << "Read count: "<<read_count<<" remaining: "<<remaining_count<<endl;
+        cout << "data:" << hex;
+        for ( size_t i = 0; i < 10; ++i ) {
+            cout << ' ' << (buffer[i]&0xff);
+        }
+        cout << dec << endl;
         
         CALL(VCursorRelease(cursor));
         CALL(VTableRelease(table));
@@ -293,7 +303,7 @@ int LowLevelTest(void)
         return 0;
     }
 
-    if ( 1 ) {
+    if ( 0 ) {
         cout << "LowLevelTest for AAAD01 opening..." << endl;
         const VDBManager* mgr = 0;
         CALL(VDBManagerMakeRead(&mgr, 0));
@@ -402,14 +412,14 @@ int LowLevelTest(void)
         CALL(VDatabaseRelease(db));
         CALL(VDBManagerRelease(mgr));
     }
-    if ( 1 ) {
+    if ( 0 ) {
         cout << "LowLevelTest sequence reading..." << endl;
         for ( int i = 0; i < 1; ++i ) {
             const VDBManager* mgr = 0;
             CALL(VDBManagerMakeRead(&mgr, 0));
 
             const VDatabase* db = 0;
-            CALL(VDBManagerOpenDBRead(mgr, &db, 0, "JELW01"));
+            CALL(VDBManagerOpenDBRead(mgr, &db, 0, "JAGHKL01"));
 
             const VTable* table = 0;
             CALL(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
@@ -427,15 +437,15 @@ int LowLevelTest(void)
             char* buffer = new char[kBases];
             uint32_t col;
 
-            uint64_t row0 = 1, row1 = 300;
+            uint64_t row0 = 20, row1 = 20;
             CStopWatch sw(CStopWatch::eStart);
-            if ( 1 ) {
+            if ( 0 ) {
                 type = "packed 2na";
                 CALL(VCursorAddColumn(cursor, &col,
                                       "(INSDC:2na:packed)READ"));
                 bit_size = 2;
             }
-            if ( 0 ) {
+            if ( 1 ) {
                 type = "packed 4na";
                 CALL(VCursorAddColumn(cursor, &col,
                                       "(INSDC:4na:packed)READ"));
@@ -457,7 +467,7 @@ int LowLevelTest(void)
                                                    bit_size, pos,
                                                    buffer, 0, kBases,
                                                    &elem_read, &elem_rem));
-                        if ( row == 1 && pos == 0 ) memcpy(data0, buffer, 10);
+                        if ( row == row0 && pos == 0 ) memcpy(data0, buffer, 10);
                     }
                     total += pos;
                 }
@@ -471,7 +481,7 @@ int LowLevelTest(void)
                                                &bit_length, &data, &bit_offset,
                                                &elem_count));
                     assert(bit_length = bit_size);
-                    if ( row == 1 ) memcpy(data0, data, 10);
+                    if ( row == row0 ) memcpy(data0, data, 10);
                     total += elem_count;
                 }
             }
