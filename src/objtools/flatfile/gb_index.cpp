@@ -103,7 +103,7 @@ vector<string> genbankKeywords = {
  *                                      February 25 1993
  *
  **********************************************************/
-static bool DelSegnum(IndexblkPtr entry, char* segnum, size_t len2)
+static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
 {
     char* str;
     char* p;
@@ -119,11 +119,16 @@ static bool DelSegnum(IndexblkPtr entry, char* segnum, size_t len2)
      */
     size_t tlen = len1;
     str         = entry->blocusname;
-    size_t i    = StringLen(str) - 1;
-    for (; tlen > 0 && str[i] >= '0' && str[i] <= '9'; i--)
-        tlen--;
+    size_t i    = StringLen(str);
+    for (; tlen > 0; tlen--) {
+        char c = str[--i];
+        if (! ('0' <= c && c <= '9'))
+            break;
+        if (i <= 0)
+            return false;
+    }
 
-    if (tlen != 0 || i < 0)
+    if (tlen > 0)
         return false;
 
     if (len2 > len1 && str[i] == '0') {
