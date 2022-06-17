@@ -420,7 +420,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AZTI\tsc\tAZTI Tecnalia\t\t\t",
 "AZU\ts\tUniversidade dos Acores, Departamento de Ciencias Agrarias\t\t\t",
 "AZUS\ts\tCitrus College, Biological Sciences Department\t\t\t",
-"B\ts\tBerlin Botanic Garden and Botanical Museum (Herbarium Berolinense)\tBGBM\thttp://herbarium.bgbm.org/object/B\t",
+"B\ts\tHerbarium Berolinense\tBGBM\thttp://herbarium.bgbm.org/object/B\t",
 "BA\ts\tMuseo Argentino de Ciencias Naturales Bernardino Rivadavia\t\t\t",
 "BAA\ts\tUniversidad de Buenos Aires, Facultad de Agronomia\t\t\t",
 "BAAC\ts\tMusee de Beni Abbes\t\t\t",
