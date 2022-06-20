@@ -10,8 +10,8 @@ build:
  stage: build
  timeout: 5 hours
  script:
-  - which time
   - /usr/bin/time ls
+  - which time||true
   - time
   - echo =====
   - echo "Building toolkit using cmake"
