@@ -279,15 +279,8 @@ void SFixture::MtReading()
 
             if (reading_result < 0) return;
 
-            if (read > expected_to_read) {
-                BOOST_ERROR("Received more data than expected");
-                return;
-            }
-
-            if (!equal(&received[0], &received[read], expected)) {
-                BOOST_ERROR("Received data does not match expected");
-                return;
-            }
+            BOOST_REQUIRE_MESSAGE(read <= expected_to_read, "Received more data than expected");
+            BOOST_REQUIRE_MESSAGE(equal(&received[0], &received[read], expected), "Received data does not match expected");
 
             expected += read;
             expected_to_read -= read;
@@ -298,9 +291,7 @@ void SFixture::MtReading()
             this_thread::sleep_for(ms);
         }
 
-        if (expected_to_read) {
-            BOOST_ERROR("Got less data that expected");
-        }
+        BOOST_REQUIRE_MESSAGE(!expected_to_read, "Got less data that expected");
     };
 
     auto dispatcher_impl = [&]() {
@@ -324,14 +315,10 @@ void SFixture::MtReading()
                         } else {
                             auto blob_id = item_locked->args.GetValue("blob_id");
                             auto src_blob = src_blobs.find(blob_id);
-                            thread t;
 
-                            if (src_blob == src_blobs.end()) {
-                                BOOST_ERROR("Unknown blob received");
-                            } else {
-                                t = thread(reader_impl, src_blob->second, ref(item_ts));
-                            }
+                            BOOST_REQUIRE_MESSAGE(src_blob != src_blobs.end(), "Unknown blob received");
 
+                            thread t = thread(reader_impl, src_blob->second, ref(item_ts));
                             readers.emplace(&item_ts, move(t));
                         }
                     }
@@ -348,9 +335,7 @@ void SFixture::MtReading()
             }
         }
 
-        if (readers.size() < src_blobs.size()) {
-            BOOST_ERROR("Got less blobs that expected");
-        }
+        BOOST_REQUIRE_MESSAGE(readers.size() >= src_blobs.size(), "Got less blobs that expected");
 
         for (auto& reader : readers) {
             if (reader.second.joinable()) reader.second.join();
@@ -429,20 +414,17 @@ BOOST_AUTO_TEST_CASE(Request)
         auto& expected = item.expected;
         auto& received = item.received;
 
-        if (expected.Cmp<greater>(received)) {
-            BOOST_ERROR("Expected is greater than received");
-        } else if (expected.Cmp<less>(received)) {
-            BOOST_ERROR("Expected is less than received");
-        }
+        BOOST_REQUIRE_MESSAGE(!expected.Cmp<greater>(received), "Expected is greater than received");
+        BOOST_REQUIRE_MESSAGE(!expected.Cmp<less>(received), "Expected is less than received");
 
         auto& chunks = item.chunks;
         auto blob_id = item.args.GetValue("blob_id");
 
         auto src_blob = src_blobs.find(blob_id);
 
-        if (src_blob == src_blobs.end()) {
-            BOOST_ERROR("Unknown blob received");
-        } else {
+        BOOST_REQUIRE_MESSAGE(src_blob != src_blobs.end(), "Unknown blob received");
+
+        {
             auto src_current = src_blob->second.begin();
             auto src_end = src_blob->second.end();
 
@@ -453,18 +435,13 @@ BOOST_AUTO_TEST_CASE(Request)
                 auto src_to_compare = distance(src_current, src_end);
                 auto dst_to_compare = distance(dst_current, dst_end);
 
-                if (dst_to_compare > src_to_compare) {
-                    BOOST_ERROR("Received more data than sent");
-                } else if (!equal(dst_current, dst_end, src_current)) {
-                    BOOST_FAIL("Received data does not match expected");
-                }
+                BOOST_REQUIRE_MESSAGE(dst_to_compare <= src_to_compare, "Received more data than sent");
+                BOOST_REQUIRE_MESSAGE(equal(dst_current, dst_end, src_current), "Received data does not match expected");
 
                 advance(src_current, dst_to_compare);
             }
 
-            if (src_current != src_end) {
-                BOOST_ERROR("Received less data than sent");
-            }
+            BOOST_REQUIRE_MESSAGE(src_current == src_end, "Received less data than sent");
         }
     }
 }
@@ -480,15 +457,8 @@ struct SBlobReader
 
         auto pending_result = reader.PendingCount(read);
 
-        if ((pending_result != eRW_Success) && (pending_result != eRW_Eof)) {
-            BOOST_ERROR("PendingCount() failed");
-            return -1;
-        }
-
-        if (*read > expected) {
-            BOOST_ERROR("Pending data is more than expected");
-            return -1;
-        }
+        BOOST_REQUIRE_MESSAGE((pending_result == eRW_Success) || (pending_result == eRW_Eof), "PendingCount() failed");
+        BOOST_REQUIRE_MESSAGE(*read <= expected, "Pending data is more than expected");
 
         auto to_read = r.Get(1, buf_size);
         auto reading_result = eRW_Success;
