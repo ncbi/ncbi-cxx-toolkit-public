@@ -285,7 +285,7 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
     const CSpliced_seg& spliced_seg = align.GetSegs().GetSpliced();
 
     int next_prod_start = 0;
-    int cds_len = spliced_seg.GetProduct_length();
+    CSeq_loc::TRanges cds_ranges;
 
     if (spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_transcript) {
         const CSeq_id& product_id = spliced_seg.GetProduct_id();
@@ -298,13 +298,15 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
             NCBI_THROW(CException, eUnknown, "minus strand cdregion on mrna is not supported");
         }
         next_prod_start = cds_on_rna.GetLocation().GetStart(eExtreme_Biological);
-        cds_len = cds_on_rna.GetLocation().GetTotalRange().GetLength();
 
+        ITERATE (CSeq_loc, loc_ci, cds_on_rna.GetLocation()) {
+            cds_ranges.push_back(loc_ci.GetRange());
+        }
         if (!cds_on_rna.GetLocation().IsPartialStop(eExtreme_Biological)) {
-            cds_len -= 3;
+            cds_ranges.back().SetTo(cds_ranges.back().GetTo()-3);
         }
     } else {
-        cds_len *=3;
+        cds_ranges.push_back(TSeqRange::GetWhole());
     }
 
     ITERATE( CSpliced_seg::TExons, exon, spliced_seg.GetExons() ) {
@@ -347,7 +349,15 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
         }
     }
 
-    return mRNA.substr(0, cds_len);
+    if (cds_ranges.front().IsWhole()) {
+        return mRNA;
+    } else {
+        string cds_seq;
+        for (const TSeqRange &range : cds_ranges) {
+            cds_seq += mRNA.substr(range.GetFrom(), range.GetLength());
+        }
+        return cds_seq;
+    }
 }
 
 
