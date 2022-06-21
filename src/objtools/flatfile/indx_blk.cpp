@@ -993,7 +993,7 @@ Int4 IsNewAccessFormat(const Char* acnum)
 {
     const Char* p = acnum;
 
-    if (!p || *p == '\0')
+    if (! p || *p == '\0')
         return 0;
 
     if (sIsUpperAlpha(p[0]) && sIsUpperAlpha(p[1])) {
@@ -1017,8 +1017,8 @@ Int4 IsNewAccessFormat(const Char* acnum)
         if (sIsUpperAlpha(p[2]) && sIsUpperAlpha(p[3])) {
             if (sIsUpperAlpha(p[4]) && sIsUpperAlpha(p[5]) &&
                 isdigit(p[6])) {
-                if(isdigit(p[7]) && p[8] == 'S' &&
-                   isdigit(p[9])) {
+                if (isdigit(p[7]) && p[8] == 'S' &&
+                    isdigit(p[9])) {
                     return 9;
                 }
                 return 8;
@@ -1491,9 +1491,9 @@ static bool sCheckAccession(const list<string>& tokens,
 */
 
 
-static bool sNotAllDigits(const char* first, const char* last) 
+static bool sNotAllDigits(const char* first, const char* last)
 {
-    return any_of(first, last, [](char c) { return !isdigit(c); });
+    return any_of(first, last, [](char c) { return ! isdigit(c); });
 }
 
 /**********************************************************
@@ -1552,35 +1552,35 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
         }
         badac = false;
         if (accformat == 1) {
-            badac = (len != 8 && len != 10) || sNotAllDigits(acnum+2, acnum+8);
+            badac = (len != 8 && len != 10) || sNotAllDigits(acnum + 2, acnum + 8);
         } else if (accformat == 2) {
-            badac = (len != 9 && len != 12) || sNotAllDigits(acnum+3, acnum+len);
+            badac = (len != 9 && len != 12) || sNotAllDigits(acnum + 3, acnum + len);
         } else if (accformat == 3) {
-            badac = (len < 12 || len > 14) || sNotAllDigits(acnum+4, acnum+len);
+            badac = (len < 12 || len > 14) || sNotAllDigits(acnum + 4, acnum + len);
         } else if (accformat == 8) {
-            badac = (len < 15 || len > 17) || sNotAllDigits(acnum+6, acnum+len);
+            badac = (len < 15 || len > 17) || sNotAllDigits(acnum + 6, acnum + len);
         } else if (accformat == 4) {
-            badac = (len < 15 || len > 17) || sNotAllDigits(acnum+7, acnum+len);
+            badac = (len < 15 || len > 17) || sNotAllDigits(acnum + 7, acnum + len);
         } else if (accformat == 5) {
-            badac = (len != 12) || sNotAllDigits(acnum+5, acnum+len);
+            badac = (len != 12) || sNotAllDigits(acnum + 5, acnum + len);
         } else if (accformat == 6) {
             badac = (len != 11 || acnum[0] != 'N' || acnum[1] != 'Z' ||
-                acnum[2] != '_' || acnum[3] < 'A' || acnum[3] > 'Z' ||
-                acnum[4] < 'A' || acnum[4] > 'Z') || sNotAllDigits(acnum+5, acnum+len);
+                     acnum[2] != '_' || acnum[3] < 'A' || acnum[3] > 'Z' ||
+                     acnum[4] < 'A' || acnum[4] > 'Z') ||
+                    sNotAllDigits(acnum + 5, acnum + len);
         } else if (accformat == 7) {
-            badac = (len < 13 || len > 15) || sNotAllDigits(acnum+7, acnum+len);
+            badac = (len < 13 || len > 15) || sNotAllDigits(acnum + 7, acnum + len);
         } else if (accformat == 9) {
-            badac = (len < 16 || len > 17) ||sNotAllDigits(acnum+9, acnum+len);
-        } 
-        else if (accformat == 0) {
+            badac = (len < 16 || len > 17) || sNotAllDigits(acnum + 9, acnum + len);
+        } else if (accformat == 0) {
             if (len != 6 && len != 10)
                 badac = true;
             else if (sIsUpperAlpha(acnum[0])) {
                 if (source == Parser::ESource::SPROT) {
                     if (! IsSPROTAccession(acnum))
                         badac = true;
-                } else { 
-                    badac = (len == 10) || sNotAllDigits(acnum+1, acnum+6);
+                } else {
+                    badac = (len == 10) || sNotAllDigits(acnum + 1, acnum + 6);
                 }
             } else
                 badac = true;
@@ -2243,18 +2243,17 @@ const char** GetAccArray(Parser::ESource source)
 
 bool isSupportedAccession(CSeq_id::E_Choice type)
 {
-    switch(type)
-    {
-        case CSeq_id::e_Genbank:
-        case CSeq_id::e_Ddbj:
-        case CSeq_id::e_Embl:
-        case CSeq_id::e_Other:
-        case CSeq_id::e_Tpg:
-        case CSeq_id::e_Tpd:
-        case CSeq_id::e_Tpe:
-            return true;
-        default:
-            break;
+    switch (type) {
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Other:
+    case CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpd:
+    case CSeq_id::e_Tpe:
+        return true;
+    default:
+        break;
     }
 
     return false;
@@ -2267,7 +2266,7 @@ CSeq_id::E_Choice GetNucAccOwner(const char* acc)
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
         return CSeq_id::e_not_set;
-    }   
+    }
 
     if (auto type = CSeq_id::GetAccType(info);
         isSupportedAccession(type)) {
@@ -2287,7 +2286,7 @@ Uint1 GetProtAccOwner(const Char* acc)
             isSupportedAccession(type)) {
             return type;
         }
-    }   
+    }
 
     return 0;
 }
