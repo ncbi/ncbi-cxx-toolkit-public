@@ -11,8 +11,10 @@ build:
  timeout: 5 hours
  script:
   - cat /etc/passwd
+  - ls -laFh
   - echo "Building toolkit using cmake"
   - ./cmake-configure --with-dll 2>&1 | tee "${CI_PROJECT_DIR}/config.log"
+  - chown -R nobody:nobody CMake-GCC730-DebugDLL/
   - cd CMake-GCC730-DebugDLL/build
   - DISTCC_VERBOSE=1 DISTCC_LOG="${CI_PROJECT_DIR}/distcc.log"  make VERBOSE=0 -j 8 2>&1 | tee "${CI_PROJECT_DIR}/build.log"
   - echo "Running tests"
