@@ -1798,92 +1798,10 @@ enum EPostNumberIncrement {
 };
 
 
-struct SRequestCtxWrapper;
 class CRequestContext;
 class CSharedHitId;
 class CRequestRateControl;
 class CEncodedString;
-
-
-/// Thread local context data stored in TLS
-class NCBI_XNCBI_EXPORT CDiagContextThreadData
-{
-public:
-    CDiagContextThreadData(void);
-    ~CDiagContextThreadData(void);
-
-    /// Get current request context.
-    CRequestContext& GetRequestContext(void);
-    /// Set request context. If NULL, switches the current thread
-    /// to its default request context.
-    void SetRequestContext(CRequestContext* ctx);
-
-    /// CDiagContext properties
-    typedef map<string, string> TProperties;
-    enum EGetProperties {
-        eProp_Get,    ///< Do not create properties if not exist yet
-        eProp_Create  ///< Auto-create properties if not exist
-    };
-    NCBI_DEPRECATED TProperties* GetProperties(EGetProperties flag);
-
-    typedef SDiagMessage::TCount TCount;
-
-    /// Request id
-    NCBI_DEPRECATED TCount GetRequestId(void);
-    NCBI_DEPRECATED void SetRequestId(TCount id);
-    NCBI_DEPRECATED void IncRequestId(void);
-
-    /// Get request timer, create if not exist yet
-    NCBI_DEPRECATED CStopWatch* GetOrCreateStopWatch(void) { return NULL; }
-    /// Get request timer or null
-    NCBI_DEPRECATED CStopWatch* GetStopWatch(void) { return NULL; }
-    /// Delete request timer
-    NCBI_DEPRECATED void ResetStopWatch(void) {}
-
-    /// Diag buffer
-    CDiagBuffer& GetDiagBuffer(void) { return *m_DiagBuffer; }
-
-    /// Get diag context data for the current thread
-    static CDiagContextThreadData& GetThreadData(void);
-
-    /// Thread ID
-    typedef Uint8 TTID;
-
-    /// Get cached thread ID
-    TTID GetTID(void) const { return m_TID; }
-
-    /// Get thread post number
-    TCount GetThreadPostNumber(EPostNumberIncrement inc);
-
-    void AddCollectGuard(CDiagCollectGuard* guard);
-    void RemoveCollectGuard(CDiagCollectGuard* guard);
-    CDiagCollectGuard* GetCollectGuard(void);
-
-    void CollectDiagMessage(const SDiagMessage& mess);
-
-    static bool IsInitialized(void);
-
-private:
-    CDiagContextThreadData(const CDiagContextThreadData&);
-    CDiagContextThreadData& operator=(const CDiagContextThreadData&);
-
-    // Guards override the global post level and define severity
-    // for collecting messages.
-    typedef list<CDiagCollectGuard*> TCollectGuards;
-
-    // Collected diag messages
-    typedef list<SDiagMessage>       TDiagCollection;
-
-    unique_ptr<TProperties> m_Properties;       // Per-thread properties
-    unique_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
-    TTID                  m_TID;              // Cached thread ID
-    TCount                m_ThreadPostNumber; // Number of posted messages
-    TCollectGuards        m_CollectGuards;
-    TDiagCollection       m_DiagCollection;
-    size_t                m_DiagCollectionSize; // cached size of m_DiagCollection
-    unique_ptr<SRequestCtxWrapper> m_RequestCtx;        // Request context
-    unique_ptr<SRequestCtxWrapper> m_DefaultRequestCtx; // Default request context
-};
 
 
 template<class TKey, class TStorage> class CStrictId;
@@ -2335,6 +2253,8 @@ public:
         { return sm_ApplogSeverityLocked; }
     static void SetApplogSeverityLocked(bool lock)
         { sm_ApplogSeverityLocked = lock; }
+
+    static bool IsMainThreadDataInitialized(void);
 
 private:
     CDiagContext(const CDiagContext&);

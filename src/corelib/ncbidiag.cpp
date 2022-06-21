@@ -438,6 +438,89 @@ static CSafeStatic<NCBI_PARAM_TYPE(Diag, Disable_AppLog_Messages)> s_DisableAppL
 static bool s_FinishedSetupDiag = false;
 
 
+///////////////////////////////////////////////////////
+//  CDiagContextThreadData::
+
+
+/// Thread local context data stored in TLS
+class CDiagContextThreadData
+{
+public:
+    CDiagContextThreadData(void);
+    ~CDiagContextThreadData(void);
+
+    /// Get current request context.
+    CRequestContext& GetRequestContext(void);
+    /// Set request context. If NULL, switches the current thread
+    /// to its default request context.
+    void SetRequestContext(CRequestContext* ctx);
+
+    /// CDiagContext properties
+    typedef map<string, string> TProperties;
+    enum EGetProperties {
+        eProp_Get,    ///< Do not create properties if not exist yet
+        eProp_Create  ///< Auto-create properties if not exist
+    };
+    NCBI_DEPRECATED TProperties* GetProperties(EGetProperties flag);
+
+    typedef SDiagMessage::TCount TCount;
+
+    /// Request id
+    NCBI_DEPRECATED TCount GetRequestId(void);
+    NCBI_DEPRECATED void SetRequestId(TCount id);
+    NCBI_DEPRECATED void IncRequestId(void);
+
+    /// Get request timer, create if not exist yet
+    NCBI_DEPRECATED CStopWatch* GetOrCreateStopWatch(void) { return NULL; }
+    /// Get request timer or null
+    NCBI_DEPRECATED CStopWatch* GetStopWatch(void) { return NULL; }
+    /// Delete request timer
+    NCBI_DEPRECATED void ResetStopWatch(void) {}
+
+    /// Diag buffer
+    CDiagBuffer& GetDiagBuffer(void) { return *m_DiagBuffer; }
+
+    /// Get diag context data for the current thread
+    static CDiagContextThreadData& GetThreadData(void);
+
+    /// Thread ID
+    typedef Uint8 TTID;
+
+    /// Get cached thread ID
+    TTID GetTID(void) const { return m_TID; }
+
+    /// Get thread post number
+    TCount GetThreadPostNumber(EPostNumberIncrement inc);
+
+    void AddCollectGuard(CDiagCollectGuard* guard);
+    void RemoveCollectGuard(CDiagCollectGuard* guard);
+    CDiagCollectGuard* GetCollectGuard(void);
+
+    void CollectDiagMessage(const SDiagMessage& mess);
+
+private:
+    CDiagContextThreadData(const CDiagContextThreadData&);
+    CDiagContextThreadData& operator=(const CDiagContextThreadData&);
+
+    // Guards override the global post level and define severity
+    // for collecting messages.
+    typedef list<CDiagCollectGuard*> TCollectGuards;
+
+    // Collected diag messages
+    typedef list<SDiagMessage>       TDiagCollection;
+
+    unique_ptr<TProperties> m_Properties;       // Per-thread properties
+    unique_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
+    TTID                  m_TID;              // Cached thread ID
+    TCount                m_ThreadPostNumber; // Number of posted messages
+    TCollectGuards        m_CollectGuards;
+    TDiagCollection       m_DiagCollection;
+    size_t                m_DiagCollectionSize; // cached size of m_DiagCollection
+    CRef<CRequestContext> m_RequestCtx;        // Request context
+    CRef<CRequestContext> m_DefaultRequestCtx; // Default request context
+};
+
+
 CDiagCollectGuard::CDiagCollectGuard(void)
 {
     // the severities will be adjusted by x_Init()
@@ -807,16 +890,6 @@ EDiagSev AdjustApplogPrintableSeverity(EDiagSev sev)
 }
 
 
-///////////////////////////////////////////////////////
-//  CDiagContextThreadData::
-
-
-struct SRequestCtxWrapper
-{
-    CRef<CRequestContext> m_Ctx;
-};
-
-
 inline Uint8 s_GetThreadId(void)
 {
     if (s_PrintSystemTID->Get()) {
@@ -828,28 +901,23 @@ inline Uint8 s_GetThreadId(void)
 
 
 enum EThreadDataState {
-    eInitialized,
-    eUninitialized,
+    eUninitialized = 0,
     eInitializing,
+    eInitialized,
     eDeinitialized,
     eReinitializing
 };
 
-static atomic<EThreadDataState> s_ThreadDataState(eUninitialized);
+static thread_local EThreadDataState s_ThreadDataState(eUninitialized);
 #define USE_TLS_DATA_CACHE
 #ifdef USE_TLS_DATA_CACHE
 static thread_local CDiagContextThreadData* s_ThreadDataCache;
 #endif
 
-static void s_ThreadDataSafeStaticCleanup(void*)
-{
-    s_ThreadDataState = eDeinitialized; // re-enable protection
-}
 
-
-bool CDiagContextThreadData::IsInitialized(void)
+bool CDiagContext::IsMainThreadDataInitialized(void)
 {
-    return s_ThreadDataState == eInitialized;
+    return CThread::IsMain() && s_ThreadDataState == eInitialized;
 }
 
 
@@ -857,15 +925,11 @@ CDiagContextThreadData::CDiagContextThreadData(void)
     : m_DiagBuffer(new CDiagBuffer),
       m_TID(s_GetThreadId()),
       m_ThreadPostNumber(0),
-      m_DiagCollectionSize(0),
-      m_RequestCtx(new SRequestCtxWrapper),
-      m_DefaultRequestCtx(new SRequestCtxWrapper)
+      m_DiagCollectionSize(0)
 {
     // Default context should auto-reset on request start.
-    m_RequestCtx->m_Ctx = m_DefaultRequestCtx->m_Ctx =
-        new CRequestContext(CRequestContext::fResetOnStart);
-    m_RequestCtx->m_Ctx->SetAutoIncRequestIDOnPost(
-        CRequestContext::GetDefaultAutoIncRequestIDOnPost());
+    m_RequestCtx = m_DefaultRequestCtx = new CRequestContext(CRequestContext::fResetOnStart);
+    m_RequestCtx->SetAutoIncRequestIDOnPost(CRequestContext::GetDefaultAutoIncRequestIDOnPost());
 }
 
 
@@ -880,9 +944,9 @@ CDiagContextThreadData::~CDiagContextThreadData(void)
 
 
 void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
-                                           void* cleanup_data)
+                                           void* /*cleanup_data*/)
 {
-    if ( cleanup_data ) {
+    if ( CThread::IsMain() ) {
         // Copy properties from the main thread's TLS to the global properties.
         CDiagLock lock(CDiagLock::eWrite);
         CDiagContextThreadData::TProperties* props =
@@ -895,8 +959,8 @@ void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
         if (!CDiagContext::IsSetOldPostFormat()  &&  s_FinishedSetupDiag) {
             GetDiagContext().PrintStop();
         }
-        s_ThreadDataState = eDeinitialized; // re-enable protection
     }
+    s_ThreadDataState = eDeinitialized; // re-enable protection
     delete value;
 }
 
@@ -916,8 +980,6 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
     // mid-execution would both add overhead and open up uncatchable
     // opportunities for inappropriate recursion.
 
-    static volatile TThreadSystemID s_LastThreadID
-        = THREAD_SYSTEM_ID_INITIALIZER;
  #ifdef USE_TLS_DATA_CACHE
     if ( CDiagContextThreadData* data = s_ThreadDataCache ) {
         return *data;
@@ -928,7 +990,6 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
     if (s_ThreadDataState != eInitialized) {
         // Avoid false positives, while also taking care not to call
         // anything that might itself produce diagnostics.
-        TThreadSystemID thread_id = GetCurrentThreadSystemID();
         EThreadDataState thread_data_state = s_ThreadDataState; // for Clang10
         switch (thread_data_state) {
         case eInitialized:
@@ -936,35 +997,28 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 
         case eUninitialized:
             s_ThreadDataState = eInitializing;
-            s_LastThreadID = thread_id;
             break;
 
         case eInitializing:
-            if (s_LastThreadID == thread_id) {
-                cerr << "FATAL ERROR: inappropriate recursion initializing NCBI"
-                        " diagnostic framework." << endl;
-                Abort();
-            }
+            cerr << "FATAL ERROR: inappropriate recursion initializing NCBI"
+                    " diagnostic framework." << endl;
+            Abort();
             break;
 
         case eDeinitialized:
             s_ThreadDataState = eReinitializing;
-            s_LastThreadID = thread_id;
             break;
 
         case eReinitializing:
-            if (s_LastThreadID == thread_id) {
-                cerr << "FATAL ERROR: NCBI diagnostic framework no longer"
-                        " initialized." << endl;
-                Abort();
-            }
+            cerr << "FATAL ERROR: NCBI diagnostic framework no longer"
+                    " initialized." << endl;
+            Abort();
             break;
         }
     }
 
     static CStaticTls<CDiagContextThreadData>
-        s_ThreadData(s_ThreadDataSafeStaticCleanup,
-        CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
+        s_ThreadData(nullptr, CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
 
     // Deliberate leak for 'data'-- for both cases: 
     // GetValue() and new CDiagContextThreadData.
@@ -991,8 +1045,8 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 
 CRequestContext& CDiagContextThreadData::GetRequestContext(void)
 {
-    _ASSERT(m_RequestCtx.get()  &&  m_RequestCtx->m_Ctx);
-    return *m_RequestCtx->m_Ctx;
+    _ASSERT(m_RequestCtx);
+    return *m_RequestCtx;
 }
 
 
@@ -1000,28 +1054,28 @@ static const Uint8 kOwnerTID_None = Uint8(-1);
 
 void CDiagContextThreadData::SetRequestContext(CRequestContext* ctx)
 {
-    if (m_RequestCtx->m_Ctx) {
+    if (m_RequestCtx) {
         // If pointers are the same (e.g. consecutive calls with the same ctx)
-        if (ctx == m_RequestCtx->m_Ctx.GetPointer()) {
+        if (ctx == m_RequestCtx.GetPointer()) {
             return;
         }
 
         // Reset TID in the context.
-        m_RequestCtx->m_Ctx->m_OwnerTID = kOwnerTID_None;
+        m_RequestCtx->m_OwnerTID = kOwnerTID_None;
     }
 
     if (!ctx) {
-        m_RequestCtx->m_Ctx = m_DefaultRequestCtx->m_Ctx;
+        m_RequestCtx = m_DefaultRequestCtx;
         return;
     }
 
-    m_RequestCtx->m_Ctx = ctx;
-    if (!ctx->GetReadOnly()) {
-        if (ctx->m_OwnerTID == kOwnerTID_None) {
+    m_RequestCtx = ctx;
+    if (!m_RequestCtx->GetReadOnly()) {
+        if (m_RequestCtx->m_OwnerTID == kOwnerTID_None) {
             // Save current TID in the context.
-            ctx->m_OwnerTID = m_TID;
+            m_RequestCtx->m_OwnerTID = m_TID;
         }
-        else if (ctx->m_OwnerTID != m_TID) {
+        else if (m_RequestCtx->m_OwnerTID != m_TID) {
             ERR_POST_X_ONCE(29,
                 "Using the same CRequestContext in multiple threads is unsafe!"
                 << CStackTrace());
@@ -1030,7 +1084,7 @@ void CDiagContextThreadData::SetRequestContext(CRequestContext* ctx)
     }
     else {
         // Read-only contexts should not remember owner thread.
-        ctx->m_OwnerTID = kOwnerTID_None;
+        m_RequestCtx->m_OwnerTID = kOwnerTID_None;
     }
 }
 
