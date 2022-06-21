@@ -118,7 +118,7 @@ namespace {
     {
         return s_ConfigDumpDisabled.Get() == 0
             && s_ConfigDump
-            && CDiagContextThreadData::IsInitialized();
+            && CDiagContext::IsMainThreadDataInitialized();
     }
 #endif
 }
