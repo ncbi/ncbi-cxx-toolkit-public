@@ -10,6 +10,7 @@ build:
  stage: build
  timeout: 5 hours
  script:
+  - cat /etc/passwd
   - echo "Building toolkit using cmake"
   - ./cmake-configure --with-dll 2>&1 | tee "${CI_PROJECT_DIR}/config.log"
   - cd CMake-GCC730-DebugDLL/build
