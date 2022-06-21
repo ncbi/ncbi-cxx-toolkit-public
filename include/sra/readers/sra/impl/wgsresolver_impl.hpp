@@ -75,15 +75,19 @@ public:
         return m_WGSIndexPath;
     }
     const string& GetWGSIndexResolvedPath(void) const {
-        return m_WGSIndexResolvedPath;
+        return m_Impl->m_WGSIndexResolvedPath;
     }
     
     bool IsValid(void) const {
-        return m_Db;
+        return m_Impl->m_Db;
+    }
+
+    bool AccIndexIsPrefix() const {
+        return m_Impl->m_AccIndexIsPrefix;
     }
 
     const CTime& GetTimestamp(void) const {
-        return m_Timestamp;
+        return m_Impl->m_Timestamp;
     }
 
     // return all WGS accessions that could contain gi or accession
@@ -99,10 +103,10 @@ protected:
     struct SAccIdxTableCursor;
 
     const CVDBTable& GiIdxTable(void) {
-        return m_GiIdxTable;
+        return m_Impl->m_GiIdxTable;
     }
     const CVDBTable& AccIdxTable(void) {
-        return m_AccIdxTable;
+        return m_Impl->m_AccIdxTable;
     }
 
     // get table accessor object for exclusive access
@@ -114,21 +118,30 @@ protected:
 
     void x_Close(); // unguarded
     bool x_Update();
+
+    TWGSPrefixes x_GetGiPrefixes(TGi gi);
+    TWGSPrefixes x_GetAccPrefixes(const string& acc);
     
 private:
     CVDBMgr m_Mgr;
     typedef CRWLock TDBMutex;
     TDBMutex m_DBMutex; // for update
+    struct SImpl {
+        SImpl(const CVDBMgr& mgr, const string& acc_or_path);
+        string m_WGSIndexResolvedPath;
+        CTime m_Timestamp;
+        CVDB m_Db;
+        CVDBTable m_GiIdxTable;
+        CVDBTable m_AccIdxTable;
+        CVDBTableIndex m_AccIndex;
+        bool m_AccIndexIsPrefix;
+        CVDBObjectCache<SGiIdxTableCursor> m_GiIdxCursorCache;
+        CVDBObjectCache<SAccIdxTableCursor> m_AccIdxCursorCache;
+        CAtomicCounter_WithAutoInit m_FailedGiRequestCount;
+        CAtomicCounter_WithAutoInit m_FailedAccRequestCount;
+    };
     string m_WGSIndexPath;
-    string m_WGSIndexResolvedPath;
-    CTime m_Timestamp;
-    CVDB m_Db;
-    CVDBTable m_GiIdxTable;
-    CVDBTable m_AccIdxTable;
-    CVDBTableIndex m_AccIndex;
-    bool m_AccIndexIsPrefix;
-    CVDBObjectCache<SGiIdxTableCursor> m_GiIdxCursorCache;
-    CVDBObjectCache<SAccIdxTableCursor> m_AccIdxCursorCache;
+    unique_ptr<SImpl> m_Impl;
     CRef<CWGSResolver_VDB> m_NextResolver;
 };
 
