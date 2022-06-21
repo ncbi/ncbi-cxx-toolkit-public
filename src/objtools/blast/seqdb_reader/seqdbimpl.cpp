@@ -121,7 +121,6 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
 
             // This is a whole-database scan; it's always done in
             // approximate length mode.
-
             x_ScanTotals(true, & m_NumSeqs, & m_TotalLength,
                                & m_MaxLength, & m_MinLength, locked);
 
@@ -138,6 +137,9 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
         }
         m_NumSeqsStats     = x_GetNumSeqsStats();
         m_TotalLengthStats = x_GetTotalLengthStats();
+
+        LOG_POST(Info << "Num of Seqs: " << m_NumSeqs);
+        LOG_POST(Info << "Total Length: " << m_TotalLength);
     }
     catch(CSeqDBException & e) {
         m_UserGiList.Reset();
