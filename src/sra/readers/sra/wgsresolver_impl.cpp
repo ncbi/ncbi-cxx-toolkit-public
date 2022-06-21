@@ -353,7 +353,7 @@ CRef<CWGSResolver> CWGSResolver_VDB::CreateResolver(const CVDBMgr& mgr)
     if ( ret2->IsValid() ) {
         ret = ret2;
     }
-    if ( !ret->m_AccIndexIsPrefix ) {
+    if ( !ret->AccIndexIsPrefix() ) {
         CRef<CWGSResolver_VDB> ret3(new CWGSResolver_VDB(mgr, eThirdIndex, ret));
         if ( ret3->IsValid() ) {
             ret = ret3;
@@ -372,13 +372,8 @@ void CWGSResolver_VDB::Close(void)
 
 void CWGSResolver_VDB::x_Close()
 {
+    m_Impl.reset();
     m_Mgr.Close();
-    m_Db.Close();
-    m_GiIdxTable.Close();
-    m_AccIdxTable.Close();
-    m_AccIndex.Close();
-    m_GiIdxCursorCache.Clear();
-    m_AccIdxCursorCache.Clear();
 }
 
 
@@ -420,14 +415,27 @@ static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
 
 void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
 {
-    string path = s_ResolveAccOrPath(mgr, acc_or_path);
-
     // open VDB file
     TDBMutex::TWriteLockGuard guard(m_DBMutex);
-    x_Close();
-    m_Mgr = mgr;
+    unique_ptr<SImpl> impl = make_unique<SImpl>(mgr, acc_or_path);
+    if ( impl->m_Db ) {
+        m_WGSIndexPath = acc_or_path;
+        swap(m_Impl, impl);
+    }
+    else if ( IsValid() ) {
+        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
+            LOG_POST_X(29, "CWGSResolver_VDB("<<acc_or_path<<"): "
+                       "index disappeared from "<<GetWGSIndexResolvedPath());
+        }
+    }
+}
+
+
+CWGSResolver_VDB::SImpl::SImpl(const CVDBMgr& mgr, const string& acc_or_path)
+{
+    string path = s_ResolveAccOrPath(mgr, acc_or_path);
     try {
-        m_Db = CVDB(m_Mgr, path);
+        m_Db = CVDB(mgr, path);
     }
     catch ( CSraException& exc ) {
         if ( exc.GetErrCode() == exc.eNotFoundDb ) {
@@ -437,7 +445,6 @@ void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
     }
 
     // save original argument for possible changes in symbolic links
-    m_WGSIndexPath = acc_or_path;
     m_WGSIndexResolvedPath = path;
     if ( !CDirEntry(path).GetTime(&m_Timestamp) ) {
         m_Timestamp = CTime();
@@ -492,7 +499,7 @@ bool CWGSResolver_VDB::x_Update(void)
         // cannot get timestamp -> remote reference
         return false;
     }
-    if ( timestamp == m_Timestamp ) {
+    if ( timestamp == GetTimestamp() ) {
         // same timestamp
         return false;
     }
@@ -507,7 +514,7 @@ bool CWGSResolver_VDB::x_Update(void)
 inline
 CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
 {
-    CRef<SGiIdxTableCursor> curs = m_GiIdxCursorCache.Get(row);
+    CRef<SGiIdxTableCursor> curs = m_Impl->m_GiIdxCursorCache.Get(row);
     if ( !curs ) {
         curs = new SGiIdxTableCursor(GiIdxTable());
     }
@@ -518,7 +525,7 @@ CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
 inline
 CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
 {
-    CRef<SAccIdxTableCursor> curs = m_AccIdxCursorCache.Get();
+    CRef<SAccIdxTableCursor> curs = m_Impl->m_AccIdxCursorCache.Get();
     if ( !curs ) {
         curs = new SAccIdxTableCursor(AccIdxTable());
     }
@@ -530,7 +537,7 @@ inline
 void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TIntId row)
 {
     if ( curs->m_Table == GiIdxTable() ) {
-        m_GiIdxCursorCache.Put(curs, row);
+        m_Impl->m_GiIdxCursorCache.Put(curs, row);
     }
 }
 
@@ -539,29 +546,33 @@ inline
 void CWGSResolver_VDB::Put(CRef<SAccIdxTableCursor>& curs)
 {
     if ( curs->m_Table == AccIdxTable() ) {
-        m_AccIdxCursorCache.Put(curs);
+        m_Impl->m_AccIdxCursorCache.Put(curs);
     }
 }
 
 
-CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(TGi gi)
+CWGSResolver::TWGSPrefixes CWGSResolver_VDB::x_GetGiPrefixes(TGi gi)
 {
-    TDBMutex::TReadLockGuard guard(m_DBMutex);
     TWGSPrefixes ret;
+    TDBMutex::TReadLockGuard guard(m_DBMutex);
     if ( s_DebugEnabled(eDebug_resolve) ) {
         LOG_POST_X(24, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<gi);
     }
-    CRef<SGiIdxTableCursor> cur = GiIdx();
-    CVDBStringValue value = cur->WGS_PREFIX(GI_TO(TVDBRowId, gi), CVDBValue::eMissing_Allow);
-    if ( !value.empty() ) {
-        if ( s_DebugEnabled(eDebug_resolve) ) {
-            LOG_POST_X(25, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<*value);
+    try {
+        CRef<SGiIdxTableCursor> cur = GiIdx();
+        CVDBStringValue value = cur->WGS_PREFIX(GI_TO(TVDBRowId, gi), CVDBValue::eMissing_Allow);
+        if ( !value.empty() ) {
+            if ( s_DebugEnabled(eDebug_resolve) ) {
+                LOG_POST_X(25, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<*value);
+            }
+            ret.push_back(*value);
         }
-        ret.push_back(*value);
+        m_Impl->m_FailedAccRequestCount.Set(0);
+        Put(cur);
     }
-    Put(cur);
-    if ( ret.empty() && m_NextResolver ) {
-        ret = m_NextResolver->GetPrefixes(gi);
+    catch ( ... ) {
+        m_Impl->m_FailedAccRequestCount.Add(1);
+        throw;
     }
     return ret;
 }
@@ -588,16 +599,16 @@ static inline bool s_SplitAccIndex(string& uacc, Uint2& key_num)
 }
 
 
-CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
+CWGSResolver::TWGSPrefixes CWGSResolver_VDB::x_GetAccPrefixes(const string& acc)
 {
-    TDBMutex::TReadLockGuard guard(m_DBMutex);
     TWGSPrefixes ret;
+    TDBMutex::TReadLockGuard guard(m_DBMutex);
     if ( s_DebugEnabled(eDebug_resolve) ) {
         LOG_POST_X(26, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<acc);
     }
     string uacc = acc;
     SAccIdxTableCursor::acc_range_number_t key_num = 0;
-    if ( m_AccIndexIsPrefix ) {
+    if ( AccIndexIsPrefix() ) {
         if ( !s_SplitAccIndex(uacc, key_num) ) {
             if ( s_DebugEnabled(eDebug_resolve) ) {
                 LOG_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): invalid accession");
@@ -606,41 +617,67 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
         }
     }
     NStr::ToUpper(uacc);
-    TVDBRowIdRange range;
-    {{
-        PROFILE(sw_AccFind);
-        range = m_AccIndex.Find(uacc);
-    }}
-    if ( s_DebugEnabled(eDebug_resolve) ) {
-        LOG_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): "
-                   "range "<<range.first<<"-"<<range.second);
-    }
-    if ( range.second ) {
-        CRef<SAccIdxTableCursor> cur = AccIdx();
-        for ( TVDBRowCount i = 0; i < range.second; ++i ) {
-            TVDBRowId row_id = range.first+i;
-            if ( m_AccIndexIsPrefix ) {
-                PROFILE(sw_AccRange);
-                CVDBValueFor<SAccIdxTableCursor::acc_range_number_t> v =
-                    cur->ACCESSION_RANGE(row_id);
-                if ( v[0] > key_num ) {
-                    // current range is past the requested id, end of scan
-                    break;
-                }
-                if ( v[1] < key_num ) {
-                    // current range is before the requested id, check next range
-                    continue;
-                }
-            }
-            PROFILE(sw_WGSPrefix);
-            CTempString prefix = *cur->WGS_PREFIX(row_id);
-            if ( s_DebugEnabled(eDebug_resolve) ) {
-                LOG_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<prefix);
-            }
-            ret.push_back(prefix);
+    try {
+        TVDBRowIdRange range;
+        {{
+            PROFILE(sw_AccFind);
+            range = m_Impl->m_AccIndex.Find(uacc);
+        }}
+        if ( s_DebugEnabled(eDebug_resolve) ) {
+            LOG_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): "
+                       "range "<<range.first<<"-"<<range.second);
         }
-        Put(cur);
+        if ( range.second ) {
+            CRef<SAccIdxTableCursor> cur = AccIdx();
+            for ( TVDBRowCount i = 0; i < range.second; ++i ) {
+                TVDBRowId row_id = range.first+i;
+                if ( AccIndexIsPrefix() ) {
+                    PROFILE(sw_AccRange);
+                    CVDBValueFor<SAccIdxTableCursor::acc_range_number_t> v =
+                        cur->ACCESSION_RANGE(row_id);
+                    if ( v[0] > key_num ) {
+                        // current range is past the requested id, end of scan
+                        break;
+                    }
+                    if ( v[1] < key_num ) {
+                        // current range is before the requested id, check next range
+                        continue;
+                    }
+                }
+                PROFILE(sw_WGSPrefix);
+                CTempString prefix = *cur->WGS_PREFIX(row_id);
+                if ( s_DebugEnabled(eDebug_resolve) ) {
+                    LOG_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<prefix);
+                }
+                ret.push_back(prefix);
+            }
+            Put(cur);
+        }
+        m_Impl->m_FailedGiRequestCount.Set(0);
     }
+    catch ( ... ) {
+        m_Impl->m_FailedGiRequestCount.Add(1);
+        throw;
+    }
+    return ret;
+}
+
+
+CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(TGi gi)
+{
+    CVDBMgr::CRequestContextUpdater ctx_updater;
+    TWGSPrefixes ret = x_GetGiPrefixes(gi);
+    if ( ret.empty() && m_NextResolver ) {
+        ret = m_NextResolver->GetPrefixes(gi);
+    }
+    return ret;
+}
+
+
+CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
+{
+    CVDBMgr::CRequestContextUpdater ctx_updater;
+    auto ret = x_GetAccPrefixes(acc);
     if ( ret.empty() && m_NextResolver ) {
         ret = m_NextResolver->GetPrefixes(acc);
     }
