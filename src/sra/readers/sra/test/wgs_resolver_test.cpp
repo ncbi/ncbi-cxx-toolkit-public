@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_signal.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <sra/readers/sra/wgsresolver.hpp>
 #include <util/thread_nonstop.hpp>
@@ -71,10 +72,10 @@ protected:
             {
             }
 
-        unsigned m_UpdateCount;
-        unsigned m_ReopenCount;
+        size_t m_UpdateCount;
+        size_t m_ReopenCount;
         double m_ReopenTime;
-        unsigned m_ReuseCount;
+        size_t m_ReuseCount;
         double m_ReuseTime;
         
     protected:
@@ -123,14 +124,17 @@ protected:
     {
     public:
         CResolveThread(unsigned resolve_delay,
-                       unsigned run_count,
-                       unsigned id_index,
+                       unsigned run_time,
+                       size_t id_index,
                        const TGis& gis,
                        const TAccs& accs,
                        bool verbose,
                        CRef<CWGSResolver> resolver)
-            : CThreadNonStop(resolve_delay),
-              m_RunCount(run_count),
+            : CThreadNonStop(1),
+              m_ResolveDelay(resolve_delay),
+              m_RunTime(run_time),
+              m_ResolveCount(0),
+              m_ErrorCount(0),
               m_IdIndex(id_index),
               m_GiResolveCount(0),
               m_GiResolveTime(0),
@@ -143,11 +147,15 @@ protected:
             {
             }
 
-        int m_RunCount;
-        unsigned m_IdIndex;
-        unsigned m_GiResolveCount;
+        CMutex m_StatsMutex;
+        unsigned m_ResolveDelay;
+        unsigned m_RunTime;
+        unsigned m_ResolveCount;
+        size_t m_ErrorCount;
+        size_t m_IdIndex;
+        size_t m_GiResolveCount;
         double m_GiResolveTime;
-        unsigned m_AccResolveCount;
+        size_t m_AccResolveCount;
         double m_AccResolveTime;
         const TGis& m_Gis;
         const TAccs& m_Accs;
@@ -156,37 +164,66 @@ protected:
     protected:
         virtual void DoJob(void) {
             try {
-                {{
-                    TGi gi = m_Gis[m_IdIndex%size(m_Gis)];
-                    CStopWatch sw(CStopWatch::eStart);
-                    auto prefixes = m_Resolver->GetPrefixes(gi);
-                    ++m_GiResolveCount;
-                    m_GiResolveTime += sw.Elapsed();
-                    if ( m_Verbose ) {
-                        LOG_POST("Resolved gi "<<gi<<" to "<<prefixes.size()<<" projects");
-                    }
-                    _ASSERT(prefixes.size() > 0);
-                }}
-                {{
-                    string acc = m_Accs[m_IdIndex%size(m_Accs)];
-                    CStopWatch sw(CStopWatch::eStart);
-                    auto prefixes = m_Resolver->GetPrefixes(acc);
-                    ++m_AccResolveCount;
-                    m_AccResolveTime += sw.Elapsed();
-                    if ( m_Verbose ) {
-                        LOG_POST("Resolved acc "<<acc<<" to "<<prefixes.size()<<" projects");
-                    }
-                    _ASSERT(prefixes.size() > 0);
-                }}
-                ++m_IdIndex;
-                if ( --m_RunCount <= 0 ) {
+                if ( m_RunTime == 0 ) {
                     RequestStop();
+                }
+                else {
+                    --m_RunTime;
+                }
+                if ( ++m_ResolveCount >= m_ResolveDelay ) {
+                    m_ResolveCount = 0;
+
+                    {{
+                        TGi gi = m_Gis[m_IdIndex%size(m_Gis)];
+                        CStopWatch sw(CStopWatch::eStart);
+                        auto prefixes = m_Resolver->GetPrefixes(gi);
+                        double time = sw.Elapsed();
+                        {{
+                            CMutexGuard guard(m_StatsMutex);
+                            ++m_GiResolveCount;
+                            m_GiResolveTime += time;
+                        }}
+                        if ( m_Verbose ) {
+                            LOG_POST("Resolved gi "<<gi<<" to "<<prefixes.size()<<" projects");
+                        }
+                        if ( prefixes.empty() ) {
+                            NCBI_THROW(CSraException, eNotFound,
+                                       "Couldn't resolve gi "+NStr::NumericToString(gi));
+                        }
+                    }}
+                    {{
+                        string acc = m_Accs[m_IdIndex%size(m_Accs)];
+                        CStopWatch sw(CStopWatch::eStart);
+                        auto prefixes = m_Resolver->GetPrefixes(acc);
+                        double time = sw.Elapsed();
+                        {{
+                            CMutexGuard guard(m_StatsMutex);
+                            ++m_AccResolveCount;
+                            m_AccResolveTime += time;
+                        }}
+                        if ( m_Verbose ) {
+                            LOG_POST("Resolved acc "<<acc<<" to "<<prefixes.size()<<" projects");
+                        }
+                        if ( prefixes.empty() ) {
+                            NCBI_THROW(CSraException, eNotFound,
+                                       "Couldn't resolve acc "+acc);
+                        }
+                    }}
+                    ++m_IdIndex;
                 }
             }
             catch ( CException& exc ) {
+                {{
+                    CMutexGuard guard(m_StatsMutex);
+                    ++m_ErrorCount;
+                }}
                 ERR_POST("Exception while resolving: "<<exc);
             }
             catch ( exception& exc ) {
+                {{
+                    CMutexGuard guard(m_StatsMutex);
+                    ++m_ErrorCount;
+                }}
                 ERR_POST("Exception while resolving: "<<exc.what());
             }
         }
@@ -203,6 +240,7 @@ protected:
     void StartWorkers();
     void InterruptWorkers();
     void StopWorkers();
+    void PrintStats();
     
     void ResolveGi(TGi gi);
     void ResolveAcc(const string& acc);
@@ -215,7 +253,7 @@ private:
     TGis m_Gis;
     TAccs m_Accs;
     vector<CRef<CResolveThread>> m_ResolveThreads;
-    unsigned m_RunTime;
+    size_t m_ErrorCount;
 };
 
 
@@ -274,11 +312,11 @@ void CWGSResolverTestApp::CloseResolver()
              m_UpdateThread->m_UpdateCount<<" times");
     if ( m_UpdateThread->m_ReopenCount ) {
         LOG_POST("Average reopen time: "<<
-                 m_UpdateThread->m_ReopenTime/m_UpdateThread->m_ReopenCount*1e3<<" ms");
+                 (m_UpdateThread->m_ReopenTime/m_UpdateThread->m_ReopenCount*1e3)<<" ms");
     }
     if ( m_UpdateThread->m_ReuseCount ) {
         LOG_POST("Average reuse time: "<<
-                 m_UpdateThread->m_ReuseTime/m_UpdateThread->m_ReuseCount*1e3<<" ms");
+                 (m_UpdateThread->m_ReuseTime/m_UpdateThread->m_ReuseCount*1e3)<<" ms");
     }
     m_UpdateThread = null;
     m_Resolver = null;
@@ -339,7 +377,7 @@ void CWGSResolverTestApp::StartWorkers()
         LOG_POST("Running "<<thread_count<<" resolve threads for "<<run_time<<" seconds");
         for ( int t = 0; t < thread_count; ++t ) {
             m_ResolveThreads.push_back(Ref(new CResolveThread(resolve_interval,
-                                                              run_time/resolve_interval, t,
+                                                              run_time, t,
                                                               m_Gis, m_Accs,
                                                               m_Verbose, m_Resolver)));
         }
@@ -367,21 +405,41 @@ void CWGSResolverTestApp::InterruptWorkers()
 
 void CWGSResolverTestApp::StopWorkers()
 {
-    unsigned gi_resolve_count = 0;
-    double gi_resolve_time = 0;
-    unsigned acc_resolve_count = 0;
-    double acc_resolve_time = 0;
+    InterruptWorkers();
     for ( auto& t : m_ResolveThreads ) {
         t->Join();
+    }
+}
+
+
+void CWGSResolverTestApp::PrintStats()
+{
+    size_t gi_resolve_count = 0;
+    double gi_resolve_time = 0;
+    size_t acc_resolve_count = 0;
+    double acc_resolve_time = 0;
+    for ( auto& t : m_ResolveThreads ) {
+        CMutexGuard guard(t->m_StatsMutex);
+        m_ErrorCount += t->m_ErrorCount;
         gi_resolve_count += t->m_GiResolveCount;
         gi_resolve_time += t->m_GiResolveTime;
         acc_resolve_count += t->m_AccResolveCount;
         acc_resolve_time += t->m_AccResolveTime;
     }
-    LOG_POST("Resolved "<<gi_resolve_count<<" gis "
-             "average time: "<<gi_resolve_time/gi_resolve_count*1e3<<" ms");
-    LOG_POST("Resolved "<<acc_resolve_count<<" accs "
-             "average time: "<<acc_resolve_time/acc_resolve_count*1e3<<" ms");
+    if ( gi_resolve_count ) {
+        LOG_POST("Resolved "<<gi_resolve_count<<" gis "
+                 "average time: "<<(gi_resolve_time/gi_resolve_count*1e3)<<" ms");
+    }
+    else {
+        LOG_POST("No gis resolved yet");
+    }
+    if ( acc_resolve_count ) {
+        LOG_POST("Resolved "<<acc_resolve_count<<" accs "
+                 "average time: "<<(acc_resolve_time/acc_resolve_count*1e3)<<" ms");
+    }
+    else {
+        LOG_POST("No accs resolved yet");
+    }
 }
 
 
@@ -404,6 +462,7 @@ void CWGSResolverTestApp::ResolveAcc(const string& acc)
 int CWGSResolverTestApp::Run(void)
 {
     m_Verbose = GetArgs()["verbose"];
+    m_ErrorCount = 0;
     
     InitRequests();
     
@@ -411,10 +470,32 @@ int CWGSResolverTestApp::Run(void)
     StartWorkers();
 
     // start controlling thread
+    LOG_POST("You can interrupt the test with Ctrl-C");
+    //LOG_POST("or print current statistics with Ctrl-\\");
+    CSignal::TrapSignals(CSignal::eSignal_INT | CSignal::eSignal_TERM);
+    for ( ;; ) {
+        if ( CSignal::IsSignaled(CSignal::eSignal_INT) ) {
+            InterruptWorkers();
+        }
+        if ( CSignal::IsSignaled(CSignal::eSignal_TERM) ) {
+            CSignal::ClearSignals(CSignal::eSignal_TERM);
+            PrintStats();
+        }
+        if ( m_ResolveThreads.front()->IsStopRequested() ) {
+            break;
+        }
+        SleepMilliSec(100);
+    }
+    CSignal::Reset();
 
     StopWorkers();
+    PrintStats();
     CloseResolver();
-    
+
+    if ( m_ErrorCount ) {
+        ERR_POST("Error count: "<<m_ErrorCount);
+        return 1;
+    }
     return 0;
 }
 
