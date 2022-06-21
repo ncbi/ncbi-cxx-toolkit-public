@@ -419,9 +419,6 @@ extern char* LOG_ComposeMessage
     static const char kRawData_End[] =
         "\n#################### [_END_] Raw Data\n";
 
-    const char *function, *level = 0;
-    char *str, *s, datetime[32];
-
     /* Calculated length of ... */
     size_t datetime_len  = 0;
     size_t level_len     = 0;
@@ -431,6 +428,9 @@ extern char* LOG_ComposeMessage
     size_t message_len   = 0;
     size_t data_len      = 0;
     size_t total_len;
+
+    const char* level;
+    char *str, *s, datetime[32];
 
     /* Adjust formatting flags */
     if (mess->level == eLOG_Trace  &&  !(flags & fLOG_None))
@@ -477,28 +477,19 @@ extern char* LOG_ComposeMessage
         &&  (mess->level != eLOG_Note  ||  !(flags & fLOG_OmitNoteLevel))) {
         level = LOG_LevelStr(mess->level);
         level_len = strlen(level) + 2;
-    }
-    if ((flags & fLOG_Module) != 0
-        &&  mess->module  &&  *mess->module) {
-        module_len = strlen(mess->module) + 3;
-    }
-    if ((flags & fLOG_Function) != 0
-        &&  mess->func  &&  *mess->func) {
-        function = mess->func;
-        if (!module_len)
-            function_len = 3;
-        function_len += strlen(function) + 2;
-        if (strncmp(function, "::", 2) == 0  &&  !*(function += 2))
-            function_len = 0;
     } else
-        function = 0;
-    if ((flags & fLOG_FileLine) != 0
-        &&  mess->file  &&  *mess->file) {
-        file_line_len = 12 + strlen(mess->file) + 11;
+        level = 0;
+    if ((flags & fLOG_Module) != 0  &&  mess->module  &&  *mess->module)
+        module_len = strlen(mess->module) + 3;
+    if ((flags & fLOG_Function) != 0  &&  mess->func  &&  *mess->func) {
+        const char* function = mess->func;
+        if (strncmp(function, "::", 2) != 0  ||  *(function += 2))
+            function_len = strlen(function) + (module_len ? 2 : 5);
     }
+    if ((flags & fLOG_FileLine) != 0  &&  mess->file  &&  *mess->file)
+        file_line_len = 12 + strlen(mess->file) + 11;
     if (mess->message  &&  *mess->message)
         message_len = strlen(mess->message);
-
     if (mess->raw_size) {
         data_len = (sizeof(kRawData_Beg)
                     + 20 + UTIL_PrintableStringSize((const char*)
@@ -521,10 +512,8 @@ extern char* LOG_ComposeMessage
         memcpy(s, datetime, datetime_len);
         s += datetime_len;
     }
-    if (file_line_len) {
-        s += sprintf(s, "\"%s\", line %d: ",
-                     mess->file, (int) mess->line);
-    }
+    if (file_line_len)
+        s += sprintf(s, "\"%s\", line %d: ", mess->file, mess->line);
     if (module_len | function_len)
         *s++ = '[';
     if (module_len) {
@@ -534,7 +523,7 @@ extern char* LOG_ComposeMessage
     if (function_len) {
         memcpy(s, "::", 2);
         s += 2;
-        memcpy(s, function, function_len -= (module_len ? 2 : 5));
+        memcpy(s, mess->func, function_len -= (module_len ? 2 : 5));
         s += function_len;
     }
     if (module_len | function_len) {
