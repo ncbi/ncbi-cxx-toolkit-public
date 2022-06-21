@@ -641,7 +641,7 @@ void CWriteDB_OidList::x_Flush() {
     Int4 num_oids = m_OidList.size();
 
     LOG_POST(Info << "Num of excluded oids" << num_oids);
-    if (!num_oids || !m_TotalOids ){
+    if (!m_TotalOids ){
     	LOG_POST(Info<< "No oid list created for mode " << m_Type);
     	return;
     }
