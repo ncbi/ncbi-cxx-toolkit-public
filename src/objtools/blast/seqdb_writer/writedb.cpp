@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 #include "writedb_impl.hpp"
 #include <objtools/blast/seqdb_writer/writedb_convert.hpp>
 #include <iostream>
@@ -413,6 +414,18 @@ s_CreateAliasFilePriv(const string& file_name,
     s_PrintAliasFileCreationLog(file_name, is_prot, num_seqs);
 }
 
+int s_GetNumOfDigits(int n)
+{
+	int num_digits = 0;
+	while (n) {
+		n/=10;
+		num_digits ++;
+	}
+
+	return (num_digits >2) ? num_digits: 2;
+}
+
+
 void CWriteDB_CreateAliasFile(const string& file_name,
                               unsigned int num_volumes,
                               CWriteDB::ESeqType seq_type,
@@ -421,9 +434,10 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     bool is_prot(seq_type == CWriteDB::eProtein ? true : false);
     string concatenated_blastdb_name;
     vector<string> volume_names(num_volumes, kEmptyStr);
+    int num_digits = s_GetNumOfDigits(num_volumes);
     for (unsigned int i = 0; i < num_volumes; i++) {
         CNcbiOstrstream oss;
-        oss << file_name << "." << setfill('0') << setw(2) << i;
+        oss << file_name << "." << setfill('0') << setw(num_digits) << i;
         const string vol_name((string)CNcbiOstrstreamToString(oss));
         s_DoesBlastDbExist(vol_name, is_prot);
         volume_names.push_back(vol_name);
@@ -526,6 +540,81 @@ CWriteDB_ConsolidateAliasFiles(bool delete_source_alias_files /* = false */)
     FindFiles("*.nal", alias_files, fFF_File);
     FindFiles("*.pal", alias_files, fFF_File);
     CWriteDB_ConsolidateAliasFiles(alias_files, delete_source_alias_files);
+}
+
+void CWriteDB_CreateOidMaskDB(const string& input_db,
+							  const string & output_db,
+                              CWriteDB::ESeqType seq_type,
+                              int oid_mask_type,
+                              const string & title)
+{
+	CRef<CSeqDB> seqdb;
+	bool is_protein = seq_type == CWriteDB::eProtein ? true : false;
+	CSeqDB::ESeqType t = (is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide);
+	try {
+		seqdb.Reset(new CSeqDB(input_db, t));
+	}
+	catch(CException & e) {
+		NCBI_THROW(CSeqDBException, eArgErr, "Invalid input db");
+	}
+
+	vector<string> vols;
+	seqdb->FindVolumePaths(vols);
+	if(vols.size() == 0) {
+       	NCBI_THROW(CSeqDBException, eArgErr, "no vol found for " + input_db);
+	}
+	seqdb.Reset();
+
+	string out_ext = is_protein? ".pal":".nal";
+	int num_digits = s_GetNumOfDigits(vols.size());
+	ofstream ofs(output_db + out_ext);
+	ofs << "TITLE " << title <<endl;
+	for (unsigned int i = 0; i < vols.size(); i++) {
+		CSeqDB_Path v_path(vols[i]);
+		string v_basename;
+		v_path.FindBaseName().GetString(v_basename);
+		string DBList = "DBLIST " + v_basename;
+		string OidList = "OIDLIST ";
+		if (oid_mask_type & EOidMaskType::fExcludeModel) {
+			string ex_model_ext = "." + SeqDB_GetOidMaskFileExt(is_protein, EOidMaskType::fExcludeModel);
+        	string full_path = vols[i] + ex_model_ext;
+       		CFile f(full_path);
+        	if (!f.Exists()) {
+	        	NCBI_THROW(CSeqDBException, eArgErr, "Exclude oid mask file not found for " + vols[i]);
+        	}
+        	OidList += f.GetName();
+		}
+	    CNcbiOstrstream oss;
+	    if (vols.size() > 1) {
+	    	oss << output_db << "." << setfill('0') << setw(num_digits) << i << out_ext;
+	    	ofstream ovs((string)CNcbiOstrstreamToString(oss));
+    		ovs << DBList << endl;
+    		ovs << OidList << endl;
+	    }
+	    else {
+	    	ofs << DBList << endl;
+	    	ofs << OidList << endl;
+	    }
+	}
+
+	if (vols.size() > 1) {
+        CNcbiOstrstream oss;
+        oss << "DBLIST";
+		for (unsigned int i = 0; i < vols.size(); i++) {
+        	oss << " " << output_db << "." << setfill('0') << setw(num_digits) << i;
+		}
+		ofs << (string) CNcbiOstrstreamToString(oss) << endl;
+	}
+
+
+	Uint8 total_length = 0;
+	int num_seqs = 0;
+	CSeqDB new_db(output_db, t);
+	num_seqs = new_db.GetNumSeqs();
+	total_length = new_db.GetTotalLength();
+
+	ofs << "NSEQ " << num_seqs << endl;
+	ofs << "LENGTH " << total_length << endl;
 }
 
 END_NCBI_SCOPE
