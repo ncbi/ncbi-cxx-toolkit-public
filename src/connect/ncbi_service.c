@@ -1060,36 +1060,40 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* net_info, int but_last)
         return 0;
     }
     if (iter) {
-        TSERV_TypeOnly t, types
-            = iter->types & (TSERV_TypeOnly)(~fSERV_Stateless);
-        /* Accepted server types */
-        buflen = sizeof(kAcceptedServerTypes) - 1;
-        memcpy(buffer, kAcceptedServerTypes, buflen);
-        for (t = 1;  t;  t = (TSERV_TypeOnly)(t << 1)) {
-            if (types & t) {
-                const char* name = SERV_TypeStr((ESERV_Type) t);
-                size_t namelen = strlen(name);
-                if (!namelen  ||  buflen + 1 + namelen + 2 >= sizeof(buffer))
-                    break;
-                buffer[buflen++] = ' ';
-                memcpy(buffer + buflen, name, namelen);
-                buflen += namelen;
-            } else if (types < t)
-                break;
-        }
-        if (buffer[buflen - 1] != ':') {
-            strcpy(&buffer[buflen], "\r\n");
-            assert(strlen(buffer) == buflen+2  &&  buflen+2 < sizeof(buffer));
-            if (!BUF_Write(&buf, buffer, buflen + 2)) {
-                BUF_Destroy(buf);
-                return 0;
-            }
-        }
+        TSERV_TypeOnly types;
         if (iter->external) {
             /* External */
             if (!BUF_Write(&buf, kNcbiExternal, sizeof(kNcbiExternal)-1)) {
                 BUF_Destroy(buf);
                 return 0;
+            }
+        }
+        if ((types = (iter->types & fSERV_All)) != fSERV_Any) {
+            /* Accepted server types */
+            TSERV_TypeOnly t;
+            buflen = 0;
+            for (t = 1;  t;  t <<= 1) {
+                if (types & t) {
+                    const char* name = SERV_TypeStr((ESERV_Type) t);
+                    size_t namelen = strlen(name);
+                    if (!namelen)
+                        continue;
+                    if (buflen + namelen + (1 + 2) > sizeof(buffer))
+                        break;
+                    buffer[buflen++] = ' ';
+                    memcpy(buffer + buflen, name, namelen);
+                    buflen += namelen;
+                } else if (types < t)
+                    break;
+            }
+            if (buflen) {
+                memcpy(buffer + buflen, "\r\n", 2);
+                if (!BUF_Write(&buf, kAcceptedServerTypes,
+                               sizeof(kAcceptedServerTypes) - 1)
+                    ||  !BUF_Write(&buf, buffer, buflen + 2)) {
+                    BUF_Destroy(buf);
+                    return 0;
+                }
             }
         }
         if (types & fSERV_Firewall) {
@@ -1112,7 +1116,7 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* net_info, int but_last)
             buffer[buflen++] = ' ';
             buflen = (size_t)(strcpy(NCBI_simple_ftoa(buffer + buflen,
                                                       iter->pref * 100.0, 2),
-                                     "\r\n") - buffer) + 2/*"\r\n"*/;
+                                     "%\r\n") - buffer) + 3/*"%\r\n"*/;
             if (!BUF_Write(&buf, kPreference, sizeof(kPreference) - 1)  ||
                 !BUF_Write(&buf, buffer, buflen)) {
                 BUF_Destroy(buf);
