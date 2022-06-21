@@ -3930,7 +3930,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
         for (p = bptr; *p != '\n';)
             p++;
         *p = '\0';
-        FtaInstallPrefix(PREFIX_FEATURE, (char*)"Parsing FT line: ", bptr);
+        FtaInstallPrefix(PREFIX_FEATURE, "Parsing FT line: ", bptr);
         *p   = '\n';
         ptr1 = bptr + ParFlat_COL_FEATKEY;
         if (*ptr1 == ' ') {

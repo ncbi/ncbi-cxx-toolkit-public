@@ -458,7 +458,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
     if (! already)
         fta_init_servers(pp);
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char*)"INDEXING", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, "INDEXING");
 
     bool good = FlatFileIndex(pp, NULL);
 
@@ -475,7 +475,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
     GetScope().AddDefaults();
 
     if (pp->format == Parser::EFormat::SPROT) {
-        FtaInstallPrefix(PREFIX_LOCUS, (char*)"PARSING", NULL);
+        FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
 
         good = SprotAscii(pp);
 
@@ -489,7 +489,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
         return good;
     }
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char*)"SET-UP", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
 
     //fta_entrez_fetch_enable(pp);
 
@@ -513,7 +513,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-    FtaInstallPrefix(PREFIX_LOCUS, (char*)"PARSING", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
 
     if (pp->format == Parser::EFormat::GenBank) {
         good = GenBankAsciiOrig(pp);
@@ -816,14 +816,14 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     pp.entrez_fetch = pp.taxserver = pp.medserver = 1;
 
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char*)"SET-UP", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
 
     pp.ffbuf.start   = buf;
     pp.ffbuf.current = buf;
 
     FtaDeletePrefix(PREFIX_LOCUS);
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char*)"INDEXING", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, "INDEXING");
 
     bool good = FlatFileIndex(&pp, NULL);
 
@@ -842,7 +842,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     GetScope().AddDefaults();
 
     if (pp.format == Parser::EFormat::SPROT) {
-        FtaInstallPrefix(PREFIX_LOCUS, (char*)"PARSING", NULL);
+        FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
 
         good = SprotAscii(&pp);
 
@@ -856,7 +856,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
         return pp.entries;
     }
 
-    FtaInstallPrefix(PREFIX_LOCUS, (char*)"SET-UP", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
 
     //fta_entrez_fetch_enable(&pp);
 
@@ -900,7 +900,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-    FtaInstallPrefix(PREFIX_LOCUS, (char*)"PARSING", NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
 
     good = false;
 
