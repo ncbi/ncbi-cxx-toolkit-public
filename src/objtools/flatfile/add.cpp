@@ -288,14 +288,14 @@ void err_install(IndexblkPtr ibp, bool accver)
 {
     Char temp[210];
 
-    FtaInstallPrefix(PREFIX_LOCUS, ibp->locusname, NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, ibp->locusname);
     if (accver && ibp->vernum > 0)
         sprintf(temp, "%s.%d", ibp->acnum, ibp->vernum);
     else
         StringCpy(temp, ibp->acnum);
     if (*temp == '\0')
         StringCpy(temp, ibp->locusname);
-    FtaInstallPrefix(PREFIX_ACCESSION, temp, NULL);
+    FtaInstallPrefix(PREFIX_ACCESSION, temp);
 }
 
 /**********************************************************/

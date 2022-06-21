@@ -840,8 +840,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
             if (p != NULL && p[1] == '\0')
                 *p = '\0';
 
-            FtaInstallPrefix(PREFIX_LOCUS, ptr->str, NULL);
-            FtaInstallPrefix(PREFIX_ACCESSION, ptr->str, NULL);
+            FtaInstallPrefix(PREFIX_LOCUS, ptr->str);
+            FtaInstallPrefix(PREFIX_ACCESSION, ptr->str);
 
             if (i != 6 || (stoken->num != 10 && stoken->num != 11)) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
@@ -854,8 +854,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
         StringCpy(entry->blocusname, entry->locusname);
 
         if (entry->embl_new_ID == false) {
-            FtaInstallPrefix(PREFIX_LOCUS, entry->locusname, NULL);
-            FtaInstallPrefix(PREFIX_ACCESSION, entry->locusname, NULL);
+            FtaInstallPrefix(PREFIX_LOCUS, entry->locusname);
+            FtaInstallPrefix(PREFIX_ACCESSION, entry->locusname);
         }
 
         if (pp->mode != Parser::EMode::Relaxed && ! badlocus) {
@@ -1848,7 +1848,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
                 temp = "???";
             }
         }
-        FtaInstallPrefix(PREFIX_ACCESSION, temp.c_str(), NULL);
+        FtaInstallPrefix(PREFIX_ACCESSION, temp.c_str());
     }
 
     if (parseInfo.source == Parser::ESource::Flybase) {
@@ -2014,7 +2014,7 @@ bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
             else
                 StringCpy(temp, "???");
         }
-        FtaInstallPrefix(PREFIX_ACCESSION, temp, NULL);
+        FtaInstallPrefix(PREFIX_ACCESSION, temp);
     }
 
     if (pp->source == Parser::ESource::Flybase) {

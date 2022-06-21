@@ -567,11 +567,11 @@ static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver, Parser::E
             break;
     }
 
-    FtaInstallPrefix(PREFIX_LOCUS, ibp->locusname, NULL);
+    FtaInstallPrefix(PREFIX_LOCUS, ibp->locusname);
     if (ibp->acnum[0] == '\0')
-        FtaInstallPrefix(PREFIX_ACCESSION, ibp->locusname, NULL);
+        FtaInstallPrefix(PREFIX_ACCESSION, ibp->locusname);
     else
-        FtaInstallPrefix(PREFIX_ACCESSION, ibp->acnum, NULL);
+        FtaInstallPrefix(PREFIX_ACCESSION, ibp->acnum);
 
     if (accver) {
         for (xip = ibp->xip; xip != NULL; xip = xip->next) {
@@ -580,7 +580,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver, Parser::E
             buf = XMLGetTagValue(entry, xip);
             XMLParseVersion(ibp, buf);
             if (buf != NULL) {
-                FtaInstallPrefix(PREFIX_ACCESSION, buf, NULL);
+                FtaInstallPrefix(PREFIX_ACCESSION, buf);
                 MemFree(buf);
             }
             break;
