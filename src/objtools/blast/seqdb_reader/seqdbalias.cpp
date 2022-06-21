@@ -1493,6 +1493,11 @@ public:
             return true;
         }
         
+        if (vars.find("OIDLIST") != vars.end()) {
+            m_NeedScan = true;
+            return true;
+        }
+
         // If none of those conditions is met, traversal proceeds.
         return false;
     }
@@ -1920,7 +1925,12 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
             if (oid_iter != m_Values.end()) {
                 CSeqDB_FileName lst(oid_iter->second);
                 CSeqDB_Path lst_path(m_DBPath, lst);
-                
+                CFile oid_f(lst_path.GetPathS());
+                if (!oid_f.Exists() && m_VolNames.size() != 0) {
+                	CSeqDB_Path tmp(m_VolNames[0].FindDirName(), lst.GetFileNameSub());
+                	lst_path = tmp;
+                }
+
                 CRef<TMask> mask(new TMask(TMask::eOidList, lst_path));
                 m_NodeMasks.push_back(mask);
             }

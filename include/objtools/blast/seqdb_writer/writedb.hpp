@@ -697,6 +697,14 @@ void CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files,
 NCBI_XOBJWRITE_EXPORT
 void CWriteDB_ConsolidateAliasFiles(bool delete_source_alias_files = false);
 
+
+NCBI_XOBJWRITE_EXPORT
+void CWriteDB_CreateOidMaskDB(const string& input_db,
+							  const string & output_db,
+                              CWriteDB::ESeqType seq_type,
+                              int oid_mask_type,
+                              const string & title = string());
+
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_BLAST_SEQDB_WRITER___WRITEDB__HPP
