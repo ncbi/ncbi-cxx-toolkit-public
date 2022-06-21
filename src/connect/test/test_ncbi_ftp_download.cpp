@@ -479,6 +479,9 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
         dlcbdata->Append();
         update = true;
     } else if (s_Signaled) {
+        size_t unused;
+        // This should cause data connection (if any) to abort
+        CONN_Write(conn, "NOOP\n", 5, &unused, eIO_WritePersist);
         status = eIO_Interrupt;
         update = true;
     } else if (type & eCONN_OnTimeout) {
