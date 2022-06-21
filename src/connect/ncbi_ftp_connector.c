@@ -768,6 +768,14 @@ static EIO_Status x_FTPDir(SFTPConnector* xxx,
 }
 
 
+/* Worthwhile reading:
+ * https://datatracker.ietf.org/doc/html/rfc793#section-3.1
+ * https://datatracker.ietf.org/doc/html/rfc1122#page-84
+ * https://datatracker.ietf.org/doc/html/draft-ietf-tcpm-urgent-data-05
+ * https://datatracker.ietf.org/doc/html/rfc854
+ * https://www.freesoft.org/CIE/RFC/854/5a.htm
+ * http://alas.matf.bg.ac.rs/manuals/lspe/snode=126.html
+ */
 static EIO_Status x_FTPTelnetSynch(SFTPConnector* xxx)
 {
     EIO_Status status;
