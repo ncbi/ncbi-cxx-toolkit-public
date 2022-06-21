@@ -398,7 +398,11 @@ int CTest::Run(void)
     ps >> str;
     NcbiCout << str << endl << flush;
     assert(str == "Done.");
-    assert(!(ps >> str));
+
+    str.clear();
+    ps >> str;
+    if (ps  ||  !str.empty())
+        ERR_POST(Fatal << "Unexpected extra data read:\n" << str);
 
     status = ps.GetPipe().Close(&exitcode); 
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
@@ -419,7 +423,11 @@ int CTest::Run(void)
     ps.GetPipe().SetReadHandle(CPipe::eStdErr);
     ps >> str;
     assert(str == "stderr");
-    assert(!(ps >> str));
+
+    str.clear();
+    ps >> str;
+    if (ps  ||  !str.empty())
+        ERR_POST(Fatal << "Unexpected extra data read:\n" << str);
     
     assert(ps.GetPipe().Open(app.c_str(), args) != eIO_Success);
 
@@ -440,7 +448,11 @@ int CTest::Run(void)
     assert(str == "stdout");
     ps >> str;
     assert(str == "stderr");
-    assert(!(ps >> str));
+    
+    str.clear();
+    ps >> str;
+    if (ps  ||  !str.empty())
+        ERR_POST(Fatal << "Unexpected extra data read:\n" << str);
 
     status = ps.GetPipe().Close(&exitcode); 
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
