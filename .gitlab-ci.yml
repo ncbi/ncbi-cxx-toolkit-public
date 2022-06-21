@@ -10,8 +10,7 @@ build:
  stage: build
  timeout: 5 hours
  script:
-  - cat /etc/passwd
-  - ls -laFh
+  - adduser --disabled-password --gecos "" toolkit
   - echo "Building toolkit using cmake"
   - ./cmake-configure --with-dll 2>&1 | tee "${CI_PROJECT_DIR}/config.log"
   - cd CMake-GCC730-DebugDLL/build
@@ -20,7 +19,7 @@ build:
   - echo "Running tests"
   - chown -R nobody:nobody CMake-GCC730-DebugDLL/
   - cd CMake-GCC730-DebugDLL/build
-  - su nobody -c "make check VERBOSE=1" 2>&1 | tee "${CI_PROJECT_DIR}/test.log" || true
+  - su toolkit -c "make check VERBOSE=1" 2>&1 | tee "${CI_PROJECT_DIR}/test.log" || true
   - cd ../..
  artifacts:
   paths:
