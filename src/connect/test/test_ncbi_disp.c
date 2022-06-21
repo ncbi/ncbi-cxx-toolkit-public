@@ -163,6 +163,7 @@ int main(int argc, const char* argv[])
 {
     static const char kParameter[] = "test_parameter";
     const char* service = argc > 1 ? argv[1] : "bounce";
+    TSERV_Type types = fSERV_All & ~fSERV_Firewall;
     SConnNetInfo* net_info;
     const SSERV_Info* info;
     const char* arg, *val;
@@ -179,9 +180,11 @@ int main(int argc, const char* argv[])
 
     arg = 0;
     if (argc > 2) {
+        int/*bool*/ okay = 0/*false*/;
         if (strcasecmp(argv[2],"heap") == 0 || strcasecmp(argv[2],"all") == 0){
             HEAP_Options(eOff, eDefault);
-            CORE_LOG(eLOG_Note, "Using slow heap access (w/checks)");
+            CORE_LOG(eLOG_Note, "Using slow heap walks with checks");
+            okay = 1/*true*/;
         }
         if (strcasecmp(argv[2],"lbsm") == 0 || strcasecmp(argv[2],"all") == 0){
 #ifdef NCBI_OS_MSWIN
@@ -193,6 +196,7 @@ int main(int argc, const char* argv[])
             LBSMD_FastHeapAccess(eOn);
             CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
 #endif /*NCBI_OS_MSWIN*/
+            okay = 1/*true*/;
         }
         if ((val = strchr(argv[2], '=')) != 0) {
             arg = argv[2];
@@ -203,10 +207,15 @@ int main(int argc, const char* argv[])
                                   val ? "\"" : "",
                                   val ? val  : "NULL",
                                   val ? "\"" : ""));
-        } else if (strcasecmp(argv[2],"lbsm") != 0  &&
-                   strcasecmp(argv[2],"heap") != 0  &&
-                   strcasecmp(argv[2],"all")  != 0) {
-            CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[2]));
+            // okay = 1/*true*/;
+        } else {
+            ESERV_Type type;
+            if ((value = SERV_ReadType(argv[2], &type)) != 0  &&  !*value
+                &&  type != fSERV_Firewall) {
+                types = type;
+                // okay = 1/*true*/;
+            } else if (!okay)
+                CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[2]));
         }
     } else
         val = 0;
@@ -228,8 +237,8 @@ int main(int argc, const char* argv[])
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     if (x_gettimeofday(&start) != 0)
         memset(&start, 0, sizeof(start));
-    iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
-                      (strpbrk(service, "?*[") ? fSERV_Promiscuous : 0),
+    iter = SERV_OpenP(service,
+                      types | (strpbrk(service,"?*[") ? fSERV_Promiscuous : 0),
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       getenv("NCBI_EXTERNAL")  ||  getenv("HTTP_NCBI_EXTERNAL")
