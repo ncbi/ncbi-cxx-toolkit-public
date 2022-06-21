@@ -214,8 +214,7 @@ void CBlastDBAliasApp::Init()
                              CArgDescriptions::eInputFile);
 
     arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eRequires, kOutput);
-    arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
-                            kArgGiList);
+    arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, kArgGiList);
 
     arg_desc->AddOptionalKey(kArgTaxIdListFile, "input_file",
                                  "Text taxonomy id file to restrict "
@@ -225,6 +224,15 @@ void CBlastDBAliasApp::Init()
     arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eRequires, kOutput);
     arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, kArgGiList);
     arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, kArgSeqIdList);
+
+    arg_desc->AddOptionalKey("oid_masks", "oid_masks",
+        		                 "Create alias db with pre-built oid masks\n"
+        		                 "0x01 Exclude Model", CArgDescriptions::eInteger);
+
+    arg_desc->SetDependency("oid_masks", CArgDescriptions::eRequires, kOutput);
+    arg_desc->SetDependency("oid_masks", CArgDescriptions::eExcludes, kArgGiList);
+    arg_desc->SetDependency("oid_masks", CArgDescriptions::eExcludes, kArgSeqIdList);
+    arg_desc->SetDependency("oid_masks", CArgDescriptions::eExcludes, kArgTaxIdListFile);
 
 #ifdef NCBI_TI
     arg_desc->AddFlag("process_as_tis", 
@@ -386,25 +394,35 @@ CBlastDBAliasApp::CreateAliasFile() const
     }
 
     if (args[kArgDb].HasValue() && !args[kArgGiList].HasValue() &&
-        !args[kArgSeqIdList].HasValue()&& ! args[kArgTaxIdListFile].HasValue()) {
+        !args[kArgSeqIdList].HasValue() && ! args[kArgTaxIdListFile].HasValue() &&
+        !args["oid_masks"].HasValue()) {
 
-        NCBI_THROW(CInputException, eInvalidInput, "Either gilist or "
-                   "seqid_list must be specified if database name is used");
+        NCBI_THROW(CInputException, eInvalidInput, "Either gilist, seqid_list, taxidlist "
+                   "or oid_masks must be specified if database name is used");
     }
 
     if (args[kArgDbTitle].HasValue()) {
         title = args[kArgDbTitle].AsString();
     } else if (args[kArgDb].HasValue()) {
         _ASSERT(args[kArgGiList].HasValue() || args[kArgSeqIdList].HasValue() ||
-        		args[kArgTaxIdListFile].HasValue());
-        title = args[kArgDb].AsString() + " limited by ";
+        		args[kArgTaxIdListFile].HasValue() || args["oid_masks"].HasValue());
+        CSeqDB_Path orig_db(args[kArgDb].AsString());
+        string orig_db_name;
+        orig_db.FindBaseName().GetString(orig_db_name);
+        title = orig_db_name + " limited by ";
         if (args[kArgGiList]) {
             title += args[kArgGiList].AsString();
         }
         else if (args[kArgSeqIdList]){
             title += args[kArgSeqIdList].AsString();
-        } else {
+        }
+        else if (args[kArgTaxIdListFile]) {
             title += args[kArgTaxIdListFile].AsString();
+        }
+        else  {
+        	if (args["oid_masks"].AsInteger() && EOidMaskType::fExcludeModel) {
+            	title += "exclude model oid masks";
+        	}
         }
     }
     const CWriteDB::ESeqType seq_type = 
@@ -476,6 +494,9 @@ CBlastDBAliasApp::CreateAliasFile() const
                                  args[kArgDb].AsString(),
                                  seq_type, taxid_list,
                                  title, eTaxIdList);
+    } else if (args[kArgDb].HasValue() && args["oid_masks"]) {
+    	CWriteDB_CreateOidMaskDB(args[kArgDb].AsString(), args[kOutput].AsString(),
+    			                 seq_type, args["oid_masks"].AsInteger(), title);
     }
 
     if (args["vdblist"].HasValue() || args["vdblist_file"].HasValue()) {
@@ -678,8 +699,6 @@ void CBlastDBAliasApp::x_AddCmdOptions()
 	   	}
 	 }
 }
-
-
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
