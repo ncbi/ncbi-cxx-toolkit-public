@@ -10,8 +10,6 @@ build:
  stage: build
  timeout: 5 hours
  script:
-  - ls /netopt/ncbi_tools64
-  - ls /netopt/ncbi_tools64/boost*
   - export NCBI=/opt/ncbi/64
   - adduser toolkit
   - echo "Building toolkit using cmake"
