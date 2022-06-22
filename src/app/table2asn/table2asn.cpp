@@ -357,7 +357,7 @@ may be implemented in the future; RW-1253
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
     arg_desc->AddFlag("verbose", "Be verbose on reporting");
-    arg_desc->AddFlag("hugefiles", "Try opening files in huge mode");
+    arg_desc->AddFlag("huge", "Try opening files in huge mode");
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
     arg_desc->AddFlag("fetchall", "Search data in all available databases");
@@ -387,7 +387,7 @@ int CTbl2AsnApp::Run()
         }
     }
 
-    m_context.m_can_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false) || args["hugefiles"];
+    m_context.m_can_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false) || args["huge"];
     if (m_context.m_can_use_huge_files)
     {
         std::cerr << "Will be using huge files scenario" << std::endl;
