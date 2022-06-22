@@ -5322,6 +5322,9 @@ NMW<AUT>	s	Naturhistorisches Museum, Wien	NHMV,NHMW
 NMW<GBR>	s	National Museums & Galleries of Wales, Department of Biodiversity and Systematic Biology			
 NMWC	s	National Museum of Wales			
 NMWZ	s	National Museum of Wales			
+NMZ	s	Northern Michigan University Museum of Zoology			
+NMZ:Bird	s	Northern Michigan University Museum of Zoology, NMU Bird Collection	
+NMZ:Mamm	s	Northern Michigan University Museum of Zoology, NMU Mammal Collection	
 NMZB	s	National Museum of Zimbabwe			
 NMZL	s	National Museum of Zambia			
 NNA	s	Nanning Arboretum			
@@ -8360,6 +8363,7 @@ ZMB:Crustacea	s	Museum fur Naturkunde Berlin, Crustacea Collection
 ZMB:Echinodermata	s	Museum fur Naturkunde Berlin, Echinodermata Collection		
 ZMB:Hydrozoa	s	Museum fur Naturkunde Berlin, Hydrozoa Collection		
 ZMB:Mam	s	Museum fur Naturkunde Berlin, Mammal collection	
+ZMB:Moll	s	Museum fur Naturkunde Berlin, Mollusks collection	
 ZMB:Porifera	s	Museum fur Naturkunde Berlin, Porifera Collection		
 ZMB:Vermes	s	Museum fur Naturkunde Berlin, Vermes Collection		
 ZMBJ	s	Banding Zoological Museum			
