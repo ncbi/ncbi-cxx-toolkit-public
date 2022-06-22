@@ -294,63 +294,58 @@ static string s_GetBioseqAcc(const CBioseq& seq, int* version)
 
 static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst)
 {
-    const CBioseq* retval = nullptr;
+    if (!bsst.IsSetSeq_set()) {
+        return nullptr;
+    }
 
     switch (bsst.GetClass()) {
         case CBioseq_set::eClass_gen_prod_set:
             // find the genomic bioseq
-            FOR_EACH_SEQENTRY_ON_SEQSET (it, bsst) {
-                if ((*it)->IsSeq()) {
-                    const CSeq_inst& inst = (*it)->GetSeq().GetInst();
-                    if (inst.IsSetMol()  &&  inst.GetMol() == CSeq_inst::eMol_dna) {
-                        retval = &(*it)->GetSeq();
-                        break;
+            for (auto pSubEntry : bsst.GetSeq_set()) {
+                if (pSubEntry->IsSeq()) {
+                    const auto& inst = pSubEntry->GetSeq().GetInst();
+                    if (inst.IsSetMol() && inst.GetMol() == CSeq_inst::eMol_dna) {
+                        return &(pSubEntry->GetSeq());
                     }
                 }
             }
             break;
         case CBioseq_set::eClass_nuc_prot:
             // find the nucleotide bioseq
-            FOR_EACH_SEQENTRY_ON_SEQSET (it, bsst) {
-                if ((*it)->IsSeq()  &&  (*it)->GetSeq().IsNa()) {
-                    retval = &(*it)->GetSeq();
-                    break;
-                } else if ((*it)->IsSet()  &&
-                           (*it)->GetSet().IsSetClass() &&
-                           (*it)->GetSet().GetClass() == CBioseq_set::eClass_segset) {
-                    retval = s_GetSeqFromSet((*it)->GetSet());
-                    break;
+            for (auto pSubEntry : bsst.GetSeq_set()) {
+                if (pSubEntry->IsSeq() && pSubEntry->GetSeq().IsNa()) {
+                    return &pSubEntry->GetSeq();
+                } else if (pSubEntry->IsSet() &&
+                           pSubEntry->GetSet().IsSetClass() &&
+                           pSubEntry->GetSet().GetClass() == CBioseq_set::eClass_segset) {
+                    return s_GetSeqFromSet(pSubEntry->GetSet());
                 }
             }
-            if (!retval) {
-                FOR_EACH_SEQENTRY_ON_SEQSET (it, bsst) {
-                    if ((*it)->IsSeq()) {
-                        retval = &(*it)->GetSeq();
-                        break;
-                    }
+                
+            for (auto pSubEntry : bsst.GetSeq_set()) {
+                if (pSubEntry->IsSeq()) {
+                    return &pSubEntry->GetSeq();
                 }
             }
             break;
         case CBioseq_set::eClass_segset:
-            // find the master bioseq
-            FOR_EACH_SEQENTRY_ON_SEQSET (it, bsst) {
-                if ((*it)->IsSeq()) {
-                    retval = &(*it)->GetSeq();
-                    break;
+            for (auto pSubEntry : bsst.GetSeq_set()) {
+                if (pSubEntry->IsSeq()) {
+                    return &pSubEntry->GetSeq();
                 }
             }
             break;
 
         default:
-            // find the first bioseq
-            CTypeConstIterator<CBioseq> seqit(ConstBegin(bsst));
-            if (seqit) {
-                retval = &(*seqit);
-            }
             break;
     }
-
-    return retval;
+    
+    // In this case, return the first bioseq in the set
+    CTypeConstIterator<CBioseq> seqit(ConstBegin(bsst));
+    if (seqit) {
+        return &(*seqit);
+    }
+    return nullptr;
 }
 
 
