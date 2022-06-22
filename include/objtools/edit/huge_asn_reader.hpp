@@ -104,6 +104,7 @@ public:
     // These metods are for CDataLoader, each top object is a 'blob'
     const TBioseqSetInfo* FindTopObject(CConstRef<CSeq_id> seqid) const;
     CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info) const;
+    const TBioseqInfo* FindBioseq(CConstRef<CSeq_id> seqid) const;
 
     // Direct loading methods
     CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> seqid) const;
