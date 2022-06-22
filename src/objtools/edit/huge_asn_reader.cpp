@@ -95,6 +95,26 @@ const CHugeAsnReader::TBioseqSetInfo* CHugeAsnReader::FindTopObject(CConstRef<CS
     return &*it->second;
 }
 
+const CHugeAsnReader::TBioseqInfo* CHugeAsnReader::FindBioseq(CConstRef<CSeq_id> seqid) const
+{
+    auto it = m_bioseq_index.lower_bound(seqid);
+    if (it == m_bioseq_index.end())
+        return nullptr;
+    if (it->first->Compare(*seqid) != CSeq_id::E_SIC::e_YES)
+        return nullptr;
+
+    return &*it->second;
+}
+
+CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(CConstRef<CSeq_id> seqid) const
+{
+    auto info = FindTopObject(seqid);
+    if (info)
+        return LoadSeqEntry(*info);
+    else
+        return {};
+}
+
 CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
 {
     auto entry = Ref(new CSeq_entry);
