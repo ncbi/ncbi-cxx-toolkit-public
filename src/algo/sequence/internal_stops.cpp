@@ -297,7 +297,6 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
         if (cds_on_rna.GetLocation().GetStrand() == eNa_strand_minus) {
             NCBI_THROW(CException, eUnknown, "minus strand cdregion on mrna is not supported");
         }
-        next_prod_start = cds_on_rna.GetLocation().GetStart(eExtreme_Biological);
 
         ITERATE (CSeq_loc, loc_ci, cds_on_rna.GetLocation()) {
             cds_ranges.push_back(loc_ci.GetRange());
