@@ -175,13 +175,13 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
 
     tmp = ptr;
     if (pfx_len > 0) {
-        tmp = StringMove(tmp, pfx);
+        StringAppend(tmp, pfx);
     }
     if (str_len > 0) {
-        tmp = StringMove(tmp, str);
+        StringAppend(tmp, str);
     }
     if (sfx_len > 0) {
-        tmp = StringMove(tmp, sfx);
+        StringAppend(tmp, sfx);
     }
 
     if (newnode != NULL) {
@@ -232,17 +232,17 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, c
 
     tmp = ptr;
     if (pfx_len > 0) {
-        tmp = StringMove(tmp, pfx);
+        StringAppend(tmp, pfx);
     }
     sep = NULL;
     for (vnp = list; vnp != NULL; vnp = vnp->next) {
-        tmp = StringMove(tmp, sep);
+        StringAppend(tmp, sep);
         str = (char*)vnp->data.ptrvalue;
-        tmp = StringMove(tmp, str);
+        StringAppend(tmp, str);
         sep = separator;
     }
     if (sfx_len > 0) {
-        tmp = StringMove(tmp, sfx);
+        StringAppend(tmp, sfx);
     }
 
     return ptr;

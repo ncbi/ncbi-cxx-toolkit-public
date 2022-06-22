@@ -78,7 +78,16 @@ inline int   StringNICmp(const char* s1, const char* s2, size_t n)
     return NStr::CompareNocase(S1.substr(0, n), S2.substr(0, n));
 }
 
-inline char* StringMove(char* d, const char* s) { return s && d ? std::strcpy(d, s) + std::strlen(s) : d; }
+inline void StringAppend(char*& d, const char* s)
+{
+    if (d && s) {
+        auto n = std::strlen(s);
+        if (n > 0) {
+            std::strcpy(d, s);
+            d += n;
+        }
+    }
+}
 
 inline bool StringHasNoText(const char* s)
 {

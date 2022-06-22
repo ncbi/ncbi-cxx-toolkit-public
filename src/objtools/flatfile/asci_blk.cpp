@@ -1151,8 +1151,8 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
             q++;
         if (q == p) {
             if (*(str - 1) != '~')
-                str = StringMove(str, "~");
-            str = StringMove(str, "~");
+                StringAppend(str, "~");
+            StringAppend(str, "~");
             continue;
         }
 
@@ -1163,17 +1163,17 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
         size_t size = p - bptr;
 
         if (*bptr == ' ' && *(str - 1) != '~')
-            str = StringMove(str, "~");
+            StringAppend(str, "~");
         MemCpy(str, bptr, size);
         str += size;
         if (is_pat && size > 4 &&
             q[0] >= 'A' && q[0] <= 'Z' && q[1] >= 'A' && q[1] <= 'Z' &&
             StringNCmp(q + 2, "   ", 3) == 0)
-            str = StringMove(str, "~");
+            StringAppend(str, "~");
         else if (size < 50 || within)
-            str = StringMove(str, "~");
+            StringAppend(str, "~");
         else
-            str = StringMove(str, " ");
+            StringAppend(str, " ");
 
         if (within) {
             *p = '\0';
