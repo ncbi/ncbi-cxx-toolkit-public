@@ -5075,6 +5075,8 @@ bool CValidError_bioseq::x_ParentAndComponentLocationsDiffer(CBioseq_Handle bsh,
 // location is mitochondrion, the sequence length should not be
 // greater than 65000bp.
 // This is erring on the side of caution as most Metazoan genomes are less than 17000 bp.
+// From RW-1709:
+// Raising length from 65000 to 100000.
 size_t CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& src, const CSeq_inst& inst)
 {
     if (src.IsSetGenome() && src.GetGenome() == CBioSource::eGenome_mitochondrion &&
@@ -5082,7 +5084,7 @@ size_t CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& sr
         src.IsSetOrg() && src.GetOrg().IsSetLineage() &&
         inst.IsSetLength() &&
         NStr::Find(src.GetOrg().GetLineage(), "Metazoa") != NPOS) {
-        return 65000;
+        return 100000;
     }
     return 0;
 }
