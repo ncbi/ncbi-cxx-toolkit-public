@@ -489,11 +489,14 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     bool    pre_finished = (finished_count + finishing_count) == total_count;
     bool    fully_finished = finished_count == total_count;
     bool    need_unlock = true;
-    bool    flushed = false;
+    bool    safe_to_delete = false;
+
+    if (fully_finished) {
+        procs->second->m_AllProcessorsFinished = true;
+        safe_to_delete = procs->second->IsSafeToDelete();
+    }
 
     if (pre_finished) {
-        // The reply needs to be flushed if it has not been done yet
-
         // Timer is not needed anymore
         procs->second->StopRequestTimer();
 
@@ -518,16 +521,16 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             }
 
             reply->PrepareReplyCompletion(request->GetStartTimestamp());
-            // This will switch the stream to the finished state, i.e.
-            // IsFinished() will return true
-            procs->second->m_FlushedAndFinished = true;
-            flushed = true;
+            procs->second->m_FinallyFlushed = true;
 
             // To avoid flushing and stopping request under a lock
             m_GroupsLock[bucket_index].unlock();
             need_unlock = false;
 
+            // This will switch the stream to the finished state, i.e.
+            // IsFinished() will return true
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+            reply->SetCompleted();
             x_PrintRequestStop(request, request_status);
         }
     }
@@ -536,17 +539,13 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         m_GroupsLock[bucket_index].unlock();
     }
 
-    if (fully_finished && flushed) {
-        // Clear the group after the final chunk is sent
-        if (!reply->IsCompleted() && reply->IsFinished()) {
-            reply->SetCompleted();
-            // Note: erasing the group right away is not good because the call
-            // comes from a processor and it might be not the last thing the
-            // processor does. So the destruction needs to be delayed till the
-            // next libuv loop iteration
-            processor->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
-                                                        (void*)(request_id));
-        }
+    if (safe_to_delete) {
+        // Note: erasing the group right away is not good because the call
+        // comes from a processor and it might be not the last thing the
+        // processor does. So the destruction needs to be delayed till the
+        // next libuv loop iteration
+        processor->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
+                                                    (void*)(request_id));
     }
 }
 
@@ -650,6 +649,7 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
     size_t                      bucket_index = x_GetBucketIndex(request_id);
     vector<IPSGS_Processor *>   to_be_canceled;     // To avoid calling Cancel()
                                                     // under the lock
+    IPSGS_Processor *           first_proc = nullptr;
 
     m_GroupsLock[bucket_index].lock();
 
@@ -658,10 +658,13 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
         // Remove the group because the low level request structures have
         // already been dismissed
 
-        // m_FlushedAndFinished => that was a normal finish for the group of
+        // m_FinallyFlushed => that was a normal finish for the group of
         // processors. They have reported finish finish with data and the reply
-        //  was flushed and closed.
-        if (!procs->second->m_FlushedAndFinished) {
+        // was flushed and closed.
+        if (!procs->second->m_FinallyFlushed) {
+
+            first_proc = procs->second->m_Processors[0].m_Processor.get();
+
             // Note: it is possible that a processor is on a wait for another
             // processor. This should be taken care of. A Cancel() call will make
             // the locking processor to unlock the waiter
@@ -673,8 +676,11 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
                 }
             }
 
-            // Note: deletion of the group must not be done otherwise than
-            // after all processors report their finish themself.
+            // The low level destruction also means that there will be no
+            // libh2o signal that the response generator memory can be
+            // disposed. Set another flag that it could be safe to destrow the
+            // group.
+            procs->second->m_LowLevelClose = true;
         }
     }
 
@@ -682,6 +688,15 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
 
     for (auto & proc: to_be_canceled) {
         proc->Cancel();
+    }
+
+    if (first_proc != nullptr) {
+        // It is safe to schedule group erase. There will be a check if it is
+        // safe to erase a group.
+        // The scheduling is needed in case the processors report finishing
+        // quicker than the low level reports closing activity.
+        first_proc->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
+                                                     (void*)(request_id));
     }
 }
 
@@ -786,6 +801,26 @@ void CPSGS_Dispatcher::OnRequestTimer(size_t  request_id)
 }
 
 
+void CPSGS_Dispatcher::OnLibh2oFinished(size_t  request_id)
+{
+    size_t              bucket_index = x_GetBucketIndex(request_id);
+
+    m_GroupsLock[bucket_index].lock();
+
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs != m_ProcessorGroups[bucket_index].end()) {
+        procs->second->m_Libh2oFinished = true;
+
+        if (procs->second->IsSafeToDelete()) {
+            auto    processor = procs->second->m_Processors[0].m_Processor;
+            processor->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
+                                                        (void*)(request_id));
+        }
+    }
+    m_GroupsLock[bucket_index].unlock();
+}
+
+
 void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
 {
     size_t              bucket_index = x_GetBucketIndex(request_id);
@@ -796,6 +831,11 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
     auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
     if (procs != m_ProcessorGroups[bucket_index].end()) {
 
+        if (!procs->second->IsSafeToDelete()) {
+            m_GroupsLock[bucket_index].unlock();
+            return;
+        }
+
         group = procs->second.release();
 
         // Without releasing the pointer it may lead to a processor
@@ -805,8 +845,9 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
     }
     m_GroupsLock[bucket_index].unlock();
 
-    if (group != nullptr)
+    if (group != nullptr) {
         delete group;
+    }
 }
 
 
@@ -834,5 +875,18 @@ map<string, size_t>  CPSGS_Dispatcher::GetConcurrentCounters(void)
     }
 
     return ret;
+}
+
+
+size_t CPSGS_Dispatcher::GetActiveProcessorGroups(void)
+{
+    size_t      cnt=0;
+
+    for (size_t  index=0; index < PROC_BUCKETS; ++index) {
+        m_GroupsLock[index].lock();
+        cnt += m_ProcessorGroups[index].size();
+        m_GroupsLock[index].unlock();
+    }
+    return cnt;
 }
 

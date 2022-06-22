@@ -57,12 +57,6 @@ extern SShutdownData    g_ShutdownData;
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
-#define CONTAINER_OF(ptr, type, member) ({                                                      \
-    const typeof(((type*)(0))->member) *__mptr = ((const typeof(((type*)(0))->member) *)(ptr)); \
-    (type*)((char*)(__mptr) - offsetof(type, member));                                          \
-})
-
-
 #define MAX_QUERY_PARAMS            64
 #define QUERY_PARAMS_RAW_BUF_SIZE   2048
 
@@ -86,6 +80,7 @@ void CheckFDLimit(void);
 
 void IncrementBackloggedCounter(void);
 void IncrementTooManyRequestsCounter(void);
+void OnLibh2oFinished(size_t  request_id);
 
 
 #if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
@@ -110,6 +105,22 @@ class CHttpProto;
 template<typename P>
 class CHttpConnection;
 
+
+struct SRespGenerator
+{
+    h2o_generator_t     m_Generator;
+    size_t              m_RequestId;
+    void *              m_HttpReply;
+
+    SRespGenerator() :
+        m_RequestId(0),
+        m_HttpReply(nullptr)
+    {
+        m_Generator.stop = nullptr;
+        m_Generator.proceed = nullptr;
+    }
+};
+
 template<typename P>
 class CHttpReply
 {
@@ -124,7 +135,8 @@ public:
                CHttpConnection<P> *  http_conn,
                const char *  cd_uid) :
         m_Req(req),
-        m_RespGenerator({0}),
+        m_RespGenerator(nullptr),
+        m_RequestId(0),
         m_OutputIsReady(true),
         m_OutputFinished(false),
         m_Postponed(false),
@@ -173,6 +185,11 @@ public:
             NCBI_THROW(CPubseqGatewayException, eReplyAlreadyStarted,
                        "Reply has already started");
         }
+    }
+
+    void SetRequestId(size_t  request_id)
+    {
+        m_RequestId = request_id;
     }
 
     void SetContentType(EPSGS_ReplyMimeType  mime_type)
@@ -300,7 +317,7 @@ public:
     void SetPostponed(void)
     { m_Postponed = true; }
 
-    list<shared_ptr<P>> GetPendingReqs(void)
+    list<shared_ptr<P>> & GetPendingReqs(void)
     {
         if (m_PendingReqs.empty())
             NCBI_THROW(CPubseqGatewayException, ePendingReqNotAssigned,
@@ -376,8 +393,20 @@ private:
 
     void AssignGenerator(void)
     {
-        m_RespGenerator.stop = s_StopCB;
-        m_RespGenerator.proceed = s_ProceedCB;
+        if (m_RespGenerator != nullptr) {
+            PSG_ERROR("A responce generator is created more than once "
+                      "for an http reply. Request ID: " << m_RequestId);
+        }
+
+        // The memory will be freed by libh2o
+        m_RespGenerator = (SRespGenerator*)
+                    h2o_mem_alloc_shared(&m_Req->pool,
+                                         sizeof(SRespGenerator),
+                                         s_GeneratorDisposalCB);
+        m_RespGenerator->m_Generator.stop = s_StopCB;
+        m_RespGenerator->m_Generator.proceed = s_ProceedCB;
+        m_RespGenerator->m_RequestId = m_RequestId;
+        m_RespGenerator->m_HttpReply = (void *)(this);
     }
 
     void NeedOutput(void)
@@ -403,7 +432,10 @@ private:
             NeedOutput();
         }
 
-        m_RespGenerator = {0};
+        if (m_RespGenerator != nullptr) {
+            m_RespGenerator->m_Generator.stop = nullptr;
+            m_RespGenerator->m_Generator.proceed = nullptr;
+        }
         m_Req = nullptr;
     }
 
@@ -418,26 +450,24 @@ private:
 
     static void s_StopCB(h2o_generator_t *  _generator, h2o_req_t *  req)
     {
-        // Note: it is expected to have a warning here.
-        // h2o_req_t structure does not have any user data field so a pointer
-        // to a reply is calculated by a pointer to one of it members.
-        // Unfortunately the reply has a non POD member as well - a list of
-        // pending operations for the request - so there is a warning.
-        CHttpReply<P> *     http_reply = CONTAINER_OF(_generator, CHttpReply<P>,
-                                                      m_RespGenerator);
+        SRespGenerator *    gen = (SRespGenerator*)(_generator);
+        CHttpReply<P> *     http_reply = (CHttpReply<P> *)(gen->m_HttpReply);
+
         http_reply->StopCB();
     }
 
     static void s_ProceedCB(h2o_generator_t *  _generator, h2o_req_t *  req)
     {
-        // Note: it is expected to have a warning here.
-        // h2o_req_t structure does not have any user data field so a pointer
-        // to a reply is calculated by a pointer to one of it members.
-        // Unfortunately the reply has a non POD member as well - a list of
-        // pending operations for the request - so there is a warning.
-        CHttpReply<P> *     http_reply = CONTAINER_OF(_generator, CHttpReply<P>,
-                                                      m_RespGenerator);
+        SRespGenerator *    gen = (SRespGenerator*)(_generator);
+        CHttpReply<P> *     http_reply = (CHttpReply<P> *)(gen->m_HttpReply);
+
         http_reply->ProceedCB();
+    }
+
+    static void s_GeneratorDisposalCB(void *  gen)
+    {
+        SRespGenerator *    generator = (SRespGenerator*)(gen);
+        OnLibh2oFinished(generator->m_RequestId);
     }
 
     // true => OK
@@ -480,7 +510,7 @@ private:
                     m_Req->res.reason = reason;
                     AssignGenerator();
                     m_OutputIsReady = false;
-                    h2o_start_response(m_Req, &m_RespGenerator);
+                    h2o_start_response(m_Req, &(m_RespGenerator->m_Generator));
                 }
                 break;
             case eReplyStarted:
@@ -678,7 +708,6 @@ private:
         m_PendingReqs.clear();
 
         m_Req = nullptr;
-        m_RespGenerator = {0};
         m_OutputIsReady = true;
         m_OutputFinished = false;
         m_Postponed = false;
@@ -691,7 +720,12 @@ private:
     }
 
     h2o_req_t *                     m_Req;
-    h2o_generator_t                 m_RespGenerator;
+
+    // The memory is allocated in the libh2o pool. Thus there is no need to
+    // call 'delete m_RespGenerator;' in the client code.
+    SRespGenerator *                m_RespGenerator;
+    size_t                          m_RequestId;
+
     bool                            m_OutputIsReady;
     bool                            m_OutputFinished;
     bool                            m_Postponed;
