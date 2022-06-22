@@ -1407,6 +1407,9 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
         m_Counters.AppendValueNode(
             status, CPSGSCounters::ePSGS_ShutdownRequested,
             g_ShutdownData.m_ShutdownRequested);
+        m_Counters.AppendValueNode(
+            status, CPSGSCounters::ePSGS_ActiveProcessorGroups,
+            static_cast<uint64_t>(GetProcessorDispatcher()->GetActiveProcessorGroups()));
 
         if (g_ShutdownData.m_ShutdownRequested) {
             auto        now = psg_clock_t::now();

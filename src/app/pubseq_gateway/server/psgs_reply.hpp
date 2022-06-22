@@ -103,6 +103,8 @@ public:
     // Tells if the output is ready
     bool IsOutputReady(void) const;
 
+    bool IsClosed(void) const;
+
     void Clear(void);
     void SetContentType(EPSGS_ReplyMimeType  mime_type);
     void SetContentLength(uint64_t  content_length);
@@ -132,10 +134,7 @@ public:
         return ret;
     }
 
-    void SetRequestId(size_t  request_id)
-    {
-        m_RequestId = request_id;
-    }
+    void SetRequestId(size_t  request_id);
 
     size_t GetRequestId(void) const
     {

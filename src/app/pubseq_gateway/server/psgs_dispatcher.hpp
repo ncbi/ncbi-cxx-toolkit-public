@@ -108,8 +108,10 @@ public:
     void StartRequestTimer(size_t  request_id);
 
     void EraseProcessorGroup(size_t  request_id);
+    void OnLibh2oFinished(size_t  request_id);
 
     map<string, size_t>  GetConcurrentCounters(void);
+    size_t GetActiveProcessorGroups(void);
 
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
@@ -164,14 +166,27 @@ private:
         vector<SProcessorData>      m_Processors;
         uv_timer_t                  m_RequestTimer;
         bool                        m_TimerActive;
-        // true if the reply has been already flushed and finished
-        bool                        m_FlushedAndFinished;
+
+        // During the normal processing (no abrupt connection dropping by the
+        // client) there are three conditions to delete the group. All the
+        // flags below must be true when a group is deleted from memory
+        bool                        m_FinallyFlushed;
+        bool                        m_AllProcessorsFinished;
+        bool                        m_Libh2oFinished;
+
+        // In case of a low level close (abrupt connection dropping) there will
+        // be no lib h2o finish notification and probably there will be no
+        // final flush.
+        bool                        m_LowLevelClose;
+
         // A processor which has started to supply data
         IPSGS_Processor *           m_StartedProcessing;
 
         SProcessorGroup(size_t  request_id) :
             m_RequestId(request_id),
-            m_TimerActive(false), m_FlushedAndFinished(false),
+            m_TimerActive(false), m_FinallyFlushed(false),
+            m_AllProcessorsFinished(false), m_Libh2oFinished(false),
+            m_LowLevelClose(false),
             m_StartedProcessing(nullptr)
         {
             m_Processors.reserve(MAX_PROCESSOR_GROUPS);
@@ -185,6 +200,16 @@ private:
                           ") must be stopped before the processor group "
                           "is destroyed");
             }
+        }
+
+        bool IsSafeToDelete(void) const
+        {
+            return // Normal flow safe case
+                   (m_FinallyFlushed &&
+                    m_AllProcessorsFinished &&
+                    m_Libh2oFinished) ||
+                   // Abrupt connection drop case
+                   (m_LowLevelClose && m_AllProcessorsFinished);
         }
 
         void StartRequestTimer(uv_loop_t *  uv_loop,

@@ -462,6 +462,12 @@ void IncrementTooManyRequestsCounter(void)
 }
 
 
+void OnLibh2oFinished(size_t  request_id)
+{
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->GetProcessorDispatcher()->OnLibh2oFinished(request_id);
+}
+
 // Explicit instantiation due to PostponedStart() method is in the .cpp file
 template class CHttpConnection<CPendingOperation>;
 
@@ -471,7 +477,7 @@ template class CHttpConnection<CPendingOperation>;
 void CheckFDLimit(void)
 {
     auto *  app = CPubseqGatewayApp::GetInstance();
-    size_t  limit = app->GetShutdownIfTooManyOpenFD();
+    ssize_t limit = app->GetShutdownIfTooManyOpenFD();
 
     if (limit == 0)
         return;

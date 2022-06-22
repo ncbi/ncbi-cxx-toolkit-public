@@ -109,6 +109,18 @@ bool CPSGS_Reply::IsOutputReady(void) const
 }
 
 
+bool CPSGS_Reply::IsClosed(void) const
+{
+    return m_Reply->IsClosed();
+}
+
+void CPSGS_Reply:: SetRequestId(size_t  request_id)
+{
+    m_RequestId = request_id;
+    m_Reply->SetRequestId(request_id);
+}
+
+
 void CPSGS_Reply::Clear(void)
 {
     lock_guard<mutex>       guard(m_ChunksLock);
