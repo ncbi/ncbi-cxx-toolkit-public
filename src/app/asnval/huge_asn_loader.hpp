@@ -46,23 +46,27 @@ namespace edit
     class CHugeFile;
 };
 
+BEGIN_SCOPE(edit)
+
 class CHugeAsnDataLoader: public CDataLoader
 {
 public:
     typedef SRegisterLoaderInfo<CHugeAsnDataLoader> TRegisterLoaderInfo;
-    CHugeAsnDataLoader(const string& name, edit::CHugeAsnReader* reader);
+    CHugeAsnDataLoader(const string& name, CHugeAsnReader* reader);
     ~CHugeAsnDataLoader();
 
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string& loader_name,
-        edit::CHugeAsnReader* reader,
+        CHugeAsnReader* reader,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_Default);
 
     TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice) override;
     TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
     TTSE_Lock GetBlobById(const TBlobId& blob_id) override;
+    TSeqPos GetSequenceLength(const CSeq_id_Handle& idh) override;
+    void GetIds(const CSeq_id_Handle& idh, CDataLoader::TIds& ids) override;
 
     bool CanGetBlobById(void) const override
     {
@@ -70,10 +74,11 @@ public:
     }
 
 private:
-    edit::CHugeAsnReader* m_reader = nullptr;
+    CHugeAsnReader* m_reader = nullptr;
     bool m_owning = false;
 };
 
+END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
