@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "huge_asn_loader.hpp"
+#include <objtools/edit/huge_asn_loader.hpp>
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
 
