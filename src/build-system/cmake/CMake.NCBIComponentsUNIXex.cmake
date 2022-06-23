@@ -61,6 +61,7 @@ set(NCBI_ThirdParty_SAMTOOLS      ${NCBI_TOOLS_ROOT}/samtools CACHE PATH "SAMTOO
 set(NCBI_ThirdParty_FTGL          ${NCBI_TOOLS_ROOT}/ftgl-2.1.3-rc5 CACHE PATH "FTGL root")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(NCBI_ThirdParty_OpenGL        ${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2 CACHE PATH "OpenGL root")
+  set(NCBI_ThirdParty_OSMesa        ${NCBI_ThirdParty_OpenGL})
   set(NCBI_ThirdParty_GLEW          ${NCBI_TOOLS_ROOT}/glew-2.2.0-ncbi1 CACHE PATH "GLEW root")
 else()
   set(NCBI_ThirdParty_GLEW          ${NCBI_TOOLS_ROOT}/glew-1.5.8 CACHE PATH "GLEW root")
