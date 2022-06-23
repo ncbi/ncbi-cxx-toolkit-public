@@ -95,18 +95,21 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, unsigned
 {
     bool fatal = (flags & CDiscrepancySet::eOutput_Fatal) != 0;
     for (const auto& it : list) {
-        if (level == 0) {
+        auto title = it->GetTitle();
+        auto msg = it->GetMsg();
+        bool includeInSummary = (level == 0 )  ||  (title == "SOURCE_QUALS"  &&  level == 1);
+        if (includeInSummary) {
             if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
             }
-            out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << '\n';
+            out << deunderscore(title) << ": " << msg << '\n';
         }
         else if (it->IsSummary()) {
             out << string(level, '\t');
             if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
             }
-            out << it->GetMsg() << '\n';
+            out << msg << '\n';
         }
         else {
             continue;
