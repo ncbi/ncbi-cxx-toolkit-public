@@ -24014,13 +24014,13 @@ BOOST_AUTO_TEST_CASE(Test_VR_796)
     SetLineage(entry, "Metazoan");
     SetGenome(entry, CBioSource::eGenome_mitochondrion);
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    entry->SetSeq().SetInst().SetLength(66000);
+    entry->SetSeq().SetInst().SetLength(110000);
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     STANDARD_SETUP
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
         "MitoMetazoanTooLong", cMitoMezoMsg));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
-        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [66000]"));
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [110000]"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
