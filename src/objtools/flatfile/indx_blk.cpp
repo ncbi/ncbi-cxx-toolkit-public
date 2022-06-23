@@ -128,7 +128,7 @@ static const char* ncbi_accpref[] = {
     "KK", "KL", "KM", "KN", "KO", "KP", "KQ", "KR", "KS", "KT", "KU", "KV",
     "KX", "KY", "KZ", "MF", "MG", "MH", "MI", "MJ", "MK", "ML", "MM", "MN",
     "MO", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "OK", "OL", "OM", "ON",
-    "OO", "OT", NULL
+    "OO", "OP", "OT", NULL
 };
 
 static const char* refseq_accpref[] = {
