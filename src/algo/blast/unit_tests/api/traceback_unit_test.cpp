@@ -76,6 +76,10 @@
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 
+#include <common/test_data_path.h>
+#include <corelib/ncbifile.hpp>
+#include <algorithm>
+
 #include "test_objmgr.hpp"
 #include "blast_test_util.hpp"
 
@@ -1083,7 +1087,10 @@ BlastHSPList * s_GetHSPList(int num_hsps, int oid, int len, int range_len)
 
 
 BOOST_AUTO_TEST_CASE(testSetupPartialFetching) {
-	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit("/am/ncbiapdata/test_data/blast/algo/unit_tests/api/data/long_seqs", false);
+	string rel_path = "blast/algo/unit_tests/api/data/long_seqs";
+	std::replace( rel_path.begin(), rel_path.end(),'/', CDirEntry::GetPathSeparator() ); // SB-3398 fix sub directory path to be platform compatible
+
+	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit( NCBI_GetTestDataPath()  + rel_path , false );
     const int k_num_hsps = 6;
 	BlastHSPList* hsp_list = (BlastHSPList*) calloc(1, sizeof(BlastHSPList));
 	hsp_list->oid = 4;
@@ -1120,7 +1127,9 @@ BOOST_AUTO_TEST_CASE(testSetupPartialFetching) {
 }
 
 BOOST_AUTO_TEST_CASE(testPartialFetchingMT) {
-	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit("/am/ncbiapdata/test_data/blast/algo/unit_tests/api/data/long_seqs", false);
+	string rel_path = "blast/algo/unit_tests/api/data/long_seqs";
+	std::replace( rel_path.begin(), rel_path.end(),'/', CDirEntry::GetPathSeparator() ); // SB-3398 fix sub directory path to be platform compatible
+	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit( NCBI_GetTestDataPath()  + rel_path , false );
     const int kMaxNum = 36;
     const int kRangeLen = 10000;
     int kOid = 4;
