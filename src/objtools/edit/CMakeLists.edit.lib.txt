@@ -10,9 +10,9 @@ NCBI_begin_lib(xobjedit)
     remote_updater mla_updater eutils_updater
     parse_text_options publication_edit gap_trim
     external_annots feature_propagate text_object_description
-    seq_edit pub_fix huge_asn_reader huge_file huge_file_process
+    seq_edit pub_fix
+    huge_asn_reader huge_file huge_file_process huge_asn_loader
   )
   NCBI_uses_toolkit_libraries(eutils efetch esearch esummary mlacli taxon3 valid xobjread xobjutil xlogging)
   NCBI_project_watchers(stakhovv gotvyans foleyjp choi)
 NCBI_end_lib()
-

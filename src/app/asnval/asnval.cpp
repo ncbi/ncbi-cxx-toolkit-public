@@ -83,13 +83,13 @@
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <util/compress/stream_util.hpp>
 #include <objtools/readers/format_guess_ex.hpp>
-#include <objtools/edit/huge_file_process.hpp>
 #include <objects/submit/Submit_block.hpp>
+#include <objtools/edit/huge_file_process.hpp>
 #include <objtools/edit/huge_asn_reader.hpp>
+#include <objtools/edit/huge_asn_loader.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <future>
 #include "message_queue.hpp"
-#include "huge_asn_loader.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
