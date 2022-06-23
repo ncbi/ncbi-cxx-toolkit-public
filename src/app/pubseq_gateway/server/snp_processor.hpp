@@ -38,10 +38,11 @@
 #include "psgs_reply.hpp"
 #include "snp_client.hpp"
 #include <objects/seq/seq_id_handle.hpp>
-#include <thread>
 
 
 BEGIN_NCBI_NAMESPACE;
+
+class CThreadPool;
 
 BEGIN_NAMESPACE(objects);
 class CID2_Reply_Data;
@@ -88,6 +89,7 @@ public:
 
 private:
     CPSGS_SNPProcessor(const shared_ptr<CSNPClient>& client,
+                       shared_ptr<ncbi::CThreadPool> thread_pool,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
                        TProcessorPriority priority);
@@ -139,6 +141,7 @@ private:
     vector<SSNPData> m_SNPData;
     bool m_Unlocked;
     bool m_PreResolving;
+    shared_ptr<ncbi::CThreadPool> m_ThreadPool;
 };
 
 

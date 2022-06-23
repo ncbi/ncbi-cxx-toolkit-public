@@ -45,6 +45,8 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqset/seqset__.hpp>
+#include <util/thread_pool.hpp>
+
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
@@ -55,7 +57,68 @@ USING_SCOPE(objects);
 static const string kCDDAnnotName = "CDD";
 static const string kCDDProcessorGroupName = "CDD";
 static const string kCDDProcessorName = "CDD";
+static const string kCDDProcessorSection = "WGS_PROCESSOR";
 const CID2_Blob_Id::TSat kCDDSat = 8087;
+
+static const string kParamMaxConn = "maxconn";
+static const int kDefaultMaxConn = 64;
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Helper classes
+/////////////////////////////////////////////////////////////////////////////
+
+BEGIN_LOCAL_NAMESPACE;
+
+class CCDDThreadPoolTask_GetBlobId : public CThreadPool_Task
+{
+public:
+    CCDDThreadPoolTask_GetBlobId(CPSGS_CDDProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetBlobId();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_CDDProcessor& m_Processor;
+};
+
+
+class CCDDThreadPoolTask_GetBlobBySeqId : public CThreadPool_Task
+{
+public:
+    CCDDThreadPoolTask_GetBlobBySeqId(CPSGS_CDDProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetBlobBySeqId();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_CDDProcessor& m_Processor;
+};
+
+
+class CCDDThreadPoolTask_GetBlobByBlobId : public CThreadPool_Task
+{
+public:
+    CCDDThreadPoolTask_GetBlobByBlobId(CPSGS_CDDProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetBlobByBlobId();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_CDDProcessor& m_Processor;
+};
+
+
+END_LOCAL_NAMESPACE;
 
 
 CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
@@ -64,17 +127,23 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
       m_Canceled(false),
       m_Unlocked(true)
 {
+    const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
+    unsigned int max_conn = registry.GetInt(kCDDProcessorSection, kParamMaxConn, kDefaultMaxConn);
+    if (max_conn == 0) max_conn = 1;
+    m_ThreadPool.reset(new CThreadPool(kMax_UInt, max_conn));
 }
 
 CPSGS_CDDProcessor::CPSGS_CDDProcessor(
     shared_ptr<CCDDClientPool> client_pool,
+    shared_ptr<CThreadPool> thread_pool,
     shared_ptr<CPSGS_Request> request,
     shared_ptr<CPSGS_Reply> reply,
     TProcessorPriority priority)
     : m_ClientPool(client_pool),
       m_Status(ePSGS_InProgress),
       m_Canceled(false),
-      m_Unlocked(true)
+      m_Unlocked(true),
+      m_ThreadPool(thread_pool)
 {
     m_Request = request;
     m_Reply = reply;
@@ -124,7 +193,7 @@ CPSGS_CDDProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
         !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>()))
         return nullptr;
         
-    return new CPSGS_CDDProcessor(m_ClientPool, request, reply, priority);
+    return new CPSGS_CDDProcessor(m_ClientPool, m_ThreadPool, request, reply, priority);
 }
 
 
@@ -167,21 +236,9 @@ void CPSGS_CDDProcessor::Process()
 }
 
 
-static void s_GetBlobId(CPSGS_CDDProcessor* processor)
-{
-    processor->GetBlobId();
-}
-
-
 static void s_OnGotBlobId(void* data)
 {
     static_cast<CPSGS_CDDProcessor*>(data)->OnGotBlobId();
-}
-
-
-static void s_GetBlobBySeqId(CPSGS_CDDProcessor* processor)
-{
-    processor->GetBlobBySeqId();
 }
 
 
@@ -212,18 +269,12 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_WholeTSE ||
         annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_OrigTSE) {
         // Send whole TSE.
-        thread(bind(&s_GetBlobBySeqId, this)).detach();
+        m_ThreadPool->AddTask(new CCDDThreadPoolTask_GetBlobBySeqId(*this));
     }
     else {
         // Send annot info only.
-        thread(bind(&s_GetBlobId, this)).detach();
+        m_ThreadPool->AddTask(new CCDDThreadPoolTask_GetBlobId(*this));
     }
-}
-
-
-static void s_GetBlobByBlobId(CPSGS_CDDProcessor* processor)
-{
-    processor->GetBlobByBlobId();
 }
 
 
@@ -242,7 +293,7 @@ void CPSGS_CDDProcessor::x_ProcessGetBlobRequest(void)
         x_Finish(ePSGS_NotFound);
         return;
     }
-    thread(bind(&s_GetBlobByBlobId, this)).detach();
+    m_ThreadPool->AddTask(new CCDDThreadPoolTask_GetBlobByBlobId(*this));
 }
 
 

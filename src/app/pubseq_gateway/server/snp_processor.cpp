@@ -44,9 +44,8 @@
 #include <corelib/rwstream.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostrasnb.hpp>
-#include <util/thread_nonstop.hpp>
-#include <util/limited_size_map.hpp>
 #include <util/compress/zlib.hpp>
+#include <util/thread_pool.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqset/seqset__.hpp>
 #include <objects/id2/ID2_Blob_Id.hpp>
@@ -64,6 +63,9 @@ USING_SCOPE(objects);
 static const string kSNPProcessorName = "SNP";
 static const string kSNPProcessorGroupName = "SNP";
 static const string kSNPProcessorSection = "SNP_PROCESSOR";
+
+static const string kParamMaxConn = "maxconn";
+static const int kDefaultMaxConn = 64;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -113,6 +115,54 @@ void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& data)
 }
 
 
+class CSNPThreadPoolTask_GetBlobByBlobId: public CThreadPool_Task
+{
+public:
+    CSNPThreadPoolTask_GetBlobByBlobId(CPSGS_SNPProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetBlobByBlobId();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_SNPProcessor& m_Processor;
+};
+
+
+class CSNPThreadPoolTask_GetChunk: public CThreadPool_Task
+{
+public:
+    CSNPThreadPoolTask_GetChunk(CPSGS_SNPProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetChunk();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_SNPProcessor& m_Processor;
+};
+
+
+class CSNPThreadPoolTask_GetAnnotation: public CThreadPool_Task
+{
+public:
+    CSNPThreadPoolTask_GetAnnotation(CPSGS_SNPProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetAnnotation();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_SNPProcessor& m_Processor;
+};
+
+
 END_LOCAL_NAMESPACE;
 
 
@@ -147,6 +197,7 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
 
 CPSGS_SNPProcessor::CPSGS_SNPProcessor(
     const shared_ptr<CSNPClient>& client,
+    shared_ptr<ncbi::CThreadPool> thread_pool,
     shared_ptr<CPSGS_Request> request,
     shared_ptr<CPSGS_Reply> reply,
     TProcessorPriority priority)
@@ -160,7 +211,8 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
       m_Client(client),
       m_Status(ePSGS_InProgress),
       m_Unlocked(true),
-      m_PreResolving(false)
+      m_PreResolving(false),
+      m_ThreadPool(thread_pool)
 {
 }
 
@@ -188,6 +240,10 @@ void CPSGS_SNPProcessor::x_LoadConfig(void)
         PSG_ERROR("CSNPClient: SNP primary track is disabled due to lack of GRPC support");
         m_Config->m_AddPTIS = false;
     }
+
+    unsigned int max_conn = registry.GetInt(kSNPProcessorSection, kParamMaxConn, kDefaultMaxConn);
+    if (max_conn == 0) max_conn = 1;
+    m_ThreadPool.reset(new CThreadPool(kMax_UInt, max_conn));
 }
 
 
@@ -231,7 +287,7 @@ IPSGS_Processor* CPSGS_SNPProcessor::CreateProcessor(
     _ASSERT(m_Client);
     if (!m_Client->CanProcessRequest(*request, m_Priority)) return nullptr;
 
-    return new CPSGS_SNPProcessor(m_Client, request, reply, priority);
+    return new CPSGS_SNPProcessor(m_Client, m_ThreadPool, request, reply, priority);
 }
 
 
@@ -275,12 +331,6 @@ void CPSGS_SNPProcessor::Process()
         x_Finish(ePSGS_Error);
         return;
     }
-}
-
-
-static void s_GetAnnotation(CPSGS_SNPProcessor* processor)
-{
-    processor->GetAnnotation();
 }
 
 
@@ -344,12 +394,6 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
 }
 
 
-static void s_GetBlobByBlobId(CPSGS_SNPProcessor* processor)
-{
-    processor->GetBlobByBlobId();
-}
-
-
 static void s_OnGotBlobByBlobId(void* data)
 {
     static_cast<CPSGS_SNPProcessor*>(data)->OnGotBlobByBlobId();
@@ -360,7 +404,7 @@ void CPSGS_SNPProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
-    thread(bind(&s_GetBlobByBlobId, this)).detach();
+    m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetBlobByBlobId(*this));
 }
 
 
@@ -403,12 +447,6 @@ void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
 }
 
 
-static void s_GetChunk(CPSGS_SNPProcessor* processor)
-{
-    processor->GetChunk();
-}
-
-
 static void s_OnGotChunk(void* data)
 {
     static_cast<CPSGS_SNPProcessor*>(data)->OnGotChunk();
@@ -420,7 +458,7 @@ void CPSGS_SNPProcessor::x_ProcessTSEChunkRequest(void)
     SPSGS_TSEChunkRequest& chunk_request = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
-    thread(bind(&s_GetChunk, this)).detach();
+    m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetChunk(*this));
 }
 
 
@@ -665,7 +703,7 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
 
-        thread(bind(&s_GetAnnotation, this)).detach();
+        m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
     }
     catch (...) {
         x_Finish(ePSGS_Error);

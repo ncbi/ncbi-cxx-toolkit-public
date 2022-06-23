@@ -36,10 +36,11 @@
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
 #include <objects/seq/seq_id_handle.hpp>
-#include <thread>
 
 
 BEGIN_NCBI_NAMESPACE;
+
+class CThreadPool;
 
 BEGIN_NAMESPACE(objects);
 class CID2_Blob_Id;
@@ -89,6 +90,7 @@ public:
 
 private:
     CPSGS_WGSProcessor(const shared_ptr<CWGSClient>& client,
+                       shared_ptr<ncbi::CThreadPool> thread_pool,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
                        TProcessorPriority priority);
@@ -151,6 +153,7 @@ private:
     shared_ptr<SWGSData> m_WGSData;
     EOutputFormat m_OutputFormat;
     bool m_Unlocked;
+    shared_ptr<ncbi::CThreadPool> m_ThreadPool;
 };
 
 
