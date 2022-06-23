@@ -1390,7 +1390,6 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
             p++;
             for (r = q; *r >= '0' && *r <= '9';)
                 r++;
-            ch = *p;
             *p = '\0';
             if (r != p) {
                 ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID in OH line : \"%s\".", q);

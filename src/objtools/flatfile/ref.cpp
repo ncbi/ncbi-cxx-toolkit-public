@@ -1040,7 +1040,6 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
         if (tit != NULL)
             while (*tit == ' ' || *tit == ';' || *tit == '\n')
                 tit++;
-        c    = *s;
         *s++ = '\0';
         if (IS_AUTH && *bptr != '\0') {
             CRef<CAuth_list> book_auth_list;
@@ -1512,15 +1511,13 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
 
     if (my_len >= 6 && *p == '(') {
         p += 6;
-        my_len -= 6;
         if (StringNCmp(" In press", p, 9) == 0) {
             retval = ParFlat_IN_PRESS;
             pre    = 2;
         }
     }
 
-    p      = bptr;
-    my_len = StringLen(p);
+    p = bptr;
     if (StringNCmp("Unpub", p, 5) == 0 || StringNCmp("Unknown", p, 7) == 0) {
         retval                = ParFlat_UNPUB_JOURNAL;
         const Char* title_str = title.Empty() ? NULL : title->GetName().c_str();

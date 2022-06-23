@@ -150,11 +150,11 @@ static void fta_fix_last_initials(CName_std& namestd,
     if (initials) {
         if (! namestd.IsSetInitials())
             return;
-        str = (char*)namestd.GetInitials().c_str();
+        str = namestd.SetInitials().data();
     } else {
         if (! namestd.IsSetLast())
             return;
-        str = (char*)namestd.GetLast().c_str();
+        str = namestd.SetLast().data();
     }
 
     size_t i = strlen(str);
@@ -169,7 +169,7 @@ static void fta_fix_last_initials(CName_std& namestd,
                 namestd.SetInitials(str);
             else
                 namestd.SetLast(str);
-            i = 0;
+            return;
         }
     }
     if (i > 4) {
@@ -192,7 +192,7 @@ static void fta_fix_last_initials(CName_std& namestd,
                 namestd.SetInitials(str);
             else
                 namestd.SetLast(str);
-            i = 0;
+            return;
         }
     }
     if (i > 3) {
@@ -213,7 +213,7 @@ static void fta_fix_last_initials(CName_std& namestd,
                 namestd.SetInitials(str);
             else
                 namestd.SetLast(str);
-            i = 0;
+            return;
         }
     }
 }
@@ -221,13 +221,11 @@ static void fta_fix_last_initials(CName_std& namestd,
 /**********************************************************/
 static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
 {
-    bool got_pmid = false;
-
     NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
     {
         if (! (*pub)->IsPmid())
             continue;
-        got_pmid = true;
+        // got_pmid = true;
         break;
     }
 
@@ -455,7 +453,6 @@ static Uint1 fta_init_pubseq(void)
     if (s_pubseq == nullptr || !s_pubseq->CheckConnection())
         return(2);
     return(1);
-    return 2;
 }
 
 /**********************************************************/
@@ -734,7 +731,7 @@ void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
 }
 
 /**********************************************************/
-//static void fta_find_pub(ParserPtr pp, TEntryList& seq_entries)
+// static void fta_find_pub(ParserPtr pp, TEntryList& seq_entries)
 void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
 {
     for (auto& pEntry : seq_entries) {
@@ -1048,8 +1045,8 @@ Int4 fta_is_con_div(ParserPtr pp, const CSeq_id& id, const Char* acc)
 {
     if (pp->entrez_fetch == 0)
         return (-1);
-    //if (pp->entrez_fetch == 2)
-    //    pp->entrez_fetch = fta_init_pubseq();
+    // if (pp->entrez_fetch == 2)
+    //     pp->entrez_fetch = fta_init_pubseq();
     if (pp->entrez_fetch == 2) {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
         pp->entrylist[pp->curindx]->drop = 1;

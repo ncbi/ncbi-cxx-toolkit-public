@@ -156,14 +156,11 @@ void FtaErrGetMsgCodes(
     FtaMsgModFiles*  bmmfp;
     FtaMsgModTag*    bmmtp;
     FILE*            fd;
-    //string val1;
-    //string val3;
     char* p;
     char* q;
     char  s[2048];
     char  ch;
     bool  got_mod;
-    //int             val2;
 
     if (! bmp)
         FtaErrInit();
@@ -219,24 +216,20 @@ void FtaErrGetMsgCodes(
         if (s[0] != '$' || (s[1] != '^' && s[1] != '$'))
             continue;
 
-        string val1{};
-        string val3{};
+        string val1;
+        string val3;
         int    val2{ 0 };
 
-        for (p = s + 2; *p == ' ' || *p == '\t'; p++)
-            ;
-        for (q = p; *p && *p != ','; p++)
-            ;
+        for (p = s + 2; *p == ' ' || *p == '\t'; p++) {}
+        for (q = p; *p && *p != ','; p++) {}
         if (*p != ',')
             continue;
 
         *p   = '\0';
         val1 = q;
 
-        for (*p++ = ','; *p == ' ' || *p == '\t'; p++)
-            ;
-        for (q = p; *p >= '0' && *p <= '9'; p++)
-            ;
+        for (*p++ = ','; *p == ' ' || *p == '\t'; p++) {}
+        for (q = p; *p >= '0' && *p <= '9'; p++) {}
 
         if (q == p) {
             continue;
@@ -252,12 +245,10 @@ void FtaErrGetMsgCodes(
         }
 
         if (s[1] == '^' && ch == ',') {
-            for (p++; *p == ' ' || *p == '\t'; p++)
-                ;
+            for (p++; *p == ' ' || *p == '\t'; p++) {}
             for (q = p;
                  *p && *p != ' ' && *p != '\t' && *p != '\n' && *p != ',';
-                 p++)
-                ;
+                 p++) {}
             if (p > q) {
                 ch = *p;
                 *p = '\0';
@@ -285,7 +276,6 @@ void FtaErrGetMsgCodes(
         }
 
         if (! bmmfp->bmmt || ! bmmtp) {
-            val2 = 0;
             continue;
         }
 
@@ -530,10 +520,8 @@ EDiagSev ErrCToCxxSeverity(int c_severity)
 /**********************************************************/
 void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
 {
-
     if (! bmp)
         FtaErrInit();
-
 
     if (fec.fname == NULL || fec.line < 0) {
         fec.module = NULL;

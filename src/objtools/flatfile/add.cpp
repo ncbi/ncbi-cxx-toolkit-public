@@ -381,7 +381,6 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
         return;
 
     const std::string& sequence = bioseq.GetInst().GetSeq_data().GetIupacna();
-    p                           = sequence.c_str();
 
     if (sequence.empty() || sequence.size() != bioseq.GetLength())
         return;
@@ -1671,7 +1670,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         user_field->SetLabel().SetStr("BioProject");
         user_field->SetNum(i);
 
-        for (tvnp = vnp, i = 0; tvnp != NULL; tvnp = tvnp->next)
+        for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
             user_field->SetData().SetStrs().push_back((char*)tvnp->data.ptrvalue);
 
         user_obj_ptr->SetData().push_back(user_field);
@@ -2041,8 +2040,6 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             user_field->SetData().SetStrs();
 
             user_obj->SetData().push_back(user_field);
-
-            i = 0;
         } else if (! inpr && user_obj.NotEmpty()) {
             user_field->SetData().SetStrs().push_back((char*)tvnp->data.ptrvalue);
         }
@@ -2458,7 +2455,7 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
     bad = false;
     res = ValNodeNew(NULL);
     vnp = res;
-    for (start = buf, q = start;;) {
+    for (start = buf;;) {
         p = StringStr(start, "::");
         if (p == NULL) {
             if (start == buf)

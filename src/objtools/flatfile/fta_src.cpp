@@ -404,7 +404,7 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
     }
     tsfbp = sfbp->next;
     delete sfbp;
-    //MemFree(sfbp);
+    // MemFree(sfbp);
     return (tsfbp);
 }
 
@@ -958,8 +958,7 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxPtr mmp, size_t
     Int4             tgs;
     Int4             sporg;
 
-    loc  = NULL;
-    tmmp = mmp;
+    loc = NULL;
     for (tsfbp = sfbp; tsfbp != NULL; tsfbp = tsfbp->next) {
         if (tsfbp->location == NULL || tsfbp->location[0] == '\0' ||
             tsfbp->name == NULL || tsfbp->name[0] == '\0')

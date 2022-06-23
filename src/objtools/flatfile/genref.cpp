@@ -518,7 +518,7 @@ static GeneNodePtr sort_gnp_list(GeneNodePtr gnp)
     glp       = temp[total - 1];
     glp->next = NULL;
 
-    temp = (GeneListPtr*)MemFree(temp);
+    MemFree(temp);
 
     return (gnp);
 }
@@ -652,8 +652,7 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const CSeq_loc* origslp, Int4 lengt
             } else
                 continue;
 
-            /* get low and high only for locations from the same entry
-                */
+            /* get low and high only for locations from the same entry */
             if (from < 0 || to < 0 || id == nullptr || orig_id.Compare(*id) == CSeq_id::e_NO)
                 continue;
 
@@ -2462,8 +2461,8 @@ static bool LocusTagCheck(GeneListPtr glp, bool& resort)
             NStr::EqualCase(glpstart->locus.c_str(), glpstart->locus_tag.c_str())) {
             for (glp = glpstart;; glp = glp->next) {
                 glp->locus.clear();
-                //MemFree(glp->locus);
-                //glp->locus = NULL;
+                // MemFree(glp->locus);
+                // glp->locus = NULL;
                 resort = true;
                 if (glp == glpstop)
                     break;
@@ -2793,10 +2792,12 @@ static CRef<CSeqFeatXref> GetXrpForOverlap(
     const CSeq_feat&       feat,
     CGene_ref&             gerep)
 {
-    int        count  = 0;
+    int count = 0;
+    /*
     ENa_strand strand = feat.GetLocation().IsSetStrand() ? feat.GetLocation().GetStrand() : eNa_strand_unknown;
     if (strand == eNa_strand_other)
         strand = eNa_strand_unknown;
+     */
 
     CConstRef<CGene_ref> gene_ref;
 

@@ -826,7 +826,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         for (; *q == '0';)
             q++;
 
-        const Char* r = q;
+        const Char* r;
         for (r = q; *r >= '0' && *r <= '9';)
             r++;
         if (*q == '\0' || *r != '\0') {
@@ -1638,7 +1638,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
 
     bool digits = false;
     prod        = StringSave(product);
-    for (p = prod, q = prod; *p != '\0'; p++) {
+    for (p = prod; *p != '\0'; p++) {
         if (*p >= 'a' && *p <= 'z')
             *p &= ~040;
         else if ((*p < 'A' || *p > 'Z') && *p != '(' && *p != ')') {
@@ -1795,7 +1795,7 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned c
         return ret;
 
     comm = StringSave(comment);
-    for (p = comm, q = comm; *p != '\0'; p++) {
+    for (p = comm; *p != '\0'; p++) {
         if (*p >= 'a' && *p <= 'z')
             *p &= ~040;
         else if (*p < 'A' || *p > 'Z')
@@ -3269,7 +3269,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             is_htg = 3;
     }
 
-    prev_gap     = 0;
+    // prev_gap     = 0;
     curr_gap     = 0;
     finished_gap = false;
     for (ibp->gaps = NULL; dbp != NULL; dbp = dbp->mpNext) {
@@ -3296,10 +3296,9 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             } else
                 continue;
 
-            from             = 0;
-            to               = 0;
-            estimated_length = 0;
-            gap_type         = NULL;
+            from     = 0;
+            to       = 0;
+            gap_type = NULL;
             linkage_evidence_names.clear();
             asn_gap_type = -1;
             asn_linkage_evidence.clear();

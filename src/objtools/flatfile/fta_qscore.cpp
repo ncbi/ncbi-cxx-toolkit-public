@@ -305,7 +305,6 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc, char* def_ver, ch
         return (-35);
     }
 
-    p = q;
     if (*q == '\0')
         return (-14);
 
