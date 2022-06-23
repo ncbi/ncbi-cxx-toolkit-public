@@ -1,7 +1,5 @@
 ## C++ CGI application sample
 
-| [GIT FCGI](https://bitbucket.ncbi.nlm.nih.gov/projects/CXX/repos/cxx-fast-cgi-sample/browse) | [GIT CGI](https://bitbucket.ncbi.nlm.nih.gov/projects/CXX/repos/cxx-cgi-sample/browse) | SVN FCGI | [SVN CGI](https://svn.ncbi.nlm.nih.gov/viewvc/toolkit/trunk/c%2B%2B/src/sample/app/deployable_cgi/) |
-
 This is C++ CGI Application sample which is buildable and deployable using export\_project and TeamCity.
 
 See proper documentation on build process [here](https://confluence.ncbi.nlm.nih.gov/display/CT/Build+Framework).
