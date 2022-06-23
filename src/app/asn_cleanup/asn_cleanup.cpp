@@ -1156,20 +1156,7 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         return false;
     }
     
-    CSeq_entry_Handle entryHandle;
-    try { 
-        entryHandle = m_Scope->AddTopLevelSeqEntry(*se);
-    }
-    catch (const CObjMgrException& e)
-    {
-        if (e.GetErrCode() == CObjMgrException::eAddDataError) {
-            se->ReassignConflictingIds();
-            entryHandle = m_Scope->AddTopLevelSeqEntry(*se);
-        }
-        else {
-            throw;
-        }
-    }
+    auto entryHandle = m_Scope->AddTopLevelSeqEntry(*se);
     if (!entryHandle) {
         NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
     }
