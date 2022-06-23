@@ -37,15 +37,18 @@
 #include "psgs_reply.hpp"
 #include <objects/seq/seq_id_handle.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/cdd_client.hpp>
-#include <thread>
 
 
 BEGIN_NCBI_NAMESPACE;
 
+class CThreadPool;
+
 BEGIN_NAMESPACE(objects);
+
 class CCDD_Reply_Get_Blob_Id;
 class CSeq_annot;
 class CID2_Blob_Id;
+
 END_NAMESPACE(objects);
 
 BEGIN_NAMESPACE(psg);
@@ -60,8 +63,8 @@ public:
     ~CPSGS_CDDProcessor(void) override;
 
     IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                             shared_ptr<CPSGS_Reply> reply,
-                                             TProcessorPriority priority) const override;
+                                     shared_ptr<CPSGS_Reply> reply,
+                                     TProcessorPriority priority) const override;
     void Process(void) override;
     void Cancel(void) override;
     EPSGS_Status GetStatus(void) override;
@@ -79,6 +82,7 @@ public:
 
 private:
     CPSGS_CDDProcessor(shared_ptr<objects::CCDDClientPool> client_pool,
+                       shared_ptr<ncbi::CThreadPool> thread_pool,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
                        TProcessorPriority priority);
@@ -99,11 +103,11 @@ private:
     shared_ptr<objects::CCDDClientPool> m_ClientPool;
     EPSGS_Status m_Status;
     bool m_Canceled;
-    //unique_ptr<thread> m_Thread;
     objects::CSeq_id_Handle m_SeqId;
     CRef<objects::CCDDClientPool::TBlobId> m_BlobId;
     objects::CCDDClientPool::SCDDBlob m_CDDBlob;
     bool m_Unlocked;
+    shared_ptr<ncbi::CThreadPool> m_ThreadPool;
 };
 
 

@@ -46,9 +46,8 @@
 #include <corelib/rwstream.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostrasnb.hpp>
-#include <util/thread_nonstop.hpp>
-#include <util/limited_size_map.hpp>
 #include <util/compress/zlib.hpp>
+#include <util/thread_pool.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqset/seqset__.hpp>
@@ -67,6 +66,9 @@ USING_SCOPE(objects);
 static const string kWGSProcessorName = "WGS";
 static const string kWGSProcessorGroupName = "WGS";
 static const string kWGSProcessorSection = "WGS_PROCESSOR";
+
+static const string kParamMaxConn = "maxconn";
+static const int kDefaultMaxConn = 64;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -107,6 +109,70 @@ private:
 };
 
 
+class CWGSThreadPoolTask_ResolveSeqId: public CThreadPool_Task
+{
+public:
+    CWGSThreadPoolTask_ResolveSeqId(CPSGS_WGSProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.ResolveSeqId();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_WGSProcessor& m_Processor;
+};
+
+
+class CWGSThreadPoolTask_GetBlobBySeqId: public CThreadPool_Task
+{
+public:
+    CWGSThreadPoolTask_GetBlobBySeqId(CPSGS_WGSProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetBlobBySeqId();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_WGSProcessor& m_Processor;
+};
+
+
+class CWGSThreadPoolTask_GetBlobByBlobId: public CThreadPool_Task
+{
+public:
+    CWGSThreadPoolTask_GetBlobByBlobId(CPSGS_WGSProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetBlobByBlobId();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_WGSProcessor& m_Processor;
+};
+
+
+class CWGSThreadPoolTask_GetChunk: public CThreadPool_Task
+{
+public:
+    CWGSThreadPoolTask_GetChunk(CPSGS_WGSProcessor& processor) : m_Processor(processor) {}
+
+    virtual EStatus Execute(void) override
+    {
+        m_Processor.GetChunk();
+        return eCompleted;
+    }
+
+private:
+    CPSGS_WGSProcessor& m_Processor;
+};
+
+
 END_LOCAL_NAMESPACE;
 
 
@@ -138,6 +204,7 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(void)
 
 CPSGS_WGSProcessor::CPSGS_WGSProcessor(
     const shared_ptr<CWGSClient>& client,
+    shared_ptr<ncbi::CThreadPool> thread_pool,
     shared_ptr<CPSGS_Request> request,
     shared_ptr<CPSGS_Reply> reply,
     TProcessorPriority priority)
@@ -146,7 +213,8 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(
       m_Canceled(false),
       m_ChunkId(0),
       m_OutputFormat(SPSGS_ResolveRequest::ePSGS_NativeFormat),
-      m_Unlocked(true)
+      m_Unlocked(true),
+      m_ThreadPool(thread_pool)
 {
     m_Request = request;
     m_Reply = reply;
@@ -172,6 +240,10 @@ void CPSGS_WGSProcessor::x_LoadConfig(void)
         m_Config->m_CompressData = SWGSProcessor_Config::ECompressData(compress_data);
     }
     m_Config->m_UpdateDelay = registry.GetInt(kWGSProcessorSection, PARAM_INDEX_UPDATE_TIME, DEFAULT_INDEX_UPDATE_TIME);
+
+    unsigned int max_conn = registry.GetInt(kWGSProcessorSection, kParamMaxConn, kDefaultMaxConn);
+    if (max_conn == 0) max_conn = 1;
+    m_ThreadPool.reset(new CThreadPool(kMax_UInt, max_conn));
 }
 
 
@@ -185,7 +257,7 @@ CPSGS_WGSProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
     _ASSERT(m_Client);
     if ( !m_Client->CanProcessRequest(*request) ) return nullptr;
 
-    return new CPSGS_WGSProcessor(m_Client, request, reply, priority);
+    return new CPSGS_WGSProcessor(m_Client, m_ThreadPool, request, reply, priority);
 }
 
 
@@ -264,12 +336,6 @@ void CPSGS_WGSProcessor::x_InitClient(void) const
 }
 
 
-static void s_ResolveSeqId(CPSGS_WGSProcessor* processor)
-{
-    processor->ResolveSeqId();
-}
-
-
 static void s_OnResolvedSeqId(void* data)
 {
     static_cast<CPSGS_WGSProcessor*>(data)->OnResolvedSeqId();
@@ -286,7 +352,7 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
         x_Finish(ePSGS_Error);
         return;
     }
-    thread(bind(&s_ResolveSeqId, this)).detach();
+    m_ThreadPool->AddTask(new CWGSThreadPoolTask_ResolveSeqId(*this));
 }
 
 
@@ -330,12 +396,6 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
 }
 
 
-static void s_GetBlobBySeqId(CPSGS_WGSProcessor* processor)
-{
-    processor->GetBlobBySeqId();
-}
-
-
 static void s_OnGotBlobBySeqId(void* data)
 {
     static_cast<CPSGS_WGSProcessor*>(data)->OnGotBlobBySeqId();
@@ -353,11 +413,11 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
     }
 
     if (get_request.m_TSEOption == SPSGS_BlobRequestBase::ePSGS_NoneTSE) {
-        thread(bind(&s_ResolveSeqId, this)).detach();
+        m_ThreadPool->AddTask(new CWGSThreadPoolTask_ResolveSeqId(*this));
     }
     else {
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
-        thread(bind(&s_GetBlobBySeqId, this)).detach();
+        m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetBlobBySeqId(*this));
     }
 }
 
@@ -413,12 +473,6 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
 }
 
 
-static void s_GetBlobByBlobId(CPSGS_WGSProcessor* processor)
-{
-    processor->GetBlobByBlobId();
-}
-
-
 static void s_OnGotBlobByBlobId(void* data)
 {
     static_cast<CPSGS_WGSProcessor*>(data)->OnGotBlobByBlobId();
@@ -429,7 +483,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
-    thread(bind(&s_GetBlobByBlobId, this)).detach();
+        m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetBlobByBlobId(*this));
 }
 
 
@@ -481,12 +535,6 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
 }
 
 
-static void s_GetChunk(CPSGS_WGSProcessor* processor)
-{
-    processor->GetChunk();
-}
-
-
 static void s_OnGotChunk(void* data)
 {
     static_cast<CPSGS_WGSProcessor*>(data)->OnGotChunk();
@@ -498,7 +546,7 @@ void CPSGS_WGSProcessor::x_ProcessTSEChunkRequest(void)
     SPSGS_TSEChunkRequest& chunk_request = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
-    thread(bind(&s_GetChunk, this)).detach();
+    m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetChunk(*this));
 }
 
 
