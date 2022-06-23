@@ -67,6 +67,8 @@ public:
     TTSE_Lock GetBlobById(const TBlobId& blob_id) override;
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh) override;
     void GetIds(const CSeq_id_Handle& idh, CDataLoader::TIds& ids) override;
+    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh) override;
+    STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh) override;
 
     bool CanGetBlobById(void) const override
     {

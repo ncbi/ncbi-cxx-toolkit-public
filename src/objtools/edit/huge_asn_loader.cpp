@@ -149,6 +149,31 @@ TSeqPos CHugeAsnDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
     return info? info->m_length : kInvalidSeqPos;
 }
 
+CSeq_inst::TMol CHugeAsnDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
+{
+    auto info = m_reader->FindBioseq(idh.GetSeqId());
+    if (info == nullptr)
+        NCBI_THROW(CLoaderException, eNotFound,
+            "CHugeAsnDataLoader::GetSequenceType() sequence not found");
+
+    if (info->m_mol == CSeq_inst::eMol_not_set)
+        NCBI_THROW(CLoaderException, eNoData,
+            "CHugeAsnDataLoader::GetSequenceType() type not set");
+
+    return info->m_mol;
+}
+
+CDataLoader::STypeFound CHugeAsnDataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
+{
+    auto info = m_reader->FindBioseq(idh.GetSeqId());
+    STypeFound ret;
+    if (info) {
+        ret.sequence_found = true;
+        ret.type = info->m_mol;
+    }
+    return ret;
+}
+
 void CHugeAsnDataLoader::GetIds(const CSeq_id_Handle& idh, CDataLoader::TIds& ids)
 {
     //cerr << "CHugeAsnDataLoader::GetIds invoked\n";
