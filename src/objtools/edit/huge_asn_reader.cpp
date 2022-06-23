@@ -186,6 +186,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
     auto bioseqset_class_mi = bioseq_set_info.FindMember("class");
     auto bioseqset_descr_mi = bioseq_set_info.FindMember("descr");
     auto seqinst_len_mi = seqinst_info.FindMember("length");
+    auto seqinst_mol_mi = seqinst_info.FindMember("mol");
     auto bioseq_descr_mi = bioseq_info.FindMember("descr");
 
     // temporal structure for indexing
@@ -194,6 +195,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
         std::list<CConstRef<CSeq_id>> m_ids;
         TSeqPos      m_length  = 0;
         CRef<CSeq_descr> m_descr;
+        CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
     };
 
     struct TContext
@@ -240,6 +242,12 @@ void CHugeAsnReader::x_IndexNextAsn1()
         in.ReadObject(&context.bioseq_stack.back().m_length, (*member).GetTypeInfo());
     });
 
+    SetLocalSkipHook(seqinst_mol_mi, *obj_stream,
+        [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
+    {
+        in.ReadObject(&context.bioseq_stack.back().m_mol, (*member).GetTypeInfo());
+    });
+
     SetLocalSkipHook(CType<CFeat_id>(), *obj_stream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
@@ -263,7 +271,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
         type.GetTypeInfo()->DefaultSkipData(in);
 
         auto& bioseqinfo = context.bioseq_stack.back();
-        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids});
+        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids, bioseqinfo.m_mol});
         context.bioseq_stack.pop_back();
     });
 

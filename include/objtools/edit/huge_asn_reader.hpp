@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objtools/edit/huge_file.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -79,6 +80,7 @@ public:
         TSeqPos   m_length  = -1;
         CConstRef<CSeq_descr> m_descr;
         std::list<CConstRef<CSeq_id>> m_ids;
+        CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
     };
 
     struct TBioseqSetInfo
