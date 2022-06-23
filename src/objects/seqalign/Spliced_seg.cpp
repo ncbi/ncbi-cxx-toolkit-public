@@ -188,12 +188,7 @@ void CSpliced_seg::Validate(bool /*full_test*/) const
                    "CSpliced_seg::Validate(): Spiced-seg is empty (has no exons)");
     }
 
-    TSeqPos last_gen_start = kInvalidSeqPos;
-    TSeqPos last_gen_end = kInvalidSeqPos;
-    TSeqPos last_prod_start = kInvalidSeqPos;
-    TSeqPos last_prod_end = kInvalidSeqPos;
     bool gen_rev = CanGetGenomic_strand() && IsReverse(GetGenomic_strand());
-    bool prod_rev = CanGetProduct_strand() && IsReverse(GetProduct_strand());
 
     ITERATE (CSpliced_seg::TExons, exon_it, GetExons()) {
 
