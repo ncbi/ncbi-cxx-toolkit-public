@@ -7256,6 +7256,7 @@ UAIC<USA-AZ>	s	University of Arizona
 UALF	s	Federal University of Alfenas			
 UALRVC	s	University of Arkansas at Little Rock, Vertebrate Collection			
 UAM	s	University of Alaska, Museum of the North	UAF	http://arctos.database.museum/SpecimenDetail.cfm?GUID=	
+UAM:Alg	s	University of Alaska, Museum of the North, The Algae collection	
 UAM:Bird	s	University of Alaska, Museum of the North, Bird Collection		
 UAM:Bryo	s	University of Alaska, Museum of the North, Bryozoan Collection		
 UAM:Crus	s	University of Alaska, Museum of the North, Marine Arthropod Collection		
@@ -7271,6 +7272,8 @@ UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection
 UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria			
 UAM<USA-AL>	s	University of Alabama, Malacology Collection			
 UAM<USA-AR>	s	University of Arkansas at Monticello			
+UAMb	s	Cryptogam collection of University of Alaska Museum of the North			
+UAMb:Herb	s	Cryptogam collection of University of Alaska Museum of the North, 	
 UAMH	scb	Centre for Global Microfungal Biodiversity		https://www.uamh.ca/details.php?id=	
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)			
 UAMIZ	s	Universidad Autonoma Metropolitana, Iztapalapa, Departamento de Biologia			
