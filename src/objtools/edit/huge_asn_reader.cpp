@@ -89,6 +89,8 @@ const CHugeAsnReader::TBioseqSetInfo* CHugeAsnReader::FindTopObject(CConstRef<CS
     auto it = m_FlattenedIndex.lower_bound(seqid);
     if (it == m_FlattenedIndex.end())
         return nullptr;
+    if (it->first->CompareOrdered(*seqid) == 0)
+        return &*it->second;
     if (it->first->Compare(*seqid) != CSeq_id::E_SIC::e_YES)
         return nullptr;
 
