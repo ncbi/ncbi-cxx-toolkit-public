@@ -335,6 +335,7 @@ bool CValidError_annot::IsLocationUnindexed(const CSeq_loc& loc)
     bool found_one = false;
     for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
         const CSeq_id& id = loc_it.GetSeq_id();
+        #if 0
         CBioseq_Handle in_record = m_Scope->GetBioseqHandleFromTSE(id, m_Imp.GetTSE());
         if (in_record) {
             found_one = true;
@@ -342,6 +343,16 @@ bool CValidError_annot::IsLocationUnindexed(const CSeq_loc& loc)
                 return true;
             }
         }
+        #else
+            auto seq_len = m_Scope->GetSequenceLength(id, CScope::fDoNotRecalculate);
+            if (seq_len != kInvalidSeqPos) {
+                found_one = true;
+
+                if (!loc_it.IsWhole() && loc_it.GetRange().GetFrom() > seq_len - 1) {
+                    return true;
+                }
+            }
+        #endif
     }
     return !found_one;
 }
