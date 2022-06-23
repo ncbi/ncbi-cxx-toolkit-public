@@ -131,7 +131,7 @@ int CTestApplication::Run(void)
             }
         }
     }
-    catch (exception& e) {
+    catch (exception&) {
 #if defined(NCBI_OS_MSWIN) && defined(NDEBUG)
         string msg = e.what();
         if (msg.find("locale") != NPOS) {
