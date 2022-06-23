@@ -130,7 +130,7 @@ public:
     virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                    TLoadedBlob_ids& blob_ids) const override;
 
-    virtual operator CInitMutexPool&(void) { return GetMutexPool(); }
+    virtual operator CInitMutexPool&(void) override { return GetMutexPool(); }
 
     CInitMutexPool& GetMutexPool(void) { return m_Loader->m_MutexPool; }
 
