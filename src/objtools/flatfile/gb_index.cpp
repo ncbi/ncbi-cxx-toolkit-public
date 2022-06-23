@@ -144,9 +144,9 @@ static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
     for (q = &str[i + 1], p = q; *p == '0';)
         p++;
 
-    i = atoi(segnum);
-    if ((size_t)atoi(p) != i) {
-        ErrPostEx(SEV_REJECT, ERR_SEGMENT_BadLocusName, "Segment suffix in locus name \"%s\" does not match number in SEGMENT line = \"%d\". Entry dropped.", str, i);
+    int j = atoi(segnum);
+    if (atoi(p) != j) {
+        ErrPostEx(SEV_REJECT, ERR_SEGMENT_BadLocusName, "Segment suffix in locus name \"%s\" does not match number in SEGMENT line = \"%d\". Entry dropped.", str, j);
         entry->drop = 1;
     }
 
@@ -359,7 +359,6 @@ bool GenBankIndex(ParserPtr pp)
     IndexblkPtr   entry;
     int           currentKeyword;
     Int4          indx = 0;
-    DataBlkPtr    data = NULL;
     IndBlkNextPtr ibnp;
     IndBlkNextPtr tibnp;
     char*         p;
@@ -607,7 +606,7 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_DBLINK:
                     if (dbl != NULL)
-                        dbl = ValNodeFreeData(dbl);
+                        ValNodeFreeData(dbl);
                     dbl     = ConstructValNode(NULL, 0, StringSave(finfo->str + 8));
                     tdbl    = dbl;
                     dbl_len = StringLen(finfo->str) - 8;
@@ -726,8 +725,7 @@ bool GenBankIndex(ParserPtr pp)
                 MemFree(line_nid);
                 line_nid = NULL;
             }
-            entry->len = (size_t)(pp->ffbuf.current - pp->ffbuf.start) -
-                         entry->offset;
+            entry->len = (size_t)(pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
             if (acwflag == false &&
                 pp->mode != Parser::EMode::Relaxed) {
@@ -735,8 +733,8 @@ bool GenBankIndex(ParserPtr pp)
             }
 
             if (dbl != NULL) {
-                dbl     = ValNodeFreeData(dbl);
-                dbl_len = 0;
+                dbl = ValNodeFreeData(dbl);
+                // dbl_len = 0;
             }
         } /* if, entry */
         else {

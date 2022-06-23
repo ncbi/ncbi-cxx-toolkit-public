@@ -531,7 +531,6 @@ static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver, Parser::E
 
     if (ibp == NULL || ibp->xip == NULL || entry == NULL)
         return;
-    xip = ibp->xip;
 
     if (source == Parser::ESource::USPTO)
         ibp->is_pat = true;

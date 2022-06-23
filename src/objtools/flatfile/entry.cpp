@@ -161,9 +161,9 @@ bool Entry::xInitSeqInst(const unsigned char* pConvert)
     auto& bioseq  = mSeqEntry->SetSeq();
     auto& seqInst = bioseq.SetInst();
     seqInst.SetRepr(ibp->is_mga ? CSeq_inst::eRepr_virtual : CSeq_inst::eRepr_raw);
-    //Int2         topology;
-    //Int2         strand;
-    //char*      strandstr;
+    // Int2         topology;
+    // Int2         strand;
+    // char*      strandstr;
 
     string topologyStr = mBaseData.substr(lcp->topology, 16);
     int    topology    = CheckTPG(topologyStr);
@@ -175,12 +175,12 @@ bool Entry::xInitSeqInst(const unsigned char* pConvert)
     if (strand > 0)
         seqInst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
 
-    //auto codeType = (ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna);
-    //if (!GetSeqData(pp, entry, bioseq, ParFlat_ORIGIN, dnaconv, codeType))
-    //    return false;
+    // auto codeType = (ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna);
+    // if (!GetSeqData(pp, entry, bioseq, ParFlat_ORIGIN, dnaconv, codeType))
+    //     return false;
 
-    //if (ibp->is_contig && !GetGenBankInstContig(entry, bioseq, pp))
-    //    return false;
+    // if (ibp->is_contig && !GetGenBankInstContig(entry, bioseq, pp))
+    //     return false;
 
     return true;
 }
@@ -222,7 +222,6 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
     size_t     i;
 
     pp->ffbuf.current = pp->ffbuf.start + offset;
-    i                 = 0;
 
     entry          = new DataBlk(nullptr, ParFlat_ENTRYNODE);
     entry->mpNext  = NULL;                   /* assume no segment at this time */
@@ -249,8 +248,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
             *q = '#';
         }
 
-        /* Modified to skip empty line: Tatiana - 01/21/94
-        */
+        /* Modified to skip empty line: Tatiana - 01/21/94 */
         if (*q != '\n') {
             was = false;
             continue;
@@ -306,11 +304,8 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
     size_t     i;
 
     pp->ffbuf.current = pp->ffbuf.start + offset;
-    i                 = 0;
 
-    entry = new DataBlk(
-        nullptr,
-        ParFlat_ENTRYNODE);
+    entry          = new DataBlk(nullptr, ParFlat_ENTRYNODE);
     entry->len     = len;
     entry->mpNext  = nullptr;                /* assume no segment at this time */
     entry->mOffset = (char*)MemNew(len + 1); /* plus 1 for null byte */
@@ -354,8 +349,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
             *q = '#';
         }
 
-        /* Modified to skip empty line: Tatiana - 01/21/94
-        */
+        /* Modified to skip empty line: Tatiana - 01/21/94 */
         if (*q != '\n') {
             was = false;
             continue;

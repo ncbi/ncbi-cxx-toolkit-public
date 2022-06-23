@@ -1210,6 +1210,7 @@ static int CkQualTokenType(objects::CGb_qual& cur, bool error_msgs, Uint1 type)
             }
 
             if (str != NULL) {
+#if 0
                 switch (type) {
                 case ParFlat_BracketInt_type:
                     bptr = "Invalid [integer] format";
@@ -1225,6 +1226,7 @@ static int CkQualTokenType(objects::CGb_qual& cur, bool error_msgs, Uint1 type)
                     bptr = "Bad qualifier value";
                     break;
                 }
+#endif
                 if (error_msgs) {
                     ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "%s=%s, at %s", cur.GetQual().c_str(), cur.GetVal().c_str(), str);
                 }

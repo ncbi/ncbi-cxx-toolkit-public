@@ -341,7 +341,7 @@ static Nlm_XmlObjPtr ProcessAttribute(char* str)
         eql++;
         ch = *eql;
     }
-    chf = *eql;
+    chf = ch;
     if (chf == '\0')
         return NULL;
 

@@ -205,16 +205,16 @@ void xGetGenBankBlocks(Entry& entry)
     NStr::Split(entry.mBaseData, "\n", lines);
 
     vector<string> sectionLines;
-    int            currentKw   = ParFlat_LOCUS;
-    int            nextKw      = currentKw;
-    string         sectionText = "";
-    for (auto line : lines) {
+    int            currentKw = ParFlat_LOCUS;
+    int            nextKw;
+    string         sectionText;
+    for (const string& line : lines) {
         nextKw = SrchKeyword(line, genbankKeywords);
         if (nextKw == ParFlat_UNKW) {
             nextKw = currentKw;
         }
         if (nextKw != currentKw || NStr::StartsWith(line, "REFERENCE")) {
-            auto secPtr = new Section(currentKw, sectionLines);
+            auto* secPtr = new Section(currentKw, sectionLines);
             // secPtr->DumpText(cerr);
             entry.mSections.push_back(secPtr);
             currentKw = nextKw;
@@ -237,8 +237,6 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw, char* eptr)
     len    = 0;
     offset = ptr;
     curkw  = *retkw;
-    nextkw = ParFlat_UNKW;
-    nextkw = curkw;
 
     do /* repeat loop until it finds next key-word */
     {
@@ -501,7 +499,6 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat f
     size_t len = 0;
     offset     = ptr;
     curkw      = *retkw;
-    nextkw     = curkw;
 
     do /* repeat loop until it finds next key-word */
     {
@@ -894,7 +891,7 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type)
         cho = GetNucAccOwner(accession);
     else
         cho = GetProtAccOwner(accession);
-*/
+    */
     if ((type == CSeq_id::e_Genbank || type == CSeq_id::e_Tpg) &&
         (cho == CSeq_id::e_Genbank || cho == CSeq_id::e_Tpg))
         return (cho);

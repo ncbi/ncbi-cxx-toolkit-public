@@ -1730,7 +1730,6 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
         int orig_code_id = cur_code->GetId();
         for (int cur_code_id = cur_code->GetId(); again && cur_code_id < 14; ++cur_code_id) {
             cur_code->SetId(cur_code_id);
-            intercodon = false;
 
             std::string prot;
             if (! Translate(feat, prot))

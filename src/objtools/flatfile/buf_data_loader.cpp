@@ -323,8 +323,6 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
             ptr = GetGenBankBlock(&ebp->chain, ptr, &curkw, eptr);
         }
         if (ptr < eptr) {
-
-            res = false;
             if (! ibp->is_contig) {
                 auto molconv = GetDNAConv();
                 res          = GetSeqData(pp, *entry, *bioseq, ParFlat_ORIGIN, molconv.get(), eSeq_code_type_iupacna);
@@ -457,8 +455,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     char*       eptr  = ptr + entry->len;
     Int2        curkw = ParFlat_ID;
     while (curkw != ParFlatEM_END) {
-        /* ptr points to current keyword's memory line
-        */
+        /* ptr points to current keyword's memory line */
         ptr = GetEmblBlock(&ebp->chain, ptr, &curkw, pp->format, eptr);
     }
 

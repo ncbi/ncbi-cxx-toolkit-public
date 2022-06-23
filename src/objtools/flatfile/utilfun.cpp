@@ -220,7 +220,7 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
         while (*p == '0')
             p++;
 
-        const Char* q = p;
+        const Char* q;
         for (q = p; *p >= '0' && *p <= '9';)
             p++;
         num1 = atoi(q);
