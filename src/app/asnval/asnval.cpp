@@ -371,7 +371,7 @@ void CAsnvalApp::Init()
 
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
     arg_desc->AddFlag("batch", "Process NCBI release file (Seq-submit or Bioseq-set only)");
-    arg_desc->AddFlag("huge", "Execute in huge-file mode (currently only applies to Seq-entry input)");
+    arg_desc->AddFlag("huge", "Execute in huge-file mode");
     arg_desc->SetDependency("huge", CArgDescriptions::eRequires, "i"); // RW-1665 - temporary dependency while I perform initial testing
 
     arg_desc->AddOptionalKey(
@@ -441,8 +441,11 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
         top_h = scope->AddTopLevelSeqEntry(*pEntry);
     } else {
         auto seq_id_h = CSeq_id_Handle::GetHandle(*seqid);
-        auto bioseq_h = scope->GetBioseqHandle(seq_id_h);
-        if (bioseq_h) {
+        if (scope->Exists(seq_id_h)) {
+#ifdef _DEBUG
+            //std::cerr << "Taxid for " << scope->GetLabel(seq_id_h) << " : " << scope->GetTaxId(seq_id_h, CScope::fDoNotRecalculate) << "\n";
+#endif
+            auto bioseq_h = scope->GetBioseqHandle(seq_id_h);
             top_h = bioseq_h.GetTopLevelEntry();
             pEntry = Ref((CSeq_entry*)(void*)top_h.GetCompleteSeq_entry().GetPointer());
         }
@@ -508,7 +511,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
         }
 
         auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
-                *m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, CObjectManager::kPriority_Local);
+                *m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
 
         CAutoRevoker autorevoker(info);
 
@@ -674,8 +677,24 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                     try {
                         if (m_In) {
                             CConstRef<CValidError> eval = ValidateInput(asninfo);
-                            if (eval) {
+                            if (eval)
                                 PrintValidError(eval);
+
+                            if (!m_In->EndOfData()) { // force to SkipWhiteSpace
+                                try
+                                {
+                                    auto types = m_In->GuessDataType(s_known_types);
+                                    asninfo = types.empty() ? nullptr : *types.begin();
+                                }
+                                catch(const CException& e)
+                                {
+                                    eval = ReportReadFailure(&e);
+                                    if (eval) {
+                                        PrintValidError(eval);
+                                        doloop = false;
+                                    } else
+                                        throw;
+                                }
                             }
                         } else {
                             string loader_name =  CDirEntry::ConvertToOSPath(fname);
