@@ -511,7 +511,8 @@ bool SeqIdToIdentifier(const CRef < ncbi::objects::CSeq_id >& seqID, string& ide
 bool IdentifierToSeqId(const string& identifier, CRef < ncbi::objects::CSeq_id >& seqID)
 {
     try {
-        CNcbiIstrstream iss(identifier.data(), identifier.size());
+        //CNcbiIstrstream iss(identifier.data(), identifier.size());
+        CNcbiIstrstream iss(identifier);
         unique_ptr < CObjectIStream > isa(CObjectIStream::Open(eSerial_Xml, iss, eNoOwnership));
         seqID.Reset(new CSeq_id());
         *isa >> *seqID;
