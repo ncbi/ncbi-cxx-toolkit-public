@@ -7263,7 +7263,7 @@ UAM:Crus	s	University of Alaska, Museum of the North, Marine Arthropod Collectio
 UAM:Ento	s	University of Alaska, Museum of the North, Insect Collection		
 UAM:ES	s	University of Alaska, Museum of the North, Earth Science		
 UAM:Fish	s	University of Alaska, Museum of the North, Fish Collection		
-UAM:Herb	s	University of Alaska, Museum of the North, UAM Herbarium		
+UAM:Herb	s	University of Alaska, Museum of the North, UAM Herbarium	
 UAM:Herp	s	University of Alaska, Museum of the North, Amphibian and Reptile Collection		
 UAM:Inv	s	University of Alaska, Museum of the North, Invertebrate Collection		
 UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection	https://arctos.database.museum/guid/UAM:Mamm:
@@ -7273,7 +7273,7 @@ UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria
 UAM<USA-AL>	s	University of Alabama, Malacology Collection			
 UAM<USA-AR>	s	University of Arkansas at Monticello			
 UAMb	s	Cryptogam collection of University of Alaska Museum of the North			
-UAMb:Herb	s	Cryptogam collection of University of Alaska Museum of the North, 	
+UAMb:Herb	s	Cryptogam collection of University of Alaska Museum of the North, Herbarium collection	
 UAMH	scb	Centre for Global Microfungal Biodiversity		https://www.uamh.ca/details.php?id=	
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)			
 UAMIZ	s	Universidad Autonoma Metropolitana, Iztapalapa, Departamento de Biologia			
