@@ -16,12 +16,6 @@
 
 
 #set(NCBI_TRACE_ALLCOMPONENTS ON)
-set(__silent ${CONAN_CMAKE_SILENT_OUTPUT})
-set(CONAN_CMAKE_SILENT_OUTPUT TRUE)
-if(NOT NCBI_PTBCFG_PACKAGED OR NOT TARGET CONAN_PKG::ncbi-cxx-toolkit-public)
-    conan_define_targets()
-endif()
-set(CONAN_CMAKE_SILENT_OUTPUT ${__silent})
 
 include(CheckIncludeFile)
 include(CheckSymbolExists)
