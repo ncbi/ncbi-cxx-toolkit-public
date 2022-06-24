@@ -102,6 +102,8 @@ const CHugeAsnReader::TBioseqInfo* CHugeAsnReader::FindBioseq(CConstRef<CSeq_id>
     auto it = m_bioseq_index.lower_bound(seqid);
     if (it == m_bioseq_index.end())
         return nullptr;
+    if (it->first->CompareOrdered(*seqid) == 0)
+        return &*it->second;
     if (it->first->Compare(*seqid) != CSeq_id::E_SIC::e_YES)
         return nullptr;
 
@@ -338,8 +340,9 @@ void CHugeAsnReader::FlattenGenbankSet()
     m_top_ids.clear();
     m_FlattenedIndex.clear();
 
-    for (auto& rec: m_bioseq_list)
+    for (auto it = m_bioseq_list.begin(); it!= m_bioseq_list.end(); ++it)
     {
+        auto rec = *it;
         auto parent = rec.m_parent_set;
 
         if (auto _class = parent->m_class;
@@ -360,8 +363,10 @@ void CHugeAsnReader::FlattenGenbankSet()
                 }
         }
         auto last = --m_FlattenedSets.end();
-        for (auto id: rec.m_ids)
+        for (auto id: rec.m_ids) {
             m_FlattenedIndex[id] = last;
+            m_bioseq_index[id] = it;
+        }
     }
 
     if (GetBiosets().size()>1)
