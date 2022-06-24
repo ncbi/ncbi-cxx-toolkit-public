@@ -37,6 +37,7 @@
 #include <corelib/ncbi_param.hpp>
 #include <util/line_reader.hpp>
 #include <sra/error_codes.hpp>
+#include <kns/http.h>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -44,7 +45,7 @@
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   WGSResolver
-NCBI_DEFINE_ERR_SUBCODE_X(32);
+NCBI_DEFINE_ERR_SUBCODE_X(36);
 
 BEGIN_NAMESPACE(objects);
 
@@ -413,6 +414,113 @@ static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
 }
 
 
+DECLARE_SRA_REF_TRAITS(KClientHttpRequest, );
+DECLARE_SRA_REF_TRAITS(KClientHttpResult, );
+
+DEFINE_SRA_REF_TRAITS(KClientHttpRequest, );
+DEFINE_SRA_REF_TRAITS(KClientHttpResult, );
+
+class NCBI_SRAREAD_EXPORT CClientHttpRequest
+    : public CSraRef<KClientHttpRequest>
+{
+public:
+    CClientHttpRequest(const CKNSManager& mgr, const string& path)
+        {
+            if ( rc_t rc = KNSManagerMakeClientRequest(mgr, x_InitPtr(), 0x01010000, 0,
+                                                       "%s", path.c_str()) ) {
+                *x_InitPtr() = 0;
+                NCBI_THROW2(CSraException, eInitFailed,
+                            "Cannot create http client request", rc);
+            }
+        }
+
+private:
+};
+
+
+class NCBI_SRAREAD_EXPORT CClientHttpResult
+    : public CSraRef<KClientHttpResult>
+{
+public:
+    enum EHead {
+        eHead
+    };
+    
+    CClientHttpResult(const CClientHttpRequest& request, EHead)
+        {
+            if ( rc_t rc = KClientHttpRequestHEAD(request, x_InitPtr()) ) {
+                *x_InitPtr() = 0;
+                NCBI_THROW2(CSraException, eInitFailed,
+                            "Cannot get http HEAD", rc);
+            }
+        }
+    
+private:
+};
+
+
+static CTime s_GetURLTimestamp(const CVDBMgr& mgr, const string& path)
+{
+    try {
+        CVFSManager vfs(mgr);
+        CKNSManager kns(vfs);
+        CClientHttpRequest request(kns, path);
+        CClientHttpResult result(request, CClientHttpResult::eHead);
+        char buffer[99];
+        size_t size;
+        if ( rc_t rc = KClientHttpResultGetHeader(result, "Last-Modified",
+                                                  buffer, sizeof(buffer), &size) ) {
+            NCBI_THROW2(CSraException, eNotFound,
+                        "No Last-Modified header in HEAD response", rc);
+        }
+        CTempString str(buffer, size);
+        CTimeFormat fmt("w, d b Y h:m:s Z"); // standard Last-Modified HTTP header format
+        return CTime(str, fmt);
+    }
+    catch ( CException& exc ) {
+        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
+            ERR_POST_X(36, "CWGSResolver_VDB: cannot get URL timestamp of "<<path);
+        }
+        return CTime();
+    }
+}
+
+
+static CTime s_GetTimestamp(const CVDBMgr& mgr, const string& path)
+{
+    CTime timestamp;
+    if ( path[0] == 'h' &&
+         (NStr::StartsWith(path, "http://") ||
+          NStr::StartsWith(path, "https://")) ) {
+        // try http:
+        timestamp = s_GetURLTimestamp(mgr, path);
+    }
+    else {
+        // try direct file access
+        if ( CDirEntry(path).GetTime(&timestamp) ) {
+            timestamp.ToUniversalTime();
+        }
+        else {
+            timestamp = CTime();
+        }
+    }
+    if ( timestamp.IsEmpty() ) {
+        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
+            ERR_POST_X(34, "CWGSResolver_VDB("<<path<<"): "
+                       "cannot get timestamp");
+        }
+    }
+    else {
+        _ASSERT(timestamp.IsUniversalTime());
+        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_open) ) {
+            LOG_POST_X(35, "CWGSResolver_VDB("<<path<<"): "
+                       "timestamp: "<<CTime(timestamp).ToLocalTime());
+        }
+    }
+    return timestamp;
+}
+
+
 void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
 {
     // open VDB file
@@ -423,11 +531,79 @@ void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
         swap(m_Impl, impl);
     }
     else if ( IsValid() ) {
-        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
-            LOG_POST_X(29, "CWGSResolver_VDB("<<acc_or_path<<"): "
+        if ( s_DebugEnabled(eDebug_error) ) {
+            ERR_POST_X(33, "CWGSResolver_VDB("<<acc_or_path<<"): "
                        "index disappeared from "<<GetWGSIndexResolvedPath());
         }
     }
+}
+
+
+inline
+CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::SImpl::GiIdx(TIntId row)
+{
+    CRef<SGiIdxTableCursor> curs = m_GiIdxCursorCache.Get(row);
+    if ( !curs ) {
+        curs = new SGiIdxTableCursor(GiIdxTable());
+    }
+    return curs;
+}
+
+
+inline
+CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::SImpl::AccIdx(void)
+{
+    CRef<SAccIdxTableCursor> curs = m_AccIdxCursorCache.Get();
+    if ( !curs ) {
+        curs = new SAccIdxTableCursor(AccIdxTable());
+    }
+    return curs;
+}
+
+
+inline
+void CWGSResolver_VDB::SImpl::Put(CRef<SGiIdxTableCursor>& curs, TIntId row)
+{
+    if ( curs->m_Table == GiIdxTable() ) {
+        m_GiIdxCursorCache.Put(curs, row);
+    }
+}
+
+
+inline
+void CWGSResolver_VDB::SImpl::Put(CRef<SAccIdxTableCursor>& curs)
+{
+    if ( curs->m_Table == AccIdxTable() ) {
+        m_AccIdxCursorCache.Put(curs);
+    }
+}
+
+
+inline
+CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId gi)
+{
+    return m_Impl->GiIdx(gi);
+}
+
+
+inline
+CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
+{
+    return m_Impl->AccIdx();
+}
+
+
+inline
+void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TIntId gi)
+{
+    m_Impl->Put(curs, gi);
+}
+
+
+inline
+void CWGSResolver_VDB::Put(CRef<SAccIdxTableCursor>& curs)
+{
+    m_Impl->Put(curs);
 }
 
 
@@ -446,14 +622,7 @@ CWGSResolver_VDB::SImpl::SImpl(const CVDBMgr& mgr, const string& acc_or_path)
 
     // save original argument for possible changes in symbolic links
     m_WGSIndexResolvedPath = path;
-    if ( !CDirEntry(path).GetTime(&m_Timestamp) ) {
-        m_Timestamp = CTime();
-    }
-    else {
-        if ( s_DebugEnabled(eDebug_open) ) {
-            LOG_POST_X(30, "CWGSResolver_VDB("<<acc_or_path<<"): index timestamp: "<<m_Timestamp);
-        }
-    }
+    m_Timestamp = s_GetTimestamp(mgr, path);
     m_GiIdxTable = CVDBTable(m_Db, "GI_IDX");
     m_AccIdxTable = CVDBTable(m_Db, "ACC_IDX");
     m_AccIndexIsPrefix = true;
@@ -461,6 +630,15 @@ CWGSResolver_VDB::SImpl::SImpl(const CVDBMgr& mgr, const string& acc_or_path)
     if ( !m_AccIndex ) {
         m_AccIndexIsPrefix = false;
         m_AccIndex = CVDBTableIndex(m_AccIdxTable, "accession");
+    }
+    if ( s_DebugEnabled(eDebug_open) ) {
+        auto gi_idx = GiIdx();
+        auto acc_idx = AccIdx();
+        LOG_POST_X(33, "CWGSResolver_VDB("<<acc_or_path<<"):"
+                   " gi_rows: "<<gi_idx->m_Cursor.GetMaxRowId()<<
+                   " acc_rows: "<<acc_idx->m_Cursor.GetMaxRowId());
+        Put(acc_idx);
+        Put(gi_idx);
     }
 }
 
@@ -494,60 +672,18 @@ bool CWGSResolver_VDB::x_Update(void)
         return true;
     }
 
-    CTime timestamp;
-    if ( !CDirEntry(path).GetTime(&timestamp) ) {
-        // cannot get timestamp -> remote reference
-        return false;
+    CTime timestamp = s_GetTimestamp(m_Mgr, path);
+    if ( timestamp.IsEmpty() ) {
+        // cannot get timestamp, always reopen
+        Reopen();
+        return true;
     }
     if ( timestamp == GetTimestamp() ) {
         // same timestamp
         return false;
     }
-    if ( s_DebugEnabled(eDebug_open) ) {
-        LOG_POST_X(31, "CWGSResolver_VDB: new index timestamp: "<<timestamp);
-    }
     Reopen();
     return true;
-}
-
-
-inline
-CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
-{
-    CRef<SGiIdxTableCursor> curs = m_Impl->m_GiIdxCursorCache.Get(row);
-    if ( !curs ) {
-        curs = new SGiIdxTableCursor(GiIdxTable());
-    }
-    return curs;
-}
-
-
-inline
-CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
-{
-    CRef<SAccIdxTableCursor> curs = m_Impl->m_AccIdxCursorCache.Get();
-    if ( !curs ) {
-        curs = new SAccIdxTableCursor(AccIdxTable());
-    }
-    return curs;
-}
-
-
-inline
-void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TIntId row)
-{
-    if ( curs->m_Table == GiIdxTable() ) {
-        m_Impl->m_GiIdxCursorCache.Put(curs, row);
-    }
-}
-
-
-inline
-void CWGSResolver_VDB::Put(CRef<SAccIdxTableCursor>& curs)
-{
-    if ( curs->m_Table == AccIdxTable() ) {
-        m_Impl->m_AccIdxCursorCache.Put(curs);
-    }
 }
 
 
