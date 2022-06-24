@@ -128,6 +128,19 @@ private:
     TDBMutex m_DBMutex; // for update
     struct SImpl {
         SImpl(const CVDBMgr& mgr, const string& acc_or_path);
+        // get table accessor object for exclusive access
+        const CVDBTable& GiIdxTable(void) {
+            return m_GiIdxTable;
+        }
+        const CVDBTable& AccIdxTable(void) {
+            return m_AccIdxTable;
+        }
+        CRef<SGiIdxTableCursor> GiIdx(TIntId gi = 0);
+        CRef<SAccIdxTableCursor> AccIdx(void);
+        // return table accessor object for reuse
+        void Put(CRef<SGiIdxTableCursor>& curs, TIntId gi = 0);
+        void Put(CRef<SAccIdxTableCursor>& curs);
+        
         string m_WGSIndexResolvedPath;
         CTime m_Timestamp;
         CVDB m_Db;
