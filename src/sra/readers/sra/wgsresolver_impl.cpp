@@ -479,7 +479,7 @@ static CTime s_GetURLTimestamp(const CVDBMgr& mgr, const string& path)
     }
     catch ( CException& exc ) {
         if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
-            ERR_POST_X(36, "CWGSResolver_VDB: cannot get URL timestamp of "<<path);
+            ERR_POST_X(36, "CWGSResolver_VDB: cannot get URL timestamp of "<<path<<": "<<exc);
         }
         return CTime();
     }
