@@ -2250,7 +2250,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         if (uuu->received < uuu->expected) {
             if (status == eIO_Closed) {
                 status  = eIO_Unknown;
-                how = "premature EOM in";
+                how = "Premature EOM in";
             }
         } else if (uuu->expected < uuu->received) {
             if (!uuu->net_info->http_version
@@ -2264,13 +2264,13 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             }
             uuu->conn_state = eCS_Discard;
             status  = eIO_Unknown;
-            how = "too much";
+            how = "Got too much";
         } else if (!uuu->chunked  &&  uuu->keepalive)
             uuu->conn_state = eCS_DoneBody;
         if (how) {
             char* url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_X(21, eLOG_Warning,
-                        ("[HTTP%s%s]  Got %s data (received "
+                        ("[HTTP%s%s]  %s data (received "
                          "%" NCBI_BIGCOUNT_FORMAT_SPEC " vs. "
                          "%" NCBI_BIGCOUNT_FORMAT_SPEC " expected)",
                          url ? "; " : "",
