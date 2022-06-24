@@ -1050,15 +1050,8 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
         return true;
     }
 
-    using GENE_ID = string;
-    using GENE_MAP = map<CMappedFeat, GENE_ID>;
-    using GENE_IDS = list<GENE_ID>;
-
-    static GENE_IDS usedGeneIds;
-    static GENE_MAP geneMap;
-
-    auto  geneIt = geneMap.find(geneFeat);
-    if (geneMap.end() != geneIt) {
+    auto  geneIt = mGeneMap.find(geneFeat);
+    if (mGeneMap.end() != geneIt) {
         record.SetGeneId(geneIt->second);
         return true;
     }
@@ -1080,15 +1073,15 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
         geneId = xGenericGeneId(mf, fc);
         //we know the ID is going to be unique if we get it this way
         // not point in further checking
-        usedGeneIds.push_back(geneId);
-        geneMap[mf] = geneId;
+        mUsedGeneIds.push_back(geneId);
+        mGeneMap[mf] = geneId;
         record.SetGeneId(geneId);
         return true;
     }
-    auto cit = find(usedGeneIds.begin(), usedGeneIds.end(), geneId);
-    if (usedGeneIds.end() == cit) {
-        usedGeneIds.push_back(geneId);
-        geneMap[mf] = geneId;
+    auto cit = find(mUsedGeneIds.begin(), mUsedGeneIds.end(), geneId);
+    if (mUsedGeneIds.end() == cit) {
+        mUsedGeneIds.push_back(geneId);
+        mGeneMap[mf] = geneId;
         record.SetGeneId(geneId);
         return true;
     }
@@ -1096,10 +1089,10 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
     geneId += "_";
     while (true) {
         GENE_ID qualifiedGeneId = geneId + NStr::UIntToString(suffix);
-        cit = find(usedGeneIds.begin(), usedGeneIds.end(), qualifiedGeneId);
-        if (usedGeneIds.end() == cit) {
-            usedGeneIds.push_back(qualifiedGeneId);
-            geneMap[mf] = qualifiedGeneId;
+        cit = find(mUsedGeneIds.begin(), mUsedGeneIds.end(), qualifiedGeneId);
+        if (mUsedGeneIds.end() == cit) {
+            mUsedGeneIds.push_back(qualifiedGeneId);
+            mGeneMap[mf] = qualifiedGeneId;
             record.SetGeneId(qualifiedGeneId);
             return true;
         }

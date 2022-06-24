@@ -166,7 +166,12 @@ private:
     FEAT_MAP mFeatMap;
     FEAT_IDS mUsedFeatIds;
 
+    using GENE_ID = string;
+    using GENE_MAP = map<CMappedFeat, GENE_ID>;
+    using GENE_IDS = list<GENE_ID>;
 
+    GENE_IDS mUsedGeneIds;
+    GENE_MAP mGeneMap;
 };
 
 END_objects_SCOPE
