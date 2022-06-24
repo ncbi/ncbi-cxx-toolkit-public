@@ -37,6 +37,8 @@
 #include <objmgr/impl/tse_loadlock.hpp>
 
 #include <objects/submit/Submit_block.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -70,7 +72,7 @@ private:
     CHugeAsnReader* m_reader = nullptr;
 };
 
-}
+} // anonymous namespace
 
 CHugeAsnDataLoader::CHugeAsnDataLoader(const string& name, CHugeAsnReader* reader):
     CDataLoader(name),
@@ -87,16 +89,27 @@ CHugeAsnDataLoader::~CHugeAsnDataLoader()
     }
 }
 
-//static thread_local std::string loading_ids;
+#ifdef _DEBUG
+//#define DEBUG_HUGE_ASN_LOADER
+#endif
+
+#ifdef DEBUG_HUGE_ASN_LOADER
+static thread_local std::string loading_ids;
+#endif
+
 CDataLoader::TBlobId CHugeAsnDataLoader::GetBlobId(const CSeq_id_Handle& idh)
 {
-    //loading_ids = idh.AsString();
+#ifdef DEBUG_HUGE_ASN_LOADER
+    loading_ids = idh.AsString();
+#endif
     auto info = m_reader->FindTopObject(idh.GetSeqId());
     if (info) {
         TBlobId blob_id = new CBlobIdPtr(info);
         return blob_id;
     }
-    //cerr << MSerial_AsnText << "Seq id not found: " << idh.AsString() << "\n";
+#ifdef DEBUG_HUGE_ASN_LOADER
+    cerr << MSerial_AsnText << "Seq id not found: " << loading_ids << "\n";
+#endif
     return {};
 }
 
@@ -109,7 +122,9 @@ CDataLoader::TTSE_Lock CHugeAsnDataLoader::GetBlobById(const TBlobId& blob_id)
         auto info_ptr = id->GetValue();
         const CHugeAsnReader::TBioseqSetInfo* info = (const CHugeAsnReader::TBioseqSetInfo*)info_ptr;
         auto entry = m_reader->LoadSeqEntry(*info);
-        //cerr << MSerial_AsnText << "Loaded: " << loading_ids << "\n";
+#ifdef DEBUG_HUGE_ASN_LOADER
+        cerr << MSerial_AsnText << "Loaded: " << loading_ids << "\n";
+#endif
         CTSE_Info& tse_info = *lock;
         tse_info.SetSeq_entry(*entry);
         lock.SetLoaded();
@@ -189,6 +204,49 @@ void CHugeAsnDataLoader::GetIds(const CSeq_id_Handle& idh, CDataLoader::TIds& id
             }
         }
     }
+}
+
+namespace
+{
+    TTaxId x_FindTaxId(const CHugeAsnReader::TBioseqSetList& cont, CHugeAsnReader::TBioseqSetList::const_iterator parent, CConstRef<CSeq_descr> descr)
+    {
+        if (descr)
+        {
+            for (auto d: descr->Get())
+            {
+                const COrg_ref* org_ref = nullptr;
+                switch(d->Which())
+                {
+                    case CSeqdesc::e_Source:
+                        if (d->GetSource().IsSetOrg())
+                            org_ref = &d->GetSource().GetOrg();
+                        break;
+                    case CSeqdesc::e_Org:
+                        org_ref = &d->GetOrg();
+                        break;
+                    default:
+                        break;
+                }
+                if (org_ref)
+                    return org_ref->GetTaxId();
+            }
+        }
+        if (parent != cont.end())
+            return x_FindTaxId(cont, parent->m_parent_set, parent->m_descr);
+
+        return ZERO_TAX_ID;
+    }
+}
+
+TTaxId CHugeAsnDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+{
+    auto info = m_reader->FindBioseq(idh.GetSeqId());
+    if (info)
+    {
+        auto taxid = x_FindTaxId(m_reader->GetBiosets(), info->m_parent_set, info->m_descr);
+        return taxid;
+    }
+    return INVALID_TAX_ID;
 }
 
 END_SCOPE(edit)

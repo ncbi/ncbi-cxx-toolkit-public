@@ -69,6 +69,7 @@ public:
     void GetIds(const CSeq_id_Handle& idh, CDataLoader::TIds& ids) override;
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh) override;
     STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh) override;
+    TTaxId GetTaxId(const CSeq_id_Handle& idh) override;
 
     bool CanGetBlobById(void) const override
     {
