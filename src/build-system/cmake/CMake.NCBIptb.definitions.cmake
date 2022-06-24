@@ -81,7 +81,7 @@ endif()
 if (NOT EXISTS "${NCBI_INC_ROOT}")
     set(NCBI_INC_ROOT   ${NCBI_TREE_ROOT})
 endif()
-set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+#set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(build_root      ${CMAKE_BINARY_DIR})
 set(builddir        ${CMAKE_BINARY_DIR})
