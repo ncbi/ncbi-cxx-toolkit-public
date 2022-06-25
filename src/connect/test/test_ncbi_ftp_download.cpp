@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/stream_utils.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_misc.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -323,8 +324,11 @@ size_t CNullProcessor::Run(void)
     Uint8 filesize = 0;
     do {
         static char buf[10000];
-        m_Stream->read(buf, sizeof(buf));
-        filesize += m_Stream->gcount();
+        if (rand() & 1) {
+            m_Stream->read(buf, sizeof(buf));
+            filesize += m_Stream->gcount();
+        } else
+            filesize += CStreamUtils::Readsome(*m_Stream, buf, sizeof(buf));
     } while (*m_Stream);
 
     if (s_Signaled  ||  !m_Stream->eof()) {
@@ -480,8 +484,8 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
         update = true;
     } else if (s_Signaled) {
         size_t unused;
-        // This should cause data connection (if any) to abort
-        CONN_Write(conn, "NOOP\n", 5, &unused, eIO_WritePersist);
+        // Optional: this should cause data connection (if any) to abort
+        CONN_Write(conn, "\n", 1, &unused, eIO_WritePersist);
         status = eIO_Interrupt;
         update = true;
     } else if (type & eCONN_OnTimeout) {
@@ -863,9 +867,9 @@ int CTestFTPDownloadApp::Run(void)
     // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear again
     assert(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
     // Set a fine read timeout and handle the actual timeout in callbacks
-    static const STimeout second = { 1, 0 };
-    // NB: also "ftp.SetTimeout(eIO_Read, &second)"
-    ftp >> SetReadTimeout(&second);
+    static const STimeout a_second = { 1, 0 };
+    // NB: also "ftp.SetTimeout(eIO_Read, &a_second)"
+    ftp >> SetReadTimeout(&a_second);
     // Set all relevant CONN callbacks
     const SCONN_Callback conncb = { x_ConnectionCallback, &dlcbdata };
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,    &conncb, 0/*dontcare*/);
@@ -936,7 +940,12 @@ int main(int argc, const char* argv[])
     signal(SIGINT,  s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #endif // NCBI_OS
-    CSocketAPI::SetInterruptOnSignal(eOn);
+    // When SetInterruptOnSignal() is set to eOn, EINTR in socket I/O can end
+    // up returning eIO_Interrupt and translate to stream I/O errors directly,
+    // thus bypassing any callbacks (because the I/O has already failed).  When
+    // eOff (default), EINTR will cause I/O to restart internally, eventually
+    // hitting the CONN callback, where the I/O will be properly canceled.
+    // CSocketAPI::SetInterruptOnSignal(eOn);
 
     return CTestFTPDownloadApp().AppMain(argc, argv);
 }
