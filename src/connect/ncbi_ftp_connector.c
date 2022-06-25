@@ -184,10 +184,10 @@ static EIO_Status x_FTPCloseData(SFTPConnector* xxx,
     } else {
         if (!xxx->cntl) {
             how = eIO_Open;
-        } else if (xxx->what  &&  how != eIO_Close) {
+        } else if (how != eIO_Close) {
             CORE_LOGF_X(1, xxx->send ? eLOG_Error : eLOG_Warning,
-                        ("[FTP; %s]  Data connection transfer aborted",
-                         xxx->what));
+                        ("[FTP%s%s]  Data connection transfer aborted",
+                         xxx->what ? ": " : "", xxx->what ? xxx->what : ""));
         }
         if (how != eIO_Close) {
             status = SOCK_Abort(xxx->data);
@@ -316,6 +316,8 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
 }
 
 
+/* Read replies while successful until the received response is: ether == *code
+ * or its hundred's place == cXX;  return the response code via the pointer. */
 static EIO_Status s_FTPDrainReply(SFTPConnector* xxx, int* code, int cXX)
 {
     int        c;
@@ -794,6 +796,55 @@ static EIO_Status x_FTPTelnetSynch(SFTPConnector* xxx)
 }
 
 
+static void x_StoreTimeoutNormalized(STimeout* dst, const STimeout* src)
+{
+    dst->sec  = src->sec;
+    dst->sec += src->usec / 1000000;
+    dst->usec = src->usec % 1000000;
+}
+
+
+static int/*bool*/ x_IsLongerTimeout(const STimeout* p1,
+                                     const STimeout* p2)
+{
+    STimeout t1, t2;
+    assert(p2);
+    if (!p1)
+        return 1/*T*/;
+    x_StoreTimeoutNormalized(&t1, p1);
+    x_StoreTimeoutNormalized(&t2, p2);
+    return   t1.sec  > t2.sec
+        ||  (t1.sec == t2.sec  &&  t1.usec > t2.usec) ? 1/*T*/ : 0/*F*/;
+}
+
+
+static EIO_Status x_DrainData(SFTPConnector* xxx, const STimeout* timeout)
+{
+    EIO_Status status;
+    time_t deadline = time(0);
+    /* this is not "data" per se, so go silent */
+    ESwitch log = xxx->flag & fFTP_LogData
+        ? SOCK_SetDataLogging(xxx->data, eDefault) : eDefault;
+    const STimeout* r_timeout = SOCK_GetTimeout(xxx->data, eIO_Read);
+    if (x_IsLongerTimeout(r_timeout, timeout))
+        SOCK_SetTimeout(xxx->data, eIO_Read, timeout);
+    else
+        timeout = r_timeout;
+    deadline += (time_t)(timeout->sec + (timeout->usec + 500000) / 1000000);
+
+    /* drain up data connection by discarding 1MB blocks repeatedly */
+    while ((status = SOCK_Read(xxx->data, 0, 1 << 20, 0, eIO_ReadPlain))
+           == eIO_Success) {
+        if (time(0) >= deadline)
+            break;
+    }
+
+    if (log != eDefault)
+        SOCK_SetDataLogging(xxx->data, log);
+    return status;
+}
+
+
 /*
  * how = 0 -- ABOR sequence only if data connection is open;
  * how = 1 -- just abort data connection, if any open;
@@ -812,25 +863,20 @@ static EIO_Status x_FTPAbort(SFTPConnector*  xxx,
         return eIO_Success;
     if (!xxx->cntl  ||  how == 1)
         return x_FTPCloseData(xxx, eIO_Close/*silent close*/, 0);
-    if (!timeout)
+    if (x_IsLongerTimeout(timeout, &kFailsafeTimeout))
         timeout = &kFailsafeTimeout;
     SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
     status = x_FTPTelnetSynch(xxx);
     if (status == eIO_Success)
         status  = s_FTPCommand(xxx, "ABOR", 0);
     if (xxx->data) {
-        if (status == eIO_Success  &&  !xxx->send) {
-            /* this is not "data" per se, so go silent */
-            if (xxx->flag & fFTP_LogData)
-                SOCK_SetDataLogging(xxx->data, eDefault);
-            SOCK_SetTimeout(xxx->data, eIO_ReadWrite, timeout);
-            /* drain up data connection by discarding 1MB blocks repeatedly */
-            while (SOCK_Read(xxx->data, 0, 1<<20, 0, eIO_ReadPlain)
-                   == eIO_Success) {
-                continue;
-            }
+        EIO_Status abort = status;
+        if (abort == eIO_Success  &&  !xxx->send) {
+            if (x_DrainData(xxx, timeout) == eIO_Success)
+                abort = eIO_Timeout;
         }
         x_FTPCloseData(xxx, how == 3
+                       ||  abort != eIO_Success
                        ||  SOCK_Status(xxx->data, eIO_Read) != eIO_Closed
                        ? eIO_Open/*warning*/ : eIO_Close/*silent*/, 0);
     }
@@ -1759,7 +1805,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
             if (!size || (size == 4 && strncasecmp(s, "NOOP", 4) == 0 && !*c)){
                 /* Special, means to stop the current command and reach EOF */
-                status = x_FTPNoop(xxx);
+                status = size ? x_FTPNoop(xxx) : eIO_Success;
             } else if  (size == 3  &&   strncasecmp(s, "REN",  3) == 0) {
                 /* Special-case, non-standard command */
                 status = s_FTPRename(xxx, c + strspn(c, " \t"));
@@ -2219,7 +2265,7 @@ static EIO_Status s_VT_Close
     if (xxx->cntl) {
         if (!data  &&  status == eIO_Success) {
             int code = 0/*any*/;
-            if (!timeout)
+            if (x_IsLongerTimeout(timeout, &kFailsafeTimeout))
                 timeout = &kFailsafeTimeout;
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
             /* all implementations MUST support QUIT */
