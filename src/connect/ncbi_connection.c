@@ -162,11 +162,12 @@ typedef struct SConnectionTag {
     void*           data;        /* user data pointer                        */
 
     /* "[o|r|w|c]_timeout" is either 0 (kInfiniteTimeout), kDefaultTimeout
-       (to use connector-specific one), or points to "[oo|rr|ww|cc]_timeout" */
-    const STimeout* o_timeout;   /* timeout on open                          */
-    const STimeout* r_timeout;   /* timeout on read                          */
-    const STimeout* w_timeout;   /* timeout on write                         */
-    const STimeout* c_timeout;   /* timeout on close                         */
+       (to use connector-specific one), or points to "[oo|rr|ww|cc]_timeout";
+       timeouts are "as is" (may be not normalized) for performance reasons  */
+    const STimeout*  o_timeout;  /* timeout on open                          */
+    const STimeout*  r_timeout;  /* timeout on read                          */
+    const STimeout*  w_timeout;  /* timeout on write                         */
+    const STimeout*  c_timeout;  /* timeout on close                         */
     STimeout        oo_timeout;  /* storage for "o_timeout"                  */
     STimeout        rr_timeout;  /* storage for "r_timeout"                  */
     STimeout        ww_timeout;  /* storage for "w_timeout"                  */
