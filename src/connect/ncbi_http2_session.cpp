@@ -659,7 +659,7 @@ void CHttpSessionImpl2::StartRequest(CHttpSession_Base::EProtocol protocol, CHtt
     unique_ptr<IReaderWriter> rw(new SH2S_ReaderWriter(move(update_response), move(response_queue), move(request)));
     auto stream = make_shared<CRWStream>(rw.release(), 0, nullptr, CRWStreambuf::fOwnAll);
 
-    req.x_InitConnection2(move(stream), /* TODO: */ false);
+    req.x_InitConnection2(move(stream));
 }
 
 bool CHttpSessionImpl2::Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol)

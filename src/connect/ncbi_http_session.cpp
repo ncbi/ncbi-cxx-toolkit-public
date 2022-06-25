@@ -579,7 +579,6 @@ CHttpRequest::CHttpRequest(CHttpSession_Base& session,
                            const CHttpParam& param)
     : m_Session(&session),
       m_Url(url),
-      m_IsService(url.IsService()),
       m_Method(method),
       m_Headers(new CHttpHeaders),
       m_AdjustUrl(0),
@@ -867,15 +866,16 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     x_SetProxy(*net_info);
 
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url));
+    m_Response->m_AdjustData.m_Request = this;
     if ( !m_Url.IsService() ) {
         // Connect using HTTP.
-        m_IsService = false;
+        m_Response->m_AdjustData.m_IsService = false;
         m_Stream.reset(new CConn_HttpStream(
             m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
             net_info.get(),
             headers.c_str(),
             sx_ParseHeader,
-            this,
+            &m_Response->m_AdjustData,
             sx_Adjust,
             0, // cleanup
             // Always set AdjustOnRedirect flag - to send correct cookies.
@@ -883,16 +883,16 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     }
     else {
         // Try to resolve service name.
-        m_IsService = true;
+        m_Response->m_AdjustData.m_IsService = true;
         SSERVICE_Extra x_extra;
         memset(&x_extra, 0, sizeof(x_extra));
-        x_extra.data = this;
+        x_extra.data = &m_Response->m_AdjustData;
         x_extra.adjust = sx_Adjust;
         x_extra.parse_header = sx_ParseHeader;
         x_extra.flags = m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect;
         ConnNetInfo_OverrideUserHeader(net_info.get(), headers.c_str());
         m_Stream.reset(new CConn_ServiceStream(
-            m_Url.GetService(), // Ignore other fields now, set them in sx_Adjust
+            m_Url.GetService(), // Ignore other fields for now, set them in sx_Adjust (called with failure_count == -1 on open)
             fSERV_Http,
             net_info.get(),
             &x_extra));
@@ -901,10 +901,9 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 }
 
 
-void CHttpRequest::x_InitConnection2(shared_ptr<iostream> stream, bool is_service)
+void CHttpRequest::x_InitConnection2(shared_ptr<iostream> stream)
 {
     m_Stream = move(stream);
-    m_IsService = is_service;
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url, m_Stream));
 }
 
@@ -928,84 +927,120 @@ void CHttpRequest::x_AddCookieHeader(const CUrl& url, bool initial)
 
 
 // CConn_HttpStream callback for header parsing.
-// user_data must contain CHttpRequest*.
+// user_data must contain CHttpResponse::SAdjustData*.
+// See the explanation for callback sequence in sx_Adjust.
 EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
                                                void*       user_data,
                                                int         server_error)
 {
-    if ( !user_data ) return eHTTP_HeaderContinue;
-    CHttpRequest* req = reinterpret_cast<CHttpRequest*>(user_data);
-    _ASSERT(req);
-    CRef<CHttpResponse> resp = req->m_Response;
-    // Response can be NULL, e.g. if an exception was thrown while
-    // initializing the request.
-    if ( resp ) {
-        // Prevent collecting multiple headers on redirects.
-        CHttpHeaders::THeaders headers;
-        s_ParseHttpHeader(http_header, headers);
-        
-        // Parse status code/text.
-        const char* eol = strstr(http_header, HTTP_EOL);
-        string status = eol ? string(http_header, eol - http_header) : http_header;
-        int status_code = 0;
-        string status_text;
-        if ( NStr::StartsWith(status, "HTTP/") ) {
-            int text_pos = 0;
-            sscanf(status.c_str(), "%*s %d %n", &status_code, &text_pos);
-            if (text_pos > 0) {
-                status_text = status.substr(text_pos);
-            }
-        }
+    if ( !user_data ) return eHTTP_HeaderError;
 
-        resp->x_Update(headers, status_code, status_text);
+    CHttpResponse::SAdjustData* adj
+        = reinterpret_cast<CHttpResponse::SAdjustData*>(user_data);
+
+    CHttpRequest*       req  = adj->m_Request;
+    CRef<CHttpResponse> resp = req->m_Response;
+    _ASSERT(resp  &&  adj == &resp->m_AdjustData);
+
+    // Prevent collecting multiple headers on redirects.
+    CHttpHeaders::THeaders headers;
+    s_ParseHttpHeader(http_header, headers);
+
+    // Parse status code/text.
+    const char* eol = strstr(http_header, HTTP_EOL);
+    string status = eol ? string(http_header, eol - http_header) : http_header;
+    int status_code = 0;
+    string status_text;
+    if ( NStr::StartsWith(status, "HTTP/") ) {
+        int text_pos = 0;
+        sscanf(status.c_str(), "%*s %d %n", &status_code, &text_pos);
+        _ASSERT(!server_error  ||  server_error == status_code);
+        if (text_pos > 0) {
+            status_text = status.substr(text_pos);
+        }
     }
+
+    resp->x_Update(headers, status_code, status_text);
+
     // Always read response body - normal content or error.
     return eHTTP_HeaderContinue;
 }
 
 
 // CConn_HttpStream callback for handling retries and redirects.
-// user_data must contain CHttpRequest*.
+// Reset and re-fill headers on redirects (failure_count == 0).
+// user_data must contain CHttpResponse::SAdjustData*.
+//
+// For HTTP streams, the callbacks are coming in the follwing order:
+//   1. while establishing a connection with the speficied HTTP server (or
+//      through the chain of redirected-to server(s), therein) sx_ParseHeader
+//      is called for every HTTP response received from the tried HTTP
+//      server(s);  and sx_Adjust gets called for every redirect (with
+//      failure_count == 0) or HTTP request failure (failure_count contains a
+//      positive connection attempt number);
+//   2. *after* the entire HTTP response has been read out, sx_Adjust is called
+//      again with failure_count == -1 to request the next URL.
+//      NOTE that by this time CHttpRequest* may no longer be valid.
+// For service streams:
+//   1. sx_Adjust is called *before* establishing HTTP connection with
+//      failure_count == -1 to request SConnNetInfo's setup for the 1st found
+//      HTTP server;  then sx_ParseHeader and sx_Adjust are called the same way
+//      as for the HTTP streams above (in 1.) in the process of establishing
+//      the HTTP session;  however, if the negotiation fails, sx_Adjust may be
+//      called for the next HTTP server for the service (w/failure_count == -1)
+//      etc -- this process repeats until a satisfactory conneciton is made;
+//   2. once the HTTP data exchange has occured, sx_Adjust is NOT called at the
+//      end of the HTTP data stream.
+// Note that adj->m_Request can only be considered valid at the either of the
+// steps 1 above because these actions get performed in the valid CHttpRequest
+// context, namely from CHttpRequest::Execute().  Once that call is finished,
+// CHttpRequest may no longer be considered valid, and no dereference of that
+// pointer should be allowed.
+//
 int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
                                     void*         user_data,
                                     unsigned int  failure_count)
 {
-    if ( !user_data )
-        return  1;
-    // Reset and re-fill headers on redirects (failure_count == 0).
-    CHttpRequest* req = reinterpret_cast<CHttpRequest*>(user_data);
-    _ASSERT(req);
-    if (failure_count == (unsigned int)(-1)  &&  !req->m_IsService)
+    if ( !user_data ) return 0; // error, stop
+
+    CHttpResponse::SAdjustData* adj
+        = reinterpret_cast<CHttpResponse::SAdjustData*>(user_data);
+    if (failure_count == (unsigned int)(-1)  &&  !adj->m_IsService)
         return -1; // no new URL
+
+    CHttpRequest*       req  = adj->m_Request;
     CRef<CHttpResponse> resp = req->m_Response;
-    _ASSERT(resp);
+    _ASSERT(resp  &&  adj == &resp->m_AdjustData);
 
-    // On the following errors do not retry, abort the request.
-    switch ( resp->GetStatusCode() ) {
-    case 400:
-    case 403:
-    case 404:
-    case 405:
-    case 406:
-    case 410:
-        return 0; // false
-    default:
-        break;
+    if (failure_count  &&  failure_count != (unsigned int)(-1)) {
+        // On the following errors do not retry, abort the request.
+        switch ( resp->GetStatusCode() ) {
+        case 400:
+        case 403:
+        case 404:
+        case 405:
+        case 406:
+        case 410:
+            return 0; // stop
+        default:
+            break;
+        }
+        return 1; // ok to retry
     }
+    _ASSERT(!failure_count/*redirect*/  ||  adj->m_IsService);
 
-    // Update location if it's different from the original url.
+    // Update location if it's different from the original URL.
     char* loc = ConnNetInfo_URL(net_info);
     if (loc) {
         CUrl url(loc);
-        if (failure_count == (unsigned int)(-1)  &&  req->m_IsService) {
+        if (failure_count/*== (unsigned int)(-1)  &&  adj->m_IsService*/) {
             bool adjust;
-            if (req->m_AdjustUrl) {
+            if (req->m_AdjustUrl)
                 adjust = req->m_AdjustUrl->AdjustUrl(url);
-            }
             else {
                 url.Adjust(req->m_Url, CUrl::fScheme_Replace |
-                                       CUrl::fPath_Append    |
-                                       CUrl::fArgs_Merge);
+                           CUrl::fPath_Append    |
+                           CUrl::fArgs_Merge);
                 adjust = true;
             }
             if ( adjust ) {
@@ -1018,12 +1053,12 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
         resp->m_Location.SetUrl(loc);
         free(loc);
     }
-    req->x_SetProxy(*net_info);
+
     // Discard old cookies, add those for the new location.
     req->x_AddCookieHeader(resp->m_Location, false);
     string headers = req->m_Headers->GetHttpHeader();
     ConnNetInfo_OverrideUserHeader(net_info, headers.c_str());
-    return 1; // true
+    return 1; // proceed
 }
 
 
