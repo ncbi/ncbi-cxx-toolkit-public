@@ -332,9 +332,6 @@ CHttpResponse g_HttpPut(const CUrl&         url,
                         const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
                         THttpRetries        retries = null);
 
-class CHttpSession_Base;
-
-
 /// Interface for custom form data providers.
 class NCBI_XCONNECT_EXPORT CFormDataProvider_Base : public CObject
 {
@@ -468,6 +465,10 @@ public:
 };
 
 
+class CHttpSession_Base;
+class CHttpRequest;
+
+
 /// HTTP response
 class NCBI_XCONNECT_EXPORT CHttpResponse : public CObject
 {
@@ -520,6 +521,12 @@ private:
     CRef<CHttpHeaders>      m_Headers;
     int                     m_StatusCode;
     string                  m_StatusText;
+
+    // Interface for the HTTP connector's adjust callback
+    struct SAdjustData {
+        CHttpRequest*       m_Request;  // NB: don't use after request sent!
+        bool                m_IsService;
+    }                       m_AdjustData;
 };
 
 
@@ -650,7 +657,7 @@ private:
 
     // Open connection, initialize response.
     void x_InitConnection(bool use_form_data);
-    void x_InitConnection2(shared_ptr<iostream> stream, bool is_service);
+    void x_InitConnection2(shared_ptr<iostream> stream);
 
     bool x_CanSendData(void) const;
 
@@ -674,27 +681,26 @@ private:
                          unsigned int  failure_count);
 
     CRef<CHttpSession_Base> m_Session;
-    CUrl                m_Url;
-    bool                m_IsService;
-    EReqMethod          m_Method;
-    CRef<CHttpHeaders>  m_Headers;
-    CRef<CHttpFormData> m_FormData;
-    shared_ptr<iostream> m_Stream;
-    CRef<CHttpResponse> m_Response; // current response or null
-    CTimeout            m_Timeout;
-    THttpRetries        m_Retries;
-    CTimeout            m_Deadline;
-    ESwitch             m_RetryProcessing;
+    CUrl                    m_Url;
+    EReqMethod              m_Method;
+    CRef<CHttpHeaders>      m_Headers;
+    CRef<CHttpFormData>     m_FormData;
+    shared_ptr<iostream>    m_Stream;
+    CRef<CHttpResponse>     m_Response; // current response or null
+    CTimeout                m_Timeout;
+    THttpRetries            m_Retries;
+    CTimeout                m_Deadline;
+    ESwitch                 m_RetryProcessing;
     CRef<CAdjustUrlCallback_Base> m_AdjustUrl;
     // Store credentials so that they are not destroyed while request is being executed.
     shared_ptr<CTlsCertCredentials> m_Credentials;
-    CHttpProxy          m_Proxy;
+    CHttpProxy              m_Proxy;
 };
 
 
 /// HTTP session class, holding common data for multiple requests.
 class NCBI_XCONNECT_EXPORT CHttpSession_Base : public CObject,
-                                          virtual protected CConnIniter
+                                               virtual protected CConnIniter
 {
 public:
     /// Supported request methods, proxy for EReqMethod.
