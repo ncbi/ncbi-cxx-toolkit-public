@@ -117,6 +117,9 @@
 #include <stddef.h>
 
 
+#define HTTP_EOL "\r\n"
+
+
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 

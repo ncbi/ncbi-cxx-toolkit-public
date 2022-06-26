@@ -39,7 +39,6 @@
 #include <corelib/stream_utils.hpp>
 #include <cgi/cgi_util.hpp>
 #include <cgi/user_agent.hpp>
-#include <set>
 
 
 /** @addtogroup CGIReqRes
@@ -48,14 +47,13 @@
  */
 
 
-#define HTTP_EOL "\r\n"
-
-
 BEGIN_NCBI_SCOPE
+
 
 class CTime;
 class CCgiSession;
 class CCgiEntryReaderContext;
+
 
 ///////////////////////////////////////////////////////
 ///
