@@ -357,7 +357,7 @@ EIO_Status CSocket::Read(void*          buf,
 
 EIO_Status CSocket::ReadLine(string& str)
 {
-    str.erase();
+    str.clear();
     if ( !m_Socket )
         return eIO_Closed;
     EIO_Status status;
@@ -365,7 +365,7 @@ EIO_Status CSocket::ReadLine(string& str)
     size_t size;
     do {
         status = SOCK_ReadLine(m_Socket, buf, sizeof(buf), &size);
-        if (!size)
+        if ( !size )
             break;
         str.append(buf, size);
     } while (status == eIO_Success  &&  size == sizeof(buf));
