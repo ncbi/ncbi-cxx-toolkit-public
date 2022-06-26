@@ -609,9 +609,9 @@ public:
 
 /// Helper class to fetch HTTP status code and text
 struct SHTTP_StatusData {
-    int         m_Code;
-    CTempString m_Text;
-    string      m_Header;
+    int               m_Code;
+    CTempString       m_Text;
+    string            m_Header;
 
     SHTTP_StatusData(void) : m_Code(0)
     { }
@@ -627,6 +627,35 @@ private:
     SHTTP_StatusData& operator= (const SHTTP_StatusData&);
 };
 
+
+/// Helper base class for HTTP-like streams
+class NCBI_XCONNECT_EXPORT CConn_HttpStream_Base : public CConn_IOStream
+{
+public:
+    /// Get the last seen HTTP status code, if available
+    int               GetStatusCode(void) const {return m_StatusData.m_Code;  }
+
+    /// Get the last seen HTTP status text, if available
+    const CTempString GetStatusText(void) const {return m_StatusData.m_Text;  }
+
+    /// Get the last seen HTTP header text, if available
+    const string&     GetHTTPHeader(void) const {return m_StatusData.m_Header;}
+
+protected:
+    /// @sa
+    ///   CConn_IOStream
+    CConn_HttpStream_Base
+    (const TConnector& connector,
+     const STimeout*   timeout,
+     size_t            buf_size,
+     TConn_Flags       flags = 0)
+        : CConn_IOStream(connector, timeout, buf_size, flags)
+    { }
+
+protected:
+    // HTTP status code & text seen last
+    SHTTP_StatusData  m_StatusData;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -659,7 +688,7 @@ private:
 ///   CConn_IOStream, HTTP_CreateConnector, ConnNetInfo_Create
 ///
 
-class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_IOStream
+class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_HttpStream_Base
 {
 public:
     CConn_HttpStream
@@ -716,17 +745,8 @@ public:
 
     ~CConn_HttpStream();
 
-    /// Get the last seen HTTP status code
-    int               GetStatusCode(void) const {return m_StatusData.m_Code;  }
-
-    /// Get the last seen HTTP status text
-    const CTempString GetStatusText(void) const {return m_StatusData.m_Text;  }
-
-    /// Get the entire HTTP header as received
-    const string&     GetHTTPHeader(void) const {return m_StatusData.m_Header;}
-
     /// Set new URL to hit next
-    void              SetURL(const string& url) { m_URL = url; }
+    void                     SetURL(const string& url) { m_URL = url; }
 
 protected:
     // Chained callbacks and data
@@ -734,9 +754,6 @@ protected:
     FHTTP_Adjust             m_UserAdjust;
     FHTTP_Cleanup            m_UserCleanup;
     FHTTP_ParseHeader        m_UserParseHeader;
-
-    // HTTP status & text seen last
-    SHTTP_StatusData         m_StatusData;
 
     // URL to hit next
     string                   m_URL;
@@ -764,6 +781,9 @@ private:
 /// otherwise created by using the service name as a registry section to obtain
 /// the information from (details: <connect/ncbi_connutil.h>).
 ///
+/// In case when the service is implemented over underlying HTTP (which is NOT
+/// generally guaranteed), the HTTP status data become available.
+///
 /// Provided "timeout" is set at the connection level, and if different from
 /// kDefaultTimeout, it overrides the value supplied by an underlying connector
 /// (the latter value is kept in SConnNetInfo::timeout).
@@ -772,7 +792,7 @@ private:
 ///   SERVICE_CreateConnector
 ///
 
-class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
+class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_HttpStream_Base
 {
 public:
     CConn_ServiceStream
@@ -793,21 +813,9 @@ public:
 
     ~CConn_ServiceStream();
 
-    /// Get the last seen HTTP status code, if available
-    int               GetStatusCode(void) const {return m_StatusData.m_Code;}
-
-    /// Get the last seen HTTP status text, if available
-    const CTempString GetStatusText(void) const {return m_StatusData.m_Text;}
-
-    /// Get the last seen HTTP status text, if available
-    const string&     GetHTTPHeader(void) const {return m_StatusData.m_Header;}
-
 protected:
     // Chained callbacks and data
     SSERVICE_Extra           m_Extra;
-
-    // HTTP status & text seen last
-    SHTTP_StatusData         m_StatusData;
 
 private:
     // Callback interceptors
@@ -992,7 +1000,7 @@ public:
     /// Abort any command in progress, read and discard all input data, and
     /// clear stream error state when successful (eIO_Success returns).
     /// @note
-    ///   The call empties both the stream and the underlying CONN.
+    ///   The call empties out both the stream and the underlying CONN.
     virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
 
 protected:
