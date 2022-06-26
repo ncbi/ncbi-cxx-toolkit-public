@@ -486,17 +486,18 @@ CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
 
 EHTTP_HeaderParse SHTTP_StatusData::Parse(const char* header)
 {
-    int c, n;
-    m_Code = 0;
-    m_Text.clear();
-    m_Header = header;
-    if (sscanf(header, "%*s %u%n", &c, &n) < 1)
-        return eHTTP_HeaderError;
-    const char* str = m_Header.c_str() + n;
-    str += strspn(str, " \t");
-    const char* eol = strchr(str, '\n');
+    Clear();
+    const char* eol = strstr(header, HTTP_EOL);
     if (!eol)
-        eol = str + strlen(str);
+        return eHTTP_HeaderError;
+    int c, n;
+    if (sscanf(header, "HTTP/%*[0-9.] %u%n", &c, &n) < 1  ||  header + n > eol)
+        return eHTTP_HeaderError;
+    m_Header = header;
+    const char* str = m_Header.c_str();
+    eol = str + (size_t)(eol - header);
+    str += n;
+    str += strspn(str, " \t");
     while (eol > str) {
         if (!isspace((unsigned char) eol[-1]))
             break;
@@ -611,23 +612,23 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                    THTTP_Flags     flgs,
                                    const STimeout* timeout,
                                    size_t          buf_size)
-    : CConn_IOStream(s_HttpConnectorBuilder(0,
-                                            eReqMethod_Any,
-                                            0,
-                                            host.c_str(),
-                                            port,
-                                            path.c_str(),
-                                            args.c_str(),
-                                            user_header.c_str(),
-                                            this,
-                                            sx_Adjust,
-                                            0/*x_cleanup*/,
-                                            sx_ParseHeader,
-                                            flgs,
-                                            timeout,
-                                            &m_UserData,
-                                            &m_UserCleanup),
-                     timeout, buf_size),
+    : CConn_HttpStream_Base(s_HttpConnectorBuilder(0,
+                                                   eReqMethod_Any,
+                                                   0,
+                                                   host.c_str(),
+                                                   port,
+                                                   path.c_str(),
+                                                   args.c_str(),
+                                                   user_header.c_str(),
+                                                   this,
+                                                   sx_Adjust,
+                                                   0/*x_cleanup*/,
+                                                   sx_ParseHeader,
+                                                   flgs,
+                                                   timeout,
+                                                   &m_UserData,
+                                                   &m_UserCleanup),
+                            timeout, buf_size),
       m_UserAdjust(0), m_UserParseHeader(0)
 {
     return;
@@ -638,23 +639,23 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                    THTTP_Flags     flgs,
                                    const STimeout* timeout,
                                    size_t          buf_size)
-    : CConn_IOStream(s_HttpConnectorBuilder(0,
-                                            eReqMethod_Any,
-                                            url.c_str(),
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            this,
-                                            sx_Adjust,
-                                            0/*x_cleanup*/,
-                                            sx_ParseHeader,
-                                            flgs,
-                                            timeout,
-                                            &m_UserData,
-                                            &m_UserCleanup),
-                     timeout, buf_size),
+    : CConn_HttpStream_Base(s_HttpConnectorBuilder(0,
+                                                   eReqMethod_Any,
+                                                   url.c_str(),
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   this,
+                                                   sx_Adjust,
+                                                   0/*x_cleanup*/,
+                                                   sx_ParseHeader,
+                                                   flgs,
+                                                   timeout,
+                                                   &m_UserData,
+                                                   &m_UserCleanup),
+                            timeout, buf_size),
       m_UserAdjust(0), m_UserParseHeader(0)
 {
     return;
@@ -667,24 +668,24 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                    THTTP_Flags     flgs,
                                    const STimeout* timeout,
                                    size_t          buf_size)
-    : CConn_IOStream(s_HttpConnectorBuilder(0,
-                                            method,
-                                            url.c_str(),
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            user_header.c_str(),
-                                            this,
-                                            sx_Adjust,
-                                            0/*x_cleanup*/,
-                                            sx_ParseHeader,
-                                            flgs,
-                                            timeout,
-                                            &m_UserData,
-                                            &m_UserCleanup),
-                     timeout, buf_size),
-      m_UserAdjust(0),  m_UserParseHeader(0)
+    : CConn_HttpStream_Base(s_HttpConnectorBuilder(0,
+                                                   method,
+                                                   url.c_str(),
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   user_header.c_str(),
+                                                   this,
+                                                   sx_Adjust,
+                                                   0/*x_cleanup*/,
+                                                   sx_ParseHeader,
+                                                   flgs,
+                                                   timeout,
+                                                   &m_UserData,
+                                                   &m_UserCleanup),
+                            timeout, buf_size),
+      m_UserAdjust(0), m_UserParseHeader(0)
 {
     return;
 }
@@ -700,25 +701,25 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                    THTTP_Flags         flgs,
                                    const STimeout*     timeout,
                                    size_t              buf_size)
-    : CConn_IOStream(s_HttpConnectorBuilder(net_info,
-                                            eReqMethod_Any,
-                                            url.c_str(),
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            user_header.c_str(),
-                                            this,
-                                                      sx_Adjust,
-                                            cleanup ? sx_Cleanup : 0,
-                                            sx_ParseHeader,
-                                            flgs,
-                                            timeout,
-                                            &m_UserData,
-                                            &m_UserCleanup,
-                                            user_data,
-                                            cleanup),
-                     timeout, buf_size),
+    : CConn_HttpStream_Base(s_HttpConnectorBuilder(net_info,
+                                                   eReqMethod_Any,
+                                                   url.c_str(),
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   user_header.c_str(),
+                                                   this,
+                                                   sx_Adjust,
+                                                   cleanup ? sx_Cleanup : 0,
+                                                   sx_ParseHeader,
+                                                   flgs,
+                                                   timeout,
+                                                   &m_UserData,
+                                                   &m_UserCleanup,
+                                                   user_data,
+                                                   cleanup),
+                            timeout, buf_size),
       m_UserAdjust(adjust), m_UserParseHeader(parse_header)
 {
     return;
@@ -734,25 +735,25 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                    THTTP_Flags         flgs,
                                    const STimeout*     timeout,
                                    size_t              buf_size)
-    : CConn_IOStream(s_HttpConnectorBuilder(net_info,
-                                            eReqMethod_Any,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            user_header.c_str(),
-                                            this,
-                                                      sx_Adjust,
-                                            cleanup ? sx_Cleanup : 0,
-                                            sx_ParseHeader,
-                                            flgs,
-                                            timeout,
-                                            &m_UserData,
-                                            &m_UserCleanup,
-                                            user_data,
-                                            cleanup),
-                     timeout, buf_size),
+    : CConn_HttpStream_Base(s_HttpConnectorBuilder(net_info,
+                                                   eReqMethod_Any,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   0,
+                                                   user_header.c_str(),
+                                                   this,
+                                                             sx_Adjust,
+                                                   cleanup ? sx_Cleanup : 0,
+                                                   sx_ParseHeader,
+                                                   flgs,
+                                                   timeout,
+                                                   &m_UserData,
+                                                   &m_UserCleanup,
+                                                   user_data,
+                                                   cleanup),
+                            timeout, buf_size),
       m_UserAdjust(adjust), m_UserParseHeader(parse_header)
 {
     return;
@@ -782,7 +783,7 @@ EHTTP_HeaderParse CConn_HttpStream::sx_ParseHeader(const char* header,
     }
     NCBI_CATCH_ALL("CConn_HttpStream::sx_ParseHeader()");
     if (http->exceptions())
-        throw IOS_BASE::failure("CConn_HttpStream::sx_ParseHeader()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_HttpStream::sx_ParseHeader()");
     return eHTTP_HeaderError;
 }
 
@@ -799,7 +800,7 @@ int CConn_HttpStream::sx_Adjust(SConnNetInfo* net_info,
             http->m_StatusData.Clear();
             if (!ConnNetInfo_ParseURL(net_info, http->m_URL.c_str()))
                 return 0/*failure*/;
-            http->m_URL.erase();
+            http->m_URL.clear();
             modified = true;
         } else
             modified = false;
@@ -814,7 +815,7 @@ int CConn_HttpStream::sx_Adjust(SConnNetInfo* net_info,
     }
     NCBI_CATCH_ALL("CConn_HttpStream::sx_Adjust()");
     if (http->exceptions())
-        throw IOS_BASE::failure("CConn_HttpStream::sx_Adjust()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_HttpStream::sx_Adjust()");
     return 0/*error*/;
 }
 
@@ -827,24 +828,24 @@ void CConn_HttpStream::sx_Cleanup(void* data)
     }
     NCBI_CATCH_ALL("CConn_HttpStream::sx_Cleanup()");
     if (http->exceptions())
-        throw IOS_BASE::failure("CConn_HttpStream::sx_Cleanup()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_HttpStream::sx_Cleanup()");
 }
 
 
 static CConn_IOStream::TConnector
-s_ServiceConnectorBuilder(const char*                          service,
-                          TSERV_Type                           types,
-                          const SConnNetInfo*                  net_info,
-                          const char*                          user_header,
-                          const SSERVICE_Extra*                extra,
-                          void*                                x_data,
-                          SSERVICE_Extra*                      x_extra,
-                          FSERVICE_Reset                       x_reset,
-                          FHTTP_Adjust                         x_adjust,
-                          FSERVICE_Cleanup                     x_cleanup,
-                          FHTTP_ParseHeader                    x_parse_header,
-                          FSERVICE_GetNextInfo                 x_get_next_info,
-                          const STimeout*                      timeout)
+s_ServiceConnectorBuilder(const char*           service,
+                          TSERV_Type            types,
+                          const SConnNetInfo*   net_info,
+                          const char*           user_header,
+                          const SSERVICE_Extra* extra,
+                          void*                 x_data,
+                          SSERVICE_Extra*       x_extra,
+                          FSERVICE_Reset        x_reset,
+                          FHTTP_Adjust          x_adjust,
+                          FSERVICE_Cleanup      x_cleanup,
+                          FHTTP_ParseHeader     x_parse_header,
+                          FSERVICE_GetNextInfo  x_get_next_info,
+                          const STimeout*       timeout)
 {
     AutoPtr<SConnNetInfo> x_net_info(net_info
                                      ? ConnNetInfo_Clone(net_info)
@@ -901,25 +902,25 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                          const SSERVICE_Extra* extra,
                                          const STimeout*       timeout,
                                          size_t                buf_size)
-    : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
-                                               types,
-                                               net_info,
-                                               0, // user_header
-                                               extra,
-                                               this,
-                                               &m_Extra,
-                                               extra  &&  extra->reset
-                                               ? sx_Reset       : 0,
-                                               extra  &&  extra->adjust
-                                               ? sx_Adjust      : 0,
-                                               extra  &&  extra->cleanup
-                                               ? sx_Cleanup     : 0,
-                                               sx_ParseHeader,
-                                               extra  &&  extra->get_next_info
-                                               ? sx_GetNextInfo : 0,
-                                               timeout),
-                     timeout, buf_size,
-                     types & fSERV_DelayOpen ? fConn_DelayOpen : 0)
+    : CConn_HttpStream_Base(s_ServiceConnectorBuilder(service.c_str(),
+                                                      types,
+                                                      net_info,
+                                                      0, // user_header
+                                                      extra,
+                                                      this,
+                                                      &m_Extra,
+                                                      extra  &&  extra->reset
+                                                      ? sx_Reset       : 0,
+                                                      extra  &&  extra->adjust
+                                                      ? sx_Adjust      : 0,
+                                                      extra  &&  extra->cleanup
+                                                      ? sx_Cleanup     : 0,
+                                                      sx_ParseHeader,
+                                                      extra  &&  extra->get_next_info
+                                                      ? sx_GetNextInfo : 0,
+                                                      timeout),
+                            timeout, buf_size,
+                            types & fSERV_DelayOpen ? fConn_DelayOpen : 0)
 {
     return;
 }
@@ -931,25 +932,25 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                          const SSERVICE_Extra* extra,
                                          const STimeout*       timeout,
                                          size_t                buf_size)
-    : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
-                                               types,
-                                               0, // net_info
-                                               user_header.c_str(),
-                                               extra,
-                                               this,
-                                               &m_Extra,
-                                               extra  &&  extra->reset
-                                               ? sx_Reset       : 0,
-                                               extra  &&  extra->adjust
-                                               ? sx_Adjust      : 0,
-                                               extra  &&  extra->cleanup
-                                               ? sx_Cleanup     : 0,
-                                               sx_ParseHeader,
-                                               extra  &&  extra->get_next_info
-                                               ? sx_GetNextInfo : 0,
-                                               timeout),
-                     timeout, buf_size,
-                     types & fSERV_DelayOpen ? fConn_DelayOpen : 0)
+    : CConn_HttpStream_Base(s_ServiceConnectorBuilder(service.c_str(),
+                                                      types,
+                                                      0, // net_info
+                                                      user_header.c_str(),
+                                                      extra,
+                                                      this,
+                                                      &m_Extra,
+                                                      extra  &&  extra->reset
+                                                      ? sx_Reset       : 0,
+                                                      extra  &&  extra->adjust
+                                                      ? sx_Adjust      : 0,
+                                                      extra  &&  extra->cleanup
+                                                      ? sx_Cleanup     : 0,
+                                                      sx_ParseHeader,
+                                                      extra  &&  extra->get_next_info
+                                                      ? sx_GetNextInfo : 0,
+                                                      timeout),
+                            timeout, buf_size,
+                            types & fSERV_DelayOpen ? fConn_DelayOpen : 0)
 {
     return;
 }
@@ -978,7 +979,7 @@ EHTTP_HeaderParse CConn_ServiceStream::sx_ParseHeader(const char* header,
     }
     NCBI_CATCH_ALL("CConn_ServiceStream::sx_ParseHeader()");
     if (svc->exceptions())
-        throw IOS_BASE::failure("CConn_ServiceStream::sx_ParseHeader()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_ServiceStream::sx_ParseHeader()");
     return eHTTP_HeaderError;
 }
 
@@ -995,7 +996,7 @@ int/*bool*/ CConn_ServiceStream::sx_Adjust(SConnNetInfo* net_info,
     }
     NCBI_CATCH_ALL("CConn_ServiceStream::sx_Adjust()");
     if (svc->exceptions())
-        throw IOS_BASE::failure("CConn_ServiceStream::sx_Adjust()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_ServiceStream::sx_Adjust()");
     return 0/*error*/;
 }
 
@@ -1009,7 +1010,7 @@ const SSERV_Info* CConn_ServiceStream::sx_GetNextInfo(void*     data,
     }
     NCBI_CATCH_ALL("CConn_ServiceStream::sx_GetNextInfo()");
     if (svc->exceptions())
-        throw IOS_BASE::failure("CConn_ServiceStream::sx_GetNextInfo()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_ServiceStream::sx_GetNextInfo()");
     return 0;
 }
 
@@ -1022,7 +1023,7 @@ void CConn_ServiceStream::sx_Reset(void* data)
     }
     NCBI_CATCH_ALL("CConn_ServiceStream::sx_Reset()");
     if (svc->exceptions())
-        throw IOS_BASE::failure("CConn_ServiceStream::sx_Reset()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_ServiceStream::sx_Reset()");
 }
 
 
@@ -1034,7 +1035,7 @@ void CConn_ServiceStream::sx_Cleanup(void* data)
     }
     NCBI_CATCH_ALL("CConn_ServiceStream::sx_Cleanup()");
     if (svc->exceptions())
-        throw IOS_BASE::failure("CConn_ServiceStream::sx_Cleanup()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_ServiceStream::sx_Cleanup()");
 }
 
 
@@ -1329,7 +1330,7 @@ EIO_Status CConn_FtpStream::sx_FtpCallback(void*       data,
     }
     NCBI_CATCH_ALL("CConn_FtpStream::sx_FtpCallback()");
     if (ftp->exceptions())
-        throw IOS_BASE::failure("CConn_FtpStream::sx_FtpCallback()");
+        THROW1_TRACE(IOS_BASE::failure, "CConn_FtpStream::sx_FtpCallback()");
     return eIO_Unknown;
 }
 
@@ -1338,14 +1339,17 @@ EIO_Status CConn_FtpStream::Drain(const STimeout* timeout)
 {
     const STimeout* r_timeout = kInfiniteTimeout/*0*/;
     const STimeout* w_timeout = kInfiniteTimeout/*0*/;
-    static char sink[16384]; /*NB:shared sink*/
+    static char sink[16384]; /*NB: shared sink*/
     CONN conn = GetCONN();
+    size_t n;
     if (conn) {
-        size_t n;
         r_timeout = CONN_GetTimeout(conn, eIO_Read);
         w_timeout = CONN_GetTimeout(conn, eIO_Write);
-        _VERIFY(SetTimeout(eIO_Read,  timeout) == eIO_Success);
-        _VERIFY(SetTimeout(eIO_Write, timeout) == eIO_Success);
+        _VERIFY(CONN_SetTimeout(conn, eIO_ReadWrite, timeout) == eIO_Success);
+    }
+    clear();
+    flush();
+    if (conn) {
         // Cause any upload-in-progress to abort
         CONN_Read(conn, sink, sizeof(sink), &n, eIO_ReadPlain);
         // Cause any command-in-progress to abort
@@ -1353,12 +1357,11 @@ EIO_Status CConn_FtpStream::Drain(const STimeout* timeout)
     }
     clear();
     while (read(sink, sizeof(sink)))
-        ;
+        continue;
     if (!conn)
         return eIO_Closed;
     EIO_Status status;
     do {
-        size_t n;
         status = CONN_Read(conn, sink, sizeof(sink), &n, eIO_ReadPersist);
     } while (status == eIO_Success);
     _VERIFY(CONN_SetTimeout(conn, eIO_Read,  r_timeout) == eIO_Success);
