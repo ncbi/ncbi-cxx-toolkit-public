@@ -205,7 +205,7 @@ EIO_Status CConn_IOStream::SetCanceledCallback(const ICanceled* canceled)
         SCONN_Callback cb;
         m_Canceled = canceled;
         memset(&cb, 0, sizeof(cb));
-        cb.func = (FCONN_Callback) x_IsCanceled;
+        cb.func = sx_IsCanceled;
         cb.data = this;
         CONN_SetCallback(conn, eCONN_OnOpen,  &cb,      isset ? 0 : &m_CB[0]);
         CONN_SetCallback(conn, eCONN_OnRead,  &cb,      isset ? 0 : &m_CB[1]);
@@ -223,9 +223,9 @@ EIO_Status CConn_IOStream::SetCanceledCallback(const ICanceled* canceled)
 }
 
 
-EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
-                                        TCONN_Callback type,
-                                        void*          data)
+EIO_Status CConn_IOStream::sx_IsCanceled(CONN           conn,
+                                         TCONN_Callback type,
+                                         void*          data)
 {
     _ASSERT(conn  &&  data);
     CConn_IOStream* io = reinterpret_cast<CConn_IOStream*>(data);
@@ -411,7 +411,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
             AutoPtr<SConnNetInfo> x_net_info(ConnNetInfo_Clone(net_info));
             if (x_net_info.get()) {
                 // NB: This is only for logging! (so no throw on NULL)
-                // Manual cleanup of most fields req'd
+                // Manual cleanup of most fields req'd :-/
                 x_net_info->scheme = eURL_Unspec;
                 x_net_info->req_method = eReqMethod_Any;
                 x_net_info->external = 0;
@@ -824,11 +824,9 @@ void CConn_HttpStream::sx_Cleanup(void* data)
 {
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
     try {
-        return http->m_UserCleanup(http->m_UserData);
+        http->m_UserCleanup(http->m_UserData);
     }
     NCBI_CATCH_ALL("CConn_HttpStream::sx_Cleanup()");
-    if (http->exceptions())
-        THROW1_TRACE(IOS_BASE::failure, "CConn_HttpStream::sx_Cleanup()");
 }
 
 
@@ -1031,11 +1029,9 @@ void CConn_ServiceStream::sx_Cleanup(void* data)
 {
     CConn_ServiceStream* svc = reinterpret_cast<CConn_ServiceStream*>(data);
     try {
-        return svc->m_Extra.cleanup(svc->m_Extra.data);
+        svc->m_Extra.cleanup(svc->m_Extra.data);
     }
     NCBI_CATCH_ALL("CConn_ServiceStream::sx_Cleanup()");
-    if (svc->exceptions())
-        THROW1_TRACE(IOS_BASE::failure, "CConn_ServiceStream::sx_Cleanup()");
 }
 
 
