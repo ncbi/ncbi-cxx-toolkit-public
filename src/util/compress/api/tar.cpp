@@ -1397,7 +1397,7 @@ void CTar::x_Init(void)
 
 bool CTar::x_Flush(bool no_throw)
 {
-    m_Current.m_Name.erase();
+    m_Current.m_Name.clear();
     if (m_BufferPos == m_BufferSize) {
         m_Bad = true;  // In case of unhandled exception(s)
     }
@@ -1533,7 +1533,7 @@ void CTar::x_Open(EAction action)
                 m_Modified = false;
             }
         }
-        m_Current.m_Name.erase();
+        m_Current.m_Name.clear();
         if (m_Bad || (m_Stream.rdstate() & ~NcbiEofbit) || !m_Stream.rdbuf()) {
             TAR_THROW(this, eOpen,
                       "Archive I/O stream is in bad state");
@@ -1560,7 +1560,7 @@ void CTar::x_Open(EAction action)
         if (action != eAppend  &&  action != eCreate/*mode == eWO*/) {
             x_Flush();
         } else {
-            m_Current.m_Name.erase();
+            m_Current.m_Name.clear();
         }
         if (mode == eWO  ||  m_OpenMode < mode) {
             // Need to (re-)open the archive file
@@ -2858,7 +2858,7 @@ void CTar::x_Backspace(EAction action)
 {
     _ASSERT(SIZE_OF(m_ZeroBlockCount) <= m_StreamPos);
     _ASSERT(!OFFSET_OF(m_StreamPos));
-    m_Current.m_Name.erase();
+    m_Current.m_Name.clear();
     if (!m_ZeroBlockCount) {
         return;
     }
@@ -3070,22 +3070,22 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         xinfo.m_HeaderSize = 0;
         if (!xinfo.GetName().empty()) {
             xinfo.m_Name.swap(m_Current.m_Name);
-            xinfo.m_Name.erase();
+            xinfo.m_Name.clear();
         }
         if (!xinfo.GetLinkName().empty()) {
             xinfo.m_LinkName.swap(m_Current.m_LinkName);
-            xinfo.m_LinkName.erase();
+            xinfo.m_LinkName.clear();
         }
         TPAXBits parsed;
         if (xinfo.GetType() == CTarEntryInfo::ePAXHeader) {
             parsed = (TPAXBits) xinfo.m_Stat.orig.st_mode;
             if (!xinfo.GetUserName().empty()) {
                 xinfo.m_UserName.swap(m_Current.m_UserName);
-                xinfo.m_UserName.erase();
+                xinfo.m_UserName.clear();
             }
             if (!xinfo.GetGroupName().empty()) {
                 xinfo.m_GroupName.swap(m_Current.m_GroupName);
-                xinfo.m_GroupName.erase();
+                xinfo.m_GroupName.clear();
             }
             if (parsed & fPAXMtime) {
                 m_Current.m_Stat.orig.st_mtime = xinfo.m_Stat.orig.st_mtime;
@@ -4182,10 +4182,10 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                    follow_links, &uid, &gid);
 #ifdef NCBI_OS_UNIX
     if (NStr::UIntToString(uid) == m_Current.GetUserName()) {
-        m_Current.m_UserName.erase();
+        m_Current.m_UserName.clear();
     }
     if (NStr::UIntToString(gid) == m_Current.GetGroupName()) {
-        m_Current.m_GroupName.erase();
+        m_Current.m_GroupName.clear();
     }
 #endif //NCBI_OS_UNIX
 #ifdef NCBI_OS_MSWIN
