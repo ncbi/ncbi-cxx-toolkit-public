@@ -339,12 +339,12 @@ protected:
 
 private:
     CConn_Streambuf*      m_CSb;
+    CSocket               m_Socket;
 
     // Cancellation
     SCONN_Callback        m_CB[4];
-    CSocket               m_Socket;
     CConstIRef<ICanceled> m_Canceled;
-    static EIO_Status x_IsCanceled(CONN conn, TCONN_Callback type, void* data);
+    static EIO_Status  sx_IsCanceled(CONN conn,TCONN_Callback type,void* data);
 
 private:
     // Disable copy constructor and assignment
