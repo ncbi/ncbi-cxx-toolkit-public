@@ -47,19 +47,15 @@
 BEGIN_NCBI_SCOPE
 
 
-// Forward declarations for shortcut functions.
-class CHttpResponse;
-class CTlsCertCredentials;
-
 // Default retries value.
 struct SGetHttpDefaultRetries
 {
     unsigned short operator()(void) const;
 };
 
-
 /// Nullable retries for CHttpRequest
 typedef CNullable<unsigned short, SGetHttpDefaultRetries> THttpRetries;
+
 
 class NCBI_XCONNECT_EXPORT CHttpHeaders : public CObject
 {
@@ -152,8 +148,8 @@ public:
     virtual ~CHttpHeaders(void) {}
 
 private:
-    friend class CHttpResponse;
     friend class CHttpRequest;
+    friend class CHttpResponse;
 
     // Prohibit copying headers.
     CHttpHeaders(const CHttpHeaders&);
@@ -206,6 +202,10 @@ private:
     string         m_User;
     string         m_Password;
 };
+
+
+class CHttpResponse;
+class CTlsCertCredentials;
 
 
 /// CHttpSession and CHttpRequest parameters.
@@ -331,6 +331,7 @@ CHttpResponse g_HttpPut(const CUrl&         url,
                         CTempString         content_type = CTempString(),
                         const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
                         THttpRetries        retries = null);
+
 
 /// Interface for custom form data providers.
 class NCBI_XCONNECT_EXPORT CFormDataProvider_Base : public CObject
@@ -465,8 +466,8 @@ public:
 };
 
 
-class CHttpSession_Base;
 class CHttpRequest;
+class CHttpSession_Base;
 
 
 /// HTTP response
