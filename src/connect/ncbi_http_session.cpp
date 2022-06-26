@@ -71,7 +71,7 @@ static const char* kReservedHeaders[]  = {
     "NCBI-PHID"
 };
 
-static  CSafeStatic<CHttpHeaders::THeaderValues> kEmptyValues;
+static CSafeStatic<CHttpHeaders::THeaderValues> kEmptyValues;
 static const char kHttpHeaderDelimiter = ':';
 
 
@@ -146,7 +146,7 @@ void CHttpHeaders::ClearAll(void)
 }
 
 
-void s_ParseHttpHeader(const CTempString& from, CHttpHeaders::THeaders& to)
+static void s_ParseHttpHeader(const CTempString& from, CHttpHeaders::THeaders& to)
 {
     list<CTempString> lines;
     NStr::Split(from, HTTP_EOL, lines,
@@ -942,25 +942,17 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
     CRef<CHttpResponse> resp = req->m_Response;
     _ASSERT(resp  &&  adj == &resp->m_AdjustData);
 
+    CConn_HttpStream_Base* http
+        = dynamic_cast<CConn_HttpStream_Base*>(req->m_Stream.get());
+
     // Prevent collecting multiple headers on redirects.
     CHttpHeaders::THeaders headers;
-    s_ParseHttpHeader(http_header, headers);
+    _ASSERT(http_header == http->GetHTTPHeader());
+    s_ParseHttpHeader(http->GetHTTPHeader(), headers);
 
-    // Parse status code/text.
-    const char* eol = strstr(http_header, HTTP_EOL);
-    string status = eol ? string(http_header, eol - http_header) : http_header;
-    int status_code = 0;
-    string status_text;
-    if ( NStr::StartsWith(status, "HTTP/") ) {
-        int text_pos = 0;
-        sscanf(status.c_str(), "%*s %d %n", &status_code, &text_pos);
-        _ASSERT(!server_error  ||  server_error == status_code);
-        if (text_pos > 0) {
-            status_text = status.substr(text_pos);
-        }
-    }
-
-    resp->x_Update(headers, status_code, status_text);
+    // Capture status code/text.
+    _ASSERT(http);
+    resp->x_Update(headers, http->GetStatusCode(), http->GetStatusText());
 
     // Always read response body - normal content or error.
     return eHTTP_HeaderContinue;
@@ -971,8 +963,8 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 // Reset and re-fill headers on redirects (failure_count == 0).
 // user_data must contain CHttpResponse::SAdjustData*.
 //
-// For HTTP streams, the callbacks are coming in the follwing order:
-//   1. while establishing a connection with the speficied HTTP server (or
+// For HTTP streams, the callbacks are coming in the following order:
+//   1. while establishing a connection with the specified HTTP server (or
 //      through the chain of redirected-to server(s), therein) sx_ParseHeader
 //      is called for every HTTP response received from the tried HTTP
 //      server(s);  and sx_Adjust gets called for every redirect (with
@@ -992,10 +984,9 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 //   2. once the HTTP data exchange has occured, sx_Adjust is NOT called at the
 //      end of the HTTP data stream.
 // Note that adj->m_Request can only be considered valid at the either of the
-// steps 1 above because these actions get performed in the valid CHttpRequest
+// steps 1 above because those actions get performed in the valid CHttpRequest
 // context, namely from CHttpRequest::Execute().  Once that call is finished,
-// CHttpRequest may no longer be considered valid, and no dereference of that
-// pointer should be allowed.
+// CHttpRequest may no longer be accessible.
 //
 int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
                                     void*         user_data,
