@@ -464,7 +464,7 @@ bool CHttpFormData::IsEmpty(void) const
 
 
 CHttpResponse::CHttpResponse(CHttpSession_Base&   session,
-                             const CUrl&     url,
+                             const CUrl&          url,
                              shared_ptr<iostream> stream)
     : m_Session(&session),
       m_Url(url),
@@ -482,7 +482,7 @@ CNcbiIstream& CHttpResponse::ContentStream(void) const
     if ( !CanGetContentStream() ) {
         NCBI_THROW(CHttpSessionException, eBadStream,
             string("Content stream is not available for status '") +
-            NStr::NumericToString(m_StatusCode) + " " +
+            NStr::NumericToString(m_StatusCode) + ' ' +
             m_StatusText + "'");
     }
     return *m_Stream;
@@ -495,7 +495,7 @@ CNcbiIstream& CHttpResponse::ErrorStream(void) const
     if ( CanGetContentStream() ) {
         NCBI_THROW(CHttpSessionException, eBadStream,
             string("Error stream is not available for status '") +
-            NStr::NumericToString(m_StatusCode) + " " +
+            NStr::NumericToString(m_StatusCode) + ' ' +
             m_StatusText + "'");
     }
     return *m_Stream;
