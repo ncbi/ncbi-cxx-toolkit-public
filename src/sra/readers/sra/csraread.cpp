@@ -281,6 +281,7 @@ CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
       m_SraIdPart(sra_id_part),
       m_RowSize(0)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     // to avoid conflict with ref seq ids like gnl|SRA|SRR452437/scaffold_1
     // we replace all slashes ('/') with backslashes ('\\')
     replace(m_SraIdPart.begin(), m_SraIdPart.end(), '/', '\\');
@@ -536,6 +537,7 @@ CRef<CCSraDb_Impl::SRefTableCursor> CCSraDb_Impl::Ref(void)
 {
     CRef<SRefTableCursor> curs = m_Ref.Get();
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         curs = new SRefTableCursor(RefTable());
     }
     return curs;
@@ -546,6 +548,7 @@ CRef<CCSraDb_Impl::SAlnTableCursor> CCSraDb_Impl::Aln(bool is_secondary)
 {
     CRef<SAlnTableCursor> curs = m_Aln[is_secondary].Get();
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         curs = new SAlnTableCursor(AlnTable(is_secondary), is_secondary);
     }
     return curs;
@@ -556,6 +559,7 @@ CRef<CCSraDb_Impl::SSeqTableCursor> CCSraDb_Impl::Seq(void)
 {
     CRef<SSeqTableCursor> curs = m_Seq.Get();
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         curs = new SSeqTableCursor(SeqTable());
     }
     return curs;
@@ -679,6 +683,7 @@ size_t CCSraRefSeqIterator::GetAlignCountAtPos(TSeqPos pos,
         NCBI_THROW(CSraException, eInvalidArg,
                    "pos is beyond reference sequence");
     }
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     TVDBRowId row = GetInfo().m_RowFirst + pos/GetDb().GetRowSize();
     CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
     size_t ret = 0;
@@ -695,6 +700,7 @@ size_t CCSraRefSeqIterator::GetAlignCountAtPos(TSeqPos pos,
 
 CRef<CSeq_graph> CCSraRefSeqIterator::GetCoverageGraph(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<CSeq_graph> graph(new CSeq_graph);
 
     const CCSraDb_Impl::SRefInfo& info = **this;
@@ -775,6 +781,7 @@ CCSraRefSeqIterator::x_GetSeq_annot(const string* annot_name) const
 
 CRef<CBioseq> CCSraRefSeqIterator::GetRefBioseq(ELoadData load) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<CBioseq> seq(new CBioseq);
     const CCSraDb_Impl::SRefInfo& info = GetInfo();
     seq->SetId() = GetRefSeq_ids();
@@ -810,6 +817,7 @@ void CCSraRefSeqIterator::GetRefLiterals(TLiterals& literals,
                                          TRange range,
                                          ELoadData load) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     const CCSraDb_Impl::SRefInfo& info = GetInfo();
     TSeqPos segment_len = GetDb().GetRowSize();
     CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
@@ -835,6 +843,7 @@ void CCSraRefSeqIterator::GetRefLiterals(TLiterals& literals,
 
 const vector<TSeqPos>& CCSraRefSeqIterator::GetAlnOverStarts(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     const CCSraDb_Impl::SRefInfo& info = GetInfo();
     if ( info.m_AlnOverStarts.empty() ) {
         CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
@@ -918,6 +927,7 @@ TSeqPos CCSraRefSeqIterator::GetAlnOverToOpen(TRange range) const
 
 Uint8 CCSraRefSeqIterator::GetEstimatedNumberOfAlignments(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     TVDBRowId first_align_id = 0, last_align_id = 0;
     const CCSraDb_Impl::SRefInfo& info = GetInfo();
     CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
@@ -1106,6 +1116,7 @@ void CCSraAlignIterator::Select(TSeqPos ref_pos,
                                 ESearchMode search_mode,
                                 TAlignType align_type)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     m_Error = RC_NO_MORE_ALIGNMENTS;
     m_ArgRefPos = m_ArgRefLast = 0;
     m_SearchMode = search_mode;
@@ -1149,6 +1160,7 @@ void CCSraAlignIterator::Select(TSeqPos ref_pos,
 
 void CCSraAlignIterator::x_Settle(void)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     for ( ;; ) {
         if ( m_AlnRowCur == m_AlnRowEnd ) {
             if ( m_RefRowNext > m_RefRowLast ) {
@@ -1467,6 +1479,7 @@ CCSraAlignIterator::x_GetCreateCache(void) const
 
 CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     SCreateCache& cache = x_GetCreateCache();
 
     CRef<CSeq_align> align(new CSeq_align);
@@ -1672,6 +1685,7 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
 
 CRef<CSeq_graph> CCSraAlignIterator::GetQualityGraph(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<CSeq_graph> graph(new CSeq_graph);
     graph->SetTitle("Phred Quality");
     CSeq_interval& loc_int = graph->SetLoc().SetInt();
@@ -1709,6 +1723,7 @@ CRef<CSeq_graph> CCSraAlignIterator::GetQualityGraph(void) const
 
 CRef<CBioseq> CCSraAlignIterator::GetShortBioseq(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<CBioseq> seq(new CBioseq);
     seq->SetId().push_back(GetShortSeq_id());
     if ( IsSetName() ) {
@@ -1955,6 +1970,7 @@ CCSraShortReadIterator::CCSraShortReadIterator(const CCSraDb& csra_db,
 void CCSraShortReadIterator::x_Init(const CCSraDb& csra_db,
                                     EClipType clip_type)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     m_Db = csra_db;
     m_Seq = csra_db.GetNCObject().Seq();
     m_ReadId = 1;
@@ -1980,6 +1996,7 @@ void CCSraShortReadIterator::x_Init(const CCSraDb& csra_db,
 
 bool CCSraShortReadIterator::Select(TVDBRowId spot_id)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     m_SpotId = spot_id;
     m_ReadId = 1;
     if ( spot_id < 1 || spot_id > m_MaxSpotId ) {
@@ -1995,6 +2012,7 @@ bool CCSraShortReadIterator::Select(TVDBRowId spot_id)
 bool CCSraShortReadIterator::Select(TVDBRowId spot_id,
                                     uint32_t read_id)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     m_SpotId = spot_id;
     m_ReadId = read_id;
     if ( spot_id < 1 || spot_id > m_MaxSpotId ) {
@@ -2207,6 +2225,7 @@ CTempString CCSraShortReadIterator::GetReadData(EClipType clip_type) const
 CRef<CBioseq>
 CCSraShortReadIterator::GetShortBioseq(TBioseqFlags flags) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<CBioseq> seq(new CBioseq);
     seq->SetId().push_back(GetShortSeq_id());
     if ( IsSetName() ) {
@@ -2268,6 +2287,7 @@ CCSraShortReadIterator::x_GetQualityGraph(TOpenRange range) const
 CRef<CSeq_graph>
 CCSraShortReadIterator::GetQualityGraph(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     return x_GetQualityGraph(GetReadRange());
 }
 
