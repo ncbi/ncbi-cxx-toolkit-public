@@ -522,12 +522,6 @@ private:
     CRef<CHttpHeaders>      m_Headers;
     int                     m_StatusCode;
     string                  m_StatusText;
-
-    // Interface for the HTTP connector's adjust callback
-    struct SAdjustData {
-        CHttpRequest*       m_Request;  // NB: don't use after request sent!
-        bool                m_IsService;
-    }                       m_AdjustData;
 };
 
 
