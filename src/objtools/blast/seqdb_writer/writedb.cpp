@@ -569,6 +569,7 @@ void CWriteDB_CreateOidMaskDB(const string& input_db,
 	int num_digits = s_GetNumOfDigits(vols.size());
 	ofstream ofs(output_db + out_ext);
 	ofs << "TITLE " << title <<endl;
+
 	for (unsigned int i = 0; i < vols.size(); i++) {
 		CSeqDB_Path v_path(vols[i]);
 		string v_basename;
@@ -590,10 +591,12 @@ void CWriteDB_CreateOidMaskDB(const string& input_db,
 	    	ofstream ovs((string)CNcbiOstrstreamToString(oss));
     		ovs << DBList << endl;
     		ovs << OidList << endl;
+    		ovs << "OID_MASK_TYPE " << oid_mask_type << endl;
 	    }
 	    else {
 	    	ofs << DBList << endl;
 	    	ofs << OidList << endl;
+    		ofs << "OID_MASK_TYPE " << oid_mask_type << endl;
 	    }
 	}
 
