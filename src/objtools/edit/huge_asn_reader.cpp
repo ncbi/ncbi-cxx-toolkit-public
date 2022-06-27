@@ -334,6 +334,32 @@ static bool s_ShouldSplitSet(CBioseq_set::EClass setClass) {
            setClass == CBioseq_set::eClass_genbank;
 }
 
+void CHugeAsnReader::x_ThrowDuplicateId(
+    const TBioseqSetInfo& existingInfo,
+    const TBioseqSetInfo& newInfo,
+    const CSeq_id& duplicateId)
+{
+    // Quest: Produce an exception that looks reasonably close to the
+    //  exception that object manager would throw in non-huge mode.
+    // Except: Fix the grossly misleading parts, even if it changes some
+    //  message details.
+
+    auto existingEntry = LoadSeqEntry(existingInfo);
+    string existingStr;
+    existingEntry->GetLabel(&existingStr, CSeq_entry::eContent);
+
+    auto newEntry = LoadSeqEntry(newInfo);
+    string newStr;
+    existingEntry->GetLabel(&newStr, CSeq_entry::eContent);
+
+    string msg = "duplicate Bioseq id " +
+        duplicateId.AsFastaString() + " present in * " + existingStr;
+    if (newStr != existingStr) {
+        msg += " and * " + newStr;
+    }
+    NCBI_THROW(CCoreException, eCore, msg);
+}
+
 void CHugeAsnReader::FlattenGenbankSet()
 {
     m_FlattenedSets.clear();
@@ -364,6 +390,10 @@ void CHugeAsnReader::FlattenGenbankSet()
         }
         auto last = --m_FlattenedSets.end();
         for (auto id: rec.m_ids) {
+            auto existingIndex = m_FlattenedIndex.find(id);
+            if (existingIndex != m_FlattenedIndex.end()) {
+                x_ThrowDuplicateId(*(existingIndex->second), *last, *id);
+            }
             m_FlattenedIndex[id] = last;
             m_bioseq_index[id] = it;
         }
