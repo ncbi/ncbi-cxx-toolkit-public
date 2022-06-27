@@ -241,7 +241,7 @@ case "\$method" in
       ( 
 #      cat \$res_log
       test -f \$res_journal  ||  exit 0
-      x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
+      x_files=\`cat \$res_journal | tr -d '\r' | sed -e 's/ /%gj_s4%/g'\`
       for x_file in \$x_files; do
          x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
          echo 
@@ -257,7 +257,7 @@ case "\$method" in
       ( 
 #      egrep 'ERR \[|TO  -' \$res_log
       test -f \$res_journal  ||  exit 0
-      x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
+      x_files=\`cat \$res_journal | tr -d '\r' | sed -e 's/ /%gj_s4%/g'\`
       for x_file in \$x_files; do
          x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
          x_code=\`grep -c '@@@ EXIT CODE:' \$x_file\`
@@ -725,7 +725,7 @@ EOF
 
 
 # Read list with tests
-x_tests=`cat "$x_list" | sed -e 's/ /%gj_s4%/g'`
+x_tests=`cat "$x_list" | tr -d '\r' | sed -e 's/ /%gj_s4%/g'`
 x_test_prev=""
    
 # For all tests
