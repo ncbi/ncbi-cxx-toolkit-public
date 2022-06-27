@@ -118,6 +118,11 @@ public:
     void CloseCass(void);
     bool SatToKeyspace(int  sat, string &  sat_name);
 
+    void MaintainSplitInfoBlobCache(void) {
+        if (m_SplitInfoCache)
+            m_SplitInfoCache->Maintain();
+    }
+
     string GetBioseqKeyspace(void) const
     {
         return m_CassMapping[m_MappingIndex].m_BioseqKeyspace;
@@ -498,6 +503,7 @@ private:
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
     unique_ptr<CSplitInfoCache>         m_SplitInfoCache;
+    size_t                              m_SplitInfoBlobCacheSize;
 
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;

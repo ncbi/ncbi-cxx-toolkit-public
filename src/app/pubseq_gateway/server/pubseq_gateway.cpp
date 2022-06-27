@@ -107,6 +107,8 @@ const string            kDefaultSSLCiphers = "EECDH+aRSA+AESGCM EDH+aRSA+AESGCM 
 const size_t            kDefaultShutdownIfTooManyOpenFDforHTTP = 0;
 const size_t            kDefaultShutdownIfTooManyOpenFDforHTTPS = 8000;
 const size_t            kDefaultProcessorMaxConcurrency = 800;
+const size_t            kDefaultSplitInfoBlobCacheSize = 1000;
+const float             kSplitInfoBlobCacheSizeMultiplier = 0.8;    // Used to calculate low mark
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -161,6 +163,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
     m_ExcludeBlobCache(nullptr),
     m_SplitInfoCache(nullptr),
+    m_SplitInfoBlobCacheSize(kDefaultSplitInfoBlobCacheSize),
     m_StartupDataState(ePSGS_NoCassConnection),
     m_LogFields("http"),
     m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
@@ -257,6 +260,8 @@ void CPubseqGatewayApp::ParseArgs(void)
                                              kDefaultRequestTimeoutSec);
     m_ProcessorMaxConcurrency = registry.GetInt("SERVER", "ProcessorMaxConcurrency",
                                                 kDefaultProcessorMaxConcurrency);
+    m_SplitInfoBlobCacheSize = registry.GetInt("SERVER", "split_info_blob_cache_size",
+                                               kDefaultSplitInfoBlobCacheSize);
 
     try {
         m_AuthToken = registry.GetEncryptedString("ADMIN", "auth_token",
@@ -503,7 +508,8 @@ int CPubseqGatewayApp::Run(void)
                               m_ExcludeCacheMaxSize,
                               m_ExcludeCacheMaxSize - static_cast<size_t>(purge_size)));
 
-    m_SplitInfoCache.reset(new CSplitInfoCache());
+    m_SplitInfoCache.reset(new CSplitInfoCache(m_SplitInfoBlobCacheSize,
+                                               m_SplitInfoBlobCacheSize * kSplitInfoBlobCacheSizeMultiplier));
 
     m_Timing.reset(new COperationTiming(m_MinStatValue,
                                         m_MaxStatValue,

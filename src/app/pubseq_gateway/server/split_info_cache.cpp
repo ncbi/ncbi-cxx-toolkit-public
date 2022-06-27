@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <algorithm>
 #include "split_info_cache.hpp"
 
 
@@ -38,20 +39,21 @@
 pair<bool, CRef<CID2S_Split_Info>>
 CSplitInfoCache::GetBlob(const SCass_BlobId &  info_blob_id)
 {
-    auto    last_touch = psg_clock_t::now();
-
-    while (m_Lock.exchange(true)) {}    // acquire top level lock
+    lock_guard<mutex>   guard(m_Lock);
 
     auto    it = m_Cache.find(info_blob_id);
     if (it == m_Cache.cend()) {
-        m_Lock = false;                 // release top level lock
         return make_pair(false, CRef<CID2S_Split_Info>());
     }
 
-    it->second.m_LastTouch = last_touch;
-    auto    ret = make_pair(true, it->second.m_SplitInfoBlob);
+    auto lru_it = find(m_LRU.begin(), m_LRU.end(), info_blob_id);
+    if (lru_it != m_LRU.begin()) {
+        m_LRU.erase(lru_it);
+        m_LRU.push_front(info_blob_id);
+    }
 
-    m_Lock = false;                     // release top level lock
+    it->second.m_LastTouch = psg_clock_t::now();
+    auto    ret = make_pair(true, it->second.m_SplitInfoBlob);
     return ret;
 }
 
@@ -60,10 +62,37 @@ void
 CSplitInfoCache::AddBlob(const SCass_BlobId &  info_blob_id,
                          CRef<CID2S_Split_Info>  blob)
 {
-    while (m_Lock.exchange(true)) {}    // acquire top level lock
+    lock_guard<mutex>   guard(m_Lock);
 
-    m_Cache[info_blob_id] = SSplitInfoCacheItem(blob);
+    auto  find_it = m_Cache.find(info_blob_id);
+    if (find_it == m_Cache.end()) {
+        // No blob, add a new one
+        m_Cache[info_blob_id] = SSplitInfoCacheItem(blob);
+        m_LRU.emplace_front(info_blob_id);
+        return;
+    }
 
-    m_Lock = false;                     // release top level lock
+    // It already exists
+    find_it->second.m_LastTouch = psg_clock_t::now();
+
+    auto lru_it = find(m_LRU.begin(), m_LRU.end(), info_blob_id);
+    if (lru_it != m_LRU.begin()) {
+        m_LRU.erase(lru_it);
+        m_LRU.push_front(info_blob_id);
+    }
+}
+
+
+void CSplitInfoCache::Maintain(void)
+{
+    lock_guard<mutex>   guard(m_Lock);
+
+    if (m_Cache.size() <= m_HighMark)
+        return;
+
+    while (m_Cache.size() > m_LowMark) {
+        m_Cache.erase(m_Cache.find(m_LRU.back()));
+        m_LRU.pop_back();
+    }
 }
 
