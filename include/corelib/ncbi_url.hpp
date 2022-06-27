@@ -364,6 +364,9 @@ public:
     ///   @sa CDefaultUrlEncoder
     CUrl(const string& url, const IUrlEncoder* encoder = 0);
 
+    CUrl(const char* url, const IUrlEncoder* encoder = 0)
+        : CUrl(string(url), encoder) {}
+
     /// Parse the URL.
     ///
     /// @param url
