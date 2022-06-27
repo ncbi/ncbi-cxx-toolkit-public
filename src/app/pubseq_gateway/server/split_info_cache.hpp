@@ -33,9 +33,9 @@
  */
 
 
-#include <atomic>
+#include <mutex>
 #include <map>
-#include <vector>
+#include <list>
 using namespace std;
 
 #include "pubseq_gateway_types.hpp"
@@ -72,8 +72,8 @@ struct SSplitInfoCacheItem
 class CSplitInfoCache
 {
     public:
-        CSplitInfoCache() :
-            m_Lock(false)
+        CSplitInfoCache(size_t  high_mark, size_t  low_mark) :
+            m_HighMark(high_mark), m_LowMark(low_mark)
         {}
 
         ~CSplitInfoCache()
@@ -87,16 +87,22 @@ class CSplitInfoCache
 
         size_t Size(void)
         {
-            size_t size = 0;
-            while (m_Lock.exchange(true)) {}    // acquire top level lock
+            size_t              size = 0;
+            lock_guard<mutex>   guard(m_Lock);
+
             size = m_Cache.size();
-            m_Lock = false;                     // release top level lock
             return size;
         }
 
+        // Cleans up the cache if needed
+        void Maintain(void);
+
     private:
+        size_t                                      m_HighMark;
+        size_t                                      m_LowMark;
         map<SCass_BlobId, SSplitInfoCacheItem>      m_Cache;
-        atomic<bool>                                m_Lock;
+        list<SCass_BlobId>                          m_LRU;
+        mutex                                       m_Lock;
 };
 
 

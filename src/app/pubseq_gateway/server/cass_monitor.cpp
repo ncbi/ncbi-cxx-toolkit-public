@@ -93,6 +93,8 @@ void CassMonitorThreadedFunction(void)
                 app->CheckCassMapping();
                 break;
         }
+
+        app->MaintainSplitInfoBlobCache();
     }
 }
 

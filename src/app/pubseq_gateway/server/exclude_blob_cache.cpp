@@ -121,8 +121,8 @@ bool CUserExcludeBlobs::Remove(int  sat, int  sat_key)
 void CUserExcludeBlobs::Purge(size_t  purged_size)
 {
     while (m_ExcludeBlobs.size() > purged_size) {
-        m_ExcludeBlobs.erase(m_ExcludeBlobs.find(m_LRU.front()));
-        m_LRU.pop_front();
+        m_ExcludeBlobs.erase(m_ExcludeBlobs.find(m_LRU.back()));
+        m_LRU.pop_back();
     }
 }
 
@@ -145,7 +145,7 @@ EPSGS_CacheAddResult CExcludeBlobCache::AddBlobId(const string &  user,
     if (user.empty())
         return ePSGS_Added;
 
-    while (m_Lock.exchange(true)) {}    // acquire top level lock
+    m_Lock.lock();                                  // acquire top level lock
 
     const auto user_item = m_UserBlobs.find(user);
     CUserExcludeBlobs *  user_blobs;
@@ -158,11 +158,11 @@ EPSGS_CacheAddResult CExcludeBlobCache::AddBlobId(const string &  user,
         user_blobs = user_item->second;
     }
 
-    while (user_blobs->m_Lock.exchange(true)) {}    // acquire the user data lock
-    m_Lock = false;                                 // release top level lock
+    user_blobs->m_Lock.lock();                      // acquire the user data lock
+    m_Lock.unlock();                                // release top level lock
 
     auto ret = user_blobs->AddBlobId(sat, sat_key, completed, completed_time);
-    user_blobs->m_Lock = false;                     // release user data lock
+    user_blobs->m_Lock.unlock();                    // release user data lock
     return ret;
 }
 
@@ -177,24 +177,24 @@ bool CExcludeBlobCache::IsInCache(const string &  user,
     if (user.empty())
         return false;
 
-    while (m_Lock.exchange(true)) {}    // acquire top level lock
+    m_Lock.lock();                      // acquire top level lock
 
     const auto user_item = m_UserBlobs.find(user);
     CUserExcludeBlobs *  user_blobs;
     if (user_item == m_UserBlobs.cend()) {
         // Not found
-        m_Lock = false;                 // release top level lock
+        m_Lock.unlock();                // release top level lock
         return false;
     }
 
     // Found
     user_blobs = user_item->second;
 
-    while (user_blobs->m_Lock.exchange(true)) {}    // acquire the user data lock
-    m_Lock = false;                                 // release top level lock
+    user_blobs->m_Lock.lock();          // acquire the user data lock
+    m_Lock.unlock();                    // release top level lock
 
     auto ret = user_blobs->IsInCache(sat, sat_key, completed, completed_time);
-    user_blobs->m_Lock = false;                     // release user data lock
+    user_blobs->m_Lock.unlock();        // release user data lock
     return ret;
 }
 
@@ -207,24 +207,24 @@ bool CExcludeBlobCache::SetCompleted(const string &  user,
     if (user.empty())
         return true;
 
-    while (m_Lock.exchange(true)) {}    // acquire top level lock
+    m_Lock.lock();                      // acquire top level lock
 
     const auto user_item = m_UserBlobs.find(user);
     CUserExcludeBlobs *  user_blobs;
     if (user_item == m_UserBlobs.cend()) {
         // Not found
-        m_Lock = false;                 // release top level lock
+        m_Lock.unlock();                // release top level lock
         return false;
     }
 
     // Found
     user_blobs = user_item->second;
 
-    while (user_blobs->m_Lock.exchange(true)) {}    // acquire the user data lock
-    m_Lock = false;                                 // release top level lock
+    user_blobs->m_Lock.lock();          // acquire the user data lock
+    m_Lock.unlock();                    // release top level lock
 
     auto ret = user_blobs->SetCompleted(sat, sat_key, new_val);
-    user_blobs->m_Lock = false;                     // release user data lock
+    user_blobs->m_Lock.unlock();        // release user data lock
     return ret;
 }
 
@@ -237,24 +237,24 @@ bool CExcludeBlobCache::Remove(const string &  user,
     if (user.empty())
         return true;
 
-    while (m_Lock.exchange(true)) {}    // acquire top level lock
+    m_Lock.lock();                      // acquire top level lock
 
     const auto user_item = m_UserBlobs.find(user);
     CUserExcludeBlobs *  user_blobs;
     if (user_item == m_UserBlobs.cend()) {
         // Not found
-        m_Lock = false;                 // release top level lock
+        m_Lock.unlock();                // release top level lock
         return false;
     }
 
     // Found
     user_blobs = user_item->second;
 
-    while (user_blobs->m_Lock.exchange(true)) {}    // acquire the user data lock
-    m_Lock = false;                                 // release top level lock
+    user_blobs->m_Lock.lock();          // acquire the user data lock
+    m_Lock.unlock();                    // release top level lock
 
     auto ret = user_blobs->Remove(sat, sat_key);
-    user_blobs->m_Lock = false;                     // release user data lock
+    user_blobs->m_Lock.unlock();        // release user data lock
     return ret;
 }
 
@@ -267,23 +267,23 @@ void CExcludeBlobCache::Purge(void)
 
     psg_time_point_t    limit = psg_clock_t::now() - m_InactivityTimeout;
 
-    while (m_Lock.exchange(true)) {}    // acquire top level lock
+    m_Lock.lock();                          // acquire top level lock
 
     // Purge the users and their caches approprietly
     for (auto it = m_UserBlobs.begin(); it != m_UserBlobs.end(); ) {
-        while (it->second->m_Lock.exchange(true)) {}    // acquire the user data lock
+        it->second->m_Lock.lock();          // acquire the user data lock
         if (it->second->m_LastTouch < limit) {
             m_ToDiscard.push_back(it->second);
-            it->second->m_Lock = false;                 // release user data lock
+            it->second->m_Lock.unlock();    // release user data lock
             it = m_UserBlobs.erase(it);
         } else {
             m_ToPurge.push_back(it->second);
-            it->second->m_Lock = false;                 // release user data lock
+            it->second->m_Lock.unlock();    // release user data lock
             ++it;
         }
     }
 
-    m_Lock = false;                 // release top level lock
+    m_Lock.unlock();                        // release top level lock
 
     // Discard obsolete users
     for (auto user_data : m_ToDiscard) {
@@ -294,9 +294,9 @@ void CExcludeBlobCache::Purge(void)
 
     // Purge the rest
     for (auto user_data : m_ToPurge) {
-        while (user_data->m_Lock.exchange(true)) {} // acquire the user data lock
+        user_data->m_Lock.lock();           // acquire the user data lock
         user_data->Purge(m_PurgedSize);
-        user_data->m_Lock = false;                  // release the user data lock
+        user_data->m_Lock.unlock();         // release the user data lock
     }
     m_ToPurge.clear();
 }

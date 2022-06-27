@@ -37,6 +37,7 @@
 #include <set>
 #include <list>
 #include <atomic>
+#include <mutex>
 #include <map>
 #include <vector>
 using namespace std;
@@ -80,7 +81,7 @@ class CUserExcludeBlobs
 {
     public:
         CUserExcludeBlobs() :
-            m_Lock(false), m_LastTouch(psg_clock_t::now())
+            m_LastTouch(psg_clock_t::now())
         {}
 
         ~CUserExcludeBlobs()
@@ -108,7 +109,7 @@ class CUserExcludeBlobs
         // the upper lock is released. An alternative would be to store the
         // lock in the upper level but it seems better to store it here because
         // it goes into the cathegory of the user associated data
-        atomic<bool>                m_Lock;
+        mutex                       m_Lock;
         psg_time_point_t            m_LastTouch;
 
     private:
@@ -121,7 +122,7 @@ class CUserExcludeBlobsPool
 {
     public:
         CUserExcludeBlobsPool() :
-            m_Head(nullptr), m_Lock(false)
+            m_Head(nullptr)
         {}
 
         ~CUserExcludeBlobsPool()
@@ -147,13 +148,13 @@ class CUserExcludeBlobsPool
             if (item == nullptr)
                 return new CUserExcludeBlobs();
 
-            while (m_Lock.exchange(true)) {}    // acquire lock
+            m_Lock.lock();
 
             item = m_Head.load();
             auto object = item->m_Data;
             m_Head = item->m_Next;
 
-            m_Lock = false;                     // release lock
+            m_Lock.unlock();
 
             delete item;
             return object;
@@ -162,13 +163,10 @@ class CUserExcludeBlobsPool
         void Return(CUserExcludeBlobs *  user_exclude_blobs)
         {
             SNode *     returned_node = new SNode(user_exclude_blobs);
-
-            while (m_Lock.exchange(true)) {}    // acquire lock
+            lock_guard<mutex>   guard(m_Lock);
 
             returned_node->m_Next = m_Head.load();
             m_Head = returned_node;
-
-            m_Lock = false;                     // release lock
         }
 
     private:
@@ -182,7 +180,7 @@ class CUserExcludeBlobsPool
         };
 
         atomic<SNode *>     m_Head;
-        atomic<bool>        m_Lock;
+        mutex               m_Lock;
 };
 
 
@@ -192,7 +190,7 @@ class CExcludeBlobCache
     public:
         CExcludeBlobCache(size_t  inactivity_timeout,
                           size_t  max_cache_size, size_t  purged_size) :
-            m_Lock(false), m_InactivityTimeout(inactivity_timeout),
+            m_InactivityTimeout(inactivity_timeout),
             m_MaxCacheSize(max_cache_size), m_PurgedSize(purged_size)
         {
             m_ToPurge.reserve(128);     // arbitrary
@@ -227,15 +225,15 @@ class CExcludeBlobCache
 
         size_t Size(void) {
             size_t size = 0;
-            while (m_Lock.exchange(true)) {}    // acquire top level lock
+            lock_guard<mutex>   guard(m_Lock);
+
             size = m_UserBlobs.size();
-            m_Lock = false;                     // release top level lock
             return size;
         }
 
     private:
         map<string, CUserExcludeBlobs *>    m_UserBlobs;
-        atomic<bool>                        m_Lock;
+        mutex                               m_Lock;
         CUserExcludeBlobsPool               m_Pool;
 
         chrono::seconds                     m_InactivityTimeout;
