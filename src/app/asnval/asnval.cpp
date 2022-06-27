@@ -371,7 +371,6 @@ void CAsnvalApp::Init()
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
     arg_desc->AddFlag("batch", "Process NCBI release file (Seq-submit or Bioseq-set only)");
     arg_desc->AddFlag("huge", "Execute in huge-file mode");
-    arg_desc->SetDependency("huge", CArgDescriptions::eRequires, "i"); // RW-1665 - temporary dependency while I perform initial testing
 
     arg_desc->AddOptionalKey(
         "D", "String", "Path to lat_lon country data files",
@@ -442,11 +441,13 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
         auto seq_id_h = CSeq_id_Handle::GetHandle(*seqid);
         if (scope->Exists(seq_id_h)) {
 #ifdef _DEBUG
-            //std::cerr << "Taxid for " << scope->GetLabel(seq_id_h) << " : " << scope->GetTaxId(seq_id_h, CScope::fDoNotRecalculate) << "\n";
+            std::cerr << "Taxid for " << scope->GetLabel(seq_id_h) << " : " << scope->GetTaxId(seq_id_h, CScope::fDoNotRecalculate) << "\n";
 #endif
             auto bioseq_h = scope->GetBioseqHandle(seq_id_h);
-            top_h = bioseq_h.GetTopLevelEntry();
-            pEntry = Ref((CSeq_entry*)(void*)top_h.GetCompleteSeq_entry().GetPointer());
+            if (bioseq_h)
+                top_h = bioseq_h.GetTopLevelEntry();
+            if (top_h)
+                pEntry = Ref((CSeq_entry*)(void*)top_h.GetCompleteSeq_entry().GetPointer());
         }
     }
 
