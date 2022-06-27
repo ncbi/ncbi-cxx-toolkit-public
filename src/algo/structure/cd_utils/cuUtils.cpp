@@ -92,20 +92,13 @@ void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
   } else if (SeqID->IsPdb()) {
 
       const CPDB_seq_id&  pPDB_ID = SeqID->GetPdb();
-      
-#ifndef _STRUCTURE_USE_LONG_PDB_CHAINS_
-
       char buf[1024];
       char chain=pPDB_ID.GetChain();
       sprintf(buf,"pdb %s_%c",pPDB_ID.GetMol().Get().c_str(),chain);
       int len=strlen(buf);
       if(chain==' ')buf[len-2]=0; // if there is no chain info (i.e., uses the default chain value)
-
       Str += string(buf);
-#else
-      Str += pPDB_ID.GetMol().Get() + "_" + pPDB_ID.GetEffectiveChain_id();
-#endif
-      
+
   }
 
 }
@@ -129,13 +122,7 @@ string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len) {
       Str = NStr::NumericToString<TGi>(GI);
   } else if (SeqID->IsPdb()) {
       const CPDB_seq_id&  pPDB_ID = SeqID->GetPdb();
-
-#ifndef _STRUCTURE_USE_LONG_PDB_CHAINS_
-      Str = pPDB_ID.GetMol().Get() + " " + string(1, (char) pPDB_ID.GetChain());;
-#else
-      Str = pPDB_ID.GetMol().Get() + " " + pPDB_ID.GetEffectiveChain_id();
-#endif
-      
+      Str = pPDB_ID.GetMol().Get() + " " + string(1, (char) pPDB_ID.GetChain());
   } else if (SeqID->IsOther()) {
       Str = SeqID->GetOther().GetAccession();
   } else if (SeqID->IsLocal()) {
