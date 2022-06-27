@@ -123,6 +123,8 @@ protected:
 private:
     void x_ResetIndex();
     void x_IndexNextAsn1();
+    void x_ThrowDuplicateId(
+        const TBioseqSetInfo& existingInfo,const TBioseqSetInfo& newInfo, const CSeq_id& duplicateId);
 
     ILineErrorListener * mp_MessageListener = nullptr;
     std::streampos m_streampos = 0;
