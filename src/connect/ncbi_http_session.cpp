@@ -961,6 +961,7 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 
     CConn_HttpStream_Base* http
         = dynamic_cast<CConn_HttpStream_Base*>(req->m_Stream.get());
+    _ASSERT(http);
 
     // Prevent collecting multiple headers on redirects.
     CHttpHeaders::THeaders headers;
@@ -968,7 +969,6 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
     s_ParseHttpHeader(http->GetHTTPHeader(), headers);
 
     // Capture status code/text.
-    _ASSERT(http);
     resp->x_Update(headers, http->GetStatusCode(), http->GetStatusText());
 
     // Always read response body - normal content or error.
