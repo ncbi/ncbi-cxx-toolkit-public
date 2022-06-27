@@ -45,7 +45,6 @@ class CNCBITestHttpSessionApp : public CNcbiApplication
 {
 public:
     CNCBITestHttpSessionApp(void);
-    ~CNCBITestHttpSessionApp();
 
 public:
     void Init(void);
@@ -75,12 +74,6 @@ CNCBITestHttpSessionApp::CNCBITestHttpSessionApp(void)
 }
 
 
-CNCBITestHttpSessionApp::~CNCBITestHttpSessionApp()
-{
-    //m_Response.Reset();
-}
-
-
 void CNCBITestHttpSessionApp::Init(void)
 {
 }
@@ -88,27 +81,26 @@ void CNCBITestHttpSessionApp::Init(void)
 
 int CNCBITestHttpSessionApp::Run(void)
 {
-#if 0
     {{
-        const string  bad_url("https://www.ncbi.nlm.nih.gov/Service/404");
         CHttpSession  session;
-        CHttpRequest  request = session.NewRequest(bad_url);
+        CHttpRequest  request
+            = session.NewRequest("https://www.ncbi.nlm.nih.gov/Service/404");
         CHttpResponse response = request.Execute();
         _ASSERT(response.GetStatusCode() == CRequestStatus::e404_NotFound);
+        NcbiStreamCopy(cout, response.ErrorStream());
+    }}
+    {{
+        CHttpSession  session;
+        CHttpRequest  request
+            = session.NewRequest("https://no_such_server.ncbi.nlm.nih.gov");
+        CHttpResponse response = request.Execute();
         CNcbiIstream& in = response.ErrorStream();
-        if (in.good())
-            NcbiStreamCopy(cout, in);
+        _ASSERT(!in.good());
     }}
     {{
-        const string  bad_url{"https://no_such_server.ncbi.nlm.nih.gov"};
         CHttpSession  session;
-        CHttpRequest  request = session.NewRequest(bad_url);
-        CHttpResponse response = request.Execute();
-    }}
-    {{
-        const string  good_url{"http://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=test"};
-        CHttpSession  session;
-        CHttpRequest  request = session.NewRequest(good_url);
+        CHttpRequest  request
+            = session.NewRequest("http://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=test");
         CHttpResponse response = request.Execute();
         _ASSERT(response.GetStatusCode() == CRequestStatus::e200_Ok);
         CNcbiIstream& in = response.ContentStream();
@@ -116,17 +108,17 @@ int CNCBITestHttpSessionApp::Run(void)
             NcbiStreamCopy(cout, in);
     }}
     {{
-        const string  good_url{"http://www.ncbi.nlm.nih.gov/Service/index.html"};
         CHttpSession  session;
-        CHttpRequest  request = session.NewRequest(good_url);
+        CHttpRequest  request
+            = session.NewRequest("http://www.ncbi.nlm.nih.gov/Service/index.html");
         CHttpResponse response = request.Execute();
         _ASSERT(response.GetStatusCode() == CRequestStatus::e200_Ok);
         CNcbiIstream& in = response.ContentStream();
         if (in.good())
             NcbiStreamCopy(cout, in);
     }}
-#endif
-    istream* stream = GetStream("http://www.ncbi.nlm.nih.gov/Service/index.html"/*"http://www.ncbi.nlm.nih.gov/"*/);
+
+    istream* stream = GetStream("http://www.ncbi.nlm.nih.gov");
     UseStream(stream);
 
     return 0;
@@ -137,7 +129,7 @@ istream* CNCBITestHttpSessionApp::GetStream(const string& url)
 {
     CHttpRequest request = m_Session.NewRequest(url);
 
-    m_Response.Reset(new CHttpResponse(request.Execute()));
+    m_Response = new CHttpResponse(request.Execute());
     _ASSERT(m_Response->GetStatusCode() == CRequestStatus::e200_Ok);
 
     return &m_Response->ContentStream();
@@ -157,6 +149,5 @@ void CNCBITestHttpSessionApp::UseStream(istream* stream)
 
 int main(int argc, const char* argv[])
 {
-    ERR_POST(Info << "Hello!");
     return CNCBITestHttpSessionApp().AppMain(argc, argv);
 }
