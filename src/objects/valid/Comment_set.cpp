@@ -44,8 +44,6 @@
 // for default structured comment rules file
 #include "validrules.inc"
 #include <util/util_misc.hpp>
-#include <util/line_reader.hpp>
-#include <serial/enumvalues.hpp>
 #include <serial/serialimpl.hpp>
 
 
@@ -55,10 +53,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-
-static bool  s_StructuredCommentRulesInitialized = false;
-DEFINE_STATIC_FAST_MUTEX(s_StructuredCommentRulesMutex);
-static CRef<CComment_set> s_CommentRules;
 
 // destructor
 CComment_set::~CComment_set(void)
@@ -105,20 +99,17 @@ static bool s_FieldRuleCompare (
 }
 
 
-static void s_InitializeStructuredCommentRules(void)
+static CConstRef<CComment_set> s_InitializeStructuredCommentRules()
 {
-    CFastMutexGuard GUARD(s_StructuredCommentRulesMutex);
-    if (s_StructuredCommentRulesInitialized) {
-        return;
-    }
-    s_CommentRules.Reset(new CComment_set());
+    auto s_CommentRules = Ref(new CComment_set());
+
     string file = g_FindDataFile("validrules.prt");
-  
+
     if ( !file.empty() ) {
         unique_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Open(file, eSerial_AsnText));
         string header = in->ReadFileHeader();
-        in->Read(ObjectInfo(*s_CommentRules), CObjectIStream::eNoFileHeader);    
+        in->Read(ObjectInfo(*s_CommentRules), CObjectIStream::eNoFileHeader);
         if (getenv("NCBI_DEBUG")) {
             LOG_POST("Reading from " + file + " for structured comment rules.");
         }
@@ -127,7 +118,7 @@ static void s_InitializeStructuredCommentRules(void)
         if (getenv("NCBI_DEBUG")) {
             LOG_POST("Falling back on built-in data for structured comment rules");
         }
-        size_t num_lines = sizeof (s_Defaultvalidrules) / sizeof (char *);     
+        size_t num_lines = sizeof (s_Defaultvalidrules) / sizeof (char *);
         string all_rules = "";
         for (size_t i = 0; i < num_lines; i++) {
             all_rules += s_Defaultvalidrules[i];
@@ -136,22 +127,22 @@ static void s_InitializeStructuredCommentRules(void)
         istr >> MSerial_AsnText >> *s_CommentRules;
     }
     if (s_CommentRules->IsSet()) {
-        NON_CONST_ITERATE(CComment_set::Tdata, it, s_CommentRules->Set()) {
-            if (!(*it)->GetRequire_order() && (*it)->IsSetFields()) {
-                CField_set& fields = (*it)->SetFields();
+        for(auto& rule: s_CommentRules->Set()) {
+            if (!rule->GetRequire_order() && rule->IsSetFields()) {
+                CField_set& fields = rule->SetFields();
                 fields.Set().sort(s_FieldRuleCompare);
             }
         }
-    }       
+    }
 
-    s_StructuredCommentRulesInitialized = true;
+    return s_CommentRules;
 }
 
 
 CConstRef<CComment_set> CComment_set::GetCommentRules()
 {
-    s_InitializeStructuredCommentRules();
-    return CConstRef<CComment_set>(s_CommentRules.GetPointer());
+    static CConstRef<CComment_set> rules = s_InitializeStructuredCommentRules();
+    return rules;
 }
 
 
