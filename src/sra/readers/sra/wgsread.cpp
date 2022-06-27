@@ -752,6 +752,7 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ProjectGBState(0),
       m_SeqIdType(CSeq_id::e_not_set)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_WGSOpen);
     //static CVDBSchema schema(mgr, "wgs.schema");
     m_Db = CVDB(mgr, m_WGSPath);
@@ -770,6 +771,7 @@ CRef<CWGSDb_Impl::SSeq0TableCursor> CWGSDb_Impl::Seq0(TVDBRowId row)
 {
     CRef<SSeq0TableCursor> curs = m_Seq0.Get(row);
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         curs = new SSeq0TableCursor(SeqTable());
     }
     return curs;
@@ -781,6 +783,7 @@ CRef<CWGSDb_Impl::SSeqTableCursor> CWGSDb_Impl::Seq(TVDBRowId row)
 {
     CRef<SSeqTableCursor> curs = m_Seq.Get(row);
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         curs = new SSeqTableCursor(SeqTable());
     }
     return curs;
@@ -792,6 +795,7 @@ CRef<CWGSDb_Impl::SScfTableCursor> CWGSDb_Impl::Scf(TVDBRowId row)
 {
     CRef<SScfTableCursor> curs = m_Scf.Get(row);
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         if ( const CVDBTable& table = ScfTable() ) {
             curs = new SScfTableCursor(table);
         }
@@ -805,6 +809,7 @@ CRef<CWGSDb_Impl::SProt0TableCursor> CWGSDb_Impl::Prot0(TVDBRowId row)
 {
     CRef<SProt0TableCursor> curs = m_Prot0.Get(row);
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         if ( const CVDBTable& table = ProtTable() ) {
             curs = new SProt0TableCursor(table);
         }
@@ -818,6 +823,7 @@ CRef<CWGSDb_Impl::SProtTableCursor> CWGSDb_Impl::Prot(TVDBRowId row)
 {
     CRef<SProtTableCursor> curs = m_Prot.Get(row);
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         if ( const CVDBTable& table = ProtTable() ) {
             curs = new SProtTableCursor(table);
         }
@@ -831,6 +837,7 @@ CRef<CWGSDb_Impl::SFeatTableCursor> CWGSDb_Impl::Feat(TVDBRowId row)
 {
     CRef<SFeatTableCursor> curs = m_Feat.Get(row);
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         if ( const CVDBTable& table = FeatTable() ) {
             curs = new SFeatTableCursor(table);
         }
@@ -844,6 +851,7 @@ CRef<CWGSDb_Impl::SGiIdxTableCursor> CWGSDb_Impl::GiIdx(TVDBRowId row)
 {
     CRef<SGiIdxTableCursor> curs = m_GiIdx.Get(row);
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         if ( const CVDBTable& table = GiIdxTable() ) {
             curs = new SGiIdxTableCursor(table);
         }
@@ -857,6 +865,7 @@ CRef<CWGSDb_Impl::SProtIdxTableCursor> CWGSDb_Impl::ProtIdx(TVDBRowId row)
 {
     CRef<SProtIdxTableCursor> curs = m_ProtIdx.Get(row);
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         if ( const CVDBTable& table = ProtIdxTable() ) {
             curs = new SProtIdxTableCursor(table);
         }
@@ -2268,6 +2277,7 @@ TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc, int ask_version)
 {
     TVDBRowId prot_row_id = 0;
     if ( CRef<SProtIdxTableCursor> idx = ProtIdx() ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         SProtIdxTableCursor::row_range_t range;
         string tmp = acc;
         const char* query_param_name;
@@ -2752,6 +2762,7 @@ void CWGSSeqIterator::x_Select(const CWGSDb& wgs_db,
                                EClipType clip_type,
                                TVDBRowId row)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     x_Init(wgs_db, include_flags, clip_type, row);
     SelectRow(row);
 }
@@ -2763,6 +2774,7 @@ void CWGSSeqIterator::x_Select(const CWGSDb& wgs_db,
                                TVDBRowId first_row,
                                TVDBRowId last_row)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     x_Init(wgs_db, include_flags, clip_type, first_row);
     if ( m_FirstBadId == 0 ) {
         return;
@@ -2783,6 +2795,7 @@ void CWGSSeqIterator::x_Select(const CWGSDb& wgs_db,
                                EClipType clip_type,
                                CTempString acc)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( TVDBRowId row = wgs_db.ParseContigRow(acc) ) {
         x_Init(wgs_db, include_flags, clip_type, row);
         SelectRow(row);
@@ -2890,6 +2903,7 @@ CTempString CWGSSeqIterator::GetAccession(void) const
 
 int CWGSSeqIterator::GetLatestAccVersion(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     x_CheckValid("CWGSSeqIterator::GetLatestAccVersion");
     return *m_Cur->ACC_VERSION(m_CurrId);
 }
@@ -2910,6 +2924,7 @@ unsigned CWGSSeqIterator::GetAccVersionCount(void) const
 
 bool CWGSSeqIterator::HasAccVersion(int version) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( version == -1 ) {
         // latest version
         return true;
@@ -2943,12 +2958,14 @@ CWGSSeqIterator::x_GetAccVersionSelector(int version) const
 
 void CWGSSeqIterator::SelectAccVersion(int version)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     m_AccVersion = x_GetAccVersionSelector(version);
 }
 
 
 CRef<CSeq_id> CWGSSeqIterator::GetAccSeq_id(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     return GetDb().GetAccSeq_id(GetAccession(), GetAccVersion());
 }
 
@@ -3112,6 +3129,7 @@ CRef<CSeq_id> CWGSSeqIterator::GetId(TFlags flags) const
 
 void CWGSSeqIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw___GetContigIds);
     if ( flags & fIds_acc ) {
         // acc.ver
@@ -3415,6 +3433,7 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
         // not the last version of sequence
         return NCBI_gb_state_eWGSGenBankReplaced;
     }
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
 }
 
@@ -4115,6 +4134,7 @@ void CWGSSeqIterator::x_SetDeltaOrData(CSeq_inst& inst,
 
 CRef<CSeq_inst> CWGSSeqIterator::x_GetSeq_inst(SWGSCreateInfo& info) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw___GetContigInst);
     x_CheckValid("CWGSSeqIterator::GetSeq_inst");
     CRef<CSeq_inst> inst(new CSeq_inst);
@@ -4589,6 +4609,7 @@ void CWGSSeqIterator::x_AddQualityChunkInfo(SWGSCreateInfo& info) const
 
 void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw__GetContigBioseq);
     _ASSERT(!info.main_seq);
     info.x_SetSeq(*this);
@@ -4701,6 +4722,7 @@ void SWGSCreateInfo::x_AddProducts(const vector<TVDBRowId>& product_row_ids)
 
 void SWGSCreateInfo::x_CreateProtSet(TVDBRowIdRange range)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     _ASSERT(entry->IsSeq() && &entry->GetSeq() == main_seq);
     vector<TVDBRowId> product_row_ids;
     {
@@ -4764,6 +4786,7 @@ void sx_AddMasterDescr(const CWGSDb& db, SWGSCreateInfo& info, SWGSDb_Defs::TFla
 
 void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_GetContigEntry);
     if ( !(info.flags & fSeqAnnot) || !info.db->FeatTable() ) {
         // plain sequence only without FEATURE table
@@ -4852,6 +4875,7 @@ void CWGSSeqIterator::x_CreateQualityChunk(SWGSCreateInfo& info,
 void CWGSSeqIterator::x_CreateDataChunk(SWGSCreateInfo& info,
                                         unsigned index) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_CreateDataChunk);
     CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
     sx_SetSplitId(data->SetId(), *info.main_id);
@@ -4946,6 +4970,7 @@ void CWGSSeqIterator::x_CreateFeaturesChunk(SWGSCreateInfo& info,
 void CWGSSeqIterator::x_CreateChunk(SWGSCreateInfo& info,
                                     TChunkId chunk_id) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_GetChunk);
     info.x_SetId(*this);
     EChunkType type = EChunkType(chunk_id%kChunkIdStep);
@@ -5005,6 +5030,7 @@ CRef<CAsnBinData> CWGSSeqIterator::GetSeq_entryData(TFlags flags) const
 
 CRef<CID2S_Split_Info> CWGSSeqIterator::GetSplitInfo(TFlags flags) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_GetSplitInfo);
     x_CheckValid("CWGSSeqIterator::GetSplitInfo");
     SWGSCreateInfo info(m_Db, flags);
@@ -5018,6 +5044,7 @@ CRef<CID2S_Split_Info> CWGSSeqIterator::GetSplitInfo(TFlags flags) const
 
 CRef<CAsnBinData> CWGSSeqIterator::GetSplitInfoData(TFlags flags) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_GetSplitInfoData);
     x_CheckValid("CWGSSeqIterator::GetSplitInfoData");
     SWGSCreateInfo info(m_Db, flags);
@@ -5183,6 +5210,7 @@ CTempString CWGSScaffoldIterator::GetAccession(void) const
     if ( !m_Cur->m_ACCESSION ) {
         return CTempString();
     }
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     return *CVDBStringValue(m_Cur->ACCESSION(m_CurrId));
 }
 
@@ -5198,12 +5226,14 @@ NCBI_gb_state CWGSScaffoldIterator::GetGBState(void) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetGBState");
 
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
 }
 
 
 CRef<CSeq_id> CWGSScaffoldIterator::GetAccSeq_id(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<CSeq_id> id;
     CTempString acc = GetAccession();
     if ( !acc.empty() ) {
@@ -5270,6 +5300,7 @@ CRef<CSeq_id> CWGSScaffoldIterator::GetId(TFlags flags) const
 
 void CWGSScaffoldIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw___GetScaffoldIds);
     if ( flags & fIds_acc ) {
         // acc.ver
@@ -5370,6 +5401,7 @@ TVDBRowIdRange CWGSScaffoldIterator::GetLocFeatRowIdRange(void) const
 
 CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     x_CheckValid("CWGSScaffoldIterator::GetSeq_inst");
 
     CRef<CSeq_inst> inst(new CSeq_inst);
@@ -5449,6 +5481,7 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
 
 void CWGSScaffoldIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw__GetScaffoldBioseq);
     _ASSERT(!info.main_seq);
     info.x_SetSeq(*this);
@@ -5483,6 +5516,7 @@ void CWGSScaffoldIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 
 void CWGSScaffoldIterator::x_CreateEntry(SWGSCreateInfo& info) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_GetScaffoldEntry);
     if ( !(info.flags & fSeqAnnot) || !info.db->FeatTable() ) {
         // plain sequence only without FEATURE table
@@ -5836,6 +5870,7 @@ int CWGSProteinIterator::GetAccVersion(void) const
 
 CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw____GetProtAccSeq_id);
     CRef<CSeq_id> id;
     CTempString acc = GetAccession();
@@ -5906,6 +5941,7 @@ CRef<CSeq_id> CWGSProteinIterator::GetId(TFlags flags) const
 
 void CWGSProteinIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw___GetProtIds);
     if ( flags & fIds_acc ) {
         // acc.ver
@@ -5973,6 +6009,7 @@ NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetGBState");
     x_Cur();
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
 }
 
@@ -6222,6 +6259,7 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
 
 void CWGSProteinIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw__GetProtBioseq);
     _ASSERT(!info.main_seq);
     x_Cur();

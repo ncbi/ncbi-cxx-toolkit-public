@@ -104,6 +104,7 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path, ELookupType l
     : m_Mgr(mgr),
       m_Path(path)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     // VDB graph are plain VDB table objects.
     // However, there could be other VDBs in the same namespace (NA*)
     // so we have to check this situation and return normal eNotFoundDb error.
@@ -208,6 +209,7 @@ CRef<CVDBGraphDb_Impl::SGraphTableCursor> CVDBGraphDb_Impl::Graph(void)
 {
     CRef<SGraphTableCursor> curs = m_Graph.Get();
     if ( !curs ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         curs = new SGraphTableCursor(GraphTable());
     }
     return curs;
@@ -216,6 +218,7 @@ CRef<CVDBGraphDb_Impl::SGraphTableCursor> CVDBGraphDb_Impl::Graph(void)
 
 bool CVDBGraphDb_Impl::HasMidZoomGraphs(void)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<SGraphTableCursor> curs = Graph();
     bool ret = curs->m_GR_ZOOM_Q100;
     Put(curs);
@@ -231,6 +234,7 @@ CVDBGraphDb_Impl::SSeqInfo CVDBGraphDb_Impl::GetSeqInfoAtRow(TVDBRowId first_row
         return *iter->second;
     }
     if ( m_LookupIndex ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         auto curs = Graph();
         CVDBStringValue id = curs->SID(first_row, CVDBValue::eMissing_Allow);
         if ( id.empty() ) {
@@ -275,6 +279,7 @@ CVDBGraphDb_Impl::SSeqInfo CVDBGraphDb_Impl::GetSeqInfo(const CSeq_id_Handle& id
         return *iter->second;
     }
     if ( m_LookupIndex ) {
+        CVDBMgr::CRequestContextUpdater ctx_updater;
         auto seq_id = idh.GetSeqId();
         const CTextseq_id* text_id = seq_id->GetTextseq_Id();
         if ( !text_id ||
@@ -652,6 +657,7 @@ bool CVDBGraphSeqIterator::SeqTableIsSmaller(COpenRange<TSeqPos> range) const
     if ( range.Empty() ) {
         return false;
     }
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<SGraphTableCursor> curs(GetDb().Graph());
     bool seq_table_is_smaller = x_SeqTableIsSmaller(range, *curs);
     GetDb().Put(curs);
@@ -680,6 +686,7 @@ CVDBGraphSeqIterator::GetAnnot(COpenRange<TSeqPos> range0,
         annot->SetDesc().Set().push_back(desc);
     }
 
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<SGraphTableCursor> curs(GetDb().Graph());
 
     if ( content & fGraphQAll ) {
