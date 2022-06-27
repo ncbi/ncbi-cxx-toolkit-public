@@ -420,7 +420,7 @@ CBlastDBAliasApp::CreateAliasFile() const
             title += args[kArgTaxIdListFile].AsString();
         }
         else  {
-        	if (args["oid_masks"].AsInteger() && EOidMaskType::fExcludeModel) {
+        	if (args["oid_masks"].AsInteger() & EOidMaskType::fExcludeModel) {
             	title += "exclude model oid masks";
         	}
         }
