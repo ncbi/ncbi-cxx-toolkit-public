@@ -51,9 +51,9 @@ BEGIN_SCOPE(Cn3D)
 class Molecule;
 class Sequence;
 
-#ifndef _STRUCTURE_USE_LONG_PDB_CHAINS_
-#define _STRUCTURE_USE_LONG_PDB_CHAINS_
-#endif
+//#ifndef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//#define _STRUCTURE_USE_LONG_PDB_CHAINS_
+//#endif
 
 class MoleculeIdentifier
 {
@@ -67,11 +67,11 @@ public:
     int mmdbID, moleculeID;
     TGi gi;
 
-	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 	  std::string pdbChain;
-	#else
-	  int pdbChain;
-	#endif
+//	#else
+//	  int pdbChain;
+//	#endif
 
     std::string pdbID;
 
@@ -98,15 +98,15 @@ public:
     bool HasStructure(void) const
     {
 
-		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 			return (
 				(mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) ||
 				(pdbID.size() > 0 && !pdbChain.empty()));
-		#else
-			return (
-				(mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) ||
-				(pdbID.size() > 0 && pdbChain != VALUE_NOT_SET));
-		#endif
+//		#else
+//			return (
+//				(mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) ||
+//				(pdbID.size() > 0 && pdbChain != VALUE_NOT_SET));
+//		#endif
     }
 
     // comparison of identifiers (e.g. for sorting) - floats PDB's to top, then gi's in numerical order
@@ -123,15 +123,15 @@ public:
 
 private:
     // can't create one of these directly - must use GetIdentifier()
-	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 		MoleculeIdentifier(void) :
 			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(""), gi(GI_NOT_SET), nResidues(0)
 			{ }
-	#else
-		MoleculeIdentifier(void) :
-			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(VALUE_NOT_SET), gi(GI_NOT_SET), nResidues(0)
-			{ }
-	#endif
+//	#else
+//		MoleculeIdentifier(void) :
+//			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(VALUE_NOT_SET), gi(GI_NOT_SET), nResidues(0)
+//			{ }
+//	#endif
 
     // get identifier based on Seq-id match
     static MoleculeIdentifier * GetIdentifier(const SeqIdList& ids);

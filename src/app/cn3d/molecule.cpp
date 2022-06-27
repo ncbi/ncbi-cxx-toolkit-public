@@ -263,30 +263,30 @@ int Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector 
 
         ResidueMap::const_iterator r = residues.find(rID);
         if (r == residues.end()) {
-			#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//			#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 				ERRORMSG("Can't find residueID " << rID
 					<< " in " << identifier->pdbID << " chain '"
 					<< identifier->pdbChain << "'");
-			#else
-				ERRORMSG("Can't find residueID " << rID
-					<< " in " << identifier->pdbID << " chain '"
-					<< (char) identifier->pdbChain << "'");
-			#endif
+//			#else
+//				ERRORMSG("Can't find residueID " << rID
+//					<< " in " << identifier->pdbID << " chain '"
+//					<< (char) identifier->pdbChain << "'");
+//			#endif
 
             return -1;
         }
 
         int aID = (r->second->alphaID);
         if (aID == Residue::NO_ALPHA_ID) {
-			#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//			#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 				WARNINGMSG("No alpha atom in residueID " << rID
 					<< " from " << identifier->pdbID << " chain '"
 					<< identifier->pdbChain << "'");
-			#else
-				WARNINGMSG("No alpha atom in residueID " << rID
-					<< " from " << identifier->pdbID << " chain '"
-					<< (char) identifier->pdbChain << "'");
-			#endif
+//			#else
+//				WARNINGMSG("No alpha atom in residueID " << rID
+//					<< " from " << identifier->pdbID << " chain '"
+//					<< (char) identifier->pdbChain << "'");
+//			#endif
 
             continue;
         }
@@ -373,13 +373,13 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                         oss << "3'";
                 }
 
-				#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//				#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 					if (!identifier->pdbChain.empty() && identifier->pdbChain != " ")
 						oss << " (" << identifier->pdbChain << ')';
-				#else
-					if (identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && identifier->pdbChain != ' ')
-						oss << " (" << (char) identifier->pdbChain << ')';
-				#endif
+//				#else
+//					if (identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && identifier->pdbChain != ' ')
+//						oss << " (" << (char) identifier->pdbChain << ')';
+//				#endif
 
                 // draw label
                 string labelText = (string) CNcbiOstrstreamToString(oss);

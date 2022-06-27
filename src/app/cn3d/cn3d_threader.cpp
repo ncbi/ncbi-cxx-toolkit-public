@@ -747,11 +747,11 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
     // fill out min. loop lengths
     GetMinimumLoopLengths(mol, atomSet, fldMtf);
 
-	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 	  TRACEMSG("created Fld_Mtf for " << mol->identifier->pdbID << " chain '" << mol->identifier->pdbChain << "'");
-	#else
-	  TRACEMSG("created Fld_Mtf for " << mol->identifier->pdbID << " chain '" << (char) mol->identifier->pdbChain << "'");
-	#endif
+//	#else
+//	  TRACEMSG("created Fld_Mtf for " << mol->identifier->pdbID << " chain '" << (char) mol->identifier->pdbChain << "'");
+//	#endif
 
     contacts[mol] = fldMtf;
     return fldMtf;
