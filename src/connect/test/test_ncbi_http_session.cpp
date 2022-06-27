@@ -45,10 +45,18 @@ class CNCBITestHttpSessionApp : public CNcbiApplication
 {
 public:
     CNCBITestHttpSessionApp(void);
+    ~CNCBITestHttpSessionApp();
 
 public:
     void Init(void);
     int  Run (void);
+
+private:
+    istream* GetStream(const string& url);
+    void     UseStream(istream* stream);
+
+    CHttpSession        m_Session;
+    CRef<CHttpResponse> m_Response;
 };
 
 
@@ -67,6 +75,12 @@ CNCBITestHttpSessionApp::CNCBITestHttpSessionApp(void)
 }
 
 
+CNCBITestHttpSessionApp::~CNCBITestHttpSessionApp()
+{
+    //m_Response.Reset();
+}
+
+
 void CNCBITestHttpSessionApp::Init(void)
 {
 }
@@ -74,6 +88,7 @@ void CNCBITestHttpSessionApp::Init(void)
 
 int CNCBITestHttpSessionApp::Run(void)
 {
+#if 0
     {{
         const string  bad_url("https://www.ncbi.nlm.nih.gov/Service/404");
         CHttpSession  session;
@@ -110,11 +125,38 @@ int CNCBITestHttpSessionApp::Run(void)
         if (in.good())
             NcbiStreamCopy(cout, in);
     }}
+#endif
+    istream* stream = GetStream("http://www.ncbi.nlm.nih.gov/Service/index.html"/*"http://www.ncbi.nlm.nih.gov/"*/);
+    UseStream(stream);
+
     return 0;
+}
+
+
+istream* CNCBITestHttpSessionApp::GetStream(const string& url)
+{
+    CHttpRequest request = m_Session.NewRequest(url);
+
+    m_Response.Reset(new CHttpResponse(request.Execute()));
+    _ASSERT(m_Response->GetStatusCode() == CRequestStatus::e200_Ok);
+
+    return &m_Response->ContentStream();
+}
+
+
+void CNCBITestHttpSessionApp::UseStream(istream* stream)
+{
+    // Make sure the stack gets clobbered enough
+    volatile char a[2 * sizeof(CHttpRequest)];
+    memset((void*) a, '\xA5', sizeof(a));
+
+    stream->exceptions(IOS_BASE::failbit);
+    NcbiStreamCopyThrow(cout, *stream);
 }
 
 
 int main(int argc, const char* argv[])
 {
+    ERR_POST(Info << "Hello!");
     return CNCBITestHttpSessionApp().AppMain(argc, argv);
 }
