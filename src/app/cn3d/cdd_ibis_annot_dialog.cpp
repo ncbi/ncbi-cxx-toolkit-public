@@ -123,11 +123,11 @@ bool IBISInteraction::QueryMoleculeHasChain()
 {
     bool result = false;
     if (m_queryMolecule) {
-		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 		  result = (!m_queryMolecule->pdbChain.empty() && m_queryMolecule->pdbChain != " ");
-		#else
-		  result = (m_queryMolecule->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && m_queryMolecule->pdbChain != ' ');
-		#endif
+//		#else
+//		  result = (m_queryMolecule->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && m_queryMolecule->pdbChain != ' ');
+//		#endif
     }
     return result;
 }
@@ -896,11 +896,11 @@ void IBISAnnotateDialog::PopulateInteractionData(void)
             if (master->identifier->pdbID.size() > 0) {
                 query.pdb = master->identifier->pdbID;
                 if (IBISInteraction::QueryMoleculeHasChain())  {//master->identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && master->identifier->pdbChain != ' ')
-					#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//					#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 					  query.pdb += master->identifier->pdbChain;
-					#else
-					  query.pdb += (char) master->identifier->pdbChain;
-					#endif
+//					#else
+//					  query.pdb += (char) master->identifier->pdbChain;
+//					#endif
 				}
             }
 
@@ -1500,11 +1500,11 @@ void IBISAnnotateDialog::LaunchIbisWebPage(void)
         if (launchGeneralUrl) {
             if (IBISInteraction::GetQueryMolecule()) {
                 if (IBISInteraction::QueryMoleculeHasChain()) {
-					#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//					#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 					  pdbQuery.Printf("%s%s", IBISInteraction::GetQueryMolecule()->pdbID.c_str(), IBISInteraction::GetQueryMolecule()->pdbChain.c_str());
-					#else
-					  pdbQuery.Printf("%s%c", IBISInteraction::GetQueryMolecule()->pdbID.c_str(), (char) IBISInteraction::GetQueryMolecule()->pdbChain);
-					#endif
+//					#else
+//					  pdbQuery.Printf("%s%c", IBISInteraction::GetQueryMolecule()->pdbID.c_str(), (char) IBISInteraction::GetQueryMolecule()->pdbChain);
+//					#endif
                 } else {
                     pdbQuery.Printf("%s", IBISInteraction::GetQueryMolecule()->pdbID.c_str());
                 }
