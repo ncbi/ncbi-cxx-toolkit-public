@@ -346,13 +346,13 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                     sequence->identifier->pdbID != "consensus") {
                     uids[row] = sequence->identifier->pdbID;
 
-					#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//					#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 						if (sequence->identifier->pdbChain != " ")
 							uids[row] += string("_")  + sequence->identifier->pdbChain;
-					#else
-						if (sequence->identifier->pdbChain != ' ')
-							uids[row] += string("_")  + (char) sequence->identifier->pdbChain;
-					#endif
+//					#else
+//						if (sequence->identifier->pdbChain != ' ')
+//							uids[row] += string("_")  + (char) sequence->identifier->pdbChain;
+//					#endif
                 }
             } else {
                 uids[row] = sequence->identifier->GetLabel();

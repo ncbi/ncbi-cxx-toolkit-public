@@ -244,11 +244,11 @@ bool Cn3DApp::OnInit(void)
 {
     INFOMSG("Welcome to Cn3D " << CN3D_VERSION_STRING << "!");
     INFOMSG("Built " << __DATE__ << " with wxWidgets " << wxVERSION_NUM_DOT_STRING);
-#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-    INFOMSG("Compiled with _STRUCTURE_USE_LONG_PDB_CHAINS_");
-#else
-    INFOMSG("NOT compiled for long PDB chain-ids");
-#endif
+//#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
+//    INFOMSG("Compiled with _STRUCTURE_USE_LONG_PDB_CHAINS_");
+//#else
+//    INFOMSG("NOT compiled for long PDB chain-ids");
+//#endif
 #ifdef _DEBUG
     INFOMSG("This is a debug build");
 #elif NDEBUG
