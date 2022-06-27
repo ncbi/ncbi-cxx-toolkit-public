@@ -255,7 +255,6 @@ CAsnvalApp::~CAsnvalApp()
 void CAsnvalApp::x_AliasLogFile()
 {
     const CArgs& args = GetArgs();
-    Setup(args);
 
     if (args["L"]) {
         if (args["logfile"]) {
@@ -566,6 +565,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 #ifdef _DEBUG1
                 cerr << MSerial_AsnText << "Validating: " << seqid->AsFastaString() << "\n";
 #endif
+                auto seqid_str = seqid->AsFastaString();
                 eval = x_ValidateAsync(loader_name, pSubmitBlock, seqid, {});
                 PrintValidError(eval);
             }
