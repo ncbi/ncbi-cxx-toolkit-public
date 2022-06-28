@@ -61,6 +61,7 @@ bool CHugeFile::x_TryOpenMemoryFile(const string& filename)
         CMemoryFile_Base::eMMS_Private)};
 
     m_filesize = memfile->GetFileSize();
+    m_filename = filename;
     m_memory = (const char*)memfile->Map(0, 0);
 
     if (m_filesize == 0 || m_memory == 0)
