@@ -159,7 +159,7 @@ ifeq "yes" "$(need_flag_stamps)"
       make_cpp_stamp = $(prev_make_cpp_stamp)
     endif
   else
-    make_cpp_ = $(make_cpp:-DNCBI_BUILD_SESSION_ID%=)
+    make_cpp_ = $(make_cpp:-DNCBI_BUIL%=)
     make_cpp_stamp_ := $(make_cpp_stamp_base)-$(shell echo '$(make_cpp_)' | cksum)
     make_cpp_stamp := $(stamp_dir)/$(subst $(space),-,$(make_cpp_stamp_))
     ifneq "$(make_cpp_stamp)" "$(prev_make_cpp_stamp)"
@@ -186,7 +186,7 @@ ifeq "yes" "$(need_flag_stamps)"
       make_c_stamp = $(prev_make_c_stamp)
     endif
   else
-    make_c_ = $(make_c:-DNCBI_BUILD_SESSION_ID%=)
+    make_c_ = $(make_c:-DNCBI_BUIL%=)
     make_c_stamp_ := $(make_c_stamp_base)-$(shell echo '$(make_c_)' | cksum)
     make_c_stamp := $(stamp_dir)/$(subst $(space),-,$(make_c_stamp_))
     ifneq "$(make_c_stamp)" "$(prev_make_c_stamp)"
