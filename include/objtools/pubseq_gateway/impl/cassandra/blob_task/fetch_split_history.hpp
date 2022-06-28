@@ -70,27 +70,6 @@ class CCassBlobTaskFetchSplitHistory
     static const SSplitHistoryRecord::TSplitVersion kAllVersions = -1;
     using TConsumeCallback = function<void(vector<SSplitHistoryRecord> &&)>;
 
-    NCBI_DEPRECATED CCassBlobTaskFetchSplitHistory(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBlobRecord::TSatKey sat_key,
-        TConsumeCallback consume_callback,
-        TDataErrorCallback data_error_cb
-    );
-
-    NCBI_DEPRECATED CCassBlobTaskFetchSplitHistory(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBlobRecord::TSatKey sat_key,
-        SSplitHistoryRecord::TSplitVersion split_version,
-        TConsumeCallback consume_callback,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassBlobTaskFetchSplitHistory(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -107,12 +86,6 @@ class CCassBlobTaskFetchSplitHistory
         TConsumeCallback consume_callback,
         TDataErrorCallback data_error_cb
     );
-
-    /// Use GetKeySpace() from base class
-    NCBI_DEPRECATED string GetKeyspace() const
-    {
-        return GetKeySpace();
-    }
 
     SSplitHistoryRecord::TSplitVersion GetSplitVersion() const
     {
@@ -123,7 +96,7 @@ class CCassBlobTaskFetchSplitHistory
     void SetConsumeCallback(TConsumeCallback callback);
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     SSplitHistoryRecord::TSplitVersion m_SplitVersion;

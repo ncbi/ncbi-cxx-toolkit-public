@@ -48,38 +48,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
-    unsigned int op_timeout_ms,
-    unsigned int max_retries,
-    shared_ptr<CCassConnection> conn,
-    const string & keyspace,
-    CBlobRecord::TSatKey sat_key,
-    TConsumeCallback consume_callback,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobTaskFetchSplitHistory(
-        move(conn), keyspace, sat_key, kAllVersions, move(consume_callback), data_error_cb
-    )
-{
-    SetMaxRetries(max_retries);
-}
-
-CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
-    unsigned int timeout_ms,
-    unsigned int max_retries,
-    shared_ptr<CCassConnection> connection,
-    const string & keyspace,
-    CBlobRecord::TSatKey sat_key,
-    SSplitHistoryRecord::TSplitVersion split_version,
-    TConsumeCallback consume_callback,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(timeout_ms, connection, keyspace, sat_key, true, max_retries, move(data_error_cb))
-    , m_SplitVersion(split_version)
-    , m_ConsumeCallback(move(consume_callback))
-{
-}
-
-CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     shared_ptr<CCassConnection> connection,
     const string & keyspace,
     CBlobRecord::TSatKey sat_key,

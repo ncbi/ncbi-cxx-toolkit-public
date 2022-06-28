@@ -46,23 +46,6 @@
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
-
-CCassStatusHistoryTaskDelete::CCassStatusHistoryTaskDelete(
-    unsigned int op_timeout_ms,
-    shared_ptr<CCassConnection> conn,
-    const string & keyspace,
-    int32_t sat_key,
-    int64_t done_when,
-    unsigned int max_retries,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, sat_key,
-        true, max_retries, move(data_error_cb)
-      )
-    , m_DoneWhen(done_when)
-{}
-
 CCassStatusHistoryTaskDelete::CCassStatusHistoryTaskDelete(
     shared_ptr<CCassConnection> conn,
     const string & keyspace,

@@ -41,7 +41,7 @@
 USING_NCBI_SCOPE;
 
 GTEST_API_ int main(int argc, char **argv) {
-    // SetDiagPostLevel(eDiag_Trace);
+    SetDiagPostLevel(eDiag_Warning);
     ncbi::CONNECT_Init();
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -46,16 +46,6 @@ USING_NCBI_SCOPE;
 class CCassBlobTaskDelete: public CCassBlobWaiter
 {
 public:
-    NCBI_DEPRECATED CCassBlobTaskDelete(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        int32_t key,
-        bool async,
-        unsigned int max_retries,
-        TDataErrorCallback error_cb
-    );
-
     CCassBlobTaskDelete(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -65,7 +55,7 @@ public:
     );
 
 protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
 private:
     enum EBlobDeleteState {

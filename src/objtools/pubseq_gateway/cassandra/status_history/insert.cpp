@@ -48,21 +48,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 CCassStatusHistoryTaskInsert::CCassStatusHistoryTaskInsert(
-    unsigned int op_timeout_ms,
-    shared_ptr<CCassConnection> conn,
-    const string & keyspace,
-    CBlobStatusHistoryRecord * record,
-    unsigned int max_retries,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, record->GetSatKey(),
-        true, max_retries, move(data_error_cb)
-      )
-    , m_Record(record)
-{}
-
-CCassStatusHistoryTaskInsert::CCassStatusHistoryTaskInsert(
     shared_ptr<CCassConnection> conn,
     const string & keyspace,
     CBlobStatusHistoryRecord * record,

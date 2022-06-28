@@ -50,23 +50,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 CCassNAnnotTaskInsert::CCassNAnnotTaskInsert(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBlobRecord * blob,
-        CNAnnotRecord * annot,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, blob == nullptr ? annot->GetSatKey() : blob->GetKey(),
-        true, max_retries, move(data_error_cb)
-      )
-    , m_Blob(blob)
-    , m_Annot(annot)
-{}
-
-CCassNAnnotTaskInsert::CCassNAnnotTaskInsert(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
         CBlobRecord * blob,

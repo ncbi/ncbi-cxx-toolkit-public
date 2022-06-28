@@ -49,25 +49,6 @@
 
 BEGIN_IDBLOB_SCOPE
 
-
-CCassBioseqInfoTaskDelete::CCassBioseqInfoTaskDelete(
-    unsigned int op_timeout_ms,
-    shared_ptr<CCassConnection> connection,
-    const string & keyspace,
-    CBioseqInfoRecord::TAccession accession,
-    CBioseqInfoRecord::TVersion version,
-    CBioseqInfoRecord::TSeqIdType seq_id_type,
-    CBioseqInfoRecord::TGI gi,
-    unsigned int max_retries,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(op_timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
-    , m_Accession(move(accession))
-    , m_Version(version)
-    , m_SeqIdType(seq_id_type)
-    , m_GI(gi)
-{}
-
 CCassBioseqInfoTaskDelete::CCassBioseqInfoTaskDelete(
     shared_ptr<CCassConnection> connection,
     const string & keyspace,

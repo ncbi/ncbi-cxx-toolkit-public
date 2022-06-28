@@ -65,68 +65,6 @@ void CCassBlobTaskLoadBlob::InitBlobChunkDataQuery(
 }
 
 CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
-    unsigned int op_timeout_ms,
-    unsigned int max_retries,
-    shared_ptr<CCassConnection> conn,
-    const string & keyspace,
-    CBlobRecord::TSatKey sat_key,
-    bool load_chunks,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobTaskLoadBlob(
-        conn,
-        keyspace,
-        sat_key,
-        kAnyModified,
-        load_chunks,
-        data_error_cb
-    )
-{
-    SetMaxRetries(max_retries);
-}
-
-CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
-    unsigned int op_timeout_ms,
-    unsigned int max_retries,
-    shared_ptr<CCassConnection> conn,
-    const string & keyspace,
-    CBlobRecord::TSatKey sat_key,
-    CBlobRecord::TTimestamp modified,
-    bool load_chunks,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, sat_key, true,
-        max_retries, move(data_error_cb)
-      )
-    , m_Blob(make_unique<CBlobRecord>(sat_key))
-    , m_Modified(modified)
-    , m_LoadChunks(load_chunks)
-{
-    m_Blob->SetModified(modified);
-}
-
-CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
-    unsigned int op_timeout_ms,
-    unsigned int max_retries,
-    shared_ptr<CCassConnection> conn,
-    const string & keyspace,
-    unique_ptr<CBlobRecord> blob_record,
-    bool load_chunks,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, blob_record->GetKey(), true,
-        max_retries, move(data_error_cb)
-      )
-    , m_Blob(move(blob_record))
-    , m_Modified(m_Blob->GetModified())
-    , m_LoadChunks(load_chunks)
-    , m_PropsFound(true)
-    , m_ExplicitBlob(true)
-{}
-
-CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     shared_ptr<CCassConnection> conn,
     const string & keyspace,
     CBlobRecord::TSatKey sat_key,

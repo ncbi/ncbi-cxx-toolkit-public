@@ -49,19 +49,6 @@
 
 BEGIN_IDBLOB_SCOPE
 
-
-CCassBioseqInfoTaskUpdate::CCassBioseqInfoTaskUpdate(
-    unsigned int op_timeout_ms,
-    shared_ptr<CCassConnection> connection,
-    const string & keyspace,
-    CBioseqInfoRecord * record,
-    unsigned int max_retries,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(op_timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
-    , m_Record(record)
-{}
-
 CCassBioseqInfoTaskUpdate::CCassBioseqInfoTaskUpdate(
     shared_ptr<CCassConnection> connection,
     const string & keyspace,

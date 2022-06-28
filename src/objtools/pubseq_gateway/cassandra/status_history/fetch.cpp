@@ -45,19 +45,6 @@
 BEGIN_IDBLOB_SCOPE
 
 CCassStatusHistoryTaskFetch::CCassStatusHistoryTaskFetch(
-    unsigned int timeout_ms,
-    shared_ptr<CCassConnection> connection,
-    const string &keyspace,
-    int32_t sat_key,
-    int64_t done_when,
-    unsigned int max_retries,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(timeout_ms, connection, keyspace, sat_key, true, max_retries, move(data_error_cb))
-    , m_DoneWhen(done_when)
-{}
-
-CCassStatusHistoryTaskFetch::CCassStatusHistoryTaskFetch(
     shared_ptr<CCassConnection> connection,
     const string &keyspace,
     int32_t sat_key,

@@ -59,15 +59,6 @@ class CCassStatusHistoryTaskInsert
     };
 
  public:
-    NCBI_DEPRECATED CCassStatusHistoryTaskInsert(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBlobStatusHistoryRecord * record,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassStatusHistoryTaskInsert(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -76,7 +67,7 @@ class CCassStatusHistoryTaskInsert
     );
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     CBlobStatusHistoryRecord * m_Record{nullptr};

@@ -65,15 +65,6 @@ class CCassStatusHistoryTaskGetPublicComment
  public:
     using TCommentCallback = function<void(string comment, bool isFound)>;
 
-    NCBI_DEPRECATED CCassStatusHistoryTaskGetPublicComment(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBlobRecord const &blob,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassStatusHistoryTaskGetPublicComment(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -86,7 +77,7 @@ class CCassStatusHistoryTaskGetPublicComment
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     void JumpToReplaced(CBlobRecord::TSatKey replaced);

@@ -59,15 +59,6 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
     };
 
  public:
-    NCBI_DEPRECATED
-    CCassSI2CSITaskFetch(unsigned int                timeout_ms,
-                         unsigned int                max_retries,
-                         shared_ptr<CCassConnection> connection,
-                         const string &              keyspace,
-                         CSi2CsiFetchRequest const&  request,
-                         TSI2CSIConsumeCallback      consume_callback,
-                         TDataErrorCallback          data_error_cb);
-
     CCassSI2CSITaskFetch(shared_ptr<CCassConnection> connection,
                          const string &              keyspace,
                          CSi2CsiFetchRequest const&  request,
@@ -78,7 +69,7 @@ class CCassSI2CSITaskFetch : public CCassBlobWaiter
     void SetConsumeCallback(TSI2CSIConsumeCallback callback);
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     void x_InitializeQuery();

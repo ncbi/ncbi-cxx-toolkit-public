@@ -49,18 +49,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 CCassBlobTaskDelete::CCassBlobTaskDelete(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        int32_t key,
-        bool async,
-        unsigned int max_retries,
-        TDataErrorCallback error_cb
-)
-    : CCassBlobWaiter(op_timeout_ms, conn, keyspace, key, async, max_retries, move(error_cb))
-{}
-
-CCassBlobTaskDelete::CCassBlobTaskDelete(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
         int32_t key,

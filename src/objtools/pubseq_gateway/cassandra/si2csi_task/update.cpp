@@ -50,18 +50,6 @@
 BEGIN_IDBLOB_SCOPE
 
 CCassSI2CSITaskUpdate::CCassSI2CSITaskUpdate(
-    unsigned int op_timeout_ms,
-    shared_ptr<CCassConnection> connection,
-    const string & keyspace,
-    CSI2CSIRecord * record,
-    unsigned int max_retries,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(op_timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
-    , m_Record(record)
-{}
-
-CCassSI2CSITaskUpdate::CCassSI2CSITaskUpdate(
     shared_ptr<CCassConnection> connection,
     const string & keyspace,
     CSI2CSIRecord * record,

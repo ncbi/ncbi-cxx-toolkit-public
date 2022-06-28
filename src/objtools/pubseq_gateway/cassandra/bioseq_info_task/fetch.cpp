@@ -75,21 +75,6 @@ BEGIN_SCOPE()
 END_SCOPE()
 
 CCassBioseqInfoTaskFetch::CCassBioseqInfoTaskFetch(
-                            unsigned int                   timeout_ms,
-                            unsigned int                   max_retries,
-                            shared_ptr<CCassConnection>    connection,
-                            const string &                 keyspace,
-                            CBioseqInfoFetchRequest const& request,
-                            TBioseqInfoConsumeCallback     consume_callback,
-                            TDataErrorCallback             data_error_cb) :
-    CCassBlobWaiter(timeout_ms, connection, keyspace, 0,
-                    true, max_retries, move(data_error_cb)),
-    m_Request(request),
-    m_Accession(request.GetAccession()),
-    m_ConsumeCallback(move(consume_callback))
-{}
-
-CCassBioseqInfoTaskFetch::CCassBioseqInfoTaskFetch(
                             shared_ptr<CCassConnection>    connection,
                             const string &                 keyspace,
                             CBioseqInfoFetchRequest const& request,

@@ -76,29 +76,6 @@ class CCassBlobWaiter
     CCassBlobWaiter(CCassBlobWaiter&&) = default;
     CCassBlobWaiter& operator=(CCassBlobWaiter&&) = default;
 
-    /// Use constructor without op_timeout_ms parameter
-    /*NCBI_DEPRECATED*/ CCassBlobWaiter(
-        unsigned int /*op_timeout_ms deprecated*/,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        int32_t key,
-        bool async,
-        unsigned int max_retries,
-        TDataErrorCallback error_cb
-    )
-      : m_ErrorCb(move(error_cb))
-      , m_Conn(conn)
-      , m_Async(async)
-      , m_Keyspace(keyspace)
-      , m_Key(key)
-    {
-        if (max_retries > numeric_limits<int>::max()) {
-            m_MaxRetries = 0;
-        } else {
-            m_MaxRetries = static_cast<int>(max_retries);
-        }
-    }
-
     CCassBlobWaiter(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -190,12 +167,6 @@ class CCassBlobWaiter
             NCBI_THROW(CCassandraException, eSeqFailed, "CCassBlobWaiter: Cannot change keyspace for started task");
         }
         m_Keyspace = keyspace;
-    }
-
-    /// Use GetKey()
-    NCBI_DEPRECATED int32_t key() const
-    {
-        return m_Key;
     }
 
     int32_t GetKey() const

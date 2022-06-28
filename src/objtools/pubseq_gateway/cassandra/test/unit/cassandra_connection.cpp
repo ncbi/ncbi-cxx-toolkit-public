@@ -155,7 +155,7 @@ TEST_F(CCassConnectionTest, QueryRetryTimeout) {
     query->SetSQL("select * from test_ipg_storage_entrez.ipg_report LIMIT 10000", 0);
     query->Query(CASS_CONSISTENCY_ALL, true, false, 10000);
     try {
-        query->WaitAsync(query->Timeout() * 1000 + 10);
+        query->WaitAsync(query->Timeout() * 2000);
         ASSERT_TRUE(false) << "Query with 1ms timeout should throw.";
     }
     catch (CCassandraException const& ex) {

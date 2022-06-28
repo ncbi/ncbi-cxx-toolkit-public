@@ -55,15 +55,6 @@ class CCassBioseqInfoTaskUpdate
     };
 
 public:
-    NCBI_DEPRECATED CCassBioseqInfoTaskUpdate(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBioseqInfoRecord * record,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassBioseqInfoTaskUpdate(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -77,7 +68,7 @@ public:
     }
 
 protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
 private:
     CBioseqInfoRecord * m_Record{nullptr};
