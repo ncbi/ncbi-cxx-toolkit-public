@@ -2037,6 +2037,9 @@ endfunction()
 ##############################################################################
 function(NCBI_internal_add_project)
 
+    if(NOT DEFINED NCBI_CURRENT_SOURCE_DIR)
+        set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
     if (DEFINED NCBI_${NCBI_PROJECT}_PARTS AND NOT NCBI_PTBCFG_ALLOW_COMPOSITE)
         if (NOT NCBI_PTBMODE_COLLECT_DEPS)
             if (NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
