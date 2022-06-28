@@ -87,7 +87,7 @@ int CNCBITestHttpSessionApp::Run(void)
             = session.NewRequest("https://www.ncbi.nlm.nih.gov/Service/404");
         CHttpResponse response = request.Execute();
         _ASSERT(response.GetStatusCode() == CRequestStatus::e404_NotFound);
-        NcbiStreamCopy(cout, response.ErrorStream());
+        NcbiStreamCopyThrow(cout, response.ErrorStream());
     }}
     {{
         CHttpSession  session;
@@ -104,8 +104,7 @@ int CNCBITestHttpSessionApp::Run(void)
         CHttpResponse response = request.Execute();
         _ASSERT(response.GetStatusCode() == CRequestStatus::e200_Ok);
         CNcbiIstream& in = response.ContentStream();
-        if (in.good())
-            NcbiStreamCopy(cout, in);
+        NcbiStreamCopyThrow(cout, in);
     }}
     {{
         CHttpSession  session;
@@ -114,8 +113,7 @@ int CNCBITestHttpSessionApp::Run(void)
         CHttpResponse response = request.Execute();
         _ASSERT(response.GetStatusCode() == CRequestStatus::e200_Ok);
         CNcbiIstream& in = response.ContentStream();
-        if (in.good())
-            NcbiStreamCopy(cout, in);
+        NcbiStreamCopyThrow(cout, in);
     }}
 
     istream* stream = GetStream("http://www.ncbi.nlm.nih.gov");
