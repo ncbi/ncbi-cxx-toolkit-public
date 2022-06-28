@@ -81,6 +81,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
       m_VolName      (name),
       m_TaxCache     (256),
       m_MemBit       (0),
+      m_OidMaskType  (0),
       m_VolStart     (vol_start),
       m_VolEnd       (0),
       m_DeflineCache (256),
@@ -92,6 +93,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
 {
     if (user_list) {
         m_UserGiList.Reset(user_list);
+        m_OidMaskType = m_UserGiList->GetMaskOpts();
     }
     if (neg_list) {
         m_NegativeList.Reset(neg_list);
@@ -1974,7 +1976,7 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
 
     bool id_filter = x_HaveIdFilter();
 
-    if (id_filter || m_MemBit) {
+    if (id_filter || m_MemBit || m_OidMaskType) {
         // Create the memberships mask (should this be fixed to allow
         // membership bits greater than 32?)
 
@@ -2033,8 +2035,8 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
                		have_memb = s_IncludeDefline_NegativeTaxid(defline, m_NegativeList->GetTaxIdsList());
             	}
 
-            	if(have_memb && (!m_UserGiList.Empty()) && (m_UserGiList->GetMaskOpts() != 0)) {
-               		have_memb = s_IncludeDefline_MaskFilter(defline, m_UserGiList->GetMaskOpts());
+            	if(have_memb && (m_OidMaskType != 0)) {
+               		have_memb = s_IncludeDefline_MaskFilter(defline, m_OidMaskType);
             	}
             }
 
@@ -2090,7 +2092,7 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
 
     bool id_filter = x_HaveIdFilter();
 
-    if (id_filter || m_MemBit) {
+    if (id_filter || m_MemBit || m_OidMaskType) {
         // Create the memberships mask (should this be fixed to allow
         // membership bits greater than 32?)
 
@@ -2149,8 +2151,8 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
                		have_memb = s_IncludeDefline_NegativeTaxid(defline, m_NegativeList->GetTaxIdsList());
             	}
 
-            	if(have_memb && (!m_UserGiList.Empty()) && (m_UserGiList->GetMaskOpts() != 0)) {
-               		have_memb = s_IncludeDefline_MaskFilter(defline, m_UserGiList->GetMaskOpts());
+            	if(have_memb && (m_OidMaskType != 0)) {
+               		have_memb = s_IncludeDefline_MaskFilter(defline, m_OidMaskType);
             	}
 
             }

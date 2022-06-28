@@ -394,6 +394,10 @@ public:
         return ! Empty();
     }
 
+    bool HasIdFilters() const
+    {
+        return (GetNumGis() || GetNumSis() || GetNumTis());
+    }
     /// Specify the correct OID for a GI.
     ///
     /// When SeqDB translates a GI into an OID, this method is called

@@ -884,6 +884,14 @@ public:
         m_MemBit = mbit;
     }
 
+    void SetOidMaskType(int oid_masks) const {
+        m_OidMaskType = oid_masks;
+    }
+
+    int GetOidMaskType() const {
+        return m_OidMaskType;
+    }
+
 private:
     void x_StringToOids(const string         & acc,
                         ESeqDBIdType           id_type,
@@ -937,7 +945,7 @@ private:
                        bool          & have_vol) const
     {
         if (! have_user) {
-            if (m_UserGiList.NotEmpty() && m_UserGiList->GetNumTaxIds() == 0 && m_UserGiList->GetNumPigs() == 0 && m_UserGiList->GetMaskOpts() == 0) {
+            if (m_UserGiList.NotEmpty() && m_UserGiList->HasIdFilters()) {
                 have_user |= x_ListIncludesId(*m_UserGiList, id);
             } else if (m_NegativeList.NotEmpty() && m_NegativeList->GetNumTaxIds() == 0 && m_NegativeList->GetNumPigs() == 0 ) {
                 have_user |= x_ListIncludesId(*m_NegativeList, id);
@@ -1398,6 +1406,8 @@ private:
 
     /// The filtering MEMB_BIT
     mutable int m_MemBit;
+
+    mutable int m_OidMaskType;
 
     /// Cached/ranged sequence info type.
     typedef map<int, CRef<CSeqDBRangeList> > TRangeCache;

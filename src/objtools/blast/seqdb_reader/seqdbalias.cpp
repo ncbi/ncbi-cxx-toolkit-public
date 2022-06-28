@@ -68,7 +68,8 @@ CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
       m_MembBit          (-1),
       m_HasTitle         (false),
       m_NeedTotalsScan   (-1),
-      m_HasFilters       (0)
+      m_HasFilters       (0),
+      m_OidMaskType      (0)
 {
     if (name_list.size() && prot_nucl != '-') {
         m_Node.Reset(new CSeqDBAliasNode(atlas,
@@ -1413,6 +1414,60 @@ private:
     int m_Value;
 };
 
+/// Walker for oid mask type
+///
+/// This just searches alias files for the oid mask type if one is
+/// specified.
+
+class CSeqDB_OidMaskTypeWalker : public CSeqDB_AliasWalker {
+public:
+    /// Constructor
+    CSeqDB_OidMaskTypeWalker()
+    {
+        m_Value = 0;
+    }
+
+    /// This provides the alias file key used for this field.
+    virtual const char * GetFileKey() const
+    {
+        return "OID_MASK_TYPE";
+    }
+
+    /// Collect data from the volume
+    ///
+    /// If the MEMB_BIT field is not specified in an alias file, then
+    /// it is not needed.  This field is intended to allow filtration
+    /// of deflines by taxonomic category, which is only needed if an
+    /// alias file reduces the taxonomic scope.
+    virtual void Accumulate(const CSeqDBVol &)
+    {
+        // Volumes don't have this data, only alias files.
+    }
+
+    /// Collect data from an alias file
+    ///
+    /// If the MEMB_BIT field is specified in an alias file, it will
+    /// be used unmodified.  No attempt is made to combine or collect
+    /// bit values - currently, only one can be used at a time.
+    ///
+    /// @param value
+    ///   A database volume
+    virtual void AddString(const string & value)
+    {
+        m_Value = NStr::StringToUInt(value);
+    }
+
+    /// Returns the oid mask type.
+    int GetOidMaskType() const
+    {
+        return m_Value;
+    }
+
+private:
+    /// The oid mask type.
+    int m_Value;
+};
+
 
 /// Test for completeness of GI list alias file values.
 ///
@@ -1644,6 +1699,15 @@ bool CSeqDBAliasNode::NeedTotalsScan(const CSeqDBVolSet & volset) const
     return explore.NeedScan();
 }
 
+int CSeqDBAliasNode::GetOidMaskType(const CSeqDBVolSet & volset) const
+{
+    CSeqDB_OidMaskTypeWalker walk;
+    WalkNodes(& walk, volset);
+
+    return walk.GetOidMaskType();
+}
+
+
 
 void CSeqDBAliasNode::
 CompleteAliasFileValues(const CSeqDBVolSet & volset)
@@ -1828,6 +1892,14 @@ void CSeqDBAliasNode::BuildFilterTree(CSeqDB_FilterTree & ftree) const
     }
 }
 
+int CSeqDBAliasFile::GetOidMaskType(const CSeqDBVolSet & volset) const
+{
+    // Default is zero.
+    m_OidMaskType = m_Node->GetOidMaskType(volset);
+
+    return m_OidMaskType;
+}
+
 CRef<CSeqDB_FilterTree> CSeqDBAliasFile::GetFilterTree()
 {
     if (m_TopTree.Empty()) {
@@ -1884,6 +1956,7 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
     TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
     TVarList::iterator mbit_iter  = m_Values.find(string("MEMB_BIT"));
     TVarList::iterator taxid_iter  = m_Values.find(string("TAXIDLIST"));
+    TVarList::iterator oid_mask_type_iter  = m_Values.find(string("OID_MASK_TYPE"));
     
     if (! m_DBList.empty()) {
         if (oid_iter   != m_Values.end() ||
@@ -1931,7 +2004,11 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
                 	lst_path = tmp;
                 }
 
-                CRef<TMask> mask(new TMask(TMask::eOidList, lst_path));
+                int oid_mask_type = 0;
+                if(oid_mask_type_iter != m_Values.end()) {
+                	oid_mask_type = NStr::StringToUInt(oid_mask_type_iter->second);
+                }
+                CRef<TMask> mask(new TMask(TMask::eOidList, lst_path, oid_mask_type));
                 m_NodeMasks.push_back(mask);
             }
             

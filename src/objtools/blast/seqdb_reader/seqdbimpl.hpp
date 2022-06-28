@@ -1058,6 +1058,8 @@ public:
     /// Set the membership bit of all volumes
     void SetVolsMemBit(int mbit);
 
+    void SetVolsOidMaskType(int oid_mask_type);
+
     /// Dump debug information for this object
     /// @sa CDebugDumpable
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
