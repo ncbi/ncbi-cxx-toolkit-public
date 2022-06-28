@@ -125,10 +125,9 @@ public:
              streamsize           buf_size  = 0,
              CT_CHAR_TYPE*        buf       = 0,
              CRWStreambuf::TFlags stm_flags = 0)
-        : CNcbiIstream(0), m_Sb(r, 0, buf_size, buf, stm_flags)
-    {
-        init(r ? &m_Sb : 0);
-    }
+        : CNcbiIstream(r ? &m_Sb : 0),
+          m_Sb(r, 0, buf_size, buf, stm_flags)
+    { }
 
 private:
     CRWStreambuf m_Sb;
@@ -175,10 +174,9 @@ public:
              streamsize           buf_size  = 0,
              CT_CHAR_TYPE*        buf       = 0,
              CRWStreambuf::TFlags stm_flags = 0)
-        : CNcbiOstream(0), m_Sb(0, w, buf_size, buf, stm_flags)
-    {
-        init(w ? &m_Sb : 0);
-    }
+        : CNcbiOstream(w ? &m_Sb : 0),
+          m_Sb(0, w, buf_size, buf, stm_flags)
+    { }
 
 private:
     CRWStreambuf m_Sb;
@@ -214,20 +212,18 @@ public:
               streamsize           buf_size  = 0,
               CT_CHAR_TYPE*        buf       = 0,
               CRWStreambuf::TFlags stm_flags = 0)
-        : CNcbiIostream(0), m_Sb(rw, buf_size, buf, stm_flags)
-    {
-        init(rw ? &m_Sb : 0);
-    }
+        : CNcbiIostream(rw ? &m_Sb : 0),
+          m_Sb(rw, buf_size, buf, stm_flags)
+    { }
 
     CRWStream(IReader*             r,
               IWriter*             w,
               streamsize           buf_size  = 0,
               CT_CHAR_TYPE*        buf       = 0,
               CRWStreambuf::TFlags stm_flags = 0)
-        : CNcbiIostream(0), m_Sb(r, w, buf_size, buf, stm_flags)
-    {
-        init(r  ||  w ? &m_Sb : 0);
-    }
+        : CNcbiIostream(r  ||  w ? &m_Sb : 0),
+          m_Sb(r, w, buf_size, buf, stm_flags)
+    { }
 
 private:
     CRWStreambuf m_Sb;
