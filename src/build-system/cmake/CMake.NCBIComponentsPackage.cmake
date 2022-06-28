@@ -131,6 +131,7 @@ function(NCBI_define_Pkgcomponent)
         set(HAVE_${_altname} 1 PARENT_SCOPE)
 
         list(APPEND NCBI_ALL_COMPONENTS ${DC_NAME})
+        list(REMOVE_DUPLICATES NCBI_ALL_COMPONENTS)
         set(NCBI_ALL_COMPONENTS ${NCBI_ALL_COMPONENTS} PARENT_SCOPE)
         if(NCBI_TRACE_COMPONENT_${DC_NAME} OR NCBI_TRACE_ALLCOMPONENTS)
             message("----------------------")
