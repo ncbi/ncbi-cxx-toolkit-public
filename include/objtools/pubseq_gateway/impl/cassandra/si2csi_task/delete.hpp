@@ -55,16 +55,6 @@ class CCassSI2CSITaskDelete
     };
 
 public:
-    NCBI_DEPRECATED CCassSI2CSITaskDelete(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CSI2CSIRecord::TSecSeqId sec_seq_id,
-        CSI2CSIRecord::TSecSeqIdType sec_seq_id_type,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassSI2CSITaskDelete(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -81,7 +71,7 @@ public:
     }
 
 protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
 private:
     CSI2CSIRecord::TSecSeqId m_SecSeqId;

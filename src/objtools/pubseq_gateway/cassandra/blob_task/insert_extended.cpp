@@ -61,19 +61,6 @@ static int32_t ExtractNth(string const& str, char separator, size_t n)
 }
 
 CCassBlobTaskInsertExtended::CCassBlobTaskInsertExtended(
-    unsigned int op_timeout_ms, shared_ptr<CCassConnection>  conn,
-    const string & keyspace, CBlobRecord * blob,
-    bool async, unsigned int max_retries,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, blob->GetKey(), async,
-        max_retries, move(data_error_cb)
-    )
-    , m_Blob(blob)
-{}
-
-CCassBlobTaskInsertExtended::CCassBlobTaskInsertExtended(
     shared_ptr<CCassConnection>  conn,
     const string & keyspace, CBlobRecord * blob,
     bool async, TDataErrorCallback data_error_cb

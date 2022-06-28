@@ -105,18 +105,14 @@ void CCassBlobOp::GetBigBlobSizeLimit(unsigned int timeout_ms, const string & ke
 }
 
 void CCassBlobOp::InsertID2Split(
-    unsigned int op_timeout_ms,
-    unsigned int max_retries,
+    unsigned int /*op_timeout_ms*/,
+    unsigned int /*max_retries*/,
     CBlobRecord * blob, CID2SplitRecord* id2_split,
     TDataErrorCallback error_cb,
     unique_ptr<CCassBlobWaiter> & waiter
 )
 {
-    waiter = make_unique<CCassID2SplitTaskInsert>(
-        op_timeout_ms, m_Conn, m_Keyspace,
-        blob, id2_split, max_retries,
-        move(error_cb)
-    );
+    waiter = make_unique<CCassID2SplitTaskInsert>(m_Conn, m_Keyspace, blob, id2_split, move(error_cb));
 }
 
 void CCassBlobOp::UpdateBlobFlagsExtended(

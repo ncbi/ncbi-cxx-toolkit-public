@@ -61,16 +61,6 @@ class CCassID2SplitTaskInsert
     };
 
  public:
-    NCBI_DEPRECATED CCassID2SplitTaskInsert(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBlobRecord * blob,
-        CID2SplitRecord* id2_split,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassID2SplitTaskInsert(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -80,7 +70,7 @@ class CCassID2SplitTaskInsert
     );
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     CBlobRecord * m_Blob{nullptr};

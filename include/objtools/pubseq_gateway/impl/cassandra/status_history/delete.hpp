@@ -59,16 +59,6 @@ class CCassStatusHistoryTaskDelete
     };
 
  public:
-    NCBI_DEPRECATED CCassStatusHistoryTaskDelete(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        int32_t sat_key,
-        int64_t done_when,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassStatusHistoryTaskDelete(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -78,7 +68,7 @@ class CCassStatusHistoryTaskDelete
     );
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     int64_t m_DoneWhen{-1};

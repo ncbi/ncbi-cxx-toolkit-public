@@ -74,23 +74,6 @@ bool IsHistorySuppressed(TBlobStatusFlagsBase flags) {
 END_SCOPE()
 
 CCassStatusHistoryTaskGetPublicComment::CCassStatusHistoryTaskGetPublicComment(
-    unsigned int op_timeout_ms,
-    unsigned int max_retries,
-    shared_ptr<CCassConnection> conn,
-    const string & keyspace,
-    CBlobRecord const &blob,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, blob.GetKey(),
-        true, max_retries, move(data_error_cb)
-      )
-    , m_BlobFlags(blob.GetFlags())
-    , m_ReplacesRetries(kMaxReplacesRetries)
-    , m_CurrentKey(blob.GetKey())
-{}
-
-CCassStatusHistoryTaskGetPublicComment::CCassStatusHistoryTaskGetPublicComment(
     shared_ptr<CCassConnection> conn,
     const string & keyspace,
     CBlobRecord const &blob,

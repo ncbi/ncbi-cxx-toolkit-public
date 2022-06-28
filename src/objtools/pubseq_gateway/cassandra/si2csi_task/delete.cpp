@@ -48,21 +48,6 @@
 
 BEGIN_IDBLOB_SCOPE
 
-
-CCassSI2CSITaskDelete::CCassSI2CSITaskDelete(
-    unsigned int op_timeout_ms,
-    shared_ptr<CCassConnection> connection,
-    const string & keyspace,
-    CSI2CSIRecord::TSecSeqId sec_seq_id,
-    CSI2CSIRecord::TSecSeqIdType sec_seq_id_type,
-    unsigned int max_retries,
-    TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(op_timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
-    , m_SecSeqId(move(sec_seq_id))
-    , m_SecSeqIdType(sec_seq_id_type)
-{}
-
 CCassSI2CSITaskDelete::CCassSI2CSITaskDelete(
     shared_ptr<CCassConnection> connection,
     const string & keyspace,

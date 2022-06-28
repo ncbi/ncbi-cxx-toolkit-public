@@ -55,15 +55,6 @@ class CCassSI2CSITaskUpdate
     };
 
 public:
-    NCBI_DEPRECATED CCassSI2CSITaskUpdate(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CSI2CSIRecord * record,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassSI2CSITaskUpdate(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -77,7 +68,7 @@ public:
     }
 
 protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
 private:
     CSI2CSIRecord * m_Record{nullptr};

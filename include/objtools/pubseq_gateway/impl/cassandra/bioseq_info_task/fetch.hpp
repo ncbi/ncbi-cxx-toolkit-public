@@ -61,15 +61,6 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     };
 
  public:
-    NCBI_DEPRECATED
-    CCassBioseqInfoTaskFetch(unsigned int timeout_ms,
-                             unsigned int max_retries,
-                             shared_ptr<CCassConnection> connection,
-                             const string & keyspace,
-                             CBioseqInfoFetchRequest const& request,
-                             TBioseqInfoConsumeCallback consume_callback,
-                             TDataErrorCallback data_error_cb);
-
     CCassBioseqInfoTaskFetch(shared_ptr<CCassConnection> connection,
                              const string & keyspace,
                              CBioseqInfoFetchRequest const& request,
@@ -81,7 +72,7 @@ class CCassBioseqInfoTaskFetch : public CCassBlobWaiter
     void AllowInheritance(bool value);
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     void x_InitializeQuery();

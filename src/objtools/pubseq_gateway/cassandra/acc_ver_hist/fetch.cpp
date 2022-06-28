@@ -46,29 +46,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 CCassAccVerHistoryTaskFetch::CCassAccVerHistoryTaskFetch(
-    unsigned int timeout_ms,
-    unsigned int max_retries,
-    shared_ptr<CCassConnection> connection,
-    const string & keyspace,
-    string accession,
-    TAccVerHistConsumeCallback consume_callback,
-    TDataErrorCallback data_error_cb,
-    int16_t version,
-    int16_t seq_id_type
-)
-    : CCassBlobWaiter(
-        timeout_ms, connection, keyspace,
-        0,
-        true, // false, // m_Async
-        max_retries, move(data_error_cb)
-    )
-    , m_Accession(move( accession))
-    , m_Version(version)
-    , m_SeqIdType(seq_id_type)
-    , m_Consume(move( consume_callback))
-{}
-
-CCassAccVerHistoryTaskFetch::CCassAccVerHistoryTaskFetch(
     shared_ptr<CCassConnection> connection,
     const string & keyspace,
     string accession,

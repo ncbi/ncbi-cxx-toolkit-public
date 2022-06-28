@@ -68,37 +68,6 @@ class CCassBlobTaskLoadBlob
 
     static void InitBlobChunkDataQuery(CCassQuery* query, string const& keyspace, CBlobRecord const& blob, int32_t chunk_no);
 
-    NCBI_DEPRECATED CCassBlobTaskLoadBlob(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        shared_ptr<CCassConnection>  conn,
-        const string & keyspace,
-        CBlobRecord::TSatKey sat_key,
-        bool load_chunks,
-        TDataErrorCallback data_error_cb
-    );
-
-    NCBI_DEPRECATED CCassBlobTaskLoadBlob(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        shared_ptr<CCassConnection>  conn,
-        const string & keyspace,
-        CBlobRecord::TSatKey sat_key,
-        CBlobRecord::TTimestamp modified,
-        bool load_chunks,
-        TDataErrorCallback data_error_cb
-    );
-
-    NCBI_DEPRECATED CCassBlobTaskLoadBlob(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        unique_ptr<CBlobRecord> blob_record,
-        bool load_chunks,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassBlobTaskLoadBlob(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -132,12 +101,6 @@ class CCassBlobTaskLoadBlob
             }
         }
         m_QueryArr.clear();
-    }
-
-    /// Use GetKeySpace()
-    NCBI_DEPRECATED string GetKeyspace() const
-    {
-        return GetKeySpace();
     }
 
     CBlobRecord::TSatKey GetSatKey() const
@@ -174,7 +137,7 @@ class CCassBlobTaskLoadBlob
     }
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     bool x_AreAllChunksProcessed() const;

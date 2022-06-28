@@ -173,11 +173,6 @@ void CCassConnection::UpdateLogging(void)
     }
 }
 
-unsigned int CCassConnection::QryTimeout() const
-{
-    return m_qtimeoutms;
-}
-
 unsigned int CCassConnection::QryTimeoutRetryMs() const
 {
     return m_qtimeout_retry_ms;
@@ -191,12 +186,6 @@ unsigned int CCassConnection::QryTimeoutMks() const
 unsigned int CCassConnection::QryTimeoutMs() const
 {
     return m_qtimeoutms;
-}
-
-void CCassConnection::SetRtLimits(unsigned int  numThreadsIo, unsigned int  numConnPerHost,
-                 unsigned int /*maxConnPerHost*/)
-{
-    SetRtLimits(numThreadsIo, numConnPerHost);
 }
 
 void CCassConnection::SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost)
@@ -512,11 +501,6 @@ shared_ptr<CCassQuery> CCassConnection::NewQuery()
     shared_ptr<CCassQuery> rv(new CCassQuery(shared_from_this()));
     rv->SetTimeout(m_qtimeoutms);
     return rv;
-}
-
-void CCassConnection::getTokenRanges(TTokenRanges &ranges)
-{
-    GetTokenRanges(ranges);
 }
 
 void CCassConnection::GetTokenRanges(TTokenRanges &ranges)

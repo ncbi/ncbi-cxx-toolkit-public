@@ -51,21 +51,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 CCassBlobTaskDeleteExpired::CCassBlobTaskDeleteExpired(
-    unsigned int op_timeout_ms,
-    shared_ptr<CCassConnection> conn,
-    const string & keyspace,
-    int32_t key,
-    CBlobRecord::TTimestamp last_modified,
-    CBlobRecord::TTimestamp expiration,
-    unsigned int max_retries,
-    TDataErrorCallback error_cb
-)
-    : CCassBlobWaiter(op_timeout_ms, conn, keyspace, key, true, max_retries, move(error_cb))
-    , m_LastModified(last_modified)
-    , m_Expiration(expiration)
-{}
-
-CCassBlobTaskDeleteExpired::CCassBlobTaskDeleteExpired(
     shared_ptr<CCassConnection> conn,
     const string & keyspace,
     int32_t key,

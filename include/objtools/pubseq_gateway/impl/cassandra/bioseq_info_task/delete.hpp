@@ -55,18 +55,6 @@ class CCassBioseqInfoTaskDelete
     };
 
 public:
-    NCBI_DEPRECATED CCassBioseqInfoTaskDelete(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBioseqInfoRecord::TAccession accession,
-        CBioseqInfoRecord::TVersion version,
-        CBioseqInfoRecord::TSeqIdType seq_id_type,
-        CBioseqInfoRecord::TGI gi,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassBioseqInfoTaskDelete(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -85,7 +73,7 @@ public:
     }
 
 protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
 private:
     CBioseqInfoRecord::TAccession m_Accession;

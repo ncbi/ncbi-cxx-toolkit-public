@@ -53,19 +53,6 @@ BEGIN_SCOPE()
 END_SCOPE()
 
 CCassSI2CSITaskFetch::CCassSI2CSITaskFetch(
-                            unsigned int                timeout_ms,
-                            unsigned int                max_retries,
-                            shared_ptr<CCassConnection> connection,
-                            const string &              keyspace,
-                            CSi2CsiFetchRequest const&  request,
-                            TSI2CSIConsumeCallback      consume_callback,
-                            TDataErrorCallback          data_error_cb)
-    : CCassBlobWaiter(timeout_ms, connection, keyspace, 0, true, max_retries, move(data_error_cb))
-    , m_Request(request)
-    , m_ConsumeCallback(consume_callback)
-{}
-
-CCassSI2CSITaskFetch::CCassSI2CSITaskFetch(
                             shared_ptr<CCassConnection> connection,
                             const string &              keyspace,
                             CSi2CsiFetchRequest const&  request,

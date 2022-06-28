@@ -49,17 +49,6 @@ USING_NCBI_SCOPE;
 class CCassBlobTaskDeleteExpired: public CCassBlobWaiter
 {
  public:
-    NCBI_DEPRECATED CCassBlobTaskDeleteExpired(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        int32_t key,
-        CBlobRecord::TTimestamp last_modified,
-        CBlobRecord::TTimestamp expiration,
-        unsigned int max_retries,
-        TDataErrorCallback error_cb
-    );
-
     CCassBlobTaskDeleteExpired(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -72,7 +61,7 @@ class CCassBlobTaskDeleteExpired: public CCassBlobWaiter
     bool IsExpiredVersionDeleted() const;
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     enum EBlobDeleteState {

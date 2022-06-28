@@ -62,15 +62,6 @@ class CCassNAnnotTaskDelete
     };
 
  public:
-    NCBI_DEPRECATED CCassNAnnotTaskDelete(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CNAnnotRecord * annot,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassNAnnotTaskDelete(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -86,7 +77,7 @@ class CCassNAnnotTaskDelete
     }
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     CNAnnotRecord * m_Annot{nullptr};

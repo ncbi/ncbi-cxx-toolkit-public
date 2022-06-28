@@ -48,21 +48,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 CCassNAnnotTaskDelete::CCassNAnnotTaskDelete(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CNAnnotRecord * annot,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-)
-    : CCassBlobWaiter(
-        op_timeout_ms, conn, keyspace, annot->GetSatKey(), true,
-        max_retries, move(data_error_cb)
-      )
-    , m_Annot(annot)
-{}
-
-CCassNAnnotTaskDelete::CCassNAnnotTaskDelete(
     shared_ptr<CCassConnection> conn,
     const string & keyspace,
     CNAnnotRecord * annot,

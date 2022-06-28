@@ -61,16 +61,6 @@ class CCassNAnnotTaskInsert
     };
 
  public:
-    NCBI_DEPRECATED CCassNAnnotTaskInsert(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBlobRecord * blob,
-        CNAnnotRecord * annot,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassNAnnotTaskInsert(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -85,7 +75,7 @@ class CCassNAnnotTaskInsert
     }
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     CBlobRecord * m_Blob{nullptr};

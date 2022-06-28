@@ -186,8 +186,6 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     static void DisableLogging(void);
     static void UpdateLogging(void);
 
-    // Use QryTimeoutMs. It announces units at least
-    NCBI_DEPRECATED unsigned int QryTimeout() const;
     unsigned int QryTimeoutRetryMs() const;
     unsigned int QryTimeoutMs() const;
     unsigned int QryTimeoutMks() const;
@@ -202,10 +200,6 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
         m_maxretries = value < 0 ? 1 : value;
     }
 
-    // This function is deprecated and will be removed after Jan-1 2022
-    // Use 2 parameters version
-    NCBI_DEPRECATED void SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost, unsigned int /*maxConnPerHost*/);
-
     void SetRtLimits(unsigned int numThreadsIo, unsigned int numConnPerHost);
 
     void SetKeepAlive(unsigned int keepalive);
@@ -218,7 +212,6 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
     shared_ptr<CCassQuery> NewQuery();
     void GetTokenRanges(TTokenRanges &ranges);
-    NCBI_DEPRECATED void getTokenRanges(TTokenRanges &ranges);
     vector<string> GetPartitionKeyColumnNames(string const & keyspace, string const & table) const;
 
     // For multi-datacenter environment picture will be not complete

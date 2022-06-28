@@ -58,15 +58,6 @@ class CCassAccVerHistoryTaskInsert
     };
 
  public:
-    NCBI_DEPRECATED CCassAccVerHistoryTaskInsert(
-        unsigned int op_timeout_ms,
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        SAccVerHistRec * record,
-        unsigned int max_retries,
-        TDataErrorCallback data_error_cb
-    );
-
     CCassAccVerHistoryTaskInsert(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -75,7 +66,7 @@ class CCassAccVerHistoryTaskInsert
     );
 
  protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
  private:
     SAccVerHistRec * m_Record{nullptr};
@@ -94,18 +85,6 @@ class CCassAccVerHistoryTaskFetch
     };
 
 public:
-    NCBI_DEPRECATED CCassAccVerHistoryTaskFetch(
-        unsigned int timeout_ms,
-        unsigned int max_retries,
-        shared_ptr<CCassConnection> connection,
-        const string & keyspace,
-        string accession,
-        TAccVerHistConsumeCallback consume_callback,
-        TDataErrorCallback data_error_cb,
-        int16_t version = 0,
-        int16_t seq_id_type = 0
-    );
-
     CCassAccVerHistoryTaskFetch(
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
@@ -118,12 +97,6 @@ public:
 
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(TAccVerHistConsumeCallback callback);
-
-    /// Use GetKeySpace()
-    NCBI_DEPRECATED string GetKeyspace() const
-    {
-        return GetKeySpace();
-    }
 
     string GetAccession() const
     {
@@ -141,7 +114,7 @@ public:
     }
 
 protected:
-    virtual void Wait1() override;
+    void Wait1() override;
 
 private:
     string m_Accession;
