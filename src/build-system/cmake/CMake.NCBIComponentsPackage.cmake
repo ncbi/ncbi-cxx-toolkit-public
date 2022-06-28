@@ -21,7 +21,7 @@ include(CheckIncludeFile)
 include(CheckSymbolExists)
 #############################################################################
 function(NCBI_define_Pkgcomponent)
-    cmake_parse_arguments(DC "" "NAME;PACKAGE" "REQUIRES" ${ARGN})
+    cmake_parse_arguments(DC "" "NAME;PACKAGE;FIND" "REQUIRES" ${ARGN})
 
     if("${DC_NAME}" STREQUAL "")
         message(FATAL_ERROR "No component name")
@@ -47,6 +47,7 @@ function(NCBI_define_Pkgcomponent)
     string(TOUPPER ${DC_PACKAGE} _UPPACKAGE)
     set(DC_REQUIRES ${DC_PACKAGE} ${DC_REQUIRES})
 
+    set(_found NO)
     set(NCBI_COMPONENT_${DC_NAME}_FOUND NO PARENT_SCOPE)
     if(NCBI_COMPONENT_${DC_NAME}_DISABLED)
         message("DISABLED ${DC_NAME}")
@@ -54,6 +55,7 @@ function(NCBI_define_Pkgcomponent)
         if(NOT NCBI_PTBCFG_PACKAGED)
             message(STATUS "Found ${DC_NAME}: ${CONAN_${_UPPACKAGE}_ROOT}")
         endif()
+        set(_found YES)
         set(NCBI_COMPONENT_${DC_NAME}_FOUND YES PARENT_SCOPE)
         set(_include ${CONAN_INCLUDE_DIRS_${_UPPACKAGE}})
         set(_defines ${CONAN_DEFINES_${_UPPACKAGE}})
@@ -99,7 +101,23 @@ function(NCBI_define_Pkgcomponent)
         if(MSVC)
             set(NCBI_COMPONENT_${DC_NAME}_BINPATH ${CONAN_BIN_DIRS_${_UPPACKAGE}} PARENT_SCOPE)
         endif()
+    elseif(NOT "${DC_FIND}" STREQUAL "")
+        set(CONAN_CMAKE_SILENT_OUTPUT TRUE)
+        NCBIcomponent_find_package(${DC_NAME} ${DC_FIND})
+        if(NCBI_COMPONENT_${DC_NAME}_FOUND)
+            set(_found YES)
+            set(_include ${NCBI_COMPONENT_${DC_NAME}_INCLUDE})
+            set(_all_libs ${NCBI_COMPONENT_${DC_NAME}_LIBS})
+            set(_defines ${NCBI_COMPONENT_${DC_NAME}_DEFINES})
+            set(NCBI_COMPONENT_${DC_NAME}_FOUND YES PARENT_SCOPE)
+            set(NCBI_COMPONENT_${DC_NAME}_VERSION ${NCBI_COMPONENT_${DC_NAME}_VERSION} PARENT_SCOPE)
+            set(NCBI_COMPONENT_${DC_NAME}_INCLUDE ${NCBI_COMPONENT_${DC_NAME}_INCLUDE} PARENT_SCOPE)
+            set(NCBI_COMPONENT_${DC_NAME}_LIBS ${NCBI_COMPONENT_${DC_NAME}_LIBS} PARENT_SCOPE)
+            set(NCBI_COMPONENT_${DC_NAME}_DEFINES ${NCBI_COMPONENT_${DC_NAME}_DEFINES} PARENT_SCOPE)
+        endif()
+    endif()
 
+    if(_found)
         string(TOUPPER ${DC_NAME} _upname)
         set(HAVE_LIB${_upname} 1 PARENT_SCOPE)
         string(REPLACE "." "_" _altname ${_upname})
@@ -141,11 +159,15 @@ if(DEFINED CONAN_LIBICONV_ROOT)
     set(ICONV_LIBS ${CONAN_LIBS_LIBICONV})
     set(HAVE_LIBICONV 1)
     set(NCBI_REQUIRE_Iconv_FOUND YES)
+elseif(TARGET Iconv::Iconv)
+    set(ICONV_LIBS Iconv::Iconv)
+    set(HAVE_LIBICONV 1)
+    set(NCBI_REQUIRE_Iconv_FOUND YES)
 endif()
 
 #############################################################################
 # LMDB
-NCBI_define_Pkgcomponent(NAME LMDB PACKAGE lmdb)
+NCBI_define_Pkgcomponent(NAME LMDB PACKAGE lmdb FIND lmdb)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
     set(NCBI_COMPONENT_LMDB_INCLUDE ${NCBI_COMPONENT_LocalLMDB_INCLUDE})
@@ -155,7 +177,7 @@ endif()
 
 #############################################################################
 # PCRE
-NCBI_define_Pkgcomponent(NAME PCRE PACKAGE pcre REQUIRES bzip2;zlib)
+NCBI_define_Pkgcomponent(NAME PCRE PACKAGE pcre REQUIRES bzip2;zlib FIND pcre)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
     set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
@@ -165,7 +187,7 @@ endif()
 
 #############################################################################
 # Z
-NCBI_define_Pkgcomponent(NAME Z PACKAGE zlib)
+NCBI_define_Pkgcomponent(NAME Z PACKAGE zlib FIND ZLIB)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
     set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
@@ -175,7 +197,7 @@ endif()
 
 #############################################################################
 # BZ2
-NCBI_define_Pkgcomponent(NAME BZ2 PACKAGE bzip2)
+NCBI_define_Pkgcomponent(NAME BZ2 PACKAGE bzip2 FIND BZip2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
     set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
@@ -185,11 +207,11 @@ endif()
 
 #############################################################################
 # LZO
-NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo)
+NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo FIND lzo)
 
 #############################################################################
 # Boost
-NCBI_define_Pkgcomponent(NAME Boost PACKAGE boost)
+NCBI_define_Pkgcomponent(NAME Boost PACKAGE boost FIND Boost)
 set(Boost_FOUND ${NCBI_COMPONENT_Boost_FOUND})
 
 #############################################################################
@@ -242,23 +264,23 @@ endif()
 
 #############################################################################
 # JPEG
-NCBI_define_Pkgcomponent(NAME JPEG PACKAGE libjpeg)
+NCBI_define_Pkgcomponent(NAME JPEG PACKAGE libjpeg FIND JPEG)
 
 #############################################################################
 # PNG
-NCBI_define_Pkgcomponent(NAME PNG PACKAGE libpng REQUIRES zlib)
+NCBI_define_Pkgcomponent(NAME PNG PACKAGE libpng REQUIRES zlib FIND PNG)
 
 #############################################################################
 # GIF
-NCBI_define_Pkgcomponent(NAME GIF PACKAGE giflib)
+NCBI_define_Pkgcomponent(NAME GIF PACKAGE giflib FIND GIF)
 
 #############################################################################
 # TIFF
-NCBI_define_Pkgcomponent(NAME TIFF PACKAGE libtiff REQUIRES zlib;libdeflate;xz_utils;libjpeg;jbig;zstd;libwebp)
+NCBI_define_Pkgcomponent(NAME TIFF PACKAGE libtiff REQUIRES zlib;libdeflate;xz_utils;libjpeg;jbig;zstd;libwebp FIND TIFF)
 
 #############################################################################
 # SQLITE3
-NCBI_define_Pkgcomponent(NAME SQLITE3 PACKAGE sqlite3)
+NCBI_define_Pkgcomponent(NAME SQLITE3 PACKAGE sqlite3 FIND SQLite3)
 if(NCBI_COMPONENT_SQLITE3_FOUND)
     check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
     check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
@@ -275,11 +297,11 @@ endif()
 
 #############################################################################
 # XML
-NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2 REQUIRES zlib;libiconv)
+NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2 REQUIRES zlib;libiconv FIND libxml2)
 
 #############################################################################
 # XSLT
-NCBI_define_Pkgcomponent(NAME XSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv)
+NCBI_define_Pkgcomponent(NAME XSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv FIND LibXslt)
 if(NOT DEFINED NCBI_XSLTPROCTOOL AND DEFINED CONAN_BIN_DIRS_LIBXSLT)
     set(NCBI_XSLTPROCTOOL "${CONAN_BIN_DIRS_LIBXSLT}/xsltproc${CMAKE_EXECUTABLE_SUFFIX}")
     set(NCBI_REQUIRE_XSLTPROCTOOL_FOUND YES)
@@ -287,26 +309,34 @@ endif()
 
 #############################################################################
 # EXSLT
-NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv)
+NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE libxslt REQUIRES libxml2;zlib;libiconv FIND LibXslt)
 
 #############################################################################
 # UV
-NCBI_define_Pkgcomponent(NAME UV PACKAGE libuv)
+NCBI_define_Pkgcomponent(NAME UV PACKAGE libuv FIND libuv)
 
 #############################################################################
 # NGHTTP2
-NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2 REQUIRES zlib)
+NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2 REQUIRES zlib FIND libnghttp2)
 
 ##############################################################################
 # GRPC/PROTOBUF
-if(NOT DEFINED NCBI_PROTOC_APP AND DEFINED CONAN_BIN_DIRS_PROTOBUF)
-    set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc${CMAKE_EXECUTABLE_SUFFIX}")
+NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf REQUIRES zlib FIND protobuf)
+NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc REQUIRES abseil;c-ares;openssl;protobuf;re2;zlib FIND gRPC)
+if(NOT DEFINED NCBI_PROTOC_APP)
+    if(DEFINED CONAN_BIN_DIRS_PROTOBUF)
+        set(NCBI_PROTOC_APP "${CONAN_BIN_DIRS_PROTOBUF}/protoc${CMAKE_EXECUTABLE_SUFFIX}")
+    elseif(TARGET protobuf::protoc)
+        get_property(NCBI_PROTOC_APP TARGET protobuf::protoc PROPERTY IMPORTED_LOCATION)
+    endif()
 endif()
-if(NOT DEFINED NCBI_GRPC_PLUGIN AND DEFINED CONAN_BIN_DIRS_GRPC)
-    set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin${CMAKE_EXECUTABLE_SUFFIX}")
+if(NOT DEFINED NCBI_GRPC_PLUGIN)
+    if(DEFINED CONAN_BIN_DIRS_GRPC)
+        set(NCBI_GRPC_PLUGIN "${CONAN_BIN_DIRS_GRPC}/grpc_cpp_plugin${CMAKE_EXECUTABLE_SUFFIX}")
+    elseif(TARGET gRPC::grpc_cpp_plugin)
+        get_property(NCBI_GRPC_PLUGIN TARGET gRPC::grpc_cpp_plugin PROPERTY IMPORTED_LOCATION)
+    endif()
 endif()
-NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf REQUIRES zlib)
-NCBI_define_Pkgcomponent(NAME GRPC PACKAGE grpc REQUIRES abseil;c-ares;openssl;protobuf;re2;zlib)
 
 #############################################################################
 # CASSANDRA
@@ -314,7 +344,7 @@ NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver REQUIRES ht
 
 #############################################################################
 # MySQL
-NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient REQUIRES lz4;openssl;zlib;zstd)
+NCBI_define_Pkgcomponent(NAME MySQL PACKAGE libmysqlclient REQUIRES lz4;openssl;zlib;zstd FIND libmysqlclient)
 
 #############################################################################
 # VDB
