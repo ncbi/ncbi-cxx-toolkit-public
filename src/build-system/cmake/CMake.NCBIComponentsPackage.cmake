@@ -145,12 +145,12 @@ endfunction()
 
 #############################################################################
 # BACKWARD, UNWIND
-NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp)
+NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp FIND Backward)
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
 endif()
-NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind)
+NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind FIND libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
 #############################################################################
@@ -288,7 +288,7 @@ endif()
 
 #############################################################################
 # BerkeleyDB
-NCBI_define_Pkgcomponent(NAME BerkeleyDB PACKAGE libdb)
+NCBI_define_Pkgcomponent(NAME BerkeleyDB PACKAGE libdb FIND libdb)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
@@ -340,7 +340,7 @@ endif()
 
 #############################################################################
 # CASSANDRA
-NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver REQUIRES http_parser;libuv;minizip;openssl;rapidjson;zlib)
+NCBI_define_Pkgcomponent(NAME CASSANDRA PACKAGE cassandra-cpp-driver REQUIRES http_parser;libuv;minizip;openssl;rapidjson;zlib FIND cassandra-cpp-driver)
 
 #############################################################################
 # MySQL
