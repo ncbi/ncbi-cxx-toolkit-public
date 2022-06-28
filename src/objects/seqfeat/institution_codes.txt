@@ -3755,6 +3755,7 @@ KUMA	s	Kumamoto University, Biology Department
 KUMCC	c	Kunming Institute of Botany Culture Collection			
 KUMF	s	Kasetsart University Museum of Fisheries			
 KUN	s	Kunming Institute of Botany, Chinese Academy of Sciences			
+KUNCC	c	KUNCC Culture Collection of the Herbarium of Cryptogams Kunming Institute of Botany, Academia Sinica			
 KUNE	s	Kunming Institute of Ecology, Academia Sinica			
 KUO	s	Kuopio Natural History Museum			
 KURS	s	Kursk State University, Department of Botany			
