@@ -74,7 +74,7 @@ class CPubmedFetchApplication : public CNcbiApplication
             }
         } else if (args["ids"]) {
             vector<string> ids;
-            NStr::Split2(args["ids"].AsString(), ",", ids);
+            NStr::Split(args["ids"].AsString(), ",", ids);
             for (string id_str : ids) {
                 TIntId id = 0;
                 if (NStr::StringToNumeric(id_str, &id, NStr::fConvErr_NoThrow) && id > 0) {
