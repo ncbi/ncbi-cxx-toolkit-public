@@ -38,6 +38,7 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
@@ -339,23 +340,20 @@ void CHugeAsnReader::x_ThrowDuplicateId(
     const TBioseqSetInfo& newInfo,
     const CSeq_id& duplicateId)
 {
-    // Quest: Produce an exception that looks reasonably close to the
-    //  exception that object manager would throw in non-huge mode.
-    // Except: Fix the grossly misleading parts, even if it changes some
-    //  message details.
+    auto filename = m_file->m_filename;
+    auto existingPos = existingInfo.m_pos;
+    auto newPos = newInfo.m_pos;
 
-    auto existingEntry = LoadSeqEntry(existingInfo);
-    string existingStr;
-    existingEntry->GetLabel(&existingStr, CSeq_entry::eContent);
-
-    auto newEntry = LoadSeqEntry(newInfo);
-    string newStr;
-    existingEntry->GetLabel(&newStr, CSeq_entry::eContent);
-
-    string msg = "duplicate Bioseq id " +
-        duplicateId.AsFastaString() + " present in * " + existingStr;
-    if (newStr != existingStr) {
-        msg += " and * " + newStr;
+    auto existingFilePos = NStr::UInt8ToString(existingPos);
+    auto newFilePos = NStr::UInt8ToString(newPos);
+    if (!filename.empty()) {
+        existingFilePos = filename + ":" + existingFilePos;
+        newFilePos = filename + ":" + newFilePos;
+    }
+    string msg = "duplicate Bioseq id " + objects::GetLabel(duplicateId) + 
+        " present in the set starting at " + existingFilePos;
+    if (newPos != existingPos) {
+        msg += " and the set starting at " + newFilePos;
     }
     NCBI_THROW(CCoreException, eCore, msg);
 }
@@ -371,22 +369,21 @@ void CHugeAsnReader::FlattenGenbankSet()
         auto rec = *it;
         auto parent = rec.m_parent_set;
 
-        if (auto _class = parent->m_class;
-                s_ShouldSplitSet(_class))
-            { // create fake bioseq_set
-                m_FlattenedSets.push_back({rec.m_pos, m_FlattenedSets.cend(), objects::CBioseq_set::eClass_not_set});
-                m_top_ids.push_back(rec.m_ids.front());
-            } else {
+        if (auto _class = parent->m_class; s_ShouldSplitSet(_class))
+        { // create fake bioseq_set
+            m_FlattenedSets.push_back({rec.m_pos, m_FlattenedSets.cend(), objects::CBioseq_set::eClass_not_set});
+            m_top_ids.push_back(rec.m_ids.front());
+        } else {
 
-                auto grandParent = parent->m_parent_set;
-                while (!s_ShouldSplitSet(grandParent->m_class)) {
-                    parent = grandParent;
-                    grandParent = grandParent->m_parent_set;
-                }
-                if (m_FlattenedSets.empty() || (m_FlattenedSets.back().m_pos != parent->m_pos)) {
-                    m_FlattenedSets.push_back(*parent);
-                    m_top_ids.push_back(rec.m_ids.front());
-                }
+            auto grandParent = parent->m_parent_set;
+            while (!s_ShouldSplitSet(grandParent->m_class)) {
+                parent = grandParent;
+                grandParent = grandParent->m_parent_set;
+            }
+            if (m_FlattenedSets.empty() || (m_FlattenedSets.back().m_pos != parent->m_pos)) {
+                m_FlattenedSets.push_back(*parent);
+                m_top_ids.push_back(rec.m_ids.front());
+            }
         }
         auto last = --m_FlattenedSets.end();
         for (auto id: rec.m_ids) {
