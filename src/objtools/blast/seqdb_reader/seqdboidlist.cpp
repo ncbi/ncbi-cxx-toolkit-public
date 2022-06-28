@@ -230,6 +230,7 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
         switch(mask.GetType()) {
         case CSeqDB_AliasMask::eOidList:
             f = x_GetOidMask(mask.GetPath(), vol_start, vol_end);
+            vol.Vol()->SetOidMaskType(mask.GetOidMaskType());
             break;
             
         case CSeqDB_AliasMask::eSiList:

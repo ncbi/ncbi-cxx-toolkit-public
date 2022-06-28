@@ -738,6 +738,17 @@ public:
         return m_HasGiMask;
     };
 
+    /// Get the Oid Mask Type
+    ///
+    /// This iterates the alias node tree to find the oid mask type,
+    /// if there is one.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   Oid mask type, or zero if none was found.
+    int GetOidMaskType(const CSeqDBVolSet & volset) const;
+
 private:
     /// Private Constructor
     ///
@@ -1245,6 +1256,17 @@ public:
     /// @sa CDebugDumpable
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    /// Get the Oid Mask Type
+    ///
+    /// This iterates the alias node tree to find the oid mask type,
+    /// if there is one.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   Oid mask type, or zero if none was found.
+    int GetOidMaskType(const CSeqDBVolSet & volset) const;
+
 private:
     /// Compute filtering options for all volumes.
     ///
@@ -1313,6 +1335,9 @@ private:
     /// Are there filters for this database?
     bool m_HasFilters;
     
+    /// Oid Mask Type
+    mutable int m_OidMaskType;
+
     /// Disable copy operator.
     CSeqDBAliasFile & operator =(const CSeqDBAliasFile &);
     

@@ -64,13 +64,17 @@ public:
     /// Constructor for file-based filtering.
     /// @param Type of file-based filtering to apply.
     /// @param fn Name of file containing included IDs info.
-    CSeqDB_AliasMask(EMaskType mask_type, const CSeqDB_Path & fn)
+    CSeqDB_AliasMask(EMaskType mask_type, const CSeqDB_Path & fn, int OidMaskType = 0)
         : m_MaskType(mask_type),
           m_Path    (fn),
           m_Begin   (0),
           m_End     (0),
-          m_MemBit  (0)
+          m_MemBit  (0),
+          m_OidMaskType (OidMaskType)
     {
+    	if(OidMaskType && m_MaskType == eOidList) {
+    		m_OidMaskType = OidMaskType;
+    	}
     }
     
     /// Constructor for OID range filter.
@@ -80,7 +84,8 @@ public:
         : m_MaskType(eOidRange),
           m_Begin   (begin),
           m_End     (end),
-          m_MemBit  (0)
+          m_MemBit  (0),
+          m_OidMaskType (0)
     {
     }
     
@@ -90,7 +95,8 @@ public:
         : m_MaskType(eMemBit),
           m_Begin   (0),
           m_End     (0),
-          m_MemBit  (mem_bit)
+          m_MemBit  (mem_bit),
+          m_OidMaskType(0)
     {
     }
 
@@ -160,6 +166,11 @@ public:
         return m_MemBit;
     }
 
+    int GetOidMaskType() const
+    {
+    	return m_OidMaskType;
+    }
+
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     {
         ddc.SetFrame("CSeqDB_AliasMask");
@@ -186,6 +197,9 @@ private:
 
     /// Membit to filter
     int m_MemBit;
+
+    /// Oid Mask Type
+    int m_OidMaskType;
 };
 
 

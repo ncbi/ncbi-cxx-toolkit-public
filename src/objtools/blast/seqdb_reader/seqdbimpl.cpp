@@ -2622,6 +2622,14 @@ void CSeqDBImpl::SetVolsMemBit(int mbit)
     }
 }
 
+void CSeqDBImpl::SetVolsOidMaskType(int oid_mask_type)
+{
+    int nvols = m_VolSet.GetNumVols();
+    for (int vol = 0; vol < nvols; ++vol) {
+        m_VolSet.GetVolNonConst(vol)->SetOidMaskType(oid_mask_type);
+    }
+}
+
 void CSeqDBImpl::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CSeqDBImpl");
