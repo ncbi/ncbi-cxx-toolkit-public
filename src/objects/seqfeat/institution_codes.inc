@@ -8399,6 +8399,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZMB:Crustacea\ts\tMuseum fur Naturkunde Berlin, Crustacea Collection\t\t",
 "ZMB:Echinodermata\ts\tMuseum fur Naturkunde Berlin, Echinodermata Collection\t\t",
 "ZMB:Hydrozoa\ts\tMuseum fur Naturkunde Berlin, Hydrozoa Collection\t\t",
+"ZMB:Lep\ts\tMuseum fur Naturkunde Berlin, Lepidoptera collection\t",
 "ZMB:Mam\ts\tMuseum fur Naturkunde Berlin, Mammal collection\t",
 "ZMB:Moll\ts\tMuseum fur Naturkunde Berlin, Mollusks collection\t",
 "ZMB:Porifera\ts\tMuseum fur Naturkunde Berlin, Porifera Collection\t\t",

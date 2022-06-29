@@ -8366,6 +8366,7 @@ ZMB:Cnidaria	s	Museum fur Naturkunde Berlin, Cnidaria Collection
 ZMB:Crustacea	s	Museum fur Naturkunde Berlin, Crustacea Collection		
 ZMB:Echinodermata	s	Museum fur Naturkunde Berlin, Echinodermata Collection		
 ZMB:Hydrozoa	s	Museum fur Naturkunde Berlin, Hydrozoa Collection		
+ZMB:Lep	s	Museum fur Naturkunde Berlin, Lepidoptera collection	
 ZMB:Mam	s	Museum fur Naturkunde Berlin, Mammal collection	
 ZMB:Moll	s	Museum fur Naturkunde Berlin, Mollusks collection	
 ZMB:Porifera	s	Museum fur Naturkunde Berlin, Porifera Collection		
