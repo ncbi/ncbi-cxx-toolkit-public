@@ -625,7 +625,7 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str,
 /// checking for errors after doing a "close()" (if "os" is an ofstream, for
 /// example).  For instance, uploading into the Toolkit FTP stream must be
 /// finalized with a read for the byte count delivered;  otherwise, it may not
-///  work correctly.
+/// work correctly.
 /// @sa
 ///   CConn_IOStream
 NCBI_XNCBI_EXPORT

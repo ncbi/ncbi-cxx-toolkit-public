@@ -214,6 +214,7 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
         return false;
     if (CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
         // NB: C++ Std says nothing about eofbit (27.6.1.3.27)
+        _ASSERT(!is.good());
         return !is.bad();
     }
     os << is.rdbuf();
