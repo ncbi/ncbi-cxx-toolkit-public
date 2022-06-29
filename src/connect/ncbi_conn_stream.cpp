@@ -51,18 +51,20 @@ static const STimeout s_ZeroTimeout = { 0, 0 };
 const STimeout* CConn_IOStream::kZeroTimeout = &s_ZeroTimeout;
 
 
+typedef AutoPtr< char, CDeleter<char> >  TTempCharPtr;
+
+
 CConn_IOStream::CConn_IOStream(const TConnector& connector,
                                const STimeout* timeout,
                                size_t buf_size, TConn_Flags flgs,
                                CT_CHAR_TYPE* ptr, size_t size)
-    : CNcbiIostream(0), m_CSb(new CConn_Streambuf(connector.first,
-                                                  connector.second,
-                                                  timeout, buf_size, flgs,
-                                                  ptr, size))
+    : CNcbiIostream(0/*the stream is "bad" initially (27.4.4.1.3)*/),
+      m_CSb(new CConn_Streambuf(connector.first, connector.second,
+                                timeout, buf_size, flgs,
+                                ptr, size))
 {
-    init(Status() != eIO_Success
-         ? 0  // according to the standard (27.4.4.1.3), badbit is set here
-         : m_CSb);
+    if (m_CSb->Status() == eIO_Success)
+        init(m_CSb);
 }
 
 
@@ -70,13 +72,13 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
                                const STimeout* timeout,
                                size_t buf_size, TConn_Flags flgs,
                                CT_CHAR_TYPE* ptr, size_t size)
-    : CNcbiIostream(0), m_CSb(new CConn_Streambuf(conn, close,
-                                                  timeout, buf_size, flgs,
-                                                  ptr, size))
+    : CNcbiIostream(0/*the stream is "bad" initially (27.4.4.1.3)*/),
+      m_CSb(new CConn_Streambuf(conn, close,
+                                timeout, buf_size, flgs,
+                                ptr, size))
 {
-    init(Status() != eIO_Success
-         ? 0  // according to the standard (27.4.4.1.3), badbit is set here
-         : m_CSb);
+    if (m_CSb->Status() == eIO_Success)
+        init(m_CSb);
 }
 
 
@@ -105,12 +107,9 @@ string CConn_IOStream::GetType(void) const
 
 string CConn_IOStream::GetDescription(void) const
 {
-    CONN   conn = GET_CONN(m_CSb);
-    char*  text = conn ? CONN_Description(conn) : 0;
-    string retval(text ? text : kEmptyStr);
-    if (text)
-        free(text);
-    return retval;
+    CONN         conn = GET_CONN(m_CSb);
+    TTempCharPtr text(conn ? CONN_Description(conn) : 0);
+    return text.get() ? text.get() : kEmptyStr;
 }
 
 
@@ -285,7 +284,7 @@ s_SocketConnectorBuilder(const string&  ahost,
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_SocketStream::CConn_SocketStream(\""
                    + ahost + "\", " + NStr::NumericToString(aport) + "): "
-                   " Invalid/insufficient destination");
+                   " Invalid/insufficient destination address");
     } else {
         port =  x_port;
         host = &x_host;
@@ -478,9 +477,13 @@ CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
 
 //
 // WARNING: All sx_ callbacks that operate on data members of non-primitive
-//          types (such as sx_ParseHeader can operate on SHTTP_StatusData)
-//          MUST NOT be indirectly called _before_ the respective stream's
+//          types MUST NOT be indirectly called before the respective stream's
 //          constructor body, and may not be used after that stream's dtor!!!
+//
+// Notably, sx_ParseHeader operates on SHTTP_StatusData, or SERVICE connector's
+// sx_Adjust (with failure_count == -1) gets called from that connector's Open,
+// which is done by default from the CConn_Streambuf's ctor unless
+// fConn_DelayOpen is set in the stream's flags.
 //
 
 
@@ -491,7 +494,7 @@ EHTTP_HeaderParse SHTTP_StatusData::Parse(const char* header)
     if (!eol)
         return eHTTP_HeaderError;
     int c, n;
-    if (sscanf(header, "HTTP/%*[0-9.] %u%n", &c, &n) < 1  ||  header + n > eol)
+    if (sscanf(header, "HTTP/%*[0-9.] %u%n", &c, &n) < 1  ||  eol < header + n)
         return eHTTP_HeaderError;
     m_Header = header;
     const char* str = m_Header.c_str();
@@ -507,9 +510,6 @@ EHTTP_HeaderParse SHTTP_StatusData::Parse(const char* header)
     m_Text.assign(str, (size_t)(eol - str));
     return eHTTP_HeaderSuccess;
 }
-
-
-typedef AutoPtr< char, CDeleter<char> >  TTempCharPtr;
 
 
 static CConn_IOStream::TConnector
@@ -591,7 +591,7 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     }
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
-    // NB: Must init these two now in case of an early CONNECTOR->destroy()
+    // NB: Must init these two here just in case of early CONNECTOR->destroy()
     *user_data_ptr    = user_data;
     *user_cleanup_ptr = user_cleanup;
     CONNECTOR c = HTTP_CreateConnectorEx(x_net_info.get(),
@@ -710,7 +710,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                                    0,
                                                    user_header.c_str(),
                                                    this,
-                                                   sx_Adjust,
+                                                             sx_Adjust,
                                                    cleanup ? sx_Cleanup : 0,
                                                    sx_ParseHeader,
                                                    flgs,
@@ -772,6 +772,7 @@ EHTTP_HeaderParse CConn_HttpStream::sx_ParseHeader(const char* header,
                                                    int         code)
 {
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
+    _ASSERT(http->rdbuf()); // make sure the stream is fully constructed
     try {
         EHTTP_HeaderParse rv = http->m_StatusData.Parse(header);
         if (rv != eHTTP_HeaderSuccess)
@@ -793,6 +794,7 @@ int CConn_HttpStream::sx_Adjust(SConnNetInfo* net_info,
                                 unsigned int  failure_count)
 {
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
+    _ASSERT(http->rdbuf()); // make sure the stream is fully constructed
     try {
         int  retval;
         bool modified;
@@ -966,6 +968,7 @@ EHTTP_HeaderParse CConn_ServiceStream::sx_ParseHeader(const char* header,
                                                       int         code)
 {
     CConn_ServiceStream* svc = reinterpret_cast<CConn_ServiceStream*>(data);
+    _ASSERT(svc->rdbuf()); // make sure the stream is fully constructed
     try {
         EHTTP_HeaderParse rv = svc->m_StatusData.Parse(header);
         if (rv != eHTTP_HeaderSuccess)
@@ -988,8 +991,6 @@ int/*bool*/ CConn_ServiceStream::sx_Adjust(SConnNetInfo* net_info,
 {
     CConn_ServiceStream* svc = reinterpret_cast<CConn_ServiceStream*>(data);
     try {
-        if (failure_count != (unsigned int)(-1))
-            svc->m_StatusData.Clear();
         return svc->m_Extra.adjust(net_info, svc->m_Extra.data, failure_count);
     }
     NCBI_CATCH_ALL("CConn_ServiceStream::sx_Adjust()");
@@ -1140,8 +1141,9 @@ s_PipeConnectorBuilder(const string&         cmd,
                        size_t                pipe_size,
                        CPipe*&               pipe)
 {
-    pipe = new CPipe(pipe_size);
-    CONNECTOR c = PIPE_CreateConnector(cmd, args, flgs, pipe, eNoOwnership);
+    unique_ptr<CPipe> p(new CPipe(pipe_size));
+    CONNECTOR c = PIPE_CreateConnector(cmd, args, flgs, p.get(), eNoOwnership);
+    pipe = c ? p.release() : 0;
     return CConn_IOStream::TConnector(c);
 }
 
@@ -1484,7 +1486,7 @@ public:
 };
 
 
-static bool s_IsIdentifier(const string& str)
+static bool x_IsIdentifier(const string& str)
 {
     const char* s = str.c_str();
     if (!isalpha((unsigned char)(*s)))
@@ -1507,13 +1509,12 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
         {
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
-    bool svc = s_IsIdentifier(url);
+    bool svc = x_IsIdentifier(url);
 
     AutoPtr<SConnNetInfo> net_info
         (ConnNetInfo_CreateInternal
          (svc
-          ? unique_ptr<char, void (*)(void*)>(SERV_ServiceName(url.c_str()),
-                                              &free).get()
+          ? make_c_unique(SERV_ServiceName(url.c_str())).get()
           : NStr::StartsWith(url, "ftp://", NStr::eNocase)
           ? "_FTP" : 0));
     if (svc)

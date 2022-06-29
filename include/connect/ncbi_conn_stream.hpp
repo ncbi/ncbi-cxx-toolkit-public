@@ -613,7 +613,8 @@ struct SHTTP_StatusData {
     CTempString       m_Text;
     string            m_Header;
 
-    SHTTP_StatusData(void) : m_Code(0)
+    SHTTP_StatusData(void)
+        : m_Code(0)
     { }
 
     EHTTP_HeaderParse Parse(const char* header);
@@ -743,7 +744,7 @@ public:
      size_t              buf_size     = kConn_DefaultBufSize
      );
 
-    ~CConn_HttpStream();
+    virtual ~CConn_HttpStream();
 
     /// Set new URL to hit next
     void                     SetURL(const string& url) { m_URL = url; }
@@ -811,7 +812,7 @@ public:
      const STimeout*         timeout  = kDefaultTimeout,
      size_t                  buf_size = kConn_DefaultBufSize);
 
-    ~CConn_ServiceStream();
+    virtual ~CConn_ServiceStream();
 
 protected:
     // Chained callbacks and data
@@ -995,7 +996,7 @@ public:
      size_t               buf_size = kConn_DefaultBufSize
      );
 
-    ~CConn_FtpStream();
+    virtual ~CConn_FtpStream();
 
     /// Abort any command in progress, read and discard all input data, and
     /// clear stream error state when successful (eIO_Success returns).
