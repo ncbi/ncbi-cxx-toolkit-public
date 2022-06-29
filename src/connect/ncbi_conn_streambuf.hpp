@@ -61,16 +61,20 @@ public:
     EIO_Status Open    (void);
     CONN       GetCONN (void) const { return m_Conn; }
     EIO_Status Close   (void)       { return m_Conn ? x_Close(true) : eIO_Closed; }
-    EIO_Status Status  (EIO_Event direction = eIO_Open) const;
+    EIO_Status Status  (EIO_Event direction) const;
 
     /// Return the specified data "data" of size "size" into the underlying
     /// connection CONN.
     /// If there is any non-empty pending input sequence (internal read buffer)
-    /// it will first be attempted to return to CONN.  That excludes any
-    /// initial read area ("ptr") that might have been specified in the ctor.
+    /// it will first be attempted to return to CONN.  Note that it may include
+    /// any initial read area ("ptr"), which could have been specified in the
+    /// ctor yet still unread, so potentially unwanted data copying can result.
     /// Any status different from eIO_Success means that nothing from "data"
     /// has been pushed back to the connection.
-    EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size);
+    /// On success, the "push" argument (if true) updates the current put
+    /// position with "size" that helps maintain its correct value in streams,
+    /// which logically append data when writing (e.g. CConn_MemoryStream).
+    EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size, bool push);
 
     /// @sa CConn_IOStream::Fetch
     EIO_Status Fetch   (const STimeout* timeout);
@@ -106,7 +110,7 @@ protected:
     // operations on the call below.  Unfortunately, they seem to have
     // forgotten that xsgetn() is to optimize read operations for unbuffered
     // streams, in particular;  yet the new "secure" implementation falls
-    // back to use uflow() instead (causing byte-by-byte input) -- very
+    // back to use uflow() instead (causing a byte-by-byte input) -- very
     // inefficient.  We redefine the "secure" API to go the standard way here.
     virtual streamsize  _Xsgetn_s(CT_CHAR_TYPE* buf, size_t, streamsize n)
     { return xsgetn(buf, n); }
