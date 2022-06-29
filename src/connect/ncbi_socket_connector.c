@@ -322,7 +322,7 @@ static CONNECTOR s_Init
             xxx->host  = strcpy((char*) xxx + sizeof(*xxx), host);
             xxx->port  = 0;
         } else if (!sock) {
-            /* in the absence of sock this denotes invalid state for Open() */
+            /* in the absence of sock, this denotes invalid state for Open() */
             xxx->host  = 0;
             xxx->port  = 0;
         } else {
@@ -331,9 +331,8 @@ static CONNECTOR s_Init
             SOCK_GetPeerAddress(sock, &x_host, &xxx->port, eNH_HostByteOrder);
             SOCK_ntoa(SOCK_HostToNetLong(x_host), addr, MAX_IP_ADDR_LEN);
             xxx->host  = addr;
-            assert(xxx->port);
         }
-        xxx->try_own   = try_own   ? 1         : 0;
+        xxx->try_own   = try_own ? 1       : 0;
         /*xxx->flags   = 0; // unused*/
     } else {
         char* temp     = (char*) xxx + sizeof(*xxx);
@@ -347,7 +346,7 @@ static CONNECTOR s_Init
         }
         xxx->host      = strcpy(temp + xxx->size, host);
         xxx->port      = port;
-        xxx->try_own   = try_own   ? try_own   : 1;
+        xxx->try_own   = try_own ? try_own : 1;
         xxx->flags     = flags;
     }
 
