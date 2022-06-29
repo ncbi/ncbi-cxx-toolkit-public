@@ -238,7 +238,7 @@ void CHttpFormData::SetContentType(EContentType content_type)
 {
     if (!m_Providers.empty()  &&  content_type != eMultipartFormData) {
         NCBI_THROW(CHttpSessionException, eBadContentType,
-            "The requested Content-Type cannot be used with the form data.");
+            "Requested Content-Type cannot be used with the form data");
     }
     m_ContentType = content_type;
 }
@@ -250,7 +250,7 @@ void CHttpFormData::AddEntry(CTempString entry_name,
 {
     if ( entry_name.empty() ) {
         NCBI_THROW(CHttpSessionException, eBadFormDataName,
-            "Form data entry name must not be empty.");
+            "Form data entry name must not be empty");
     }
     TValues& values = m_Entries[entry_name];
     SFormData entry;
@@ -265,7 +265,7 @@ void CHttpFormData::AddProvider(CTempString             entry_name,
 {
     if ( entry_name.empty() ) {
         NCBI_THROW(CHttpSessionException, eBadFormDataName,
-            "Form data entry name must not be empty.");
+            "Form data entry name must not be empty");
     }
     m_ContentType = eMultipartFormData;
     m_Providers[entry_name].push_back(Ref(provider));
@@ -294,11 +294,11 @@ public:
     {
         try {
             CNcbiIfstream in(m_FileName.c_str(), ios_base::binary);
-            NcbiStreamCopy(out, in);
+            NcbiStreamCopyThrow(out, in);
         }
         catch (...) {
             NCBI_THROW(CHttpSessionException, eBadFormData,
-                "Failed to POST file: " + m_FileName);
+                "Failed to POST file " + m_FileName);
         }
     }
 
@@ -410,9 +410,8 @@ void CHttpFormData::WriteFormData(CNcbiOstream& out) const
         ITERATE(TEntries, values, m_Entries) {
             if (values->second.size() > 1) {
                 NCBI_THROW(CHttpSessionException, eBadFormData,
-                    string("No multiple values per entry are allowed "
-                    "in URL-encoded form data, entry name '") +
-                    values->first + "' ");
+                    "Multiple values not allowed in URL-encoded form data, "
+                    " entry '" + values->first + '\'');
             }
             args.SetValue(values->first, values->second.back().m_Value);
         }
@@ -481,9 +480,9 @@ CNcbiIstream& CHttpResponse::ContentStream(void) const
     _ASSERT(m_Stream);
     if ( !CanGetContentStream() ) {
         NCBI_THROW(CHttpSessionException, eBadStream,
-            string("Content stream is not available for status '") +
-            NStr::NumericToString(m_StatusCode) + ' ' +
-            m_StatusText + "'");
+            "Content stream not available for status '"
+            + NStr::NumericToString(m_StatusCode) + ' '
+            + m_StatusText + '\'');
     }
     return *m_Stream;
 }
@@ -494,9 +493,9 @@ CNcbiIstream& CHttpResponse::ErrorStream(void) const
     _ASSERT(m_Stream);
     if ( CanGetContentStream() ) {
         NCBI_THROW(CHttpSessionException, eBadStream,
-            string("Error stream is not available for status '") +
-            NStr::NumericToString(m_StatusCode) + ' ' +
-            m_StatusText + "'");
+            "Error stream not available for status '"
+            + NStr::NumericToString(m_StatusCode) + ' '
+            + m_StatusText + '\'');
     }
     return *m_Stream;
 }
@@ -721,7 +720,7 @@ CHttpResponse CHttpRequest::Execute(void)
         if ( !m_Response ) {
             if (m_Stream) {
                 NCBI_THROW(CHttpSessionException, eBadRequest,
-                    "An attempt to execute HTTP request already being executed");
+                    "Attempt to execute HTTP request already being executed");
             }
 
             m_Session->x_StartRequest(protocol, *this, have_data);
@@ -752,7 +751,7 @@ CNcbiOstream& CHttpRequest::ContentStream(void)
     if ( !m_Stream ) {
         if (m_Response) {
             NCBI_THROW(CHttpSessionException, eBadRequest,
-                "An attempt to execute HTTP request already being executed");
+                "Attempt to execute HTTP request already being executed");
         }
 
         m_Session->x_StartRequest(m_Session->GetProtocol(), *this, false);
@@ -798,6 +797,9 @@ void CHttpRequest::x_UpdateResponse(CHttpHeaders::THeaders headers, int status_c
 }
 
 
+#define _STR(x)     #x
+#define  STR(x) _STR(x)
+
 void CHttpRequest::x_SetProxy(SConnNetInfo& net_info)
 {
     CHttpProxy proxy = GetProxy();
@@ -806,21 +808,27 @@ void CHttpRequest::x_SetProxy(SConnNetInfo& net_info)
     if ( proxy.IsEmpty() ) return;
 
     if (proxy.GetHost().size() > CONN_HOST_LEN) {
-        NCBI_THROW(CHttpSessionException, eConnFailed, "Proxy host length exceeds " + NStr::NumericToString(CONN_HOST_LEN));
+        NCBI_THROW(CHttpSessionException, eConnFailed,
+            "Proxy host length exceeds " STR(CONN_HOST_LEN));
     }
     memcpy(net_info.http_proxy_host, proxy.GetHost().c_str(), proxy.GetHost().size() + 1);
     net_info.http_proxy_port = proxy.GetPort();
 
     if (proxy.GetUser().size() > CONN_USER_LEN) {
-        NCBI_THROW(CHttpSessionException, eConnFailed, "Proxy user length exceeds " + NStr::NumericToString(CONN_USER_LEN));
+        NCBI_THROW(CHttpSessionException, eConnFailed,
+            "Proxy user length exceeds " STR(CONN_USER_LEN));
     }
     memcpy(net_info.http_proxy_user, proxy.GetUser().c_str(), proxy.GetUser().size() + 1);
 
     if (proxy.GetPassword().size() > CONN_PASS_LEN) {
-        NCBI_THROW(CHttpSessionException, eConnFailed, "Proxy password length exceeds " + NStr::NumericToString(CONN_PASS_LEN));
+        NCBI_THROW(CHttpSessionException, eConnFailed,
+            "Proxy password length exceeds " STR(CONN_PASS_LEN));
     }
     memcpy(net_info.http_proxy_pass, proxy.GetPassword().c_str(), proxy.GetPassword().size() + 1);
 }
+
+#undef  STR
+#undef _STR
 
 
 // Interface for the HTTP connector's adjust callback
@@ -847,7 +855,8 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         (ConnNetInfo_Create(m_Url.IsService() ? m_Url.GetService().c_str() : 0),
          ConnNetInfo_Destroy);
     if (!net_info.get()) {
-        NCBI_THROW(CHttpSessionException, eConnFailed, "Failed to create SConnNetInfo");
+        NCBI_THROW(CHttpSessionException, eConnFailed,
+            "Failed to create SConnNetInfo");
     }
     if (m_Session->GetProtocol() == CHttpSession::eHTTP_11) {
         net_info->http_version = 1;
@@ -983,7 +992,7 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 // For HTTP streams, the callbacks are coming in the following order:
 //   1. while establishing a connection with the specified HTTP server (or
 //      through the chain of redirected-to server(s), therein) sx_ParseHeader
-//      is called for every HTTP response received from the tried HTTP
+//      gets called for every HTTP response received from the tried HTTP
 //      server(s);  and sx_Adjust gets called for every redirect (with
 //      failure_count == 0) or HTTP request failure (failure_count contains a
 //      positive connection attempt number);
@@ -998,10 +1007,10 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 //      the HTTP session;  however, if the negotiation fails, sx_Adjust may be
 //      called for the next HTTP server for the service (w/failure_count == -1)
 //      etc -- this process repeats until a satisfactory conneciton is made;
-//   2. once the HTTP data exchange has occured, sx_Adjust is NOT called at the
-//      end of the HTTP data stream.
-// Note that adj->m_Request can only be considered valid at the either of the
-// steps 1 above because those actions get performed in the valid CHttpRequest
+//   2. once the HTTP data exchange has occurred, sx_Adjust is NOT called at
+//      the end of the HTTP data stream.
+// Note that adj->m_Request can only be considered valid at either of the steps
+// number 1 above because those actions get performed in the valid CHttpRequest
 // context, namely from CHttpRequest::Execute().  Once that call is finished,
 // CHttpRequest may no longer be accessible.
 //
@@ -1031,39 +1040,53 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
         default:
             break;
         }
-        return 1; // ok to retry
+        if (!adj->m_IsService)
+            return 1; // ok to retry
     }
     _ASSERT(!failure_count/*redirect*/  ||  adj->m_IsService);
 
     // Update location if it's different from the original URL.
-    char* loc = ConnNetInfo_URL(net_info);
+    auto loc = make_c_unique(ConnNetInfo_URL(net_info));
     if (loc) {
-        CUrl url(loc);
-        if (failure_count/*== (unsigned int)(-1)  &&  adj->m_IsService*/) {
+        CUrl url(loc.get());
+        if (failure_count) {
+            _ASSERT(adj->m_IsService);
             bool adjust;
             if (req->m_AdjustUrl)
                 adjust = req->m_AdjustUrl->AdjustUrl(url);
             else {
-                url.Adjust(req->m_Url, CUrl::fScheme_Replace |
+                url.Adjust(req->m_Url,
+                           CUrl::fScheme_Replace |
                            CUrl::fPath_Append    |
                            CUrl::fArgs_Merge);
                 adjust = true;
             }
             if ( adjust ) {
-                ConnNetInfo_ParseURL(net_info, url.ComposeUrl(CUrlArgs::eAmp_Char).c_str());
-                // Re-read the url and save it in the response.
-                free(loc);
-                loc = ConnNetInfo_URL(net_info);
+                // Re-read the url and save that in the response.
+                string new_url = url.ComposeUrl(CUrlArgs::eAmp_Char);
+                if (!ConnNetInfo_ParseURL(net_info, new_url.c_str())) {
+                    NCBI_THROW(CHttpSessionException, eConnFailed,
+                        "Cannot parse URL " + new_url);
+                }
+                if (!(loc = make_c_unique(ConnNetInfo_URL(net_info)))) {
+                    NCBI_THROW(CHttpSessionException, eConnFailed,
+                        "Cannot obtain updated URL");
+                }
             }
         }
-        resp->m_Location.SetUrl(loc);
-        free(loc);
+        resp->m_Location.SetUrl(loc.get());
+    } else {
+        NCBI_THROW(CHttpSessionException, eConnFailed,
+            "Cannot obtain original URL");
     }
 
     // Discard old cookies, add those for the new location.
     req->x_AddCookieHeader(resp->m_Location, false);
     string headers = req->m_Headers->GetHttpHeader();
-    ConnNetInfo_OverrideUserHeader(net_info, headers.c_str());
+    if (!ConnNetInfo_OverrideUserHeader(net_info, headers.c_str())) {
+        NCBI_THROW(CHttpSessionException, eConnFailed,
+            "Cannot set HTTP header(s)");
+    }
     return 1; // proceed
 }
 
@@ -1214,7 +1237,7 @@ void CHttpSession_Base::SetCredentials(shared_ptr<CTlsCertCredentials> cred)
 {
     if (m_Credentials) {
         NCBI_THROW(CHttpSessionException, eOther,
-            "Session credentials already set.");
+            "Session credentials already set");
     }
     m_Credentials = cred;
 }
