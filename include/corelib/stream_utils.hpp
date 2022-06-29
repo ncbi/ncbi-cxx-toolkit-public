@@ -83,7 +83,7 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
 // NOTE 6:  Stream re-positioning made after pushback clears all pushback data.
 // NOTE 7:  The standard specifically says that putbacks must be interleaved
 //          with reads in order to work properly.  That is especially
-//          important to keep in mind, while using both the standard
+//          important to keep in mind, while mixing both the standard
 //          putbacks and the pushbacks offered by this API.
 // NOTE 8:  Implementation is incomplete (but safe and stable) and may leak
 //          memory in Solaris WorkShop MT builds (due to a bug in its C++ RTL).
