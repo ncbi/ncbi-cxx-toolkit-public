@@ -462,7 +462,7 @@ public:
     typedef int TAdjustFlags;
 
     /// Adjust this URL using information from 'other' URL.
-    /// Scheme, host and port are never changed. Other parts can be replaced or merged
+    /// Host and port are never changed. Other parts can be replaced or merged
     /// depending on the flags.
     /// Throw CUrlException if the flags are inconsistent (e.g. both fPath_Replace and fPath_Append are set).
     void Adjust(const CUrl& other, TAdjustFlags flags);
