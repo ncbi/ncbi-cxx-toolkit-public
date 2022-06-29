@@ -80,11 +80,12 @@ void CCassSI2CSITaskUpdate::Wait1()
                     " accession, gi, sec_seq_state, seq_id_type, version"
                     ")"
                     "VALUES(?, ?, ?, ?, ?, ?, ?)";
-                if (m_UseWritetime && m_Record->GetWritetime() > 0) {
-                    sql += " USING TIMESTAMP " + to_string(m_Record->GetWritetime());
+                int64_t writetime = (m_UseWritetime && m_Record->GetWritetime() > 0) ? m_Record->GetWritetime() : 0;
+                if (writetime > 0) {
+                    sql += " USING TIMESTAMP ?";
                 }
                 qry->NewBatch();
-                qry->SetSQL(sql, 7);
+                qry->SetSQL(sql, 7 + (writetime > 0));
                 qry->BindStr(0, m_Record->GetSecSeqId());
                 qry->BindInt16(1, m_Record->GetSecSeqIdType());
                 qry->BindStr(2, m_Record->GetAccession());
@@ -92,6 +93,9 @@ void CCassSI2CSITaskUpdate::Wait1()
                 qry->BindInt8(4, m_Record->GetSecSeqState());
                 qry->BindInt16(5, m_Record->GetSeqIdType());
                 qry->BindInt16(6, m_Record->GetVersion());
+                if (writetime > 0) {
+                    qry->BindInt64(7, m_Record->GetWritetime());
+                }
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();

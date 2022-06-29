@@ -118,13 +118,13 @@ void CCassNAnnotTaskInsert::Wait1()
                 string sql = "INSERT INTO " + GetKeySpace() + ".bioseq_na "
                       "(accession, version, seq_id_type, annot_name, sat_key, last_modified, start, stop, seq_annot_info, annot_info_modified)"
                       "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                if (m_UseWritetime && m_Annot->GetWritetime() > 0) {
-                    sql += " USING TIMESTAMP " + to_string(m_Annot->GetWritetime());
+                int64_t writetime = (m_UseWritetime && m_Annot->GetWritetime() > 0) ? m_Annot->GetWritetime() : 0;
+                if (writetime > 0) {
+                    sql += " USING TIMESTAMP ?";
                 }
 
                 qry->NewBatch();
-
-                qry->SetSQL(sql, 10);
+                qry->SetSQL(sql, 10 + (writetime > 0));
                 qry->BindStr(0, m_Annot->GetAccession());
                 qry->BindInt16(1, m_Annot->GetVersion());
                 qry->BindInt16(2, m_Annot->GetSeqIdType());
@@ -137,6 +137,9 @@ void CCassNAnnotTaskInsert::Wait1()
                 auto annot_info_size = m_Annot->GetSeqAnnotInfo().size();
                 qry->BindBytes(8, reinterpret_cast<const unsigned char *>(annot_info_data), annot_info_size);
                 qry->BindInt64(9, m_Annot->GetAnnotInfoModified());
+                if (writetime > 0) {
+                    qry->BindInt64(10, m_Annot->GetWritetime());
+                }
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 CNAnnotChangelogWriter().WriteChangelogEvent(

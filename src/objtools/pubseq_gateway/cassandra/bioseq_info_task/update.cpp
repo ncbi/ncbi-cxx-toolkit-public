@@ -93,12 +93,13 @@ void CCassBioseqInfoTaskUpdate::Wait1()
                     " tax_id"
                     ")"
                     "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                if (m_UseWritetime && m_Record->GetWritetime() > 0) {
-                    sql += " USING TIMESTAMP " + to_string(m_Record->GetWritetime());
+                int64_t writetime = (m_UseWritetime && m_Record->GetWritetime() > 0) ? m_Record->GetWritetime() : 0;
+                if (writetime > 0) {
+                    sql += " USING TIMESTAMP ?";
                 }
                 qry->NewBatch();
 
-                qry->SetSQL(sql, 15);
+                qry->SetSQL(sql, 15 + (writetime > 0));
                 qry->BindStr(0, m_Record->GetAccession());
                 qry->BindInt16(1, m_Record->GetVersion());
                 qry->BindInt16(2, m_Record->GetSeqIdType());
@@ -114,6 +115,9 @@ void CCassBioseqInfoTaskUpdate::Wait1()
                 qry->BindInt8(12, m_Record->GetSeqState());
                 qry->BindInt8(13, m_Record->GetState());
                 qry->BindInt32(14, m_Record->GetTaxId());
+                if (writetime > 0) {
+                    qry->BindInt64(15, writetime);
+                }
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
                 int64_t partition = CBiSiPartitionMaker().GetCurrentPartition();
