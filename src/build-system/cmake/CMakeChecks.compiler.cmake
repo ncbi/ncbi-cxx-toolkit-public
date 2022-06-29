@@ -23,6 +23,9 @@ if (BUILD_SHARED_LIBS)
     set(NCBI_DLL_SUPPORT 1)
 endif()
 
+if(DEFINED NCBI_PTBCFG_CONFIGURATION_TYPES)
+    set(CMAKE_CONFIGURATION_TYPES "${NCBI_PTBCFG_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
+endif()
 # ---------------------------------------------------------------------------
 # compilation features
 if(NOT "${NCBI_PTBCFG_PROJECT_FEATURES}" STREQUAL "")
