@@ -173,7 +173,7 @@ public:
 
     // common
 
-    EIO_Status Close(void);
+    EIO_Status Close(bool close = true);
     EIO_Status Read (void*       buf, size_t count, size_t* n_read,
                      const STimeout* timeout);
     EIO_Status Write(const void* buf, size_t count, size_t* n_written,
@@ -182,8 +182,7 @@ public:
     EIO_Status Status(EIO_Event direction) const;
 
 private:
-    EIO_Status x_Flush(void);
-    EIO_Status x_Disconnect(bool orderly = true);
+    EIO_Status x_Disconnect(bool orderly);
     EIO_Status x_WaitForRead(const STimeout* timeout, DWORD* in_avail);
 
     HANDLE     m_Pipe;         // pipe I/O handle
@@ -205,7 +204,7 @@ CNamedPipeHandle::CNamedPipeHandle(void)
 
 CNamedPipeHandle::~CNamedPipeHandle()
 {
-    Close();
+    Close(false);
 }
 
 
@@ -445,47 +444,33 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 }
 
 
-EIO_Status CNamedPipeHandle::x_Flush(void)
-{
-    _ASSERT(m_Pipe != INVALID_HANDLE_VALUE);
-    if (!m_Flushed) {
-        if (m_Connected  &&  !::FlushFileBuffers(m_Pipe)) {
-            NAMEDPIPE_THROW(::GetLastError(),
-                            "Named pipe \"" + m_PipeName
-                            + "\" failed to flush");
-        }
-        m_Flushed = true;
-    }
-    return eIO_Success;
-}
-
-
 EIO_Status CNamedPipeHandle::x_Disconnect(bool orderly)
 {
-    EIO_Status status;
-    if (m_Connected <= 0  &&  orderly) {
-        if (m_Pipe == INVALID_HANDLE_VALUE  ||  !m_Connected) {
-            status = eIO_Closed;
-            NAMEDPIPE_THROW(0,
-                            "Named pipe \"" + m_PipeName
-                            + "\" already disconnected");
-        }
-        status = x_Flush();
-    } else {
-        m_Flushed = true;
-        status = eIO_Success;
+    _ASSERT(m_Pipe != INVALID_HANDLE_VALUE);
+    if (m_Connected  &&  orderly
+        &&  !m_Flushed  &&  !::FlushFileBuffers(m_Pipe)) {
+        NAMEDPIPE_THROW(::GetLastError(),
+                        "Named pipe \"" + m_PipeName
+                        + "\" failed to flush");
     }
-    if (m_Connected <= 0  &&  !::DisconnectNamedPipe(m_Pipe)) {
-        status = eIO_Unknown;
-        if (orderly) {
-            NAMEDPIPE_THROW(::GetLastError(),
-                            "Named pipe \"" + m_PipeName
-                            + "\" failed to disconnect");
+    m_Flushed = true;
+    EIO_Status status = eIO_Success;
+
+    if (m_Connected <= 0) {
+        if (!::DisconnectNamedPipe(m_Pipe)) {
+            status = eIO_Unknown;
+            if (orderly) {
+                NAMEDPIPE_THROW(::GetLastError(),
+                                "Named pipe \"" + m_PipeName
+                                + "\" failed to disconnect");
+            }
         }
-    } else {
         // Per documentation, another client can now connect again
-        m_Connected  = 0;
+    } else {
+        (void) ::CloseHandle(m_Pipe);
+        m_Pipe = INVALID_HANDLE_VALUE;
     }
+    m_Connected = 0;
     return status;
 }
 
@@ -495,8 +480,13 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
     EIO_Status status = eIO_Unknown;
 
     try {
-        status = x_Disconnect(/*orderly*/);
-
+        if (m_Pipe == INVALID_HANDLE_VALUE  ||  !m_Connected) {
+            status = eIO_Closed;
+            NAMEDPIPE_THROW(0,
+                            "Named pipe \"" + m_PipeName
+                            + "\" already disconnected");
+        }
+        status = x_Disconnect(true);
         _ASSERT(m_Flushed  &&  !m_Connected);
         m_ReadStatus  = eIO_Closed;
         m_WriteStatus = eIO_Closed;
@@ -509,7 +499,7 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
 }
 
 
-EIO_Status CNamedPipeHandle::Close(void)
+EIO_Status CNamedPipeHandle::Close(bool close)
 {
     if (m_Pipe == INVALID_HANDLE_VALUE) {
         _ASSERT(m_Flushed  &&  !m_Connected);
@@ -517,22 +507,18 @@ EIO_Status CNamedPipeHandle::Close(void)
     }
     EIO_Status status = eIO_Unknown;
     try {
-        if (m_Connected < 0) {
-            status = x_Disconnect(/*orderly*/);
-            _ASSERT(m_Flushed  &&  !m_Connected);
-        } else {
-            status = x_Flush();
-            _ASSERT(m_Flushed);
-            m_Connected = 0;
-        }
+        status = m_Connected ? x_Disconnect(close) : eIO_Success;
+        _ASSERT(m_Flushed  &&  !m_Connected);
     }
     catch (string& what) {
         ERR_POST_X(8, s_FormatErrorMessage("Close", what));
         m_Flushed = true;
         m_Connected = 0;
     }
-    (void) ::CloseHandle(m_Pipe);
-    m_Pipe = INVALID_HANDLE_VALUE;
+    if (m_Pipe != INVALID_HANDLE_VALUE) {
+        (void) ::CloseHandle(m_Pipe);
+        m_Pipe  = INVALID_HANDLE_VALUE;
+    }
     m_ReadStatus  = eIO_Closed;
     m_WriteStatus = eIO_Closed;
     return status;
@@ -813,7 +799,7 @@ public:
 
     // common
 
-    EIO_Status Close(void);
+    EIO_Status Close(bool close = true);
     EIO_Status Read (void* buf, size_t count, size_t* n_read,
                      const STimeout* timeout);
     EIO_Status Write(const void* buf, size_t count, size_t* n_written,
@@ -844,7 +830,7 @@ CNamedPipeHandle::CNamedPipeHandle(void)
 
 CNamedPipeHandle::~CNamedPipeHandle()
 {
-    Close();
+    Close(false);
 }
 
 
@@ -1008,16 +994,20 @@ EIO_Status CNamedPipeHandle::x_Disconnect(const char* where)
 {
     // Close I/O socket
     _ASSERT(m_IoSocket);
+    if (!where) {
+        static const STimeout kZeroTimeout = {0, 0};
+        SOCK_SetTimeout(m_IoSocket, eIO_Close, &kZeroTimeout);
+    }
     EIO_Status status = SOCK_Close(m_IoSocket);
     m_IoSocket = 0;
 
-    if (status != eIO_Success) {
+    if (status != eIO_Success  &&  where) {
         string verb(where);
         ERR_POST_X(8, s_FormatErrorMessage(where,
                                            x_FormatError(0,
                                                          "Named pipe \""
-                                                         + m_PipeName + "\""
-                                                         " failed to "
+                                                         + m_PipeName
+                                                         + "\" failed to "
                                                          + NStr::ToLower
                                                          (verb))));
     }
@@ -1037,7 +1027,7 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
 }
 
 
-EIO_Status CNamedPipeHandle::Close(void)
+EIO_Status CNamedPipeHandle::Close(bool close)
 {
     if (!m_LSocket  &&  !m_IoSocket) {
         return eIO_Closed;
@@ -1048,7 +1038,7 @@ EIO_Status CNamedPipeHandle::Close(void)
         m_LSocket = 0;
     }
     // Disconnect if connected
-    return m_IoSocket ? x_Disconnect("Close") : eIO_Success;
+    return m_IoSocket ? x_Disconnect(close ? "Close" : 0) : eIO_Success;
 }
 
 
