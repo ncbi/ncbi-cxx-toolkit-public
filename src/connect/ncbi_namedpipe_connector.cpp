@@ -192,27 +192,24 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
 (const string& pipename,
  size_t        pipesize) 
 {
-    CONNECTOR            ccc;
-    SNamedPipeConnector* xxx;
-
-    if (!(ccc = (SConnector*) malloc(sizeof(SConnector)))) {
+    auto ccc = make_c_unique((SConnector*) malloc(sizeof(SConnector)));
+    if (!ccc.get())
         return 0;
-    }
 
     // Initialize internal data structures
-    xxx           = new SNamedPipeConnector;
+    unique_ptr<SNamedPipeConnector> xxx(new SNamedPipeConnector);
     xxx->pipe     = new CNamedPipeClient;
     xxx->pipename = pipename;
     xxx->pipesize = pipesize;
 
     // Initialize connector data
-    ccc->handle  = xxx;
+    ccc->handle  = xxx.release();
     ccc->next    = 0;
     ccc->meta    = 0;
     ccc->setup   = s_Setup;
     ccc->destroy = s_Destroy;
 
-    return ccc;
+    return ccc.release();
 }
 
 
