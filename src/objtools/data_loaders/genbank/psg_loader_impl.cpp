@@ -2376,45 +2376,47 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
             }
             annot_names.push_back(it->first);
         }
-        //_ASSERT(PsgIdToHandle(bio_id));
-        auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), annot_names);
-        auto reply = x_SendRequest(request);
-        CPSG_TaskGroup group(*m_ThreadPool);
-        CRef<CPSG_AnnotRecordsNA_Task> task(new CPSG_AnnotRecordsNA_Task(reply, group));
-        CPSG_Task_Guard guard(*task);
-        group.AddTask(task);
-        group.WaitAll();
+        if ( !annot_names.empty() ) {
+            //_ASSERT(PsgIdToHandle(bio_id));
+            auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), annot_names);
+            auto reply = x_SendRequest(request);
+            CPSG_TaskGroup group(*m_ThreadPool);
+            CRef<CPSG_AnnotRecordsNA_Task> task(new CPSG_AnnotRecordsNA_Task(reply, group));
+            CPSG_Task_Guard guard(*task);
+            group.AddTask(task);
+            group.WaitAll();
 
-        if (task->GetStatus() == CThreadPool_Task::eCompleted) {
-            for ( auto& info : task->m_AnnotInfo ) {
-                CDataLoader::SetProcessedNA(info->GetName(), processed_nas);
-                CRef<CPsgBlobId> blob_id(new CPsgBlobId(info->GetBlobId().GetId()));
-                auto chunk_info = s_CreateNAChunk(*info, task->m_BioseqInfo.get());
-                if ( chunk_info.first ) {
-                    CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(blob_id);
-                    CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
-                    if ( load_lock ) {
-                        if ( !load_lock.IsLoaded() ) {
-                            if ( !chunk_info.second.empty() ) {
-                                load_lock->SetName(chunk_info.second);
+            if (task->GetStatus() == CThreadPool_Task::eCompleted) {
+                for ( auto& info : task->m_AnnotInfo ) {
+                    CDataLoader::SetProcessedNA(info->GetName(), processed_nas);
+                    CRef<CPsgBlobId> blob_id(new CPsgBlobId(info->GetBlobId().GetId()));
+                    auto chunk_info = s_CreateNAChunk(*info, task->m_BioseqInfo.get());
+                    if ( chunk_info.first ) {
+                        CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(blob_id);
+                        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
+                        if ( load_lock ) {
+                            if ( !load_lock.IsLoaded() ) {
+                                if ( !chunk_info.second.empty() ) {
+                                    load_lock->SetName(chunk_info.second);
+                                }
+                                load_lock->GetSplitInfo().AddChunk(*chunk_info.first);
+                                _ASSERT(load_lock->x_NeedsDelayedMainChunk());
+                                load_lock.SetLoaded();
                             }
-                            load_lock->GetSplitInfo().AddChunk(*chunk_info.first);
-                            _ASSERT(load_lock->x_NeedsDelayedMainChunk());
-                            load_lock.SetLoaded();
+                            locks.insert(load_lock);
                         }
-                        locks.insert(load_lock);
                     }
-                }
-                else {
-                    // no annot info
-                    if ( auto tse_lock = GetBlobById(data_source, *blob_id) ) {
-                        locks.insert(tse_lock);
+                    else {
+                        // no annot info
+                        if ( auto tse_lock = GetBlobById(data_source, *blob_id) ) {
+                            locks.insert(tse_lock);
+                        }
                     }
                 }
             }
-        }
-        else {
-            _TRACE("Failed to load annotations for " << idh.AsString());
+            else {
+                _TRACE("Failed to load annotations for " << idh.AsString());
+            }
         }
     }
     if ( kCreateLocalCDDEntries ) {
