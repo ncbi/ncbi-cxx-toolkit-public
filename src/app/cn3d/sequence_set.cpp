@@ -442,14 +442,8 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
         oss << identifier->gi;
     } else if (identifier->pdbID.size() > 0) {
         oss << identifier->pdbID.c_str();
-
-//		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-			if (identifier->pdbChain != " ")
-				oss << '_' << identifier->pdbChain.c_str();
-//		#else
-//			if (identifier->pdbChain != ' ')
-//				oss << '_' << (char) identifier->pdbChain;
-//		#endif
+		if (identifier->pdbChain != " ")
+			oss << '_' << identifier->pdbChain.c_str();
     } else {
         string label = identifier->GetLabel();
         if (label == "query" || label == "consensus")

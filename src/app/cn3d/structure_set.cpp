@@ -1454,19 +1454,11 @@ void StructureObject::RealignStructure(int nCoords,
 
     // for backward-compatibility with Cn3D 3.5, need name to encode chain/domain
     CNcbiOstrstream oss;
-//	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-		oss << masterMolecule->identifier->pdbID << masterMolecule->identifier->pdbChain << masterDomain << ' '
-			<< dependentMolecule->identifier->pdbID << dependentMolecule->identifier->pdbChain << dependentDomain << ' '
-			<< "Structure alignment of dependent " << multiple->GetSequenceOfRow(dependentRow)->identifier->ToString()
-			<< " with master " << multiple->GetSequenceOfRow(0)->identifier->ToString()
-			<< ", as computed by Cn3D";
-//	#else
-//		oss << masterMolecule->identifier->pdbID << ((char) masterMolecule->identifier->pdbChain) << masterDomain << ' '
-//			<< dependentMolecule->identifier->pdbID << ((char) dependentMolecule->identifier->pdbChain) << dependentDomain << ' '
-//			<< "Structure alignment of dependent " << multiple->GetSequenceOfRow(dependentRow)->identifier->ToString()
-//			<< " with master " << multiple->GetSequenceOfRow(0)->identifier->ToString()
-//			<< ", as computed by Cn3D";
-//	#endif
+	oss << masterMolecule->identifier->pdbID << masterMolecule->identifier->pdbChain << masterDomain << ' '
+		<< dependentMolecule->identifier->pdbID << dependentMolecule->identifier->pdbChain << dependentDomain << ' '
+		<< "Structure alignment of dependent " << multiple->GetSequenceOfRow(dependentRow)->identifier->ToString()
+		<< " with master " << multiple->GetSequenceOfRow(0)->identifier->ToString()
+		<< ", as computed by Cn3D";
 
     feature->SetName((string) CNcbiOstrstreamToString(oss));
 }

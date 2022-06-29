@@ -51,10 +51,6 @@ BEGIN_SCOPE(Cn3D)
 class Molecule;
 class Sequence;
 
-//#ifndef _STRUCTURE_USE_LONG_PDB_CHAINS_
-//#define _STRUCTURE_USE_LONG_PDB_CHAINS_
-//#endif
-
 class MoleculeIdentifier
 {
 public:
@@ -67,12 +63,7 @@ public:
     int mmdbID, moleculeID;
     TGi gi;
 
-//	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-	  std::string pdbChain;
-//	#else
-//	  int pdbChain;
-//	#endif
-
+	std::string pdbChain;
     std::string pdbID;
 
     // # residues (1 for non-biopolymers - hets, solvents)
@@ -97,16 +88,9 @@ public:
     // does this molecule have structure?
     bool HasStructure(void) const
     {
-
-//		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-			return (
-				(mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) ||
-				(pdbID.size() > 0 && !pdbChain.empty()));
-//		#else
-//			return (
-//				(mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) ||
-//				(pdbID.size() > 0 && pdbChain != VALUE_NOT_SET));
-//		#endif
+		return (
+			(mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) ||
+			(pdbID.size() > 0 && !pdbChain.empty()));
     }
 
     // comparison of identifiers (e.g. for sorting) - floats PDB's to top, then gi's in numerical order
@@ -123,15 +107,9 @@ public:
 
 private:
     // can't create one of these directly - must use GetIdentifier()
-//	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-		MoleculeIdentifier(void) :
-			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(""), gi(GI_NOT_SET), nResidues(0)
-			{ }
-//	#else
-//		MoleculeIdentifier(void) :
-//			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(VALUE_NOT_SET), gi(GI_NOT_SET), nResidues(0)
-//			{ }
-//	#endif
+	MoleculeIdentifier(void) :
+		mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(""), gi(GI_NOT_SET), nResidues(0)
+		{ }
 
     // get identifier based on Seq-id match
     static MoleculeIdentifier * GetIdentifier(const SeqIdList& ids);
