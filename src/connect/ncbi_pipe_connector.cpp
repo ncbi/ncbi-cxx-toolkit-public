@@ -240,30 +240,28 @@ extern CONNECTOR PIPE_CreateConnector
  EOwnership            own_pipe,
  size_t                pipe_size)
 {
-    CONNECTOR       ccc;
-    SPipeConnector* xxx;
-
-    if (!(ccc = (SConnector*) malloc(sizeof(SConnector)))) {
+    auto ccc = make_c_unique((SConnector*) malloc(sizeof(SConnector)));
+    if (!ccc.get()) {
         return 0;
     }
 
     // Initialize internal data structures
-    xxx            = new SPipeConnector;
-    xxx->pipe      = pipe ? pipe                       : new CPipe;
+    unique_ptr<SPipeConnector> xxx(new SPipeConnector);
     xxx->cmd       = cmd;
     xxx->args      = args;
     xxx->flags     = flags;
+    xxx->pipe      = pipe ? pipe                       : new CPipe;
     xxx->own_pipe  = pipe ? own_pipe == eTakeOwnership : true;
     xxx->pipe_size = pipe_size;
 
     // Initialize connector data
-    ccc->handle  = xxx;
+    ccc->handle  = xxx.release();
     ccc->next    = 0;
     ccc->meta    = 0;
     ccc->setup   = s_Setup;
     ccc->destroy = s_Destroy;
 
-    return ccc;
+    return ccc.release();
 }
 
 
