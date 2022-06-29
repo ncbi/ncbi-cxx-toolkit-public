@@ -632,9 +632,8 @@ int CNCBITestConnStreamApp::Run(void)
     {{
         // Silent test for timeouts and memory leaks in an unused stream
         static const STimeout tmo = {5, 0};
-        CConn_IOStream* s  =
-            new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmo);
-        delete s;
+        unique_ptr<CConn_IOStream>
+            s(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmo));
     }}
 
 
@@ -845,7 +844,9 @@ int CNCBITestConnStreamApp::Run(void)
 
     SOCK sock;
     string hello("Hello, World!");
-    CConn_ServiceStream echo("bounce", fSERV_Standalone);
+    CConn_ServiceStream echo("bounce", fSERV_Standalone | fSERV_DelayOpen);
+    if (!echo.good())
+        ERR_POST(Fatal << "Unable to build service stream");
     if (!(sock = echo.GetSOCK()))
         ERR_POST(Fatal << "Unable to get SOCK. Test 12 failed");
     if (!(echo << hello << NcbiEndl))
