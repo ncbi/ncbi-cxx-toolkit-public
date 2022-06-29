@@ -275,8 +275,9 @@ public:
     /// Return the specified data "data" of size "size" into the underlying
     /// connection CONN.
     /// If there is any non-empty pending input sequence (internal read buffer)
-    /// it will first be attempted to return to CONN.  That excludes any
-    /// initial read area ("ptr") that might have been specified in the ctor.
+    /// it will first be attempted to return to CONN.  Note that it may include
+    /// any initial read area ("ptr"), which could have been specified in the
+    /// ctor yet still unread, so potentially unwanted data copying can result.
     /// Any status different from eIO_Success means that nothing from "data"
     /// has been pushed back to the connection.
     /// @note
@@ -284,7 +285,8 @@ public:
     ///   the CONN if used with a "size" of 0 ("data" is ignored then).
     /// @sa
     ///   CONN_Pushback
-    EIO_Status         Pushback(const CT_CHAR_TYPE* data, streamsize size);
+    virtual EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size)
+    { return x_Pushback(data, size); }
 
     /// Get underlying SOCK, if available (e.g. after Fetch())
     SOCK               GetSOCK(void);
@@ -335,7 +337,9 @@ public:
                             const STimeout* timeout = kZeroTimeout);
 
 protected:
-    void x_Destroy(void);
+    EIO_Status x_Pushback(const CT_CHAR_TYPE* data, streamsize size,
+                          bool push = false);
+    void       x_Destroy(void);
 
 private:
     CConn_Streambuf*      m_CSb;
@@ -873,6 +877,9 @@ public:
                        size_t      buf_size = kConn_DefaultBufSize);
 
     virtual ~CConn_MemoryStream();
+
+    virtual EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size)
+    { return x_Pushback(data, size, true); }
 
     /// The CConnMemoryStream::To* methods allow to obtain unread portion of
     /// the stream into a single container (as a string or a vector) so that

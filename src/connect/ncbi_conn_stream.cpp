@@ -63,7 +63,7 @@ CConn_IOStream::CConn_IOStream(const TConnector& connector,
                                 timeout, buf_size, flgs,
                                 ptr, size))
 {
-    if (m_CSb->Status() == eIO_Success)
+    if (m_CSb->Status(eIO_Close) == eIO_Success)
         init(m_CSb);
 }
 
@@ -77,7 +77,7 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
                                 timeout, buf_size, flgs,
                                 ptr, size))
 {
-    if (m_CSb->Status() == eIO_Success)
+    if (m_CSb->Status(eIO_Close) == eIO_Success)
         init(m_CSb);
 }
 
@@ -147,9 +147,12 @@ EIO_Status CConn_IOStream::Fetch(const STimeout* timeout)
 }
 
 
-EIO_Status CConn_IOStream::Pushback(const CT_CHAR_TYPE* data, streamsize size)
+EIO_Status CConn_IOStream::x_Pushback(const CT_CHAR_TYPE* data,
+                                      streamsize          size,
+                                      bool                push)
 {
-    EIO_Status status = m_CSb ? m_CSb->Pushback(data, size) : eIO_NotSupported;
+    EIO_Status status 
+        = m_CSb ? m_CSb->Pushback(data, size, push) : eIO_NotSupported;
     if (status != eIO_Success)
         clear(NcbiBadbit);
     return status;
@@ -1092,6 +1095,7 @@ void CConn_MemoryStream::ToString(string* str)
     size_t size = sb  &&  good() ? (size_t)(tellp() - tellg()) : 0;
     str->resize(size);
     if (sb) {
+        // Proceed with read even with size == 0
         size_t s = (size_t) sb->sgetn(&(*str)[0], size);
 #ifdef NCBI_COMPILER_WORKSHOP
         if (s < 0) {
@@ -1114,6 +1118,7 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
     size_t size = sb  &&  good() ? (size_t)(tellp() - tellg()) : 0;
     vec->resize(size);
     if (sb) {
+        // Proceed with read even with size == 0
         size_t s = (size_t) sb->sgetn(&(*vec)[0], size);
 #ifdef NCBI_COMPILER_WORKSHOP
         if (s < 0) {
@@ -1156,7 +1161,8 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    size_t                buf_size)
     : CConn_IOStream(s_PipeConnectorBuilder(cmd, args, flgs, pipe_size,
                                             m_Pipe),
-                     timeout, buf_size), m_ExitCode(-1)
+                     timeout, buf_size),
+      m_ExitCode(-1)
 {
     return;
 }

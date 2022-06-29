@@ -152,7 +152,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
                                   | (m_Tie ? 0 : flgs & fCONN_Untie), &m_Conn))
         != eIO_Success) {
         ERR_POST_X(3, x_Message("CConn_Streambuf", "CONN_Create() failed"));
-        _ASSERT(!connector->meta  &&  !connector->next);
+        _ASSERT(!m_Conn  &&  !connector->meta  &&  !connector->next);
         return;
     }
     _ASSERT(m_Conn);
@@ -279,7 +279,7 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
 
 EIO_Status CConn_Streambuf::x_Pushback(void) THROWS_NONE
 {
-    _ASSERT(m_Conn  &&  !m_Initial);
+    _ASSERT(m_Conn);
 
     size_t count = (size_t)(egptr() - gptr());
     if (!count)
@@ -337,6 +337,7 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
     setp(0, 0);
 
     CONN conn = m_Conn;
+    x_Connector = 0;
     m_Conn = 0;  // NB: no re-entry
 
     if (close) {
@@ -363,7 +364,6 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
             status  = cbstat;
     }
 
-    x_Connector = 0;
     return status;
 }
 
@@ -780,16 +780,22 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
 }
 
 
-EIO_Status CConn_Streambuf::Pushback(const CT_CHAR_TYPE* data, streamsize size)
+EIO_Status CConn_Streambuf::Pushback(const CT_CHAR_TYPE* data,
+                                     streamsize          size,
+                                     bool                push)
 {
     if (!m_Conn)
         return eIO_Closed;
 
-    if ((!m_Initial  &&  (m_Status = x_Pushback()) != eIO_Success)
-        ||  (m_Status = CONN_Pushback(m_Conn, data, size)) != eIO_Success) {
+    m_Status = x_Pushback();
+    if (m_Status == eIO_Success  &&  size)
+        m_Status  = CONN_Pushback(m_Conn, data, size);
+    if (m_Status != eIO_Success) {
         ERR_POST_X(14, x_Message("Pushback",
                                  "CONN_Pushback() failed"));
-    }
+    } else if (push)
+        x_PPos += (CT_OFF_TYPE) size;
+        
     return m_Status;
 }
 
