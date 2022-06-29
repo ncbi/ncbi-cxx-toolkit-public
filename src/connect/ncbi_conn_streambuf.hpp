@@ -56,11 +56,11 @@ public:
                     const STimeout* timeout, size_t buf_size,
                     CConn_IOStream::TConn_Flags flags,
                     CT_CHAR_TYPE* ptr, size_t size);
-    virtual   ~CConn_Streambuf()    { Close();  delete[] m_WriteBuf; }
+    virtual   ~CConn_Streambuf();
 
     EIO_Status Open    (void);
-    CONN       GetCONN (void) const { return m_Conn;                 }
-    EIO_Status Close   (void)       { return x_Close(true);          }
+    CONN       GetCONN (void) const { return m_Conn; }
+    EIO_Status Close   (void)       { return m_Conn ? x_Close(true) : eIO_Closed; }
     EIO_Status Status  (EIO_Event direction = eIO_Open) const;
 
     /// Return the specified data "data" of size "size" into the underlying
@@ -124,10 +124,11 @@ protected:
 
     streamsize  x_Read(CT_CHAR_TYPE* buf, streamsize n);
 
-    EIO_Status  x_Pushback(void);
+    EIO_Status  x_Pushback(void) THROWS_NONE;
 
 private:
     CONN              m_Conn;      // underlying connection handle
+    CONNECTOR         x_Connector; // CONNECTOR (if passed in)
 
     CT_CHAR_TYPE*     m_WriteBuf;  // I/O arena (set as 0 if unbuffered)
     CT_CHAR_TYPE*     m_ReadBuf;   // read buffer or &x_Buf (if unbuffered)

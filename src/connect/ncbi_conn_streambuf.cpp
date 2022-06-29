@@ -72,25 +72,26 @@ static inline bool x_CheckConn(CONN conn)
 }
 
 
-string CConn_Streambuf::x_Message(const char*     method,
-                                  const char*     message,
-                                  EIO_Status      status,
-                                  const STimeout* timeout)
+string CConn_Streambuf::x_Message(const char*      method,
+                                  const char*      message,
+                                  EIO_Status       status,
+                                  const STimeout*  timeout)
 {
-    const char* type = m_Conn ? CONN_GetType    (m_Conn) : 0;
-    char*       text = m_Conn ? CONN_Description(m_Conn) : 0;
+    const char*
+        type = m_Conn ? CONN_GetType(m_Conn)     : 0;
+    unique_ptr<char, void (*)(void*)>
+        text  (m_Conn ? CONN_Description(m_Conn) : 0, free);
     string result("[CConn_Streambuf::");
     result += method;
     result += '(';
     if (type) {
         result += type;
-        if (text)
+        if (text.get())
             result += "; ";
     }
-    if (text) {
-        _ASSERT(*text);
-        result += text;
-        free(text);
+    if (text.get()) {
+        _ASSERT(*text.get());
+        result += text.get();
     }
     result += ")]  ";
     result += message;
@@ -115,7 +116,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
                                  CConn_IOStream::TConn_Flags flgs,
                                  CT_CHAR_TYPE*               ptr,
                                  size_t                      size)
-    : m_Conn(0),
+    : m_Conn(0), x_Connector(connector),
       m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1), m_Status(status),
       m_Tie(false), m_Close(true), m_CbValid(false), m_Initial(false),
       x_Buf(), x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE)size)
@@ -124,8 +125,24 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
         if (m_Status == eIO_Success)
             m_Status  = eIO_InvalidArg;
         ERR_POST_X(2, x_Message("CConn_Streambuf", "NULL connector"));
+        //NCBI_IO_CHECK(m_Status); /*NB: should be able to throw here*/
         return;
     }
+    //
+    // CAUTION!  May not throw from this point on in this ctor!
+    //
+    // This ctor must not throw from here on because otherwise it would either:
+    // a. leak memory allocated to the passed CONNECTOR (see the construction
+    //    of CConn_IOStream-based classes); or
+    // b. if CONNECTOR's destroy method was called here to cleanup, that would
+    //    have chained some of the CONNECTOR's cleanup callback(s) as well, yet
+    //    with the callback data (user_data), which might still be unreleased
+    //    by guard objects (e.g. smart pointers) that hold the ownership until
+    //    after the construction's completion;  thus, exception throwing would
+    //    make those guards attempt to destroy user_data for the second time!
+    //  So we just hold the error status and rely on CConn_IOStream to return a
+    //  bad stream;  and later to cleanup everything by a proper destructor.
+    //
     if (!(flgs & (CConn_IOStream::fConn_Untie |
                   CConn_IOStream::fConn_WriteUnbuffered))  &&  buf_size) {
         m_Tie = true;
@@ -135,9 +152,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
                                   | (m_Tie ? 0 : flgs & fCONN_Untie), &m_Conn))
         != eIO_Success) {
         ERR_POST_X(3, x_Message("CConn_Streambuf", "CONN_Create() failed"));
-        _ASSERT(!m_Conn  &&  !connector->meta  &&  !connector->next);
-        if (connector->destroy) // NB: cleanup callback (if any) must be valid!
-            connector->destroy(connector);
+        _ASSERT(!connector->meta  &&  !connector->next);
         return;
     }
     _ASSERT(m_Conn);
@@ -152,7 +167,7 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
                                  CConn_IOStream::TConn_Flags flgs,
                                  CT_CHAR_TYPE*               ptr,
                                  size_t                      size)
-    : m_Conn(conn),
+    : m_Conn(conn), x_Connector(0),
       m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1), m_Status(eIO_Success),
       m_Tie(false), m_Close(close), m_CbValid(false), m_Initial(false),
       x_Buf(), x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE)size)
@@ -160,6 +175,7 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
     if (!m_Conn) {
         m_Status = eIO_InvalidArg;
         ERR_POST_X(1, x_Message("CConn_Streambuf", "NULL connection"));
+        NCBI_IO_CHECK(m_Status);
         return;
     }
     if (!(flgs & (CConn_IOStream::fConn_Untie |
@@ -167,6 +183,19 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
         m_Tie = true;
     }
     x_Init(timeout, buf_size, flgs, ptr, size);
+}
+
+
+CConn_Streambuf::~CConn_Streambuf()
+{
+    Close();
+
+    _ASSERT(!m_Conn  &&  !m_CbValid);
+
+    if (x_Connector  &&  x_Connector->destroy)
+        x_Connector->destroy(x_Connector);
+
+    delete[] m_WriteBuf;
 }
 
 
@@ -181,7 +210,7 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
                              CConn_IOStream::TConn_Flags flgs,
                              CT_CHAR_TYPE* ptr, size_t size)
 {
-    _ASSERT(m_Status == eIO_Success);
+    _ASSERT(m_Conn  &&  m_Status == eIO_Success);
 
     if (timeout != kDefaultTimeout) {
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Open,      timeout) ==eIO_Success);
@@ -195,19 +224,26 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
             CConn_IOStream::fConn_WriteUnbuffered)) {
         buf_size = 0;
     }
+    unique_ptr<CT_CHAR_TYPE[]> wbp;
     if (buf_size) {
-        m_WriteBuf = new
-            CT_CHAR_TYPE[buf_size
-                         << ((flgs & (CConn_IOStream::fConn_ReadUnbuffered |
-                                      CConn_IOStream::fConn_WriteUnbuffered))
-                             ? 0 : 1)];
+        wbp.reset
+            (new
+             CT_CHAR_TYPE[buf_size
+                          << ((flgs & (CConn_IOStream::fConn_ReadUnbuffered |
+                                       CConn_IOStream::fConn_WriteUnbuffered))
+                              ? 0 : 1)]);
+        CT_CHAR_TYPE* write_buf = wbp.get();
         if (!(flgs & CConn_IOStream::fConn_ReadUnbuffered))
-            m_BufSize =  buf_size;
+            m_BufSize = buf_size;
         if (  flgs & CConn_IOStream::fConn_WriteUnbuffered)
-            buf_size  =  0;
+            buf_size  = 0;
         if (!(flgs & CConn_IOStream::fConn_ReadUnbuffered))
-            m_ReadBuf =  m_WriteBuf + buf_size;
-        setp(m_WriteBuf, m_WriteBuf + buf_size);
+            m_ReadBuf = write_buf + buf_size;
+#if 0/*unnecessary*/
+        if (  flgs & CConn_IOStream::fConn_WriteUnbuffered)
+            write_buf = 0;
+#endif
+        setp(write_buf, write_buf + buf_size);
     }/* else
         setp(0, 0) */
 
@@ -225,20 +261,25 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
     m_CbValid = true;
 
     if (!(flgs & CConn_IOStream::fConn_DelayOpen)) {
-        SOCK s/*dummy*/;
+        SOCK unused;
         // NB: CONN_Write(0 bytes) could have caused the same effect
-        (void) CONN_GetSOCK(m_Conn, &s);  // Prompt CONN to actually open
+        (void) CONN_GetSOCK(m_Conn, &unused);  // Prompt CONN to actually open
         if ((m_Status = CONN_Status(m_Conn, eIO_Open)) != eIO_Success) {
             ERR_POST_X(17, x_Message("CConn_Streambuf", "Failed to open",
                                      m_Status, timeout));
+            if (!x_Connector)
+                NCBI_IO_CHECK(m_Status);
         }
     }
+
+    if (m_Status == eIO_Success)
+        m_WriteBuf = wbp.release();
 }
 
 
-EIO_Status CConn_Streambuf::x_Pushback(void)
+EIO_Status CConn_Streambuf::x_Pushback(void) THROWS_NONE
 {
-    _ASSERT(m_Conn);
+    _ASSERT(m_Conn  &&  !m_Initial);
 
     size_t count = (size_t)(egptr() - gptr());
     if (!count)
@@ -253,10 +294,11 @@ EIO_Status CConn_Streambuf::x_Pushback(void)
 
 EIO_Status CConn_Streambuf::x_Close(bool close)
 {
-    if (!m_Conn)
-        return close ? eIO_Closed : eIO_Success;
- 
+    _ASSERT(m_Conn);
+
     EIO_Status status = eIO_Success;
+    bool cb_valid = m_CbValid;
+    m_CbValid = false;
 
     // push any still unread data from the buffer back to the device
     if (!m_Close  &&  close  &&  !m_Initial) {
@@ -294,40 +336,47 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
     }
     setp(0, 0);
 
-    CONN c = m_Conn;
+    CONN conn = m_Conn;
     m_Conn = 0;  // NB: no re-entry
 
     if (close) {
-        // here: not called from the close callback x_OnClose
-        if (m_CbValid) {
+        // Here when not called from the close callback x_OnClose
+        if (cb_valid) {
             SCONN_Callback cb;
-            CONN_SetCallback(c, eCONN_OnClose, &m_Cb, &cb);
-            if ((void*) cb.func != (void*) x_OnClose  ||  cb.data != this)
-                CONN_SetCallback(c, eCONN_OnClose, &cb, 0);
+            // Restore the original callback
+            CONN_SetCallback(conn, eCONN_OnClose, &m_Cb, &cb);
+            if (cb.func != x_OnClose  ||  cb.data != this) {
+                // Restore again if our callback was replaced
+                CONN_SetCallback(conn, eCONN_OnClose, &cb, 0);
+            }
         }
-        if (m_Close  &&  (m_Status = CONN_Close(c)) != eIO_Success) {
+        if (m_Close  &&  (m_Status = CONN_Close(conn)) != eIO_Success) {
             _TRACE(x_Message("Close",
                              "CONN_Close() failed"));
             if (status == eIO_Success)
                 status  = m_Status;
         }
-    } else if (m_CbValid  &&  m_Cb.func) {
-        EIO_Status cbstat = m_Cb.func(c, eCONN_OnClose, m_Cb.data);
+    } else if (cb_valid  &&  m_Cb.func) {
+        // In x_OnClose callback here: upcall the original callback
+        EIO_Status cbstat = m_Cb.func(conn, eCONN_OnClose, m_Cb.data);
         if (cbstat != eIO_Success)
             status  = cbstat;
     }
+
+    x_Connector = 0;
     return status;
 }
 
 
+// x_OnClose() is called when CONN gets closed from outside this class
 EIO_Status CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
                                       TCONN_Callback _DEBUG_ARG(type),
                                       void*          data)
 {
-    CConn_Streambuf* sb = static_cast<CConn_Streambuf*>(data);
+    CConn_Streambuf* sb = reinterpret_cast<CConn_Streambuf*>(data);
     _ASSERT(type == eCONN_OnClose  &&  sb  &&  conn);
     _ASSERT(!sb->m_Conn  ||  sb->m_Conn == conn);
-    return sb->x_Close(false);
+    return sb->m_Conn ? sb->x_Close(false) : eIO_Success;
 }
 
 
