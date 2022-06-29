@@ -69,8 +69,7 @@ SRC =	aaa_dummy_pch \
 	viewer_base \
 	viewer_window_base
 
-CPPFLAGS = -D_STRUCTURE_USE_LONG_PDB_CHAINS_ \
-	$(ORIG_CPPFLAGS) \
+CPPFLAGS = $(ORIG_CPPFLAGS) \
 	$(WXWIDGETS_INCLUDE) \
 	$(Z_INCLUDE) $(PNG_INCLUDE) $(PCRE_INCLUDE)
 

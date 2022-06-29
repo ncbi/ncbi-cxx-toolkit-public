@@ -92,18 +92,10 @@ public:
     ShowHideMolecule(const Molecule *m) : molecule(m)
     {
         label = indent + m->identifier->pdbID;
-
-//		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-			if (m->identifier->pdbChain != " ") {
-				label += '_';
-				label += m->identifier->pdbChain;
-			}
-//		#else
-//			if (m->identifier->pdbChain != ' ') {
-//				label += '_';
-//				label += (char) m->identifier->pdbChain;
-//			}
-//		#endif
+		if (m->identifier->pdbChain != " ") {
+			label += '_';
+			label += m->identifier->pdbChain;
+		}
     }
     virtual ~ShowHideMolecule(void) { }
     bool IsVisible(const ShowHideManager *shm) const { return shm->IsVisible(molecule); }
@@ -120,13 +112,7 @@ public:
     {
         CNcbiOstrstream oss;
         oss << indent << indent << m->identifier->pdbID;
-
-//		#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
-			if (m->identifier->pdbChain != " ") oss << '_' << m->identifier->pdbChain.c_str();
-//		#else
-//			if (m->identifier->pdbChain != ' ') oss << '_' << (char) m->identifier->pdbChain;
-//		#endif
-
+		if (m->identifier->pdbChain != " ") oss << '_' << m->identifier->pdbChain.c_str();
         oss << " d" << labelNum;
         label = (string) CNcbiOstrstreamToString(oss);
     }
