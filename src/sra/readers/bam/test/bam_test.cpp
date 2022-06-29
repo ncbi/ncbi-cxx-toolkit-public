@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <common/test_data_path.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -375,16 +376,21 @@ int LowLevelTest()
     VFSManager* vfs_mgr;
     CALL(VFSManagerMake(&vfs_mgr));
     VPath* bam_path = 0;
+#define COMMON "/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
 #ifdef _MSC_VER
-# define BAM_FILE "//traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
+    static const string kBamFile
+        = "//traces04/1kg_pilot_data/ftp/pilot_data" COMMON;
 #else
-//# define BAM_FILE "/netmnt/traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
-# define BAM_FILE "/am/ncbiapdata/test_data//traces04//1000genomes3/ftp/data/NA10851/alignment/NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam"
+    // static const string kBamFile
+    //     = "/netmnt/traces04/1kg_pilot_data/ftp/pilot_data" COMMON;
+    static const string kBamFile
+        = string(NCBI_GetTestDataPath()) + "/traces04/1000genomes3/ftp" COMMON;
 #endif
-    cout << "Testing BAM file: "<<BAM_FILE<<endl;
-    CALL(VFSManagerMakeSysPath(vfs_mgr, &bam_path, BAM_FILE));
+    static const string kBaiFile = kBamFile + ".bai";
+    cout << "Testing BAM file: " << kBamFile << endl;
+    CALL(VFSManagerMakeSysPath(vfs_mgr, &bam_path, kBamFile.c_str()));
     VPath* bai_path = 0;
-    CALL(VFSManagerMakeSysPath(vfs_mgr, &bai_path, BAM_FILE ".bai"));
+    CALL(VFSManagerMakeSysPath(vfs_mgr, &bai_path, kBaiFile.c_str()));
     
     const AlignAccessDB* bam = 0;
     CALL(AlignAccessMgrMakeIndexBAMDB(mgr, &bam, bam_path, bai_path));
