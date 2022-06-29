@@ -245,6 +245,13 @@ bool s_HaveVDBWGS()
 }
 
 
+bool s_HaveVDBSNP()
+{
+    // VDB SNP plugin is available in PSG and OSG
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2(eExcludePubseqos2);
+}
+
+
 bool s_RelaxGpipeCheck(void)
 {
     return true;
@@ -2250,6 +2257,28 @@ NCBITEST_INIT_TREE()
     if ( !CGBDataLoader::IsUsingPSGLoader() &&
          (!s_HaveID2(eExcludePubseqos2) || s_HaveCache()) ) {
         NCBITEST_DISABLE(TestGetBlobById);
+    }
+    if ( !s_HaveVDBSNP() ) {
+        NCBITEST_DISABLE(CheckExtSNP);
+        NCBITEST_DISABLE(CheckExtSNPEdit);
+        NCBITEST_DISABLE(CheckExtSNPEditChangeId);
+        NCBITEST_DISABLE(CheckExtSNP_Seq_feat);
+        NCBITEST_DISABLE(CheckExtSNP_SeqFeatData);
+        NCBITEST_DISABLE(CheckExtSNP_Imp_feat);
+        NCBITEST_DISABLE(CheckExtSNP_Seq_loc);
+        NCBITEST_DISABLE(CheckExtSNP_Seq_id);
+        NCBITEST_DISABLE(CheckExtSNP_Seq_interval);
+        NCBITEST_DISABLE(CheckExtSNP_Seq_point);
+        NCBITEST_DISABLE(CheckExtSNP_Seq_loc);
+        NCBITEST_DISABLE(CheckExtSNP_Gb_qual);
+        NCBITEST_DISABLE(CheckExtSNP_Dbtag);
+        NCBITEST_DISABLE(CheckExtSNP_Object_id);
+        NCBITEST_DISABLE(CheckExtSNP_User_object);
+        NCBITEST_DISABLE(CheckExtSNP_User_field);
+        NCBITEST_DISABLE(CheckExtSNPGraph);
+        //NCBITEST_DISABLE(CheckExtSNPNAGraph5000);
+        //NCBITEST_DISABLE(CheckExtSNPNAGraph100);
+        //NCBITEST_DISABLE(CheckExtSNPNA);
     }
     if ( !s_HaveVDBWGS() ) {
         NCBITEST_DISABLE(CheckWGSMasterDescr8);
