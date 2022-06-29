@@ -6,6 +6,11 @@ stages:
  - build
  - test
 
+default:
+  retry:
+    max: 2
+    when: runner_system_failure
+
 build:
  stage: build
  timeout: 5 hours
