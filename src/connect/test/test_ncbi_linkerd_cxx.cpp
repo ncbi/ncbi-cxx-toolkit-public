@@ -703,9 +703,7 @@ int CTestNcbiLinkerdCxxApp::TestGet_HttpStream(int id, const STest& test)
         mem_str.ToString(&got);
         retval = CompareResponse(test.expected, got);
     }
-    catch (CException& ex) {
-        ERR_POST(Error << "HttpStream exception: " << ex.what());
-    }
+    NCBI_CATCH("HttpStream exception");
     TestCaseEnd(id, "CConn_HttpStream", "GET", retval, test.url);
     return retval;
 }
@@ -748,9 +746,7 @@ int CTestNcbiLinkerdCxxApp::TestPost_HttpStream(int id, const STest& test)
         mem_str.ToString(&got);
         retval = CompareResponse(test.expected, got);
     }
-    catch (CException& ex) {
-        ERR_POST(Error << "HttpStream exception: " << ex.what());
-    }
+    NCBI_CATCH("HttpStream exception");
     TestCaseEnd(id, "CConn_HttpStream", "POST", retval, test.url);
     return retval;
 }
@@ -830,21 +826,11 @@ int CTestNcbiLinkerdCxxApp::Run(void)
 
 int main(int argc, char* argv[])
 {
-    int exit_code = 1;
-
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
                         | eDPF_Severity | eDPF_ErrorID | eDPF_Prefix);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
-    try {
-        exit_code = CTestNcbiLinkerdCxxApp().AppMain(argc, argv);
-    }
-    catch (...) {
-        // ERR_POST may not work
-        cerr << "\n\nunhandled exception" << endl;
-    }
-
-    return exit_code;
+    return CTestNcbiLinkerdCxxApp().AppMain(argc, argv);
 }

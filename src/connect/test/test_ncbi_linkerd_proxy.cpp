@@ -428,14 +428,13 @@ int CTestNcbiLinkerdProxyApp::Test(int id, bool pass_expected)
     TestCaseStart(id);
     bool test_passed = false;
     bool post_worked = false;
-    int result;
+    int result = -1;
     try {
         CHttpResponse resp = g_HttpPost(CUrl(url), post_data);
         result = ProcessResponse(resp, exp_data);
-    } catch (const CHttpSessionException& ex) {
-        NCBI_REPORT_EXCEPTION("g_HttpPost() failed", ex);
-        result = -1;
     }
+    NCBI_CATCH("g_HttpPost() failed");
+
     post_worked = (result == 0);
     if ((   pass_expected  &&    post_worked)  ||
         ( ! pass_expected  &&  ! post_worked))
@@ -496,21 +495,11 @@ int CTestNcbiLinkerdProxyApp::Run(void)
 
 int main(int argc, char* argv[])
 {
-    int exit_code = 1;
-
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
                         | eDPF_Severity | eDPF_ErrorID | eDPF_Prefix);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
-    try {
-        exit_code = CTestNcbiLinkerdProxyApp().AppMain(argc, argv);
-    }
-    catch (...) {
-        // ERR_POST may not work
-        cerr << "\n\nunhandled exception" << endl;
-    }
-
-    return exit_code;
+    return CTestNcbiLinkerdProxyApp().AppMain(argc, argv);
 }
