@@ -49,6 +49,7 @@ int main(int argc, const char* argv[])
     EIO_Status status;
     char ibuf[1024];
     CONN conn;
+    SOCK sock;
     size_t n;
 
     g_NCBI_ConnectRandomSeed
@@ -106,9 +107,11 @@ int main(int argc, const char* argv[])
             assert(m == strlen(obuf));
         }
     }
+    if (CONN_GetSOCK(conn, &sock) == eIO_Success)
+        verify(SOCK_Shutdown(sock, eIO_Write) == eIO_Success);
 
     for (;;) {
-       if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_Success) {
+        if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_Success) {
             CONN_Close(conn);
             CORE_LOG(eLOG_Fatal, "Failed to wait for reading");
         }
