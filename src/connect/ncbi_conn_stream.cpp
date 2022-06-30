@@ -194,7 +194,7 @@ EIO_Status CConn_IOStream::Close(void)
 
 void CConn_IOStream::x_Destroy(void)
 {
-    x_CSb.release();
+    x_CSb.reset();
     m_CSb = 0;
 }
 
