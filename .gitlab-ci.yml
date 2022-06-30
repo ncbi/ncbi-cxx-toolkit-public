@@ -55,4 +55,3 @@ test:
  cache:
   paths:
    - build.log
-
