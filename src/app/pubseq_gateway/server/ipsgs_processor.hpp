@@ -91,7 +91,7 @@ public:
 
 public:
     IPSGS_Processor() :
-        m_FinishSignalled(false)
+        m_FinishSignalled(false), m_UVThreadId(0)
     {}
 
     virtual ~IPSGS_Processor()
@@ -196,6 +196,16 @@ public:
     uv_thread_t GetUVThreadId(void) const
     {
         return m_UVThreadId;
+    }
+
+    /// Tells if a libuv thread id has been assigned to the processor.
+    /// Basically the assignment of the libuv thread means that the processor
+    /// has been started i.e. Process() was called before.
+    /// @return
+    ///  true if the libuv thread has been assigned
+    bool IsUVThreadAssigned(void) const
+    {
+        return m_UVThreadId != 0;
     }
 
 public:

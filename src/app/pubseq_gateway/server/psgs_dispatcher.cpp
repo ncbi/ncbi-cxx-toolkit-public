@@ -305,12 +305,22 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     // group is deleted
 
     if (uv_thread_self() != processor->GetUVThreadId()) {
-        PSG_ERROR("SignalFinishProcessing() is called not from an assigned "
-                  "thread (and libuv loop). "
-                  "Current thread: " << uv_thread_self() <<
-                  " Assigned thread: " << processor->GetUVThreadId() <<
-                  " Processor: " << processor->GetName() <<
-                  " Call source: " << CPSGS_Dispatcher::SignalSourceToString(source));
+        if (processor->IsUVThreadAssigned()) {
+            PSG_ERROR("SignalFinishProcessing() is called not from an assigned "
+                      "thread (and libuv loop). "
+                      "Current thread: " << uv_thread_self() <<
+                      " Assigned thread: " << processor->GetUVThreadId() <<
+                      " Processor: " << processor->GetName() <<
+                      " Call source: " << CPSGS_Dispatcher::SignalSourceToString(source));
+        } else {
+            // The worker thread has not been assigned yet. This is the case
+            // when a processor signals finishing before it was started. That
+            // possible in a scenario like this:
+            // - some requests have been backlogged
+            // - a connection has been abruptly dropped
+            // - Cancel() is called for backlogged (not started yet) processors
+            // - processors signal finishing
+        }
     }
 
     auto                            reply = processor->GetReply();
