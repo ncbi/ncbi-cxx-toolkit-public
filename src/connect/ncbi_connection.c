@@ -49,35 +49,35 @@
 
 /* Standard logging message
  */
-#define CONN_LOG_EX(subcode, func_name, level, message, status)            \
-  do {                                                                     \
-      const char* ststr = ((EIO_Status) status != eIO_Success              \
-                           ? IO_StatusStr((EIO_Status) status)             \
-                           : "");                                          \
-      const char* ctype = (conn  &&  conn->meta.get_type                   \
-                           ? conn->meta.get_type(conn->meta.c_get_type)    \
-                           : 0);                                           \
-      char* descr = (conn  &&  conn->meta.descr                            \
-                     ? conn->meta.descr(conn->meta.c_descr)                \
-                     : 0);                                                 \
-      char stbuf[80];                                                      \
-      if ((EIO_Status) status == eIO_Timeout  &&  timeout) {               \
-          assert(timeout != kDefaultTimeout);                              \
-          sprintf(stbuf, "%s[%u.%06u]", ststr,                             \
-                  (unsigned int)(timeout->sec + timeout->usec / 1000000),  \
-                  (unsigned int)               (timeout->usec % 1000000)); \
-          assert(strlen(stbuf) < sizeof(stbuf));                           \
-          ststr = stbuf;                                                   \
-      }                                                                    \
-      CORE_LOGF_X(subcode, level,                                          \
-                  ("[CONN_" #func_name "(%s%s%s)]  %s%s%s",                \
-                   ctype  &&  *ctype ? ctype : "UNDEF",                    \
-                   descr  &&  *descr ? "; "  : "", descr ? descr : "",     \
-                   message,                                                \
-                   ststr  &&  *ststr ? ": "  : "",                         \
-                   ststr             ? ststr : ""));                       \
-      if (descr)                                                           \
-          free(descr);                                                     \
+#define CONN_LOG_EX(subcode, func_name, level, message, status)         \
+  do {                                                                  \
+      const char* ststr = ((EIO_Status) status != eIO_Success           \
+                           ? IO_StatusStr((EIO_Status) status)          \
+                           : "");                                       \
+      const char* ctype = (conn  &&  conn->meta.get_type                \
+                           ? conn->meta.get_type(conn->meta.c_get_type) \
+                           : 0);                                        \
+      char* descr = (conn  &&  conn->meta.descr                         \
+                     ? conn->meta.descr(conn->meta.c_descr)             \
+                     : 0);                                              \
+      char stbuf[80];                                                   \
+      if ((EIO_Status) status == eIO_Timeout  &&  timeout) {            \
+          assert(timeout != kDefaultTimeout);                           \
+          sprintf(stbuf, "%s[%u.%06u]", ststr,                          \
+                  timeout->usec / 1000000 + timeout->sec,               \
+                  timeout->usec % 1000000);                             \
+          assert(strlen(stbuf) < sizeof(stbuf));                        \
+          ststr = stbuf;                                                \
+      }                                                                 \
+      CORE_LOGF_X(subcode, level,                                       \
+                  ("[CONN_" #func_name "(%s%s%s)]  %s%s%s",             \
+                   ctype  &&  *ctype ? ctype : "UNDEF",                 \
+                   descr  &&  *descr ? "; "  : "", descr ? descr : "",  \
+                   message,                                             \
+                   ststr  &&  *ststr ? ": "  : "",                      \
+                   ststr             ? ststr : ""));                    \
+      if (descr)                                                        \
+          free(descr);                                                  \
   } while (0)
 
 #define CONN_LOG(s_c, f_n, lvl, msg)  CONN_LOG_EX(s_c, f_n, lvl, msg, status)
