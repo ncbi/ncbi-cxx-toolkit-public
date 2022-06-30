@@ -90,6 +90,7 @@ class CPSGSCounters
             ePSGS_BioseqInfoError,
             ePSGS_BackloggedRequests,
             ePSGS_TooManyRequests,
+            ePSGS_DestroyedProcessorCallbacks,
 
             // Request stop statuses
             ePSGS_100,

@@ -34,12 +34,10 @@
 
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
+#include "psgs_uv_loop_binder.hpp"
 #include <objects/seqloc/Seq_id.hpp>
 
 USING_NCBI_SCOPE;
-
-// Forward declaration
-class CPSGS_UvLoopBinder;
 
 /// Interface class (and self-factory) for request processor objects that can
 /// retrieve data from a given data source.
@@ -174,11 +172,14 @@ public:
         return m_Priority;
     }
 
-    /// Provides a libuv event loop binder to have a callback from the
-    /// processor assigned thread
-    /// @return
-    ///  The binder for the processor assigned libuv loop
-    CPSGS_UvLoopBinder &  GetUvLoopBinder(void);
+    /// The provided callback will be called from the libuv loop assigned to
+    /// the processor
+    /// @param cb
+    ///  The callback to be called from the libuv loop
+    /// @param user_data
+    ///  The data to be passed to the callback
+    void PostponeInvoke(CPSGS_UvLoopBinder::TProcessorCB  cb,
+                        void *  user_data);
 
     /// Saves the libuv worker thread id which runs the processor.
     /// To be used by the server framework only.

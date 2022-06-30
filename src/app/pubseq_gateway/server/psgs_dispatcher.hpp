@@ -112,6 +112,7 @@ public:
 
     map<string, size_t>  GetConcurrentCounters(void);
     size_t GetActiveProcessorGroups(void);
+    bool IsGroupAlive(size_t  request_id);
 
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,

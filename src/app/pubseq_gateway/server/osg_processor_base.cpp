@@ -476,7 +476,7 @@ void CPSGS_OSGProcessorBase::CallDoProcessRepliesAsync(TBGProcToken token)
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() canceled: "<<State());
         return;
     }
-    GetUvLoopBinder().PostponeInvoke(s_CallDoProcessRepliesUvCallback, x_BGProcTokenToVoidP(token));
+    PostponeInvoke(s_CallDoProcessRepliesUvCallback, x_BGProcTokenToVoidP(token));
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesAsync() return: "<<State());
     //SleepMilliSec(10);
 }
@@ -611,7 +611,7 @@ void CPSGS_OSGProcessorBase::SignalEndOfBackgroundProcessing()
     x_SignalFinishProcessing("SignalEndOfBackgroundProcessing");
     if ( !m_FinishSignalled ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): sending to uv-loop "<<State());
-        GetUvLoopBinder().PostponeInvoke(s_CallFinalizeUvCallback, this);
+        PostponeInvoke(s_CallFinalizeUvCallback, this);
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): sent to uv-loop "<<State());
     }
 }
