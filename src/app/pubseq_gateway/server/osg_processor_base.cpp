@@ -75,6 +75,7 @@ BEGIN_NAMESPACE(osg);
 // CPSGS_OSGProcessorBase
 /////////////////////////////////////////////////////////////////////////////
 
+static thread_local bool m_UVLoop;
 
 CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
                                                const CRef<COSGConnectionPool>& pool,
@@ -86,7 +87,6 @@ CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
       m_EnabledFlags(enabled_flags),
       m_Status(IPSGS_Processor::ePSGS_InProgress),
       m_BackgroundProcesing(0),
-      m_UVLoop(0),
       m_NeedTrace(request->NeedTrace())
 {
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CPSGS_OSGProcessorBase()");
@@ -189,7 +189,7 @@ void CPSGS_OSGProcessorBase::Process()
 {
     CRequestContextResetter     context_resetter;
     GetRequest()->SetRequestContext();
-    CUVLoopGuard uv_loop_guard(this);
+    CUVLoopGuard uv_loop_guard(*this);
     
     SEND_TRACE("OSG: Process() called");
 
@@ -249,7 +249,7 @@ void CPSGS_OSGProcessorBase::CallDoProcessCallback(TBGProcToken token)
 
 CPSGS_OSGProcessorBase::TBGProcToken CPSGS_OSGProcessorBase::x_CreateBGProcToken()
 {
-    return TBGProcToken(new CBackgroundProcessingGuard(this));
+    return TBGProcToken(new CBackgroundProcessingGuard(*this));
 }
 
 
@@ -440,7 +440,7 @@ void CPSGS_OSGProcessorBase::CallDoProcessRepliesCallback(TBGProcToken token)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    CUVLoopGuard uv_loop_guard(this);
+    CUVLoopGuard uv_loop_guard(*this);
     
     if ( !x_Valid(token) ) {
         tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::CallDoProcessRepliesCallback() canceled: "<<State());
@@ -484,6 +484,7 @@ void CPSGS_OSGProcessorBase::CallDoProcessRepliesAsync(TBGProcToken token)
 
 void CPSGS_OSGProcessorBase::Cancel()
 {
+    CBackgroundProcessingGuard bg_guard(*this);
     CMutexGuard guard(m_StatusMutex);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::Cancel(): before: "<<State());
     SetFinalStatus(ePSGS_Canceled);
@@ -496,7 +497,7 @@ CNcbiOstream& COSGStateReporter::Print(CNcbiOstream& out) const
 {
     return out << "ST=" << m_ProcessorPtr->m_Status
                << " BG=" << m_ProcessorPtr->m_BackgroundProcesing
-               << " UV=" << m_ProcessorPtr->m_UVLoop
+               << " UV=" << m_UVLoop
                << " FS=" << m_ProcessorPtr->m_FinishSignalled;
 }
 
@@ -584,21 +585,30 @@ bool CPSGS_OSGProcessorBase::SignalStartOfBackgroundProcessing()
 
 void CPSGS_OSGProcessorBase::x_SignalFinishProcessing(const char* from)
 {
-    if ( m_UVLoop > 0 &&
-         m_BackgroundProcesing == 0 &&
-         m_Status != IPSGS_Processor::ePSGS_InProgress &&
-         !m_FinishSignalled ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): signal: "<<State());
-        SignalFinishProcessing();
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): return: "<<State());
-        _ASSERT(m_FinishSignalled);
+    try {
+    if ( m_Status != IPSGS_Processor::ePSGS_InProgress && !m_FinishSignalled ) {
+        if ( (m_UVLoop && m_BackgroundProcesing == 0) || !IsUVThreadAssigned() ) {
+            tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): signal: "<<State());
+            SignalFinishProcessing();
+            tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): return: "<<State());
+            _ASSERT(m_FinishSignalled);
+        }
+        else {
+            tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): sending to uv-loop "<<State());
+            PostponeInvoke(s_CallFinalizeUvCallback, this);
+            tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): sent to uv-loop "<<State());
+        }
+    }
+    }
+    catch ( exception& exc ) {
+        ERR_POST("CPSGS_OSGProcessorBase("<<this<<")::"<<from<<"()::x_SignalFinishProcessing(): exception: "<<exc.what());
     }
 }
 
 
 void CPSGS_OSGProcessorBase::s_CallFinalizeUvCallback(void *data)
 {
-    CUVLoopGuard uv_loop_guard(static_cast<CPSGS_OSGProcessorBase*>(data));
+    CUVLoopGuard uv_loop_guard(*static_cast<CPSGS_OSGProcessorBase*>(data));
 }
 
 
@@ -609,29 +619,24 @@ void CPSGS_OSGProcessorBase::SignalEndOfBackgroundProcessing()
     _ASSERT(m_BackgroundProcesing > 0);
     --m_BackgroundProcesing;
     x_SignalFinishProcessing("SignalEndOfBackgroundProcessing");
-    if ( !m_FinishSignalled ) {
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): sending to uv-loop "<<State());
-        PostponeInvoke(s_CallFinalizeUvCallback, this);
-        tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfBackgroundProcessing(): sent to uv-loop "<<State());
-    }
 }
 
 
 void CPSGS_OSGProcessorBase::SignalStartOfUVLoop()
 {
-    CMutexGuard guard(m_StatusMutex);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalStartOfUVLoop(): "<<State());
-    ++m_UVLoop;
+    _ASSERT(!m_UVLoop);
+    m_UVLoop = true;
+    CMutexGuard guard(m_StatusMutex);
     x_SignalFinishProcessing("SignalStartOfUVLoop");
 }
 
 
 void CPSGS_OSGProcessorBase::SignalEndOfUVLoop()
 {
-    CMutexGuard guard(m_StatusMutex);
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfUVLoop(): "<<State());
-    _ASSERT(m_UVLoop > 0);
-    --m_UVLoop;
+    _ASSERT(m_UVLoop);
+    m_UVLoop = false;
 }
 
 

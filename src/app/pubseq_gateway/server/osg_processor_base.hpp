@@ -176,101 +176,44 @@ protected:
     class CUVLoopGuard
     {
     public:
-        explicit CUVLoopGuard(CPSGS_OSGProcessorBase* processor)
-            : m_ProcessorPtr(processor)
+        explicit CUVLoopGuard(CPSGS_OSGProcessorBase& processor)
+            : m_Processor(processor)
             {
-                x_Start();
+                processor.SignalStartOfUVLoop();
             }
         ~CUVLoopGuard()
             {
-                x_End();
+                m_Processor.SignalEndOfUVLoop();
             }
         CUVLoopGuard(const CUVLoopGuard& guard) = delete;
         CUVLoopGuard& operator=(const CUVLoopGuard& guard) = delete;
     private:
-        friend class CPSGS_OSGProcessorBase;
-        void x_Start()
-            {
-                if ( m_ProcessorPtr ) {
-                    m_ProcessorPtr->SignalStartOfUVLoop();
-                }
-            }
-        void x_End()
-            {
-                if ( m_ProcessorPtr ) {
-                    m_ProcessorPtr->SignalEndOfUVLoop();
-                }
-            }
-        void x_Start(CPSGS_OSGProcessorBase* processor)
-            {
-                if ( processor != m_ProcessorPtr ) {
-                    x_End();
-                    m_ProcessorPtr = processor;
-                    x_Start();
-                }
-            }
-        CPSGS_OSGProcessorBase* m_ProcessorPtr;
+        CPSGS_OSGProcessorBase& m_Processor;
     };
     friend class CUVLoopGuard;
 
     class CBackgroundProcessingGuard : public CObject
     {
     public:
-        explicit CBackgroundProcessingGuard(CPSGS_OSGProcessorBase* processor)
-            : m_ProcessorPtr(processor)
+        explicit CBackgroundProcessingGuard(CPSGS_OSGProcessorBase& processor)
+            : m_ProcessorPtr(processor.SignalStartOfBackgroundProcessing()? &processor: 0)
             {
-                x_Start();
             }
         ~CBackgroundProcessingGuard()
             {
-                x_End();
+                if ( m_ProcessorPtr ) {
+                    m_ProcessorPtr->SignalEndOfBackgroundProcessing();
+                }
             }
         
         CBackgroundProcessingGuard(const CBackgroundProcessingGuard& guard) = delete;
         CBackgroundProcessingGuard& operator=(const CBackgroundProcessingGuard& guard) = delete;
-        /*
-        CBackgroundProcessingGuard(const CBackgroundProcessingGuard& guard)
-            : m_ProcessorPtr(guard.m_ProcessorPtr)
-            {
-                x_Start();
-            }
-        CBackgroundProcessingGuard& operator=(const CBackgroundProcessingGuard& guard)
-            {
-                if ( this != &guard ) {
-                    x_Start(guard.m_ProcessorPtr);
-                }
-                return *this;
-            }
-        */
 
         CPSGS_OSGProcessorBase* GetGuardedProcessor() const
             {
                 return m_ProcessorPtr;
             }
     private:
-        friend class CPSGS_OSGProcessorBase;
-        void x_Start()
-            {
-                if ( m_ProcessorPtr ) {
-                    if ( !m_ProcessorPtr->SignalStartOfBackgroundProcessing() ) {
-                        m_ProcessorPtr = 0;
-                    }
-                }
-            }
-        void x_End()
-            {
-                if ( m_ProcessorPtr ) {
-                    m_ProcessorPtr->SignalEndOfBackgroundProcessing();
-                }
-            }
-        void x_Start(CPSGS_OSGProcessorBase* processor)
-            {
-                if ( processor != m_ProcessorPtr ) {
-                    x_End();
-                    m_ProcessorPtr = processor;
-                    x_Start();
-                }
-            }
         CPSGS_OSGProcessorBase* m_ProcessorPtr;
     };
     friend class CBackgroundProcessingGuard;
@@ -335,7 +278,6 @@ private:
     CMutex m_StatusMutex;
     EPSGS_Status m_Status;
     int m_BackgroundProcesing;
-    int m_UVLoop;
     bool m_NeedTrace;
 };
 
