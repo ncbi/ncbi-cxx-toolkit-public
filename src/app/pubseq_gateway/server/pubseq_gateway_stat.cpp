@@ -280,6 +280,11 @@ CPSGSCounters::CPSGSCounters()
             "TooManyRequests", "Too many requests counter",
             "Number of times a request has been rejected because currently there are too many in serving",
             true, false, false);
+    m_Counters[ePSGS_DestroyedProcessorCallbacks] =
+        new SCounterInfo(
+            "DestroyedProcessorCallbacks", "Destroyed processor callback counter",
+            "Number of times a postponed callback was going to be invoked when a processor has already been destroyed",
+            true, false, false);
     m_Counters[ePSGS_100] =
         new SCounterInfo(
             "RequestStop100", "Request stop counter with status 100",

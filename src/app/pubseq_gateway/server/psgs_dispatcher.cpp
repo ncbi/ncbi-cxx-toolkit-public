@@ -544,8 +544,9 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         // comes from a processor and it might be not the last thing the
         // processor does. So the destruction needs to be delayed till the
         // next libuv loop iteration
-        processor->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
-                                                    (void*)(request_id));
+        auto *  app = CPubseqGatewayApp::GetInstance();
+        app->GetUvLoopBinder(processor->GetUVThreadId()).PostponeInvoke(
+                erase_processor_group_cb, (void*)(request_id));
     }
 }
 
@@ -695,8 +696,9 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
         // safe to erase a group.
         // The scheduling is needed in case the processors report finishing
         // quicker than the low level reports closing activity.
-        first_proc->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
-                                                     (void*)(request_id));
+        auto *  app = CPubseqGatewayApp::GetInstance();
+        app->GetUvLoopBinder(first_proc->GetUVThreadId()).PostponeInvoke(
+                erase_processor_group_cb, (void*)(request_id));
     }
 }
 
@@ -813,8 +815,9 @@ void CPSGS_Dispatcher::OnLibh2oFinished(size_t  request_id)
 
         if (procs->second->IsSafeToDelete()) {
             auto    processor = procs->second->m_Processors[0].m_Processor;
-            processor->GetUvLoopBinder().PostponeInvoke(erase_processor_group_cb,
-                                                        (void*)(request_id));
+            auto *  app = CPubseqGatewayApp::GetInstance();
+            app->GetUvLoopBinder(processor->GetUVThreadId()).PostponeInvoke(
+                        erase_processor_group_cb, (void*)(request_id));
         }
     }
     m_GroupsLock[bucket_index].unlock();
@@ -888,5 +891,17 @@ size_t CPSGS_Dispatcher::GetActiveProcessorGroups(void)
         m_GroupsLock[index].unlock();
     }
     return cnt;
+}
+
+
+bool CPSGS_Dispatcher::IsGroupAlive(size_t  request_id)
+{
+    size_t              bucket_index = x_GetBucketIndex(request_id);
+    bool                found = false;
+
+    m_GroupsLock[bucket_index].lock();
+    found = (m_ProcessorGroups[bucket_index].find(request_id) != m_ProcessorGroups[bucket_index].end());
+    m_GroupsLock[bucket_index].unlock();
+    return found;
 }
 

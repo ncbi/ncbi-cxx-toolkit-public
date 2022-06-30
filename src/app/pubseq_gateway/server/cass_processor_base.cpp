@@ -183,7 +183,7 @@ void CPSGS_CassProcessorBase::CancelLoaders(void)
                 // next iteration of libuv loop associated with the processor
                 // so that it is safe even if Cancel() is done from another
                 // loop
-                GetUvLoopBinder().PostponeInvoke(call_on_data_cb, (void*)(this));
+                PostponeInvoke(call_on_data_cb, (void*)(this));
             }
         }
     }

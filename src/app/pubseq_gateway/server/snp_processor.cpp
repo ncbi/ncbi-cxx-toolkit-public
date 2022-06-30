@@ -365,7 +365,7 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
         }
     }
     // Even if canceled, execute OnGotAnnotation to properly finish processing.
-    GetUvLoopBinder().PostponeInvoke(s_OnGotAnnotation, this);
+    PostponeInvoke(s_OnGotAnnotation, this);
 }
 
 
@@ -418,7 +418,7 @@ void CPSGS_SNPProcessor::GetBlobByBlobId(void)
     catch (...) {
         m_SNPData.clear();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobByBlobId, this);
+    PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
 
 
@@ -473,7 +473,7 @@ void CPSGS_SNPProcessor::GetChunk(void)
     catch (...) {
         m_SNPData.clear();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotChunk, this);
+    PostponeInvoke(s_OnGotChunk, this);
 }
 
 

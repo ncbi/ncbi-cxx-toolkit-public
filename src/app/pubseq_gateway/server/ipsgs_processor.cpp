@@ -100,9 +100,12 @@ void IPSGS_Processor::SignalFinishProcessing(void)
 }
 
 
-CPSGS_UvLoopBinder &  IPSGS_Processor::GetUvLoopBinder(void)
+void IPSGS_Processor::PostponeInvoke(CPSGS_UvLoopBinder::TProcessorCB  cb,
+                                     void *  user_data)
 {
-    return CPubseqGatewayApp::GetInstance()->GetUvLoopBinder(GetUVThreadId());
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->GetUvLoopBinder(GetUVThreadId()).PostponeInvoke(cb, user_data,
+                                                         m_Request->GetRequestId());
 }
 
 

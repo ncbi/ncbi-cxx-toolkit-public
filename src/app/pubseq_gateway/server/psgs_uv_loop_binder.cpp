@@ -35,6 +35,8 @@
 #include "psgs_uv_loop_binder.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "pubseq_gateway.hpp"
+
 
 USING_NCBI_SCOPE;
 
@@ -95,11 +97,29 @@ CPSGS_UvLoopBinder::~CPSGS_UvLoopBinder()
 }
 
 
+// This is for a callback which is not related to a processor
 void CPSGS_UvLoopBinder::PostponeInvoke(TProcessorCB    cb,
                                         void *          user_data)
 {
     m_QueueLock.lock();
     m_Callbacks.push_back(SUserCallback(user_data, cb));
+    m_QueueLock.unlock();
+
+    int     ret = uv_async_send(&m_Async);
+    if (ret < 0)
+        PSG_ERROR("Async send error: " + string(uv_strerror(ret)));
+}
+
+
+// This is for a callback which is related to a processor
+// So there will be a safety guard before calling it: is the processor group
+// still alive when it is time to call cb
+void CPSGS_UvLoopBinder::PostponeInvoke(TProcessorCB    cb,
+                                        void *          user_data,
+                                        size_t          request_id)
+{
+    m_QueueLock.lock();
+    m_Callbacks.push_back(SUserCallback(user_data, cb, request_id));
     m_QueueLock.unlock();
 
     int     ret = uv_async_send(&m_Async);
@@ -117,7 +137,18 @@ void CPSGS_UvLoopBinder::x_UvOnCallback(void)
     m_QueueLock.unlock();
 
     for (auto & cb : callbacks) {
-        cb.m_ProcCallback(cb.m_UserData);
+        if (cb.m_FromProcessor) {
+            // Need to check if the group still alive for the callback related
+            // request id
+            auto *      app = CPubseqGatewayApp::GetInstance();
+            if (app->GetProcessorDispatcher()->IsGroupAlive(cb.m_RequestId)) {
+                cb.m_ProcCallback(cb.m_UserData);
+            } else {
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
+            }
+        } else {
+            cb.m_ProcCallback(cb.m_UserData);
+        }
     }
 }
 

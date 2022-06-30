@@ -367,7 +367,7 @@ void CPSGS_WGSProcessor::ResolveSeqId(void)
     catch (...) {
         m_WGSData.reset();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnResolvedSeqId, this);
+    PostponeInvoke(s_OnResolvedSeqId, this);
 }
 
 
@@ -433,7 +433,7 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
     catch (...) {
         m_WGSData.reset();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobBySeqId, this);
+    PostponeInvoke(s_OnGotBlobBySeqId, this);
 }
 
 
@@ -497,7 +497,7 @@ void CPSGS_WGSProcessor::GetBlobByBlobId(void)
     catch (...) {
         m_WGSData.reset();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobByBlobId, this);
+    PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
 
 
@@ -560,7 +560,7 @@ void CPSGS_WGSProcessor::GetChunk(void)
     catch (...) {
         m_WGSData.reset();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotChunk, this);
+    PostponeInvoke(s_OnGotChunk, this);
 }
 
 

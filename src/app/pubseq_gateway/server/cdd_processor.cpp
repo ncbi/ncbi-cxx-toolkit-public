@@ -308,7 +308,7 @@ void CPSGS_CDDProcessor::GetBlobId(void)
         m_CDDBlob.info.Reset();
         m_CDDBlob.data.Reset();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobId, this);
+    PostponeInvoke(s_OnGotBlobId, this);
 }
 
 
@@ -323,7 +323,7 @@ void CPSGS_CDDProcessor::GetBlobBySeqId(void)
         m_CDDBlob.info.Reset();
         m_CDDBlob.data.Reset();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobBySeqId, this);
+    PostponeInvoke(s_OnGotBlobBySeqId, this);
 }
 
 
@@ -338,7 +338,7 @@ void CPSGS_CDDProcessor::GetBlobByBlobId(void)
         m_CDDBlob.info.Reset();
         m_CDDBlob.data.Reset();
     }
-    GetUvLoopBinder().PostponeInvoke(s_OnGotBlobByBlobId, this);
+    PostponeInvoke(s_OnGotBlobByBlobId, this);
 }
 
 

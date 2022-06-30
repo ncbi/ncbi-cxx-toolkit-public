@@ -163,8 +163,8 @@ void CPendingOperation::Peek(bool  need_wait)
         // loop, not from the framework loop.
         if (!m_ConnectionCanceledHandled) {
             m_ConnectionCanceledHandled = true;
-            m_Processor->GetUvLoopBinder().PostponeInvoke(call_process_event_cb,
-                                                          (void*)(m_Processor.get()));
+            m_Processor->PostponeInvoke(call_process_event_cb,
+                                        (void*)(m_Processor.get()));
         }
         return;
     }

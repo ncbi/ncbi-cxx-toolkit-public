@@ -83,6 +83,11 @@ class CPSGS_UvLoopBinder
         // The method is thread safe.
         void PostponeInvoke(TProcessorCB  cb, void *  user_data);
 
+        // The provided callback will be invoked from the libuv event loop.
+        // The invokation will happened once.
+        // The method is thread safe.
+        void PostponeInvoke(TProcessorCB  cb, void *  user_data, size_t  request_id);
+
     public:
         // Internal usage only.
         // The libuv C-style callback calls this method upon the prepare
@@ -99,10 +104,18 @@ class CPSGS_UvLoopBinder
     private:
         struct SUserCallback
         {
-            SUserCallback(void *  user_data, TProcessorCB  cb) :
+            SUserCallback(void *  user_data, TProcessorCB  cb, size_t  request_id) :
+                m_FromProcessor(true), m_RequestId(request_id),
                 m_UserData(user_data), m_ProcCallback(cb)
             {}
 
+            SUserCallback(void *  user_data, TProcessorCB  cb) :
+                m_FromProcessor(false), m_RequestId(0),
+                m_UserData(user_data), m_ProcCallback(cb)
+            {}
+
+            bool            m_FromProcessor;
+            size_t          m_RequestId;
             void *          m_UserData;
             TProcessorCB    m_ProcCallback;
         };
