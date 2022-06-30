@@ -413,7 +413,11 @@ struct CTcpWorker
             for (auto  it = m_connected_list.begin();
                  it != m_connected_list.end(); ++it) {
                 uv_tcp_t *tcp = &std::get<0>(*it);
-                uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
+                if (uv_is_closing(reinterpret_cast<uv_handle_t*>(tcp)) == 0) {
+                    uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
+                } else {
+                    s_OnClientClosed(reinterpret_cast<uv_handle_t*>(tcp));
+                }
             }
         }
     }
