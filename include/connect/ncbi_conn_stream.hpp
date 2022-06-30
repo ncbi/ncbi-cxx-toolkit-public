@@ -267,12 +267,10 @@ public:
     /// Flush the stream and fetch the response (w/o extracting any user data).
     /// @return
     ///   eIO_Success if the operation was successful, and some input
-    ///   (including empty in case of EOF) will be available upon read.
-    /// @note
-    ///   Status eIO_Closed does not necessarily mean a proper EOF here. 
+    ///   (including none in case of EOF) will be available upon read.
     EIO_Status         Fetch(const STimeout* timeout = kDefaultTimeout);
 
-    /// Return the specified data "data" of size "size" into the underlying
+    /// Push the specified data "data" of size "size" into back the underlying
     /// connection CONN.
     /// If there is any non-empty pending input sequence (internal read buffer)
     /// it will first be attempted to return to CONN.  Note that it may include
@@ -341,9 +339,14 @@ protected:
                           bool push = false);
     void       x_Destroy(void);
 
+protected:
+    // Stream buffer
+    CConn_Streambuf*            m_CSb;
+
 private:
-    CConn_Streambuf*      m_CSb;
-    CSocket               m_Socket;
+    // Resource storage
+    unique_ptr<CConn_Streambuf> x_CSb;
+    CSocket                     m_Socket;
 
     // Cancellation
     SCONN_Callback        m_CB[4];
