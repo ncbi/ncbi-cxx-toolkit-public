@@ -89,7 +89,8 @@ public:
 		string  trackSubType;    ///< used to further differentiate some GWAS/pha tracks (see SV-2201)
 		string  population;      ///< population description for GWAS/pha tracks
 		TSeqPos pos_end;         ///< gene end when trackSubType is (Gene association)
-		int     geneId;          ///< gene ID when trackSubType is (Gene association)
+		int		geneId;          ///< gene ID when trackSubType is (Gene association)
+		string  geneStringId;    ///< when external Gene IDs are used, it can be a string
 		string  geneName;        ///< gene name when trackSubType is (Gene association)
 
 	};

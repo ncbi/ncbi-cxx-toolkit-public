@@ -207,6 +207,7 @@ CRef<NSnpBins::SBinEntry> NSnpBins::GetEntry(const objects::CSeq_annot_Handle& a
     const CTableFieldHandle<int>      col_source("source");
     const CTableFieldHandle<string>   col_population("population");
     const CTableFieldHandle<int>      col_geneId("geneId");
+    const CTableFieldHandle<string>   col_geneStringId("geneId");
     const CTableFieldHandle<string>   col_geneName("geneName");
 
     string  trackSubType;
@@ -216,7 +217,8 @@ CRef<NSnpBins::SBinEntry> NSnpBins::GetEntry(const objects::CSeq_annot_Handle& a
     string  trait, pmids, rgenes, mgenes;
     string  title, comment, population;
     string  sHGVS;
-	int		source, geneId;
+    int		source, geneId;
+    string  geneStringId;
     string  dbgaptext, geneName;
 	string  context;
 
@@ -239,7 +241,11 @@ CRef<NSnpBins::SBinEntry> NSnpBins::GetEntry(const objects::CSeq_annot_Handle& a
         entry->source = col_source.TryGet(annot, row, source) ? source : -1;
         entry->population = col_population.TryGet(annot, row, population) ? population : "";
         entry->geneName = col_geneName.TryGet(annot, row, geneName) ? geneName : "";
-        entry->geneId = col_geneId.TryGet(annot, row, geneId) ? geneId : -1;
+        try {
+            entry->geneId = col_geneId.TryGet(annot, row, geneId) ? geneId : -1;
+        } catch(...) {
+            entry->geneStringId = col_geneStringId.TryGet(annot, row, geneStringId) ? geneStringId : "";
+        }
     }
     return entry;
 }
