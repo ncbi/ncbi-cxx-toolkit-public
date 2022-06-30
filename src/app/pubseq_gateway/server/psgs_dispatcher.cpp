@@ -554,9 +554,16 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         // comes from a processor and it might be not the last thing the
         // processor does. So the destruction needs to be delayed till the
         // next libuv loop iteration
-        auto *  app = CPubseqGatewayApp::GetInstance();
-        app->GetUvLoopBinder(processor->GetUVThreadId()).PostponeInvoke(
-                erase_processor_group_cb, (void*)(request_id));
+        if (processor->IsUVThreadAssigned()) {
+            // The processor has been started (Process() was called)
+            auto *  app = CPubseqGatewayApp::GetInstance();
+            app->GetUvLoopBinder(processor->GetUVThreadId()).PostponeInvoke(
+                    erase_processor_group_cb, (void*)(request_id));
+        } else {
+            // The processor was canceled before it started
+            // The group can be removed right away
+            EraseProcessorGroup(request_id);
+        }
     }
 }
 
@@ -706,9 +713,16 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
         // safe to erase a group.
         // The scheduling is needed in case the processors report finishing
         // quicker than the low level reports closing activity.
-        auto *  app = CPubseqGatewayApp::GetInstance();
-        app->GetUvLoopBinder(first_proc->GetUVThreadId()).PostponeInvoke(
-                erase_processor_group_cb, (void*)(request_id));
+        if (first_proc->IsUVThreadAssigned()) {
+            // The processor has been started (Process() was called)
+            auto *  app = CPubseqGatewayApp::GetInstance();
+            app->GetUvLoopBinder(first_proc->GetUVThreadId()).PostponeInvoke(
+                    erase_processor_group_cb, (void*)(request_id));
+        } else {
+            // The processor was canceled before it started
+            // The group can be removed right away
+            EraseProcessorGroup(request_id);
+        }
     }
 }
 
@@ -825,9 +839,17 @@ void CPSGS_Dispatcher::OnLibh2oFinished(size_t  request_id)
 
         if (procs->second->IsSafeToDelete()) {
             auto    processor = procs->second->m_Processors[0].m_Processor;
-            auto *  app = CPubseqGatewayApp::GetInstance();
-            app->GetUvLoopBinder(processor->GetUVThreadId()).PostponeInvoke(
-                        erase_processor_group_cb, (void*)(request_id));
+
+            if (processor->IsUVThreadAssigned()) {
+                // The processor has been started (Process() was called)
+                auto *  app = CPubseqGatewayApp::GetInstance();
+                app->GetUvLoopBinder(processor->GetUVThreadId()).PostponeInvoke(
+                            erase_processor_group_cb, (void*)(request_id));
+            } else {
+                // The processor was canceled before it started
+                // The group can be removed right away
+                EraseProcessorGroup(request_id);
+            }
         }
     }
     m_GroupsLock[bucket_index].unlock();
