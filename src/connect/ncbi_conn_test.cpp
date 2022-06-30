@@ -299,7 +299,7 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     PreCheck(eNone, 0/*main*/, "Failback HTTP access check");
 
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0, eDebugPrintout_Data));
-    if (!net_info.get()) {
+    if (!net_info) {
         PostCheck(eNone, 0/*main*/,
                   eIO_Unknown, "Unable to create network info structure");
         return eIO_Unknown;
@@ -384,7 +384,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
              "Checking whether NCBI is HTTP(S) accessible");
 
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0, m_DebugPrintout));
-    if (!net_info.get()) {
+    if (!net_info) {
         PostCheck(eNone, 0/*main*/,
                   eIO_Unknown, "Unable to create network info structure");
         return eIO_Unknown;
@@ -544,7 +544,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
             temp += "Check with your network administrator that your network"
                 " neither filters out nor blocks non-standard HTTP headers\n";
         }
-        if (net_info.get()  &&  status == eIO_NotSupported)
+        if (net_info  &&  status == eIO_NotSupported)
             temp += "NCBI network dispatcher must be accessed via HTTPS\n";
     }
 
@@ -565,7 +565,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
 
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(kService,
                                                       m_DebugPrintout));
-    if (net_info.get())
+    if (net_info)
         net_info->lb_disable = 1/*no local LB to use even if available*/;
 
     CConn_ServiceStream svc(kService, fSERV_Stateless, net_info.get(),
@@ -583,7 +583,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
     else if (status == eIO_Success)
         temp = "OK";
     else {
-        char* str = net_info.get() ? SERV_ServiceName(kService) : 0;
+        char* str = net_info ? SERV_ServiceName(kService) : 0;
         if (str  &&  NStr::CompareNocase(str, kService) == 0) {
             free(str);
             str = 0;
@@ -746,7 +746,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " blocking had not been an issue\n";
     }
     if (m_Firewall) {
-        _ASSERT(net_info.get());
+        _ASSERT(net_info);
         switch (net_info->firewall) {
         case eFWMode_Adaptive:
             temp += "Also, there are usually a few additional ports such as "
@@ -779,7 +779,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " firewall imposing a fine-grained control over which hosts and"
             " ports the outbound connections are allowed to use\n";
     }
-    if (m_HttpProxy  &&  net_info.get()  &&  !net_info->http_proxy_only) {
+    if (m_HttpProxy  &&  net_info  &&  !net_info->http_proxy_only) {
         temp += "Connections to the aforementioned ports will be made via an"
             " HTTP proxy at '";
         temp += net_info->http_proxy_host;
@@ -904,7 +904,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0, m_DebugPrintout));
 
     string temp("Checking individual connection points..\n");
-    if (net_info.get()) {
+    if (net_info) {
         if (net_info->firewall != eFWMode_Fallback) {
             temp += "NOTE that even though that not the entire port range may"
                 " currently be utilized and checked, in order for NCBI"
@@ -931,8 +931,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
     size_t n;
     bool url = false;
     unsigned int m = 0;
-    EIO_Status status = net_info.get() ? eIO_Unknown : eIO_InvalidArg;
-    for (n = 0;  net_info.get()  &&  n < sizeof(fwd) / sizeof(fwd[0]);  ++n) {
+    EIO_Status status = net_info ? eIO_Unknown : eIO_InvalidArg;
+    for (n = 0;  net_info  &&  n < sizeof(fwd) / sizeof(fwd[0]);  ++n) {
         if (fwd[n]->empty())
             continue;
         status = eIO_Success;
@@ -1063,7 +1063,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 #else
                 k = distance(fwd[n]->begin(), cp);
 #endif // NCBI_COMPILER_WORKSHOP
-                if (!fwck[k].first.get())
+                if (!fwck[k].first)
                     m_CheckPoint = "Connection closed";
                 else
                     m_CheckPoint = "Connection refused";
@@ -1282,7 +1282,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 }
                 temp += x_TimeoutMsg();
             }
-            if (m_Stateless  ||  (net_info.get()  &&  net_info->stateless)) {
+            if (m_Stateless  ||  (net_info  &&  net_info->stateless)) {
                 temp += "STATELESS mode forced by your configuration may be"
                     " preventing this stateful service from operating"
                     " properly; try to remove [";
@@ -1300,7 +1300,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                          ||  !SERV_GetNextInfo(iter))) {
                     temp += "The service is currently unavailable;"
                         " you may want to contact " + HELP_EMAIL + '\n';
-                } else if (m_Fwd.empty()  &&  net_info.get()
+                } else if (m_Fwd.empty()  &&  net_info
                            &&  net_info->firewall != eFWMode_Fallback) {
                     temp += "The most likely reason for the failure is that"
                         " your firewall is still blocking ports as reported"
@@ -1315,7 +1315,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 if (!net_info->firewall)
                     temp += " (Connection Relay)";
                 temp += " Daemon reports negotitation error";
-                if (net_info.get()  &&  m_HttpProxy
+                if (net_info  &&  m_HttpProxy
                     &&  !(net_info->http_proxy_only |
                           net_info->http_proxy_leak)) {
                     temp += ", which usually means that an intermediate HTTP"

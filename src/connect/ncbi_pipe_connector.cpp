@@ -241,7 +241,7 @@ extern CONNECTOR PIPE_CreateConnector
  size_t                pipe_size)
 {
     auto ccc = make_c_unique((SConnector*) malloc(sizeof(SConnector)));
-    if (!ccc.get()) {
+    if (!ccc) {
         return 0;
     }
 

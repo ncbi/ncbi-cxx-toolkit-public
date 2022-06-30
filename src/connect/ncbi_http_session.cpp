@@ -854,7 +854,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     unique_ptr<SConnNetInfo, void (*)(SConnNetInfo*)> net_info
         (ConnNetInfo_Create(m_Url.IsService() ? m_Url.GetService().c_str() : 0),
          ConnNetInfo_Destroy);
-    if (!net_info.get()) {
+    if (!net_info) {
         NCBI_THROW(CHttpSessionException, eConnFailed,
             "Failed to create SConnNetInfo");
     }
