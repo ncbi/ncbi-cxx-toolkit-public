@@ -160,8 +160,8 @@ private:
 
     string            x_Message(const char*     method,
                                 const char*     message,
-                                EIO_Status      status = eIO_Success,
-                                const STimeout* timeout = 0/*kInfiniteTmo*/);
+                                EIO_Status      status  = eIO_Success,
+                                const STimeout* timeout = kInfiniteTimeout);
 
     SCONN_Callback    m_Cb;
 };
