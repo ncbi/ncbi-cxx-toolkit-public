@@ -193,7 +193,7 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
  size_t        pipesize) 
 {
     auto ccc = make_c_unique((SConnector*) malloc(sizeof(SConnector)));
-    if (!ccc.get())
+    if (!ccc)
         return 0;
 
     // Initialize internal data structures
