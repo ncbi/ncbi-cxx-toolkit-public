@@ -608,9 +608,8 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                 CListeningSocket* ls = dynamic_cast<CListeningSocket*>(p);
                 if (!ls) {
                     CTrigger* tr = dynamic_cast<CTrigger*>(p);
-                    x_polls[i].poll = POLLABLE_FromTRIGGER(tr
-                                                           ? tr->GetTRIGGER()
-                                                           : 0);
+                    x_polls[i].poll
+                        = tr ? POLLABLE_FromTRIGGER(tr->GetTRIGGER()) : 0;
                 } else
                     x_polls[i].poll = POLLABLE_FromLSOCK(ls->GetLSOCK());
                 polls[i].m_REvent = eIO_Open;
