@@ -63,7 +63,7 @@ public:
     EIO_Status Close   (void)       { return m_Conn ? x_Close(true) : eIO_Closed; }
     EIO_Status Status  (EIO_Event direction) const;
 
-    /// Return the specified data "data" of size "size" into the underlying
+    /// Push the specified data "data" of size "size" back into the underlying
     /// connection CONN.
     /// If there is any non-empty pending input sequence (internal read buffer)
     /// it will first be attempted to return to CONN.  Note that it may include
@@ -77,6 +77,7 @@ public:
     EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size, bool push);
 
     /// @sa CConn_IOStream::Fetch
+    /// @note Return eIO_InvalidArg when there is no CONN
     EIO_Status Fetch   (const STimeout* timeout);
 
 protected:

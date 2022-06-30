@@ -86,10 +86,10 @@ string CConn_Streambuf::x_Message(const char*      method,
     result += '(';
     if (type) {
         result += type;
-        if (text.get())
+        if (text)
             result += "; ";
     }
-    if (text.get()) {
+    if (text) {
         _ASSERT(*text.get());
         result += text.get();
     }
@@ -803,7 +803,7 @@ EIO_Status CConn_Streambuf::Pushback(const CT_CHAR_TYPE* data,
 EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
 {
     if (!m_Conn)
-        return eIO_Closed;
+        return eIO_InvalidArg;
 
     if (timeout == kDefaultTimeout) {
         // HACK * HACK * HACK
