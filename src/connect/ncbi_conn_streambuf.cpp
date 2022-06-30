@@ -72,10 +72,10 @@ static inline bool x_CheckConn(CONN conn)
 }
 
 
-string CConn_Streambuf::x_Message(const char*      method,
-                                  const char*      message,
-                                  EIO_Status       status,
-                                  const STimeout*  timeout)
+string CConn_Streambuf::x_Message(const char*     method,
+                                  const char*     message,
+                                  EIO_Status      status,
+                                  const STimeout* timeout)
 {
     const char*
         type = m_Conn ? CONN_GetType(m_Conn)     : 0;
@@ -100,10 +100,15 @@ string CConn_Streambuf::x_Message(const char*      method,
         status  = m_Status;
     _ASSERT(status != eIO_Success);
     result += IO_StatusStr(status);
-    if (status == eIO_Timeout  &&  timeout  &&  timeout != kDefaultTimeout) {
-        char tmo[40];
-        ::sprintf(tmo, "[%u.%06us]", timeout->sec, timeout->usec);
-        result += tmo;
+    if (status == eIO_Timeout  &&  timeout/*!=kInfiniteTimeout*/) {
+        if (timeout != kDefaultTimeout) {
+            char x_timeout[40];
+            ::sprintf(x_timeout, "[%u.%06us]",
+                      timeout->usec / 1000000 + timeout->sec,
+                      timeout->usec % 1000000);
+            result += x_timeout;
+        } else
+            result += "(default)";
     }
     return result;
 }
