@@ -59,12 +59,12 @@ CConn_IOStream::CConn_IOStream(const TConnector& connector,
                                size_t buf_size, TConn_Flags flgs,
                                CT_CHAR_TYPE* ptr, size_t size)
     : CNcbiIostream(0/*the stream is "bad" initially (27.4.4.1.3)*/),
-      m_CSb(new CConn_Streambuf(connector.first, connector.second,
-                                timeout, buf_size, flgs,
-                                ptr, size))
+      m_CSb(0), x_CSb(new CConn_Streambuf(connector.first, connector.second,
+                                          timeout, buf_size, flgs,
+                                          ptr, size))
 {
-    if (m_CSb->Status(eIO_Close) == eIO_Success)
-        init(m_CSb);
+    if (x_CSb->Status(eIO_Close) == eIO_Success)
+        init(m_CSb = x_CSb.get());
 }
 
 
@@ -73,12 +73,12 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
                                size_t buf_size, TConn_Flags flgs,
                                CT_CHAR_TYPE* ptr, size_t size)
     : CNcbiIostream(0/*the stream is "bad" initially (27.4.4.1.3)*/),
-      m_CSb(new CConn_Streambuf(conn, close,
-                                timeout, buf_size, flgs,
-                                ptr, size))
+      m_CSb(0), x_CSb(new CConn_Streambuf(conn, close,
+                                          timeout, buf_size, flgs,
+                                          ptr, size))
 {
-    if (m_CSb->Status(eIO_Close) == eIO_Success)
-        init(m_CSb);
+    if (x_CSb->Status(eIO_Close) == eIO_Success)
+        init(m_CSb = x_CSb.get());
 }
 
 
@@ -109,7 +109,7 @@ string CConn_IOStream::GetDescription(void) const
 {
     CONN         conn = GET_CONN(m_CSb);
     TTempCharPtr text(conn ? CONN_Description(conn) : 0);
-    return text.get() ? text.get() : kEmptyStr;
+    return text ? text.get() : kEmptyStr;
 }
 
 
@@ -151,7 +151,7 @@ EIO_Status CConn_IOStream::x_Pushback(const CT_CHAR_TYPE* data,
                                       streamsize          size,
                                       bool                push)
 {
-    EIO_Status status 
+    EIO_Status status
         = m_CSb ? m_CSb->Pushback(data, size, push) : eIO_NotSupported;
     if (status != eIO_Success)
         clear(NcbiBadbit);
@@ -163,8 +163,10 @@ SOCK CConn_IOStream::GetSOCK(void)
 {
     SOCK sock;
     CONN conn = GET_CONN(m_CSb);
-    if (!conn  ||  CONN_GetSOCK(conn, &sock) != eIO_Success)
+    if (!conn)
         sock = 0;
+    else if (CONN_GetSOCK(conn, &sock) != eIO_Success)
+        _ASSERT(!sock);
     return sock;
 }
 
@@ -180,18 +182,20 @@ EIO_Status CConn_IOStream::Close(void)
 {
     if (!m_CSb)
         return eIO_Closed;
+    m_Socket.Reset(0, eNoOwnership, eCopyTimeoutsFromSOCK);
     EIO_Status status = m_CSb->Close();
     if (status != eIO_Success  &&  status != eIO_Closed)
         clear(NcbiBadbit);
+    _ASSERT(!GET_CONN(m_CSb));
+    m_Canceled.Reset(0);
     return status;
 }
 
 
 void CConn_IOStream::x_Destroy(void)
 {
-    CConn_Streambuf* sb = m_CSb;
+    x_CSb.release();
     m_CSb = 0;
-    delete sb;
 }
 
 
@@ -411,7 +415,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
             timeout  = net_info->timeout;
         if (!proxy  &&  net_info->debug_printout) {
             AutoPtr<SConnNetInfo> x_net_info(ConnNetInfo_Clone(net_info));
-            if (x_net_info.get()) {
+            if (x_net_info) {
                 // NB: This is only for logging! (so no throw on NULL)
                 // Manual cleanup of most fields req'd :-/
                 x_net_info->scheme = eURL_Unspec;
@@ -539,7 +543,7 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     AutoPtr<SConnNetInfo> x_net_info(net_info
                                      ? ConnNetInfo_Clone(net_info)
                                      : ConnNetInfo_CreateInternal(0));
-    if (!x_net_info.get()) {
+    if (!x_net_info) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_HttpStream::CConn_HttpStream(): "
                    " Out of memory");
@@ -775,7 +779,7 @@ EHTTP_HeaderParse CConn_HttpStream::sx_ParseHeader(const char* header,
                                                    int         code)
 {
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
-    _ASSERT(http->rdbuf()); // make sure the stream is fully constructed
+    _ASSERT(http->m_CSb); // make sure the stream is fully constructed
     try {
         EHTTP_HeaderParse rv = http->m_StatusData.Parse(header);
         if (rv != eHTTP_HeaderSuccess)
@@ -797,7 +801,7 @@ int CConn_HttpStream::sx_Adjust(SConnNetInfo* net_info,
                                 unsigned int  failure_count)
 {
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
-    _ASSERT(http->rdbuf()); // make sure the stream is fully constructed
+    _ASSERT(http->m_CSb); // make sure the stream is fully constructed
     try {
         int  retval;
         bool modified;
@@ -853,7 +857,7 @@ s_ServiceConnectorBuilder(const char*           service,
     AutoPtr<SConnNetInfo> x_net_info(net_info
                                      ? ConnNetInfo_Clone(net_info)
                                      : ConnNetInfo_Create(service));
-    if (!x_net_info.get()) {
+    if (!x_net_info) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_ServiceStream::CConn_ServiceStream(): "
                    " Out of memory");
@@ -971,7 +975,7 @@ EHTTP_HeaderParse CConn_ServiceStream::sx_ParseHeader(const char* header,
                                                       int         code)
 {
     CConn_ServiceStream* svc = reinterpret_cast<CConn_ServiceStream*>(data);
-    _ASSERT(svc->rdbuf()); // make sure the stream is fully constructed
+    _ASSERT(svc->m_CSb); // make sure the stream is fully constructed
     try {
         EHTTP_HeaderParse rv = svc->m_StatusData.Parse(header);
         if (rv != eHTTP_HeaderSuccess)
@@ -1526,7 +1530,7 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     if (svc)
         return new CConn_ServiceStream(url, fSERV_Any, net_info.get());
 
-    if (net_info.get()  &&  !NCBI_HasSpaces(url.c_str(), len)) {
+    if (net_info  &&  !NCBI_HasSpaces(url.c_str(), len)) {
         unsigned int   host;
         unsigned short port;
         SIZE_TYPE      pos = NStr::Find(url, ":");
