@@ -2285,7 +2285,7 @@ extern int/*bool*/ ConnNetInfo_SetTimeout(SConnNetInfo*   info,
         info->tmo     = *timeout;
         info->timeout = &info->tmo;
     } else
-        info->timeout = kInfiniteTimeout/*0,timeout*/;
+        info->timeout = kInfiniteTimeout/*0,==timeout*/;
     return 1/*succeeded*/;
 }
 
@@ -2524,8 +2524,8 @@ extern EIO_Status URL_ConnectEx
         assert(!*sock);
         if (status == eIO_Timeout  &&  o_timeout) {
             sprintf(timeout, "[%u.%06u]",
-                    (unsigned int)(o_timeout->sec + o_timeout->usec/1000000),
-                    (unsigned int)                 (o_timeout->usec%1000000));
+                    o_timeout->usec / 1000000 + o_timeout->sec,
+                    o_timeout->usec % 1000000);
         } else
             *timeout = '\0';
         if (port)
