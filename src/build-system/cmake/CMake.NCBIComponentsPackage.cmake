@@ -19,9 +19,9 @@
 
 set(__silent ${CONAN_CMAKE_SILENT_OUTPUT})	 
 set(CONAN_CMAKE_SILENT_OUTPUT TRUE)	 
-if(NOT NCBI_PTBCFG_PACKAGED OR NOT TARGET CONAN_PKG::ncbi-cxx-toolkit-public)	 
-    conan_define_targets()	 
-endif()	 
+if(NOT NCBI_PTBCFG_PACKAGED OR NOT TARGET CONAN_PKG::ncbi-cxx-toolkit-public OR NOT TARGET CONAN_PKG::ncbi-cxx-toolkit-core)
+    conan_define_targets()
+endif()
 set(CONAN_CMAKE_SILENT_OUTPUT ${__silent})
 
 include(CheckIncludeFile)
