@@ -41,9 +41,6 @@
 #include <iterator>
 #include <stdlib.h>
 
-#define _STR(x)           #x
-#define STRINGIFY(x)  _STR(x)
-
 #define HELP_EMAIL    (m_Email.empty()                                    \
                        ? string("NCBI Help Desk <info@ncbi.nlm.nih.gov>") \
                        : m_Email)
@@ -732,7 +729,8 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     if (m_Firewall) {
         temp += "This mode requires your firewall to be configured in such a"
             " way that it allows outbound connections to the port range ["
-            STRINGIFY(CONN_FWD_PORT_MIN) ".." STRINGIFY(CONN_FWD_PORT_MAX)
+            NCBI_AS_STRING(CONN_FWD_PORT_MIN) ".."
+            NCBI_AS_STRING(CONN_FWD_PORT_MAX)
             "] (inclusive) at the two fixed NCBI addresses, "
             NCBI_FWD_BEMD " and " NCBI_FWD_STVA ".\n"
             "To set that up correctly, please have your network administrator"
@@ -750,7 +748,8 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         switch (net_info->firewall) {
         case eFWMode_Adaptive:
             temp += "Also, there are usually a few additional ports such as "
-                STRINGIFY(CONN_PORT_SSH) " and " STRINGIFY(CONN_PORT_HTTPS)
+                NCBI_AS_STRING(CONN_PORT_SSH) " and "
+                NCBI_AS_STRING(CONN_PORT_HTTPS)
                 " at " NCBI_FWD_BEMD ", which can be used if connections to"
                 " the ports in the range described above, have failed\n";
             break;
@@ -761,7 +760,8 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             break;
         case eFWMode_Fallback:
             temp += "There are usually a few backup connection ports such as "
-                STRINGIFY(CONN_PORT_SSH) " and " STRINGIFY(CONN_PORT_HTTPS)
+                NCBI_AS_STRING(CONN_PORT_SSH) " and "
+                NCBI_AS_STRING(CONN_PORT_HTTPS)
                 " at " NCBI_FWD_BEMD ", which can be used as a failover if"
                 " connections to the port range above fail.  However, your "
                 " configuration explicitly requests that only those fallback"

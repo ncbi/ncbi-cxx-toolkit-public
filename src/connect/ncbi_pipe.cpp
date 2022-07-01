@@ -59,9 +59,6 @@
 #  include <sys/types.h>
 #  include <sys/wait.h>
 
-#  define _STR(s)  #s
-#  define  STR(s)  _STR(s)
-
 #else
 #  error "The CPipe class is supported only on Windows and Unix"
 #endif
@@ -1798,7 +1795,8 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             if (max >= FD_SETSIZE) {
                 PIPE_THROW(0,
                            "File descriptor " + NStr::NumericToString(max)
-                           + " too large (" + string(STR(FD_SETSIZE)) + ')');
+                           + " too large ("
+                           + string(NCBI_AS_STRING(FD_SETSIZE)) + ')');
             }
 
             int n = ::select(max + 1,
