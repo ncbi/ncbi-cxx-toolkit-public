@@ -934,7 +934,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
             auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
 
             if (!Retry(req, error)) {
-                ERR_POST("Request failed with " << error);
+                ERR_POST("Request for " << server.address.AsString() << " failed with " << error);
             }
         } else {
             req->reply->SetComplete();
@@ -1053,7 +1053,7 @@ void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
     }
 
     if (some_requests_failed) {
-        ERR_POST("Some requests failed with " << error);
+        ERR_POST("Some requests for " << server.address.AsString() << " failed with " << error);
     }
 
     m_Requests.clear();
