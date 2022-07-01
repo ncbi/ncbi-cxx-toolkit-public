@@ -3684,7 +3684,7 @@ KOPRI	c	Korean Polar Research Institute
 KOPRI:KCCPM	c	Korean Polar Research Institute, KOPRI Culture Collection of Polar Microorganisms		
 KOR	s	Institute of Dendrology			
 KOS	c	Collection of Salmonella Microorganisms			
-KPABG	s	Polar-Alpine Botanical Garden-Institute, Department of Flora and Vegetation			
+KPABG	sc	Polar-Alpine Botanical Garden-Institute, Department of Flora and Vegetation			
 KPBG	s	Kings Park and Botanic Garden, Botanic Gardens and Parks Authority			
 KPE	s	Kyungpook Earth, Kyungpook National University			
 KPM	s	Kanagawa Prefectural Museum of Natural History			
@@ -4352,7 +4352,8 @@ MFGC	c	Margot Forde Germplasm Centre, AgResearch GrasslandsWar
 MFLB	s	Marine Fisheries Laboratory			
 MFLU	sc	Mae Fah Laung University Herbarium	MFLU<THA>		
 MFLUCC	c	Mae Fah Luang University Culture Collection			
-MfN<DEU>	s	Museum fur Naturkunde			
+MfN<DEU>	s	Museum fur Naturkunde	ZMB		
+MfN<DEU>:Lep	s	Museum fur Naturkunde, Lepidoptera collection	
 MFP	s	Museo Felipe Poey			
 MFRU	s	Malawi Fisheries Research Unit			
 MFS	s	Museo dei Fisiocritici			
