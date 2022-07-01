@@ -18,7 +18,7 @@ build:
   - export NCBI=/opt/ncbi/64
   - adduser toolkit
   - echo "Building toolkit using cmake"
-  - ./cmake-configure --with-dll 2>&1 | tee "${CI_PROJECT_DIR}/config.log"
+  - ./cmake-configure --with-dll --with-projects=corelib 2>&1 | tee "${CI_PROJECT_DIR}/config.log"
   - cd CMake-GCC730-DebugDLL/build
   - DISTCC_VERBOSE=1 DISTCC_LOG="${CI_PROJECT_DIR}/distcc.log"  make VERBOSE=0 -j 8 2>&1 | tee "${CI_PROJECT_DIR}/build.log"
   - cd ../../
