@@ -734,15 +734,13 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 #  define offsetof(T, F)  ((char*) &(((T*) 0)->F) - (char*) 0)
 #endif
 
-
-#define _STR(s)  #s
-
 #define TAR_PRINTABLE_EX(field, text, size)                             \
     "@" + s_OffsetAsString((size_t) offsetof(STarHeader, field)) +      \
-    "[" _STR(field) "]:" + string(14 - sizeof(_STR(field)), ' ') +      \
+    "[" NCBI_AS_STRING(field) "]:" +                                    \
+    string(14 - sizeof(NCBI_AS_STRING(field)), ' ') +                   \
     '"' + s_Printable(h->field, size, text  ||  excpt) + '"'
 
-#define TAR_PRINTABLE(field, text)                                      \
+#define TAR_PRINTABLE(field, text)                  \
     TAR_PRINTABLE_EX(field, text, sizeof(h->field))
 
 
