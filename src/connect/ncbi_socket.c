@@ -1675,12 +1675,12 @@ inline
 static int/*bool*/ s_SetKeepAlive(TSOCK_Handle x_sock, int/*bool*/ on_off)
 {
 #  ifdef NCBI_OS_MSWIN
-    BOOL oobinline = on_off ? TRUE      : FALSE;
+    BOOL keepalive = on_off ? TRUE      : FALSE;
 #  else
-    int  oobinline = on_off ? 1/*true*/ : 0/*false*/;
+    int  keepalive = on_off ? 1/*true*/ : 0/*false*/;
 #  endif /*NCBI_OS_MSWIN*/
     return setsockopt(x_sock, SOL_SOCKET, SO_KEEPALIVE,
-                      (char*) &oobinline, sizeof(oobinline)) == 0;
+                      (char*) &keepalive, sizeof(keepalive)) == 0;
 }
 #endif /*SO_KEEPALIVE*/
 
