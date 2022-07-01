@@ -160,12 +160,12 @@ endfunction()
 
 #############################################################################
 # BACKWARD, UNWIND
-NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp FIND Backward)
+NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp REQUIRES libdwarf FIND Backward)
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
 endif()
-NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind FIND libunwind)
+NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind REQUIRES xz_utils;zlib FIND libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
 #############################################################################
