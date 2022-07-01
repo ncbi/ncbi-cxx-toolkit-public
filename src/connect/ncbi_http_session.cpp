@@ -553,13 +553,9 @@ NCBI_CRED CTlsCertCredentials::GetNcbiCred(void) const
 
 unsigned short SGetHttpDefaultRetries::operator()(void) const
 {
-#define _STR(s)  #s
-#define  STR(s)  _STR(s)
     char buf[16];
-    ConnNetInfo_GetValueInternal(0, REG_CONN_MAX_TRY,
-                                 buf, sizeof(buf), STR(DEF_CONN_MAX_TRY));
-#undef   STR
-#undef  _STR
+    ConnNetInfo_GetValueInternal(0, REG_CONN_MAX_TRY, buf, sizeof(buf),
+                                 NCBI_AS_STRING(DEF_CONN_MAX_TRY));
     int maxtry = atoi(buf);
     return (unsigned short)(maxtry ? maxtry - 1 : 0);
 }
@@ -797,9 +793,6 @@ void CHttpRequest::x_UpdateResponse(CHttpHeaders::THeaders headers, int status_c
 }
 
 
-#define _STR(x)     #x
-#define  STR(x) _STR(x)
-
 void CHttpRequest::x_SetProxy(SConnNetInfo& net_info)
 {
     CHttpProxy proxy = GetProxy();
@@ -809,26 +802,23 @@ void CHttpRequest::x_SetProxy(SConnNetInfo& net_info)
 
     if (proxy.GetHost().size() > CONN_HOST_LEN) {
         NCBI_THROW(CHttpSessionException, eConnFailed,
-            "Proxy host length exceeds " STR(CONN_HOST_LEN));
+            "Proxy host length exceeds " NCBI_AS_STRING(CONN_HOST_LEN));
     }
     memcpy(net_info.http_proxy_host, proxy.GetHost().c_str(), proxy.GetHost().size() + 1);
     net_info.http_proxy_port = proxy.GetPort();
 
     if (proxy.GetUser().size() > CONN_USER_LEN) {
         NCBI_THROW(CHttpSessionException, eConnFailed,
-            "Proxy user length exceeds " STR(CONN_USER_LEN));
+            "Proxy user length exceeds " NCBI_AS_STRING(CONN_USER_LEN));
     }
     memcpy(net_info.http_proxy_user, proxy.GetUser().c_str(), proxy.GetUser().size() + 1);
 
     if (proxy.GetPassword().size() > CONN_PASS_LEN) {
         NCBI_THROW(CHttpSessionException, eConnFailed,
-            "Proxy password length exceeds " STR(CONN_PASS_LEN));
+            "Proxy password length exceeds " NCBI_AS_STRING(CONN_PASS_LEN));
     }
     memcpy(net_info.http_proxy_pass, proxy.GetPassword().c_str(), proxy.GetPassword().size() + 1);
 }
-
-#undef  STR
-#undef _STR
 
 
 // Interface for the HTTP connector's adjust callback
