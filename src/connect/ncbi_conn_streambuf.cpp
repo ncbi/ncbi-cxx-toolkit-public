@@ -270,8 +270,8 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
         // NB: CONN_Write(0 bytes) could have caused the same effect
         (void) CONN_GetSOCK(m_Conn, &unused);  // Prompt CONN to actually open
         if ((m_Status = CONN_Status(m_Conn, eIO_Open)) != eIO_Success) {
-            ERR_POST_X(17, x_Message("CConn_Streambuf", "Failed to open",
-                                     m_Status, timeout));
+            ERR_POST_X(17, x_Message("CConn_Streambuf",
+                                     "Failed to open", m_Status, timeout));
             if (!x_Connector)
                 NCBI_IO_CHECK(m_Status);
         }
@@ -322,9 +322,9 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
         if (x_status != eIO_Success) {
             status = m_Status = x_status;
             if (CONN_Status(m_Conn, eIO_Open) == eIO_Success) {
-                _TRACE(x_Message("Close",
-                                 "Cannot finalize implicitly"
-                                 ", data loss may result"));
+                _ALWAYS_TRACE(x_Message("Close",
+                                        "Cannot finalize implicitly"
+                                        ", data loss may result"));
             }
         } else {
             bool synced = false;
@@ -356,11 +356,20 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
                 CONN_SetCallback(conn, eCONN_OnClose, &cb, 0);
             }
         }
-        if (m_Close  &&  (m_Status = CONN_Close(conn)) != eIO_Success) {
-            _TRACE(x_Message("Close",
-                             "CONN_Close() failed"));
-            if (status == eIO_Success)
-                status  = m_Status;
+        if (m_Close) {
+            STimeout        xtmo;
+            const STimeout* ctmo = CONN_GetTimeout(conn, eIO_Close);
+            if (ctmo != kInfiniteTimeout  &&  ctmo != kDefaultTimeout) {
+                xtmo  = *ctmo;
+                ctmo  = &xtmo;
+            }
+            if ((m_Status = CONN_Close(conn)) != eIO_Success) {
+                _ALWAYS_TRACE(x_Message("Close",
+                                        "CONN_Close() failed",
+                                        m_Status, ctmo));
+                if (status == eIO_Success)
+                    status  = m_Status;
+            }
         }
     } else if (cb_valid  &&  m_Cb.func) {
         // In x_OnClose callback here: upcall the original callback
@@ -449,7 +458,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         if (n_towrite) {
             _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(4, x_Message("overflow",
-                                    "CONN_Write() failed"));
+                                    "CONN_Write() failed", m_Status,
+                                    m_Status != eIO_Timeout ? 0 :
+                                    CONN_GetTimeout(m_Conn, eIO_Write)));
             if (x_IsThrowable(m_Status))
                 NCBI_IO_CHECK(m_Status);
             return CT_EOF;
@@ -462,7 +473,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         if (!n_written) {
             _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(5, x_Message("overflow",
-                                    "CONN_Write(1) failed"));
+                                    "CONN_Write(1) failed", m_Status,
+                                    m_Status != eIO_Timeout ? 0 :
+                                    CONN_GetTimeout(m_Conn, eIO_Write)));
             if (x_IsThrowable(m_Status))
                 NCBI_IO_CHECK(m_Status);
             return CT_EOF;
@@ -474,7 +487,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
     _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
     if ((m_Status = CONN_Flush(m_Conn)) != eIO_Success) {
         ERR_POST_X(9, x_Message("overflow",
-                                "CONN_Flush() failed"));
+                                "CONN_Flush() failed", m_Status,
+                                m_Status != eIO_Timeout ? 0 :
+                                CONN_GetTimeout(m_Conn, eIO_Write)));
         if (x_IsThrowable(m_Status))
             NCBI_IO_CHECK(m_Status);
         return CT_EOF;
@@ -520,7 +535,9 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 if (!x_written) {
                     _ASSERT(m_Status != eIO_Success);
                     ERR_POST_X(6, x_Message("xsputn",
-                                            "CONN_Write() failed"));
+                                            "CONN_Write() failed", m_Status,
+                                            m_Status != eIO_Timeout ? 0 :
+                                            CONN_GetTimeout(m_Conn, eIO_Write)));
                     break;
                 }
                 memmove(pbase(), pbase() + x_written, x_towrite - x_written);
@@ -536,7 +553,9 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         if (!x_written  &&  n) {
             _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(7, x_Message("xsputn",
-                                    "CONN_Write(direct) failed"));
+                                    "CONN_Write(direct) failed", m_Status,
+                                    m_Status != eIO_Timeout ? 0 :
+                                    CONN_GetTimeout(m_Conn, eIO_Write)));
             break;
         }
         x_PPos    += (CT_OFF_TYPE) x_written;
@@ -592,7 +611,9 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
         _ASSERT(m_Status != eIO_Success);
         if (m_Status != eIO_Closed) {
             ERR_POST_X(8, x_Message("underflow",
-                                    "CONN_Read() failed"));
+                                    "CONN_Read() failed", m_Status,
+                                    m_Status != eIO_Timeout ? 0 :
+                                    CONN_GetTimeout(m_Conn, eIO_Read)));
             if (x_IsThrowable(m_Status))
                 NCBI_IO_CHECK(m_Status);
         }
@@ -652,7 +673,9 @@ streamsize CConn_Streambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
             _ASSERT(!x_toread  ||  m_Status != eIO_Success);
             if (m_Status != eIO_Success  &&  m_Status != eIO_Closed) {
                 ERR_POST_X(10, x_Message("xsgetn",
-                                         "CONN_Read() failed"));
+                                         "CONN_Read() failed", m_Status,
+                                         m_Status != eIO_Timeout ? 0 :
+                                         CONN_GetTimeout(m_Conn, eIO_Read)));
             }
             break;
         }
