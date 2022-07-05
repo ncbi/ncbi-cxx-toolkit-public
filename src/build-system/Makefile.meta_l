@@ -320,6 +320,8 @@ endif
 sources.nonusr:
 	$(call make_each_spec,all)
 	$(call make_each_lib_proj,export-headers)
+	$(call make_each_lib_proj,flag-stamps)
+	$(call make_each_app_proj,flag-stamps)
 	$(MAKE_LOCK_MAP)
 
 all.nonusr: $(sources:%=%.nonusr) # $(wildcard Makefile.*.libdep)
