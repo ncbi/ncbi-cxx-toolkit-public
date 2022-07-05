@@ -1066,7 +1066,7 @@ string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, bool suppress
 }
 
 
-string CValidErrorFormat::GetBioseqSetLabel(string accession, CBioseq_set::EClass setClass, bool suppress_context)
+string CValidErrorFormat::GetBioseqSetLabel(const string& accession, CBioseq_set::EClass setClass, bool suppress_context)
 {
     string str = "BIOSEQ-SET: ";
     if (!suppress_context) {
@@ -1080,8 +1080,10 @@ string CValidErrorFormat::GetBioseqSetLabel(string accession, CBioseq_set::EClas
         str += "(No Bioseqs)";
         return str;
     }
-    s_FixBioseqLabelProblems(accession);
-    str += accession;
+
+    string temporary(accession); // create modifiable copy of accession
+    s_FixBioseqLabelProblems(temporary);
+    str += temporary;
     return str;
 }
 
