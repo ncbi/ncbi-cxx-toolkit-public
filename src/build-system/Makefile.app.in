@@ -54,6 +54,8 @@ ifneq "" "$(wildcard Makefile.$(TMPL).app.libdep)"
   endif
 endif
 
+PROJ_TYPE = app
+
 include $(builddir)/Makefile.$(Rules)
 
 CMD_BASE = $(LINK_WRAPPER) $(LINK)

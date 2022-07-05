@@ -29,6 +29,7 @@ include $(builddir)/Makefile.is_dll_support
 
 # Standard rules to build a library
 #
+PROJ_TYPE = lib
 include $(builddir)/Makefile.$(LIB_OR_DLL)
 
 
