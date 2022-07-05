@@ -2595,7 +2595,9 @@ public:
     /// themselves if appropriate.
     /// @param fname
     ///   Output file name.
-    CFileHandleDiagHandler(const string& fname);
+    /// @param file_type
+    ///   Type of log file.
+    CFileHandleDiagHandler(const string& fname, EDiagFileType file_type = eDiagFile_All);
     /// Close file handle
     ~CFileHandleDiagHandler(void);
 
@@ -2611,7 +2613,9 @@ public:
 
     bool Valid(void)
     {
-        return m_Handle  ||  m_LowDiskSpace;
+        return (m_FileType == eDiagFile_Perf  &&  !m_HavePosts)
+            ||  m_Handle
+            ||  m_LowDiskSpace;
     }
 
     // Reopen file to enable log rotation.
@@ -2621,10 +2625,12 @@ protected:
     virtual void SetLogName(const string& log_name);
 
 private:
-    bool        m_LowDiskSpace;
+    EDiagFileType m_FileType;
+    bool          m_HavePosts;
+    bool          m_LowDiskSpace;
     CDiagFileHandleHolder* m_Handle;
-    CSpinLock*  m_HandleLock;
-    CStopWatch* m_ReopenTimer;
+    CSpinLock*    m_HandleLock;
+    CStopWatch*   m_ReopenTimer;
 
     /// Save messages if the handle is unavailable
     typedef deque<SDiagMessage> TMessages;
