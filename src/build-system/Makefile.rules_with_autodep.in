@@ -38,10 +38,12 @@ ifdef GCCPCH
  FIXPCH = -e 's%\$$(wildcard \$$(includedir)/ncbi_pch\.hpp)%& $$(pchdir)/$(PCHMODE)%g'
 endif
 
-SKIP_DEP_RULES = no
-ifneq "" "$(findstring q,$(MAKEFLAGS))"
-  ifeq "" "$(filter depend,$(MAKECMDGOALS))"
-    SKIP_DEP_RULES = yes
+SKIP_DEP_RULES = yes
+ifneq "" "$(filter all% depend, $(MAKECMDGOALS))"
+  SKIP_DEP_RULES = no
+else
+  ifeq "" "$(MAKECMDGOALS)"
+    SKIP_DEP_RULES = no
   endif
 endif
 

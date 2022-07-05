@@ -136,7 +136,7 @@ space := $(empty) $(empty)
 stamp_dir = .ncbi-stamps
 
 need_flag_stamps = no
-ifneq "" "$(filter all% depend, $(MAKECMDGOALS))"
+ifneq "" "$(filter all% depend flag-stamps, $(MAKECMDGOALS))"
   need_flag_stamps = yes
 else
   ifeq "" "$(MAKECMDGOALS)"
@@ -173,7 +173,7 @@ ifeq "yes" "$(need_flag_stamps)"
  endif
 
  ifneq "" "$(C_OBJ)"
-  make_c_stamp_base = make_cpp-$(TMPL).$(PROJ_TYPE)
+  make_c_stamp_base = make_c-$(TMPL).$(PROJ_TYPE)
   prev_make_c_stamp := $(wildcard $(stamp_dir)/$(make_c_stamp_base)-* $(make_c_stamp_base)-*)
   make_c_stamp_status := $(shell ls -t $(prev_make_c_stamp) $(builddir)/Makefile.mk)
   ifeq "$(prev_make_c_stamp)" "$(firstword $(make_c_stamp_status))"
@@ -199,6 +199,8 @@ ifeq "yes" "$(need_flag_stamps)"
   $(C_OBJ): $(make_c_stamp)
  endif
 endif
+
+flag-stamps: $(make_cpp_stamp) $(make_c_stamp)
 
 ifneq "" "$(NCBI_BUILD_SESSION_ID)"
   CPPFLAGS += -DNCBI_BUILD_SESSION_ID=$(NCBI_BUILD_SESSION_ID)

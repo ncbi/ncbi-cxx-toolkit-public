@@ -176,7 +176,7 @@ class Collector(object):
         if command[0].endswith('.sh'):
             raise IrrelevantCommandError
 
-        irrelevant_re = re.compile(r'(?:check|clean|export-headers'
+        irrelevant_re = re.compile(r'(?:check|clean|export-headers|flag-stamps'
                                    + r'|mark-as-disabled|purge|requirements'
                                    + r'|sources)(?:[._].+)?$')
         template_re   = re.compile(r'/Makefile\.(app|lib).tmpl$')
