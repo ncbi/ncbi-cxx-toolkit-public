@@ -5810,7 +5810,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          fi
          with_boost=no
          ;;
-      1_3[[5-9]] | 1_3[[5-9]]_* | 1_[[4-6]]* | 1_7[[0-6]] | 1_7[[0-6]]_* ) ;;
+      1_3[[5-9]] | 1_3[[5-9]]_* | 1_[[4-7]]* ) ;;
       '' ) with_boost=no ;;
       * )
          AC_MSG_WARN(
