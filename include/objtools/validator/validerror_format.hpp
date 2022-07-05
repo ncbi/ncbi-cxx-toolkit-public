@@ -105,7 +105,7 @@ public:
     static string GetBioseqLabel (CBioseq_Handle bh);
     static string GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> scope, bool suppress_context);
     static string GetBioseqSetLabel(const CBioseq_set& st, bool suppress_context);
-    static string GetBioseqSetLabel(string accession, CBioseq_set::EClass setClass, bool suppress_context);
+    static string GetBioseqSetLabel(const string& accession, CBioseq_set::EClass setClass, bool suppress_context);
     static string GetObjectLabel(const CObject& obj, const CSeq_entry& ctx, CRef<CScope> scope, bool suppress_context);
 
     // for suppressing error collection during runtime
