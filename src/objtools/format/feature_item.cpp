@@ -1486,7 +1486,7 @@ void CFeatureItem::x_AddQualExceptions(
             continue;
         }
         if ( NStr::EqualNocase(cur, "circular RNA") ) {
-            if( data.IsRna() ) {
+            if( data.IsRna() || data.IsCdregion() ) {
               x_AddQual( eFQ_circular_RNA, new CFlatBoolQVal( true ) );
             } else {
                 output_notes.push_back( cur );
