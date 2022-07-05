@@ -2124,6 +2124,7 @@ void CValidError_imp::ValidateSeqLoc
     ValidateSeqLocIds(loc, obj);
 
     bool trans_splice = false;
+    bool circular_rna = false;
     bool exception = false;
     const CSeq_feat* sfp = nullptr;
     if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
@@ -2138,10 +2139,13 @@ void CValidError_imp::ValidateSeqLoc
 
         exception = sfp->IsSetExcept() ?  sfp->GetExcept() : false;
         if (exception  &&  sfp->CanGetExcept_text()) {
-            // trans splicing exception turns off both mixed_strand and
-            // out_of_order messages
             if (NStr::FindNoCase(sfp->GetExcept_text(), "trans-splicing") != NPOS) {
+                // trans splicing exception turns off both mixed_strand and
+                // out_of_order messages
                 trans_splice = true;
+            } else if (NStr::FindNoCase(sfp->GetExcept_text(), "circular RNA") != NPOS) {
+                // circular RNA exception turns off out_of_order message
+                circular_rna = true;
             }
         }
     }
@@ -2208,7 +2212,7 @@ void CValidError_imp::ValidateSeqLoc
                 prefix + ": Mixed plus and unknown strands in SeqLoc ["
                 + loc_lbl + "]", obj);
         }
-        if (!ordered) {
+        if (!ordered && !circular_rna) {
             if (IsSmallGenomeSet()) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqLocOrder,
                     prefix + ": Intervals out of order in SeqLoc [" +
@@ -2229,7 +2233,7 @@ void CValidError_imp::ValidateSeqLoc
     }
 
     // Check for intervals out of order on segmented Bioseq
-    if ( seq  &&  BadSeqLocSortOrder(seq, loc) ) {
+    if ( seq  &&  BadSeqLocSortOrder(seq, loc) && !circular_rna ) {
         if (loc_lbl.empty()) {
             loc.GetLabel(&loc_lbl);
         }
