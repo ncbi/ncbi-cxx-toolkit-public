@@ -6455,8 +6455,10 @@ CDiagFileHandleHolder::~CDiagFileHandleHolder(void)
 
 // CFileDiagHandler
 
-CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
-    : m_LowDiskSpace(false),
+CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname, EDiagFileType file_type)
+    : m_FileType(file_type),
+      m_HavePosts(false),
+      m_LowDiskSpace(false),
       m_Handle(NULL),
       m_HandleLock(new CSpinLock()),
       m_ReopenTimer(new CStopWatch())
@@ -6489,6 +6491,10 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
 {
     s_ReopenEntered->Add(1);
     CDiagLock lock(CDiagLock::ePost);
+    if (m_FileType == eDiagFile_Perf && !m_HavePosts) {
+        s_ReopenEntered->Add(-1);
+        return;
+    }
     // Period is longer than for CFileDiagHandler to prevent double-reopening
     if (flags & fCheck  &&  m_ReopenTimer->IsRunning()) {
         if (m_ReopenTimer->Elapsed() < kLogReopenDelay + 5) {
@@ -6578,6 +6584,7 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
     {
         if (s_ReopenEntered->Add(1) == 1  ||  !m_ReopenTimer->IsRunning()) {
             CDiagLock lock(CDiagLock::ePost);
+            m_HavePosts = true;
             if (!m_ReopenTimer->IsRunning()  ||
                 m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5)
             {
@@ -6821,7 +6828,8 @@ void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
 
 static bool
 s_CreateHandler(const string& fname,
-                unique_ptr<CStreamDiagHandler_Base>& handler)
+                unique_ptr<CStreamDiagHandler_Base>& handler,
+                EDiagFileType file_type)
 {
     if ( fname.empty()  ||  fname == "/dev/null") {
         handler.reset();
@@ -6831,7 +6839,7 @@ s_CreateHandler(const string& fname,
         handler.reset(new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr));
         return true;
     }
-    unique_ptr<CFileHandleDiagHandler> fh(new CFileHandleDiagHandler(fname));
+    unique_ptr<CFileHandleDiagHandler> fh(new CFileHandleDiagHandler(fname, file_type));
     if ( !fh->Valid() ) {
         ERR_POST_X(7, Info << "Failed to open log file: " << fname);
         return false;
@@ -6869,13 +6877,13 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             string perf_name = special ? adj_name : adj_name + ".perf";
 
             if ( s_SplitLogFile ) {
-                if (!s_CreateHandler(err_name, err_handler))
+                if (!s_CreateHandler(err_name, err_handler, eDiagFile_Err))
                     return false;
-                if (!s_CreateHandler(log_name, log_handler))
+                if (!s_CreateHandler(log_name, log_handler, eDiagFile_Log))
                     return false;
-                if (!s_CreateHandler(trace_name, trace_handler))
+                if (!s_CreateHandler(trace_name, trace_handler, eDiagFile_Trace))
                     return false;
-                if (!s_CreateHandler(perf_name, perf_handler))
+                if (!s_CreateHandler(perf_name, perf_handler, eDiagFile_Perf))
                     return false;
 
                 x_SetHandler(&m_Err, &m_OwnErr, err_handler.release(), true);
@@ -6884,9 +6892,9 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                 x_SetHandler(&m_Perf, &m_OwnPerf, perf_handler.release(), true);
             }
             else {
-                if (!s_CreateHandler(file_name, err_handler))
+                if (!s_CreateHandler(file_name, err_handler, eDiagFile_All))
                     return false;
-                if (!s_CreateHandler(perf_name, perf_handler))
+                if (!s_CreateHandler(perf_name, perf_handler, eDiagFile_Perf))
                     return false;
 
                 x_SetHandler(&m_Err, &m_OwnErr, err_handler.get(), true);
@@ -6899,22 +6907,22 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             break;
         }
     case eDiagFile_Err:
-        if (!s_CreateHandler(file_name, err_handler))
+        if (!s_CreateHandler(file_name, err_handler, eDiagFile_Err))
             return false;
         x_SetHandler(&m_Err, &m_OwnErr, err_handler.release(), true);
         break;
     case eDiagFile_Log:
-        if (!s_CreateHandler(file_name, log_handler))
+        if (!s_CreateHandler(file_name, log_handler, eDiagFile_Log))
             return false;
         x_SetHandler(&m_Log, &m_OwnLog, log_handler.release(), true);
         break;
     case eDiagFile_Trace:
-        if (!s_CreateHandler(file_name, trace_handler))
+        if (!s_CreateHandler(file_name, trace_handler, eDiagFile_Trace))
             return false;
         x_SetHandler(&m_Trace, &m_OwnTrace, trace_handler.release(), true);
         break;
     case eDiagFile_Perf:
-        if (!s_CreateHandler(file_name, perf_handler))
+        if (!s_CreateHandler(file_name, perf_handler, eDiagFile_Perf))
             return false;
         x_SetHandler(&m_Perf, &m_OwnPerf, perf_handler.release(), true);
         break;
