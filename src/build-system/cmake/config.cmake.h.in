@@ -170,6 +170,9 @@
 /* Define to 1 if you have the <Accelerate/Accelerate.h> header file. */
 #cmakedefine HAVE_ACCELERATE_ACCELERATE_H 1
 
+/* Define to 1 if you have the `accept4' function. */
+#cmakedefine HAVE_ACCEPT4 1
+
 /* Define to 1 if you have the `alarm' function. */
 #cmakedefine HAVE_ALARM 1
 
@@ -406,6 +409,9 @@
 
 /* Define to 1 if you have the <paths.h> header file. */
 #cmakedefine HAVE_PATHS_H 1
+
+/* Define to 1 if you have the `pipe2' function. */
+#cmakedefine HAVE_PIPE2 1
 
 /* Define to 1 if you have the `poll' function. */
 #cmakedefine HAVE_POLL 1

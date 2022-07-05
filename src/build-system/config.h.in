@@ -12,6 +12,9 @@
 /* Define to 1 if you have the <Accelerate/Accelerate.h> header file. */
 #undef HAVE_ACCELERATE_ACCELERATE_H
 
+/* Define to 1 if you have the `accept4' function. */
+#undef HAVE_ACCEPT4
+
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
@@ -631,6 +634,9 @@
 
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
+
+/* Define to 1 if you have the `pipe2' function. */
+#undef HAVE_PIPE2
 
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL

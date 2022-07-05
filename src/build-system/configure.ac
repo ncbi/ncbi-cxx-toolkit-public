@@ -3931,11 +3931,11 @@ fi
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(alarm asprintf atoll basename dbopen daemon euidaccess eventfd \
-               fseeko fstat getgrouplist gethrtime getopt getpagesize getpass \
-               getpassphrase getpwuid getrusage gettimeofday getuid lchown \
-               lutimes malloc_options memrchr nl_langinfo poll putenv \
-               readpassphrase readv select setenv setitimer setrlimit \
+AC_CHECK_FUNCS(accept4 alarm asprintf atoll basename dbopen daemon euidaccess \
+               eventfd fseeko fstat getgrouplist gethrtime getopt getpagesize \
+               getpass getpassphrase getpwuid getrusage gettimeofday getuid \
+               lchown lutimes malloc_options memrchr nl_langinfo pipe2 poll \
+               putenv readpassphrase readv select setenv setitimer setrlimit \
                snprintf statfs statvfs strcasecmp strdup strlcat strlcpy \
                strndup strnlen strsep strtok_r sysmp timegm usleep utimes \
                vasprintf vsnprintf writev)
