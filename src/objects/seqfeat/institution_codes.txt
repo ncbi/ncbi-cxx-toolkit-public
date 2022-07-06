@@ -5287,6 +5287,9 @@ NMSU<USA-MO>	s	Northwest Missouri State University, Biology Department
 NMSU<USA-NM>	s	New Mexico State University			
 NMTC	s	Inner Mongolia Normal University, Biology Department			
 NMTT	s	National Museum and Art Gallery, Port-of-Spain			
+NMU	s	Northern Michigan University Museum of Zoology			
+NMU:Bird	s	Northern Michigan University Museum of Zoology, NMU Bird Collection	
+NMU:Mamm	s	Northern Michigan University Museum of Zoology, NMU Mammal Collection	
 NMV<AUS>	s	Museum Victoria	NMM		
 NMV<AUS>:A	s	Museum Victoria, Ichthyology		
 NMV<AUS>:AV	s	Museum Victoria, Entomology - Australian Voucher Specimens		
@@ -5324,9 +5327,6 @@ NMW<AUT>	s	Naturhistorisches Museum, Wien	NHMV,NHMW
 NMW<GBR>	s	National Museums & Galleries of Wales, Department of Biodiversity and Systematic Biology			
 NMWC	s	National Museum of Wales			
 NMWZ	s	National Museum of Wales			
-NMZ	s	Northern Michigan University Museum of Zoology			
-NMZ:Bird	s	Northern Michigan University Museum of Zoology, NMU Bird Collection	
-NMZ:Mamm	s	Northern Michigan University Museum of Zoology, NMU Mammal Collection	
 NMZB	s	National Museum of Zimbabwe			
 NMZL	s	National Museum of Zambia			
 NNA	s	Nanning Arboretum			
