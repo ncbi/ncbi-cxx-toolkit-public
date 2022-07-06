@@ -46,7 +46,8 @@
 #include <objects/seq/seqport_util.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sgml_entity.hpp>
-
+#include <objtools/validator/validator_context.hpp>
+#include <atomic>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -524,9 +525,13 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
 
 void CSingleFeatValidator::x_ReportECNumFileStatus()
 {
-    static bool file_status_reported = false;
+    cout << "In x_ReportECNumFilesStatus()" << endl;
 
-    if (!file_status_reported) {
+    bool expected{true};    
+    if (m_Imp.SetContext().CheckECNumFileStatus.compare_exchange_strong(expected,false)) { 
+
+        cout << "Checking EC number files" << endl;
+
         if (CProt_ref::GetECNumAmbiguousStatus() == CProt_ref::eECFile_not_found) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
                 "Unable to find EC number file 'ecnum_ambiguous.txt' in data directory");
@@ -543,7 +548,6 @@ void CSingleFeatValidator::x_ReportECNumFileStatus()
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
                 "Unable to find EC number file 'ecnum_specific.txt' in data directory");
         }
-        file_status_reported = true;
     }
 }
 

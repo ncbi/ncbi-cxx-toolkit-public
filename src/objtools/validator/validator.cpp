@@ -46,6 +46,7 @@
 
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/validerror_format.hpp>
+#include <objtools/validator/validator_context.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -58,11 +59,14 @@ USING_SCOPE(sequence);
 
 
 CValidator::CValidator(CObjectManager& objmgr,
+    shared_ptr<SValidatorContext> pContext,
     AutoPtr<ITaxon3> taxon) :
     m_ObjMgr(&objmgr),
     m_PrgCallback(nullptr),
-    m_UserData(nullptr)
+    m_UserData(nullptr),
+    m_pContext{pContext}
 {
+
     if (!taxon) {
         AutoPtr<ITaxon3> taxon3(new CTaxon3(CTaxon3::initialize::yes));
         m_Taxon = taxon3;
@@ -71,6 +75,12 @@ CValidator::CValidator(CObjectManager& objmgr,
     }
     m_Taxon->Init();
 }
+
+
+CValidator::CValidator(CObjectManager& objmgr,
+    AutoPtr<ITaxon3> taxon) :
+    CValidator(objmgr, make_shared<SValidatorContext>(), taxon)
+{}
 
 
 CValidator::~CValidator()
@@ -85,7 +95,7 @@ CConstRef<CValidError> CValidator::Validate
 {
     CRef<CValidError> errors(new CValidError(&se));
     CValidErrorFormat::SetSuppressionRules(se, *errors);
-    CValidError_imp imp(*m_ObjMgr, &(*errors), m_Taxon.get(), options);
+    CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), m_Taxon.get(), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.Validate(se, nullptr, scope) ) {
         errors.Reset();
@@ -110,7 +120,7 @@ CConstRef<CValidError> CValidator::Validate
 
     CRef<CValidError> errors(new CValidError(&*seh.GetCompleteSeq_entry()));
     CValidErrorFormat::SetSuppressionRules(seh, *errors);
-    CValidError_imp imp(*m_ObjMgr, &(*errors), m_Taxon.get(), options);
+    CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), m_Taxon.get(), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.Validate(seh) ) {
         errors.Reset();

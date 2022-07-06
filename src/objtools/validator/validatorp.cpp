@@ -125,6 +125,7 @@
 #include <objtools/error_codes.hpp>
 #include <objtools/validator/validerror_format.hpp>
 #include <objtools/validator/utilities.hpp>
+#include <objtools/validator/validator_context.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <util/sgml_entity.hpp>
 #include <util/line_reader.hpp>
@@ -175,6 +176,7 @@ m_ErrRepository(errs),
 m_taxon(nullptr)
 {
     x_Init(options);
+    m_pContext = make_shared<SValidatorContext>();
 }
 //LCOV_EXCL_STOP
 
@@ -189,8 +191,30 @@ m_ErrRepository(errs),
 m_taxon(taxon)
 {
     x_Init(options);
+    m_pContext = make_shared<SValidatorContext>();
 }
 
+CValidError_imp::CValidError_imp
+(CObjectManager&    objmgr,
+ shared_ptr<SValidatorContext> pContext,
+ CValidError*       errs,
+ Uint4              options) :
+    CValidError_imp(objmgr, errs, options)
+{
+    m_pContext = pContext;
+}
+
+
+CValidError_imp::CValidError_imp
+(CObjectManager&    objmgr,
+ shared_ptr<SValidatorContext> pContext,
+ CValidError*       errs,
+ ITaxon3*           taxon,
+ Uint4              options) :
+    CValidError_imp(objmgr, errs, taxon, options)
+{
+    m_pContext = pContext;
+}
 
 void CValidError_imp::x_Init(Uint4 options)
 {
@@ -203,6 +227,23 @@ void CValidError_imp::x_Init(Uint4 options)
 // Destructor
 CValidError_imp::~CValidError_imp()
 {
+}
+
+
+SValidatorContext& CValidError_imp::SetContext()
+{
+  //  if (!m_pContext) {
+  //      m_pContext = make_shared<SValidatorContext>();
+  //  }
+    _ASSERT(m_pContext);
+    return *m_pContext;
+}
+
+
+const SValidatorContext& CValidError_imp::GetContext() const
+{
+    _ASSERT(m_pContexT);
+    return *m_pContext;
 }
 
 
@@ -747,6 +788,22 @@ void CValidError_imp::PostErr
         return;
     }
 
+    if (GetContext().HugeFileMode && 
+        ctx.IsSet() && 
+        ctx.GetSet().IsSetClass() &&
+        ctx.GetSet().GetClass() == CBioseq_set::eClass_genbank) {
+        string desc{"DESCRIPTOR: "};
+        desc += CValidErrorFormat::GetDescriptorContent(ds) + " ";
+        desc += "BIOSEQ-SET: ";
+        if (!m_SuppressContext) {
+            desc += "genbank: ";
+        }
+        desc += GetContext().GenbankSetId;
+
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, GetContext().GenbankSetId, 0);
+        return;
+    } 
+
     // Append Descriptor label
     string desc = CValidErrorFormat::GetDescriptorLabel(ds, ctx, m_Scope, m_SuppressContext);
     int version = 0;
@@ -1171,6 +1228,9 @@ bool CValidError_imp::Validate
     if (cs) {
         m_NoPubs = false;
         m_IsSeqSubmit = true;
+        if (GetContext().HugeFileMode) {
+            SetContext().NoPubsFound = false;
+        }
     }
 
     // Get first CBioseq object pointer for PostErr below.
@@ -2781,11 +2841,22 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
 
     // If no Pubs/BioSource in CSeq_entry, post only one error
     CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
-    m_NoPubs = !pub;
-    while (pub && !pub->IsSub()) {
-        ++pub;
+
+    if (pub && GetContext().HugeFileMode) {
+        SetContext().NoPubsFound = false;
+        while (pub && !pub->IsSub()) {
+            ++pub;
+        }
+        if (pub) {
+            SetContext().NoCitSubFound = false;
+        }       
+    } else {
+        m_NoPubs = !pub;
+        while (pub && !pub->IsSub()) {
+            ++pub;
+        }
+        m_NoCitSubPubs = !pub;
     }
-    m_NoCitSubPubs = !pub;
 
     CTypeConstIterator<CBioSource> src(ConstBegin(*m_TSE));
     m_NoBioSource = !src;

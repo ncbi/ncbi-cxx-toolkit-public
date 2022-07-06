@@ -111,6 +111,58 @@ const CHugeAsnReader::TBioseqInfo* CHugeAsnReader::FindBioseq(CConstRef<CSeq_id>
     return &*it->second;
 }
 
+
+
+static CConstRef<CSeqdesc> s_GetDescriptor(const CSeq_descr& descr, CSeqdesc::E_Choice choice) 
+{
+    if (descr.IsSet()) {
+        for (auto pDesc : descr.Get()) {
+            if (pDesc && (pDesc->Which() == choice)) {
+                return pDesc;
+            }
+        }
+    }
+
+    return {};
+}
+
+
+CConstRef<CSeqdesc> CHugeAsnReader::GetClosestDescriptor(const TBioseqInfo& info, CSeqdesc::E_Choice choice) const
+{
+    CConstRef<CSeqdesc> result;
+
+    if (info.m_descr) {
+        result = s_GetDescriptor(*info.m_descr, choice);
+        if (result) {
+            return result;
+        }
+    }
+
+    auto parentSet = info.m_parent_set;
+    while (parentSet != end(m_bioseq_set_list)) {
+        if (parentSet->m_descr) {
+            result = s_GetDescriptor(*parentSet->m_descr, choice);
+            if (result) {
+                return result;
+            }
+        }
+    }
+
+    return result;
+}
+
+
+CConstRef<CSeqdesc> CHugeAsnReader::GetClosestDescriptor(const CSeq_id& id, CSeqdesc::E_Choice choice) const
+{
+    CConstRef<CSeq_id> pId(&id);
+    const auto* pInfo = FindBioseq(pId);
+    if (!pInfo) {
+        return {};
+    }
+    return GetClosestDescriptor(*pInfo, choice);
+}
+
+
 CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(CConstRef<CSeq_id> seqid) const
 {
     auto info = FindTopObject(seqid);
@@ -190,6 +242,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
     auto bioseqset_descr_mi = bioseq_set_info.FindMember("descr");
     auto seqinst_len_mi = seqinst_info.FindMember("length");
     auto seqinst_mol_mi = seqinst_info.FindMember("mol");
+    auto seqinst_repr_mi = seqinst_info.FindMember("repr");
     auto bioseq_descr_mi = bioseq_info.FindMember("descr");
 
     // temporal structure for indexing
@@ -199,6 +252,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
         TSeqPos      m_length  = 0;
         CRef<CSeq_descr> m_descr;
         CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
+        CSeq_inst::TRepr m_repr = CSeq_inst::eRepr_not_set;
     };
 
     struct TContext
@@ -251,6 +305,14 @@ void CHugeAsnReader::x_IndexNextAsn1()
         in.ReadObject(&context.bioseq_stack.back().m_mol, (*member).GetTypeInfo());
     });
 
+
+    SetLocalSkipHook(seqinst_repr_mi, *obj_stream,
+        [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
+    {
+        in.ReadObject(&context.bioseq_stack.back().m_repr, (*member).GetTypeInfo());
+    });
+
+
     SetLocalSkipHook(CType<CFeat_id>(), *obj_stream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
@@ -274,7 +336,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
         type.GetTypeInfo()->DefaultSkipData(in);
 
         auto& bioseqinfo = context.bioseq_stack.back();
-        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids, bioseqinfo.m_mol});
+        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids, bioseqinfo.m_mol, bioseqinfo.m_repr});
         context.bioseq_stack.pop_back();
     });
 

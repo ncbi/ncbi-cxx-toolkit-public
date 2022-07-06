@@ -63,6 +63,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objtools/validator/validator.hpp>
 #include <objtools/validator/valid_cmdargs.hpp>
+#include <objtools/validator/validator_context.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
@@ -90,6 +91,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <future>
 #include "message_queue.hpp"
+#include "huge_file_utils.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -221,6 +223,8 @@ private:
 
     unique_ptr<edit::CHugeFileProcess> m_pHugeFileProcess;
     CNcbiOstream* m_ValidErrorStream;
+
+    shared_ptr<SValidatorContext> m_pContext;
 #ifdef USE_XMLWRAPP_LIBS
     unique_ptr<CValXMLStream> m_ostr_xml;
 #endif
@@ -432,7 +436,7 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
 
     CConstRef<CValidError> eval;
 
-    CValidator validator(*m_ObjMgr);
+    CValidator validator(*m_ObjMgr, m_pContext);
 
     CSeq_entry_Handle top_h;
     if (pEntry) {
@@ -452,11 +456,20 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
     }
 
     if (top_h) {
+        
+        if (auto pTopEntry = m_pHugeFileProcess->GetReader().GetTopEntry();
+            pTopEntry) {
+            auto pNewEntry = Ref(new CSeq_entry());
+            pNewEntry->Assign(*pTopEntry);
+            pNewEntry->SetSet().SetSeq_set().push_back(pEntry);
+            pEntry = pNewEntry;
+        }
+
+
         if (m_DoCleanup) {
             CCleanup cleanup;
-
             cleanup.SetScope(scope);
-            cleanup.BasicCleanup(top_h);
+            cleanup.BasicCleanup(*pEntry);
         }
 
         if (pSubmitBlock) {
@@ -465,7 +478,7 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
             pSubmit->SetData().SetEntrys().push_back(pEntry);
             eval = validator.Validate(*pSubmit, scope, m_Options);
         } else {
-            eval = validator.Validate(top_h, m_Options);
+            eval = validator.Validate(*pEntry, scope, m_Options);
         }
     }
 
@@ -509,6 +522,16 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
             }
             throw;
         }
+
+        if (reader.GetBiosets().size() > 1) {
+            auto it = next(reader.GetBiosets().begin());    
+            if (it->m_class == CBioseq_set::eClass_genbank) {
+                int version;
+                m_pContext->GenbankSetId = 
+                    g_GetIdString(reader);
+            }
+        }
+
 
         auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
                 *m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
@@ -558,6 +581,44 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
             }
 
             topids_task.wait();
+            
+            if (reader.GetSubmitBlock().NotEmpty()) {
+                return;
+            }
+
+            if (m_pContext->NoPubsFound){ 
+                if (auto info = reader.GetBioseqs().front(); g_ReportMissingPubs(info, reader)) {
+                    // What if this contains a gen-prod set?
+                    auto pEval = Ref(new CValidError());
+                    auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
+                    g_PostErr(severity, 
+                            eErr_SEQ_DESCR_NoPubFound,
+                            "No publications anywhere on this entire record.",
+                            m_pContext->GenbankSetId,
+                            *pEval);
+
+                    PrintValidError(pEval);
+                }
+            }
+
+            if (m_pContext->NoCitSubFound) {
+                bool isRefSeq = g_HasRefSeqAccession(reader) || 
+                    (m_Options & CValidator::eVal_refseq_conventions); 
+
+                if (auto info = reader.GetBioseqs().front(); g_ReportMissingCitSub(info, reader, isRefSeq))
+                {
+                    auto pEval = Ref(new CValidError());
+                    auto severity = (m_Options & CValidator::eVal_genome_submission) ?
+                        eDiag_Error : eDiag_Info;
+                    g_PostErr(severity,
+                            eErr_GENERIC_MissingPubRequirement,
+                            "No submission citation anywhere on this entire record.",
+                            m_pContext->GenbankSetId,
+                            *pEval);
+
+                    PrintValidError(pEval);
+                }
+            }   
         } else {
             for (auto seqid: reader.GetTopIds())
             {
@@ -581,6 +642,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     if (! args["quiet"] ) {
         LOG_POST_XX(Corelib_App, 1, fname);
     }
+
+    m_pContext.reset(new SValidatorContext()); // For now, put this here
+    m_pContext->HugeFileMode = m_HugeFile;
 
     unique_ptr<CNcbiOfstream> local_stream;
 
@@ -920,7 +984,7 @@ void CAsnvalApp::ReadClassMember
                 i >> *se;
 
                 // Validate Seq-entry
-                CValidator validator(*m_ObjMgr);
+                CValidator validator(*m_ObjMgr, m_pContext);
                 CRef<CScope> scope = BuildScope();
                 CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
 
@@ -1126,7 +1190,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry()
 CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
 {
     // Validate Seq-entry
-    CValidator validator(*m_ObjMgr);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
         m_Cleanup.SetScope(scope);
@@ -1171,7 +1235,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat()
         m_Cleanup.BasicCleanup(*feat);
     }
 
-    CValidator validator(*m_ObjMgr);
+    CValidator validator(*m_ObjMgr, m_pContext);
     eval = validator.Validate(*feat, scope, m_Options);
     m_NumRecords++;
     return eval;
@@ -1184,7 +1248,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioSource()
     if (eval)
         return eval;
 
-    CValidator validator(*m_ObjMgr);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     eval = validator.Validate(*src, scope, m_Options);
     m_NumRecords++;
@@ -1198,7 +1262,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessPubdesc()
     if (eval)
         return eval;
 
-    CValidator validator(*m_ObjMgr);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     eval = validator.Validate(*pd, scope, m_Options);
     m_NumRecords++;
@@ -1214,7 +1278,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit()
         return eval;
 
     // Validate Seq-submit
-    CValidator validator(*m_ObjMgr);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
         NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, se, ss->SetData().SetEntrys()) {
@@ -1246,7 +1310,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot()
     }
 
     // Validate Seq-annot
-    CValidator validator(*m_ObjMgr);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
         m_Cleanup.SetScope(scope);
@@ -1296,7 +1360,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqDesc()
 
     CRef<CSeq_entry> ctx = s_BuildGoodSeq();
 
-    CValidator validator(*m_ObjMgr);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*ctx);
 
