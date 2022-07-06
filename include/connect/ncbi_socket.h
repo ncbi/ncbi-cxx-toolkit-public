@@ -927,8 +927,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseOSHandle
  * eIO_Open (as "event") can be used to check whether the socket has been
  * connected.  When eIO_Read is requested as an "event" for a datagram socket,
  * then eIO_Closed results if the internally latched message has been entirely
- * read out.  Either of eIO_Open, eIO_Write and eIO_ReadWrite always succeed
- * immediately for the datagram socket.
+ * read out.  Either of eIO_Open, eIO_Write and eIO_ReadWrite always succeeds
+ * immediately for a datagram socket.
  * @param sock
  *  [in]  socket handle
  * @param event
@@ -1992,10 +1992,10 @@ typedef struct {
  *  [out]     how many elements of the "polls" array returned with their
  *            I/O marked ready
  * @return
- *  eIO_Success if at least one element was found ready, eIO_Timeout if
- *  none were and the specified time interval had elapsed, other error code
- *  for some other error condition (in which case the "revent" fields in the
- *  array may not have been updated with valid values).
+ *  eIO_Success if at least one element was found ready, eIO_Timeout if none
+ *  and the specified time interval had elapsed, other error code for some
+ *  other error condition (in which case the "revent" fields in the array may
+ *  not have been updated with valid values).
  * @sa
  *   SOCK_Wait, SOCK_Poll
  */
