@@ -902,7 +902,6 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
 void CPSGS_Dispatcher::OnRequestTimerClose(size_t  request_id)
 {
     size_t              bucket_index = x_GetBucketIndex(request_id);
-    SProcessorGroup *   group = nullptr;
 
     m_GroupsLock[bucket_index].lock();
 

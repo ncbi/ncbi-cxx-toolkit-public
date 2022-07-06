@@ -103,9 +103,34 @@ void IPSGS_Processor::SignalFinishProcessing(void)
 void IPSGS_Processor::PostponeInvoke(CPSGS_UvLoopBinder::TProcessorCB  cb,
                                      void *  user_data)
 {
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetUvLoopBinder(GetUVThreadId()).PostponeInvoke(cb, user_data,
-                                                         m_Request->GetRequestId());
+    auto *          app = CPubseqGatewayApp::GetInstance();
+    uv_thread_t     uv_thread_id = GetUVThreadId();
+
+    if (uv_thread_id == 0) {
+        // The processor has not started yet. There is no uv loop (and thread)
+        // to bind to.
+        string  msg = "Processor '" + GetName() + "' "
+                      "tries to schedule a postponed callback before "
+                      "a thread was assigned to the processor (request id: " +
+                      to_string(m_Request->GetRequestId()) + ").";
+        PSG_ERROR(msg);
+        NCBI_THROW(CPubseqGatewayException, eLogic, msg);
+    }
+
+    try {
+        app->GetUvLoopBinder(uv_thread_id).PostponeInvoke(cb, user_data,
+                                                          m_Request->GetRequestId());
+    } catch (const exception &  exc) {
+        PSG_ERROR("Error scheduling a postponed callback by the processor '" +
+                  GetName() + "' (while serving request id: " +
+                  to_string(m_Request->GetRequestId()) + "): " + exc.what());
+        throw;
+    } catch (...) {
+        PSG_ERROR("Unknown error scheduling a postponed callback by the processor '" +
+                  GetName() + "' (while serving request id: " +
+                  to_string(m_Request->GetRequestId()) + ")");
+        throw;
+    }
 }
 
 
