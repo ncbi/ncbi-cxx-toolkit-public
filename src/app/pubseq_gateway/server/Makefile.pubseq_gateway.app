@@ -25,7 +25,7 @@ LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) 
 CPPFLAGS = $(OPENSSL_INCLUDE) $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) \
            $(PROTOBUF_INCLUDE) $(CMPRS_INCLUDE) $(SRA_INCLUDE) $(ORIG_CPPFLAGS)
 LIB = $(SRAREAD_LIBS) dbsnp_ptis grpc_integration sraread \
-      cdd_access id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) \
+      cdd_access id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) $(CMPRS_LIB) \
       pub medline biblio general xser psg_cassandra psg_protobuf psg_cache \
       xconnext connext xconnserv xconnect xcompress xutil xncbi
 
