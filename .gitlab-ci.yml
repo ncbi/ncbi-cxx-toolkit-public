@@ -5,18 +5,13 @@ image:
 stages:
  - build
  - test
+ - publish
 
 default:
   retry:
     max: 2
     when: runner_system_failure
 
-dummy:
- stage: build
- script:
-  - echo "`pwd`"
-  - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.be-md.ncbi.nlm.nih.gov/pd/cxxtk/cxx/ncbi-cxx-toolkit-core-conan.git
-  - ls
 build:
  stage: build
  timeout: 5 hours
@@ -40,6 +35,7 @@ build:
    - distcc.log
    - test.log
    - CMake-GCC730-DebugDLL/check/
+   - ncbi-cxx-toolkit-core-conan/
   when: always
   expire_in: never
  cache:
@@ -61,3 +57,25 @@ test:
  cache:
   paths:
    - build.log
+
+publish:
+ stage: publish
+ script:
+  - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.be-md.ncbi.nlm.nih.gov/pd/cxxtk/cxx/ncbi-cxx-toolkit-core-conan.git
+  - ls
+  - python -m venv .venv
+  - . .venv/bin/activate
+  - pip install conan --upgrade
+  - conan remote add conan-center https://center.conan.io
+  - conan remote add artifactory_internal https://artifactory.ncbi.nlm.nih.gov/artifactory/api/conan/EXP-DO-CXX-DEP-MNG
+  - conan remote list
+  - conan profile list
+  - conan profile new default --detect
+  - conan profile show default
+  - conan profile update settings.compiler.libcxx=libstdc++11 default
+  - conan profile show default
+  - conan user $NCBI_CONAN_USERNAME -r artifactory_internal -p $NCBI_CONAN_UPLOADER_PASSWORD
+  - cd ncbi-cxx-toolkit-core-conan
+  - conan upload "*" --all -r=artifactory_internal
+  - deactivate
+
