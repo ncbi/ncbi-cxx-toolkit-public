@@ -17,6 +17,7 @@
 
 
 from optparse import OptionParser
+from urllib import request as urlrequest
 import sys
 import datetime
 import shutil
@@ -25,6 +26,7 @@ import subprocess
 import signal
 import time
 import pwd
+import json
 
 
 # Order is important
@@ -251,6 +253,17 @@ def getCPUUsage(srv):
     proc = psutil.Process(pid=srv.pid)
     # CPU percent (float) during the 3 seconds interval (blocking call)
     return proc.cpu_percent(interval=3)
+
+def getConcurrentProcCount(port, name):
+    url = f'http://localhost:{port}/ADMIN/info'
+    req = urlrequest.Request(url)
+    response = urlrequest.urlopen(req, timeout=10)
+    content = response.read().decode('utf-8')
+    info = json.loads(content)
+
+    if name in info:
+        return info[name]
+    return None
 
 def getArchivedBinaryPath(ver):
     if not ver:
@@ -744,13 +757,15 @@ def stability_test(commands, options, args):
                  'ID/get?seq_id=164040&seq_id_type=3&exclude_blobs=1.1,4.8091,3.3',
                  'ID/getblob?blob_id=4.509567&tse=whole',
                  'ID/get_tse_chunk?id2_chunk=999999999&id2_info=25.116773935.5']
+    cnt = 0
     for testCase in testCases:
+        cnt += 1
         # Run the server
         cmdLine = [artefactDir + 'pubseq_gateway',
                    '-conffile',
                    artefactDir + 'pubseq_gateway.ini',
                    '-logfile',
-                   artefactDir + 'pubseq_gateway-drop-client-http.log']
+                   artefactDir + f'pubseq_gateway-drop-client-http-cpu-{cnt}.log']
         print_verbose('Running PSG server: ' + ' '.join(cmdLine))
         SRV1 = subprocess.Popen(cmdLine)
         time.sleep(AFTER_START_DELAY)
@@ -789,6 +804,60 @@ def stability_test(commands, options, args):
 
         # Stop the server
         stopServer(SRV1)
+
+
+    testCases = [('ID/get_tse_chunk?id2_chunk=2041&id2_info=1000/69892021.2.0.0&disable_processor=cassandra&enable_processor=OSG', 'ConcurrentProcCount_OSG'),
+                 ('ID/get?seq_id=164040&seq_id_type=3&trace=no&enable_processor=cassandra&disable_processor=OSG', 'ConcurrentProcCount_CASSANDRA')]
+
+    cnt = 0
+    for testCase in testCases:
+        cnt += 1
+        # Run the server
+        cmdLine = [artefactDir + 'pubseq_gateway',
+                   '-conffile',
+                   artefactDir + 'pubseq_gateway.ini',
+                   '-logfile',
+                   artefactDir + f'pubseq_gateway-drop-client-http-proccount-{cnt}.log']
+        print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+        SRV1 = subprocess.Popen(cmdLine)
+        time.sleep(AFTER_START_DELAY)
+
+        # Run the clients
+        clients = []
+        for client_number in range(100):
+            clientCmdLine = ['h2load', '-n', '10000', '-c', '4',
+                             '-t', '4', '-m', '4',
+                             f'http://localhost:{PORT1}/{testCase[0]}']
+            print_verbose(f'Runnig client #{client_number}: ' +
+                          ' '.join(clientCmdLine))
+            clients.append(subprocess.Popen(clientCmdLine,
+                                            stdout=subprocess.DEVNULL,
+                                            stderr=subprocess.DEVNULL))
+
+        # Let clients work for 3 seconds
+        time.sleep(3)
+
+        # Kill the clients
+        print_verbose('Killing all h2load at once...')
+        os.system('killall h2load')
+        for client in clients:
+            client.wait()
+
+        # Let the server to calm down
+        print_verbose('All h2load have been killed. '
+                      'Allow the server some time to handle the closed connections.')
+        time.sleep(3)
+
+        try:
+            # Check the number of processors
+            procCount = getConcurrentProcCount(PORT1, testCase[1])
+            if procCount != 0:
+                errors.append(f'Processor count after killing clients is not 0. {testCase[1]}={procCount}')
+        except Exception as exc:
+            errors.append(f'Error getting the {testCase[1]} counter: ' + str(exc))
+        except:
+            errors.append(f'Unknown error getting the {testCase[1]} counter')
+
 
     if errors:
         print_error('Drop client test errors:')
