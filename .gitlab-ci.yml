@@ -66,7 +66,6 @@ publish:
   - python -m venv .venv
   - . .venv/bin/activate
   - pip install conan --upgrade
-  - conan remote add conan-center https://center.conan.io
   - conan remote add artifactory_internal https://artifactory.ncbi.nlm.nih.gov/artifactory/api/conan/EXP-DO-CXX-DEP-MNG
   - conan remote list
   - conan profile list
