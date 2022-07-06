@@ -242,7 +242,7 @@ SValidatorContext& CValidError_imp::SetContext()
 
 const SValidatorContext& CValidError_imp::GetContext() const
 {
-    _ASSERT(m_pContexT);
+    _ASSERT(m_pContext);
     return *m_pContext;
 }
 
