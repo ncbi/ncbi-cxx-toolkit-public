@@ -75,6 +75,8 @@ publish:
   - conan profile show default
   - conan user $NCBI_CONAN_USERNAME -r artifactory_internal -p $NCBI_CONAN_UPLOADER_PASSWORD
   - cd ncbi-cxx-toolkit-core-conan
-  - conan upload "*" --all -r=artifactory_internal
+  - pwd
+  - ls
+  - conan export . ncbi-cxx-toolkit-core/27.0
+  - conan upload "ncbi-cxx-toolkit-core/27.0" --all -r=artifactory_internal --confirm --force
   - deactivate
-
