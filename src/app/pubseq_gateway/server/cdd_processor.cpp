@@ -493,7 +493,13 @@ void CPSGS_CDDProcessor::x_SendAnnot(const CID2_Blob_Id& id2_blob_id, CRef<CSeq_
 void CPSGS_CDDProcessor::Cancel()
 {
     m_Canceled = true;
-    x_UnlockRequest();
+    if (!IsUVThreadAssigned()) {
+        m_Status = ePSGS_Canceled;
+        x_Finish(ePSGS_Canceled);
+    }
+    else {
+        x_UnlockRequest();
+    }
 }
 
 
