@@ -279,8 +279,8 @@ void SFixture::MtReading()
 
             if (reading_result < 0) return;
 
-            BOOST_REQUIRE_MESSAGE(read <= expected_to_read, "Received more data than expected");
-            BOOST_REQUIRE_MESSAGE(equal(&received[0], &received[read], expected), "Received data does not match expected");
+            BOOST_REQUIRE_MESSAGE_MT_SAFE(read <= expected_to_read, "Received more data than expected");
+            BOOST_REQUIRE_MESSAGE_MT_SAFE(equal(&received[0], &received[read], expected), "Received data does not match expected");
 
             expected += read;
             expected_to_read -= read;
@@ -291,7 +291,7 @@ void SFixture::MtReading()
             this_thread::sleep_for(ms);
         }
 
-        BOOST_REQUIRE_MESSAGE(!expected_to_read, "Got less data that expected");
+        BOOST_REQUIRE_MESSAGE_MT_SAFE(!expected_to_read, "Got less data that expected");
     };
 
     auto dispatcher_impl = [&]() {
@@ -316,7 +316,7 @@ void SFixture::MtReading()
                             auto blob_id = item_locked->args.GetValue("blob_id");
                             auto src_blob = src_blobs.find(blob_id);
 
-                            BOOST_REQUIRE_MESSAGE(src_blob != src_blobs.end(), "Unknown blob received");
+                            BOOST_REQUIRE_MESSAGE_MT_SAFE(src_blob != src_blobs.end(), "Unknown blob received");
 
                             thread t = thread(reader_impl, src_blob->second, ref(item_ts));
                             readers.emplace(&item_ts, move(t));
@@ -335,7 +335,7 @@ void SFixture::MtReading()
             }
         }
 
-        BOOST_REQUIRE_MESSAGE(readers.size() >= src_blobs.size(), "Got less blobs that expected");
+        BOOST_REQUIRE_MESSAGE_MT_SAFE(readers.size() >= src_blobs.size(), "Got less blobs that expected");
 
         for (auto& reader : readers) {
             if (reader.second.joinable()) reader.second.join();
@@ -457,8 +457,8 @@ struct SBlobReader
 
         auto pending_result = reader.PendingCount(read);
 
-        BOOST_REQUIRE_MESSAGE((pending_result == eRW_Success) || (pending_result == eRW_Eof), "PendingCount() failed");
-        BOOST_REQUIRE_MESSAGE(*read <= expected, "Pending data is more than expected");
+        BOOST_REQUIRE_MESSAGE_MT_SAFE((pending_result == eRW_Success) || (pending_result == eRW_Eof), "PendingCount() failed");
+        BOOST_REQUIRE_MESSAGE_MT_SAFE(*read <= expected, "Pending data is more than expected");
 
         auto to_read = r.Get(1, buf_size);
         auto reading_result = eRW_Success;
@@ -467,18 +467,18 @@ struct SBlobReader
             reading_result = reader.Read(buf, to_read, read);
         }
         catch (CPSG_Exception& ex) {
-            BOOST_ERROR("Read() exception: " << ex.GetErrCodeString());
+            BOOST_ERROR_MT_SAFE("Read() exception: " << ex.GetErrCodeString());
             return -1;
         }
         catch (...) {
-            BOOST_ERROR("Read() exception: Unknown");
+            BOOST_ERROR_MT_SAFE("Read() exception: Unknown");
             return -1;
         }
 
         if (reading_result == eRW_Eof)     return 0;
         if (reading_result == eRW_Success) return 1;
 
-        BOOST_ERROR("Read() failed: " << g_RW_ResultToString(reading_result));
+        BOOST_ERROR_MT_SAFE("Read() failed: " << g_RW_ResultToString(reading_result));
         return -1;
     }
 
