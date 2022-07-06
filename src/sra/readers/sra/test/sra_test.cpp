@@ -42,6 +42,9 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqres/Byte_graph.hpp>
+#include <serial/iterator.hpp>
 #include <common/test_data_path.h>
 
 #include <klib/rc.h>
@@ -118,6 +121,108 @@ void CheckRc(rc_t rc)
         exit(1);
     }
 }
+
+
+pair<CRef<CSeq_entry>, vector<CRef<CSeq_graph>>> x_ExtractGraphs(const CSeq_entry& entry)
+{
+    pair<CRef<CSeq_entry>, vector<CRef<CSeq_graph>>> ret;
+    ret.first = SerialClone(entry);
+    for ( CTypeIterator<CSeq_graph> it = Begin(*ret.first); it; ++it ) {
+        CSeq_graph& g = *it;
+        ret.second.push_back(Ref(SerialClone(g)));
+        auto& b = g.SetGraph().SetByte();
+        b.SetMin(0);
+        b.SetMax(0);
+        b.SetAxis(0);
+        b.SetValues().clear();
+    }
+    return ret;
+}
+
+
+template<class Iterator>
+size_t x_CountBad(Iterator beg, Iterator end)
+{
+    const int kBadThreshold = 20;
+    size_t ret = 0;
+    for ( ; beg != end; ++beg ) {
+        ret += (*beg < kBadThreshold);
+    }
+    return ret;
+}
+
+
+bool x_ToReject(const CSeq_graph& graph)
+{
+    auto& vv = graph.GetGraph().GetByte().GetValues();
+    size_t s = vv.size();
+    const size_t kBadSideLength = 10;
+    if ( s >= kBadSideLength &&
+         (x_CountBad(vv.begin(), vv.begin()+kBadSideLength) == kBadSideLength ||
+          x_CountBad(vv.end()-kBadSideLength, vv.end()) == kBadSideLength) ) {
+        return true;
+    }
+    if ( x_CountBad(vv.begin(), vv.end()) > s/2 ) {
+        return true;
+    }
+    return false;
+}
+
+
+CRef<CSeq_graph> x_GetLite(const CSeq_graph& graph, bool reject)
+{
+    CRef<CSeq_graph> ret(SerialClone(graph));
+    char v = reject? 3: 30;
+    CByte_graph& b = ret->SetGraph().SetByte();
+    fill(b.SetValues().begin(), b.SetValues().end(), v);
+    b.SetMin(v);
+    b.SetMax(v);
+    return ret;
+}
+
+
+CRef<CSeq_graph> x_GetLite(const CSeq_graph& graph)
+{
+    return x_GetLite(graph, x_ToReject(graph));
+}
+
+
+bool x_Equals(const CSeq_graph& graph, const CSeq_graph& reference)
+{
+    if ( graph.Equals(reference) ) {
+        return true;
+    }
+    // convert quality graph to lite version and check again
+    if ( graph.Equals(*x_GetLite(reference, false)) ||
+         graph.Equals(*x_GetLite(reference, true)) ) {
+        return true;
+    }
+    return false;
+}
+
+
+bool x_Equals(const CSeq_entry& entry, const CSeq_entry& reference)
+{
+    if ( entry.Equals(reference) ) {
+        return true;
+    }
+    // quality graph may be converted to lite version
+    auto split_entry = x_ExtractGraphs(entry);
+    auto split_reference = x_ExtractGraphs(reference);
+    if ( !split_entry.first->Equals(*split_reference.first) ) {
+        return false;
+    }
+    if ( split_entry.second.size() != split_reference.second.size() ) {
+        return false;
+    }
+    for ( size_t i = 0; i < split_entry.second.size(); ++i ) {
+        if ( !x_Equals(*split_entry.second[i], *split_reference.second[i]) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 int CSRATestApp::Run(void)
 {
@@ -202,7 +307,7 @@ int CSRATestApp::Run(void)
                 return 0;
             }
             if ( !bh ) {
-                string file_name = string(NCBI_GetTestDataPath())+"/sra/"+sra+".lite.asn";
+                string file_name = string(NCBI_GetTestDataPath())+"/sra/"+sra+".asn";
                 NcbiCout << "Loading GenBank version of "<<sra<<" from "<<file_name << NcbiEndl;
                 CNcbiIfstream in(file_name.c_str());
                 if ( in ) {
@@ -247,7 +352,7 @@ int CSRATestApp::Run(void)
             string tag = seq.GetId().front()->GetGeneral().GetTag().GetStr();
             string sar = tag.substr(0, tag.rfind('.'));
             CRef<CSeq_entry> e2 = mgr.GetSpotEntry(sar, run);
-            if ( !e2->Equals(e1) ) {
+            if ( !x_Equals(*e2, e1) ) {
                 NcbiCout << "Reference: "<<MSerial_AsnText<<e1;
                 NcbiCout << "Generated: "<<MSerial_AsnText<<*e2;
                 ERR_POST(Fatal<<"Different!");
