@@ -272,11 +272,13 @@ endif()
 # Set stuff for an automated builds
 
 if (IS_AUTOMATED)
+    # check_exec.sh controls test execution and kill it if the time exceeded $CHECK_TIMEOUT.
+    # As a backup CTest have its own itimeout NCBITEST_TIMEOUT, that is $CHECK_TIMEOUT + 1 minute.
     set(ENV{CHECK_EXEC} "${NCBITEST_CHECK_SCRIPTDIR}/check_exec_test.sh")
     set(ENV{CHECK_EXEC_STDIN} "${NCBITEST_CHECK_SCRIPTDIR}/check_exec_test.sh -stdin")
     math(EXPR NCBITEST_TIMEOUT "${NCBITEST_TIMEOUT} + 60")
-    set(ENV{DIAG_OLD_POST_FORMAT}    "FALSE")
-    set(ENV{NCBI_BOOST_REPORT_FILE}  "${_boost_rep}")
+    set(ENV{DIAG_OLD_POST_FORMAT} "FALSE")
+    set(ENV{NCBI_BOOST_REPORT_FILE} "${_boost_rep}")
 else()
     set(ENV{CHECK_EXEC} " ")
 endif()
@@ -284,6 +286,7 @@ endif()
 
 # ---------------------------------------------------------------------------
 # Compose test arguments, create wrappers
+
 
 string(REPLACE  ";" " " _test_args "${NCBITEST_ARGS}")
 string(REPLACE  ";" " " _test_cmd  "${NCBITEST_COMMAND}")
@@ -329,6 +332,10 @@ endif()
 
 # ---------------------------------------------------------------------------
 # Run command
+
+# CTest have its own timeout NCBITEST_TIMEOUT, that is CHECK_TIMEOUT + 1 minute (see above).
+# If check_exec.sh unable to termimnte the test during allowed time, it will be killed 
+# by CTest and marked as "failed".
 
 set(_result 1)
 execute_process(
