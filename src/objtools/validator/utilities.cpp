@@ -2972,6 +2972,83 @@ bool DoesFeatureHaveUnnecessaryException(const CSeq_feat& feat, CScope& scope)
 }
 //LCOV_EXCL_STOP
 
+static bool s_IsGenbankMasterAccession(const string& acc)
+{
+    bool rval = false;
+    switch (acc.length()) {
+        case 12:
+            if (NStr::EndsWith(acc, "000000")) {
+                rval = true;
+            }
+            break;
+        case 13:
+            if (NStr::EndsWith(acc, "0000000")) {
+                rval = true;
+            }
+            break;
+        case 14:
+            if (NStr::EndsWith(acc, "00000000")) {
+                rval = true;
+            }
+            break;
+        default:
+            break;
+    }
+    return rval;
+}
+
+
+bool g_IsMasterAccession(const CSeq_id& id)
+{
+    bool rval = false;
+    switch (id.Which()) {
+        case CSeq_id::e_Other:
+            if (id.GetOther().IsSetAccession()) {
+                const string& acc = id.GetOther().GetAccession();
+                switch (acc.length()) {
+                    case 15:
+                        if (NStr::EndsWith(acc, "000000")) {
+                            rval = true;
+                        }
+                        break;
+                    case 16:
+                    case 17:
+                        if (NStr::EndsWith(acc, "0000000")) {
+                            rval = true;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            break;
+        case CSeq_id::e_Genbank:
+            if (id.GetGenbank().IsSetAccession()) {
+                rval = s_IsGenbankMasterAccession(id.GetGenbank().GetAccession());
+            }
+            break;
+        case CSeq_id::e_Ddbj:
+            if (id.GetDdbj().IsSetAccession()) {
+                rval = s_IsGenbankMasterAccession(id.GetDdbj().GetAccession());
+            }
+            break;
+        case CSeq_id::e_Embl:
+            if (id.GetEmbl().IsSetAccession()) {
+                rval = s_IsGenbankMasterAccession(id.GetEmbl().GetAccession());
+            }
+            break;
+        case CSeq_id::e_Tpg:
+            if (id.GetTpg().IsSetAccession()) {
+                rval = s_IsGenbankMasterAccession(id.GetTpg().GetAccession());
+            }
+            break;
+        default:
+            break;
+    }
+
+    return rval;
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)

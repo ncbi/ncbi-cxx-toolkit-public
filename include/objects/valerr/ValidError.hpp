@@ -76,6 +76,15 @@ public:
                          unsigned int         ec,      // error code
                          const string&        msg,     // specific error message
                          const string&        desc,    // offending object's description
+                         const string&        acc,     // accession of object.
+                         const int            ver,     // version of object.
+                         const string&        location = kEmptyStr, // formatted location of object
+                         const int            seq_offset = 0);
+
+    void AddValidErrItem(EDiagSev             sev,     // severity
+                         unsigned int         ec,      // error code
+                         const string&        msg,     // specific error message
+                         const string&        desc,    // offending object's description
                          const CSerialObject& obj,     // offending object
                          const string&        acc,     // accession of object.
                          const int            ver,     // version of object.

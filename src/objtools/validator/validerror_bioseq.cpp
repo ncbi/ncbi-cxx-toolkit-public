@@ -8600,7 +8600,7 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
 
 }
 
-
+/*
 bool s_IsGenbankMasterAccession(const string& acc)
 {
     bool rval = false;
@@ -8676,6 +8676,7 @@ bool s_IsMasterAccession(const CSeq_id& id)
 
     return rval;
 }
+*/
 
 
 bool CValidError_bioseq::IsMaster(const CBioseq& seq)
@@ -8686,7 +8687,7 @@ bool CValidError_bioseq::IsMaster(const CBioseq& seq)
     }
     bool is_master = false;
     ITERATE(CBioseq::TId, id, seq.GetId()) {
-        is_master |= s_IsMasterAccession(**id);
+        is_master |= g_IsMasterAccession(**id);
     }
 
     return is_master;

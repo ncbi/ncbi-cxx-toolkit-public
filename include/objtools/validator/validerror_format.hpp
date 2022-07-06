@@ -63,6 +63,7 @@ class CScope;
 
 BEGIN_SCOPE(validator)
 
+struct SValidatorContext;
 
 enum ESubmitterFormatErrorGroup {
     eSubmitterFormatErrorGroup_ConsensusSplice = 0,
@@ -134,7 +135,7 @@ private:
     static const string& x_GetLocusTag(const CSeq_feat& sf, CScope& scope);
 
     CRef<CObjectManager>    m_ObjMgr;
-
+    SValidatorContext*      m_pContext=nullptr;
 };
 
 

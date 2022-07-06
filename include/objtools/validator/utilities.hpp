@@ -282,6 +282,8 @@ bool ConsistentWithC(Char ch);
 bool ConsistentWithG(Char ch);
 bool ConsistentWithT(Char ch);
 
+bool g_IsMasterAccession(const CSeq_id& id);
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

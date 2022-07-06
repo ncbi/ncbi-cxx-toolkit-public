@@ -37,6 +37,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seqdesc.hpp>
 #include <objtools/edit/huge_file.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -49,6 +50,7 @@ class CSeq_id;
 class CBioseq;
 class CSeq_submit;
 class CSeq_descr;
+class CSeqdesc;
 
 BEGIN_SCOPE(edit)
 
@@ -81,6 +83,7 @@ public:
         CConstRef<CSeq_descr> m_descr;
         std::list<CConstRef<CSeq_id>> m_ids;
         CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
+        CSeq_inst::TRepr m_repr = CSeq_inst::eRepr_not_set;
     };
 
     struct TBioseqSetInfo
@@ -90,6 +93,8 @@ public:
         CBioseq_set::TClass m_class = CBioseq_set::eClass_not_set;
         CConstRef<CSeq_descr> m_descr;
     };
+
+
 
 
     using CRefLess = PPtrLess<CConstRef<CSeq_id>>;
@@ -107,7 +112,9 @@ public:
     const TBioseqSetInfo* FindTopObject(CConstRef<CSeq_id> seqid) const;
     CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info) const;
     const TBioseqInfo* FindBioseq(CConstRef<CSeq_id> seqid) const;
-
+    CConstRef<CSeqdesc> GetClosestDescriptor(const TBioseqInfo& info, CSeqdesc::E_Choice choice) const;
+    CConstRef<CSeqdesc> GetClosestDescriptor(const CSeq_id& id, CSeqdesc::E_Choice choice) const;
+    
     // Direct loading methods
     CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> seqid) const;
     CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;

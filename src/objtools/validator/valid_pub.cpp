@@ -63,6 +63,8 @@
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/misc/sequence_macros.hpp>
+#include <objtools/validator/validator_context.hpp>
+
 
 #define NCBI_USE_ERRCODE_X   Objtools_Validator
 
@@ -1116,20 +1118,22 @@ void CValidError_imp::ValidateCitSub
 }
 
 
+
+static bool s_CuratedRefSeq(const string& accession)
+{   
+    return (NStr::StartsWith(accession, "NM_") ||
+            NStr::StartsWith(accession, "NP_") ||
+            NStr::StartsWith(accession, "NG_") ||
+            NStr::StartsWith(accession, "NR_"));
+}
+
 static bool s_IsNoncuratedRefSeq (const CBioseq& seq)
 {
     FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
         if ((*id_it)->IsOther()) {
             if ((*id_it)->GetOther().IsSetAccession()) {
                 string accession = (*id_it)->GetOther().GetAccession();
-                if (NStr::StartsWith(accession, "NM_")
-                    || NStr::StartsWith(accession, "NP_")
-                    || NStr::StartsWith(accession, "NG_")
-                    || NStr::StartsWith(accession, "NR_")) {
-                    return false;
-                } else {
-                    return true;
-                }
+                return !s_CuratedRefSeq(accession);
             }
         }
     }
@@ -1143,10 +1147,7 @@ bool CValidError_imp::IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev)
         if ((*id_it)->IsOther()
             && (*id_it)->GetOther().IsSetAccession()) {
             const string& accession = (*id_it)->GetOther().GetAccession();
-            if (NStr::StartsWith (accession, "NM_")
-                || NStr::StartsWith(accession, "NP_")
-                || NStr::StartsWith(accession, "NG_")
-                || NStr::StartsWith(accession, "NR_")) {
+            if (s_CuratedRefSeq(accession)) {
                 sev = eDiag_Warning;
                 return false;
             }
@@ -1246,6 +1247,10 @@ static bool s_IsTSA_Contig (const CBioseq& seq)
 
 void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs)
 {
+    if (GetContext().HugeFileMode) {
+        return;
+    }
+
      if ( m_NoPubs && !IsSeqSubmitParent() ) {
         if ( !m_IsGPS  &&  !cs) {
             CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));

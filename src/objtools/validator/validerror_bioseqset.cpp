@@ -44,7 +44,7 @@
 #include <objects/misc/sequence_macros.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
-
+#include <objtools/validator/validator_context.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -154,8 +154,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
         break;
     }
 
-    SetShouldNotHaveMolInfo(seqset);
-    ValidateSetTitle(seqset);
+
     ValidateSetElements(seqset);
 
     if (seqset.IsSetClass()
@@ -168,6 +167,30 @@ void CValidError_bioseqset::ValidateBioseqSet(
         CheckForImproperlyNestedSets(seqset);
     }
 
+
+    // validate annots
+    FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
+        m_AnnotValidator.ValidateSeqAnnot (**annot_it);
+        m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
+    }
+  
+    if (m_Imp.GetContext().HugeFileMode &&
+        seqset.IsSetClass() && seqset.GetClass() == CBioseq_set::eClass_genbank) { // what about eClass_not_set?
+        call_once(m_Imp.SetContext().DescriptorsOnceFlag,
+                [this, &seqset](){ x_ValidateSetDescriptors(seqset); });
+        return;
+    }
+
+    x_ValidateSetDescriptors(seqset);
+}
+
+
+// =============================================================================
+//                                     Private
+// =============================================================================
+
+void CValidError_bioseqset::x_ValidateSetDescriptors(const CBioseq_set& seqset)
+{
     if (seqset.IsSetClass()
         && (seqset.GetClass() == CBioseq_set::eClass_genbank
             || seqset.GetClass() == CBioseq_set::eClass_pop_set
@@ -179,11 +202,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
         ShouldHaveNoDblink(seqset);
     }
 
-    // validate annots
-    FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
-        m_AnnotValidator.ValidateSeqAnnot (**annot_it);
-        m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
-    }
+
     if (seqset.IsSetDescr()) {
         CBioseq_set_Handle bsh = m_Scope->GetBioseq_setHandle(seqset);
         if (bsh) {
@@ -193,12 +212,10 @@ void CValidError_bioseqset::ValidateBioseqSet(
             }
         }
     }
+
+    SetShouldNotHaveMolInfo(seqset);
+    ValidateSetTitle(seqset);
 }
-
-
-// =============================================================================
-//                                     Private
-// =============================================================================
 
 
 bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)

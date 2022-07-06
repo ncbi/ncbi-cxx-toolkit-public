@@ -88,6 +88,7 @@ private:
     void ValidateGenbankSet(const CBioseq_set& seqset);
     void ValidateSetTitle(const CBioseq_set& seqset);
     void ValidateSetElements(const CBioseq_set& seqset);
+    void x_ValidateSetDescriptors(const CBioseq_set& seqset);
     void ValidatePopSet(const CBioseq_set& seqset);
     void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);

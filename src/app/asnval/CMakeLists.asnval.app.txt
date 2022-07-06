@@ -1,7 +1,7 @@
 # $Id$
 
 NCBI_begin_app(asnvalidate)
-  NCBI_sources(asnval)
+  NCBI_sources(asnval huge_file_utils)
   NCBI_uses_toolkit_libraries(data_loaders_util xmlwrapp xvalidate)
   NCBI_project_watchers(stakhovv gotvyans)
 NCBI_end_app()

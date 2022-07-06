@@ -45,6 +45,7 @@
 #include <objmgr/scope.hpp>
 
 #include <map>
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -66,6 +67,7 @@ class CDbtag;
 
 BEGIN_SCOPE(validator)
 
+struct SValidatorContext;
 
 class NCBI_VALIDATOR_EXPORT CValidator : public CObject
 {
@@ -105,6 +107,9 @@ public:
     // If no taxon service is provided, a CTAxon3 client will
     // be created.
     CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon = nullptr);
+    CValidator(CObjectManager& objmgr, 
+            shared_ptr<SValidatorContext> 
+            pContext, AutoPtr<ITaxon3> taxon=nullptr);
     ~CValidator();
 
     // If many validations are being done without changing the underlying
@@ -271,8 +276,9 @@ private:
     CRef<CObjectManager>    m_ObjMgr;
     AutoPtr<ITaxon3>        m_Taxon;
 
-    TProgressCallback       m_PrgCallback;
-    void*                   m_UserData;
+    TProgressCallback               m_PrgCallback;
+    void*                           m_UserData;
+    shared_ptr<SValidatorContext>   m_pContext;
 };
 
 

@@ -63,6 +63,7 @@
 #include <objmgr/util/create_defline.hpp>
 
 #include <objmgr/util/feature.hpp>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -111,6 +112,8 @@ class CT3Error;
 
 BEGIN_SCOPE(validator)
 
+
+struct SValidatorContext;
 class CValidError_desc;
 class CValidError_descr;
 
@@ -136,6 +139,18 @@ public:
     // NB: ITaxon is owned by CValidator.
     CValidError_imp(CObjectManager& objmgr, CValidError* errors,
         ITaxon3* taxon, Uint4 options = 0);
+
+    CValidError_imp(CObjectManager& objmgr, 
+            shared_ptr<SValidatorContext> pContext,
+            CValidError* errors, 
+            Uint4 options=0);
+
+    CValidError_imp(CObjectManager& objmgr,
+            shared_ptr<SValidatorContext> pContext,
+            CValidError* errors,
+            ITaxon3* taxon, 
+            Uint4 options=0);
+
 
     // Destructor
     virtual ~CValidError_imp();
@@ -174,6 +189,9 @@ public:
     void SetTSE(const CSeq_entry_Handle& seh);
 
     bool ShouldSubdivide() const { if (m_NumTopSetSiblings > 1000) return true; else return false; }
+
+    SValidatorContext& SetContext();
+    const SValidatorContext& GetContext() const;
 
 public:
     // interface to be used by the various validation classes
@@ -620,6 +638,7 @@ private:
     ITaxon3* m_taxon;
     ITaxon3* x_GetTaxonService();
 
+    shared_ptr<SValidatorContext> m_pContext;
 };
 
 

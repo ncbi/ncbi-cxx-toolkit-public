@@ -98,6 +98,7 @@ void CValidError_desc::ValidateSeqDesc
 (const CSeqdesc& desc,
  const CSeq_entry& ctx)
 {
+
     m_Ctx.Reset(&ctx);
 
     // check for non-ascii characters
