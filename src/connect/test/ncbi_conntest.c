@@ -33,7 +33,7 @@
 
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_connector.h>
-#include "../ncbi_priv.h"               /* CORE logging facilities */
+#include "../ncbi_once.h"               /* pulls CORE logging facilities */
 #include "ncbi_conntest.h"
 #include <stdlib.h>
 #include <string.h>
@@ -357,34 +357,39 @@ void CONN_TestConnector
  FILE*           data_file,
  TTestConnFlags  flags)
 {
-    char        buf[128];
-    EIO_Status  status;
-    SConnector  dummy;
-    CONN        conn;
-    const char* type;
-    char*       desc;
+    static void* s_Once = 0;
+    char         buf[128];
+    EIO_Status   status;
+    CONN         conn;
+    const char*  type;
+    char*        desc;
 
-    memset(&dummy, 0, sizeof(dummy));
+    if (CORE_Once(&s_Once)) {
+        SConnector dummy;
+        memset(&dummy, 0, sizeof(dummy));
 
-    TEST_LOG(eIO_Success, "[CONN_TestConnector]  Pretest starting...");
+        TEST_LOG(eIO_Success, "[CONN_TestConnector]  Pretest starting...");
 
-    /* Fool around with dummy connector / connection
-     */
-    assert(CONN_Create(0,      &conn)  != eIO_Success  &&  !conn);
-    assert(CONN_Create(&dummy, &conn)  != eIO_Success  &&  !conn);
-    dummy.setup = s_DummySetup;
-    assert(CONN_Create(&dummy, &conn)  == eIO_Success);
-    assert(dummy.meta->default_timeout == &g_NcbiDefConnTimeout);
-    assert(CONN_Flush (conn)           != eIO_Success);
-    assert(CONN_ReInit(conn, 0)        == eIO_Success);
-    assert(CONN_ReInit(conn, 0)        != eIO_Success);
-    assert(CONN_ReInit(conn, &dummy)   == eIO_Success);
-    assert(CONN_Flush (conn)           != eIO_Success);
-    assert(CONN_ReInit(conn, &dummy)   == eIO_Success);
-    assert(CONN_ReInit(conn, 0)        == eIO_Success);
-    assert(CONN_Close (conn)           == eIO_Success);
+        /* Fool around with dummy connector / connection
+         */
+        assert(CONN_Create(0,      &conn)  != eIO_Success  &&  !conn);
+        assert(CONN_Create(&dummy, &conn)  != eIO_Success  &&  !conn);
+        dummy.setup = s_DummySetup;
+        assert(CONN_Create(&dummy, &conn)  == eIO_Success);
+        assert(dummy.meta->default_timeout == &g_NcbiDefConnTimeout);
+        assert(!CONN_GetType    (conn));
+        assert(!CONN_Description(conn));
+        assert(CONN_Flush (conn)           != eIO_Success);
+        assert(CONN_ReInit(conn, 0)        == eIO_Success);
+        assert(CONN_ReInit(conn, 0)        != eIO_Success);
+        assert(CONN_ReInit(conn, &dummy)   == eIO_Success);
+        assert(CONN_Flush (conn)           != eIO_Success);
+        assert(CONN_ReInit(conn, &dummy)   == eIO_Success);
+        assert(CONN_ReInit(conn, 0)        == eIO_Success);
+        assert(CONN_Close (conn)           == eIO_Success);
 
-    TEST_LOG(eIO_Success, "[CONN_TestConnector]  Pretest completed");
+        TEST_LOG(eIO_Success, "[CONN_TestConnector]  Pretest completed");
+    }
 
     TEST_LOG(eIO_Success, "[CONN_TestConnector]  Starting...");
 
