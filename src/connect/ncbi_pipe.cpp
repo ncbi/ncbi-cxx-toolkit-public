@@ -37,12 +37,12 @@
 #endif /*_FORTIFY_SOURCE*/
 #define  _FORTIFY_SOURCE 0
 #include "ncbi_priv.h"
-#include <connect/error_codes.hpp>
 #include <corelib/ncbiexec.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <connect/ncbi_pipe.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
+#include <connect/error_codes.hpp>
+#include <connect/ncbi_pipe.hpp>
 
 #ifdef NCBI_OS_MSWIN
 
@@ -984,7 +984,8 @@ CPipeHandle::CPipeHandle(void)
     static NCBI_PARAM_TYPE(CONN, PIPE_USE_POLL) use_poll_param;
 
     m_UsePoll = use_poll_param.Get();
-    _TRACE("CPipeHandle using poll(): " + NStr::BoolToString(m_UsePoll));
+    ERR_POST_ONCE(Trace << "CPipeHandle using poll(): "
+                  + NStr::BoolToString(m_UsePoll));
 }
 
 
@@ -1682,15 +1683,15 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 
     if (m_UsePoll) {
         struct pollfd poll_fds[3] = {
-            { m_ChildStdIn,  POLLOUT | POLLERR },
-            { m_ChildStdOut, POLLIN,           },
-            { m_ChildStdErr, POLLIN,           }
+            { m_ChildStdIn,  POLLOUT },
+            { m_ChildStdOut, POLLIN  },
+            { m_ChildStdErr, POLLIN  }
         };
         int timeout_msec(timeout
                          ? timeout->sec * 1000 + (timeout->usec + 500) / 1000
                          : -1/*infinite*/);
 
-        // Negative FDs OK, poll should ignore them
+        // Negative FDs OK, poll ignores them
         // Check the mask
         if (!(mask & CPipe::fStdIn))
             poll_fds[0].fd = -1;
@@ -1765,10 +1766,8 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                 }
             }
             if ((mask & CPipe::fStdOut)  &&  m_ChildStdOut != -1) {
-                if (!rd) {
-                    rd = true;
-                    FD_ZERO(&rfds);
-                }
+                rd = true;
+                FD_ZERO(&rfds);
                 if (m_ChildStdOut < FD_SETSIZE) {
                     FD_SET(m_ChildStdOut, &rfds);
                     FD_SET(m_ChildStdOut, &efds);
@@ -1795,7 +1794,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             if (max >= FD_SETSIZE) {
                 PIPE_THROW(0,
                            "File descriptor " + NStr::NumericToString(max)
-                           + " too large ("
+                           + " too large (maximum allowed "
                            + string(NCBI_AS_STRING(FD_SETSIZE)) + ')');
             }
 
