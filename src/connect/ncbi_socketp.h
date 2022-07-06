@@ -37,14 +37,14 @@
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */
 #if !defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_MSWIN)
-#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
+#  error "Unknown OS, must be either NCBI_OS_UNIX or NCBI_OS_MSWIN!"
 #endif /*supported platforms*/
 
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_buffer.h>
 
 
-/* Pull in a minial set of platform-specific system headers here.
+/* Pull in a minimal set of platform-specific system headers here.
  */
 
 #ifdef NCBI_OS_MSWIN
@@ -270,7 +270,7 @@ typedef struct SOCK_tag {
 
     SNcbiSSLctx*     sslctx;    /* secure session context if SSL's on, else 0*/
 
-    /* timeouts */
+    /* timeouts: all normalized */
     struct timeval   r_tv;      /* finite read  timeout value                */
     struct timeval   w_tv;      /* finite write timeout value                */
     struct timeval   c_tv;      /* finite close timeout value                */
