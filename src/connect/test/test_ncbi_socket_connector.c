@@ -63,7 +63,7 @@ static int s_REG_Get(void* unused, const char* section,
     if (strcasecmp(DEF_CONN_REG_SECTION, section) == 0) {
         if      (strcasecmp(REG_CONN_HOST,    name) == 0)
             *value = '\0';
-        if      (strcasecmp(REG_CONN_MAX_TRY, name) == 0)
+        else if (strcasecmp(REG_CONN_MAX_TRY, name) == 0)
             strncpy0(value, STR(TEST_MAX_TRY), value_size);
         else if (strcasecmp(REG_CONN_TIMEOUT, name) == 0)
             strncpy0(value, STR(TEST_TIMEOUT), value_size);

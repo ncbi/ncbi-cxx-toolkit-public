@@ -39,8 +39,8 @@
 #include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_connection.h>
+#include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_util.h>
 #include "ncbi_conntest.h"
 
