@@ -44,6 +44,7 @@
 
 // libuv request timer callback
 void request_timer_cb(uv_timer_t *  handle);
+void request_timer_close_cb(uv_handle_t *handle);
 
 
 /// Based on various attributes of the request: {{seq_id}}; NA name;
@@ -109,6 +110,7 @@ public:
 
     void EraseProcessorGroup(size_t  request_id);
     void OnLibh2oFinished(size_t  request_id);
+    void OnRequestTimerClose(size_t  request_id);
 
     map<string, size_t>  GetConcurrentCounters(void);
     size_t GetActiveProcessorGroups(void);
@@ -167,6 +169,7 @@ private:
         vector<SProcessorData>      m_Processors;
         uv_timer_t                  m_RequestTimer;
         bool                        m_TimerActive;
+        bool                        m_TimerClosed;
 
         // During the normal processing (no abrupt connection dropping by the
         // client) there are three conditions to delete the group. All the
@@ -185,7 +188,7 @@ private:
 
         SProcessorGroup(size_t  request_id) :
             m_RequestId(request_id),
-            m_TimerActive(false), m_FinallyFlushed(false),
+            m_TimerActive(false), m_TimerClosed(true), m_FinallyFlushed(false),
             m_AllProcessorsFinished(false), m_Libh2oFinished(false),
             m_LowLevelClose(false),
             m_StartedProcessing(nullptr)
@@ -195,22 +198,25 @@ private:
 
         ~SProcessorGroup()
         {
-            if (m_TimerActive) {
+            if (!m_TimerClosed) {
                 PSG_ERROR("The request timer (request id: " +
                           to_string(m_RequestId) +
-                          ") must be stopped before the processor group "
-                          "is destroyed");
+                          ") must be stopped and its handle closed before the "
+                          "processor group is destroyed");
             }
         }
 
         bool IsSafeToDelete(void) const
         {
-            return // Normal flow safe case
+            return m_TimerClosed &&
+                (
+                   // Normal flow safe case
                    (m_FinallyFlushed &&
                     m_AllProcessorsFinished &&
                     m_Libh2oFinished) ||
                    // Abrupt connection drop case
-                   (m_LowLevelClose && m_AllProcessorsFinished);
+                   (m_LowLevelClose && m_AllProcessorsFinished)
+                );
         }
 
         void StartRequestTimer(uv_loop_t *  uv_loop,
@@ -235,6 +241,7 @@ private:
                            uv_strerror(ret));
             }
             m_TimerActive = true;
+            m_TimerClosed = false;
         }
 
         void StopRequestTimer(void)
@@ -248,7 +255,8 @@ private:
                               string(uv_strerror(ret)));
                 }
 
-                uv_close(reinterpret_cast<uv_handle_t*>(&m_RequestTimer), NULL);
+                uv_close(reinterpret_cast<uv_handle_t*>(&m_RequestTimer),
+                         request_timer_close_cb);
             }
         }
 
