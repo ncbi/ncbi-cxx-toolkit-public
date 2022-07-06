@@ -641,7 +641,7 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
             polls[i].m_REvent = x_polls[i].revent;
     }
 
-    if (n_ready)
+    if ( n_ready )
         *n_ready = xx_ready + x_ready;
 
     delete[] x_polls;
