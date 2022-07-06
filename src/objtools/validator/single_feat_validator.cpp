@@ -525,13 +525,9 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
 
 void CSingleFeatValidator::x_ReportECNumFileStatus()
 {
-    cout << "In x_ReportECNumFilesStatus()" << endl;
 
     bool expected{true};    
     if (m_Imp.SetContext().CheckECNumFileStatus.compare_exchange_strong(expected,false)) { 
-
-        cout << "Checking EC number files" << endl;
-
         if (CProt_ref::GetECNumAmbiguousStatus() == CProt_ref::eECFile_not_found) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
                 "Unable to find EC number file 'ecnum_ambiguous.txt' in data directory");
