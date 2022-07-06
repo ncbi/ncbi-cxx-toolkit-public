@@ -110,7 +110,7 @@ class CMrnaMatchInfo;
 
 typedef map<const CSeq_feat *, CRef<CMrnaMatchInfo> > TmRNAList;
 
-class CValidError_bioseq : private CValidError_base
+class NCBI_VALIDATOR_EXPORT CValidError_bioseq : private CValidError_base
 {
 public:
     CValidError_bioseq(CValidError_imp& imp);
