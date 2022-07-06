@@ -351,9 +351,24 @@ struct CTcpWorker
         } catch (const CPubseqGatewayUVException &  exc) {
             m_error = exc.GetUVLibraryErrorCode();
             m_last_error = exc.GetMsg();
+            PSG_ERROR("Libuv exception while preparing/running worker " << m_id <<
+                      " UV error code: " << m_error <<
+                      " Error: " << m_last_error);
         } catch (const CException &  exc) {
             m_error = exc.GetErrCode();
             m_last_error = exc.GetMsg();
+            PSG_ERROR("NCBI exception while preparing/running worker " << m_id <<
+                      " Error code: " << m_error <<
+                      " Error: " << m_last_error);
+        } catch (const exception &  exc) {
+            m_error = -1;
+            m_last_error = exc.what();
+            PSG_ERROR("Standard exception while preparing/running worker " << m_id <<
+                      " Error: " << exc.what());
+        } catch (...) {
+            m_error = -1;
+            m_last_error = "unknown";
+            PSG_ERROR("Unknown exception while preparing/running worker " << m_id);
         }
 
         m_shuttingdown = true;
@@ -398,8 +413,11 @@ struct CTcpWorker
                     uv_walk(m_internal->m_loop.Handle(), s_LoopWalk, this);
                 }
                 m_internal.reset(nullptr);
-            } catch(...) {
-                PSG_ERROR("unexpected exception while shutting down worker " <<
+            } catch (const exception &  exc) {
+                PSG_ERROR("Exception while shutting down worker " << m_id <<
+                          ": " << exc.what());
+            } catch (...) {
+                PSG_ERROR("Unexpected exception while shutting down worker " <<
                           m_id);
             }
         }
