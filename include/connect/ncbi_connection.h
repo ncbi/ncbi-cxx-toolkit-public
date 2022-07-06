@@ -131,7 +131,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
  * the connection.  Return value NULL denotes unknown connection type.
  */
 extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
-(CONN conn  /**< [in] connection handle */ 
+(CONN conn  /**< [in] connection handle */
  );
 
 

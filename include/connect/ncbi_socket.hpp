@@ -96,7 +96,7 @@ public:
     EIO_Status IsSet(void);
     EIO_Status Reset(void);
 
-    /// Access to the the system-specific handle.
+    /// Access to the system-specific handle.
     virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
                                    EOwnership ownership = eNoOwnership) const;
 
@@ -758,10 +758,11 @@ public:
     static ESwitch SetDataLogging(ESwitch log);
 
     /// Polling structure
+    /// m_Event can be either of eIO_Open, eIO_Read, eIO_Write, eIO_ReadWrite
     struct SPoll {
-        CPollable* m_Pollable;  ///< object pointer (or NULL not to poll)
-        EIO_Event  m_Event;     ///< event inqury (or eIO_Open not to poll)
-        EIO_Event  m_REvent;    ///< event ready (eIO_Open if not ready)
+        CPollable* m_Pollable;  ///< [in]  object pointer (or NULL not to poll)
+        EIO_Event  m_Event;     ///< [in]  event inqury (or eIO_Open for none)
+        EIO_Event  m_REvent;    ///< [out] event ready (eIO_Open if not ready)
 
         SPoll(CPollable* pollable = 0, EIO_Event event = eIO_Open)
             : m_Pollable(pollable), m_Event(event), m_REvent(eIO_Open)
@@ -770,7 +771,7 @@ public:
 
     /// Poll a vector of CPollable objects for I/O readiness.
     ///
-    /// @note  If possible, consider using lower-level SOCK_Poll() for
+    /// @note  If possible, please consider using lower-level SOCK_Poll() for
     ///        performance reasons (the code may still use a vector to prepare
     ///        the array of elements, then pass vector::data() and
     ///        vector::size() when making the SOCK_Poll() call).
@@ -809,7 +810,7 @@ public:
     static string    HostPortToString(unsigned int   host,
                                       unsigned short port);
 
-    /// Return position past the end of parsed portion, NPOS on error
+    /// Return position past the end of the parsed portion, NPOS on error
     static SIZE_TYPE StringToHostPort(const string&   str,
                                       unsigned int*   host,
                                       unsigned short* port);
