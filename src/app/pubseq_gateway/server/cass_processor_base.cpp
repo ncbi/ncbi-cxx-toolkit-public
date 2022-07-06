@@ -167,6 +167,13 @@ void CPSGS_CassProcessorBase::CallOnData(void)
 }
 
 
+void call_processor_process_event_cb(void *  user_data)
+{
+    CPSGS_CassProcessorBase *   proc = (CPSGS_CassProcessorBase*)(user_data);
+    proc->ProcessEvent();
+}
+
+
 void CPSGS_CassProcessorBase::CancelLoaders(void)
 {
     for (auto &  loader: m_FetchDetails) {
@@ -187,6 +194,15 @@ void CPSGS_CassProcessorBase::CancelLoaders(void)
             }
         }
     }
+
+    // Sometimes there are no loaders which have not finished or the OnData()
+    // does not lead to a process event call of the processor due to a data
+    // trigger.
+    // This may lead to a not called SignalFinishProcessing() for a processor.
+    // On the other hand the ProcessEvent() is innocent in terms of data
+    // processing however will check the cancel status as needed.
+    // So shedule ProcessEvent() for later.
+    PostponeInvoke(call_processor_process_event_cb, (void*)(this));
 }
 
 

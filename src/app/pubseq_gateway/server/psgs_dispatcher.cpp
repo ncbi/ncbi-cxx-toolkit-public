@@ -46,6 +46,16 @@ void request_timer_cb(uv_timer_t *  handle)
     app->GetProcessorDispatcher()->OnRequestTimer(request_id);
 }
 
+
+void request_timer_close_cb(uv_handle_t *   handle)
+{
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    size_t      request_id = (size_t)(handle->data);
+
+    app->GetProcessorDispatcher()->OnRequestTimerClose(request_id);
+}
+
+
 void erase_processor_group_cb(void *  user_data)
 {
     auto *      app = CPubseqGatewayApp::GetInstance();
@@ -508,6 +518,9 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
     if (pre_finished) {
         // Timer is not needed anymore
+        // Note: it is safe to have this call even is the processor has not
+        // started yet. If so then the timer is not created thus the call leads
+        // to an immediate return
         procs->second->StopRequestTimer();
 
 
@@ -883,6 +896,31 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
     if (group != nullptr) {
         delete group;
     }
+}
+
+
+void CPSGS_Dispatcher::OnRequestTimerClose(size_t  request_id)
+{
+    size_t              bucket_index = x_GetBucketIndex(request_id);
+    SProcessorGroup *   group = nullptr;
+
+    m_GroupsLock[bucket_index].lock();
+
+    auto    procs = m_ProcessorGroups[bucket_index].find(request_id);
+    if (procs != m_ProcessorGroups[bucket_index].end()) {
+        // It could be that the timer is closed first or
+        // the processors finished first.
+        // Set the flag first
+        procs->second->m_TimerClosed = true;
+
+        if (procs->second->IsSafeToDelete()) {
+            // Can erase group right away
+            m_GroupsLock[bucket_index].unlock();
+            EraseProcessorGroup(request_id);
+            return;
+        }
+    }
+    m_GroupsLock[bucket_index].unlock();
 }
 
 
