@@ -78,5 +78,5 @@ publish:
   - pwd
   - ls
   - conan export . ncbi-cxx-toolkit-core/27.0
-  - conan upload "ncbi-cxx-toolkit-core/27.0@" --all -r=artifactory_internal --confirm --force
+  - conan upload "*" --all -r=artifactory_internal --confirm --force
   - deactivate
