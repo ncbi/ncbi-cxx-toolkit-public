@@ -723,6 +723,7 @@ enum EErrType {
     eErr_SEQ_FEAT_CDSdoesNotMatchVDJC,
     eErr_SEQ_FEAT_GeneOnNucPositionOfPeptide,
     eErr_SEQ_FEAT_ShortTRNAIntron,
+    eErr_SEQ_FEAT_BadCDScomponentOverlapTRNA,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,

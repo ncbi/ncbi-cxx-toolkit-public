@@ -2223,6 +2223,9 @@ same id type" } },
    { eErr_SEQ_FEAT_ShortTRNAIntron,
    { "ShortTRNAIntron",
      "Bacterial tRNA intron less than 100 bp" } },
+   { eErr_SEQ_FEAT_BadCDScomponentOverlapTRNA,
+   { "BadCDScomponentOverlapTRNA",
+     "CDS features should not overlap tRNA features" } },
 
 /* SEQ_ALIGN */
 
