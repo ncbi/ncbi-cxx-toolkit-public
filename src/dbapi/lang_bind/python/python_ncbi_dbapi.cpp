@@ -2919,8 +2919,10 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         return CVariant(eDB_VarChar);
     } else if ( pythonpp::CBool::HasSameType(obj) ) {
         return CVariant( pythonpp::CBool(obj) );
+#if PY_MAJOR_VERSION < 3
     } else if ( pythonpp::CInt::HasSameType(obj) ) {
         return CVariant( static_cast<int>(pythonpp::CInt(obj)) );
+#endif
     } else if ( pythonpp::CLong::HasSameType(obj) ) {
         return CVariant( static_cast<Int8>(pythonpp::CLong(obj)) );
     } else if ( pythonpp::CFloat::HasSameType(obj) ) {
