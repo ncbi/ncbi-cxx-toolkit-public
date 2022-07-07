@@ -61,4 +61,5 @@ test:
 publish:
  stage: publish
  trigger: pd/cxxtk/cxx/ncbi-cxx-toolkit-core-conan
-
+ variables:
+  UPSTREAM_BRANCH: $CI_COMMIT_REF_NAME
