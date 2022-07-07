@@ -94,6 +94,14 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 }
 
 
+/* "service" == the original input service name;
+ * "svc" == current service name (== service at the beginning);
+ * "ismask" = 1 if "service" contained any wilcard characters;
+ * "*isfast" = 1 on input if not to do environment scan;
+ * "*isfast" = 1 on output if the service was substituted with itself (but may
+ *               be different case);  otherwise, "*isfast" == 0.  This is used
+ *               (only) in namerd searches, which are case-sensitive.
+ */
 static char* x_ServiceName(unsigned int depth,
                            const char* service, const char* svc,
                            int/*bool*/ ismask, int* /*bool*/isfast)
@@ -103,6 +111,7 @@ static char* x_ServiceName(unsigned int depth,
 
     assert(isfast);
     assert(!svc == !service);
+    assert(depth  ||  svc == service);
     assert(sizeof(buf) > sizeof(REG_CONN_SERVICE_NAME));
     if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*[")))
         ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(REG_CONN_SERVICE_NAME)
