@@ -97,9 +97,30 @@
 #  include <sys/param.h>
 #  ifdef HAVE_POLL_H
 #    include <sys/poll.h>
+#    ifndef   POLLPRI
+#      define POLLPRI     POLLIN
+#    endif /*!POLLPRI*/
+#    ifndef   POLLRDNORM
+#      define POLLRDNORM  POLLIN
+#    endif /*!POLLRDNORM*/
+#    ifndef   POLLRDBAND
+#      define POLLRDBAND  POLLIN
+#    endif /*!POLLRDBAND*/
+#    ifndef   POLLWRNORM
+#      define POLLWRNORM  POLLOUT
+#    endif /*!POLLWRNORM*/
+#    ifndef   POLLWRBAND
+#      define POLLWRBAND  POLLOUT
+#    endif /*!POLLWRBAND*/
 #    ifndef   POLLRDHUP
-#      define POLLRDHUP  POLLHUP
+#      define POLLRDHUP   POLLHUP
 #    endif /*!POLLRDHUP*/
+#    define   POLL_READ         (POLLIN  | POLLRDNORM | POLLRDBAND | POLLPRI)
+#    define   POLL_WRITE        (POLLOUT | POLLWRNORM | POLLWRBAND)
+#    define  _POLL_READY        (POLLERR | POLLHUP)
+#    define   POLL_READ_READY   (_POLL_READY | POLL_READ | POLLRDHUP)
+#    define   POLL_WRITE_READY  (_POLL_READY | POLL_WRITE)
+#    define   POLL_ERROR         POLLNVAL
 #  endif /*HAVE_POLL_H*/
 #  include <sys/stat.h>
 #  include <sys/un.h>
@@ -130,7 +151,7 @@
 #  define sys_gethostname(a, b)  gethostname(a, (int)(b))
 #else
 #  define sys_gethostname        gethostname
-#endif
+#endif /*NCBI_COMPILER_MSVC*/
 
 
 #ifdef NCBI_MONKEY
@@ -181,6 +202,9 @@
 #    ifdef   SOCK_CLOEXEC
 #      undef SOCK_CLOEXEC
 #    endif /*SOCK_CLOEXEC*/
+#    ifdef   HAVE_ACCEPT4
+#      undef HAVE_ACCEPT4
+#    endif /*HAVE_ACCEPT4*/
 #  endif /*NCBI_OS_CYGWIN*/
 
 #  define SOCK_INVALID        (-1)
@@ -456,7 +480,7 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
 static unsigned short s_GetLocalPort(TSOCK_Handle fd)
 {
     struct sockaddr_in sin;
-    TSOCK_socklen_t sinlen = (TSOCK_socklen_t) sizeof(sin);
+    TSOCK_socklen_t sinlen = sizeof(sin);
     memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
     sin.sin_len = sinlen;
@@ -1373,7 +1397,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 
         memset(&sin, 0, sizeof(sin));
 #  ifdef HAVE_SIN_LEN
-        sin.sin_len = (TSOCK_socklen_t) sizeof(sin);
+        sin.sin_len = sizeof(sin);
 #  endif /*HAVE_SIN_LEN*/
         sin.sin_family      = AF_INET; /* we only handle IPv4 currently */
         sin.sin_addr.s_addr = host;
@@ -1490,7 +1514,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         name = 0;
     }
 
-    assert(!NCBI_HasSpaces(name, strlen(name)));
+    assert(!name  ||  !NCBI_HasSpaces(name, strlen(name)));
     CORE_TRACEF(("[SOCK::gethostbyaddr]  %s @ %s%s%s",
                  SOCK_ntoa(host, addr, sizeof(addr)) == 0
                  ? addr : sprintf(addr, "0x%08X", (unsigned int) ntohl(host))
@@ -1710,13 +1734,22 @@ static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 #  else
 #    define SOCK_DUPOVER  2
 #  endif /*STDERR_FILENO*/
-    int fd = fcntl(sock->sock, F_DUPFD, SOCK_DUPOVER + 1);
+#  ifdef F_DUPFD_CLOEXEC
+    int fd = fcntl(sock->sock, F_DUPFD_CLOEXEC, SOCK_DUPOVER + 1);
+#  else
+    int fd = fcntl(sock->sock, F_DUPFD,         SOCK_DUPOVER + 1);
+#  endif /*F_DUPFD_CLOEXEC*/
     if (fd >= 0) {
         if (fd < FD_SETSIZE) {
             char _id[MAXIDLEN];
+#  ifndef F_DUPFD_CLOEXEC
             int cloexec = fcntl(sock->sock, F_GETFD, 0);
-            if (cloexec > 0  &&  (cloexec & FD_CLOEXEC))
-                fcntl(fd, F_SETFD, cloexec);
+            if (cloexec == -1  ||  ((cloexec & FD_CLOEXEC)
+                                    &&  fcntl(fd, F_SETFD, cloexec) != 0)) {
+                close(fd);
+                return 0/*failure*/;
+            }
+#  endif /*F_DUPFD_CLOEXEC*/
             CORE_LOGF_X(111, eLOG_Trace,
                         ("%s[SOCK::Select] "
                          " File descriptor has been lowered to %d",
@@ -1730,25 +1763,25 @@ static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
     }
     return 0/*failure*/;
 }
-#endif /*!NCBI_MSWIN && FD_SETSIZE*/
+#endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
 
 
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-/* compare 2 normalized timeval timeouts: "whether *v1 is less than *v2" */
-static int/*bool*/ s_IsSmallerTimeout(const struct timeval* v1,
-                                      const struct timeval* v2)
+/* compare 2 normalized timeval timeouts: "whether *t1 is less than *t2" */
+static int/*bool*/ s_IsSmallerTimeout(const struct timeval* t1,
+                                      const struct timeval* t2)
 {
-    if (!v1/*inf*/)
+    if (!t1/*inf*/)
         return 0;
-    if (!v2/*inf*/)
+    if (!t2/*inf*/)
         return 1;
-    if (v1->tv_sec > v2->tv_sec)
+    if (t1->tv_sec > t2->tv_sec)
         return 0;
-    if (v1->tv_sec < v2->tv_sec)
+    if (t1->tv_sec < t2->tv_sec)
         return 1;
-    return v1->tv_usec < v2->tv_usec;
+    return t1->tv_usec < t2->tv_usec;
 }
 
 
@@ -1786,7 +1819,7 @@ static EIO_Status s_Select_(size_t                n,
         memset(&x_tv, 0, sizeof(x_tv));
 
     for (;;) { /* optionally auto-resume if interrupted / sliced */
-        int/*bool*/    bad   = 0/*false*/;
+        int/*bool*/    error = 0/*false*/;
 #  ifdef NCBI_OS_MSWIN
         unsigned int   count = 0;
 #  endif /*NCBI_OS_MSWIN*/
@@ -1799,56 +1832,44 @@ static EIO_Status s_Select_(size_t                n,
         nfds = 0;
 
         for (i = 0;  i < n;  ++i) {
+            int/*bool*/  x_asis;
             EIO_Event    event;
             SOCK         sock;
             ESOCK_Type   type;
             TSOCK_Handle fd;
 
-            if (!(sock = polls[i].sock)) {
+            if (!(sock = polls[i].sock)  ||  !(event = polls[i].event)) {
                 assert(!polls[i].revent/*eIO_Open*/);
                 continue;
             }
+            assert((event | eIO_ReadWrite) == eIO_ReadWrite);
 
-            event = polls[i].event;
-            if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if ((fd = sock->sock) == SOCK_INVALID)
                 polls[i].revent = eIO_Close;
-                if (!bad) {
-                    ready = 0/*false*/;
-                    bad   = 1/*true*/;
-                }
-                continue;
-            }
-            if (!event) {
-                assert(!polls[i].revent/*eIO_Open*/);
-                continue;
-            }
-            if (bad)
+            if (error)
                 continue;
 
-            if ((fd = sock->sock) == SOCK_INVALID) {
-                polls[i].revent = eIO_Close;
-                ready = 1/*true*/;
-                continue;
-            }
             if (polls[i].revent) {
                 ready = 1/*true*/;
                 if (polls[i].revent == eIO_Close)
                     continue;
                 assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
                 event = (EIO_Event)(event & ~polls[i].revent);
-            }
+                x_asis = 1/*true*/;
+            } else
+                x_asis = asis;
 
 #  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
             if (fd >= FD_SETSIZE) {
                 if (!x_TryLowerSockFileno(sock)) {
-                    /* NB: only once here, as this sets "bad" to "1" */
+                    /* NB: only once here, as this sets "error" to "1" */
                     CORE_LOGF_ERRNO_X(145, eLOG_Error, errno,
                                       ("%s[SOCK::Select] "
                                        " Socket file descriptor must "
-                                       " be less than %d",
+                                       " not exceed %d",
                                        s_ID(sock, _id), FD_SETSIZE));
                     polls[i].revent = eIO_Close;
-                    ready = bad = 1/*true*/;
+                    error = 1/*true*/;
                     continue;
                 }
                 fd = sock->sock;
@@ -1869,7 +1890,7 @@ static EIO_Status s_Select_(size_t                n,
                     FD_SET(fd, &wfds);
                 }
                 if (event == eIO_Write
-                    &&  (type == eSOCK_Datagram  ||  asis
+                    &&  (type == eSOCK_Datagram  ||  x_asis
                          ||  (sock->r_on_w == eOff
                               ||  (sock->r_on_w == eDefault
                                    &&  s_ReadOnWrite != eOn)))) {
@@ -1886,7 +1907,7 @@ static EIO_Status s_Select_(size_t                n,
                     }
                     FD_SET(fd, &rfds);
                 }
-                if (type != eSOCK_Socket  ||  asis  ||  event != eIO_Read
+                if (type != eSOCK_Socket  ||  x_asis  ||  event != eIO_Read
                     ||  sock->w_status == eIO_Closed
                     ||  !(sock->pending | sock->w_len)) {
                     break;
@@ -1916,7 +1937,7 @@ static EIO_Status s_Select_(size_t                n,
                              " Too many sockets in select(),"
                              " must be fewer than %u", count));
                 polls[i].revent = eIO_Close;
-                ready = bad = 1/*true*/;
+                error = 1/*true*/;
                 continue;
             }
             ++count;
@@ -1924,14 +1945,9 @@ static EIO_Status s_Select_(size_t                n,
         }
         assert(i >= n);
 
-        if (bad) {
-            if (ready) {
-                errno = SOCK_ETOOMANY;
-                return eIO_Unknown;
-            } else {
-                errno = EINVAL;
-                return eIO_InvalidArg;
-            }
+        if (error) {
+            errno = SOCK_ETOOMANY;
+            return eIO_Unknown;
         }
 
         if (ready)
@@ -1988,6 +2004,8 @@ static EIO_Status s_Select_(size_t                n,
                 continue;
             assert(error != SOCK_EINTR  &&  ready);
         }
+
+        assert(ready);
         break;
     }
 
@@ -1995,21 +2013,30 @@ static EIO_Status s_Select_(size_t                n,
         /* NB: some fd bits could have been counted multiple times if reside
            in different fd_set's (such as ready for both R and W), recount. */
         for (ready = 0, i = 0;  i < n;  ++i) {
-            SOCK sock = polls[i].sock;
-            if (sock  &&  polls[i].event) {
-                TSOCK_Handle fd;
-                if (polls[i].revent == eIO_Close) {
-                    ++ready;
-                    continue;
-                }
-                if ((fd = sock->sock) == SOCK_INVALID) {
-                    polls[i].revent = eIO_Close;
-                    ++ready;
-                    continue;
-                }
+            EIO_Event    event;
+            SOCK         sock;
+            TSOCK_Handle fd;
+            if (!(sock = polls[i].sock)  ||  !(event = polls[i].event)) {
+                assert(polls[i].revent == eIO_Open);
+                continue;
+            }
+            if (polls[i].revent == eIO_Close) {
+                ++ready;
+                continue;
+            }
+            fd = sock->sock;
 #  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
-                assert(fd < FD_SETSIZE);
+            assert(fd < FD_SETSIZE);
 #  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
+            if (FD_ISSET(fd, &efds)) {
+                polls[i].revent = event;
+#  ifdef NCBI_OS_MSWIN
+                if (event & eIO_Read)
+                    sock->readable = 1/*true*/;
+                if (event & eIO_Write)
+                    sock->writable = 1/*true*/;
+#  endif /*NCBI_OS_MSWIN*/
+            } else {
                 if (!write_only  &&  FD_ISSET(fd, &rfds)) {
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
 #  ifdef NCBI_OS_MSWIN
@@ -2022,20 +2049,17 @@ static EIO_Status s_Select_(size_t                n,
                     sock->writable = 1/*true*/;
 #  endif /*NCBI_OS_MSWIN*/
                 }
-                assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
-                if (polls[i].revent == eIO_Open) {
-                    if (!FD_ISSET(fd, &efds))
-                        continue;
-                    polls[i].revent = eIO_Close;
-                } else if (sock->type == eSOCK_Trigger)
-                    polls[i].revent = polls[i].event;
-                assert(polls[i].revent != eIO_Open);
-                ++ready;
-            } else
-                assert(polls[i].revent == eIO_Open);
+                if (polls[i].revent == eIO_Open)
+                    continue;
+                if (sock->type == eSOCK_Trigger)
+                    polls[i].revent = event;
+            }
+            assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+            ++ready;
         }
     }
 
+    (void) ready;
     assert(ready);
     /* can do I/O now */
     return eIO_Success;
@@ -2125,48 +2149,36 @@ static EIO_Status s_Poll_(size_t                n,
     status = eIO_Success;
     wait = tv ? (int)(tv->tv_sec * 1000 + (tv->tv_usec + 500) / 1000) : -1;
     for (;;) { /* optionally auto-resume if interrupted / sliced */
-        int/*bool*/ bad = 0/*false*/;
-        int         x_ready;
-        int         slice;
+        int x_ready;
+        int slice;
 
         ready = count = 0;
         for (i = 0;  i < n;  ++i) {
+            int/*bool*/  x_asis;
             short        bitset;
             EIO_Event    event;
             SOCK         sock;
             ESOCK_Type   type;
             TSOCK_Handle fd;
 
-            if (!(sock = polls[i].sock)) {
+            if (!(sock = polls[i].sock)  ||  !(event = polls[i].event)) {
                 assert(!polls[i].revent/*eIO_Open*/);
                 continue;
             }
+            assert((event | eIO_ReadWrite) == eIO_ReadWrite);
 
-            event = polls[i].event;
-            if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if ((fd = sock->sock) == SOCK_INVALID)
                 polls[i].revent = eIO_Close;
-                bad = 1/*true*/;
-                continue;
-            }
-            if (!event) {
-                assert(!polls[i].revent/*eIO_Open*/);
-                continue;
-            }
-            if (bad)
-                continue;
 
-            if ((fd = sock->sock) == SOCK_INVALID) {
-                polls[i].revent = eIO_Close;
-                ++ready;
-                continue;
-            }
             if (polls[i].revent) {
                 ++ready;
                 if (polls[i].revent == eIO_Close)
                     continue;
                 assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
                 event = (EIO_Event)(event & ~polls[i].revent);
-            }
+                x_asis = 1/*true*/;
+            } else
+                x_asis = asis;
 
             bitset = 0;
             type = (ESOCK_Type) sock->type;
@@ -2175,9 +2187,9 @@ static EIO_Status s_Poll_(size_t                n,
             case eIO_ReadWrite:
                 assert(type & eSOCK_Socket);
                 if (type == eSOCK_Datagram  ||  sock->w_status != eIO_Closed)
-                    bitset |= POLLOUT;
+                    bitset |= POLL_WRITE;
                 if (event == eIO_Write
-                    &&  (type == eSOCK_Datagram  ||  asis
+                    &&  (type == eSOCK_Datagram  ||  x_asis
                          ||  (sock->r_on_w == eOff
                               ||  (sock->r_on_w == eDefault
                                    &&  s_ReadOnWrite != eOn)))) {
@@ -2188,13 +2200,13 @@ static EIO_Status s_Poll_(size_t                n,
             case eIO_Read:
                 if (type != eSOCK_Socket
                     ||  (sock->r_status != eIO_Closed  &&  !sock->eof))
-                    bitset |= POLLIN;
-                if (type != eSOCK_Socket  ||  asis  ||  event != eIO_Read
+                    bitset |= POLL_READ;
+                if (type != eSOCK_Socket  ||  x_asis  ||  event != eIO_Read
                     ||  sock->w_status == eIO_Closed
                     ||  !(sock->pending | sock->w_len)) {
                     break;
                 }
-                bitset |= POLLOUT;
+                bitset |= POLL_WRITE;
                 break;
 
             default:
@@ -2204,7 +2216,7 @@ static EIO_Status s_Poll_(size_t                n,
 
             if (!bitset)
                 continue;
-            assert(count < (nfds_t) m);
+            assert(0 <= fd  &&  count < (nfds_t) m);
             x_polls[count].fd      = fd;
             x_polls[count].events  = bitset;
             x_polls[count].revents = 0;
@@ -2212,22 +2224,19 @@ static EIO_Status s_Poll_(size_t                n,
         }
         assert(i >= n);
 
-        if (bad) {
-            status = eIO_InvalidArg;
-            errno = EINVAL;
-            break;
-        }
-
-        if (s_SelectTimeout) {
+        if (ready)
+            slice = 0;
+        else if (!s_SelectTimeout)
+            slice = wait;
+        else {
             slice = (int)((s_SelectTimeout->tv_sec         * 1000 +
                           (s_SelectTimeout->tv_usec + 500) / 1000));
             if (wait != -1  &&  wait < slice)
                 slice = wait;
-        } else
-            slice = wait;
+        }
 
         if (count  ||  !ready) {
-            x_ready = poll(x_polls, count, !ready ? slice : 0);
+            x_ready = poll(x_polls, count, slice);
 
             if (x_ready > 0) {
 #    ifdef NCBI_OS_DARWIN
@@ -2243,6 +2252,7 @@ static EIO_Status s_Poll_(size_t                n,
         } else
             x_ready = 0;
 
+        assert(x_ready <= 0);
         if (!x_ready) {
             /* timeout has expired */
             if (!ready) {
@@ -2258,7 +2268,8 @@ static EIO_Status s_Poll_(size_t                n,
             /* NB: ready */
         } else { /* x_ready < 0 */
             if ((x_ready = SOCK_ERRNO) != SOCK_EINTR) {
-                const char* strerr = SOCK_STRERROR(x_ready);
+                const char* strerr =
+                    SOCK_STRERROR(x_ready == EINVAL ? SOCK_ETOOMANY : x_ready);
                 CORE_LOGF_ERRNO_EXX(147, ready ? eLOG_Warning : eLOG_Error,
                                     x_ready, strerr ? strerr : "",
                                     ("%s[SOCK::Select] "
@@ -2287,59 +2298,54 @@ static EIO_Status s_Poll_(size_t                n,
 
     assert(status != eIO_Success  ||  ready > 0);
     if (status == eIO_Success  &&  n) {
-        nfds_t x_ready = 0;
         nfds_t scanned = 0;
+        nfds_t x_ready = 0;
         for (m = 0, i = 0;  i < n;  ++i) {
+            TSOCK_Handle fd;
+            short events, revents;
             SOCK sock = polls[i].sock;
-            if (sock  &&  polls[i].event) {
-                TSOCK_Handle fd;
-                short events, revents;
-                if (polls[i].revent == eIO_Close) {
-                    ++x_ready;
-                    continue;
-                }
-                if ((fd = sock->sock) == SOCK_INVALID) {
-                    polls[i].revent = eIO_Close;
-                    ++x_ready;
-                    continue;
-                }
-                events = revents = 0;
-                if (scanned < ready) {
-                    nfds_t x_scanned = 0;
-                    nfds_t j;
-                    assert((nfds_t) m < count);
-                    for (j = (nfds_t) m;  j < count;  ++j) {
-                        if (x_polls[j].revents)
-                            ++x_scanned;
-                        if (x_polls[j].fd == fd) {
-                            events   = x_polls[j].events;
-                            revents  = x_polls[j].revents;
-                            scanned += x_scanned;
-                            m        = (size_t) ++j;
-                            break;
-                        }
-                    }
-                    assert(events  ||  ((nfds_t) m < count  &&  count <= j));
-                }
-                if ((events & POLLIN)
-                    &&  (revents & (POLLIN | POLLRDHUP | POLLPRI))) {
-                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
-                }
-                if ((events & POLLOUT)
-                    &&  (revents & (POLLOUT | POLLHUP))) {
-                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
-                }
-                assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
-                if (polls[i].revent == eIO_Open) {
-                    if (!(revents & (POLLERR | POLLNVAL)))
-                        continue;
-                    polls[i].revent = eIO_Close;
-                } else if (sock->type == eSOCK_Trigger)
-                    polls[i].revent = polls[i].event;
-                assert(polls[i].revent != eIO_Open);
+            if (!sock  ||  !polls[i].event) {
+                assert(!polls[i].revent);
+                continue;
+            }
+            if ((fd = sock->sock) == SOCK_INVALID)
+                polls[i].revent  = eIO_Close;
+            if (polls[i].revent == eIO_Close) {
                 ++x_ready;
+                continue;
+            }
+            events = revents = 0;
+            if (scanned < ready) {
+                nfds_t x_scanned = 0;
+                nfds_t j;
+                assert((nfds_t) m < count);
+                for (j = (nfds_t) m;  j < count;  ++j) {
+                    if (x_polls[j].revents)
+                        ++x_scanned;
+                    if (x_polls[j].fd == fd) {
+                        events   = x_polls[j].events;
+                        revents  = x_polls[j].revents;
+                        scanned += x_scanned;
+                        m        = (size_t) ++j;
+                        break;
+                    }
+                }
+                assert(events  ||  ((nfds_t) m < count  &&  count <= j));
+            }
+            assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+            if (!(revents & POLL_ERROR)) {
+                if ((events & POLL_READ)   &&  (revents & POLL_READ_READY))
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
+                if ((events & POLL_WRITE)  &&  (revents & POLL_WRITE_READY))
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
+                if (polls[i].revent == eIO_Open)
+                    continue;
+                else if (sock->type == eSOCK_Trigger)
+                    polls[i].revent = polls[i].event;
             } else
-                assert(polls[i].revent == eIO_Open);
+                polls[i].revent = eIO_Close;
+            assert(polls[i].revent != eIO_Open);
+            ++x_ready;
         }
         assert(scanned <= ready);
         assert(x_ready >= ready);
@@ -2407,44 +2413,32 @@ static EIO_Status s_Select(size_t                n,
         size_t      i;
 
         for (i = 0;  i < n;  ++i) {
-            long      bitset;
-            EIO_Event event;
-            SOCK      sock;
-            HANDLE    ev;
+            int/*bool*/ x_asis;
+            long        bitset;
+            EIO_Event   event;
+            SOCK        sock;
+            HANDLE      ev;
 
-            if (!(sock = polls[i].sock)) {
+            if (!(sock = polls[i].sock)  ||  !(event = polls[i].event)) {
                 assert(!polls[i].revent/*eIO_Open*/);
                 continue;
             }
+            assert((event | eIO_ReadWrite) == eIO_ReadWrite);
 
-            event = polls[i].event;
-            if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if (sock->sock == SOCK_INVALID)
                 polls[i].revent = eIO_Close;
-                if (!done) {
-                    ready = 0/*false*/;
-                    done  = 1/*true*/;
-                }
-                continue;
-            }
-            if (!event) {
-                assert(!polls[i].revent/*eIO_Open*/);
-                continue;
-            }
             if (done)
                 continue;
 
-            if (sock->sock == SOCK_INVALID) {
-                polls[i].revent = eIO_Close;
-                ready = 1/*true*/;
-                continue;
-            }
             if (polls[i].revent) {
                 ready = 1/*true*/;
                 if (polls[i].revent == eIO_Close)
                     continue;
                 assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
                 event = (EIO_Event)(event & ~polls[i].revent);
-            }
+                x_asis = 1/*true*/;
+            } else
+                x_asis = asis;
 
             bitset = 0;
             if (sock->type != eSOCK_Trigger) {
@@ -2465,7 +2459,7 @@ static EIO_Status s_Select(size_t                n,
                         bitset     |= FD_WRITE/*W*/;
                     }
                     if (event == eIO_Write
-                        &&  (type == eSOCK_Datagram  ||  asis
+                        &&  (type == eSOCK_Datagram  ||  x_asis
                              ||  (sock->r_on_w == eOff
                                   ||  (sock->r_on_w == eDefault
                                        &&  s_ReadOnWrite != eOn)))) {
@@ -2487,7 +2481,7 @@ static EIO_Status s_Select(size_t                n,
                         } else
                             bitset     |= FD_ACCEPT/*A*/;
                     }
-                    if (type != eSOCK_Socket  ||  asis  ||  event != eIO_Read
+                    if (type != eSOCK_Socket  ||  x_asis  ||  event != eIO_Read
                         ||  sock->w_status == eIO_Closed
                         ||  !(sock->pending | sock->w_len)) {
                         break;
@@ -2514,10 +2508,10 @@ static EIO_Status s_Select(size_t                n,
                 /* NB: only once here, as this sets "done" to "1" */
                 CORE_LOGF_X(145, eLOG_Error,
                             ("[SOCK::Select] "
-                             " Too many objects, must be fewer than %u",
+                             " Too many objects exceeding %u",
                              (unsigned int) count));
                 polls[i].revent = eIO_Close;
-                ready = done = 1/*true*/;
+                done = 1/*true*/;
                 continue;
             }
             want[count] = bitset;
@@ -2527,13 +2521,8 @@ static EIO_Status s_Select(size_t                n,
         assert(i >= n);
 
         if (done) {
-            if (ready) {
-                errno = SOCK_ETOOMANY;
-                return eIO_Unknown;
-            } else {
-                errno = EINVAL;
-                return eIO_InvalidArg;
-            }
+            errno = SOCK_ETOOMANY;
+            return eIO_Unknown;
         }
 
         if (s_SelectTimeout) {
@@ -2791,7 +2780,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
 
 #if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
     if (!sock->connected  &&  status == eIO_Success) {
-        TSOCK_socklen_t len = (TSOCK_socklen_t) sizeof(*error);
+        TSOCK_socklen_t len = sizeof(*error);
         /* Note WSA resets SOCK_ERROR to 0 after this call, if successful */
         if (getsockopt(sock->sock, SOL_SOCKET, SO_ERROR, (void*) error, &len)
             != 0  ||  *error != 0) {
@@ -2823,7 +2812,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
 #  if defined(SOL_IP)  &&  defined(IP_MTU)
             if (sock->port) {
                 int             m    = 0;
-                TSOCK_socklen_t mlen = (TSOCK_socklen_t) sizeof(m);
+                TSOCK_socklen_t mlen = sizeof(m);
                 if (getsockopt(sock->sock, SOL_IP, IP_MTU, &m, &mlen) != 0) {
                     const char* strerr = SOCK_STRERROR(SOCK_ERRNO);
                     sprintf(mtu, ", MTU ?? (%.80s)", strerr ? strerr : "??");
@@ -3017,7 +3006,7 @@ static EIO_Status s_Recv(SOCK    sock,
             }
             if (readable) {
                 CORE_TRACEF(("%s[SOCK::Recv] "
-                             " Spurious false indication of data ready",
+                             " Spurious false indication of read-ready",
                              s_ID(sock, _id)));
             }
             poll.sock   = sock;
@@ -3069,8 +3058,8 @@ static EIO_Status s_WritePending(SOCK, const struct timeval*, int, int);
 
 /* Read/Peek data from the socket.  Return eIO_Success iff some data have been
  * read.  Return other (error) code if an error/EOF occurred (zero bytes read).
- * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
- * on Win32, so we had to implement this feature by ourselves.)
+ * MSG_PEEK is not implemented on Mac, and it is poorly implemented on Win32,
+ * so we had to implement this feature by ourselves.
  * NB:  peek = {-1=upread(!buf && !size), 0=read, 1=peek}
  */
 static EIO_Status s_Read_(SOCK    sock,
@@ -3303,38 +3292,46 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                                     const struct timeval* tv,
                                     size_t*               n_ready)
 {
-    size_t i, k;
+    size_t i, k, m;
 
     assert(!n  ||  polls);
 
-    for (;;) { /* until one full "tv" term expires or an error occurs */
+    for (;;) { /* until ready, or one full "tv" term expires or error occurs */
         int/*bool*/ pending;
         EIO_Status  status;
 
         status = s_Select(n, polls, tv, 0);
         if (status != eIO_Success) {
-            if (n_ready)
+            if ( n_ready )
                 *n_ready = 0;
             return status;
         }
 
-        k = 0;
-        pending = 0;
+        m = k = 0;
+        pending = 0/*false*/;
         for (i = 0;  i < n;  ++i) {
-            if (polls[i].revent == eIO_Close)
-                break;
-            if (polls[i].revent & polls[i].event)
-                break;
-            if (polls[i].revent != eIO_Open  &&  !pending) {
-                pending = 1;
+            if (polls[i].revent == eIO_Close) {
+                break/*ready*/;
+            }
+            assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+            if (polls[i].revent & polls[i].event) {
+                polls[i].revent
+                    = (EIO_Event)(polls[i].revent & polls[i].event);
+                break/*ready*/;
+            }
+            if (polls[i].revent  &&  !pending) {
+                assert(polls[i].sock);
+                pending = 1/*true*/;
                 k = i;
             }
         }
-        if (i < n/*ready*/)
+        if (i < n/*ready*/) {
+            m = 1/*ready*/;
             break;
+        }
 
+        assert(pending  &&  !m);
         /* all sockets are not ready for the requested events */
-        assert(pending);
         for (i = k;  i < n;  ++i) {
             static const struct timeval zero = { 0 };
             SOCK sock = polls[i].sock;
@@ -3345,10 +3342,10 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                        sock->type == eSOCK_Socket    &&
                        sock->w_status != eIO_Closed  &&
                        (sock->pending | sock->w_len));
-                s_WritePending(sock, &zero, 1/*writeable*/, 0);
+                (void) s_WritePending(sock, &zero, 1/*writeable*/, 0);
                 if (sock->r_status == eIO_Closed  ||  sock->eof) {
                     polls[i].revent = eIO_Read;
-                    pending = 0;
+                    ++m/*ready*/;
                 } else
                     polls[i].revent = eIO_Open;
                 continue;
@@ -3365,32 +3362,31 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                        (sock->r_on_w == eOn
                         ||  (sock->r_on_w == eDefault
                              &&  s_ReadOnWrite == eOn)));
-                s_Read_(sock, 0, 0, &dummy, -1/*upread*/);
+                (void) s_Read_(sock, 0, 0, &dummy, -1/*upread*/);
                 if (sock->w_status == eIO_Closed) {
                     polls[i].revent = eIO_Write;
-                    pending = 0;
+                    ++m/*ready*/;
                 } else
                     polls[i].revent = eIO_Open;
             }
         }
-        if (!pending)
-            break;
+        if (m)
+            break/*ready*/;
     }
 
-    k = 0;
-    for (i = 0;  i < n;  ++i) {
+    assert(m);
+    for ( ;  i < n;  ++i) {
         if (polls[i].revent != eIO_Close) {
             polls[i].revent = (EIO_Event)(polls[i].revent & polls[i].event);
             if (!polls[i].revent)
                 continue;
         }
-        ++k;
+        ++m;
     }
 
-    if (n_ready)
-        *n_ready = k;
-
-    return k ? eIO_Success : eIO_Timeout;
+    if ( n_ready )
+        *n_ready = m;
+    return eIO_Success;
 }
 
 
@@ -3443,6 +3439,9 @@ static EIO_Status s_Send(SOCK        sock,
                          size_t*     n_written,
                          int         flag)
 {
+    int/*bool*/ writeable;
+    char _id[MAXIDLEN];
+
 #ifdef NCBI_OS_MSWIN
     int wait_buf_ms = 0;
     struct timeval waited;
@@ -3454,11 +3453,16 @@ static EIO_Status s_Send(SOCK        sock,
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
 
+    /* write to the socket */
+    writeable = 0/*false*/;
     for (;;) { /* optionally auto-resume if interrupted */
         int error = 0;
 
-        ssize_t x_written = send(sock->sock, (void*) data, WIN_INT_CAST size, 
-                                 flag < 0 ? MSG_OOB : 0);
+        ssize_t x_written = send(sock->sock, (void*) data, WIN_INT_CAST size,
+#ifdef MSG_NOSIGNAL
+                                 (s_AllowSigPipe ? 0 : MSG_NOSIGNAL) |
+#endif /*MSG_NOSIGNAL*/
+                                 (flag < 0 ? MSG_OOB : 0));
 
         if (x_written >= 0  ||
             (x_written < 0  &&  ((error = SOCK_ERRNO) == SOCK_EPIPE       ||
@@ -3518,6 +3522,7 @@ static EIO_Status s_Send(SOCK        sock,
                 if (size < SOCK_BUF_CHUNK_SIZE / 4) {
                     s_AddTimeout(&waited, wait_buf_ms);
                     if (s_IsSmallerTimeout(SOCK_GET_TIMEOUT(sock, w),&waited)){
+                        sock->writable = writable;
                         sock->w_status = eIO_Timeout;
                         break/*timeout*/;
                     }
@@ -3528,10 +3533,11 @@ static EIO_Status s_Send(SOCK        sock,
                     slice.tv_sec  = 0;
                     slice.tv_usec = wait_buf_ms * 1000;
                 } else {
-                    size >>= 1;
+                    verify(size >>= 1);
                     memset(&slice, 0, sizeof(slice));
                 }
                 timeout = &slice;
+                writeable = 0/*false*/;
             } else {
                 if (wait_buf_ms) {
                     wait_buf_ms = 0;
@@ -3549,6 +3555,11 @@ static EIO_Status s_Send(SOCK        sock,
             }
 #endif /*NCBI_OS_MSWIN*/
 
+            if (writeable) {
+                CORE_TRACEF(("%s[SOCK::Send] "
+                             " Spurious false indication of write-ready",
+                             s_ID(sock, _id)));
+            }
             poll.sock   = sock;
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
@@ -3572,11 +3583,11 @@ static EIO_Status s_Send(SOCK        sock,
             if (poll.revent == eIO_Close)
                 return eIO_Unknown;
             assert(poll.event == eIO_Write);
-            continue/*write again*/;
+            writeable = 1/*true*/;
+            continue/*try to write again*/;
         }
 
         if (error != SOCK_EINTR) {
-            char _id[MAXIDLEN];
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(11, eLOG_Trace,
                                 error, strerr ? strerr : "",
@@ -3678,7 +3689,7 @@ static EIO_Status s_WriteData(SOCK        sock,
             s_DoLog(*n_written > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Write,
                     status == eIO_Success ? data : (void*) &error,
                     status != eIO_Success ? 0    : *n_written,
-                    n_written > 0 ? " [encrypt]" : 0);
+                    *n_written > 0 ? " [encrypt]" : 0);
         }
 
         if (status == eIO_Closed)
@@ -4320,7 +4331,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                          (unsigned long) sizeof(addr.un.sun_path)));
             return eIO_InvalidArg;
         }
-        addrlen = (TSOCK_socklen_t) sizeof(addr.un);
+        addrlen = sizeof(addr.un);
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len    = addrlen;
 #  endif /*HAVE_SIN_LEN*/
@@ -4344,7 +4355,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                          s_ID(sock, _id), CONN_HOST_LEN, host));
             return eIO_Unknown;
         }
-        addrlen = (TSOCK_socklen_t) sizeof(addr.in);
+        addrlen = sizeof(addr.in);
 #ifdef HAVE_SIN_LEN
         addr.in.sin_len         = addrlen;
 #endif /*HAVE_SIN_LEN*/
@@ -4427,7 +4438,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         s_Close_(sock, -2/*silent abort*/, fSOCK_KeepNone);
         return eIO_Unknown;
     }
-#endif
+#endif /*O_NONBLOCK setting*/
 
     if (sock->port) {
 #ifdef SO_KEEPALIVE
@@ -4802,7 +4813,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
     /* get peer's address */
     memset(&peer, 0, sizeof(peer));
     if (!x_orig) {
-        peerlen = (TSOCK_socklen_t) sizeof(peer);
+        peerlen = sizeof(peer);
 #ifdef HAVE_SIN_LEN
         peer.sa.sa_len = peerlen;
 #endif /*HAVE_SIN_LEN*/
@@ -4843,8 +4854,8 @@ static EIO_Status s_CreateOnTop(const void*       handle,
 #  endif /*NCBI_OS*/
                              peer.sa.sa_family == AF_UNIX)) {
         if (peerlen == sizeof(peer.sa.sa_family)  ||  !peer.un.sun_path[0]) {
-            peerlen = (TSOCK_socklen_t) sizeof(peer);
             memset(&peer, 0, sizeof(peer));
+            peerlen = sizeof(peer);
 #  ifdef HAVE_SIN_LEN
             peer.sa.sa_len = peerlen;
 #  endif /*HAVE_SIN_LEN*/
@@ -5285,7 +5296,7 @@ static EIO_Status s_CreateListening(const char*    path,
 #ifdef NCBI_OS_UNIX
     if (path) {
         assert(addr.un.sun_family == AF_UNIX);
-        addrlen = (TSOCK_socklen_t) sizeof(addr.un);
+        addrlen = sizeof(addr.un);
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
@@ -5335,12 +5346,18 @@ static EIO_Status s_CreateListening(const char*    path,
         SOCK_CLOSE(fd);
         return error != SOCK_EADDRINUSE ? eIO_Unknown : eIO_Closed;
     }
-    if (path)
-#ifdef NCBI_OS_IRIX
-        (void) fchmod(fd, S_IRWXU | S_IRWXG | S_IRWXO)
-#endif /*NCBI_OS_IRIX*/
-            ;
-    else if (!port) {
+#ifdef NCBI_OS_UNIX
+    if (path) {
+#  if !defined(NCBI_OS_IRIX)    &&  !defined(NCBI_OS_BSD)   &&    \
+      !defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_OS_CYGWIN)
+        (void) fchmod(fd, S_IRWXU | S_IRWXG | S_IRWXO);
+#  endif/*!NCBI_OS_IRIX && !NCBI_OS_BSD && !NCBI_OS_DARWIN && !NCBI_OS_CYGWIN*/
+#  ifdef NCBI_OS_CYGWIN
+        (void) chmod(path, S_IRWXU | S_IRWXG | S_IRWXO);
+#  endif /*NCBI_OS_CYGWIN*/
+    } else
+#endif /*NCBI_OS_UNIX*/
+    if (!port) {
         assert(addr.in.sin_family == AF_INET);
         error = getsockname(fd, &addr.sa, &addrlen) != 0
             ? SOCK_ERRNO : 0;
@@ -5406,7 +5423,7 @@ static EIO_Status s_CreateListening(const char*    path,
         SOCK_CLOSE(fd);
         return eIO_Unknown;
     }
-#endif
+#endif /*O_NONBLOCK setting*/
 
     /* listen */
     if (listen(fd, backlog) != 0) {
@@ -5548,28 +5565,27 @@ static EIO_Status s_Accept(LSOCK           lsock,
     x_id = (lsock->id * 1000 + ++s_ID_Counter) * 1000;
 
     /* accept next connection */
-    memset(&addr, 0, sizeof(addr));
 #ifdef NCBI_OS_UNIX
     if (lsock->path[0]) {
-        addrlen = (TSOCK_socklen_t) sizeof(addr.un);
-#  ifdef HAVE_SIN_LEN
-        addr.un.sun_len = addrlen;
-#  endif /*HAVE_SIN_LEN*/
+        addrlen = sizeof(addr.un);
         assert(!lsock->port);
     } else
 #endif /*NCBI_OS_UNIX*/
     {
-        addrlen = (TSOCK_socklen_t) sizeof(addr.in);
-#ifdef HAVE_SIN_LEN
-        addr.in.sin_len = addrlen;
-#endif /*HAVE_SIN_LEN*/
+        addrlen = sizeof(addr.in);
         assert(lsock->port);
 #ifdef NCBI_OS_MSWIN
         /* accept() [to follow shortly] resets IO event recording */
         lsock->readable = 0/*false*/;
 #endif /*NCBI_OS_MSWIN*/
     }
-    if ((fd = accept(lsock->sock, &addr.sa, &addrlen)) == SOCK_INVALID) {
+#ifdef HAVE_ACCEPT4
+    error = SOCK_NONBLOCK | (flags & fSOCK_KeepOnExec ? SOCK_CLOEXEC : 0);
+    fd = accept4(lsock->sock, &addr.sa, &addrlen, error/*just flags*/);
+#else
+    fd = accept (lsock->sock, &addr.sa, &addrlen);
+#endif /*HAVE_ACCEPT4*/
+    if (fd == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(40, eLOG_Error,
                             error, strerr ? strerr : "",
@@ -5606,7 +5622,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         path = "";
     }
 
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     if (!(event = WSACreateEvent())) {
         DWORD err = GetLastError();
         const char* strerr = s_WinStrerror(err);
@@ -5635,7 +5651,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         WSACloseEvent(event);
         return eIO_Unknown;
     }
-#else
+#elif !defined(HAVE_ACCEPT4)
     /* man accept(2) notes that non-blocking state may not be inherited */
     if (!s_SetNonblock(fd, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -5649,10 +5665,10 @@ static EIO_Status s_Accept(LSOCK           lsock,
         SOCK_ABORT(fd);
         return eIO_Unknown;
     }
-#endif /*NCBI_OS_MSWIN*/
+#endif /*O_NONBLOCK setting*/
 
     /* create new SOCK structure */
-    addrlen = *path ? (TSOCK_socklen_t) strlen(path) : 0;
+    addrlen = (TSOCK_socklen_t)(path ? strlen(path) : 0);
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + addrlen))) {
         SOCK_ABORT(fd);
 #ifdef NCBI_OS_MSWIN
@@ -5703,7 +5719,6 @@ static EIO_Status s_Accept(LSOCK           lsock,
                                  s_ID(*sock, _id)));
             UTIL_ReleaseBuffer(strerr);
         }
-
 #ifdef SO_KEEPALIVE
         if (x_sock->keepalive  &&  !s_SetKeepAlive(fd, 1)) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -5728,27 +5743,29 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #endif /*SO_OOBINLINE*/
     }
 
+#ifndef HAVE_ACCEPT4
     if (!x_sock->crossexec  &&  !s_SetCloexec(fd, 1/*true*/)) {
         const char* strerr;
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
         error = err;
-#else
+#  else
         error = errno;
         strerr = SOCK_STRERROR(error);
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(128, eLOG_Warning,
                             error, strerr ? strerr : "",
                             ("%s[LSOCK::Accept] "
                              " Cannot set socket close-on-exec mode",
                              s_ID(*sock, _id)));
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         UTIL_ReleaseBufferOnHeap(strerr);
-#else
+#  else
         UTIL_ReleaseBuffer(strerr);
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
     }
+#endif /*!HAVE_ACCEPT4*/
 
     /* statistics & logging */
     if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  s_Log == eOn))
@@ -5862,7 +5879,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
         ssize_t            x_read;
         int                error;
         struct sockaddr_in sin;
-        TSOCK_socklen_t    sinlen = (TSOCK_socklen_t) sizeof(sin);
+        TSOCK_socklen_t    sinlen = sizeof(sin);
         memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
         sin.sin_len = sinlen;
@@ -6034,7 +6051,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
 
     memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
-    sin.sin_len         = (TSOCK_socklen_t) sizeof(sin);
+    sin.sin_len         = sizeof(sin);
 #endif /*HAVE_SIN_LEN*/
     sin.sin_family      = AF_INET;
     sin.sin_addr.s_addr =       x_host;
@@ -6146,6 +6163,9 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 {
     unsigned int x_id = ++s_ID_Counter;
 
+    if (!trigger)
+        return eIO_InvalidArg;
+
     *trigger = 0;
 
     /* initialize internals */
@@ -6158,9 +6178,16 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 
 #elif defined(NCBI_OS_UNIX)
     {{
+        int err;
         int fd[3];
+#  ifdef HAVE_PIPE2
+        int flags = O_NONBLOCK | O_CLOEXEC;
 
-        if (pipe(fd) != 0) {
+        err = pipe2(fd, flags);
+#  else
+        err = pipe (fd);
+#  endif /*HAVE_PIPE2*/
+        if (err != 0) {
             CORE_LOGF_ERRNO_X(28, eLOG_Error, errno,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Cannot create pipe", x_id));
@@ -6168,9 +6195,17 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
         }
 
 #  ifdef FD_SETSIZE
-        if ((fd[2] = fcntl(fd[1], F_DUPFD, FD_SETSIZE)) < 0) {
-            /* We don't need "out" to be selectable, so move it out
-             * of the way to spare precious "selectable" fd numbers */
+        /* We don't need "out" to be selectable, so move it out
+         * of the way to spare precious "selectable" fd numbers */
+#    ifdef F_DUPFD_CLOEXEC
+        fd[2] = fcntl(fd[1], F_DUPFD_CLOEXEC, FD_SETSIZE);
+        err = fd[2] < 0                                      ? 1/*T*/ : 0/*F*/;
+#    else
+        /* NB: dup() does not inherit the CLOEXEC flag */
+        fd[2] = fcntl(fd[1], F_DUPFD,         FD_SETSIZE);
+        err = fd[2] < 0  ||  !s_SetCloexec(fd[2], 1/*true*/) ? 1/*T*/ : 0/*F*/;
+#    endif /*F_DUPFD_CLOEXEC*/
+        if (err) {
             CORE_LOGF_ERRNO_X(143, eLOG_Warning, errno,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to dup(%d) to higher fd(%d+))",
@@ -6179,8 +6214,10 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
             close(fd[1]);
             fd[1] = fd[2];
         }
+        assert((err = fcntl(fd[1], F_GETFD, 0)) != -1  &&  (err & FD_CLOEXEC));
 #  endif /*FD_SETSIZE*/
 
+#  ifndef HAVE_PIPE2
         if (!s_SetNonblock(fd[0], 1/*true*/)  ||
             !s_SetNonblock(fd[1], 1/*true*/)) {
             CORE_LOGF_ERRNO_X(29, eLOG_Error, errno,
@@ -6191,12 +6228,16 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
             return eIO_Unknown;
         }
 
-        if (!s_SetCloexec(fd[0], 1/*true*/)  ||
-            !s_SetCloexec(fd[1], 1/*true*/)) {
+        if (!s_SetCloexec(fd[0], 1/*true*/)
+#    ifndef FD_SETSIZE
+            ||  !s_SetCloexec(fd[1], 1/*true*/)
+#    endif /*!FD_SETSIZE*/
+            ) {
             CORE_LOGF_ERRNO_X(30, eLOG_Warning, errno,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to set close-on-exec", x_id));
         }
+#  endif /*!HAVE_PIPE2*/
 
         if (!(*trigger = (TRIGGER) calloc(1, sizeof(**trigger)))) {
             close(fd[0]);
@@ -6255,9 +6296,11 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 }
 
 
-/*ARGSUSED*/
 extern EIO_Status TRIGGER_Close(TRIGGER trigger)
 {
+    if (!trigger)
+        return eIO_InvalidArg;
+
 #ifndef NCBI_CXX_TOOLKIT
 
     return eIO_NotSupported;
@@ -6289,9 +6332,11 @@ extern EIO_Status TRIGGER_Close(TRIGGER trigger)
 }
 
 
-/*ARGSUSED*/
 extern EIO_Status TRIGGER_Set(TRIGGER trigger)
 {
+    if (!trigger)
+        return eIO_InvalidArg;
+
 #ifndef NCBI_CXX_TOOLKIT
 
     return eIO_NotSupported;
@@ -6309,17 +6354,15 @@ extern EIO_Status TRIGGER_Set(TRIGGER trigger)
 
     return WSASetEvent(trigger->fd) ? eIO_Success : eIO_Unknown;
 
-#else
-#  error "Unsupported platform"
 #endif /*NCBI_OS*/
 }
 
 
-/*ARGSUSED*/
 static EIO_Status x_TriggerRead(const TRIGGER trigger, int/*bool*/ isset)
 {
 #ifndef NCBI_CXX_TOOLKIT
 
+    (void) trigger;
     return eIO_NotSupported;
 
 #elif defined(NCBI_OS_UNIX)
@@ -6360,22 +6403,20 @@ static EIO_Status x_TriggerRead(const TRIGGER trigger, int/*bool*/ isset)
     }
     return eIO_Unknown;
 
-#else
-#  error "Unsupported platform"
 #endif /*NCBI_OS*/
 }
 
 
 extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
 {
-#ifndef NCBI_CXX_TOOLKIT
+    EIO_Status status;
 
-    return eIO_NotSupported;
+    if (!trigger)
+        return eIO_InvalidArg;
 
-#else
-    EIO_Status status = x_TriggerRead(trigger, 1/*IsSet*/);
+    status = x_TriggerRead(trigger, 1/*IsSet*/);
 
-#  ifdef NCBI_OS_UNIX
+#ifdef NCBI_OS_UNIX
 
     if (status == eIO_Success)
         trigger->isset.ptr = (void*) 1/*true*/;
@@ -6383,19 +6424,22 @@ extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
         return status;
     return trigger->isset.ptr ? eIO_Success : eIO_Closed;
 
-#  else
+#else
 
     return status == eIO_Timeout ? eIO_Closed : status;
 
-#  endif /*NCBI_OS_UNIX*/
-
-#endif /*!NCBI_CXX_TOOLKIT*/
+#endif /*NCBI_OS_UNIX*/
 }
 
 
 extern EIO_Status TRIGGER_Reset(TRIGGER trigger)
 {
-    EIO_Status status = x_TriggerRead(trigger, 0/*Reset*/);
+    EIO_Status status;
+
+    if (!trigger)
+        return eIO_InvalidArg;
+
+    status = x_TriggerRead(trigger, 0/*Reset*/);
 
 #if   defined(NCBI_OS_UNIX)
 
@@ -7000,7 +7044,8 @@ extern EIO_Status SOCK_Poll(size_t          n,
                             const STimeout* timeout,
                             size_t*         n_ready)
 {
-    EIO_Status status;
+    EIO_Status     status = eIO_InvalidArg;
+    int/*bool*/    error;
     struct timeval tv;
     size_t         i;
 
@@ -7020,17 +7065,31 @@ extern EIO_Status SOCK_Poll(size_t          n,
     if (n  &&  !polls) {
         if ( n_ready )
             *n_ready = 0;
-        return eIO_InvalidArg;
+        return status/*eIO_InvalidArg*/;
     }
 
+    error = 0/*false*/;
     for (i = 0;  i < n;  ++i) {
-        SOCK sock = polls[i].sock;
-        polls[i].revent = sock
-            &&  sock->type == eSOCK_Trigger  &&  ((TRIGGER)sock)->isset.ptr
+        SOCK      sock;
+        EIO_Event event;
+        if (!(sock = polls[i].sock)  ||  !(event = polls[i].event)) {
+            polls[i].revent = eIO_Open;
+            continue;
+        }
+        if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
+            polls[i].revent = eIO_Close;
+            /*status = eIO_InvalidArg;*/
+            error = 1/*true*/;
+            continue;
+        }
+        if (error) {
+            polls[i].revent = eIO_Open;
+            continue;
+        }
+        polls[i].revent =
+            sock->type == eSOCK_Trigger  &&  ((TRIGGER) sock)->isset.ptr
             ? polls[i].event
             : eIO_Open;
-        if (!sock)
-            continue;
         if (!(sock->type & eSOCK_Socket)  ||  sock->sock == SOCK_INVALID)
             continue;
         if ((polls[i].event & eIO_Read)  &&  BUF_Size(sock->r_buf) != 0) {
@@ -7047,7 +7106,23 @@ extern EIO_Status SOCK_Poll(size_t          n,
         }
     }
 
-    status = s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
+    if (!n_ready)
+        n_ready = &i;
+    if (!error) {
+        status = s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
+        assert(!(status == eIO_Success) == !*n_ready);
+    } else {
+        assert(status != eIO_Success);
+        *n_ready = 0;
+    }
+
+    if (status != eIO_Success) {
+        for (i = 0;  i < n;  ++i) {
+            if (polls[i].revent != eIO_Close)
+                polls[i].revent  = eIO_Open;
+        }
+        assert(!*n_ready);
+    }
 
 #ifdef NCBI_MONKEY
     if (orig_polls != polls) {
@@ -7067,6 +7142,7 @@ extern EIO_Status SOCK_Poll(size_t          n,
         polls = orig_polls;
         if (mnk_status != -1)
             status = mnk_status;
+        /* FIXME make sure: !(status == eIO_Success) == !*n_ready */
     }
 #endif /*NCBI_MONKEY*/
 
@@ -7819,7 +7895,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
         SOCK_CLOSE(fd);
         return eIO_Unknown;
     }
-#endif
+#endif /*O_NONBLOCK setting*/
 
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock)))) {
         SOCK_CLOSE(fd);
@@ -7909,7 +7985,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
     /* bind */
     memset(&addr, 0, sizeof(addr));
 #ifdef HAVE_SIN_LEN
-    addr.in.sin_len         = (TSOCK_socklen_t) sizeof(addr.in);
+    addr.in.sin_len         = sizeof(addr.in);
 #endif /*HAVE_SIN_LEN*/
     addr.in.sin_family      = AF_INET;
     addr.in.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -8012,7 +8088,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     /* connect (non-empty address) or drop association (on empty address) */
     memset(&peer, 0, sizeof(peer));
 #ifdef HAVE_SIN_LEN
-    peer.sin_len             = (TSOCK_socklen_t) sizeof(peer);
+    peer.sin_len             = sizeof(peer);
 #endif /*HAVE_SIN_LEN*/
     if (host/*  &&  port*/) {
         peer.sin_family      = AF_INET;
