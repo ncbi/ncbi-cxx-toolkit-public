@@ -89,6 +89,9 @@ public:
     double SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap,
                                   TIVec starts[3],  TIVec stops[3], int& frame, int& best_start, int& best_stop, bool extend5p = true) const;
 
+    double DonorScore(int l, EStrand strand) const;
+    double AcceptorScore(int l, EStrand strand) const;
+
     // run gnomon. return score
     double Run(bool leftwall = true, bool rightwall = true, double mpp = 10); // pure ab initio
 

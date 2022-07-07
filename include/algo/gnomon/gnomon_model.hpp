@@ -404,6 +404,7 @@ public:
 
     typedef vector<CModelExon> TExons;
     const TExons& Exons() const { return m_exons; }
+    TExons& Exons() { return m_exons; }
     void ClearExons() {
         m_exons.clear();
         m_fshifts.clear();
@@ -650,8 +651,8 @@ public:
     TSignedSeqRange MapRangeOrigToEdited(TSignedSeqRange orig_range, ERangeEnd lend, ERangeEnd rend) const;
     TSignedSeqRange MapRangeOrigToEdited(TSignedSeqRange orig_range, bool withextras = true) const { return MapRangeOrigToEdited(orig_range, withextras?eLeftEnd:eSinglePoint, withextras?eRightEnd:eSinglePoint); }
     TSignedSeqRange MapRangeEditedToOrig(TSignedSeqRange edited_range, bool withextras = true) const;
-    template <class Vec>
-    void EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes = false) const;
+    template <class In, class Out>
+    void EditedSequence(const In& original_sequence, Out& edited_sequence, bool includeholes = false) const;
     int FShiftedLen(TSignedSeqRange ab, ERangeEnd lend, ERangeEnd rend) const;
     int FShiftedLen(TSignedSeqRange ab, bool withextras = true) const;
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b, bool withextras = true) const { return FShiftedLen(TSignedSeqRange(a,b), withextras); }

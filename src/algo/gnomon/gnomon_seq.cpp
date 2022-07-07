@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "gnomon_seq.hpp"
+#include <algo/gnomon/aligncollapser.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
@@ -616,8 +617,8 @@ CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const TInDels& indels, ESt
     _ASSERT(m_edited_ranges.size() == m_orig_ranges.size());
 }
 
-template <class Vec>
-void CAlignMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes) const
+template <class In, class Out>
+void CAlignMap::EditedSequence(const In& original_sequence, Out& edited_sequence, bool includeholes) const
 {
     edited_sequence.clear();
 
@@ -629,7 +630,7 @@ void CAlignMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequenc
         s = m_edited_ranges.front().GetExtraSeqFrom();
     }
     ITERATE(string, i, s)
-        edited_sequence.push_back(res_traits<typename Vec::value_type>::_fromACGT(*i));
+        edited_sequence.push_back(res_traits<typename Out::value_type>::_fromACGT(*i));
 
     for(int range = 0; range < (int)m_orig_ranges.size(); ++range) {
         string seq = m_edited_ranges[range].GetMismatch();
@@ -637,7 +638,9 @@ void CAlignMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequenc
         if(seq.empty()) {
             int a = m_orig_ranges[range].GetFrom();
             int b = m_orig_ranges[range].GetTo()+1;
-            edited_sequence.insert(edited_sequence.end(),original_sequence.begin()+a, original_sequence.begin()+b);
+            for(int i = a; i < b; ++i)
+                edited_sequence.push_back(original_sequence[i]);
+            //            edited_sequence.insert(edited_sequence.end(),original_sequence.begin()+a, original_sequence.begin()+b);
         }
 
         if(range < (int)m_orig_ranges.size()-1) {
@@ -660,7 +663,7 @@ void CAlignMap::EditedSequence(const Vec& original_sequence, Vec& edited_sequenc
             }
         }
         ITERATE(string, i, seq)
-            edited_sequence.push_back(res_traits<typename Vec::value_type>::_fromACGT(*i));
+            edited_sequence.push_back(res_traits<typename Out::value_type>::_fromACGT(*i));
     }
     
     if(m_orientation == eMinus) 
@@ -673,11 +676,13 @@ int CAlignMap::FindLowerRange(const vector<CAlignMap::SMapRange>& a,  TSignedSeq
 }
 
 template
-void CAlignMap::EditedSequence<CResidueVec>(const CResidueVec& original_sequence, CResidueVec& edited_sequence, bool includeholes) const;
+void CAlignMap::EditedSequence<CResidueVec,CResidueVec>(const CResidueVec& original_sequence, CResidueVec& edited_sequence, bool includeholes) const;
 template
-void CAlignMap::EditedSequence<CEResidueVec>(const CEResidueVec& original_sequence, CEResidueVec& edited_sequence, bool includeholes) const;
+void CAlignMap::EditedSequence<CEResidueVec,CEResidueVec>(const CEResidueVec& original_sequence, CEResidueVec& edited_sequence, bool includeholes) const;
 template
-void CAlignMap::EditedSequence<string>(const string& original_sequence, string& edited_sequence, bool includeholes) const;
+void CAlignMap::EditedSequence<string,string>(const string& original_sequence, string& edited_sequence, bool includeholes) const;
+template
+void CAlignMap::EditedSequence<CAlignCollapser::CPartialString,string>(const CAlignCollapser::CPartialString& original_sequence, string& edited_sequence, bool includeholes) const;
 
 TSignedSeqRange CAlignMap::ShrinkToRealPointsOnEdited(TSignedSeqRange edited_range) const {
 
