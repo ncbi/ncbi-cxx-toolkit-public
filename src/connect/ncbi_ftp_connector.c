@@ -1999,6 +1999,7 @@ static EIO_Status s_VT_Open
                     ("[FTP; %s:%hu]  Too many failed attempts (%hu), giving up"
                      , xxx->info->host, xxx->info->port, ntry));
     }
+    assert(!(status == eIO_Success) == !xxx->cntl);
     assert(!xxx->what  &&  !xxx->data);
     xxx->r_status = status;
     xxx->w_status = status;
