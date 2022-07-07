@@ -417,7 +417,7 @@ void CHugeAsnReader::x_ThrowDuplicateId(
     if (newPos != existingPos) {
         msg += " and the set starting at " + newFilePos;
     }
-    NCBI_THROW(CCoreException, eCore, msg);
+    NCBI_THROW(CHugeFileException, eDuplicateSeqIds, msg);
 }
 
 void CHugeAsnReader::FlattenGenbankSet()
