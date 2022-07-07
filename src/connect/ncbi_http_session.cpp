@@ -841,10 +841,11 @@ static void s_Cleanup(void* user_data)
 
 void CHttpRequest::x_InitConnection(bool use_form_data)
 {
+    bool is_service = m_Url.IsService();
     unique_ptr<SConnNetInfo, void (*)(SConnNetInfo*)> net_info
-        (ConnNetInfo_Create(m_Url.IsService() ? m_Url.GetService().c_str() : 0),
+        (ConnNetInfo_Create(is_service ? m_Url.GetService().c_str() : 0),
          ConnNetInfo_Destroy);
-    if (!net_info) {
+    if (!net_info  ||  (is_service  &&  !net_info->svc[0])) {
         NCBI_THROW(CHttpSessionException, eConnFailed,
             "Failed to create SConnNetInfo");
     }
@@ -884,7 +885,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url));
     unique_ptr<SAdjustData> adjust_data(new SAdjustData(this));
-    if ( !m_Url.IsService() ) {
+    if ( !is_service ) {
         // Connect using HTTP.
         m_Stream.reset(new CConn_HttpStream(
             m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
@@ -980,7 +981,7 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 // user_data must contain SAdjustData*.
 //
 // For HTTP streams, the callbacks are coming in the following order:
-//   1. while establishing a connection with the specified HTTP server (or
+//   1. *while* establishing a connection with the specified HTTP server (or
 //      through the chain of redirected-to server(s), therein) sx_ParseHeader
 //      gets called for every HTTP response received from the tried HTTP
 //      server(s);  and sx_Adjust gets called for every redirect (with
@@ -990,7 +991,7 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 //      again with failure_count == -1 to request the next URL.
 //      NOTE that by this time CHttpRequest* may no longer be valid.
 // For service streams:
-//   1. sx_Adjust is called *before* establishing HTTP connection with
+//   1. *before* establishing HTTP connection, sx_Adjust is called with
 //      failure_count == -1 to request SConnNetInfo's setup for the 1st found
 //      HTTP server;  then sx_ParseHeader and sx_Adjust are called the same way
 //      as for the HTTP streams above (in 1.) in the process of establishing
