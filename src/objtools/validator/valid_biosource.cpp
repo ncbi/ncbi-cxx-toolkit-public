@@ -2579,17 +2579,7 @@ void CValidError_imp::ValidateStrain
 
 void CValidError_imp::ValidateSpecificHost(const CSeq_entry& se)
 {
-    unique_ptr<CTaxValidationAndCleanup> pTval;
-    if (m_taxon) {
-        auto taxFunc = [this](const vector<CRef<COrg_ref>>& orgRefs)->CRef<CTaxon3_reply> {
-            return m_taxon->SendOrgRefList(orgRefs);
-        };
-        pTval.reset(new CTaxValidationAndCleanup(taxFunc));
-    }
-    else {
-        pTval.reset(new CTaxValidationAndCleanup());
-    }
-
+    auto pTval = x_CreateTaxValidator();
     pTval->Init(se);
     ValidateSpecificHost(*pTval);
 }
@@ -2779,17 +2769,7 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
 
 void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 {
-
-    unique_ptr<CTaxValidationAndCleanup> pTval;
-    if (m_taxon) {
-        auto taxFunc = [this](const vector<CRef<COrg_ref>>& orgRefs)->CRef<CTaxon3_reply> {
-            return m_taxon->SendOrgRefList(orgRefs);
-        };
-        pTval.reset(new CTaxValidationAndCleanup(taxFunc));
-    }
-    else {
-        pTval.reset(new CTaxValidationAndCleanup());
-    }
+    auto pTval = x_CreateTaxValidator();
 
     pTval->Init(se);
 
@@ -2807,17 +2787,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 
 void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
 {
-    unique_ptr<CTaxValidationAndCleanup> pTval;
-    if (m_taxon) {
-        auto taxFunc = [this](const vector<CRef<COrg_ref>>& orgRefs)->CRef<CTaxon3_reply> {
-            return m_taxon->SendOrgRefList(orgRefs);
-        };
-        pTval.reset(new CTaxValidationAndCleanup(taxFunc));
-    }
-    else {
-        pTval.reset(new CTaxValidationAndCleanup());
-    }
-
+    auto pTval = x_CreateTaxValidator();
     pTval->CheckOneOrg(org, genome, *this);
 }
 
@@ -3207,6 +3177,19 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, *err, obj, ctx);
         }
     }
+}
+
+
+unique_ptr<CTaxValidationAndCleanup> CValidError_imp::x_CreateTaxValidator() const
+{
+    if (m_taxon) { 
+        auto taxFunc = [this](const vector<CRef<COrg_ref>>& orgRefs)->CRef<CTaxon3_reply> {
+            return m_taxon->SendOrgRefList(orgRefs);
+        };
+        return make_unique<CTaxValidationAndCleanup>(taxFunc);
+    }
+
+    return make_unique<CTaxValidationAndCleanup>();
 }
 
 
