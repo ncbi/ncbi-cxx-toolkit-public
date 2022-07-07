@@ -70,7 +70,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout g_NcbiDefConnTimeout;
  */
 
 
-/** Get the name of the connector (may be NULL on error)
+/** Get the name of the connector (may NOT be NULL)
  */
 typedef const char* (*FConnectorGetType)
 (CONNECTOR       connector
