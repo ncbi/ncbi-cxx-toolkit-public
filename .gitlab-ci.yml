@@ -58,6 +58,10 @@ test:
   paths:
    - build.log
 
+conan_publish:
+ stage: publish
+ trigger: pd/cxxtk/cxx/ncbi-cxx-toolkit-core-conan
+
 publish:
  stage: publish
  script:
