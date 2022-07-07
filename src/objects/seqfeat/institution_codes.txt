@@ -241,7 +241,7 @@ ANLW	s	Amt Der Niederosterreichischen Landsregierung
 ANMR	c	Asian Network on Microbial Researches			
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
 ANSP	s	Academy of Natural Sciences of Drexel University	ANSP		
-ANSP:FISH	s	Academy of Natural Sciences of Drexel University, Ichthyology Collection	
+ANSP:FISH	s	Academy of Natural Sciences of Drexel University, Ichthyology Collection		
 ANSP:HRP	s	Academy of Natural Sciences of Drexel University, Herpetology collection		
 ANSP:Malacology	s	Academy of Natural Sciences of Drexel University, Malacology Collection		
 ANSP:MAM	s	Academy of Natural Sciences of Drexel University, Mammal collection		
@@ -928,8 +928,8 @@ CBFS	s	University of South Bohemia, Department of Botany
 CBG	s	Australian National Botanic Gardens			
 CBH	s	Cephalonia Botanica, Focas Cosmetatos Foundation			
 CBM	s	Natural History Museum and Institute, Chiba			
-CBM:ZC	s	Natural History Museum and Institute, Chiba,  Zoology Crustacea	
-CBM:ZF	s	Natural History Museum and Institute, Chiba,  Zoology Fish	
+CBM:ZC	s	Natural History Museum and Institute, Chiba,  Zoology Crustacea		
+CBM:ZF	s	Natural History Museum and Institute, Chiba,  Zoology Fish		
 CBMAI	c	Brazilian Collection of Microorganisms from the Environment and Industry (Colecao Brasileira de Microrganismos de Ambiente e Industria)			
 CBMC	s	CONSERVATOIRE BOTANIQUE NATIONAL DU MASSIF CENTRAL			
 CBNM	s	Cedar Breaks National Monument			
@@ -1728,7 +1728,7 @@ DMNH<USA-DE>	s	Delaware Museum of Natural History
 DMNH<USA-DE>:Bird	s	Delaware Museum of Natural History, Birds collection		
 DMNH<USA-OH>	s	Dayton Museum of Natural History, Biology Department			
 DMNS	s	Denver Museum of Nature and Science	DMNH<USA-CO>,DNHC		
-DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections	
+DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections		
 DMNS:Mamm	s	Denver Museum of Nature and Science, Mammology Collection	https://arctos.database.museum/guid/DMNS:Mamm:
 DMNS:Para	s	Denver Museum of Nature and Science, Parasite collection	https://arctos.database.museum/guid/DMNS:Para:
 DMPMC	c	Department of Microbiology, University of Western Australia			
@@ -3855,7 +3855,7 @@ LDSP	s	Leeds Philosophical and Literary Society Museum
 LDUCZ	s	Grant Museum of Zoology and Comparative Anatomy UCL			
 LE<BRA>	c	Servico de Microbiologia e Imunologia			
 LE<RUS>	s	V. L. Komarov Botanical Institute			
-LE<RUS>:BIN	c	V. L. Komarov Botanical Institute, Komarov Botanical Institute Basidiomycetes	
+LE<RUS>:BIN	c	V. L. Komarov Botanical Institute, Komarov Botanical Institute Basidiomycetes		
 LEA	s	University of Lethbridge, Biological Sciences Department			
 LEB<ESP>	s	Universidad de Leon, Departamento de Biologia, Botanica			
 LEB<LVA>	s	Entomological Society of Latvia			
@@ -4353,7 +4353,7 @@ MFLB	s	Marine Fisheries Laboratory
 MFLU	sc	Mae Fah Laung University Herbarium	MFLU<THA>		
 MFLUCC	c	Mae Fah Luang University Culture Collection			
 MfN<DEU>	s	Museum fur Naturkunde	ZMB		
-MfN<DEU>:Lep	s	Museum fur Naturkunde, Lepidoptera collection	
+MfN<DEU>:Lep	s	Museum fur Naturkunde, Lepidoptera collection		
 MFP	s	Museo Felipe Poey			
 MFRU	s	Malawi Fisheries Research Unit			
 MFS	s	Museo dei Fisiocritici			
@@ -4438,7 +4438,7 @@ MIB:ZPL	s	University of Milano - Bicocca, Department of Biotechnology and Biosci
 MIC	s	Mar Ivanios College (Zoology museum)			
 MICG	s	Universidad de San Carlos de Guatemala			
 MICH	s	University of Michigan		http://quod.lib.umich.edu/h/herb4ic/x-MICH&spec;	
-MICH:CZEUM	s	University of Michigan, Collection of Zoosporic Eufungi at the University of Michigan	
+MICH:CZEUM	s	University of Michigan, Collection of Zoosporic Eufungi at the University of Michigan		
 MICKKU	c	MICKKU Culture Collection			
 MICOCL	s	ONG Micofilos			
 MICODIF	s	Universidad Nacional de San Luis			
@@ -4892,7 +4892,7 @@ MZ<POL>	s	Museum of the Earth, Polish Academy of Sciences
 MZAF	s	Museo Zoologico dell'Accademia dei Fisiocritici			
 MZB	s	Museum Zoologicum Bogoriense			
 MZB:Amp	s	Museum Zoologicum Bogoriense, Amphibian Collection		
-MZB:Lace	s	Museum Zoologicum Bogoriense, Lizard Collection	
+MZB:Lace	s	Museum Zoologicum Bogoriense, Lizard Collection		
 MZB:Ornith	s	Museum Zoologicum Bogoriense, Ornithology Collection		
 MZBL	s	Museo de Zoologica			
 MZBS	s	Museo Zoologia			
@@ -5288,8 +5288,8 @@ NMSU<USA-NM>	s	New Mexico State University
 NMTC	s	Inner Mongolia Normal University, Biology Department			
 NMTT	s	National Museum and Art Gallery, Port-of-Spain			
 NMU	s	Northern Michigan University Museum of Zoology			
-NMU:Bird	s	Northern Michigan University Museum of Zoology, NMU Bird Collection	
-NMU:Mamm	s	Northern Michigan University Museum of Zoology, NMU Mammal Collection	
+NMU:Bird	s	Northern Michigan University Museum of Zoology, NMU Bird Collection		
+NMU:Mamm	s	Northern Michigan University Museum of Zoology, NMU Mammal Collection		
 NMV<AUS>	s	Museum Victoria	NMM		
 NMV<AUS>:A	s	Museum Victoria, Ichthyology		
 NMV<AUS>:AV	s	Museum Victoria, Entomology - Australian Voucher Specimens		
@@ -5946,7 +5946,7 @@ QCA	s	Pontificia Universidad Catolica del Ecuador, Departamento de Biologia
 QCAM	s	Pontificia Universidad Catolica del Ecuador			
 QCAZ	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador			
 QCAZ:A	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Amphibian Collection		
-QCAZ:M	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Mammal Collection	
+QCAZ:M	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Mammal Collection		
 QCAZ:R	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Reptile Collection		
 QCC	c	 Qatari Culture Collection			
 QCNE	s	Herbario Nacional del Ecuador			
@@ -7258,14 +7258,14 @@ UAIC<USA-AZ>	s	University of Arizona
 UALF	s	Federal University of Alfenas			
 UALRVC	s	University of Arkansas at Little Rock, Vertebrate Collection			
 UAM	s	University of Alaska, Museum of the North	UAF	http://arctos.database.museum/SpecimenDetail.cfm?GUID=	
-UAM:Alg	s	University of Alaska, Museum of the North, The Algae collection	
+UAM:Alg	s	University of Alaska, Museum of the North, The Algae collection		
 UAM:Bird	s	University of Alaska, Museum of the North, Bird Collection		
 UAM:Bryo	s	University of Alaska, Museum of the North, Bryozoan Collection		
 UAM:Crus	s	University of Alaska, Museum of the North, Marine Arthropod Collection		
 UAM:Ento	s	University of Alaska, Museum of the North, Insect Collection		
 UAM:ES	s	University of Alaska, Museum of the North, Earth Science		
 UAM:Fish	s	University of Alaska, Museum of the North, Fish Collection		
-UAM:Herb	s	University of Alaska, Museum of the North, UAM Herbarium	
+UAM:Herb	s	University of Alaska, Museum of the North, UAM Herbarium		
 UAM:Herp	s	University of Alaska, Museum of the North, Amphibian and Reptile Collection		
 UAM:Inv	s	University of Alaska, Museum of the North, Invertebrate Collection		
 UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection	https://arctos.database.museum/guid/UAM:Mamm:
@@ -7275,7 +7275,7 @@ UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria
 UAM<USA-AL>	s	University of Alabama, Malacology Collection			
 UAM<USA-AR>	s	University of Arkansas at Monticello			
 UAMb	s	Cryptogam collection of University of Alaska Museum of the North			
-UAMb:Herb	s	Cryptogam collection of University of Alaska Museum of the North, Herbarium collection	
+UAMb:Herb	s	Cryptogam collection of University of Alaska Museum of the North, Herbarium collection		
 UAMH	scb	Centre for Global Microfungal Biodiversity		https://www.uamh.ca/details.php?id=	
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)			
 UAMIZ	s	Universidad Autonoma Metropolitana, Iztapalapa, Departamento de Biologia			
@@ -7343,7 +7343,7 @@ UCM<ESP>	s	Universidad Complutense Madrid
 UCM<UKR>	c	Ukrainian Collection of Microorganisms, Zabolotny Institute of Microbiology and Virology			
 UCM<USA-CO>	s	University of Colorado Museum of Natural History			
 UCM<USA-CO>:Bird	s	University of Colorado Museum of Natural History, University of Colorado Museum Bird Collection		
-UCM<USA-CO>:Egg	s	University of Colorado Museum of Natural History, University of Colorado Museum Egg collection	
+UCM<USA-CO>:Egg	s	University of Colorado Museum of Natural History, University of Colorado Museum Egg collection		
 UCM<USA-CO>:Fish	s	University of Colorado Museum of Natural History, University of Colorado Museum Fish collection		
 UCM<USA-CO>:Herp	s	University of Colorado Museum of Natural History, University of Colorado Museum Amplibian and Reptile collection		
 UCM<USA-CO>:Mamm	s	University of Colorado Museum of Natural History, University of Colorado Museum Mammal Collection		
@@ -7363,7 +7363,7 @@ UCPC	s	Universidad del Cauca
 UCR<CRI>	s	Universidad de Costa Rica, Museo de Zoologia	MZUCR		
 UCR<USA-CA>	s	University of California, Riverside	UCRC		
 UCR<USA-CA>:ENT	s	University of California, Riverside, Entomology Collection		
-UCR<USA-CA>:ESM	s	University of California, Riverside, Earth Sciences Museum	
+UCR<USA-CA>:ESM	s	University of California, Riverside, Earth Sciences Museum		
 UCRC ESM	s	University of California, Riverside - Earth Sciences Museum			
 UCS<USA-CT>	s	University of Connecticut			
 UCS<USA-NY>	s	Union College, Department of Biological Sciences			
@@ -7405,7 +7405,7 @@ UFH	s	University of Fort Hare, Botany Department
 UFHNH	s	Utah Field House of Natural History State Park			
 UFJF	s	Universidade Federal de Juiz de Fora			
 UFMA	sc	Universidade Federal do Maranhao, Curso de Farmacia			
-UFMA:LMBA	c	Universidade Federal do Maranhao, Curso de Farmacia,  Laboratorio de Microbiologia Basica e Aplicada do Departamento de Patologia	
+UFMA:LMBA	c	Universidade Federal do Maranhao, Curso de Farmacia,  Laboratorio de Microbiologia Basica e Aplicada do Departamento de Patologia		
 UFMG<BRA>	s	Universidade Federal de Minas Gerais			
 UFMI	s	Universidade Federal de Mato Grosso, Instituto de Biociencias			
 UFMT	s	Universidade Federal de Mato Grosso, Herbario Central			
@@ -7520,7 +7520,7 @@ UMMP	s	University of Michigan
 UMMZ	s	University of Michigan, Museum of Zoology			
 UMMZ:Birds	s	University of Michigan, Museum of Zoology, Birds Collection		
 UMMZ:Herpetology	s	University of Michigan, Museum of Zoology, Herpetology Collection	http://portal.vertnet.org/o/ummz/herps?id=
-UMMZ:Ichthyology	s	University of Michigan, Museum of Zoology, Ichthyology collection	
+UMMZ:Ichthyology	s	University of Michigan, Museum of Zoology, Ichthyology collection		
 UMMZ:Mammal	s	University of Michigan, Museum of Zoology, Mammal collection		
 UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection		
 UMN-ANTHRO	s	University of Minnesota - Department of Anthropology			
@@ -8171,7 +8171,7 @@ WTU	s	University of Washington
 WTU:F	s	University of Washington, Fungal Collection		
 WTUH	s	University of Washington Botanic Gardens, College of Forest Resources			
 WU	s	Universitat Wien			
-WU:MYC	s	Universitat Wien, Mycological collection of Universitat Wien	
+WU:MYC	s	Universitat Wien, Mycological collection of Universitat Wien		
 WU<USA-TX>	s	Wayland University			
 WUD	s	Wayne State University, Biological Sciences Department			
 WUH	s	Wuhu School of Traditional Chinese Medicine			
@@ -8367,9 +8367,9 @@ ZMB:Cnidaria	s	Museum fur Naturkunde Berlin, Cnidaria Collection
 ZMB:Crustacea	s	Museum fur Naturkunde Berlin, Crustacea Collection		
 ZMB:Echinodermata	s	Museum fur Naturkunde Berlin, Echinodermata Collection		
 ZMB:Hydrozoa	s	Museum fur Naturkunde Berlin, Hydrozoa Collection		
-ZMB:Lep	s	Museum fur Naturkunde Berlin, Lepidoptera collection	
-ZMB:Mam	s	Museum fur Naturkunde Berlin, Mammal collection	
-ZMB:Moll	s	Museum fur Naturkunde Berlin, Mollusks collection	
+ZMB:Lep	s	Museum fur Naturkunde Berlin, Lepidoptera collection		
+ZMB:Mam	s	Museum fur Naturkunde Berlin, Mammal collection		
+ZMB:Moll	s	Museum fur Naturkunde Berlin, Mollusks collection		
 ZMB:Porifera	s	Museum fur Naturkunde Berlin, Porifera Collection		
 ZMB:Vermes	s	Museum fur Naturkunde Berlin, Vermes Collection		
 ZMBJ	s	Banding Zoological Museum			
