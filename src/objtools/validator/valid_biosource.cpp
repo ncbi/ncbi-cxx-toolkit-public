@@ -2579,9 +2579,19 @@ void CValidError_imp::ValidateStrain
 
 void CValidError_imp::ValidateSpecificHost(const CSeq_entry& se)
 {
-    CTaxValidationAndCleanup tval;
-    tval.Init(se);
-    ValidateSpecificHost(tval);
+    unique_ptr<CTaxValidationAndCleanup> pTval;
+    if (m_taxon) {
+        auto taxFunc = [this](const vector<CRef<COrg_ref>>& orgRefs)->CRef<CTaxon3_reply> {
+            return m_taxon->SendOrgRefList(orgRefs);
+        };
+        pTval.reset(new CTaxValidationAndCleanup(taxFunc));
+    }
+    else {
+        pTval.reset(new CTaxValidationAndCleanup());
+    }
+
+    pTval->Init(se);
+    ValidateSpecificHost(*pTval);
 }
 
 
@@ -2769,16 +2779,27 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
 
 void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 {
-    CTaxValidationAndCleanup tval;
-    tval.Init(se);
 
-    ValidateOrgRefs(tval);
+    unique_ptr<CTaxValidationAndCleanup> pTval;
+    if (m_taxon) {
+        auto taxFunc = [this](const vector<CRef<COrg_ref>>& orgRefs)->CRef<CTaxon3_reply> {
+            return m_taxon->SendOrgRefList(orgRefs);
+        };
+        pTval.reset(new CTaxValidationAndCleanup(taxFunc));
+    }
+    else {
+        pTval.reset(new CTaxValidationAndCleanup());
+    }
+
+    pTval->Init(se);
+
+    ValidateOrgRefs(*pTval);
 
     // Now look at specific-host values
-    ValidateSpecificHost(tval);
+    ValidateSpecificHost(*pTval);
 
     // Commented out until TM-725 is resolved
-    ValidateStrain(tval);
+    ValidateStrain(*pTval);
 
     ValidateTentativeName(se);
 }
@@ -2786,8 +2807,18 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 
 void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
 {
-    CTaxValidationAndCleanup tval;
-    tval.CheckOneOrg(org, genome, *this);
+    unique_ptr<CTaxValidationAndCleanup> pTval;
+    if (m_taxon) {
+        auto taxFunc = [this](const vector<CRef<COrg_ref>>& orgRefs)->CRef<CTaxon3_reply> {
+            return m_taxon->SendOrgRefList(orgRefs);
+        };
+        pTval.reset(new CTaxValidationAndCleanup(taxFunc));
+    }
+    else {
+        pTval.reset(new CTaxValidationAndCleanup());
+    }
+
+    pTval->CheckOneOrg(org, genome, *this);
 }
 
 
