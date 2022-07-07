@@ -77,7 +77,6 @@ def getPsgClientPath():
         print_error('Error getting path to psg_client: ' + str(exc))
         return None
 
-
 def prepareConfigFile(source, target, subst):
     f = open(source, 'r')
     content = f.read()
@@ -89,7 +88,6 @@ def prepareConfigFile(source, target, subst):
     f = open(target, 'w')
     f.write(content)
     f.close()
-
 
 def getBuildResultsDir(options):
     artefactDir = getArtefactDir(options)
@@ -113,14 +111,13 @@ def findBuildArchive(buildResultsDir, variant):
         if item.startswith('Linux64-Centos-pubseq_gateway-'):
             if item.endswith('.tar.gz'):
                 if not item.endswith('src.tar.gz'):
-                    if variant in item:
+                    if '-' + variant + '-' in item:
                         buildArchive = buildResultsDir + item
                         break
     if buildArchive is None:
         print_error(f'Cannot find the "{variant}" build results in {buildResultsDir}')
         return None
     return buildArchive
-
 
 def findBuildResultDir(buildResultsDir, variant):
     buildResultDir = None
@@ -851,12 +848,16 @@ def stability_test(commands, options, args):
         try:
             # Check the number of processors
             procCount = getConcurrentProcCount(PORT1, testCase[1])
+            print_verbose(f'PSG processor count after killing clients: {testCase[1]}={procCount}')
             if procCount != 0:
                 errors.append(f'Processor count after killing clients is not 0. {testCase[1]}={procCount}')
         except Exception as exc:
             errors.append(f'Error getting the {testCase[1]} counter: ' + str(exc))
         except:
             errors.append(f'Unknown error getting the {testCase[1]} counter')
+
+        # Stop the server
+        stopServer(SRV1)
 
 
     if errors:
