@@ -638,10 +638,12 @@ CTaxValidationAndCleanup::CTaxValidationAndCleanup()
     };
 }
 
+
 CTaxValidationAndCleanup::CTaxValidationAndCleanup(taxupdate_func_t tax_func)
   : m_tax_func(tax_func)
 {
 }
+
 
 void CTaxValidationAndCleanup::Init(const CSeq_entry& se)
 {

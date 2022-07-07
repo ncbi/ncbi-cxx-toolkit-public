@@ -47,6 +47,7 @@
 #include <connect/ncbi_util.h>
 
 // Objects includes
+#include <objects/taxon3/taxon3.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -225,6 +226,7 @@ private:
     CNcbiOstream* m_ValidErrorStream;
 
     shared_ptr<SValidatorContext> m_pContext;
+    shared_ptr<CTaxon3> m_pTaxon;
 #ifdef USE_XMLWRAPP_LIBS
     unique_ptr<CValXMLStream> m_ostr_xml;
 #endif
@@ -436,7 +438,7 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
 
     CConstRef<CValidError> eval;
 
-    CValidator validator(*m_ObjMgr, m_pContext);
+    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
 
     CSeq_entry_Handle top_h;
     if (pEntry) {
@@ -456,6 +458,7 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
     }
 
     if (top_h) {
+        
         if (m_DoCleanup) {
             CCleanup cleanup;
             cleanup.SetScope(scope);
@@ -848,6 +851,8 @@ int CAsnvalApp::Run()
 {
     const CArgs& args = GetArgs();
     Setup(args);
+    
+    m_pTaxon.reset(new CTaxon3(CTaxon3::initialize::yes));
 
     CTime expires = GetFullVersion().GetBuildInfo().GetBuildTime();
     if (!expires.IsEmpty())

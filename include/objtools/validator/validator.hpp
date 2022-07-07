@@ -108,8 +108,11 @@ public:
     // be created.
     CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon = nullptr);
     CValidator(CObjectManager& objmgr, 
-            shared_ptr<SValidatorContext> 
-            pContext, AutoPtr<ITaxon3> taxon=nullptr);
+            shared_ptr<SValidatorContext> pContext, 
+            AutoPtr<ITaxon3> taxon=nullptr);
+    CValidator(CObjectManager& objmgr, 
+            shared_ptr<SValidatorContext> pContext,
+            shared_ptr<ITaxon3> pTaxon);
     ~CValidator();
 
     // If many validations are being done without changing the underlying
@@ -275,6 +278,7 @@ private:
     // and are passed into the implementation.
     CRef<CObjectManager>    m_ObjMgr;
     AutoPtr<ITaxon3>        m_Taxon;
+    shared_ptr<ITaxon3>     m_pTaxon;
 
     TProgressCallback               m_PrgCallback;
     void*                           m_UserData;
