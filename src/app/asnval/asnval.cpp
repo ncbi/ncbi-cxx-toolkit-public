@@ -456,16 +456,6 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
     }
 
     if (top_h) {
-        
-        if (auto pTopEntry = m_pHugeFileProcess->GetReader().GetTopEntry();
-            pTopEntry) {
-            auto pNewEntry = Ref(new CSeq_entry());
-            pNewEntry->Assign(*pTopEntry);
-            pNewEntry->SetSet().SetSeq_set().push_back(pEntry);
-            pEntry = pNewEntry;
-        }
-
-
         if (m_DoCleanup) {
             CCleanup cleanup;
             cleanup.SetScope(scope);
