@@ -116,7 +116,7 @@ BEGIN_SCOPE(validator)
 struct SValidatorContext;
 class CValidError_desc;
 class CValidError_descr;
-
+class CTaxValidationAndCleanup;
 
 // ===========================  Central Validation  ==========================
 
@@ -637,7 +637,9 @@ private:
     // Taxonomy service interface.
     ITaxon3* m_taxon;
     ITaxon3* x_GetTaxonService();
-
+    
+    unique_ptr<CTaxValidationAndCleanup> x_CreateTaxValidator() const;
+    
     shared_ptr<SValidatorContext> m_pContext;
 };
 
