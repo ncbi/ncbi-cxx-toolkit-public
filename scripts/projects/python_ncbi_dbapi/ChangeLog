@@ -1,3 +1,7 @@
+Version 1.24.0 (2022-07-07):
+* Advance to version 25.0 of the stable C++ Toolkit components.
+* Avoid OverflowError from large integer parameters.
+
 Version 1.23.2 (2021-12-15):
 * Support datetimeoffset more fully, albeit with results always coming
   back as corresponding "aware" UTC.
