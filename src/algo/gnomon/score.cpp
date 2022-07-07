@@ -1184,6 +1184,73 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
     }
 }
 
+double CGnomonEngine::DonorScore(int l, EStrand strand) const {  // l - exon end
+    const CTerminal& donor = *m_data->m_donor;
+    const CNonCodingRegion& ncdr = *m_data->m_ncdr;
+    const CDoubleStrandSeq& ds = m_data->m_ds;
+    if(strand == ePlus) {
+        double scr = donor.Score(ds[ePlus],l);
+        if(scr == BadScore()) {
+            scr = 0;
+        } else {
+            for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
+                double s = ncdr.Score(ds[ePlus],k);
+                if(s == BadScore()) s = 0;
+                scr -= s;
+            }
+        }
+        return scr;
+    } else {
+        int contig_len = m_data->m_seq.size();
+        l = contig_len-1-l;
+        double scr = donor.Score(ds[eMinus],l);
+        if(scr == BadScore()) {
+            scr = 0;
+        } else {
+            for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
+                double s = ncdr.Score(ds[eMinus],k);
+                if(s == BadScore()) s = 0;
+                scr -= s;
+            }
+        }
+        return scr;
+    }
+}
+
+double CGnomonEngine::AcceptorScore(int l, EStrand strand) const { // l - exon end
+    const CTerminal& acceptor = *m_data->m_acceptor;
+    const CNonCodingRegion& ncdr = *m_data->m_ncdr;
+    const CDoubleStrandSeq& ds = m_data->m_ds;
+    if(strand == ePlus) {
+        --l;
+        double scr = acceptor.Score(ds[ePlus],l);
+        if(scr == BadScore()) {
+            scr = 0;
+        } else {
+            for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
+                double s = ncdr.Score(ds[ePlus],k);
+                if(s == BadScore()) s = 0;
+                scr -= s;
+            }
+        }
+        return scr;
+    } else {
+        int contig_len = m_data->m_seq.size();
+        l = contig_len-2-l;
+        double scr = acceptor.Score(ds[eMinus],l);
+        if(scr == BadScore()) {
+            scr = 0;
+        } else {
+            for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
+                double s = ncdr.Score(ds[eMinus],k);
+                if(s == BadScore()) s = 0;
+                scr -= s;
+            }
+        }
+        return scr;
+    }
+}
+
 double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop, bool extend5p) const
 {
     const CTerminal& acceptor    = *m_data->m_acceptor;

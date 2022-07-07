@@ -33,6 +33,7 @@
 #include <algo/gnomon/gnomon_model.hpp>
 #include <algo/gnomon/aligncollapser.hpp>
 #include <algo/gnomon/id_handler.hpp>
+#include <algo/gnomon/glb_align.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
@@ -123,7 +124,7 @@ struct LeftAndLongFirstOrder {
     }
 };
 
-bool OriginalOrder(const SAlignIndividual& a, const SAlignIndividual& b) {  // the order in which alignmnets were added
+bool OriginalOrder(const SAlignIndividual& a, const SAlignIndividual& b) {  // the order in which alignments were added
     return a.m_target_id < b.m_target_id;
 }
 
@@ -224,12 +225,14 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
                             "Minimal expression relative to the mean for introns with the same splice",
                             CArgDescriptions::eDouble, "0.1");
 
+    /*
     arg_desc->AddDefaultKey("minest", "minest",
                             "Minimal EST support to trump expression checks",
                             CArgDescriptions::eInteger, "3");
+    */
 
     arg_desc->AddDefaultKey("min-edge-coverage", "MinEdgeCoverage",
-                            "Minimal absolute expression for accepted single-exon alignmnets without polyA/Cap",
+                            "Minimal absolute expression for accepted single-exon alignments without polyA/Cap",
                             CArgDescriptions::eInteger, "5");
 
     arg_desc->AddDefaultKey("sharp-boundary", "SharpBoundary",
@@ -287,7 +290,7 @@ void CAlignCollapser::InitContig(string contig, CScope* scope) {
     }
 }
 
-CAlignCollapser::CAlignCollapser(string contig, CScope* scope, bool nofilteringcollapsing) : m_count(0), m_scope(scope) {
+CAlignCollapser::CAlignCollapser(string contig, CScope* scope, bool nofilteringcollapsing) : m_count(0), m_long_read_count(0), m_scope(scope) {
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     
     if(nofilteringcollapsing) {
@@ -307,6 +310,7 @@ CAlignCollapser::CAlignCollapser(string contig, CScope* scope, bool nofilteringc
     }
     m_fillgenomicgaps = args["fillgenomicgaps"];
     m_use_long_reads_tss = args["use-long-read-tss"];
+    m_minident = args["high-identity"].AsDouble();
 
     if(m_scope != 0 && contig != "") {
         m_range = TSignedSeqRange::GetWhole();
@@ -972,9 +976,7 @@ int TotalFrameShift(const TInDels& indels, TSignedSeqRange range = TSignedSeqRan
 
 
 void CAlignCollapser::FilterAlignments() {
-
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-
     m_left_end = numeric_limits<int>::max();
     int right_end = 0;
 
@@ -986,7 +988,7 @@ void CAlignCollapser::FilterAlignments() {
             ++count_m_aligns;
         }
     }
-    if (count_m_aligns == 0) {
+    if (count_m_aligns == 0 && m_long_read_count == 0) {
         for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end(); ) {
             TAlignModelList::iterator i = it++;
             CAlignModel& align = *i;
@@ -999,6 +1001,9 @@ void CAlignCollapser::FilterAlignments() {
 
     ITERATE(TAlignIntrons, it, m_align_introns) {
         const SIntron& intron = it->first;
+
+        cerr << "Intron: " << m_contig_name << ':' << intron.m_range.GetFrom()+1 << ':' << intron.m_range.GetTo()+1 << '\n'; 
+
         int a = intron.m_range.GetFrom();
         int b = intron.m_range.GetTo();
         m_left_end = min(m_left_end, a);
@@ -1014,25 +1019,97 @@ void CAlignCollapser::FilterAlignments() {
 
     cerr << "Before filtering: " << m_align_introns.size() << " introns, " << m_count << " alignments" << endl;
 
+    if(m_filterest) { // remove less supported fuzzy introns
+        map<TSignedSeqRange, tuple<double,bool>> intervals; // [intron interval] weight, don't delete
+        for(auto it = m_align_introns.begin(); it != m_align_introns.end(); ++it) {
+            const SIntron& intron = it->first;
+            SIntronData& data = it->second;
+            auto& rslt = intervals[intron.m_range];
+            get<0>(rslt) += data.m_weight;
+            if(data.m_not_long || data.m_ident >= m_minident)
+                get<1>(rslt) = true;
+        }
+
+        multimap<int, TAlignIntrons::iterator> left_intronsp;
+        multimap<int, TAlignIntrons::iterator> right_intronsp;
+        for(auto it = m_align_introns.begin(); it != m_align_introns.end(); ++it) {
+            const SIntron& intron = it->first;
+            if(!get<1>(intervals[intron.m_range])) {
+                left_intronsp.emplace(intron.m_range.GetFrom(), it);
+                right_intronsp.emplace(intron.m_range.GetTo(), it);
+            }
+        }
+    
+        set<SIntron> deleted_introns;
+        int delta = 6;
+        for(auto& interval : intervals) {
+            TSignedSeqRange range = interval.first;
+            auto il = left_intronsp.lower_bound(range.GetFrom()-delta);        // >= acceptable left for left intron end  
+            if(il == left_intronsp.end() || il->first > range.GetFrom()+delta) // no close left ends  
+                continue;
+            auto ir = left_intronsp.upper_bound(range.GetFrom()+delta);        // > acceptable right or end   
+            set<TAlignIntrons::value_type*> close_lefts;
+            for(auto i = il; i != ir; ++i) {
+                const SIntron& intronb = i->second->first;
+                if(intronb.m_range != range)
+                    close_lefts.insert(&(*i->second));
+            }
+            if(close_lefts.empty())
+                continue;
+
+            auto jl = right_intronsp.lower_bound(range.GetTo()-delta);         // >= acceptable left for right intron end 
+            if(jl == right_intronsp.end() || jl->first > range.GetTo()+delta)  // no close right end  
+                continue;
+            auto jr = right_intronsp.upper_bound(range.GetTo()+delta);         // > acceptable right or end   
+            set<TAlignIntrons::value_type*> close_rights;
+            for(auto j = jl; j != jr; ++j) {
+                const SIntron& intronb = j->second->first;
+                if(intronb.m_range != range)
+                    close_rights.insert(&(*j->second));
+            }
+            if(close_rights.empty())
+                continue;
+
+            vector<TAlignIntrons::value_type*> close(min(close_lefts.size(),close_rights.size()), nullptr);
+            auto close_end = set_intersection(close_lefts.begin(), close_lefts.end(), close_rights.begin(), close_rights.end(), close.begin());            
+            for(auto it = close.begin(); it != close_end; ++it) {
+                const SIntron& intronb = (*it)->first;
+                if(get<0>(intervals[intronb.m_range]) < get<0>(interval.second))
+                    deleted_introns.insert(intronb);
+            }
+        }
+        for(auto& intron : deleted_introns) {
+            cerr << "Fuzzy intron: " << m_contig_name << ':' << intron.m_range.GetFrom()+1 << ':' << intron.m_range.GetTo()+1 << '\n';
+            m_align_introns.erase(intron);
+        }
+    }
 
 
 #define COVERAGE_WINDOW 20    
     //coverage calculation
     m_coverage.resize(len,0.);
     ITERATE(Tdata, i, m_aligns) {
-        ITERATE(deque<SAlignIndividual>, k, i->second) {
-            if(i->first.isSR()) {
-                float weight = k->m_weight;
-                TSignedSeqRange range = k->m_range;
-                for(int l = range.GetFrom(); l <= range.GetTo(); ++l)  // add coverage for all alignmnet range 
-                    m_coverage[l-m_left_end] += weight;
-                ITERATE(CAlignCommon::Tintrons, in, i->first.GetIntrons()) {   // substract intron ranges
-                    for(int l = in->m_range.GetFrom()+1; l <= in->m_range.GetTo()-1; ++l) 
-                        m_coverage[l-m_left_end] -= weight;
-                }
+        ITERATE(deque<SAlignIndividual>, k, i->second) { // short reads and collapsed EST
+            float weight = k->m_weight;
+            TSignedSeqRange range = k->m_range;
+            for(int l = range.GetFrom(); l <= range.GetTo(); ++l)  // add coverage for all alignment range 
+                m_coverage[l-m_left_end] += weight;
+            ITERATE(CAlignCommon::Tintrons, in, i->first.GetIntrons()) {   // substract intron ranges
+                for(int l = in->m_range.GetFrom()+1; l <= in->m_range.GetTo()-1; ++l) 
+                    m_coverage[l-m_left_end] -= weight;
             }
         }
     }
+    for(auto& align : m_aligns_for_filtering_only) {
+        if((align.Type()&CGeneModel::eProt) || (align.Type()&CGeneModel::eNotForChaining))
+            continue;
+        // any cDNA for chaining
+        for(auto& exon : align.Exons()) {
+            for(int l = exon.GetFrom(); l <= exon.GetTo(); ++l)
+                m_coverage[l-m_left_end] += align.Weight();
+        }
+    }
+
     vector<double> left_coverage(len,0.);   // average from the left side (including point)
     double wsum = 0;
     for(int i = 0; i < len; ++i) {
@@ -1055,16 +1132,17 @@ void CAlignCollapser::FilterAlignments() {
     //initial intron filtering
     int minconsensussupport = args["min-consensus-support"].AsInteger();
     int minnonconsensussupport = args["min-non-consensussupport"].AsInteger();
-    double minident = args["high-identity"].AsDouble();
-    int minest = args["minest"].AsInteger();
+    //    int minest = args["minest"].AsInteger();
     for(TAlignIntrons::iterator it = m_align_introns.begin(); it != m_align_introns.end(); ) {
         TAlignIntrons::iterator intron = it++;
         bool bad_intron = false;
         SIntronData& id = intron->second;
 
         if(id.m_selfsp_support) {
+            /*
             if(id.m_est_support >= minest)
                 id.m_keep_anyway = true;
+            */
         } else {
             bad_intron = true;
         }
@@ -1083,8 +1161,10 @@ void CAlignCollapser::FilterAlignments() {
                 bad_intron = true;
         }
 
-        if(id.m_ident < minident)
+        /* not included in AddAlignment
+        if(id.m_ident < minident && id.m_not_long)
             bad_intron = true;
+        */
 
         if(bad_intron)
             m_align_introns.erase(intron);
@@ -1157,7 +1237,7 @@ void CAlignCollapser::FilterAlignments() {
             m_align_introns.erase(intron);
     }
     
-    //remove/clip alignmnets with bad introns
+    //remove/cut pool alignments with bad introns
     for(Tdata::iterator it = m_aligns.begin(); it != m_aligns.end(); ) {
         Tdata::iterator data = it++;
         const CAlignCommon& alc = data->first;
@@ -1165,10 +1245,40 @@ void CAlignCollapser::FilterAlignments() {
         if((alc.isEST() && !m_filterest) || (alc.isSR() && !m_filtersr))
             continue;
 
-        CAlignCommon::Tintrons introns = alc.GetIntrons();
+        const CAlignCommon::Tintrons& introns = alc.GetIntrons();  //need copy for old version
         if(introns.empty())
             continue;
 
+        bool all_good = true;
+        for(int i = 0; all_good && i < (int)introns.size(); ++i) {
+            all_good = (m_align_introns.find(introns[i]) != m_align_introns.end());
+        }
+        if(all_good)
+            continue;
+
+        const deque<char>& id_pool = m_target_id_pool[alc];
+        ITERATE(deque<SAlignIndividual>, i, data->second) {
+            CAlignModel align(alc.GetAlignment(*i, id_pool));
+            CGeneModel::TExons& e = align.Exons();
+            for(unsigned int l = 1; l < e.size(); ++l) {
+                SIntron intron(e[l-1].GetTo(), e[l].GetFrom(), align.Strand(), (align.Status()&CGeneModel::eUnknownOrientation) == 0, ""); // signature not used
+                if(!m_align_introns.count(intron)) {
+                    e[l-1].m_ssplice = false;
+                    e[l].m_fsplice = false;
+                }
+            }
+            TAlignModelList aligns = GetAlignParts(align, false);
+            for(auto& a : aligns) {
+                if(alc.isEST())
+                    a.Status() |= CGeneModel::eChangedByFilter; 
+                if(a.Exons().size() > 1) {
+                    CAlignCommon c(a);
+                    m_aligns[c].push_back(SAlignIndividual(a, m_target_id_pool[c]));                    
+                }
+            }
+        }
+
+        /*
         //remove flanking bad introns
         int new_right = right_end;
         while(!introns.empty() && m_align_introns.find(introns.back()) == m_align_introns.end()) {
@@ -1202,6 +1312,7 @@ void CAlignCollapser::FilterAlignments() {
                 m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c]));
             }
         }
+        */
 
         // delete initial alignments and ids
         m_target_id_pool.erase(data->first);
@@ -1362,7 +1473,7 @@ void CAlignCollapser::FilterAlignments() {
 
         bool good_alignment = true;
 
-        //clip alignmnets with bad introns
+        //clip alignments with bad introns
         if(align.Type()&CAlignModel::eProt) {
             good_alignment = RemoveNotSupportedIntronsFromProt(align);
         } else if(align.Type()&CGeneModel::eNotForChaining) {
@@ -1710,7 +1821,7 @@ void CAlignCollapser::FilterAlignments() {
                         
                         TSignedSeqRange seg = amap.ShrinkToRealPoints(TSignedSeqRange(new_l,align.Limits().GetTo()),snap_to_codons);
                         if(seg.Empty() || amap.FShiftedLen(seg,false) < END_PART_LENGTH) { // nothing left on right  
-                            if(ie == 0 || amap.FShiftedLen(TSignedSeqRange(align.Limits().GetFrom(),align.Exons()[ie-1].GetTo())) < END_PART_LENGTH) { // no alignmnet left  
+                            if(ie == 0 || amap.FShiftedLen(TSignedSeqRange(align.Limits().GetFrom(),align.Exons()[ie-1].GetTo())) < END_PART_LENGTH) { // no alignment left  
                                 good_alignment = false;
                             } else {      // left side is kept  
                                 align.Clip(TSignedSeqRange(align.Limits().GetFrom(),align.Exons()[ie-1].GetTo()),CGeneModel::eRemoveExons);
@@ -1782,7 +1893,7 @@ void CAlignCollapser::FilterAlignments() {
                         
                         TSignedSeqRange seg = amap.ShrinkToRealPoints(TSignedSeqRange(align.Limits().GetFrom(),new_r),snap_to_codons);
                         if(seg.Empty() || amap.FShiftedLen(seg,false) < END_PART_LENGTH) { // nothing left on left    
-                            if(ie == (int)align.Exons().size()-1 || amap.FShiftedLen(TSignedSeqRange(align.Exons()[ie+1].GetFrom(),align.Limits().GetTo())) < END_PART_LENGTH) { // no alignmnet left 
+                            if(ie == (int)align.Exons().size()-1 || amap.FShiftedLen(TSignedSeqRange(align.Exons()[ie+1].GetFrom(),align.Limits().GetTo())) < END_PART_LENGTH) { // no alignment left 
                                 good_alignment = false;
                             } else {      // right side is kept  
                                 align.Clip(TSignedSeqRange(align.Exons()[ie+1].GetFrom(),align.Limits().GetTo()),CGeneModel::eRemoveExons);
@@ -1813,8 +1924,6 @@ void CAlignCollapser::FilterAlignments() {
     m_correction_data.m_correction_indels.erase( unique(m_correction_data.m_correction_indels.begin(),m_correction_data.m_correction_indels.end()), m_correction_data.m_correction_indels.end() );   // uses == for CInDelInfo which ignores accession
 
     total += m_aligns_for_filtering_only.size();
-    
-
     cerr << "After filtering: " << m_align_introns.size() << " introns, " << total << " alignments" << endl;
 }
 
@@ -1933,7 +2042,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         deque<SAlignIndividual>& alideque = i->second;
         sort(alideque.begin(),alideque.end(),LeftAndLongFirstOrder(id_pool));
 
-        if(alc.isSR() && !m_collapssr) {   // don't collaps
+        if((alc.isSR()&&!m_collapssr) || (alc.isEST()&&!m_collapsest)) {   // don't collaps
             ITERATE(deque<SAlignIndividual>, k, alideque) {
                 CAlignModel align(alc.GetAlignment(*k, id_pool));
                 rnaseq_or_est.push_back(align);
@@ -2309,6 +2418,66 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
 
     bool long_read = acc.find("SRA") != string::npos && acc.find("RNASEQ_COLLAPSE") == string::npos;
 
+    if(long_read && a.Exons().front().m_ident == 0) {
+        TInDels& indels = a.FrameShifts();
+
+        auto it = indels.begin();        
+        for(CModelExon& exon : a.Exons()) {
+            int align_len = exon.Limits().GetLength();
+            double matches = align_len;
+            for( ;it != indels.end() && it->IntersectingWith(exon.GetFrom(), exon.GetTo()); ++it) {
+                if(it->IsMismatch() || it->IsInsertion())
+                    matches -= it->Len();
+                if(it->IsDeletion())
+                    align_len += it->Len();
+            }
+            if(matches > 0)
+                exon.m_ident = matches/align_len;            
+        }
+    }
+
+    if(m_filterest && long_read && a.Continuous()) {
+        string transcript;
+        CAlignMap amap = a.GetAlignMap();
+        amap.EditedSequence(m_contig, transcript);
+        int shift = a.TranscriptLimits().GetFrom();
+
+        TSignedSeqRange lim = a.Limits();
+        for(int i = 0; i < (int)a.Exons().size(); ++i) {
+            auto te = a.TranscriptExon(i);
+            string eseq = transcript.substr(te.GetFrom()-shift, te.GetLength()); // transcript sequence corresponding to the exon
+            if(Entropy(eseq) < 0.65) {
+                if(i == (int)a.Exons().size()-1) {
+                    lim = TSignedSeqRange::GetEmpty();
+                } else {
+                    lim.SetFrom(a.Exons()[i+1].GetFrom());
+                    if(a.Exons()[i].m_ssplice && a.Exons()[i+1].m_fsplice)
+                        cerr << "Low complexity: " << a.ID() << " " << m_contig_name << ':' << a.Exons()[i].GetTo()+1 << ':' << a.Exons()[i+1].GetFrom()+1 << ' ' << eseq << "\n";
+                }
+            } else {
+                break;
+            }
+        }
+        if(lim.Empty()) {
+            cerr << "Erased: " << a.ID() << "\n";
+            return;
+        }
+        // at least one exon is good
+        for(int i = (int)a.Exons().size()-1; i > 0; --i) {
+            auto te = a.TranscriptExon(i);
+            string eseq = transcript.substr(te.GetFrom()-shift, te.GetLength()); // transcript sequence corresponding to the exon
+            if(Entropy(eseq) < 0.65) {
+                lim.SetTo(a.Exons()[i-1].GetTo());
+                if(a.Exons()[i-1].m_ssplice && a.Exons()[i].m_fsplice)
+                    cerr << "Low complexity: " << a.ID() << " " << m_contig_name << ':' << a.Exons()[i-1].GetTo()+1 << ':' << a.Exons()[i].GetFrom()+1 << ' ' << eseq << "\n";
+            } else {
+                break;
+            }
+        }
+        if(lim != a.Limits()) 
+            a.Clip(lim, CGeneModel::eRemoveExons);           
+    }
+
     //Capinfo from not capped long reads
     if(m_use_long_reads_tss) {
         bool use_alignment = !(a.Status()&CGeneModel::eCap) && long_read; // not capped long read 
@@ -2366,6 +2535,12 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
     const CGeneModel::TExons& e = align.Exons();
     for(unsigned int l = 1; l < e.size(); ++l) {
         if(e[l-1].m_ssplice && e[l].m_fsplice) {
+            double ident = min(e[l-1].m_ident, e[l].m_ident);
+            if(ident == 0.)
+                ident = 1.;                        // collapsed SRA and proteins don't have ident information 
+            if(ident < m_minident && !long_read)   // ignore low identity introns from transcripts which are not long reads
+                continue;
+
             string sig;
             if(align.Strand() == ePlus)
                 sig = e[l-1].m_ssplice_sig+e[l].m_fsplice_sig;
@@ -2390,19 +2565,20 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
                 id.m_selfsp_support = true;
             }
 
+            if(!long_read)
+                id.m_not_long = true;
+
             id.m_weight += align.Weight();
 
             if(align.Type()&(CGeneModel::eEST|CGeneModel::emRNA))
                 id.m_est_support += align.Weight()+0.5;
 
-            double ident = min(e[l-1].m_ident,e[l].m_ident);
-            if(ident == 0.)
-                ident = 1.;   // collapsed SRA and proteins don't have ident information
             id.m_ident = max(id.m_ident,ident);
         }
     }
 
-    if((align.Type()&CGeneModel::eSR) || ((align.Type()&CGeneModel::eEST) && !(align.Status()&CGeneModel::eGapFiller) && m_collapsest)) {   // add alignments for collapsing
+    //    if((align.Type()&CGeneModel::eSR) || ((align.Type()&CGeneModel::eEST) && !(align.Status()&CGeneModel::eGapFiller) && m_collapsest)) {   // add alignments for collapsing
+    if((align.Type()&CGeneModel::eSR) || ((align.Type()&CGeneModel::eEST) && !(align.Status()&CGeneModel::eGapFiller))) {   // add alignments for collapsing (long reads always included even if no collapsest - big memory saving)
         if(align.Continuous()) {
             CAlignCommon c(align);
             m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c]));
@@ -2416,6 +2592,9 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
     } else {
         m_aligns_for_filtering_only.push_back(align);
     }
+
+    if(long_read)
+        ++m_long_read_count;
         
     if(++m_count%COLLAPS_CHUNK == 0) {
         cerr << "Added " << m_count << " alignments to collapser" << endl;

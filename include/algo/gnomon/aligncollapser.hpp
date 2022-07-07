@@ -142,12 +142,13 @@ public:
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
     struct SIntronData {
-        SIntronData() : m_weight(0.), m_ident(0.), m_est_support(0), m_keep_anyway(false), m_selfsp_support(false) {}
+        SIntronData() : m_weight(0.), m_ident(0.), m_est_support(0), m_keep_anyway(false), m_selfsp_support(false), m_not_long(false) {}
         double m_weight;
         double m_ident;
         int m_est_support;
         bool m_keep_anyway;
         bool m_selfsp_support;
+        bool m_not_long;
     };
     typedef map<SIntron,SIntronData> TAlignIntrons;
 
@@ -208,6 +209,7 @@ private:
     map<tuple<int, int>, CAlignModel> m_special_aligns; // [left/right flex|cap/polya, position]
 
     int m_count;
+    int m_long_read_count;
     bool m_filtersr;
     bool m_filterest;
     bool m_collapsest;
@@ -216,6 +218,7 @@ private:
     bool m_filterprots;
     bool m_fillgenomicgaps;
     bool m_use_long_reads_tss;
+    double m_minident;
 
     CScope* m_scope;
     TIntMap m_genomic_gaps_len;
