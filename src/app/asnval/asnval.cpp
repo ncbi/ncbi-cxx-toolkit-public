@@ -979,7 +979,7 @@ void CAsnvalApp::ReadClassMember
                 i >> *se;
 
                 // Validate Seq-entry
-                CValidator validator(*m_ObjMgr, m_pContext);
+                CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
                 CRef<CScope> scope = BuildScope();
                 CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
 
@@ -1185,7 +1185,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry()
 CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
 {
     // Validate Seq-entry
-    CValidator validator(*m_ObjMgr, m_pContext);
+    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
         m_Cleanup.SetScope(scope);
@@ -1230,7 +1230,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat()
         m_Cleanup.BasicCleanup(*feat);
     }
 
-    CValidator validator(*m_ObjMgr, m_pContext);
+    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
     eval = validator.Validate(*feat, scope, m_Options);
     m_NumRecords++;
     return eval;
@@ -1243,7 +1243,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioSource()
     if (eval)
         return eval;
 
-    CValidator validator(*m_ObjMgr, m_pContext);
+    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
     CRef<CScope> scope = BuildScope();
     eval = validator.Validate(*src, scope, m_Options);
     m_NumRecords++;
@@ -1257,7 +1257,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessPubdesc()
     if (eval)
         return eval;
 
-    CValidator validator(*m_ObjMgr, m_pContext);
+    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
     CRef<CScope> scope = BuildScope();
     eval = validator.Validate(*pd, scope, m_Options);
     m_NumRecords++;
@@ -1273,7 +1273,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit()
         return eval;
 
     // Validate Seq-submit
-    CValidator validator(*m_ObjMgr, m_pContext);
+    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
         NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, se, ss->SetData().SetEntrys()) {
@@ -1305,7 +1305,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot()
     }
 
     // Validate Seq-annot
-    CValidator validator(*m_ObjMgr, m_pContext);
+    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
         m_Cleanup.SetScope(scope);
@@ -1355,7 +1355,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqDesc()
 
     CRef<CSeq_entry> ctx = s_BuildGoodSeq();
 
-    CValidator validator(*m_ObjMgr, m_pContext);
+    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
     CRef<CScope> scope = BuildScope();
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*ctx);
 
