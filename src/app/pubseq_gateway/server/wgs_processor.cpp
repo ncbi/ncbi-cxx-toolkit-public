@@ -867,7 +867,13 @@ void CPSGS_WGSProcessor::x_WaitForOtherProcessors(void)
 void CPSGS_WGSProcessor::Cancel()
 {
     m_Canceled = true;
-    x_UnlockRequest();
+    if (!IsUVThreadAssigned()) {
+        m_Status = ePSGS_Canceled;
+        x_Finish(ePSGS_Canceled);
+    }
+    else {
+        x_UnlockRequest();
+    }
 }
 
 
