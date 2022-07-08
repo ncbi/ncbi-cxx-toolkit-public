@@ -309,7 +309,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
 
-        x_DispatchRequest(request, reply);
+        x_DispatchRequest(context, request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get request: " +
                           string(exc.what());
@@ -436,7 +436,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
             shared_ptr<CPSGS_Request>
                     request(new CPSGS_Request(move(req), context));
 
-            x_DispatchRequest(request, reply);
+            x_DispatchRequest(context, request, reply);
             return 0;
         }
 
@@ -590,7 +590,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
 
-        x_DispatchRequest(request, reply);
+        x_DispatchRequest(context, request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a resolve request: " +
                           string(exc.what());
@@ -703,7 +703,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
 
-        x_DispatchRequest(request, reply);
+        x_DispatchRequest(context, request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_tse_chunk request: " +
                           string(exc.what());
@@ -871,7 +871,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
 
-        x_DispatchRequest(request, reply);
+        x_DispatchRequest(context, request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling a get_na request: " +
                           string(exc.what());
@@ -958,7 +958,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
 
-        x_DispatchRequest(request, reply);
+        x_DispatchRequest(context, request, reply);
     } catch (const exception &  exc) {
         string      msg = "Exception when handling an accession_version_history request: " +
                           string(exc.what());
@@ -2093,9 +2093,15 @@ bool CPubseqGatewayApp::x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
 }
 
 
-void CPubseqGatewayApp::x_DispatchRequest(shared_ptr<CPSGS_Request>  request,
+void CPubseqGatewayApp::x_DispatchRequest(CRef<CRequestContext>   context,
+                                          shared_ptr<CPSGS_Request>  request,
                                           shared_ptr<CPSGS_Reply>  reply)
 {
+    if (context.NotNull()) {
+        CDiagContext::SetRequestContext(context);
+        GetDiagContext().Extra().Print("psg_request_id", request->GetRequestId());
+    }
+
     // The dispatcher works in terms of processors while the infrastructure
     // works in terms of pending operation. So, lets create the corresponding
     // pending operations.
