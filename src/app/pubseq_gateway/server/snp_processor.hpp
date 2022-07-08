@@ -33,6 +33,7 @@
  */
 
 #include "ipsgs_processor.hpp"
+#include "cass_processor_base.hpp"
 #include "resolve_base.hpp"
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
@@ -85,7 +86,7 @@ public:
     void OnGotChunk(void);
 
     // Seq-id pre-resolving
-    virtual void ProcessEvent(void);
+    void ProcessEvent(void) override;
 
 private:
     CPSGS_SNPProcessor(const shared_ptr<CSNPClient>& client,

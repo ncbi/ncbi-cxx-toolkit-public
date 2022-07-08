@@ -633,7 +633,13 @@ void CPSGS_SNPProcessor::Cancel()
 {
     CPSGS_CassProcessorBase::Cancel();
     m_Canceled = true;
-    x_UnlockRequest();
+    if (!IsUVThreadAssigned()) {
+        m_Status = ePSGS_Canceled;
+        x_Finish(ePSGS_Canceled);
+    }
+    else {
+        x_UnlockRequest();
+    }
 }
 
 
@@ -744,7 +750,7 @@ void CPSGS_SNPProcessor::ProcessEvent(void)
 }
 
 
-void CPSGS_SNPProcessor::x_Peek(bool  need_wait)
+void CPSGS_SNPProcessor::x_Peek(bool need_wait)
 {
     if (x_IsCanceled()) {
         return;
