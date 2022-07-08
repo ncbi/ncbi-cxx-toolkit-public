@@ -443,7 +443,8 @@ private:
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
     void x_RegisterProcessors(void);
-    void x_DispatchRequest(shared_ptr<CPSGS_Request>  request,
+    void x_DispatchRequest(CRef<CRequestContext>   context,
+                           shared_ptr<CPSGS_Request>  request,
                            shared_ptr<CPSGS_Reply>  reply);
     void x_InitSSL(void);
 
