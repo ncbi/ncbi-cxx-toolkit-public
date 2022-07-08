@@ -183,7 +183,11 @@ race:^MT_LOCK_DoInternal
 race:^tds_socket_write$
 race:^tds_socket_read$
 
-
+# False positives -- the writes in question cannot occur until the
+# worker thread responsible for previous reads has finished with them
+# and released its CRef.
+race:>::CQueueItem::~CQueueItem()$
+race:^ncbi::CRef<ncbi::CStdRequest, ncbi::CObjectCounterLocker>::Reset()$
 
 
 ################################################################
