@@ -65,6 +65,8 @@ public:
         unsigned int,
         CImportMessageHandler&);
 
+    virtual ~CFeatImporter() {};
+
 public:
     void
     ReadSeqAnnot(
