@@ -45,14 +45,10 @@
 #define NCBI_USE_ERRCODE_X   Corelib_Unix
 
 
-#define _STRINGIFY(x)            #x
-#define  STRINGIFY(x)  _STRINGIFY(x)
-
-
 // Some initial defaults for faster lookups
 #define PWD_BUF  1024
 #define GRP_BUF  4096
-#define MAX_TRY  3
+#define MAX_TRY  3         // must be at least 2
 
 
 BEGIN_NCBI_SCOPE
@@ -73,25 +69,22 @@ string CUnixFeature::GetUserNameByUID(uid_t uid)
 #elif defined(NCBI_HAVE_GETPWUID_R)
     struct passwd* pwd;
 
-    char x_buf[PWD_BUF + sizeof(*pwd)];
-    size_t size = sizeof(x_buf);
+    char x_buf[sizeof(*pwd) + PWD_BUF];
+    size_t size = PWD_BUF;
     char*  buf  = x_buf;
 
     for (int n = 0;  n < MAX_TRY;  ++n) {
+        pwd = (struct passwd*) buf;
+
 #  if   NCBI_HAVE_GETPWUID_R == 4
-        // obsolete but still existent
-        pwd = getpwuid_r(uid,
-                         (struct passwd*) buf, buf + sizeof(*pwd),
-                         size - sizeof(*pwd));
+        // obsolete but still existing
+        pwd = getpwuid_r(uid, pwd, (char*)(pwd + 1), size);
 
 #  elif NCBI_HAVE_GETPWUID_R == 5
         /* POSIX-conforming */
-        int x_errno = getpwuid_r(uid,
-                                 (struct passwd*) buf, buf + sizeof(*pwd),
-                                 size - sizeof(*pwd), &pwd);
-        if (x_errno) {
+        int x_errno = getpwuid_r(uid, pwd, (char*)(pwd + 1), size, &pwd);
+        if (!pwd) {
             errno = x_errno;
-            pwd = 0;
         }
 
 #  else
@@ -107,17 +100,22 @@ string CUnixFeature::GetUserNameByUID(uid_t uid)
             size_t maxsize;
 #  ifdef _SC_GETPW_R_SIZE_MAX
             long sc = sysconf(_SC_GETPW_R_SIZE_MAX);
-            maxsize = sc < 0 ? 0 : (size_t) sc + sizeof(*pwd);
+            maxsize = (size_t)(sc < 0 ? 0 : sc);
+            _ASSERT(!maxsize  ||  size < maxsize);
 #  else
             maxsize = size << 1;
 #  endif //_SC_GETPW_R_SIZE_MAX
-            ERR_POST_ONCE((size < maxsize ? Error : Critical)
-                          << "getpwuid_r() parse buffer too small ("
-                          STRINGIFY(PWD_BUF) "), please enlarge it!");
+            ERR_POST_ONCE((size < maxsize ? Error : Critical) <<
+                          "getpwuid_r() parse buffer too small ("
+                          NCBI_AS_STRING(PWD_BUF) "), please enlarge it"
+                          + string(maxsize
+                                   ? " up to at least "
+                                   + NStr::NumericToString(maxsize)
+                                   : kEmptyStr) + '!');
             _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
-                buf = new char[size];
+                buf = new char[sizeof(*pwd) + size];
                 continue;
             }
         } else if (n == MAX_TRY - 1) {
@@ -129,7 +127,8 @@ string CUnixFeature::GetUserNameByUID(uid_t uid)
             delete[] buf;
         }
 
-        buf = new char[size <<= 1];
+        size <<= 1;
+        buf = new char[sizeof(*pwd) + size];
     }
 
     if (pwd  &&  pwd->pw_name) {
@@ -158,25 +157,23 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
 #elif defined(NCBI_HAVE_GETPWUID_R)
     struct passwd* pwd;
 
-    char x_buf[PWD_BUF + sizeof(*pwd)];
-    size_t size = sizeof(x_buf);
+    char x_buf[sizeof(*pwd) + PWD_BUF];
+    size_t size = PWD_BUF;
     char*  buf  = x_buf;
 
     for (int n = 0;  n < MAX_TRY;  ++n) {
+        pwd = (struct passwd*) buf;
+
 #  if   NCBI_HAVE_GETPWUID_R == 4
-        // obsolete but still existent
-        pwd = getpwnam_r(user.c_str(),
-                         (struct passwd*) buf, buf + sizeof(*pwd),
-                         size - sizeof(*pwd));
+        // obsolete but still existing
+        pwd = getpwnam_r(user.c_str(), pwd, (char*)(pwd + 1), size);
 
 #  elif NCBI_HAVE_GETPWUID_R == 5
         // POSIX-conforming
         int x_errno = getpwnam_r(user.c_str(),
-                                 (struct passwd*) buf, buf + sizeof(*pwd),
-                                 size - sizeof(*pwd), &pwd);
-        if (x_errno) {
+                                 pwd, (char*)(pwd + 1), size, &pwd);
+        if (!pwd) {
             errno = x_errno;
-            pwd = 0;
         }
 
 #  else
@@ -192,17 +189,22 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
             size_t maxsize;
 #  ifdef _SC_GETPW_R_SIZE_MAX
             long sc = sysconf(_SC_GETPW_R_SIZE_MAX);
-            maxsize = sc < 0 ? 0 : (size_t) sc + sizeof(*pwd);
+            maxsize = (size_t)(sc < 0 ? 0 : sc);
+            _ASSERT(!maxsize  ||  size < maxsize);
 #  else
             maxsize = size << 1;
 #  endif //_SC_GETPW_R_SIZE_MAX
             ERR_POST_ONCE((size < maxsize ? Error : Critical)
                           << "getpwnam_r() parse buffer too small ("
-                          STRINGIFY(PWD_BUF) "), please enlarge it!");
+                          NCBI_AS_STRING(PWD_BUF) "), please enlarge it"
+                          + string(maxsize
+                                   ? " up to at least "
+                                   + NStr::NumericToString(maxsize)
+                                   : kEmptyStr) + '!');
             _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
-                buf = new char[size];
+                buf = new char[sizeof(*pwd) + size];
                 continue;
             }
         } else if (n == MAX_TRY - 1) {
@@ -214,7 +216,8 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
             delete[] buf;
         }
 
-        buf = new char[size <<= 1];
+        size <<= 1;
+        buf = new char[sizeof(*pwd) + size];
     }
 
     uid = pwd ? pwd->pw_uid : (uid_t)(-1);
@@ -247,25 +250,22 @@ string CUnixFeature::GetGroupNameByGID(gid_t gid)
 #elif defined(NCBI_HAVE_GETPWUID_R)
     struct group* grp;
 
-    char x_buf[GRP_BUF + sizeof(*grp)];
-    size_t size = sizeof(x_buf);
+    char x_buf[sizeof(*grp) + GRP_BUF];
+    size_t size = GRP_BUF;
     char*  buf  = x_buf;
 
     for (int n = 0;  n < MAX_TRY;  ++n) {
+        grp = (struct group*) buf;
+
 #  if   NCBI_HAVE_GETPWUID_R == 4
-        // obsolete but still existent
-        grp = getgrgid_r(gid,
-                         (struct group*) buf, buf + sizeof(*grp),
-                         size - sizeof(*grp));
+        // obsolete but still existing
+        grp = getgrgid_r(gid, grp, (char*)(grp + 1), size);
 
 #  elif NCBI_HAVE_GETPWUID_R == 5
         // POSIX-conforming
-        int x_errno  = getgrgid_r(gid,
-                                  (struct group*) buf, buf + sizeof(*grp),
-                                  size - sizeof(*grp), &grp);
-        if (x_errno) {
+        int x_errno  = getgrgid_r(gid, grp,(char*)(grp + 1), size, &grp);
+        if (!grp) {
             errno = x_errno;
-            grp = 0;
         }
 
 #  else
@@ -281,17 +281,22 @@ string CUnixFeature::GetGroupNameByGID(gid_t gid)
             size_t maxsize;
 #  ifdef _SC_GETGR_R_SIZE_MAX
             long sc = sysconf(_SC_GETGR_R_SIZE_MAX);
-            maxsize = sc < 0 ? 0 : (size_t) sc + sizeof(*grp);
+            maxsize = (size_t)(sc < 0 ? 0 : sc);
+            _ASSERT(!maxsize  ||  size < maxsize);
 #  else
             maxsize = size << 1;
 #  endif //_SC_GETGR_R_SIZE_MAX
             ERR_POST_ONCE((size < maxsize ? Error : Critical)
                           << "getgrgid_r() parse buffer too small ("
-                          STRINGIFY(GRP_BUF) "), please enlarge it!");
+                          NCBI_AS_STRING(GRP_BUF) "), please enlarge it"
+                          + string(maxsize
+                                   ? " up to at least "
+                                   + NStr::NumericToString(maxsize)
+                                   : kEmptyStr) + '!');
             _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
-                buf = new char[size];
+                buf = new char[sizeof(*grp) + size];
                 continue;
             }
         } else if (n == MAX_TRY - 1) {
@@ -303,7 +308,8 @@ string CUnixFeature::GetGroupNameByGID(gid_t gid)
             delete[] buf;
         }
 
-        buf = new char[size <<= 1];
+        size <<= 1;
+        buf = new char[sizeof(*grp) + size];
     }
 
     if (grp  &&  grp->gr_name) {
@@ -333,25 +339,23 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
 #elif defined(NCBI_HAVE_GETPWUID_R)
     struct group* grp;
 
-    char x_buf[GRP_BUF + sizeof(*grp)];
-    size_t size = sizeof(x_buf);
+    char x_buf[sizeof(*grp) + GRP_BUF];
+    size_t size = GRP_BUF;
     char*  buf  = x_buf;
 
     for (int n = 0;  n < MAX_TRY;  ++n) {
+        grp = (struct group*) buf;
+
 #  if   NCBI_HAVE_GETPWUID_R == 4
-        // obsolete but still existent
-        grp = getgrnam_r(group.c_str(),
-                         (struct group*) buf, buf + sizeof(*grp),
-                         size - sizeof(*grp));
+        // obsolete but still existing
+        grp = getgrnam_r(group.c_str(), grp, (char*)(grp + 1), size);
 
 #  elif NCBI_HAVE_GETPWUID_R == 5
         // POSIX-conforming
         int x_errno = getgrnam_r(group.c_str(),
-                                 (struct group*) buf, buf + sizeof(*grp),
-                                 size - sizeof(*grp), &grp);
-        if (x_errno) {
+                                 grp, (char*)(grp + 1), size, &grp);
+        if (!grp) {
             errno = x_errno;
-            grp = 0;
         }
 
 #  else
@@ -367,17 +371,22 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
             size_t maxsize;
 #  ifdef _SC_GETGR_R_SIZE_MAX
             long sc = sysconf(_SC_GETGR_R_SIZE_MAX);
-            maxsize = sc < 0 ? 0 : (size_t) sc + sizeof(*grp);
+            maxsize = (size_t)(sc < 0 ? 0 : sc);
+            _ASSERT(!maxsize  ||  size < maxsize);
 #  else
             maxsize = size << 1;
 #  endif //_SC_GETGR_R_SIZE_MAX
             ERR_POST_ONCE((size < maxsize ? Error : Critical)
                           << "getgrnam_r() parse buffer too small ("
-                          STRINGIFY(GRP_BUF) "), please enlarge it!");
+                          NCBI_AS_STRING(GRP_BUF) "), please enlarge it"
+                          + string(maxsize
+                                   ? " up to at least "
+                                   + NStr::NumericToString(maxsize)
+                                   : kEmptyStr) + '!');
             _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
-                buf = new char[size];
+                buf = new char[sizeof(*grp) + size];
                 continue;
             }
         } else if (n == MAX_TRY - 1) {
@@ -389,7 +398,8 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
             delete[] buf;
         }
 
-        buf = new char[size <<= 1];
+        size <<= 1;
+        buf = new char[sizeof(*grp) + size];
     }
 
     gid = grp ? grp->gr_gid : (gid_t)(-1);
