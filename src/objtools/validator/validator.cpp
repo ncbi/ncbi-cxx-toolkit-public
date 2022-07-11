@@ -55,44 +55,44 @@ BEGIN_SCOPE(validator)
 USING_SCOPE(sequence);
 
 
-// *********************** CValidator implementation **********************
+// *********************** CValidator implementation *******************
+//
+CValidator::CValidator(CObjectManager& objmgr) :
+    CValidator(objmgr,
+            make_shared<SValidatorContext>(),
+            make_shared<CTaxon3>())
+{   
+}
+
 
 CValidator::CValidator(CObjectManager& objmgr,
     shared_ptr<SValidatorContext> pContext,
     shared_ptr<ITaxon3> pTaxon) :
-    m_ObjMgr(&objmgr),
-    m_PrgCallback(nullptr),
-    m_UserData(nullptr),
+    m_ObjMgr{&objmgr},
     m_pContext{pContext},
     m_pTaxon{pTaxon}
 {   
-    m_pTaxon->Init(); // What happens if Init() is called multiple times?
+    m_pTaxon->Init(); 
 }
 
 
-CValidator::CValidator(CObjectManager& objmgr,
+CValidator::CValidator(CObjectManager& objmgr, 
     shared_ptr<SValidatorContext> pContext,
-    AutoPtr<ITaxon3> taxon) :
-    m_ObjMgr(&objmgr),
-    m_PrgCallback(nullptr),
-    m_UserData(nullptr),
+    AutoPtr<ITaxon3> taxon) :  // deprecated
+    m_ObjMgr{&objmgr},
     m_pContext{pContext}
 {
-
-    if (!taxon) {
-        AutoPtr<ITaxon3> taxon3(new CTaxon3(CTaxon3::initialize::yes));
-        m_Taxon = taxon3;
-    } else {
-        m_Taxon = taxon;
-    }
-    m_Taxon->Init();
+    m_pTaxon.reset(taxon.release());
 }
 
 
 CValidator::CValidator(CObjectManager& objmgr,
-    AutoPtr<ITaxon3> taxon) :
-    CValidator(objmgr, make_shared<SValidatorContext>(), taxon)
-{}
+    AutoPtr<ITaxon3> taxon) : // deprecated
+    m_ObjMgr{&objmgr},
+    m_pContext{make_shared<SValidatorContext>()}
+{
+    m_pTaxon.reset(taxon.release());
+}
 
 
 CValidator::~CValidator()
@@ -107,8 +107,7 @@ CConstRef<CValidError> CValidator::Validate
 {
     CRef<CValidError> errors(new CValidError(&se));
     CValidErrorFormat::SetSuppressionRules(se, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), pTaxon, options);
+    CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), m_pTaxon.get(), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.Validate(se, nullptr, scope) ) {
         errors.Reset();
@@ -133,8 +132,7 @@ CConstRef<CValidError> CValidator::Validate
 
     CRef<CValidError> errors(new CValidError(&*seh.GetCompleteSeq_entry()));
     CValidErrorFormat::SetSuppressionRules(seh, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), pTaxon, options);
+    CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), m_pTaxon.get(), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.Validate(seh) ) {
         errors.Reset();
@@ -147,8 +145,7 @@ CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CSeq_entry_Handle&
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
     CValidErrorFormat::SetSuppressionRules(se, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, 0);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSANStretchErrors(se) ) {
         errors.Reset();
@@ -161,8 +158,7 @@ CConstRef<CValidError> CValidator::GetTSACDSOnMinusStrandErrors (const CSeq_entr
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
     CValidErrorFormat::SetSuppressionRules(se, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, 0);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSACDSOnMinusStrandErrors(se) ) {
         errors.Reset();
@@ -175,8 +171,7 @@ CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CSeq
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
     CValidErrorFormat::SetSuppressionRules(se, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, 0);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSAConflictingBiomolTechErrors(se) ) {
         errors.Reset();
@@ -190,8 +185,7 @@ CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CBioseq& seq)
 
     CRef<CValidError> errors(new CValidError(&seq));
     CValidErrorFormat::SetSuppressionRules(seq, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, 0);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSANStretchErrors(seq) ) {
         errors.Reset();
@@ -204,8 +198,7 @@ CConstRef<CValidError> CValidator::GetTSACDSOnMinusStrandErrors (const CSeq_feat
 {
     CRef<CValidError> errors(new CValidError(&f));
     CValidErrorFormat::SetSuppressionRules(seq, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, 0);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSACDSOnMinusStrandErrors(f, seq) ) {
         errors.Reset();
@@ -218,8 +211,7 @@ CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CBio
 {
     CRef<CValidError> errors(new CValidError(&seq));
     CValidErrorFormat::SetSuppressionRules(seq, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, 0);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSAConflictingBiomolTechErrors(seq) ) {
         errors.Reset();
@@ -237,8 +229,7 @@ CConstRef<CValidError> CValidator::Validate
     options |= CValidator::eVal_seqsubmit_parent;
     CRef<CValidError> errors(new CValidError(&ss));
     CValidErrorFormat::SetSuppressionRules(ss, *errors);
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, options);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), options);
     imp.Validate(ss, scope);
     if (ss.IsSetSub() && ss.GetSub().IsSetContact() && ss.GetSub().GetContact().IsSetContact()
         && ss.GetSub().GetContact().GetContact().IsSetAffil()
@@ -257,8 +248,7 @@ CConstRef<CValidError> CValidator::Validate
 {
     CConstRef<CSeq_annot> sar = sah.GetCompleteSeq_annot();
     CRef<CValidError> errors(new CValidError(&*sar));
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, options);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), options);
     imp.Validate(sah);
     return errors;
 }
@@ -270,8 +260,7 @@ CConstRef<CValidError> CValidator::Validate
  Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&feat));
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, options);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), options);
     imp.Validate(feat, scope);
     return errors;
 }
@@ -292,8 +281,7 @@ CConstRef<CValidError> CValidator::Validate
  Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&src));
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, options);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), options);
     imp.Validate(src, scope);
     return errors;
 }
@@ -314,8 +302,7 @@ CConstRef<CValidError> CValidator::Validate
  Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&pubdesc));
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, options);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), options);
     imp.Validate(pubdesc, scope);
     return errors;
 }
@@ -336,8 +323,7 @@ CConstRef<CValidError> CValidator::Validate
  Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&desc));
-    auto* pTaxon = m_pTaxon ? m_pTaxon.get() : m_Taxon.get();
-    CValidError_imp imp(*m_ObjMgr, &(*errors), pTaxon, options);
+    CValidError_imp imp(*m_ObjMgr, &(*errors), m_pTaxon.get(), options);
     imp.Validate(desc, ctx);
     return errors;
 }
