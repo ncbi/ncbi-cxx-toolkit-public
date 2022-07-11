@@ -41,7 +41,8 @@ SRV2 = None
 
 # Sometimes, especially under valgrind, it takes longer to start.
 # So, wait a bit before running a test suite
-AFTER_START_DELAY=10
+AFTER_START_DELAY = 10
+AFTER_STOP_DELAY = 10
 
 def timestamp():
     now = datetime.datetime.now()
@@ -65,6 +66,15 @@ def getArtefactDir(options):
     if not fullPath.endswith(os.path.sep):
         fullPath += os.path.sep
     return fullPath
+
+def safeRemove(filePath):
+    try:
+        if os.path.exists(filePath):
+            os.remove(filePath)
+    except Exception as exc:
+        print_error(f'Error removing file: {filePath}: ' + str(exc))
+    except:
+        print_error(f'Unknown error removing file: {filePath}')
 
 def getPsgClientPath():
     try:
@@ -192,11 +202,13 @@ def stopServer(srv, reset=True):
         srv.wait()
         if reset:
             SRV1 = None
+        time.sleep(AFTER_STOP_DELAY)
     else:
         srv.send_signal(signal.SIGINT)
         srv.wait()
         if reset:
             SRV2 = None
+        time.sleep(AFTER_STOP_DELAY)
 
 
 def prepareO2Gsandbox(options):
@@ -621,9 +633,11 @@ def functional_test(commands, options, args):
                        'ssl_key': ''})
 
     # Run the server
+    logFile = f'{artefactDir}pubseq_gateway-ut-http.log'
     cmdLine = [artefactDir + 'pubseq_gateway',
                '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', artefactDir + 'pubseq_gateway-ut-http.log']
+               '-logfile', logFile]
+    safeRemove(logFile)
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
     time.sleep(AFTER_START_DELAY)
@@ -656,9 +670,11 @@ def functional_test(commands, options, args):
                        'ssl_key': artefactDir + 'psg.key'})
 
     # Run the server
+    logFile = f'{artefactDir}pubseq_gateway-ut-https.log'
     cmdLine = [artefactDir + 'pubseq_gateway',
                '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', artefactDir + 'pubseq_gateway-ut-https.log']
+               '-logfile', logFile]
+    safeRemove(logFile)
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
     time.sleep(AFTER_START_DELAY)
@@ -700,9 +716,11 @@ def functional_test(commands, options, args):
             errors.append(f'Error copying psg_client from {psg_client_path}')
         else:
             # Run the server
+            logFile = f'{artefactDir}pubseq_gateway-integration-test.log'
             cmdLine = [artefactDir + 'pubseq_gateway',
                        '-conffile', artefactDir + 'pubseq_gateway.ini',
-                       '-logfile', artefactDir + 'pubseq_gateway-integration-test.log']
+                       '-logfile', logFile]
+            safeRemove(logFile)
             print_verbose('Running PSG server: ' + ' '.join(cmdLine))
             SRV1 = subprocess.Popen(cmdLine)
             time.sleep(AFTER_START_DELAY)
@@ -758,11 +776,12 @@ def stability_test(commands, options, args):
     for testCase in testCases:
         cnt += 1
         # Run the server
+        logFile = f'{artefactDir}pubseq_gateway-drop-client-http-cpu-{cnt}.log'
         cmdLine = [artefactDir + 'pubseq_gateway',
                    '-conffile',
                    artefactDir + 'pubseq_gateway.ini',
-                   '-logfile',
-                   artefactDir + f'pubseq_gateway-drop-client-http-cpu-{cnt}.log']
+                   '-logfile', logFile]
+        safeRemove(logFile)
         print_verbose('Running PSG server: ' + ' '.join(cmdLine))
         SRV1 = subprocess.Popen(cmdLine)
         time.sleep(AFTER_START_DELAY)
@@ -810,11 +829,12 @@ def stability_test(commands, options, args):
     for testCase in testCases:
         cnt += 1
         # Run the server
+        logFile = f'{artefactDir}pubseq_gateway-drop-client-http-proccount-{cnt}.log'
         cmdLine = [artefactDir + 'pubseq_gateway',
                    '-conffile',
                    artefactDir + 'pubseq_gateway.ini',
-                   '-logfile',
-                   artefactDir + f'pubseq_gateway-drop-client-http-proccount-{cnt}.log']
+                   '-logfile', logFile]
+        safeRemove(logFile)
         print_verbose('Running PSG server: ' + ' '.join(cmdLine))
         SRV1 = subprocess.Popen(cmdLine)
         time.sleep(AFTER_START_DELAY)
@@ -925,9 +945,11 @@ def memcheck(commands, options, args):
                        'ssl_key': ''})
 
     # Run the server
+    logFile = f'{artefactDir}pubseq_gateway-memcheck-ut-http.log'
     cmdLine = [artefactDir + 'pubseq_gateway',
                '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', artefactDir + 'pubseq_gateway-memcheck-ut-http.log']
+               '-logfile', logFile]
+    safeRemove(logFile)
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     time.sleep(AFTER_START_DELAY)
@@ -961,9 +983,11 @@ def memcheck(commands, options, args):
                        'ssl_key': artefactDir + 'psg.key'})
 
     # Run the server
+    logFile = f'{artefactDir}pubseq_gateway-memcheck-ut-https.log'
     cmdLine = [artefactDir + 'pubseq_gateway',
                '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', artefactDir + 'pubseq_gateway-memcheck-ut-https.log']
+               '-logfile', logFile]
+    safeRemove(logFile)
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     time.sleep(AFTER_START_DELAY)
@@ -1007,9 +1031,11 @@ def memcheck(commands, options, args):
             errors.append(f'Error copying psg_client from {psg_client_path}')
         else:
             # Run the server
+            logFile = f'{artefactDir}pubseq_gateway-memcheck-integration-test.log'
             cmdLine = [artefactDir + 'pubseq_gateway',
                        '-conffile', artefactDir + 'pubseq_gateway.ini',
-                       '-logfile', artefactDir + 'pubseq_gateway-memcheck-integration-test.log']
+                       '-logfile', logFile]
+            safeRemove(logFile)
             print_verbose('Running PSG server: ' + ' '.join(cmdLine))
             SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             time.sleep(AFTER_START_DELAY)
@@ -1057,9 +1083,11 @@ def stress_test(commands, options, args):
                        'ssl_key': ''})
 
     # Run the server
+    logFile = f'{artefactDir}pubseq_gateway-stress-http.log'
     cmdLine = [artefactDir + 'pubseq_gateway',
                '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', artefactDir + 'pubseq_gateway-stress-http.log']
+               '-logfile', logFile]
+    safeRemove(logFile)
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
     time.sleep(AFTER_START_DELAY)
@@ -1092,9 +1120,11 @@ def stress_test(commands, options, args):
                        'ssl_key': artefactDir + 'psg.key'})
 
     # Run the server
+    logFile = f'{artefactDir}pubseq_gateway-stress-https.log'
     cmdLine = [artefactDir + 'pubseq_gateway',
                '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', artefactDir + 'pubseq_gateway-stress-https.log']
+               '-logfile', logFile]
+    safeRemove(logFile)
     print_verbose('Running PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
     time.sleep(AFTER_START_DELAY)
@@ -1181,9 +1211,11 @@ def compare(commands, options, args):
                        'ssl_key': ''})
 
     # Run the old server
+    logFile = f'{artefactDir}pubseq_gateway-compare-{oldVersion}.log'
     cmdLine = [f'{artefactDir}pubseq_gateway-{oldVersion}-o2g',
                '-conffile', f'{artefactDir}pubseq_gateway.ini-{oldVersion}',
-               '-logfile', f'{artefactDir}pubseq_gateway-compare-{oldVersion}.log']
+               '-logfile', logFile]
+    safeRemove(logFile)
     print_verbose('Running old PSG server: ' + ' '.join(cmdLine))
     SRV1 = subprocess.Popen(cmdLine)
     time.sleep(AFTER_START_DELAY)
@@ -1200,9 +1232,11 @@ def compare(commands, options, args):
                        'ssl_key': ''})
 
     # Run the currently built server
+    logFile = f'{artefactDir}pubseq_gateway-compare.log'
     cmdLine = [f'{artefactDir}pubseq_gateway',
                '-conffile', f'{artefactDir}pubseq_gateway.ini',
-               '-logfile', f'{artefactDir}pubseq_gateway-compare.log']
+               '-logfile', logFile]
+    safeRemove(logFile)
     print_verbose('Running current PSG server: ' + ' '.join(cmdLine))
     SRV2 = subprocess.Popen(cmdLine)
     time.sleep(AFTER_START_DELAY)
