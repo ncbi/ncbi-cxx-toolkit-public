@@ -37,7 +37,7 @@
 #include <objects/taxon3/itaxon3.hpp>
 #include <objects/taxon3/Taxon3_reply.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-
+#include <objtools/validator/validator_context.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -154,8 +154,8 @@ public:
     scope.AddDefaults(); \
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
     CConstRef<CValidError> eval; \
-    AutoPtr<ITaxon3> taxon(new CMockTaxon(replies)); \
-    CValidator validator(*objmgr, taxon); \
+    auto taxon = make_shared<CMockTaxon>(replies); \
+    CValidator validator(*objmgr, make_shared<SValidatorContext>(), taxon); \
     unsigned int options = CValidator::eVal_need_isojta \
                           | CValidator::eVal_far_fetch_mrna_products \
                           | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
