@@ -106,7 +106,11 @@ public:
     // Constructor / Destructor
     // If no taxon service is provided, a CTAxon3 client will
     // be created.
-    CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon = nullptr);
+
+    CValidator(CObjectManager& objmgr);
+    NCBI_DEPRECATED
+    CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon);
+    NCBI_DEPRECATED
     CValidator(CObjectManager& objmgr, 
             shared_ptr<SValidatorContext> pContext, 
             AutoPtr<ITaxon3> taxon=nullptr);
@@ -277,11 +281,10 @@ private:
     // Services belong here, in the outside class
     // and are passed into the implementation.
     CRef<CObjectManager>    m_ObjMgr;
-    AutoPtr<ITaxon3>        m_Taxon;
-    shared_ptr<ITaxon3>     m_pTaxon;
+    shared_ptr<ITaxon3>     m_pTaxon{nullptr};
 
-    TProgressCallback               m_PrgCallback;
-    void*                           m_UserData;
+    TProgressCallback               m_PrgCallback=nullptr;
+    void*                           m_UserData=nullptr;
     shared_ptr<SValidatorContext>   m_pContext;
 };
 
