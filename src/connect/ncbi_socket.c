@@ -2934,7 +2934,7 @@ static EIO_Status s_Recv(SOCK    sock,
                          void*   buf,
                          size_t  size,
                          size_t* n_read,
-                         int     flag)
+                         int     flag/*log(>0)*/)
 {
     int/*bool*/ readable;
     char _id[MAXIDLEN];
@@ -2983,7 +2983,7 @@ static EIO_Status s_Recv(SOCK    sock,
             } else {
                 /* catch EOF/failure */
                 sock->eof = 1/*true*/;
-                if (x_read) {
+                if (x_read/*<0*/) {
                     sock->r_status = sock->w_status = eIO_Closed;
                     return eIO_Unknown/*error*/;
                 }
@@ -3437,7 +3437,7 @@ static EIO_Status s_Send(SOCK        sock,
                          const void* data,
                          size_t      size,
                          size_t*     n_written,
-                         int         flag)
+                         int         flag/*OOB(<0); log(>0)*/)
 {
     int/*bool*/ writeable;
     char _id[MAXIDLEN];
@@ -3465,12 +3465,13 @@ static EIO_Status s_Send(SOCK        sock,
                                  (flag < 0 ? MSG_OOB : 0));
 
         if (x_written >= 0  ||
-            (x_written < 0  &&  ((error = SOCK_ERRNO) == SOCK_EPIPE       ||
-                                 error                == SOCK_ENOTCONN    ||
-                                 error                == SOCK_ETIMEDOUT   ||
-                                 error                == SOCK_ENETRESET   ||
-                                 error                == SOCK_ECONNRESET  ||
-                                 error                == SOCK_ECONNABORTED))) {
+            (x_written < 0  &&  ((error = SOCK_ERRNO) == SOCK_EPIPE         ||
+                                 error                == SOCK_ENOTCONN      ||
+                                 error                == SOCK_ETIMEDOUT     ||
+                                 error                == SOCK_ENETRESET     ||
+                                 error                == SOCK_ECONNRESET    ||
+                                 error                == SOCK_ECONNABORTED  ||
+                                 flag < 0/*OOB*/))) {
             /* statistics & logging */
             if ((x_written <= 0  &&  sock->log != eOff)  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
@@ -3481,7 +3482,7 @@ static EIO_Status s_Send(SOCK        sock,
                         : eLOG_Note, sock, eIO_Write,
                         x_written <= 0 ? (void*) &error : data,
                         (size_t)(x_written <= 0 ? 0 : x_written),
-                        flag < 0 ? "" : 0);
+                        flag < 0/*OOB*/ ? "" : 0);
             }
 
             if (x_written > 0) {
