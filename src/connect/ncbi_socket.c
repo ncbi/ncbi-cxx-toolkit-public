@@ -122,6 +122,9 @@
 #    define   POLL_WRITE_READY  (_POLL_READY | POLL_WRITE)
 #    define   POLL_ERROR         POLLNVAL
 #  endif /*HAVE_POLL_H*/
+#  ifdef HAVE_SYS_RESOURCE_H
+#    include <sys/resource.h>
+#  endif /*HAVE_SYS_RESOURCE_H*/
 #  include <sys/stat.h>
 #  include <sys/un.h>
 #  include <unistd.h>
@@ -2024,7 +2027,10 @@ static EIO_Status s_Select_(size_t                n,
                 ++ready;
                 continue;
             }
-            fd = sock->sock;
+            if ((fd = sock->sock) == SOCK_INVALID) {
+                polls[i].revent = eIO_Close;
+                ++ready;
+            }
 #  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
             assert(fd < FD_SETSIZE);
 #  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
@@ -2308,9 +2314,12 @@ static EIO_Status s_Poll_(size_t                n,
                 assert(!polls[i].revent);
                 continue;
             }
-            if ((fd = sock->sock) == SOCK_INVALID)
-                polls[i].revent  = eIO_Close;
             if (polls[i].revent == eIO_Close) {
+                ++x_ready;
+                continue;
+            }
+            if ((fd = sock->sock) == SOCK_INVALID) {
+                polls[i].revent = eIO_Close;
                 ++x_ready;
                 continue;
             }
@@ -2340,7 +2349,7 @@ static EIO_Status s_Poll_(size_t                n,
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
                 if (polls[i].revent == eIO_Open)
                     continue;
-                else if (sock->type == eSOCK_Trigger)
+                if (sock->type == eSOCK_Trigger)
                     polls[i].revent = polls[i].event;
             } else
                 polls[i].revent = eIO_Close;
@@ -2390,6 +2399,9 @@ static EIO_Status s_Poll_(size_t                n,
  * (including "eIO_Read" event on "eIO_Write" for upreadable sockets, and/or
  * "eIO_Write" on "eIO_Read" for sockets in pending state when "asis!=0")
  * or failing ("revent" contains "eIO_Close").
+ *
+ * NB:  Make sure to consider sock's file descriptor going invalid while the
+ * call was still waiting (the usage may involve SOCK_Abort() from elsewhere).
  *
  * Return "eIO_Timeout", if timeout expired before any socket was capable
  * of doing any IO.  Any other return code indicates some usage failure.
@@ -2578,6 +2590,11 @@ static EIO_Status s_Select(size_t                n,
                         ready = 1/*true*/;
                         continue;
                     }
+                    if (sock->sock == SOCK_INVALID) {
+                        polls[j].revent = eIO_Close;
+                        ready = 1/*true*/;
+                        continue;
+                    }
                     if (sock->type == eSOCK_Trigger) {
                         if (what[m] != ((TRIGGER) sock)->fd)
                             continue;
@@ -2585,11 +2602,6 @@ static EIO_Status s_Select(size_t                n,
                         assert(polls[j].revent != eIO_Open);
                         done = 1/*true*/;
                         break;
-                    }
-                    if (sock->sock == SOCK_INVALID) {
-                        polls[j].revent = eIO_Close;
-                        ready = 1/*true*/;
-                        continue;
                     }
                     if (what[m] != sock->event)
                         continue;
@@ -6181,10 +6193,9 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
     {{
         int err;
         int fd[3];
-#  ifdef HAVE_PIPE2
-        int flags = O_NONBLOCK | O_CLOEXEC;
 
-        err = pipe2(fd, flags);
+#  ifdef HAVE_PIPE2
+        err = pipe2(fd, O_NONBLOCK | O_CLOEXEC);
 #  else
         err = pipe (fd);
 #  endif /*HAVE_PIPE2*/
@@ -6196,26 +6207,48 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
         }
 
 #  ifdef FD_SETSIZE
-        /* We don't need "out" to be selectable, so move it out
-         * of the way to spare precious "selectable" fd numbers */
+        /* We don't need "out" to be selectable, so move it out of the way to
+           spare precious "selectable" file descriptor numbers */
 #    ifdef F_DUPFD_CLOEXEC
         fd[2] = fcntl(fd[1], F_DUPFD_CLOEXEC, FD_SETSIZE);
-        err = fd[2] < 0                                      ? 1/*T*/ : 0/*F*/;
 #    else
         /* NB: dup() does not inherit the CLOEXEC flag */
         fd[2] = fcntl(fd[1], F_DUPFD,         FD_SETSIZE);
-        err = fd[2] < 0  ||  !s_SetCloexec(fd[2], 1/*true*/) ? 1/*T*/ : 0/*F*/;
 #    endif /*F_DUPFD_CLOEXEC*/
-        if (err) {
-            CORE_LOGF_ERRNO_X(143, eLOG_Warning, errno,
-                              ("TRIGGER#%u[?]: [TRIGGER::Create] "
-                               " Failed to dup(%d) to higher fd(%d+))",
-                               x_id, fd[1], FD_SETSIZE));
+        if (fd[2] == -1) {
+            err = errno;
+#    if   defined(RLIMIT_NOFILE)
+            struct rlimit rl;
+            if (getrlimit(RLIMIT_NOFILE, &rl) == 0
+                &&  rl.rlim_cur <= FD_SETSIZE) {
+                err = 0/*no error*/;
+            }
+#    elif defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)
+            if (getdtablesize() <= FD_SETSIZE)
+                err = 0/*no error*/;
+#    endif /*file limit*/
+            if (err) {
+                CORE_LOGF_ERRNO_X(143, eLOG_Warning, err,
+                                  ("TRIGGER#%u[?]: [TRIGGER::Create] "
+                                   " Failed to dup(%d) to higher fd(%d+))",
+                                   x_id, fd[1], FD_SETSIZE));
+                err = 0;
+            }
         } else {
+            assert(!err);
             close(fd[1]);
             fd[1] = fd[2];
+#    ifdef F_DUPFD_CLOEXEC
+            assert((fd[2]=fcntl(fd[1],F_GETFD,0))!=-1 && (fd[2] & FD_CLOEXEC));
+#    else
+            if (!s_SetCloexec(fd[1], 1/*true*/)) {
+                CORE_LOGF_ERRNO_X(30, eLOG_Warning, errno,
+                                  ("TRIGGER#%u[?]: [TRIGGER::Create] "
+                                   " Failed to set close-on-exec", x_id));
+                err = -1;
+            }
+#    endif /*F_DUPFD_CLOEXEC*/
         }
-        assert((err = fcntl(fd[1], F_GETFD, 0)) != -1  &&  (err & FD_CLOEXEC));
 #  endif /*FD_SETSIZE*/
 
 #  ifndef HAVE_PIPE2
@@ -6229,12 +6262,14 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
             return eIO_Unknown;
         }
 
-        if (!s_SetCloexec(fd[0], 1/*true*/)
+        if (!s_SetCloexec(fd[0], 1/*true*/)  &&  err != -1)
+            err = errno;
 #    ifndef FD_SETSIZE
-            ||  !s_SetCloexec(fd[1], 1/*true*/)
+        if (!s_SetCloexec(fd[1], 1/*true*/))
+            err = errno;
 #    endif /*!FD_SETSIZE*/
-            ) {
-            CORE_LOGF_ERRNO_X(30, eLOG_Warning, errno,
+        if (err  &&  err != -1) {
+            CORE_LOGF_ERRNO_X(30, eLOG_Warning, err,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to set close-on-exec", x_id));
         }
