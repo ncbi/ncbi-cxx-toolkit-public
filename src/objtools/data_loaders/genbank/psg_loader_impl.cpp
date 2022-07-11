@@ -2335,7 +2335,9 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
         LOG_POST(Info<<"PSG loader: TSE "<<psg_annot_info.GetBlobId().GetId()<<
                  " annots: "<<ret.second<<" "<<main_count<<"+"<<zoom_count);
     }
-    ret.first = chunk;
+    if ( !names.empty() ) {
+        ret.first = chunk;
+    }
     return ret;
 }
 
