@@ -111,18 +111,17 @@ bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
                 {
                     entry = Ref(new CSeq_entry);
                     entry->SetSeq(*seq);
+                    if (auto pTopEntry = m_pReader->GetTopEntry(); pTopEntry) {
+                        auto pNewEntry = Ref(new CSeq_entry());
+                        pNewEntry->Assign(*pTopEntry);
+                        pNewEntry->SetSet().SetSeq_set().push_back(entry);
+                        entry = pNewEntry;
+                    }
                 }
             }
 
             if (entry)
             {
-                if (auto pTopEntry = m_pReader->GetTopEntry(); pTopEntry) {
-                    auto pNewEntry = Ref(new CSeq_entry());
-                    pNewEntry->Assign(*pTopEntry);
-                    pNewEntry->SetSet().SetSeq_set().push_back(entry);
-                    entry = pNewEntry;
-                }
-
                 handler(m_pReader->GetSubmitBlock(), entry);
             }
         }

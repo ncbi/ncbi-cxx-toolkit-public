@@ -182,6 +182,14 @@ CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
     } else {
         obj_stream->Read(&entry->SetSet(), CBioseq_set::GetTypeInfo(), CObjectIStream::eNoFileHeader);
     }
+
+    if (m_top_entry) {
+        auto pNewEntry = Ref(new CSeq_entry());
+        pNewEntry->Assign(*m_top_entry);
+        pNewEntry->SetSet().SetSeq_set().push_back(entry);
+        return pNewEntry;
+    }
+
     return entry;
 }
 
