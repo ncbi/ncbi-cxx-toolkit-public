@@ -611,7 +611,15 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 
                     PrintValidError(pEval);
                 }
-            }   
+            }
+
+            {
+                auto pEval = Ref(new CValidError());
+                g_ReportCollidingSerialNumbers(reader, m_pContext->GenbankSetId, *pEval);
+                PrintValidError(pEval);
+            }
+
+
         } else {
             for (auto seqid: reader.GetTopIds())
             {
