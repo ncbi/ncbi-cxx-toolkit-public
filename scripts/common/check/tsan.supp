@@ -145,6 +145,8 @@ race:^ncbi::objects::CSeqMap::x_FindSegment
 # false positive -- double-check one-time initialization
 race:^ncbi::objects::CSeqMap::GetLength
 
+
+
 ################################################################
 # lavr CXX-11285
 
@@ -188,6 +190,7 @@ race:^tds_socket_read$
 # and released its CRef.
 race:>::CQueueItem::~CQueueItem()$
 race:^ncbi::CRef<ncbi::CStdRequest, ncbi::CObjectCounterLocker>::Reset()$
+
 
 
 ################################################################
@@ -238,6 +241,7 @@ race:^CThreadPoolTester::Thread_Run(int)$
 
 ################################################################
 # satskyse CXX-11623
+
 # Formally suppress complains on libuv and datastax
 race:^uv__writev$
 race:^uv_mutex_lock$
@@ -251,4 +255,13 @@ race:^datastax::internal::core::Buffer::copy(datastax::internal::core::Buffer co
 race:^datastax::internal::core::Buffer::copy(unsigned long, char const*, unsigned long)$
 race:^datastax::internal::Memory::free(void*)$
 race:^std::__cxx11::basic_string<char, std::char_traits<char>, datastax::internal::Allocator<char> >::compare(std::__cxx11::basic_string<char, std::char_traits<char>, datastax::internal::Allocator<char> > const&) const$
+
+
+
+################################################################
+# sadyrov CXX-12552
+
+# False positive
+race:^ncbi::CServer_Request::~CServer_Request()
+
 
