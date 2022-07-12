@@ -65,6 +65,11 @@ string g_GetIdString(const TBioseqInfo& info, int* version);
 
 string g_GetIdString(const objects::edit::CHugeAsnReader& reader);
 
+void g_ReportCollidingSerialNumbers(const objects::edit::CHugeAsnReader& reader,
+        const string& idString,
+        objects::CValidError& errRepository);
+
+
 END_NCBI_SCOPE
 
 #endif

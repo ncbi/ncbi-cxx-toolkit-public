@@ -280,4 +280,53 @@ string g_GetIdString(const CHugeAsnReader& reader)
 }
 
 
+
+static void s_GatherSerialNumbers(const list<CRef<CSeqdesc>>& descriptors,
+        set<int>& pubSerialNumbers,
+        set<int>& conflictingNumbers)
+{
+    for (auto pDesc : descriptors) {
+        if (pDesc && pDesc->IsPub()) {
+            const auto& pub = pDesc->GetPub();
+            if (pub.IsSetPub() && pub.GetPub().IsSet()) {
+                for (auto pPub : pub.GetPub().Get()) {
+                    if (pPub->IsGen()) {
+                        const auto& gen = pPub->GetGen();
+                        if (gen.IsSetSerial_number()) {
+                            if (!pubSerialNumbers.insert(gen.GetSerial_number()).second) {
+                                conflictingNumbers.insert(gen.GetSerial_number());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void g_ReportCollidingSerialNumbers(const CHugeAsnReader& reader, const string& idString, CValidError& errRepository)
+{
+    set<int> pubSerialNumbers;
+    set<int> conflictingNumbers;
+
+    for (const auto& bioseqInfo : reader.GetBioseqs()) {
+        if (bioseqInfo.m_descr && bioseqInfo.m_descr->IsSet()) {
+            s_GatherSerialNumbers(bioseqInfo.m_descr->Get(), pubSerialNumbers, conflictingNumbers);
+        }
+    }
+
+    for (const auto& biosetInfo : reader.GetBiosets()) {
+        if (biosetInfo.m_descr && biosetInfo.m_descr->IsSet()) {
+            s_GatherSerialNumbers(biosetInfo.m_descr->Get(), pubSerialNumbers, conflictingNumbers);
+        }
+    }
+
+    for (auto val : conflictingNumbers) {
+        g_PostErr(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers,
+                "Multiple publications have serial number " + NStr::IntToString(val),
+                idString, errRepository);
+    }
+}
+
 END_NCBI_SCOPE
