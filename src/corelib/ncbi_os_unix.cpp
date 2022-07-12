@@ -47,7 +47,7 @@
 
 // Some initial defaults for faster lookups
 #define PWD_BUF  1024
-#define GRP_BUF  4096
+#define GRP_BUF  8192
 #define MAX_TRY  3         // must be at least 2
 
 
@@ -83,8 +83,9 @@ string CUnixFeature::GetUserNameByUID(uid_t uid)
 #  elif NCBI_HAVE_GETPWUID_R == 5
         /* POSIX-conforming */
         int x_errno = getpwuid_r(uid, pwd, (char*)(pwd + 1), size, &pwd);
-        if (!pwd) {
+        if (x_errno) {
             errno = x_errno;
+            pwd = 0;
         }
 
 #  else
@@ -100,18 +101,17 @@ string CUnixFeature::GetUserNameByUID(uid_t uid)
             size_t maxsize;
 #  ifdef _SC_GETPW_R_SIZE_MAX
             long sc = sysconf(_SC_GETPW_R_SIZE_MAX);
-            maxsize = (size_t)(sc < 0 ? 0 : sc);
-            _ASSERT(!maxsize  ||  size < maxsize);
+            maxsize = sc > 0 ? (size_t) sc : size;
 #  else
-            maxsize = size << 1;
+            maxsize = 0;
 #  endif //_SC_GETPW_R_SIZE_MAX
-            ERR_POST_ONCE((size < maxsize ? Error : Critical) <<
+            ERR_POST_ONCE((!maxsize  ||  size < maxsize ? Error : Critical) <<
                           "getpwuid_r() parse buffer too small ("
                           NCBI_AS_STRING(PWD_BUF) "), please enlarge it"
-                          + string(maxsize
+                          + string(size < maxsize
                                    ? " up to at least "
                                    + NStr::NumericToString(maxsize)
-                                   : kEmptyStr) + '!');
+                                   : "!"));
             _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
@@ -148,7 +148,7 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
 {
     uid_t uid;
 
-#if defined(NCBI_OS_SOLARIS)   ||                                   \
+#if defined(NCBI_OS_SOLARIS)  ||                                    \
     (defined(HAVE_GETPWUID)  &&  !defined(NCBI_HAVE_GETPWUID_R))
     // NB:  getpwnam() is MT-safe on Solaris
     const struct passwd* pwd = getpwnam(user.c_str());
@@ -172,8 +172,9 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
         // POSIX-conforming
         int x_errno = getpwnam_r(user.c_str(),
                                  pwd, (char*)(pwd + 1), size, &pwd);
-        if (!pwd) {
+        if (x_errno) {
             errno = x_errno;
+            pwd = 0;
         }
 
 #  else
@@ -189,18 +190,17 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
             size_t maxsize;
 #  ifdef _SC_GETPW_R_SIZE_MAX
             long sc = sysconf(_SC_GETPW_R_SIZE_MAX);
-            maxsize = (size_t)(sc < 0 ? 0 : sc);
-            _ASSERT(!maxsize  ||  size < maxsize);
+            maxsize = sc > 0 ? (size_t) sc : size;
 #  else
-            maxsize = size << 1;
+            maxsize = 0;
 #  endif //_SC_GETPW_R_SIZE_MAX
-            ERR_POST_ONCE((size < maxsize ? Error : Critical)
-                          << "getpwnam_r() parse buffer too small ("
+            ERR_POST_ONCE((!maxsize  ||  size < maxsize ? Error : Critical) <<
+                          "getpwnam_r() parse buffer too small ("
                           NCBI_AS_STRING(PWD_BUF) "), please enlarge it"
-                          + string(maxsize
+                          + string(size < maxsize
                                    ? " up to at least "
                                    + NStr::NumericToString(maxsize)
-                                   : kEmptyStr) + '!');
+                                   : "!"));
             _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
@@ -264,8 +264,9 @@ string CUnixFeature::GetGroupNameByGID(gid_t gid)
 #  elif NCBI_HAVE_GETPWUID_R == 5
         // POSIX-conforming
         int x_errno  = getgrgid_r(gid, grp,(char*)(grp + 1), size, &grp);
-        if (!grp) {
+        if (x_errno) {
             errno = x_errno;
+            grp = 0;
         }
 
 #  else
@@ -281,18 +282,17 @@ string CUnixFeature::GetGroupNameByGID(gid_t gid)
             size_t maxsize;
 #  ifdef _SC_GETGR_R_SIZE_MAX
             long sc = sysconf(_SC_GETGR_R_SIZE_MAX);
-            maxsize = (size_t)(sc < 0 ? 0 : sc);
-            _ASSERT(!maxsize  ||  size < maxsize);
+            maxsize = sc > 0 ? (size_t) sc : size;
 #  else
-            maxsize = size << 1;
+            maxsize = 0;
 #  endif //_SC_GETGR_R_SIZE_MAX
-            ERR_POST_ONCE((size < maxsize ? Error : Critical)
-                          << "getgrgid_r() parse buffer too small ("
+            ERR_POST_ONCE((!maxsize  ||  size < maxsize ? Error : Critical) <<
+                          "getgrgid_r() parse buffer too small ("
                           NCBI_AS_STRING(GRP_BUF) "), please enlarge it"
-                          + string(maxsize
+                          + string(size < maxsize
                                    ? " up to at least "
                                    + NStr::NumericToString(maxsize)
-                                   : kEmptyStr) + '!');
+                                   : "!"));
             _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
@@ -354,8 +354,9 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
         // POSIX-conforming
         int x_errno = getgrnam_r(group.c_str(),
                                  grp, (char*)(grp + 1), size, &grp);
-        if (!grp) {
+        if (x_errno) {
             errno = x_errno;
+            grp = 0;
         }
 
 #  else
@@ -371,18 +372,17 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
             size_t maxsize;
 #  ifdef _SC_GETGR_R_SIZE_MAX
             long sc = sysconf(_SC_GETGR_R_SIZE_MAX);
-            maxsize = (size_t)(sc < 0 ? 0 : sc);
-            _ASSERT(!maxsize  ||  size < maxsize);
+            maxsize = sc > 0 ? (size_t) sc : size;
 #  else
-            maxsize = size << 1;
+            maxsize = 0;
 #  endif //_SC_GETGR_R_SIZE_MAX
-            ERR_POST_ONCE((size < maxsize ? Error : Critical)
-                          << "getgrnam_r() parse buffer too small ("
+            ERR_POST_ONCE((!maxsize  ||  size < maxsize ? Error : Critical) <<
+                          "getgrnam_r() parse buffer too small ("
                           NCBI_AS_STRING(GRP_BUF) "), please enlarge it"
-                          + string(maxsize
+                          + string(size < maxsize
                                    ? " up to at least "
                                    + NStr::NumericToString(maxsize)
-                                   : kEmptyStr) + '!');
+                                   : "!"));
             _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
