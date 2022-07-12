@@ -3839,11 +3839,11 @@ string CQueue::PrintJobDbStat(const CNSClientId &  client,
             job_dump = job_iter->second.Print(dump_fields,
                                               *this, m_AffinityRegistry,
                                               m_GroupRegistry);
-            if (dump_fields | eGCEraseTime)
+            if (dump_fields & eGCEraseTime)
                 job_dump.append("OK:GC erase time: ")
                         .append(NS_FormatPreciseTime(m_GCRegistry.GetLifetime(job_id)))
                         .append(kNewLine);
-            if (dump_fields | eScope)
+            if (dump_fields & eScope)
                 job_dump.append("OK:scope: '")
                         .append(m_ScopeRegistry.GetJobScope(job_id))
                         .append(1, '\'')
