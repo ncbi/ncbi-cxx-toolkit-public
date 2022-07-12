@@ -1511,7 +1511,9 @@ bool CValidError_imp::Validate
 
     FindEmbeddedScript(*(seh.GetCompleteSeq_entry()));
     FindNonAsciiText(*(seh.GetCompleteSeq_entry()));
-    FindCollidingSerialNumbers(*(seh.GetCompleteSeq_entry()));
+    if (!GetContext().HugeFileMode) {
+        FindCollidingSerialNumbers(*(seh.GetCompleteSeq_entry()));
+    }
 
     if (m_FarFetchFailure) {
         PostErr(eDiag_Warning, eErr_SEQ_INST_FarFetchFailure,
