@@ -353,7 +353,52 @@ bool isGoodIntron(int a, int b, EStrand strand, const CAlignCollapser::TAlignInt
 
 #define END_PART_LENGTH 35
 
-void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_threshold) {
+#define EXON_TO_SKIP 10
+void CAlignCollapser::ClipESTorSR(CAlignModel& align, double clip_threshold, double min_lim) { // used for pool alignments with no indel or mismatch info
+    double cov = 0;
+    int nt = 0;
+    ITERATE(CGeneModel::TExons, e, align.Exons()) {
+        for(int i = e->GetFrom(); i <= e->GetTo(); ++i) {
+            cov += m_coverage[i-m_left_end];
+            ++nt;
+        }
+    }
+    cov /= nt;
+
+    double threshold = max(clip_threshold*cov, min_lim);
+
+    int left_lim = align.Limits().GetFrom();
+    int exnl = 0;
+    while(m_coverage[left_lim-m_left_end] < threshold) {
+        ++left_lim;
+        if(align.Exons()[exnl].GetTo()-EXON_TO_SKIP+1 <= left_lim) {
+            if(++exnl == (int)align.Exons().size()) {
+                align.ClearExons();
+                return;
+            }
+            left_lim = align.Exons()[exnl].GetFrom();
+        }
+    }
+    int right_lim = align.Limits().GetTo();
+    int exnr = align.Exons().size()-1; 
+    while(m_coverage[right_lim-m_left_end] < threshold) {
+        --right_lim;
+        if(align.Exons()[exnr].GetFrom()+EXON_TO_SKIP-1 >= right_lim) {
+            if(--exnr < exnl) {
+                align.ClearExons();
+                return;
+            }
+            right_lim = align.Exons()[exnr].GetTo();
+        }
+    }
+    _ASSERT(right_lim >= left_lim);
+
+    align.Clip(TSignedSeqRange(left_lim, right_lim),CGeneModel::eRemoveExons);
+    if(align.AlignLen() < END_PART_LENGTH)
+        align.ClearExons();        
+}
+
+void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_threshold, double min_lim) {
 
     double cov = 0;
     int nt = 0;
@@ -364,6 +409,8 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
         }
     }
     cov /= nt;
+
+    double lim = max(clip_threshold*cov, min_lim);
 
     CAlignMap amap = align.GetAlignMap();
     TSignedSeqRange old_limits = align.Limits();
@@ -378,7 +425,7 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
         if(not_aligned_left > 30) {
             int l = align.Limits().GetFrom();
             int ie = 0;
-            while(l < align.Limits().GetTo() && m_coverage[l-m_left_end] < clip_threshold*cov) {
+            while(l < align.Limits().GetTo() && m_coverage[l-m_left_end] < lim) {
                 if(l < align.Exons()[ie].GetTo())
                     ++l;
                 else
@@ -398,7 +445,7 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
         if(not_aligned_right > 30) {
             int r = align.Limits().GetTo();
             int ie = align.Exons().size()-1;
-            while(r > align.Limits().GetFrom() && m_coverage[r-m_left_end] < clip_threshold*cov) {
+            while(r > align.Limits().GetFrom() && m_coverage[r-m_left_end] < lim) {
                 if(r > align.Exons()[ie].GetFrom())
                     --r;
                 else
@@ -426,13 +473,13 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
             if(!(exonl.m_ssplice && exonr.m_fsplice)) {
                 int l = exonl.GetTo();
                 TSignedSeqRange segl(align.Limits().GetFrom(),l);
-                for( ; l >= exonl.GetFrom() && m_coverage[l-m_left_end] < clip_threshold*cov; --l);
+                for( ; l >= exonl.GetFrom() && m_coverage[l-m_left_end] < lim; --l);
                 if(l != exonl.GetTo())
                     segl = amap.ShrinkToRealPoints(TSignedSeqRange(align.Limits().GetFrom(),max(align.Limits().GetFrom(),l)),snap_to_codons);
 
                 int r = exonr.GetFrom();
                 TSignedSeqRange segr(r,align.Limits().GetTo());
-                for( ; r <= exonr.GetTo() && m_coverage[r-m_left_end] < clip_threshold*cov; ++r);
+                for( ; r <= exonr.GetTo() && m_coverage[r-m_left_end] < lim; ++r);
                 if(r != exonr.GetFrom())
                     segr = amap.ShrinkToRealPoints(TSignedSeqRange(min(align.Limits().GetTo(),r),align.Limits().GetTo()), snap_to_codons);
 
@@ -1278,42 +1325,6 @@ void CAlignCollapser::FilterAlignments() {
             }
         }
 
-        /*
-        //remove flanking bad introns
-        int new_right = right_end;
-        while(!introns.empty() && m_align_introns.find(introns.back()) == m_align_introns.end()) {
-            new_right = introns.back().m_range.GetFrom();
-            introns.pop_back();
-        }
-        int new_left = m_left_end;
-        while(!introns.empty() && m_align_introns.find(introns.front()) == m_align_introns.end()) {
-            new_left = introns.front().m_range.GetTo();
-            introns.erase(introns.begin());
-        }
-
-        bool all_good = true;
-        for(int i = 0; all_good && i < (int)introns.size(); ++i) {
-            all_good = (m_align_introns.find(introns[i]) != m_align_introns.end());
-        }
-
-        if(all_good && introns.size() == alc.GetIntrons().size())  // all initial introns good
-            continue;
-
-        if(all_good && introns.size() > 0) { // clipped some flanked introns but not all
-            const deque<char>& id_pool = m_target_id_pool[alc];
-            ITERATE(deque<SAlignIndividual>, i, data->second) {
-                CAlignModel align(alc.GetAlignment(*i, id_pool));
-                align.Clip(TSignedSeqRange(new_left,new_right),CGeneModel::eRemoveExons);
-                if(alc.isEST())
-                    align.Status() |= CGeneModel::eChangedByFilter;  
-                _ASSERT(align.Limits().NotEmpty());
-                _ASSERT(align.Exons().size() == introns.size()+1);
-                CAlignCommon c(align);
-                m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c]));
-            }
-        }
-        */
-
         // delete initial alignments and ids
         m_target_id_pool.erase(data->first);
         m_aligns.erase(data);
@@ -1356,6 +1367,47 @@ void CAlignCollapser::FilterAlignments() {
     for(int i = len-2; i >= 0; --i) {
         left_plus[i] = min(left_plus[i],left_plus[i+1]);
         left_minus[i] = min(left_minus[i],left_minus[i+1]);
+    }
+
+    double clip_threshold = args["utrclipthreshold"].AsDouble();
+    for(Tdata::iterator it = m_aligns.begin(); it != m_aligns.end(); ) {
+        Tdata::iterator data = it++;
+        const CAlignCommon& alc = data->first;
+        deque<SAlignIndividual>& aligns = data->second;
+
+        if((alc.isEST() && !m_filterest) || (alc.isSR() && !m_filtersr))
+            continue;
+
+        const deque<char>& id_pool = m_target_id_pool[alc];
+        NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
+            CAlignModel align(alc.GetAlignment(*i, id_pool));
+            TSignedSeqRange lim = align.Limits();
+            unsigned exnum = align.Exons().size();
+            //            ClipESTorSR(align, clip_threshold, 2);
+            ClipESTorSR(align, 0, 2);
+            if(align.Limits() == lim)
+                continue;
+
+            cerr << "Clipped long read: " << i->m_align_id << " " << lim.GetFrom()+1 << " " << lim.GetTo()+1 << " " << align.Limits().GetFrom()+1 << " " << align.Limits().GetTo()+1 << " " << exnum << " " <<  align.Exons().size() << endl;
+
+            if(align.Limits().Empty()) {
+                i->m_weight = -1;
+                continue;
+            }
+            if(exnum != align.Exons().size()) {
+                if(align.Exons().size() > 1) {
+                    CAlignCommon c(align);
+                    m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c])); 
+                }                   
+                i->m_weight = -1;
+                continue;
+            }
+            i->m_range = align.Limits();
+        }
+        
+        aligns.erase(remove_if(aligns.begin(),aligns.end(),AlignmentMarkedForDeletion),aligns.end());
+        if(aligns.empty())
+            m_aligns.erase(data);
     }
 
     //filter/cut low abandance one-exon and crossing splices
@@ -1438,7 +1490,6 @@ void CAlignCollapser::FilterAlignments() {
     //filter other alignments
 
     //filter introns
-    double clip_threshold = args["utrclipthreshold"].AsDouble();
     for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end(); ) {
         TAlignModelList::iterator i = it++;
         CAlignModel& align = *i;
@@ -2474,8 +2525,11 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
                 break;
             }
         }
-        if(lim != a.Limits()) 
-            a.Clip(lim, CGeneModel::eRemoveExons);           
+        if(lim != a.Limits()) {
+            a.Clip(lim, CGeneModel::eRemoveExons);
+            if(a.Exons().size() == 1 && !(a.Status()&CGeneModel::eCap) && !(a.Status()&CGeneModel::ePolyA))
+                a.Status() |= CGeneModel::eUnknownOrientation;
+        }
     }
 
     //Capinfo from not capped long reads
