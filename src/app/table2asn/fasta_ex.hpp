@@ -46,8 +46,8 @@ public:
     void Open(objects::edit::CHugeFile* file, objects::ILineErrorListener * pMessageListener) override;
     bool GetNextBlob() override;
     CRef<objects::CSeq_entry> GetNextSeqEntry() override;
-    bool IsMultiSequence() override { return m_is_multi; }
-    CConstRef<objects::CSubmit_block> GetSubmitBlock() override;
+    bool IsMultiSequence() const override { return m_is_multi; }
+    CConstRef<objects::CSubmit_block> GetSubmitBlock() const override;
 protected:
     bool m_is_multi = false;
     CRef<objects::CSeq_entry> xLoadNextSeq();
