@@ -70,6 +70,35 @@ void g_ReportCollidingSerialNumbers(const objects::edit::CHugeAsnReader& reader,
         objects::CValidError& errRepository);
 
 
+class CHugeFileValidator {
+public:
+    using TReader = objects::edit::CHugeAsnReader;
+    using TBioseqInfo = TReader::TBioseqInfo;
+    using TOptions = unsigned int;
+
+    CHugeFileValidator(const TReader& reader, 
+            const objects::validator::SValidatorContext& context,
+            TOptions options);
+    ~CHugeFileValidator(){}
+
+    void ReportMissingPubs(CRef<objects::CValidError>& errors) const;
+
+    void ReportMissingCitSubs(CRef<objects::CValidError>& errors) const;
+
+    void ReportCollidingSerialNumbers(CRef<objects::CValidError>& errors) const;
+
+private:
+    bool x_HasRefSeqAccession() const; 
+    string x_FindIdString() const;
+    string x_GetIdString() const;
+
+    mutable unique_ptr<string> m_pIdString;
+
+    const TReader& m_Reader; // Is this what I want?
+    const objects::validator::SValidatorContext& m_Context;
+    TOptions m_Options;
+};
+
 END_NCBI_SCOPE
 
 #endif
