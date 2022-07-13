@@ -1853,3 +1853,9 @@ void CancelAllProcessors(void)
     app->CancelAllProcessors();
 }
 
+
+size_t GetActiveProcessorGroups(void)
+{
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    return app->GetProcessorDispatcher()->GetActiveProcessorGroups();
+}

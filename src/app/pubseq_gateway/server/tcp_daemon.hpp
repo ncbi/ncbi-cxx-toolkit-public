@@ -57,6 +57,7 @@ void UnregisterUVLoop(uv_thread_t  uv_thread);
 void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop);
 void RegisterDaemonUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop);
 void CancelAllProcessors(void);
+size_t GetActiveProcessorGroups(void);
 
 namespace TSL {
 
@@ -162,7 +163,8 @@ public:
                         static_cast<CTcpWorkersList<P, U, D>*>(handle->data);
 
         if (g_ShutdownData.m_ShutdownRequested) {
-            if (g_ShutdownData.m_ActiveRequestCount == 0) {
+            size_t      proc_groups = GetActiveProcessorGroups();
+            if (proc_groups == 0) {
                 self->m_daemon->StopDaemonLoop();
             } else {
                 if (psg_clock_t::now() >= g_ShutdownData.m_Expired) {

@@ -145,7 +145,6 @@ class CPSGSCounters
             ePSGS_TotalError,
             ePSGS_CassandraActiveStatements,
             ePSGS_NumberOfConnections,
-            ePSGS_ActiveRequest,
             ePSGS_ActiveProcessorGroups,
             ePSGS_ShutdownRequested,
             ePSGS_GracefulShutdownExpiredInSec,
