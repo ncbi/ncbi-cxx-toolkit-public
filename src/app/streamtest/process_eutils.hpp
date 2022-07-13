@@ -35,8 +35,15 @@
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/xmlwrapp/event_parser.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <misc/eutils_client/eutils_client.hpp>
+
+#include <objects/pubmed/Pubmed_entry.hpp>
 
 #include <cmath>
+
+#include <sys/time.h>
+#include <iostream>
+#include <unistd.h>
 
 #ifndef __process_eutils__hpp__
 #define __process_eutils__hpp__
@@ -507,24 +514,68 @@ public:
         CScopedProcess::SeqEntryInitialize( se );
     };
 
+    string s_LookupJournals(const string& title)
+
+    {
+        if (title.empty()) {
+            return "";
+        }
+
+        string tmp = title;
+        NStr::ToLower(tmp);
+
+        string qry;
+        if (NStr::StartsWith(title, "the ")) {
+            NStr::TrimPrefixInPlace(tmp, "the ");
+            qry = tmp + " [MULT] OR the " + tmp + " [MULT]";
+        } else if (NStr::StartsWith(title, "journal ")) {
+            qry = tmp + " [MULT] OR the " + tmp + " [MULT]";
+        } else {
+            qry = tmp + " [MULT]";
+        }
+
+        string sch = ncbi::edirect::Execute("esearch", { "-db", "nlmcatalog", "-query", qry } );
+        string xml = ncbi::edirect::Execute("efetch", { "-format", "docsum" }, sch);
+        string res = ncbi::edirect::Execute("xtract", { "-pattern", "DocumentSummary", "-element", "MedlineTA" }, xml);
+
+        return res;
+    }
+
     //  ------------------------------------------------------------------------
     void SeqEntryProcess()
     //  ------------------------------------------------------------------------
     {
+       /*
         vector<int> uids;
         vector<string> strs;
         CEJournalSearch searcher;
         if (searcher.DoJournalSearch (m_journal, uids)) {
             if (searcher.DoJournalSummary (uids, strs)) {
                 // cout << "Success" << NcbiEndl;
-                // cout << "Vector of " + NStr::IntToString(strs.size()) + " strings" << NcbiEndl;
+                // cout << "Vector of " + NStr::IntToString((int) strs.size()) + " strings" << NcbiEndl;
                 for (int i = 0; i < strs.size(); i++) {
                     cout << strs [i] << NcbiEndl;
                 }
             }
         }
-        // cout << "Vector of " + NStr::IntToString(uids.size()) + " elements" << NcbiEndl;
+        // cout << "Vector of " + NStr::IntToString((int) uids.size()) + " elements" << NcbiEndl;
+        */
 
+        struct timeval start_time, end_time;
+        long milli_time, seconds, useconds;
+        gettimeofday(&start_time, NULL);
+
+        // string jrs = s_LookupJournals("journal of immunology");
+        string jrs = s_LookupJournals(m_journal);
+
+        gettimeofday(&end_time, NULL);
+        seconds = end_time.tv_sec - start_time.tv_sec; //seconds
+        useconds = end_time.tv_usec - start_time.tv_usec; //milliseconds
+        milli_time = ((seconds) * 1000 + useconds/1000.0);
+
+        cout << endl << jrs << endl;
+
+        cout << "Elapsed time: " << milli_time <<" milliseconds" << endl;
     };
 
 protected:
