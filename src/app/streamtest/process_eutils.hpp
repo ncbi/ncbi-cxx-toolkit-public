@@ -35,9 +35,9 @@
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/xmlwrapp/event_parser.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <misc/eutils_client/eutils_client.hpp>
 
-#include <objects/pubmed/Pubmed_entry.hpp>
+// #include <misc/eutils_client/eutils_client.hpp>
+// #include <objects/pubmed/Pubmed_entry.hpp>
 
 #include <cmath>
 
@@ -514,6 +514,7 @@ public:
         CScopedProcess::SeqEntryInitialize( se );
     };
 
+    /*
     string s_LookupJournals(const string& title)
 
     {
@@ -540,6 +541,7 @@ public:
 
         return res;
     }
+    */
 
     //  ------------------------------------------------------------------------
     void SeqEntryProcess()
@@ -565,15 +567,14 @@ public:
         long milli_time, seconds, useconds;
         gettimeofday(&start_time, NULL);
 
-        // string jrs = s_LookupJournals("journal of immunology");
-        string jrs = s_LookupJournals(m_journal);
+        // string jrs = s_LookupJournals(m_journal);
 
         gettimeofday(&end_time, NULL);
         seconds = end_time.tv_sec - start_time.tv_sec; //seconds
         useconds = end_time.tv_usec - start_time.tv_usec; //milliseconds
         milli_time = ((seconds) * 1000 + useconds/1000.0);
 
-        cout << endl << jrs << endl;
+        // cout << endl << jrs << endl;
 
         cout << "Elapsed time: " << milli_time <<" milliseconds" << endl;
     };
