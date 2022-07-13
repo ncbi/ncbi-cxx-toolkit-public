@@ -1085,6 +1085,15 @@ BlastHSPList * s_GetHSPList(int num_hsps, int oid, int len, int range_len)
 	return hsp_list;
 }
 
+BOOST_AUTO_TEST_CASE(testUnit_TestsDataPath) {
+	string rel_path = "blast/algo/unit_tests/api/data/long_seqs";
+	std::replace( rel_path.begin(), rel_path.end(),'/', CDirEntry::GetPathSeparator() ); // SB-3398 fix sub directory path to be platform compatible
+
+	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit( NCBI_GetTestDataPath()  + rel_path , false );
+	BOOST_REQUIRE(seqSrc != NULL);
+	BOOST_REQUIRE(BlastSeqSrcGetInitError(seqSrc) ==  NULL);
+
+}
 
 BOOST_AUTO_TEST_CASE(testSetupPartialFetching) {
 	string rel_path = "blast/algo/unit_tests/api/data/long_seqs";
