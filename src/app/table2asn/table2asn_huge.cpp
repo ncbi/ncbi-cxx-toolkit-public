@@ -64,7 +64,7 @@ namespace
     class CFlattenedAsn: public CHugeAsnReader
     {
     public:
-        bool IsMultiSequence() override { return m_flattened.size()>1; }
+        bool IsMultiSequence() const override { return m_flattened.size()>1; }
         const TBioseqSetInfo& GetTopObject()
         {
             auto top = GetBiosets().begin();
