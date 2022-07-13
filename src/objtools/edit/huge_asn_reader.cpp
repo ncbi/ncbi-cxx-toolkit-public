@@ -146,6 +146,7 @@ CConstRef<CSeqdesc> CHugeAsnReader::GetClosestDescriptor(const TBioseqInfo& info
                 return result;
             }
         }
+        parentSet = parentSet->m_parent_set;
     }
 
     return result;
