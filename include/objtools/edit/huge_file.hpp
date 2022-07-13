@@ -105,7 +105,7 @@ public:
     virtual bool GetNextBlob() = 0;
     virtual CRef<CSeq_entry> GetNextSeqEntry() = 0;
     virtual bool IsMultiSequence() = 0;
-    virtual CConstRef<CSubmit_block> GetSubmitBlock() = 0;
+    virtual CConstRef<CSubmit_block> GetSubmitBlock() const = 0;
     virtual ~IHugeAsnSource(){};
 protected:
     IHugeAsnSource(){};
