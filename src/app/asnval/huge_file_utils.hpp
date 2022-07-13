@@ -41,33 +41,7 @@ namespace objects {
     class CValidError;
 }
 
-using TBioseqInfo = objects::edit::CHugeAsnReader::TBioseqInfo;
-
-
-bool g_ReportMissingCitSub(const TBioseqInfo& info, 
-        const objects::edit::CHugeAsnReader& reader,
-        bool IsRefSeq);
-
-bool g_ReportMissingPubs(const TBioseqInfo& info,
-        const objects::edit::CHugeAsnReader& reader);
-
-void g_PostErr(EDiagSev severity,
-        objects::EErrType errorType,
-        const string& message,
-        const string& idString,
-        objects::CValidError& errRepository);
-
-bool g_HasRefSeqAccession(const objects::edit::CHugeAsnReader& reader);
-
-bool g_IsCuratedRefSeq(const TBioseqInfo& info);
-
-string g_GetIdString(const TBioseqInfo& info, int* version);
-
 string g_GetIdString(const objects::edit::CHugeAsnReader& reader);
-
-void g_ReportCollidingSerialNumbers(const objects::edit::CHugeAsnReader& reader,
-        const string& idString,
-        objects::CValidError& errRepository);
 
 
 class CHugeFileValidator {
@@ -81,11 +55,13 @@ public:
             TOptions options);
     ~CHugeFileValidator(){}
 
-    void ReportMissingPubs(CRef<objects::CValidError>& errors) const;
+    void ReportMissingPubs(CRef<objects::CValidError>& pErrors) const;
 
-    void ReportMissingCitSubs(CRef<objects::CValidError>& errors) const;
+    void ReportMissingCitSubs(CRef<objects::CValidError>& pErrors) const;
 
-    void ReportCollidingSerialNumbers(CRef<objects::CValidError>& errors) const;
+    void ReportCollidingSerialNumbers(CRef<objects::CValidError>& pErrors) const;
+
+    void PerformGlobalChecks(CRef<objects::CValidError>& pErrors) const;
 
 private:
     bool x_HasRefSeqAccession() const; 

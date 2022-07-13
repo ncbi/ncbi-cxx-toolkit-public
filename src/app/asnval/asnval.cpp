@@ -575,51 +575,13 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 
             topids_task.wait();
             
-            if (reader.GetSubmitBlock().NotEmpty()) {
-                return;
-            }
 
-            if (m_pContext->NoPubsFound){ 
-                if (auto info = reader.GetBioseqs().front(); g_ReportMissingPubs(info, reader)) {
-                    // What if this contains a gen-prod set?
-                    auto pEval = Ref(new CValidError());
-                    auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
-                    g_PostErr(severity, 
-                            eErr_SEQ_DESCR_NoPubFound,
-                            "No publications anywhere on this entire record.",
-                            m_pContext->GenbankSetId,
-                            *pEval);
-
-                    PrintValidError(pEval);
-                }
-            }
-
-            if (m_pContext->NoCitSubFound) {
-                bool isRefSeq = g_HasRefSeqAccession(reader) || 
-                    (m_Options & CValidator::eVal_refseq_conventions); 
-
-                if (auto info = reader.GetBioseqs().front(); g_ReportMissingCitSub(info, reader, isRefSeq))
-                {
-                    auto pEval = Ref(new CValidError());
-                    auto severity = (m_Options & CValidator::eVal_genome_submission) ?
-                        eDiag_Error : eDiag_Info;
-                    g_PostErr(severity,
-                            eErr_GENERIC_MissingPubRequirement,
-                            "No submission citation anywhere on this entire record.",
-                            m_pContext->GenbankSetId,
-                            *pEval);
-
-                    PrintValidError(pEval);
-                }
-            }
-
-            {
-                auto pEval = Ref(new CValidError());
-                g_ReportCollidingSerialNumbers(reader, m_pContext->GenbankSetId, *pEval);
+            CHugeFileValidator hugeFileValidator(reader, *m_pContext, m_Options);
+            CRef<CValidError> pEval;
+            hugeFileValidator.PerformGlobalChecks(pEval);
+            if (pEval) {
                 PrintValidError(pEval);
             }
-
-
         } else {
             for (auto seqid: reader.GetTopIds())
             {
