@@ -934,8 +934,6 @@ private:
         (*it)->GetHttpReply()->ResetPendingRequest();
 
         m_Pending.erase(it);
-        --g_ShutdownData.m_ActiveRequestCount;
-
         NotifyRequestFinished(request_id);
     }
 
@@ -946,14 +944,12 @@ private:
 
         (*it)->GetHttpReply()->ResetPendingRequest();
         m_Backlog.erase(it);
-        --g_ShutdownData.m_ActiveRequestCount;
         NotifyRequestFinished(request_id);
     }
 
     reply_list_iterator_t x_RegisterPending(shared_ptr<CPSGS_Reply>  reply,
                                             list<shared_ptr<CPSGS_Reply>> &  reply_list)
     {
-        ++g_ShutdownData.m_ActiveRequestCount;
         reply_list.push_back(reply);
         auto it = reply_list.end();
         --it;

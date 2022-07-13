@@ -530,11 +530,6 @@ CPSGSCounters::CPSGSCounters()
             "NumberOfConnections", "Cassandra connections counter",
             "Number of the connections to Cassandra",
             false, false, false);
-    m_Counters[ePSGS_ActiveRequest] =
-        new SCounterInfo(
-            "ActiveRequestCount", "Active requests counter",
-            "Number of the currently active client requests",
-            false, false, false);
     m_Counters[ePSGS_ActiveProcessorGroups] =
         new SCounterInfo(
             "ActiveProcessorGroupCount", "Active processor groups counter",
