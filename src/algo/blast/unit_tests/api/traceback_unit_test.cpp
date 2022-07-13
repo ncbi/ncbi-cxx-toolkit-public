@@ -1090,6 +1090,10 @@ BOOST_AUTO_TEST_CASE(testUnit_TestsDataPath) {
 	std::replace( rel_path.begin(), rel_path.end(),'/', CDirEntry::GetPathSeparator() ); // SB-3398 fix sub directory path to be platform compatible
 
 	BlastSeqSrc* seqSrc = SeqDbBlastSeqSrcInit( NCBI_GetTestDataPath()  + rel_path , false );
+	if( seqSrc && BlastSeqSrcGetInitError(seqSrc) ) {
+	    cout << "testUnit_TestsDataPath: BlastSeqSrcGetInitError: "<<BlastSeqSrcGetInitError(seqSrc) << endl;
+	    cout << "testUnit_TestsDataPath: Can't access: "<< ( NCBI_GetTestDataPath()  + rel_path ) << endl;
+	}
 	BOOST_REQUIRE(seqSrc != NULL);
 	BOOST_REQUIRE(BlastSeqSrcGetInitError(seqSrc) ==  NULL);
 
