@@ -47,7 +47,7 @@ USING_SCOPE(objects);
 USING_SCOPE(edit);
 USING_SCOPE(validator);
 
-//using TBioseqInfo = CHugeAsnReader::TBioseqInfo;
+using TBioseqInfo = CHugeAsnReader::TBioseqInfo;
 
 static bool s_IsTSAContig(const TBioseqInfo& info, const CHugeAsnReader& reader) {
     auto pSeqdesc = reader.GetClosestDescriptor(info, CSeqdesc::e_Molinfo);
@@ -60,14 +60,6 @@ static bool s_IsTSAContig(const TBioseqInfo& info, const CHugeAsnReader& reader)
     return false;
 }
 
-/*
-static bool s_IsWgsContig(const TBioseqInfo& info, const CHugeAsnReader& reader) {
-    if (info.m_repr == CSeq_inst::eRepr_virtual) {
-        return false;
-    }
-    return s_IsTSAContig(info, reader);
-}
-*/
 
 static bool s_IsGpipe(const TBioseqInfo& info)
 {
@@ -145,7 +137,7 @@ static bool s_IsWGSMaster(const TBioseqInfo& info, const CHugeAsnReader& reader)
 
 // IsRefSeq==true indicates that either the record contains RefSeq accessions
 // or that RefSeq conventions have been specified.
-bool g_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader& reader, bool IsRefSeq)
+static bool s_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader& reader, bool IsRefSeq)
 {
     // Does the order matter here? Can this be a RefSeq record and a WGS master?
     if (s_IsWGSMaster(info, reader)) {
@@ -166,7 +158,7 @@ bool g_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader& reader
 }
 
 
-bool g_ReportMissingPubs(const TBioseqInfo& info, const CHugeAsnReader& reader)
+static bool s_ReportMissingPubs(const TBioseqInfo& info, const CHugeAsnReader& reader)
 {
     if (s_IsNoncuratedRefSeq(info.m_ids) ||
         s_IsGpipe(info) ||
@@ -208,27 +200,6 @@ static string s_GetIdString(const list<CConstRef<CSeq_id>>& ids, int* version)
 }
 
 
-string g_GetIdString(const TBioseqInfo& info, int* version) 
-{   
-    return s_GetIdString(info.m_ids, version);    
-}
-
-
-void g_PostErr(EDiagSev severity,
-               EErrType errorType,
-               const string& message,
-               const string& idString,
-               CValidError& errRepository)
-{
-    const bool suppressContext = false; // Revisit this
-    const auto setClass = CBioseq_set::eClass_genbank; // Revisit this
-    int version = 0;
-    string desc = CValidErrorFormat::GetBioseqSetLabel(idString, 
-            setClass, suppressContext);
-
-    errRepository.AddValidErrItem(severity, errorType, message, desc, idString, version);
-}
-
 void s_PostErr(EDiagSev severity,
                EErrType errorType,
                const string& message,
@@ -247,19 +218,6 @@ void s_PostErr(EDiagSev severity,
             setClass, suppressContext);
 
     pErrors->AddValidErrItem(severity, errorType, message, desc, idString, version);
-}
-
-
-bool g_HasRefSeqAccession(const CHugeAsnReader& reader) 
-{
-    for (auto info : reader.GetBioseqs()) {
-        for (auto pId : info.m_ids) {
-            if (pId && pId->IsOther()) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 
@@ -300,7 +258,6 @@ string g_GetIdString(const CHugeAsnReader& reader)
 }
 
 
-
 static void s_GatherSerialNumbers(const list<CRef<CSeqdesc>>& descriptors,
         set<int>& pubSerialNumbers,
         set<int>& conflictingNumbers)
@@ -324,30 +281,6 @@ static void s_GatherSerialNumbers(const list<CRef<CSeqdesc>>& descriptors,
     }
 }
 
-
-void g_ReportCollidingSerialNumbers(const CHugeAsnReader& reader, const string& idString, CValidError& errRepository)
-{
-    set<int> pubSerialNumbers;
-    set<int> conflictingNumbers;
-
-    for (const auto& bioseqInfo : reader.GetBioseqs()) {
-        if (bioseqInfo.m_descr && bioseqInfo.m_descr->IsSet()) {
-            s_GatherSerialNumbers(bioseqInfo.m_descr->Get(), pubSerialNumbers, conflictingNumbers);
-        }
-    }
-
-    for (const auto& biosetInfo : reader.GetBiosets()) {
-        if (biosetInfo.m_descr && biosetInfo.m_descr->IsSet()) {
-            s_GatherSerialNumbers(biosetInfo.m_descr->Get(), pubSerialNumbers, conflictingNumbers);
-        }
-    }
-
-    for (auto val : conflictingNumbers) {
-        g_PostErr(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers,
-                "Multiple publications have serial number " + NStr::IntToString(val),
-                idString, errRepository);
-    }
-}
 
 
 CHugeFileValidator::CHugeFileValidator(const CHugeFileValidator::TReader& reader,
@@ -442,7 +375,7 @@ void CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
         return;
     }
 
-    if (auto info = m_Reader.GetBioseqs().front(); g_ReportMissingPubs(info, m_Reader)) {
+    if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingPubs(info, m_Reader)) {
         auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
         s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound,
                 "No publications anywhere on this entire record.", 
@@ -460,7 +393,7 @@ void CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
     bool isRefSeq = (m_Options & CValidator::eVal_refseq_conventions) ||
                     x_HasRefSeqAccession();
 
-    if (auto info = m_Reader.GetBioseqs().front(); g_ReportMissingCitSub(info, m_Reader, isRefSeq)) 
+    if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingCitSub(info, m_Reader, isRefSeq)) 
     {
         auto severity = (m_Options & CValidator::eVal_genome_submission) ?
             eDiag_Error : eDiag_Info;
@@ -468,6 +401,14 @@ void CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
                 "No submission citation anywhere on this entire record.",
                 x_GetIdString(), pErrors);
     }
+}
+
+
+void CHugeFileValidator::PerformGlobalChecks(CRef<CValidError>& pErrors) const
+{
+    ReportMissingPubs(pErrors);
+    ReportMissingCitSubs(pErrors);
+    ReportCollidingSerialNumbers(pErrors);
 }
 
 END_NCBI_SCOPE
