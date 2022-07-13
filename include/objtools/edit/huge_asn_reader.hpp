@@ -119,7 +119,7 @@ public:
     CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> seqid) const;
     CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;
 
-    bool IsMultiSequence() override { return m_bioseq_index.size()>1; }
+    bool IsMultiSequence() const override { return m_bioseq_index.size()>1; }
 
     void FlattenGenbankSet();
     CConstRef<CSeq_entry> GetTopEntry() const { return m_top_entry; }
