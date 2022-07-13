@@ -67,7 +67,7 @@ public:
     void Open(CHugeFile* file, ILineErrorListener * pMessageListener) override;
     bool GetNextBlob() override;
     CRef<CSeq_entry> GetNextSeqEntry() override;
-    CConstRef<CSubmit_block> GetSubmitBlock() override { return m_submit_block; };
+    CConstRef<CSubmit_block> GetSubmitBlock() const override { return m_submit_block; };
     CRef<CObject> ReadAny();
 
     struct TBioseqInfo;
