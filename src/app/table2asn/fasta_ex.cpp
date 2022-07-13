@@ -255,7 +255,7 @@ CRef<objects::CSeq_entry> CHugeFastaReader::xLoadNextSeq()
     return result;
 }
 
-CConstRef<objects::CSubmit_block> CHugeFastaReader::GetSubmitBlock()
+CConstRef<objects::CSubmit_block> CHugeFastaReader::GetSubmitBlock() const
 {
     return {};
 }
