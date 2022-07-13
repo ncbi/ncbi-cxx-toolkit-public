@@ -60,14 +60,14 @@ static bool s_IsTSAContig(const TBioseqInfo& info, const CHugeAsnReader& reader)
     return false;
 }
 
-
+/*
 static bool s_IsWgsContig(const TBioseqInfo& info, const CHugeAsnReader& reader) {
     if (info.m_repr == CSeq_inst::eRepr_virtual) {
         return false;
     }
     return s_IsTSAContig(info, reader);
 }
-
+*/
 
 static bool s_IsGpipe(const TBioseqInfo& info)
 {
@@ -229,6 +229,26 @@ void g_PostErr(EDiagSev severity,
     errRepository.AddValidErrItem(severity, errorType, message, desc, idString, version);
 }
 
+void s_PostErr(EDiagSev severity,
+               EErrType errorType,
+               const string& message,
+               const string& idString,
+               CRef<CValidError>& pErrors)
+{
+
+    if (!pErrors) {
+        pErrors = Ref(new CValidError());
+    }
+
+    const bool suppressContext = false; // Revisit this
+    const auto setClass = CBioseq_set::eClass_genbank; // Revisit this
+    int version = 0;
+    string desc = CValidErrorFormat::GetBioseqSetLabel(idString, 
+            setClass, suppressContext);
+
+    pErrors->AddValidErrItem(severity, errorType, message, desc, idString, version);
+}
+
 
 bool g_HasRefSeqAccession(const CHugeAsnReader& reader) 
 {
@@ -326,6 +346,127 @@ void g_ReportCollidingSerialNumbers(const CHugeAsnReader& reader, const string& 
         g_PostErr(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers,
                 "Multiple publications have serial number " + NStr::IntToString(val),
                 idString, errRepository);
+    }
+}
+
+
+CHugeFileValidator::CHugeFileValidator(const CHugeFileValidator::TReader& reader,
+        const SValidatorContext& context,
+        CHugeFileValidator::TOptions options)
+    : m_Reader(reader), m_Context(context), m_Options(options) {}
+
+
+bool CHugeFileValidator::x_HasRefSeqAccession() const
+{
+    for (auto info : m_Reader.GetBioseqs()) {
+        for (auto pId : info.m_ids) {
+            if (pId && pId->IsOther()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+string CHugeFileValidator::x_FindIdString() const
+{
+    const auto& biosets = m_Reader.GetBiosets();
+    if (biosets.size() < 2) {
+        return "";
+    }
+    
+    if (auto it = next(biosets.begin()); 
+        it->m_class != CBioseq_set::eClass_genbank){
+        return "";
+    }
+
+    const auto& bioseqs = m_Reader.GetBioseqs();
+    const auto& firstBioseq = bioseqs.begin();
+    const auto& parentIt = firstBioseq->m_parent_set;
+    int version;
+    if (parentIt->m_class != CBioseq_set::eClass_nuc_prot) {
+        return s_GetIdString(firstBioseq->m_ids, &version);
+    }
+    // else parent set is nuc-prot set
+    for(auto it = firstBioseq; it != bioseqs.end(); ++it) {
+        if (s_IsNa(it->m_mol) && it->m_parent_set == parentIt) {
+            return s_GetIdString(it->m_ids, &version);
+        }
+    }
+    return s_GetIdString(firstBioseq->m_ids, &version);
+}
+
+
+string CHugeFileValidator::x_GetIdString() const
+{
+    if (m_pIdString) {
+        return *m_pIdString;
+    }
+
+    m_pIdString.reset(new string());
+    *m_pIdString = x_FindIdString();
+
+    return *m_pIdString;
+}
+
+
+void CHugeFileValidator::ReportCollidingSerialNumbers(CRef<CValidError>& pErrors) const
+{
+    set<int> pubSerialNumbers;
+    set<int> conflictingNumbers;
+
+    for (const auto& bioseqInfo : m_Reader.GetBioseqs()) {
+        if (bioseqInfo.m_descr && bioseqInfo.m_descr->IsSet()) {
+            s_GatherSerialNumbers(bioseqInfo.m_descr->Get(), pubSerialNumbers, conflictingNumbers);
+        }
+    }
+
+    for (const auto& biosetInfo : m_Reader.GetBiosets()) {
+        if (biosetInfo.m_descr && biosetInfo.m_descr->IsSet()) {
+            s_GatherSerialNumbers(biosetInfo.m_descr->Get(), pubSerialNumbers, conflictingNumbers);
+        }
+    }
+
+    for (auto val : conflictingNumbers) {
+        s_PostErr(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers,
+                "Multiple publications have serial number " + NStr::IntToString(val),
+                x_GetIdString(), pErrors);
+    }
+}
+
+
+void CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
+{
+    if (!m_Context.NoPubsFound || m_Reader.GetSubmitBlock()) {
+        return;
+    }
+
+    if (auto info = m_Reader.GetBioseqs().front(); g_ReportMissingPubs(info, m_Reader)) {
+        auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
+        s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound,
+                "No publications anywhere on this entire record.", 
+                x_GetIdString(), pErrors);
+    }
+}
+
+
+void CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
+{
+    if (!m_Context.NoCitSubFound || m_Reader.GetSubmitBlock()) {
+        return;
+    }
+
+    bool isRefSeq = (m_Options & CValidator::eVal_refseq_conventions) ||
+                    x_HasRefSeqAccession();
+
+    if (auto info = m_Reader.GetBioseqs().front(); g_ReportMissingCitSub(info, m_Reader, isRefSeq)) 
+    {
+        auto severity = (m_Options & CValidator::eVal_genome_submission) ?
+            eDiag_Error : eDiag_Info;
+        s_PostErr(severity, eErr_GENERIC_MissingPubRequirement,
+                "No submission citation anywhere on this entire record.",
+                x_GetIdString(), pErrors);
     }
 }
 
