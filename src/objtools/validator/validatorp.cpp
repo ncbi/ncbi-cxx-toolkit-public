@@ -1228,9 +1228,6 @@ bool CValidError_imp::Validate
     if (cs) {
         m_NoPubs = false;
         m_IsSeqSubmit = true;
-        if (GetContext().HugeFileMode) {
-            SetContext().NoPubsFound = false;
-        }
     }
 
     // Get first CBioseq object pointer for PostErr below.
@@ -2842,17 +2839,11 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
     m_Scope.Reset(&m_TSEH.GetScope());
 
     // If no Pubs/BioSource in CSeq_entry, post only one error
-    CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
-
-    if (pub && GetContext().HugeFileMode) {
-        SetContext().NoPubsFound = false;
-        while (pub && !pub->IsSub()) {
-            ++pub;
-        }
-        if (pub) {
-            SetContext().NoCitSubFound = false;
-        }       
+    if (GetContext().HugeFileMode) {
+        m_NoPubs        = GetContext().NoPubsFound;
+        m_NoCitSubPubs  = GetContext().NoCitSubsFound;
     } else {
+        CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
         m_NoPubs = !pub;
         while (pub && !pub->IsSub()) {
             ++pub;

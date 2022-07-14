@@ -51,17 +51,17 @@ public:
     using TOptions = unsigned int;
 
     CHugeFileValidator(const TReader& reader, 
-            const objects::validator::SValidatorContext& context,
             TOptions options);
     ~CHugeFileValidator(){}
 
-    void ReportMissingPubs(CRef<objects::CValidError>& pErrors) const;
+    bool ReportMissingPubs(CRef<objects::CValidError>& pErrors) const;
 
-    void ReportMissingCitSubs(CRef<objects::CValidError>& pErrors) const;
+    bool ReportMissingCitSubs(CRef<objects::CValidError>& pErrors) const;
 
     void ReportCollidingSerialNumbers(CRef<objects::CValidError>& pErrors) const;
 
-    void PerformGlobalChecks(CRef<objects::CValidError>& pErrors) const;
+    void PerformGlobalChecks(CRef<objects::CValidError>& pErrors, 
+            objects::validator::SValidatorContext& context) const;
 
 private:
     bool x_HasRefSeqAccession() const; 
@@ -70,8 +70,7 @@ private:
 
     mutable unique_ptr<string> m_pIdString;
 
-    const TReader& m_Reader; // Is this what I want?
-    const objects::validator::SValidatorContext& m_Context;
+    const TReader& m_Reader; 
     TOptions m_Options;
 };
 

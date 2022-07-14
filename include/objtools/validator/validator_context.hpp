@@ -45,8 +45,8 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     bool        HugeFileMode{false};
     string      GenbankSetId;
     atomic_bool CheckECNumFileStatus{true};
-    bool        NoPubsFound{true};
-    bool        NoCitSubFound{true};
+    bool        NoPubsFound{false};
+    bool        NoCitSubsFound{false};
     once_flag   DescriptorsOnceFlag;
 };
 

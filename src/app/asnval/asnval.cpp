@@ -524,6 +524,13 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
                     g_GetIdString(reader);
             }
         }
+    
+        CHugeFileValidator hugeFileValidator(reader, m_Options);
+        CRef<CValidError> pEval;
+        hugeFileValidator.PerformGlobalChecks(pEval, *m_pContext);
+        if (pEval) {
+            PrintValidError(pEval);
+        }
 
 
         auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
@@ -575,13 +582,6 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 
             topids_task.wait();
             
-
-            CHugeFileValidator hugeFileValidator(reader, *m_pContext, m_Options);
-            CRef<CValidError> pEval;
-            hugeFileValidator.PerformGlobalChecks(pEval);
-            if (pEval) {
-                PrintValidError(pEval);
-            }
         } else {
             for (auto seqid: reader.GetTopIds())
             {
