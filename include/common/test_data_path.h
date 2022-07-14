@@ -48,7 +48,16 @@
 /// environment variables NCBI_TEST_DATA_PATH or NCBI_TEST_DATA.
 ///
 /// @return
-///   Pointer to internal zero-terminated string buffer.
+///   Pointer to internal zero-terminated string buffer, that contains 
+///   a path to the test data. 
+/// @note
+///   The path can be terminated by a slash, or not. So, please use next
+///   code to get an absolute path to the subfolder with a test data:
+///       CFile::MakePath(NCBI_GetTestDataPath(), "some/test/path") ;
+///   Also, you can use:
+///       string path = NCBI_GetTestDataPath() + "/some/test/path");
+///   Possible extra slash between path's parts will be ignored by OS.
+///
 static const char* NCBI_GetTestDataPath(void)
 {
     static const char* s_NcbiTestDataPath = NULL;
