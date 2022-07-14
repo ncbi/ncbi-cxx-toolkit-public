@@ -258,6 +258,36 @@ string g_GetIdString(const CHugeAsnReader& reader)
 }
 
 
+static bool s_HasPub(const list<CRef<CSeqdesc>>& descriptors)
+{   
+    for (auto pDesc : descriptors) {
+        if (pDesc && pDesc->IsPub()) {
+            const auto& pub = pDesc->GetPub();
+            if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
+                return true;
+            }
+        }
+    } 
+    return false;
+}
+
+static bool s_HasCitSub(const list<CRef<CSeqdesc>>& descriptors)
+{
+    for (auto pDesc : descriptors) {
+        if (pDesc && pDesc->IsPub()) {
+            const auto& pub = pDesc->GetPub();
+            if (pub.IsSetPub() && pub.GetPub().IsSet()) {
+                for (auto pPub : pub.GetPub().Get()) {
+                    if (pPub && pPub->IsSub()) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
 static void s_GatherSerialNumbers(const list<CRef<CSeqdesc>>& descriptors,
         set<int>& pubSerialNumbers,
         set<int>& conflictingNumbers)
@@ -282,11 +312,9 @@ static void s_GatherSerialNumbers(const list<CRef<CSeqdesc>>& descriptors,
 }
 
 
-
 CHugeFileValidator::CHugeFileValidator(const CHugeFileValidator::TReader& reader,
-        const SValidatorContext& context,
         CHugeFileValidator::TOptions options)
-    : m_Reader(reader), m_Context(context), m_Options(options) {}
+    : m_Reader(reader), m_Options(options) {}
 
 
 bool CHugeFileValidator::x_HasRefSeqAccession() const
@@ -369,45 +397,76 @@ void CHugeFileValidator::ReportCollidingSerialNumbers(CRef<CValidError>& pErrors
 }
 
 
-void CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
+bool CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
 {
-    if (!m_Context.NoPubsFound || m_Reader.GetSubmitBlock()) {
-        return;
+    for (const auto& bioseqInfo : m_Reader.GetBioseqs()) {
+        if (bioseqInfo.m_descr && bioseqInfo.m_descr->IsSet()) {
+            if (s_HasPub(bioseqInfo.m_descr->Get())) {
+                return false;
+            }
+        }
     }
 
-    if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingPubs(info, m_Reader)) {
-        auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
-        s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound,
-                "No publications anywhere on this entire record.", 
-                x_GetIdString(), pErrors);
+    for (const auto& biosetInfo : m_Reader.GetBiosets()) {
+        if (biosetInfo.m_descr && biosetInfo.m_descr->IsSet()) {
+            if (s_HasPub(biosetInfo.m_descr->Get())) {
+                return false;
+            }
+        }
     }
+
+    if(!(m_Reader.GetSubmitBlock())) {
+        if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingPubs(info, m_Reader)) {
+            auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
+            s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound,
+                    "No publications anywhere on this entire record.", 
+                    x_GetIdString(), pErrors);
+        }
+    }
+    return true;
+}
+
+bool CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
+{
+    for (const auto& bioseqInfo : m_Reader.GetBioseqs()) {
+        if (bioseqInfo.m_descr && bioseqInfo.m_descr->IsSet()) {
+            if (s_HasCitSub(bioseqInfo.m_descr->Get())) {
+                return false;
+            }
+        }
+    }
+
+    for (const auto& biosetInfo : m_Reader.GetBiosets()) {
+        if (biosetInfo.m_descr && biosetInfo.m_descr->IsSet()) {
+            if (s_HasCitSub(biosetInfo.m_descr->Get())) {
+                return false;
+            }
+        }
+    }
+
+    if(!(m_Reader.GetSubmitBlock())) {
+        bool isRefSeq = (m_Options & CValidator::eVal_refseq_conventions) ||
+            x_HasRefSeqAccession();
+
+        if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingCitSub(info, m_Reader, isRefSeq)) 
+        {
+            auto severity = (m_Options & CValidator::eVal_genome_submission) ?
+                eDiag_Error : eDiag_Info;
+            s_PostErr(severity, eErr_GENERIC_MissingPubRequirement,
+                    "No submission citation anywhere on this entire record.",
+                    x_GetIdString(), pErrors);
+        }
+    }
+
+    return true;
 }
 
 
-void CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
+
+void CHugeFileValidator::PerformGlobalChecks(CRef<CValidError>& pErrors, SValidatorContext& context) const
 {
-    if (!m_Context.NoCitSubFound || m_Reader.GetSubmitBlock()) {
-        return;
-    }
-
-    bool isRefSeq = (m_Options & CValidator::eVal_refseq_conventions) ||
-                    x_HasRefSeqAccession();
-
-    if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingCitSub(info, m_Reader, isRefSeq)) 
-    {
-        auto severity = (m_Options & CValidator::eVal_genome_submission) ?
-            eDiag_Error : eDiag_Info;
-        s_PostErr(severity, eErr_GENERIC_MissingPubRequirement,
-                "No submission citation anywhere on this entire record.",
-                x_GetIdString(), pErrors);
-    }
-}
-
-
-void CHugeFileValidator::PerformGlobalChecks(CRef<CValidError>& pErrors) const
-{
-    ReportMissingPubs(pErrors);
-    ReportMissingCitSubs(pErrors);
+    context.NoPubsFound = ReportMissingPubs(pErrors);
+    context.NoCitSubsFound = ReportMissingCitSubs(pErrors);
     ReportCollidingSerialNumbers(pErrors);
 }
 
