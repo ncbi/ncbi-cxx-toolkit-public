@@ -41,12 +41,6 @@
 
 #include <cmath>
 
-/*
-#include <sys/time.h>
-#include <iostream>
-#include <unistd.h>
-*/
-
 #ifndef __process_eutils__hpp__
 #define __process_eutils__hpp__
 
