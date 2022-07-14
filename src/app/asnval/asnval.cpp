@@ -525,18 +525,17 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
             }
         }
     
+        auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
+                *m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
+
+        CAutoRevoker autorevoker(info);
+
         CHugeFileValidator hugeFileValidator(reader, m_Options);
         CRef<CValidError> pEval;
         hugeFileValidator.PerformGlobalChecks(pEval, *m_pContext);
         if (pEval) {
             PrintValidError(pEval);
         }
-
-
-        auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
-                *m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
-
-        CAutoRevoker autorevoker(info);
 
         if (use_mt)
         {
