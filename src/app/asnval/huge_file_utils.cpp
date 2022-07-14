@@ -161,7 +161,7 @@ static bool s_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader&
 static bool s_ReportMissingPubs(const TBioseqInfo& info, const CHugeAsnReader& reader)
 {   
     if (!reader.GetBiosets().empty() && 
-        reader.GetBiosets().front().m_class == CSeq_inst::eClass_gen_prod_set) {
+        reader.GetBiosets().front().m_class == CBioseq_set::eClass_gen_prod_set) {
         return false;
     }
 
