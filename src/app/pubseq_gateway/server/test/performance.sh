@@ -94,7 +94,7 @@ run() {
 mkdir -p ${outdir}
 rm -rf ${outdir}/*.out
 
-run "resolve-primary-cache" "/ID/resolve?psg_protocol=yes&seq_id=XP_015453951&fmt=json&all_info=yes&use_cache=yes"
+run "resolve-primary-cache" "/ID/resolve?psg_protocol=yes&seq_id=XP_015453951&fmt=json&all_info=yes&use_cache=yes&disable_processor=osg"
 run "resolve-primary-db" "/ID/resolve?psg_protocol=yes&seq_id=XP_015453951&fmt=json&all_info=yes&use_cache=no"
 run "resolve-secondary-cache" "/ID/resolve?psg_protocol=yes&seq_id=123791&fmt=json&all_info=yes&use_cache=yes"
 run "resolve-secondary-db" "/ID/resolve?psg_protocol=yes&seq_id=123791&fmt=json&all_info=yes&use_cache=no"
