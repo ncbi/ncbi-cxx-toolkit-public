@@ -159,7 +159,13 @@ static bool s_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader&
 
 
 static bool s_ReportMissingPubs(const TBioseqInfo& info, const CHugeAsnReader& reader)
-{
+{   
+    if (!reader.GetBiosets().empty() && 
+        reader.GetBiosets().front().m_class == CSeq_inst::eClass_gen_prod_set) {
+        return false;
+    }
+
+
     if (s_IsNoncuratedRefSeq(info.m_ids) ||
         s_IsGpipe(info) ||
         s_IsTSAContig(info, reader)) { // Note - no need to check for WGS contig because a WGS contig is a type of TSA contig
@@ -425,6 +431,7 @@ bool CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
     }
     return true;
 }
+
 
 bool CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
 {
