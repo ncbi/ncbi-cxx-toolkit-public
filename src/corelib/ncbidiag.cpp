@@ -3842,6 +3842,18 @@ CDiagContext::TCount CDiagContext::GetProcessPostNumber(EPostNumberIncrement inc
 }
 
 
+CDiagContext::TCount CDiagContext::GetThreadPostNumber(EPostNumberIncrement inc)
+{
+    return CDiagContextThreadData::GetThreadData().GetThreadPostNumber(inc);
+}
+
+
+CDiagContext::TTID CDiagContext::GetTID(void)
+{
+    return CDiagContextThreadData::GetThreadData().GetTID();
+}
+
+
 bool CDiagContext::IsUsingRootLog(void)
 {
     return GetLogFile().substr(0, 5) == kRootLog;

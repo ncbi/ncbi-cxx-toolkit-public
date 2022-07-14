@@ -2227,6 +2227,12 @@ public:
     typedef SDiagMessage::TCount TCount;
     /// Return process post number (incrementing depends on the flag).
     static TCount GetProcessPostNumber(EPostNumberIncrement inc);
+    /// Return thread post number (incrementing depends on the flag).
+    static TCount GetThreadPostNumber(EPostNumberIncrement inc);
+
+    /// Get thread ID used in messages
+    typedef Uint8 TTID;
+    static TTID GetTID(void);
 
     /// Type of logging rate limit
     enum ELogRate_Type {
