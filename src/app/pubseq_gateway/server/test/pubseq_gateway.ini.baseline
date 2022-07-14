@@ -133,7 +133,7 @@ service=ID_CASS_TEST
 enabled=true
 
 [OSG_PROCESSOR]
-enabled=false
+enabled=true
 
 [HEALTH]
 test_seq_id=RuBBiSH

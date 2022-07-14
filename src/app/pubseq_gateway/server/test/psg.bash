@@ -98,7 +98,8 @@ TESTS="many_chunk_blob get_auto_blob_skipping_no2 get_auto_blob_skipping_no1
        acc_ver_hist_1 acc_ver_hist_2 proper_skip_1 proper_skip_2
        extra_chunk_44_info_size_1 no_extra_chunk_info_size_1
        no_extra_chunk_info_size_5 extra_chunk_266_info_size_5
-       extra_chunk_266_info_size_5_gi get_resend_timeout_setup get_resend_timeout_short"
+       extra_chunk_266_info_size_5_gi get_resend_timeout_setup get_resend_timeout_short
+       osg_getchunk_ok"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     # The chunks may come in an arbitrary order so diff may fail
     curl "${curl_https}" -s -i "${full_url}" | grep --text '^PSG-Reply-Chunk: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/item_id=[0-9]+&//g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sort > $ofile
