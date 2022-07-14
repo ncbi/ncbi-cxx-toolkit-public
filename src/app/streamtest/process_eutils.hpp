@@ -41,9 +41,11 @@
 
 #include <cmath>
 
+/*
 #include <sys/time.h>
 #include <iostream>
 #include <unistd.h>
+*/
 
 #ifndef __process_eutils__hpp__
 #define __process_eutils__hpp__
@@ -563,6 +565,7 @@ public:
         // cout << "Vector of " + NStr::IntToString((int) uids.size()) + " elements" << NcbiEndl;
         */
 
+        /*
         struct timeval start_time, end_time;
         long milli_time, seconds, useconds;
         gettimeofday(&start_time, NULL);
@@ -577,6 +580,7 @@ public:
         // cout << endl << jrs << endl;
 
         cout << "Elapsed time: " << milli_time <<" milliseconds" << endl;
+        */
     };
 
 protected:
