@@ -1619,7 +1619,7 @@ DBMU2	c	Panbangred lab, Department of Biotechnology, Mahidol University
 DBN	s	National Botanic Gardens			
 DBS	c	Department of Biological Culture Collection			
 DBSE	s	Universidade Federale Sergipe			
-DBUA	c	Zoological Collection of the Biology Department, University of the Azores			
+DBUA	sc	Zoological Collection of the Biology Department, University of the Azores			
 DBUM-IPT	c	Department of Biochemistry, Faculty of Medicine, University of Malaya			
 DBUP	c	Algal Culture Collection			
 DBV	c	Division of Standardisation			
