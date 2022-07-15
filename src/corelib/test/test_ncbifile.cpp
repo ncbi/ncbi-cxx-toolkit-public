@@ -1670,6 +1670,7 @@ public:
 
 void CTest::Init(void)
 {
+    assert(SetDiagDieLevel(eDiag_Critical) == eDiag_Fatal);
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_All);
     
