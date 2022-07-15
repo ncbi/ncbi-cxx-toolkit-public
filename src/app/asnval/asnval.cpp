@@ -458,7 +458,7 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
     }
 
     if (top_h) {
-        
+
         if (m_DoCleanup) {
             CCleanup cleanup;
             cleanup.SetScope(scope);
@@ -517,20 +517,18 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
         }
 
         if (reader.GetBiosets().size() > 1) {
-            auto it = next(reader.GetBiosets().begin());    
+            auto it = next(reader.GetBiosets().begin());
             if (it->m_class == CBioseq_set::eClass_genbank) {
-                int version;
-                m_pContext->GenbankSetId = 
-                    g_GetIdString(reader);
+                m_pContext->GenbankSetId = g_GetIdString(reader);
                 m_pContext->HugeFileMode = true;
             }
         }
-    
+
         auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
                 *m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
 
         CAutoRevoker autorevoker(info);
-        
+
         if (m_pContext->HugeFileMode) {
             CHugeFileValidator hugeFileValidator(reader, m_Options);
             CRef<CValidError> pEval;
@@ -583,7 +581,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
             }
 
             topids_task.wait();
-            
+
         } else {
             for (auto seqid: reader.GetTopIds())
             {
@@ -636,7 +634,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             close_error_stream = true;
         }
     }
-    catch (CException) {
+    catch (const CException&) {
     }
 
     TTypeInfo asninfo = nullptr;
@@ -822,7 +820,7 @@ int CAsnvalApp::Run()
 {
     const CArgs& args = GetArgs();
     Setup(args);
-    
+
     m_pTaxon.reset(new CTaxon3(CTaxon3::initialize::yes));
 
     CTime expires = GetFullVersion().GetBuildInfo().GetBuildTime();
