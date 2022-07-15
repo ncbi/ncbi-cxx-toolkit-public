@@ -522,6 +522,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
                 int version;
                 m_pContext->GenbankSetId = 
                     g_GetIdString(reader);
+                m_pContext->HugeFileMode = true;
             }
         }
     
@@ -529,12 +530,14 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
                 *m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
 
         CAutoRevoker autorevoker(info);
-
-        CHugeFileValidator hugeFileValidator(reader, m_Options);
-        CRef<CValidError> pEval;
-        hugeFileValidator.PerformGlobalChecks(pEval, *m_pContext);
-        if (pEval) {
-            PrintValidError(pEval);
+        
+        if (m_pContext->HugeFileMode) {
+            CHugeFileValidator hugeFileValidator(reader, m_Options);
+            CRef<CValidError> pEval;
+            hugeFileValidator.PerformGlobalChecks(pEval, *m_pContext);
+            if (pEval) {
+                PrintValidError(pEval);
+            }
         }
 
         if (use_mt)
@@ -606,7 +609,6 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     }
 
     m_pContext.reset(new SValidatorContext()); // For now, put this here
-    m_pContext->HugeFileMode = m_HugeFile;
 
     unique_ptr<CNcbiOfstream> local_stream;
 
