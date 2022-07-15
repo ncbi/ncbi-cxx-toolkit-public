@@ -2757,7 +2757,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     if ( gid ) *gid = 0;
 
     if ( !owner  &&  !group ) {
-        LOG_ERROR_NCBI(24, "CDirEntry::GetOwner(): Parameters are empty for: " + GetPath(), CNcbiError::eInvalidArgument);
+        LOG_ERROR_NCBI(24, "CDirEntry::GetOwner(): Parameters are NULL for: " + GetPath(), CNcbiError::eInvalidArgument);
         return false;
     }
 
