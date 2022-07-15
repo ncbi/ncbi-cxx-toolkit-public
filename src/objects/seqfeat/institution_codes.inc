@@ -1652,7 +1652,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DBN\ts\tNational Botanic Gardens\t\t\t",
 "DBS\tc\tDepartment of Biological Culture Collection\t\t\t",
 "DBSE\ts\tUniversidade Federale Sergipe\t\t\t",
-"DBUA\tc\tZoological Collection of the Biology Department, University of the Azores\t\t\t",
+"DBUA\tsc\tZoological Collection of the Biology Department, University of the Azores\t\t\t",
 "DBUM-IPT\tc\tDepartment of Biochemistry, Faculty of Medicine, University of Malaya\t\t\t",
 "DBUP\tc\tAlgal Culture Collection\t\t\t",
 "DBV\tc\tDivision of Standardisation\t\t\t",
