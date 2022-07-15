@@ -101,13 +101,6 @@
 
 
 #############################################################################
-# deprecated
-macro(NCBI_add_root_subdirectory)
-    message(WARNING "NCBI_add_root_subdirectory is deprecated, use NCBI_add_subdirectory instead")
-    NCBI_add_subdirectory(${ARGV})
-endmacro()
-
-#############################################################################
 function(NCBI_add_subdirectory)
     if(NCBI_PTBMODE_PARTS)
         return()
@@ -1669,7 +1662,8 @@ function(NCBI_internal_verify_libs)
         set(_ncbilib ${_value})
     endif()
 
-    if ( NOT "${_ncbilib}" STREQUAL "" AND DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    if ( NOT "${_ncbilib}" STREQUAL "" AND DEFINED NCBI_EXTERNAL_TREE_ROOT
+        AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
         set(_value "")
         foreach(_prj IN LISTS _ncbilib)
             get_property(_local GLOBAL PROPERTY NCBI_PTBPROP_LOCAL_${_prj})
