@@ -1013,7 +1013,7 @@ CCNH	s	Central Michigan University, Center for Cultural and Natural History	MCNH
 CCNL	s	Connecticut College, Botany Department			
 CCNP	s	Carlsbad, Carlsbad Caverns National Park			
 CCNP<POL>	c	Culture Collection of Northern Poland			
-CCNU	s	Central China Normal University, Biology Department			
+CCNU	sc	Central China Normal University, Biology Department			
 CCNY	s	City College of New York, Biology Department, New York, NY			
 CCO	s	Carleton University, Biology Department			
 CCOS<CHE>	c	Culture Collection of Switzerland			
