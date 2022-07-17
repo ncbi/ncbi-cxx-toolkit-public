@@ -1046,7 +1046,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCNL\ts\tConnecticut College, Botany Department\t\t\t",
 "CCNP\ts\tCarlsbad, Carlsbad Caverns National Park\t\t\t",
 "CCNP<POL>\tc\tCulture Collection of Northern Poland\t\t\t",
-"CCNU\ts\tCentral China Normal University, Biology Department\t\t\t",
+"CCNU\tsc\tCentral China Normal University, Biology Department\t\t\t",
 "CCNY\ts\tCity College of New York, Biology Department, New York, NY\t\t\t",
 "CCO\ts\tCarleton University, Biology Department\t\t\t",
 "CCOS<CHE>\tc\tCulture Collection of Switzerland\t\t\t",
