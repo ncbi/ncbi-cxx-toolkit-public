@@ -1680,7 +1680,6 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
 void CPubseqGatewayApp::x_MalformedArguments(
                                 shared_ptr<CPSGS_Reply>  reply,
                                 const psg_time_point_t &  create_timestamp,
-                                CRef<CRequestContext> &  context,
                                 const string &  err_msg)
 {
     m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
@@ -1688,14 +1687,12 @@ void CPubseqGatewayApp::x_MalformedArguments(
                                      CRequestStatus::e400_BadRequest,
                                      ePSGS_MalformedParameter, eDiag_Error);
     PSG_WARNING(err_msg);
-    x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
 }
 
 
 void CPubseqGatewayApp::x_InsufficientArguments(
                                 shared_ptr<CPSGS_Reply>  reply,
                                 const psg_time_point_t &  create_timestamp,
-                                CRef<CRequestContext> &  context,
                                 const string &  err_msg)
 {
     m_Counters.Increment(CPSGSCounters::ePSGS_InsufficientArgs);
@@ -1703,7 +1700,6 @@ void CPubseqGatewayApp::x_InsufficientArguments(
                                      CRequestStatus::e400_BadRequest,
                                      ePSGS_InsufficientArguments, eDiag_Error);
     PSG_WARNING(err_msg);
-    x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
 }
 
 

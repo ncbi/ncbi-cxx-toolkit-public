@@ -169,7 +169,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     if (ret.empty()) {
         string  msg = "No matching processors found or processor limits "
                       "exceeded to serve the request";
-        PSG_TRACE(msg);
+        PSG_WARNING(msg);
 
         reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
                                    ePSGS_NoProcessor, eDiag_Error);
@@ -177,7 +177,6 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
 
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
-        x_PrintRequestStop(request, CRequestStatus::e404_NotFound);
     } else {
         auto *  grp = procs.release();
         pair<size_t,
@@ -616,7 +615,31 @@ void CPSGS_Dispatcher::SignalConnectionCanceled(size_t      request_id)
 void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                                           CRequestStatus::ECode  status)
 {
-    CPubseqGatewayApp::GetInstance()->GetCounters().IncrementRequestStopCounter(status);
+    auto &  counters = CPubseqGatewayApp::GetInstance()->GetCounters();
+    counters.IncrementRequestStopCounter(status);
+
+    switch (request->GetRequestType()) {
+        case CPSGS_Request::ePSGS_ResolveRequest:
+            counters.Increment(CPSGSCounters::ePSGS_ResolveRequest);
+            break;
+        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+            counters.Increment(CPSGSCounters::ePSGS_GetBlobBySeqIdRequest);
+            break;
+        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+            counters.Increment(CPSGSCounters::ePSGS_GetBlobBySatSatKeyRequest);
+            break;
+        case CPSGS_Request::ePSGS_AnnotationRequest:
+            counters.Increment(CPSGSCounters::ePSGS_GetNamedAnnotations);
+            break;
+        case CPSGS_Request::ePSGS_TSEChunkRequest:
+            counters.Increment(CPSGSCounters::ePSGS_GetTSEChunk);
+            break;
+        case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+            counters.Increment(CPSGSCounters::ePSGS_AccessionVersionHistory);
+            break;
+        default:
+            break;
+    }
 
     if (request->GetRequestContext().NotNull()) {
         request->SetRequestContext();

@@ -91,6 +91,8 @@ class CPSGSCounters
             ePSGS_BackloggedRequests,
             ePSGS_TooManyRequests,
             ePSGS_DestroyedProcessorCallbacks,
+            ePSGS_NonProtocolRequests,
+            ePSGS_NoProcessorInstantiated,
 
             // Request stop statuses
             ePSGS_100,
@@ -141,8 +143,6 @@ class CPSGSCounters
             // Not pure monotonic counters;
             // They participate in the output though so the name and identifier will be
             // required for them too
-            ePSGS_TotalRequest,
-            ePSGS_TotalError,
             ePSGS_CassandraActiveStatements,
             ePSGS_NumberOfConnections,
             ePSGS_ActiveProcessorGroups,
@@ -181,28 +181,29 @@ class CPSGSCounters
 
         struct SCounterInfo
         {
+            enum EPSGS_CounterType {
+                ePSGS_Monotonic,    // Monotonically growing counter,
+                                    // needs to be generically sent to the
+                                    // client
+                ePSGS_Arbitrary     // The value is set from outside at the moment
+                                    // of sending a reply. Can float arbitrary.
+                                    // Basically a storage for the identifier,
+                                    // name, and description
+            };
+
             string                  m_Identifier;
             string                  m_Name;
             string                  m_Description;
-            bool                    m_IsMonotonicCounter;   // Some counters are sums
-                                                            // (like total number of errors) or
-                                                            // not really monotonic
-                                                            // like number of
-                                                            // connections. For them
-                                                            // this is 'false'
-            bool                    m_IsErrorCounter;
-            bool                    m_IsRequestCounter;
+            EPSGS_CounterType       m_Type;
+
             atomic_uint_fast64_t    m_Value;
 
             SCounterInfo(const string &  identifier,
                          const string &  name,
                          const string &  description,
-                         bool  is_monotonic = true,
-                         bool  is_error = false,
-                         bool  is_request = false) :
+                         EPSGS_CounterType  counter_type = ePSGS_Monotonic) :
                 m_Identifier(identifier), m_Name(name),
-                m_Description(description), m_IsMonotonicCounter(is_monotonic),
-                m_IsErrorCounter(is_error), m_IsRequestCounter(is_request),
+                m_Description(description), m_Type(counter_type),
                 m_Value(0)
             {}
         };

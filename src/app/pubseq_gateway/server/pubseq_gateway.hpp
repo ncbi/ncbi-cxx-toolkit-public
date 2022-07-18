@@ -432,18 +432,16 @@ private:
 private:
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
                                  const psg_time_point_t &  create_timestamp,
-                                 CRef<CRequestContext> &  context,
                                  const string &  err_msg);
     void x_MalformedArguments(shared_ptr<CPSGS_Reply>  reply,
                               const psg_time_point_t &  create_timestamp,
-                              CRef<CRequestContext> &  context,
                               const string &  err_msg);
     bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
                           const psg_time_point_t &  create_timestamp);
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
     void x_RegisterProcessors(void);
-    void x_DispatchRequest(CRef<CRequestContext>   context,
+    bool x_DispatchRequest(CRef<CRequestContext>   context,
                            shared_ptr<CPSGS_Request>  request,
                            shared_ptr<CPSGS_Reply>  reply);
     void x_InitSSL(void);
