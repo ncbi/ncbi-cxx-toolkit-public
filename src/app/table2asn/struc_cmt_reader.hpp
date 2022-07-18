@@ -26,7 +26,7 @@ class CTable2AsnStructuredCommentsReader : public CStructuredCommentsReader
 public:
     // If you need messages and error to be logged
     // supply an optional ILineErrorListener instance
-    CTable2AsnStructuredCommentsReader(const std::string& filename, objects::ILineErrorListener* logger);
+    CTable2AsnStructuredCommentsReader(const std::string& filename, objects::ILineErrorListener* logger, bool verbose);
     ~CTable2AsnStructuredCommentsReader();
     void ProcessComments(objects::CSeq_entry& entry) const;
 private:
@@ -42,12 +42,13 @@ private:
     static
     bool IsVertical(ILineReader& reader);
 
-    static void _AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments);
+    static bool _AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments);
     static void _AddStructuredComments(objects::CSeq_descr& descr, const CStructComment& comments);
 
     static void _CheckStructuredCommentsSuffix(CStructComment& comments);
     list<CStructComment> m_comments;
     bool m_vertical = false;
+    bool m_verbose = false;
 };
 
 END_NCBI_SCOPE

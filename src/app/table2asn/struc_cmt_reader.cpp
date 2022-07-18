@@ -46,6 +46,8 @@
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <util/line_reader.hpp>
+#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -57,11 +59,37 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#include <set>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(const std::string& filename, ILineErrorListener* logger)
-    : CStructuredCommentsReader(logger)
+static void sReportUnappliedStructuredComment(
+    ILineErrorListener* pEC,
+    const string& commentID)
+{
+    if (!pEC) {
+        return;
+    }
+    string message =
+        string("Structured comment for \"") +
+        commentID +
+        "\" could not be matched to any input sequence.";
+
+    AutoPtr< CLineErrorEx> pErr = CLineErrorEx::Create(
+        ILineError::eProblem_GeneralParsingError,
+        eDiag_Warning,
+        0, 0,
+        commentID,
+        0,
+        message);
+    pEC->PutError(*pErr);
+}
+
+
+CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(
+    const std::string& filename, ILineErrorListener* logger, bool verbose)
+    : CStructuredCommentsReader(logger), m_verbose(verbose)
 {
     CRef<ILineReader> reader{ILineReader::New(filename)};
     m_vertical = IsVertical(*reader);
@@ -83,6 +111,8 @@ CTable2AsnStructuredCommentsReader::~CTable2AsnStructuredCommentsReader()
 
 void CTable2AsnStructuredCommentsReader::ProcessComments(CSeq_entry& entry) const
 {
+    set<CRef<CSeq_id>> matchedCommentIds;
+
     if (m_vertical) {
         VisitAllSeqDesc(entry, true, [this](CBioseq* bioseq, CSeq_descr& descr)
         {
@@ -93,7 +123,17 @@ void CTable2AsnStructuredCommentsReader::ProcessComments(CSeq_entry& entry) cons
         });
     } else {
         for (const CStructComment& comment : m_comments) {
-            _AddStructuredComments(entry, comment);
+            if (_AddStructuredComments(entry, comment)) {
+                matchedCommentIds.insert(comment.m_id);
+            }
+        }
+    }
+    if (m_logger  &&  m_verbose) {
+        for (auto& comment: m_comments) {
+            if (matchedCommentIds.find(comment.m_id) == matchedCommentIds.end()) {
+                auto commentId = comment.m_id->GetLocal().GetStr();
+                sReportUnappliedStructuredComment(m_logger, commentId);
+            }
         }
     }
 }
@@ -216,9 +256,11 @@ bool sSeqIdMatchesCommentId(const CSeq_id& seqID, const CSeq_id& commentID)
 
 
 
-void CTable2AsnStructuredCommentsReader::_AddStructuredComments(CSeq_entry& entry, const CStructComment& comments)
+bool CTable2AsnStructuredCommentsReader::_AddStructuredComments(
+    CSeq_entry& entry, const CStructComment& comments)
 {
-    VisitAllBioseqs(entry, [comments](CBioseq& bioseq)
+    bool matchFound(false);
+    VisitAllBioseqs(entry, [&matchFound, comments](CBioseq& bioseq)
     {
         if (!bioseq.IsNa())
             return;
@@ -234,12 +276,15 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(CSeq_entry& entr
                     break;
                 }
             }
-            if (!matched)
+            if (!matched) {
                 return;
+            }
         }
 
         _AddStructuredComments(bioseq.SetDescr(), comments);
+        matchFound = true;
     });
+    return matchFound;
 }
 
 void CTable2AsnStructuredCommentsReader::_CheckStructuredCommentsSuffix(CStructComment& comments)

@@ -1569,7 +1569,7 @@ void CTbl2AsnApp::LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStruc
         CFile file(pathname);
         if (file.Exists() && file.GetLength())
         {
-            comments.reset(new CTable2AsnStructuredCommentsReader(pathname, m_logger));
+            comments.reset(new CTable2AsnStructuredCommentsReader(pathname, m_logger, m_context.m_verbose));
         }
     }
 }
