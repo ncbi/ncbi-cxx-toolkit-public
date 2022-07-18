@@ -266,60 +266,6 @@ string g_GetIdString(const CHugeAsnReader& reader)
 }
 
 
-static bool s_HasPub(const list<CRef<CSeqdesc>>& descriptors)
-{   
-    for (auto pDesc : descriptors) {
-        if (pDesc && pDesc->IsPub()) {
-            const auto& pub = pDesc->GetPub();
-            if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
-                return true;
-            }
-        }
-    } 
-    return false;
-}
-
-static bool s_HasCitSub(const list<CRef<CSeqdesc>>& descriptors)
-{
-    for (auto pDesc : descriptors) {
-        if (pDesc && pDesc->IsPub()) {
-            const auto& pub = pDesc->GetPub();
-            if (pub.IsSetPub() && pub.GetPub().IsSet()) {
-                for (auto pPub : pub.GetPub().Get()) {
-                    if (pPub && pPub->IsSub()) {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-    return false;
-}
-
-static void s_GatherSerialNumbers(const list<CRef<CSeqdesc>>& descriptors,
-        set<int>& pubSerialNumbers,
-        set<int>& collidingNumbers)
-{
-    for (auto pDesc : descriptors) {
-        if (pDesc && pDesc->IsPub()) {
-            const auto& pub = pDesc->GetPub();
-            if (pub.IsSetPub() && pub.GetPub().IsSet()) {
-                for (auto pPub : pub.GetPub().Get()) {
-                    if (pPub->IsGen()) {
-                        const auto& gen = pPub->GetGen();
-                        if (gen.IsSetSerial_number()) {
-                            if (!pubSerialNumbers.insert(gen.GetSerial_number()).second) {
-                                collidingNumbers.insert(gen.GetSerial_number());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 CHugeFileValidator::CHugeFileValidator(const CHugeFileValidator::TReader& reader,
         CHugeFileValidator::TOptions options)
     : m_Reader(reader), m_Options(options) {}
