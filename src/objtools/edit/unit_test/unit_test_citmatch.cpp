@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(Test3)
 {
     SCitMatch cm;
     cm.Journal = "Genome Announc";
-    cm.Title   = "(Hansenula fabianii)";
+    cm.Title   = "Yeast (Hansenula fabianii)";
     cm.Author  = "Freel KC";
 
     for (auto upd : updaters) {
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(Test5)
     cm.Page    = "3";
     cm.Year    = "2003";
     cm.Author  = "Nilsson MA";
-    cm.Title   = "Radiation of marsupials after the K/T boundary"; // ": evidence from complete mitochondrial genomes";
+    cm.Title   = "Radiation of marsupials after the K/T boundary: evidence from complete mitochondrial genomes";
 
     for (auto upd : updaters) {
         TEntrezId pmid = upd->CitMatch(cm);
