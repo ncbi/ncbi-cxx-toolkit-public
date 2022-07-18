@@ -1069,11 +1069,11 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
     }
     if (!x_FormFQDN(fqdn, iter->name, len, type, data->domain, data->domlen)) {
         CORE_LOGF(eLOG_Error,
-                  ("LBDNS FQDN for %s \"%s\" in \"%s\": Name too long",
-                   x_TypeStr(type, errbuf), iter->name, data->domain));
+                  ("LBDNS FQDN for \"%s\" %s in \"%s\": Name too long",
+                   iter->name, x_TypeStr(type, errbuf), data->domain));
         return 0/*failure*/;
     }
-    CORE_TRACEF(("LBDNS query \"%s\"", fqdn));
+    CORE_TRACEF(("LBDNS query \"%s\" %s", fqdn, x_TypeStr(type, errbuf)));
 
     h_errno = errno = 0;
     memset(msg, 0, NS_HFIXEDSZ);
