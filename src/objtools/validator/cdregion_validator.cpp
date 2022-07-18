@@ -554,7 +554,7 @@ string CCdregionValidator::MapToNTCoords(TSeqPos pos)
 
     try {
         pnt.SetId().Assign(GetId(m_Feat.GetProduct(), &m_Scope));
-    } catch (CObjmgrUtilException) {}
+    } catch (const CObjmgrUtilException&) {}
 
     CSeq_loc tmp;
     tmp.SetPnt(pnt);
@@ -948,8 +948,8 @@ static int s_GetStrictGenCode(const CBioSource& src)
                     break;
             }
         }
-    } catch (CException ) {
-    } catch (std::exception ) {
+    } catch (const CException& ) {
+    } catch (const std::exception& ) {
     }
     return gencode;
 }
@@ -1319,7 +1319,7 @@ void CCdregionValidator::x_ValidateCDSPeptides()
             }
         }
     }
-    } catch (CException) {
+    } catch (const CException& ) {
     }
 }
 

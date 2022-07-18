@@ -61,7 +61,7 @@ CValidator::CValidator(CObjectManager& objmgr) :
     CValidator(objmgr,
             make_shared<SValidatorContext>(),
             make_shared<CTaxon3>())
-{   
+{
 }
 
 
@@ -69,14 +69,14 @@ CValidator::CValidator(CObjectManager& objmgr,
     shared_ptr<SValidatorContext> pContext,
     shared_ptr<ITaxon3> pTaxon) :
     m_ObjMgr{&objmgr},
-    m_pContext{pContext},
-    m_pTaxon{pTaxon}
-{   
-    m_pTaxon->Init(); 
+    m_pTaxon{pTaxon},
+    m_pContext{pContext}
+{
+    m_pTaxon->Init();
 }
 
 
-CValidator::CValidator(CObjectManager& objmgr, 
+CValidator::CValidator(CObjectManager& objmgr,
     shared_ptr<SValidatorContext> pContext,
     AutoPtr<ITaxon3> taxon) :  // deprecated
     m_ObjMgr{&objmgr},

@@ -2313,8 +2313,8 @@ bool CValidError_bioseq::SuppressTrailingXMsg(const CBioseq& seq)
                 return true;
             }
         }
-    } catch (CException ) {
-    } catch (std::exception ) {
+    } catch (const CException& ) {
+    } catch (const std::exception& ) {
     }
     return false;
 }
@@ -3348,14 +3348,14 @@ static optional<int> s_MaxSeqStretchIfLessThanThreshold(const CSeqVector& vec, i
         // check a sequence interval no longer than the threshold length
         auto interval = (distanceToEnd > threshold) ? threshold : distanceToEnd;
         auto end_it = find_if(begin_it, next(begin_it, interval), IsN);
-        const auto current_stretch = distance(begin_it, end_it); 
+        const auto current_stretch = distance(begin_it, end_it);
         if (current_stretch >= threshold) { // No Ns in the interval
-            return {};               
+            return {};
         }
 
         if (current_stretch > max_stretch) {
             max_stretch = current_stretch;
-        } 
+        }
         begin_it = find_if_not(end_it, end(vec), IsN);
     }
     return max_stretch;
@@ -3400,7 +3400,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         }
 
         if (const auto oMaxLength = s_MaxSeqStretchIfLessThanThreshold(vec, 10); oMaxLength.has_value()) {
-            PostErr(eDiag_Error, eErr_SEQ_INST_ContigsTooShort, 
+            PostErr(eDiag_Error, eErr_SEQ_INST_ContigsTooShort,
                     "Maximum contig length is " + NStr::IntToString(*oMaxLength) + " bases", seq);
         }
 
@@ -3953,8 +3953,8 @@ void CValidError_bioseq::ValidateRawConst(
                             protein_label = first_prot.GetName().front();
                     }
                     }
-                } catch (CException ) {
-                } catch (std::exception ) {
+                } catch (const CException& ) {
+                } catch (const std::exception& ) {
                 }
 
                 if (NStr::IsBlank(gene_label)) {
@@ -4335,8 +4335,8 @@ void CValidError_bioseq::ValidateDeltaLoc
                     PostErr(eDiag_Error, eErr_GENERIC_DeltaSeqError,
                         "Unable to find far delta sequence component", seq);
                 }
-            } catch (CException ) {
-            } catch (std::exception ) {
+            } catch (const CException& ) {
+            } catch (const std::exception& ) {
             }
         }
     }
@@ -4820,8 +4820,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 }
                 pos += delta_len;
             }
-        } catch (CException ) {
-        } catch (std::exception ) {
+        } catch (const CException& ) {
+        } catch (const std::exception& ) {
         }
     }
 
@@ -6681,9 +6681,9 @@ unsigned int CValidError_bioseq::x_IdXrefsNotReciprocal (const CSeq_feat &cds, c
                     return 2;
                 }
             }
-        } catch (CException ) {
+        } catch (const CException& ) {
             return 2;
-        } catch (std::exception ) {
+        } catch (const std::exception& ) {
             return 2;
         }
     }
@@ -10902,8 +10902,8 @@ unsigned int s_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna
                     return 2;
                 }
             }
-        } catch (CException ) {
-        } catch (std::exception ) {
+        } catch (const CException& ) {
+        } catch (const std::exception& ) {
         }
     }
     return 0;

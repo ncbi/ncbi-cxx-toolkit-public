@@ -844,8 +844,8 @@ string CValidErrorFormat::GetFeatureBioseqLabel(const CSeq_feat& ft, CRef<CScope
             if (ex.GetErrCode() == CObjMgrException::eFindFailed) {
                 find_failed = true;
             }
-        } catch (CException) {
-        } catch (std::exception) {
+        } catch (const CException&) {
+        } catch (const std::exception&) {
         };
         if (find_failed) {
             try {
@@ -855,8 +855,8 @@ string CValidErrorFormat::GetFeatureBioseqLabel(const CSeq_feat& ft, CRef<CScope
                     desc += CValidErrorFormat::GetBioseqLabel(hnd);
                 }
 
-            } catch (CException) {
-            } catch (std::exception) {
+            } catch (const CException&) {
+            } catch (const std::exception&) {
             };
         }
     }

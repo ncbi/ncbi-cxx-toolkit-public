@@ -282,7 +282,7 @@ static string s_GetSeq_featAcc(const CSeq_feat& feat, CScope& scope, int* versio
 //}
 
 
-static string s_GetBioseqAcc(const CBioseq& seq, int* version) 
+static string s_GetBioseqAcc(const CBioseq& seq, int* version)
 {
     auto seqid = sequence::GetId(seq, sequence::eGetId_Best).GetSeqId();
     if (seqid) {
@@ -321,7 +321,7 @@ static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst)
                     return s_GetSeqFromSet(pSubEntry->GetSet());
                 }
             }
-                
+
             for (auto pSubEntry : bsst.GetSeq_set()) {
                 if (pSubEntry->IsSeq()) {
                     return &pSubEntry->GetSeq();
@@ -339,7 +339,7 @@ static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst)
         default:
             break;
     }
-    
+
     // In this case, return the first bioseq in the set
     CTypeConstIterator<CBioseq> seqit(ConstBegin(bsst));
     if (seqit) {
@@ -427,11 +427,11 @@ CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScop
 
 
 
-string GetAccessionFromBioseq(const CBioseq& bioseq, int* version) 
+string GetAccessionFromBioseq(const CBioseq& bioseq, int* version)
 {
     return s_GetBioseqAcc(bioseq, version);
 }
-           
+
 
 string GetAccessionFromBioseqSet(const CBioseq_set& bsst, int* version)
 {
@@ -1404,7 +1404,7 @@ bool& end_ambig)
                 }
             }
             num_ns = 0;
-            for (int i = 0; i < check_len; i++) {
+            for (size_t i = 0; i < check_len; i++) {
                 if (vec[vec.size() - i - 1] == 'N') {
                     num_ns++;
                     if (num_ns >= 5 && i < 10) {
