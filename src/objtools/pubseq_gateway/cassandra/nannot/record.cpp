@@ -47,7 +47,9 @@ string CNAnnotRecord::ToString() const
       << "\n\tm_SatKey: " << m_SatKey
       << "\n\tm_AnnotName: " << m_AnnotName
       << "\n\tm_Start: " << m_Start
-      << "\n\tm_Stop: " << m_Stop << "\n";
+      << "\n\tm_Stop: " << m_Stop
+      << "\n\tm_State: " << static_cast<int32_t>(m_State)
+      << "\n";
     return s.str();
 }
 

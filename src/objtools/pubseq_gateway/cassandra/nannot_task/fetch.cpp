@@ -181,7 +181,7 @@ void CCassNAnnotTaskFetch::Wait1()
 
                 string sql =
                     " SELECT "
-                    "  annot_name, sat_key, last_modified, start, stop, seq_annot_info, annot_info_modified, writetime(stop) "
+                    "  annot_name, sat_key, last_modified, start, stop, seq_annot_info, annot_info_modified, state, writetime(stop) "
                     " FROM " + GetKeySpace() + ".bioseq_na "
                     " WHERE"
                     "  accession = ? AND version = ? AND seq_id_type = ?";
@@ -236,7 +236,8 @@ void CCassNAnnotTaskFetch::Wait1()
                             .SetStart(m_QueryArr[0].query->FieldGetInt32Value(3, 0))
                             .SetStop(m_QueryArr[0].query->FieldGetInt32Value(4, 0))
                             .SetAnnotInfoModified(m_QueryArr[0].query->FieldGetInt64Value(6, 0))
-                            .SetWritetime(m_QueryArr[0].query->FieldGetInt64Value(7, 0));
+                            .SetState(m_QueryArr[0].query->FieldGetInt8Value(7, CNAnnotRecord::eStateAlive))
+                            .SetWritetime(m_QueryArr[0].query->FieldGetInt64Value(8, 0));
 
                         const unsigned char * rawdata = nullptr;
                         int64_t len = m_QueryArr[0].query->FieldGetBlobRaw(5, &rawdata);
@@ -244,7 +245,7 @@ void CCassNAnnotTaskFetch::Wait1()
                             record.SetSeqAnnotInfo(string(reinterpret_cast<const char*>(rawdata), len));
                         }
 
-                        if (m_Consume) {
+                        if (m_Consume && record.GetState() == CNAnnotRecord::eStateAlive) {
                             string annot_name = record.GetAnnotName();
                             do_next = m_Consume(move(record), false);
                             m_LastConsumedAnnot = move(annot_name);
