@@ -141,6 +141,7 @@ private:
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
 
+    CFastMutex m_Mutex;
     shared_ptr<SWGSProcessor_Config> m_Config;
     mutable shared_ptr<CWGSClient> m_Client;
     EPSGS_Status m_Status;

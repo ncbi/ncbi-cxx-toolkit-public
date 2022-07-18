@@ -100,6 +100,7 @@ private:
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
 
+    CFastMutex m_Mutex;
     shared_ptr<objects::CCDDClientPool> m_ClientPool;
     EPSGS_Status m_Status;
     bool m_Canceled;

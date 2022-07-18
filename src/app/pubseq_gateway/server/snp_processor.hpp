@@ -133,6 +133,7 @@ private:
     shared_ptr<SSNPProcessor_Config> m_Config;
     mutable shared_ptr<CSNPClient> m_Client;
 
+    CFastMutex m_Mutex;
     EPSGS_Status m_Status = ePSGS_NotFound;
     bool m_Canceled = false;
     vector<CSeq_id_Handle> m_SeqIds;

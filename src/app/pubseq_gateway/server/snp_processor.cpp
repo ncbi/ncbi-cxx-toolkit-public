@@ -309,7 +309,10 @@ void CPSGS_SNPProcessor::Process()
     GetRequest()->SetRequestContext();
 
     try {
-        m_Unlocked = false;
+        {
+            CFastMutexGuard guard(m_Mutex);
+            m_Unlocked = false;
+        }
         if (m_Request) m_Request->Lock(kSNPProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
@@ -651,8 +654,11 @@ IPSGS_Processor::EPSGS_Status CPSGS_SNPProcessor::GetStatus()
 
 void CPSGS_SNPProcessor::x_UnlockRequest(void)
 {
-    if (m_Unlocked) return;
-    m_Unlocked = true;
+    {
+        CFastMutexGuard guard(m_Mutex);
+        if (m_Unlocked) return;
+        m_Unlocked = true;
+    }
     if (m_Request) m_Request->Unlock(kSNPProcessorEvent);
 }
 
