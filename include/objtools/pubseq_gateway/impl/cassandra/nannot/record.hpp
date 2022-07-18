@@ -51,20 +51,15 @@ class CNAnnotRecord {
     using TCoord = int32_t;
     using TAnnotInfo = string;
     using TWritetime = int64_t;
+    using TState = int8_t;
+
+    enum EState {
+        eStateDead = 0,
+        eStateAlive = 1,
+    };
 
  public:
-    CNAnnotRecord()
-        : m_Modified(0)
-        , m_AnnotInfoModified(0)
-        , m_Writetime(0)
-        , m_SatKey(0)
-        , m_Start(0)
-        , m_Stop()
-        , m_Version(0)
-        , m_SeqIdType(0)
-    {
-    }
-
+    CNAnnotRecord() = default;
     CNAnnotRecord(CNAnnotRecord const &) = default;
     CNAnnotRecord(CNAnnotRecord&&) = default;
     CNAnnotRecord& operator=(CNAnnotRecord const &) = default;
@@ -142,6 +137,12 @@ class CNAnnotRecord {
         return *this;
     }
 
+    CNAnnotRecord& SetState(TState  value)
+    {
+        m_State = value;
+        return *this;
+    }
+
     // ---------------- Getters ------------------------
     string const & GetAccession() const
     {
@@ -198,20 +199,26 @@ class CNAnnotRecord {
         return m_Writetime;
     }
 
+    TState GetState() const
+    {
+        return m_State;
+    }
+
     string ToString() const;
 
  private:
     string m_Accession;
     string m_AnnotName;
     TAnnotInfo m_SeqAnnotInfo;
-    TTimestamp m_Modified;
-    TTimestamp m_AnnotInfoModified;
-    TWritetime m_Writetime;
-    TSatKey m_SatKey;
-    TCoord m_Start;
-    TCoord m_Stop;
-    int16_t m_Version;
-    int16_t m_SeqIdType;
+    TTimestamp m_Modified{0};
+    TTimestamp m_AnnotInfoModified{0};
+    TWritetime m_Writetime{0};
+    TSatKey m_SatKey{0};
+    TCoord m_Start{0};
+    TCoord m_Stop{0};
+    int16_t m_Version{0};
+    int16_t m_SeqIdType{0};
+    TState m_State{0};
 };
 
 using TNAnnotConsumeCallback = function<bool(CNAnnotRecord &&, bool last)>;
