@@ -175,87 +175,6 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(CSeq_descr& desc
     }
 }
 
-bool sSeqIdMatchesCommentId(const CSeq_id& seqID, const CSeq_id& commentID)
-{
-    // idea: try match the raw text of the commentID with the "money" part of the given ID
- 
-    if (seqID.Compare(commentID) == CSeq_id::e_YES) {
-        return true;
-    }
-    if (!commentID.IsLocal()) {
-        return false;
-    }
-
-    const auto& commentIdText = commentID.GetLocal().GetStr();
-    const CTextseq_id* pTsid = seqID.GetTextseq_Id();
-    if (pTsid) {
-        if (pTsid->IsSetAccession()) {
-            return (pTsid->GetAccession() == commentIdText);
-        }
-        if (pTsid->IsSetName()) {
-            return (pTsid->GetName() == commentIdText);
-        }
-        return false;
-    }
-
-    string seqIdText;
-    switch (seqID.Which()) {
-        default:
-            return false;
-        case CSeq_id::e_Gibbsq:
-            seqIdText = NStr::IntToString(seqID.GetGibbsq());
-            break;
-        case CSeq_id::e_Gibbmt:
-            seqIdText = NStr::IntToString(seqID.GetGibbmt());
-            break;
-        case CSeq_id::e_Giim:
-            seqIdText = NStr::IntToString(seqID.GetGiim().GetId());
-            break;
-        case CSeq_id::e_General: {
-            const auto& general = seqID.GetGeneral();
-            if (general.IsSetTag()) {
-                if (general.GetTag().IsStr()) {
-                    seqIdText = general.GetTag().GetStr();
-                }
-                else {
-                    seqIdText = NStr::IntToString(general.GetTag().GetId());
-                }
-            }
-            break;
-        }
-        case CSeq_id::e_Patent: {
-            const CId_pat& idp = seqID.GetPatent().GetCit();
-            seqIdText = idp.GetId().IsNumber() ?
-                idp.GetId().GetNumber() : idp.GetId().GetApp_number();
-            seqIdText += '_';
-            seqIdText += NStr::IntToString(seqID.GetPatent().GetSeqid());
-            break;
-        }
-        case CSeq_id::e_Gi:
-            seqIdText = NStr::NumericToString(seqID.GetGi());
-            break;
-        case CSeq_id::e_Pdb: {
-            const CPDB_seq_id& pid = seqID.GetPdb();
-            seqIdText = pid.GetMol().Get();
-            if (pid.IsSetChain_id()) {
-                seqIdText += '_';
-                seqIdText += pid.GetChain_id();
-            }
-            else if (pid.IsSetChain()) {
-                unsigned char chain = static_cast<unsigned char>(pid.GetChain());
-                if (chain > ' ') {
-                    seqIdText += '_';
-                    seqIdText += static_cast<char>(chain);
-                }
-            }
-            break;
-        }
-    }
-    return (seqIdText == commentIdText);
-}
-
-
-
 bool CTable2AsnStructuredCommentsReader::_AddStructuredComments(
     CSeq_entry& entry, const CStructComment& comments)
 {
@@ -270,7 +189,7 @@ bool CTable2AsnStructuredCommentsReader::_AddStructuredComments(
             bool matched = false;
             for (const auto& id : bioseq.GetId())
             {
-                if (sSeqIdMatchesCommentId(*id, *comments.m_id))
+                if (CStructuredCommentsReader::SeqIdMatchesCommentId(*id, *comments.m_id))
                 {
                     matched = true;
                     break;
