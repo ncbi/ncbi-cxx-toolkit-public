@@ -99,6 +99,7 @@
 using namespace ncbi;
 USING_SCOPE(objects);
 USING_SCOPE(validator);
+USING_SCOPE(edit);
 
 #define USE_XMLWRAPP_LIBS
 
@@ -223,6 +224,7 @@ private:
     string m_OnlyError;
 
     unique_ptr<edit::CHugeFileProcess> m_pHugeFileProcess;
+    SGlobalValidatorInfo m_GlobalInfo;
     CNcbiOstream* m_ValidErrorStream;
 
     shared_ptr<SValidatorContext> m_pContext;
@@ -483,8 +485,10 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 {
     auto& reader = m_pHugeFileProcess->GetReader();
 
+
     while(true)
     {
+        m_GlobalInfo.Clear(); 
         try
         {
             if (!reader.GetNextBlob())
@@ -530,9 +534,12 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
         CAutoRevoker autorevoker(info);
 
         if (m_pContext->HugeFileMode) {
+            m_pContext->NoPubsFound = m_GlobalInfo.NoPubsFound;
+            m_pContext->NoCitSubsFound = m_GlobalInfo.NoCitSubsFound;    
+
             CHugeFileValidator hugeFileValidator(reader, m_Options);
             CRef<CValidError> pEval;
-            hugeFileValidator.PerformGlobalChecks(pEval, *m_pContext);
+            hugeFileValidator.ReportGlobalErrors(m_GlobalInfo, pEval);
             if (pEval) {
                 PrintValidError(pEval);
             }
@@ -641,7 +648,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     if (fname.empty())// || true)
         m_In = OpenFile(fname, asninfo);
     else {
-        m_pHugeFileProcess.reset(new edit::CHugeFileProcess);
+        m_pHugeFileProcess.reset(new CHugeFileProcess(new CValidatorHFReader(m_GlobalInfo)));
         try
         {
             m_pHugeFileProcess->Open(fname, &s_known_types);

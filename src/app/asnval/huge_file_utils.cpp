@@ -37,9 +37,11 @@
 #include <objtools/validator/validerror_format.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Pubdesc.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
 #include <objects/valerr/ValidError.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objtools/readers/objhook_lambdas.hpp> 
 #include "huge_file_utils.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -296,7 +298,7 @@ static bool s_HasCitSub(const list<CRef<CSeqdesc>>& descriptors)
 
 static void s_GatherSerialNumbers(const list<CRef<CSeqdesc>>& descriptors,
         set<int>& pubSerialNumbers,
-        set<int>& conflictingNumbers)
+        set<int>& collidingNumbers)
 {
     for (auto pDesc : descriptors) {
         if (pDesc && pDesc->IsPub()) {
@@ -307,7 +309,7 @@ static void s_GatherSerialNumbers(const list<CRef<CSeqdesc>>& descriptors,
                         const auto& gen = pPub->GetGen();
                         if (gen.IsSetSerial_number()) {
                             if (!pubSerialNumbers.insert(gen.GetSerial_number()).second) {
-                                conflictingNumbers.insert(gen.GetSerial_number());
+                                collidingNumbers.insert(gen.GetSerial_number());
                             }
                         }
                     }
@@ -378,24 +380,10 @@ string CHugeFileValidator::x_GetIdString() const
 }
 
 
-void CHugeFileValidator::ReportCollidingSerialNumbers(CRef<CValidError>& pErrors) const
+void CHugeFileValidator::ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
+        CRef<CValidError>& pErrors) const
 {
-    set<int> pubSerialNumbers;
-    set<int> conflictingNumbers;
-
-    for (const auto& bioseqInfo : m_Reader.GetBioseqs()) {
-        if (bioseqInfo.m_descr && bioseqInfo.m_descr->IsSet()) {
-            s_GatherSerialNumbers(bioseqInfo.m_descr->Get(), pubSerialNumbers, conflictingNumbers);
-        }
-    }
-
-    for (const auto& biosetInfo : m_Reader.GetBiosets()) {
-        if (biosetInfo.m_descr && biosetInfo.m_descr->IsSet()) {
-            s_GatherSerialNumbers(biosetInfo.m_descr->Get(), pubSerialNumbers, conflictingNumbers);
-        }
-    }
-
-    for (auto val : conflictingNumbers) {
+    for (auto val : collidingNumbers) {
         s_PostErr(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers,
                 "Multiple publications have serial number " + NStr::IntToString(val),
                 x_GetIdString(), pErrors);
@@ -403,24 +391,8 @@ void CHugeFileValidator::ReportCollidingSerialNumbers(CRef<CValidError>& pErrors
 }
 
 
-bool CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
+void CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
 {
-    for (const auto& bioseqInfo : m_Reader.GetBioseqs()) {
-        if (bioseqInfo.m_descr && bioseqInfo.m_descr->IsSet()) {
-            if (s_HasPub(bioseqInfo.m_descr->Get())) {
-                return false;
-            }
-        }
-    }
-
-    for (const auto& biosetInfo : m_Reader.GetBiosets()) {
-        if (biosetInfo.m_descr && biosetInfo.m_descr->IsSet()) {
-            if (s_HasPub(biosetInfo.m_descr->Get())) {
-                return false;
-            }
-        }
-    }
-
     if(!(m_Reader.GetSubmitBlock())) {
         if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingPubs(info, m_Reader)) {
             auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
@@ -429,28 +401,11 @@ bool CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
                     x_GetIdString(), pErrors);
         }
     }
-    return true;
 }
 
 
-bool CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
+void CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
 {
-    for (const auto& bioseqInfo : m_Reader.GetBioseqs()) {
-        if (bioseqInfo.m_descr && bioseqInfo.m_descr->IsSet()) {
-            if (s_HasCitSub(bioseqInfo.m_descr->Get())) {
-                return false;
-            }
-        }
-    }
-
-    for (const auto& biosetInfo : m_Reader.GetBiosets()) {
-        if (biosetInfo.m_descr && biosetInfo.m_descr->IsSet()) {
-            if (s_HasCitSub(biosetInfo.m_descr->Get())) {
-                return false;
-            }
-        }
-    }
-
     if(!(m_Reader.GetSubmitBlock())) {
         bool isRefSeq = (m_Options & CValidator::eVal_refseq_conventions) ||
             x_HasRefSeqAccession();
@@ -464,17 +419,67 @@ bool CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
                     x_GetIdString(), pErrors);
         }
     }
-
-    return true;
 }
 
 
 
-void CHugeFileValidator::PerformGlobalChecks(CRef<CValidError>& pErrors, SValidatorContext& context) const
+void CHugeFileValidator::ReportGlobalErrors(const SGlobalValidatorInfo& globalInfo, CRef<CValidError>& pErrors) const
 {
-    context.NoPubsFound = ReportMissingPubs(pErrors);
-    context.NoCitSubsFound = ReportMissingCitSubs(pErrors);
-    ReportCollidingSerialNumbers(pErrors);
+    if (globalInfo.NoPubsFound) {
+        ReportMissingPubs(pErrors);
+    }
+
+    if (globalInfo.NoCitSubsFound) {
+        ReportMissingCitSubs(pErrors);
+    }
+
+    if (!globalInfo.conflictingSerialNumbers.empty()) {
+        ReportCollidingSerialNumbers(globalInfo.conflictingSerialNumbers, pErrors);
+    }
+}
+
+
+static void s_UpdateGlobalInfo(const CPubdesc& pub, SGlobalValidatorInfo& globalInfo) 
+{
+    if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
+        globalInfo.NoPubsFound = false;
+        for (auto pPub : pub.GetPub().Get()) {
+            if (pPub->IsSub()) {
+                globalInfo.NoCitSubsFound = false;
+            }
+            else if (pPub->IsGen()) {
+                const auto& gen = pPub->GetGen();
+                if (gen.IsSetSerial_number()) {
+                    if (!globalInfo.pubSerialNumbers.insert(gen.GetSerial_number()).second) {
+                        globalInfo.conflictingSerialNumbers.insert(gen.GetSerial_number());
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void CValidatorHFReader::x_SetHooks(CObjectIStream& objStream, CValidatorHFReader::TContext& context) 
+{
+    TParent::x_SetHooks(objStream, context);
+    // Set Pubdesc skip and read hooks
+    SetLocalSkipHook(CType<CPubdesc>(), objStream,
+            [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+            {
+                auto pPubdesc = Ref(new CPubdesc());
+                type.GetTypeInfo()->DefaultReadData(in, pPubdesc);
+                s_UpdateGlobalInfo(*pPubdesc, m_GlobalInfo);
+            });
+
+    SetLocalReadHook(CType<CPubdesc>(), objStream,
+            [this](CObjectIStream& in, const CObjectInfo& object)
+            {
+                auto* pObject = object.GetObjectPtr();
+                object.GetTypeInfo()->DefaultReadData(in, pObject);
+                CPubdesc* pPubdesc = CTypeConverter<CPubdesc>::SafeCast(pObject);
+                s_UpdateGlobalInfo(*pPubdesc, m_GlobalInfo);
+            });
 }
 
 END_NCBI_SCOPE

@@ -43,6 +43,7 @@ namespace objects {
 
 string g_GetIdString(const objects::edit::CHugeAsnReader& reader);
 
+struct SGlobalValidatorInfo;
 
 class CHugeFileValidator {
 public:
@@ -54,14 +55,15 @@ public:
             TOptions options);
     ~CHugeFileValidator(){}
 
-    bool ReportMissingPubs(CRef<objects::CValidError>& pErrors) const;
+    void ReportMissingPubs(CRef<objects::CValidError>& pErrors) const;
 
-    bool ReportMissingCitSubs(CRef<objects::CValidError>& pErrors) const;
+    void ReportMissingCitSubs(CRef<objects::CValidError>& pErrors) const;
 
-    void ReportCollidingSerialNumbers(CRef<objects::CValidError>& pErrors) const;
+    void ReportCollidingSerialNumbers(const set<int>& collidingNumbers, 
+            CRef<objects::CValidError>& pErrors) const;
 
-    void PerformGlobalChecks(CRef<objects::CValidError>& pErrors, 
-            objects::validator::SValidatorContext& context) const;
+    void ReportGlobalErrors(const SGlobalValidatorInfo& globalInfo,
+            CRef<objects::CValidError>& pErrors) const;
 
 private:
     bool x_HasRefSeqAccession() const; 
@@ -72,6 +74,36 @@ private:
 
     const TReader& m_Reader; 
     TOptions m_Options;
+};
+
+
+struct SGlobalValidatorInfo {
+    bool NoPubsFound = true;
+    bool NoCitSubsFound = true;
+    
+    set<int> pubSerialNumbers;
+    set<int> conflictingSerialNumbers;
+
+    void Clear() {
+        NoPubsFound = true;
+        NoCitSubsFound = true;
+        pubSerialNumbers.clear();
+        conflictingSerialNumbers.clear();
+    }
+};
+
+class CValidatorHFReader : public objects::edit::CHugeAsnReader {
+public:
+    CValidatorHFReader(SGlobalValidatorInfo& globalInfo) :
+        m_GlobalInfo(globalInfo) {}
+    virtual ~CValidatorHFReader(){}
+    using TParent = objects::edit::CHugeAsnReader;
+
+protected:
+    void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
+
+private:
+    SGlobalValidatorInfo& m_GlobalInfo;
 };
 
 END_NCBI_SCOPE
