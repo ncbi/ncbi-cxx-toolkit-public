@@ -64,6 +64,12 @@ CHugeFileProcess::CHugeFileProcess():
     m_pReader{ new CHugeAsnReader }
 {}
 
+
+CHugeFileProcess::CHugeFileProcess(CHugeAsnReader* pReader):
+    m_pHugeFile { new CHugeFile },
+    m_pReader { pReader }
+{}
+
 CHugeFileProcess::CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types)
 : CHugeFileProcess()
 {

@@ -235,13 +235,8 @@ bool CHugeAsnReader::GetNextBlob()
     return true;
 }
 
-void CHugeAsnReader::x_IndexNextAsn1()
+void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context) 
 {
-    x_ResetIndex();
-    auto object_type = m_file->RecognizeContent(m_streampos);
-
-    auto obj_stream = MakeObjStream(m_streampos);
-
     CObjectTypeInfo bioseq_info = CType<CBioseq>();
     CObjectTypeInfo bioseq_set_info = CType<CBioseq_set>();
     CObjectTypeInfo seqinst_info = CType<CSeq_inst>();
@@ -254,31 +249,14 @@ void CHugeAsnReader::x_IndexNextAsn1()
     auto seqinst_repr_mi = seqinst_info.FindMember("repr");
     auto bioseq_descr_mi = bioseq_info.FindMember("descr");
 
-    // temporal structure for indexing
-    struct TBioseqInfoRec
-    {
-        std::list<CConstRef<CSeq_id>> m_ids;
-        TSeqPos      m_length  = 0;
-        CRef<CSeq_descr> m_descr;
-        CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
-        CSeq_inst::TRepr m_repr = CSeq_inst::eRepr_not_set;
-    };
 
-    struct TContext
-    {
-        std::deque<TBioseqInfoRec> bioseq_stack;
-        std::deque<TBioseqSetList::iterator> bioseq_set_stack;
-    };
-
-    TContext context;
-
-    SetLocalSkipHook(bioseq_id_mi, *obj_stream,
+    SetLocalSkipHook(bioseq_id_mi, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         in.ReadObject(&context.bioseq_stack.back().m_ids, (*member).GetTypeInfo());
     });
 
-    SetLocalSkipHook(bioseqset_class_mi, *obj_stream,
+    SetLocalSkipHook(bioseqset_class_mi, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         CBioseq_set::TClass _class;
@@ -286,7 +264,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
         context.bioseq_set_stack.back()->m_class = _class;
     });
 
-    SetLocalSkipHook(bioseqset_descr_mi, *obj_stream,
+    SetLocalSkipHook(bioseqset_descr_mi, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         auto descr = Ref(new CSeq_descr);
@@ -294,7 +272,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
         context.bioseq_set_stack.back()->m_descr = descr;
     });
 
-    SetLocalSkipHook(bioseq_descr_mi, *obj_stream,
+    SetLocalSkipHook(bioseq_descr_mi, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         auto descr = Ref(new CSeq_descr);
@@ -302,27 +280,27 @@ void CHugeAsnReader::x_IndexNextAsn1()
         context.bioseq_stack.back().m_descr = descr;
     });
 
-    SetLocalSkipHook(seqinst_len_mi, *obj_stream,
+    SetLocalSkipHook(seqinst_len_mi, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         in.ReadObject(&context.bioseq_stack.back().m_length, (*member).GetTypeInfo());
     });
 
-    SetLocalSkipHook(seqinst_mol_mi, *obj_stream,
+    SetLocalSkipHook(seqinst_mol_mi, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         in.ReadObject(&context.bioseq_stack.back().m_mol, (*member).GetTypeInfo());
     });
 
 
-    SetLocalSkipHook(seqinst_repr_mi, *obj_stream,
+    SetLocalSkipHook(seqinst_repr_mi, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         in.ReadObject(&context.bioseq_stack.back().m_repr, (*member).GetTypeInfo());
     });
 
 
-    SetLocalSkipHook(CType<CFeat_id>(), *obj_stream,
+    SetLocalSkipHook(CType<CFeat_id>(), objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
         auto id = Ref(new CFeat_id);
@@ -334,7 +312,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
     });
 
 
-    SetLocalSkipHook(bioseq_info, *obj_stream,
+    SetLocalSkipHook(bioseq_info, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
         auto pos = in.GetStreamPos() + m_streampos;
@@ -349,7 +327,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
         context.bioseq_stack.pop_back();
     });
 
-    SetLocalSkipHook(bioseq_set_info, *obj_stream,
+    SetLocalSkipHook(bioseq_set_info, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
         auto pos = in.GetStreamPos() + m_streampos;
@@ -364,13 +342,26 @@ void CHugeAsnReader::x_IndexNextAsn1()
         context.bioseq_set_stack.pop_back();
     });
 
-    SetLocalSkipHook(CType<CSubmit_block>(), *obj_stream,
+    SetLocalSkipHook(CType<CSubmit_block>(), objStream,
         [this](CObjectIStream& in, const CObjectTypeInfo& type)
     {
         auto submit_block = Ref(new CSubmit_block);
         in.Read(submit_block, CSubmit_block::GetTypeInfo(), CObjectIStream::eNoFileHeader);
         m_submit_block = submit_block;
     });
+
+}
+
+void CHugeAsnReader::x_IndexNextAsn1()
+{
+    x_ResetIndex();
+    auto object_type = m_file->RecognizeContent(m_streampos);
+
+    auto obj_stream = MakeObjStream(m_streampos);
+
+    TContext context;
+    x_SetHooks(*obj_stream, context);
+
 
     // Ensure there is at least on bioseq_set_info object exists
     obj_stream->SkipFileHeader(object_type);

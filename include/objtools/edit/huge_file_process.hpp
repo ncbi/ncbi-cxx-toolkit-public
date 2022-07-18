@@ -54,6 +54,7 @@ public:
 
     /// constructors
     CHugeFileProcess();
+    CHugeFileProcess(CHugeAsnReader* pReader);
     CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types = nullptr);
     /// destructor
     virtual ~CHugeFileProcess(void);
