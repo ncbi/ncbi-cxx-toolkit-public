@@ -111,10 +111,10 @@ public:
     NCBI_DEPRECATED
     CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon);
     NCBI_DEPRECATED
-    CValidator(CObjectManager& objmgr, 
-            shared_ptr<SValidatorContext> pContext, 
+    CValidator(CObjectManager& objmgr,
+            shared_ptr<SValidatorContext> pContext,
             AutoPtr<ITaxon3> taxon=nullptr);
-    CValidator(CObjectManager& objmgr, 
+    CValidator(CObjectManager& objmgr,
             shared_ptr<SValidatorContext> pContext,
             shared_ptr<ITaxon3> pTaxon);
     ~CValidator();
@@ -281,7 +281,7 @@ private:
     // Services belong here, in the outside class
     // and are passed into the implementation.
     CRef<CObjectManager>    m_ObjMgr;
-    shared_ptr<ITaxon3>     m_pTaxon{nullptr};
+    shared_ptr<ITaxon3>     m_pTaxon;
 
     TProgressCallback               m_PrgCallback=nullptr;
     void*                           m_UserData=nullptr;

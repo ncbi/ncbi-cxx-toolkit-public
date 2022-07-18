@@ -173,7 +173,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
         m_AnnotValidator.ValidateSeqAnnot (**annot_it);
         m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
     }
-  
+
     if (m_Imp.GetContext().HugeFileMode &&
         seqset.IsSetClass() && seqset.GetClass() == CBioseq_set::eClass_genbank) { // what about eClass_not_set?
         call_once(m_Imp.SetContext().DescriptorsOnceFlag,
@@ -812,9 +812,9 @@ void CValidError_bioseqset::ValidateGenProdSet(
                     try {
                         const CSeq_id& id = GetId(fi->GetProduct(), m_Scope);
                         id_type = id.Which();
-                    } catch (CException ) {
+                    } catch (const CException& ) {
                         id_no_good = true;
-                    } catch (std::exception ) {
+                    } catch (const std::exception& ) {
                         id_no_good = true;
                     }
 

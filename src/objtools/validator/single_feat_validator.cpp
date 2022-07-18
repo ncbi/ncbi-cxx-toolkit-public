@@ -526,8 +526,8 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
 void CSingleFeatValidator::x_ReportECNumFileStatus()
 {
 
-    bool expected{true};    
-    if (m_Imp.SetContext().CheckECNumFileStatus.compare_exchange_strong(expected,false)) { 
+    bool expected{true};
+    if (m_Imp.SetContext().CheckECNumFileStatus.compare_exchange_strong(expected,false)) {
         if (CProt_ref::GetECNumAmbiguousStatus() == CProt_ref::eECFile_not_found) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
                 "Unable to find EC number file 'ecnum_ambiguous.txt' in data directory");
@@ -775,11 +775,11 @@ void CSingleFeatValidator::x_ValidateSeqFeatLoc()
                             "Feature crosses gap of unknown length");
                     }
                 }
-            } catch (CException &e) {
+            } catch (const CException &e) {
                 PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                     string("Exception while checking for intervals in gaps. EXCEPTION: ") +
                     e.what());
-            } catch (std::exception) {
+            } catch (const std::exception&) {
             }
         }
     }
@@ -1109,8 +1109,8 @@ bool CSingleFeatValidator::x_IsMostlyNs(const CSeq_loc& loc, CBioseq_Handle bsh)
                     ++it;
                     ++pos;
                 }
-            } catch (CException) {
-            } catch (std::exception) {
+            } catch (const CException& ) {
+            } catch (const std::exception& ) {
             }
         }
     }
@@ -1390,7 +1390,7 @@ void CSingleFeatValidator::x_ValidateGbquals()
                         "Wrong qualifier " + qual_str + " for feature " +
                         key);
             }
-            else if (ftype == CSeqFeatData::eSubtype_misc_feature && 
+            else if (ftype == CSeqFeatData::eSubtype_misc_feature &&
                     gbqual == CSeqFeatData::eQual_feat_class && !m_Imp.IsRefSeq()) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
                         "feat_class qualifier is only legal for RefSeq");
@@ -1566,9 +1566,9 @@ static bool s_RptUnitIsBaseRange (string str, TSeqPos& from, TSeqPos& to)
         from = tmp_from;
         tmp_to = NStr::StringToInt (str.substr (pos + 2));
         to = tmp_to;
-      } catch (CException ) {
+      } catch (const CException& ) {
           return false;
-      } catch (std::exception ) {
+      } catch (const std::exception& ) {
         return false;
     }
     if (tmp_from < 0 || tmp_to < 0) {
@@ -1710,8 +1710,8 @@ void CSingleFeatValidator::x_ValidateReplaceQual(const string& key, const string
                     PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidMatchingReplace,
                                 "/replace already matches underlying sequence (" + val + ")");
                 }
-            } catch (CException ) {
-            } catch (std::exception ) {
+            } catch (const CException& ) {
+            } catch (const std::exception& ) {
             }
         }
     }
@@ -3442,9 +3442,9 @@ const char* GetAAName(unsigned char aa, bool is_ascii)
                 (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
         }
         return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
-    } catch (CException ) {
+    } catch (const CException& ) {
         return "OTHER";
-    } catch (std::exception ) {
+    } catch (const std::exception& ) {
         return "OTHER";
     }
 }
@@ -3671,8 +3671,8 @@ void CRNAValidator::x_ValidateTrnaCodons()
             if (anticodon.length() > 3) {
                 anticodon = anticodon.substr(0, 3);
             }
-            } catch (CException ) {
-            } catch (std::exception ) {
+            } catch (const CException& ) {
+            } catch (const std::exception& ) {
         }
 
         if (codon_values.size() > 0) {
@@ -4526,8 +4526,8 @@ void CGapFeatValidator::Validate()
                              + " does not match " + NStr::IntToString (loc_len) + " feature length");
                     return;
                 }
-            } catch (CException ) {
-            } catch (std::exception ) {
+            } catch (const CException& ) {
+            } catch (const std::exception& ) {
             }
         }
     }
@@ -4577,8 +4577,8 @@ void CGapFeatValidator::Validate()
             }
         }
 
-    } catch (CException ) {
-    } catch (std::exception ) {
+    } catch (const CException& ) {
+    } catch (const std::exception& ) {
     }
 }
 

@@ -764,8 +764,8 @@ void CValidError_imp::PostErr
     const auto isSetClass = st.IsSetClass();
 
     //string desc = CValidErrorFormat::GetBioseqSetLabel(st, m_SuppressContext);
-    string desc = CValidErrorFormat::GetBioseqSetLabel(accession, 
-            isSetClass ? st.GetClass() : CBioseq_set::eClass_not_set, 
+    string desc = CValidErrorFormat::GetBioseqSetLabel(accession,
+            isSetClass ? st.GetClass() : CBioseq_set::eClass_not_set,
             isSetClass ? m_SuppressContext : true);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, accession, version);
 }
@@ -788,8 +788,8 @@ void CValidError_imp::PostErr
         return;
     }
 
-    if (GetContext().HugeFileMode && 
-        ctx.IsSet() && 
+    if (GetContext().HugeFileMode &&
+        ctx.IsSet() &&
         ctx.GetSet().IsSetClass() &&
         ctx.GetSet().GetClass() == CBioseq_set::eClass_genbank) {
         string desc{"DESCRIPTOR: "};
@@ -802,7 +802,7 @@ void CValidError_imp::PostErr
 
         m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, GetContext().GenbankSetId, 0);
         return;
-    } 
+    }
 
     // Append Descriptor label
     string desc = CValidErrorFormat::GetDescriptorLabel(ds, ctx, m_Scope, m_SuppressContext);
@@ -970,7 +970,7 @@ void CValidError_imp::PostErr
     try {
         CSeq_align::TDim dim = align.GetDim();
         desc += ", dim=" + NStr::NumericToString(dim);
-    } catch ( const CUnassignedMember ) {
+    } catch ( const CUnassignedMember& ) {
         desc += ", dim=UNASSIGNED";
     }
 
@@ -1142,7 +1142,7 @@ bool CValidError_imp::Validate
     CSeq_entry_Handle seh;
     try {
         seh = scope->GetSeq_entryHandle(se);
-    } catch (const CException ) { ; }
+    } catch (const CException& ) { ; }
     if (! seh) {
         seh = scope->AddTopLevelSeqEntry(se);
         if (!seh) {
