@@ -314,6 +314,7 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
 TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 {
     unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
+    req->SetField("title");
     req->SetRetMax(2);
     req->SetUseHistory(false);
     EPubmedError err = eError_val_citation_not_found;
