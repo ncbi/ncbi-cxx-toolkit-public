@@ -667,7 +667,9 @@ bool CWGSResolver_VDB::x_Update(void)
     string path = s_ResolveAccOrPath(m_Mgr, GetWGSIndexPath());
     if ( path != GetWGSIndexResolvedPath() ) {
         // resolved to a different path -> new index by symbolic link
-        LOG_POST_X(32, "CWGSResolver_VDB: new index path: "<<path);
+        if ( s_DebugEnabled(eDebug_open) ) {
+            LOG_POST_X(32, "CWGSResolver_VDB: new index path: "<<path);
+        }
         Reopen();
         return true;
     }
