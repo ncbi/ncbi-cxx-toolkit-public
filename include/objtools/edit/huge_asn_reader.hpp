@@ -127,6 +127,24 @@ public:
     auto& GetTopIds() const { return m_top_ids; }
     unique_ptr<CObjectIStream> MakeObjStream(TFileSize pos) const;
 protected:
+    // temporary structure for indexing
+    struct TBioseqInfoRec
+    {
+        list<CConstRef<CSeq_id>> m_ids;
+        TSeqPos      m_length  = 0;
+        CRef<CSeq_descr> m_descr;
+        CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
+        CSeq_inst::TRepr m_repr = CSeq_inst::eRepr_not_set;
+    };
+
+    struct TContext
+    {
+        std::deque<TBioseqInfoRec> bioseq_stack;
+        std::deque<TBioseqSetList::iterator> bioseq_set_stack;
+    };
+
+    virtual void x_SetHooks(CObjectIStream& objStream, TContext& context);
+
 private:
     void x_ResetIndex();
     void x_IndexNextAsn1();
