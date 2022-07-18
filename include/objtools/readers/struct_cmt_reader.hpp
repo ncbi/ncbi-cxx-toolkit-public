@@ -104,6 +104,8 @@ public:
        return cmt.m_descs.size();
    }
 
+   static bool SeqIdMatchesCommentId(const objects::CSeq_id& seqID, const objects::CSeq_id& commentID);
+
 
 protected:
    void _LoadHeaderLine(ILineReader& reader, vector<string>& cols);
