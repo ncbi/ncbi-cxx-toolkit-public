@@ -279,7 +279,10 @@ void CPSGS_WGSProcessor::Process()
     GetRequest()->SetRequestContext();
 
     try {
-        m_Unlocked = false;
+        {
+            CFastMutexGuard guard(m_Mutex);
+            m_Unlocked = false;
+        }
         if (m_Request) m_Request->Lock(kWGSProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
@@ -846,8 +849,11 @@ void CPSGS_WGSProcessor::x_WriteData(CID2_Reply_Data& data,
 
 void CPSGS_WGSProcessor::x_UnlockRequest(void)
 {
-    if (m_Unlocked) return;
-    m_Unlocked = true;
+    {
+        CFastMutexGuard guard(m_Mutex);
+        if (m_Unlocked) return;
+        m_Unlocked = true;
+    }
     if (m_Request) m_Request->Unlock(kWGSProcessorEvent);
 }
 
