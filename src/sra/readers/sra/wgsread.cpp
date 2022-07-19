@@ -575,7 +575,9 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
     //DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_NAME);
+    DECLARE_VDB_COLUMN_AS(NCBI_taxid, TAXID);
     DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
+    DECLARE_VDB_COLUMN_AS(Uint4 /*NCBI_WGS_hash*/, HASH);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
@@ -612,7 +614,9 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(PROTEIN_LEN),
       //INIT_VDB_COLUMN(PROTEIN_NAME),
       INIT_OPTIONAL_VDB_COLUMN(PRODUCT_NAME),
+      INIT_OPTIONAL_VDB_COLUMN(TAXID),
       INIT_OPTIONAL_VDB_COLUMN(REF_ACC),
+      INIT_OPTIONAL_VDB_COLUMN(HASH),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID),
@@ -748,9 +752,11 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ProductNameIndexIsOpened(0),
       m_IsSetMasterDescr(false),
       m_HasNoDefaultGnlId(false),
+      m_HasCommonTaxId(false),
       m_FeatLocIdType(eFeatLocIdUninitialized),
       m_ProjectGBState(0),
-      m_SeqIdType(CSeq_id::e_not_set)
+      m_SeqIdType(CSeq_id::e_not_set),
+      m_CommonTaxId(ZERO_TAX_ID)
 {
     CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_WGSOpen);
@@ -983,6 +989,14 @@ void CWGSDb_Impl::x_InitIdParams(void)
         }
         if ( CKMDataNode node = CKMDataNode(meta, "SEQ_ID_TYPE", CKMDataNode::eMissing_Allow) ) {
             m_SeqIdType = CSeq_id::E_Choice(node.GetUint8());
+        }
+        if ( CKMDataNode node = CKMDataNode(meta, "EXTRA_TAXIDS", CKMDataNode::eMissing_Allow) ) {
+            // all tax ids are separate
+        }
+        else if ( CKMDataNode node = CKMDataNode(meta, "TAXID", CKMDataNode::eMissing_Allow) ) {
+            // common taxid
+            m_CommonTaxId = node.GetUint4();
+            m_HasCommonTaxId = true;
         }
     }
 }
@@ -2558,13 +2572,16 @@ bool CWGSSeqIterator::x_Excluded(void) const
 
 void CWGSSeqIterator::Reset(void)
 {
-    if ( m_Cur ) {
+    if ( m_Cur0 ) {
         if ( m_Db ) {
             GetDb().Put(m_Cur0, m_CurrId);
-            GetDb().Put(m_Cur, m_CurrId);
+            if ( m_Cur ) {
+                GetDb().Put(m_Cur, m_CurrId);
+            }
         }
         else {
             m_Cur.Reset();
+            m_Cur0.Reset();
         }
     }
     m_Db.Reset();
@@ -3016,13 +3033,16 @@ CTempString CWGSSeqIterator::GetTitle(void) const
 
 bool CWGSSeqIterator::HasTaxId(void) const
 {
-    return m_Cur->m_TAXID;
+    return GetDb().HasCommonTaxId() || m_Cur->m_TAXID;
 }
 
 
 TTaxId CWGSSeqIterator::GetTaxId(void) const
 {
     x_CheckValid("CWGSSeqIterator::GetTaxId");
+    if ( GetDb().HasCommonTaxId() ) {
+        return GetDb().GetCommonTaxId();
+    }
     return TAX_ID_FROM(int, *m_Cur->TAXID(m_CurrId));
 }
 
@@ -5707,10 +5727,12 @@ void CWGSGiIterator::x_Settle(void)
 
 void CWGSProteinIterator::Reset(void)
 {
-    if ( m_Cur ) {
+    if ( m_Cur0 ) {
         if ( m_Db ) {
             GetDb().Put(m_Cur0);
-            GetDb().Put(m_Cur);
+            if ( m_Cur ) {
+                GetDb().Put(m_Cur);
+            }
         }
         else {
             m_Cur.Reset();
@@ -5978,6 +6000,41 @@ CTempString CWGSProteinIterator::GetProductName(void) const
     x_CheckValid("CWGSProteinIterator::GetProductName");
     x_Cur();
     return *CVDBStringValue(m_Cur->PRODUCT_NAME(m_CurrId));
+}
+
+
+bool CWGSProteinIterator::HasTaxId(void) const
+{
+    if ( GetDb().HasCommonTaxId() ) {
+        return true;
+    }
+    x_Cur();
+    return m_Cur->m_TAXID;
+}
+
+
+TTaxId CWGSProteinIterator::GetTaxId(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetTaxId");
+    if ( GetDb().HasCommonTaxId() ) {
+        return GetDb().GetCommonTaxId();
+    }
+    x_Cur();
+    return TAX_ID_FROM(int, *m_Cur->TAXID(m_CurrId));
+}
+
+
+bool CWGSProteinIterator::HasSeqHash(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetSeqHash");
+    x_Cur();
+    return m_Cur->m_HASH;
+}
+
+
+int CWGSProteinIterator::GetSeqHash(void) const
+{
+    return HasSeqHash()? *m_Cur->HASH(m_CurrId): 0;
 }
 
 

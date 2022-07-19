@@ -399,6 +399,15 @@ public:
         return !m_ReplacedBy.empty();
     }
 
+    bool HasCommonTaxId(void) const
+    {
+        return m_HasCommonTaxId;
+    }
+    TTaxId GetCommonTaxId(void) const
+    {
+        return m_CommonTaxId;
+    }
+    
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
@@ -593,6 +602,7 @@ private:
     CSeq_inst::TMol m_ContigMolType;
     bool m_IsSetMasterDescr;
     bool m_HasNoDefaultGnlId;
+    bool m_HasCommonTaxId;
     EFeatLocIdType m_FeatLocIdType;
     CRef<CSeq_entry> m_MasterEntry;
     TMasterDescr m_MasterDescr;
@@ -600,6 +610,7 @@ private:
     NCBI_gb_state m_ProjectGBState;
     CSeq_id::E_Choice m_SeqIdType;
     string m_ReplacedBy;
+    TTaxId m_CommonTaxId;
 };
 DECLARE_SAFE_FLAGS(CWGSDb_Impl::EGnlIdFlags);
 DECLARE_SAFE_FLAGS(CWGSDb_Impl::EAllowRowType);
@@ -1385,6 +1396,12 @@ public:
     CTempString GetProteinName(void) const;
     CTempString GetProductName(void) const;
 
+    bool HasTaxId(void) const;
+    TTaxId GetTaxId(void) const;
+    
+    bool HasSeqHash(void) const;
+    int GetSeqHash(void) const;
+    
     TVDBRowIdRange GetLocFeatRowIdRange(void) const;
     size_t GetProductFeatCount(void) const;
     TVDBRowId GetProductFeatRowId(size_t index) const;

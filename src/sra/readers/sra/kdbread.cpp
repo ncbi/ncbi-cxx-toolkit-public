@@ -128,6 +128,17 @@ CKMDataNode::CKMDataNode(const CKMDataNode& parent,
 }
 
 
+Uint4 CKMDataNode::GetUint4(void) const
+{
+    uint32_t value;
+    if ( rc_t rc = KMDataNodeReadAsU32(*this, &value) ) {
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot read metadata node value", rc);
+    }
+    return (Uint4)value;
+}
+
+
 Uint8 CKMDataNode::GetUint8(void) const
 {
     uint64_t value;
