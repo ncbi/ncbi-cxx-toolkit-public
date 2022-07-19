@@ -167,7 +167,7 @@ function(NCBI_internal_install_target _variable _access)
                                 DESTINATION ${_dest}/${_cfg} OPTIONAL
                                 CONFIGURATIONS ${_cfg})
                     else()
-                        install(FILES $<TARGET_FILE:${NCBI_PROJECT}>.pdb
+                        install(FILES $<TARGET_FILE_DIR:${NCBI_PROJECT}>/${NCBI_PROJECT}.pdb
                                 DESTINATION ${_dest}/${_cfg} OPTIONAL
                                 CONFIGURATIONS ${_cfg})
                     endif()
