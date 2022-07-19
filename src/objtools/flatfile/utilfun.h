@@ -150,6 +150,7 @@ void fta_remove_tpa_keywords(TKeywordList& kwds);
 void fta_remove_tsa_keywords(TKeywordList& kwds, Parser::ESource source);
 void fta_remove_tls_keywords(TKeywordList& kwds, Parser::ESource source);
 void fta_remove_env_keywords(TKeywordList& kwds);
+void fta_remove_mag_keywords(TKeywordList& kwds);
 
 bool IsCancelled(const TKeywordList& keywords);
 bool HasHtg(const TKeywordList& keywords);
