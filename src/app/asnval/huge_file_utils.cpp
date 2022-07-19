@@ -369,7 +369,7 @@ void CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
 
 
 
-void CHugeFileValidator::ReportGlobalErrors(const SGlobalValidatorInfo& globalInfo, CRef<CValidError>& pErrors) const
+void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors) const
 {
     if (globalInfo.NoPubsFound) {
         ReportMissingPubs(pErrors);
@@ -385,12 +385,12 @@ void CHugeFileValidator::ReportGlobalErrors(const SGlobalValidatorInfo& globalIn
 }
 
 
-static void s_UpdateGlobalInfo(const CPubdesc& pub, SGlobalValidatorInfo& globalInfo) 
+static void s_UpdateGlobalInfo(const CPubdesc& pub, CHugeFileValidator::TGlobalInfo& globalInfo) 
 {
     if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
         globalInfo.NoPubsFound = false;
         for (auto pPub : pub.GetPub().Get()) {
-            if (pPub->IsSub()) {
+            if (pPub->IsSub() && globalInfo.NoCitSubsFound) {
                 globalInfo.NoCitSubsFound = false;
             }
             else if (pPub->IsGen()) {
@@ -406,7 +406,7 @@ static void s_UpdateGlobalInfo(const CPubdesc& pub, SGlobalValidatorInfo& global
 }
 
 
-void CValidatorHFReader::x_SetHooks(CObjectIStream& objStream, CValidatorHFReader::TContext& context) 
+void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHugeAsnReader::TContext& context) 
 {
     TParent::x_SetHooks(objStream, context);
     // Set Pubdesc skip and read hooks

@@ -47,6 +47,22 @@ struct SGlobalValidatorInfo;
 
 class CHugeFileValidator {
 public:
+    struct SGlobalInfo {
+    
+        bool NoPubsFound = true;
+        bool NoCitSubsFound = true;
+        set<int> pubSerialNumbers;
+        set<int> conflictingSerialNumbers;
+
+        void Clear() {
+            NoPubsFound = true;
+            NoCitSubsFound = true;
+            pubSerialNumbers.clear();
+            conflictingSerialNumbers.clear();
+        }
+    };
+
+    using TGlobalInfo = SGlobalInfo;
     using TReader = objects::edit::CHugeAsnReader;
     using TBioseqInfo = TReader::TBioseqInfo;
     using TOptions = unsigned int;
@@ -62,7 +78,7 @@ public:
     void ReportCollidingSerialNumbers(const set<int>& collidingNumbers, 
             CRef<objects::CValidError>& pErrors) const;
 
-    void ReportGlobalErrors(const SGlobalValidatorInfo& globalInfo,
+    void ReportGlobalErrors(const TGlobalInfo& globalInfo,
             CRef<objects::CValidError>& pErrors) const;
 
 private:
@@ -77,33 +93,18 @@ private:
 };
 
 
-struct SGlobalValidatorInfo {
-    bool NoPubsFound = true;
-    bool NoCitSubsFound = true;
-    
-    set<int> pubSerialNumbers;
-    set<int> conflictingSerialNumbers;
-
-    void Clear() {
-        NoPubsFound = true;
-        NoCitSubsFound = true;
-        pubSerialNumbers.clear();
-        conflictingSerialNumbers.clear();
-    }
-};
-
-class CValidatorHFReader : public objects::edit::CHugeAsnReader {
+class CValidatorHugeAsnReader : public objects::edit::CHugeAsnReader {
 public:
-    CValidatorHFReader(SGlobalValidatorInfo& globalInfo) :
+    CValidatorHugeAsnReader(CHugeFileValidator::TGlobalInfo& globalInfo) :
         m_GlobalInfo(globalInfo) {}
-    virtual ~CValidatorHFReader(){}
+    virtual ~CValidatorHugeAsnReader(){}
     using TParent = objects::edit::CHugeAsnReader;
 
 protected:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
 
 private:
-    SGlobalValidatorInfo& m_GlobalInfo;
+    CHugeFileValidator::TGlobalInfo& m_GlobalInfo;
 };
 
 END_NCBI_SCOPE
