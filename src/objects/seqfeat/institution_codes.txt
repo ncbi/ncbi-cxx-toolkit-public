@@ -547,6 +547,7 @@ BGH	s	University of Malakand
 BGHan	s	Bundesanstalf fuer Geowissenschaften und Rohstoffe			
 BGIV	c	Banco de Glomeromycota In Vitro (Bank of Glomeromycota In Vitro)			
 BGM	s	Bath Geology Museum (now the Royal Literary and Scientific Institution)			
+BGMRC	c	Beibu Gulf Marine			
 BGR	s	Bundesanstalt fur Geowissenschaften und Rohstoffe			
 BGRB	s	Bovine Genome Resources Bank			
 BGS	s	British Geological Survey			
@@ -7163,6 +7164,7 @@ TRV	s	Transvaal Museum
 TS	s	National University of Shandong, Biology Department			
 TSB	s	Universita degli Studi di Trieste, Dipartimento di Biologia			
 TSC	s	Tarleton State University, Tarleton State Collection			
+TSC<USA>	b	Tetrahymena Stock Center			
 TSGM	s	Central Geological Museum			
 TSH	s	Mycological Herbarium University of Tsukuba			
 TSM	s	Erbario, Museo Civico di Storia Naturale, Trieste			
