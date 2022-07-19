@@ -1432,6 +1432,32 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         data->m_BioseqInfoFlags |=
             SPSGS_ResolveRequest::fPSGS_Length |
             SPSGS_ResolveRequest::fPSGS_MoleculeType;
+        {{
+            // set taxid
+            auto wgs = GetWGSDb(seq);
+            // faster common taxid retrieval if possible
+            if ( wgs->HasCommonTaxId() ) {
+                info.SetTaxId(wgs->GetCommonTaxId());
+                data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
+            }
+            else {
+                // otherwise get taxid from root sequence (contig or protein itself)
+                auto& root_seq = GetRootSeq(seq);
+                if ( root_seq.IsContig() ) {
+                    CWGSSeqIterator root_it = GetContigIterator(root_seq);
+                    if ( root_it.HasTaxId() ) {
+                        info.SetTaxId(root_it.GetTaxId());
+                        data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
+                    }
+                }
+                if ( root_seq.IsProtein() ) {
+                    if ( it.HasTaxId() ) {
+                        info.SetTaxId(it.GetTaxId());
+                        data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_TaxId;
+                    }
+                }
+            }
+        }}
     }
 
     data->m_Id2BlobId.Reset(&GetBlobId(seq));
