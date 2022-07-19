@@ -106,6 +106,7 @@ public:
         return TryToGetData(NULL, 0, 0).second;
     }
 
+    Uint4 GetUint4(void) const;
     Uint8 GetUint8(void) const;
 };
 
