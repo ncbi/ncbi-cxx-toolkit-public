@@ -745,6 +745,8 @@ public:
                 // Don't check for right now
             } else if (tokens[0] == "MASKLIST") {
                 // Don't check for right now
+            } else if (tokens[0] == "TAXIDLIST") {
+                num_failures += x_CheckFile(name, dir, tokens);
             } else if (tokens[0] == "OIDLIST") {
                 oidlist = 0;
                 num_failures += x_CheckFile(name, dir, tokens);
