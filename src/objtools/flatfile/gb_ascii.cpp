@@ -513,9 +513,15 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                 } else if (i != 2 || env_kwd == false ||
                            (est_kwd == false && gss_kwd == false && wgs_kwd == false)) {
                     if (i != 2 || pp->source != Parser::ESource::DDBJ ||
-                        ibp->is_tsa == false || env_kwd == false) {
-                        ErrPostEx(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords, "This record contains more than one of the special keywords used to indicate that a sequence is an HTG, EST, GSS, STS, HTC, WGS, ENV, FLI_CDNA, TPA, CAGE, TSA or TLS sequence.");
-                        return ret;
+                        ibp->is_tsa == false || env_kwd == false)
+                    {
+                        if(pp->source != Parser::ESource::DDBJ || ibp->is_wgs == false ||
+                           (env_kwd == false && tpa_kwd == false))
+                        {
+                            ErrPostEx(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords,
+                                      "This record contains more than one of the special keywords used to indicate that a sequence is an HTG, EST, GSS, STS, HTC, WGS, ENV, FLI_CDNA, TPA, CAGE, TSA or TLS sequence.");
+                            return ret;
+                        }
                     }
                 }
             }
@@ -671,11 +677,36 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     if (ibp->is_tls)
         fta_remove_tls_keywords(gbb->SetKeywords(), pp->source);
 
-    if (bio_src != NULL && bio_src->IsSetSubtype()) {
-        ITERATE (CBioSource::TSubtype, subtype, bio_src->GetSubtype()) {
-            if ((*subtype)->GetSubtype() == 27) {
-                fta_remove_env_keywords(gbb->SetKeywords());
-                break;
+    if(bio_src != NULL)
+    {
+        if(bio_src->IsSetSubtype())
+        {
+            ITERATE(CBioSource::TSubtype, subtype, bio_src->GetSubtype())
+            {
+                if ((*subtype)->GetSubtype() == 27)
+                {
+                    fta_remove_env_keywords(gbb->SetKeywords());
+                    break;
+                }
+            }
+        }
+        if(bio_src->IsSetOrg())
+        {
+            const COrg_ref &org_ref = bio_src->GetOrg();
+            if(org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod())
+            {
+                ITERATE(COrgName::TMod, mod, org_ref.GetOrgname().GetMod())
+                {
+                    if(!(*mod)->IsSetSubtype())
+                        continue;
+
+                    int stype = (*mod)->GetSubtype();
+                    if(stype == 37)
+                    {
+                        fta_remove_mag_keywords(gbb->SetKeywords());
+                        break;
+                    }
+                }
             }
         }
     }
