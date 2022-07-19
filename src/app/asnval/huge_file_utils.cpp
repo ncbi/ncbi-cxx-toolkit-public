@@ -41,6 +41,7 @@
 #include <objects/valerr/ValidErrItem.hpp>
 #include <objects/valerr/ValidError.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <serial/objhook.hpp>
 #include <objtools/readers/objhook_lambdas.hpp> 
 #include "huge_file_utils.hpp"
 
@@ -425,6 +426,20 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
                 object.GetTypeInfo()->DefaultReadData(in, pObject);
                 CPubdesc* pPubdesc = CTypeConverter<CPubdesc>::SafeCast(pObject);
                 s_UpdateGlobalInfo(*pPubdesc, m_GlobalInfo);
+            });
+
+    // Set BioSource skip and read hooks
+    SetLocalSkipHook(CType<CBioSource>(), objStream,
+            [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+            {
+                m_GlobalInfo.NoBioSource = false;
+            });
+
+    SetLocalReadHook(CType<CBioSource>(), objStream, 
+            [this] (CObjectIStream& in, const CObjectInfo& object)
+            {
+                object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr()); 
+                m_GlobalInfo.NoBioSource = false;
             });
 }
 
