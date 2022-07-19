@@ -1106,12 +1106,23 @@ CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 TTaxId CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        auto& vdb = info.file->GetDb();
+        if ( vdb->HasCommonTaxId() ) {
+            return vdb->GetCommonTaxId();
+        }
         if ( info.IsContig() ) {
-            if ( CWGSSeqIterator it = info.GetContigIterator() ) {
-                if ( it.HasTaxId() ) {
-                    return it.GetTaxId();
+            return info.GetContigIterator().GetTaxId();
+        }
+        if ( info.IsProtein() ) {
+            if ( auto root = info.GetRootFileInfo() ) {
+                if ( root.IsContig() ) {
+                    return root.GetContigIterator().GetTaxId();
+                }
+                if ( root.IsProtein() ) {
+                    return root.GetProteinIterator().GetTaxId();
                 }
             }
+            return info.GetProteinIterator().GetTaxId();
         }
         return ZERO_TAX_ID; // taxid is not defined
     }
@@ -1161,7 +1172,10 @@ CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
         case 'P': // protein
             /*
             if ( CWGSProteinIterator it = info.GetProteinIterator() ) {
-                return it.GetSeqHash();
+                if ( it.HasSeqHash() ) {
+                    ret.hash = it.GetSeqHash();
+                    ret.hash_known = true;
+                }
             }
             */
             break;
