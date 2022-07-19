@@ -1934,14 +1934,14 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
 
     std::string doi;
     std::string agricola;
-    ITERATE (TQualVector, xref, xrefs) {
-        if (! (*xref)->IsSetQual())
+    for (const auto& xref : xrefs) {
+        if (! xref->IsSetQual())
             continue;
 
-        if (NStr::EqualNocase((*xref)->GetQual(), "ARGICOLA") && agricola.empty())
-            agricola = (*xref)->GetVal();
-        else if (NStr::EqualNocase((*xref)->GetQual(), "DOI") && doi.empty())
-            doi = (*xref)->GetVal();
+        if (NStr::EqualNocase(xref->GetQual(), "ARGICOLA") && agricola.empty())
+            agricola = xref->GetVal();
+        else if (NStr::EqualNocase(xref->GetQual(), "DOI") && doi.empty())
+            doi = xref->GetVal();
     }
 
     fta_add_article_ids(*pub_ref, doi, agricola);
@@ -2272,8 +2272,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
 /**********************************************************/
 static void fta_sort_pubs(TPubList& pubs)
 {
-    NON_CONST_ITERATE(TPubList, pub, pubs)
-    {
+    for (TPubList::iterator pub = pubs.begin(); pub != pubs.end(); ++pub) {
         TPubList::iterator next_pub = pub;
         for (++next_pub; next_pub != pubs.end(); ++next_pub) {
             if ((*next_pub)->Which() > (*pub)->Which())
@@ -2299,11 +2298,11 @@ static void fta_check_long_last_name(const CAuth_list& authors, bool soft_report
     if (! authors.IsSetNames() || ! authors.GetNames().IsStd())
         return;
 
-    ITERATE (CAuth_list::C_Names::TStd, author, authors.GetNames().GetStd()) {
-        if (! (*author)->IsSetName() || ! (*author)->GetName().IsName())
+    for (const auto& author : authors.GetNames().GetStd()) {
+        if (! author->IsSetName() || ! author->GetName().IsName())
             continue;
 
-        const CName_std& name = (*author)->GetName().GetName();
+        const CName_std& name = author->GetName().GetName();
 
         if (name.IsSetLast() && name.GetLast().size() > MAX_LAST_NAME_LEN) {
             /* Downgrade severity of this error to WARNING
@@ -2395,8 +2394,8 @@ static void fta_check_long_names(const CPub& pub, bool soft_report)
             fta_check_long_last_name(patent.GetAssignees(), soft_report);
     } else if (pub.IsEquiv()) /* PubEquiv */
     {
-        ITERATE (TPubList, cur_pub, pub.GetEquiv().Get()) {
-            fta_check_long_names(*(*cur_pub), soft_report);
+        for (const auto& cur_pub : pub.GetEquiv().Get()) {
+            fta_check_long_names(*cur_pub, soft_report);
         }
     }
 }
@@ -2408,14 +2407,13 @@ static void fta_propagate_pmid_muid(CPub_equiv& pub_equiv)
     TEntrezId muid = ZERO_ENTREZ_ID;
 
     CCit_art* cit_art = nullptr;
-    NON_CONST_ITERATE(TPubList, pub, pub_equiv.Set())
-    {
-        if ((*pub)->IsMuid() && muid == ZERO_ENTREZ_ID)
-            muid = (*pub)->GetMuid();
-        else if ((*pub)->IsPmid() && pmid == ZERO_ENTREZ_ID)
-            pmid = (*pub)->GetPmid().Get();
-        else if ((*pub)->IsArticle() && ! cit_art)
-            cit_art = &(*pub)->SetArticle();
+    for (auto& pub : pub_equiv.Set()) {
+        if (pub->IsMuid() && muid == ZERO_ENTREZ_ID)
+            muid = pub->GetMuid();
+        else if (pub->IsPmid() && pmid == ZERO_ENTREZ_ID)
+            pmid = pub->GetPmid().Get();
+        else if (pub->IsArticle() && ! cit_art)
+            cit_art = &pub->SetArticle();
     }
 
     if (! cit_art || (muid == ZERO_ENTREZ_ID && pmid == ZERO_ENTREZ_ID))
@@ -2487,8 +2485,8 @@ CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
     if (desc.NotEmpty() && desc->IsSetPub()) {
         fta_sort_pubs(desc->SetPub().Set());
 
-        ITERATE (TPubList, pub, desc->GetPub().Get()) {
-            fta_check_long_names(*(*pub), soft_report);
+        for (const auto& pub : desc->GetPub().Get()) {
+            fta_check_long_names(*pub, soft_report);
         }
 
         fta_propagate_pmid_muid(desc->SetPub());
