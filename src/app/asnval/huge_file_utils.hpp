@@ -86,6 +86,8 @@ public:
     void ReportCollidingSerialNumbers(const set<int>& collidingNumbers, 
             CRef<objects::CValidError>& pErrors) const;
 
+    void ReportMissingBioSources(CRef<objects::CValidError>& pErrors) const;
+
     void ReportGlobalErrors(const TGlobalInfo& globalInfo,
             CRef<objects::CValidError>& pErrors) const;
 
