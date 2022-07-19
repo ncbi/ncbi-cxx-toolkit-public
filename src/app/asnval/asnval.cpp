@@ -224,7 +224,7 @@ private:
     string m_OnlyError;
 
     unique_ptr<edit::CHugeFileProcess> m_pHugeFileProcess;
-    SGlobalValidatorInfo m_GlobalInfo;
+    CHugeFileValidator::TGlobalInfo m_GlobalInfo;
     CNcbiOstream* m_ValidErrorStream;
 
     shared_ptr<SValidatorContext> m_pContext;
@@ -648,7 +648,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     if (fname.empty())// || true)
         m_In = OpenFile(fname, asninfo);
     else {
-        m_pHugeFileProcess.reset(new CHugeFileProcess(new CValidatorHFReader(m_GlobalInfo)));
+        m_pHugeFileProcess.reset(new CHugeFileProcess(new CValidatorHugeAsnReader(m_GlobalInfo)));
         try
         {
             m_pHugeFileProcess->Open(fname, &s_known_types);
