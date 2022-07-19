@@ -407,6 +407,21 @@ static void s_UpdateGlobalInfo(const CPubdesc& pub, CHugeFileValidator::TGlobalI
 }
 
 
+static void s_UpdateGlobalInfo(const CSeq_id& id, CHugeFileValidator::TGlobalInfo& globalInfo)
+{
+    switch (id.Which()) {
+    case CSeq_id::e_Patent:
+        globalInfo.IsPatent = true;
+        break;
+    case CSeq_id::e_Pdb:
+        globalInfo.IsPDB = true;
+        break;
+    default:
+        break;
+    }
+}
+
+
 void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHugeAsnReader::TContext& context) 
 {
     TParent::x_SetHooks(objStream, context);
@@ -424,7 +439,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
             {
                 auto* pObject = object.GetObjectPtr();
                 object.GetTypeInfo()->DefaultReadData(in, pObject);
-                CPubdesc* pPubdesc = CTypeConverter<CPubdesc>::SafeCast(pObject);
+                auto* pPubdesc = CTypeConverter<CPubdesc>::SafeCast(pObject);
                 s_UpdateGlobalInfo(*pPubdesc, m_GlobalInfo);
             });
 
@@ -441,6 +456,16 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
                 object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr()); 
                 m_GlobalInfo.NoBioSource = false;
             });
+
+    
+    SetLocalReadHook(CType<CSeq_id>(), objStream,
+        [this] (CObjectIStream& in, const CObjectInfo& object)
+        {
+                auto* pObject = object.GetObjectPtr();
+                object.GetTypeInfo()->DefaultReadData(in, pObject);
+                auto* pSeqId = CTypeConverter<CSeq_id>::SafeCast(pObject);
+                s_UpdateGlobalInfo(*pSeqId, m_GlobalInfo);
+        });
 }
 
 END_NCBI_SCOPE
