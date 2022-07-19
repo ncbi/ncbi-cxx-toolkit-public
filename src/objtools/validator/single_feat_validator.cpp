@@ -3773,7 +3773,7 @@ void CRNAValidator::x_ValidateTrnaOverlap()
     }
     CConstRef<CSeq_feat> cds = GetBestOverlappingFeat( m_Feat.GetLocation(),
                                                        CSeqFeatData::eSubtype_cdregion,
-                                                       eOverlap_Interval, m_Scope);
+                                                       eOverlap_Contained, m_Scope);
     if (cds) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadCDScomponentOverlapTRNA,
             "tRNA overlaps CDS");
