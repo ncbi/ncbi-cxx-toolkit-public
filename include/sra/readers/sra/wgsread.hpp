@@ -91,6 +91,7 @@ enum {
     NCBI_gb_state_eWGSGenBankMigrated = 6
 };
 
+typedef int32_t NCBI_WGS_hash;
 
 BEGIN_NCBI_NAMESPACE;
 
@@ -956,8 +957,9 @@ public:
     bool HasTaxId(void) const;
     TTaxId GetTaxId(void) const;
 
+    typedef NCBI_WGS_hash THash;
     bool HasSeqHash(void) const;
-    int GetSeqHash(void) const;
+    THash GetSeqHash(void) const;
 
     TVDBRowIdRange GetLocFeatRowIdRange(void) const;
 
@@ -1399,8 +1401,9 @@ public:
     bool HasTaxId(void) const;
     TTaxId GetTaxId(void) const;
     
+    typedef NCBI_WGS_hash THash;
     bool HasSeqHash(void) const;
-    int GetSeqHash(void) const;
+    THash GetSeqHash(void) const;
     
     TVDBRowIdRange GetLocFeatRowIdRange(void) const;
     size_t GetProductFeatCount(void) const;

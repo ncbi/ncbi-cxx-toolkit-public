@@ -411,7 +411,7 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, GAP_LINKAGE);
     DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
     DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
-    DECLARE_VDB_COLUMN_AS(Uint4 /*NCBI_WGS_hash*/, HASH);
+    DECLARE_VDB_COLUMN_AS(NCBI_WGS_hash, HASH);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
@@ -577,7 +577,7 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_NAME);
     DECLARE_VDB_COLUMN_AS(NCBI_taxid, TAXID);
     DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
-    DECLARE_VDB_COLUMN_AS(Uint4 /*NCBI_WGS_hash*/, HASH);
+    DECLARE_VDB_COLUMN_AS(NCBI_WGS_hash, HASH);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
@@ -3031,6 +3031,12 @@ CTempString CWGSSeqIterator::GetTitle(void) const
     return *m_Cur->TITLE(m_CurrId);
 }
 
+static TTaxId s_GetTaxId(const CVDBValueFor<NCBI_taxid>& value)
+{
+    return value.empty()? ZERO_TAX_ID: TAX_ID_FROM(int, value[0]);
+}
+
+
 bool CWGSSeqIterator::HasTaxId(void) const
 {
     return GetDb().HasCommonTaxId() || m_Cur->m_TAXID;
@@ -3043,7 +3049,7 @@ TTaxId CWGSSeqIterator::GetTaxId(void) const
     if ( GetDb().HasCommonTaxId() ) {
         return GetDb().GetCommonTaxId();
     }
-    return TAX_ID_FROM(int, *m_Cur->TAXID(m_CurrId));
+    return s_GetTaxId(m_Cur->TAXID(m_CurrId));
 }
 
 
@@ -3054,7 +3060,7 @@ bool CWGSSeqIterator::HasSeqHash(void) const
 }
 
 
-int CWGSSeqIterator::GetSeqHash(void) const
+CWGSSeqIterator::THash CWGSSeqIterator::GetSeqHash(void) const
 {
     return HasSeqHash()? *m_Cur->HASH(m_CurrId): 0;
 }
@@ -6020,7 +6026,7 @@ TTaxId CWGSProteinIterator::GetTaxId(void) const
         return GetDb().GetCommonTaxId();
     }
     x_Cur();
-    return TAX_ID_FROM(int, *m_Cur->TAXID(m_CurrId));
+    return s_GetTaxId(m_Cur->TAXID(m_CurrId));
 }
 
 
@@ -6032,7 +6038,7 @@ bool CWGSProteinIterator::HasSeqHash(void) const
 }
 
 
-int CWGSProteinIterator::GetSeqHash(void) const
+CWGSProteinIterator::THash CWGSProteinIterator::GetSeqHash(void) const
 {
     return HasSeqHash()? *m_Cur->HASH(m_CurrId): 0;
 }
