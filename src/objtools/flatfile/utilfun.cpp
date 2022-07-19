@@ -169,6 +169,12 @@ static const char* ParFlat_ENV_kw_array[] = {
     NULL
 };
 
+static const char *ParFlat_MAG_kw_array[] = {
+    "Metagenome Assembled Genome",
+    "MAG",
+    NULL
+};
+
 /**********************************************************/
 static std::string FTAitoa(Int4 m)
 {
@@ -1453,6 +1459,20 @@ void fta_remove_env_keywords(TKeywordList& kwds)
 
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();) {
         if (key->empty() || MatchArrayIString(ParFlat_ENV_kw_array, key->c_str()) != -1) {
+            key = kwds.erase(key);
+        } else
+            ++key;
+    }
+}
+
+/**********************************************************/
+void fta_remove_mag_keywords(TKeywordList& kwds)
+{
+    if (kwds.empty())
+        return;
+
+    for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();) {
+        if (key->empty() || MatchArrayIString(ParFlat_MAG_kw_array, key->c_str()) != -1) {
             key = kwds.erase(key);
         } else
             ++key;
