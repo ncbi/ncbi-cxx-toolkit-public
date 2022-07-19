@@ -369,6 +369,14 @@ void CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
 }
 
 
+void CHugeFileValidator::ReportMissingBioSources(CRef<CValidError>& pErrors) const
+{
+    s_PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
+            "No source information included on this record.",
+            x_GetIdString(), pErrors);
+}
+
+
 
 void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors) const
 {
@@ -383,6 +391,12 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<
     if (!globalInfo.conflictingSerialNumbers.empty()) {
         ReportCollidingSerialNumbers(globalInfo.conflictingSerialNumbers, pErrors);
     }
+
+
+    if (globalInfo.NoBioSource && !globalInfo.IsPatent && !globalInfo.IsPDB)
+    {
+        ReportMissingBioSources(pErrors);
+    } 
 }
 
 
