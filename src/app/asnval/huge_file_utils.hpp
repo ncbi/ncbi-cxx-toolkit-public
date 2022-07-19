@@ -48,16 +48,22 @@ struct SGlobalValidatorInfo;
 class CHugeFileValidator {
 public:
     struct SGlobalInfo {
+
+        bool IsPatent = false;
+        bool IsPDB    = false;
    
-        bool NoBioSource = true; 
-        bool NoPubsFound = true;
+        bool NoBioSource    = true; 
+        bool NoPubsFound    = true;
         bool NoCitSubsFound = true;
         set<int> pubSerialNumbers;
         set<int> conflictingSerialNumbers;
 
         void Clear() {
-            NoBioSource = true;
-            NoPubsFound = true;
+            bool IsPatent = false;
+            bool IsPDB    = false;
+
+            NoBioSource    = true;
+            NoPubsFound    = true;
             NoCitSubsFound = true;
             pubSerialNumbers.clear();
             conflictingSerialNumbers.clear();
