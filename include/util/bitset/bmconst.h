@@ -123,8 +123,9 @@ const unsigned rs3_border0_1 = rs3_border0 + rs3_half_span; // intermed pnt 1
 const unsigned rs3_border1_1 = rs3_border1 + rs3_half_span; // intermed pnt 2
 
 // misc parameters for sparse vec algorithms
-const unsigned sub_block3_size = bm::gap_max_bits / 4;
-
+//const unsigned sub_bfind_block_cnt = 32; // bfind discretization factor
+//const unsigned sub_block_l1_size =
+//        bm::gap_max_bits / bm::sub_bfind_block_cnt; // size in bits/elements
 
 #if defined(BM64OPT) || defined(BM64_SSE4)
 typedef id64_t  wordop_t;
@@ -242,11 +243,11 @@ template<bool T> struct _copyright
 };
 
 #define BM_VERSION_MAJOR 7
-#define BM_VERSION_MINOR 11
-#define BM_VERSION_PATCH 2
+#define BM_VERSION_MINOR 12
+#define BM_VERSION_PATCH 3
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic Library. v.7.11.2 (c) 2002-2022 Anatoliy Kuznetsov.";
+    "BitMagic Library. v.7.12.3 (c) 2002-2022 Anatoliy Kuznetsov.";
 template<bool T> const unsigned _copyright<T>::_v[3] =
                     { BM_VERSION_MAJOR, BM_VERSION_MINOR, BM_VERSION_PATCH };
 
