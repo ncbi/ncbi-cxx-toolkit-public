@@ -2402,11 +2402,16 @@ bool CValidError_imp::IsTSAIntermediate(const CBioseq& seq)
 
 void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
 {
-    if(m_NoBioSource  &&  !m_IsPatent  &&  !m_IsPDB) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
-            "No source information included on this record.", se);
+   if (GetContext().HugeFileMode) {
+        if (m_NoBioSource && !GetContext().IsPatent && !GetContext().IsPDB) {
+            return;
+        }
+   }
+   else if (m_NoBioSource  &&  !m_IsPatent  &&  !m_IsPDB) {
+       PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
+               "No source information included on this record.", se);
         return;
-    }
+   }
 
     size_t num_no_source = m_BioseqWithNoSource.size();
 
@@ -2842,6 +2847,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
     if (GetContext().HugeFileMode) {
         m_NoPubs        = GetContext().NoPubsFound;
         m_NoCitSubPubs  = GetContext().NoCitSubsFound;
+        m_NoBioSource   = GetContext().NoBioSource;
     } else {
         CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
         m_NoPubs = !pub;
@@ -2849,10 +2855,10 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
             ++pub;
         }
         m_NoCitSubPubs = !pub;
+        CTypeConstIterator<CBioSource> src(ConstBegin(*m_TSE));
+        m_NoBioSource = !src;
     }
 
-    CTypeConstIterator<CBioSource> src(ConstBegin(*m_TSE));
-    m_NoBioSource = !src;
 
     // Look for genomic product set
     for (CTypeConstIterator <CBioseq_set> si (*m_TSE); si; ++si) {

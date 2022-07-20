@@ -43,8 +43,11 @@ BEGIN_SCOPE(validator)
 struct NCBI_VALIDATOR_EXPORT SValidatorContext 
 {
     bool        HugeFileMode{false};
+    bool        IsPatent{false};
+    bool        IsPDB{false};
     string      GenbankSetId;
     atomic_bool CheckECNumFileStatus{true};
+    bool        NoBioSource{false};
     bool        NoPubsFound{false};
     bool        NoCitSubsFound{false};
     once_flag   DescriptorsOnceFlag;
