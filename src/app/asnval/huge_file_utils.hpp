@@ -59,8 +59,8 @@ public:
         set<int> conflictingSerialNumbers;
 
         void Clear() {
-            bool IsPatent = false;
-            bool IsPDB    = false;
+            IsPatent = false;
+            IsPDB    = false;
 
             NoBioSource    = true;
             NoPubsFound    = true;
