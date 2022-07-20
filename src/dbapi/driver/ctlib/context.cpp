@@ -1284,7 +1284,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             return CS_SUCCEED;
         }
 
-        impl::CDBHandlerStack* handlers;
+        impl::CDBHandlerStack* handlers = nullptr;
         const CDBParams*       params = NULL;
         unsigned int           rows_in_batch = 0;
         if (ctl_conn) {
