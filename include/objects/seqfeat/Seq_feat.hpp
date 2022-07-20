@@ -155,6 +155,10 @@ public:
     int Compare(const CSeq_feat& f2) const;
     int Compare(const CSeq_feat& f2,
                 const CSeq_loc& mapped1, const CSeq_loc& mapped2) const;
+    /// Compare features more thoroughly than Compare() - return zero only
+    /// if the features are identical, otherwise use ASN.1 text representation
+    /// to compare features.
+    int CompareStrict(const CSeq_feat& f2) const;
 
     /// Compare relative order of this feature and feature f2 similarily
     /// to the Compare() method, assuming their locations are already

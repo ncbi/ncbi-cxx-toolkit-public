@@ -166,6 +166,18 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
     return 0; // unknown
 }
 
+
+int CSeq_feat::CompareStrict(const CSeq_feat& f2) const
+{
+    int diff = Compare(f2);
+    if (diff) return diff;
+    stringstream s1, s2;
+    s1 << MSerial_AsnText << *this;
+    s2 << MSerial_AsnText << f2;
+    return s1.str().compare(s2.str());
+}
+
+
 const CGene_ref* CSeq_feat::GetGeneXref(void) const
 
 {
