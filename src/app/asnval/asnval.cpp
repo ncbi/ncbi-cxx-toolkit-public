@@ -534,7 +534,11 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
         CAutoRevoker autorevoker(info);
 
         if (m_pContext->HugeFileMode) {
-            m_pContext->NoPubsFound = m_GlobalInfo.NoPubsFound;
+
+            m_pContext->IsPatent        = m_GlobalInfo.IsPatent;
+            m_pContext->IsPDB           = m_GlobalInfo.IsPDB;
+            m_pContext->NoBioSource     = m_GlobalInfo.NoBioSource;
+            m_pContext->NoPubsFound     = m_GlobalInfo.NoPubsFound;
             m_pContext->NoCitSubsFound = m_GlobalInfo.NoCitSubsFound;    
 
             CHugeFileValidator hugeFileValidator(reader, m_Options);
