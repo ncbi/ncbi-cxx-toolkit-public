@@ -4248,6 +4248,22 @@ void BasicFunctionalityTest()
 
     }
 
+
+    {
+        bvect::statistics st;
+        bvect bv;
+        bv.init(256, false/* NOT allocate secondary structures*/);
+        bv.calc_stat(&st);
+        assert(st.ptr_sub_blocks == 0);
+    }
+    {
+        bvect::statistics st;
+        bvect bv;
+        bv.init(256, true/*allocate secondary structures*/);
+        bv.calc_stat(&st);
+        assert(st.ptr_sub_blocks == 256);
+    }
+
     // filling vectors with regular values
     
     cout << "test data generation... " << endl;
@@ -9964,7 +9980,7 @@ void AggregatorTest()
         bv1[100000] = true;
         bv2[100] = true;
         bv2[100000] = true;
-        bv3[100000] = true;
+        bv3.set(100000);
 
         bv_arr[0] = &bv1;
         bv_arr[1] = &bv2;
@@ -9981,7 +9997,8 @@ void AggregatorTest()
         
         bv1.optimize();
         agg.combine_and_sub(bv4, bv_arr, 2, bv_arr2, 1, false);
-        assert(bv4.count()==1);
+        auto c = bv4.count();
+        assert(c==1);
         assert(bv4.test(100));
 
         bv2.optimize();
@@ -19977,6 +19994,47 @@ void TestNibbleArr()
     cout << "---------------------------- TestNibbleArr() OK" << endl;
 }
 
+static
+void TestHasZeroByte()
+{
+    cout << "---------------------------- TestHasZeroByte()" << endl;
+
+    {
+        bool b;
+        b = bm::has_zero_byte_u64(0ULL);
+        assert(b);
+        b = bm::has_zero_byte_u64(1ULL);
+        assert(b);
+        for (unsigned i = 8; i < 64; i+=8)
+        {
+            b = bm::has_zero_byte_u64(1ULL << i);
+            assert(b);
+        }
+        b = bm::has_zero_byte_u64(~0ULL);
+        assert(!b);
+        b = bm::has_zero_byte_u64(0x0101010101010101ULL);
+        assert(!b);
+        b = bm::has_zero_byte_u64(0x0101000101010101ULL);
+        assert(b);
+        b = bm::has_zero_byte_u64(0x8080808080808080ULL);
+        assert(!b);
+
+        b = bm::has_zero_byte_u64(~0ULL ^ 0xFFULL);
+        assert(b);
+        for (unsigned i = 8; i < 64; i+=8)
+        {
+            auto v = ~0ULL ^ (0xFFUL << i);
+            cout << i << endl;
+            cout << hex << v << endl;
+            b = bm::has_zero_byte_u64(v);
+            assert(b || v == ~0ULL);
+        }
+    }
+
+    cout << "---------------------------- TestHasZeroByte() OK" << endl;
+}
+
+
 
 static
 void TestRecomb()
@@ -24339,11 +24397,13 @@ void TestSparseVector_XOR_Scanner()
 static
 void TestSparseVectorSerial()
 {
-    cout << "---------------------------- Test sparse vector serializer" << endl;
+    cout << "---------------------------- TestSparseVectorSerial()" << endl;
 
     cout << "  test chain XOR serialization.. " << endl;
     bm::sparse_vector_serializer<sparse_vector_u32> sv_ser;
     bm::sparse_vector_deserializer<sparse_vector_u32> sv_deserial;
+    bm::sparse_vector_deserializer<sparse_vector_u32> sv_deserial_ro;
+    sv_deserial_ro.set_finalization(bm::finalization::READONLY);
 
     {
         sparse_vector_serial_layout<sparse_vector_u32> sv_lay;
@@ -24397,8 +24457,7 @@ void TestSparseVectorSerial()
         // simple test gather for non-NULL vector
 
         {
-            sparse_vector_u32 sv1;
-            sparse_vector_u32 sv2;
+            sparse_vector_u32 sv1, sv2, sv3;
 
             for (sparse_vector_u32::size_type i = 0; i < 10; ++i)
                 sv1.push_back(i + 1);
@@ -24421,6 +24480,12 @@ void TestSparseVectorSerial()
             sv2.calc_stat(&st);
             assert(!st.bit_blocks);
             assert(st.gap_blocks);
+
+            sv_deserial_ro.deserialize(sv3, buf, bv_mask);
+            assert(sv3.is_ro());
+            bool eq = sv2.equal(sv3);
+            assert(eq);
+
         }
 
 
@@ -24429,6 +24494,7 @@ void TestSparseVectorSerial()
         {
             sparse_vector_u32 sv1(bm::use_null);
             sparse_vector_u32 sv2(sv1);
+            sparse_vector_u32 sv3;
 
             for (sparse_vector_u32::size_type i = 0; i < 100; i += 2)
             {
@@ -24437,8 +24503,6 @@ void TestSparseVectorSerial()
             sparse_vector_serial_layout<sparse_vector_u32> sv_lay;
             sv_ser.serialize(sv1, sv_lay);
             const unsigned char* buf = sv_lay.buf();
-
-            //bm::sparse_vector_deserializer<sparse_vector_u32> sv_deserial;
 
             {
                 sparse_vector_u32::bvector_type bv_mask;
@@ -24462,6 +24526,12 @@ void TestSparseVectorSerial()
                 sv2.calc_stat(&st);
                 //assert(!st.bit_blocks);
                 assert(st.gap_blocks);
+
+                sv_deserial_ro.deserialize(sv3, buf, bv_mask);
+                assert(sv3.is_ro());
+                bool eq = sv2.equal(sv3);
+                assert(eq);
+
             }
             {
                 sparse_vector_u32::bvector_type bv_mask;
@@ -24589,6 +24659,19 @@ void TestSparseVectorSerial()
                         cerr << "Error: Range deserialization equality failed!" << endl;
                         assert(0); exit(1);
                     }
+
+                    {
+                    sparse_vector_u32 sv5(bm::use_null);
+                    sv_deserial_ro.deserialize(sv5, buf, i, j);
+                    is_eq = sv2.equal(sv5);
+                    if (!is_eq)
+                    {
+                        cerr << "Error: Range deserialization equality failed!(2)" << endl;
+                        assert(0); exit(1);
+                    }
+                    }
+
+
 
                     //sv3.filter(bv_mask);
 
@@ -27849,7 +27932,7 @@ void CheckStrSVCompare(const STR_SV& str_sv,
 static
 void TestStrSparseVector()
 {
-   cout << "---------------------------- Bit-plane STR sparse vector test" << endl;
+   cout << "---------------------------- TestStrSparseVector()" << endl;
 
    typedef str_sparse_vector<char, bvect, 2> str_svect_type;
 
@@ -28068,6 +28151,86 @@ void TestStrSparseVector()
         str_sv0.remap();
         bool b = str_sv0.equal(str_sv1);
         assert(b);
+    }
+
+    // samplex index tests
+    {
+        using TSparseOptVector = bm::str_sparse_vector<char, bm::bvector<>, 2>;
+        TSparseOptVector::size_type l, r;
+        TSparseOptVector str_sv1, str_sv0;
+        {
+            bm::sv_sample_index<TSparseOptVector> s_idx;
+            s_idx.construct(str_sv1, 64);
+            assert(s_idx.size() == 0);
+        }
+        str_sv1.push_back("1");
+        {
+            bm::sv_sample_index<TSparseOptVector> s_idx(str_sv1, 64);
+            assert(s_idx.size() == 1);
+            assert(s_idx.sv_size() == 1);
+            assert(s_idx.is_unique());
+
+            bool found = s_idx.bfind_range("0", 1, l, r);
+            assert(!found);
+            found = s_idx.bfind_range("1", 1, l, r);
+            assert(found);
+            assert(l == 0);
+            assert(r == 0);
+
+        }
+        str_sv1.push_back("2");
+        {
+            bm::sv_sample_index<TSparseOptVector> s_idx(str_sv1, 64);
+            assert(s_idx.size() == 2);
+            assert(s_idx.sv_size() == 2);
+            assert(s_idx.is_unique());
+
+        }
+
+
+        for (unsigned i = 0; i < 65536*16; ++i)
+        {
+            {
+            bm::sv_sample_index<TSparseOptVector> s_idx(str_sv0, 64);
+            assert(s_idx.sv_size() == i);
+            if (i <= 1)
+            {
+                assert(s_idx.is_unique());
+            }
+            else
+            {
+                assert(!s_idx.is_unique());
+            }
+
+            if (i)
+            {
+                //assert(s_idx.size() == (i / 64) || (s_idx.size() == (i / 64)+1) || (s_idx.size() == (i / 64)+2));
+            }
+            bool found = s_idx.bfind_range("0", 1,  l, r);
+            assert(!found);
+            found = s_idx.bfind_range("129", 3, l, r);
+            assert(!found);
+            if (i)
+            {
+                found = s_idx.bfind_range("123", 3, l, r);
+                assert(found);
+                assert(l >= 0);
+                assert(r <= s_idx.size()-1);
+
+                s_idx.recalc_range("123", l, r);
+                assert(l >= 0);
+                assert(r <= str_sv0.size()-1);
+                assert(l <= r);
+            }
+
+            }
+
+            str_sv0.push_back("123");
+
+            if (((i & 0xFFFF) == 0) && (!is_silent))
+                cout << "\r" << i << flush;
+        } // for i
+
     }
 
 
@@ -29000,6 +29163,16 @@ void TestStrSparseVector()
            found = scanner.bfind_eq_str("11", pos);
            assert(found);
            assert(pos == 1);
+
+          {
+          pos = 0;
+            const char test_ch [] = "113";
+           found = scanner.bfind_eq_str(test_ch, 2, pos);
+           assert(found);
+           assert(pos == 1);
+
+          }
+
            found = scanner1.lower_bound_str(str_sv1, "11", pos1);
            assert(found);
            assert(pos == pos1);
@@ -29134,6 +29307,7 @@ void TestStrSparseVector()
             int cmp = strcmp(s.c_str(), str);
             assert(cmp == 0);
         }
+
       cout << "  Testing compare(i, j)..." << endl;
       CheckStrSVCompare(str_sv0);
       cout << "  OK" << endl;
@@ -29328,7 +29502,7 @@ void TestStrSparseVector()
     }
     
     
-   cout << "---------------------------- Bit-plane STR sparse vector test OK" << endl;
+   cout << "---------------------------- TestStrSparseVector() OK" << endl;
 }
 
 static
@@ -29724,7 +29898,7 @@ void TestStrSparseVectorSerial()
 
     {
        str_sparse_vector<char, bvect, 3> str_sv1;
-       str_sparse_vector<char, bvect, 3> str_sv2;
+       str_sparse_vector<char, bvect, 3> str_sv2, str_sv3;
 
        {
            str_sparse_vector<char, bvect, 3>::back_insert_iterator bi = str_sv1.get_back_inserter();
@@ -29778,6 +29952,12 @@ void TestStrSparseVectorSerial()
         assert(cmp==0);
         cmp = str_sv2.compare(0, "");
         assert(cmp==0);
+
+        sv_deserial.set_finalization(bm::finalization::READONLY);
+        sv_deserial.deserialize(str_sv3, buf_v.data(), bv_mask);
+        assert(str_sv3.is_ro());
+        bool eq = str_sv2.equal(str_sv3);
+        assert(eq);
     }
 
     {
@@ -29840,6 +30020,12 @@ void TestStrSparseVectorSerial()
 
         bool b = str_sv1.equal(str_sv2);
         assert(b);
+
+        sv_deserial.set_finalization(bm::finalization::READONLY);
+        sv_deserial.deserialize(str_sv2, buf_v.data());
+        assert(str_sv2.is_ro());
+        bool eq = str_sv1.equal(str_sv2);
+        assert(eq);
     }
 
 
@@ -30047,6 +30233,8 @@ void TestStrSparseVectorSerial()
         }
 
         bm::sparse_vector_deserializer<str_sparse_vector<char, bvect, 3> > sv_deserial;
+        bm::sparse_vector_deserializer<str_sparse_vector<char, bvect, 3> > sv_deserial_ro;
+        sv_deserial_ro.set_finalization(bm::finalization::READONLY);
         char s1[256];
         char s2[256];
         int cmp;
@@ -30115,6 +30303,13 @@ void TestStrSparseVectorSerial()
                 assert(cmp==0);
 
             } // for j
+
+            sv_deserial_ro.deserialize_range(str_sv3, buf_v.data(), i, to);
+            assert(str_sv3.is_ro());
+            eq = str_r.equal(str_sv3);
+            assert(eq);
+
+
 
             if ((i & 0xF) == 0)
                 if (!is_silent)
@@ -30198,6 +30393,10 @@ void TestStrSparseVectorSerial()
         }
 
         bm::sparse_vector_deserializer<str_sparse_vector<char, bvect, 3> > sv_deserial;
+
+        bm::sparse_vector_deserializer<str_sparse_vector<char, bvect, 3> > sv_deserial_ro;
+        sv_deserial_ro.set_finalization(bm::finalization::READONLY);
+
         char s1[256];
         char s2[256];
         char s3[256];
@@ -30235,6 +30434,11 @@ void TestStrSparseVectorSerial()
                 assert(cmp==0);
                 assert(str_sv1.is_null(j) == str_sv2.is_null(j));
             } // for j
+
+            sv_deserial_ro.deserialize_range(str_sv3, buf_v.data(), i, to);
+            assert(str_sv3.is_ro());
+            eq = str_r.equal(str_sv3);
+            assert(eq);
 
             if ((i & 0xF) == 0)
                 if (!is_silent)
@@ -30568,7 +30772,7 @@ void StressTestStrSparseVector()
 {
    cout << "---------------------------- Bit-plane STR sparse vector stress test" << endl;
    
-   const unsigned max_coll = 2000000;
+   const unsigned max_coll = 3000000;
    std::vector<string> str_coll;
    str_svect_type str_sv;
 
@@ -30578,11 +30782,10 @@ void StressTestStrSparseVector()
    {
        str_svect_type::back_insert_iterator bi = str_sv.get_back_inserter();
        for (auto str : str_coll)
-       {
            bi = str;
-       }
        bi.flush();
    }
+
     cout << "  Testing compare(i, j)..." << endl;
     CheckStrSVCompare(str_sv, max_coll / 100);
     cout << "  OK" << endl;
@@ -30608,7 +30811,7 @@ void StressTestStrSparseVector()
     str_sv_remap.remap_from(str_sv_sorted);
     cout << "Build re-mapped vector... OK" << endl;
 
-    
+
     // -----------------------------------------------------------
 
    //print_svector_stat(str_sv);
@@ -30620,7 +30823,7 @@ void StressTestStrSparseVector()
 
     CompareStrSparseVector(str_sv, str_coll);
 
-   print_svector_stat(cout,str_sv, true);
+    //print_svector_stat(cout,str_sv, true);
 
     cout << "ok. \n Verification..." << endl;
 
@@ -30630,10 +30833,6 @@ void StressTestStrSparseVector()
     
     CompareStrSparseVector(str_sv_remap, str_coll_sorted);
     
-
-    cout << "ok. \n Verification of remap vector..." << endl;
-    
-    CompareStrSparseVector(str_sv_remap, str_coll_sorted);
 
 
     // serialization check
@@ -30699,20 +30898,17 @@ void StressTestStrSparseVector()
             unsigned octet_idx = 0;
             for (;true; ++octet_idx)
             {
-                if (!str1[octet_idx])
-                {
-                    if (octet_idx)
-                        --octet_idx;
-                    break;
-                }
-                if (!str2[octet_idx])
-                {
-                    if (octet_idx)
-                        --octet_idx;
-                    break;
-                }
                 if (str1[octet_idx] != str2[octet_idx])
                     break;
+                if (!str1[octet_idx] || !str2[octet_idx])
+                    break;
+            }
+            if (octet_idx)
+            {
+                for (unsigned i0 = 0; i0 < octet_idx; ++i0)
+                {
+                    assert(str1[i0] == str2[i0]);
+                }
             }
             unsigned common_prefix = str_sv_sorted.common_prefix_length(i, j);
             if (common_prefix != octet_idx)
@@ -30720,6 +30916,8 @@ void StressTestStrSparseVector()
                 cerr << "Common prefix length mismatch!" <<
                      common_prefix << " != " << octet_idx <<
                      " [" << str1 << "]-[" << str2 << "]" << endl;
+                common_prefix = str_sv_sorted.common_prefix_length(i, j);
+                assert(common_prefix == octet_idx);
                 exit(1);
             }
         } // for j
@@ -30733,6 +30931,8 @@ void StressTestStrSparseVector()
     
     }
    cout << "\nTest common prefix...ok." << endl;
+
+
    // ----------------------------------------------
 
    cout << "Test sorted search..." << endl;
@@ -30740,8 +30940,21 @@ void StressTestStrSparseVector()
    for (unsigned k = 0; k < 2; ++k)
    {
         bm::sparse_vector_scanner<str_svect_type> scanner;
-        bm::sparse_vector_scanner<str_svect_type> scanner2;
-        scanner2.bind(str_sv_remap, true); // bind sorted vector
+        bm::sparse_vector_scanner<str_svect_type, 4> scanner4;
+        scanner4.bind(str_sv_remap, true); // bind sorted vector
+
+        bm::sparse_vector_scanner<str_svect_type, 8> scanner8;
+        scanner8.bind(str_sv_remap, true); // bind sorted vector
+
+        bm::sparse_vector_scanner<str_svect_type, 16> scanner16;
+        scanner16.bind(str_sv_remap, true); // bind sorted vector
+
+        bm::sparse_vector_scanner<str_svect_type, 32> scanner32;
+        scanner32.bind(str_sv_remap, true); // bind sorted vector
+
+        bm::sparse_vector_scanner<str_svect_type, 64> scanner64;
+        scanner64.bind(str_sv_remap, true); // bind sorted vector
+
 
         for (unsigned i = 0; i < unsigned(str_coll_sorted.size()); ++i)
         {
@@ -30770,7 +30983,8 @@ void StressTestStrSparseVector()
             if (!found1)
             {
                 cerr << "Sorted scan failed at: " << i << " " << s << endl;
-                exit(1);
+                found1 = scanner.find_eq_str(str_sv_sorted, s.c_str(), pos1);
+                assert(0); exit(1);
             }
             if (pos1 != i)
             {
@@ -30778,6 +30992,7 @@ void StressTestStrSparseVector()
                      << " " << s << endl;
                 assert(0);exit(1);
             }
+
             bool found2 = scanner.bfind_eq_str(str_sv_sorted, s.c_str(), pos2);
             if (!found2)
             {
@@ -30792,11 +31007,14 @@ void StressTestStrSparseVector()
                      << " " << s << endl;
                 assert(0);exit(1);
             }
+
+
             bool found4 = scanner.lower_bound_str(str_sv_sorted, s.c_str(), pos4);
             assert(found4);
             assert(pos2 == pos4);
 
-            bool found3 = scanner2.bfind_eq_str(s.c_str(), pos3);
+
+            bool found3 = scanner4.bfind_eq_str(s.c_str(), pos3);
             if (!found3)
             {
                 cerr << "Error! Sorted-remap binary search failed at: " << i << " value='" << s << "'" << endl;
@@ -30808,6 +31026,73 @@ void StressTestStrSparseVector()
                      << " value='" << s << "'" << endl;
                 assert(0);exit(1);
             }
+
+            // -----------------------------------------------
+            {
+                unsigned pos_x;
+                bool found_x = scanner8.bfind_eq_str(s.c_str(), pos_x);
+                if (!found_x)
+                {
+                    cerr << "Error! Sorted-remap binary search 8 failed at: " << i << " value='" << s << "'" << endl;
+                    assert(0);exit(1);
+                }
+                if (pos_x != i)
+                {
+                    cerr << "Error! Sorted-remap binary search 8 position mismatch at: " << i << "!=" << pos2
+                         << " value='" << s << "'" << endl;
+                    assert(0);exit(1);
+                }
+            }
+            // -----------------------------------------------
+            {
+                unsigned pos_x;
+                bool found_x = scanner16.bfind_eq_str(s.c_str(), pos_x);
+                if (!found_x)
+                {
+                    cerr << "Error! Sorted-remap binary search 16 failed at: " << i << " value='" << s << "'" << endl;
+                    assert(0);exit(1);
+                }
+                if (pos_x != i)
+                {
+                    cerr << "Error! Sorted-remap binary search 16 position mismatch at: " << i << "!=" << pos2
+                         << " value='" << s << "'" << endl;
+                    assert(0);exit(1);
+                }
+            }
+            // -----------------------------------------------
+            {
+                unsigned pos_x;
+                bool found_x = scanner32.bfind_eq_str(s.c_str(), pos_x);
+                if (!found_x)
+                {
+                    cerr << "Error! Sorted-remap binary search 32 failed at: " << i << " value='" << s << "'" << endl;
+                    assert(0);exit(1);
+                }
+                if (pos_x != i)
+                {
+                    cerr << "Error! Sorted-remap binary search 32 position mismatch at: " << i << "!=" << pos2
+                         << " value='" << s << "'" << endl;
+                    assert(0);exit(1);
+                }
+            }
+            // -----------------------------------------------
+            {
+                unsigned pos_x;
+                bool found_x = scanner64.bfind_eq_str(s.c_str(), pos_x);
+                if (!found_x)
+                {
+                    cerr << "Error! Sorted-remap binary search 64 failed at: " << i << " value='" << s << "'" << endl;
+                    assert(0);exit(1);
+                }
+                if (pos_x != i)
+                {
+                    cerr << "Error! Sorted-remap binary search 64 position mismatch at: " << i << "!=" << pos2
+                         << " value='" << s << "'" << endl;
+                    assert(0);exit(1);
+                }
+            }
+            // ---------------------------------------------------
+
             {
                 bvect bv_result;
                 bool found5 = scanner.find_eq_str(str_sv_sorted, s.c_str(), bv_result);
@@ -30825,7 +31110,7 @@ void StressTestStrSparseVector()
             }
             {
                 bvect bv_result;
-                bool found6 = scanner2.find_eq_str(s.c_str(), bv_result);
+                bool found6 = scanner4.find_eq_str(s.c_str(), bv_result);
                 if (!found6)
                 {
                     cerr << "Error! Scanner bvector search failed! at: " << i << endl;
@@ -30838,10 +31123,11 @@ void StressTestStrSparseVector()
                     assert(pos6 == i);
                 }
             }
+
             if (i % 65535 == 0)
             {
                 if (!is_silent)
-                    cout << "\r" << i << " / " << str_sv_sorted.size() << flush;
+                    cout << "\r" << (str_sv_sorted.size()-i) << flush;
             }
 
         } // for
@@ -30980,7 +31266,7 @@ void TestSparseFindEqStrPipeline()
 
    cout << "OK" << endl;
 
-    bm::print_svector_stat(cout,str_sv);
+    //bm::print_svector_stat(cout,str_sv);
 
     unsigned test_runs = 10000;
     std::vector<string> str_test_coll;
@@ -32350,6 +32636,7 @@ void TestSIMDUtils()
     {
         unsigned short buf[127] = { 65535, 127, 255, 256, 1000, 2000, 2001, 2005, 0xFF, 0,  };
         idx = bm::sse4_gap_find(buf, (unsigned short)65535, 1);
+cout << idx << endl;
         assert(idx == 0);
         idx = bm::sse4_gap_find(buf, 0, 1);
         assert(idx == 0);
@@ -36746,6 +37033,7 @@ void TestCompressSparseVectorSerial()
     {
         rsc_sparse_vector_u32 csv1;
         rsc_sparse_vector_u32 csv2;
+        rsc_sparse_vector_u32 csv3;
         {
         rsc_sparse_vector_u32::back_insert_iterator rs_bi = csv1.get_back_inserter();
             rs_bi.add_null();
@@ -36783,10 +37071,29 @@ void TestCompressSparseVectorSerial()
         assert(csv2.get(1) == 1);
         assert(csv2.get(2) == 2);
 
+        {
+            sv_deserial.set_finalization(bm::finalization::READONLY);
+            sv_deserial.deserialize(csv3, buf, bv_mask);
+            assert(csv3.is_ro());
+            bool eq = csv2.equal(csv3);
+            assert(eq);
+            sv_deserial.set_finalization(bm::finalization::READWRITE);
+        }
+
         sv_deserial.deserialize(csv2, buf, 1, 2);
         assert(csv2.size() == csv1.size());
         assert(csv2.get(1) == 1);
         assert(csv2.get(2) == 2);
+
+        {
+            sv_deserial.set_finalization(bm::finalization::READONLY);
+            sv_deserial.deserialize(csv3, buf, 1, 2);
+            assert(csv3.is_ro());
+            bool eq = csv2.equal(csv3);
+            assert(eq);
+            sv_deserial.set_finalization(bm::finalization::READWRITE);
+        }
+
 
     }
 
@@ -36840,6 +37147,9 @@ void TestCompressSparseVectorSerial()
         sv_serializer.set_bookmarks(false);
         bm::sparse_vector_deserializer<rsc_sparse_vector_u32> sv_deserial;
 
+        bm::sparse_vector_deserializer<rsc_sparse_vector_u32> sv_deserial_ro;
+        sv_deserial_ro.set_finalization(bm::finalization::READONLY);
+
         for (unsigned pass = 0; pass < 2; ++pass)
         {
             cout << "\nPASS=" << pass << endl;
@@ -36850,6 +37160,11 @@ void TestCompressSparseVectorSerial()
                 rsc_sparse_vector_u32 csv_c;
                 sv_deserial.deserialize(csv_c, buf);
                 bool eq = csv1.equal(csv_c);
+                assert(eq);
+
+                sv_deserial_ro.deserialize(csv_c, buf);
+                assert(csv_c.is_ro());
+                eq = csv1.equal(csv_c);
                 assert(eq);
             }
 
@@ -36869,6 +37184,12 @@ void TestCompressSparseVectorSerial()
                 sv_deserial.deserialize_range(csv3, buf, i, j);
                 eq = csv2.equal(csv3);
                 assert(eq);
+
+                sv_deserial_ro.deserialize(csv3, buf, i, j);
+                assert(csv3.is_ro());
+                eq = csv2.equal(csv3);
+                assert(eq);
+
 
                 {
                     rsc_sparse_vector_u32 csv_range;
@@ -36911,8 +37232,8 @@ void TestCompressSparseVectorSerial()
 */
 
                 }
-                eq = csv2.equal(csv3);
-                assert(eq);
+//                eq = csv2.equal(csv3);
+//                assert(eq);
 
 
                 if (!is_silent)
@@ -37810,6 +38131,76 @@ int main2 ()
 }
 */
 
+/*
+void BamLoVoTest()
+{
+
+    typedef bm::bvector<> bvector_type;
+    typedef bm::str_sparse_vector<char, bvector_type, 32> str_sv_type;
+    str_sv_type data;    ///<< sorted succinct spot names
+    ///
+    str_sv_type data2;
+    data2.push_back("E100027113L1C009R01304370475");
+    data2.push_back("E100027113L1C030R02304370475");
+    auto pl1 = data2.common_prefix_length(0, 1);
+    data2.remap();
+    data2.optimize();
+    auto pl2 = data2.common_prefix_length(0, 1);
+
+    std::string path = "/Users/anatoliykuznetsov/dev/git/BitMagic/tests/stress/";
+    std::string key = "E100027113L1C030R02304370475";
+    std::string file_name = path + key + ".batch";
+    bm::file_load_svector(data, file_name);
+
+    auto pl3 = data.common_prefix_length(49938432, 49999999);
+    string s3_l, s3_r;
+    data.get(49938432, s3_l);
+    data.get(49999999, s3_r);
+
+    str_sv_type::size_type pos = 0;
+    std::string found_key;
+
+    bm::sparse_vector_scanner<str_sv_type, 16> scanner2;
+
+    if (scanner2.find_eq_str(data, key.c_str(), pos)) {
+        data.get(pos, found_key);
+        if (found_key != key) {
+            std::cerr << pos << endl << key << "\n" << found_key << std::endl;
+        }
+        assert(0);
+    }
+    if (scanner2.bfind_eq_str(data, key.c_str(), pos)) {
+        data.get(pos, found_key);
+        if (found_key != key) {
+            std::cerr << pos << endl << key << "\n" << found_key << std::endl;
+        }
+        assert(0);
+    }
+
+    bm::sparse_vector_scanner<str_sv_type, 16> scanner;
+    scanner.bind(data, true);
+
+    if (scanner.bfind_eq_str(key.c_str(), pos)) {
+        data.get(pos, found_key);
+        if (found_key != key) {
+            std::cerr << "Found " << key << "  at " << pos << " but get returned " << found_key << std::endl;
+        }
+    }
+    auto it = data.begin();
+    std::string s;
+    while (it.valid()) {
+        auto s= it.get_string_view();
+        if (s == key) {
+            std::cerr << "Drat! Key " << s << " exists! (Should not happen)" << std::endl;
+            assert(0);
+        } else if (s == found_key) {
+            std::cerr << "Found_key " << s << " confirmed!" << std::endl;
+        }
+        it.advance();
+    }
+    std::cerr << "the end" << std::endl;
+}
+*/
 
 #define BM_EXPAND(x)  x ## 1
 #define EXPAND(x)     BM_EXPAND(x)
@@ -37823,6 +38214,8 @@ int main(int argc, char *argv[])
     cerr << "Build error: Test build with undefined BM_ASSERT" << endl;
     exit(1);
 #endif
+
+//    BamLoVoTest();
 
     {
     auto ret = parse_args(argc, argv);
@@ -38029,6 +38422,8 @@ LoadTestAlignData("/Volumes/DATAFAT32/CGV-131/ser_align_5736.bin");
     {
         TestNibbleArr();
 
+        TestHasZeroByte();
+
         TestRecomb();
 
         HMaskTest();
@@ -38041,7 +38436,7 @@ LoadTestAlignData("/Volumes/DATAFAT32/CGV-131/ser_align_5736.bin");
         CalcBeginMask();
         CalcEndMask();
 
-        TestSIMDUtils();
+//        TestSIMDUtils();
 
         TestArraysAndBuffers();
 
@@ -38411,7 +38806,6 @@ LoadTestAlignData("/Volumes/DATAFAT32/CGV-131/ser_align_5736.bin");
 
         if (is_all || is_sv || is_sv0)
         {
-
             TestSparseVector();
              CheckAllocLeaks(false);
 
@@ -38498,6 +38892,7 @@ LoadTestAlignData("/Volumes/DATAFAT32/CGV-131/ser_align_5736.bin");
 
         if (is_all || is_csv || is_csv1)
         {
+
             TestCompressedSparseVectorScanGT();
              CheckAllocLeaks(false);
 

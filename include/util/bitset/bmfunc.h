@@ -64,6 +64,8 @@ struct bv_statistics
     gap_word_t  gap_levels[bm::gap_levels]; ///< GAP block lengths in the bvect
     unsigned long long gaps_by_level[bm::gap_levels]; ///< number of GAP blocks at each level
 
+    bv_statistics() BMNOEXCEPT { reset(); }
+
     /// cound bit block
     void add_bit_block() BMNOEXCEPT
     {
@@ -132,7 +134,13 @@ struct bv_arena_statistics
     size_t get_alloc_size() const BMNOEXCEPT
     {
         size_t sz = bit_blocks_sz * sizeof(bm::word_t);
-        sz += gap_blocks_sz * sizeof(bm::gap_word_t);
+
+        if (gap_blocks_sz) // add padding space for SIMD vect overread
+        {
+            sz += (gap_blocks_sz + bm::gap_len_table_min<true>::_len[0])
+                                                   * sizeof(bm::gap_word_t);
+        }
+
         sz += (ptr_sub_blocks_sz + top_block_size) * sizeof(void*);
         return sz;
     }
@@ -1021,8 +1029,8 @@ bm::id64_t digest_mask(unsigned from, unsigned to) BMNOEXCEPT
     
     bm::id64_t digest_from = from >> bm::set_block_digest_pos_shift;
     bm::id64_t digest_to = to >> bm::set_block_digest_pos_shift;;
-    bm::id64_t mask(~0ull);
-    mask = (mask >> (63 - (digest_to - digest_from))) << digest_from;
+    bm::id64_t mask =
+        ((~0ull) >> (63 - (digest_to - digest_from))) << digest_from;
 
     //BM_ASSERT(mask == bm::dm_control(from, to));
 
@@ -1042,12 +1050,34 @@ bm::id64_t digest_mask(unsigned from, unsigned to) BMNOEXCEPT
    @ingroup bitfunc
    @internal
 */
-inline
+BMFORCEINLINE
 bool check_zero_digest(bm::id64_t digest,
                        unsigned bitpos_from, unsigned bitpos_to) BMNOEXCEPT
 {
     bm::id64_t mask = bm::digest_mask(bitpos_from, bitpos_to);
     return !(digest & mask);
+}
+
+/**
+    \brief Is one range of 1s ( 0000110000 - one range, 000011000010 - more than one)
+    @return true
+    @internal
+ */
+inline
+bool is_digest_one_range(bm::id64_t digest) BMNOEXCEPT
+{
+    BM_ASSERT(digest);
+    bm::id64_t mask = 1;
+    bool prev = digest & mask;
+    unsigned cnt = prev;
+    for (mask <<= 1; mask; mask <<= 1)
+    {
+        bool curr = digest & mask;
+        if (curr && curr != prev)
+            cnt++;
+        prev = curr;
+    } // for
+    return cnt == 1;
 }
 
 /*!
@@ -1061,22 +1091,20 @@ bool check_zero_digest(bm::id64_t digest,
 inline
 void block_init_digest0(bm::word_t* const block, bm::id64_t digest) BMNOEXCEPT
 {
-    unsigned   off;
     for (unsigned i = 0; i < 64; ++i)
     {
-        off = i * bm::set_block_digest_wave_size;
-        bm::word_t mask = (digest & 1) ? ~0u : 0u;
+        unsigned off = i * bm::set_block_digest_wave_size;
+        bm::word_t mask = 0u - unsigned(digest & 1u); // (digest & 1) ? ~0u : 0u;
+        BM_ASSERT(mask == ((digest & 1) ? ~0u : 0u));
 #if defined(VECT_BLOCK_SET_DIGEST)
         VECT_BLOCK_SET_DIGEST(&block[off], mask);
 #else
-        for (unsigned j = 0; j < bm::set_block_digest_wave_size; j+=4)
-        {
-            block[off+j+0] = block[off+j+1] =
-            block[off+j+2] = block[off+j+3] = mask;
-        } // for j
+        for (; off < (i * bm::set_block_digest_wave_size)
+                           + bm::set_block_digest_wave_size; off+=4)
+            block[off] = block[off+1] = block[off+2] = block[off+3] = mask;
 #endif
         digest >>= 1ull;
-    } // for
+    } // for i
 }
 
 /*!
@@ -1142,6 +1170,7 @@ update_block_digest0(const bm::word_t* const block, bm::id64_t digest) BMNOEXCEP
 
         unsigned wave = bm::word_bitcount64(t - 1);
         unsigned off = wave * bm::set_block_digest_wave_size;
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
 
         #if defined(VECT_IS_DIGEST_ZERO)
             bool all_zero = VECT_IS_DIGEST_ZERO(&block[off]);
@@ -1160,10 +1189,9 @@ update_block_digest0(const bm::word_t* const block, bm::id64_t digest) BMNOEXCEP
             digest &= w64 ? digest : ~(mask << wave);
         #endif
         
-        d = bm::bmi_bslr_u64(d); // d &= d - 1;
     } // while
 
-    BM_ASSERT(bm::calc_block_digest0(block) == digest);
+//    BM_ASSERT(bm::calc_block_digest0(block) == digest);
     return digest;
 }
 
@@ -1756,19 +1784,19 @@ unsigned gap_test(const T* BMRESTRICT buf, unsigned pos) BMNOEXCEPT
         if (buf[6] >= pos) return sv1;
         if (buf[7] >= pos) return sv;
         if (buf[8] >= pos) return sv1;
-        if (buf[9] >= pos) return sv;
-        BM_ASSERT(0);
+        BM_ASSERT(buf[9] >= pos);
+        return sv;
     }
     else
     {
-        while (start != end)
+        BM_ASSERT(start != end);
+        do
         {
-            unsigned curr = (start + end) >> 1;
-            if (buf[curr] < pos)
+            if (unsigned curr = (start + end) >> 1; buf[curr] < pos)
                 start = curr + 1;
             else
                 end = curr;
-        }
+        } while (start != end);
     }
     return ((*buf) & 1) ^ ((--start) & 1); 
 }
@@ -1783,20 +1811,11 @@ unsigned gap_test(const T* BMRESTRICT buf, unsigned pos) BMNOEXCEPT
 template<typename T> 
 unsigned gap_test_unr(const T* BMRESTRICT buf, const unsigned pos) BMNOEXCEPT
 {
+    BM_ASSERT(buf);
     BM_ASSERT(pos < bm::gap_max_bits);
 
-    if (pos == 0) // quick answer possible
-    {
-        return (*buf) & 1;
-    }
-#if defined(BMSSE2OPT)
-    unsigned res = bm::sse2_gap_test(buf, pos);
-    BM_ASSERT(res == bm::gap_test(buf, pos));
-#elif defined(BMSSE42OPT)
-    unsigned res = bm::sse42_gap_test(buf, pos);
-    BM_ASSERT(res == bm::gap_test(buf, pos));
-#elif defined(BMAVX2OPT)
-    unsigned res = bm::avx2_gap_test(buf, pos);
+#if defined(VECT_GAP_TEST)
+    unsigned res = VECT_GAP_TEST(buf, pos);
     BM_ASSERT(res == bm::gap_test(buf, pos));
 #else
     unsigned res = bm::gap_test(buf, pos);
@@ -3747,8 +3766,6 @@ unsigned test_bit(const unsigned* block, unsigned  bitpos) BMNOEXCEPT
 inline
 void or_bit_block(unsigned* dest, unsigned bitpos, unsigned bitcount) BMNOEXCEPT
 {
-    const unsigned maskFF = ~0u;
-    
     dest += unsigned(bitpos >> bm::set_word_shift); // nword
     bitpos &= bm::set_word_mask;
 
@@ -3758,11 +3775,11 @@ void or_bit_block(unsigned* dest, unsigned bitpos, unsigned bitcount) BMNOEXCEPT
         return;
     }
 
-    if (bitpos) // starting pos is not aligned
+     const unsigned maskFF = ~0u;
+   if (bitpos) // starting pos is not aligned
     {
         unsigned mask_r = maskFF << bitpos;
-        unsigned right_margin = bitpos + bitcount;
-        if (right_margin < 32)
+        if (unsigned right_margin = bitpos + bitcount; right_margin < 32)
         {
             *dest |= (maskFF >> (32 - right_margin)) & mask_r;
             return;
@@ -3794,22 +3811,20 @@ void or_bit_block(unsigned* dest, unsigned bitpos, unsigned bitcount) BMNOEXCEPT
 inline
 void sub_bit_block(unsigned* dest, unsigned bitpos, unsigned bitcount) BMNOEXCEPT
 {
-    const unsigned maskFF = ~0u;
-    
+    BM_ASSERT(bitcount);
+
     dest += unsigned(bitpos >> bm::set_word_shift); // nword
     bitpos &= bm::set_word_mask;
-
     if (bitcount == 1u)  // special case (only 1 bit to set)
     {
-        *dest &= ~(1u << bitpos);
+        *dest &= ~(bitcount << bitpos);
         return;
     }
-
+    const unsigned maskFF = ~0u;
     if (bitpos) // starting pos is not aligned
     {
         unsigned mask_r = maskFF << bitpos;
-        unsigned right_margin = bitpos + bitcount;
-        if (right_margin < 32)
+        if (unsigned right_margin = bitpos + bitcount; right_margin < 32)
         {
             *dest &= ~((maskFF >> (32 - right_margin)) & mask_r);
             return;
@@ -3824,9 +3839,7 @@ void sub_bit_block(unsigned* dest, unsigned bitpos, unsigned bitcount) BMNOEXCEP
         *dest++ = 0u; bitcount -= 32;
     }
     if (bitcount)
-    {
         *dest &= ~(maskFF >> (32 - bitcount));
-    }
 }
 
 
@@ -3923,15 +3936,19 @@ void gap_sub_to_bitset(unsigned* BMRESTRICT dest,
    \param pcurr   - GAP buffer pointer.
    \param digest0 - digest of 0 strides inside bit block
 
+   @return new digest
+
    @ingroup gapfunc
 */
 template<typename T>
-void gap_sub_to_bitset(unsigned* BMRESTRICT dest,
+bm::id64_t gap_sub_to_bitset(unsigned* BMRESTRICT dest,
                        const T* BMRESTRICT pcurr, bm::id64_t digest0) BMNOEXCEPT
 {
     BM_ASSERT(dest && pcurr);
     
-    const T* pend = pcurr + (*pcurr >> 3);
+    const T* BMRESTRICT pbuf = pcurr;
+    const unsigned len = (*pcurr >> 3);
+    const T* BMRESTRICT pend = pcurr + len;
     if (*pcurr & 1)  // Starts with 1
     {
         bool all_zero = bm::check_zero_digest(digest0, 0, pcurr[1]);
@@ -3946,33 +3963,40 @@ void gap_sub_to_bitset(unsigned* BMRESTRICT dest,
     {
         unsigned tz = bm::count_trailing_zeros_u64(digest0);
         unsigned start_pos = tz << set_block_digest_pos_shift;
-        for (; pcurr <= pend; pcurr += 2) // now we are in GAP "0"
+        if (len > 16)
         {
-            if (*pcurr >= start_pos)
-                break;
+            unsigned is_set;
+            unsigned found_pos = bm::gap_bfind(pbuf, start_pos, &is_set);
+            if (found_pos > 2)
+            {
+                found_pos += !is_set; // to GAP "1" (can go out of scope)
+                pcurr = pbuf + found_pos;
+            }
+            BM_ASSERT (pcurr > pend || *pcurr >= start_pos);
+        }
+        else
+        {
+            for (; pcurr <= pend; pcurr += 2) // now we are in GAP "1"
+                if (*pcurr >= start_pos)
+                    break;
         }
     }
 
-    unsigned lz = bm::count_leading_zeros_u64(digest0);
+    const unsigned lz = bm::count_leading_zeros_u64(digest0);
     unsigned stop_pos = (64u - lz) << set_block_digest_pos_shift;
 
-    unsigned bc, pos;
-    T prev;
-    for (; pcurr <= pend; pcurr += 2) // now we are in GAP "1" again
+    for (T prev; pcurr <= pend; pcurr += 2) // now we are in GAP "1" again
     {
         BM_ASSERT(*pcurr > *(pcurr-1));
         prev = pcurr[-1];
-        bc = *pcurr - prev;
-        pos = 1u + prev;
-        
+        unsigned pos = 1u + prev;
         bool all_zero = bm::check_zero_digest(digest0, prev, *pcurr);
         if (!all_zero)
-            bm::sub_bit_block(dest, pos, bc);
-        
+            bm::sub_bit_block(dest, pos, *pcurr - prev);
         if (pos > stop_pos)
             break; // early break is possible based on digest tail
-
     } // for
+    return bm::update_block_digest0(dest, digest0);
 }
 
 
@@ -4094,19 +4118,22 @@ void gap_and_to_bitset(unsigned* BMRESTRICT dest,
    \brief ANDs GAP block to bitblock with digest assist
    \param dest - bitblock buffer pointer.
    \param pcurr  - GAP buffer pointer.
-   \param digest0 - digest of 0 strides for the destination 
+   \param digest0 - digest of 0 strides for the destination
+
+   @return new digest
 
    @ingroup gapfunc
 */
 template<typename T>
-void gap_and_to_bitset(unsigned* BMRESTRICT dest,
+bm::id64_t gap_and_to_bitset(unsigned* BMRESTRICT dest,
                     const T* BMRESTRICT pcurr, bm::id64_t digest0) BMNOEXCEPT
 {
     BM_ASSERT(dest && pcurr);
     if (!digest0)
-        return;
-    
-    const T* pend = pcurr + (*pcurr >> 3);
+        return digest0;
+    const T* BMRESTRICT pbuf = pcurr;
+    const unsigned len = (*pcurr >> 3);
+    const T* BMRESTRICT pend = pcurr + len;
     if (!(*pcurr & 1) )  // Starts with 0
     {
         bool all_zero = bm::check_zero_digest(digest0, 0, pcurr[1]);
@@ -4121,34 +4148,42 @@ void gap_and_to_bitset(unsigned* BMRESTRICT dest,
     {
         unsigned tz = bm::count_trailing_zeros_u64(digest0);
         unsigned start_pos = tz << set_block_digest_pos_shift;
-        for (; pcurr <= pend; pcurr += 2) // now we are in GAP "0"
+        if (len > 16)
         {
-            if (*pcurr >= start_pos)
-                break;
+            unsigned is_set;
+            unsigned found_pos = bm::gap_bfind(pbuf, start_pos, &is_set);
+            if (found_pos > 2)
+            {
+                found_pos += is_set; // to GAP "0" (can go out of scope)
+                pcurr = pbuf + found_pos;
+            }
+            BM_ASSERT (pcurr > pend || *pcurr >= start_pos);
         }
+        else
+        {
+            for (; pcurr <= pend; pcurr += 2) // now we are in GAP "0"
+                if (*pcurr >= start_pos)
+                    break;
+        }
+
     }
 
-    unsigned lz = bm::count_leading_zeros_u64(digest0);
-    unsigned stop_pos = (64u - lz) << set_block_digest_pos_shift;
-    
-    unsigned bc, pos;
-    T prev;
-    for (; pcurr <= pend; pcurr += 2) // now we are in GAP "0" again
+    const unsigned lz = bm::count_leading_zeros_u64(digest0);
+    const unsigned stop_pos = (64u - lz) << set_block_digest_pos_shift;
+
+    for (T prev; pcurr <= pend; pcurr += 2) // now we are in GAP "0" again
     {
         BM_ASSERT(*pcurr > *(pcurr-1));
-
         prev = pcurr[-1];
-        bc = *pcurr - prev;
-        pos = 1u + prev;
-        
+        unsigned pos = 1u + prev;
         bool all_zero = bm::check_zero_digest(digest0, prev, *pcurr);
         if (!all_zero)
-            bm::sub_bit_block(dest, pos, bc);
-        
+            bm::sub_bit_block(dest, pos, *pcurr - prev);
         if (pos > stop_pos) // early break is possible based on digest tail
             break;
+    } // for pcurr
 
-    } // for
+    return bm::update_block_digest0(dest, digest0);
 }
 
 
@@ -6874,7 +6909,8 @@ bm::id64_t bit_block_and(bm::word_t* BMRESTRICT dst,
         
         unsigned wave = bm::word_bitcount64(t - 1);
         unsigned off = wave * bm::set_block_digest_wave_size;
-        
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
+
         #if defined(VECT_AND_DIGEST)
             bool all_zero = VECT_AND_DIGEST(&dst[off], &src[off]);
             if (all_zero)
@@ -6897,8 +6933,6 @@ bm::id64_t bit_block_and(bm::word_t* BMRESTRICT dst,
             if (!acc) // all zero
                 digest &= ~(mask  << wave);
         #endif
-
-        d = bm::bmi_bslr_u64(d); // d &= d - 1;
     } // while
     
     return digest;
@@ -6928,9 +6962,9 @@ bm::id64_t bit_block_and_5way(bm::word_t* BMRESTRICT dst,
     while (d)
     {
         bm::id64_t t = bm::bmi_blsi_u64(d); // d & -d;
-
         unsigned wave = bm::word_bitcount64(t - 1);
         unsigned off = wave * bm::set_block_digest_wave_size;
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
 
 #if defined(VECT_AND_DIGEST_5WAY)
         bool all_zero = VECT_AND_DIGEST_5WAY(&dst[off], &src0[off], &src1[off], &src2[off], &src3[off]);
@@ -6953,12 +6987,72 @@ bm::id64_t bit_block_and_5way(bm::word_t* BMRESTRICT dst,
             acc |= dst_u->w64[j + 3] &= src_u0->w64[j + 3] & src_u1->w64[j + 3] & src_u2->w64[j + 3] & src_u3->w64[j + 3];
             j += 4;
         } while (j < bm::set_block_digest_wave_size / 2);
-
         if (!acc) // all zero
             digest &= ~(mask << wave);
 #endif
+    } // while
+    return digest;
+}
 
+/*!
+   \brief digest based bit-block AND
+
+   dst &= src1 AND src2
+
+   \param dst - src/destination block.
+   \param src1 - source block.
+   \param src2 - source block.
+   \param digest - known initial digest
+
+   \return new digest
+
+   @ingroup bitfunc
+*/
+inline
+bm::id64_t bit_block_and_3way(bm::word_t* BMRESTRICT dst,
+                              const bm::word_t* BMRESTRICT src1,
+                              const bm::word_t* BMRESTRICT src2,
+                              bm::id64_t digest) BMNOEXCEPT
+{
+    BM_ASSERT(dst);
+    BM_ASSERT(src1 && src2);
+    BM_ASSERT(dst != src1 && dst != src2);
+
+    const bm::id64_t mask(1ull);
+    bm::id64_t d = digest;
+    while (d)
+    {
+        bm::id64_t t = bm::bmi_blsi_u64(d); // d & -d;
+
+        unsigned wave = bm::word_bitcount64(t - 1);
+        unsigned off = wave * bm::set_block_digest_wave_size;
         d = bm::bmi_bslr_u64(d); // d &= d - 1;
+
+        #if defined(VECT_AND_DIGEST_3WAY)
+            bool all_zero = VECT_AND_DIGEST_3WAY(&dst[off], &src1[off], &src2[off]);
+            if (all_zero)
+                digest &= ~(mask << wave);
+        #else
+            const bm::bit_block_t::bunion_t* BMRESTRICT src_u1 =
+                                (const bm::bit_block_t::bunion_t*)(&src1[off]);
+            const bm::bit_block_t::bunion_t* BMRESTRICT src_u2 =
+                                (const bm::bit_block_t::bunion_t*)(&src2[off]);
+            bm::bit_block_t::bunion_t* BMRESTRICT dst_u =
+                                (bm::bit_block_t::bunion_t*)(&dst[off]);
+            unsigned j = 0; bm::id64_t acc = 0;
+            do
+            {
+                acc |= dst_u->w64[j] &= src_u1->w64[j] & src_u2->w64[j];
+                acc |= dst_u->w64[j+1] &= src_u1->w64[j+1] & src_u2->w64[j+1];
+                acc |= dst_u->w64[j+2] &= src_u1->w64[j+2] & src_u2->w64[j+2];
+                acc |= dst_u->w64[j+3] &= src_u1->w64[j+3] & src_u2->w64[j+3];
+                j+=4;
+            } while (j < bm::set_block_digest_wave_size/2);
+
+            if (!acc) // all zero
+                digest &= ~(mask  << wave);
+        #endif
+
     } // while
 
     return digest;
@@ -6997,7 +7091,8 @@ bm::id64_t bit_block_and_2way(bm::word_t* BMRESTRICT dst,
 
         unsigned wave = bm::word_bitcount64(t - 1);
         unsigned off = wave * bm::set_block_digest_wave_size;
-        
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
+
         #if defined(VECT_AND_DIGEST_2WAY)
             bool all_zero = VECT_AND_DIGEST_2WAY(&dst[off], &src1[off], &src2[off]);
             if (all_zero)
@@ -7009,12 +7104,10 @@ bm::id64_t bit_block_and_2way(bm::word_t* BMRESTRICT dst,
                                 (const bm::bit_block_t::bunion_t*)(&src2[off]);
             bm::bit_block_t::bunion_t* BMRESTRICT dst_u =
                                 (bm::bit_block_t::bunion_t*)(&dst[off]);
-
-            bm::id64_t acc = 0;
-            unsigned j = 0;
+            unsigned j = 0; bm::id64_t acc = 0;
             do
             {
-                acc |= dst_u->w64[j+0] = src_u1->w64[j+0] & src_u2->w64[j+0];
+                acc |= dst_u->w64[j] = src_u1->w64[j] & src_u2->w64[j];
                 acc |= dst_u->w64[j+1] = src_u1->w64[j+1] & src_u2->w64[j+1];
                 acc |= dst_u->w64[j+2] = src_u1->w64[j+2] & src_u2->w64[j+2];
                 acc |= dst_u->w64[j+3] = src_u1->w64[j+3] & src_u2->w64[j+3];
@@ -7025,10 +7118,78 @@ bm::id64_t bit_block_and_2way(bm::word_t* BMRESTRICT dst,
                 digest &= ~(mask  << wave);
         #endif
 
-        d = bm::bmi_bslr_u64(d); // d &= d - 1;
     } // while
     
     return digest;
+}
+
+/*!
+   \brief digest based bit-block AND (0 elements of digest will be zeroed)
+
+   dst = src1 AND src2
+
+   \param dst - destination block.
+   \param src1 - source block.
+   \param src2 - source block.
+   \param digest - known initial digest
+
+   \return new digest
+
+   @ingroup bitfunc
+*/
+inline
+bm::id64_t bit_block_init_and_2way(bm::word_t* BMRESTRICT dst,
+                                   const bm::word_t* BMRESTRICT src1,
+                                   const bm::word_t* BMRESTRICT src2,
+                                   bm::id64_t digest) BMNOEXCEPT
+{
+    bm::id64_t d = digest;
+    unsigned   off;
+    for (unsigned i = 0; i < 64; ++i)
+    {
+        off = i * bm::set_block_digest_wave_size;
+        if (digest & 1)
+        {
+        #if defined(VECT_AND_DIGEST_2WAY)
+            bool all_zero = VECT_AND_DIGEST_2WAY(&dst[off], &src1[off], &src2[off]);
+            if (all_zero)
+                d &= ~(1ull << i);
+        #else
+            const bm::bit_block_t::bunion_t* BMRESTRICT src_u1 =
+                                (const bm::bit_block_t::bunion_t*)(&src1[off]);
+            const bm::bit_block_t::bunion_t* BMRESTRICT src_u2 =
+                                (const bm::bit_block_t::bunion_t*)(&src2[off]);
+            bm::bit_block_t::bunion_t* BMRESTRICT dst_u =
+                                (bm::bit_block_t::bunion_t*)(&dst[off]);
+            bm::id64_t acc = 0;
+            unsigned j = 0;
+            do
+            {
+                acc |= dst_u->w64[j] = src_u1->w64[j] & src_u2->w64[j];
+                acc |= dst_u->w64[j+1] = src_u1->w64[j+1] & src_u2->w64[j+1];
+                acc |= dst_u->w64[j+2] = src_u1->w64[j+2] & src_u2->w64[j+2];
+                acc |= dst_u->w64[j+3] = src_u1->w64[j+3] & src_u2->w64[j+3];
+                j+=4;
+            } while (j < bm::set_block_digest_wave_size/2);
+
+            if (!acc) // all zero
+                d &= ~(1ull << i);
+        #endif
+
+        }
+        else // init to all 0s
+        {
+        #if defined(VECT_BLOCK_SET_DIGEST)
+            VECT_BLOCK_SET_DIGEST(&dst[off], 0u);
+        #else
+            for (; off < (i * bm::set_block_digest_wave_size) +
+                               bm::set_block_digest_wave_size; off+=4)
+                dst[off] = dst[off+1] = dst[off+2] = dst[off+3] = 0u;
+        #endif
+        }
+        digest >>= 1ull;
+    } // for
+    return d;
 }
 
 
@@ -7995,6 +8156,7 @@ bm::id64_t bit_block_sub(bm::word_t* BMRESTRICT dst,
 
         unsigned wave = bm::word_bitcount64(t - 1);
         unsigned off = wave * bm::set_block_digest_wave_size;
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
 
         #if defined(VECT_SUB_DIGEST)
             bool all_zero = VECT_SUB_DIGEST(&dst[off], &src[off]);
@@ -8019,7 +8181,6 @@ bm::id64_t bit_block_sub(bm::word_t* BMRESTRICT dst,
                 digest &= ~(mask  << wave);
         #endif
 
-        d = bm::bmi_bslr_u64(d); // d &= d - 1;
     } // while
     
     return digest;
@@ -8056,6 +8217,7 @@ bm::id64_t bit_block_sub_2way(bm::word_t* BMRESTRICT dst,
 
         unsigned wave = bm::word_bitcount64(t - 1);
         unsigned off = wave * bm::set_block_digest_wave_size;
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
 
         #if defined(VECT_SUB_DIGEST_2WAY)
             bool all_zero = VECT_SUB_DIGEST_2WAY(&dst[off], &src1[off], &src2[off]);
@@ -8083,10 +8245,117 @@ bm::id64_t bit_block_sub_2way(bm::word_t* BMRESTRICT dst,
             if (!acc) // all zero
                 digest &= ~(mask  << wave);
         #endif
-
-        d = bm::bmi_bslr_u64(d); // d &= d - 1;
     } // while
     
+    return digest;
+}
+
+
+/*!
+   \brief digest based bit-block SUB 5-way
+   \return new digest
+   @ingroup bitfunc
+*/
+inline
+bm::id64_t bit_block_sub_5way(bm::word_t* BMRESTRICT dst,
+                              const bm::word_t* BMRESTRICT src0,
+                              const bm::word_t* BMRESTRICT src1,
+                              const bm::word_t* BMRESTRICT src2,
+                              const bm::word_t* BMRESTRICT src3,
+                              bm::id64_t digest) BMNOEXCEPT
+{
+    BM_ASSERT(dst);
+    BM_ASSERT(src0 && src1 && src2 && src3);
+
+    const bm::id64_t mask(1ull);
+    bm::id64_t d = digest;
+    while (d)
+    {
+        bm::id64_t t = bm::bmi_blsi_u64(d); // d & -d;
+
+        unsigned wave = bm::word_bitcount64(t - 1);
+        unsigned off = wave * bm::set_block_digest_wave_size;
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
+
+#if defined(VECT_SUB_DIGEST_5WAY)
+        bool all_zero = VECT_SUB_DIGEST_5WAY(&dst[off], &src0[off], &src1[off], &src2[off], &src3[off]);
+        if (all_zero)
+            digest &= ~(mask << wave);
+#else
+        const bm::bit_block_t::bunion_t* BMRESTRICT src_u0 = (const bm::bit_block_t::bunion_t*)(&src0[off]);
+        const bm::bit_block_t::bunion_t* BMRESTRICT src_u1 = (const bm::bit_block_t::bunion_t*)(&src1[off]);
+        const bm::bit_block_t::bunion_t* BMRESTRICT src_u2 = (const bm::bit_block_t::bunion_t*)(&src2[off]);
+        const bm::bit_block_t::bunion_t* BMRESTRICT src_u3 = (const bm::bit_block_t::bunion_t*)(&src3[off]);
+        bm::bit_block_t::bunion_t* BMRESTRICT dst_u = (bm::bit_block_t::bunion_t*)(&dst[off]);
+
+        bm::id64_t acc = 0;
+        unsigned j = 0;
+        do
+        {
+            acc |= dst_u->w64[j + 0] &= ~src_u0->w64[j + 0] & ~src_u1->w64[j + 0] & ~src_u2->w64[j + 0] & ~src_u3->w64[j + 0];
+            acc |= dst_u->w64[j + 1] &= ~src_u0->w64[j + 1] & ~src_u1->w64[j + 1] & ~src_u2->w64[j + 1] & ~src_u3->w64[j + 1];
+            acc |= dst_u->w64[j + 2] &= ~src_u0->w64[j + 2] & ~src_u1->w64[j + 2] & ~src_u2->w64[j + 2] & ~src_u3->w64[j + 2];
+            acc |= dst_u->w64[j + 3] &= ~src_u0->w64[j + 3] & ~src_u1->w64[j + 3] & ~src_u2->w64[j + 3] & ~src_u3->w64[j + 3];
+            j += 4;
+        } while (j < bm::set_block_digest_wave_size / 2);
+
+        if (!acc) // all zero
+            digest &= ~(mask << wave);
+#endif
+
+    } // while
+
+    return digest;
+}
+
+/*!
+   \brief digest based bit-block SUB 3-way
+   \return new digest
+   @ingroup bitfunc
+*/
+inline
+bm::id64_t bit_block_sub_3way(bm::word_t* BMRESTRICT dst,
+                              const bm::word_t* BMRESTRICT src0,
+                              const bm::word_t* BMRESTRICT src1,
+                              bm::id64_t digest) BMNOEXCEPT
+{
+    BM_ASSERT(dst);
+    BM_ASSERT(src0 && src1);
+
+    const bm::id64_t mask(1ull);
+    bm::id64_t d = digest;
+    while (d)
+    {
+        bm::id64_t t = bm::bmi_blsi_u64(d); // d & -d;
+
+        unsigned wave = bm::word_bitcount64(t - 1);
+        unsigned off = wave * bm::set_block_digest_wave_size;
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
+
+#if defined(VECT_SUB_DIGEST_3WAY)
+        bool all_zero = VECT_SUB_DIGEST_3WAY(&dst[off], &src0[off], &src1[off]);
+        if (all_zero)
+            digest &= ~(mask << wave);
+#else
+        const bm::bit_block_t::bunion_t* BMRESTRICT src_u0 = (const bm::bit_block_t::bunion_t*)(&src0[off]);
+        const bm::bit_block_t::bunion_t* BMRESTRICT src_u1 = (const bm::bit_block_t::bunion_t*)(&src1[off]);
+        bm::bit_block_t::bunion_t* BMRESTRICT dst_u = (bm::bit_block_t::bunion_t*)(&dst[off]);
+
+        bm::id64_t acc = 0;
+        unsigned j = 0;
+        do
+        {
+            acc |= dst_u->w64[j + 0] &= ~src_u0->w64[j + 0] & ~src_u1->w64[j + 0];
+            acc |= dst_u->w64[j + 1] &= ~src_u0->w64[j + 1] & ~src_u1->w64[j + 1];
+            acc |= dst_u->w64[j + 2] &= ~src_u0->w64[j + 2] & ~src_u1->w64[j + 2];
+            acc |= dst_u->w64[j + 3] &= ~src_u0->w64[j + 3] & ~src_u1->w64[j + 3];
+            j += 4;
+        } while (j < bm::set_block_digest_wave_size / 2);
+
+        if (!acc) // all zero
+            digest &= ~(mask << wave);
+#endif
+    } // while
     return digest;
 }
 
@@ -8478,7 +8747,7 @@ bool bit_find_first(const bm::word_t* BMRESTRICT block,
     BM_ASSERT(pos);
 
 #ifdef VECT_BIT_FIND_FIRST
-    return VECT_BIT_FIND_FIRST(block, pos);
+    return VECT_BIT_FIND_FIRST(block, 0, pos);
 #else
     for (unsigned i = 0; i < bm::set_block_size; ++i)
     {
@@ -8499,7 +8768,7 @@ bool bit_find_first(const bm::word_t* BMRESTRICT block,
 
     \param block - bit block buffer pointer
     \param first - index of the first 1 bit (out)
-   \param digest - known digest of dst block
+    \param digest - known digest of dst block
 
     \return 0 if not found
 
@@ -8515,20 +8784,43 @@ unsigned bit_find_first(const bm::word_t* BMRESTRICT block,
     BM_ASSERT(digest);
     
     bm::id64_t t = bm::bmi_blsi_u64(digest); // d & -d;
-
     unsigned wave = bm::word_bitcount64(t - 1);
-    unsigned off = wave * bm::set_block_digest_wave_size;
-    for (unsigned i = off; i < bm::set_block_size; ++i)
+    unsigned i = wave * bm::set_block_digest_wave_size;
+
+#ifdef VECT_BIT_FIND_FIRST
+    return VECT_BIT_FIND_FIRST(block, i, first);
+#else
+    do
     {
-        bm::word_t w = block[i];
-        if (w)
+        bm::id64_t w64 = block[i] | block[i+1];
+        if (w64)
         {
-            unsigned idx = bit_scan_forward32(w); // trailing zeros
-            *first = unsigned(idx + (i * 8u * unsigned(sizeof(bm::word_t))));
-            return w;
+            unsigned base = i * 8u * unsigned(sizeof(bm::word_t));
+            if (bm::word_t w0 = block[i])
+            {
+                *first = bm::bit_scan_forward32(w0) + base;
+                return w0;
+            }
+            BM_ASSERT(block[i+1]);
+            return *first = bm::bit_scan_forward32(block[i+1]) + base + 32;
         }
-    } // for i
+        i+=2;
+        w64 = block[i] | block[i+1];
+        if (w64)
+        {
+            unsigned base = i * 8u * unsigned(sizeof(bm::word_t));
+            if (bm::word_t w0 = block[i])
+            {
+                *first = bm::bit_scan_forward32(w0) + base;
+                return w0;
+            }
+            BM_ASSERT(block[i+1]);
+            return *first = bm::bit_scan_forward32(block[i+1]) + base + 32;
+        }
+        i+=2;
+    } while (i < bm::set_block_size);
     return 0u;
+#endif
 }
 
 
@@ -8552,35 +8844,59 @@ bool bit_find_first_if_1(const bm::word_t* BMRESTRICT block,
     BM_ASSERT(first);
     BM_ASSERT(bm::word_bitcount64(digest)==1);
 
-    bool found = false;
-    bm::id64_t t = bm::bmi_blsi_u64(digest); // d & -d;
+    const bm::id64_t t = bm::bmi_blsi_u64(digest); // d & -d;
+    const unsigned wave = bm::word_bitcount64(t - 1);
+    const unsigned off = wave * bm::set_block_digest_wave_size;
 
-    unsigned wave = bm::word_bitcount64(t - 1);
-    unsigned off = wave * bm::set_block_digest_wave_size;
-    unsigned i;
-    for (i = off; i < off + bm::set_block_digest_wave_size; ++i)
+#if defined(BMSSE42OPT) || defined(BMAVX2OPT) || defined(BMAVX512OPT)
+    for (unsigned i = off; i < off + bm::set_block_digest_wave_size; i+=4)
     {
-        bm::word_t w = block[i];
-        if (w)
+        __m128i wA = _mm_load_si128((__m128i*)&block[i]);
+        if (_mm_test_all_zeros(wA, wA))
+            continue;
+        const unsigned cnt = i + 4;
+        do
         {
-            unsigned bc = bm::word_bitcount(w);
-            if (bc != 1)
+            const bm::word_t w = block[i];
+            switch (bm::word_bitcount(w))
+            {
+            case 0: break;
+            case 1:
+                *first = (i * 32) + bm::bit_scan_forward32(w);
+                for (++i; i < cnt; ++i) // check the rest of the SSE lane
+                    if (block[i])
+                        return false;
+                goto check_tail; // break out of switch-while
+            default:
                 return false;
-
-            unsigned idx = bit_scan_forward32(w); // trailing zeros
-            *first = unsigned(idx + (i * 8u * sizeof(bm::word_t)));
-            found = true;
-            break;
+            } // switch
+        } while (++i < cnt);
+        check_tail:
+        for (; i < off + bm::set_block_digest_wave_size; i+=4)
+        {
+            wA = _mm_load_si128((__m128i*)&block[i]);
+            if (!_mm_test_all_zeros(wA, wA)) // another != 0 found
+                return false;
+        } // for i
+        return true;
+    } // for i
+#else
+    for (auto i = off; i < off + bm::set_block_digest_wave_size; ++i)
+    {
+        if (auto w = block[i])
+        {
+            if (bm::word_bitcount(w) != 1)
+                return false;
+            const unsigned idx = (i * 32) + bm::bit_scan_forward32(w); // tzero
+            for (++i; i < off + bm::set_block_digest_wave_size; ++i)
+                if (block[i])
+                    return false;
+            *first = idx;
+            return true;
         }
     } // for i
-    
-    // check if all other bits are zero
-    for (++i; i < off + bm::set_block_digest_wave_size; ++i)
-    {
-        if (block[i])
-            return false;
-    }
-    return found;
+#endif
+    return false;
 }
 
 

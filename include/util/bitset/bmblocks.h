@@ -1957,7 +1957,16 @@ public:
         }
         top_blocks_ = 0;
     }
-    
+
+    /// allocate first level of descr. of blocks
+    void init_tree(unsigned top_size)
+    {
+        BM_ASSERT(top_blocks_ == 0);
+        if (top_size > top_block_size_)
+            top_block_size_ = top_size;
+        init_tree();
+    }
+
     // ----------------------------------------------------------------
     #define BM_FREE_OP(x) blk = blk_blk[j + x]; \
         if (IS_VALID_ADDR(blk)) \
@@ -2424,6 +2433,7 @@ public:
                 }
             } // for j
         } // for i
+
     }
 
     /**
@@ -2560,7 +2570,7 @@ public:
     void destroy_arena() BMNOEXCEPT
     {
         free_arena(arena_, alloc_);
-        ::free(arena_); arena_ = 0;
+        ::free(arena_); arena_ = 0; top_blocks_ = 0; top_block_size_ = 0;
     }
 
     // ----------------------------------------------------------------
