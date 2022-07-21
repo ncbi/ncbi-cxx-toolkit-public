@@ -1432,6 +1432,11 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         data->m_BioseqInfoFlags |=
             SPSGS_ResolveRequest::fPSGS_Length |
             SPSGS_ResolveRequest::fPSGS_MoleculeType;
+        if ( it.HasSeqHash() ) {
+            info.SetHash(it.GetSeqHash());
+            data->m_BioseqInfoFlags |=
+                SPSGS_ResolveRequest::fPSGS_Hash;
+        }
         {{
             // set taxid
             auto wgs = GetWGSDb(seq);
