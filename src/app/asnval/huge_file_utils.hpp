@@ -51,6 +51,7 @@ public:
 
         bool IsPatent = false;
         bool IsPDB    = false;
+        bool IsRefSeq = false;
 
         bool NoBioSource    = true;
         bool NoPubsFound    = true;
@@ -61,6 +62,7 @@ public:
         void Clear() {
             IsPatent = false;
             IsPDB    = false;
+            IsRefSeq = false;
 
             NoBioSource    = true;
             NoPubsFound    = true;
@@ -81,7 +83,7 @@ public:
 
     void ReportMissingPubs(CRef<objects::CValidError>& pErrors) const;
 
-    void ReportMissingCitSubs(CRef<objects::CValidError>& pErrors) const;
+    void ReportMissingCitSubs(bool hasRefSeqAccession, CRef<objects::CValidError>& pErrors) const;
 
     void ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
             CRef<objects::CValidError>& pErrors) const;
@@ -92,7 +94,6 @@ public:
             CRef<objects::CValidError>& pErrors) const;
 
 private:
-    bool x_HasRefSeqAccession() const;
     string x_FindIdString() const;
     string x_GetIdString() const;
 
