@@ -42,7 +42,7 @@
 #include <objects/valerr/ValidError.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <serial/objhook.hpp>
-#include <objtools/readers/objhook_lambdas.hpp> 
+#include <objtools/readers/objhook_lambdas.hpp>
 #include "huge_file_utils.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -56,10 +56,10 @@ static bool s_IsTSAContig(const TBioseqInfo& info, const CHugeAsnReader& reader)
     auto pSeqdesc = reader.GetClosestDescriptor(info, CSeqdesc::e_Molinfo);
     if (pSeqdesc) {
         const auto& molInfo = pSeqdesc->GetMolinfo();
-        return (molInfo.IsSetTech() && 
+        return (molInfo.IsSetTech() &&
                 (molInfo.GetTech() == CMolInfo::eTech_wgs ||
                  molInfo.GetTech() == CMolInfo::eTech_tsa));
-    }   
+    }
     return false;
 }
 
@@ -76,7 +76,7 @@ static bool s_IsGpipe(const TBioseqInfo& info)
 
 
 static bool s_CuratedRefSeq(const string& accession)
-{   
+{
     return (NStr::StartsWith(accession, "NM_") ||
             NStr::StartsWith(accession, "NP_") ||
             NStr::StartsWith(accession, "NG_") ||
@@ -108,7 +108,7 @@ bool g_IsCuratedRefSeq(const TBioseqInfo& info)
 }
 
 
-static bool s_IsMaster(const TBioseqInfo& info) 
+static bool s_IsMaster(const TBioseqInfo& info)
 {
     if (info.m_repr != CSeq_inst::eRepr_virtual) {
         return false;
@@ -123,7 +123,7 @@ static bool s_IsMaster(const TBioseqInfo& info)
 }
 
 static bool s_IsWGS(const TBioseqInfo& info, const CHugeAsnReader& reader)
-{   
+{
     auto pSeqdesc = reader.GetClosestDescriptor(info, CSeqdesc::e_Molinfo);
     if (pSeqdesc) {
         const auto& molInfo = pSeqdesc->GetMolinfo();
@@ -146,7 +146,7 @@ static bool s_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader&
     if (s_IsWGSMaster(info, reader)) {
         return true;
     }
-        
+
     if (IsRefSeq) {
         return false;
     }
@@ -156,14 +156,14 @@ static bool s_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader&
             CValidError_bioseq::IsTSAAccession(*pId)) {
             return false;
         }
-    }   
-    return true; 
+    }
+    return true;
 }
 
 
 static bool s_ReportMissingPubs(const TBioseqInfo& info, const CHugeAsnReader& reader)
-{   
-    if (reader.GetBiosets().size() > 1 && 
+{
+    if (reader.GetBiosets().size() > 1 &&
         next(reader.GetBiosets().begin())->m_class == CBioseq_set::eClass_gen_prod_set) {
         return false;
     }
@@ -205,7 +205,7 @@ static string s_GetIdString(const list<CConstRef<CSeq_id>>& ids, int* version)
         return s_GetBioseqAcc(*pBestId, version);
     }
 
-    return kEmptyStr; 
+    return kEmptyStr;
 }
 
 
@@ -223,7 +223,7 @@ void s_PostErr(EDiagSev severity,
     const bool suppressContext = false; // Revisit this
     const auto setClass = CBioseq_set::eClass_genbank; // Revisit this
     int version = 0;
-    string desc = CValidErrorFormat::GetBioseqSetLabel(idString, 
+    string desc = CValidErrorFormat::GetBioseqSetLabel(idString,
             setClass, suppressContext);
 
     pErrors->AddValidErrItem(severity, errorType, message, desc, idString, version);
@@ -244,8 +244,8 @@ string g_GetIdString(const CHugeAsnReader& reader)
     if (biosets.size() < 2) {
         return "";
     }
-    
-    if (auto it = next(biosets.begin()); 
+
+    if (auto it = next(biosets.begin());
         it->m_class != CBioseq_set::eClass_genbank){
         return "";
     }
@@ -280,8 +280,8 @@ string CHugeFileValidator::x_FindIdString() const
     if (biosets.size() < 2) {
         return "";
     }
-    
-    if (auto it = next(biosets.begin()); 
+
+    if (auto it = next(biosets.begin());
         it->m_class != CBioseq_set::eClass_genbank){
         return "";
     }
@@ -333,7 +333,7 @@ void CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
         if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingPubs(info, m_Reader)) {
             auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
             s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound,
-                    "No publications anywhere on this entire record.", 
+                    "No publications anywhere on this entire record.",
                     x_GetIdString(), pErrors);
         }
     }
@@ -345,7 +345,7 @@ void CHugeFileValidator::ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CVal
     if(!(m_Reader.GetSubmitBlock())) {
         bool isRefSeq = hasRefSeqAccession || (m_Options & CValidator::eVal_refseq_conventions);
 
-        if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingCitSub(info, m_Reader, isRefSeq)) 
+        if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingCitSub(info, m_Reader, isRefSeq))
         {
             auto severity = (m_Options & CValidator::eVal_genome_submission) ?
                 eDiag_Error : eDiag_Info;
@@ -384,11 +384,11 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<
     if (globalInfo.NoBioSource && !globalInfo.IsPatent && !globalInfo.IsPDB)
     {
         ReportMissingBioSources(pErrors);
-    } 
+    }
 }
 
 
-static void s_UpdateGlobalInfo(const CPubdesc& pub, CHugeFileValidator::TGlobalInfo& globalInfo) 
+static void s_UpdateGlobalInfo(const CPubdesc& pub, CHugeFileValidator::TGlobalInfo& globalInfo)
 {
     if (pub.IsSetPub() && pub.GetPub().IsSet() && !pub.GetPub().Get().empty()) {
         globalInfo.NoPubsFound = false;
@@ -426,7 +426,7 @@ static void s_UpdateGlobalInfo(const CSeq_id& id, CHugeFileValidator::TGlobalInf
 }
 
 
-void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHugeAsnReader::TContext& context) 
+void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHugeAsnReader::TContext& context)
 {
     TParent::x_SetHooks(objStream, context);
     // Set Pubdesc skip and read hooks
@@ -452,16 +452,17 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
             [this] (CObjectIStream& in, const CObjectTypeInfo& type)
             {
                 m_GlobalInfo.NoBioSource = false;
+                type.GetTypeInfo()->DefaultSkipData(in);
             });
 
-    SetLocalReadHook(CType<CBioSource>(), objStream, 
+    SetLocalReadHook(CType<CBioSource>(), objStream,
             [this] (CObjectIStream& in, const CObjectInfo& object)
             {
-                object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr()); 
+                object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
                 m_GlobalInfo.NoBioSource = false;
             });
 
-    
+
     SetLocalReadHook(CType<CSeq_id>(), objStream,
         [this] (CObjectIStream& in, const CObjectInfo& object)
         {
