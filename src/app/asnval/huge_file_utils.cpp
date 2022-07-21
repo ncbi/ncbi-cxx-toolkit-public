@@ -272,17 +272,6 @@ CHugeFileValidator::CHugeFileValidator(const CHugeFileValidator::TReader& reader
     : m_Reader(reader), m_Options(options) {}
 
 
-bool CHugeFileValidator::x_HasRefSeqAccession() const
-{
-    for (auto info : m_Reader.GetBioseqs()) {
-        for (auto pId : info.m_ids) {
-            if (pId && pId->IsOther()) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
 
 
 string CHugeFileValidator::x_FindIdString() const
@@ -351,11 +340,10 @@ void CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
 }
 
 
-void CHugeFileValidator::ReportMissingCitSubs(CRef<CValidError>& pErrors) const
+void CHugeFileValidator::ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CValidError>& pErrors) const
 {
     if(!(m_Reader.GetSubmitBlock())) {
-        bool isRefSeq = (m_Options & CValidator::eVal_refseq_conventions) ||
-            x_HasRefSeqAccession();
+        bool isRefSeq = hasRefSeqAccession || (m_Options & CValidator::eVal_refseq_conventions);
 
         if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingCitSub(info, m_Reader, isRefSeq)) 
         {
@@ -385,7 +373,7 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<
     }
 
     if (globalInfo.NoCitSubsFound) {
-        ReportMissingCitSubs(pErrors);
+        ReportMissingCitSubs(globalInfo.IsRefSeq, pErrors);
     }
 
     if (!globalInfo.conflictingSerialNumbers.empty()) {
@@ -430,6 +418,8 @@ static void s_UpdateGlobalInfo(const CSeq_id& id, CHugeFileValidator::TGlobalInf
     case CSeq_id::e_Pdb:
         globalInfo.IsPDB = true;
         break;
+    case CSeq_id::e_Other:
+        globalInfo.IsRefSeq = true;
     default:
         break;
     }
