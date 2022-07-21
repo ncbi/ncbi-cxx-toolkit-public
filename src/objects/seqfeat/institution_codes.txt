@@ -104,6 +104,7 @@ AFRC	s	Afribugs
 AFS	s	American Fern Society Herbarium			
 AFSDU	s	Suleyman Demirel University, Agricultural Faculty			
 AFTC	s	Alaska Frozen Tissue Collection			
+AGG	b	Australian Grains Genebank			
 AGIL	s	USDA/ARS, Animal Genomics and Improvement Laboratory			
 AGMT	s	Associazione Gruppi Micologici Toscani			
 AGRITEC	b	AGRITEC, Ltd.			
