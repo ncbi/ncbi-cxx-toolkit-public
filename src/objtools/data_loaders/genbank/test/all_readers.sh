@@ -16,6 +16,7 @@ disabled() {
     return 0;
 }
 
+no_id2_test=0
 if test "$1" = "-id2"; then
     shift
     methods="ID2"
@@ -30,6 +31,7 @@ else
         methods="PUBSEQOS ID1"
     fi
     if test "$1" = "-xid2"; then
+	no_id2_test=1
         shift
     else
         methods="$methods ID2"
@@ -144,11 +146,13 @@ for method in $methods; do
     done
 done
 
-if disabled PSGLoader; then
+if test "$no_id2_test" = "1" || disabled PSGLoader; then
     echo "Skipping PSG loader test"
 else
+    echo "Checking PSG loader"
     GENBANK_LOADER_PSG=t
     export GENBANK_LOADER_PSG
+    $CHECK_EXEC "$@" $ALL_READERS_EXTRA_ARGUMENTS
     error=$?
     if test $error -ne 0; then
         echo "Test of PSG loader failed: $error"
