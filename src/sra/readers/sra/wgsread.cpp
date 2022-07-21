@@ -379,6 +379,7 @@ struct CWGSDb_Impl::SSeq0TableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, ACC_CONTIG_LEN);
     DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
     DECLARE_VDB_COLUMN_AS(Uint1, MOL);
+    DECLARE_VDB_COLUMN_AS(NCBI_taxid, TAXID);
 };
 
 
@@ -399,7 +400,6 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, READ_LEN);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, TRIM_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
-    DECLARE_VDB_COLUMN_AS(NCBI_taxid, TAXID);
     DECLARE_VDB_COLUMN_AS_STRING(DESCR);
     DECLARE_VDB_COLUMN_AS_STRING(NUC_PROT_DESCR);
     DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
@@ -446,7 +446,8 @@ CWGSDb_Impl::SSeq0TableCursor::SSeq0TableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(ACC_PREFIX),
       INIT_VDB_COLUMN(ACC_CONTIG_LEN),
       INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
-      INIT_OPTIONAL_VDB_COLUMN(MOL)
+      INIT_OPTIONAL_VDB_COLUMN(MOL),
+      INIT_OPTIONAL_VDB_COLUMN(TAXID)
 {
 }
 
@@ -464,7 +465,6 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(READ_LEN),
       INIT_VDB_COLUMN(TRIM_START),
       INIT_VDB_COLUMN(TRIM_LEN),
-      INIT_OPTIONAL_VDB_COLUMN(TAXID),
       INIT_OPTIONAL_VDB_COLUMN(DESCR),
       INIT_OPTIONAL_VDB_COLUMN(NUC_PROT_DESCR),
       INIT_OPTIONAL_VDB_COLUMN(ANNOT),
@@ -976,6 +976,17 @@ void CWGSDb_Impl::x_InitIdParams(void)
     m_IdPrefixDbWithVersion = (IsTSA()? "TSA:": "WGS:")+m_IdPrefixWithVersion;
     m_IdPrefixDb = (IsTSA()? "TSA:": "WGS:")+m_IdPrefix;
     m_HasNoDefaultGnlId = seq->m_SEQID_GNL_PREFIX && seq->SEQID_GNL_PREFIX(1).empty();
+    bool has_static_taxid = seq->m_TAXID && seq->m_TAXID.IsStatic(seq->m_Cursor);
+    TTaxId static_taxid = ZERO_TAX_ID;
+    if ( has_static_taxid ) {
+        auto value = seq->TAXID(1);
+        if ( value.size() != 1 ) {
+            has_static_taxid = false;
+        }
+        else {
+            static_taxid = value[0];
+        }
+    }
     Put(seq);
 
     if ( CKMetadata meta = CKMetadata(SeqTable()) ) {
@@ -997,6 +1008,14 @@ void CWGSDb_Impl::x_InitIdParams(void)
             // common taxid
             m_CommonTaxId = node.GetUint4();
             m_HasCommonTaxId = true;
+            if ( has_static_taxid && static_taxid != m_CommonTaxId ) {
+                LOG_POST(Info<<"WGS("<<m_IdPrefixWithVersion<<") taxid: common "<<m_CommonTaxId<<" != static "<<static_taxid);
+                m_CommonTaxId = ZERO_TAX_ID;
+                m_HasCommonTaxId = false;
+            }
+            if ( m_HasCommonTaxId ) {
+                LOG_POST(Info<<"WGS("<<m_IdPrefixWithVersion<<") taxid: common "<<m_CommonTaxId);
+            }
         }
     }
 }
@@ -3039,7 +3058,7 @@ static TTaxId s_GetTaxId(const CVDBValueFor<NCBI_taxid>& value)
 
 bool CWGSSeqIterator::HasTaxId(void) const
 {
-    return GetDb().HasCommonTaxId() || m_Cur->m_TAXID;
+    return GetDb().HasCommonTaxId() || m_Cur0->m_TAXID;
 }
 
 
@@ -3049,7 +3068,7 @@ TTaxId CWGSSeqIterator::GetTaxId(void) const
     if ( GetDb().HasCommonTaxId() ) {
         return GetDb().GetCommonTaxId();
     }
-    return s_GetTaxId(m_Cur->TAXID(m_CurrId));
+    return s_GetTaxId(m_Cur0->TAXID(m_CurrId));
 }
 
 
