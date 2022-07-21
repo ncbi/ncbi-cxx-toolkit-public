@@ -95,8 +95,8 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 
 
 /* "service" == the original input service name;
- * "svc" == current service name (== service at the beginning);
- * "ismask" = 1 if "service" contained any wilcard characters;
+ * "svc"     == current service name (== "service" at first);
+ * "ismask"  = 1 if "service" may contain any wildcards;
  * "*isfast" = 1 on input if not to do environment scan;
  * "*isfast" = 1 on output if the service was substituted with itself (but may
  *               be different case);  otherwise, "*isfast" == 0.  This is used
@@ -159,7 +159,7 @@ static char* x_ServiceName(unsigned int depth,
                     return x_ServiceName(depth, service, s, ismask, isfast);
                 CORE_LOGF_X(8, eLOG_Error,
                             ("[%s]  Maximal service name recursion"
-                             " depth reached: %u", service, depth));
+                             " depth exceeded: %u", service, depth));
                 return 0/*failure*/;
             } else
                 svc = s, *isfast = 1/*true*/;
