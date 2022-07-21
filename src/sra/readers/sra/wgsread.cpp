@@ -1009,12 +1009,8 @@ void CWGSDb_Impl::x_InitIdParams(void)
             m_CommonTaxId = node.GetUint4();
             m_HasCommonTaxId = true;
             if ( has_static_taxid && static_taxid != m_CommonTaxId ) {
-                LOG_POST(Info<<"WGS("<<m_IdPrefixWithVersion<<") taxid: common "<<m_CommonTaxId<<" != static "<<static_taxid);
                 m_CommonTaxId = ZERO_TAX_ID;
                 m_HasCommonTaxId = false;
-            }
-            if ( m_HasCommonTaxId ) {
-                LOG_POST(Info<<"WGS("<<m_IdPrefixWithVersion<<") taxid: common "<<m_CommonTaxId);
             }
         }
     }
