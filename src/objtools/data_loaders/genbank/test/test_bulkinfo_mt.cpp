@@ -323,40 +323,57 @@ CRef<CScope> CTestApplication::MakeScope(void) const
 
 bool CTestApplication::Thread_Run(int thread_id)
 {
-    vector<CSeq_id_Handle> ids;
-    vector<string> reference;
-    vector<pair<CSeq_id_Handle, string> > data;
-    CRandom random(m_Seed+thread_id);
-    for ( size_t run_i = 0; run_i < m_RunCount; ++run_i ) {
-        size_t size = min(m_RunSize, m_Ids.size());
-        data.clear();
-        data.resize(m_Ids.size());
-        for ( size_t i = 0; i < m_Ids.size(); ++i ) {
-            data[i].first = m_Ids[i];
-            if ( !m_Reference.empty() ) {
-                data[i].second = m_Reference[i];
+    try {
+        vector<CSeq_id_Handle> ids;
+        vector<string> reference;
+        vector<pair<CSeq_id_Handle, string> > data;
+        CRandom random(m_Seed+thread_id);
+        for ( size_t run_i = 0; run_i < m_RunCount; ++run_i ) {
+            size_t size = min(m_RunSize, m_Ids.size());
+            data.clear();
+            data.resize(m_Ids.size());
+            for ( size_t i = 0; i < m_Ids.size(); ++i ) {
+                data[i].first = m_Ids[i];
+                if ( !m_Reference.empty() ) {
+                    data[i].second = m_Reference[i];
+                }
+            }
+            for ( size_t i = 0; i < size; ++i ) {
+                swap(data[i], data[random.GetRandSize_t(i, data.size()-1)]);
+            }
+            data.resize(size);
+            if ( m_Sort ) {
+                sort(data.begin(), data.end());
+            }
+            ids.clear();
+            reference.clear();
+            for ( size_t i = 0; i < data.size(); ++i ) {
+                ids.push_back(data[i].first);
+                if ( !m_Reference.empty() ) {
+                    reference.push_back(data[i].second);
+                }
+            }
+            if ( !ProcessBlock(ids, reference) ) {
+                m_ErrorCount.Add(1);
             }
         }
-        for ( size_t i = 0; i < size; ++i ) {
-            swap(data[i], data[random.GetRandSize_t(i, data.size()-1)]);
-        }
-        data.resize(size);
-        if ( m_Sort ) {
-            sort(data.begin(), data.end());
-        }
-        ids.clear();
-        reference.clear();
-        for ( size_t i = 0; i < data.size(); ++i ) {
-            ids.push_back(data[i].first);
-            if ( !m_Reference.empty() ) {
-                reference.push_back(data[i].second);
-            }
-        }
-        if ( !ProcessBlock(ids, reference) ) {
-            m_ErrorCount.Add(1);
-        }
+        return true;
     }
-    return true;
+    catch (CException& e) {
+        LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                 "EXCEPTION = "<<e<<" at "<<e.GetStackTrace());
+        return false;
+    }
+    catch (exception& e) {
+        LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                 "EXCEPTION = "<<e.what());
+        return false;
+    }
+    catch (...) {
+        LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                 "EXCEPTION unknown");
+        return false;
+    }
 }
 
 
