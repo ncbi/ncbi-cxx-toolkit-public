@@ -321,14 +321,8 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeqdesc& desc)
     }
 }
 
-void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org, FLogger logger)
-{ // logger parameter is deprecated and should be removed soon
-    std::lock_guard<std::mutex> guard(m_Mutex);
-
-    TTaxId taxid = org.GetTaxId();
-    if (taxid == ZERO_TAX_ID && !org.IsSetTaxname())
-        return;
-
+void CRemoteUpdater::xInitTaxCache()
+{
     if (!m_taxClient)
     {
         m_taxClient.reset(new CCachedTaxon3_impl);
@@ -337,6 +331,17 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org, FLogger logger)
         else
             m_taxClient->Init();
     }
+}
+
+void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org, FLogger logger)
+{ // logger parameter is deprecated and should be removed soon
+    std::lock_guard<std::mutex> guard(m_Mutex);
+
+    TTaxId taxid = org.GetTaxId();
+    if (taxid == ZERO_TAX_ID && !org.IsSetTaxname())
+        return;
+
+    xInitTaxCache();
 
     CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, logger);
     if (new_org.NotEmpty())
@@ -694,6 +699,8 @@ void CRemoteUpdater::SetMLAClient(CMLAClient& mlaClient) {
 CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
+
+    xInitTaxCache();
 
     CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(list, nullptr);
     return reply;

@@ -45,7 +45,22 @@ void xGetLabel(const CSeq_feat& feat, string& label)
 
 } // end anonymous namespace
 
-CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) : m_stats(CValidErrItem::eSev_trace), m_context(&ctx)
+CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) :
+    m_stats(CValidErrItem::eSev_trace),
+    m_context(&ctx),
+    m_validator_ctx(make_shared<validator::SValidatorContext>())
+{
+    m_validator_ctx->m_taxon_update = [&remote = m_context->m_remote_updater]
+        (const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
+        { // we need to make a copy of record to prevent changes put back to cache
+            CConstRef<CTaxon3_reply> res = remote->SendOrgRefList(query);
+            CRef<CTaxon3_reply> copied (new CTaxon3_reply);
+            copied->Assign(*res);
+            return copied;
+        };
+}
+
+CTable2AsnValidator::~CTable2AsnValidator()
 {
 }
 
@@ -104,15 +119,7 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
 
     if (flags.find('T') != string::npos)
     {
-        validator::CTaxValidationAndCleanup tval(
-            [&remote = m_context->m_remote_updater](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
-            { // we need to make a copy of record to prevent changes put back to cache
-                CConstRef<CTaxon3_reply> res = remote->SendOrgRefList(query);
-                CRef<CTaxon3_reply> copied (new CTaxon3_reply);
-                copied->Assign(*res);
-                return copied;
-            }
-        );
+        validator::CTaxValidationAndCleanup tval(m_validator_ctx->m_taxon_update);
         tval.DoTaxonomyUpdate(h_entry, true);
     }
 }
@@ -121,7 +128,7 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
 {
     CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
-    validator::CValidator validator(scope.GetObjectManager());
+    validator::CValidator validator(scope.GetObjectManager(), m_validator_ctx);
 
     Uint4 options = 0;
     if (m_context->m_master_genome_flag == "n")

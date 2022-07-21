@@ -57,6 +57,8 @@ class CConn_ServiceStream;
 
 BEGIN_objects_SCOPE
 
+using taxupdate_func_t = function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>& list)>;
+
 class NCBI_TAXON3_EXPORT ITaxon3 {
 public:
 

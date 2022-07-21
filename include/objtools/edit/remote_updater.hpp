@@ -134,6 +134,7 @@ private:
     void xUpdateOrgTaxname(COrg_ref& org, FLogger logger);
     bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
     bool xSetFromConfig();
+    void xInitTaxCache();
 
     IObjtoolsListener* m_pMessageListener = nullptr;
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger

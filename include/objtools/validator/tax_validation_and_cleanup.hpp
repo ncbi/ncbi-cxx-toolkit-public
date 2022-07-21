@@ -305,8 +305,6 @@ typedef map<string, CSpecificHostRequest> TSpecificHostRequests;
 class NCBI_VALIDATOR_EXPORT CTaxValidationAndCleanup
 {
 public:
-    using taxupdate_func_t = function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>& list)>;
-
     CTaxValidationAndCleanup();
     CTaxValidationAndCleanup(taxupdate_func_t);
     ~CTaxValidationAndCleanup() {}

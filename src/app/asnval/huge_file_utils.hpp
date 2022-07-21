@@ -51,8 +51,8 @@ public:
 
         bool IsPatent = false;
         bool IsPDB    = false;
-   
-        bool NoBioSource    = true; 
+
+        bool NoBioSource    = true;
         bool NoPubsFound    = true;
         bool NoCitSubsFound = true;
         set<int> pubSerialNumbers;
@@ -75,7 +75,7 @@ public:
     using TBioseqInfo = TReader::TBioseqInfo;
     using TOptions = unsigned int;
 
-    CHugeFileValidator(const TReader& reader, 
+    CHugeFileValidator(const TReader& reader,
             TOptions options);
     ~CHugeFileValidator(){}
 
@@ -83,7 +83,7 @@ public:
 
     void ReportMissingCitSubs(CRef<objects::CValidError>& pErrors) const;
 
-    void ReportCollidingSerialNumbers(const set<int>& collidingNumbers, 
+    void ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
             CRef<objects::CValidError>& pErrors) const;
 
     void ReportMissingBioSources(CRef<objects::CValidError>& pErrors) const;
@@ -92,13 +92,13 @@ public:
             CRef<objects::CValidError>& pErrors) const;
 
 private:
-    bool x_HasRefSeqAccession() const; 
+    bool x_HasRefSeqAccession() const;
     string x_FindIdString() const;
     string x_GetIdString() const;
 
     mutable unique_ptr<string> m_pIdString;
 
-    const TReader& m_Reader; 
+    const TReader& m_Reader;
     TOptions m_Options;
 };
 

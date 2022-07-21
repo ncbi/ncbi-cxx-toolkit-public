@@ -90,6 +90,7 @@
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objtools/edit/huge_asn_loader.hpp>
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/edit/remote_updater.hpp>
 #include <future>
 #include "message_queue.hpp"
 #include "huge_file_utils.hpp"
@@ -228,7 +229,8 @@ private:
     CNcbiOstream* m_ValidErrorStream;
 
     shared_ptr<SValidatorContext> m_pContext;
-    shared_ptr<CTaxon3> m_pTaxon;
+    unique_ptr<edit::CRemoteUpdater> m_remote_updater;
+
 #ifdef USE_XMLWRAPP_LIBS
     unique_ptr<CValXMLStream> m_ostr_xml;
 #endif
@@ -440,7 +442,7 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
 
     CConstRef<CValidError> eval;
 
-    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+    CValidator validator(*m_ObjMgr, m_pContext);
 
     CSeq_entry_Handle top_h;
     if (pEntry) {
@@ -488,7 +490,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 
     while(true)
     {
-        m_GlobalInfo.Clear(); 
+        m_GlobalInfo.Clear();
         try
         {
             if (!reader.GetNextBlob())
@@ -539,7 +541,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
             m_pContext->IsPDB           = m_GlobalInfo.IsPDB;
             m_pContext->NoBioSource     = m_GlobalInfo.NoBioSource;
             m_pContext->NoPubsFound     = m_GlobalInfo.NoPubsFound;
-            m_pContext->NoCitSubsFound = m_GlobalInfo.NoCitSubsFound;    
+            m_pContext->NoCitSubsFound = m_GlobalInfo.NoCitSubsFound;
 
             CHugeFileValidator hugeFileValidator(reader, m_Options);
             CRef<CValidError> pEval;
@@ -617,7 +619,14 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
         LOG_POST_XX(Corelib_App, 1, fname);
     }
 
-    m_pContext.reset(new SValidatorContext()); // For now, put this here
+    m_pContext.reset(new SValidatorContext());
+    m_pContext->m_taxon_update = [&remote = m_remote_updater](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
+        { // we need to make a copy of record to prevent changes put back to cache
+            CConstRef<CTaxon3_reply> res = remote->SendOrgRefList(query);
+            CRef<CTaxon3_reply> copied (new CTaxon3_reply);
+            copied->Assign(*res);
+            return copied;
+        };
 
     unique_ptr<CNcbiOfstream> local_stream;
 
@@ -832,7 +841,7 @@ int CAsnvalApp::Run()
     const CArgs& args = GetArgs();
     Setup(args);
 
-    m_pTaxon.reset(new CTaxon3(CTaxon3::initialize::yes));
+    m_remote_updater.reset(new edit::CRemoteUpdater(nullptr)); //m_logger));
 
     CTime expires = GetFullVersion().GetBuildInfo().GetBuildTime();
     if (!expires.IsEmpty())
@@ -959,7 +968,7 @@ void CAsnvalApp::ReadClassMember
                 i >> *se;
 
                 // Validate Seq-entry
-                CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+                CValidator validator(*m_ObjMgr, m_pContext);
                 CRef<CScope> scope = BuildScope();
                 CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
 
@@ -1165,7 +1174,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry()
 CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
 {
     // Validate Seq-entry
-    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
         m_Cleanup.SetScope(scope);
@@ -1210,7 +1219,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat()
         m_Cleanup.BasicCleanup(*feat);
     }
 
-    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+    CValidator validator(*m_ObjMgr, m_pContext);
     eval = validator.Validate(*feat, scope, m_Options);
     m_NumRecords++;
     return eval;
@@ -1223,7 +1232,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioSource()
     if (eval)
         return eval;
 
-    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     eval = validator.Validate(*src, scope, m_Options);
     m_NumRecords++;
@@ -1237,7 +1246,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessPubdesc()
     if (eval)
         return eval;
 
-    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     eval = validator.Validate(*pd, scope, m_Options);
     m_NumRecords++;
@@ -1253,7 +1262,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit()
         return eval;
 
     // Validate Seq-submit
-    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
         NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, se, ss->SetData().SetEntrys()) {
@@ -1285,7 +1294,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot()
     }
 
     // Validate Seq-annot
-    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
         m_Cleanup.SetScope(scope);
@@ -1335,7 +1344,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqDesc()
 
     CRef<CSeq_entry> ctx = s_BuildGoodSeq();
 
-    CValidator validator(*m_ObjMgr, m_pContext, m_pTaxon);
+    CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*ctx);
 
