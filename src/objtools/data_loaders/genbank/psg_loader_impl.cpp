@@ -251,8 +251,12 @@ SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bios
         canonical = PsgIdToHandle(bioseq_info.GetCanonicalId());
         ids.push_back(canonical);
     }
-    if (inc_info & CPSG_Request_Resolve::fGi)
+    if (inc_info & CPSG_Request_Resolve::fGi) {
         gi = bioseq_info.GetGi();
+        if ( gi == INVALID_GI ) {
+            gi = ZERO_GI;
+        }
+    }
 
     if (inc_info & CPSG_Request_Resolve::fOtherIds) {
         vector<CPSG_BioId> other_ids = bioseq_info.GetOtherIds();
