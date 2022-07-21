@@ -49,6 +49,7 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     bool        HugeFileMode{false};
     bool        IsPatent{false};
     bool        IsPDB{false};
+    bool        IsRefSeq{false};
     string      GenbankSetId;
     atomic_bool CheckECNumFileStatus{true};
     bool        NoBioSource{false};
