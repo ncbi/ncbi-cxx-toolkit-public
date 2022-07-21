@@ -137,6 +137,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AFS\ts\tAmerican Fern Society Herbarium\t\t\t",
 "AFSDU\ts\tSuleyman Demirel University, Agricultural Faculty\t\t\t",
 "AFTC\ts\tAlaska Frozen Tissue Collection\t\t\t",
+"AGG\tb\tAustralian Grains Genebank\t\t\t",
 "AGIL\ts\tUSDA/ARS, Animal Genomics and Improvement Laboratory\t\t\t",
 "AGMT\ts\tAssociazione Gruppi Micologici Toscani\t\t\t",
 "AGRITEC\tb\tAGRITEC, Ltd.\t\t\t",
