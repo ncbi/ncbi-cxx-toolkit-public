@@ -32,7 +32,7 @@ CHECK_CMD = all_readers.sh test_bulkinfo_mt -type hash -idlist wgs.ids -no-recal
 CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type gi -idlist wgs_vdb.ids -reference ref/wgs_vdb.gi.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_gi
 CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type acc -idlist wgs_vdb.ids -reference ref/wgs_vdb.acc.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_acc
 CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type label -idlist wgs_vdb.ids -reference ref/wgs_vdb.label.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_label
-CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type taxid -idlist wgs_vdb.ids -reference ref/wgs_vdb.taxid.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_taxid
+#CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type taxid -idlist wgs_vdb.ids -reference ref/wgs_vdb.taxid.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_taxid
 CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type length -idlist wgs_vdb.ids -reference ref/wgs_vdb.length.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_length
 CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type type -idlist wgs_vdb.ids -reference ref/wgs_vdb.type.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_types
 CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type state -idlist wgs_vdb.ids /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_state_id2
