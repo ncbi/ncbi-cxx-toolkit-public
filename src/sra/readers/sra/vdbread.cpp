@@ -1332,18 +1332,21 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
 }
 
 
+bool CVDBColumn::IsStatic(const CVDBCursor& cursor) const
+{
+    bool static_value;
+    if ( rc_t rc = VCursorIsStaticColumn(cursor, GetIndex(), &static_value) ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidState,
+                        "Cannot get static status of "<<cursor<<*this,rc);
+    }
+    return static_value;
+}
+
+
 void CVDBColumn::ResetIfAlwaysEmpty(const CVDBCursor& cursor)
 {
-    if ( !*this ) {
-        return;
-    }
-    bool static_value;
-    if ( VCursorIsStaticColumn(cursor, GetIndex(), &static_value) ) {
-        // cannot get 'static' value -> do nothing
-        return;
-    }
     try {
-        if ( static_value && CVDBValue(cursor, 1, *this).empty() ) {
+        if ( IsStatic(cursor) && CVDBValue(cursor, 1, *this).empty() ) {
             // value is always empty
             Reset();
         }

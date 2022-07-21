@@ -497,6 +497,8 @@ public:
             Init(cursor, element_bit_size, name, backup_name, missing);
         }
 
+    bool IsStatic(const CVDBCursor& cursor) const;
+    
     void Reset(void)
         {
             m_Index = kInvalidIndex;
