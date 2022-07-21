@@ -118,6 +118,7 @@ class CValidError_desc;
 class CValidError_descr;
 class CTaxValidationAndCleanup;
 
+
 // ===========================  Central Validation  ==========================
 
 // CValidError_imp provides the entry point to the validation process.
@@ -129,28 +130,10 @@ class NCBI_VALIDATOR_EXPORT CValidError_imp
 public:
     typedef map<int, int> TCount;
 
-    // Interface to be used by the CValidError class
-
-    CValidError_imp(CObjectManager& objmgr, CValidError* errors,
-        Uint4 options = 0);
-
-    // Constructor allowing over-ride of Services
-    // Namely, the taxonomy service.
-    // NB: ITaxon is owned by CValidator.
-    CValidError_imp(CObjectManager& objmgr, CValidError* errors,
-        ITaxon3* taxon, Uint4 options = 0);
-
-    CValidError_imp(CObjectManager& objmgr, 
-            shared_ptr<SValidatorContext> pContext,
-            CValidError* errors, 
-            Uint4 options=0);
-
     CValidError_imp(CObjectManager& objmgr,
             shared_ptr<SValidatorContext> pContext,
             CValidError* errors,
-            ITaxon3* taxon, 
             Uint4 options=0);
-
 
     // Destructor
     virtual ~CValidError_imp();
@@ -635,11 +618,8 @@ private:
     size_t      m_NumTopSetSiblings;
 
     // Taxonomy service interface.
-    ITaxon3* m_taxon;
-    ITaxon3* x_GetTaxonService();
-    
     unique_ptr<CTaxValidationAndCleanup> x_CreateTaxValidator() const;
-    
+
     shared_ptr<SValidatorContext> m_pContext;
 };
 

@@ -164,56 +164,16 @@ const CBioseq_Handle CCacheImpl::kEmptyBioseqHandle;
 const CTSE_Handle CCacheImpl::kEmptyTSEHandle;
 const CBioseq_Handle CCacheImpl::kAnyBioseq;
 
-//LCOV_EXCL_START
-//not used by asnvalidate
-// Constructor
-CValidError_imp::CValidError_imp
-(CObjectManager& objmgr,
-CValidError*     errs,
-Uint4            options) :
-m_ObjMgr(&objmgr),
-m_ErrRepository(errs),
-m_taxon(nullptr)
-{
-    x_Init(options);
-    m_pContext = make_shared<SValidatorContext>();
-}
-//LCOV_EXCL_STOP
-
-// Constructor
-CValidError_imp::CValidError_imp
-(CObjectManager& objmgr,
-CValidError*     errs,
-ITaxon3*         taxon,
-Uint4            options) :
-m_ObjMgr(&objmgr),
-m_ErrRepository(errs),
-m_taxon(taxon)
-{
-    x_Init(options);
-    m_pContext = make_shared<SValidatorContext>();
-}
-
 CValidError_imp::CValidError_imp
 (CObjectManager&    objmgr,
  shared_ptr<SValidatorContext> pContext,
  CValidError*       errs,
  Uint4              options) :
-    CValidError_imp(objmgr, errs, options)
+    m_ObjMgr{&objmgr},
+    m_ErrRepository{errs},
+    m_pContext{pContext}
 {
-    m_pContext = pContext;
-}
-
-
-CValidError_imp::CValidError_imp
-(CObjectManager&    objmgr,
- shared_ptr<SValidatorContext> pContext,
- CValidError*       errs,
- ITaxon3*           taxon,
- Uint4              options) :
-    CValidError_imp(objmgr, errs, taxon, options)
-{
-    m_pContext = pContext;
+    x_Init(options);
 }
 
 void CValidError_imp::x_Init(Uint4 options)
@@ -3271,17 +3231,6 @@ bool CValidError_imp::GetTSAConflictingBiomolTechErrors (const CBioseq& seq)
     return bioseq_validator.GetTSAConflictingBiomolTechErrors(*(seh.GetSeq().GetCompleteBioseq()));
 }
 //LCOV_EXCL_STOP
-
-
-ITaxon3* CValidError_imp::x_GetTaxonService()
-{
-    if (!m_taxon) {
-        //Impossible to reach code, as c'tor requires non-null taxon service
-        throw runtime_error("Taxon service not defined by CValidator");
-    }
-    return m_taxon;
-}
-
 
 const string kTooShort = "Too Short";
 const string kMissingPrimers = "Missing Primers";

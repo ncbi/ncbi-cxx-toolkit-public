@@ -108,15 +108,26 @@ public:
     // be created.
 
     CValidator(CObjectManager& objmgr);
+
+    CValidator(CObjectManager& objmgr,
+            shared_ptr<SValidatorContext> pContext);
+
+    NCBI_DEPRECATED
+    CValidator(CObjectManager& objmgr,
+            shared_ptr<SValidatorContext> pContext,
+            shared_ptr<ITaxon3> taxon);
+
     NCBI_DEPRECATED
     CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon);
+
     NCBI_DEPRECATED
     CValidator(CObjectManager& objmgr,
             shared_ptr<SValidatorContext> pContext,
-            AutoPtr<ITaxon3> taxon=nullptr);
-    CValidator(CObjectManager& objmgr,
-            shared_ptr<SValidatorContext> pContext,
-            shared_ptr<ITaxon3> pTaxon);
+            AutoPtr<ITaxon3> taxon);
+
+    CValidator(const CValidator&) = delete;
+    CValidator& operator= (const CValidator&) = delete;
+
     ~CValidator();
 
     // If many validations are being done without changing the underlying
@@ -272,16 +283,14 @@ public:
     };
     typedef int TDbxrefValidFlags;
     static TDbxrefValidFlags IsValidDbxref(const CDbtag& xref, bool is_biosource, bool is_refseq_or_gps);
+    static taxupdate_func_t  MakeTaxUpdateFunction(shared_ptr<ITaxon3> taxon);
+    SValidatorContext& SetContext() { return *m_pContext; }
 
 private:
-    // Prohibit copy constructor & assignment operator
-    CValidator(const CValidator&);
-    CValidator& operator= (const CValidator&);
-
     // Services belong here, in the outside class
     // and are passed into the implementation.
     CRef<CObjectManager>    m_ObjMgr;
-    shared_ptr<ITaxon3>     m_pTaxon;
+    shared_ptr<ITaxon3>     m_pOwnTaxon;
 
     TProgressCallback               m_PrgCallback=nullptr;
     void*                           m_UserData=nullptr;

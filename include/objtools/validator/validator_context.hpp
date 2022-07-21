@@ -38,9 +38,13 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CTaxon3_reply;
+class COrg_ref;
+
 BEGIN_SCOPE(validator)
 
-struct NCBI_VALIDATOR_EXPORT SValidatorContext 
+struct NCBI_VALIDATOR_EXPORT SValidatorContext
 {
     bool        HugeFileMode{false};
     bool        IsPatent{false};
@@ -51,6 +55,9 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     bool        NoPubsFound{false};
     bool        NoCitSubsFound{false};
     once_flag   DescriptorsOnceFlag;
+
+    using taxupdate_func_t = function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>& list)>;
+    taxupdate_func_t m_taxon_update;
 };
 
 END_SCOPE(validator)

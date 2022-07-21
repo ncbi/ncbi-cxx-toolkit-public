@@ -39,6 +39,7 @@
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validerror_bioseq.hpp>
+#include <objtools/validator/validator_context.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
@@ -2501,7 +2502,7 @@ void CValidError_imp::ValidateOrgRefs(CTaxValidationAndCleanup& tval)
         while (i < org_rq_list.size()) {
             size_t len = min(chunk_size, org_rq_list.size() - i);
             vector< CRef<COrg_ref> >  tmp_rq(org_rq_list.begin() + i, org_rq_list.begin() + i + len);
-            CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(tmp_rq);
+            CRef<CTaxon3_reply> reply = m_pContext->m_taxon_update(tmp_rq);
             if (!reply || !reply->IsSetReply()) {
                 if (chunk_size > 20) {
                     chunk_size = chunk_size / 2;
@@ -2532,7 +2533,7 @@ void CValidError_imp::ValidateSpecificHost
     while (i < org_rq_list.size()) {
         size_t len = min(chunk_size, org_rq_list.size() - i);
         vector< CRef<COrg_ref> >  tmp_rq(org_rq_list.begin() + i, org_rq_list.begin() + i + len);
-        CRef<CTaxon3_reply> tmp_spec_host_reply = x_GetTaxonService()->SendOrgRefList(tmp_rq);
+        CRef<CTaxon3_reply> tmp_spec_host_reply = m_pContext->m_taxon_update(tmp_rq);
         string err_msg;
         if (tmp_spec_host_reply) {
             err_msg = tval.IncrementalSpecificHostMapUpdate(tmp_rq, *tmp_spec_host_reply);
@@ -2564,7 +2565,7 @@ void CValidError_imp::ValidateStrain
     while (i < org_rq_list.size()) {
         size_t len = min(chunk_size, org_rq_list.size() - i);
         vector< CRef<COrg_ref> >  tmp_rq(org_rq_list.begin() + i, org_rq_list.begin() + i + len);
-        CRef<CTaxon3_reply> tmp_spec_host_reply = x_GetTaxonService()->SendOrgRefList(tmp_rq);
+        CRef<CTaxon3_reply> tmp_spec_host_reply = m_pContext->m_taxon_update(tmp_rq);
         string err_msg = tval.IncrementalStrainMapUpdate(tmp_rq, *tmp_spec_host_reply);
         if (!NStr::IsBlank(err_msg)) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_msg, *(tval.GetTopReportObject()));
@@ -2636,7 +2637,7 @@ void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
         return;
     }
 
-    CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
+    CRef<CTaxon3_reply> reply = m_pContext->m_taxon_update(org_rq_list);
     if (!reply || !reply->IsSetReply()) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
             "Taxonomy service connection failure", se);
@@ -3182,14 +3183,16 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
 
 unique_ptr<CTaxValidationAndCleanup> CValidError_imp::x_CreateTaxValidator() const
 {
-    if (m_taxon) { 
+    #if 0
+    if (m_taxon) {
         auto taxFunc = [this](const vector<CRef<COrg_ref>>& orgRefs)->CRef<CTaxon3_reply> {
             return m_taxon->SendOrgRefList(orgRefs);
         };
         return make_unique<CTaxValidationAndCleanup>(taxFunc);
     }
+    #endif
 
-    return make_unique<CTaxValidationAndCleanup>();
+    return make_unique<CTaxValidationAndCleanup>(m_pContext->m_taxon_update);
 }
 
 
