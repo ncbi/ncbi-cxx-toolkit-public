@@ -29,23 +29,23 @@
  *
  */
 
-#ifndef _HUGE_FILE_UTILS_HPP_
-#define _HUGE_FILE_UTILS_HPP_
+#ifndef _HUGE_FILE_VALIDATOR_HPP_
+#define _HUGE_FILE_VALIDATOR_HPP_
 
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
-namespace objects {
-    class CValidError;
-}
+class CValidError;
 
-string g_GetIdString(const objects::edit::CHugeAsnReader& reader);
+BEGIN_SCOPE(validator)
 
-struct SGlobalValidatorInfo;
+string NCBI_VALIDATOR_EXPORT g_GetIdString(const edit::CHugeAsnReader& reader);
 
-class CHugeFileValidator {
+
+class NCBI_VALIDATOR_EXPORT CHugeFileValidator {
 public:
     struct SGlobalInfo {
 
@@ -73,7 +73,7 @@ public:
     };
 
     using TGlobalInfo = SGlobalInfo;
-    using TReader = objects::edit::CHugeAsnReader;
+    using TReader =     edit::CHugeAsnReader;
     using TBioseqInfo = TReader::TBioseqInfo;
     using TOptions = unsigned int;
 
@@ -81,17 +81,17 @@ public:
             TOptions options);
     ~CHugeFileValidator(){}
 
-    void ReportMissingPubs(CRef<objects::CValidError>& pErrors) const;
+    void ReportMissingPubs(CRef<CValidError>& pErrors) const;
 
-    void ReportMissingCitSubs(bool hasRefSeqAccession, CRef<objects::CValidError>& pErrors) const;
+    void ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CValidError>& pErrors) const;
 
     void ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
-            CRef<objects::CValidError>& pErrors) const;
+            CRef<CValidError>& pErrors) const;
 
-    void ReportMissingBioSources(CRef<objects::CValidError>& pErrors) const;
+    void ReportMissingBioSources(CRef<CValidError>& pErrors) const;
 
     void ReportGlobalErrors(const TGlobalInfo& globalInfo,
-            CRef<objects::CValidError>& pErrors) const;
+            CRef<CValidError>& pErrors) const;
 
 private:
     string x_FindIdString() const;
@@ -104,12 +104,14 @@ private:
 };
 
 
-class CValidatorHugeAsnReader : public objects::edit::CHugeAsnReader {
+class NCBI_VALIDATOR_EXPORT CValidatorHugeAsnReader : 
+    public edit::CHugeAsnReader 
+{
 public:
     CValidatorHugeAsnReader(CHugeFileValidator::TGlobalInfo& globalInfo) :
         m_GlobalInfo(globalInfo) {}
     virtual ~CValidatorHugeAsnReader(){}
-    using TParent = objects::edit::CHugeAsnReader;
+    using TParent = edit::CHugeAsnReader;
 
 protected:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
@@ -118,6 +120,8 @@ private:
     CHugeFileValidator::TGlobalInfo& m_GlobalInfo;
 };
 
+END_SCOPE(validator)
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
