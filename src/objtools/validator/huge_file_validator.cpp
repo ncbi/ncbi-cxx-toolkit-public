@@ -43,12 +43,13 @@
 #include <objmgr/util/sequence.hpp>
 #include <serial/objhook.hpp>
 #include <objtools/readers/objhook_lambdas.hpp>
-#include "huge_file_utils.hpp"
+#include <objtools/validator/huge_file_validator.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
+
 USING_SCOPE(edit);
-USING_SCOPE(validator);
+BEGIN_SCOPE(validator)
 
 using TBioseqInfo = CHugeAsnReader::TBioseqInfo;
 
@@ -473,4 +474,6 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
         });
 }
 
+END_SCOPE(validator)
+END_SCOPE(objects)
 END_NCBI_SCOPE

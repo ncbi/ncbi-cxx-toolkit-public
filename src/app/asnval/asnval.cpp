@@ -93,7 +93,7 @@
 #include <objtools/edit/remote_updater.hpp>
 #include <future>
 #include "message_queue.hpp"
-#include "huge_file_utils.hpp"
+#include <objtools/validator/huge_file_validator.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
