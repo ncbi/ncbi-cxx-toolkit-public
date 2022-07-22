@@ -179,6 +179,7 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
               !seq_ids.empty()) ) {
             m_BioseqInfo.SetSeqIds(move(seq_ids));
             // all ids are requested, so we should get GI and acc.ver too if they exist
+            m_BioseqInfo.SetGI(GI_TO(CBioseqInfoRecord::TGI,gi)); // even if it's zero
             m_BioseqInfoFlags |= (SPSGS_ResolveRequest::fPSGS_SeqIds |
                                   SPSGS_ResolveRequest::fPSGS_CanonicalId |
                                   SPSGS_ResolveRequest::fPSGS_Gi);
