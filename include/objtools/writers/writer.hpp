@@ -76,7 +76,7 @@ protected:
 /// render them to an output stream in their respective formats.
 ///
 class NCBI_XOBJWRITE_EXPORT CWriterBase:
-    public CInterruptable, public CObject
+    public CObject, public CInterruptable
 //  ============================================================================
 {
 public:
