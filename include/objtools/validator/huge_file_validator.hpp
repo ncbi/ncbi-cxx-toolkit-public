@@ -42,6 +42,8 @@ class CValidError;
 
 BEGIN_SCOPE(validator)
 
+struct SValidatorContext;
+
 string NCBI_VALIDATOR_EXPORT g_GetIdString(const edit::CHugeAsnReader& reader);
 
 
@@ -81,19 +83,21 @@ public:
             TOptions options);
     ~CHugeFileValidator(){}
 
-    void ReportMissingPubs(CRef<CValidError>& pErrors) const;
-
-    void ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CValidError>& pErrors) const;
-
-    void ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
-            CRef<CValidError>& pErrors) const;
-
-    void ReportMissingBioSources(CRef<CValidError>& pErrors) const;
-
+    void UpdateValidatorContext(const TGlobalInfo& globalInfo, 
+            SValidatorContext& context) const;
     void ReportGlobalErrors(const TGlobalInfo& globalInfo,
             CRef<CValidError>& pErrors) const;
 
 private:
+    void x_ReportMissingPubs(CRef<CValidError>& pErrors) const;
+
+    void x_ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CValidError>& pErrors) const;
+
+    void x_ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
+            CRef<CValidError>& pErrors) const;
+
+    void x_ReportMissingBioSources(CRef<CValidError>& pErrors) const;
+
     string x_FindIdString() const;
     string x_GetIdString() const;
 
