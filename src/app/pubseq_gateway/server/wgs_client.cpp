@@ -1397,6 +1397,7 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
     if ( (data->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId)  ||  !psg_ids.empty() ) {
         info.SetSeqIds(move(psg_ids));
         // all ids are requested, so we should get GI and acc.ver too if they exist
+        info.SetGI(GI_TO(CBioseqInfoRecord::TGI, gi)); // even if it's zero
         data->m_BioseqInfoFlags |=
             SPSGS_ResolveRequest::fPSGS_SeqIds |
             SPSGS_ResolveRequest::fPSGS_CanonicalId |
