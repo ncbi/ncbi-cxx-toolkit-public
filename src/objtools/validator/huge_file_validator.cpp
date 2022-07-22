@@ -141,7 +141,7 @@ static bool s_IsWGSMaster(const TBioseqInfo& info, const CHugeAsnReader& reader)
 
 // IsRefSeq==true indicates that either the record contains RefSeq accessions
 // or that RefSeq conventions have been specified.
-static bool s_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader& reader, bool IsRefSeq)
+static bool s_x_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader& reader, bool IsRefSeq)
 {
     // Does the order matter here? Can this be a RefSeq record and a WGS master?
     if (s_IsWGSMaster(info, reader)) {
@@ -162,7 +162,7 @@ static bool s_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReader&
 }
 
 
-static bool s_ReportMissingPubs(const TBioseqInfo& info, const CHugeAsnReader& reader)
+static bool s_x_ReportMissingPubs(const TBioseqInfo& info, const CHugeAsnReader& reader)
 {
     if (reader.GetBiosets().size() > 1 &&
         next(reader.GetBiosets().begin())->m_class == CBioseq_set::eClass_gen_prod_set) {
@@ -317,7 +317,7 @@ string CHugeFileValidator::x_GetIdString() const
 }
 
 
-void CHugeFileValidator::ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
+void CHugeFileValidator::x_ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
         CRef<CValidError>& pErrors) const
 {
     for (auto val : collidingNumbers) {
@@ -328,10 +328,10 @@ void CHugeFileValidator::ReportCollidingSerialNumbers(const set<int>& collidingN
 }
 
 
-void CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
+void CHugeFileValidator::x_ReportMissingPubs(CRef<CValidError>& pErrors) const
 {
     if(!(m_Reader.GetSubmitBlock())) {
-        if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingPubs(info, m_Reader)) {
+        if (auto info = m_Reader.GetBioseqs().front(); s_x_ReportMissingPubs(info, m_Reader)) {
             auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
             s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound,
                     "No publications anywhere on this entire record.",
@@ -341,12 +341,12 @@ void CHugeFileValidator::ReportMissingPubs(CRef<CValidError>& pErrors) const
 }
 
 
-void CHugeFileValidator::ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CValidError>& pErrors) const
+void CHugeFileValidator::x_ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CValidError>& pErrors) const
 {
     if(!(m_Reader.GetSubmitBlock())) {
         bool isRefSeq = hasRefSeqAccession || (m_Options & CValidator::eVal_refseq_conventions);
 
-        if (auto info = m_Reader.GetBioseqs().front(); s_ReportMissingCitSub(info, m_Reader, isRefSeq))
+        if (auto info = m_Reader.GetBioseqs().front(); s_x_ReportMissingCitSub(info, m_Reader, isRefSeq))
         {
             auto severity = (m_Options & CValidator::eVal_genome_submission) ?
                 eDiag_Error : eDiag_Info;
@@ -358,7 +358,7 @@ void CHugeFileValidator::ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CVal
 }
 
 
-void CHugeFileValidator::ReportMissingBioSources(CRef<CValidError>& pErrors) const
+void CHugeFileValidator::x_ReportMissingBioSources(CRef<CValidError>& pErrors) const
 {
     s_PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
             "No source information included on this record.",
@@ -370,22 +370,45 @@ void CHugeFileValidator::ReportMissingBioSources(CRef<CValidError>& pErrors) con
 void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors) const
 {
     if (globalInfo.NoPubsFound) {
-        ReportMissingPubs(pErrors);
+        x_ReportMissingPubs(pErrors);
     }
 
     if (globalInfo.NoCitSubsFound) {
-        ReportMissingCitSubs(globalInfo.IsRefSeq, pErrors);
+        x_ReportMissingCitSubs(globalInfo.IsRefSeq, pErrors);
     }
 
     if (!globalInfo.conflictingSerialNumbers.empty()) {
-        ReportCollidingSerialNumbers(globalInfo.conflictingSerialNumbers, pErrors);
+        x_ReportCollidingSerialNumbers(globalInfo.conflictingSerialNumbers, pErrors);
     }
 
 
     if (globalInfo.NoBioSource && !globalInfo.IsPatent && !globalInfo.IsPDB)
     {
-        ReportMissingBioSources(pErrors);
+        x_ReportMissingBioSources(pErrors);
     }
+}
+
+
+void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, SValidatorContext& context) const
+{
+    if (m_Reader.GetBiosets().size() < 2) {
+        return;
+    }
+
+    if (auto it = next(m_Reader.GetBiosets().begin()); 
+            it->m_class != CBioseq_set::eClass_genbank) {
+        return;
+    }
+
+    context.HugeFileMode = true;
+    context.GenbankSetId = g_GetIdString(m_Reader);
+
+    context.IsPatent        = globalInfo.IsPatent;
+    context.IsPDB           = globalInfo.IsPDB;
+    context.IsRefSeq        = globalInfo.IsRefSeq;
+    context.NoBioSource     = globalInfo.NoBioSource;
+    context.NoPubsFound     = globalInfo.NoPubsFound;
+    context.NoCitSubsFound  = globalInfo.NoCitSubsFound;
 }
 
 
