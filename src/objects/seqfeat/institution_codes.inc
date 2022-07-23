@@ -1375,7 +1375,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CNMT\ts\tHerbario Centro-Norte-Mato-Grossense\t\t\t",
 "CNPO\ts\tEmbrapa Pecuaria Sul\t\t\t",
 "CNPS\ts\tCentro Nacional de Pesquisas da Soja\t\t\t",
-"CNPSO\tc\tCulture Collection of Diazotrophic and Plant Growth Promoting Bacteria of Embrapa Soja\t\t\t",
+"CNPSo\tc\tCulture Collection of Diazotrophic and Plant Growth Promoting Bacteria of Embrapa Soja\t\t\t",
 "CNR\tsc\tPlant Protection of the National Research Council of Italy\t\t\t",
 "CNR<UKR>\ts\tCrimean Natural Reserve\t\t\t",
 "CNRO\ts\tCentre National de Recherches Oceanographiques\t\t\t",
