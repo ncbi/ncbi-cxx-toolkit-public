@@ -4228,7 +4228,7 @@ MC	s	Avery Island Archives
 MCA	s	Muhlenberg College, Biology Department			
 MCAS	s	Museo Civico Archeologico e di Scienze Naturali "F. Eusebio"			
 MCBR	s	Museo Civico "Baldassarre Romano"			
-MCC	c	National Centre for Microbial Resource (Microbial Culture Collection)	MCC		
+MCC	sc	National Centre for Microbial Resource (Microbial Culture Collection)	MCC		
 MCC-UPLB	c	Microbial Culture Collection			
 MCCA	s	Universidade Federal de Minas Gerais			
 MCCB	s	Museo Civico "Craveri"			

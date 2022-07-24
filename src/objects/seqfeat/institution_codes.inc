@@ -4261,7 +4261,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MCA\ts\tMuhlenberg College, Biology Department\t\t\t",
 "MCAS\ts\tMuseo Civico Archeologico e di Scienze Naturali \"F. Eusebio\"\t\t\t",
 "MCBR\ts\tMuseo Civico \"Baldassarre Romano\"\t\t\t",
-"MCC\tc\tNational Centre for Microbial Resource (Microbial Culture Collection)\tMCC\t\t",
+"MCC\tsc\tNational Centre for Microbial Resource (Microbial Culture Collection)\tMCC\t\t",
 "MCC-UPLB\tc\tMicrobial Culture Collection\t\t\t",
 "MCCA\ts\tUniversidade Federal de Minas Gerais\t\t\t",
 "MCCB\ts\tMuseo Civico \"Craveri\"\t\t\t",
