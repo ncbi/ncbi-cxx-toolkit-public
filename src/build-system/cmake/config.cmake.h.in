@@ -1134,4 +1134,4 @@
 #cmakedefine HAVE_LIBGRPC 1
 #cmakedefine HAVE_LIBPROTOBUF 1
 
-#define HAVE_PSG_LOADER 1
+#cmakedefine HAVE_PSG_LOADER 1
