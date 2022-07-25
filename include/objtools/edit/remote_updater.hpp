@@ -127,6 +127,8 @@ public:
     void SetMLAClient(CMLAClient& mlaClient);
     // Use either shared singleton or individual instances
     NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
+    void ReportStats(std::ostream& str);
+    taxupdate_func_t GetUpdateFunc() const { return m_taxon_update; }
 
 private:
     void xUpdatePubReferences(CSeq_entry& entry);
@@ -141,6 +143,7 @@ private:
     EPubmedSource m_pm_source = EPubmedSource::eNone;
     unique_ptr<IPubmedUpdater> m_pubmed;
     unique_ptr<CCachedTaxon3_impl> m_taxClient;
+    taxupdate_func_t m_taxon_update;
 
     std::mutex m_Mutex;
     int m_MaxMlaAttempts=3;
