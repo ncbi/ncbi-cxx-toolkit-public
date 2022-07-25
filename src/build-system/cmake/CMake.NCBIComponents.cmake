@@ -275,6 +275,7 @@ endif()
 # PSG_LOADER
 if(NCBI_COMPONENT_UV_FOUND AND NCBI_COMPONENT_NGHTTP2_FOUND)
     set(HAVE_PSG_LOADER 1)
+    list(APPEND NCBI_ALL_REQUIRES PSGLoader)
 endif()
 
 #############################################################################
