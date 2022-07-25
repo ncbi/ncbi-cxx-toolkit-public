@@ -983,8 +983,6 @@ USER_CFLAGS=$CFLAGS
 USER_CXXFLAGS=$CXXFLAGS
 USER_LDFLAGS=$LDFLAGS
 
-with_experimental="$with_experimental PSGLoader"
-
 if test -n "$with_experimental"; then
    NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
    want_gi32=no
@@ -1017,9 +1015,7 @@ if test -n "$with_experimental"; then
             want_gi64=yes
             ;;
          PSGLoader )
-            AC_DEFINE(HAVE_PSG_LOADER, 1,
-               [Define to 1 to let the GenBank data loader use PubSeq Gateway.])
-            NCBI_FEATURE(PSGLoader)
+            # Contingent on third-party library availability
             ;;
          BM64 )
             AC_DEFINE(BM64ADDR, 1, [Define to 1 to use 64-bit bitset indices.])
@@ -9030,6 +9026,35 @@ if test "$with_objects" = "no"  -o  -z "$serial" ; then
 else
    NCBI_PROJECT(objects)
    objects="objects"
+fi
+
+
+## PSG loader
+
+reason=
+sep=
+if test "$with_mt" = no; then
+   reason=MT
+   sep=", "
+fi
+if test "$with_libuv" = no; then
+   reason="${reason}${sep}LIBUV"
+   sep=", "
+fi
+if test "$with_mt" = no; then
+   reason="${reason}${sep}NGHTTP2"
+   sep=", "
+fi
+if test -z "$reason"; then
+   AC_DEFINE(HAVE_PSG_LOADER, 1,
+      [Define to 1 to let the GenBank data loader use PubSeq Gateway.])
+   NCBI_FEATURE(PSGLoader)
+else
+   case " $with_experimental " in
+      *\ PSGLoader\ * )
+         AC_MSG_ERROR([--with-experimental=$with_experimental: Cannot build PSG loader: missing $missing])
+         ;;
+   esac
 fi
 
 

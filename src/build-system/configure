@@ -6278,8 +6278,6 @@ USER_CFLAGS=$CFLAGS
 USER_CXXFLAGS=$CXXFLAGS
 USER_LDFLAGS=$LDFLAGS
 
-with_experimental="$with_experimental PSGLoader"
-
 if test -n "$with_experimental"; then
    NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
    want_gi32=no
@@ -6316,10 +6314,7 @@ $as_echo "#define NCBI_STRICT_GI 1" >>confdefs.h
             want_gi64=yes
             ;;
          PSGLoader )
-
-$as_echo "#define HAVE_PSG_LOADER 1" >>confdefs.h
-
-                      WithFeatures="$WithFeatures${WithFeaturesSep}PSGLoader"; WithFeaturesSep=" "
+            # Contingent on third-party library availability
             ;;
          BM64 )
 
@@ -35427,6 +35422,36 @@ else
 fi
 
 
+## PSG loader
+
+reason=
+sep=
+if test "$with_mt" = no; then
+   reason=MT
+   sep=", "
+fi
+if test "$with_libuv" = no; then
+   reason="${reason}${sep}LIBUV"
+   sep=", "
+fi
+if test "$with_mt" = no; then
+   reason="${reason}${sep}NGHTTP2"
+   sep=", "
+fi
+if test -z "$reason"; then
+
+$as_echo "#define HAVE_PSG_LOADER 1" >>confdefs.h
+
+             WithFeatures="$WithFeatures${WithFeaturesSep}PSGLoader"; WithFeaturesSep=" "
+else
+   case " $with_experimental " in
+      *\ PSGLoader\ * )
+         as_fn_error $? "--with-experimental=$with_experimental: Cannot build PSG loader: missing $missing" "$LINENO" 5
+         ;;
+   esac
+fi
+
+
 ## `bdb' projects
 
 if test "$with_bdb" = "no" ; then
@@ -35702,7 +35727,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in ChaosMonkey Int4GI Int8GI StrictGI PSGLoader BM64 GCC KCC ICC AppleClang LLVMClang Clang VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS check Valgrind LimitedLinker; do
+for x in ChaosMonkey Int4GI Int8GI StrictGI BM64 GCC KCC ICC AppleClang LLVMClang Clang VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS PSGLoader check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
