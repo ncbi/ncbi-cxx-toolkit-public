@@ -533,7 +533,8 @@ NCBI_define_Xcomponent(NAME FTGL MODULE ftgl LIB ftgl INCLUDE FTGL)
 
 #############################################################################
 # GLEW
-NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
+#NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
+NCBI_define_Xcomponent(NAME GLEW LIB GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
     foreach( _inc IN LISTS NCBI_COMPONENT_GLEW_INCLUDE)
         get_filename_component(_incdir ${_inc} DIRECTORY)
