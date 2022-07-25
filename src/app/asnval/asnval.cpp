@@ -621,13 +621,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     }
 
     m_pContext.reset(new SValidatorContext());
-    m_pContext->m_taxon_update = [&remote = m_remote_updater](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
-        { // we need to make a copy of record to prevent changes put back to cache
-            CConstRef<CTaxon3_reply> res = remote->SendOrgRefList(query);
-            CRef<CTaxon3_reply> copied (new CTaxon3_reply);
-            copied->Assign(*res);
-            return copied;
-        };
+    m_pContext->m_taxon_update = m_remote_updater->GetUpdateFunc();
 
     unique_ptr<CNcbiOfstream> local_stream;
 
