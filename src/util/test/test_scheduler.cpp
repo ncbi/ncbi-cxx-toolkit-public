@@ -49,7 +49,7 @@ s_GetScheduler(void)
 }
 
 
-class CTestSchedTask : public IScheduler_Task, public CObject
+class CTestSchedTask : public CObject, public IScheduler_Task
 {
 public:
     virtual ~CTestSchedTask(void) {}
