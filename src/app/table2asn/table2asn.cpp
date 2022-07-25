@@ -407,6 +407,7 @@ int CTbl2AsnApp::Run()
     SetDiagStream(error_log);
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
+    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
     m_validator.Reset(new CTable2AsnValidator(m_context));
 
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
@@ -444,7 +445,6 @@ int CTbl2AsnApp::Run()
     }
 
     m_reader.reset(new CMultiReader(m_context));
-    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
 
     // excluded per RW-589
 #if 0
