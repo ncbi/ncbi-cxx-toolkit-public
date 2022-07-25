@@ -522,29 +522,15 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
             throw;
         }
 
-        if (reader.GetBiosets().size() > 1) {
-            auto it = next(reader.GetBiosets().begin());
-            if (it->m_class == CBioseq_set::eClass_genbank) {
-                m_pContext->GenbankSetId = g_GetIdString(reader);
-                m_pContext->HugeFileMode = true;
-            }
-        }
 
         auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
                 *m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
 
         CAutoRevoker autorevoker(info);
+        CHugeFileValidator hugeFileValidator(reader, m_Options);
+        hugeFileValidator.UpdateValidatorContext(m_GlobalInfo, *m_pContext);
 
         if (m_pContext->HugeFileMode) {
-
-            m_pContext->IsPatent        = m_GlobalInfo.IsPatent;
-            m_pContext->IsPDB           = m_GlobalInfo.IsPDB;
-            m_pContext->IsRefSeq        = m_GlobalInfo.IsRefSeq;
-            m_pContext->NoBioSource     = m_GlobalInfo.NoBioSource;
-            m_pContext->NoPubsFound     = m_GlobalInfo.NoPubsFound;
-            m_pContext->NoCitSubsFound = m_GlobalInfo.NoCitSubsFound;
-
-            CHugeFileValidator hugeFileValidator(reader, m_Options);
             CRef<CValidError> pEval;
             hugeFileValidator.ReportGlobalErrors(m_GlobalInfo, pEval);
             if (pEval) {
