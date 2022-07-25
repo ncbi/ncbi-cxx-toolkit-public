@@ -39,6 +39,7 @@
 #include <functional>
 #include <objtools/edit/edit_error.hpp>
 #include <objtools/edit/pubmed_updater.hpp>
+#include <objects/taxon3/itaxon3.hpp>
 #include <mutex>
 
 BEGIN_NCBI_SCOPE
