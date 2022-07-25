@@ -272,6 +272,12 @@ if (NCBI_COMPONENT_GCRYPT_FOUND AND EXISTS ${NCBITK_SRC_ROOT}/internal/ncbils2/C
 endif()
 
 #############################################################################
+# PSG_LOADER
+if(NCBI_COMPONENT_UV_FOUND AND NCBI_COMPONENT_NGHTTP2_FOUND)
+    set(HAVE_PSG_LOADER 1)
+endif()
+
+#############################################################################
 list(SORT NCBI_ALL_LEGACY)
 list(APPEND NCBI_ALL_COMPONENTS ${NCBI_ALL_LEGACY})
 list(SORT NCBI_ALL_COMPONENTS)
