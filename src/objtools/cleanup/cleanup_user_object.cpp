@@ -191,29 +191,58 @@ bool CCleanup::s_CleanupStructuredComment( CUser_object &obj )
     bool genome_assembly_data = false;
     bool ibol_data = false;
 
+    bool prefix_present = false;
+    bool suffix_present = false;
+    string core;
+
     const string kBarcode = "International Barcode of Life (iBOL)Data";
+    const string kGenomeAssemblyData = "Genome-Assembly-Data";
 
     for (auto field_i : obj.SetData()) {
         CUser_field &field = *field_i;
         if (field.IsSetLabel() && field.GetLabel().IsStr()
             && field.IsSetData() && field.GetData().IsStr()) {
             bool is_prefix = NStr::Equal(field.GetLabel().GetStr(), "StructuredCommentPrefix");
+            if (is_prefix) {
+                prefix_present = true;
+            }
             bool is_suffix = NStr::Equal(field.GetLabel().GetStr(), "StructuredCommentSuffix");
+            if (is_suffix) {
+                suffix_present = true;
+            }
             if (is_prefix || is_suffix) {
-                string core = CUtf8::AsUTF8(field.GetData().GetStr(), eEncoding_Ascii);
+                core = CUtf8::AsUTF8(field.GetData().GetStr(), eEncoding_Ascii);
                 CComment_rule::NormalizePrefix(core);
                 string new_val = is_prefix ? CComment_rule::MakePrefixFromRoot(core) : CComment_rule::MakeSuffixFromRoot(core);
                 if (!NStr::Equal(new_val, field.GetData().GetStr())) {
                     field.SetData().SetStr(new_val);
                     any_change = true;
                 }
-                if (core == "Genome-Assembly-Data") {
+                if (core == kGenomeAssemblyData) {
                     genome_assembly_data = true;
                 } else if( core == kBarcode ) {
                     ibol_data = true;
                 }
             }
         }
+    }
+    if (prefix_present  &&  !suffix_present) {
+        string suffix_val = CComment_rule::MakeSuffixFromRoot(core);
+        auto& data = obj.SetData();
+        CRef<CUser_field> suffix(new CUser_field());
+        suffix->SetLabel().SetStr("StructuredCommentSuffix");
+        suffix->SetString(suffix_val);
+        data.push_back(suffix);
+        any_change = true;
+    }
+    if (!prefix_present  &&  suffix_present) {
+        string prefix_val = CComment_rule::MakePrefixFromRoot(core);
+        auto& data = obj.SetData();
+        CRef<CUser_field> prefix(new CUser_field());
+        prefix->SetLabel().SetStr("StructuredCommentPrefix");
+        prefix->SetString(prefix_val);
+        data.emplace(data.begin(), prefix);
+        any_change = true;
     }
 
     if( genome_assembly_data ) {
