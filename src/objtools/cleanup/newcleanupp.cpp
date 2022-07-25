@@ -90,7 +90,7 @@ namespace {
 
     // a CRegexp that has lock and unlock methods,
     // and also inherits from CObject
-    class CRegexpWithLock : public CRegexp, public CObject {
+    class CRegexpWithLock : public CObject, public CRegexp {
     public:
         CRegexpWithLock( const CTempStringEx & pattern,
             CRegexp::TCompile flags ) : CRegexp(pattern, flags) { }
