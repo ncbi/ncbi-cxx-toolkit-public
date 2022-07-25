@@ -167,6 +167,11 @@ public:
         }
     }
 
+    void ReportStats(std::ostream& str)
+    {
+        str << "CRemoteUpdater: cache_hits " << m_cache_hits << " out of " << m_num_requests << " requests\n";
+    }
+
     CRef<COrg_ref> GetOrg(const COrg_ref& org, CRemoteUpdater::FLogger f_logger)
     {
         CRef<COrg_ref> result;
@@ -180,6 +185,7 @@ public:
 
     CRef<CT3Reply> GetOrgReply(const COrg_ref& in_org, CRemoteUpdater::FLogger f_logger)
     {
+        m_num_requests++;
         std::ostringstream os;
         os << MSerial_AsnText << in_org;
         CRef<CT3Reply>& reply = (*m_cache)[os.str()];
@@ -215,6 +221,7 @@ public:
         }
         else
         {
+            m_cache_hits++;
 #ifdef _DEBUG
             //cerr << "Using cache for:" << os.str() << endl;
 #endif
@@ -236,6 +243,8 @@ public:
 protected:
     unique_ptr<CTaxon3> m_taxon;
     unique_ptr<CCachedReplyMap> m_cache;
+    size_t m_num_requests = 0;
+    size_t m_cache_hits = 0;
 };
 
 bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
@@ -274,6 +283,15 @@ void CRemoteUpdater::SetTaxonTimeout(unsigned seconds, unsigned retries, bool ex
 
 bool CRemoteUpdater::xSetFromConfig()
 {
+    // default update lambda function
+    m_taxon_update = [this](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
+        { // we need to make a copy of record to prevent changes put back to cache
+            CConstRef<CTaxon3_reply> res = SendOrgRefList(query);
+            CRef<CTaxon3_reply> copied (new CTaxon3_reply);
+            copied->Assign(*res);
+            return copied;
+        };
+
     CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
     if (app) {
         const CNcbiRegistry& cfg = app->GetConfig();
@@ -704,6 +722,13 @@ CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_r
 
     CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(list, nullptr);
     return reply;
+}
+
+void CRemoteUpdater::ReportStats(std::ostream& str)
+{
+    std::lock_guard<std::mutex> guard(m_Mutex);
+    if (m_taxClient)
+        m_taxClient->ReportStats(str);
 }
 
 END_SCOPE(edit)
