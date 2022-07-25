@@ -3299,6 +3299,46 @@ void CValidError_imp::x_DoBarcodeTests(CSeq_entry_Handle seh)
 }
 
 
+bool CValidError_imp::IsNoPubs() const { return m_NoPubs; }
+bool CValidError_imp::IsNoCitSubPubs() const { return m_NoCitSubPubs; }
+bool CValidError_imp::IsNoBioSource() const { return m_NoBioSource; }
+bool CValidError_imp::IsGPS() const { return m_IsGPS; }
+bool CValidError_imp::IsGED() const { return m_IsGED; }
+bool CValidError_imp::IsPDB() const { return m_IsPDB; }
+bool CValidError_imp::IsPatent() const { return m_IsPatent; }
+bool CValidError_imp::IsRefSeq() const { return m_IsRefSeq || m_RefSeqConventions; }
+bool CValidError_imp::IsEmbl() const { return m_IsEmbl; }
+bool CValidError_imp::IsDdbj() const { return m_IsDdbj; }
+bool CValidError_imp::IsTPE() const { return m_IsTPE; }
+bool CValidError_imp::IsNC() const { return m_IsNC; }
+bool CValidError_imp::IsNG() const { return m_IsNG; }
+bool CValidError_imp::IsNM() const { return m_IsNM; }
+bool CValidError_imp::IsNP() const { return m_IsNP; }
+bool CValidError_imp::IsNR() const { return m_IsNR; }
+bool CValidError_imp::IsNZ() const { return m_IsNZ; }
+bool CValidError_imp::IsNS() const { return m_IsNS; }
+bool CValidError_imp::IsNT() const { return m_IsNT; }
+bool CValidError_imp::IsNW() const { return m_IsNW; }
+bool CValidError_imp::IsWP() const { return m_IsWP; }
+bool CValidError_imp::IsXR() const { return m_IsXR; }
+bool CValidError_imp::IsGI() const { return m_IsGI; }
+bool CValidError_imp::IsGpipe() const { return m_IsGpipe; }
+bool CValidError_imp::IsLocalGeneralOnly() const { return m_IsLocalGeneralOnly; }
+bool CValidError_imp::HasGiOrAccnVer() const { return m_HasGiOrAccnVer; }
+bool CValidError_imp::IsGenomic() const { return m_IsGenomic; }
+bool CValidError_imp::IsSeqSubmit() const { return m_IsSeqSubmit; }
+bool CValidError_imp::IsSmallGenomeSet() const { return m_IsSmallGenomeSet; }
+bool CValidError_imp::IsGenbank() const { return m_IsGB; }
+bool CValidError_imp::DoesAnyFeatLocHaveGI() const { return m_FeatLocHasGI; }
+bool CValidError_imp::DoesAnyProductLocHaveGI() const { return m_ProductLocHasGI; }
+bool CValidError_imp::DoesAnyGeneHaveLocusTag() const { return m_GeneHasLocusTag; }
+bool CValidError_imp::DoesAnyProteinHaveGeneralID() const { return m_ProteinHasGeneralID; }
+bool CValidError_imp::IsINSDInSep() const { return m_IsINSDInSep; }
+bool CValidError_imp::IsGeneious() const { return m_IsGeneious; }
+const CBioSourceKind& CValidError_imp::BioSourceKind() const { return m_biosource_kind; }
+
+
+
 // =============================================================================
 //                         CValidError_base Implementation
 // =============================================================================
@@ -3824,6 +3864,9 @@ void CCacheImpl::Clear()
     m_featToBioseqCache.clear();
     m_IdToBioseqCache.clear();
 }
+
+
+
 
 
 END_SCOPE(validator)

@@ -294,46 +294,46 @@ public:
 
 
     // flags calculated by examining data in record
-    inline bool IsStandaloneAnnot() const { return m_IsStandaloneAnnot; }
-    inline bool IsNoPubs() const { return m_NoPubs; }
-    inline bool IsNoCitSubPubs() const { return m_NoCitSubPubs; }
-    inline bool IsNoBioSource() const { return m_NoBioSource; }
-    inline bool IsGPS() const { return m_IsGPS; }
-    inline bool IsGED() const { return m_IsGED; }
-    inline bool IsPDB() const { return m_IsPDB; }
-    inline bool IsPatent() const { return m_IsPatent; }
-    inline bool IsRefSeq() const { return m_IsRefSeq || m_RefSeqConventions; }
-    inline bool IsEmbl() const { return m_IsEmbl; }
-    inline bool IsDdbj() const { return m_IsDdbj; }
-    inline bool IsTPE() const { return m_IsTPE; }
-    inline bool IsNC() const { return m_IsNC; }
-    inline bool IsNG() const { return m_IsNG; }
-    inline bool IsNM() const { return m_IsNM; }
-    inline bool IsNP() const { return m_IsNP; }
-    inline bool IsNR() const { return m_IsNR; }
-    inline bool IsNZ() const { return m_IsNZ; }
-    inline bool IsNS() const { return m_IsNS; }
-    inline bool IsNT() const { return m_IsNT; }
-    inline bool IsNW() const { return m_IsNW; }
-    inline bool IsWP() const { return m_IsWP; }
-    inline bool IsXR() const { return m_IsXR; }
-    inline bool IsGI() const { return m_IsGI; }
-    inline bool IsGpipe() const { return m_IsGpipe; }
+    bool IsStandaloneAnnot() const { return m_IsStandaloneAnnot; }
+    bool IsNoPubs() const;
+    bool IsNoCitSubPubs() const;
+    bool IsNoBioSource() const;
+    bool IsGPS() const;
+    bool IsGED() const;
+    bool IsPDB() const;
+    bool IsPatent() const;
+    bool IsRefSeq() const;
+    bool IsEmbl() const;
+    bool IsDdbj() const;
+    bool IsTPE() const;
+    bool IsNC() const;
+    bool IsNG() const;
+    bool IsNM() const;
+    bool IsNP() const;
+    bool IsNR() const;
+    bool IsNZ() const;
+    bool IsNS() const;
+    bool IsNT() const;
+    bool IsNW() const;
+    bool IsWP() const;
+    bool IsXR() const;
+    bool IsGI() const;
+    bool IsGpipe() const;
     bool IsHtg() const;
-    inline bool IsLocalGeneralOnly() const { return m_IsLocalGeneralOnly; }
-    inline bool HasGiOrAccnVer() const { return m_HasGiOrAccnVer; }
-    inline bool IsGenomic() const { return m_IsGenomic; }
-    inline bool IsSeqSubmit() const { return m_IsSeqSubmit; }
-    inline bool IsSmallGenomeSet() const { return m_IsSmallGenomeSet; }
+    bool IsLocalGeneralOnly() const;
+    bool HasGiOrAccnVer() const;
+    bool IsGenomic() const;
+    bool IsSeqSubmit() const;
+    bool IsSmallGenomeSet() const;
     bool IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev);
-    inline bool IsGenbank() const { return m_IsGB; }
-    inline bool DoesAnyFeatLocHaveGI() const { return m_FeatLocHasGI; }
-    inline bool DoesAnyProductLocHaveGI() const { return m_ProductLocHasGI; }
-    inline bool DoesAnyGeneHaveLocusTag() const { return m_GeneHasLocusTag; }
-    inline bool DoesAnyProteinHaveGeneralID() const { return m_ProteinHasGeneralID; }
-    inline bool IsINSDInSep() const { return m_IsINSDInSep; }
-    inline bool IsGeneious() const { return m_IsGeneious; }
-    inline const CBioSourceKind& BioSourceKind() const { return m_biosource_kind; }
+    bool IsGenbank() const;
+    bool DoesAnyFeatLocHaveGI() const;
+    bool DoesAnyProductLocHaveGI() const;
+    bool DoesAnyGeneHaveLocusTag() const;
+    bool DoesAnyProteinHaveGeneralID() const;
+    bool IsINSDInSep() const;
+    bool IsGeneious() const;
+    const CBioSourceKind& BioSourceKind() const;
 
     // counting number of misplaced features
     inline void ResetMisplacedFeatureCount() { m_NumMisplacedFeatures = 0; }
