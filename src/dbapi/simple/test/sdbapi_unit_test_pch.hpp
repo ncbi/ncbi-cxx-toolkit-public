@@ -90,11 +90,7 @@ public:
             return "MSDEV1";
 #endif
         } else if (NStr::CompareNocase(m_ServerName, "Sybase") == 0) {
-#ifdef HAVE_LIBCONNEXT
-            return "DBAPI_SYB160_TEST";
-#else
             return "DBAPI_DEV16_2K";
-#endif
         }
         return m_ServerName;
     }
