@@ -3495,7 +3495,7 @@ unsigned long CTimeout::GetAsMilliSeconds(void) const
 #if (SIZEOF_INT == SIZEOF_LONG)
     // Roughly calculate maximum number of seconds that can be safely converted
     // to milliseconds without an overflow.
-    if (m_Sec > kMax_ULong / 1000 - 1) {
+    if (m_Sec > kMax_ULong / kMilliSecondsPerSecond - 1) {
         NCBI_THROW(CTimeException, eConvert, 
                    "Timeout value " +
                    NStr::UIntToString(m_Sec) + 
