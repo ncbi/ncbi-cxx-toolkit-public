@@ -61,117 +61,6 @@ USING_SCOPE(objects::edit);
 
 namespace
 {
-    class CFlattenedAsn: public CHugeAsnReader
-    {
-    public:
-        bool IsMultiSequence() const override { return m_flattened.size()>1; }
-        const TBioseqSetInfo& GetTopObject()
-        {
-            auto top = GetBiosets().begin();
-            if (GetBiosets().size()>1)
-            {
-                top++;
-            }
-            return *top;
-        }
-        CRef<objects::CSeq_entry> GetNextSeqEntry() override
-        {
-            if (m_current == m_flattened.end())
-            {
-                m_flattened.clear();
-                m_current = m_flattened.end();
-                return {};
-            }
-            else
-            {
-#ifdef _DEBUG
-                if (m_current->m_parent_set != GetBiosets().end())
-                {
-                    if (m_current->m_parent_set->m_descr.NotEmpty())
-                        std::cerr << "Has top parent: " << m_current->m_pos << m_current->m_parent_set->m_class << std::endl;
-                }
-#endif
-                return LoadSeqEntry(*m_current++);
-            }
-        }
-
-        bool GetNextBlob() override
-        {
-            bool ret = CHugeAsnReader::GetNextBlob();
-            if (ret)
-                FlattenGenbankSet();
-            return ret;
-        }
-
-        bool CheckDescriptors(CSeqdesc::E_Choice which)
-        {
-            for (auto rec: GetBioseqs())
-            {
-                if (rec.m_descr.NotEmpty())
-                {
-                    for (auto descr: rec.m_descr->Get())
-                    {
-                        if (descr->Which() == which)
-                            return true;
-                    }
-                }
-            }
-            /*
-            for (auto rec: GetBiosets())
-            {
-                if (rec.m_descr.NotEmpty())
-                {
-                    for (auto descr: rec.m_descr->Get())
-                    {
-                        if (descr->Which() == which)
-                            return true;
-                    }
-                }
-            }
-            */
-            return false;
-        }
-
-    protected:
-        void FlattenGenbankSet();
-
-        TBioseqSetList m_flattened;
-        TBioseqSetList::iterator m_current;
-    };
-
-void CFlattenedAsn::FlattenGenbankSet()
-{
-    m_flattened.clear();
-
-    for (auto& rec: GetBioseqs())
-    {
-        auto parent = rec.m_parent_set;
-        auto _class = parent->m_class;
-        if ((_class == CBioseq_set::eClass_not_set) ||
-            (_class == CBioseq_set::eClass_genbank))
-        { // create fake bioseq_set
-            m_flattened.push_back({rec.m_pos, m_flattened.end(), objects::CBioseq_set::eClass_not_set });
-        } else {
-            if (m_flattened.empty() || (m_flattened.back().m_pos != parent->m_pos))
-                m_flattened.push_back(*parent);
-        }
-    }
-
-    if ((m_flattened.size() == 1) && (GetBiosets().size()>1))
-    {// exposing the whole top entry
-        auto top = GetBiosets().begin();
-        top++;
-        if (GetSubmitBlock().NotEmpty()
-            || (top->m_class != CBioseq_set::eClass_genbank)
-            || top->m_descr.NotEmpty())
-        {
-            m_flattened.clear();
-            m_flattened.push_back(*top);
-        }
-    }
-
-    m_current = m_flattened.begin();
-}
 
 struct THugeFileWriteContext
 {
@@ -183,11 +72,40 @@ struct THugeFileWriteContext
 
     IHugeAsnSource* source = nullptr;
 
-    CFlattenedAsn asn_reader;
+    CHugeAsnReader asn_reader;
 
     CRef<CSeq_entry> topentry;
     CRef<CSeq_submit> submit;
     std::function<CRef<CSeq_entry>()> next_entry;
+
+    bool CheckDescriptors(CSeqdesc::E_Choice which)
+    {
+        for (auto rec: asn_reader.GetBioseqs())
+        {
+            if (rec.m_descr.NotEmpty())
+            {
+                for (auto descr: rec.m_descr->Get())
+                {
+                    if (descr->Which() == which)
+                        return true;
+                }
+            }
+        }
+        /*
+        for (auto rec: asn_reader.GetBiosets())
+        {
+            if (rec.m_descr.NotEmpty())
+            {
+                for (auto descr: rec.m_descr->Get())
+                {
+                    if (descr->Which() == which)
+                        return true;
+                }
+            }
+        }
+        */
+        return false;
+    }
 
     void PopulateTopEntry(CRef<CSeq_entry>& top_set, bool handle_as_set, CBioseq_set::TClass classValue)
     {
@@ -200,12 +118,16 @@ struct THugeFileWriteContext
             m_ClassValue = topentry->SetSet().SetClass() = classValue;
             if (!is_fasta)
             {
-                auto top = asn_reader.GetTopObject();
-                if (top.m_class != CBioseq_set::eClass_not_set)
-                    m_ClassValue = topentry->SetSet().SetClass() = top.m_class;
-                if (top.m_descr.NotEmpty() && top.m_descr->IsSet() && !top.m_descr->Get().empty())
+                auto top = asn_reader.GetBiosets().begin();
+                if (asn_reader.GetBiosets().size()>1)
                 {
-                    topentry->SetSet().SetDescr().Assign(*top.m_descr);
+                    top++;
+                }
+                if (top->m_class != CBioseq_set::eClass_not_set)
+                    m_ClassValue = topentry->SetSet().SetClass() = top->m_class;
+                if (top->m_descr.NotEmpty() && top->m_descr->IsSet() && !top->m_descr->Get().empty())
+                {
+                    topentry->SetSet().SetDescr().Assign(*top->m_descr);
                 }
             }
             if (source->IsMultiSequence())
@@ -255,7 +177,7 @@ struct THugeFileWriteContext
 
 void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 {
-    static set<TTypeInfo> supported_types =
+    static const set<TTypeInfo> supported_types =
     {
         CBioseq_set::GetTypeInfo(),
         CBioseq::GetTypeInfo(),
@@ -327,6 +249,9 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
     while (context.source->GetNextBlob())
     {
+        if (!context.is_fasta)
+            context.asn_reader.FlattenGenbankSet();
+
         m_secret_files->m_feature_table_reader->m_local_id_counter = context.asn_reader.GetMaxLocalId() + 1;
 
         unique_ptr<CObjectOStream> ostr{
@@ -364,7 +289,7 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
         if (m_context.m_huge_files_mode)
         {
-            bool need_update_date = !context.is_fasta && context.asn_reader.CheckDescriptors(CSeqdesc::e_Create_date);
+            bool need_update_date = !context.is_fasta && context.CheckDescriptors(CSeqdesc::e_Create_date);
 
             ProcessTopEntry(context.file.m_format, need_update_date, context.submit, context.topentry);
 
