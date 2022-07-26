@@ -42,9 +42,9 @@
 #  include <stdlib.h>
 #  include <time.h>
 #endif
-#if !defined(NCBI_OS_DARWIN)  &&  defined(HAVE_POLL_H)
+#if defined(HAVE_POLL_H)  &&  !defined(NCBI_OS_DARWIN)
 #  include <poll.h>
-#endif /*!NCBI_OS_DARWIN && HAVE_POLL_H*/
+#endif /*HAVE_POLL_H && !NCBI_OS_DARWIN*/
 #if defined(NCBI_OS_UNIX)
 #  ifndef HAVE_GETPWUID
 #    error "HAVE_GETPWUID is undefined on a UNIX system!"
@@ -1001,14 +1001,14 @@ extern void CORE_Msdelay(unsigned long ms)
     struct timespec ts;
     ts.tv_sec  = (time_t)(ms / 1000);
     ts.tv_nsec = (long) ((ms % 1000) * 1000000);
-    nanosleep(&ts, 0);
-#  elif !defined(NCBI_OS_DARWIN)  &&  defined(HAVE_POLL_H)
-    poll(0, 0, (int) ms);
+    (void) nanosleep(&ts, 0);
+#  elif defined(HAVE_POLL_H)  &&  !defined(NCBI_OS_DARWIN)
+    (void) poll(0, 0, (int) ms);
 #  else
     struct timeval tv;
     tv.tv_sec  = (long) (ms / 1000);
     tv.tv_usec = (long)((ms % 1000) * 1000);
-    select(0, 0, 0, 0, &tv);
+    (void) select(0, 0, 0, 0, &tv);
 #  endif /*HAVE_NANOSLEEP*/
 #else
 #  error "Unsupported platform."
