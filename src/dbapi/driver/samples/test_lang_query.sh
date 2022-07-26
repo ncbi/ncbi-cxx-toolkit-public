@@ -14,7 +14,7 @@ if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_mssql="DBAPI_MS2019_TEST"
 else
     # server_list="MSDEV2"
-    server_list="DBAPI_MS2019_TEST_LB DBAPI_SYB160_TEST DBAPI_DEV16_16K"
+    server_list="DBAPI_MS2019_TEST_LB DBAPI_DEV16_2K DBAPI_DEV16_16K"
     # server_mssql="MSDEV2"
     server_mssql="DBAPI_MS2019_TEST_LB"
 fi
