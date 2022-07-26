@@ -1489,12 +1489,6 @@ EDiagSev CValidError_imp::x_SalmonellaErrorLevel()
 {
     // per RW-1097
     return eDiag_Warning;
-
-//    if (m_IsRefSeq) {
-//        return eDiag_Warning;
-//    } else {
-//        return eDiag_Error;
-//    }
 }
 
 
