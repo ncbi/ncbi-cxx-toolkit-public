@@ -90,13 +90,8 @@
 #      define IP_MTU  14
 #    endif /*!IP_MTU*/
 #  endif /*NCBI_OS_LINUX*/
-#  if !defined(NCBI_OS_BEOS)
-#    include <arpa/inet.h>
-#  endif /*NCBI_OS_BEOS*/
-#  include <signal.h>
-#  include <sys/param.h>
 #  ifdef HAVE_POLL_H
-#    include <sys/poll.h>
+#    include <poll.h>
 #    ifndef   POLLPRI
 #      define POLLPRI     POLLIN
 #    endif /*!POLLPRI*/
@@ -122,12 +117,17 @@
 #    define   POLL_WRITE_READY  (_POLL_READY | POLL_WRITE)
 #    define   POLL_ERROR         POLLNVAL
 #  endif /*HAVE_POLL_H*/
+#  include <signal.h>
+#  include <unistd.h>
+#  if !defined(NCBI_OS_BEOS)
+#    include <arpa/inet.h>
+#  endif /*NCBI_OS_BEOS*/
+#  include <sys/param.h>
 #  ifdef HAVE_SYS_RESOURCE_H
 #    include <sys/resource.h>
 #  endif /*HAVE_SYS_RESOURCE_H*/
 #  include <sys/stat.h>
 #  include <sys/un.h>
-#  include <unistd.h>
 #endif /*NCBI_OS_UNIX*/
 
 /* Portable standard C headers
@@ -1077,12 +1077,12 @@ extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
 {
     ESOCK_IOWaitSysAPI retval = s_IOWaitSysAPI;
 #ifndef NCBI_OS_MSWIN
-#  if defined(NCBI_OS_DARWIN)  ||  !defined(HAVE_POLL_H)
+#  if !defined(HAVE_POLL_H)  ||  defined(NCBI_OS_DARWIN)
     if (api == eSOCK_IOWaitSysAPIPoll) {
         CORE_LOG_X(149, eLOG_Critical, "[SOCK::SetIOWaitSysAPI] "
                    " Poll API requested but not supported on this platform");
     } else
-#  endif /*NCBI_OS_DARWIN || !HAVE_POLL_H*/
+#  endif /*!HAVE_POLL_H || NCBI_OS_DARWIN*/
         s_IOWaitSysAPI = api;
 #else
     (void) api;
@@ -2072,8 +2072,7 @@ static EIO_Status s_Select_(size_t                n,
 }
 
 
-#  if defined(NCBI_OS_UNIX) && !defined(NCBI_OS_DARWIN) && defined(HAVE_POLL_H)
-
+#  if defined(NCBI_OS_UNIX) && defined(HAVE_POLL_H) && !defined(NCBI_OS_DARWIN)
 
 #    define NPOLLS  ((3 * sizeof(fd_set)) / sizeof(struct pollfd))
 
@@ -2248,7 +2247,7 @@ static EIO_Status s_Poll_(size_t                n,
 #    ifdef NCBI_OS_DARWIN
                 /* Mac OS X sometimes misreports, weird! */
                 if (x_ready > (int) count)
-                    x_ready = (int) count;  /* this is *not* a workaround!!! */
+                    x_ready = (int) count;  /* this is *NOT* a workaround!!! */
 #    endif /*NCBI_OS_DARWIN*/
                 assert(status == eIO_Success);
                 ready = (nfds_t) x_ready;
@@ -2366,7 +2365,7 @@ static EIO_Status s_Poll_(size_t                n,
 }
 
 
-#  endif /*NCBI_OS_UNIX && !NCBI_OS_DARWIN && HAVE_POLL_H*/
+#  endif /*NCBI_OS_UNIX && HAVE_POLL_H && !NCBI_OS_DARWIN*/
 
 
 #endif /*!NCBI_OS_MSWIN || !NCBI_CXX_TOOLKIT*/
@@ -2732,10 +2731,10 @@ static EIO_Status s_Select(size_t                n,
 
 #else /*!NCBI_OS_MSWIN || !NCBI_CXX_TOOLKIT*/
 
-#  if defined(NCBI_OS_UNIX) && !defined(NCBI_OS_DARWIN) && defined(HAVE_POLL_H)
+#  if defined(NCBI_OS_UNIX) && defined(HAVE_POLL_H) && !defined(NCBI_OS_DARWIN)
     if (s_IOWaitSysAPI != eSOCK_IOWaitSysAPISelect)
         return s_Poll_(n, polls, tv, asis);
-#  endif /*NCBI_OS_UNIX && !NCBI_OS_DARWIN && HAVE_POLL_H*/
+#  endif /*NCBI_OS_UNIX && HAVE_POLL_H && !NCBI_OS_DARWIN*/
 
     return s_Select_(n, polls, tv, asis);
 
@@ -5361,10 +5360,10 @@ static EIO_Status s_CreateListening(const char*    path,
     }
 #ifdef NCBI_OS_UNIX
     if (path) {
-#  if !defined(NCBI_OS_IRIX)    &&  !defined(NCBI_OS_BSD)   &&    \
-      !defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_OS_CYGWIN)
+#  if !defined(NCBI_OS_BSD)   &&  !defined(NCBI_OS_DARWIN)  &&  \
+      !defined(NCBI_OS_IRIX)  &&  !defined(NCBI_OS_CYGWIN)
         (void) fchmod(fd, S_IRWXU | S_IRWXG | S_IRWXO);
-#  endif/*!NCBI_OS_IRIX && !NCBI_OS_BSD && !NCBI_OS_DARWIN && !NCBI_OS_CYGWIN*/
+#  endif/*!NCBI_OS_BSD && !NCBI_OS_DARWIN && !NCBI_OS_IRIX && !NCBI_OS_CYGWIN*/
 #  ifdef NCBI_OS_CYGWIN
         (void) chmod(path, S_IRWXU | S_IRWXG | S_IRWXO);
 #  endif /*NCBI_OS_CYGWIN*/
