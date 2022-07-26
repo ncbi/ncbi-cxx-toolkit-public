@@ -431,9 +431,9 @@ CCgiContext::GetStreamStatus(const CTimeout& timeout) const
 
 #  if  defined(HAVE_POLL_H)     &&  \
       !defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_OS_CYGWIN)
-    struct pollfd pfd[2] = { {ifd, POLLIN, 0} , {ofd, POLLOUT, 0} };
-
     if (max(ifd, ofd) >= 0) {
+        struct pollfd pfd[2] = { {ifd, POLLIN,  0},
+                                 {ofd, POLLOUT, 0} };
         int tmo = timeout.IsInfinite()                  ? -1
             : timeout.IsZero()  ||  timeout.IsDefault() ?  0
             : (int) timeout.GetAsMilliSeconds();
@@ -489,6 +489,7 @@ CCgiContext::GetStreamStatus(const CTimeout& timeout) const
     return result;
 }
 
+
 static inline bool s_CheckValueForTID(const string& value, string& tid)
 {
     string part1, part2;
@@ -500,6 +501,7 @@ static inline bool s_CheckValueForTID(const string& value, string& tid)
     return false;
 }
 
+
 static inline bool s_CheckCookieForTID(const CCgiCookies& cookies,
     const string& cookie_name, string& tid)
 {
@@ -507,6 +509,7 @@ static inline bool s_CheckCookieForTID(const CCgiCookies& cookies,
 
     return cookie != NULL && s_CheckValueForTID(cookie->GetValue(), tid);
 }
+
 
 static inline bool s_CheckRequestEntryForTID(const CCgiRequest* request,
     const string& entry_name, string& tid)
