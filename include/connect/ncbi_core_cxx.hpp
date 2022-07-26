@@ -121,8 +121,8 @@ enum EConnectInitFlag {
 typedef unsigned int TConnectInitFlags;  ///< Bitwise OR of EConnectInitFlag
 
 
-/// Init [X]CONNECT library with the specified "reg" and "lock" (ownership
-/// for either or both can be detailed in the "flag" parameter).
+/// Init [X]CONNECT library with the specified "reg" and "lock" (ownership for
+/// either or both can be detailed in the "flag" parameter).
 /// @warning MUST be called in MT applications to make CONNECT MT-safe, or
 ///          alternatively, CConnIniter must be used as a base-class.
 /// @param reg
@@ -148,11 +148,23 @@ extern NCBI_XCONNECT_EXPORT void CONNECT_Init
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Helper hook-up class that installs default logging/registry/locking (but
-/// only if they have not yet been installed explicitly by user) as if by
+/// only if they have not yet been installed explicitly by the user) as if by
 /// calling CONNECT_Init(&CNcbiApplication::GetConfig()) automagically.
-/// @note  Derive your CONNECT-dependent classes from this class for MT safety.
+/// @note  Derive your CONNECT-dependent classes from this class for MT safety:
+///        @code
+///        class CMyNetworkedObject : virtual protected CConnIniter
+///                                   [, ... other bases]
+///        @endcode
+/// @note  You can also use this class for an inline initialization of some
+///        library code (in a function body) like so:
+///        @code
+///        {{
+///            class CInPlaceConnIniter : protected CConnIniter {
+///            } conn_initer;
+///        }}
+///        @endcode
 /// @sa
-///  CONNECT_Init
+///  CONNECT_Init, CConn_IOStream, CONN_OpenURL
 class NCBI_XCONNECT_EXPORT CConnIniter
 {
 protected:
@@ -171,12 +183,12 @@ protected:
 /// @param cto
 ///   Timeout value to convert.
 /// @param sto
-///   Variable used to store numeric timeout value.
+///   Variable to receive a numeric timeout value.
 /// @return
-///   A special constant kDefaultTimeout or kInfiniteTimeout, 
-///   if timeout is a default or an infinite one, respectively.
-///   A pointer to the "sto" object, if timeout has a numeric value. 
-///   "sto" will be used to store the numeric value.
+///   A special constant kDefaultTimeout or kInfiniteTimeout, if the incoming
+///   timeout is either a default or an infinite one, respectively.
+///   A pointer to the "sto" variable, if the incoming timeout contains some
+///   other (finite and numeric) value, and "sto" is used to receive the value.
 /// @sa CTimeout, STimeout
 const STimeout* g_CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto);
 
