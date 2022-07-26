@@ -85,6 +85,12 @@ void CHugeAsnReader::Open(CHugeFile* file, ILineErrorListener * pMessageListener
     mp_MessageListener = pMessageListener;
 }
 
+bool CHugeAsnReader::IsMultiSequence() const
+{
+    return m_FlattenedSets.size()>1;
+    //return m_bioseq_index.size()>1;
+}
+
 const CHugeAsnReader::TBioseqSetInfo* CHugeAsnReader::FindTopObject(CConstRef<CSeq_id> seqid) const
 {
     auto it = m_FlattenedIndex.lower_bound(seqid);
@@ -113,7 +119,7 @@ const CHugeAsnReader::TBioseqInfo* CHugeAsnReader::FindBioseq(CConstRef<CSeq_id>
 
 
 
-static CConstRef<CSeqdesc> s_GetDescriptor(const CSeq_descr& descr, CSeqdesc::E_Choice choice) 
+static CConstRef<CSeqdesc> s_GetDescriptor(const CSeq_descr& descr, CSeqdesc::E_Choice choice)
 {
     if (descr.IsSet()) {
         for (auto pDesc : descr.Get()) {
@@ -173,7 +179,7 @@ CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(CConstRef<CSeq_id> seqid) const
         return {};
 }
 
-CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
+CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info, eAddTopEntry add_top_entry) const
 {
     auto entry = Ref(new CSeq_entry);
     auto obj_stream = MakeObjStream(info.m_pos);
@@ -184,7 +190,7 @@ CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info) const
         obj_stream->Read(&entry->SetSet(), CBioseq_set::GetTypeInfo(), CObjectIStream::eNoFileHeader);
     }
 
-    if (m_top_entry) {
+    if (add_top_entry == eAddTopEntry::yes && m_top_entry) {
         auto pNewEntry = Ref(new CSeq_entry());
         pNewEntry->Assign(*m_top_entry);
         pNewEntry->SetSet().SetSeq_set().push_back(entry);
@@ -235,7 +241,7 @@ bool CHugeAsnReader::GetNextBlob()
     return true;
 }
 
-void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context) 
+void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context)
 {
     CObjectTypeInfo bioseq_info = CType<CBioseq>();
     CObjectTypeInfo bioseq_set_info = CType<CBioseq_set>();
@@ -412,7 +418,7 @@ void CHugeAsnReader::x_ThrowDuplicateId(
         existingFilePos = filename + ":" + existingFilePos;
         newFilePos = filename + ":" + newFilePos;
     }
-    string msg = "duplicate Bioseq id " + objects::GetLabel(duplicateId) + 
+    string msg = "duplicate Bioseq id " + objects::GetLabel(duplicateId) +
         " present in the set starting at " + existingFilePos;
     if (newPos != existingPos) {
         msg += " and the set starting at " + newFilePos;
@@ -472,12 +478,14 @@ void CHugeAsnReader::FlattenGenbankSet()
             }
         }
         else { // m_FlattenedSets.size() > 1)
-            auto top_entry = Ref(new CSeq_entry());
-            top_entry->SetSet().SetClass() = top->m_class;
-            if (top->m_descr) {
-                top_entry->SetSet().SetDescr().Assign(*top->m_descr);
+            if (top->m_descr || top->m_class != CBioseq_set::eClass_genbank)
+            {
+                auto top_entry = Ref(new CSeq_entry());
+                top_entry->SetSet().SetClass() = top->m_class;
+                if (top->m_descr)
+                    top_entry->SetSet().SetDescr().Assign(*top->m_descr);
+                m_top_entry = top_entry;
             }
-            m_top_entry = top_entry;
         }
     }
 
@@ -493,7 +501,7 @@ CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
         return {};
     }
 
-    return LoadSeqEntry(*m_Current++);
+    return LoadSeqEntry(*m_Current++, eAddTopEntry::no);
 }
 
 END_SCOPE(edit)

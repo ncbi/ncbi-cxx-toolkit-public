@@ -110,16 +110,19 @@ public:
 
     // These metods are for CDataLoader, each top object is a 'blob'
     const TBioseqSetInfo* FindTopObject(CConstRef<CSeq_id> seqid) const;
-    CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info) const;
+
+    enum class eAddTopEntry{ yes, no };
+    CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info, eAddTopEntry add_top_entry = eAddTopEntry::yes) const;
+
     const TBioseqInfo* FindBioseq(CConstRef<CSeq_id> seqid) const;
     CConstRef<CSeqdesc> GetClosestDescriptor(const TBioseqInfo& info, CSeqdesc::E_Choice choice) const;
     CConstRef<CSeqdesc> GetClosestDescriptor(const CSeq_id& id, CSeqdesc::E_Choice choice) const;
-    
+
     // Direct loading methods
     CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> seqid) const;
     CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;
 
-    bool IsMultiSequence() const override { return m_bioseq_index.size()>1; }
+    bool IsMultiSequence() const override;
 
     void FlattenGenbankSet();
     CConstRef<CSeq_entry> GetTopEntry() const { return m_top_entry; }
