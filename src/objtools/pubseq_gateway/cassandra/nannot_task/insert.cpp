@@ -143,12 +143,15 @@ void CCassNAnnotTaskInsert::Wait1()
                 }
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
+                string annot_part = m_Annot->IsSatKeyPrimary()
+                    ? (m_Annot->GetAnnotName() + ":" + to_string(m_Annot->GetSatKey()))
+                    : m_Annot->GetAnnotName();
                 CNAnnotChangelogWriter().WriteChangelogEvent(
                     qry.get(),
                     GetKeySpace(),
                     CNAnnotChangelogRecord(
                         m_Annot->GetAccession(),
-                        m_Annot->GetAnnotName(),
+                        annot_part,
                         m_Annot->GetVersion(),
                         m_Annot->GetSeqIdType(),
                         m_Annot->GetModified(),

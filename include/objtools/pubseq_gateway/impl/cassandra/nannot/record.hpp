@@ -143,6 +143,13 @@ class CNAnnotRecord {
         return *this;
     }
 
+    // @temporary For maintenance during NAnnot schema migration only!
+    CNAnnotRecord& SetSatKeyPrimary(bool value)
+    {
+        m_SatKeyPrimary = value;
+        return *this;
+    }
+
     // ---------------- Getters ------------------------
     string const & GetAccession() const
     {
@@ -204,6 +211,12 @@ class CNAnnotRecord {
         return m_State;
     }
 
+    // @temporary For maintenance during NAnnot schema migration only!
+    bool IsSatKeyPrimary() const
+    {
+        return m_SatKeyPrimary;
+    }
+
     string ToString() const;
 
  private:
@@ -219,6 +232,7 @@ class CNAnnotRecord {
     int16_t m_Version{0};
     int16_t m_SeqIdType{0};
     TState m_State{0};
+    bool m_SatKeyPrimary{false};
 };
 
 using TNAnnotConsumeCallback = function<bool(CNAnnotRecord &&, bool last)>;

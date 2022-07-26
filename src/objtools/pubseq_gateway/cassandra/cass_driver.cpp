@@ -108,6 +108,44 @@ BEGIN_SCOPE()
             }
         }
     }
+
+    using TSchemaMeta = const CassSchemaMeta;
+    using TTableMeta = const CassTableMeta;
+    auto GetMetaPointer(CassSession *m_session)
+    {
+        if (!m_session) {
+            RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, driver is not connected");
+        }
+        unique_ptr<TSchemaMeta, function<void(TSchemaMeta*)>> schema_meta(
+            cass_session_get_schema_meta(m_session),
+            [](TSchemaMeta* meta)-> void {
+                cass_schema_meta_free(meta);
+            }
+        );
+        if (!schema_meta) {
+            NCBI_THROW(CCassandraException, eFatal, "Cluster metadata is not resolved");
+        }
+        return schema_meta;
+    }
+
+    TTableMeta* GetTableMetaPointer(TSchemaMeta* schema_meta, string const& keyspace, string const& table)
+    {
+        const CassKeyspaceMeta* keyspace_meta = cass_schema_meta_keyspace_by_name_n(
+            schema_meta, keyspace.c_str(), keyspace.size()
+        );
+        if (!keyspace_meta) {
+            NCBI_THROW(CCassandraException, eNotFound, "Keyspace not found");
+        }
+
+        TTableMeta* table_meta = cass_keyspace_meta_table_by_name_n(
+            keyspace_meta, table.c_str(), table.size()
+        );
+        if (!table_meta) {
+            NCBI_THROW(CCassandraException, eNotFound, "Table not found");
+        }
+
+        return table_meta;
+    }
 END_SCOPE()
 
 bool CCassConnection::m_LoggingInitialized = false;
@@ -670,39 +708,32 @@ string CCassConnection::GetDatacenterName()
 
 vector<string> CCassConnection::GetPartitionKeyColumnNames(string const & keyspace, string const & table) const
 {
-    if (!m_session) {
-        RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, driver is not connected");
-    }
-    using TMeta = const CassSchemaMeta;
-    unique_ptr<TMeta, function<void(TMeta*)>> schema_meta(
-        cass_session_get_schema_meta(m_session),
-        [](TMeta* meta)-> void {
-            cass_schema_meta_free(meta);
-        }
-    );
-    if (!schema_meta) {
-        NCBI_THROW(CCassandraException, eFatal, "Cluster metadata is not resolved");
-    }
-
-    const CassKeyspaceMeta* keyspace_meta = cass_schema_meta_keyspace_by_name_n(
-        schema_meta.get(), keyspace.c_str(), keyspace.size()
-    );
-    if (!keyspace_meta) {
-        NCBI_THROW(CCassandraException, eNotFound, "Keyspace not found");
-    }
-
-    const CassTableMeta* table_meta = cass_keyspace_meta_table_by_name_n(
-        keyspace_meta, table.c_str(), table.size()
-    );
-    if (!table_meta) {
-        NCBI_THROW(CCassandraException, eNotFound, "Table not found");
-    }
-
-    size_t partition_key_count = cass_table_meta_partition_key_count(table_meta);
+    auto schema_meta = GetMetaPointer(m_session);
+    auto table_meta = GetTableMetaPointer(schema_meta.get(), keyspace, table);
+    size_t key_count = cass_table_meta_partition_key_count(table_meta);
     vector<string> result;
-    result.reserve(partition_key_count);
-    for (size_t i = 0; i < partition_key_count; ++i) {
+    result.reserve(key_count);
+    for (size_t i = 0; i < key_count; ++i) {
         const CassColumnMeta* column_meta = cass_table_meta_partition_key(table_meta, i);
+        if (column_meta) {
+            const char* name;
+            size_t name_length;
+            cass_column_meta_name(column_meta, &name, &name_length);
+            result.emplace_back(name, name_length);
+        }
+    }
+    return result;
+}
+
+vector<string> CCassConnection::GetClusteringKeyColumnNames(string const & keyspace, string const & table) const
+{
+    auto schema_meta = GetMetaPointer(m_session);
+    auto table_meta = GetTableMetaPointer(schema_meta.get(), keyspace, table);
+    size_t key_count = cass_table_meta_clustering_key_count(table_meta);
+    vector<string> result;
+    result.reserve(key_count);
+    for (size_t i = 0; i < key_count; ++i) {
+        const CassColumnMeta* column_meta = cass_table_meta_clustering_key(table_meta, i);
         if (column_meta) {
             const char* name;
             size_t name_length;
