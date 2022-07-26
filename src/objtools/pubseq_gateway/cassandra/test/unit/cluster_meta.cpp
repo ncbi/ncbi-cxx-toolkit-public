@@ -113,4 +113,36 @@ TEST_F(CassandraClusterMetaTest, GetPartitionKeyColumnNames) {
     ) << "GetPartitionKeyColumnNames should throw on closed connection";
 }
 
+TEST_F(CassandraClusterMetaTest, GetClusteringKeyColumnNames) {
+    string keyspace_name = "test_ipg_storage_entrez";
+    string table_name = "ipg_report";
+    vector<string> expected = {"accession", "nuc_accession"};
+    vector<string> actual = m_Connection->GetClusteringKeyColumnNames(keyspace_name, table_name);
+    EXPECT_EQ(expected, actual)
+        << "Clustering key column list for " << keyspace_name << "." << table_name << " is not equal to expected";
+
+    keyspace_name = "test_mlst_storage";
+    table_name = "allele_data";
+    expected = {"locus_name"};
+    actual = m_Connection->GetClusteringKeyColumnNames(keyspace_name, table_name);
+    EXPECT_EQ(expected, actual)
+        << "Clustering key column list for " << keyspace_name << "." << table_name << " is not equal to expected";
+
+    EXPECT_THROW(
+        m_Connection->GetClusteringKeyColumnNames("non_existent", table_name),
+        CCassandraException
+    ) << "GetClusteringKeyColumnNames should throw for non existent keyspace";
+
+    EXPECT_THROW(
+        m_Connection->GetClusteringKeyColumnNames(keyspace_name, "non_existent"),
+        CCassandraException
+    ) << "GetClusteringKeyColumnNames should throw for non existent table";
+
+    m_Connection->Close();
+    EXPECT_THROW(
+        m_Connection->GetClusteringKeyColumnNames(keyspace_name, table_name),
+        CCassandraException
+    ) << "GetClusteringKeyColumnNames should throw on closed connection";
+}
+
 }  // namespace

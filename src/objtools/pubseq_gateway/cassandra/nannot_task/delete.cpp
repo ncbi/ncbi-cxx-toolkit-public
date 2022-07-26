@@ -72,12 +72,15 @@ void CCassNAnnotTaskDelete::Wait1()
                 m_QueryArr[0] = { m_Conn->NewQuery(), 0};
                 auto query = m_QueryArr[0].query;
                 query->NewBatch();
+                string annot_part = m_Annot->IsSatKeyPrimary()
+                    ? (m_Annot->GetAnnotName() + ":" + to_string(m_Annot->GetSatKey()))
+                    : m_Annot->GetAnnotName();
                 CNAnnotChangelogWriter().WriteChangelogEvent(
                     query.get(),
                     GetKeySpace(),
                     CNAnnotChangelogRecord(
                         m_Annot->GetAccession(),
-                        m_Annot->GetAnnotName(),
+                        annot_part,
                         m_Annot->GetVersion(),
                         m_Annot->GetSeqIdType(),
                         m_Annot->GetModified(),
@@ -100,7 +103,13 @@ void CCassNAnnotTaskDelete::Wait1()
                             "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
                             "IF last_modified = ?";
                         query->SetSQL(sql, 5 + (m_Writetime > 0));
-                    } else {
+                    }
+                    else if (m_Annot->IsSatKeyPrimary()) {
+                        string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na " + writetime +
+                            "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? AND sat_key = ? "
+                            "IF last_modified = ?";
+                    }
+                    else {
                         string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na " + writetime +
                             "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
                             "IF sat_key = ? AND last_modified = ?";

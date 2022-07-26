@@ -213,6 +213,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     shared_ptr<CCassQuery> NewQuery();
     void GetTokenRanges(TTokenRanges &ranges);
     vector<string> GetPartitionKeyColumnNames(string const & keyspace, string const & table) const;
+    vector<string> GetClusteringKeyColumnNames(string const & keyspace, string const & table) const;
 
     // For multi-datacenter environment picture will be not complete
     // system.size_estimates contains data for PRIMARY range only and other datacenter hosts

@@ -88,6 +88,7 @@ class CNAnnotTaskFetchTest
 
     string m_KeyspaceName{"nannotg2"};
     string m_FrozenKeyspaceName{"psg_test_sat_41"};
+    string m_NewNannotSchemaKeyspace{"psg_test_sat_52"};
 };
 
 class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
@@ -653,6 +654,49 @@ TEST_F(CNAnnotTaskFetchTest, RetrievalWithDeadRecords) {
                     EXPECT_FALSE(last);
                     return true;
                 case 2:
+                    EXPECT_TRUE(last);
+                    return false;
+                default:
+                    EXPECT_TRUE(false) << "Callback should not be called " << call_count << " times.";
+            }
+            return true;
+        },
+        [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
+        }
+    );
+    bool done = fetch.Wait();
+    while (!done) {
+        usleep(100);
+        done = fetch.Wait();
+    }
+}
+
+TEST_F(CNAnnotTaskFetchTest, RetrievalWithSatKeyInPrimary) {
+    size_t call_count = 0;
+    CCassNAnnotTaskFetch fetch(
+        m_Connection, m_NewNannotSchemaKeyspace,
+        "NC_062543", 1, 10, vector<string>({"NA000353807.1"}),
+        [&call_count](CNAnnotRecord && entry, bool last) -> bool {
+            switch(++call_count) {
+                case 1:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000353807.1");
+                    EXPECT_EQ(entry.GetStart(), 447);
+                    EXPECT_EQ(entry.GetStop(), 12505360);
+                    EXPECT_EQ(entry.GetSatKey(), 8754056);
+                    EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 2:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000353807.1");
+                    EXPECT_EQ(entry.GetStart(), 11751284);
+                    EXPECT_EQ(entry.GetStop(), 16972309);
+                    EXPECT_EQ(entry.GetSatKey(), 8754057);
+                    EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 3:
                     EXPECT_TRUE(last);
                     return false;
                 default:
