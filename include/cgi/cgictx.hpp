@@ -35,7 +35,6 @@
 
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_session.hpp>
-#include <connect/ncbi_types.h>
 #include <cgi/cgi_exception.hpp>
 
 
@@ -233,7 +232,7 @@ public:
         fOutputReady = 0x2
     };
     typedef int TStreamStatus;  // binary OR of 'EStreamStatus'
-    TStreamStatus GetStreamStatus(STimeout* timeout) const;
+    TStreamStatus GetStreamStatus(const CTimeout& timeout) const;
     TStreamStatus GetStreamStatus(void) const; // supplies {0,0}
 
     string RetrieveTrackingId() const;
@@ -454,8 +453,7 @@ void CCgiContext::ClearMsg(void)
 inline
 CCgiContext::TStreamStatus CCgiContext::GetStreamStatus(void) const
 {
-    STimeout timeout = {0, 0};
-    return GetStreamStatus(&timeout);
+    return GetStreamStatus({0, 0});
 }
 
 

@@ -45,6 +45,9 @@
 
 
 #ifdef NCBI_OS_UNIX
+#  ifdef HAVE_POLL_H
+#    include <poll.h>
+#  endif
 #  ifdef _AIX32 // version 3.2 *or higher*
 #    include <strings.h> // needed for bzero()
 #  endif
@@ -418,41 +421,72 @@ bool CCgiContext::IsSecure(void) const
 
 
 CCgiContext::TStreamStatus
-CCgiContext::GetStreamStatus(STimeout* timeout) const
+CCgiContext::GetStreamStatus(const CTimeout& timeout) const
 {
-#if defined(NCBI_OS_UNIX)
-    int ifd  = m_Request->GetInputFD();
-    int ofd  = m_Response.GetOutputFD();
-    int nfds = max(ifd, ofd) + 1;
-    if (nfds == 0) {
-        return 0;
-    }
-
-    fd_set readfds, writefds;
-    FD_ZERO(&readfds);
-    if (ifd >= 0) {
-        FD_SET(ifd, &readfds);
-    }
-    FD_ZERO(&writefds);
-    if (ofd >= 0) {
-        FD_SET(ofd, &writefds);
-    }
-    struct timeval tv;
-    tv.tv_sec  = timeout->sec;
-    tv.tv_usec = timeout->usec;
-    ::select(nfds, &readfds, &writefds, NULL, &tv);
-
     TStreamStatus result = 0;
-    if (ifd >= 0  &&  FD_ISSET(ifd, &readfds)) {
-        result |= fInputReady;
+
+#if defined(NCBI_OS_UNIX)
+    int ifd = m_Request->GetInputFD();
+    int ofd = m_Response.GetOutputFD();
+
+#  if  defined(HAVE_POLL_H)     &&  \
+      !defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_OS_CYGWIN)
+    struct pollfd pfd[2] = { {ifd, POLLIN, 0} , {ofd, POLLOUT, 0} };
+
+    if (max(ifd, ofd) >= 0) {
+        int tmo = timeout.IsInfinite()                  ? -1
+            : timeout.IsZero()  ||  timeout.IsDefault() ?  0
+            : (int) timeout.GetAsMilliSeconds();
+        if (::poll(pfd, 2, tmo) > 0) {
+            if (pfd[0].revents)
+                result |= fInputReady;
+            if (pfd[1].revents)
+                result |= fOutputReady;
+        }
     }
-    if (ofd >= 0  &&  FD_ISSET(ofd, &writefds)) {
-        result |= fOutputReady;
+#  else
+    fd_set readfds, *rfds = 0, writefds, *wfds = 0;
+    int nfds = -1;
+
+    if (ifd >= 0  &&  ifd < FD_SETSIZE) {
+        rfds = &readfds;
+        FD_ZERO(rfds);
+        FD_SET(ifd, rfds);
+        nfds = ifd;
     }
-    return result;
+    if (ofd >= 0  &&  ofd < FD_SETSIZE) {
+        wfds = &writefds;
+        FD_ZERO(wfds);
+        FD_SET(ofd, wfds);
+        if (nfds < ofd)
+            nfds = ofd;
+    }
+    if (++nfds) {
+        struct timeval tv, *tvp = 0;
+        if (timeout.IsFinite()) {
+            tvp = &tv;
+            ::memset(tvp, 0, sizeof(*tvp));
+            if (!timeout.IsZero()  &&  !timeout.IsDefault()) {
+                unsigned int sec,  usec;
+                timeout.Get(&sec, &usec);
+                tv.tv_sec  = sec;
+                tv.tv_usec = usec;
+            }
+        }
+        if (::select(nfds, rfds, wfds, NULL, tvp) > 0) {
+            if (rfds  &&  FD_ISSET(ifd, rfds))
+                result |= fInputReady;
+            if (wfds  &&  FD_ISSET(ofd, wfds))
+                result |= fOutputReady;
+        }
+    }
+#  endif /*HAVE_POLL_H && !NCBI_OS_DARWIN && !NCBI_OS_CYGWIN*/
+
 #else
-    return 0;
+    (void) timeout;
 #endif
+
+    return result;
 }
 
 static inline bool s_CheckValueForTID(const string& value, string& tid)
