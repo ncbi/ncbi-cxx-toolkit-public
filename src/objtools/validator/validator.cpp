@@ -96,12 +96,16 @@ CValidator::~CValidator()
 taxupdate_func_t CValidator::MakeTaxUpdateFunction(shared_ptr<ITaxon3> taxon)
 {
     taxon->Init();
-    return [&remote = taxon](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
+    return [remote = taxon](const vector< CRef<COrg_ref> >& query) -> CRef<CTaxon3_reply>
         { // we need to make a copy of record to prevent changes put back to cache
-            CConstRef<CTaxon3_reply> res = remote->SendOrgRefList(query);
-            CRef<CTaxon3_reply> copied (new CTaxon3_reply);
-            copied->Assign(*res);
-            return copied;
+            if (!query.empty() && remote) {
+                CConstRef<CTaxon3_reply> res = remote->SendOrgRefList(query);
+                CRef<CTaxon3_reply> copied (new CTaxon3_reply);
+                copied->Assign(*res);
+                return copied;
+            } else {
+                return {};
+            }
         };
 }
 
