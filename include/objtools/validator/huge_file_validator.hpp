@@ -85,6 +85,7 @@ public:
 
     void UpdateValidatorContext(const TGlobalInfo& globalInfo, 
             SValidatorContext& context) const;
+
     void ReportGlobalErrors(const TGlobalInfo& globalInfo,
             CRef<CValidError>& pErrors) const;
 

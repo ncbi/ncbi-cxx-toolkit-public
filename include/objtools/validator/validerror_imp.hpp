@@ -57,6 +57,7 @@
 #include <objtools/validator/feature_match.hpp>
 #include <objtools/validator/cache_impl.hpp>
 #include <objtools/validator/gene_cache.hpp>
+#include <objtools/validator/entry_info.hpp>
 
 #include <objtools/alnmgr/sparse_aln.hpp>
 
@@ -189,6 +190,9 @@ public:
     typedef const CSeq_align& TAlign;
     typedef const CSeq_entry& TEntry;
     typedef map < const CSeq_feat*, const CSeq_annot* >& TFeatAnnotMap;
+
+
+    const CValidatorEntryInfo& GetEntryInfo() const;
 
     // Posts errors.
     void PostErr(EDiagSev sv, EErrType et, const string& msg,
@@ -541,44 +545,20 @@ private:
 
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;
-    bool m_NoPubs;                  // Suppress no pub error if true
-    bool m_NoCitSubPubs;            // Suppress no cit-sub pub error if true
-    bool m_NoBioSource;             // Suppress no organism error if true
-    bool m_IsGPS;
-    bool m_IsGED;
-    bool m_IsPDB;
-    bool m_IsPatent;
-    bool m_IsRefSeq;
-    bool m_IsEmbl;
-    bool m_IsDdbj;
-    bool m_IsTPE;
-    bool m_IsNC;
-    bool m_IsNG;
-    bool m_IsNM;
-    bool m_IsNP;
-    bool m_IsNR;
-    bool m_IsNZ;
-    bool m_IsNS;
-    bool m_IsNT;
-    bool m_IsNW;
-    bool m_IsWP;
-    bool m_IsXR;
-    bool m_IsGI;
-    bool m_IsGB;
-    bool m_IsGpipe;
-    bool m_IsLocalGeneralOnly;
-    bool m_HasGiOrAccnVer;
-    bool m_IsGenomic;
-    bool m_IsSeqSubmit;
-    bool m_IsSmallGenomeSet;
-    bool m_FeatLocHasGI;
-    bool m_ProductLocHasGI;
-    bool m_GeneHasLocusTag;
-    bool m_ProteinHasGeneralID;
-    bool m_IsINSDInSep;
-    bool m_FarFetchFailure;
-    bool m_IsGeneious;
 
+    bool m_IsNC=false;
+    bool m_IsNG=false;
+    bool m_IsNM=false;
+    bool m_IsNP=false;
+    bool m_IsNR=false;
+    bool m_IsNZ=false;
+    bool m_IsNS=false;
+    bool m_IsNT=false;
+    bool m_IsNW=false;
+    bool m_IsWP=false;
+    bool m_IsXR=false;
+
+    bool m_FarFetchFailure;
     CBioSourceKind m_biosource_kind;
 
     bool m_IsTbl2Asn;
@@ -621,6 +601,7 @@ private:
     unique_ptr<CTaxValidationAndCleanup> x_CreateTaxValidator() const;
 
     shared_ptr<SValidatorContext> m_pContext;
+    unique_ptr<CValidatorEntryInfo> m_pEntryInfo = make_unique<CValidatorEntryInfo>();
 };
 
 
