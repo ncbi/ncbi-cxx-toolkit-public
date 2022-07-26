@@ -49,6 +49,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
     <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\..\..\..\..\..\include\</AdditionalIncludeDirectories>
       <AdditionalOptions />
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -94,6 +95,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\..\..\..\..\..\..\include\</AdditionalIncludeDirectories>
       <AdditionalOptions />
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
