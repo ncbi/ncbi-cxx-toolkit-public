@@ -1602,7 +1602,9 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "C region database name",
                             CArgDescriptions::eString);
         
-
+        arg_desc.AddOptionalKey(kArgCustomInternalData, "filename",
+                            "custom internal data file for V region annotation",
+                            CArgDescriptions::eString);
         arg_desc.AddOptionalKey(kArgGLChainType, "filename",
                             "File containing the coding frame start positions for sequences in germline J database",
                             CArgDescriptions::eString);
@@ -1747,6 +1749,8 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_IgOptions->m_MinJLength = 0;
     }
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
+    m_IgOptions->m_CustomInternalData = NcbiEmptyString;
+        
     if (!m_IsProtein) {
         string aux_file = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
                              ? args[kArgGLChainType].AsString()
@@ -1760,6 +1764,11 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                 break;
             }
         }
+
+        if (args.Exist(kArgCustomInternalData) && args[kArgCustomInternalData]) {
+            m_IgOptions->m_CustomInternalData = args[kArgCustomInternalData].AsString();
+        } 
+        
     }
 
     _ASSERT(m_IsProtein == m_IgOptions->m_IsProtein);

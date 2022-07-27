@@ -187,6 +187,7 @@ const string kArgCRegionDatabase("c_region_db");
 const string kArgGLNumAlign("num_alignments_");
 const string kArgCRegionNumAlign("num_alignments_C");
 const string kArgGLChainType("auxiliary_data");
+const string kArgCustomInternalData("custom_internal_data");
 const string kArgGLOrigin("organism");
 const string kArgGLDomainSystem("domain_system");
 const string kArgGLFocusV("focus_on_V_segment");
