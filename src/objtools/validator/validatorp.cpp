@@ -727,7 +727,7 @@ void CValidError_imp::PostErr
         return;
     }
 
-    if (GetContext().HugeFileMode &&
+    if (GetContext().PreprocessHugeFile &&
         ctx.IsSet() &&
         ctx.GetSet().IsSetClass() &&
         ctx.GetSet().GetClass() == CBioseq_set::eClass_genbank) {
@@ -1459,7 +1459,7 @@ bool CValidError_imp::Validate
 
     FindEmbeddedScript(*(seh.GetCompleteSeq_entry()));
     FindNonAsciiText(*(seh.GetCompleteSeq_entry()));
-    if (!GetContext().HugeFileMode) {
+    if (!GetContext().PreprocessHugeFile) {
         FindCollidingSerialNumbers(*(seh.GetCompleteSeq_entry()));
     }
 
@@ -2353,7 +2353,7 @@ bool CValidError_imp::IsTSAIntermediate(const CBioseq& seq)
 
 void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
 {
-   if (GetContext().HugeFileMode) {
+   if (GetContext().PreprocessHugeFile) {
         if (m_pEntryInfo->IsNoBioSource() && !GetContext().IsPatent && !GetContext().IsPDB) {
             return;
         }
@@ -2795,7 +2795,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
     m_Scope.Reset(&m_TSEH.GetScope());
 
     // If no Pubs/BioSource in CSeq_entry, post only one error
-    if (GetContext().HugeFileMode) {
+    if (GetContext().PreprocessHugeFile) {
         m_pEntryInfo->SetNoPubs(GetContext().NoPubsFound);
         m_pEntryInfo->SetNoCitSubPubs(GetContext().NoCitSubsFound);
         m_pEntryInfo->SetNoBioSource(GetContext().NoBioSource);

@@ -400,7 +400,7 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
         return;
     }
 
-    context.HugeFileMode = true;
+    context.PreprocessHugeFile = true;
     context.GenbankSetId = g_GetIdString(m_Reader);
 
     context.IsPatent        = globalInfo.IsPatent;
