@@ -193,6 +193,7 @@ public:
 
 
     const CValidatorEntryInfo& GetEntryInfo() const;
+    void SetEntryInfo(const CValidatorEntryInfo& info);
 
     // Posts errors.
     void PostErr(EDiagSev sv, EErrType et, const string& msg,
