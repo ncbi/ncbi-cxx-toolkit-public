@@ -172,6 +172,7 @@ CWiggleReader::xProcessData(
             break;
         }
         xProcessBedData(curData, readerData);
+        break;
     }
 }
 

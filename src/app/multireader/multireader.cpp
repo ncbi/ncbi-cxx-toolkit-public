@@ -353,7 +353,7 @@ void CMultiReaderApp::Init()
         &(*new CArgAllow_Strings,
             "bed",
             "microarray", "bed15",
-            "wig", "wiggle",
+            "wig", "wiggle", "bedgraph",
             "gtf", "gff3", "gff2", "augustus",
             "gvf",
             "agp",
@@ -1257,7 +1257,7 @@ void CMultiReaderApp::xSetFormat(
     const string& strProgramName = GetProgramDisplayName();
     
     if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
-        format == "wiggle") {
+        format == "wiggle" || format == "bedgraph") {
         m_uFormat = CFormatGuess::eWiggle;
         return;
     }
