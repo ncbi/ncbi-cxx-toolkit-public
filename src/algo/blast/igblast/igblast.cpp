@@ -87,10 +87,15 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     // read domain info from pdm or ndm file
     const string suffix = (ig_opt->m_IsProtein) ? ".pdm." : ".ndm.";
     string fn(SeqDB_ResolveDbPath(ig_opt->m_IgDataPath + "/" + ig_opt->m_Origin + "/" 
-                               + ig_opt->m_Origin + suffix + ig_opt->m_DomainSystem));
+                                  + ig_opt->m_Origin + suffix + ig_opt->m_DomainSystem));
+
+    if (ig_opt->m_CustomInternalData != NcbiEmptyString) {
+        //use custom data
+        fn = ig_opt->m_CustomInternalData;
+    }
     if (fn == "") {
         NCBI_THROW(CBlastException,  eInvalidArgument, 
-              "Domain annotation data file could not be found in [internal_data] directory");
+                   "Domain annotation data file could not be found in [internal_data] directory");
     }
     s_ReadLinesFromFile(fn, lines);
     int index = 0;
@@ -110,6 +115,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
             }
         } 
     }
+   
 
     // read frame info from aux files
     if (ig_opt->m_IsProtein) return;
@@ -349,7 +355,7 @@ CIgBlast::Run()
     }
 
     /*** search internal V for domain annotation */
-    {
+    if (m_IgOptions->m_CustomInternalData == NcbiEmptyString) {
         //restore default settings for internal db search 
         if (m_IgOptions->m_IsProtein) {
             opts_hndl->SetOptions().SetCompositionBasedStats(eNoCompositionBasedStats);
@@ -370,6 +376,8 @@ CIgBlast::Run()
         x_ScreenByAlignLength(results[3], m_IgOptions->m_MinVLength);
         s_SortResultsByEvalue(results[3]);
         x_AnnotateDomain(results[0], results[3], annots);
+    } else {
+        x_AnnotateDomain(results[0], results[0], annots);
     }
 
     opts_hndl.Reset(CBlastOptionsFactory
@@ -1659,14 +1667,15 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                     CAlnMap s_map((*it)->GetSegs().GetDenseg());
                     int s_start = (*it)->GetSeqStart(1);
                     int s_stop = (*it)->GetSeqStop(1);
-
+                    
                     CRef<CAlnMap> d_map;
                     int d_start = -1;
                     int d_stop = -1;
 
                     int start, stop;
-
-                    if (annotate_subject) {
+                    
+                    if (m_IgOptions->m_CustomInternalData == NcbiEmptyString && annotate_subject) {
+                        //blast2 between top germline V and internal top V
                         CRef<CBioseq> seq_q = db_domain->SeqidToBioseq((*it)->GetSeq_id(1));
                         CBioseq_Handle hdl_q = scope_q.AddBioseq(*seq_q);
                         CRef<CBioseq> seq_s = db_V->SeqidToBioseq(master_align->GetSeq_id(1));
@@ -1689,29 +1698,35 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                         scope_q.RemoveBioseq(hdl_q);
                         scope_s.RemoveBioseq(hdl_s);
                     }
-
+                    
                     for (int i =0; i<10; i+=2) {
 
                         start = domain_info[i] - 1;
                         stop = domain_info[i+1] - 1;
-
-                        if (start <= d_stop && stop >= d_start) {
-                            int start_copy = start;
-                            int stop_copy = stop;
-                            if (start_copy < d_start) start_copy = d_start;
-                            if (stop_copy > d_stop) stop_copy = d_stop;
-                            if (start_copy <= stop_copy) {
-                                if (i>0 && annot->m_DomainInfo_S[i-1]>=0) {
-                                    annot->m_DomainInfo_S[i] = annot->m_DomainInfo_S[i-1] + 1;
-                                } else {
-                                    annot->m_DomainInfo_S[i] = 
-                                       d_map->GetSeqPosFromSeqPos(1, 0, start_copy, IAlnExplorer::eForward);
+                        if (m_IgOptions->m_CustomInternalData != NcbiEmptyString) {
+                            //use custom data for top germline V regions
+                            annot->m_DomainInfo_S[i] = domain_info[i] - 1;
+                            annot->m_DomainInfo_S[i+1] = domain_info[i+1] - 1;
+                        } else {
+                            //use blast2 to annotate to germline V
+                            if (start <= d_stop && stop >= d_start) {
+                                int start_copy = start;
+                                int stop_copy = stop;
+                                if (start_copy < d_start) start_copy = d_start;
+                                if (stop_copy > d_stop) stop_copy = d_stop;
+                                if (start_copy <= stop_copy) {
+                                    if (i>0 && annot->m_DomainInfo_S[i-1]>=0) {
+                                        annot->m_DomainInfo_S[i] = annot->m_DomainInfo_S[i-1] + 1;
+                                    } else {
+                                        annot->m_DomainInfo_S[i] = 
+                                            d_map->GetSeqPosFromSeqPos(1, 0, start_copy, IAlnExplorer::eForward);
+                                    }
+                                    annot->m_DomainInfo_S[i+1] = 
+                                        d_map->GetSeqPosFromSeqPos(1, 0, stop_copy, IAlnExplorer::eBackwards);
                                 }
-                                annot->m_DomainInfo_S[i+1] = 
-                                   d_map->GetSeqPosFromSeqPos(1, 0, stop_copy, IAlnExplorer::eBackwards);
                             }
                         }
-                    
+                        
                         if (start > s_stop || stop < s_start) continue;
 
                         if (start < s_start) start = s_start;
@@ -1738,7 +1753,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                         stop = q_map.GetSeqPosFromSeqPos(0, 1, stop);
  
                         if ((start - stop)*q_dir > 0) continue;
-
+                        //annotate query
                         annot->m_DomainInfo[i] = start;
                         annot->m_DomainInfo[i+1] = stop;
                     }
