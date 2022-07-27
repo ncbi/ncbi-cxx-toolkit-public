@@ -1,5 +1,6 @@
-1.4.2 (mext release)
+1.4.2 (07/27/2022)
     - Report ncbi_applog version and path as extra record after an start_app. CXX-12337
+    - Unix: use getpid() instead of geteuid() to make log file names more unique when writing to /log. CXX-12534 
 
 1.4.1 (01/18/2022)
     - Increase maximum length of each log entry line to 128Kb. Fixed bug with rewriting message buffer
