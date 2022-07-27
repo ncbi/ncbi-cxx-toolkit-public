@@ -1545,7 +1545,7 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog)
             >= FILENAME_MAX) {
             return 0;
         }
-        nbuf = sprintf(filename_buf, "%s.%d", sx_Info->app_base_name, geteuid());
+        nbuf = sprintf(filename_buf, "%s.%d", sx_Info->app_base_name, getpid());
         if (nbuf <= 0) {
             return 0;
         }
