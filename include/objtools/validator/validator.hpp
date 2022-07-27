@@ -68,6 +68,7 @@ class CDbtag;
 BEGIN_SCOPE(validator)
 
 struct SValidatorContext;
+class CValidatorEntryInfo;
 
 class NCBI_VALIDATOR_EXPORT CValidator : public CObject
 {
@@ -286,7 +287,11 @@ public:
     static taxupdate_func_t  MakeTaxUpdateFunction(shared_ptr<ITaxon3> taxon);
     SValidatorContext& SetContext() { return *m_pContext; }
 
+    using TEntryInfo = CValidatorEntryInfo;
+    bool IsSetEntryInfo() const;
+    const TEntryInfo& GetEntryInfo() const;
 private:
+    void x_SetEntryInfo(const TEntryInfo& info);
     // Services belong here, in the outside class
     // and are passed into the implementation.
     CRef<CObjectManager>    m_ObjMgr;
@@ -295,6 +300,7 @@ private:
     TProgressCallback               m_PrgCallback=nullptr;
     void*                           m_UserData=nullptr;
     shared_ptr<SValidatorContext>   m_pContext;
+    unique_ptr<CValidatorEntryInfo> m_pEntryInfo;
 };
 
 

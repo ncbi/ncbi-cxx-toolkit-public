@@ -121,6 +121,7 @@ CConstRef<CValidError> CValidator::Validate
     if ( !imp.Validate(se, nullptr, scope) ) {
         errors.Reset();
     }
+    x_SetEntryInfo(imp.GetEntryInfo());
     return errors;
 }
 
@@ -138,6 +139,7 @@ CConstRef<CValidError> CValidator::Validate
     if ( !imp.Validate(seh) ) {
         errors.Reset();
     }
+    x_SetEntryInfo(imp.GetEntryInfo());
     return errors;
 }
 
@@ -238,6 +240,7 @@ CConstRef<CValidError> CValidator::Validate
         imp.ValidateAffil(ss.GetSub().GetContact().GetContact().GetAffil().GetStd(),
                              ss, nullptr);
     }
+    x_SetEntryInfo(imp.GetEntryInfo());
 
     return errors;
 }
@@ -691,6 +694,23 @@ CValidator::TDbxrefValidFlags CValidator::IsValidDbxref(const CDbtag& xref, bool
         flags |= eUnrecognized;
     }
     return flags;
+}
+
+void CValidator::x_SetEntryInfo(const CValidator::TEntryInfo& info)
+{
+    m_pEntryInfo.reset(new TEntryInfo(info));
+}
+
+
+bool CValidator::IsSetEntryInfo() const 
+{
+    return m_pEntryInfo.get() != nullptr;
+}
+
+
+const CValidator::TEntryInfo& CValidator::GetEntryInfo() const 
+{
+    return *m_pEntryInfo;
 }
 
 

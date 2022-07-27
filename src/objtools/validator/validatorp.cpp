@@ -1147,6 +1147,13 @@ const CValidatorEntryInfo& CValidError_imp::GetEntryInfo() const
     return *m_pEntryInfo;
 }
 
+
+void CValidError_imp::SetEntryInfo(const CValidatorEntryInfo& info) 
+{
+    m_pEntryInfo.reset(new CValidatorEntryInfo(info));
+}
+
+
 bool CValidError_imp::Validate
 (const CSeq_entry_Handle& seh,
  const CCit_sub* cs)
