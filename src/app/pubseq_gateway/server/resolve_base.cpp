@@ -62,6 +62,8 @@ CPSGS_ResolveBase::CPSGS_ResolveBase(shared_ptr<CPSGS_Request> request,
                                      TSeqIdResolutionErrorCB error_cb,
                                      TSeqIdResolutionStartProcessingCB resolution_start_processing_cb) :
     CPSGS_AsyncResolveBase(request, reply,
+                           bind(&CPSGS_ResolveBase::x_ResolveSeqId,
+                                this),
                            bind(&CPSGS_ResolveBase::x_OnSeqIdResolveFinished,
                                 this, _1),
                            bind(&CPSGS_ResolveBase::x_OnSeqIdResolveError,
@@ -71,7 +73,7 @@ CPSGS_ResolveBase::CPSGS_ResolveBase(shared_ptr<CPSGS_Request> request,
     CPSGS_AsyncBioseqInfoBase(request, reply,
                               bind(&CPSGS_ResolveBase::x_OnSeqIdResolveFinished,
                                    this, _1),
-                              bind(&CPSGS_ResolveBase::x_OnSeqIdResolveError,
+                              bind(&CPSGS_ResolveBase::x_OnAsyncBioseqInfoResolveError,
                                    this, _1, _2, _3, _4, _5)),
     m_FinalFinishedCB(finished_cb),
     m_FinalErrorCB(error_cb),
@@ -113,7 +115,8 @@ CPSGS_ResolveBase::x_ComposeOSLT(CSeq_id &  parsed_seq_id,
 {
     bool    need_trace = m_Request->NeedTrace();
 
-    if (!GetEffectiveSeqIdType(parsed_seq_id, GetRequestSeqIdType(),
+    if (!GetEffectiveSeqIdType(parsed_seq_id,
+                               m_CurrentSeqIdToResolve->seq_id_type,
                                effective_seq_id_type, need_trace)) {
         if (need_trace) {
             m_Reply->SendTrace("OSLT has not been tried due to mismatch "
@@ -221,10 +224,10 @@ CPSGS_ResolveBase::x_ResolveAsIsInCache(
     EPSGS_CacheLookupResult     cache_lookup_result = ePSGS_CacheNotHit;
 
     // Capitalize seq_id
-    string      upper_seq_id = GetRequestSeqId();
+    string      upper_seq_id = m_CurrentSeqIdToResolve->seq_id;
     NStr::ToUpper(upper_seq_id);
 
-    auto        seq_id_type = GetRequestSeqIdType();
+    auto        seq_id_type = m_CurrentSeqIdToResolve->seq_id_type;
 
     // 1. As is
     if (need_as_is == true) {
@@ -303,7 +306,7 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
     // exclude trying the very same string in x_ResolveAsIsInCache(). The
     // x_ResolveAsIsInCache() capitalizes the url seq id so the capitalized
     // versions need to be compared
-    string      upper_seq_id = GetRequestSeqId();
+    string      upper_seq_id = m_CurrentSeqIdToResolve->seq_id;
     NStr::ToUpper(upper_seq_id);
     bool        need_as_is = primary_id != upper_seq_id;
     auto        cache_lookup_result =
@@ -325,12 +328,32 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
 void
 CPSGS_ResolveBase::ResolveInputSeqId(void)
 {
+    // The ID/get_na request is special. It may select a seq_id to resolve not
+    // from the input seq_id but from the other_seq_ids list. The setup method
+    // below handles that logic and saves the choice in the member variables
+    // regardless of the request type uniformely.
+    SetupSeqIdToResolve();
+
+    x_ResolveSeqId();
+}
+
+void CPSGS_ResolveBase::ResolveInputSeqId(const string &  seq_id,
+                                          int16_t  seq_id_type)
+{
+    SetupSeqIdToResolve(seq_id, seq_id_type);
+    x_ResolveSeqId();
+}
+
+
+void CPSGS_ResolveBase::x_ResolveSeqId(void)
+{
     SBioseqResolution   bioseq_resolution;
     auto                app = CPubseqGatewayApp::GetInstance();
     string              parse_err_msg;
     CSeq_id             oslt_seq_id;
     auto                parsing_result = ParseInputSeqId(oslt_seq_id,
-        GetRequestSeqId(), GetRequestSeqIdType(), &parse_err_msg);
+        m_CurrentSeqIdToResolve->seq_id,
+        m_CurrentSeqIdToResolve->seq_id_type, &parse_err_msg);
 
     // The results of the ComposeOSLT are used in both cache and DB
     int16_t         effective_seq_id_type;
@@ -429,38 +452,39 @@ CPSGS_ResolveBase::ResolveInputSeqId(void)
     app->GetCounters().Increment(CPSGSCounters::ePSGS_InputSeqIdNotResolved);
 
     if (bioseq_resolution.m_Error.HasError()) {
-        x_OnSeqIdResolveError(bioseq_resolution.m_Error.m_ErrorCode,
-                              ePSGS_UnresolvedSeqId,
-                              eDiag_Error,
-                              bioseq_resolution.m_Error.m_ErrorMessage,
-                              ePSGS_SkipLogging);
+        m_ResolveErrors.AppendError(bioseq_resolution.m_Error.m_ErrorMessage,
+                                    bioseq_resolution.m_Error.m_ErrorCode);
+    } else if (!parse_err_msg.empty()) {
+        m_ResolveErrors.AppendError(parse_err_msg, CRequestStatus::e404_NotFound);
+    }
+
+    if (MoveToNextSeqId()) {
+        x_ResolveSeqId();
         return;
     }
 
-    if (!parse_err_msg.empty()) {
-        x_OnSeqIdResolveError(CRequestStatus::e404_NotFound,
-                              ePSGS_UnresolvedSeqId, eDiag_Error,
-                              parse_err_msg, ePSGS_SkipLogging);
-        return;
-    }
-
-    x_OnSeqIdResolveError(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
-                          eDiag_Error,
-                          "Could not resolve seq_id " + GetRequestSeqId(),
-                          ePSGS_SkipLogging);
+    x_OnSeqIdResolveError(
+            m_ResolveErrors.GetCombinedErrorCode(),
+            ePSGS_UnresolvedSeqId, eDiag_Error,
+            GetCouldNotResolveMessage() +
+            m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
+            ePSGS_SkipLogging);
 }
 
 
 SBioseqResolution
 CPSGS_ResolveBase::ResolveTestInputSeqId(void)
 {
+    SetupSeqIdToResolve();
+
     // The method is to support the 'health' and 'deep-health' URLs.
     // The only cache needs to be tried and no writing to the reply is allowed
     SBioseqResolution   bioseq_resolution;
     string              parse_err_msg;
     CSeq_id             oslt_seq_id;
     auto                parsing_result = ParseInputSeqId(oslt_seq_id,
-        GetRequestSeqId(), GetRequestSeqIdType(), &parse_err_msg);
+        m_CurrentSeqIdToResolve->seq_id,
+        m_CurrentSeqIdToResolve->seq_id_type, &parse_err_msg);
 
     // The results of the ComposeOSLT are used in both cache and DB
     int16_t         effective_seq_id_type;
@@ -521,6 +545,32 @@ CPSGS_ResolveBase::x_OnSeqIdResolveError(
 }
 
 
+void
+CPSGS_ResolveBase::x_OnAsyncBioseqInfoResolveError(
+                        CRequestStatus::ECode  status,
+                        int  code,
+                        EDiagSev  severity,
+                        const string &  message,
+                        EPSGS_LoggingFlag  loging_flag)
+{
+    if (!message.empty()) {
+        m_ResolveErrors.AppendError(message, status);
+    }
+
+    if (MoveToNextSeqId()) {
+        x_ResolveSeqId();
+        return;
+    }
+
+    x_OnSeqIdResolveError(
+        m_ResolveErrors.GetCombinedErrorCode(),
+        code, severity,
+        GetCouldNotResolveMessage() +
+        m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
+        loging_flag);
+}
+
+
 // Called only in case of a success
 void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
                                     SBioseqResolution &&  bioseq_resolution)
@@ -557,13 +607,23 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
                     return;
                 }
 
+                m_ResolveErrors.AppendError(
+                        "Data inconsistency: the bioseq key info was "
+                        "resolved for seq_id " + m_CurrentSeqIdToResolve->seq_id +
+                        " but the bioseq info is not found",
+                        CRequestStatus::e502_BadGateway);
+
+                if (MoveToNextSeqId()) {
+                    x_ResolveSeqId();
+                    return;
+                }
+
                 // It is a bioseq inconsistency case
                 x_OnSeqIdResolveError(
-                                CRequestStatus::e502_BadGateway,
-                                ePSGS_NoBioseqInfo, eDiag_Error,
-                                "Data inconsistency: the bioseq key info was "
-                                "resolved for seq_id " + GetRequestSeqId() +
-                                " but the bioseq info is not found");
+                    m_ResolveErrors.GetCombinedErrorCode(),
+                    ePSGS_NoBioseqInfo, eDiag_Error,
+                    GetCouldNotResolveMessage() +
+                    m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve));
                 return;
             } else {
                 bioseq_resolution.m_ResolutionResult = ePSGS_BioseqCache;

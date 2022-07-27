@@ -280,3 +280,85 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
 
     return ePSGS_ParseFailed;
 }
+
+
+EPSGS_SeqIdParsingResult ParseInputSeqId(
+    CSeq_id& seq_id,
+    const string& request_seq_id,
+    int request_seq_id_type)
+{
+    try {
+        seq_id.Set(request_seq_id);
+
+        if (request_seq_id_type <= 0) {
+            return ePSGS_ParsedOK;
+        }
+
+        // Check the parsed type with the given
+        if (AreSeqIdTypesMatched(seq_id, request_seq_id_type)) {
+            return ePSGS_ParsedOK;
+        }
+
+        // seq_id_type from URL and from CSeq_id differ
+        CSeq_id_Base::E_Choice  seq_id_type = seq_id.Which();
+
+        if (IsINSDCSeqIdType(request_seq_id_type) &&
+            IsINSDCSeqIdType(seq_id_type)) {
+            // Both seq_id_types belong to INSDC
+            return ePSGS_ParsedOK;
+        }
+
+        // Type mismatch
+    } catch (...) {
+    }
+
+    // Second variation of Set()
+    if (request_seq_id_type > 0) {
+        try {
+            seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
+                       (CSeq_id_Base::E_Choice)(request_seq_id_type),
+                       request_seq_id);
+            return ePSGS_ParsedOK;
+        } catch (...) {
+        }
+    }
+
+    return ePSGS_ParseFailed;
+}
+
+
+bool AreSeqIdTypesMatched(
+    const CSeq_id& parsed_seq_id,
+    int request_seq_id_type)
+{
+    auto    parsed_seq_id_type = parsed_seq_id.Which();
+    bool    parsed_seq_id_type_found = (parsed_seq_id_type !=
+                                        CSeq_id_Base::e_not_set);
+
+    if (!parsed_seq_id_type_found && request_seq_id_type < 0) {
+        return true;
+    }
+
+    if (!parsed_seq_id_type_found) {
+        return true;
+    }
+
+    if (request_seq_id_type < 0) {
+        return true;
+    }
+
+    // Both found
+    if (parsed_seq_id_type == request_seq_id_type) {
+        return true;
+    }
+
+    // The parsed and url explicit seq_id_type do not match
+    if (IsINSDCSeqIdType(parsed_seq_id_type) &&
+        IsINSDCSeqIdType(request_seq_id_type)) {
+        return true;
+    }
+
+    return false;
+}
+
+

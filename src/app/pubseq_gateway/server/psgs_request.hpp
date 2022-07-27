@@ -121,7 +121,7 @@ public:
             case ePSGS_UnknownRequest:                  return "UnknownRequest";
             default: break;
         }
-        return "UnknownRequestTypeValue";
+        return "UnknownRequestTypeValue (" + to_string(req_type) + ")";
     }
 
 public:
@@ -631,6 +631,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
     vector<string>                  m_Names;
     bool                            m_AutoBlobSkipping;
     unsigned long                   m_ResendTimeoutMks;
+    vector<string>                  m_SeqIds;
 
     SPSGS_AnnotRequest(const string &  seq_id,
                        int  seq_id_type,
@@ -638,6 +639,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
                        EPSGS_CacheAndDbUse  use_cache,
                        bool  auto_blob_skipping,
                        double  resend_timeout,
+                       vector<string> &  seq_ids,
                        const string &  client_id,
                        SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option,
                        int  send_blob_if_small,
@@ -656,6 +658,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_Names(move(names)),
         m_AutoBlobSkipping(auto_blob_skipping),
         m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
+        m_SeqIds(move(seq_ids)),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}

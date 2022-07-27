@@ -41,6 +41,7 @@
 #include "psgs_reply.hpp"
 #include "cass_processor_base.hpp"
 #include "pubseq_gateway_utils.hpp"
+#include "psgs_seq_id_utils.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 USING_NCBI_SCOPE;
@@ -60,6 +61,27 @@ using TSeqIdResolutionErrorCB =
 using TSeqIdResolutionStartProcessingCB =
                 function<void(void)>;
 
+using TContinueResolveCB =
+                function<void(void)>;
+
+
+// Used to accumulate errors during the resolution of multiple seq_ids
+class CPSGSResolveErrors
+{
+public:
+    void AppendError(const string &  msg, CRequestStatus::ECode  code);
+
+    bool HasErrors(void) const
+    {
+        return !m_Errors.empty();
+    }
+
+    string GetCombinedErrorMessage(const list<SPSGSeqId> &  seq_id_to_resolve) const;
+    CRequestStatus::ECode GetCombinedErrorCode(void) const;
+
+private:
+    vector<SResolveInputSeqIdError>     m_Errors;
+};
 
 
 class CPSGS_AsyncResolveBase : virtual public CPSGS_CassProcessorBase
@@ -68,6 +90,7 @@ public:
     CPSGS_AsyncResolveBase();
     CPSGS_AsyncResolveBase(shared_ptr<CPSGS_Request> request,
                            shared_ptr<CPSGS_Reply> reply,
+                           TContinueResolveCB  continue_resolve_cb,
                            TSeqIdResolutionFinishedCB finished_cb,
                            TSeqIdResolutionErrorCB error_cb,
                            TSeqIdResolutionStartProcessingCB  start_processing_cb);
@@ -98,8 +121,6 @@ private:
 
 protected:
     int16_t GetEffectiveVersion(const CTextseq_id *  text_seq_id);
-    string GetRequestSeqId(void);
-    int16_t GetRequestSeqIdType(void);
     SPSGS_ResolveRequest::TPSGS_BioseqIncludeData GetBioseqInfoFields(void);
     bool NonKeyBioseqInfoFieldsRequested(void);
     bool CanSkipBioseqInfoRetrieval(const CBioseqInfoRecord &  bioseq_info_record);
@@ -107,6 +128,10 @@ protected:
                                 GetAccessionSubstitutionOption(void);
     EPSGS_AccessionAdjustmentResult
                 AdjustBioseqAccession(SBioseqResolution &  bioseq_resolution);
+    void SetupSeqIdToResolve(void);
+    void SetupSeqIdToResolve(const string &  seq_id, int16_t  seq_id_type);
+    string GetCouldNotResolveMessage(void) const;
+
 protected:
     psg_time_point_t GetAsyncResolutionStartTimestamp(void) const
     {
@@ -118,8 +143,15 @@ protected:
         m_AsyncCassResolutionStart = ts;
     }
 
+    bool MoveToNextSeqId(void);
+
 private:
     void x_Process(void);
+
+private:
+    string x_GetRequestSeqId(void);
+    int16_t x_GetRequestSeqIdType(void);
+    string x_GetSeqIdsToResolveList(void) const;
 
 private:
     void x_PreparePrimaryBioseqInfoQuery(const CBioseqInfoRecord::TAccession &  seq_id,
@@ -148,6 +180,7 @@ private:
     void x_SignalStartProcessing(void);
 
 protected:
+    TContinueResolveCB                  m_ContinueResolveCB;
     TSeqIdResolutionFinishedCB          m_FinishedCB;
     TSeqIdResolutionErrorCB             m_ErrorCB;
     TSeqIdResolutionStartProcessingCB   m_StartProcessingCB;
@@ -174,6 +207,14 @@ protected:
     psg_time_point_t                    m_AsyncCassResolutionStart;
 
     bool                                m_StartProcessingCalled;
+
+    // In case of ID/get_na request a seq_id (and possibly seq_id_type) can be
+    // selected from the provided seq_id/seq_id_type and other_seq_ids list.
+    // So the selected part is stored in the variables below regardless what
+    // kind of request it was.
+    list<SPSGSeqId>                     m_SeqIdsToResolve;
+    list<SPSGSeqId>::const_iterator     m_CurrentSeqIdToResolve;
+    CPSGSResolveErrors                  m_ResolveErrors;
 };
 
 #endif  // PSGS_ASYNCRESOLVEBASE__HPP

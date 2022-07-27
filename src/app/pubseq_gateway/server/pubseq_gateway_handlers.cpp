@@ -53,6 +53,7 @@ static string  kLastModifiedParam = "last_modified";
 static string  kTSELastModifiedParam = "tse_last_modified";
 static string  kSeqIdParam = "seq_id";
 static string  kSeqIdTypeParam = "seq_id_type";
+static string  kSeqIdsParam = "seq_ids";
 static string  kTSEParam = "tse";
 static string  kUseCacheParam = "use_cache";
 static string  kNamesParam = "names";
@@ -820,8 +821,9 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         int                                     seq_id_type;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
+        // true => seq_id is optional
         if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
-                                                seq_id_type, use_cache)) {
+                                                seq_id_type, use_cache, true)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -867,6 +869,41 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
+        }
+
+        // Get other seq ids
+        SRequestParameter       seq_ids_param = x_GetParam(req, kSeqIdsParam);
+        vector<string>          seq_ids;
+        if (seq_ids_param.m_Found) {
+            if (!seq_ids_param.m_Value.empty()) {
+                NStr::Split(seq_ids_param.m_Value, " ", seq_ids);
+            }
+        }
+
+        if (seq_id.empty() && seq_ids.empty()) {
+            x_MalformedArguments(reply, now,
+                                 "Neither '" + kSeqIdParam +
+                                 "' nor '" + kSeqIdsParam +
+                                 "' are found in the request");
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            return 0;
+        }
+
+        // Sanity for seq_id and other seq ids:
+        // - remove duplicates from the other seq ids
+        // - check that seq_id is not in other seq ids
+        if (!seq_ids.empty()) {
+            sort(seq_ids.begin(), seq_ids.end());
+            auto    last = unique(seq_ids.begin(), seq_ids.end());
+            seq_ids.erase(last, seq_ids.end());
+        }
+
+        if (!seq_id.empty()) {
+            auto    it = find(seq_ids.begin(), seq_ids.end(), seq_id);
+            if (it != seq_ids.end()) {
+                seq_ids.erase(it);
+            }
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
@@ -955,6 +992,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                         seq_id_type, names, use_cache,
                         auto_blob_skipping,
                         resend_timeout,
+                        seq_ids,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         tse_option, send_blob_if_small,
@@ -2073,7 +2111,8 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         const psg_time_point_t &  create_timestamp,
         CTempString &  seq_id,
         int &  seq_id_type,
-        SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache)
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache,
+        bool  seq_id_is_optional)
 {
     SRequestParameter   seq_id_type_param;
     string              err_msg;
@@ -2081,12 +2120,16 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     // Check the mandatory parameter presence
     SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
     if (!seq_id_param.m_Found) {
-        err_msg = "Missing the '" + kSeqIdParam + "' parameter";
-        m_Counters.Increment(CPSGSCounters::ePSGS_InsufficientArgs);
+        if (!seq_id_is_optional) {
+            err_msg = "Missing the '" + kSeqIdParam + "' parameter";
+            m_Counters.Increment(CPSGSCounters::ePSGS_InsufficientArgs);
+        }
     }
     else if (seq_id_param.m_Value.empty()) {
-        err_msg = "Missing value of the '" + kSeqIdParam + "' parameter";
-        m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+        if (!seq_id_is_optional) {
+            err_msg = "Missing value of the '" + kSeqIdParam + "' parameter";
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+        }
     }
 
     if (err_msg.empty()) {
@@ -2100,7 +2143,12 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         PSG_WARNING(err_msg);
         return false;
     }
-    seq_id = seq_id_param.m_Value;
+
+    if (seq_id_param.m_Found) {
+        if (!seq_id_param.m_Value.empty()) {
+            seq_id = seq_id_param.m_Value;
+        }
+    }
 
     seq_id_type_param = x_GetParam(req, kSeqIdTypeParam);
     if (seq_id_type_param.m_Found) {

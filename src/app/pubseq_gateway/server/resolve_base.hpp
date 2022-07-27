@@ -93,8 +93,15 @@ private:
                                 SBioseqResolution &  bioseq_resolution);
 
 private:
+    void x_ResolveSeqId(void);
     void x_OnResolutionGoodData(void);
     void x_OnSeqIdResolveError(
+                        CRequestStatus::ECode  status,
+                        int  code,
+                        EDiagSev  severity,
+                        const string &  message,
+                        EPSGS_LoggingFlag  loging_flag=ePSGS_NeedLogging);
+    void x_OnAsyncBioseqInfoResolveError(
                         CRequestStatus::ECode  status,
                         int  code,
                         EDiagSev  severity,
@@ -106,6 +113,7 @@ private:
 
 protected:
     void ResolveInputSeqId(void);
+    void ResolveInputSeqId(const string &  seq_id, int16_t  seq_id_type);
 
 public:
     SBioseqResolution  ResolveTestInputSeqId(void);
