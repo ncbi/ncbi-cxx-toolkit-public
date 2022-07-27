@@ -279,7 +279,7 @@ endif()
 
 #############################################################################
 # Boost.Test
-if(Boost_FOUND)
+if(Boost_FOUND AND DEFINED Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
     set(NCBI_COMPONENT_Boost.Test_FOUND YES)
     set(NCBI_COMPONENT_Boost.Test_INCLUDE ${Boost_INCLUDE_DIRS})
     set(NCBI_COMPONENT_Boost.Test_LIBS    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
@@ -290,10 +290,10 @@ endif()
 
 #############################################################################
 # Boost.Spirit
-if(Boost_FOUND)
+if(Boost_FOUND AND DEFINED Boost_THREAD_LIBRARY AND DEFINED Boost_SYSTEM_LIBRARY)
     set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
     set(NCBI_COMPONENT_Boost.Spirit_INCLUDE ${Boost_INCLUDE_DIRS})
-    set(NCBI_COMPONENT_Boost.Spirit_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost.Spirit_LIBS    ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY})
     list(APPEND NCBI_ALL_COMPONENTS Boost.Spirit)
 else()
     set(NCBI_COMPONENT_Boost.Spirit_FOUND NO)
@@ -301,13 +301,68 @@ endif()
 
 #############################################################################
 # Boost.Thread
-if(Boost_FOUND)
+if(Boost_FOUND AND DEFINED Boost_THREAD_LIBRARY)
     set(NCBI_COMPONENT_Boost.Thread_FOUND YES)
     set(NCBI_COMPONENT_Boost.Thread_INCLUDE ${Boost_INCLUDE_DIRS})
-    set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost.Thread_LIBS    ${Boost_THREAD_LIBRARY})
     list(APPEND NCBI_ALL_COMPONENTS Boost.Thread)
 else()
     set(NCBI_COMPONENT_Boost.Thread_FOUND NO)
+endif()
+
+#############################################################################
+#   Boost.Chrono
+if(Boost_FOUND AND DEFINED Boost_CHRONO_LIBRARY)
+    set(NCBI_COMPONENT_Boost.Chrono_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Chrono_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Chrono_LIBS    ${Boost_CHRONO_LIBRARY})
+else()
+    set(NCBI_COMPONENT_Boost.Chrono_FOUND NO)
+endif()
+
+#   Boost.Filesystem
+if(Boost_FOUND AND DEFINED Boost_FILESYSTEM_LIBRARY)
+    set(NCBI_COMPONENT_Boost.Filesystem_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Filesystem_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Filesystem_LIBS    ${Boost_FILESYSTEM_LIBRARY})
+else()
+    set(NCBI_COMPONENT_Boost.Filesystem_FOUND NO)
+endif()
+
+#   Boost.Iostreams
+if(Boost_FOUND AND DEFINED Boost_IOSTREAMS_LIBRARY)
+    set(NCBI_COMPONENT_Boost.Iostreams_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Iostreams_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Iostreams_LIBS    ${Boost_IOSTREAMS_LIBRARY})
+else()
+    set(NCBI_COMPONENT_Boost.Iostreams_FOUND NO)
+endif()
+
+#   Boost.Regex
+if(Boost_FOUND AND DEFINED Boost_REGEX_LIBRARY)
+    set(NCBI_COMPONENT_Boost.Regex_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Regex_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Regex_LIBS    ${Boost_REGEX_LIBRARY})
+else()
+    set(NCBI_COMPONENT_Boost.Regex_FOUND NO)
+endif()
+
+#   Boost.Serialization
+if(Boost_FOUND AND DEFINED Boost_SERIALIZATION_LIBRARY)
+    set(NCBI_COMPONENT_Boost.Serialization_FOUND YES)
+    set(NCBI_COMPONENT_Boost.Serialization_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.Serialization_LIBS    ${Boost_SERIALIZATION_LIBRARY})
+else()
+    set(NCBI_COMPONENT_Boost.Serialization_FOUND NO)
+endif()
+
+#   Boost.System
+if(Boost_FOUND AND DEFINED Boost_SYSTEM_LIBRARY)
+    set(NCBI_COMPONENT_Boost.System_FOUND YES)
+    set(NCBI_COMPONENT_Boost.System_INCLUDE ${Boost_INCLUDE_DIRS})
+    set(NCBI_COMPONENT_Boost.System_LIBS    ${Boost_SYSTEM_LIBRARY})
+else()
+    set(NCBI_COMPONENT_Boost.System_FOUND NO)
 endif()
 
 #############################################################################
@@ -315,11 +370,23 @@ endif()
 if(Boost_FOUND)
     set(NCBI_COMPONENT_Boost_FOUND YES)
     set(NCBI_COMPONENT_Boost_INCLUDE ${Boost_INCLUDE_DIRS})
-    set(NCBI_COMPONENT_Boost_LIBS    ${Boost_LIBRARIES})
+    set(NCBI_COMPONENT_Boost_LIBS
+        ${Boost_SYSTEM_LIBRARY}
+        ${Boost_THREAD_LIBRARY}
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_IOSTREAMS_LIBRARY}
+        ${Boost_CONTEXT_LIBRARY}
+        ${Boost_CHRONO_LIBRARY}
+        ${Boost_DATE_TIME_LIBRARY}
+        ${Boost_REGEX_LIBRARY}
+        ${Boost_SERIALIZATION_LIBRARY}
+        ${Boost_TIMER_LIBRARY}
+    )
     list(APPEND NCBI_ALL_COMPONENTS Boost)
 else()
     set(NCBI_COMPONENT_Boost_FOUND NO)
 endif()
+
 endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 
 #############################################################################
