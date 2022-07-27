@@ -131,7 +131,7 @@ static const set<TTypeInfo> s_known_types {
 
 class CValXMLStream;
 
-class CAsnvalApp : public CNcbiApplication, CReadClassMemberHook
+class CAsnvalApp : public CReadClassMemberHook, public CNcbiApplication
 {
 public:
     CAsnvalApp();
