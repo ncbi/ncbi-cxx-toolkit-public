@@ -499,15 +499,16 @@ extern const char* NcbiLog_GetHostLocation(void);
  *    See ENcbiLog_Destination description for details.
  *    Sets to eNcbiLog_Disable in the case of critical errors.
  * @note
- *    By default, if SetDestination() is not called or set to eNcbiLog_Default,
+ *    If destination is set to eNcbiLog_File you need to call NcbiLog_SetDestinationFile(),
+ *    that accept file name as parameter. Also, an environment variable
+ *    $NCBI_CONFIG__LOG__FILE can be used to define a base file name for logging.
+ *    But it is recommended to use NcbiLog_SetDestinationFile() if you need
+ *    to log into some local file.
+ * @note
+ *    By default, if SetDestination() has not called or set to eNcbiLog_Default,
  *    and environment variable $NCBI_CONFIG__LOG__FILE is defined and not empty,
  *    its value will be used as base name for logfiles.
  *    It can have special value "-" to redirect all output to STDERR.
- * @note
- *    If destination is eNcbiLog_File, an environment variable 
- *    $NCBI_CONFIG__LOG__FILE ahould be defined and not empty. If you need
- *    to log into some file, it is recommended to use NcbiLog_SetDestinationFile(),
- *    that accept file name as parameter.
  *  @sa
  *    ENcbiLog_Destination, NcbiLog_Init, NcbiLog_SetSplitLogFile, NcbiLog_SetDestinationFile
  */
