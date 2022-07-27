@@ -46,7 +46,8 @@ BEGIN_SCOPE(validator)
 
 struct NCBI_VALIDATOR_EXPORT SValidatorContext
 {
-    bool        HugeFileMode{false};
+    bool        PreprocessHugeFile{false};
+    bool        PostprocessHugeFile{false};
     bool        IsPatent{false};
     bool        IsPDB{false};
     bool        IsRefSeq{false};

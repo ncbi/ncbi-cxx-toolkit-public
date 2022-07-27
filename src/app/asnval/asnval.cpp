@@ -530,7 +530,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
         CHugeFileValidator hugeFileValidator(reader, m_Options);
         hugeFileValidator.UpdateValidatorContext(m_GlobalInfo, *m_pContext);
 
-        if (m_pContext->HugeFileMode) {
+        if (m_pContext->PreprocessHugeFile) {
             CRef<CValidError> pEval;
             hugeFileValidator.ReportGlobalErrors(m_GlobalInfo, pEval);
             if (pEval) {

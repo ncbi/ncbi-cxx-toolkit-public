@@ -174,7 +174,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
         m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
     }
 
-    if (m_Imp.GetContext().HugeFileMode &&
+    if (m_Imp.GetContext().PreprocessHugeFile &&
         seqset.IsSetClass() && seqset.GetClass() == CBioseq_set::eClass_genbank) { // what about eClass_not_set?
         call_once(m_Imp.SetContext().DescriptorsOnceFlag,
                 [this, &seqset](){ x_ValidateSetDescriptors(seqset); });
