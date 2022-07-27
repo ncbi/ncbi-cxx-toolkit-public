@@ -42,7 +42,7 @@ BEGIN_SCOPE(blast)
 
 
 /// Class for reading sequences from SRA respository or SRA file
-class CSraInputSource : public CBlastInputSourceOMF, public CBlastInputSource
+class CSraInputSource : public CBlastInputSource, public CBlastInputSourceOMF
 {
 public:
 
