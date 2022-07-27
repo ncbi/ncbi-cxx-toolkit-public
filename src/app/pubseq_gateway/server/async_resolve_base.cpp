@@ -56,6 +56,57 @@ USING_SCOPE(objects);
 using namespace std::placeholders;
 
 
+void CPSGSResolveErrors::AppendError(const string &  msg, CRequestStatus::ECode  code)
+{
+    SResolveInputSeqIdError     err;
+    err.m_ErrorMessage = msg;
+    err.m_ErrorCode = code;
+    m_Errors.push_back(err);
+}
+
+
+string CPSGSResolveErrors::GetCombinedErrorMessage(const list<SPSGSeqId> &  seq_id_to_resolve) const
+{
+    if (m_Errors.empty())
+        return "";
+
+    size_t      err_count = m_Errors.size();
+    string      msg = "\n" + to_string(err_count) + " error";
+
+    if (err_count > 1)
+        msg += "s";
+    msg += " encountered while resolving ";
+
+    if (seq_id_to_resolve.size() == 1) {
+        msg += "the seq id:\n";
+    } else {
+        msg += "multiple seq ids:\n";
+    }
+
+    for (size_t  index=0; index < err_count; ++index) {
+        if (index != 0) {
+            msg += "\n";
+        }
+        msg += m_Errors[index].m_ErrorMessage;
+    }
+    return msg;
+}
+
+
+CRequestStatus::ECode CPSGSResolveErrors::GetCombinedErrorCode(void) const
+{
+    // The method is called only in case of errors including not found.
+    // If the resolve is plainly not done then there are no errors per se
+    // but the overall outcome is 404, so the initial value for the combined
+    // error code is 404 even if the list of errors is empty.
+    CRequestStatus::ECode   combined_code = CRequestStatus::e404_NotFound;
+    for (const auto &  item : m_Errors) {
+        combined_code = max(combined_code, item.m_ErrorCode);
+    }
+    return combined_code;
+}
+
+
 CPSGS_AsyncResolveBase::CPSGS_AsyncResolveBase()
 {}
 
@@ -63,9 +114,11 @@ CPSGS_AsyncResolveBase::CPSGS_AsyncResolveBase()
 CPSGS_AsyncResolveBase::CPSGS_AsyncResolveBase(
                                 shared_ptr<CPSGS_Request> request,
                                 shared_ptr<CPSGS_Reply> reply,
+                                TContinueResolveCB  continue_resolve_cb,
                                 TSeqIdResolutionFinishedCB finished_cb,
                                 TSeqIdResolutionErrorCB error_cb,
                                 TSeqIdResolutionStartProcessingCB  start_processing_cb) :
+    m_ContinueResolveCB(continue_resolve_cb),
     m_FinishedCB(finished_cb),
     m_ErrorCB(error_cb),
     m_StartProcessingCB(start_processing_cb),
@@ -97,6 +150,10 @@ CPSGS_AsyncResolveBase::Process(int16_t               effective_version,
     m_BioseqResolution = move(bioseq_resolution);
     m_AsyncCassResolutionStart = psg_clock_t::now();
 
+    m_ResolveStage = eInit;
+    m_CurrentFetch = nullptr;
+    m_NoSeqIdTypeFetch = nullptr;
+
     x_Process();
 }
 
@@ -115,8 +172,75 @@ CPSGS_AsyncResolveBase::GetEffectiveVersion(const CTextseq_id *  text_seq_id)
 }
 
 
+string CPSGS_AsyncResolveBase::x_GetSeqIdsToResolveList(void) const
+{
+    string  seq_ids;
+    bool    need_comma = false;
+    for (const auto &  item: m_SeqIdsToResolve) {
+        if (need_comma)
+            seq_ids += ", ";
+        seq_ids += item.seq_id;
+        need_comma = true;
+    }
+    return seq_ids;
+}
+
+
+void CPSGS_AsyncResolveBase::SetupSeqIdToResolve(void)
+{
+    m_SeqIdsToResolve.clear();
+    if (m_Request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
+        // Special logic to select from seq_id/seq_id_type and other_seq_ids
+        string      seq_id = x_GetRequestSeqId();
+
+        if (!seq_id.empty()) {
+            m_SeqIdsToResolve.push_back(SPSGSeqId{x_GetRequestSeqIdType(), seq_id});
+        }
+
+        SPSGS_AnnotRequest &    annot_request = m_Request->GetRequest<SPSGS_AnnotRequest>();
+        for (const auto &  item : annot_request.m_SeqIds) {
+            m_SeqIdsToResolve.push_back(SPSGSeqId{-1, item});
+        }
+
+        if (m_SeqIdsToResolve.size() > 1) {
+            if (m_Request->NeedTrace()) {
+                m_Reply->SendTrace("The seq_ids to resolve list before sorting: " +
+                                   x_GetSeqIdsToResolveList(),
+                                   m_Request->GetStartTimestamp());
+            }
+        }
+
+        // Sort the seq ids to resolve so that the most likely to resolve are
+        // in front
+        PSGSortSeqIds(m_SeqIdsToResolve);
+
+        if (m_SeqIdsToResolve.size() > 1) {
+            if (m_Request->NeedTrace()) {
+                m_Reply->SendTrace("The seq_ids to resolve list after sorting: " +
+                                   x_GetSeqIdsToResolveList(),
+                                   m_Request->GetStartTimestamp());
+            }
+        }
+        m_CurrentSeqIdToResolve = m_SeqIdsToResolve.begin();
+    } else {
+        // Generic case: use what is coming from the user request
+        SetupSeqIdToResolve(x_GetRequestSeqId(),
+                            x_GetRequestSeqIdType());
+    }
+}
+
+
+void CPSGS_AsyncResolveBase::SetupSeqIdToResolve(const string &  seq_id,
+                                                 int16_t  seq_id_type)
+{
+    m_SeqIdsToResolve.clear();
+    m_SeqIdsToResolve.push_back(SPSGSeqId{seq_id_type, seq_id});
+    m_CurrentSeqIdToResolve = m_SeqIdsToResolve.begin();
+}
+
+
 string
-CPSGS_AsyncResolveBase::GetRequestSeqId(void)
+CPSGS_AsyncResolveBase::x_GetRequestSeqId(void)
 {
     switch (m_Request->GetRequestType()) {
         case CPSGS_Request::ePSGS_ResolveRequest:
@@ -132,12 +256,12 @@ CPSGS_AsyncResolveBase::GetRequestSeqId(void)
     }
     NCBI_THROW(CPubseqGatewayException, eLogic,
                "Not handled request type " +
-               to_string(static_cast<int>(m_Request->GetRequestType())));
+               CPSGS_Request::TypeToString(m_Request->GetRequestType()));
 }
 
 
 int16_t
-CPSGS_AsyncResolveBase::GetRequestSeqIdType(void)
+CPSGS_AsyncResolveBase::x_GetRequestSeqIdType(void)
 {
     switch (m_Request->GetRequestType()) {
         case CPSGS_Request::ePSGS_ResolveRequest:
@@ -153,7 +277,7 @@ CPSGS_AsyncResolveBase::GetRequestSeqIdType(void)
     }
     NCBI_THROW(CPubseqGatewayException, eLogic,
                "Not handled request type " +
-               to_string(static_cast<int>(m_Request->GetRequestType())));
+               CPSGS_Request::TypeToString(m_Request->GetRequestType()));
 }
 
 
@@ -488,23 +612,24 @@ void CPSGS_AsyncResolveBase::x_PrepareSecondaryAsIsSi2csiQuery(void)
     // Need to capitalize the seq_id before going to the tables.
     // Capitalizing in place suites because the other tries are done via copies
     // provided by OSLT
-    auto    upper_request_seq_id = GetRequestSeqId();
+    auto    upper_request_seq_id = m_CurrentSeqIdToResolve->seq_id;
     NStr::ToUpper(upper_request_seq_id);
 
     if (upper_request_seq_id == m_PrimarySeqId &&
-        GetRequestSeqIdType() == m_EffectiveSeqIdType) {
+        m_CurrentSeqIdToResolve->seq_id_type == m_EffectiveSeqIdType) {
         // Such a request has already been made; it was because the primary id
         // matches the one from URL
         x_Process();
     } else {
-        x_PrepareSi2csiQuery(upper_request_seq_id, GetRequestSeqIdType());
+        x_PrepareSi2csiQuery(upper_request_seq_id,
+                             m_CurrentSeqIdToResolve->seq_id_type);
     }
 }
 
 
 void CPSGS_AsyncResolveBase::x_PrepareSecondaryAsIsModifiedSi2csiQuery(void)
 {
-    auto    upper_request_seq_id = GetRequestSeqId();
+    auto    upper_request_seq_id = m_CurrentSeqIdToResolve->seq_id;
     NStr::ToUpper(upper_request_seq_id);
 
     // if there are | at the end => strip all trailing bars
@@ -515,12 +640,14 @@ void CPSGS_AsyncResolveBase::x_PrepareSecondaryAsIsModifiedSi2csiQuery(void)
         while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
             strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1, 1);
 
-        x_PrepareSi2csiQuery(strip_bar_seq_id, GetRequestSeqIdType());
+        x_PrepareSi2csiQuery(strip_bar_seq_id,
+                             m_CurrentSeqIdToResolve->seq_id_type);
     } else {
         string      seq_id_added_bar(upper_request_seq_id);
         seq_id_added_bar.append(1, '|');
 
-        x_PrepareSi2csiQuery(seq_id_added_bar, GetRequestSeqIdType());
+        x_PrepareSi2csiQuery(seq_id_added_bar,
+                             m_CurrentSeqIdToResolve->seq_id_type);
     }
 }
 
@@ -578,21 +705,30 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
 
         if (m_ResolveStage == ePostSi2Csi) {
             // Special case for post si2csi results; no next stage
+
+            string      msg = "Data inconsistency. ";
             if (record_count > 1) {
-                m_ErrorCB(
-                    CRequestStatus::e502_BadGateway,
-                    ePSGS_NoBioseqInfoForGiError, eDiag_Error,
-                    "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
-                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
-                    ePSGS_NeedLogging);
+                msg += "More than one BIOSEQ_INFO table record is found for "
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession();
             } else {
-                m_ErrorCB(
-                    CRequestStatus::e502_BadGateway,
-                    ePSGS_NoBioseqInfoForGiError, eDiag_Error,
-                    "Data inconsistency. A BIOSEQ_INFO table record is not found for "
-                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
-                    ePSGS_NeedLogging);
+                msg += "A BIOSEQ_INFO table record is not found for "
+                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession();
             }
+
+            m_ResolveErrors.AppendError(msg, CRequestStatus::e502_BadGateway);
+
+            // May be there is more seq_id/seq_id_type to try
+            if (MoveToNextSeqId()) {
+                m_ContinueResolveCB();      // Call resolution again
+                return;
+            }
+
+            m_ErrorCB(
+                m_ResolveErrors.GetCombinedErrorCode(),
+                ePSGS_NoBioseqInfoForGiError, eDiag_Error,
+                GetCouldNotResolveMessage() +
+                m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
+                ePSGS_NeedLogging);
             return;
         }
 
@@ -625,10 +761,22 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     auto    adj_result = AdjustBioseqAccession(m_BioseqResolution);
     if (adj_result == ePSGS_LogicError || adj_result == ePSGS_SeqIdsEmpty) {
         // The problem has already been logged
+
+        string      msg = "BIOSEQ_INFO Cassandra error: " +
+                          m_BioseqResolution.m_AdjustmentError;
+        m_ResolveErrors.AppendError(msg, CRequestStatus::e502_BadGateway);
+
+        // May be there is more seq_id/seq_id_type to try
+        if (MoveToNextSeqId()) {
+            m_ContinueResolveCB();      // Call resolution again
+            return;
+        }
+
         m_ErrorCB(
-            CRequestStatus::e502_BadGateway,
+            m_ResolveErrors.GetCombinedErrorCode(),
             ePSGS_BioseqInfoAccessionAdjustmentError, eDiag_Error,
-            "BIOSEQ_INFO Cassandra error: " + m_BioseqResolution.m_AdjustmentError,
+            GetCouldNotResolveMessage() +
+            m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
             ePSGS_NeedLogging);
         return;
     }
@@ -679,11 +827,23 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
             if (m_ResolveStage == ePostSi2Csi) {
+
+                string      msg = "Data inconsistency. A BIOSEQ_INFO table record "
+                                  "is not found for accession " +
+                                  m_BioseqResolution.GetBioseqInfo().GetAccession();
+                m_ResolveErrors.AppendError(msg, CRequestStatus::e502_BadGateway);
+
+                // May be there is more seq_id/seq_id_type to try
+                if (MoveToNextSeqId()) {
+                    m_ContinueResolveCB();      // Call resolution again
+                    return;
+                }
+
                 m_ErrorCB(
-                    CRequestStatus::e502_BadGateway,
+                    m_ResolveErrors.GetCombinedErrorCode(),
                     ePSGS_NoBioseqInfoForGiError, eDiag_Error,
-                    "Data inconsistency. A BIOSEQ_INFO table record is not found for "
-                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                    GetCouldNotResolveMessage() +
+                    m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
                     ePSGS_NeedLogging);
             } else {
                 // Move to the next stage
@@ -695,11 +855,23 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundMany);
             if (m_ResolveStage == ePostSi2Csi) {
+                string      msg = "Data inconsistency. More than one BIOSEQ_INFO "
+                                  "table record is found for accession " +
+                                  m_BioseqResolution.GetBioseqInfo().GetAccession();
+
+                m_ResolveErrors.AppendError(msg, CRequestStatus::e502_BadGateway);
+
+                // May be there is more seq_id/seq_id_type to try
+                if (MoveToNextSeqId()) {
+                    m_ContinueResolveCB();      // Call resolution again
+                    return;
+                }
+
                 m_ErrorCB(
-                    CRequestStatus::e502_BadGateway,
+                    m_ResolveErrors.GetCombinedErrorCode(),
                     ePSGS_NoBioseqInfoForGiError, eDiag_Error,
-                    "Data inconsistency. More than one BIOSEQ_INFO table record is found for "
-                    "accession " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                    GetCouldNotResolveMessage() +
+                    m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
                     ePSGS_NeedLogging);
 
             } else {
@@ -709,11 +881,24 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             break;
         default:
             // Impossible
-            m_ErrorCB(
-                CRequestStatus::e500_InternalServerError, ePSGS_ServerLogicError,
-                eDiag_Error, "Unexpected decision code when a secondary INSCD "
-                "request results processed while resolving seq id asynchronously",
-                ePSGS_NeedLogging);
+            {
+                string      msg = "Unexpected decision code when a secondary INSCD "
+                                  "request results processed while resolving seq id asynchronously";
+                m_ResolveErrors.AppendError(msg, CRequestStatus::e500_InternalServerError);
+
+                // May be there is more seq_id/seq_id_type to try
+                if (MoveToNextSeqId()) {
+                    m_ContinueResolveCB();      // Call resolution again
+                    return;
+                }
+
+                m_ErrorCB(
+                    m_ResolveErrors.GetCombinedErrorCode(), ePSGS_ServerLogicError,
+                    eDiag_Error,
+                    GetCouldNotResolveMessage() +
+                    m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
+                    ePSGS_NeedLogging);
+            }
     }
 }
 
@@ -731,7 +916,18 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoError(CRequestStatus::ECode  status, 
                                     CPSGSCounters::ePSGS_BioseqInfoError);
     }
 
-    m_ErrorCB(status, code, severity, message, ePSGS_NeedLogging);
+    m_ResolveErrors.AppendError(message, status);
+
+    // May be there is more seq_id/seq_id_type to try
+    if (MoveToNextSeqId()) {
+        m_ContinueResolveCB();      // Call resolution again
+        return;
+    }
+
+    m_ErrorCB(m_ResolveErrors.GetCombinedErrorCode(), code, severity,
+              GetCouldNotResolveMessage() +
+              m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
+              ePSGS_NeedLogging);
 }
 
 
@@ -805,7 +1001,61 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiError(CRequestStatus::ECode  status, int 
                                             CPSGSCounters::ePSGS_Si2csiError);
     }
 
-    m_ErrorCB(status, code, severity, message, ePSGS_NeedLogging);
+    m_ResolveErrors.AppendError(message, status);
+
+    // May be there is more seq_id/seq_id_type to try
+    if (MoveToNextSeqId()) {
+        m_ContinueResolveCB();      // Call resolution again
+        return;
+    }
+
+    m_ErrorCB(m_ResolveErrors.GetCombinedErrorCode(), code, severity,
+              GetCouldNotResolveMessage() +
+              m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
+              ePSGS_NeedLogging);
+}
+
+
+bool CPSGS_AsyncResolveBase::MoveToNextSeqId(void)
+{
+    if (m_CurrentSeqIdToResolve == m_SeqIdsToResolve.end())
+        return false;
+
+    string      current_seq_id = m_CurrentSeqIdToResolve->seq_id;
+    ++m_CurrentSeqIdToResolve;
+
+    if (m_CurrentSeqIdToResolve == m_SeqIdsToResolve.end()) {
+        return false;
+    }
+
+    if (m_Request->NeedTrace()) {
+        m_Reply->SendTrace("Could not resolve seq_id " + current_seq_id +
+                           ". There are more seq_id to try, switching to the next one.",
+                           m_Request->GetStartTimestamp());
+    }
+
+    return true;
+}
+
+
+string CPSGS_AsyncResolveBase::GetCouldNotResolveMessage(void) const
+{
+    string      msg = "Could not resolve ";
+
+    if (m_SeqIdsToResolve.size() == 1) {
+        msg += "seq_id " + m_SeqIdsToResolve.begin()->seq_id;
+    } else {
+        msg += "any of the seq_ids: ";
+        bool    is_first = true;
+        for (const auto &  item : m_SeqIdsToResolve) {
+            if (!is_first)
+                msg += ", ";
+            msg += item.seq_id;
+            is_first = false;
+        }
+    }
+
+    return msg;
 }
 
 
@@ -821,20 +1071,28 @@ CPSGS_AsyncResolveBase::x_OnSeqIdAsyncResolutionFinished(
 
         m_FinishedCB(move(async_bioseq_resolution));
     } else {
+        // Could not resolve by some reasons.
+        // May be there is more seq_id/seq_id_type to try
+        if (MoveToNextSeqId()) {
+            m_ContinueResolveCB();      // Call resolution again
+            return;
+        }
+
         app->GetCounters().Increment(CPSGSCounters::ePSGS_InputSeqIdNotResolved);
 
-        if (async_bioseq_resolution.m_Error.HasError())
-            m_ErrorCB(
-                    async_bioseq_resolution.m_Error.m_ErrorCode,
-                    ePSGS_UnresolvedSeqId, eDiag_Error,
-                    async_bioseq_resolution.m_Error.m_ErrorMessage,
-                    ePSGS_SkipLogging);
-        else
-            m_ErrorCB(
-                    CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
-                    eDiag_Error,
-                    "Could not resolve seq_id " + GetRequestSeqId(),
-                    ePSGS_SkipLogging);
+        string      msg = GetCouldNotResolveMessage();
+
+        if (async_bioseq_resolution.m_Error.HasError()) {
+            m_ResolveErrors.AppendError(async_bioseq_resolution.m_Error.m_ErrorMessage,
+                                        async_bioseq_resolution.m_Error.m_ErrorCode);
+        }
+
+        if (m_ResolveErrors.HasErrors()) {
+            msg += m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve);
+        }
+
+        m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
+                  eDiag_Error, msg, ePSGS_SkipLogging);
     }
 }
 

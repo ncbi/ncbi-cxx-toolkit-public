@@ -178,10 +178,11 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
                                m_Request->GetStartTimestamp());
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
+
+        // Empty message means for the upper level that it is a generic case
+        // when a seq_id could not be resolved.
         m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
-                  eDiag_Error, "Could not resolve seq_id " +
-                  m_BioseqResolution.GetBioseqInfo().GetAccession(),
-                  ePSGS_SkipLogging);
+                  eDiag_Error, "", ePSGS_SkipLogging);
         return;
     }
 
@@ -217,9 +218,8 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
         m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
-                  eDiag_Error, "Could not resolve seq_id " +
-                  m_BioseqResolution.GetBioseqInfo().GetAccession() +
-                  " (many bioseq info records found and not able to choose one)",
+                  eDiag_Error, "Many bioseq info records found and not able to "
+                  "choose one while resolving " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
                   ePSGS_SkipLogging);
         return;
     }
@@ -292,10 +292,10 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
             // Data Callback
+            // An empty message means for the upper level that this is a
+            // generic case when a seq_id could not be resolved
             m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
-                      eDiag_Error, "Could not resolve seq_id " +
-                      m_BioseqResolution.GetBioseqInfo().GetAccession(),
-                      ePSGS_SkipLogging);
+                      eDiag_Error, "", ePSGS_SkipLogging);
             break;
         case CRequestStatus::e500_InternalServerError:
             if (m_NeedTrace)

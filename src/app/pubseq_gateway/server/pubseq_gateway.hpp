@@ -359,7 +359,8 @@ private:
         shared_ptr<CPSGS_Reply>  reply,
         const psg_time_point_t &  create_timestamp,
         CTempString &  seq_id, int &  seq_id_type,
-        SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache);
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache,
+        bool  seq_id_is_optional=false);
 
 private:
     void x_ValidateArgs(void);

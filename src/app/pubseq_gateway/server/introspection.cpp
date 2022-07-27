@@ -112,6 +112,26 @@ void AppendSeqIdParameter(CJsonNode &  node)
     node.SetByKey("seq_id", seq_id);
 }
 
+void AppendSeqIdParameterForGetNA(CJsonNode &  node)
+{
+    CJsonNode   seq_id(CJsonNode::NewObjectNode());
+    seq_id.SetBoolean("mandatory", false);
+    seq_id.SetString("description",
+        "SeqId of the blob (string). "
+        "At least one of seq_id parameter or seq_ids parameter must be provided.");
+    node.SetByKey("seq_id", seq_id);
+}
+
+void AppendSeqIdsParameterForGetNA(CJsonNode &  node)
+{
+    CJsonNode   seq_ids(CJsonNode::NewObjectNode());
+    seq_ids.SetBoolean("mandatory", false);
+    seq_ids.SetString("description",
+        "A space separated list of the blob SeqId synonims (string). "
+        "At least one of seq_id parameter or seq_ids parameter must be provided.");
+    node.SetByKey("seq_ids", seq_ids);
+}
+
 void AppendSeqIdTypeParameter(CJsonNode &  node)
 {
     CJsonNode   seq_id_type(CJsonNode::NewObjectNode());
@@ -476,7 +496,8 @@ CJsonNode  GetIdGetNaRequestNode(void)
         "Retrieves named annotations");
     CJsonNode   id_get_na_params(CJsonNode::NewObjectNode());
 
-    AppendSeqIdParameter(id_get_na_params);
+    AppendSeqIdParameterForGetNA(id_get_na_params);
+    AppendSeqIdsParameterForGetNA(id_get_na_params);
     AppendSeqIdTypeParameter(id_get_na_params);
     AppendNamesParameter(id_get_na_params);
     AppendUseCacheParameter(id_get_na_params);
