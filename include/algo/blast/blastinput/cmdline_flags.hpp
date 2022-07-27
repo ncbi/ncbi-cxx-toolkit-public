@@ -300,6 +300,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgGLDatabase;
 NCBI_BLASTINPUT_EXPORT extern const string kArgCRegionDatabase;
 /// Argument to specify the germline database chaintype name for igblast
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLChainType;
+/// Argument to specify custom internal data file
+NCBI_BLASTINPUT_EXPORT extern const string kArgCustomInternalData;
 /// Argument to specify the number of alignments for germline database
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLNumAlign;
 /// Argument to specify the number of alignments for c gene db
