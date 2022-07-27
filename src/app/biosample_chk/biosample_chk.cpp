@@ -188,7 +188,7 @@ void CBiosampleStatusReport::AddSummary()
 }
 
 
-class CBiosampleChkApp : public CNcbiApplication, CReadClassMemberHook
+class CBiosampleChkApp : public CReadClassMemberHook, public CNcbiApplication
 {
 public:
     CBiosampleChkApp(void);
