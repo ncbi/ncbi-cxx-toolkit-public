@@ -582,8 +582,8 @@ IScheduler::Create(void)
 
 /// Standalone thread to execute scheduled tasks - implementation
 class CScheduler_ExecThread_Impl
-    : public IScheduler_Listener,
-      public CThread
+    : public CThread,
+      public IScheduler_Listener
 {
 public:
     /// Constructor
