@@ -488,9 +488,10 @@ sub _decompress_impl($)
         my $cmd = "tar -zxf $file 2>/dev/null";
         return 1 unless (system($cmd));
     }
-    unless ($^O =~ /win/i) {
+    unless ($^O =~ /mswin/i) {
         local $ENV{PATH} = "/bin:/usr/bin";
         my $cmd = "gzip -cd $file 2>/dev/null | tar xf - 2>/dev/null";
+        print "$cmd\n" if $opt_verbose > 3;
         return 1 unless (system($cmd));
     }
     return Archive::Tar->extract_archive($file, 1);
@@ -509,6 +510,7 @@ sub decompress($)
         print STDERR "$msg\n";
         return EXIT_FAILURE;
     }
+    print "rm $file\n" if $opt_verbose > 3;
     unlink $file;   # Clean up archive, but preserve the checksum file
     print " [OK]\n" unless ($opt_quiet);
     return 1;
