@@ -57,12 +57,8 @@ public:
         // map lines to the index of bad residues on that line
         typedef map<int, vector<TSeqPos> > TBadIndexMap;
 
-        SBadResiduePositions(void) { }
-
-        SBadResiduePositions(
-            CConstRef<CSeq_id> seqId,
-            const TBadIndexMap & badIndexMap )
-            : m_SeqId(seqId), m_BadIndexMap(badIndexMap) { }
+        SBadResiduePositions() = default;
+        SBadResiduePositions(const SBadResiduePositions&) = default;
 
         // convenience ctor for when all bad indexes are on the same line
         SBadResiduePositions(
@@ -97,9 +93,17 @@ public:
         const SBadResiduePositions& badResiduePositions,
         EDiagSev severity = eDiag_Error) THROWS_NONE
         : CObjReaderException(info, prev_exception,
-        (CObjReaderException::EErrCode) CException::eInvalid,
+        (CObjReaderException::EErrCode) err_code,
         message), m_BadResiduePositions(badResiduePositions)
-        NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CBadResiduesException, CObjReaderException);
+    {}
+
+    virtual const CException* x_Clone(void) const override
+    {
+        return new CBadResiduesException(*this);
+    }
+
+    CBadResiduesException(const CBadResiduesException&) = default;
+
 
 public:
     // Returns the bad residues found, which might not be complete
