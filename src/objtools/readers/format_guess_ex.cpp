@@ -141,9 +141,9 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormat()
             CFormatGuess::eGff2//,
             //CFormatGuess::eHgvs
         };
-
-        for(int Loop = 0; Loop < 8; Loop++ ) {
-            auto CheckFormat = CheckOrder[Loop];
+        constexpr size_t checkCount = sizeof(CheckOrder) / sizeof(CFormatGuess::eAgp);
+        for(size_t loop = 0; loop < checkCount; loop++ ) {
+            auto CheckFormat = CheckOrder[loop];
             if (m_Guesser->IsEnabled(CheckFormat)  &&  x_TryFormat(CheckFormat)) {
                 return CheckFormat;
             }
@@ -504,7 +504,7 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
         new(&contentInfo.mInfoGenbank) CFileContentInfoGenbank();
         contentInfo.mInfoGenbank.mTypeInfo = xGuessGenbankObjectType(baseFormat);
         if (contentInfo.mInfoGenbank.mTypeInfo) {
-            contentInfo.mInfoGenbank.mObjectType = 
+            contentInfo.mInfoGenbank.mObjectType =  
                 contentInfo.mInfoGenbank.mTypeInfo->GetName();
         }
         break;

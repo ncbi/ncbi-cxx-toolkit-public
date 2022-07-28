@@ -422,7 +422,7 @@ CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr, CFileCon
 {
     CFormatGuessEx FG(istr);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
+    //FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta); // we wouldn't take "no" for an answer anyway
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     //FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
