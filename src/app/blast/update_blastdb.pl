@@ -49,6 +49,7 @@ use constant PASSWORD => "anonymous";
 use constant DEBUG => 0;
 use constant MAX_DOWNLOAD_ATTEMPTS => 3;
 use constant EXIT_FAILURE => 1;
+use constant LEGACY_EXIT_FAILURE => 2;
 
 use constant AWS_URL => "http://s3.amazonaws.com";
 use constant AMI_URL => "http://169.254.169.254/latest/meta-data/local-hostname";
@@ -58,7 +59,8 @@ use constant GCS_URL => "https://storage.googleapis.com";
 use constant GCP_URL => "http://metadata.google.internal/computeMetadata/v1/instance/id";
 use constant GCP_BUCKET => "blast-db";
 
-use constant BLASTDB_MANIFEST => "blastdb-manifest.json";
+# TODO: deprecate this in the next release 2.14.x
+#use constant BLASTDB_MANIFEST => "blastdb-manifest.json";
 use constant BLASTDB_MANIFEST_VERSION => "1.0";
 
 use constant BLASTDB_METADATA => "blastdb-metadata-1-1.json";
@@ -249,16 +251,24 @@ if ($location ne "NCBI") {
         exit(EXIT_FAILURE);
     }
     print "Connected to $location\n" if $opt_verbose;
+    print "Metadata source $url\n" if ($opt_verbose > 3);
     &validate_metadata_file($json, $url);
     my $metadata = decode_json($json);
     if (defined($opt_showall)) {
-        &showall_from_metadata_file($json, $url);
+        &showall_from_metadata_file_1_1($json, $url);
     } else {
+        &ensure_available_disk_space($json, $url);
         my @files2download;
         for my $requested_db (@ARGV) {
-            if (exists $$metadata{$requested_db}) {
-                push @files2download, @{$$metadata{$requested_db}{files}};
-            } else {
+            my $found = 0;
+            foreach my $dbm (sort @$metadata) {
+                if ($$dbm{'dbname'} eq $requested_db) {
+                    push @files2download, @{$$dbm{files}};
+                    $found = 1;
+                    last;
+                }
+            }
+            if (not $found) {
                 print STDERR "Warning: $requested_db does not exist in $location ($latest_dir)\n";
             }
         }
@@ -309,18 +319,17 @@ if ($location ne "NCBI") {
 } else {
     # Connect and download files
     $ftp = &connect_to_ftp();
+    my ($json, $url) = &get_blastdb_metadata($location, '');
+    unless (length($json)) {
+        print STDERR "ERROR: Missing manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
+        exit(EXIT_FAILURE);
+    }
+    print "Metadata source $url\n" if ($opt_verbose > 3);
+
     if (defined $opt_showall) {
-        my ($json, $url) = &get_blastdb_metadata($location, '');
-        unless (length($json)) {
-            print "$_\n" foreach (sort(&get_available_databases($ftp->ls())));
-        } else {
-            if (ref($json) eq 'HASH') {
-                &showall_from_metadata_file($json, $url)
-            } else {
-                &showall_from_metadata_file_1_1($json, $url)
-            }
-        }
+        &showall_from_metadata_file_1_1($json, $url)
     } else {
+        &ensure_available_disk_space($json, $url);
         my @files = sort(&get_files_to_download());
         my @files2decompress;
         $exit_code = &download(\@files, \@files2decompress);
@@ -376,6 +385,69 @@ sub get_available_databases
     }
     my %seen = ();
     return grep { ! $seen{$_} ++ } @retval;
+}
+
+# This function exits the program if not enough disk space is available for the
+# selected BLASTDBs
+sub ensure_available_disk_space
+{
+    my $json = shift;
+    my $url = shift;
+    my $space_needed = 0;
+    my $space_available = &get_available_disk_space;
+    print "Available disk space in bytes: $space_available\n" if ($opt_verbose > 3);
+    return unless $space_available;
+
+    for my $requested_db (@ARGV) {
+        my $x = &get_database_size_from_metadata_1_1($requested_db, $json, $url);
+        $space_needed += $x if ($x > 0);
+    }
+    print "Needed disk space in bytes: $space_needed\n" if ($opt_verbose > 3);
+    if ($space_needed > $space_available) {
+        my $msg = "ERROR: Need $space_needed bytes and only ";
+        $msg .= "$space_available bytes are available\n";
+        print STDERR $msg;
+        my $exit_code = ($opt_legacy_exit_code == 1 ? LEGACY_EXIT_FAILURE : EXIT_FAILURE);
+        exit $exit_code;
+    }
+}
+
+# Returns the available disk space in bytes of the current working directory
+# Not supported in windows
+sub get_available_disk_space
+{
+    my $retval = 0;
+    return $retval if ($^O =~ /mswin/i);
+
+    my $BLK_SIZE = 512;
+    my $cmd = "df -P --block-size $BLK_SIZE .";
+    $cmd = "df -P -b ." if ($^O =~ /darwin/i);
+    foreach (`$cmd 2>/dev/null`) {
+        chomp;
+        next if (/^Filesystem/);
+        my @F = split;
+        $retval = $F[3] * $BLK_SIZE if (scalar(@F) == 6);
+    }
+    print STDERR "WARNING: unable to compute available disk space\n" unless $retval;
+    return $retval;
+}
+
+sub get_database_size_from_metadata_1_1
+{
+    my $db = shift;
+    my $json = shift;
+    my $url = shift;
+    my $retval = -1;
+    &validate_metadata_file($json, $url);
+    my $metadata = decode_json($json);
+    foreach my $dbm (sort @$metadata) {
+        if ($$dbm{'dbname'} eq $db) {
+            $retval = $$dbm{'bytes-total'};
+            last;
+        }
+    }
+    print STDERR "ERROR: No BLASTDB metadata for $db\n" if ($retval == -1);
+    return $retval;
 }
 
 # Obtains the list of files to download
@@ -594,13 +666,13 @@ sub get_latest_dir
     return $retval;
 }
 
-# Fetches the JSON text containing the BLASTDB metadata in GCS
+# Fetches the JSON text containing the BLASTDB metadata
 sub get_blastdb_metadata
 {
     my $source = shift;
     my $latest_dir = shift;
-    my $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . BLASTDB_MANIFEST;
-    $url = AWS_URL . "/" . AWS_BUCKET . "/$latest_dir/" . BLASTDB_MANIFEST if ($source eq "AWS");
+    my $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
+    $url = AWS_URL . "/" . AWS_BUCKET . "/$latest_dir/" . BLASTDB_METADATA if ($source eq "AWS");
     $url = 'ftp://' . NCBI_FTP . "/blast/db/" . BLASTDB_METADATA if ($source eq 'NCBI');
     my $cmd = "curl -sf $url";
     print "$cmd\n" if DEBUG;
