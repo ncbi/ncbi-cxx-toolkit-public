@@ -190,8 +190,16 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
     context.file.m_supported_types = &supported_types;
 
-    context.file.Open(m_context.m_current_file);
-
+    try {
+        context.file.Open(m_context.m_current_file);
+    }
+    catch (CObjReaderParseException& e) {
+        auto message = e.GetMsg();
+        if (message == "File format not supported") {
+            context.file.m_format = CFormatGuess::eFasta;
+        }
+        else throw;
+    }
     if (context.file.m_format == CFormatGuess::eGff3) {
         list<CRef<CSeq_annot>> annots;
         m_reader->LoadGFF3Fasta(*context.file.m_stream, annots);
