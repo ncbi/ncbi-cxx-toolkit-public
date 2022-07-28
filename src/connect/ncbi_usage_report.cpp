@@ -269,14 +269,13 @@ void CUsageReportJob::x_CopyFrom(const CUsageReportJob& other)
 static string s_GetOS(void)
 {
     // Check NCBI_OS first, configure can define OS name already
-#if defined(NCBI_OS)
+#if   defined(NCBI_OS)
     return NCBI_OS;
-#endif
     // Fallback, try to guess
-#if defined(_WIN32)
+#elif defined(_WIN32)
     return "MSWIN";         // Windows
 #elif defined(__CYGWIN__)
-    return "CYGWIN";        // Windows (Cygwin POSIX under Microsoft Window)
+    return "CYGWIN";        // Windows (Cygwin POSIX under Microsoft Windows)
 #elif defined(__linux__)
     return "LINUX";
 #elif defined(__FreeBSD__)
@@ -301,8 +300,9 @@ static string s_GetOS(void)
     return "SOLARIS";
 #elif defined(unix) || defined(__unix__) || defined(__unix)
     return "UNIX";
+#else
+    return kEmptyStr;       // Unknown environment
 #endif
-    return string();        // Unknown environment
 }
 
 static string s_GetHost(void)
