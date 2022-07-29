@@ -208,6 +208,36 @@ version  1 # of file format
 4+8   HBSZ    embl_tpa_tsa_nuc # 4+8
 4+8   HBTB    embl_tpa_wgs_nuc # Fallback for old clients
 4+8   HBTB    embl_tpa_tsa_nuc # 4+8
+4+8   HBXM    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXM    embl_tpa_tsa_nuc # 4+8
+4+8   HBXN    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXN    embl_tpa_tsa_nuc # 4+8
+4+8   HBXP    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXP    embl_tpa_tsa_nuc # 4+8
+4+8   HBXQ    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXQ    embl_tpa_tsa_nuc # 4+8
+4+8   HBXR    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXR    embl_tpa_tsa_nuc # 4+8
+4+8   HBXS    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXS    embl_tpa_tsa_nuc # 4+8
+4+8   HBXT    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXT    embl_tpa_tsa_nuc # 4+8
+4+8   HBXU    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXU    embl_tpa_tsa_nuc # 4+8
+4+8   HBXW    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXW    embl_tpa_tsa_nuc # 4+8
+4+8   HBXX    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXX    embl_tpa_tsa_nuc # 4+8
+4+8   HBXY    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXY    embl_tpa_tsa_nuc # 4+8
+4+8   HBXZ    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBXZ    embl_tpa_tsa_nuc # 4+8
+4+8   HBYA    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYA    embl_tpa_tsa_nuc # 4+8
+4+8   HBYB    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYB    embl_tpa_tsa_nuc # 4+8
+4+8   HBYC    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYC    embl_tpa_tsa_nuc # 4+8
 4+8   H???    embl_tsa_nuc *
 4+9   H???    embl_tsa_nuc
 4+10  H???    embl_tsa_nuc
@@ -13331,4 +13361,4 @@ special  CAD9654407-CAD9654408  embl_tpa_wgs_prot # Fallback for older clients
 special  CAD9654407-CAD9654408  embl_tpa_tsa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special CAE9574355-CZZ9999999  unreserved_prot
+#special CAH7691017-CZZ9999999  unreserved_prot
