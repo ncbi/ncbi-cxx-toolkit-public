@@ -675,7 +675,7 @@ void CValidError_imp::PostErr
     int version = 0;
     const string& accession = GetAccessionFromBioseq(sq, &version);
     // GetAccessionFromObjects(&sq, nullptr, *m_Scope, &version);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, accession, version);
+    x_AddValidErrItem(sv, et, msg, desc, sq, accession, version);
 }
 
 
@@ -706,7 +706,7 @@ void CValidError_imp::PostErr
     string desc = CValidErrorFormat::GetBioseqSetLabel(accession,
             isSetClass ? st.GetClass() : CBioseq_set::eClass_not_set,
             isSetClass ? m_SuppressContext : true);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, accession, version);
+    x_AddValidErrItem(sv, et, msg, desc, st, accession, version);
 }
 
 
@@ -807,7 +807,7 @@ void CValidError_imp::PostErr
 
     int version = 0;
     const string& accession = GetAccessionFromObjects(&an, nullptr, *m_Scope, &version);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an, accession, version);
+    x_AddValidErrItem(sv, et, msg, desc, an, accession, version);
 }
 
 
@@ -839,7 +839,7 @@ void CValidError_imp::PostErr
 
     int version = 0;
     const string& accession = GetAccessionFromObjects(&graph, nullptr, *m_Scope, &version);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, accession, version);
+    x_AddValidErrItem(sv, et, msg, desc, graph, accession, version);
 }
 
 
@@ -872,7 +872,7 @@ void CValidError_imp::PostErr
     AppendBioseqLabel(desc, sq, m_SuppressContext);
     int version = 0;
     const string& accession = GetAccessionFromObjects(&graph, nullptr, *m_Scope, &version);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, accession, version);
+    x_AddValidErrItem(sv, et, msg, desc, graph, accession, version);
 }
 
 
@@ -920,7 +920,7 @@ void CValidError_imp::PostErr
 
     int version = 0;
     const string& accession = GetAccessionFromObjects(&align, nullptr, *m_Scope, &version);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, accession, version);
+    x_AddValidErrItem(sv, et, msg, desc, align, accession, version);
 }
 
 
@@ -950,7 +950,7 @@ void CValidError_imp::PostErr
 
         int version = 0;
         const string& accession = GetAccessionFromObjects(&entry, nullptr, *m_Scope, &version);
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, accession, version);
+        x_AddValidErrItem(sv, et, msg, desc, entry, accession, version);
     }
 }
 
@@ -972,7 +972,7 @@ void CValidError_imp::PostErr
     }
 
     string desc = "BioSource: ";
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, src, "", 0);
+    x_AddValidErrItem(sv, et, msg, desc, src, "", 0);
 }
 
 
@@ -993,7 +993,7 @@ void CValidError_imp::PostErr
     }
 
     string desc = "Org-ref: ";
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, org, "", 0);
+    x_AddValidErrItem(sv, et, msg, desc, org, "", 0);
 }
 
 
@@ -1014,7 +1014,7 @@ void CValidError_imp::PostErr
     }
 
     string desc = "Pubdesc: ";
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, pd, "", 0);
+    x_AddValidErrItem(sv, et, msg, desc, pd, "", 0);
 }
 
 
@@ -1035,7 +1035,24 @@ void CValidError_imp::PostErr
     }
 
     string desc = "Seq-submit: ";
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ss, "", 0);
+    x_AddValidErrItem(sv, et, msg, desc, ss, "", 0);
+}
+
+
+void CValidError_imp::x_AddValidErrItem(
+        EDiagSev sev, 
+        EErrType type, 
+        const string& msg, 
+        const string& desc, 
+        const CSerialObject& obj,
+        const string& accession,
+        const int version)
+{
+    if (GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) {
+        m_ErrRepository->AddValidErrItem(sev, type, msg, desc, accession, version);
+        return;
+    }
+    m_ErrRepository->AddValidErrItem(sev, type, msg, desc, obj, accession, version);
 }
 
 
