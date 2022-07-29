@@ -94,8 +94,8 @@ typedef enum {
 
 
 /* BOOL: /log usage flags */
-#define IS_APPLOG        1   /**< Logging going to /log */
-#define NO_APPLOG        0   /**< Logging going not to /log (local file, stderr, etc) */
+#define TO_LOG           1   /**< Logging going to /log */
+#define NO_LOG           0   /**< Logging going not to /log (local file, stderr, etc) */
 
 /* BOOL: Logfiles cleanup method */
 #define CLOSE_CLEANUP    1  /**< Force logfiles cleanup */
