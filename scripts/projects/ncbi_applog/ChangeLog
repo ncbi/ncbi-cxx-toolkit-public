@@ -1,4 +1,8 @@
-1.4.2 (07/27/2022)
+1.4.3 (07/29/2022)
+    - Unix: switch back to geteuipid() instead to make log file names more unique when writing to /log. CXX-12534 
+    - Ensure that write() is used only once per log line. CXX-12534
+
+1.4.2 (07/27/2022) -- problematc, unused
     - Report ncbi_applog version and path as extra record after an start_app. CXX-12337
     - Unix: use getpid() instead of geteuid() to make log file names more unique when writing to /log. CXX-12534 
 
