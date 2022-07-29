@@ -1535,6 +1535,30 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog)
 
     /* When using applog, create separate log file for each user */
     /* to avoid permission problems */
+
+#if 0
+ -- GUID approach for file names
+    if (is_applog) {
+        int nbuf;
+        int x_guid_hi, x_guid_lo;
+        /* sprintf() overflow guard */
+        if (strlen(sx_Info->app_base_name) 
+            + 1    /* . */
+            + 16   /* guid string */
+            >= FILENAME_MAX) {
+            return 0;
+        }
+        x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
+        x_guid_lo = (int) (sx_Info->guid & 0xFFFFFFFF);
+        nbuf = sprintf(filename_buf, "%s.%08X%08X", sx_Info->app_base_name, x_guid_hi, x_guid_lo);
+        if (nbuf <= 0) {
+            return 0;
+        }
+        filelen  = (size_t)nbuf;
+        filename = filename_buf;
+    }
+#endif
+
 #if defined(NCBI_OS_UNIX)
     if (is_applog) {
         int nbuf;
@@ -1545,7 +1569,7 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog)
             >= FILENAME_MAX) {
             return 0;
         }
-        nbuf = sprintf(filename_buf, "%s.%d", sx_Info->app_base_name, getpid());
+        nbuf = sprintf(filename_buf, "%s.%d", sx_Info->app_base_name, geteuid());
         if (nbuf <= 0) {
             return 0;
         }
@@ -1611,7 +1635,7 @@ static void s_InitDestination(const char* logfile_path)
          sx_Info->destination == eNcbiLog_File)  &&  logfile_path) {
         /* special case to redirect all logging to specified files */
         s_CloseLogFiles(CLOSE_CLEANUP);
-        if (s_SetLogFiles(logfile_path, NO_APPLOG)) {
+        if (s_SetLogFiles(logfile_path, NO_LOG)) {
             return;
         }
         /* Error: disable logging.
@@ -1648,14 +1672,14 @@ static void s_InitDestination(const char* logfile_path)
                 /* toolkitrc file */
                 dir = s_GetToolkitRCLogLocation();
                 if (dir) {
-                    if (s_SetLogFilesDir(dir, IS_APPLOG)) {
+                    if (s_SetLogFilesDir(dir, TO_LOG)) {
                         return;
                     }
                 }
                 /* server port */
                 if (sx_Info->server_port) {
                     sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
-                    if (s_SetLogFilesDir(xdir, IS_APPLOG)) {
+                    if (s_SetLogFilesDir(xdir, TO_LOG)) {
                         return;
                     }
                 }
@@ -1663,14 +1687,14 @@ static void s_InitDestination(const char* logfile_path)
                 /* /log/srv */ 
                 dir = s_ConcatPath(kBaseLogDir, "srv", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFilesDir(dir, IS_APPLOG)) {
+                    if (s_SetLogFilesDir(dir, TO_LOG)) {
                         return;
                     }
                 }
                 /* /log/fallback */
                 dir = s_ConcatPath(kBaseLogDir, "fallback", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFilesDir(dir, IS_APPLOG)) {
+                    if (s_SetLogFilesDir(dir, TO_LOG)) {
                         return;
                     }
                 }
@@ -1678,7 +1702,7 @@ static void s_InitDestination(const char* logfile_path)
                 if (sx_Info->logsite  &&  sx_Info->logsite[0] != '\0') {
                     dir = s_ConcatPath(kBaseLogDir, sx_Info->logsite, xdir, FILENAME_MAX + 1);
                     if (dir) {
-                        if (s_SetLogFilesDir(dir, IS_APPLOG)) {
+                        if (s_SetLogFilesDir(dir, TO_LOG)) {
                             return;
                         }
                     }
@@ -1692,7 +1716,7 @@ static void s_InitDestination(const char* logfile_path)
                 #elif defined(NCBI_OS_MSWIN)
                     cwd = _getcwd(NULL, 0);
                 #endif
-                if (cwd  &&  s_SetLogFilesDir(cwd, NO_APPLOG)) {
+                if (cwd  &&  s_SetLogFilesDir(cwd, NO_LOG)) {
                     sx_Info->destination = eNcbiLog_Cwd;
                     free(cwd);
                     return;
@@ -1849,7 +1873,7 @@ static char* s_GenerateSID_Str(char* dst)
 }
 
 
-static char* s_GenerateHitID_Str_Ex(char* dst, int /*bool*/ use_logging_api, TNcbiLog_UInt8 uid)
+static char* s_GenerateHitID_Str_Ex(char* dst, int /*bool*/ is_api_call, TNcbiLog_UInt8 uid)
 {
     TNcbiLog_UInt8 tid, rid, us, hi, lo;
     unsigned int   b0, b1, b2, b3;
@@ -1857,13 +1881,14 @@ static char* s_GenerateHitID_Str_Ex(char* dst, int /*bool*/ use_logging_api, TNc
     unsigned long  time_ns;
     int n;
 
-    if (use_logging_api) {
+    if (is_api_call) {
         if (!sx_Info->guid) {
             sx_Info->guid = uid ? uid : s_CreateUID();
         }
         hi  = sx_Info->guid;
         rid = (TNcbiLog_UInt8)(sx_Info->rid & 0xFFFFFF) << 16;
     } else {
+        // some external call, create a new UID especially for caller
         hi = uid ? uid : s_CreateUID();
         rid = 0;
     }
@@ -1907,7 +1932,7 @@ extern const char* NcbiLogP_GenerateHitID(char* buf, size_t n, TNcbiLog_UInt8 ui
     if (n <= NCBILOG_HITID_MAX) {
         return NULL;
     }
-    if (!s_GenerateHitID_Str_Ex(buf, 0/*ext api call*/, uid)) {
+    if (!s_GenerateHitID_Str_Ex(buf, 0 /*external call*/, uid)) {
         return NULL;
     }
     return buf;
@@ -3790,11 +3815,12 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
     VERIFY_CATCH(f != kInvalidFileHandle);
     
 #if NCBILOG_USE_FILE_DESCRIPTORS
-    VERIFY_CATCH(len <= NCBILOG_ENTRY_MAX);
-    n = s_Write(f, line, len);
-    VERIFY(n == len);
-    n = s_Write(f, "\n", 1);
-    VERIFY(n == 1);
+    VERIFY_CATCH(len < NCBILOG_ENTRY_MAX); /* account +1 for '\n' */
+    memcpy(sx_Info->message, line, len);
+    sx_Info->message[len] = '\n';
+    /* should be a single write */
+    n = s_Write(f, sx_Info->message, len + 1);
+    VERIFY(n == len + 1);
     /* fdatasync(f); */
 #else
     n = fprintf(f, "%s\n", line);

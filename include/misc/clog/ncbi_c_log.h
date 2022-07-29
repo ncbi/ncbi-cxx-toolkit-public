@@ -532,12 +532,13 @@ extern ENcbiLog_Destination NcbiLog_SetDestinationFile(const char* logfile_base)
 
 
 /** Set split log files flag. If set, the output for log/err/trace/perf records
- *  sent to different log files. Splitting is OFF by default, all logging going
- *  to a single .log-file, if any.
- *
+ *  will be sent to a different log files, or to a single .log file, otherwise.
+ *  Splitting is OFF by default, except if you logging to /log. The log files writting
+ *  there always split, and you cannot disable this.
  *  @note
- *    Applies for 'Cwd' and 'File' logging destinations.
- *    When logging to /log the log files are always split, regardless of this setting.
+ *    You can change splitting if logging destination set to eNcbiLog_Cwd or eNcbiLog_File only.
+ *  @note
+ *    When logging to /log the log files are always split, regardless of the setting.
  *  @sa
  *    NcbiLog_SetDestination
  */

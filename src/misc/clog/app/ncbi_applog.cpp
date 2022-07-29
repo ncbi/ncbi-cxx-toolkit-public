@@ -100,7 +100,7 @@
   Note, that for "raw" command ncbi_applog will skip any line in non-applog format.
 
   Environment/registry settings:
-     1) Logging CGI (used if /log is not accessible on current machine)
+     1) Logging CGI (used if /log is not accessible on a current machine)
             Registry file:
                 [NCBI]
                 NcbiApplogCGI = https://...
@@ -1694,6 +1694,14 @@ int CNcbiApplogApp::Run()
     }
     NcbiLogP_DisableChecks(1);
     is_api_init = true;
+
+#if 0
+    -- GUID approach for logfile names
+    // Pass basic parssed parameters from the token to CLog. We can do this after CLog initialization only.
+    if ( !m_Info.appname.empty() ) {
+        SetInfo();
+    }
+#endif
 
     // Set destination
 
