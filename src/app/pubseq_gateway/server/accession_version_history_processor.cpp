@@ -37,6 +37,7 @@
 #include "pubseq_gateway_cache_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "acc_ver_hist_callback.hpp"
+#include "psgs_seq_id_utils.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -171,10 +172,11 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
     // Note: the part of the resolution process is a accession substitution
     // However the request must be done using the original accession and
     // seq_id_type
+    string      accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession());
     CCassAccVerHistoryTaskFetch *  fetch_task =
         new CCassAccVerHistoryTaskFetch(app->GetCassandraConnection(),
                                         app->GetBioseqKeyspace(),
-                                        bioseq_resolution.GetOriginalAccession(),
+                                        accession,
                                         nullptr, nullptr,
                                         0,      // version is not used here
                                         bioseq_resolution.GetOriginalSeqIdType());

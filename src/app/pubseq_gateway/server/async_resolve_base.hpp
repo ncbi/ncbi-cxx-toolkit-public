@@ -112,7 +112,6 @@ private:
         eSecondarySi2csi,           // loop over all secondary seq_id in SI2CSI
 
         eSecondaryAsIs,
-        eSecondaryAsIsModified,     // strip or add '|'
 
         eFinished,
 
@@ -161,7 +160,6 @@ private:
                                          bool  with_seq_id_type);
     void x_PrepareSecondarySi2csiQuery(void);
     void x_PrepareSecondaryAsIsSi2csiQuery(void);
-    void x_PrepareSecondaryAsIsModifiedSi2csiQuery(void);
     void x_PrepareSi2csiQuery(const string &  secondary_id,
                               int16_t  effective_seq_id_type);
 

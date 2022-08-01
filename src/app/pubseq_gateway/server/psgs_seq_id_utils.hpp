@@ -44,6 +44,7 @@ struct SPSGSeqId {
 };
 
 void PSGSortSeqIds(list<SPSGSeqId>& seq_ids);
+string StripTrailingVerticalBars(const string &  seq_id);
 
 #endif /* PSGS_SEQ_ID_UTILS__HPP */
 

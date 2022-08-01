@@ -46,6 +46,7 @@
 #include "insdc_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "bioseq_info_record_selector.hpp"
+#include "psgs_seq_id_utils.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -450,13 +451,8 @@ void CPSGS_AsyncResolveBase::x_Process(void)
             break;
 
         case eSecondaryAsIs:
-            m_ResolveStage = eSecondaryAsIsModified;
-            x_PrepareSecondaryAsIsSi2csiQuery();
-            break;
-
-        case eSecondaryAsIsModified:
             m_ResolveStage = eFinished;
-            x_PrepareSecondaryAsIsModifiedSi2csiQuery();
+            x_PrepareSecondaryAsIsSi2csiQuery();
             break;
 
         case ePostSi2Csi:
@@ -500,7 +496,7 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
     details.reset(new CCassBioseqInfoFetch());
 
     CBioseqInfoFetchRequest     bioseq_info_request;
-    bioseq_info_request.SetAccession(seq_id);
+    bioseq_info_request.SetAccession(StripTrailingVerticalBars(seq_id));
     if (version != -1)
         bioseq_info_request.SetVersion(version);
     if (with_seq_id_type) {
@@ -565,7 +561,7 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
     details.reset(new CCassSi2csiFetch());
 
     CSi2CsiFetchRequest     si2csi_request;
-    si2csi_request.SetSecSeqId(secondary_id);
+    si2csi_request.SetSecSeqId(StripTrailingVerticalBars(secondary_id));
     if (effective_seq_id_type != -1)
         si2csi_request.SetSecSeqIdType(effective_seq_id_type);
 
@@ -622,31 +618,6 @@ void CPSGS_AsyncResolveBase::x_PrepareSecondaryAsIsSi2csiQuery(void)
         x_Process();
     } else {
         x_PrepareSi2csiQuery(upper_request_seq_id,
-                             m_CurrentSeqIdToResolve->seq_id_type);
-    }
-}
-
-
-void CPSGS_AsyncResolveBase::x_PrepareSecondaryAsIsModifiedSi2csiQuery(void)
-{
-    auto    upper_request_seq_id = m_CurrentSeqIdToResolve->seq_id;
-    NStr::ToUpper(upper_request_seq_id);
-
-    // if there are | at the end => strip all trailing bars
-    // else => add one | at the end
-
-    if (upper_request_seq_id[upper_request_seq_id.size() - 1] == '|') {
-        string      strip_bar_seq_id(upper_request_seq_id);
-        while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
-            strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1, 1);
-
-        x_PrepareSi2csiQuery(strip_bar_seq_id,
-                             m_CurrentSeqIdToResolve->seq_id_type);
-    } else {
-        string      seq_id_added_bar(upper_request_seq_id);
-        seq_id_added_bar.append(1, '|');
-
-        x_PrepareSi2csiQuery(seq_id_added_bar,
                              m_CurrentSeqIdToResolve->seq_id_type);
     }
 }

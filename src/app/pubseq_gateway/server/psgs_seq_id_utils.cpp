@@ -110,3 +110,13 @@ void PSGSortSeqIds(list<SPSGSeqId>& seq_ids)
     seq_ids.splice(seq_ids.end(), unparsed_seq_ids);
 }
 
+
+string StripTrailingVerticalBars(const string &  seq_id)
+{
+    string      stripped_v_bars = seq_id;
+    while (!stripped_v_bars.empty() && stripped_v_bars[stripped_v_bars.size() - 1] == '|') {
+        stripped_v_bars.erase(stripped_v_bars.size() - 1, 1);
+    }
+    return stripped_v_bars;
+}
+

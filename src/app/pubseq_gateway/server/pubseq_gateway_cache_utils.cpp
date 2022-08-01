@@ -37,6 +37,7 @@
 #include "insdc_utils.hpp"
 #include "pending_operation.hpp"
 #include "bioseq_info_record_selector.hpp"
+#include "psgs_seq_id_utils.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -54,9 +55,10 @@ CPSGCache::x_LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
     auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
     auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
     auto    gi = bioseq_resolution.GetBioseqInfo().GetGI();
+    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession());
 
     CBioseqInfoFetchRequest     fetch_request;
-    fetch_request.SetAccession(bioseq_resolution.GetBioseqInfo().GetAccession());
+    fetch_request.SetAccession(seq_id);
     if (version >= 0)
         fetch_request.SetVersion(version);
     if (seq_id_type >= 0)
@@ -176,9 +178,10 @@ CPSGCache::x_LookupINSDCBioseqInfo(SBioseqResolution &  bioseq_resolution)
 
     auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
     auto    gi = bioseq_resolution.GetBioseqInfo().GetGI();
+    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession());
 
     CBioseqInfoFetchRequest     fetch_request;
-    fetch_request.SetAccession(bioseq_resolution.GetBioseqInfo().GetAccession());
+    fetch_request.SetAccession(seq_id);
     if (version >= 0)
         fetch_request.SetVersion(version);
     if (gi > 0)
@@ -275,10 +278,11 @@ CPSGCache::x_LookupSi2csi(SBioseqResolution &  bioseq_resolution)
     if (cache == nullptr)
         return ePSGS_CacheNotHit;
 
+    string  seq_id = StripTrailingVerticalBars(bioseq_resolution.GetBioseqInfo().GetAccession());
     auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
 
     CSi2CsiFetchRequest     fetch_request;
-    fetch_request.SetSecSeqId(bioseq_resolution.GetBioseqInfo().GetAccession());
+    fetch_request.SetSecSeqId(seq_id);
     if (seq_id_type >= 0)
         fetch_request.SetSecSeqIdType(seq_id_type);
 
