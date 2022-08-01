@@ -90,6 +90,7 @@ public:
             CRef<CValidError>& pErrors) const;
 
     void PostprocessErrors(const TGlobalInfo& globalInfo,
+            const string& genbankSetId,
             CRef<CValidError>& pErrors) const;
 
 private:

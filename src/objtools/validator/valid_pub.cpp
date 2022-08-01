@@ -1247,7 +1247,7 @@ static bool s_IsTSA_Contig (const CBioseq& seq)
 
 void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs)
 {
-    if (GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) {
+    if (GetContext().PreprocessHugeFile) {
         return;
     }
 

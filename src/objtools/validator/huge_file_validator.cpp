@@ -499,36 +499,45 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
 
 
 static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
+        const string& genbankSetId,
         const CValidErrItem& item)
 {
-    if (globalInfo.NoPubsFound && item.GetErrIndex() == eErr_SEQ_DESCR_NoPubFound) {
-        return NStr::StartsWith(item.GetMsg(), "No publications refer to this Bioseq.");
+    const auto& errCode = item.GetErrIndex();
+
+    if (errCode == eErr_SEQ_DESCR_NoPubFound) {
+        const auto& msg = item.GetMsg();
+        if (NStr::StartsWith(msg, "No publications anywhere on this entire record.")) {
+            return !globalInfo.NoPubsFound || (item.GetAccession() != genbankSetId);
+        }
+        return globalInfo.NoPubsFound && 
+            NStr::StartsWith(msg, "No publications refer to this Bioseq.");
     }
 
+    if (errCode == eErr_GENERIC_MissingPubRequirement &&
+        NStr::StartsWith(item.GetMsg(), "No submission citation anywhere on this entire record.")) {
+        return !globalInfo.NoCitSubsFound || (item.GetAccession() != genbankSetId);
+    }
+    
     if (globalInfo.NoBioSource) {
-        const auto& errCode = item.GetErrIndex();
-        return (errCode == eErr_SEQ_DESCR_TransgenicProblem ||
+        return ((errCode == eErr_SEQ_DESCR_NoSourceDescriptor && 
+                    (item.GetAccession() != genbankSetId)) ||
+            errCode == eErr_SEQ_DESCR_TransgenicProblem ||
             errCode == eErr_SEQ_DESCR_InconsistentBioSources_ConLocation ||
             errCode == eErr_SEQ_INST_MitoMetazoanTooLong ||
             errCode ==  eErr_SEQ_DESCR_NoOrgFound);
     }
-
-    return false;
+    // else
+    return errCode == eErr_SEQ_DESCR_NoSourceDescriptor;
 }
 
 
 void CHugeFileValidator::PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
+        const string& genbankSetId,
         CRef<CValidError>& pErrors) const
 {
-    if (!globalInfo.NoPubsFound || 
-        !globalInfo.NoCitSubsFound ||
-        !globalInfo.NoBioSource) {
-        return;
-    }
-
     auto pPrunedErrors = Ref(new CValidError());
     for (auto pErrorItem : pErrors->GetErrs()) {
-        if (!s_DropErrorItem(globalInfo, *pErrorItem)) {
+        if (!s_DropErrorItem(globalInfo, genbankSetId, *pErrorItem)) {
             pPrunedErrors->AddValidErrItem(pErrorItem);
         }
     }
