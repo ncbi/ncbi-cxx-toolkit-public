@@ -193,7 +193,6 @@ public:
 
 
     const CValidatorEntryInfo& GetEntryInfo() const;
-    void SetEntryInfo(const CValidatorEntryInfo& info);
 
     // Posts errors.
     void PostErr(EDiagSev sv, EErrType et, const string& msg,
@@ -431,6 +430,8 @@ private:
     void Setup(const CSeq_annot_Handle& sa);
     CSeq_entry_Handle Setup(const CBioseq& seq);
     void SetScope(const CSeq_entry& se);
+
+    CValidatorEntryInfo& x_SetEntryInfo();
 
     void x_AddValidErrItem(EDiagSev sev, 
             EErrType type, 

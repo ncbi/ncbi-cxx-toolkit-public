@@ -89,6 +89,9 @@ public:
     void ReportGlobalErrors(const TGlobalInfo& globalInfo,
             CRef<CValidError>& pErrors) const;
 
+    void PostprocessErrors(const TGlobalInfo& globalInfo,
+            CRef<CValidError>& pErrors) const;
+
 private:
     void x_ReportMissingPubs(CRef<CValidError>& pErrors) const;
 
