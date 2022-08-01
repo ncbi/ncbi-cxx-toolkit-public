@@ -103,7 +103,6 @@ private:
 
     void x_ReportMissingBioSources(CRef<CValidError>& pErrors) const;
 
-    string x_FindIdString() const;
     string x_GetIdString() const;
 
     mutable unique_ptr<string> m_pIdString;
@@ -111,6 +110,12 @@ private:
     const TReader& m_Reader;
     TOptions m_Options;
 };
+
+string g_GetGenbankIdString(const edit::CHugeAsnReader& reader);
+
+void g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
+        const string& genbankSetId,
+        CRef<CValidError>& pErrors);
 
 
 class NCBI_VALIDATOR_EXPORT CValidatorHugeAsnReader : 
