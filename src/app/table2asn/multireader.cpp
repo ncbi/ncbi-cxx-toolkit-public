@@ -843,6 +843,7 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
             break;
         default: // RW-616 - Assume FASTA
             {
+            format = CFormatGuess::eFasta;
             m_iFlags = 0;
             m_iFlags |= CFastaReader::fNoUserObjs;
 
@@ -855,7 +856,6 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
     if (input_sequence.Empty())
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not recognized", 0);
-
     //rw-617: apply template descriptors only if input is *not* ASN1:
     bool merge_template_descriptors = (format != CFormatGuess::eTextASN);
     input_sequence = xApplyTemplate(input_sequence, merge_template_descriptors);
