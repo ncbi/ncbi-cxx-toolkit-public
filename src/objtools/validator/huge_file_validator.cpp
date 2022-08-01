@@ -239,69 +239,11 @@ static bool s_IsNa(CSeq_inst::EMol mol)
 }
 
 
-string g_GetIdString(const CHugeAsnReader& reader)
-{ // Revisit this
-    const auto& biosets = reader.GetBiosets();
-    if (biosets.size() < 2) {
-        return "";
-    }
-
-    if (auto it = next(biosets.begin());
-        it->m_class != CBioseq_set::eClass_genbank){
-        return "";
-    }
-
-    const auto& bioseqs = reader.GetBioseqs();
-    const auto& firstBioseq = bioseqs.begin();
-    const auto& parentIt = firstBioseq->m_parent_set;
-    int version;
-    if (parentIt->m_class != CBioseq_set::eClass_nuc_prot) {
-        return s_GetIdString(firstBioseq->m_ids, &version);
-    }
-    // else parent set is nuc-prot set
-    for(auto it = firstBioseq; it != bioseqs.end(); ++it) {
-        if (s_IsNa(it->m_mol) && it->m_parent_set == parentIt) {
-            return s_GetIdString(it->m_ids, &version);
-        }
-    }
-    return s_GetIdString(firstBioseq->m_ids, &version);
-}
-
 
 CHugeFileValidator::CHugeFileValidator(const CHugeFileValidator::TReader& reader,
         CHugeFileValidator::TOptions options)
     : m_Reader(reader), m_Options(options) {}
 
-
-
-
-string CHugeFileValidator::x_FindIdString() const
-{
-    const auto& biosets = m_Reader.GetBiosets();
-    if (biosets.size() < 2) {
-        return "";
-    }
-
-    if (auto it = next(biosets.begin());
-        it->m_class != CBioseq_set::eClass_genbank){
-        return "";
-    }
-
-    const auto& bioseqs = m_Reader.GetBioseqs();
-    const auto& firstBioseq = bioseqs.begin();
-    const auto& parentIt = firstBioseq->m_parent_set;
-    int version;
-    if (parentIt->m_class != CBioseq_set::eClass_nuc_prot) {
-        return s_GetIdString(firstBioseq->m_ids, &version);
-    }
-    // else parent set is nuc-prot set
-    for(auto it = firstBioseq; it != bioseqs.end(); ++it) {
-        if (s_IsNa(it->m_mol) && it->m_parent_set == parentIt) {
-            return s_GetIdString(it->m_ids, &version);
-        }
-    }
-    return s_GetIdString(firstBioseq->m_ids, &version);
-}
 
 
 string CHugeFileValidator::x_GetIdString() const
@@ -311,7 +253,7 @@ string CHugeFileValidator::x_GetIdString() const
     }
 
     m_pIdString.reset(new string());
-    *m_pIdString = x_FindIdString();
+    *m_pIdString = g_GetGenbankIdString(m_Reader);
 
     return *m_pIdString;
 }
@@ -401,7 +343,7 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     }
 
     context.PreprocessHugeFile = true;
-    context.GenbankSetId = g_GetIdString(m_Reader);
+    context.GenbankSetId = g_GetGenbankIdString(m_Reader);
 
     context.IsPatent        = globalInfo.IsPatent;
     context.IsPDB           = globalInfo.IsPDB;
@@ -531,9 +473,38 @@ static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
 }
 
 
-void CHugeFileValidator::PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
+string g_GetGenbankIdString(const CHugeAsnReader& reader)
+{
+    const auto& biosets = reader.GetBiosets();
+    if (biosets.size() < 2) {
+        return "";
+    }
+
+    if (auto it = next(biosets.begin());
+        it->m_class != CBioseq_set::eClass_genbank){
+        return "";
+    }
+
+    const auto& bioseqs = reader.GetBioseqs();
+    const auto& firstBioseq = bioseqs.begin();
+    const auto& parentIt = firstBioseq->m_parent_set;
+    int version;
+    if (parentIt->m_class != CBioseq_set::eClass_nuc_prot) {
+        return s_GetIdString(firstBioseq->m_ids, &version);
+    }
+    // else parent set is nuc-prot set
+    for(auto it = firstBioseq; it != bioseqs.end(); ++it) {
+        if (s_IsNa(it->m_mol) && it->m_parent_set == parentIt) {
+            return s_GetIdString(it->m_ids, &version);
+        }
+    }
+    return s_GetIdString(firstBioseq->m_ids, &version);
+}
+
+
+void g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
         const string& genbankSetId,
-        CRef<CValidError>& pErrors) const
+        CRef<CValidError>& pErrors) 
 {
     auto pPrunedErrors = Ref(new CValidError());
     for (auto pErrorItem : pErrors->GetErrs()) {
