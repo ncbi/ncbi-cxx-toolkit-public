@@ -424,6 +424,12 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
 void CPSGS_CDDProcessor::x_SendAnnotInfo(const CCDD_Reply_Get_Blob_Id& blob_info)
 {
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+    if ( annot_request.RegisterProcessedName(GetPriority(), kCDDAnnotName) > GetPriority() ) {
+        // higher priority processor already processed this request
+        x_Finish(ePSGS_Canceled);
+        return;
+    }
+
     const CID2_Blob_Id& blob_id = blob_info.GetBlob_id();
     CJsonNode       json(CJsonNode::NewObjectNode());
     json.SetString("blob_id", CCDDClientPool::BlobIdToString(blob_id));
@@ -456,7 +462,6 @@ void CPSGS_CDDProcessor::x_SendAnnotInfo(const CCDD_Reply_Get_Blob_Id& blob_info
 
     GetReply()->PrepareNamedAnnotationData(kCDDAnnotName, kCDDProcessorName,
         json.Repr(CJsonNode::fStandardJson));
-    annot_request.RegisterProcessedName(GetPriority(), kCDDAnnotName);
 }
 
 
@@ -535,9 +540,19 @@ bool CPSGS_CDDProcessor::x_IsCanceled()
 
 bool CPSGS_CDDProcessor::x_SignalStartProcessing()
 {
-    if ( SignalStartProcessing() == ePSGS_Cancel ) {
-        x_Finish(ePSGS_Canceled);
-        return false;
+    if ( GetRequest()->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest ) {
+        SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+        if ( annot_request.RegisterProcessedName(GetPriority(), kCDDAnnotName) > GetPriority() ) {
+            // higher priority processor already processed this request
+            x_Finish(ePSGS_Canceled);
+            return false;
+        }
+    }
+    else {
+        if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            x_Finish(ePSGS_Canceled);
+            return false;
+        }
     }
     return true;
 }
