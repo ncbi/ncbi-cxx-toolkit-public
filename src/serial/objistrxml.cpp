@@ -448,16 +448,19 @@ CTempString CObjectIStreamXml::ReadName(char c)
 
     // save beginning of tag name
     const char* ptr = m_Input.GetCurrentPos();
+    m_LastTag = string(ptr+iColon, i-iColon);
+    string ns_prefix;
+    if (iColon > 1) {
+        ns_prefix = string(ptr, iColon-1);
+    }
+    m_Input.SkipChars(i);
 
     // check end of tag name
-    m_Input.SkipChars(i);
     if (c == '\n' || c == '\r') {
         m_Input.SkipChar();
         m_Input.SkipEndOfLine(c);
     }
-    m_LastTag = string(ptr+iColon, i-iColon);
     if (iColon > 1) {
-        string ns_prefix(ptr, iColon-1);
         if (ns_prefix == "xmlns") {
             string value;
             ReadAttributeValue(value, true);
@@ -516,7 +519,7 @@ CTempString CObjectIStreamXml::ReadName(char c)
         char ch = SkipWS();
         return IsEndOfTagChar(ch) ? CTempString() : ReadName(ch);
     }
-    return CTempString(ptr+iColon, i-iColon);
+    return m_LastTag;
 }
 
 CTempString CObjectIStreamXml::RejectedName(void)
