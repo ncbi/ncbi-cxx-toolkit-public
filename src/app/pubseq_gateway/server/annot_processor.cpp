@@ -37,6 +37,7 @@
 #include "pubseq_gateway_cache_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "named_annot_callback.hpp"
+#include "psgs_seq_id_utils.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -210,10 +211,11 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
         // Note: the accession and seq_id_type may be adjusted in the bioseq
         // info record. However the request must be done using the original
         // accession and seq_id_type
+        string  accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession());
         CCassNAnnotTaskFetch *  fetch_task =
                 new CCassNAnnotTaskFetch(app->GetCassandraConnection(),
                                          bioseq_na_keyspace.first,
-                                         bioseq_resolution.GetOriginalAccession(),
+                                         accession,
                                          bioseq_resolution.GetBioseqInfo().GetVersion(),
                                          bioseq_resolution.GetOriginalSeqIdType(),
                                          m_ValidNames,

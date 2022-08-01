@@ -37,6 +37,7 @@
 #include "pubseq_gateway_convert_utils.hpp"
 #include "async_bioseq_info_base.hpp"
 #include "bioseq_info_record_selector.hpp"
+#include "psgs_seq_id_utils.hpp"
 
 using namespace std::placeholders;
 
@@ -77,9 +78,10 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
     unique_ptr<CCassBioseqInfoFetch>   details;
     details.reset(new CCassBioseqInfoFetch());
 
+    string      accession = StripTrailingVerticalBars(
+                                m_BioseqResolution.GetBioseqInfo().GetAccession());
     CBioseqInfoFetchRequest     bioseq_info_request;
-    bioseq_info_request.SetAccession(
-                            m_BioseqResolution.GetBioseqInfo().GetAccession());
+    bioseq_info_request.SetAccession(accession);
 
     auto    version = m_BioseqResolution.GetBioseqInfo().GetVersion();
     auto    gi = m_BioseqResolution.GetBioseqInfo().GetGI();

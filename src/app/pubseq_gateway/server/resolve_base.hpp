@@ -83,8 +83,7 @@ private:
                                 int16_t  effective_seq_id_type,
                                 SBioseqResolution &  bioseq_resolution);
     EPSGS_CacheLookupResult x_ResolveAsIsInCache(
-                                SBioseqResolution &  bioseq_resolution,
-                                bool  need_as_is=true);
+                                SBioseqResolution &  bioseq_resolution);
     void x_ResolveViaComposeOSLTInCache(
                                 CSeq_id &  parsed_seq_id,
                                 int16_t  effective_seq_id_type,

@@ -217,43 +217,16 @@ CPSGS_ResolveBase::x_ResolveSecondaryOSLTInCache(
 
 
 EPSGS_CacheLookupResult
-CPSGS_ResolveBase::x_ResolveAsIsInCache(
-                                SBioseqResolution &  bioseq_resolution,
-                                bool  need_as_is)
+CPSGS_ResolveBase::x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution)
 {
-    EPSGS_CacheLookupResult     cache_lookup_result = ePSGS_CacheNotHit;
-
     // Capitalize seq_id
     string      upper_seq_id = m_CurrentSeqIdToResolve->seq_id;
     NStr::ToUpper(upper_seq_id);
 
     auto        seq_id_type = m_CurrentSeqIdToResolve->seq_id_type;
-
-    // 1. As is
-    if (need_as_is == true) {
-        cache_lookup_result = x_ResolveSecondaryOSLTInCache(
-                                    upper_seq_id, seq_id_type,
-                                    bioseq_resolution);
-    }
-
-    if (cache_lookup_result == ePSGS_CacheNotHit) {
-        // 2. if there are | at the end => strip all trailing bars
-        //    else => add one | at the end
-        if (upper_seq_id[upper_seq_id.size() - 1] == '|') {
-            string  strip_bar_seq_id(upper_seq_id);
-            while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
-                strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1, 1);
-            cache_lookup_result = x_ResolveSecondaryOSLTInCache(
-                                        strip_bar_seq_id, seq_id_type,
-                                        bioseq_resolution);
-        } else {
-            string      seq_id_added_bar(upper_seq_id);
-            seq_id_added_bar.append(1, '|');
-            cache_lookup_result = x_ResolveSecondaryOSLTInCache(
-                                        seq_id_added_bar, seq_id_type,
-                                        bioseq_resolution);
-        }
-    }
+    auto        cache_lookup_result = x_ResolveSecondaryOSLTInCache(
+                                            upper_seq_id, seq_id_type,
+                                            bioseq_resolution);
 
     if (cache_lookup_result == ePSGS_CacheFailure) {
         bioseq_resolution.Reset();
@@ -308,9 +281,11 @@ CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
     // versions need to be compared
     string      upper_seq_id = m_CurrentSeqIdToResolve->seq_id;
     NStr::ToUpper(upper_seq_id);
-    bool        need_as_is = primary_id != upper_seq_id;
-    auto        cache_lookup_result =
-                    x_ResolveAsIsInCache(bioseq_resolution, need_as_is);
+    auto        cache_lookup_result = ePSGS_CacheNotHit;
+
+    if (primary_id != upper_seq_id)
+        cache_lookup_result = x_ResolveAsIsInCache(bioseq_resolution);
+
     if (cache_lookup_result == ePSGS_CacheHit)
         return;
     if (cache_lookup_result == ePSGS_CacheFailure)
