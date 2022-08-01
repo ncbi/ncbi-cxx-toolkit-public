@@ -299,7 +299,7 @@ bool CRemoteUpdater::xSetFromConfig()
         if (cfg.HasEntry("RemotePubmedUpdate")) {
             string s = cfg.Get("RemotePubmedUpdate", "Source");
             NStr::ToLower(s);
-            if (s == "mla") {
+            if (s == "medarch") {
                 m_pm_source = EPubmedSource::eMLA;
             } else if (s == "eutils") {
                 m_pm_source = EPubmedSource::eEUtils;
