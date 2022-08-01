@@ -861,41 +861,50 @@ int CTbl2AsnApp::Run()
     {
         // Error message has already been logged
     }
-    catch (const CBadResiduesException& e)
+    catch (const CException& ex)
     {
-        int line = 0;
-        ILineError::TVecOfLines lines;
-        if (e.GetBadResiduePositions().m_BadIndexMap.size() == 1)
-        {
-            line = e.GetBadResiduePositions().m_BadIndexMap.begin()->first;
-        }
-        else
-        {
-            lines.reserve(e.GetBadResiduePositions().m_BadIndexMap.size());
-            ITERATE(CBadResiduesException::SBadResiduePositions::TBadIndexMap, it, e.GetBadResiduePositions().m_BadIndexMap)
+        const CException* original = &ex;
+        // ASN writer populates exception with all nested exceptions stack which is not neccessary
+        // we need the original exception
+        while (original->GetPredecessor()) original = original->GetPredecessor();
+
+        auto msg = original->GetMsg();
+        auto bad_res_exc = dynamic_cast<const CBadResiduesException*>(original);
+        if (bad_res_exc) {
+            int line = 0;
+            ILineError::TVecOfLines lines;
+            if (bad_res_exc->GetBadResiduePositions().m_BadIndexMap.size() == 1)
             {
-                lines.push_back(it->first);
+                line = bad_res_exc->GetBadResiduePositions().m_BadIndexMap.begin()->first;
+            }
+            else
+            {
+                lines.reserve(bad_res_exc->GetBadResiduePositions().m_BadIndexMap.size());
+                for(auto rec: bad_res_exc->GetBadResiduePositions().m_BadIndexMap)
+                {
+                    lines.push_back(rec.first);
+                }
+            }
+
+            unique_ptr<CLineError> le(
+                CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
+                bad_res_exc->GetBadResiduePositions().m_SeqId->AsFastaString(),
+                line, "", "", "", msg, lines));
+            m_logger->PutError(*le);
+        } else {
+            auto seq_map_exc = dynamic_cast<const CSeqMapException*>(original);
+            if (seq_map_exc) {
+                if (!args["r"] && !args["vdb"] && msg.find("Cannot resolve") != string::npos) {
+                    msg += " - try running with -r to enable remote retrieval of sequences";
+                }
+                m_logger->PutError(*unique_ptr<CLineError>(CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, "", "", "", msg)));
+            } else {
+                m_logger->PutError(*unique_ptr<CLineError>(
+                    CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
+                    "", 0, "", "", "",
+                    msg)));
             }
         }
-        unique_ptr<CLineError> le(
-            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
-            e.GetBadResiduePositions().m_SeqId->AsFastaString(),
-            line, "", "", "", e.GetMsg(), lines));
-        m_logger->PutError(*le);
-    }
-    catch (CSeqMapException& e) {
-        string msg = e.GetMsg();
-        if (!args["r"] && !args["vdb"] && msg.find("Cannot resolve") != string::npos) {
-            msg += " - try running with -r to enable remote retrieval of sequences";
-        }
-        m_logger->PutError(*unique_ptr<CLineError>(CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, "", "", "", msg)));
-    }
-    catch (const CException& e)
-    {
-        m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
-            "", 0, "", "", "",
-            e.GetMsg())));
     }
 
     if (m_logger->Count() == 0)
