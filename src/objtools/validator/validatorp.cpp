@@ -727,7 +727,7 @@ void CValidError_imp::PostErr
         return;
     }
 
-    if (GetContext().PreprocessHugeFile &&
+    if ((GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) && 
         ctx.IsSet() &&
         ctx.GetSet().IsSetClass() &&
         ctx.GetSet().GetClass() == CBioseq_set::eClass_genbank) {
@@ -747,15 +747,6 @@ void CValidError_imp::PostErr
     string desc = CValidErrorFormat::GetDescriptorLabel(ds, ctx, m_Scope, m_SuppressContext);
     int version = 0;
     const string& accession = GetAccessionFromObjects(&ds, &ctx, *m_Scope, &version);
-
-    if (GetContext().PostprocessHugeFile) {
-        // RW-1726 More to do here. 
-        // Even if we postproces the validator output, we would still want to 
-        // know the sequence ids for the first bioseq in a genbank set up front.
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, accession, version);
-        return;
-    }
-
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, ctx, accession, version);
 }
 
