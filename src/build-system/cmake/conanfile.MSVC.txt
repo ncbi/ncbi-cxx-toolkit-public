@@ -66,11 +66,13 @@ boost:without_python = True
 #boost:without_serialization = True
 boost:without_stacktrace = True
 #boost:without_system = True
-boost:without_test = True
+#boost:without_test = True
 #boost:without_thread = True
 #boost:without_timer = True
 boost:without_type_erasure = True
 boost:without_wave = True
 
 [generators]
-cmake
+#cmake
+cmake_find_package
+#cmake_find_package_multi
