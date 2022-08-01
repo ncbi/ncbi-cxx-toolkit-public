@@ -209,6 +209,33 @@ void CPSGS_OSGAnnot::NotifyOSGCallEnd()
 }
 
 
+bool CPSGS_OSGAnnot::RegisterProcessedName(const string& annot_name)
+{
+    auto& psg_req = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+    auto prev_priority = psg_req.RegisterProcessedName(GetPriority(), annot_name);
+    if ( prev_priority > GetPriority() ) {
+        if ( NeedTrace() ) {
+            ostringstream str;
+            str << "OSG-annot: skip sending NA "<<annot_name
+                << " that has already been processed by processor with priority "
+                << prev_priority << " > " << GetPriority();
+            SendTrace(str.str());
+        }
+        return false;
+    }
+    if ( prev_priority != kUnknownPriority && prev_priority < GetPriority() ) {
+        if ( NeedTrace() ) {
+            ostringstream str;
+            str << "OSG-annot: resending NA "<<annot_name
+                << " that has already been processed by processor with priority "
+                << prev_priority << " < " << GetPriority();
+            SendTrace(str.str());
+        }
+    }
+    return true;
+}
+
+
 void CPSGS_OSGAnnot::ProcessReplies()
 {
     for ( auto& f : GetFetches() ) {
@@ -230,11 +257,8 @@ void CPSGS_OSGAnnot::ProcessReplies()
                 // do nothing
                 break;
             case CID2_Reply::TReply::e_Get_blob_id:
-                if ( AddBlobId(r->GetReply().GetGet_blob_id()) ) {
-                    if ( SignalStartProcessing() == ePSGS_Cancel ) {
-                        FinalizeResult(ePSGS_Canceled);
-                        return;
-                    }
+                if ( auto annot_name_ptr = AddBlobId(r->GetReply().GetGet_blob_id()) ) {
+                    RegisterProcessedName(*annot_name_ptr);
                 }
                 break;
             default:
@@ -245,10 +269,6 @@ void CPSGS_OSGAnnot::ProcessReplies()
         }
     }
     if ( IsCanceled() ) {
-        return;
-    }
-    if ( SignalStartProcessing() == ePSGS_Cancel ) {
-        FinalizeResult(ePSGS_Canceled);
         return;
     }
     SendReplies();
@@ -293,200 +313,6 @@ const string* CPSGS_OSGAnnot::AddBlobId(const CID2_Reply_Get_Blob_Id& blob_id)
     return &iter->first;
 }
 
-#if 0
-namespace {
-    struct SAnnotInfo {
-        // NA accession
-        string annot_name;
-        // annotated location
-        string accession;
-        int version;
-        int seq_id_type;
-        CRange<TSeqPos> range;
-        // annotation types
-        CJsonNode json;
-
-        void Add(const CID2S_Seq_loc& loc) {
-            switch ( loc.Which() ) {
-            case CID2S_Seq_loc::e_Whole_gi:
-                Add(loc.GetWhole_gi());
-                break;
-            case CID2S_Seq_loc::e_Whole_seq_id:
-                Add(loc.GetWhole_seq_id());
-                break;
-            case CID2S_Seq_loc::e_Whole_gi_range:
-                Add(loc.GetWhole_gi_range());
-                break;
-            case CID2S_Seq_loc::e_Gi_interval:
-                Add(loc.GetGi_interval());
-                break;
-            case CID2S_Seq_loc::e_Seq_id_interval:
-                Add(loc.GetSeq_id_interval());
-                break;
-            case CID2S_Seq_loc::e_Gi_ints:
-                Add(loc.GetGi_ints());
-                break;
-            case CID2S_Seq_loc::e_Seq_id_ints:
-                Add(loc.GetSeq_id_ints());
-                break;
-            case CID2S_Seq_loc::e_Loc_set:
-                for ( auto& l : loc.GetLoc_set() ) {
-                    Add(*l);
-                }
-                break;
-            default:
-                break;
-            }
-        }
-        void Add(TGi gi) {
-            Add(gi, CRange<TSeqPos>::GetWhole());
-        }
-        void Add(const CSeq_id& id) {
-            Add(id, CRange<TSeqPos>::GetWhole());
-        }
-        void Add(TGi gi, TSeqPos start, TSeqPos length) {
-            Add(gi, COpenRange<TSeqPos>(start, start+length));
-        }
-        void Add(const CSeq_id& id, TSeqPos start, TSeqPos length) {
-            Add(id, COpenRange<TSeqPos>(start, start+length));
-        }
-        void Add(TGi gi, CRange<TSeqPos> range) {
-            Add(CSeq_id(CSeq_id::e_Gi, gi), range);
-        }
-        void SetSeqId(const CSeq_id& id) {
-            string new_accession;
-            int new_version = 0;
-            int new_type = id.Which();
-            if ( auto text_id = id.GetTextseq_Id() ) {
-                if ( text_id->IsSetAccession() && text_id->IsSetVersion() ) {
-                    new_accession = text_id->GetAccession();
-                    new_version = text_id->GetVersion();
-                }
-            }
-            else {
-                id.GetLabel(&new_accession, CSeq_id::eFastaContent);
-            }
-            if ( accession.empty() ) {
-                accession = new_accession;
-                version = new_version;
-                seq_id_type = new_type;
-            }
-            else if ( accession != new_accession ||
-                      version != new_version ||
-                      seq_id_type != new_type ) {
-                PSG_ERROR("OSG-annot: multiple annotated Seq-ids");
-                throw runtime_error("");
-            }
-        }
-        void Add(const CSeq_id& id, CRange<TSeqPos> add_range) {
-            SetSeqId(id);
-            range.CombineWith(add_range);
-        }
-        void Add(const CID2S_Gi_Range& gi_range) {
-            for ( TIntId i = 0; i < gi_range.GetCount(); ++i ) {
-                Add(GI_FROM(TIntId, GI_TO(TIntId, gi_range.GetStart())+i));
-            }
-        }
-        void Add(const CID2S_Gi_Interval& interval) {
-            Add(interval.GetGi(), interval.GetStart(), interval.GetLength());
-        }
-        void Add(const CID2S_Seq_id_Interval& interval) {
-            Add(interval.GetSeq_id(), interval.GetStart(), interval.GetLength());
-        }
-        void Add(const CID2S_Gi_Ints& ints) {
-            for ( auto& i : ints.GetInts() ) {
-                Add(ints.GetGi(), i->GetStart(), i->GetLength());
-            }
-        }
-        void Add(const CID2S_Seq_id_Ints& ints) {
-            for ( auto& i : ints.GetInts() ) {
-                Add(ints.GetSeq_id(), i->GetStart(), i->GetLength());
-            }
-        }
-
-        void SetAnnotName(const string& name)
-            {
-                if ( annot_name.empty() ) {
-                    annot_name = name;
-                }
-                else if ( annot_name != name ) {
-                    PSG_ERROR("OSG-annot: multiple annot accessions: "<<annot_name<<" <> "<<name);
-                    throw runtime_error("");
-                }
-            }
-        
-        SAnnotInfo(const list<CRef<CID2S_Seq_annot_Info>>& annot_infos)
-            : range(CRange<TSeqPos>::GetEmpty()),
-              json(CJsonNode::NewObjectNode())
-            {
-                vector<int64_t> zooms;
-                for ( auto& ai : annot_infos ) {
-                    // collect location
-                    if ( ai->IsSetSeq_loc() ) {
-                        Add(ai->GetSeq_loc());
-                    }
-
-                    // collect name
-                    auto& full_name = ai->GetName();
-                    string acc;
-                    SIZE_TYPE zoom_pos = full_name.find("@@");
-                    if ( zoom_pos != NPOS ) {
-                        SetAnnotName(full_name.substr(0, zoom_pos));
-                        zooms.push_back(NStr::StringToInt(full_name.substr(zoom_pos+2)));
-                    }
-                    else {
-                        SetAnnotName(full_name);
-                    }
-
-                    // collect types
-                    if ( ai->IsSetAlign() ) {
-                        CJsonNode type_json = CJsonNode::NewArrayNode();
-                        type_json.AppendInteger(0);
-                        json.SetByKey(to_string(CSeq_annot::C_Data::e_Align), type_json);
-                    }
-                    if ( ai->IsSetGraph() ) {
-                        CJsonNode type_json = CJsonNode::NewArrayNode();
-                        type_json.AppendInteger(0);
-                        json.SetByKey(to_string(CSeq_annot::C_Data::e_Graph), type_json);
-                    }
-                    if ( ai->IsSetFeat() ) {
-                        auto& types = ai->GetFeat();
-                        if ( types.empty() ||
-                             (types.size() == 1 &&
-                              types.front()->GetType() == 0 &&
-                              !types.front()->IsSetSubtypes()) ) {
-                            CJsonNode type_json = CJsonNode::NewArrayNode();
-                            type_json.AppendInteger(0);
-                            json.SetByKey(to_string(CSeq_annot::C_Data::e_Seq_table), type_json);
-                        }
-                        else {
-                            CJsonNode type_json = CJsonNode::NewObjectNode();
-                            for ( auto& feat_type : types ) {
-                                CJsonNode subtype_json = CJsonNode::NewArrayNode();
-                                if ( feat_type->IsSetSubtypes() ) {
-                                    for ( auto feat_subtype : feat_type->GetSubtypes() ) {
-                                        subtype_json.AppendInteger(feat_subtype);
-                                    }
-                                }
-                                type_json.SetByKey(to_string(feat_type->GetType()), subtype_json);
-                            }
-                            json.SetByKey(to_string(CSeq_annot::C_Data::e_Ftable), type_json);
-                        }
-                    }
-                }
-                
-                // add collected zoom levels
-                if ( !zooms.empty() ) {
-                    CJsonNode zooms_json = CJsonNode::NewArrayNode();
-                    for ( auto zoom : zooms ) {
-                        zooms_json.AppendInteger(zoom);
-                    }
-                    json.SetByKey("2048", zooms_json);
-                }
-            }
-    };
-}
-#endif
 
 void CPSGS_OSGAnnot::SendReplies()
 {
@@ -502,9 +328,11 @@ void CPSGS_OSGAnnot::SendReplies()
             }
         }
     }
-    auto& psg_req = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
     for ( auto& r_name : m_BlobIds ) {
         auto& annot_name = r_name.first;
+        if ( !RegisterProcessedName(annot_name) ) {
+            continue;
+        }
         for ( auto& r : r_name.second ) {
             string psg_blob_id = CPSGS_OSGGetBlobBase::GetPSGBlobId(r->GetBlob_id());
             CJsonNode       json(CJsonNode::NewObjectNode());
@@ -523,7 +351,6 @@ void CPSGS_OSGAnnot::SendReplies()
             GetReply()->PrepareNamedAnnotationData(annot_name, GetName(),
                                                    json.Repr(CJsonNode::fStandardJson));
         }
-        psg_req.RegisterProcessedName(GetPriority(), annot_name);
     }
 }
 

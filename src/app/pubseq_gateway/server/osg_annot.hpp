@@ -82,8 +82,17 @@ public:
 
 protected:
     void SendReplies();
+
+    // gets annot_name of blob-id reply
     static string GetAnnotName(const CID2_Reply_Get_Blob_Id& blob_id);
+    
+    // returns null if blob-id is not relevant, or pointer to annot_name
     const string* AddBlobId(const CID2_Reply_Get_Blob_Id& blob_id);
+    
+    // returns false if higher priority processor works on this annot_name
+    bool RegisterProcessedName(const string& annot_name);
+
+    // returns true if the reply is blob-id reply about CDD
     bool IsCDDReply(const CID2_Reply& reply) const;
         
 protected:
