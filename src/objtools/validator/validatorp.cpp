@@ -747,6 +747,15 @@ void CValidError_imp::PostErr
     string desc = CValidErrorFormat::GetDescriptorLabel(ds, ctx, m_Scope, m_SuppressContext);
     int version = 0;
     const string& accession = GetAccessionFromObjects(&ds, &ctx, *m_Scope, &version);
+
+    if (GetContext().PostprocessHugeFile) {
+        // RW-1726 More to do here. 
+        // Even if we postproces the validator output, we would still want to 
+        // know the sequence ids for the first bioseq in a genbank set up front.
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, accession, version);
+        return;
+    }
+
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, ctx, accession, version);
 }
 
@@ -1165,9 +1174,13 @@ const CValidatorEntryInfo& CValidError_imp::GetEntryInfo() const
 }
 
 
-void CValidError_imp::SetEntryInfo(const CValidatorEntryInfo& info) 
+CValidatorEntryInfo& CValidError_imp::x_SetEntryInfo()
 {
-    m_pEntryInfo.reset(new CValidatorEntryInfo(info));
+    if (!m_pEntryInfo) {
+        m_pEntryInfo.reset(new CValidatorEntryInfo());
+    }
+
+    return *m_pEntryInfo;
 }
 
 
@@ -1194,8 +1207,8 @@ bool CValidError_imp::Validate
 
     // Seq-submit has submission citationTest_Descr_LatLonValue
     if (cs) {
-        m_pEntryInfo->SetNoPubs(false);
-        m_pEntryInfo->SetSeqSubmit();
+        x_SetEntryInfo().SetNoPubs(false);
+        x_SetEntryInfo().SetSeqSubmit();
     }
 
     // Get first CBioseq object pointer for PostErr below.
@@ -1521,14 +1534,14 @@ void CValidError_imp::Validate(
         return;
     }
 
-    m_pEntryInfo->SetSeqSubmit();
+    x_SetEntryInfo().SetSeqSubmit();
     ValidateSubmitBlock(ss.GetSub(), ss);
 
     // Get CCit_sub pointer
     const CCit_sub* cs = &ss.GetSub().GetCit();
 
     if (ss.IsSetSub() && ss.GetSub().IsSetTool() && NStr::StartsWith(ss.GetSub().GetTool(), "Geneious")) {
-        m_pEntryInfo->SetGeneious();
+        x_SetEntryInfo().SetGeneious();
     }
 
     // Just loop thru CSeq_entrys
@@ -2813,18 +2826,18 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
 
     // If no Pubs/BioSource in CSeq_entry, post only one error
     if (GetContext().PreprocessHugeFile) {
-        m_pEntryInfo->SetNoPubs(GetContext().NoPubsFound);
-        m_pEntryInfo->SetNoCitSubPubs(GetContext().NoCitSubsFound);
-        m_pEntryInfo->SetNoBioSource(GetContext().NoBioSource);
+        x_SetEntryInfo().SetNoPubs(GetContext().NoPubsFound);
+        x_SetEntryInfo().SetNoCitSubPubs(GetContext().NoCitSubsFound);
+        x_SetEntryInfo().SetNoBioSource(GetContext().NoBioSource);
     } else {
         CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
-        m_pEntryInfo->SetNoPubs(!pub);
+        x_SetEntryInfo().SetNoPubs(!pub);
         while (pub && !pub->IsSub()) {
             ++pub;
         }
-        m_pEntryInfo->SetNoCitSubPubs(!pub);
+        x_SetEntryInfo().SetNoCitSubPubs(!pub);
         CTypeConstIterator<CBioSource> src(ConstBegin(*m_TSE));
-        m_pEntryInfo->SetNoBioSource(!src);
+        x_SetEntryInfo().SetNoBioSource(!src);
     }
 
 
@@ -2832,10 +2845,10 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
     for (CTypeConstIterator <CBioseq_set> si (*m_TSE); si; ++si) {
         if (si->IsSetClass ()) {
             if (si->GetClass () == CBioseq_set::eClass_gen_prod_set) {
-                m_pEntryInfo->SetGPS();
+                x_SetEntryInfo().SetGPS();
             }
             if (si->GetClass () == CBioseq_set::eClass_small_genome_set) {
-                m_pEntryInfo->SetSmallGenomeSet();
+                x_SetEntryInfo().SetSmallGenomeSet();
             }
         }
     }
@@ -2858,24 +2871,24 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                 case CSeq_id::e_Giim:
                     break;
                 case CSeq_id::e_Genbank:
-                    m_pEntryInfo->SetINSDInSep();
-                    m_pEntryInfo->SetGenbank();
-                    m_pEntryInfo->SetGED();
+                    x_SetEntryInfo().SetINSDInSep();
+                    x_SetEntryInfo().SetGenbank();
+                    x_SetEntryInfo().SetGED();
                     break;
                 case CSeq_id::e_Embl:
-                    m_pEntryInfo->SetINSDInSep();
-                    m_pEntryInfo->SetGED();
-                    m_pEntryInfo->SetEmbl();
+                    x_SetEntryInfo().SetINSDInSep();
+                    x_SetEntryInfo().SetGED();
+                    x_SetEntryInfo().SetEmbl();
                     break;
                 case CSeq_id::e_Pir:
                     break;
                 case CSeq_id::e_Swissprot:
                     break;
                 case CSeq_id::e_Patent:
-                    m_pEntryInfo->SetPatent();
+                    x_SetEntryInfo().SetPatent();
                     break;
                 case CSeq_id::e_Other:
-                    m_pEntryInfo->SetRefSeq();
+                    x_SetEntryInfo().SetRefSeq();
                     // and do RefSeq subclasses up front as well
                     if (sid.GetOther().IsSetAccession()) {
                         string acc = sid.GetOther().GetAccession().substr(0, 3);
@@ -2906,44 +2919,44 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     break;
                 case CSeq_id::e_General:
                     if ((*bi).IsAa() && !sid.GetGeneral().IsSkippable()) {
-                        m_pEntryInfo->SetProteinHasGeneralID();
+                        x_SetEntryInfo().SetProteinHasGeneralID();
                     }
                     break;
                 case CSeq_id::e_Gi:
-                    m_pEntryInfo->SetGI();
-                    m_pEntryInfo->SetGiOrAccnVer();
+                    x_SetEntryInfo().SetGI();
+                    x_SetEntryInfo().SetGiOrAccnVer();
                     break;
                 case CSeq_id::e_Ddbj:
-                    m_pEntryInfo->SetINSDInSep();
-                    m_pEntryInfo->SetGED();
-                    m_pEntryInfo->SetDdbj();
+                    x_SetEntryInfo().SetINSDInSep();
+                    x_SetEntryInfo().SetGED();
+                    x_SetEntryInfo().SetDdbj();
                     break;
                 case CSeq_id::e_Prf:
                     break;
                 case CSeq_id::e_Pdb:
-                    m_pEntryInfo->SetPDB();
+                    x_SetEntryInfo().SetPDB();
                     break;
                 case CSeq_id::e_Tpg:
-                    m_pEntryInfo->SetINSDInSep();
+                    x_SetEntryInfo().SetINSDInSep();
                     break;
                 case CSeq_id::e_Tpe:
-                    m_pEntryInfo->SetTPE();
-                    m_pEntryInfo->SetINSDInSep();
+                    x_SetEntryInfo().SetTPE();
+                    x_SetEntryInfo().SetINSDInSep();
                     break;
                 case CSeq_id::e_Tpd:
-                    m_pEntryInfo->SetINSDInSep();
+                    x_SetEntryInfo().SetINSDInSep();
                     break;
                 case CSeq_id::e_Gpipe:
-                    m_pEntryInfo->SetGpipe();
+                    x_SetEntryInfo().SetGpipe();
                     break;
                 default:
                     break;
             }
             if ( tsid && tsid->IsSetAccession() && tsid->IsSetVersion() && tsid->GetVersion() >= 1 ) {
-                m_pEntryInfo->SetGiOrAccnVer();
+                x_SetEntryInfo().SetGiOrAccnVer();
             }
             if (typ != CSeq_id::e_Local && typ != CSeq_id::e_General) {
-                m_pEntryInfo->SetLocalGeneralOnly(false);
+                x_SetEntryInfo().SetLocalGeneralOnly(false);
             }
         }
     }
@@ -2954,7 +2967,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
          ++desc_ci) {
          if (desc_ci->GetSource().IsSetGenome()
              && desc_ci->GetSource().GetGenome() == CBioSource::eGenome_genomic) {
-             m_pEntryInfo->SetGenomic();
+             x_SetEntryInfo().SetGenomic();
          }
     }
 
@@ -2967,13 +2980,13 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
              const CObject_id& oi = obj.GetType();
              if ( ! oi.IsStr() ) continue;
              if ( NStr::CompareNocase(oi.GetStr(), "GenomeBuild") == 0 ) {
-                 m_pEntryInfo->SetGpipe();
+                 x_SetEntryInfo().SetGpipe();
              } else if ( NStr::CompareNocase(oi.GetStr(), "StructuredComment") == 0 ) {
                  ITERATE (CUser_object::TData, field, obj.GetData()) {
                      if ((*field)->IsSetLabel() && (*field)->GetLabel().IsStr()) {
                          if (NStr::EqualNocase((*field)->GetLabel().GetStr(), "Annotation Pipeline")) {
                              if (NStr::EqualNocase((*field)->GetData().GetStr(), "NCBI eukaryotic genome annotation pipeline")) {
-                                 m_pEntryInfo->SetGpipe();
+                                 x_SetEntryInfo().SetGpipe();
                              }
                          }
                      }
@@ -2987,15 +3000,15 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
          feat_ci && (!DoesAnyFeatLocHaveGI() || !DoesAnyProductLocHaveGI() || !DoesAnyGeneHaveLocusTag());
          ++feat_ci) {
         if (s_SeqLocHasGI(feat_ci->GetLocation())) {
-            m_pEntryInfo->SetFeatLocHasGI();
+            x_SetEntryInfo().SetFeatLocHasGI();
         }
         if (feat_ci->IsSetProduct() && s_SeqLocHasGI(feat_ci->GetProduct())) {
-            m_pEntryInfo->SetProductLocHasGI();
+            x_SetEntryInfo().SetProductLocHasGI();
         }
         if (feat_ci->IsSetData() && feat_ci->GetData().IsGene()
             && feat_ci->GetData().GetGene().IsSetLocus_tag()
             && !NStr::IsBlank (feat_ci->GetData().GetGene().GetLocus_tag())) {
-            m_pEntryInfo->SetGeneHasLocusTag();
+            x_SetEntryInfo().SetGeneHasLocusTag();
         }
     }
 
@@ -3307,17 +3320,17 @@ void CValidError_imp::x_DoBarcodeTests(CSeq_entry_Handle seh)
 }
 
 
-bool CValidError_imp::IsNoPubs() const { return m_pEntryInfo->IsNoPubs(); }
-bool CValidError_imp::IsNoCitSubPubs() const { return m_pEntryInfo->IsNoCitSubPubs(); }
-bool CValidError_imp::IsNoBioSource() const { return m_pEntryInfo->IsNoBioSource(); }
-bool CValidError_imp::IsGPS() const { return m_pEntryInfo->IsGPS(); }
-bool CValidError_imp::IsGED() const { return m_pEntryInfo->IsGED(); }
-bool CValidError_imp::IsPDB() const { return m_pEntryInfo->IsPDB(); }
-bool CValidError_imp::IsPatent() const { return m_pEntryInfo->IsPatent(); }
-bool CValidError_imp::IsRefSeq() const { return m_pEntryInfo->IsRefSeq() || m_RefSeqConventions; }
-bool CValidError_imp::IsEmbl() const { return m_pEntryInfo->IsEmbl(); }
-bool CValidError_imp::IsDdbj() const { return m_pEntryInfo->IsDdbj(); }
-bool CValidError_imp::IsTPE() const { return m_pEntryInfo->IsTPE(); }
+bool CValidError_imp::IsNoPubs() const { return GetEntryInfo().IsNoPubs(); }
+bool CValidError_imp::IsNoCitSubPubs() const { return GetEntryInfo().IsNoCitSubPubs(); }
+bool CValidError_imp::IsNoBioSource() const { return GetEntryInfo().IsNoBioSource(); }
+bool CValidError_imp::IsGPS() const { return GetEntryInfo().IsGPS(); }
+bool CValidError_imp::IsGED() const { return GetEntryInfo().IsGED(); }
+bool CValidError_imp::IsPDB() const { return GetEntryInfo().IsPDB(); }
+bool CValidError_imp::IsPatent() const { return GetEntryInfo().IsPatent(); }
+bool CValidError_imp::IsRefSeq() const { return GetEntryInfo().IsRefSeq() || m_RefSeqConventions; }
+bool CValidError_imp::IsEmbl() const { return GetEntryInfo().IsEmbl(); }
+bool CValidError_imp::IsDdbj() const { return GetEntryInfo().IsDdbj(); }
+bool CValidError_imp::IsTPE() const { return GetEntryInfo().IsTPE(); }
 bool CValidError_imp::IsNC() const { return m_IsNC; }
 bool CValidError_imp::IsNG() const { return m_IsNG; }
 bool CValidError_imp::IsNM() const { return m_IsNM; }
@@ -3329,20 +3342,20 @@ bool CValidError_imp::IsNW() const { return m_IsNW; }
 bool CValidError_imp::IsNZ() const { return m_IsNZ; }
 bool CValidError_imp::IsWP() const { return m_IsWP; }
 bool CValidError_imp::IsXR() const { return m_IsXR; }
-bool CValidError_imp::IsGI() const { return m_pEntryInfo->IsGI(); }
-bool CValidError_imp::IsGenbank() const { return m_pEntryInfo->IsGenbank(); }
-bool CValidError_imp::IsGpipe() const { return m_pEntryInfo->IsGpipe(); }
-bool CValidError_imp::IsLocalGeneralOnly() const { return m_pEntryInfo->IsLocalGeneralOnly(); }
-bool CValidError_imp::HasGiOrAccnVer() const { return m_pEntryInfo->HasGiOrAccnVer(); }
-bool CValidError_imp::IsGenomic() const { return m_pEntryInfo->IsGenomic(); }
-bool CValidError_imp::IsSeqSubmit() const { return m_pEntryInfo->IsSeqSubmit(); }
-bool CValidError_imp::IsSmallGenomeSet() const { return m_pEntryInfo->IsSmallGenomeSet(); }
-bool CValidError_imp::DoesAnyFeatLocHaveGI() const { return m_pEntryInfo->DoesAnyFeatLocHaveGI(); }
-bool CValidError_imp::DoesAnyProductLocHaveGI() const { return m_pEntryInfo->DoesAnyProductLocHaveGI(); }
-bool CValidError_imp::DoesAnyGeneHaveLocusTag() const { return m_pEntryInfo->DoesAnyGeneHaveLocusTag(); }
-bool CValidError_imp::DoesAnyProteinHaveGeneralID() const { return m_pEntryInfo->DoesAnyProteinHaveGeneralID(); }
-bool CValidError_imp::IsINSDInSep() const { return m_pEntryInfo->IsINSDInSep(); }
-bool CValidError_imp::IsGeneious() const { return m_pEntryInfo->IsGeneious(); }
+bool CValidError_imp::IsGI() const { return GetEntryInfo().IsGI(); }
+bool CValidError_imp::IsGenbank() const { return GetEntryInfo().IsGenbank(); }
+bool CValidError_imp::IsGpipe() const { return GetEntryInfo().IsGpipe(); }
+bool CValidError_imp::IsLocalGeneralOnly() const { return GetEntryInfo().IsLocalGeneralOnly(); }
+bool CValidError_imp::HasGiOrAccnVer() const { return GetEntryInfo().HasGiOrAccnVer(); }
+bool CValidError_imp::IsGenomic() const { return GetEntryInfo().IsGenomic(); }
+bool CValidError_imp::IsSeqSubmit() const { return GetEntryInfo().IsSeqSubmit(); }
+bool CValidError_imp::IsSmallGenomeSet() const { return GetEntryInfo().IsSmallGenomeSet(); }
+bool CValidError_imp::DoesAnyFeatLocHaveGI() const { return GetEntryInfo().DoesAnyFeatLocHaveGI(); }
+bool CValidError_imp::DoesAnyProductLocHaveGI() const { return GetEntryInfo().DoesAnyProductLocHaveGI(); }
+bool CValidError_imp::DoesAnyGeneHaveLocusTag() const { return GetEntryInfo().DoesAnyGeneHaveLocusTag(); }
+bool CValidError_imp::DoesAnyProteinHaveGeneralID() const { return GetEntryInfo().DoesAnyProteinHaveGeneralID(); }
+bool CValidError_imp::IsINSDInSep() const { return GetEntryInfo().IsINSDInSep(); }
+bool CValidError_imp::IsGeneious() const { return GetEntryInfo().IsGeneious(); }
 const CBioSourceKind& CValidError_imp::BioSourceKind() const { return m_biosource_kind; }
 
 

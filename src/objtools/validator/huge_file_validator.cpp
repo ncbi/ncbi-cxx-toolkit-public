@@ -497,6 +497,44 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
         });
 }
 
+
+static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
+        const CValidErrItem& item)
+{
+    if (globalInfo.NoPubsFound && item.GetErrIndex() == eErr_SEQ_DESCR_NoPubFound) {
+        return NStr::StartsWith(item.GetMsg(), "No publications refer to this Bioseq.");
+    }
+
+    if (globalInfo.NoBioSource) {
+        const auto& errCode = item.GetErrIndex();
+        return (errCode == eErr_SEQ_DESCR_TransgenicProblem ||
+            errCode == eErr_SEQ_DESCR_InconsistentBioSources_ConLocation ||
+            errCode == eErr_SEQ_INST_MitoMetazoanTooLong ||
+            errCode ==  eErr_SEQ_DESCR_NoOrgFound);
+    }
+
+    return false;
+}
+
+
+void CHugeFileValidator::PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
+        CRef<CValidError>& pErrors) const
+{
+    if (!globalInfo.NoPubsFound || 
+        !globalInfo.NoCitSubsFound ||
+        !globalInfo.NoBioSource) {
+        return;
+    }
+
+    auto pPrunedErrors = Ref(new CValidError());
+    for (auto pErrorItem : pErrors->GetErrs()) {
+        if (!s_DropErrorItem(globalInfo, *pErrorItem)) {
+            pPrunedErrors->AddValidErrItem(pErrorItem);
+        }
+    }
+    pErrors = pPrunedErrors;
+}
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

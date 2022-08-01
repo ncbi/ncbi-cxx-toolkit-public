@@ -41,6 +41,7 @@
 #include <objtools/validator/validerror_descr.hpp>
 #include <objtools/validator/validerror_annot.hpp>
 #include <objtools/validator/validerror_bioseq.hpp>
+#include <objtools/validator/validator_context.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/dup_feats.hpp>
 
@@ -1443,11 +1444,11 @@ void CValidError_bioseq::ValidateBioseqContext(
         }
 
         // make sure that there is a pub on this bioseq
-        if ( !m_Imp.IsNoPubs() ) {
+        if (m_Imp.GetContext().PostprocessHugeFile || !m_Imp.IsNoPubs() ) {
             CheckForPubOnBioseq(seq);
         }
         // make sure that there is a source on this bioseq
-        if ( !m_Imp.IsNoBioSource() ) {
+        if (m_Imp.GetContext().PostprocessHugeFile || !m_Imp.IsNoBioSource() ) {
             CheckSourceDescriptor(bsh);
             //CheckForBiosourceOnBioseq(seq);
         }

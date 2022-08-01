@@ -1163,7 +1163,7 @@ void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
 {
     EDiagSev sev = eDiag_Error;
 
-    if (!m_pEntryInfo->IsNoPubs() && !IsSeqSubmit()) {
+    if (!IsNoPubs() && !IsSeqSubmit()) {
         if (seq.IsAa()) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
             if (bsh) {
@@ -1247,11 +1247,11 @@ static bool s_IsTSA_Contig (const CBioseq& seq)
 
 void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs)
 {
-    if (GetContext().PreprocessHugeFile) {
+    if (GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) {
         return;
     }
 
-     if ( m_pEntryInfo->IsNoPubs() && !IsSeqSubmitParent() ) {
+     if ( IsNoPubs() && !IsSeqSubmitParent() ) {
         if ( !m_pEntryInfo->IsGPS()  &&  !cs) {
             CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
             if (b_it)
@@ -1271,7 +1271,7 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
             }
         }
     }
-    if ( m_pEntryInfo->IsNoCitSubPubs() && !cs && !IsSeqSubmitParent() ) {
+    if (IsNoCitSubPubs() && !cs && !IsSeqSubmitParent() ) {
         CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
         if (b_it) {
             CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
