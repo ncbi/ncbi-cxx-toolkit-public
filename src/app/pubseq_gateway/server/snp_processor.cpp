@@ -518,7 +518,12 @@ void CPSGS_SNPProcessor::x_WriteData(objects::CID2_Reply_Data& data, const CSeri
 
 void CPSGS_SNPProcessor::x_SendAnnotInfo(void)
 {
+    SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
     for (auto& data : m_SNPData) {
+        if ( annot_request.RegisterProcessedName(GetPriority(), data.m_Name) > GetPriority() ) {
+            // higher priority processor already processed this request
+            continue;
+        }
         CJsonNode json(CJsonNode::NewObjectNode());
         json.SetString("blob_id", data.m_BlobId);
         ostringstream annot_str;
@@ -527,8 +532,6 @@ void CPSGS_SNPProcessor::x_SendAnnotInfo(void)
         }
         json.SetString("seq_annot_info", NStr::Base64Encode(annot_str.str(), 0));
         GetReply()->PrepareNamedAnnotationData(data.m_Name, kSNPProcessorName, json.Repr(CJsonNode::fStandardJson));
-        SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
-        annot_request.RegisterProcessedName(GetPriority(), data.m_Name);
     }
 }
 
@@ -675,9 +678,14 @@ bool CPSGS_SNPProcessor::x_IsCanceled()
 
 bool CPSGS_SNPProcessor::x_SignalStartProcessing()
 {
-    if ( SignalStartProcessing() == ePSGS_Cancel ) {
-        x_Finish(ePSGS_Canceled);
-        return false;
+    if ( GetRequest()->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest ) {
+        // cannot register processed name before getting the data
+    }
+    else {
+        if ( SignalStartProcessing() == ePSGS_Cancel ) {
+            x_Finish(ePSGS_Canceled);
+            return false;
+        }
     }
     return true;
 }
