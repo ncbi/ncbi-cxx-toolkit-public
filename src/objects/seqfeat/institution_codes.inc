@@ -1202,7 +1202,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CIAT:Forage\tb\tCentro Internacional de Agricultura Tropical (International Center for Tropical Agriculture), CIAT Forages Collection\t\t",
 "CIAT:Rhizobium\tc\tCentro Internacional de Agricultura Tropical (International Center for Tropical Agriculture), CIAT Rhizobium Collection\t\t",
 "CIB<CHN>\ts\tChengdu Institute of Biology\t\t\t",
-"CIB<MEX-LaPaz>\ts\tCentro de Investigaciones Biologicas del Noroeste, S.C. (Mexico)\t\t\t",
+"CIB<MEX-LaPaz>\tsc\tCentro de Investigaciones Biologicas del Noroeste,S.C. (Mexico)\t\t\t",
 "CIB<MEX-Veracruz>\ts\tUniversidad Veracruzana\t\t\t",
 "CIBC\ts\tInternational Institute of Biological Control\t\t\t",
 "CIBIO\ts\tCentro de Investigacao em Biodiversidade e Recursos Geneticos\t\t\t",
