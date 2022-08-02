@@ -851,9 +851,9 @@ int CTbl2AsnApp::Run()
             m_global_files.mp_src_qual_map->ReportUnusedIds();
         }
 
-        if (m_validator->TotalErrors() > 0)
+        if (m_validator->ValTotalErrors() > 0)
         {
-            m_validator->ReportErrorStats(m_context.GetOstream(".stats", m_context.m_base_name));
+            m_validator->ValReportErrorStats(m_context.GetOstream(".stats", m_context.m_base_name));
         }
         m_validator->ReportDiscrepancies();
     }
@@ -1049,7 +1049,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
         if (!m_context.m_validate.empty())
         {
-            m_validator->Validate(submit, entry, m_context.m_validate);
+            m_validator->ValCollect(submit, entry, m_context.m_validate);
         }
 
         if (m_context.m_run_discrepancy)
@@ -1218,7 +1218,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
 
     if (!m_context.m_validate.empty())
     {
-        m_validator->Validate(submit, entry, m_context.m_validate);
+        m_validator->ValCollect(submit, entry, m_context.m_validate);
     }
 
     if (m_context.m_run_discrepancy)
@@ -1291,10 +1291,15 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
         }
         else {
 
+            m_validator->Clear();
+
             if (m_context.m_can_use_huge_files)
                 ProcessHugeFile(output);
             else
                 ProcessOneFile(output);
+
+            if (!m_context.m_validate.empty())
+                m_validator->ValReportErrors();
 
             ReportUnusedSourceQuals();
 

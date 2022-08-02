@@ -57,7 +57,7 @@ CTable2AsnValidator::~CTable2AsnValidator()
 {
 }
 
-void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h_entry, const string& flags)
+void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h_entry, const string& flags) const
 {
     if (flags.find('w') != string::npos)
     {
@@ -117,7 +117,7 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
     }
 }
 
-void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> entry, const string& flags)
+void CTable2AsnValidator::ValCollect(CRef<CSeq_submit> submit, CRef<CSeq_entry> entry, const string& flags)
 {
     CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
@@ -136,46 +136,66 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
     }
     else
     {
-        ITERATE(CSeq_submit::C_Data::TEntrys, it, submit->GetData().GetEntrys())
+        for(auto& it: submit->GetData().GetEntrys())
         {
-            scope.AddTopLevelSeqEntry(**it);
+            scope.AddTopLevelSeqEntry(*it);
         }
         errors = validator.Validate(*submit, &scope, options);
     }
+
     if (errors.NotEmpty())
     {
-        ReportErrors(errors, m_context->GetOstream(".val"));
+        std::lock_guard<std::mutex> g{m_mutex};
+        m_val_errors.push_back(errors);
     }
 }
 
-void CTable2AsnValidator::ReportErrors(CConstRef<CValidError> errors, CNcbiOstream& out)
+void CTable2AsnValidator::Clear()
 {
-    ITERATE(CValidError::TErrs, it, errors->GetErrs())
+    std::lock_guard<std::mutex> g{m_mutex};
+    m_val_errors.clear();
+    m_discrepancy.Reset();
+}
+
+void CTable2AsnValidator::ValReportErrors()
+{
+    std::lock_guard<std::mutex> g{m_mutex};
+
+    CNcbiOstream& out = m_context->GetOstream(".val");
+
+    for (auto& errors: m_val_errors)
     {
-        const CValidErrItem& item = **it;
-        out << CValidErrItem::ConvertSeverity(EDiagSev(item.GetSev()))
-               << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
-               << item.GetMsg() << " " << item.GetObjDesc() << endl;
+        for (auto& it: errors->GetErrs())
+        {
+            const CValidErrItem& item = *it;
+            out << CValidErrItem::ConvertSeverity(EDiagSev(item.GetSev()))
+                << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
+                << item.GetMsg() << " " << item.GetObjDesc() << endl;
 
-        m_stats[item.GetSev()].m_total++;
-        m_stats[item.GetSev()].m_individual[item.GetErrIndex()]++;
+            m_stats[item.GetSev()].m_total++;
+            m_stats[item.GetSev()].m_individual[item.GetErrIndex()]++;
+        }
+        //out << MSerial_AsnText << *errors;
     }
-    //out << MSerial_AsnText << *errors;
 }
 
-size_t CTable2AsnValidator::TotalErrors() const
+size_t CTable2AsnValidator::ValTotalErrors() const
 {
+    std::lock_guard<std::mutex> g(m_mutex);
+
     size_t result = 0;
-    ITERATE(vector<TErrorStats>, stats, m_stats)
+    for (auto& stats: m_stats)
     {
-        result += stats->m_total;
+        result += stats.m_total;
     }
     return result;
 }
 
-void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
+void CTable2AsnValidator::ValReportErrorStats(CNcbiOstream& out)
 {
-    out << "Total messages:\t\t" << NStr::NumericToString(TotalErrors()) << endl << endl << big_separator << endl;
+    out << "Total messages:\t\t" << NStr::NumericToString(ValTotalErrors()) << "\n\n" << big_separator << "\n";
+
+    std::lock_guard<std::mutex> g(m_mutex);
 
     for (size_t sev = 0; sev < m_stats.size(); sev++)
     {
@@ -184,15 +204,15 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
 
         string severity = CValidErrItem::ConvertSeverity(EDiagSev(sev));
         NStr::ToUpper(severity);
-        out << NStr::NumericToString(m_stats[sev].m_total) << " " << severity << "-level messages exist" << endl << endl;
+        out << NStr::NumericToString(m_stats[sev].m_total) << " " << severity << "-level messages exist" << "\n\n";
 
         for_each(m_stats[sev].m_individual.begin(), m_stats[sev].m_individual.end(), [&out](const TErrorStatMap::const_iterator::value_type& it)
         {
             out <<
                 CValidErrItem::ConvertErrGroup(it.first) << "." <<
-                CValidErrItem::ConvertErrCode(it.first) << ":\t" << NStr::NumericToString(it.second) << endl;
+                CValidErrItem::ConvertErrCode(it.first) << ":\t" << NStr::NumericToString(it.second) << "\n";
         });
-        out << endl << big_separator << endl;
+        out << "\n" << big_separator << "\n";
     }
 }
 
@@ -272,7 +292,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
         {
         case CProt_ref::eEC_deleted:
             xGetLabel(feat, label);
-            m_Context.GetOstream(".ecn") << label << "\tEC number deleted\t" << *it << '\t' << endl;
+            m_Context.GetOstream(".ecn") << label << "\tEC number deleted\t" << *it << "\t\n";
             it = EC.erase(it);
             continue;
             break;
@@ -283,7 +303,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
             bool is_split = newvalue.find('\t') != string::npos;
             m_Context.GetOstream(".ecn") << label <<
             (is_split ? "\tEC number split\t" : "\tEC number changed\t")
-            << *it << '\t' << newvalue << endl;
+            << *it << '\t' << newvalue << "\n";
             if (is_split) {
                 it = EC.erase(it);
                 continue;
@@ -293,7 +313,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
         break;
         case CProt_ref::eEC_unknown:
             xGetLabel(feat, label);
-            m_Context.GetOstream(".ecn") << label << "\tEC number invalid\t" << *it << '\t' << endl;
+            m_Context.GetOstream(".ecn") << label << "\tEC number invalid\t" << *it << "\t\n";
             break;
         default:
             break;
@@ -309,6 +329,8 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
 
 void CTable2AsnValidator::UpdateECNumbers(CSeq_entry& entry)
 {
+    std::lock_guard<std::mutex> g{m_mutex};
+
     VisitAllFeatures(entry, CUpdateECNumbers(*m_context));
 }
 

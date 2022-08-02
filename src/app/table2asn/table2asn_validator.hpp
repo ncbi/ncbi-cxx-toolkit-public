@@ -26,12 +26,14 @@ public:
     CTable2AsnValidator(CTable2AsnContext& ctx);
     ~CTable2AsnValidator();
 
-    void Validate(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry, const string& flags);
-    void Cleanup(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry, const string& flags);
+    void Clear();
+    void ValCollect(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry, const string& flags);
+    void ValReportErrorStats(CNcbiOstream& out);
+    void ValReportErrors();
+    size_t ValTotalErrors() const;
+
+    void Cleanup(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry, const string& flags) const;
     void UpdateECNumbers(objects::CSeq_entry& entry);
-    void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
-    void ReportErrorStats(CNcbiOstream& out);
-    size_t TotalErrors() const;
 
     void CollectDiscrepancies(const CSerialObject& obj, bool eukaryote, const string& lineage);
     void ReportDiscrepancy(const CSerialObject& obj, bool eukaryote, const string& lineage);
@@ -50,6 +52,8 @@ protected:
     CTable2AsnContext* m_context;
     CRef<NDiscrepancy::CDiscrepancySet> m_discrepancy;
     std::shared_ptr<objects::validator::SValidatorContext> m_validator_ctx;
+    std::list<CConstRef<objects::CValidError>> m_val_errors;
+    mutable std::mutex m_mutex;
 };
 
 END_NCBI_SCOPE
