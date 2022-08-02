@@ -1734,6 +1734,7 @@ DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections
 DMNS:Mamm	s	Denver Museum of Nature and Science, Mammology Collection	https://arctos.database.museum/guid/DMNS:Mamm:
 DMNS:Para	s	Denver Museum of Nature and Science, Parasite collection	https://arctos.database.museum/guid/DMNS:Para:
 DMPMC	c	Department of Microbiology, University of Western Australia			
+DMRX	c	Directorate of Mushroom Research Culture Bank, Indian Council of Agricultural Research			
 DMSA	s	Durban Museum	DMSA		
 DMSC	s	Medicinal Plants Research Institute, Department of Medical Sciences			
 DMSP	s	Davis Mountains State Park			
