@@ -35,12 +35,13 @@
 #include "cass_blob_base.hpp"
 #include "resolve_base.hpp"
 
+#include <objtools/pubseq_gateway/impl/cassandra/nannot/filter.hpp>
+
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
 // Forward declaration
 class CCassFetch;
-
 
 class CPSGS_AnnotProcessor : public CPSGS_ResolveBase,
                              public CPSGS_CassBlobBase
@@ -86,6 +87,7 @@ private:
                              int  code,
                              EDiagSev  severity,
                              const string &  message);
+    void x_SendAnnotDataToClient(CNAnnotRecord &&  annot_record, int32_t  sat);
 private:
     bool x_NeedToRequestBlobProp(void);
     void x_RequestBlobProp(int32_t  sat, int32_t  sat_key, int64_t  last_modified);
@@ -115,6 +117,13 @@ private:
     SPSGS_AnnotRequest *        m_AnnotRequest;
 
     bool                        m_BlobStage;
+
+    // @temp ID-7327 NAnnot storage schema is being changed. Data is in migration progress. During that time
+    // there expected to exist duplicates between NAnnot keyspaces. Keyspace with larger sat_id has priority in that case
+    // First migration NAnnotG2 => NAnnotG3 will cause duplicates between NAnnotG3 and NAnnotG2
+    // Later migration NANnotG => NAnnotG2 will cause duplicates between NAnnotG2 and NAnnotG
+    // This component should be removed when migration is finished
+    unique_ptr<CNAnnotFilter>   m_AnnotFilter;
 };
 
 #endif  // PSGS_RESOLVEPROCESSOR__HPP
