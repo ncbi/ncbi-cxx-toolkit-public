@@ -1767,6 +1767,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DMNS:Mamm\ts\tDenver Museum of Nature and Science, Mammology Collection\thttps://arctos.database.museum/guid/DMNS:Mamm:",
 "DMNS:Para\ts\tDenver Museum of Nature and Science, Parasite collection\thttps://arctos.database.museum/guid/DMNS:Para:",
 "DMPMC\tc\tDepartment of Microbiology, University of Western Australia\t\t\t",
+"DMRX\tc\tDirectorate of Mushroom Research Culture Bank, Indian Council of Agricultural Research\t\t\t",
 "DMSA\ts\tDurban Museum\tDMSA\t\t",
 "DMSC\ts\tMedicinal Plants Research Institute, Department of Medical Sciences\t\t\t",
 "DMSP\ts\tDavis Mountains State Park\t\t\t",
