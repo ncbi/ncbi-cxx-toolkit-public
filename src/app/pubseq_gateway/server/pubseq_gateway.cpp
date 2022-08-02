@@ -612,6 +612,12 @@ int CPubseqGatewayApp::Run(void)
                 return OnStatistics(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/ADMIN/dispatcher_status",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnDispatcherStatus(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/favicon.ico",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {

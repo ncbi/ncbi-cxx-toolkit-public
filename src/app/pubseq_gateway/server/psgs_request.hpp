@@ -321,6 +321,8 @@ struct SPSGS_RequestBase
         return m_StartTimestamp;
     }
 
+    void AppendCommonParameters(CJsonNode &  json) const;
+
     SPSGS_RequestBase(const SPSGS_RequestBase &) = default;
     SPSGS_RequestBase(SPSGS_RequestBase &&) = default;
     SPSGS_RequestBase &  operator=(const SPSGS_RequestBase &) = default;
@@ -503,6 +505,8 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
         m_UseCache(ePSGS_UnknownUseCache),
         m_SendBlobIfSmall(0)
     {}
+
+    void AppendCommonParameters(CJsonNode &  json) const;
 
     SPSGS_BlobRequestBase(const SPSGS_BlobRequestBase &) = default;
     SPSGS_BlobRequestBase(SPSGS_BlobRequestBase &&) = default;
