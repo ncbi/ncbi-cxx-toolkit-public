@@ -44,6 +44,7 @@ USING_NCBI_SCOPE;
 using namespace std::placeholders;
 
 static const string   kAnnotProcessorName = "Cassandra-getna";
+static const bool     kEnableAnnotFilter = false;
 
 
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
@@ -204,6 +205,9 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
     vector<pair<string, int32_t>>   bioseq_na_keyspaces =
                 CPubseqGatewayApp::GetInstance()->GetBioseqNAKeyspaces();
 
+    if (kEnableAnnotFilter) {
+        m_AnnotFilter = make_unique<CNAnnotFilter>();
+    }
     for (const auto &  bioseq_na_keyspace : bioseq_na_keyspaces) {
         unique_ptr<CCassNamedAnnotFetch>   details;
         details.reset(new CCassNamedAnnotFetch(*m_AnnotRequest));
@@ -350,6 +354,16 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         // set to true. Otherwise the process of waiting for the other callback
         // should continue.
         if (AreAllFinishedRead()) {
+            if (m_AnnotFilter) {
+                m_AnnotFilter->Consume(
+                    [this]
+                    (int32_t sat, CNAnnotRecord&& annot_record)
+                    {
+                        x_SendAnnotDataToClient(move(annot_record), sat);
+                    }
+                );
+                m_AnnotFilter = nullptr;
+            }
             CPSGS_CassProcessorBase::SignalFinishProcessing();
             return false;
         }
@@ -359,6 +373,18 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         return true;
     }
 
+    if (m_AnnotFilter) {
+        m_AnnotFilter->Store(sat, move(annot_record));
+    } else {
+        x_SendAnnotDataToClient(move(annot_record), sat);
+    }
+    x_Peek(false);
+    return true;
+}
+
+void
+CPSGS_AnnotProcessor::x_SendAnnotDataToClient(CNAnnotRecord &&  annot_record, int32_t  sat)
+{
     auto    other_proc_priority = m_AnnotRequest->RegisterProcessedName(
                     m_Priority, annot_record.GetAnnotName());
     bool    annot_was_sent = false;
@@ -402,9 +428,6 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
             x_RequestBlobProp(sat, annot_record.GetSatKey(),
                               annot_record.GetModified());
     }
-
-    x_Peek(false);
-    return true;
 }
 
 
