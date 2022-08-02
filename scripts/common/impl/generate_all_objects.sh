@@ -15,7 +15,7 @@ for arg in "$@"; do
     case "$arg" in
         --clients) clients=true ;;
         --force ) force=true ;;
-        *       ) echo "Usage: $1 [--clients] [--force]" ; exit 1 ;;
+        *       ) echo "Usage: $0 [--clients] [--force]" ; exit 1 ;;
     esac
 done
 
