@@ -146,7 +146,7 @@ for method in $methods; do
     done
 done
 
-if test "$no_id2_test" = "1" || disabled PSGLoader || disabled MT || disabled in-house-resources; then
+if test "$no_id2_test" = "1" || disabled PSGLoader || disabled in-house-resources; then
     echo "Skipping PSG loader test"
 else
     echo "Checking PSG loader"
