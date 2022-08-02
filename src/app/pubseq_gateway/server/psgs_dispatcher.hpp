@@ -115,6 +115,7 @@ public:
     map<string, size_t>  GetConcurrentCounters(void);
     size_t GetActiveProcessorGroups(void);
     bool IsGroupAlive(size_t  request_id);
+    void PopulateStatus(CJsonNode &  status);
 
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
@@ -291,6 +292,18 @@ private:
     mutex                                           m_GroupsLock[PROC_BUCKETS];
 
     uint64_t                                        m_RequestTimeoutMillisec;
+
+public:
+    static string ProcessorStatusToString(EPSGS_ProcessorStatus  st)
+    {
+        switch (st) {
+            case ePSGS_Up:       return "Up";
+            case ePSGS_Canceled: return "Canceled";
+            case ePSGS_Finished: return "Finished";
+            default: ;
+        }
+        return "Unknown";
+    }
 
 private:
     // Processor concurrency support:

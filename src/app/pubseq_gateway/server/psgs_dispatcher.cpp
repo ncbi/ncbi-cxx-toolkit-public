@@ -997,3 +997,52 @@ bool CPSGS_Dispatcher::IsGroupAlive(size_t  request_id)
     return found;
 }
 
+
+void CPSGS_Dispatcher::PopulateStatus(CJsonNode &  status)
+{
+    for (size_t  index=0; index < PROC_BUCKETS; ++index) {
+        m_GroupsLock[index].lock();
+
+        for (const auto &  processors_group : m_ProcessorGroups[index]) {
+            IPSGS_Processor *           first_proc = processors_group.second->m_Processors[0].m_Processor.get();
+            shared_ptr<CPSGS_Request>   request = first_proc->GetRequest();
+
+            CJsonNode  proc_group(CJsonNode::NewObjectNode());
+            proc_group.SetInteger("Request ID", processors_group.second->m_RequestId);
+            proc_group.SetByKey("Request details", request->Serialize());
+            proc_group.SetBoolean("Timer active", processors_group.second->m_TimerActive);
+            proc_group.SetBoolean("Timer handle closed", processors_group.second->m_TimerClosed);
+            proc_group.SetBoolean("Finally flushed", processors_group.second->m_FinallyFlushed);
+            proc_group.SetBoolean("All processors finished", processors_group.second->m_AllProcessorsFinished);
+            proc_group.SetBoolean("Libh2o finished", processors_group.second->m_Libh2oFinished);
+            proc_group.SetBoolean("Low level close", processors_group.second->m_LowLevelClose);
+            proc_group.SetBoolean("Is safe to delete", processors_group.second->IsSafeToDelete());
+
+            if (processors_group.second->m_StartedProcessing == nullptr)
+                proc_group.SetNull("Signal start processor");
+            else
+                proc_group.SetString("Signal start processor", processors_group.second->m_StartedProcessing->GetName());
+
+            CJsonNode   processors(CJsonNode::NewArrayNode());
+
+            for (const auto &  processor : processors_group.second->m_Processors) {
+                CJsonNode  proc(CJsonNode::NewObjectNode());
+                proc.SetString("Name", processor.m_Processor->GetName());
+                proc.SetString("Dispatch status",
+                               CPSGS_Dispatcher::ProcessorStatusToString(processor.m_DispatchStatus));
+                proc.SetString("Finish status",
+                               IPSGS_Processor::StatusToString(processor.m_FinishStatus));
+                proc.SetString("Processor reported status",
+                               IPSGS_Processor::StatusToString(processor.m_Processor->GetStatus()));
+                processors.Append(proc);
+            }
+
+            proc_group.SetByKey("Processors", processors);
+            status.Append(proc_group);
+        }
+
+        m_GroupsLock[index].unlock();
+    }
+
+}
+

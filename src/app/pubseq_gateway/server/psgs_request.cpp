@@ -279,6 +279,31 @@ CJsonNode CPSGS_Request::Serialize(void) const
 }
 
 
+void SPSGS_RequestBase::AppendCommonParameters(CJsonNode &  json) const
+{
+    json.SetInteger("hops", m_Hops);
+    json.SetString("trace", TraceToString(m_Trace));
+    json.SetBoolean("processor events", m_ProcessorEvents);
+
+    auto            now = psg_clock_t::now();
+    uint64_t        mks = chrono::duration_cast<chrono::microseconds>
+                            (now - m_StartTimestamp).count();
+    json.SetInteger("started ago mks", mks);
+
+    CJsonNode   enabled_procs(CJsonNode::NewArrayNode());
+    for (const auto &  name : m_EnabledProcessors) {
+        enabled_procs.AppendString(name);
+    }
+    json.SetByKey("enabled processors", enabled_procs);
+
+    CJsonNode   disabled_procs(CJsonNode::NewArrayNode());
+    for (const auto &  name : m_DisabledProcessors) {
+        disabled_procs.AppendString(name);
+    }
+    json.SetByKey("disabled processors", disabled_procs);
+}
+
+
 CJsonNode SPSGS_ResolveRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
@@ -286,12 +311,21 @@ CJsonNode SPSGS_ResolveRequest::Serialize(void) const
     json.SetString("name", GetName());
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
-    json.SetString("trace", TraceToString(m_Trace));
     json.SetInteger("include data flags", m_IncludeDataFlags);
     json.SetString("output format", OutputFormatToString(m_OutputFormat));
     json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
     json.SetString("subst option", AccSubstitutioOptionToString(m_AccSubstOption));
+    SPSGS_RequestBase::AppendCommonParameters(json);
     return json;
+}
+
+
+void SPSGS_BlobRequestBase::AppendCommonParameters(CJsonNode &  json) const
+{
+    json.SetString("tse option", TSEOptionToString(m_TSEOption));
+    json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
+    json.SetString("client id", m_ClientId);
+    json.SetInteger("send blob if small", m_SendBlobIfSmall);
 }
 
 
@@ -302,11 +336,6 @@ CJsonNode SPSGS_BlobBySeqIdRequest::Serialize(void) const
     json.SetString("name", GetName());
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
-    json.SetString("tse option", TSEOptionToString(m_TSEOption));
-    json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
-    json.SetString("client id", m_ClientId);
-    json.SetString("trace", TraceToString(m_Trace));
-    json.SetString("subst option", AccSubstitutioOptionToString(m_AccSubstOption));
 
     CJsonNode   exclude_blobs(CJsonNode::NewArrayNode());
     for (const auto &  blob_id : m_ExcludeBlobs) {
@@ -314,6 +343,12 @@ CJsonNode SPSGS_BlobBySeqIdRequest::Serialize(void) const
     }
     json.SetByKey("exclude blobs", exclude_blobs);
 
+    json.SetString("subst option", AccSubstitutioOptionToString(m_AccSubstOption));
+    json.SetBoolean("auto blob skipping", m_AutoBlobSkipping);
+    json.SetInteger("resend timeout mks", m_ResendTimeoutMks);
+
+    SPSGS_BlobRequestBase::AppendCommonParameters(json);
+    SPSGS_RequestBase::AppendCommonParameters(json);
     return json;
 }
 
@@ -324,11 +359,10 @@ CJsonNode SPSGS_BlobBySatSatKeyRequest::Serialize(void) const
 
     json.SetString("name", GetName());
     json.SetString("blob id", m_BlobId.GetId());
-    json.SetString("tse option", TSEOptionToString(m_TSEOption));
-    json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
-    json.SetString("client id", m_ClientId);
-    json.SetString("trace", TraceToString(m_Trace));
     json.SetInteger("last modified", m_LastModified);
+
+    SPSGS_BlobRequestBase::AppendCommonParameters(json);
+    SPSGS_RequestBase::AppendCommonParameters(json);
     return json;
 }
 
@@ -340,9 +374,6 @@ CJsonNode SPSGS_AnnotRequest::Serialize(void) const
     json.SetString("name", GetName());
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
-    json.SetString("trace", TraceToString(m_Trace));
-    json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
-    json.SetString("tse option", TSEOptionToString(m_TSEOption));
 
     CJsonNode   names(CJsonNode::NewArrayNode());
     for (const auto &  name : m_Names) {
@@ -350,6 +381,17 @@ CJsonNode SPSGS_AnnotRequest::Serialize(void) const
     }
     json.SetByKey("names", names);
 
+    json.SetBoolean("auto blob skipping", m_AutoBlobSkipping);
+    json.SetInteger("resend timeout mks", m_ResendTimeoutMks);
+
+    CJsonNode   seq_ids(CJsonNode::NewArrayNode());
+    for (const auto &  seq_id : m_SeqIds) {
+        seq_ids.AppendString(seq_id);
+    }
+    json.SetByKey("seq ids", seq_ids);
+
+    SPSGS_BlobRequestBase::AppendCommonParameters(json);
+    SPSGS_RequestBase::AppendCommonParameters(json);
     return json;
 }
 
@@ -361,9 +403,9 @@ CJsonNode SPSGS_AccessionVersionHistoryRequest::Serialize(void) const
     json.SetString("name", GetName());
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
-    json.SetString("trace", TraceToString(m_Trace));
     json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
 
+    SPSGS_RequestBase::AppendCommonParameters(json);
     return json;
 }
 
@@ -448,7 +490,8 @@ CJsonNode SPSGS_TSEChunkRequest::Serialize(void) const
     json.SetInteger("id2 chunk", m_Id2Chunk);
     json.SetString("id2 info", m_Id2Info);
     json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
-    json.SetString("trace", TraceToString(m_Trace));
+
+    SPSGS_RequestBase::AppendCommonParameters(json);
     return json;
 }
 

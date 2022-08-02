@@ -2006,6 +2006,47 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
     return 0;
 }
 
+int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  req,
+                                          shared_ptr<CPSGS_Reply>  reply)
+{
+    // NOTE: expected to work regardless of the shutdown request
+
+    auto                    now = psg_clock_t::now();
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    try {
+        CJsonNode  dispatcher_status(CJsonNode::NewArrayNode());
+
+        m_RequestDispatcher->PopulateStatus(dispatcher_status);
+        string      content = dispatcher_status.Repr(CJsonNode::fStandardJson);
+
+        reply->SetContentType(ePSGS_JsonMime);
+        reply->SetContentLength(content.size());
+        reply->SendOk(content.data(), content.size(), false);
+
+        x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+        m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
+    } catch (const exception &  exc) {
+        string      msg = "Exception when handling a dispatcher_status request: " +
+                          string(exc.what());
+        x_SendMessageAndCompletionChunks(reply, now, msg,
+                                         CRequestStatus::e500_InternalServerError,
+                                         ePSGS_StatusError, eDiag_Error);
+        PSG_ERROR(msg);
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+    } catch (...) {
+        string      msg = "Unknown exception when handling a dispatcher_status request";
+        x_SendMessageAndCompletionChunks(reply, now, msg,
+                                         CRequestStatus::e500_InternalServerError,
+                                         ePSGS_StatusError, eDiag_Error);
+        PSG_ERROR(msg);
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+    }
+    return 0;
+}
+
+
 
 int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                                 shared_ptr<CPSGS_Reply>  reply)
