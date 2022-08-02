@@ -2104,6 +2104,8 @@ CRef<CUser_field> MakeStructuredCommentField(const string& n, const string& v)
 
 void CheckStructuredCommentField(const CUser_field& f, const string& n, const string& v)
 {
+    //cerr << "n: " << n << endl;
+    //cerr << "v: " << v << endl;
     BOOST_CHECK_EQUAL(f.GetLabel().GetStr(), n);
     BOOST_CHECK_EQUAL(f.GetData().GetStr(), v);
 }
@@ -2137,8 +2139,9 @@ BOOST_AUTO_TEST_CASE(Test_ibol)
     CheckCleanupAndCleanupOfUserObject(*obj);
     BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
     CheckStructuredCommentField(*(obj->GetData().front()), "StructuredCommentPrefix", "##International Barcode of Life (iBOL)Data-START##");
-    CheckStructuredCommentField(*(obj->GetData().back()), "Tentative Name", "a");
-    BOOST_CHECK_EQUAL(obj->GetData().size(), 3);
+    // RW-1737: account for auto-added suffix
+    CheckStructuredCommentField(**(obj->GetData().end()-2), "Tentative Name", "a");
+    BOOST_CHECK_EQUAL(obj->GetData().size(), 4); 
 
 }
 
@@ -2153,8 +2156,9 @@ void TestGenomeAssemblyField(const string& n, const string& v, const string& v_e
     CheckCleanupAndCleanupOfUserObject(*obj);
     BOOST_CHECK_EQUAL(CCleanup::CleanupUserObject(*obj), true);
     CheckStructuredCommentField(*(obj->GetData().front()), "StructuredCommentPrefix", "##Genome-Assembly-Data-START##");
-    CheckStructuredCommentField(*(obj->GetData().back()), n, v_e);
-    BOOST_CHECK_EQUAL(obj->GetData().size(), 2);
+    // RW-1737: account for auto-added suffix
+    CheckStructuredCommentField(**(obj->GetData().end()-2), n, v_e);
+    BOOST_CHECK_EQUAL(obj->GetData().size(), 3);
 }
 
 
