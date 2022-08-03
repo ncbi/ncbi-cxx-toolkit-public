@@ -65,7 +65,8 @@ SPSGS_BlobId::SPSGS_BlobId(int32_t  sat, int32_t  sat_key)
 
 CPSGS_Request::CPSGS_Request() :
     m_RequestId(0),
-    m_ConcurrentProcessorCount(0)
+    m_ConcurrentProcessorCount(0),
+    m_LimitedProcessorCount(0)
 {}
 
 

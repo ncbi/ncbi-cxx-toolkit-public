@@ -176,6 +176,16 @@ public:
     virtual string GetName(void) const;
     virtual CJsonNode Serialize(void) const;
 
+    size_t GetLimitedProcessorCount(void) const
+    {
+        return m_LimitedProcessorCount;
+    }
+
+    void IncrementLimitProcessorCount(void)
+    {
+        ++m_LimitedProcessorCount;
+    }
+
     CPSGS_Request(const CPSGS_Request &) = default;
     CPSGS_Request(CPSGS_Request &&) = default;
     CPSGS_Request &  operator=(const CPSGS_Request &) = default;
@@ -208,6 +218,10 @@ private:
     size_t                          m_ConcurrentProcessorCount;
     mutex                           m_WaitLock;
     map<string, SWaitData *>        m_Wait;
+
+    // Number of processors which have not been instantiated due to a
+    // concurrency limit is reached
+    size_t                          m_LimitedProcessorCount;
 };
 
 

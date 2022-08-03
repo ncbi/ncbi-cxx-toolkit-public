@@ -118,6 +118,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         size_t      current_count = m_ProcessorConcurrency[proc_index].GetCurrentCount();
 
         if (current_count >= limit) {
+            request->IncrementLimitProcessorCount();
             m_ProcessorConcurrency[proc_index].IncrementLimitReachedCount();
 
             if (request->NeedTrace()) {
@@ -167,11 +168,19 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     }
 
     if (ret.empty()) {
-        string  msg = "No matching processors found or processor limits "
-                      "exceeded to serve the request";
-        PSG_WARNING(msg);
+        string                  msg;
+        CRequestStatus::ECode   status_code;
+        if (request->GetLimitedProcessorCount() == 0) {
+            msg = "No matching processors found";
+            status_code = CRequestStatus::e404_NotFound;
+            PSG_WARNING(msg);
+        } else {
+            msg = "No processors were instantiated due to the limit on concurrent processors is exceeded";
+            status_code = CRequestStatus::e503_ServiceUnavailable;
+            PSG_ERROR(msg);
+        }
 
-        reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
+        reply->PrepareReplyMessage(msg, status_code,
                                    ePSGS_NoProcessor, eDiag_Error);
         reply->PrepareReplyCompletion(request->GetStartTimestamp());
 
