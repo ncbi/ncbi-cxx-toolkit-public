@@ -159,13 +159,13 @@ public:
     // Validate Seq-entry.
     // If provding a scope the Seq-entry must be a
     // top-level Seq-entry in that scope.
-    CConstRef<CValidError> Validate(const CSeq_entry& se, CScope* scope = nullptr,
+    CRef<CValidError> Validate(const CSeq_entry& se, CScope* scope = nullptr,
         Uint4 options = 0);
-    CConstRef<CValidError> Validate(const CSeq_entry_Handle& se,
+    CRef<CValidError> Validate(const CSeq_entry_Handle& se,
         Uint4 options = 0);
     // Validate Seq-submit.
     // Validates each of the Seq-entry contained in the submission.
-    CConstRef<CValidError> Validate(const CSeq_submit& ss, CScope* scope = nullptr,
+    CRef<CValidError> Validate(const CSeq_submit& ss, CScope* scope = nullptr,
         Uint4 options = 0);
     // Validate Seq-annot
     // Validates stand alone Seq-annot objects. This will supress any
