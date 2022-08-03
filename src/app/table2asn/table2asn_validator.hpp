@@ -2,6 +2,7 @@
 #define TABLE2ASN_VALIDATOR_HPP_INCLUDED
 
 #include <objtools/validator/validator_context.hpp>
+#include <objtools/validator/huge_file_validator.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,7 +53,8 @@ protected:
     CTable2AsnContext* m_context;
     CRef<NDiscrepancy::CDiscrepancySet> m_discrepancy;
     std::shared_ptr<objects::validator::SValidatorContext> m_validator_ctx;
-    std::list<CConstRef<objects::CValidError>> m_val_errors;
+    std::list<CRef<objects::CValidError>> m_val_errors;
+    objects::validator::CHugeFileValidator::TGlobalInfo m_val_globalInfo;
     mutable std::mutex m_mutex;
 };
 
