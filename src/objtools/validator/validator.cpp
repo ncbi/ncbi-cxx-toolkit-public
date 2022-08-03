@@ -109,7 +109,7 @@ taxupdate_func_t CValidator::MakeTaxUpdateFunction(shared_ptr<ITaxon3> taxon)
         };
 }
 
-CConstRef<CValidError> CValidator::Validate
+CRef<CValidError> CValidator::Validate
 (const CSeq_entry& se,
  CScope* scope,
  Uint4 options)
@@ -128,7 +128,7 @@ CConstRef<CValidError> CValidator::Validate
 
 //LCOV_EXCL_START
 // not used by asnvalidate, used by external programs
-CConstRef<CValidError> CValidator::Validate
+CRef<CValidError> CValidator::Validate
 (const CSeq_entry_Handle& seh,
  Uint4 options)
 {
@@ -224,7 +224,7 @@ CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CBio
 //LCOV_EXCL_STOP
 
 
-CConstRef<CValidError> CValidator::Validate
+CRef<CValidError> CValidator::Validate
 (const CSeq_submit& ss,
  CScope* scope,
  Uint4 options)
@@ -702,13 +702,13 @@ void CValidator::x_SetEntryInfo(const CValidator::TEntryInfo& info)
 }
 
 
-bool CValidator::IsSetEntryInfo() const 
+bool CValidator::IsSetEntryInfo() const
 {
     return m_pEntryInfo.get() != nullptr;
 }
 
 
-const CValidator::TEntryInfo& CValidator::GetEntryInfo() const 
+const CValidator::TEntryInfo& CValidator::GetEntryInfo() const
 {
     return *m_pEntryInfo;
 }
