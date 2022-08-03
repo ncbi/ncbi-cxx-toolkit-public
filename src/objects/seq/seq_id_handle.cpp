@@ -202,6 +202,7 @@ int CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
             return GetGi() > id.GetGi();
         }
     }
+    if (*this == id) return 0;
     return GetSeqId()->CompareOrdered(*id.GetSeqId());
 }
 
