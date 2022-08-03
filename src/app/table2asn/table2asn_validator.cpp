@@ -16,12 +16,13 @@
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
 #include <objtools/edit/remote_updater.hpp>
 
+#include <misc/discrepancy/discrepancy.hpp>
+#include <objtools/validator/entry_info.hpp>
+
 #include "table2asn_validator.hpp"
 #include "table2asn_context.hpp"
 
 #include "visitors.hpp"
-
-#include <misc/discrepancy/discrepancy.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -127,7 +128,7 @@ void CTable2AsnValidator::ValCollect(CRef<CSeq_submit> submit, CRef<CSeq_entry> 
     if (m_context->m_master_genome_flag == "n")
         options |= validator::CValidator::eVal_genome_submission;
 
-    CConstRef<CValidError> errors;
+    CRef<CValidError> errors;
 
     if (submit.Empty())
     {
@@ -147,6 +148,11 @@ void CTable2AsnValidator::ValCollect(CRef<CSeq_submit> submit, CRef<CSeq_entry> 
     {
         std::lock_guard<std::mutex> g{m_mutex};
         m_val_errors.push_back(errors);
+        // Accumulate global info
+        const auto& entryInfo = validator.GetEntryInfo();
+        m_val_globalInfo.NoPubsFound    &= entryInfo.IsNoPubs();
+        m_val_globalInfo.NoCitSubsFound &= entryInfo.IsNoCitSubPubs();
+        m_val_globalInfo.NoBioSource    &= entryInfo.IsNoBioSource();
     }
 }
 
@@ -154,6 +160,7 @@ void CTable2AsnValidator::Clear()
 {
     std::lock_guard<std::mutex> g{m_mutex};
     m_val_errors.clear();
+    m_val_globalInfo.Clear();
     m_discrepancy.Reset();
 }
 
@@ -165,6 +172,8 @@ void CTable2AsnValidator::ValReportErrors()
 
     for (auto& errors: m_val_errors)
     {
+        if (m_context->m_huge_files_mode)
+            g_PostprocessErrors(m_val_globalInfo, "some-seq-id", errors);
         for (auto& it: errors->GetErrs())
         {
             const CValidErrItem& item = *it;
