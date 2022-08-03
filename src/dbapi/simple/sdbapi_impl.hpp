@@ -47,6 +47,7 @@ public:
     CSDB_UserHandler(CConnHolder& conn)
         : m_Conn(conn)
         { }
+    bool HandleIt(CDB_Exception* ex);
     bool HandleMessage(int severity, int msgnum, const string& message);
     
 private:
@@ -77,6 +78,7 @@ private:
     size_t       m_DefaultTimeout;
     bool         m_HasCustomTimeout;
     bool         m_ContinueAfterRaiserror;
+    bool         m_LogMinorMessages;
     Uint4        m_CntOpen;
     list<string> m_PrintOutput;
     CRef<CDB_Exception::SContext> m_Context;

@@ -78,7 +78,8 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
         fPoolWaitTimeSet   = 0x10000,
         fPoolAllowTempSet  = 0x20000,
         fContRaiserrorSet  = 0x40000,
-        fPoolMaxConnUseSet = 0x80000
+        fPoolMaxConnUseSet = 0x80000,
+        fLogMinorMsgsSet   = 0x100000,
         // , fPoolNameSet     = 0x40000
     };
     typedef unsigned int  TFlags;
@@ -104,6 +105,7 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     string  pool_allow_temp_overflow;
     string  continue_after_raiserror;
     string  pool_max_conn_use;
+    string  log_minor_messages;
     string  args;
 
 
@@ -131,6 +133,8 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     bool IsContinueAfterRaiserrorSet(void)
                                    { return IsFlagSet(fContRaiserrorSet);  }
     bool IsPoolMaxConnUseSet(void) { return IsFlagSet(fPoolMaxConnUseSet); }
+    bool IsLogMinorMessagesSet(void)
+                                   { return IsFlagSet(fLogMinorMsgsSet);   }
     bool IsArgsSet(void)           { return IsFlagSet(fArgsSet);           }
 
     void Clear(void);

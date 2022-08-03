@@ -958,6 +958,12 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         params->pool_max_conn_use
             = reg.Get(section_name, "conn_pool_max_conn_use");
     }
+    if (reg.HasEntry(section_name, "log_minor_messages",
+                     IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fLogMinorMsgsSet;
+        params->log_minor_messages
+            = reg.Get(section_name, "log_minor_messages");
+    }
     if (reg.HasEntry(section_name, "args", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fArgsSet;
         params->args = reg.Get(section_name, "args");
@@ -1184,6 +1190,21 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         }
         else if (params.GetParam("continue_after_raiserror") == "default") {
             act_params.SetParam("continue_after_raiserror", "false");
+        }
+        if (conf_params.IsLogMinorMessagesSet()) {
+            if (conf_params.log_minor_messages.empty()) {
+                act_params.SetParam("log_minor_messages", "false");
+            }
+            else {
+                act_params.SetParam
+                    ("log_minor_messages", 
+                     NStr::BoolToString(
+                         NStr::StringToBool(
+                             conf_params.log_minor_messages)));
+            }
+        }
+        else if (params.GetParam("log_minor_messages") == "default") {
+            act_params.SetParam("log_minor_messages", "false");
         }
 
         s_TransformLoginData(server_name, user_name, db_name, password);
