@@ -698,7 +698,6 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                     LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is neither a Seq-submit nor Bioseq-set; do not use -batch to process.");
                 }
             } else {
-                size_t num_validated = 0;
                 bool doloop = true;
                 while (doloop) {
                     CStopWatch sw(CStopWatch::eStart);
@@ -735,18 +734,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                             doloop = false;
                         }
 
-                        num_validated++;
                     }
                     catch (const CEofException&) {
                         break;
-                    }
-                    catch (const CException& e) {
-                        if (num_validated == 0) {
-                            throw(e);
-                        }
-                        else {
-                            break;
-                        }
                     }
                     double elapsed = sw.Elapsed();
                     if (elapsed > m_Longest) {
