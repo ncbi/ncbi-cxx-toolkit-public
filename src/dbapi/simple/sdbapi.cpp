@@ -1110,6 +1110,7 @@ void CSDB_ConnectionParam::x_FillParamMap(void)
     COPY_BOOL_PARAM(ContinueAfterRaiserror, ContinueAfterRaiserror,
                     continue_after_raiserror);
     COPY_NUM_PARAM (ConnPoolMaxConnUse, PoolMaxConnUse,  pool_max_conn_use);
+    COPY_BOOL_PARAM(LogMinorMessages, LogMinorMessages, log_minor_messages);
 
 #undef COPY_PARAM_EX
 #undef COPY_PARAM
@@ -1222,6 +1223,7 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
                     eConnPoolAllowTempOverflow);
     x_FillBoolParam(params, "continue_after_raiserror",
                     eContinueAfterRaiserror);
+    x_FillBoolParam(params, "log_minor_messages", eLogMinorMessages);
 
     // Generic named parameters.  The historic version of this logic
     // had two quirks, which I [AMU] have not carried over:
@@ -1726,14 +1728,32 @@ CBlobStoreDynamic* CSDBAPI::NewBlobStore(const CSDB_ConnectionParam& param,
 }
 
 
+bool CSDB_UserHandler::HandleIt(CDB_Exception* ex)
+{
+    if (ex == nullptr) {
+        return true;
+    } else if (ex->GetSeverity() == eDiag_Info  &&  m_Conn.m_LogMinorMessages) {
+        ERR_POST_X(21, Info << *ex);
+        return true;
+    } else {
+        return CDB_UserHandler_Exception::HandleIt(ex);
+    }
+}
+
+
 bool CSDB_UserHandler::HandleMessage(int severity, int msgnum,
                                      const string& message)
 {
-    if (severity == 0) {
-        m_Conn.m_PrintOutput.push_back(message);
-        return true;
-    } else if (m_Conn.m_ContinueAfterRaiserror
-               &&  (severity == 16  ||  (severity == 10  &&  msgnum > 0))) {
+    if (severity < 10  ||  (severity == 10  &&  msgnum == 0)) {
+        if (severity == 0) {
+            m_Conn.m_PrintOutput.push_back(message);
+            return !m_Conn.m_LogMinorMessages;
+        } else if (m_Conn.m_LogMinorMessages) {
+            return false;
+        }
+    }
+    if (m_Conn.m_ContinueAfterRaiserror
+        &&  (severity == 16  ||  (severity == 10  &&  msgnum > 0))) {
         // Sybase servers use severity 16 for all user-defined messages,
         // even if they're not intended to abort execution.  Also, some
         // standard minor errors (such as Duplicate key was ignored, #3604)
@@ -1758,6 +1778,9 @@ CConnHolder::CConnHolder(IConnection* conn, const CSDB_ConnectionParam& params)
       m_HasCustomTimeout(false),
       m_ContinueAfterRaiserror
         (params.Get(CSDB_ConnectionParam::eContinueAfterRaiserror) == "true"),
+      m_LogMinorMessages
+        (params.Get(CSDB_ConnectionParam::eLogMinorMessages,
+                    CSDB_ConnectionParam::eWithOverrides) == "true"),
       m_CntOpen(0),
       m_Context(new CDB_Exception::SContext),
       m_Handler(new CSDB_UserHandler(*this))
