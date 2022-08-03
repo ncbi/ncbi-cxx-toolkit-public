@@ -492,6 +492,10 @@ void CHugeAsnReader::FlattenGenbankSet()
     m_Current = m_FlattenedSets.begin();
 }
 
+CConstRef<CSubmit_block> CHugeAsnReader::GetSubmitBlock() const
+{
+    return m_submit_block;
+};
 
 CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
 {

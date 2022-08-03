@@ -67,7 +67,7 @@ public:
     void Open(CHugeFile* file, ILineErrorListener * pMessageListener) override;
     bool GetNextBlob() override;
     CRef<CSeq_entry> GetNextSeqEntry() override;
-    CConstRef<CSubmit_block> GetSubmitBlock() const override { return m_submit_block; };
+    CConstRef<CSubmit_block> GetSubmitBlock() const override;
     CRef<CObject> ReadAny();
 
     struct TBioseqInfo;
@@ -94,11 +94,7 @@ public:
         CConstRef<CSeq_descr> m_descr;
     };
 
-
-
-
     using CRefLess = PPtrLess<CConstRef<CSeq_id>>;
-
 
     using TBioseqIndex = std::map<CConstRef<CSeq_id>, TBioseqList::const_iterator, CRefLess>;
     using TBioseqSetIndex = std::map<CConstRef<CSeq_id>, TBioseqSetList::const_iterator, CRefLess>;
@@ -125,7 +121,7 @@ public:
     bool IsMultiSequence() const override;
 
     void FlattenGenbankSet();
-    CConstRef<CSeq_entry> GetTopEntry() const { return m_top_entry; }
+    auto& GetTopEntry() const { return m_top_entry; }
     auto& GetFlattenedIndex() const { return m_FlattenedIndex; }
     auto& GetTopIds() const { return m_top_ids; }
     unique_ptr<CObjectIStream> MakeObjStream(TFileSize pos) const;
