@@ -179,6 +179,8 @@ private:
         eClosing,
     };
 
+    int Connect();
+
     void OnConnect(uv_connect_t* req, int status);
     void OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf);
     void OnRead(uv_stream_t*, ssize_t nread, const uv_buf_t* buf);

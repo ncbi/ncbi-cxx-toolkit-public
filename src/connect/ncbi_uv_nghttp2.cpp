@@ -203,23 +203,11 @@ SUv_Tcp::SUv_Tcp(uv_loop_t *l, const SSocketAddress& address, size_t rd_buf_size
 int SUv_Tcp::Write()
 {
     if (m_State == eClosed) {
-        auto rv = uv_tcp_init(m_Loop, this);
+        auto rv = Connect();
 
         if (rv < 0) {
-            NCBI_UV_TCP_TRACE(this << " init failed: " << SUvNgHttp2_Error::LibuvStr(rv));
             return rv;
         }
-
-        rv = m_Connect(this, s_OnConnect);
-
-        if (rv < 0) {
-            NCBI_UV_TCP_TRACE(this << " pre-connect failed: " << SUvNgHttp2_Error::LibuvStr(rv));
-            Close();
-            return rv;
-        }
-
-        NCBI_UV_TCP_TRACE(this << " connecting");
-        m_State = eConnecting;
     }
 
     if (m_State == eConnected) {
@@ -258,6 +246,29 @@ void SUv_Tcp::Close()
     } else {
         NCBI_UV_TCP_TRACE(this << " already closing/closed");
     }
+}
+
+int SUv_Tcp::Connect()
+{
+    auto rv = uv_tcp_init(m_Loop, this);
+
+    if (rv < 0) {
+        NCBI_UV_TCP_TRACE(this << " init failed: " << SUvNgHttp2_Error::LibuvStr(rv));
+        return rv;
+    }
+
+    rv = m_Connect(this, s_OnConnect);
+
+    if (rv < 0) {
+        NCBI_UV_TCP_TRACE(this << " pre-connect failed: " << SUvNgHttp2_Error::LibuvStr(rv));
+        Close();
+        return rv;
+    }
+
+    NCBI_UV_TCP_TRACE(this << " connecting");
+    m_State = eConnecting;
+
+    return 0;
 }
 
 void SUv_Tcp::OnConnect(uv_connect_t*, int status)
