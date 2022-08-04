@@ -913,7 +913,7 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error&
     req->reply->SetFailed(error);
     _DEBUG_ARG(const auto& server_name = server.address.AsString());
     PSG_THROTTLING_TRACE("Server '" << server_name << "' failed to process request '" <<
-            debug_printout.id << '\'');
+            debug_printout.id << "', " << error);
     return false;
 }
 

@@ -289,6 +289,7 @@ void SUv_Tcp::OnConnect(uv_connect_t*, int status)
 
 void SUv_Tcp::OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf)
 {
+    NCBI_UV_TCP_TRACE(this << " alloc: " << suggested_size);
     m_ReadBuffer.resize(suggested_size);
     buf->base = m_ReadBuffer.data();
     buf->len = static_cast<decltype(buf->len)>(m_ReadBuffer.size());
@@ -414,9 +415,9 @@ int SNgHttp2_Session::Init()
         return x_DelOnError(rv);
     }
 
-    NCBI_NGHTTP2_SESSION_TRACE(this << " initialized");
     auto max_streams = nghttp2_session_get_remote_settings(m_Session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
     m_MaxStreams.first = min(max_streams, m_MaxStreams.second);
+    NCBI_NGHTTP2_SESSION_TRACE(this << " initialized: " << m_MaxStreams.first);
     return 0;
 }
 
