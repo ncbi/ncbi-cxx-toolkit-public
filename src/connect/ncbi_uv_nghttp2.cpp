@@ -202,6 +202,10 @@ SUv_Tcp::SUv_Tcp(uv_loop_t *l, const SSocketAddress& address, size_t rd_buf_size
 
 int SUv_Tcp::Write()
 {
+    if (m_State == eClosing) {
+        m_State = eRestarting;
+    }
+
     if (m_State == eClosed) {
         auto rv = Connect();
 
@@ -239,7 +243,7 @@ void SUv_Tcp::Close(ECloseType close_type)
 
     m_Write.Reset();
 
-    if (m_State == eClosing) {
+    if ((m_State == eClosing) || (m_State == eRestarting)) {
         NCBI_UV_TCP_TRACE(this << " already closing");
 
     } else if (m_State == eClosed) {
@@ -350,7 +354,10 @@ void SUv_Tcp::OnWrite(uv_write_t* req, int status)
 void SUv_Tcp::OnClose(uv_handle_t*)
 {
     NCBI_UV_TCP_TRACE(this << " closed");
-    m_State = eClosed;
+
+    if (exchange(m_State, eClosed) == eRestarting) {
+        Connect();
+    }
 }
 
 struct SUvNgHttp2_UserAgentImpl : string
