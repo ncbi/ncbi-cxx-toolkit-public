@@ -44,7 +44,7 @@ USING_NCBI_SCOPE;
 using namespace std::placeholders;
 
 static const string   kAnnotProcessorName = "Cassandra-getna";
-static const bool     kEnableAnnotFilter = false;
+static const bool     kEnableAnnotFilter = true;
 
 
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
