@@ -704,7 +704,7 @@ sub get_blastdb_metadata
     }
     if (defined $ftp) {
         my $tmpfh = File::Temp->new();
-        print "Downloading " . BLASTDB_METADATA . " to $tmpfh\n";
+        print "Downloading " . BLASTDB_METADATA . " to $tmpfh\n" if ($opt_verbose > 3);
         $ftp->get(BLASTDB_METADATA, $tmpfh);
         $tmpfh->seek(0, 0);
         $retval = do {
