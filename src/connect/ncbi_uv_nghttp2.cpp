@@ -225,7 +225,7 @@ int SUv_Tcp::Write()
     return 0;
 }
 
-void SUv_Tcp::Close()
+void SUv_Tcp::Close(ECloseType close_type)
 {
     if (m_State == eConnected) {
         auto rv = uv_read_stop(reinterpret_cast<uv_stream_t*>(this));
@@ -239,12 +239,28 @@ void SUv_Tcp::Close()
 
     m_Write.Reset();
 
-    if ((m_State != eClosing) && (m_State != eClosed)) {
-        NCBI_UV_TCP_TRACE(this << " closing");
-        m_State = eClosing;
-        SUv_Handle<uv_tcp_t>::Close();
+    if (m_State == eClosing) {
+        NCBI_UV_TCP_TRACE(this << " already closing");
+
+    } else if (m_State == eClosed) {
+        NCBI_UV_TCP_TRACE(this << " already closed");
+
     } else {
-        NCBI_UV_TCP_TRACE(this << " already closing/closed");
+        m_State = eClosing;
+
+        if (close_type == eNormalClose) {
+            SUv_Handle<uv_tcp_t>::Close();
+            NCBI_UV_TCP_TRACE(this << " closing");
+        } else {
+            auto rv = uv_tcp_close_reset(this, s_OnClose);
+
+            if (rv < 0) {
+                NCBI_UV_TCP_TRACE(this << " close reset failed: " << SUvNgHttp2_Error::LibuvStr(rv));
+                m_State = eClosed;
+            } else {
+                NCBI_UV_TCP_TRACE(this << " close resetting");
+            }
+        }
     }
 }
 
@@ -870,7 +886,7 @@ bool SUvNgHttp2_SessionBase::Send()
         Reset(SUvNgHttp2_Error::FromNgHttp2(send_rv, "on send"));
 
     } else if (send_rv == SNgHttp2_Session::eWantsClose) {
-        Reset("nghttp2 asked to drop connection");
+        Reset("nghttp2 asked to drop connection", SUv_Tcp::eNormalClose);
 
     } else {
         auto tls_rv = m_Tls->Write();
@@ -930,7 +946,7 @@ void SUvNgHttp2_SessionBase::OnRead(const char* buf, ssize_t nread)
         if (read_rv == 0) {
             m_Session.Del();
             m_Tls->Close();
-            m_Tcp.Close();
+            m_Tcp.Close(SUv_Tcp::eNormalClose);
 
         } else if (s_WantReadOrWrite(read_rv)) {
             if (nread == 0) break;
@@ -960,12 +976,12 @@ void SUvNgHttp2_SessionBase::OnRead(const char* buf, ssize_t nread)
     Send();
 }
 
-void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error)
+void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type)
 {
     NCBI_UVNGHTTP2_SESSION_TRACE(this << " resetting with " << error);
     m_Session.Del();
     m_Tls->Close();
-    m_Tcp.Close();
+    m_Tcp.Close(close_type);
     OnReset(move(error));
 }
 
