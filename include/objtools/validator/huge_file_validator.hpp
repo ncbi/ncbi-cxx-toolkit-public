@@ -111,9 +111,9 @@ private:
     TOptions m_Options;
 };
 
-string g_GetGenbankIdString(const edit::CHugeAsnReader& reader);
+string NCBI_VALIDATOR_EXPORT g_GetGenbankIdString(const edit::CHugeAsnReader& reader);
 
-void g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
+void NCBI_VALIDATOR_EXPORT g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
         const string& genbankSetId,
         CRef<CValidError>& pErrors);
 
