@@ -106,7 +106,8 @@ CPSGS_Request::CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
     m_Request(move(req)),
     m_RequestContext(request_context),
     m_RequestId(GetNextRequestId()),
-    m_ConcurrentProcessorCount(0)
+    m_ConcurrentProcessorCount(0),
+    m_LimitedProcessorCount(0)
 {}
 
 
