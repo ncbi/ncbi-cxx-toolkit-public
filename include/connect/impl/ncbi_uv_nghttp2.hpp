@@ -159,6 +159,8 @@ private:
 
 struct NCBI_XXCONNECT2_EXPORT SUv_Tcp : SUv_Handle<uv_tcp_t>
 {
+    enum ECloseType { eNormalClose, eCloseReset };
+
     using TConnectCb = function<void(int)>;
     using TReadCb = function<void(const char*, ssize_t)>;
     using TWriteCb = function<void(int)>;
@@ -167,7 +169,7 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Tcp : SUv_Handle<uv_tcp_t>
             TConnectCb connect_cb, TReadCb read_cb, TWriteCb write_cb);
 
     int Write();
-    void Close();
+    void Close(ECloseType close_type = eCloseReset);
 
     vector<char>& GetWriteBuffer() { return m_Write.GetBuffer(); }
 
@@ -446,7 +448,7 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 
     virtual ~SUvNgHttp2_SessionBase() {}
 
-    void Reset(SUvNgHttp2_Error error);
+    void Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type = SUv_Tcp::eCloseReset);
 
 protected:
     bool Send();

@@ -1176,7 +1176,7 @@ void SPSG_IoImpl::OnShutdown(uv_async_t*)
 
     for (auto& server_sessions : m_Sessions) {
         for (auto& session : server_sessions.first) {
-            session.Reset("Shutdown is in process");
+            session.Reset("Shutdown is in process", SUv_Tcp::eNormalClose);
         }
     }
 }
