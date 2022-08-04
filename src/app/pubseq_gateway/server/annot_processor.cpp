@@ -388,8 +388,11 @@ CPSGS_AnnotProcessor::x_SendAnnotDataToClient(CNAnnotRecord &&  annot_record, in
     auto    other_proc_priority = m_AnnotRequest->RegisterProcessedName(
                     m_Priority, annot_record.GetAnnotName());
     bool    annot_was_sent = false;
-    if (other_proc_priority == kUnknownPriority) {
-        // Has not been processed yet at all
+    if (other_proc_priority == kUnknownPriority ||
+        other_proc_priority == m_Priority) {
+        // 1. Has not been processed yet at all
+        // 2. It was me who send the other one, i.e. it is multiple data items
+        //    for the same annotation
         IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
             annot_record.GetAnnotName(), kAnnotProcessorName,
             ToJsonString(annot_record, sat));
