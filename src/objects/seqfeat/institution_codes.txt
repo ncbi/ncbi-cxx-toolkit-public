@@ -453,6 +453,7 @@ BBS	s	University of Suriname
 BBSL	s	Bee Biology and Systematics Laboratory			
 BBSUK	s	National Museum and Gallery, Department of Biodiversity and Systematic Biology			
 BC	s	Institut Botanic de Barcelona			
+BCAC	sc	Bashkortostan Collection of Algae and Cyanobacteria			
 BCB	s	Universitat Autonoma de Barcelona, Unitat de Botanica			
 BCBC	s	Broward College			
 BCC<ESP>	s	Universitat de Barcelona, Departament de Biologia Vegetal (Unitat de Botanica)			
@@ -5373,6 +5374,7 @@ NRC	c	Division of Biological Sciences, National Research Council of Canada
 NRC<EGY>	s	National Research Centre			
 NRCC	s	National Research Council of Canada			
 NRCS	c	National Reference Center for Streptococci in Aachen			
+NREL	s	National Renewable Energy Laboratory			
 NRI	s	Texas A&M Natural Resources Institute			
 NRIBAS	s	National Research Institute of Biology, Academia Sinica			
 NRIC	c	NODAI Research Institute Culture Collection			
