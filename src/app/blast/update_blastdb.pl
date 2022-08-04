@@ -331,7 +331,7 @@ if ($location ne "NCBI") {
 } else {
     # Connect and download files
     $ftp = &connect_to_ftp();
-    my ($json, $url) = &get_blastdb_metadata($location, '');
+    my ($json, $url) = &get_blastdb_metadata($location, '', $ftp);
     unless (length($json)) {
         print STDERR "ERROR: Missing manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
         exit(EXIT_FAILURE);
@@ -688,7 +688,10 @@ sub get_blastdb_metadata
 {
     my $source = shift;
     my $latest_dir = shift;
+    my $ftp = shift;
     my ($url, $cmd);
+    my $retval;
+
     if ($source eq "AWS") {
         $url = AWS_URL . "/" . AWS_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
         $cmd = "curl -sf $url";
@@ -699,8 +702,16 @@ sub get_blastdb_metadata
         $url = 'ftp://' . NCBI_FTP . "/blast/db/" . BLASTDB_METADATA;
         $cmd = "curl -sf $url";
     }
-    print "$cmd\n" if DEBUG;
-    chomp(my $retval = `$cmd`);
+    if (defined $ftp) {
+        my $file = "blast/db/" . BLASTDB_METADATA;
+        $ftp->get($file);
+        open(IN, BLASTDB_METADATA);
+        $retval = <IN>;
+        close(IN);
+    } else {
+        print "$cmd\n" if DEBUG;
+        chomp($retval = `$cmd`);
+    }
     return ($retval, $url);
 }
 
