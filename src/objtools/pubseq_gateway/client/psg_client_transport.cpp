@@ -1259,7 +1259,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             for (; (session != server_sessions.end()) && session->IsFull(); ++session);
 
             // All existing sessions are full and no new sessions are allowed
-            if ((session == server_sessions.end()) && (server_sessions.size() >= TPSG_MaxSessions::GetDefault())) {
+            if (session == server_sessions.end()) {
                 PSG_IO_TRACE("Server '" << server_name << "' has no room for a request");
 
             // Session is available or can be created
@@ -1281,13 +1281,6 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         return;
                     }
 
-                    // All existing sessions are full
-                    if (session == server_sessions.end()) {
-                        server_sessions.emplace_back(server, queue, handle->loop);
-                        session = (server_sessions.rbegin() + 1).base();
-                        PSG_IO_TRACE("Additional session for server '" << server_name << "' was added");
-                    }
-
                     _DEBUG_ARG(const auto req_id = req->reply->debug_printout.id);
                     bool result = session->ProcessRequest(req);
 
@@ -1295,6 +1288,15 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         PSG_IO_TRACE("Server '" << server_name << "' will get request '" <<
                                 req_id << "' with rate = " << original_rate);
                         ++server.stats;
+
+                        // Add new session if allowed to
+                        if (session->IsFull() &&
+                                (distance(session, server_sessions.end()) == 1) &&
+                                (server_sessions.size() < TPSG_MaxSessions::GetDefault())) {
+                            server_sessions.emplace_back(server, queue, handle->loop);
+                            PSG_IO_TRACE("Additional session for server '" << server_name << "' was added");
+                        }
+
                         break;
                     } else {
                         PSG_IO_TRACE("Server '" << server_name << "' failed to process request '" <<
