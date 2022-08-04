@@ -421,9 +421,9 @@ struct SPSG_Request
         while (len && (this->*m_State)(data, len));
     }
 
-    unsigned GetRetries()
+    unsigned GetRetries(bool refused_stream)
     {
-        return reply->reply_item->state.InProgress() && (m_Retries > 0) ? m_Retries-- : 0;
+        return reply->reply_item->state.InProgress() && (m_Retries > 0) ? (refused_stream ? m_Retries : m_Retries--) : 0;
     }
 
 private:
@@ -611,7 +611,7 @@ private:
 
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
-    bool Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error);
+    bool Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
     void RequestComplete(TRequests::iterator& it);
 
     void OnReset(SUvNgHttp2_Error error) override;

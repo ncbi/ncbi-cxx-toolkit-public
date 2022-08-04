@@ -893,13 +893,13 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     return 0;
 }
 
-bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error)
+bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
     SContextSetter setter(req->context);
     server.throttling.AddFailure();
 
     auto& debug_printout = req->reply->debug_printout;
-    auto retries = req->GetRetries();
+    auto retries = req->GetRetries(refused_stream);
 
     if (retries) {
         // Return to queue for a re-send
@@ -933,7 +933,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
         if (error_code) {
             auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
 
-            if (!Retry(req, error)) {
+            if (!Retry(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
                 ERR_POST("Request for " << server.address.AsString() << " failed with " << error);
             }
         } else {
