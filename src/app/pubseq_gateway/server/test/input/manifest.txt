@@ -302,5 +302,8 @@ getna_late_seq_id_cache_only            | -url "ID/get_na?fmt=json&all_info=yes&
 getna_late_seq_id_db_only               | -url "ID/get_na?fmt=json&all_info=yes&seq_id=13&seq_ids=12%20NW_017890465&names=NA000122202.1&disable_processor=osg&use_cache=no"                                                 | Third seq id must be resolved                                                 | get_na
 getna_late_seq_id_db_and_cache          | -url "ID/get_na?fmt=json&all_info=yes&seq_id=13&seq_ids=12%20NW_017890465&names=NA000122202.1&disable_processor=osg"                                                              | Third seq id must be resolved                                                 | get_na
 
+getna_multiple_1                        | -url "ID/get_na?fmt=json&all_info=yes&seq_id=NC_062543&names=NA000353806.1&disable_processor=osg"                                                                                 | multiple date items                                                           | get_na
+getna_multiple_2                        | -url "ID/get_na?fmt=json&all_info=yes&seq_id=NC_062543&names=NA000353807.1&disable_processor=osg"                                                                                 | multiple date items                                                           | get_na
+
 osg_getchunk_ok                         | -url "ID/get_tse_chunk?id2_chunk=2041&id2_info=1000/69892021.2.0.0&disable_processor=cassandra"                                                                                   | OSG processor getchunk OK                                                     | osg
 
