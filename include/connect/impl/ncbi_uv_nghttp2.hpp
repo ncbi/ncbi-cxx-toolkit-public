@@ -179,6 +179,7 @@ private:
         eConnecting,
         eConnected,
         eClosing,
+        eRestarting,
     };
 
     int Connect();
