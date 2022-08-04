@@ -170,6 +170,10 @@ endfunction()
 #############################################################################
 #############################################################################
 
+if(NCBI_PTBCFG_USECONAN AND NOT COMMAND conan_define_targets)
+    NCBI_define_Pkgcomponent(NAME OpenSSL PACKAGE openssl FIND OpenSSL)
+endif()
+
 #############################################################################
 # BACKWARD, UNWIND
 NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp REQUIRES libdwarf FIND Backward)
@@ -314,14 +318,14 @@ foreach( _type IN ITEMS Chrono Filesystem Iostreams Regex Serialization System)
     endif()
 endforeach()
 
-if(TARGET Boost::boost)
-    set(NCBI_COMPONENT_Boost_LIBS)
-    foreach( _type IN ITEMS Chrono Filesystem Iostreams Regex Serialization System)
-        string(TOLOWER ${_type} _lowtype)
-        if(TARGET Boost::${_lowtype})
-            list(APPEND NCBI_COMPONENT_Boost_LIBS Boost::${_lowtype})
+if(NCBI_COMPONENT_Boost_FOUND)
+    set(_libs)
+    foreach( _lib IN LISTS NCBI_COMPONENT_Boost_LIBS)
+        if(NOT ${_lib} MATCHES "unit_test_framework")
+            list(APPEND _libs ${_lib})
         endif()
     endforeach()
+    set(NCBI_COMPONENT_Boost_LIBS ${_libs})
     if(NCBI_TRACE_COMPONENT_Boost OR NCBI_TRACE_ALLCOMPONENTS)
         message("NCBI_COMPONENT_Boost_LIBS: ${NCBI_COMPONENT_Boost_LIBS}")
     endif()
