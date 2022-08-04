@@ -101,7 +101,8 @@ enum EPSGS_PubseqGatewayErrorCode {
 
     ePSGS_BlobRetrievalIsNotAuthorized       = 335,
 
-    ePSGS_RequestTimeout                     = 336
+    ePSGS_RequestTimeout                     = 336,
+    ePSGS_NotFoundAndNotInstantiated         = 337
 };
 
 

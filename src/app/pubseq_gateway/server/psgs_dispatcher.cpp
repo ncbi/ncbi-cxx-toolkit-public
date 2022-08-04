@@ -346,6 +346,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     size_t                          request_id = request->GetRequestId();
     size_t                          bucket_index = x_GetBucketIndex(request_id);
     IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
+    IPSGS_Processor::EPSGS_Status   worst_status = processor->GetStatus();
     IPSGS_Processor::EPSGS_Status   processor_status = processor->GetStatus();
     bool                            need_trace = request->NeedTrace();
     bool                            started_processor_finished = false;
@@ -478,6 +479,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 } // End of (proc.m_DispatchStatus) switch
 
                 best_status = min(best_status, proc.m_FinishStatus);
+                worst_status = max(worst_status, proc.m_FinishStatus);
 
             } // End of report source condition handling
 
@@ -493,6 +495,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         switch (proc.m_DispatchStatus) {
             case ePSGS_Finished:
                 best_status = min(best_status, proc.m_FinishStatus);
+                worst_status = max(worst_status, proc.m_FinishStatus);
                 ++finished_count;
                 break;
             case ePSGS_Up:
@@ -542,6 +545,32 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         if (!reply->IsFinished() && reply->IsOutputReady() && started_processor_finished) {
             // Map the processor finish to the request status
             CRequestStatus::ECode   request_status = x_MapProcessorFinishToStatus(best_status);
+            if (request->GetLimitedProcessorCount() > 0 &&
+                request_status == CRequestStatus::e404_NotFound) {
+                // The working processors found nothing but there were
+                // processors which have not been tried to instantiate because
+                // they reached the concurrency limit. So the status should be
+                // calculated in a different way as worst among those
+                // processors which worked and 503 as a substitute for the one
+                // which was not instantiated
+                request_status = max(x_MapProcessorFinishToStatus(worst_status),
+                                     CRequestStatus::e503_ServiceUnavailable);
+                if (need_trace) {
+                    x_SendTrace(
+                        "Dispatcher: request status has been calculated as "
+                        "the worst because the working processors found nothing "
+                        "and there were " + to_string(request->GetLimitedProcessorCount()) +
+                        " processor(s) which have not been tried to be instantiated "
+                        "due to their concurrency limit has been exceeded",
+                        request, reply);
+                }
+
+                reply->PrepareReplyMessage("Instantiated processors found nothing and there were " +
+                                           to_string(request->GetLimitedProcessorCount()) +
+                                           " processor(s) which have not been tried to be instantiated "
+                                           "due to their concurrency limit has been exceeded", request_status,
+                                           ePSGS_NotFoundAndNotInstantiated, eDiag_Error);
+            }
 
             if (need_trace) {
                 x_SendTrace(
@@ -669,6 +698,10 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
         case IPSGS_Processor::ePSGS_NotFound:
         case IPSGS_Processor::ePSGS_Canceled:   // not found because it was not let to finish
             return CRequestStatus::e404_NotFound;
+        case IPSGS_Processor::ePSGS_Error:
+            return CRequestStatus::e500_InternalServerError;
+        case IPSGS_Processor::ePSGS_Timeout:
+            return CRequestStatus::e504_GatewayTimeout;
         default:
             break;
     }

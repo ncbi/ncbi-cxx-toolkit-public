@@ -72,14 +72,16 @@ class IPSGS_Processor
 {
 public:
     /// The GetStatus() method returns a processor current status.
+    /// The order is important: basing on it a worst (max) and best (min)
+    /// status is calculated for a group of processors.
     enum EPSGS_Status {
         ePSGS_InProgress,   //< Processor is still working.
         ePSGS_Done,         //< Processor finished and found what needed.
         ePSGS_NotFound,     //< Processor finished and did not find anything.
-        ePSGS_Error,        //< Processor finished and there was an error.
         ePSGS_Canceled,     //< Processor finished because earlier it received
                             //< the Cancel() call.
-        ePSGS_Timeout       //< Processor finished because of a backend timeout.
+        ePSGS_Timeout,      //< Processor finished because of a backend timeout.
+        ePSGS_Error         //< Processor finished and there was an error.
     };
 
     /// Converts the processor status to a string for tracing and logging
