@@ -18,6 +18,7 @@
 
 #include <misc/discrepancy/discrepancy.hpp>
 #include <objtools/validator/entry_info.hpp>
+#include <objtools/validator/utilities.hpp>
 
 #include "table2asn_validator.hpp"
 #include "table2asn_context.hpp"
@@ -122,6 +123,16 @@ void CTable2AsnValidator::ValCollect(CRef<CSeq_submit> submit, CRef<CSeq_entry> 
 {
     CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
+
+    if (m_context->m_huge_files_mode) {
+        std::lock_guard<std::mutex> g{m_mutex};
+        m_validator_ctx->PostprocessHugeFile = true;
+        if (m_validator_ctx->GenbankSetId.empty()) {
+            int unneded_version;
+            m_validator_ctx->GenbankSetId = validator::GetAccessionFromObjects(nullptr, entry, scope, &unneded_version);
+        }
+    }
+
     validator::CValidator validator(scope.GetObjectManager(), m_validator_ctx);
 
     Uint4 options = 0;
@@ -173,7 +184,7 @@ void CTable2AsnValidator::ValReportErrors()
     for (auto& errors: m_val_errors)
     {
         if (m_context->m_huge_files_mode)
-            g_PostprocessErrors(m_val_globalInfo, "some-seq-id", errors);
+            g_PostprocessErrors(m_val_globalInfo, m_validator_ctx->GenbankSetId, errors);
         for (auto& it: errors->GetErrs())
         {
             const CValidErrItem& item = *it;
