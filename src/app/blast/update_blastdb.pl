@@ -703,11 +703,14 @@ sub get_blastdb_metadata
         $cmd = "curl -sf $url";
     }
     if (defined $ftp) {
-        my $file = "blast/db/" . BLASTDB_METADATA;
-        $ftp->get($file);
-        open(IN, BLASTDB_METADATA);
-        $retval = <IN>;
-        close(IN);
+        my $tmpfh = File::Temp->new();
+        print "Downloading " . BLASTDB_METADATA . " to $tmpfh\n";
+        $ftp->get(BLASTDB_METADATA, $tmpfh);
+        $tmpfh->seek(0, 0);
+        $retval = do {
+            local $/ = undef;
+            <$tmpfh>;
+        };
     } else {
         print "$cmd\n" if DEBUG;
         chomp($retval = `$cmd`);
