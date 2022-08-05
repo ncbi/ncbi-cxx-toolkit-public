@@ -68,6 +68,7 @@ message("-----------------------------------------------------------------------
     message("")
     message("Components:  ${NCBI_ALL_COMPONENTS}")
     message("Requirements:  ${NCBI_ALL_REQUIRES}")
+    message("Disabled Components:  ${NCBI_ALL_DISABLED}")
     message("Deprecated Components:  ${NCBI_ALL_LEGACY}")
     message("Compile Features:  ${NCBI_PTBCFG_PROJECT_FEATURES}")
 
