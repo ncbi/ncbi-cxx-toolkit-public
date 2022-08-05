@@ -59,6 +59,7 @@ BEGIN_NCBI_SCOPE
 NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            64 * 1024);
 NCBI_PARAM_DEF(size_t,   PSG, wr_buf_size,            64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
+NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_submits, 150);
 NCBI_PARAM_DEF(unsigned, PSG, max_sessions,           40);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 6);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
@@ -1227,13 +1228,14 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
         }
     }
 
+    TPSG_MaxConcurrentSubmits::TValue remaining_submits = m_MaxConcurrentSubmits;
     auto d = m_Random.first;
     auto i = m_Sessions.begin();
     auto next_i = [&]() { if (++i == m_Sessions.end()) i = m_Sessions.begin(); };
 
     // We have to find available session first and then get a request,
     // as we may not be able to put the request back into the queue after (if it's full)
-    while (sessions) {
+    while (sessions && remaining_submits) {
         auto rate = d(m_Random.second);
         _DEBUG_ARG(const auto original_rate = rate);
 
@@ -1287,6 +1289,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                     if (result) {
                         PSG_IO_TRACE("Server '" << server_name << "' will get request '" <<
                                 req_id << "' with rate = " << original_rate);
+                        --remaining_submits;
                         ++server.stats;
 
                         // Add new session if allowed to
@@ -1322,7 +1325,9 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
     // Continue processing of requests in the IO thread queue on next UV loop iteration
     queue.Signal();
-    PSG_IO_TRACE("No sessions available [anymore]");
+
+    PSG_IO_TRACE((sessions ? "Max concurrent submits reached" : "No sessions available [anymore]") <<
+            ", submitted: " << m_MaxConcurrentSubmits - remaining_submits);
 }
 
 void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
