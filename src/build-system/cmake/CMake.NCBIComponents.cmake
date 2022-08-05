@@ -18,6 +18,23 @@
 set(NCBI_ALL_COMPONENTS "")
 set(NCBI_ALL_LEGACY "")
 set(NCBI_ALL_REQUIRES "")
+set(NCBI_ALL_DISABLED "")
+
+macro(NCBIcomponent_report _name)
+    if (NCBI_COMPONENT_${_name}_DISABLED)
+        message("DISABLED ${_name}")
+    endif()
+    if(NOT DEFINED NCBI_COMPONENT_${_name}_FOUND AND NOT DEFINED NCBI_REQUIRE_${_name}_FOUND)
+        set(NCBI_REQUIRE_${_name}_FOUND NO)
+    endif()
+    if(NCBI_COMPONENT_${_name}_FOUND)
+        list(APPEND NCBI_ALL_COMPONENTS ${_name})
+    elseif(NCBI_REQUIRE_${_name}_FOUND)
+        list(APPEND NCBI_ALL_REQUIRES ${_name})
+    else()
+        list(APPEND NCBI_ALL_DISABLED ${_name})
+    endif()
+endmacro()
 
 set(NCBI_REQUIRE_MT_FOUND YES)
 list(APPEND NCBI_ALL_REQUIRES MT)
@@ -26,29 +43,29 @@ set(NCBI_TOOLS_ROOT $ENV{NCBI})
 
 if(BUILD_SHARED_LIBS)
     set(NCBI_REQUIRE_DLL_BUILD_FOUND YES)
-    list(APPEND NCBI_ALL_REQUIRES DLL_BUILD)
 endif()
+NCBIcomponent_report(DLL_BUILD)
 
 if(UNIX)
     set(NCBI_REQUIRE_unix_FOUND YES)
-    list(APPEND NCBI_ALL_REQUIRES unix)
     if(NOT APPLE AND NOT CYGWIN)
         if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
             set(NCBI_REQUIRE_Linux_FOUND YES)
-            list(APPEND NCBI_ALL_REQUIRES Linux)
         elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
             set(NCBI_REQUIRE_FreeBSD_FOUND YES)
-            list(APPEND NCBI_ALL_REQUIRES FreeBSD)
         endif()
     endif()
+    NCBIcomponent_report(unix)
+    NCBIcomponent_report(Linux)
+    NCBIcomponent_report(FreeBSD)
 elseif(WIN32)
     set(NCBI_REQUIRE_MSWin_FOUND YES)
-    list(APPEND NCBI_ALL_REQUIRES MSWin)
     if(BUILD_SHARED_LIBS)
         set(NCBI_REQUIRE_DLL_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES DLL)
     endif()
     string(REPLACE "\\" "/" NCBI_TOOLS_ROOT "${NCBI_TOOLS_ROOT}")
+    NCBIcomponent_report(MSWin)
+    NCBIcomponent_report(DLL)
 else()
     message(FATAL_ERROR "Unsupported platform")
 endif()
@@ -72,6 +89,11 @@ if(NOT "${NCBI_PTBCFG_PROJECT_COMPONENTS}" STREQUAL "")
         endif()
     endforeach()
 endif()
+foreach( _comp IN ITEMS GNUTLS WGMLST)
+    if(NOT DEFINED NCBI_COMPONENT_${_comp}_DISABLED)
+        set(NCBI_COMPONENT_${_comp}_DISABLED YES)
+    endif()
+endforeach()
 
 #############################################################################
 include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsCheck.cmake)
@@ -121,118 +143,80 @@ endif()
 
 #############################################################################
 # TLS
-set(NCBI_COMPONENT_TLS_FOUND YES)
+set(NCBI_REQUIRE_TLS_FOUND YES)
 list(APPEND NCBI_ALL_REQUIRES TLS)
 
 #############################################################################
 # local_lbsm
-set(NCBI_COMPONENT_local_lbsm_FOUND NO)
-if(NCBI_COMPONENT_local_lbsm_DISABLED)
-    message("DISABLED local_lbsm")
-else()
-    if(NOT WIN32 AND EXISTS ${NCBITK_SRC_ROOT}/connect/ncbi_lbsm.c)
-        set(NCBI_COMPONENT_local_lbsm_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES local_lbsm)
-        set(HAVE_LOCAL_LBSM 1)
-    endif()
+if(NOT NCBI_COMPONENT_local_lbsm_DISABLED AND NOT WIN32 AND EXISTS ${NCBITK_SRC_ROOT}/connect/ncbi_lbsm.c)
+    set(NCBI_REQUIRE_local_lbsm_FOUND YES)
+    set(HAVE_LOCAL_LBSM 1)
 endif()
+NCBIcomponent_report(local_lbsm)
 
 #############################################################################
 # LocalPCRE
-set(NCBI_COMPONENT_LocalPCRE_FOUND NO)
-if (NCBI_COMPONENT_LocalPCRE_DISABLED)
-    message("DISABLED LocalPCRE")
-else()
-    if (EXISTS ${NCBITK_INC_ROOT}/util/regexp)
-        set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES LocalPCRE)
-        set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${NCBITK_INC_ROOT}/util/regexp)
-        set(NCBI_COMPONENT_LocalPCRE_NCBILIB regexp)
-    endif()
+if (NOT NCBI_COMPONENT_LocalPCRE_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/regexp)
+    set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
+    set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${NCBITK_INC_ROOT}/util/regexp)
+    set(NCBI_COMPONENT_LocalPCRE_NCBILIB regexp)
 endif()
+NCBIcomponent_report(LocalPCRE)
 
 #############################################################################
 # LocalZ
-set(NCBI_COMPONENT_LocalZ_FOUND NO)
-if (NCBI_COMPONENT_LocalZ_DISABLED)
-    message("DISABLED LocalZ")
-else()
-    if (EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib)
-        set(NCBI_COMPONENT_LocalZ_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES LocalZ)
-        set(NCBI_COMPONENT_LocalZ_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib)
-        set(NCBI_COMPONENT_LocalZ_NCBILIB z)
-    endif()
+if (NOT NCBI_COMPONENT_LocalZ_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib)
+    set(NCBI_COMPONENT_LocalZ_FOUND YES)
+    set(NCBI_COMPONENT_LocalZ_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib)
+    set(NCBI_COMPONENT_LocalZ_NCBILIB z)
 endif()
+NCBIcomponent_report(LocalZ)
 
 #############################################################################
 # LocalBZ2
-set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
-if (NCBI_COMPONENT_LocalBZ2_DISABLED)
-    message("DISABLED LocalBZ2")
-else()
-    if (EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2)
-        set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES LocalBZ2)
-        set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${NCBITK_INC_ROOT}/util/compress/bzip2)
-        set(NCBI_COMPONENT_LocalBZ2_NCBILIB bz2)
-    endif()
+if (NOT NCBI_COMPONENT_LocalBZ2_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2)
+    set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
+    set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${NCBITK_INC_ROOT}/util/compress/bzip2)
+    set(NCBI_COMPONENT_LocalBZ2_NCBILIB bz2)
 endif()
+NCBIcomponent_report(LocalBZ2)
 
 #############################################################################
 # LocalLMDB
-set(NCBI_COMPONENT_LocalLMDB_FOUND NO)
-if (NCBI_COMPONENT_LocalLMDB_DISABLED)
-    message("DISABLED LocalLMDB")
-else()
-    if (EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN)
-        set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES LocalLMDB)
-        set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)
-        set(NCBI_COMPONENT_LocalLMDB_NCBILIB lmdb)
-    endif()
+if (NOT NCBI_COMPONENT_LocalLMDB_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN)
+    set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
+    set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)
+    set(NCBI_COMPONENT_LocalLMDB_NCBILIB lmdb)
 endif()
+NCBIcomponent_report(LocalLMDB)
 
 #############################################################################
 # connext
-set(NCBI_REQUIRE_connext_FOUND NO)
-if (NCBI_COMPONENT_connext_DISABLED)
-    message("DISABLED connext")
-else()
-    if (EXISTS ${NCBITK_SRC_ROOT}/connect/ext/CMakeLists.txt)
-        set(NCBI_REQUIRE_connext_FOUND YES)
-        set(HAVE_LIBCONNEXT 1)
-        list(APPEND NCBI_ALL_REQUIRES connext)
-    endif()
+if (NOT NCBI_COMPONENT_connext_DISABLED AND EXISTS ${NCBITK_SRC_ROOT}/connect/ext/CMakeLists.txt)
+    set(NCBI_REQUIRE_connext_FOUND YES)
+    set(HAVE_LIBCONNEXT 1)
 endif()
+NCBIcomponent_report(connext)
 
 #############################################################################
 # PubSeqOS
-set(NCBI_REQUIRE_PubSeqOS_FOUND NO)
-if (NCBI_COMPONENT_PubSeqOS_DISABLED)
-    message("DISABLED PubSeqOS")
-else()
-    if (EXISTS ${NCBITK_SRC_ROOT}/objtools/data_loaders/genbank/pubseq/CMakeLists.txt)
-        set(NCBI_REQUIRE_PubSeqOS_FOUND YES)
-        set(HAVE_PUBSEQ_OS 1)
-        list(APPEND NCBI_ALL_REQUIRES PubSeqOS)
-    endif()
+if (NOT NCBI_COMPONENT_PubSeqOS_DISABLED AND EXISTS ${NCBITK_SRC_ROOT}/objtools/data_loaders/genbank/pubseq/CMakeLists.txt)
+    set(NCBI_REQUIRE_PubSeqOS_FOUND YES)
+    set(HAVE_PUBSEQ_OS 1)
 endif()
+NCBIcomponent_report(PubSeqOS)
 
 #############################################################################
 # FreeTDS
-set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
-
-set(NCBI_COMPONENT_FreeTDS_FOUND   NO)
-if(NCBI_COMPONENT_FreeTDS_DISABLED)
-    message("DISABLED FreeTDS")
-else()
+if(NOT NCBI_COMPONENT_FreeTDS_DISABLED
+        AND EXISTS ${NCBITK_INC_ROOT}/dbapi/driver/ftds100
+        AND EXISTS ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
     set(NCBI_COMPONENT_FreeTDS_FOUND   YES)
     set(HAVE_LIBFTDS 1)
-    list(APPEND NCBI_ALL_REQUIRES FreeTDS)
+    set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
     set(NCBI_COMPONENT_FreeTDS_INCLUDE ${FTDS100_INCLUDE})
-#set(NCBI_COMPONENT_FreeTDS_LIBS    ct_ftds100)
 endif()
+NCBIcomponent_report(FreeTDS)
 
 #############################################################################
 set(NCBI_COMPONENT_Boost.Test.Included_NCBILIB test_boost)
@@ -266,24 +250,25 @@ set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/d
 
 #############################################################################
 # NCBILS2
-if (NCBI_COMPONENT_GCRYPT_FOUND AND EXISTS ${NCBITK_SRC_ROOT}/internal/ncbils2/CMakeLists.txt)
+if (NOT NCBI_COMPONENT_NCBILS2_DISABLED AND NCBI_COMPONENT_GCRYPT_FOUND AND EXISTS ${NCBITK_SRC_ROOT}/internal/ncbils2/CMakeLists.txt)
     set(NCBI_REQUIRE_NCBILS2_FOUND YES)
-    list(APPEND NCBI_ALL_REQUIRES NCBILS2)
 endif()
+NCBIcomponent_report(NCBILS2)
 
 #############################################################################
-# PSG_LOADER
-if(NCBI_COMPONENT_UV_FOUND AND NCBI_COMPONENT_NGHTTP2_FOUND)
+# PSGLoader
+if(NOT NCBI_COMPONENT_PSGLoader_DISABLED AND NCBI_COMPONENT_UV_FOUND AND NCBI_COMPONENT_NGHTTP2_FOUND)
     set(HAVE_PSG_LOADER 1)
     set(NCBI_REQUIRE_PSGLoader_FOUND YES)
-    list(APPEND NCBI_ALL_REQUIRES PSGLoader)
 endif()
+NCBIcomponent_report(PSGLoader)
 
 #############################################################################
 list(SORT NCBI_ALL_LEGACY)
 list(APPEND NCBI_ALL_COMPONENTS ${NCBI_ALL_LEGACY})
 list(SORT NCBI_ALL_COMPONENTS)
 list(SORT NCBI_ALL_REQUIRES)
+list(SORT NCBI_ALL_DISABLED)
 
 #############################################################################
 # verify

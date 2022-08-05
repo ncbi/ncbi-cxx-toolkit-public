@@ -69,21 +69,18 @@ set(COREFOUNDATION_LIBS "-framework CoreFoundation")
 #############################################################################
 # in-house-resources
 set(NCBI_REQUIRE_in-house-resources_FOUND NO)
-if (NCBI_COMPONENT_in-house-resources_DISABLED)
-    message("DISABLED in-house-resources")
-else()
+if (NOT NCBI_COMPONENT_in-house-resources_DISABLED)
     if (EXISTS "${NCBI_TOOLS_ROOT}/.ncbirc")
       if (EXISTS "/am/ncbiapdata/test_data")
         set(NCBITEST_TESTDATA_PATH "/am/ncbiapdata/test_data")
         set(NCBI_REQUIRE_in-house-resources_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES in-house-resources)
       elseif (EXISTS "/Volumes/ncbiapdata/test_data")
         set(NCBITEST_TESTDATA_PATH "/Volumes/ncbiapdata/test_data")
         set(NCBI_REQUIRE_in-house-resources_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES in-house-resources)
       endif()
     endif()
 endif()
+NCBIcomponent_report(in-house-resources)
 
 #############################################################################
 # NCBI_C
@@ -131,23 +128,19 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
         set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1
             USE_BIGINT_IDS=${USE_BIGINT_IDS})
         set(NCBI_COMPONENT_NCBI_C_LIBPATH ${NCBI_C_LIBPATH})
-        list(APPEND NCBI_ALL_COMPONENTS NCBI_C)
         list(APPEND NCBI_ALL_LEGACY C-Toolkit)
         set(NCBI_COMPONENT_C-Toolkit_FOUND NCBI_C)
     else()
         set(NCBI_COMPONENT_NCBI_C_FOUND NO)
         message("NOT FOUND NCBI_C")
     endif()
-else()
-    set(NCBI_COMPONENT_NCBI_C_FOUND NO)
-    message("DISABLED NCBI_C")
 endif()
+NCBIcomponent_report(NCBI_C)
 
 
 #############################################################################
 # BACKWARD, UNWIND
 NCBI_define_Xcomponent(NAME BACKWARD)
-list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
     if(NOT NCBI_PTBCFG_USECONAN AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
@@ -161,42 +154,41 @@ endif()
 
 #############################################################################
 # Kerberos 5
-if(NCBI_COMPONENT_KRB5_DISABLED)
-    message("DISABLED KRB5")
-    set(NCBI_COMPONENT_KRB5_FOUND FALSE)
-else()
+if(NOT NCBI_COMPONENT_KRB5_DISABLED)
     set(NCBI_COMPONENT_KRB5_LIBS "-framework Kerberos")
     set(KRB5_LIBS ${NCBI_COMPONENT_KRB5_LIBS})
     set(NCBI_COMPONENT_KRB5_FOUND TRUE)
     set(HAVE_LIBKRB5 1)
-    list(APPEND NCBI_ALL_COMPONENTS KRB5)
 endif()
+NCBIcomponent_report(KRB5)
 
 ##############################################################################
 # CURL
 NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl)
+NCBIcomponent_report(CURL)
 
 #############################################################################
 #LMDB
 NCBI_define_Xcomponent(NAME LMDB LIB lmdb)
+NCBIcomponent_report(LMDB)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
     set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
     set(NCBI_COMPONENT_LMDB_INCLUDE ${NCBI_COMPONENT_LocalLMDB_INCLUDE})
     set(NCBI_COMPONENT_LMDB_NCBILIB ${NCBI_COMPONENT_LocalLMDB_NCBILIB})
-    set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 endif()
+set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 
 #############################################################################
 # PCRE
 #NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre)
 set(NCBI_COMPONENT_PCRE_FOUND NO)
+NCBIcomponent_report(PCRE)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
     set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
     set(NCBI_COMPONENT_PCRE_NCBILIB ${NCBI_COMPONENT_LocalPCRE_NCBILIB})
-    set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
-    list(APPEND NCBI_ALL_COMPONENTS PCRE)
 endif()
+set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
 
 #############################################################################
 # Z
@@ -204,12 +196,13 @@ set(NCBI_COMPONENT_LocalZ_FOUND NO)
 list(REMOVE_ITEM NCBI_ALL_REQUIRES LocalZ)
 
 NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z)
+NCBIcomponent_report(Z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
     set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
     set(NCBI_COMPONENT_Z_NCBILIB ${NCBI_COMPONENT_LocalZ_NCBILIB})
-    set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 endif()
+set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 
 #############################################################################
 #BZ2
@@ -217,16 +210,18 @@ set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
 list(REMOVE_ITEM NCBI_ALL_REQUIRES LocalBZ2)
 
 NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2)
+NCBIcomponent_report(BZ2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
     set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
     set(NCBI_COMPONENT_BZ2_NCBILIB ${NCBI_COMPONENT_LocalBZ2_NCBILIB})
-    set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 endif()
+set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 
 #############################################################################
 # LZO
 NCBI_define_Xcomponent(NAME LZO LIB lzo2)
+NCBIcomponent_report(LZO)
 
 #############################################################################
 # Boost.Test.Included
@@ -236,32 +231,37 @@ if (EXISTS ${NCBI_ThirdParty_Boost}/include)
     set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
     set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${NCBI_ThirdParty_Boost}/include)
     set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
-    list(APPEND NCBI_ALL_COMPONENTS Boost.Test.Included)
 else()
     message("Component Boost.Test.Included ERROR: ${NCBI_ThirdParty_Boost}/include not found")
     set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
 endif()
+NCBIcomponent_report(Boost.Test.Included)
 
 #############################################################################
 # Boost.Test
 NCBI_define_Xcomponent(NAME Boost.Test LIB boost_unit_test_framework-clang-darwin)
+NCBIcomponent_report(Boost.Test)
 
 #############################################################################
 # Boost.Spirit
 NCBI_define_Xcomponent(NAME Boost.Spirit LIB boost_thread-mt)
+NCBIcomponent_report(Boost.Spirit)
 
 #############################################################################
 # Boost.Thread
 NCBI_define_Xcomponent(NAME Boost.Thread LIB boost_thread-mt)
+NCBIcomponent_report(Boost.Thread)
 endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 
 #############################################################################
 # JPEG
 NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg)
+NCBIcomponent_report(JPEG)
 
 #############################################################################
 # PNG
 NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png)
+NCBIcomponent_report(PNG)
 
 #############################################################################
 # GIF
@@ -272,14 +272,17 @@ NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png)
 #############################################################################
 # TIFF
 NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff)
+NCBIcomponent_report(TIFF)
 
 #############################################################################
 # FASTCGI
 NCBI_define_Xcomponent(NAME FASTCGI LIB fcgi)
+NCBIcomponent_report(FASTCGI)
 
 #############################################################################
 # SQLITE3
 NCBI_define_Xcomponent(NAME SQLITE3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
+NCBIcomponent_report(SQLITE3)
 if(NCBI_COMPONENT_SQLITE3_FOUND)
     check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
     check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
@@ -288,6 +291,7 @@ endif()
 #############################################################################
 #BerkeleyDB
 NCBI_define_Xcomponent(NAME BerkeleyDB LIB db)
+NCBIcomponent_report(BerkeleyDB)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
   set(HAVE_BERKELEY_DB 1)
   set(HAVE_BDB         1)
@@ -316,25 +320,27 @@ set(NCBI_COMPONENT_Sybase_FOUND NO)
 #############################################################################
 # PYTHON
 NCBI_define_Xcomponent(NAME PYTHON LIB python${NCBI_ThirdParty_PYTHON_version} INCLUDE python${NCBI_ThirdParty_PYTHON_version})
+NCBIcomponent_report(PYTHON)
 
 #############################################################################
 # VDB
-if(NOT NCBI_COMPONENT_VDB_FOUND)
-NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
-    LIBPATH_SUFFIX mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib INCPATH_SUFFIX interfaces)
-if(NCBI_COMPONENT_VDB_FOUND)
-    set(NCBI_COMPONENT_VDB_INCLUDE
-        ${NCBI_COMPONENT_VDB_INCLUDE} 
-        ${NCBI_COMPONENT_VDB_INCLUDE}/os/mac
-        ${NCBI_COMPONENT_VDB_INCLUDE}/os/unix
-        ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc/${NCBI_ThirdParty_VDB_ARCH}
-        ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc
-    )
-    set(NCBI_COMPONENT_VDB_LIBPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
-#    set(NCBI_COMPONENT_VDB_BINPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
-    set(HAVE_NCBI_VDB 1)
+if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
+    NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
+        LIBPATH_SUFFIX mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib INCPATH_SUFFIX interfaces)
+    if(NCBI_COMPONENT_VDB_FOUND)
+        set(NCBI_COMPONENT_VDB_INCLUDE
+            ${NCBI_COMPONENT_VDB_INCLUDE} 
+            ${NCBI_COMPONENT_VDB_INCLUDE}/os/mac
+            ${NCBI_COMPONENT_VDB_INCLUDE}/os/unix
+            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc/${NCBI_ThirdParty_VDB_ARCH}
+            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc
+        )
+        set(NCBI_COMPONENT_VDB_LIBPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
+    #    set(NCBI_COMPONENT_VDB_BINPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
+        set(HAVE_NCBI_VDB 1)
+    endif()
 endif()
-endif(NOT NCBI_COMPONENT_VDB_FOUND)
+NCBIcomponent_report(VDB)
 
 #############################################################################
 # wxWidgets
@@ -353,6 +359,7 @@ NCBI_define_Xcomponent(NAME wxWidgets LIB
     wx_base_net-${_wx_ver}
     wx_base-${_wx_ver}
 )
+NCBIcomponent_report(wxWidgets)
 if(NCBI_COMPONENT_wxWidgets_FOUND)
     list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
     get_filename_component(_libdir ${_lib} DIRECTORY)
@@ -364,6 +371,7 @@ endif()
 #############################################################################
 # XML
 NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2)
+NCBIcomponent_report(XML)
 if(NCBI_COMPONENT_XML_FOUND)
     list(APPEND NCBI_ALL_LEGACY LIBXML)
     set(NCBI_COMPONENT_LIBXML_FOUND XML)
@@ -376,6 +384,7 @@ endif()
 #############################################################################
 # XSLT
 NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML)
+NCBIcomponent_report(XSLT)
 if(NCBI_COMPONENT_XSLT_FOUND)
     if(NOT DEFINED NCBI_XSLTPROCTOOL)
         if(LIBXSLT_XSLTPROC_EXECUTABLE)
@@ -402,6 +411,7 @@ endif()
 #############################################################################
 # EXSLT
 NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT)
+NCBIcomponent_report(EXSLT)
 if(NCBI_COMPONENT_EXSLT_FOUND)
     set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
 
@@ -417,18 +427,22 @@ endif()
 #############################################################################
 # LAPACK
 NCBI_define_Xcomponent(NAME LAPACK PACKAGE LAPACK LIB lapack)
+NCBIcomponent_report(LAPACK)
 
 #############################################################################
 # FreeType
 NCBI_define_Xcomponent(NAME FreeType MODULE freetype2 PACKAGE Freetype LIB freetype INCLUDE freetype2)
+NCBIcomponent_report(FreeType)
 
 #############################################################################
 # FTGL
 NCBI_define_Xcomponent(NAME FTGL MODULE ftgl LIB ftgl INCLUDE FTGL)
+NCBIcomponent_report(FTGL)
 
 #############################################################################
 # GLEW
 NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
+NCBIcomponent_report(GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
     get_filename_component(_incdir "${NCBI_COMPONENT_GLEW_INCLUDE}" DIRECTORY)
     get_filename_component(_incGL "${NCBI_COMPONENT_GLEW_INCLUDE}" NAME)
@@ -442,11 +456,8 @@ endif()
 if(NOT NCBI_COMPONENT_OpenGL_DISABLED)
     set(NCBI_COMPONENT_OpenGL_FOUND YES)
     set(NCBI_COMPONENT_OpenGL_LIBS "-framework AGL -framework OpenGL -framework Metal -framework MetalKit")
-    list(APPEND NCBI_ALL_COMPONENTS OpenGL)
-else()
-    set(NCBI_COMPONENT_OpenGL_FOUND NO)
-    message("DISABLED OpenGL")
 endif()
+NCBIcomponent_report(OpenGL)
 
 ##############################################################################
 # GRPC/PROTOBUF
@@ -469,6 +480,7 @@ endif()
 if(NOT NCBI_COMPONENT_PROTOBUF_FOUND)
     NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
 endif()
+NCBIcomponent_report(PROTOBUF)
 NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
 NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
     grpc++ grpc address_sorting upb cares gpr re2
@@ -480,6 +492,7 @@ NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
     absl_strings_internal absl_throw_delegate absl_int128 absl_base absl_spinlock_wait 
     absl_bad_optional_access absl_raw_logging_internal absl_log_severity
     )
+NCBIcomponent_report(GRPC)
 if(NCBI_COMPONENT_GRPC_FOUND)
     set(NCBI_COMPONENT_GRPC_LIBS ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_Boring_LIBS})
     set(NCBI_COMPONENT_GRPC_LIBS ${NCBI_COMPONENT_GRPC_LIBS} ${COREFOUNDATION_LIBS})
@@ -488,6 +501,7 @@ endif()
 #############################################################################
 # UV
 NCBI_define_Xcomponent(NAME UV MODULE libuv LIB uv)
+NCBIcomponent_report(UV)
 if(NCBI_COMPONENT_UV_FOUND)
     list(APPEND NCBI_ALL_LEGACY LIBUV)
     set(NCBI_COMPONENT_LIBUV_FOUND UV)
@@ -496,27 +510,26 @@ endif()
 #############################################################################
 # NGHTTP2
 NCBI_define_Xcomponent(NAME NGHTTP2 MODULE libnghttp2 LIB nghttp2)
+NCBIcomponent_report(NGHTTP2)
 
 #############################################################################
 # GL2PS
 NCBI_define_Xcomponent(NAME GL2PS LIB gl2ps)
+NCBIcomponent_report(GL2PS)
 
 #############################################################################
 # GMP
 NCBI_define_Xcomponent(NAME GMP LIB gmp)
+NCBIcomponent_report(GMP)
 
 #############################################################################
 # NETTLE
 NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP)
+NCBIcomponent_report(NETTLE)
 
 #############################################################################
 # GNUTLS
-set(NCBI_COMPONENT_GNUTLS_FOUND NO)
-if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
+if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE)
-else()
-    set(NCBI_COMPONENT_GNUTLS_FOUND NO)
-    message("DISABLED GNUTLS")
 endif()
-
-
+NCBIcomponent_report(GNUTLS)
