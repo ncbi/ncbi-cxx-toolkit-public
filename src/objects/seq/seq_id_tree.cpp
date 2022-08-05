@@ -972,6 +972,22 @@ CConstRef<CSeq_id> CSeq_id_Textseq_Info::GetPackedSeqId(TPacked param, TVariant 
 }
 
 
+int CSeq_id_Textseq_Info::CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const
+{
+    if ((h_this.IsPacked() || h_this.IsSetVariant()) && (h_other.IsPacked() || h_other.IsSetVariant())) {
+        auto pother = dynamic_cast<const CSeq_id_Textseq_Info*>(&other);
+        if (pother) {
+            string this_acc, other_acc;
+            // NOTE: Comparison should ignore case, so use 0 variant.
+            RestoreAccession(this_acc, h_this.GetPacked(), 0);
+            pother->RestoreAccession(other_acc, h_other.GetPacked(), 0);
+            return this_acc.compare(other_acc);
+        }
+    }
+    return CSeq_id_Info::CompareOrdered(other, h_this, h_other);
+}
+
+
 CSeq_id_Textseq_PlainInfo::CSeq_id_Textseq_PlainInfo(const CConstRef<CSeq_id>& seq_id,
                                                      CSeq_id_Mapper* mapper)
     : CSeq_id_Info(seq_id, mapper)
@@ -2153,6 +2169,21 @@ CConstRef<CSeq_id> CSeq_id_General_Id_Info::GetPackedSeqId(TPacked param, TVaria
 }
 
 
+int CSeq_id_General_Id_Info::CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const
+{
+    if ((h_this.IsPacked() || h_this.IsSetVariant()) && (h_other.IsPacked() || h_other.IsSetVariant())) {
+        auto pother = dynamic_cast<const CSeq_id_General_Id_Info*>(&other);
+        if (pother) {
+            string dbtag_this = GetDbtag();
+            string dbtag_other = pother->GetDbtag();
+            int cmp = NStr::CompareNocase(dbtag_this, dbtag_other);
+            return cmp ? cmp : h_this.GetPacked() - h_other.GetPacked();
+        }
+    }
+    return CSeq_id_Info::CompareOrdered(other, h_this, h_other);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_General_Str_Info
 /////////////////////////////////////////////////////////////////////////////
@@ -2309,6 +2340,34 @@ CConstRef<CSeq_id> CSeq_id_General_Str_Info::GetPackedSeqId(TPacked param, TVari
     }
     Restore(const_cast<CSeq_id&>(*ret).SetGeneral(), param, variant);
     return ret;
+}
+
+
+string CSeq_id_General_Str_Info::x_GetStr(TPacked param) const
+{
+    string str = GetStrPrefix();
+    str.resize(str.size() + GetStrDigits(), '0');
+    if ( !GetStrSuffix().empty() ) {
+        str += GetStrSuffix();
+    }
+    if (param < 0) ++param;
+    s_RestoreNumber(str, GetStrPrefix().size(), GetStrDigits(), param);
+    return str;
+}
+
+
+int CSeq_id_General_Str_Info::CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const
+{
+    if ((h_this.IsPacked() || h_this.IsSetVariant()) && (h_other.IsPacked() || h_other.IsSetVariant())) {
+        auto pother = dynamic_cast<const CSeq_id_General_Str_Info*>(&other);
+        if (pother) {
+            string dbtag_this = GetDbtag();
+            string dbtag_other = pother->GetDbtag();
+            int cmp = NStr::CompareNocase(dbtag_this, dbtag_other);
+            return cmp ? cmp : NStr::CompareNocase(x_GetStr(h_this.GetPacked()), pother->x_GetStr(h_other.GetPacked()));
+        }
+    }
+    return CSeq_id_Info::CompareOrdered(other, h_this, h_other);
 }
 
 

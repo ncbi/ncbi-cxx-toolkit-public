@@ -467,6 +467,8 @@ public:
     
     virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
     
+    int CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const override;
+
 private:
     TKey m_Key;
 };
@@ -788,6 +790,8 @@ public:
     
     virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
     
+    int CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const override;
+
 private:
     TKey m_Key;
 };
@@ -860,7 +864,11 @@ public:
     
     virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
     
+    int CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const override;
+
 private:
+    string x_GetStr(TPacked param) const;
+
     TKey m_Key;
 };
 

@@ -107,6 +107,8 @@ public:
         }
     NCBI_SEQ_EXPORT CSeq_id_Which_Tree& GetTree(void) const;
 
+    virtual int CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const;
+
 protected:
     friend class CSeq_id_Which_Tree;
 
