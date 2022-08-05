@@ -841,6 +841,7 @@ struct SPSG_IoImpl
     SPSG_AsyncQueue queue;
 
     SPSG_IoImpl(SPSG_Servers::TTS& servers) :
+        m_MaxConcurrentSubmits(TPSG_MaxConcurrentSubmits::eGetDefault),
         m_Servers(servers),
         m_Random(piecewise_construct, {}, forward_as_tuple(random_device()()))
     {}
@@ -874,6 +875,7 @@ private:
 
     using TSessions = deque<SUvNgHttp2_Session<SPSG_IoSession>>;
 
+    const TPSG_MaxConcurrentSubmits m_MaxConcurrentSubmits;
     SPSG_Servers::TTS& m_Servers;
     deque<pair<TSessions, double>> m_Sessions;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;

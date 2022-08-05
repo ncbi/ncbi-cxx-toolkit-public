@@ -327,6 +327,9 @@ typedef NCBI_PARAM_TYPE(PSG, wr_buf_size) TPSG_WrBufSize;
 NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
 typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
 
+NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_submits);
+using TPSG_MaxConcurrentSubmits = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_submits);
+
 NCBI_PARAM_DECL(unsigned, PSG, max_sessions);
 typedef NCBI_PARAM_TYPE(PSG, max_sessions) TPSG_MaxSessions;
 
