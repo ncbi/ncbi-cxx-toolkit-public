@@ -229,6 +229,32 @@ int SUv_Tcp::Write()
     return 0;
 }
 
+// uv_tcp_close_reset was added in libuv v1.32.0
+#if UV_VERSION_HEX < 0x12000
+bool SUv_Tcp::CloseReset(ECloseType)
+{
+    return false;
+}
+#else
+bool SUv_Tcp::CloseReset(ECloseType close_type)
+{
+    if (close_type == eNormalClose) {
+        return false;
+    }
+
+    auto rv = uv_tcp_close_reset(this, s_OnClose);
+
+    if (rv < 0) {
+        NCBI_UV_TCP_TRACE(this << " close reset failed: " << SUvNgHttp2_Error::LibuvStr(rv));
+        m_State = eClosed;
+    } else {
+        NCBI_UV_TCP_TRACE(this << " close resetting");
+    }
+
+    return true;
+}
+#endif
+
 void SUv_Tcp::Close(ECloseType close_type)
 {
     if (m_State == eConnected) {
@@ -252,18 +278,9 @@ void SUv_Tcp::Close(ECloseType close_type)
     } else {
         m_State = eClosing;
 
-        if (close_type == eNormalClose) {
+        if (!CloseReset(close_type)) {
             SUv_Handle<uv_tcp_t>::Close();
             NCBI_UV_TCP_TRACE(this << " closing");
-        } else {
-            auto rv = uv_tcp_close_reset(this, s_OnClose);
-
-            if (rv < 0) {
-                NCBI_UV_TCP_TRACE(this << " close reset failed: " << SUvNgHttp2_Error::LibuvStr(rv));
-                m_State = eClosed;
-            } else {
-                NCBI_UV_TCP_TRACE(this << " close resetting");
-            }
         }
     }
 }

@@ -183,6 +183,7 @@ private:
     };
 
     int Connect();
+    bool CloseReset(ECloseType close_type);
 
     void OnConnect(uv_connect_t* req, int status);
     void OnAlloc(uv_handle_t*, size_t suggested_size, uv_buf_t* buf);
