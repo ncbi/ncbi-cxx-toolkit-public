@@ -92,6 +92,12 @@ void CSeq_id_Info::x_RemoveLastLock(void) const
 }
 
 
+int CSeq_id_Info::CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const
+{
+    return h_this.GetSeqId()->CompareOrdered(*h_other.GetSeqId());
+}
+
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CSeq_id_Handle::
@@ -203,6 +209,9 @@ int CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
         }
     }
     if (*this == id) return 0;
+    if (m_Info && id.m_Info) {
+        return m_Info->CompareOrdered(*id.m_Info, *this, id);
+    }
     return GetSeqId()->CompareOrdered(*id.GetSeqId());
 }
 
