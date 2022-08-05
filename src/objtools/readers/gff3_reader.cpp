@@ -112,9 +112,6 @@ bool CGff3ReadRecord::AssignFromGff(
     string id, parent;
     GetAttribute("ID", id);
     GetAttribute("Parent", parent);
-    if (id.empty()  &&  parent.empty()) {
-        //m_Attributes["ID"] = CGff3Reader::xNextGenericId();
-    }
     if (m_strType == "pseudogene") {
         SetType("gene");
         m_Attributes["pseudo"] = "true";
@@ -317,12 +314,12 @@ CGff3Reader::xParseFeature(
     }
 
     //no support for multiparented features in genbank mode:
-    if (this->IsInGenbankMode()  &&  pRecord->IsMultiParent()) {
+    if (pRecord->IsMultiParent()) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Fatal,
             0,
-            "Multiparented features are not supported in Genbank mode"));
+            "This GFF3 reader does not support multiparented features"));
         ProcessError(*pErr, pEC);
     }
 
@@ -456,31 +453,27 @@ bool CGff3Reader::xUpdateAnnotExon(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    list<string> parents;
-    if (record.GetAttribute("Parent", parents)) {
-        for (list<string>::const_iterator it = parents.begin(); it != parents.end();
-                ++it) {
-            const string& parentId = *it;
-            CRef<CSeq_feat> pParent;
-            if (!x_GetFeatureById(parentId, pParent)) {
-                xAddPendingExon(parentId, record);
-                return true;
+    string parentId;
+    if (record.GetAttribute("Parent", parentId)) {
+        CRef<CSeq_feat> pParent;
+        if (!x_GetFeatureById(parentId, pParent)) {
+            xAddPendingExon(parentId, record);
+            return true;
+        }
+        if (pParent->GetData().IsRna()) {
+            xVerifyExonLocation(parentId, record);
+        }
+        if (pParent->GetData().IsGene()) {
+            if (!xInitializeFeature(record, pFeature)) {
+                return false;
             }
-            if (pParent->GetData().IsRna()) {
-                xVerifyExonLocation(parentId, record);
-            }
-            if (pParent->GetData().IsGene()) {
-                if  (!xInitializeFeature(record, pFeature)) {
-                    return false;
-                }
-                return xAddFeatureToAnnot(pFeature, annot);
-            }
-            IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
-            if (fit != m_MapIdToFeature.end()) {
-                CRef<CSeq_feat> pParent = fit->second;
-                if (!record.UpdateFeature(m_iFlags, pParent)) {
-                    return false;
-                }
+            return xAddFeatureToAnnot(pFeature, annot);
+        }
+        IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
+        if (fit != m_MapIdToFeature.end()) {
+            CRef<CSeq_feat> pParent = fit->second;
+            if (!record.UpdateFeature(m_iFlags, pParent)) {
+                return false;
             }
         }
     }
@@ -496,31 +489,28 @@ bool CGff3Reader::xJoinLocationIntoRna(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    list<string> parents;
-    if (!record.GetAttribute("Parent", parents)) {
+    string parentId;
+    if (!record.GetAttribute("Parent", parentId)) {
         return true;
     }
-    for (list<string>::const_iterator it = parents.begin(); it != parents.end();
-            ++it) {
-        const string& parentId = *it;
-        CRef<CSeq_feat> pParent;
-        if (!x_GetFeatureById(parentId, pParent)) {
-            // Danger:
-            // We don't know whether the CDS parent is indeed an RNA and it could
-            //  possible be a gene.
-            // If the parent is indeed a gene then gene construction will have to
-            //  purge this pending exon (or it will cause a sanity check to fail
-            //  during post processing).
-            xAddPendingExon(parentId, record);
-            continue;
-        }
-        if (!pParent->GetData().IsRna()) {
-            continue;
-        }
-        xVerifyExonLocation(parentId, record);
-        if (!record.UpdateFeature(m_iFlags, pParent)) {
-            return false;
-        }
+    list<string> parents;
+    CRef<CSeq_feat> pParent;
+    if (!x_GetFeatureById(parentId, pParent)) {
+        // Danger:
+        // We don't know whether the CDS parent is indeed an RNA and it could
+        //  possible be a gene.
+        // If the parent is indeed a gene then gene construction will have to
+        //  purge this pending exon (or it will cause a sanity check to fail
+        //  during post processing).
+        xAddPendingExon(parentId, record);
+        return true;
+    }
+    if (!pParent->GetData().IsRna()) {
+        return true;
+    }
+    xVerifyExonLocation(parentId, record);
+    if (!record.UpdateFeature(m_iFlags, pParent)) {
+        return false;
     }
     return true;
 }
@@ -862,17 +852,17 @@ void CGff3Reader::xVerifyCdsParents(
 //  ----------------------------------------------------------------------------
 {
     string id;
-    string parents;
+    string parentId;
     if (!record.GetAttribute("ID", id)) {
         return;
     }
-    record.GetAttribute("Parent", parents);
+    record.GetAttribute("Parent", parentId);
     map<string, string>::iterator it = mCdsParentMap.find(id);
     if (it == mCdsParentMap.end()) {
-        mCdsParentMap[id] = parents;
+        mCdsParentMap[id] = parentId;
         return;
     }
-    if (it->second == parents) {
+    if (it->second == parentId) {
         return;
     }
     CReaderMessage error(

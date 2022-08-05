@@ -4,5 +4,5 @@ Message    : Bad data line: Invalid feature type "TF_binding_site"
 
 Line No    : 22
 Severity   : Fatal
-Message    : Multiparented features are not supported in Genbank mode
+Message    : This GFF3 reader does not support multiparented features
 
