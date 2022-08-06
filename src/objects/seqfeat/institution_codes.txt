@@ -4220,6 +4220,7 @@ MBML:Peixes	s	Museu de Biologia Mello Leitao, Peixes Collection
 MBML:Repteis	s	Museu de Biologia Mello Leitao, Repteis Collection		
 MBMU	c	Institute of Molecular Biology and Genetics (IMBG), Mahidol University			
 MBR	s	Museo Argention de Ciencias Naturales "Bernardino Rivadavia"			
+MBRU	scb	Marine Biobank			
 MBS	s	Manchester Banksian Society			
 MBSL	s	Royal Medico-Botanical Society			
 MBSN	s	Museo Brembano di Scienze Naturali			

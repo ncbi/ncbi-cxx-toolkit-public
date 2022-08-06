@@ -4253,6 +4253,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MBML:Repteis\ts\tMuseu de Biologia Mello Leitao, Repteis Collection\t\t",
 "MBMU\tc\tInstitute of Molecular Biology and Genetics (IMBG), Mahidol University\t\t\t",
 "MBR\ts\tMuseo Argention de Ciencias Naturales \"Bernardino Rivadavia\"\t\t\t",
+"MBRU\tscb\tMarine Biobank\t\t\t",
 "MBS\ts\tManchester Banksian Society\t\t\t",
 "MBSL\ts\tRoyal Medico-Botanical Society\t\t\t",
 "MBSN\ts\tMuseo Brembano di Scienze Naturali\t\t\t",
