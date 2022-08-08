@@ -277,6 +277,8 @@ public:
             return *begin();
         }
 
+    CFixedBlob_ids Filter(const SAnnotSelector* sel) const;
+
 private:
     typedef CObjectFor<TList> TObject;
 
@@ -785,6 +787,11 @@ public:
         {
             return SetLoaded(data, GetExpType(data));
         }
+    bool SetLoadedBlob_ids(const SAnnotSelector* sel,
+                           const TData& blob_ids,
+                           TExpirationTime expiration_time);
+    bool SetLoadedBlob_ids(const SAnnotSelector* sel,
+                           const TData& blob_ids);
     bool SetNoBlob_ids(const CFixedBlob_ids::TState& state,
                        TExpirationTime expiration_time)
         {
@@ -973,6 +980,8 @@ public:
 
     void SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info = 0);
 
+    void AllowIncompleteLoading();
+
 protected:
 
     void x_SelectChunk(TChunkId chunk_id);
@@ -983,6 +992,7 @@ protected:
 private:
     CTSE_LoadLock   m_TSE_LoadLock;
     CRef<CTSE_Chunk_Info> m_Chunk;
+    bool m_AllowIncompleteLoading;
 };
 
 

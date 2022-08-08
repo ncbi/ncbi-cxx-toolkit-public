@@ -911,10 +911,21 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
             }
             
             if ( info.IsSetAnnotInfo() ) {
-                CProcessor_AnnotInfo::LoadBlob(result, info);
-                _ASSERT(blob.IsLoadedBlob());
-                ++loaded_count;
-                continue;
+                if ( info.GetAnnotInfo()->GetAnnotInfo().empty() ) {
+                    // no actual annot info - only name
+                    auto& names = info.GetAnnotInfo()->GetNamedAnnotNames();
+                    if ( names.size() == 1 ) {
+                        CLoadLockSetter setter(blob);
+                        setter.GetTSE_LoadLock()->SetName(*names.begin());
+                        setter.AllowIncompleteLoading();
+                    }
+                }
+                else {
+                    CProcessor_AnnotInfo::LoadBlob(result, info);
+                    _ASSERT(blob.IsLoadedBlob());
+                    ++loaded_count;
+                    continue;
+                }
             }
 
             m_Dispatcher->LoadBlob(result, blob_id);
@@ -1243,7 +1254,7 @@ void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                        const CFixedBlob_ids& blob_ids) const
 {
     TRACE_SET("SetAndSaveSeq_idBlob_ids("<<seq_id<<")");
-    if ( !lock.SetLoadedBlob_ids(blob_ids) ) {
+    if ( !lock.SetLoadedBlob_ids(sel, blob_ids) ) {
         return;
     }
     TRACE_SET("SetAndSaveSeq_idBlob_ids("<<seq_id<<") set");
@@ -1260,7 +1271,7 @@ void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                        const CLoadLockBlobIds& blob_ids) const
 {
     TRACE_SET("SetAndSaveSeq_idBlob_ids("<<seq_id<<")");
-    if ( !lock.SetLoadedBlob_ids(blob_ids) ) {
+    if ( !lock.SetLoadedBlob_ids(sel, blob_ids.GetBlob_ids(), blob_ids.GetExpirationTime()) ) {
         return;
     }
     TRACE_SET("SetAndSaveSeq_idBlob_ids("<<seq_id<<") set");
