@@ -3,7 +3,7 @@
     "reply": "BioseqInfo",
     "status": "NotFound",
     "errors": [
-        "Seq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+        "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
     ]
 }
 ]
