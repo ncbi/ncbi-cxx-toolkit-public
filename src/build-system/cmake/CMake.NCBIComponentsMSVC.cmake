@@ -66,7 +66,7 @@ set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdParty
 set(NCBI_ThirdParty_FTGL       ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3-rc5 CACHE PATH "FTGL root")
 set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/1.5.8 CACHE PATH "GLEW root")
 set(NCBI_ThirdParty_FreeType   ${NCBI_ThirdPartyBasePath}/freetype/${NCBI_ThirdPartyCompiler}/2.4.10 CACHE PATH "FreeType root")
-if(NOT noUNICODE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+if(NOT noUNICODE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND NOT -UNICODE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(NCBI_ThirdParty_wxWidgets  ${NCBI_ThirdPartyBasePath}/wxwidgets/${NCBI_ThirdPartyCompiler}/3.1.3-ncbi1u CACHE PATH "wxWidgets root")
 else()
     set(NCBI_ThirdParty_wxWidgets  ${NCBI_ThirdPartyBasePath}/wxwidgets/${NCBI_ThirdPartyCompiler}/3.1.3-ncbi1 CACHE PATH "wxWidgets root")
@@ -125,8 +125,6 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
     NCBI_define_Wcomponent(NCBI_C ncbiobj.lib ncbimmdb.lib ncbi.lib)
     if(NCBI_COMPONENT_NCBI_C_FOUND)
         set(NCBI_COMPONENT_NCBI_C_LIBPATH ${NCBI_ThirdParty_NCBI_C})
-        list(APPEND NCBI_ALL_LEGACY C-Toolkit)
-        set(NCBI_COMPONENT_C-Toolkit_FOUND NCBI_C)
     endif()
 endif()
 NCBIcomponent_report(NCBI_C)
@@ -292,10 +290,6 @@ NCBIcomponent_report(GNUTLS)
 # FASTCGI
 NCBI_define_Wcomponent(FASTCGI libfcgi.lib)
 NCBIcomponent_report(FASTCGI)
-if(NCBI_COMPONENT_FASTCGI_FOUND)
-    list(APPEND NCBI_ALL_LEGACY Fast-CGI)
-    set(NCBI_COMPONENT_Fast-CGI_FOUND FASTCGI)
-endif()
 
 #############################################################################
 # BerkeleyDB
@@ -315,28 +309,16 @@ if (NCBI_COMPONENT_XML_FOUND)
         set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
     endif()
 endif()
-if(NCBI_COMPONENT_XML_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBXML)
-    set(NCBI_COMPONENT_LIBXML_FOUND XML)
-endif()
 
 #############################################################################
 # XSLT
 NCBI_define_Wcomponent(XSLT libexslt.lib libxslt.lib)
 NCBIcomponent_report(XSLT)
-if(NCBI_COMPONENT_XSLT_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBXSLT)
-    set(NCBI_COMPONENT_LIBXSLT_FOUND XSLT)
-endif()
 
 #############################################################################
 # EXSLT
 NCBI_define_Wcomponent(EXSLT libexslt.lib)
 NCBIcomponent_report(EXSLT)
-if(NCBI_COMPONENT_EXSLT_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBEXSLT)
-    set(NCBI_COMPONENT_LIBEXSLT_FOUND EXSLT)
-endif()
 
 #############################################################################
 # SQLITE3
@@ -454,10 +436,6 @@ endif()
 # XALAN
 NCBI_define_Wcomponent(XALAN xalan-c.lib XalanMessages.lib)
 NCBIcomponent_report(XALAN)
-if(NCBI_COMPONENT_XALAN_FOUND)
-    list(APPEND NCBI_ALL_LEGACY Xalan)
-    set(NCBI_COMPONENT_Xalan_FOUND XALAN)
-endif()
 
 ##############################################################################
 # XERCES
@@ -469,10 +447,6 @@ if(NCBI_COMPONENT_XERCES_FOUND)
     else()
         set(NCBI_COMPONENT_XERCES_DEFINES XML_LIBRARY)
     endif()
-endif()
-if(NCBI_COMPONENT_XERCES_FOUND)
-    list(APPEND NCBI_ALL_LEGACY Xerces)
-    set(NCBI_COMPONENT_Xerces_FOUND XERCES)
 endif()
 
 ##############################################################################
@@ -522,10 +496,6 @@ NCBI_define_Wcomponent(UV libuv.lib)
 NCBIcomponent_report( UV)
 if(NCBI_COMPONENT_UV_FOUND)
     set(NCBI_COMPONENT_UV_LIBS ${NCBI_COMPONENT_UV_LIBS} psapi.lib Iphlpapi.lib userenv.lib)
-endif()
-if(NCBI_COMPONENT_UV_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBUV)
-    set(NCBI_COMPONENT_LIBUV_FOUND UV)
 endif()
 
 ##############################################################################

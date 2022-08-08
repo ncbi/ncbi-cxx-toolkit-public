@@ -28,9 +28,42 @@ if(DEFINED NCBI_PTBCFG_CONFIGURATION_TYPES)
 endif()
 # ---------------------------------------------------------------------------
 # compilation features
+set(NCBI_PTBCFG_KNOWN_FEATURES
+    Int8GI
+    Int4GI
+    StrictGI
+    BackwardSig
+    Symbols
+    StaticComponents
+    BinRelease
+    SSE
+    OpenMP
+    CfgMT
+    CfgProps
+    UNICODE
+    MaxDebug
+    Coverage
+)
 if(NOT "${NCBI_PTBCFG_PROJECT_FEATURES}" STREQUAL "")
     string(REPLACE "," ";" NCBI_PTBCFG_PROJECT_FEATURES "${NCBI_PTBCFG_PROJECT_FEATURES}")
     string(REPLACE " " ";" NCBI_PTBCFG_PROJECT_FEATURES "${NCBI_PTBCFG_PROJECT_FEATURES}")
+
+    set(_all)
+    foreach(_f IN LISTS NCBI_PTBCFG_PROJECT_FEATURES)
+        if(${_f} STREQUAL "noSSE")
+            message("WARNING: Feature noSSE is deprecated, use -SSE instead")
+            list(APPEND _all -SSE)
+        elseif(${_f} STREQUAL "noOpenMP")
+            message("WARNING: Feature noOpenMP is deprecated, use -OpenMP instead")
+            list(APPEND _all -OpenMP)
+        elseif(${_f} STREQUAL "noUNICODE")
+            message("WARNING: Feature noUNICODE is deprecated, use -UNICODE instead")
+            list(APPEND _all -UNICODE)
+        else()
+            list(APPEND _all ${_f})
+        endif()
+    endforeach()
+    set(NCBI_PTBCFG_PROJECT_FEATURES ${_all})
 endif()
 
 set(NCBI_PTBCFG_INSTALL_SUFFIX "")
@@ -70,19 +103,19 @@ if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(NCBI_COMPONENT_BACKWARD_DISABLED TRUE)
     set(NCBI_COMPONENT_UNWIND_DISABLED TRUE)
     set(NCBI_COMPONENT_PCRE_DISABLED TRUE)
-    if(NOT   SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND
-       NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-        list(APPEND NCBI_PTBCFG_PROJECT_FEATURES noSSE)
+    if(NOT  SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND
+       NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        list(APPEND NCBI_PTBCFG_PROJECT_FEATURES -SSE)
     endif()
-    if(NOT   OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND
-       NOT noOpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-        list(APPEND NCBI_PTBCFG_PROJECT_FEATURES noOpenMP)
+    if(NOT  OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND
+       NOT -OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        list(APPEND NCBI_PTBCFG_PROJECT_FEATURES -OpenMP)
     endif()
 endif()
 
 # see also
 #    CfgMT, CfgProps in WIN32
-#    MaxDebug, Coverage, noSSE, noOpenMP in UNIX
+#    MaxDebug, Coverage, SSE, OpenMP in UNIX
 
 #----------------------------------------------------------------------------
 if (WIN32)
@@ -214,7 +247,7 @@ if (WIN32)
         add_compile_options("/arch:AVX2")
     endif()
     add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
-    if(NOT noUNICODE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    if(NOT -UNICODE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
         add_definitions(-D_UNICODE)
     endif()
     if(BUILD_SHARED_LIBS)
@@ -385,7 +418,7 @@ endif (CMAKE_USE_PTHREADS_INIT)
 # OpenMP
 if (NOT APPLE AND NOT CYGWIN AND NOT NCBI_COMPILER_LLVM_CLANG
     AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
-    AND NOT noOpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    AND NOT -OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 find_package(OpenMP)
 ## message("OPENMP_FOUND: ${OPENMP_FOUND}")
 ## message("OpenMP_CXX_SPEC_DATE: ${OpenMP_CXX_SPEC_DATE}")
@@ -544,7 +577,7 @@ endmacro()
 
 if(NOT NCBI_PTBCFG_PACKAGING
     AND "${HOST_CPU}" MATCHES "x86"
-    AND NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    AND NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 	set_cxx_compiler_flag_optional("-msse4.2")
 	set_c_compiler_flag_optional  ("-msse4.2")
 endif()
