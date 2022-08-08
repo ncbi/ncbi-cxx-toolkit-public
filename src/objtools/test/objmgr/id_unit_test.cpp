@@ -40,6 +40,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/annot_ci.hpp>
+#include <objmgr/seq_table_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
@@ -192,6 +193,20 @@ bool s_HaveID1(void)
 }
 
 
+bool s_HavePubSeqOS(void)
+{
+    const char* env = getenv("GENBANK_LOADER_METHOD_BASE");
+    if ( !env ) {
+        env = getenv("GENBANK_LOADER_METHOD");
+    }
+    if ( !env ) {
+        // assume default ID2
+        return false;
+    }
+    return NStr::EndsWith(env, "pubseqos", NStr::eNocase);
+}
+
+
 bool s_HaveCache(void)
 {
     const char* env = getenv("GENBANK_LOADER_METHOD");
@@ -206,7 +221,7 @@ bool s_HaveCache(void)
 bool s_HaveNA()
 {
     // NA are available in PSG and ID2
-    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2();
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2() || s_HavePubSeqOS();
 }
 
 
@@ -482,6 +497,30 @@ void s_CheckGraph(const SAnnotSelector& sel,
     CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
     BOOST_REQUIRE(bh);
     BOOST_CHECK(CGraph_CI(bh, range, sel));
+}
+
+
+void s_CheckTable(const SAnnotSelector& sel,
+                  const string& str_id,
+                  CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    CRef<CScope> scope = s_InitScope();
+    CRef<CSeq_id> seq_id(new CSeq_id(str_id));
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( range == CRange<TSeqPos>::GetWhole() ) {
+        loc->SetWhole(*seq_id);
+    }
+    else {
+        CSeq_interval& interval = loc->SetInt();
+        interval.SetId(*seq_id);
+        interval.SetFrom(range.GetFrom());
+        interval.SetTo(range.GetTo());
+    }
+    BOOST_CHECK(CSeq_table_CI(*scope, *loc, sel));
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK(CSeq_table_CI(bh, range, sel));
 }
 
 
@@ -995,6 +1034,18 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom10)
         }
         s_CheckGraph(sel, id);
     }
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckNATable)
+{
+    LOG_POST("Checking NA Seq-table Track");
+    string id = "NC_000001.11";
+    string na_acc = "NA000355453.1"; // NA000344170.1 is not live
+
+    SAnnotSelector sel;
+    sel.IncludeNamedAnnotAccession(na_acc);
+    s_CheckTable(sel, id);
 }
 
 
@@ -2250,6 +2301,7 @@ NCBITEST_INIT_TREE()
     }
     if ( !s_HaveNA() ) {
         NCBITEST_DISABLE(CheckNAZoom10);
+        NCBITEST_DISABLE(CheckNATable);
     }
     if ( !s_HaveSplit() ) {
         NCBITEST_DISABLE(CheckSplitSeqData);
