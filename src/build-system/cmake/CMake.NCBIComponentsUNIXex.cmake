@@ -166,8 +166,6 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
         set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1
             USE_BIGINT_IDS=${USE_BIGINT_IDS})
         set(NCBI_COMPONENT_NCBI_C_LIBPATH ${NCBI_C_LIBPATH})
-        list(APPEND NCBI_ALL_LEGACY C-Toolkit)
-        set(NCBI_COMPONENT_C-Toolkit_FOUND NCBI_C)
     else()
         set(NCBI_COMPONENT_NCBI_C_FOUND NO)
         message("NOT FOUND NCBI_C")
@@ -413,11 +411,6 @@ NCBIcomponent_report(TIFF)
 NCBI_define_Xcomponent(NAME FASTCGI LIB fcgi)
 NCBIcomponent_report(FASTCGI)
 
-if(NCBI_COMPONENT_FASTCGI_FOUND)
-    list(APPEND NCBI_ALL_LEGACY Fast-CGI)
-    set(NCBI_COMPONENT_Fast-CGI_FOUND FASTCGI)
-endif()
-
 #############################################################################
 # FASTCGIPP
 NCBI_define_Xcomponent(NAME FASTCGIPP LIB fastcgipp)
@@ -548,10 +541,6 @@ NCBIcomponent_report(GCRYPT)
 # XML
 NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2)
 NCBIcomponent_report(XML)
-if(NCBI_COMPONENT_XML_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBXML)
-    set(NCBI_COMPONENT_LIBXML_FOUND XML)
-endif()
 
 #############################################################################
 # XSLT
@@ -571,10 +560,6 @@ if(NCBI_COMPONENT_XSLT_FOUND)
         endif()
     endif()
 endif()
-if(NCBI_COMPONENT_XSLT_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBXSLT)
-    set(NCBI_COMPONENT_LIBXSLT_FOUND XSLT)
-endif()
 
 #############################################################################
 # EXSLT
@@ -583,19 +568,11 @@ NCBIcomponent_report(EXSLT)
 if(NCBI_COMPONENT_EXSLT_FOUND)
     set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
 endif()
-if(NCBI_COMPONENT_EXSLT_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBEXSLT)
-    set(NCBI_COMPONENT_LIBEXSLT_FOUND EXSLT)
-endif()
 
 #############################################################################
 # XLSXWRITER
 NCBI_define_Xcomponent(NAME XLSXWRITER LIB xlsxwriter)
 NCBIcomponent_report(XLSXWRITER)
-if(NCBI_COMPONENT_XLSXWRITER_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBXLSXWRITER)
-    set(NCBI_COMPONENT_LIBXLSXWRITER_FOUND XLSXWRITER)
-endif()
 
 #############################################################################
 # LAPACK
@@ -667,19 +644,11 @@ endif()
 # OSMesa
 NCBI_define_Xcomponent(NAME OSMesa LIB OSMesa ADD_COMPONENT OpenGL)
 NCBIcomponent_report(OSMesa)
-if(NCBI_COMPONENT_OSMesa_FOUND)
-    list(APPEND NCBI_ALL_LEGACY MESA)
-    set(NCBI_COMPONENT_MESA_FOUND OSMesa)
-endif()
 
 #############################################################################
 # XERCES
 NCBI_define_Xcomponent(NAME XERCES MODULE xerces-c PACKAGE XercesC LIB xerces-c)
 NCBIcomponent_report(XERCES)
-if(NCBI_COMPONENT_XERCES_FOUND)
-    list(APPEND NCBI_ALL_LEGACY Xerces)
-    set(NCBI_COMPONENT_Xerces_FOUND XERCES)
-endif()
 
 ##############################################################################
 # GRPC/PROTOBUF
@@ -725,10 +694,6 @@ endif()
 # XALAN
 NCBI_define_Xcomponent(NAME XALAN PACKAGE XalanC LIB xalan-c xalanMsg)
 NCBIcomponent_report(XALAN)
-if(NCBI_COMPONENT_XALAN_FOUND)
-    list(APPEND NCBI_ALL_LEGACY Xalan)
-    set(NCBI_COMPONENT_Xalan_FOUND XALAN)
-endif()
 
 ##############################################################################
 # PERL
@@ -751,10 +716,6 @@ NCBIcomponent_report(PERL)
 # OpenSSL
 NCBI_define_Xcomponent(NAME OpenSSL MODULE openssl PACKAGE OpenSSL LIB ssl crypto)
 NCBIcomponent_report(OpenSSL)
-if(NCBI_COMPONENT_OpenSSL_FOUND)
-    list(APPEND NCBI_ALL_LEGACY OPENSSL)
-    set(NCBI_COMPONENT_OPENSSL_FOUND OpenSSL)
-endif()
 
 #############################################################################
 # MSGSL  (Microsoft Guidelines Support Library)
@@ -772,10 +733,6 @@ NCBI_define_Xcomponent(NAME MONGOC LIB mongoc bson)
 NCBI_define_Xcomponent(NAME MONGOCXX MODULE libmongocxx LIB mongocxx bsoncxx INCLUDE mongocxx/v_noabi bsoncxx/v_noabi)
 NCBIcomponent_report(MONGOCXX)
 NCBIcomponent_add(MONGOCXX MONGOC)
-if(NCBI_COMPONENT_MONGOCXX_FOUND)
-    list(APPEND NCBI_ALL_LEGACY MONGODB3)
-    set(NCBI_COMPONENT_MONGODB3_FOUND MONGOCXX)
-endif()
 
 #############################################################################
 # LEVELDB
@@ -806,8 +763,6 @@ NCBI_define_Xcomponent(NAME UV MODULE libuv LIB uv)
 NCBIcomponent_report(UV)
 if(NCBI_COMPONENT_UV_FOUND)
     set(NCBI_COMPONENT_UV_LIBS    ${NCBI_COMPONENT_UV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-    list(APPEND NCBI_ALL_LEGACY LIBUV)
-    set(NCBI_COMPONENT_LUBUV_FOUND UV)
 endif()
 
 #############################################################################

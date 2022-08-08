@@ -128,8 +128,6 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
         set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1
             USE_BIGINT_IDS=${USE_BIGINT_IDS})
         set(NCBI_COMPONENT_NCBI_C_LIBPATH ${NCBI_C_LIBPATH})
-        list(APPEND NCBI_ALL_LEGACY C-Toolkit)
-        set(NCBI_COMPONENT_C-Toolkit_FOUND NCBI_C)
     else()
         set(NCBI_COMPONENT_NCBI_C_FOUND NO)
         message("NOT FOUND NCBI_C")
@@ -373,9 +371,6 @@ endif()
 NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2)
 NCBIcomponent_report(XML)
 if(NCBI_COMPONENT_XML_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBXML)
-    set(NCBI_COMPONENT_LIBXML_FOUND XML)
-
     string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XML_LIBS}")
     string(REPLACE "-L/sw/lib?" "" _x "${_x}")
     string(REPLACE "?" ";" NCBI_COMPONENT_XML_LIBS "${_x}")
@@ -403,10 +398,6 @@ if(NCBI_COMPONENT_XSLT_FOUND)
     string(REPLACE "-L/sw/lib?" "" _x "${_x}")
     string(REPLACE "?" ";" NCBI_COMPONENT_XSLT_LIBS "${_x}")
 endif()
-if(NCBI_COMPONENT_XSLT_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBXSLT)
-    set(NCBI_COMPONENT_LIBXSLT_FOUND XSLT)
-endif()
 
 #############################################################################
 # EXSLT
@@ -418,10 +409,6 @@ if(NCBI_COMPONENT_EXSLT_FOUND)
     string(REPLACE ";" "?" _x "${NCBI_COMPONENT_EXSLT_LIBS}")
     string(REPLACE "-L/sw/lib?" "" _x "${_x}")
     string(REPLACE "?" ";" NCBI_COMPONENT_EXSLT_LIBS "${_x}")
-endif()
-if(NCBI_COMPONENT_EXSLT_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBEXSLT)
-    set(NCBI_COMPONENT_LIBEXSLT_FOUND EXSLT)
 endif()
 
 #############################################################################
@@ -502,10 +489,6 @@ endif()
 # UV
 NCBI_define_Xcomponent(NAME UV MODULE libuv LIB uv)
 NCBIcomponent_report(UV)
-if(NCBI_COMPONENT_UV_FOUND)
-    list(APPEND NCBI_ALL_LEGACY LIBUV)
-    set(NCBI_COMPONENT_LIBUV_FOUND UV)
-endif()
 
 #############################################################################
 # NGHTTP2
