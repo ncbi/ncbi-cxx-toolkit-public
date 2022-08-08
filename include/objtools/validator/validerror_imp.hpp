@@ -317,10 +317,10 @@ public:
     NCBI_DEPRECATED bool IsNR() const;
     NCBI_DEPRECATED bool IsNZ() const;
     NCBI_DEPRECATED bool IsNS() const;
-    NCBI_DEPRECATED bool IsNT() const;
+    bool IsNT() const;
     NCBI_DEPRECATED bool IsNW() const;
-    NCBI_DEPRECATED bool IsWP() const;
-    NCBI_DEPRECATED bool IsXR() const;
+    bool IsWP() const;
+    bool IsXR() const;
     bool IsGI() const;
     bool IsGpipe() const;
     bool IsHtg() const;
