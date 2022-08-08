@@ -2382,7 +2382,10 @@ void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
    else if (m_pEntryInfo->IsNoBioSource()  &&  !m_pEntryInfo->IsPatent()  &&  !m_pEntryInfo->IsPDB()) {
        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
                "No source information included on this record.", se);
-        return;
+       
+       if (!GetContext().PostprocessHugeFile) {
+           return;
+       }
    }
 
     size_t num_no_source = m_BioseqWithNoSource.size();
