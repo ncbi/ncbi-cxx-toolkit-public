@@ -625,6 +625,50 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+///
+/// formatter for Shannon's entropy
+
+class CTabularFormatter_Entropy : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_Entropy(size_t row)
+        : m_Row(row)
+    {
+    }
+
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+
+private:
+    size_t m_Row;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// formatter for BLAST seg %
+
+class CTabularFormatter_SegPercent : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_SegPercent(size_t row)
+        : m_Row(row)
+    {
+    }
+
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+
+private:
+    size_t m_Row;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 class CTabularFormatter_AlignLengthRatio : public CTabularFormatter::IFormatter
 {
