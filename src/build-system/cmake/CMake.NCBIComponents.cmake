@@ -16,9 +16,10 @@
 
 #############################################################################
 set(NCBI_ALL_COMPONENTS "")
-set(NCBI_ALL_LEGACY "")
 set(NCBI_ALL_REQUIRES "")
 set(NCBI_ALL_DISABLED "")
+set(NCBI_ALL_LEGACY "")
+set(NCBI_ALL_DISABLED_LEGACY "")
 
 #############################################################################
 macro(NCBIcomponent_report _name)
@@ -40,6 +41,8 @@ macro(NCBIcomponent_deprecated_name _deprecated_name _newname)
     if(NCBI_COMPONENT_${_newname}_FOUND)
         list(APPEND NCBI_ALL_LEGACY ${_deprecated_name})
         set(NCBI_COMPONENT_${_deprecated_name}_FOUND ${_newname})
+    else()
+        list(APPEND NCBI_ALL_DISABLED_LEGACY ${_deprecated_name})
     endif()
 endmacro()
 #############################################################################
