@@ -247,6 +247,18 @@ void CFixedBlob_ids::SetNotFound(void)
 }
 
 
+CFixedBlob_ids CFixedBlob_ids::Filter(const SAnnotSelector* sel) const
+{
+    TList infos;
+    for ( auto& blob_info : Get() ) {
+        if ( blob_info.Matches(fBlobHasExtAnnot|fBlobHasNamedAnnot, sel) ) {
+            infos.push_back(blob_info);
+        }
+    }
+    return CFixedBlob_ids(eTakeOwnership, infos);
+}
+
+
 CNcbiOstream& operator<<(CNcbiOstream& out, const CFixedBlob_ids& ids)
 {
     const char* sep = "( ";
@@ -565,6 +577,7 @@ END_LOCAL_NAMESPACE;
 
 
 CLoadLockSetter::CLoadLockSetter(CLoadLockBlob& lock)
+    : m_AllowIncompleteLoading(false)
 {
     x_Init(lock, lock.GetSelectedChunkId());
 }
@@ -572,6 +585,7 @@ CLoadLockSetter::CLoadLockSetter(CLoadLockBlob& lock)
 
 CLoadLockSetter::CLoadLockSetter(CLoadLockBlob& lock,
                                  TChunkId chunk_id)
+    : m_AllowIncompleteLoading(false)
 {
     x_Init(lock, chunk_id);
 }
@@ -580,7 +594,8 @@ CLoadLockSetter::CLoadLockSetter(CLoadLockBlob& lock,
 CLoadLockSetter::CLoadLockSetter(CReaderRequestResult& result,
                                  const CBlob_id& blob_id,
                                  TChunkId chunk_id)
-    : TParent(result.GetLoadLockBlob(blob_id))
+    : TParent(result.GetLoadLockBlob(blob_id)),
+      m_AllowIncompleteLoading(false)
 {
     x_ObtainTSE_LoadLock(result, blob_id);
     if ( chunk_id != kMain_ChunkId ) {
@@ -615,7 +630,7 @@ void CLoadLockSetter::x_Init(CLoadLockBlob& lock, TChunkId chunk_id)
 
 CLoadLockSetter::~CLoadLockSetter(void)
 {
-    if ( !IsLoaded() ) {
+    if ( !m_AllowIncompleteLoading && !IsLoaded() ) {
         ERR_POST("Incomplete loading");
     }
 }
@@ -629,6 +644,12 @@ bool CLoadLockSetter::IsLoaded(void) const
     else {
         return m_Chunk->IsLoaded();
     }
+}
+
+
+void CLoadLockSetter::AllowIncompleteLoading()
+{
+    m_AllowIncompleteLoading = true;
 }
 
 
@@ -1036,6 +1057,33 @@ CLoadLockBlobIds::CLoadLockBlobIds(CReaderRequestResult& result,
     : TParent(result.GetLoadedBlobIds(id, sel)),
       m_Seq_id(id)
 {
+}
+
+
+bool CLoadLockBlobIds::SetLoadedBlob_ids(const SAnnotSelector* sel,
+                                         const TData& blob_ids)
+{
+    if ( !sel || sel->IsIncludedNamedAnnotAccession("NA*") ) {
+        // no filtering
+        return SetLoadedBlob_ids(blob_ids);
+    }
+    else {
+        return SetLoadedBlob_ids(blob_ids.Filter(sel));
+    }
+}
+
+
+bool CLoadLockBlobIds::SetLoadedBlob_ids(const SAnnotSelector* sel,
+                                         const TData& blob_ids,
+                                         TExpirationTime expiration)
+{
+    if ( !sel || sel->IsIncludedNamedAnnotAccession("NA*") ) {
+        // no filtering
+        return SetLoadedBlob_ids(blob_ids, expiration);
+    }
+    else {
+        return SetLoadedBlob_ids(blob_ids.Filter(sel), expiration);
+    }
 }
 
 
