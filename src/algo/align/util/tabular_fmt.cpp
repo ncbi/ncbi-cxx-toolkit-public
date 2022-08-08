@@ -1072,6 +1072,70 @@ void CTabularFormatter_AnyScore::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
+void CTabularFormatter_Entropy::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Entropy value for the "
+        << (m_Row == 0 ? "query " : "subject ")
+        << "sequence";
+}
+
+
+void CTabularFormatter_Entropy::PrintHeader(CNcbiOstream& ostr) const
+{
+    ostr
+        << (m_Row == 0 ? "query_" : "subject_")
+        << "entropy";
+}
+
+
+void CTabularFormatter_Entropy::Print(CNcbiOstream& ostr,
+                                      const objects::CSeq_align& align)
+{
+    string score_name =
+        (m_Row == 0 ? "query_" : "subject_") +
+        string("entropy");
+    double val = 0;
+    if (m_Scores) {
+        val = m_Scores->GetScore(align, score_name);
+    }
+    ostr << val;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+void CTabularFormatter_SegPercent::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Entropy value for the "
+        << (m_Row == 0 ? "query " : "subject ")
+        << "sequence";
+}
+
+
+void CTabularFormatter_SegPercent::PrintHeader(CNcbiOstream& ostr) const
+{
+    ostr
+        << (m_Row == 0 ? "query_" : "subject_")
+        << "seg_pct";
+}
+
+
+void CTabularFormatter_SegPercent::Print(CNcbiOstream& ostr,
+                                         const objects::CSeq_align& align)
+{
+    string score_name =
+        (m_Row == 0 ? "query_" : "subject_") +
+        string("seg_pct");
+    double val = 0;
+    if (m_Scores) {
+        val = m_Scores->GetScore(align, score_name);
+    }
+    ostr << val;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 CTabularFormatter_Defline::CTabularFormatter_Defline(int row)
     : m_Row(row)
 {
@@ -2914,6 +2978,15 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("schromosome", new CTabularFormatter_AssemblyInfo(1,
                                    CTabularFormatter_AssemblyInfo::eUnit,
                                    CTabularFormatter_AssemblyInfo::eChromosome));
+
+    formatter.RegisterField("query_entropy",
+                            new CTabularFormatter_Entropy(0));
+    formatter.RegisterField("subject_entropy",
+                            new CTabularFormatter_Entropy(1));
+    formatter.RegisterField("query_seg_pct",
+                            new CTabularFormatter_SegPercent(0));
+    formatter.RegisterField("subject_seg_pct",
+                            new CTabularFormatter_SegPercent(1));
 }
 
 void CTabularFormatter::SetGencoll(CConstRef<CGC_Assembly> gencoll)

@@ -34,6 +34,8 @@
 #include <algo/sequence/internal_stops.hpp>
 #include <algo/align/util/algo_align_util_exceptions.hpp>
 #include <algo/align/util/score_lookup.hpp>
+#include <algo/sequence/util.hpp>
+#include <algo/blast/core/blast_seg.h>
 
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -239,7 +241,7 @@ public:
 
     virtual bool IsInteger() const { return true; };
 
-    virtual double Get(const CSeq_align& align, CScope* s) const
+    virtual double Get(const CSeq_align& align, CScope*) const
     {
         return align.GapLengthRange().second;
     }
@@ -346,7 +348,7 @@ public:
 
     virtual bool IsInteger() const { return true; };
 
-    virtual double Get(const CSeq_align& align, CScope* scope) const
+    virtual double Get(const CSeq_align& align, CScope* ) const
     {
         double score_value = 0;
         switch (align.GetSegs().Which()) {
@@ -1305,7 +1307,7 @@ public:
 
     virtual bool IsInteger() const { return true; };
 
-    virtual double Get(const CSeq_align& align, CScope* scope) const
+    virtual double Get(const CSeq_align& align, CScope* ) const
     {
         if (align.GetSegs().IsSpliced())
         {
@@ -1760,6 +1762,150 @@ public:
     }
 };
 
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_SegPct : public CScoreLookup::IScore
+{
+public:
+    CScore_SegPct(int row)
+        : m_Row(row)
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Computes the percent of residues in the aligned "
+            << (m_Row == 0 ? "query" : "subject")
+            << " region that would be filtered by 'seg'";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return false; };
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(m_Row));
+        if ( !bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(0).AsFastaString());
+        }
+
+        if ( !bsh.IsProtein() ) {
+            NCBI_THROW(CException, eUnknown,
+                       "alignment filter requires that the requested "
+                       "sequence be a protein");
+        }
+
+        TSeqRange r = align.GetSeqRange(m_Row);
+        string seq;
+        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Ncbi);
+        vec.GetSeqData(r.GetFrom(), r.GetTo(), seq);
+
+        string seq_iupac;
+        vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
+        vec.GetSeqData(r.GetFrom(), r.GetTo(), seq_iupac);
+
+        //
+        // this uses lower-level calls in BLAST to run 'seg' on the covered
+        // sequence
+        //
+
+        SegParameters *sp = SegParametersNewAa();
+        BlastSeqLoc* seq_locs = NULL;
+        SeqBufferSeg((unsigned char *)seq.data(), seq.size(), 0, sp, &seq_locs);
+        SegParametersFree(sp);
+
+        // now, count how many masked residues we have
+        vector<size_t> counts(seq.size(), 0);
+        for (BlastSeqLoc *itr = seq_locs;  itr;  itr = itr->next) {
+            for (int i = itr->ssr->left;  i <= itr->ssr->right; ++ i) {
+                counts[i] = 1;
+            }
+            //cerr << "  seg range: [" << itr->ssr->left << ".." << itr->ssr->right << "]: " << itr->ssr->right - itr->ssr->left + 1 << " / " << pos.size() << " total" << endl;
+        }
+        BlastSeqLocFree(seq_locs);
+
+        // report the number of masked residues
+        size_t count_x = 0;
+        for (const auto& i : counts) {
+            count_x += i;
+        }
+        double val = count_x * 100.0 / seq.size();
+
+        /**
+        CSeq_id_Handle idh = sequence::GetId(bsh, sequence::eGetId_Best);
+        cerr
+            << idh << "(" << r << "): seg-pct = " << val
+            << ", seq = " << seq_iupac
+            << endl;
+            **/
+    
+        return val;
+    }
+
+private:
+    size_t m_Row;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_Entropy : public CScoreLookup::IScore
+{
+public:
+    CScore_Entropy(int row)
+        : m_Row(row)
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Computes the value of Shannon's entropy for the specified "
+            "aligned "
+            << (m_Row == 0 ? "query" : "subject") << " region";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return false; };
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(m_Row));
+        if ( !bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(0).AsFastaString());
+        }
+        TSeqRange r = align.GetSeqRange(m_Row);
+        string seq;
+        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+        vec.GetSeqData(r.GetFrom(), r.GetTo(), seq);
+
+        int word_size = 4;
+        if (bsh.IsProtein()) {
+            word_size = 1;
+        }
+        double val = ComputeNormalizedProteinEntropy(seq, word_size);
+
+        /**
+        CSeq_id_Handle idh = sequence::GetId(bsh, sequence::eGetId_Best);
+        cerr
+            << idh << "(" << r << "): entropy = " << val
+            << ", seq = " << seq
+            << endl;
+            **/
+    
+        return val;
+    }
+
+private:
+    size_t m_Row;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -2034,6 +2180,24 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("subject_geneid",
           CIRef<IScore>(new CScore_GeneID(1))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_entropy",
+          CIRef<IScore>(new CScore_Entropy(0))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_entropy",
+          CIRef<IScore>(new CScore_Entropy(1))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_seg_pct",
+          CIRef<IScore>(new CScore_SegPct(0))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_seg_pct",
+          CIRef<IScore>(new CScore_SegPct(1))));
 
     m_Scores.insert
         (TScoreDictionary::value_type

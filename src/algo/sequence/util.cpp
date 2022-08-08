@@ -235,26 +235,34 @@ double ComputeNormalizedProteinEntropy(const CTempString& sequence,
 {
     typedef map<CTempString, double> TCounts;
     TCounts counts;
-    double total = double(sequence.size() - word_size);
-    for (size_t i = word_size;  i < sequence.size();  ++i) {
+    double total = double(sequence.size() - word_size + 1);
+    for (size_t i = word_size;  i <= sequence.size();  ++i) {
         CTempString t(sequence, i - word_size, word_size);
         TCounts::iterator it =
             counts.insert(TCounts::value_type(t, 0)).first;
         it->second += 1;
     }
 
+    //cerr << "sum:" << endl;
     NON_CONST_ITERATE (TCounts, it, counts) {
+        /**
+        cerr << "  " << it->first
+            << " = " << it->second
+            << " = " << it->second / total
+            << " = " << it->second * log10(it->second) << endl;
+            **/
         it->second /= total;
     }
 
     double entropy = 0;
     ITERATE (TCounts, it, counts) {
-        entropy += it->second * log(it->second);
+        entropy += it->second * log10(it->second);
     }
     // NOTE:
     // 20 = count of amino acids
     double denom = pow(20, word_size);
     denom = min(denom, total);
+    //cerr << "entropy: " << entropy << " = " << -entropy / log(denom) << endl;
     entropy = -entropy / log(denom);
     return max<double>(0.0, entropy);
 }
