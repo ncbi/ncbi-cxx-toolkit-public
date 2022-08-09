@@ -112,7 +112,7 @@ bool x_ApplyCreateDate(CSeq_entry& entry)
 }
 
 
-void x_CorrectCollectionDates(CTable2AsnContext& context, CBioSource& source)
+void x_CorrectCollectionDates(const CTable2AsnContext& context, CBioSource& source)
 {
     static CTimeFormat in_formats[2] = { "M-D-Y", "D-M-Y" };
     static CTimeFormat out_format("D-b-Y");
@@ -136,7 +136,7 @@ void x_CorrectCollectionDates(CTable2AsnContext& context, CBioSource& source)
 
 }
 
-void x_CorrectCollectionDates(CTable2AsnContext& context, CSeq_annot& annot)
+void x_CorrectCollectionDates(const CTable2AsnContext& context, CSeq_annot& annot)
 {
     size_t p = context.m_cleanup.find_first_of("Dd");
     if (p == string::npos)
@@ -153,7 +153,7 @@ void x_CorrectCollectionDates(CTable2AsnContext& context, CSeq_annot& annot)
 }
 
 template<class _T>
-void x_CorrectCollectionDates(CTable2AsnContext& context, _T& seq_or_set)
+void x_CorrectCollectionDates(const CTable2AsnContext& context, _T& seq_or_set)
 {
     size_t p = context.m_cleanup.find_first_of("Dd");
     if (p == string::npos)
@@ -288,7 +288,7 @@ void CTable2AsnContext::ApplyUpdateDate(CSeq_entry& entry) const
     date_desc.Set().SetUpdate_date(*date);
 }
 
-void CTable2AsnContext::ApplyAccession(CSeq_entry& entry)
+void CTable2AsnContext::ApplyAccession(CSeq_entry& entry) const
 {
     if (m_accession.Empty())
         return;
@@ -448,10 +448,9 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
     {
         MergeSeqDescr(entry, m_entry_template->GetDescr(), true);
 
-        CSeq_entry_Base::TSet::TSeq_set& data = entry.SetSet().SetSeq_set();
-        NON_CONST_ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
+        for (auto& it: entry.SetSet().SetSeq_set())
         {
-            MergeWithTemplate(**it);
+            MergeWithTemplate(*it);
         }
     }
     else
@@ -495,11 +494,11 @@ void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
     {
         for (CFeat_CI feat_it(*bioseq_it, SAnnotSelector(CSeqFeatData::e_Rna) ); feat_it; ++feat_it)
         {
-            ITERATE(CBioseq::TId, id_it, bioseq_it->GetBioseqCore()->GetId())
+            for (auto id_it: bioseq_it->GetBioseqCore()->GetId())
             {
-                if (!(**id_it).IsGeneral()) continue;
+                if (!id_it->IsGeneral()) continue;
 
-                const string& dbtag = (**id_it).GetGeneral().GetDb();
+                const string& dbtag = id_it->GetGeneral().GetDb();
                 if (NStr::Compare(dbtag, "TMSMART") == 0) continue;
                 if (NStr::Compare(dbtag, "NCBIFILE") == 0) continue;
 
@@ -511,7 +510,7 @@ void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
                 string& comment = feature.SetComment();
                 if (!comment.empty())
                     comment += "; ";
-                (**id_it).GetLabel(&comment);
+                id_it->GetLabel(&comment);
            }
         }
     }
@@ -554,7 +553,7 @@ void CTable2AsnContext::SmartFeatureAnnotation(CSeq_entry& entry) const
 }
 //LCOV_EXCL_STOP
 
-void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry& entry)
+void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry& entry) const
 {
     if (m_genome_center_id.empty())
         return;
@@ -565,9 +564,8 @@ void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry& entry)
 
         CTempString db = m_genome_center_id;
 
-        NON_CONST_ITERATE(CBioseq::TId, id_it, bioseq.SetId())
+        for (auto& seq_id: bioseq.SetId())
         {
-            CRef<CSeq_id> seq_id(*id_it);
             if (seq_id.Empty()) continue;
 
             const CObject_id* obj_id;
@@ -596,7 +594,7 @@ void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry& entry)
 }
 
 
-void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
+void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature) const
 {
     if (!feature.IsSetQual())
         return;
@@ -625,7 +623,7 @@ void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
         feature.ResetQual();
 }
 
-void CTable2AsnContext::RemoveProteinIdsQuals(CSeq_feat& feature)
+void CTable2AsnContext::RemoveProteinIdsQuals(CSeq_feat& feature) const
 {
     if (!feature.IsSetQual())
         return;
@@ -671,9 +669,9 @@ bool CTable2AsnContext::ApplyCreateUpdateDates(CSeq_entry& entry) const
             }
             else
             {
-                NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+                for (auto& it: entry.SetSet().SetSeq_set())
                 {
-                    need_update |= ApplyCreateUpdateDates(**it);
+                    need_update |= ApplyCreateUpdateDates(*it);
                 }
                 if (need_update)
                     ApplyUpdateDate(entry);
@@ -697,33 +695,33 @@ void CTable2AsnContext::ApplyFileTracks(CSeq_entry& entry) const
 
 CRef<COrg_ref> CTable2AsnContext::GetOrgRef(CSeq_descr& descr)
 {
-    NON_CONST_ITERATE(CSeq_descr_Base::Tdata, it, descr.Set())
+    for (auto& it: descr.Set())
     {
-        if ((**it).IsSource())
+        if (it->IsSource())
         {
-            CBioSource& source = (**it).SetSource();
+            CBioSource& source = it->SetSource();
             if (source.IsSetOrg())
             {
                 return Ref(&source.SetOrg());
             }
         }
-        if ((**it).IsOrg())
+        if (it->IsOrg())
         {
-            return Ref(&(**it).SetOrg());
+            return Ref(&it->SetOrg());
         }
     }
-    return CRef<COrg_ref>();
+    return {};
 }
 
 bool CTable2AsnContext::GetOrgName(string& name, const CSeq_entry& entry)
 {
     if (entry.IsSet() && entry.GetSet().IsSetDescr())
     {
-        ITERATE(CSeq_descr_Base::Tdata, it, entry.GetSet().GetDescr().Get())
+        for (auto it: entry.GetSet().GetDescr().Get())
         {
-            if ((**it).IsSource())
+            if (it->IsSource())
             {
-                const CBioSource& source = (**it).GetSource();
+                const CBioSource& source = it->GetSource();
                 if (source.IsSetTaxname())
                 {
                     name = source.GetTaxname();
@@ -740,11 +738,11 @@ bool CTable2AsnContext::GetOrgName(string& name, const CSeq_entry& entry)
                         return true;
                 }
             }
-            if ((**it).IsOrg())
+            if (it->IsOrg())
             {
-                if ((**it).GetOrg().IsSetOrgname())
+                if (it->GetOrg().IsSetOrgname())
                 {
-                    if ((**it).GetOrg().GetOrgname().GetFlatName(name))
+                    if (it->GetOrg().GetOrgname().GetFlatName(name))
                         return true;
                 }
             }
@@ -779,7 +777,7 @@ bool AssignLocalIdIfEmpty(CSeq_feat& feature, int& id)
     }
 }
 
-void CTable2AsnContext::CorrectCollectionDates(CSeq_entry& entry)
+void CTable2AsnContext::CorrectCollectionDates(CSeq_entry& entry) const
 {
     size_t p = m_cleanup.find_first_of("Dd");
     if (p == string::npos)
@@ -800,7 +798,7 @@ void CTable2AsnContext::CorrectCollectionDates(CSeq_entry& entry)
 }
 
 
-void CTable2AsnContext::ApplyComments(CSeq_entry& entry)
+void CTable2AsnContext::ApplyComments(CSeq_entry& entry) const
 {
     if (m_Comment.empty())
         return;

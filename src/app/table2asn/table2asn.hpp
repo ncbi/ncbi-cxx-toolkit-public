@@ -78,8 +78,8 @@ private:
     void ProcessAlignmentFile(CNcbiOstream* output);
     void ReportUnusedSourceQuals();
     void ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result);
-    void ProcessSecretFiles2Phase(CSeq_entry& result);
-    void ProcessCMTFiles(CSeq_entry& result);
+    void ProcessSecretFiles2Phase(CSeq_entry& result) const;
+    void ProcessCMTFiles(CSeq_entry& result) const;
     void LoadPEPFile(const string& pathname);
     void LoadRNAFile(const string& pathname);
     void LoadPRTFile(const string& pathname);

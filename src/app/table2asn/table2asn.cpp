@@ -591,18 +591,18 @@ int CTbl2AsnApp::Run()
     {
         auto linkage_evidence_to_value = CLinkage_evidence::GetTypeInfo_enum_EType();
 
-        ITERATE(CArgValue::TStringArray, arg_it, args["l"].GetStringList())
+        for (auto& arg_it: args["l"].GetStringList())
         {
             try
             {
-                auto value = linkage_evidence_to_value->FindValue(*arg_it);
+                auto value = linkage_evidence_to_value->FindValue(arg_it);
                 m_context.m_DefaultEvidence.insert(value);
                 m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
             }
             catch (...)
             {
                 NCBI_THROW(CArgException, eConvert,
-                    "Unrecognized linkage evidence " + *arg_it);
+                    "Unrecognized linkage evidence " + arg_it);
             }
         }
     }
@@ -1501,7 +1501,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     AddAnnots(scope);
 }
 
-void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result)
+void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result) const
 {
     ProcessCMTFiles(result);
 }
@@ -1514,7 +1514,7 @@ void CTbl2AsnApp::LoadDSCFile(const string& pathname)
     m_reader->LoadDescriptors(pathname, m_secret_files->m_descriptors);
 }
 
-void CTbl2AsnApp::ProcessCMTFiles(CSeq_entry& result)
+void CTbl2AsnApp::ProcessCMTFiles(CSeq_entry& result) const
 {
     if (m_global_files.m_struct_comments)
         m_global_files.m_struct_comments->ProcessComments(result);
