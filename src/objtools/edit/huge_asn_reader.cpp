@@ -478,8 +478,9 @@ void CHugeAsnReader::FlattenGenbankSet()
             }
         }
         else { // m_FlattenedSets.size() > 1)
-            if (top->m_descr || top->m_class != CBioseq_set::eClass_genbank)
-            {
+            if (top->m_descr ||
+                    (top->m_class != CBioseq_set::eClass_genbank &&
+                     top->m_class != CBioseq_set::eClass_not_set)) {
                 auto top_entry = Ref(new CSeq_entry());
                 top_entry->SetSet().SetClass() = top->m_class;
                 if (top->m_descr)
