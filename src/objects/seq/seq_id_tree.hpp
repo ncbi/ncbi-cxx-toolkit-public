@@ -302,7 +302,7 @@ class CSeq_id_Gi_Info : public CSeq_id_Info
 public:
     CSeq_id_Gi_Info(CSeq_id_Mapper* mapper);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant /*variant*/) const;
+    CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant /*variant*/) const override;
 };
 
 
@@ -345,7 +345,7 @@ class CSeq_id_Textseq_PlainInfo : public CSeq_id_Info
 public:
     CSeq_id_Textseq_PlainInfo(const CConstRef<CSeq_id>& seq_id, CSeq_id_Mapper* mapper);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const override;
     
     TVariant ParseCaseVariant(const string& acc) const;
     TVariant ParseCaseVariant(const CTextseq_id& id) const;
@@ -465,7 +465,7 @@ public:
     static TPacked Pack(const TKey& key, const CTextseq_id& id);
     static TVariant ParseCaseVariant(const CSeq_id_Info* info, const string& acc);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const override;
     
     int CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const override;
 
@@ -721,7 +721,7 @@ public:
     TVariant ParseCaseVariant(const string& str) const;
     TVariant ParseCaseVariant(const CObject_id& oid) const;
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const override;
     
 private:
     bool m_IsId;
@@ -788,7 +788,7 @@ public:
 
     static TPacked Pack(const TKey& key, const CDbtag& id);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const override;
     
     int CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const override;
 
@@ -862,7 +862,7 @@ public:
     static TKey Parse(const CDbtag& id);
     static TPacked Pack(const TKey& key, const CDbtag& id);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const override;
     
     int CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const override;
 
@@ -877,7 +877,7 @@ class CSeq_id_General_PlainInfo : public CSeq_id_Info {
 public:
     CSeq_id_General_PlainInfo(const CDbtag& dbid, CSeq_id_Mapper* mapper);
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const;
+    CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const override;
     
     TVariant ParseCaseVariant(const CDbtag& dbtag) const;
 };
