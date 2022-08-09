@@ -377,11 +377,15 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
 
     SWGSSeqInfo seq0 = ResolveBlobId(*parsed_id2info.tse_id);
     if ( !seq0 ) return ret;
-    
-    ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
-    ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
-    ret->m_Id2BlobState = GetID2BlobState(seq0);
-    if ( ret->IsForbidden() ) return ret;
+
+    auto id2_blob_state = GetID2BlobState(seq0);
+    if ( SWGSData::IsForbidden(id2_blob_state) ) {
+        ret = make_shared<SWGSData>();
+        ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
+        ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
+        ret->m_Id2BlobState = id2_blob_state;
+        return ret;
+    }
 
     SWGSSeqInfo& seq = GetRootSeq(seq0);
     if ( seq.IsContig() ) {
@@ -389,6 +393,9 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
         // master descr shouldn't be added to proteins in chunks
         CWGSSeqIterator::TFlags flags = it.fDefaultFlags & ~it.fMasterDescr;
         ret = make_shared<SWGSData>();
+        ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
+        ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
+        ret->m_Id2BlobState = id2_blob_state;
         ret->m_Data = new CAsnBinData(*it.GetChunkData(chunk_id, flags));
         ret->m_Compress = GetCompress(m_Config.m_CompressData, seq, *ret->m_Data);
     }
@@ -1573,12 +1580,12 @@ int SWGSData::GetPSGBioseqState() const
 }
 
 
-bool SWGSData::IsForbidden() const
+bool SWGSData::IsForbidden(int id2_blob_state)
 {
-    if ( m_Id2BlobState & (1<<eID2_Blob_State_withdrawn) ) {
+    if ( id2_blob_state & (1<<eID2_Blob_State_withdrawn) ) {
         return true;
     }
-    else if ( m_Id2BlobState & (1<<eID2_Blob_State_protected) ) {
+    else if ( id2_blob_state & (1<<eID2_Blob_State_protected) ) {
         return true;
     }
     return false;
