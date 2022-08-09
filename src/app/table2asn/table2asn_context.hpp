@@ -168,9 +168,9 @@ public:
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const CTempString& type);
     bool ApplyCreateUpdateDates(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
-    void ApplyAccession(objects::CSeq_entry& entry);
+    void ApplyAccession(objects::CSeq_entry& entry) const;
     void ApplyFileTracks(objects::CSeq_entry& entry) const;
-    void ApplyComments(objects::CSeq_entry& entry);
+    void ApplyComments(objects::CSeq_entry& entry) const;
     CRef<CSerialObject> CreateSubmitFromTemplate(
         CRef<objects::CSeq_entry>& object,
         CRef<objects::CSeq_submit>& submit) const;
@@ -184,11 +184,11 @@ public:
     void RemoveUnnecessaryXRef(objects::CSeq_entry& entry) const;
     void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
 
-    void CorrectCollectionDates(objects::CSeq_entry& entry);
+    void CorrectCollectionDates(objects::CSeq_entry& entry) const;
 
-    void MakeGenomeCenterId(objects::CSeq_entry& entry);
-    void RenameProteinIdsQuals(objects::CSeq_feat& feature);
-    void RemoveProteinIdsQuals(objects::CSeq_feat& feature);
+    void MakeGenomeCenterId(objects::CSeq_entry& entry) const;
+    void RenameProteinIdsQuals(objects::CSeq_feat& feature) const;
+    void RemoveProteinIdsQuals(objects::CSeq_feat& feature) const;
     static bool IsDBLink(const objects::CSeqdesc& desc);
 
 
