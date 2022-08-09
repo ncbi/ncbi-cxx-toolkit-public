@@ -266,13 +266,13 @@ void CAnnotWriterApp::Init()
     arg_desc->AddDefaultKey(
         "assembly-name",
         "STRING",
-        "Assembly name",
+        "Assembly name to include in GFF3 pragma",
         CArgDescriptions::eString,
         "" );
     arg_desc->AddDefaultKey(
         "assembly-accn",
         "STRING",
-        "Assembly accession",
+        "Assembly accession to include in GFF3 pragma",
         CArgDescriptions::eString,
         "" );
     arg_desc->AddDefaultKey(
