@@ -47,13 +47,9 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objects/seq/Seq_descr.hpp>
-#include <objtools/cleanup/cleanup.hpp>
-#include <objtools/edit/remote_updater.hpp>
 
-#if defined(NCBI_OS_UNIX) && defined(_DEBUG)
-#   include <cxxabi.h>
-#   define TABLE2ASN_DEBUG_EXCEPTIONS
-#endif
+#include "message_queue.hpp"
+#include <future>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -62,95 +58,73 @@ USING_SCOPE(objects::edit);
 namespace
 {
 
+bool CheckDescriptors(const CHugeAsnReader& asn_reader, CSeqdesc::E_Choice which)
+{
+    for (auto rec: asn_reader.GetBioseqs())
+    {
+        if (rec.m_descr.NotEmpty())
+        {
+            for (auto descr: rec.m_descr->Get())
+            {
+                if (descr->Which() == which)
+                    return true;
+            }
+        }
+    }
+    /*
+    for (auto rec: asn_reader.GetBiosets())
+    {
+        if (rec.m_descr.NotEmpty())
+        {
+            for (auto descr: rec.m_descr->Get())
+            {
+                if (descr->Which() == which)
+                    return true;
+            }
+        }
+    }
+    */
+    return false;
+}
+
 struct THugeFileWriteContext
 {
-    size_t bioseq_level = 0;
-    size_t entries      = 0;
-    CBioseq_set::TClass m_ClassValue = CBioseq_set::eClass_not_set;
-    bool   is_fasta     = false;
-    CHugeFile file;
+    CHugeFile         file;
+    CHugeAsnReader    asn_reader;
+    bool              is_fasta = false;
+    IHugeAsnSource*   source     = nullptr;
+    CRef<CSeq_entry>  m_topentry;
+    CRef<CSeq_submit> m_submit;
 
-    IHugeAsnSource* source = nullptr;
-
-    CHugeAsnReader asn_reader;
-
-    CRef<CSeq_entry> topentry;
-    CRef<CSeq_submit> submit;
     std::function<CRef<CSeq_entry>()> next_entry;
 
-    bool CheckDescriptors(CSeqdesc::E_Choice which)
+    void PopulateTopEntry(bool handle_as_set, CBioseq_set::TClass classValue)
     {
-        for (auto rec: asn_reader.GetBioseqs())
-        {
-            if (rec.m_descr.NotEmpty())
-            {
-                for (auto descr: rec.m_descr->Get())
-                {
-                    if (descr->Which() == which)
-                        return true;
-                }
-            }
-        }
-        /*
-        for (auto rec: asn_reader.GetBiosets())
-        {
-            if (rec.m_descr.NotEmpty())
-            {
-                for (auto descr: rec.m_descr->Get())
-                {
-                    if (descr->Which() == which)
-                        return true;
-                }
-            }
-        }
-        */
-        return false;
-    }
-
-    void PopulateTopEntry(CRef<CSeq_entry>& top_set, bool handle_as_set, CBioseq_set::TClass classValue)
-    {
-        m_ClassValue = CBioseq_set::eClass_not_set;
-
         if (source->IsMultiSequence() || (is_fasta && handle_as_set))
         {
-            topentry = Ref(new CSeq_entry);
-            auto& seqset = topentry->SetSet().SetSeq_set();
-            m_ClassValue = topentry->SetSet().SetClass() = classValue;
-            if (!is_fasta)
-            {
-                auto top = asn_reader.GetBiosets().begin();
-                if (asn_reader.GetBiosets().size()>1)
-                {
-                    top++;
-                }
-                if (top->m_class != CBioseq_set::eClass_not_set)
-                    m_ClassValue = topentry->SetSet().SetClass() = top->m_class;
-                if (top->m_descr.NotEmpty() && top->m_descr->IsSet() && !top->m_descr->Get().empty())
-                {
-                    topentry->SetSet().SetDescr().Assign(*top->m_descr);
-                }
-            }
-            if (source->IsMultiSequence())
-            {
-                top_set = topentry;
+            m_topentry = Ref(new CSeq_entry);
+            if (!is_fasta && asn_reader.GetTopEntry()) {
+                m_topentry->Assign(*asn_reader.GetTopEntry());
             } else {
-                seqset.push_back(next_entry());
-                top_set = seqset.front();
+                m_topentry->SetSet().SetClass() = classValue;
+            }
+            if (!source->IsMultiSequence()) {
+                m_topentry->SetSet().SetSeq_set().push_back(next_entry());
             }
         } else {
-            top_set = topentry = next_entry();
+            m_topentry = next_entry();
         }
 
-        topentry->Parentize();
+        m_topentry->Parentize();
     }
 
-    void PopulateTempTopObject(CRef<CSeq_submit>& temp_submit, CRef<CSeq_entry>&temp_top, CRef<CSeq_entry> entry)
+    void PopulateTempTopObject(CRef<CSeq_submit>& temp_submit, CRef<CSeq_entry>&temp_top, CRef<CSeq_entry> entry) const
     {
         temp_top = entry;
-        if (submit)
+        if (m_submit)
         {
             temp_submit.Reset(new CSeq_submit);
-            temp_submit->Assign(*submit);
+            temp_submit->Assign(*m_submit);
             if (temp_submit->IsSetData() && temp_submit->GetData().IsEntrys() &&
                 !temp_submit->GetData().GetEntrys().empty())
             {
@@ -162,15 +136,118 @@ struct THugeFileWriteContext
                 temp_submit->SetData().SetEntrys().push_back(entry);
             }
         } else
-        if (topentry->IsSet())
+        if (m_topentry->IsSet())
         {
-            topentry->SetSet().SetSeq_set().clear();
-            topentry->SetSet().SetSeq_set().push_back(entry);
-            temp_top = topentry;
+            temp_top.Reset(new CSeq_entry);
+            temp_top->Assign(*m_topentry);
+            temp_top->SetSet().SetSeq_set().clear();
+            temp_top->SetSet().SetSeq_set().push_back(entry);
         }
         temp_top->Parentize();
     }
 
+};
+
+class CGenBankAsyncWriter
+{
+public:
+    using TFuture = std::future<CConstRef<CSeq_entry>>;
+    using TPullFutureFunction = std::function<std::future<CConstRef<CSeq_entry>>(void)>;
+    using TPullEntryFunction  = std::function<CConstRef<CSeq_entry>(void)>;
+
+    CGenBankAsyncWriter(CObjectOStream* o_stream)
+        : m_ostream{o_stream}
+    {}
+    ~CGenBankAsyncWriter()
+    {}
+
+    virtual void Write(CConstRef<CSerialObject> topobject)
+    {
+        *m_ostream << *topobject;
+    }
+
+    static TFuture MakeEmptyFuture(CConstRef<CSeq_entry> entry)
+    {
+        std::promise<CConstRef<CSeq_entry>> prom;
+        std::future<CConstRef<CSeq_entry>> fut = prom.get_future();
+        prom.set_value(entry);
+        return fut;
+    }
+
+    virtual void Write(CConstRef<CSerialObject> topobject, TPullEntryFunction pull_next_entry)
+    {
+        Write(topobject, [pull_next_entry]() -> TFuture
+            {
+                auto entry = pull_next_entry();
+                if (entry)
+                    return MakeEmptyFuture(entry);
+                else
+                    return {};
+            }
+        );
+    }
+
+    virtual void Write(CConstRef<CSerialObject> topobject, TPullFutureFunction pull_next_future)
+    {
+        CMessageQueue<TFuture> proc_queue(5);
+        auto pull_future = std::async(std::launch::async, [&proc_queue, pull_next_future, this]
+            {
+                try
+                {
+                    TFuture future_entry;
+                    while ((future_entry = pull_next_future()).valid())
+                    {
+                        proc_queue.push_back(std::move(future_entry));
+                    }
+                    proc_queue.push_back({});
+
+                }
+                catch(...)
+                {
+                    proc_queue.clear();
+
+                    // wrap exception into the process queue
+                    std::promise<CConstRef<CSeq_entry>> exc_prom;
+                    std::future<CConstRef<CSeq_entry>> fut = exc_prom.get_future();
+                    exc_prom.set_exception(std::current_exception());
+                    proc_queue.push_back(std::move(fut));
+                }
+            }
+        );
+
+        size_t bioseq_level = 0;
+        auto seq_set_member = CObjectTypeInfo(CBioseq_set::GetTypeInfo()).FindMember("seq-set");
+        SetLocalWriteHook(seq_set_member.GetMemberType(), *m_ostream,
+            [this, &bioseq_level, &proc_queue]
+                (CObjectOStream& out, const CConstObjectInfo& object)
+        {
+            bioseq_level++;
+            if (bioseq_level == 1)
+            {
+                COStreamContainer out_container(out, object.GetTypeInfo());
+                while(true)
+                {
+                    auto entry_future = proc_queue.pop_front();
+                    if (!entry_future.valid())
+                        break;
+                    auto entry = entry_future.get(); // this can throw an exception that was caught within the thread
+                    if (entry)
+                        out_container << *entry;
+                    else
+                        break;
+                }
+            } else {
+                object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
+            }
+            bioseq_level--;
+        });
+
+        *m_ostream << *topobject;
+    }
+
+protected:
+private:
+    CObjectOStream* m_ostream = nullptr;
 };
 
 } // namespace
@@ -236,13 +313,11 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         auto entry = context.source->GetNextSeqEntry();
         if (entry)
         {
-            if (context.is_fasta)
-            {
+            if (context.is_fasta) {
                 if (descrs)
                     CTable2AsnContext::MergeSeqDescr(*entry, *descrs, false);
             } else
-            if (m_context.m_gapNmin > 0)
-            {
+            if (m_context.m_gapNmin > 0) {
                 CGapsEditor gap_edit(
                     (CSeq_gap::EType)m_context.m_gap_type,
                     m_context.m_DefaultEvidence,
@@ -262,92 +337,105 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
         m_secret_files->m_feature_table_reader->m_local_id_counter = context.asn_reader.GetMaxLocalId() + 1;
 
-        unique_ptr<CObjectOStream> ostr{
-            CObjectOStream::Open(m_context.m_binary_asn1_output?eSerial_AsnBinary:eSerial_AsnText, *output)};
-
-        auto seq_set_member = CObjectTypeInfo(CBioseq_set::GetTypeInfo()).FindMember("seq-set");
-
-        CConstRef<CSerialObject> topobject;
-
         m_context.m_huge_files_mode = context.source->IsMultiSequence();
 
-        CRef<CSeq_entry> top_set;
-        context.PopulateTopEntry(top_set, m_context.m_HandleAsSet, m_context.m_ClassValue);
+        context.PopulateTopEntry(m_context.m_HandleAsSet, m_context.m_ClassValue);
 
-        if (m_context.m_save_bioseq_set)
+        if (context.is_fasta && descrs)
         {
-            if (context.topentry->IsSet())
-                topobject.Reset(&context.topentry->SetSet());
+            CRef<CSeq_entry> top_set;
+            //if (!context.source->IsMultiSequence() && m_context.m_HandleAsSet)
+            if (context.m_topentry->IsSet() &&
+                context.m_topentry->GetSet().IsSetSeq_set() &&
+                !context.m_topentry->GetSet().GetSeq_set().empty())
+            {
+                top_set = context.m_topentry->SetSet().SetSeq_set().front();
+            } else {
+                top_set = context.m_topentry;
+            }
+
+            m_context.MergeSeqDescr(*top_set, *descrs, true);
+        }
+
+#ifdef TABLE2ASN_ALLOW_MT
+        std::mutex proc_mutex;
+        auto process_async = [&context, this, &proc_mutex](CRef<CSeq_entry> entry) -> CConstRef<CSeq_entry>
+            {
+                CRef<CSeq_submit> temp_submit;
+                CRef<CSeq_entry> temp_top;
+                context.PopulateTempTopObject(temp_submit, temp_top, entry);
+
+                std::lock_guard<std::mutex> g(proc_mutex);
+                ProcessSingleEntry(context.file.m_format, temp_submit, temp_top);
+                return entry;
+            };
+
+        auto produce_next_future = [&context, process_async]() -> CGenBankAsyncWriter::TFuture
+        {
+            CRef<CSeq_entry> entry = context.next_entry();
+            if (entry) {
+                CGenBankAsyncWriter::TFuture fut = std::async(std::launch::async, process_async, entry);
+                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                return fut;
+            }
+            return {};
+        };
+#else
+        auto produce_next_entry = [&context, this]() -> CConstRef<CSeq_entry>
+        {
+            CRef<CSeq_entry> entry = context.next_entry();
+            if (entry) {
+                CRef<CSeq_submit> temp_submit;
+                CRef<CSeq_entry> temp_top;
+                context.PopulateTempTopObject(temp_submit, temp_top, entry);
+                ProcessSingleEntry(context.file.m_format, temp_submit, temp_top);
+            }
+            return entry;
+        };
+
+#endif
+
+        CConstRef<CSerialObject> topobject; // top object is used to write output, can be submit, entry, bioseq, bioseq_set
+
+        if (m_context.m_save_bioseq_set) {
+            if (context.m_topentry->IsSet())
+                topobject.Reset(&context.m_topentry->SetSet());
             else
-                topobject.Reset(&context.topentry->SetSeq());
+                topobject.Reset(&context.m_topentry->SetSeq());
         } else {
             if (context.source->GetSubmitBlock())
             {
-                context.submit.Reset(new CSeq_submit);
-                context.submit->SetSub().Assign(*context.source->GetSubmitBlock());
+                context.m_submit.Reset(new CSeq_submit);
+                context.m_submit->SetSub().Assign(*context.source->GetSubmitBlock());
 
-                context.submit->SetData().SetEntrys().clear();
-                context.submit->SetData().SetEntrys().push_back(context.topentry);
+                context.m_submit->SetData().SetEntrys().clear();
+                context.m_submit->SetData().SetEntrys().push_back(context.m_topentry);
             }
-            topobject = m_context.CreateSubmitFromTemplate(context.topentry, context.submit);
+            topobject = m_context.CreateSubmitFromTemplate(context.m_topentry, context.m_submit);
         }
 
-        if (context.is_fasta && descrs)
-            m_context.MergeSeqDescr(*top_set, *descrs, true);
+        unique_ptr<CObjectOStream> ostr{
+            CObjectOStream::Open(m_context.m_binary_asn1_output?eSerial_AsnBinary:eSerial_AsnText, *output)};
+
+        CGenBankAsyncWriter async_writer(ostr.get());
 
         if (m_context.m_huge_files_mode)
         {
-            bool need_update_date = !context.is_fasta && context.CheckDescriptors(CSeqdesc::e_Create_date);
+            bool need_update_date = !context.is_fasta && CheckDescriptors(context.asn_reader, CSeqdesc::e_Create_date);
 
-            ProcessTopEntry(context.file.m_format, need_update_date, context.submit, context.topentry);
+            ProcessTopEntry(context.file.m_format, need_update_date, context.m_submit, context.m_topentry);
+            #ifdef TABLE2ASN_ALLOW_MT
+                async_writer.Write(topobject, produce_next_future);
+            #else
+                async_writer.Write(topobject, produce_next_entry);
+            #endif
 
-            SetLocalWriteHook(seq_set_member.GetMemberType(), *ostr,
-            [this, &context](CObjectOStream& out, const CConstObjectInfo& object)
-            {
-                context.bioseq_level++;
-                if (context.bioseq_level == 1)
-                {
-                    COStreamContainer out_container(out, object.GetTypeInfo());
-                    CRef<objects::CSeq_entry> entry;
-                    while ((entry = context.next_entry()))
-                    {
-                        CRef<CSeq_submit> temp_submit;
-                        CRef<CSeq_entry> temp_top;
-                        context.PopulateTempTopObject(temp_submit, temp_top, entry);
-                        ProcessSingleEntry(context.file.m_format, temp_submit, temp_top);
-                        if (entry) {
-                            out_container << *entry;
-                            context.entries++;
-                        }
-                    }
-                } else {
-                    object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
-                }
-                context.bioseq_level--;
-            });
+
         } else {
-            ProcessSingleEntry(context.file.m_format, context.submit, context.topentry);
-            if (context.submit.Empty())
-                topobject = context.topentry;
+            ProcessSingleEntry(context.file.m_format, context.m_submit, context.m_topentry);
+            //if (context.m_submit.Empty()) topobject = context.m_topentry;
 
-            context.entries++;
-        }
-
-        try
-        {
-            ostr->Write(topobject, topobject->GetThisTypeInfo());
-        }
-        catch(const CException& ex)
-        { // ASN writer populates exception with a call stack which is not neccessary
-          // we need the original exception
-            // ASN.1 writer populates exception with a call stack, we need to dig out the original exception
-            const CException* original = &ex;
-            while (original->GetPredecessor())
-            {
-                original = original->GetPredecessor();
-            }
-
-            throw *original;
+            async_writer.Write(topobject);
         }
 
     }
