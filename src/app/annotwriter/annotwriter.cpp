@@ -278,7 +278,7 @@ void CAnnotWriterApp::Init()
     arg_desc->AddDefaultKey(
         "default-method",
         "STRING",
-        "GFF3 default method",
+        "Default term to use in GFF3 column 2",
         CArgDescriptions::eString,
         "" );
     }}
