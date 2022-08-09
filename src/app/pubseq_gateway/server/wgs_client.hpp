@@ -82,7 +82,8 @@ struct SWGSData
     
     int GetID2BlobState(void) const { return m_Id2BlobState; }
     int GetPSGBioseqState() const;
-    bool IsForbidden() const;
+    static bool IsForbidden(int id2_blob_state);
+    bool IsForbidden() const { return IsForbidden(m_Id2BlobState); }
 
     string                          m_BlobId;
     CRef<objects::CID2_Blob_Id>     m_Id2BlobId;
