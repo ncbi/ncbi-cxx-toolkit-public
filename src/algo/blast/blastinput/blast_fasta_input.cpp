@@ -588,18 +588,31 @@ CShortReadFastaInputSource::GetNextSequence(CBioseq_set& bioseq_set)
 }
 
 
+// Return a reference to the UserObject in SeqDescr labeled Mapping. Create one
+// if it does not exist.
+static CUser_object& s_SetSeqdescUser(CSeq_entry& entry)
+{
+    CRef<CSeqdesc> seqdesc;
+    // find user object labeled "Mapping" in Seq_entry
+    for (auto& it: entry.SetSeq().SetDescr().Set()) {
+        if (it->IsUser() && it->GetUser().GetType().GetStr() == "Mapping") {
+            seqdesc.Reset(it);
+            break;
+        }
+    }
+    // if not present create a new one
+    if (seqdesc.Empty()) {
+        seqdesc.Reset(new CSeqdesc());
+        seqdesc->SetUser().SetType().SetStr("Mapping");
+        entry.SetSeq().SetDescr().Set().push_back(seqdesc);
+    }
+    return seqdesc->SetUser();
+}
+
+
 void
 CShortReadFastaInputSource::x_ReadFastaOrFastq(CBioseq_set& bioseq_set)
 {
-    // tags to indicate paired sequences
-    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
-    seqdesc_first->SetUser().SetType().SetStr("Mapping");
-    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
-
-    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
-    seqdesc_last->SetUser().SetType().SetStr("Mapping");
-    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
-
     CRef<CSeq_entry> first;
     CRef<CSeq_entry> second;
     switch (m_Format) {
@@ -636,14 +649,16 @@ CShortReadFastaInputSource::x_ReadFastaOrFastq(CBioseq_set& bioseq_set)
 
         if (first.NotEmpty()) {
             if (second.NotEmpty()) {
-                first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
+                // tag to indicate paired sequences
+                s_SetSeqdescUser(*first).AddField("has_pair", eFirstSegment);
             }
             bioseq_set.SetSeq_set().push_back(first);
         }
 
         if (second.NotEmpty()) {
             if (first.NotEmpty()) {
-                second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
+                // tag to indicate paired sequences
+                s_SetSeqdescUser(*second).AddField("has_pair", eLastSegment);
             }
             bioseq_set.SetSeq_set().push_back(second);
         }
@@ -946,9 +961,15 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
     }
 
     if (!empty_sequence) {
-        // read and skip quality scores
+        // read and quality scores
         ++(*line_reader);
         line = **line_reader;
+
+        if (!line.empty()) {
+            // store quality string
+            s_SetSeqdescUser(*retval).AddField("quality", line.data());
+        }
+
         // skip empty lines
         while (!line_reader->AtEOF() && line.empty()) {
             ++(*line_reader);
@@ -969,15 +990,6 @@ CShortReadFastaInputSource::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
                    "used with two files");
     }
 
-    // tags to indicate paired sequences
-    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
-    seqdesc_first->SetUser().SetType().SetStr("Mapping");
-    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
-
-    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
-    seqdesc_last->SetUser().SetType().SetStr("Mapping");
-    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
-
     CRef<CSeq_entry> first;
     CRef<CSeq_entry> second;
 
@@ -992,14 +1004,15 @@ CShortReadFastaInputSource::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
 
     if (first.NotEmpty()) {
         if (second.NotEmpty()) {
-            first->SetSeq().SetDescr().Set().push_back(seqdesc_first);
+            s_SetSeqdescUser(*first).AddField("has_pair", eFirstSegment);
         }
         bioseq_set.SetSeq_set().push_back(first);
     }
 
     if (second.NotEmpty()) {
         if (first.NotEmpty()) {
-            second->SetSeq().SetDescr().Set().push_back(seqdesc_last);
+            s_SetSeqdescUser(*second).AddField("has_pair", eLastSegment);
+
         }
         bioseq_set.SetSeq_set().push_back(second);
     }
