@@ -123,7 +123,14 @@ CSraInputSource::x_ReadOneSeq(void)
     bioseq.SetInst().SetLength(sequence.length());
     bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna((string)sequence));
 
+    // store quality scores
+    CRef<CSeq_annot> quality_scores = m_It->GetQualityGraphAnnot();
+    if (quality_scores.NotEmpty()) {
+        bioseq.SetAnnot().push_back(quality_scores);
+    }
+
     m_BasesAdded += sequence.length();
+
     return seq_entry;
 }
 

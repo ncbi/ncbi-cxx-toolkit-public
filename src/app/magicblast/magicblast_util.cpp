@@ -56,6 +56,8 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/Dbtag.hpp>
 
+#include <objects/seqres/Byte_graph.hpp>
+
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 #include <algo/sequence/consensus_splice.hpp>
@@ -292,6 +294,49 @@ static int s_GetQuerySequence(const CBioseq& bioseq,
     }
 
     return 0;
+}
+
+// Get FASTQ quality string, return true if the bioseq has qualities,
+// otheriwse false.
+static bool s_GetQualityString(const CBioseq& bioseq, string& quality_str)
+{
+    // First check UserObject in SeqDescr. These are ASCII encoded quality
+    // scores copied from a FASTQ file.
+    if (bioseq.IsSetDescr()) {
+        for (const auto& it: bioseq.GetDescr().Get()) {
+            if (it->IsUser() && it->GetUser().GetType().GetStr() == "Mapping") {
+                if (it->GetUser().HasField("quality")) {
+                    quality_str.assign(it->GetUser().GetField("quality").GetString());
+                    return true;
+                }
+            }
+        }
+    }
+
+    // If not present, check Seq-annot. These are Phred quality values as
+    // integers (usually from SRA).
+    if (bioseq.IsSetAnnot()) {
+        for (const auto& ann_it: bioseq.GetAnnot()) {
+            if (ann_it->IsGraph()) {
+                for (const auto& it: ann_it->GetData().GetGraph()) {
+                    if (it->IsSetTitle() && it->GetTitle().find("Phred Quality") != string::npos) {
+                        if (it->GetGraph().IsByte()) {
+                            const vector<char>& values = it->GetGraph().GetByte().GetValues();
+                            // produce 33-base ASCII encoding
+                            quality_str.reserve(values.size());
+                            for (const auto& ch: values) {
+                                quality_str.push_back(ch + 33);
+                            }
+
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 
@@ -1175,7 +1220,17 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     ostr << range.GetFrom() + 1 << sep;
 
     // mapping quality
-    ostr << "255" << sep;
+    // 255 means MAPQ value unavailable
+    int mapq = 255;
+    // for single alignements, report 60 (like HISAT2)
+    if (num_hits == 1) {
+        mapq = 60;
+    }
+    else if (num_hits > 1) {
+        // MAPQ value for more than one alignment (like TopHat2 and STAR)
+        mapq = (int)((-10.0 * log10(1.0 - 1.0 / (double) num_hits)) + 0.5);
+    }
+    ostr << mapq << sep;
 
     // CIGAR string
     string cigar;
@@ -1373,7 +1428,9 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     }
 
     // quality string
-    ostr << "*";
+    string quality_str;
+    bool has_qualities = s_GetQualityString(bioseq, quality_str);
+    ostr <<  (has_qualities ? quality_str : "*") ;
 
     // optional fields
     // number of hits reported for the query
@@ -1527,7 +1584,9 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
     }
 
     // quality string
-    ostr << "*";
+    string quality_str;
+    bool has_qualities = s_GetQualityString(bioseq, quality_str);
+    ostr << (has_qualities ? quality_str : "*");
 
     // read did not pass filtering
     CMagicBlastResults::TResultsInfo info =
