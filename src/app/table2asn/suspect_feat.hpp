@@ -25,24 +25,17 @@ namespace objects
         ~CFixSuspectProductName();
 
         void SetRulesFilename(const string& filename);
-        void SetupOutput(std::function<CNcbiOstream&()> f);
-        void FixSuspectProductNames(objects::CSeq_entry& entry, CScope& scope);
-        bool FixSuspectProductNames(objects::CSeq_feat& feature);
-        CRef<feature::CFeatTree>& SetFeatTree()
-        {
-            return m_feattree;
-        }
-
-        void ReportFixedProduct(const string& oldproduct, const string& newproduct, const objects::CSeq_loc& loc, const string& locustag);
+        void SetupOutput(std::function<std::ostream&()> f);
+        void FixSuspectProductNames(objects::CSeq_entry& entry, CScope& scope) const;
+        bool FixSuspectProductNames(objects::CSeq_feat& feature, CScope& scope, feature::CFeatTree& feattree) const;
 
     protected:
-        CConstRef<CSuspect_rule> x_FixSuspectProductName(string& product_name);
-        std::function<CNcbiOstream&()> m_output;
+        void ReportFixedProduct(const string& oldproduct, const string& newproduct, const objects::CSeq_loc& loc, const string& locustag) const;
+        CConstRef<CSuspect_rule> x_FixSuspectProductName(string& product_name) const;
+        std::function<std::ostream&()> m_output;
 
         string m_rules_filename;
         CConstRef<CSuspect_rule_set> m_rules;
-        CRef<feature::CFeatTree> m_feattree;
-        CRef<CScope> m_scope;
     };
 }
 
