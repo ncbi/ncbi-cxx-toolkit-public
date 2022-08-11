@@ -92,23 +92,13 @@ public:
     typedef TLocMap::const_iterator const_iterator;
 
     CHandleRangeMap(void);
-    CHandleRangeMap(const CHandleRangeMap& rmap);
     ~CHandleRangeMap(void);
-
-    CHandleRangeMap& operator= (const CHandleRangeMap& rmap);
 
     enum ETransSplicing {
         eNoTransSplicing,
         eTransSplicing
     };
-    struct SAddState {
-        typedef CHandleRange::TRange TRange;
-
-        CSeq_id_Handle  m_PrevId;
-        ENa_strand      m_PrevStrand;
-        ETransSplicing  m_TransSplicing;
-        TRange          m_PrevRange;
-    };
+    struct SAddState;
     
     // Add all ranges for each seq-id from a seq-loc
     void AddLocation(const CSeq_loc& loc,

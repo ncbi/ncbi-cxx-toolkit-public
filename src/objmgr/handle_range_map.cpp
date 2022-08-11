@@ -58,23 +58,8 @@ CHandleRangeMap::CHandleRangeMap(void)
 }
 
 
-CHandleRangeMap::CHandleRangeMap(const CHandleRangeMap& rmap)
-{
-    *this = rmap;
-}
-
-
 CHandleRangeMap::~CHandleRangeMap(void)
 {
-}
-
-
-CHandleRangeMap& CHandleRangeMap::operator= (const CHandleRangeMap& rmap)
-{
-    if (this != &rmap) {
-        m_LocMap = rmap.m_LocMap;
-    }
-    return *this;
 }
 
 
@@ -82,6 +67,16 @@ void CHandleRangeMap::clear(void)
 {
     m_LocMap.clear();
 }
+
+
+struct CHandleRangeMap::SAddState {
+    typedef CHandleRange::TRange TRange;
+    
+    CSeq_id_Handle  m_PrevId;
+    ENa_strand      m_PrevStrand;
+    ETransSplicing  m_TransSplicing;
+    TRange          m_PrevRange;
+};
 
 
 void CHandleRangeMap::AddLocation(const CSeq_loc& loc,
@@ -171,7 +166,16 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc,
     case CSeq_loc::e_Equiv:
     {
         // extract sub-locations
+        bool first = true; // allow intron only before the first sub-location
         ITERATE ( CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get() ) {
+            if ( first ) {
+                // the remaining gaps between sub-location aren't introns
+                first = false;
+            }
+            else {
+                // there's no intron between equiv sub-locations
+                state.m_PrevId.Reset();
+            }
             AddLocation(**li, state);
         }
         return;
