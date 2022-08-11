@@ -3112,7 +3112,7 @@ void CValidError_imp::ValidateSeqLocIds
 
 bool CValidError_imp::IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& scope)
 {
-    return IsInOrganelleSmallGenomeSet(id, scope);
+    return validator::IsInOrganelleSmallGenomeSet(id, scope);
 }
 
 
@@ -3120,7 +3120,7 @@ bool CValidError_imp::IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& sco
 // in an organelle small genome set
 bool CValidError_imp::BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope)
 {
-    return BadMultipleSequenceLocation(loc, scope);
+    return validator::BadMultipleSequenceLocation(loc, scope);
 }
 
 
