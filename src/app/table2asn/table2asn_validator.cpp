@@ -48,11 +48,11 @@ void xGetLabel(const CSeq_feat& feat, string& label)
 } // end anonymous namespace
 
 CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) :
-    m_stats(CValidErrItem::eSev_trace),
     m_context(&ctx),
-    m_validator_ctx(make_shared<validator::SValidatorContext>())
+    m_val_context(make_shared<validator::SValidatorContext>()),
+    m_val_stats(CValidErrItem::eSev_trace)
 {
-    m_validator_ctx->m_taxon_update = m_context->m_remote_updater->GetUpdateFunc();
+    m_val_context->m_taxon_update = m_context->m_remote_updater->GetUpdateFunc();
 }
 
 CTable2AsnValidator::~CTable2AsnValidator()
@@ -114,7 +114,7 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
 
     if (flags.find('T') != string::npos)
     {
-        validator::CTaxValidationAndCleanup tval(m_validator_ctx->m_taxon_update);
+        validator::CTaxValidationAndCleanup tval(m_val_context->m_taxon_update);
         tval.DoTaxonomyUpdate(h_entry, true);
     }
 }
@@ -126,14 +126,14 @@ void CTable2AsnValidator::ValCollect(CRef<CSeq_submit> submit, CRef<CSeq_entry> 
 
     if (m_context->m_huge_files_mode) {
         std::lock_guard<std::mutex> g{m_mutex};
-        m_validator_ctx->PostprocessHugeFile = true;
-        if (m_validator_ctx->GenbankSetId.empty()) {
+        m_val_context->PostprocessHugeFile = true;
+        if (m_val_context->GenbankSetId.empty()) {
             int unneded_version;
-            m_validator_ctx->GenbankSetId = validator::GetAccessionFromObjects(nullptr, entry, scope, &unneded_version);
+            m_val_context->GenbankSetId = validator::GetAccessionFromObjects(nullptr, entry, scope, &unneded_version);
         }
     }
 
-    validator::CValidator validator(scope.GetObjectManager(), m_validator_ctx);
+    validator::CValidator validator(scope.GetObjectManager(), m_val_context);
 
     Uint4 options = 0;
     if (m_context->m_master_genome_flag == "n")
@@ -172,7 +172,7 @@ void CTable2AsnValidator::Clear()
     std::lock_guard<std::mutex> g{m_mutex};
     m_val_errors.clear();
     m_val_globalInfo.Clear();
-    m_discrepancy.Reset();
+    //m_discrepancy.Reset();
 }
 
 void CTable2AsnValidator::ValReportErrors()
@@ -184,7 +184,7 @@ void CTable2AsnValidator::ValReportErrors()
     for (auto& errors: m_val_errors)
     {
         if (m_context->m_huge_files_mode)
-            g_PostprocessErrors(m_val_globalInfo, m_validator_ctx->GenbankSetId, errors);
+            g_PostprocessErrors(m_val_globalInfo, m_val_context->GenbankSetId, errors);
         for (auto& it: errors->GetErrs())
         {
             const CValidErrItem& item = *it;
@@ -192,8 +192,8 @@ void CTable2AsnValidator::ValReportErrors()
                 << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
                 << item.GetMsg() << " " << item.GetObjDesc() << endl;
 
-            m_stats[item.GetSev()].m_total++;
-            m_stats[item.GetSev()].m_individual[item.GetErrIndex()]++;
+            m_val_stats[item.GetSev()].m_total++;
+            m_val_stats[item.GetSev()].m_individual[item.GetErrIndex()]++;
         }
         //out << MSerial_AsnText << *errors;
     }
@@ -204,7 +204,7 @@ size_t CTable2AsnValidator::ValTotalErrors() const
     std::lock_guard<std::mutex> g(m_mutex);
 
     size_t result = 0;
-    for (auto& stats: m_stats)
+    for (auto& stats: m_val_stats)
     {
         result += stats.m_total;
     }
@@ -217,16 +217,16 @@ void CTable2AsnValidator::ValReportErrorStats(CNcbiOstream& out)
 
     std::lock_guard<std::mutex> g(m_mutex);
 
-    for (size_t sev = 0; sev < m_stats.size(); sev++)
+    for (size_t sev = 0; sev < m_val_stats.size(); sev++)
     {
-        if (m_stats[sev].m_individual.empty())
+        if (m_val_stats[sev].m_individual.empty())
             continue;
 
         string severity = CValidErrItem::ConvertSeverity(EDiagSev(sev));
         NStr::ToUpper(severity);
-        out << NStr::NumericToString(m_stats[sev].m_total) << " " << severity << "-level messages exist" << "\n\n";
+        out << NStr::NumericToString(m_val_stats[sev].m_total) << " " << severity << "-level messages exist" << "\n\n";
 
-        for_each(m_stats[sev].m_individual.begin(), m_stats[sev].m_individual.end(), [&out](const TErrorStatMap::const_iterator::value_type& it)
+        for_each(m_val_stats[sev].m_individual.begin(), m_val_stats[sev].m_individual.end(), [&out](const TErrorStatMap::const_iterator::value_type& it)
         {
             out <<
                 CValidErrItem::ConvertErrGroup(it.first) << "." <<
@@ -236,52 +236,68 @@ void CTable2AsnValidator::ValReportErrorStats(CNcbiOstream& out)
     }
 }
 
-void CTable2AsnValidator::CollectDiscrepancies(const CSerialObject& obj, bool eukaryote, const string& lineage)
+void CTable2AsnValidator::x_PopulateDiscrepancy(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry)
 {
-    if (!m_discrepancy)
-        m_discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_context->m_scope);
-    vector<string> names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
-    m_discrepancy->AddTests(names);
+    if (!m_discrep_scope) {
+        m_discrep_scope.Reset(new CScope(*m_context->m_ObjMgr));
+        m_discrep_scope->AddDefaults();
+    }
+    CSeq_entry_Handle seh;
+    CRef<CSerialObject> obj;
+    if (submit) {
+        seh = m_discrep_scope->AddSeq_submit(*submit);
+        obj = submit;
+    } else
+    if (entry) {
+        seh = m_discrep_scope->AddTopLevelSeqEntry(*entry);
+        obj = entry;
+    }
 
-    CFile nm(m_context->GenerateOutputFilename(m_context->m_asn1_suffix));
-    m_discrepancy->SetLineage(lineage);
-    //m_discrepancy->SetEukaryote(eukaryote);
-    m_discrepancy->Parse(obj, nm.GetName());
-}
+    if (!discrepancy)
+        discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_discrep_scope);
 
-void CTable2AsnValidator::ReportDiscrepancy(const CSerialObject& obj, bool eukaryote, const string& lineage)
-{
-    CRef<NDiscrepancy::CDiscrepancySet> discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_context->m_scope);
     vector<string> names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
     discrepancy->AddTests(names);
 
     CFile nm(m_context->GenerateOutputFilename(m_context->m_asn1_suffix));
-    discrepancy->SetLineage(lineage);
-    //discrepancy->SetEukaryote(eukaryote);
-    discrepancy->Parse(obj, nm.GetName());
+    discrepancy->SetLineage(m_context->m_disc_lineage);
+    //discrepancy->SetEukaryote(m_context->m_eukaryote);
+    discrepancy->Parse(*obj, nm.GetName());
 
+    m_discrep_scope->RemoveTopLevelSeqEntry(seh);
+}
+
+void CTable2AsnValidator::CollectDiscrepancies(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry)
+{
+    if (!m_context->m_run_discrepancy)
+        return;
+
+    x_PopulateDiscrepancy(m_discrepancy, submit, entry);
+    if(m_context->m_split_discrepancy && !m_context->m_huge_files_mode) {
+        x_ReportDiscrepancies(m_discrepancy);
+    }
+}
+
+void CTable2AsnValidator::x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy)
+{
     discrepancy->Summarize();
     unsigned short output_flags = NDiscrepancy::CDiscrepancySet::eOutput_Files;
     if (!m_context->m_master_genome_flag.empty()) {
         output_flags |= NDiscrepancy::CDiscrepancySet::eOutput_Fatal;
     }
-    discrepancy->OutputText(m_context->GetOstream(".dr"), output_flags);
-    m_context->ClearOstream(".dr");
+    discrepancy->OutputText(m_context->GetOstream(".dr", m_context->m_split_discrepancy?"":m_context->m_base_name), output_flags);
+    discrepancy.Reset();
+    if (m_context->m_split_discrepancy)
+        m_context->ClearOstream(".dr");
 }
 
 void CTable2AsnValidator::ReportDiscrepancies()
 {
-    if (m_discrepancy.NotEmpty())
+    if (m_discrepancy)
     {
-        m_discrepancy->Summarize();
-        unsigned short output_flags = NDiscrepancy::CDiscrepancySet::eOutput_Files;
-        if (!m_context->m_master_genome_flag.empty()) {
-            output_flags |= NDiscrepancy::CDiscrepancySet::eOutput_Fatal;
-        }
-        m_discrepancy->OutputText(m_context->GetOstream(".dr", m_context->m_base_name), output_flags);
+        x_ReportDiscrepancies(m_discrepancy);
     }
 }
-
 
 class CUpdateECNumbers
 {

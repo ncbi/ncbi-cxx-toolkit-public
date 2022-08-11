@@ -36,11 +36,12 @@ public:
     void Cleanup(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry, const string& flags) const;
     void UpdateECNumbers(objects::CSeq_entry& entry);
 
-    void CollectDiscrepancies(const CSerialObject& obj, bool eukaryote, const string& lineage);
-    void ReportDiscrepancy(const CSerialObject& obj, bool eukaryote, const string& lineage);
+    void CollectDiscrepancies(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry);
     void ReportDiscrepancies();
 
 protected:
+    void x_PopulateDiscrepancy(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry);
+    void x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy);
     typedef map<int, size_t> TErrorStatMap;
     class TErrorStats
     {
@@ -49,12 +50,15 @@ protected:
         TErrorStatMap m_individual;
         size_t m_total;
     };
-    vector<TErrorStats> m_stats;
-    CTable2AsnContext* m_context;
-    CRef<NDiscrepancy::CDiscrepancySet> m_discrepancy;
-    std::shared_ptr<objects::validator::SValidatorContext> m_validator_ctx;
-    std::list<CRef<objects::CValidError>> m_val_errors;
-    objects::validator::CHugeFileValidator::TGlobalInfo m_val_globalInfo;
+    CTable2AsnContext*     m_context;
+
+    CRef<objects::CScope>                                  m_discrep_scope;
+    CRef<NDiscrepancy::CDiscrepancySet>                    m_discrepancy;
+
+    std::shared_ptr<objects::validator::SValidatorContext> m_val_context;
+    vector<TErrorStats>                                    m_val_stats;
+    std::list<CRef<objects::CValidError>>                  m_val_errors;
+    objects::validator::CHugeFileValidator::TGlobalInfo    m_val_globalInfo;
     mutable std::mutex m_mutex;
 };
 

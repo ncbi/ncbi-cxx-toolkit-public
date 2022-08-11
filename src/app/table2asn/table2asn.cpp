@@ -935,6 +935,9 @@ void CTbl2AsnApp::ProcessOneEntry(
         CRef<CSerialObject> obj,
         CRef<CSerialObject>& result)
 {
+    auto scope = Ref(new CScope(*m_context.m_ObjMgr));
+    scope->AddDefaults();
+
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
 
@@ -1020,7 +1023,7 @@ void CTbl2AsnApp::ProcessOneEntry(
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
 
-    CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup)
@@ -1052,13 +1055,7 @@ void CTbl2AsnApp::ProcessOneEntry(
             m_validator->ValCollect(submit, entry, m_context.m_validate);
         }
 
-        if (m_context.m_run_discrepancy)
-        {
-            if(m_context.m_split_discrepancy)
-                m_validator->ReportDiscrepancy(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
-            else
-                m_validator->CollectDiscrepancies(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
-        }
+        m_validator->CollectDiscrepancies(submit, entry);
 
         if (m_context.m_make_flatfile)
         {
@@ -1071,7 +1068,7 @@ void CTbl2AsnApp::ProcessOneEntry(
             if (submit.Empty())
                 ffgenerator.Generate(seh, ostream);
             else
-                ffgenerator.Generate(*submit, *m_context.m_scope, ostream);
+                ffgenerator.Generate(*submit, *scope, ostream);
         }
     }
 }
@@ -1113,6 +1110,9 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
 
 void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_submit> submit, CRef<CSeq_entry>& entry)
 {
+    auto scope = Ref(new CScope(*m_context.m_ObjMgr));
+    scope->AddDefaults();
+
     /*
         for FASTA inputs 'entry' argument is:
             - always a single seq object
@@ -1191,8 +1191,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
 
-    m_context.m_scope->ResetDataAndHistory();
-    CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup)
@@ -1221,13 +1220,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         m_validator->ValCollect(submit, entry, m_context.m_validate);
     }
 
-    if (m_context.m_run_discrepancy)
-    {
-        if(m_context.m_split_discrepancy)
-            m_validator->ReportDiscrepancy(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
-        else
-            m_validator->CollectDiscrepancies(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
-    }
+    m_validator->CollectDiscrepancies(submit, entry);
 
     if (m_context.m_make_flatfile)
     {
@@ -1240,7 +1233,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         if (submit.Empty())
             ffgenerator.Generate(seh, ostream);
         else
-            ffgenerator.Generate(*submit, *m_context.m_scope, ostream);
+            ffgenerator.Generate(*submit, *scope, ostream);
     }
 
 }
@@ -1249,8 +1242,6 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 {
     if (m_context.m_split_log_files)
         m_context.m_logger->ClearAll();
-
-    m_context.m_scope->ResetDataAndHistory();
 
     CFile log_name;
     if (!IsDryRun() && m_context.m_split_log_files)
@@ -1300,6 +1291,9 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 
             if (!m_context.m_validate.empty())
                 m_validator->ValReportErrors();
+
+            if (m_context.m_split_discrepancy)
+                m_validator->ReportDiscrepancies();
 
             ReportUnusedSourceQuals();
 
@@ -1454,9 +1448,6 @@ void CTbl2AsnApp::Setup(const CArgs& args)
 
     m_context.m_ObjMgr = CObjectManager::GetInstance();
     CDataLoadersUtil::SetupObjectManager(args, *m_context.m_ObjMgr, default_loaders);
-
-    m_context.m_scope.Reset(new CScope(*m_context.m_ObjMgr));
-    m_context.m_scope->AddDefaults();
 }
 
 /*
