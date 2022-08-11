@@ -276,6 +276,9 @@ bool IsTemporary(const CSeq_id& id);
 
 bool IsOrganelle(int genome);
 bool NCBI_VALIDATOR_EXPORT IsOrganelle(const CBioseq_Handle& seq);
+bool NCBI_VALIDATOR_EXPORT IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& scope);
+bool NCBI_VALIDATOR_EXPORT BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope);
+
 
 bool ConsistentWithA(Char ch);
 bool ConsistentWithC(Char ch);
