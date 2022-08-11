@@ -242,7 +242,9 @@ public:
                         const string& prefix, const CSerialObject& obj, bool lowerSev = false);
 
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
-    static bool IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& scope);
+    NCBI_STD_DEPRECATED("Please use corresponding function in objtools/validator/utilities.hpp") 
+        static bool IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& scope);
+    NCBI_STD_DEPRECATED("Please use corresponding function in objtools/validator/utilities.hpp") 
     static bool BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope);
     void CheckMultipleIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
