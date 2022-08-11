@@ -250,11 +250,18 @@ CConstRef<CValidError> CValidator::Validate
 (const CSeq_annot_Handle& sah,
  Uint4 options)
 {
-    CConstRef<CSeq_annot> sar = sah.GetCompleteSeq_annot();
-    CRef<CValidError> errors(new CValidError(&*sar));
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), options);
-    imp.Validate(sah);
+    auto errors = Ref(new CValidError(&*(sah.GetCompleteSeq_annot())));
+    Validate(sah, options, *errors);
     return errors;
+}
+
+
+void CValidator::Validate(const CSeq_annot_Handle& sah,
+ Uint4 options,
+ CValidError& errors)
+{
+    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
+    imp.Validate(sah);
 }
 
 

@@ -173,6 +173,8 @@ public:
     CConstRef<CValidError> Validate(const CSeq_annot_Handle& sa,
         Uint4 options = 0);
 
+    void Validate(const CSeq_annot_Handle& sa, Uint4 options, CValidError& errors);
+
     // Validate Seq-feat
     CConstRef<CValidError> Validate(const CSeq_feat& feat,
         CScope *scope = nullptr,
