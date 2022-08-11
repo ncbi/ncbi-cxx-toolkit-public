@@ -1170,14 +1170,12 @@ CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
             */
             break;
         case 'P': // protein
-            /*
             if ( CWGSProteinIterator it = info.GetProteinIterator() ) {
                 if ( it.HasSeqHash() ) {
                     ret.hash = it.GetSeqHash();
                     ret.hash_known = true;
                 }
             }
-            */
             break;
         default:
             if ( CWGSSeqIterator it = info.GetContigIterator() ) {
