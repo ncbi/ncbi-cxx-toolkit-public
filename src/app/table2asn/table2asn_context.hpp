@@ -196,7 +196,6 @@ public:
     CRef<objects::CSeq_entry>  m_entry_template;
     objects::ILineErrorListener* m_logger{ nullptr };
 
-    CRef<objects::CScope>      m_scope;
     CRef<objects::CObjectManager> m_ObjMgr;
     string mCommandLineMods;
 
