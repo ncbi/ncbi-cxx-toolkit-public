@@ -1671,7 +1671,7 @@ static bool s_UnknownEstimatedLength(const CSeq_feat& feat)
 }
 
 
-CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& feature_gap)
+CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& feature_gap) const
 {
     const string& sGT = feature_gap.GetNamedQual(kGapType_qual);
 
@@ -1769,7 +1769,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
 }
 
 
-void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
+void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh) const
 {
     for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it)
     {
@@ -1821,13 +1821,14 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
 }
 
 
-void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry& entry) {
+void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry& entry) const
+{
 
     VisitAllBioseqs(entry, [&](CBioseq& bioseq) { MakeGapsFromFeatures(bioseq); });
 }
 
 
-void CFeatureTableReader::MakeGapsFromFeatures(CBioseq& bioseq)
+void CFeatureTableReader::MakeGapsFromFeatures(CBioseq& bioseq) const
 {
     if (!bioseq.IsSetAnnot()) {
         return;
@@ -1874,9 +1875,7 @@ void CFeatureTableReader::MakeGapsFromFeatures(CBioseq& bioseq)
 }
 
 
-
-
-void CFeatureTableReader::ChangeDeltaProteinToRawProtein(CSeq_entry& entry)
+void CFeatureTableReader::ChangeDeltaProteinToRawProtein(CSeq_entry& entry) const
 {
     VisitAllBioseqs(entry, [](CBioseq& bioseq)
         {

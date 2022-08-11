@@ -50,13 +50,13 @@ public:
     void MoveRegionsToProteins(objects::CSeq_entry& entry);
     void MoveProteinSpecificFeats(objects::CSeq_entry& entry);
 
-    void MakeGapsFromFeatures(objects::CSeq_entry_Handle seh);
-    void MakeGapsFromFeatures(objects::CSeq_entry& entry);
-    void MakeGapsFromFeatures(objects::CBioseq& bioseq);
-    CRef<objects::CDelta_seq> MakeGap(objects::CBioseq& bioseq, const objects::CSeq_feat& feature_gap);
+    void MakeGapsFromFeatures(objects::CSeq_entry_Handle seh) const;
+    void MakeGapsFromFeatures(objects::CSeq_entry& entry) const;
+    void MakeGapsFromFeatures(objects::CBioseq& bioseq) const;
+    CRef<objects::CDelta_seq> MakeGap(objects::CBioseq& bioseq, const objects::CSeq_feat& feature_gap) const;
     static
     void RemoveEmptyFtable(objects::CBioseq& bioseq);
-    void ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry);
+    void ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry) const;
 
 private:
     bool _CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
