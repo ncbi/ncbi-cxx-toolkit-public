@@ -132,62 +132,54 @@ namespace {
         TKeyVec m_keysInOriginalOrder;
     };
 
-    static char descr_insert_order [] = {
-        CSeqdesc::e_Title,
-        CSeqdesc::e_Source,
-        CSeqdesc::e_Molinfo,
-        CSeqdesc::e_Het,
-        CSeqdesc::e_Pub,
-        CSeqdesc::e_Comment,
-        CSeqdesc::e_Name,
-        CSeqdesc::e_User,
-        CSeqdesc::e_Maploc,
-        CSeqdesc::e_Region,
-        CSeqdesc::e_Num,
-        CSeqdesc::e_Dbxref,
-        CSeqdesc::e_Mol_type,
-        CSeqdesc::e_Modif,
-        CSeqdesc::e_Method,
-        CSeqdesc::e_Org,
-        CSeqdesc::e_Sp,
-        CSeqdesc::e_Pir,
-        CSeqdesc::e_Prf,
-        CSeqdesc::e_Pdb,
-        CSeqdesc::e_Embl,
-        CSeqdesc::e_Genbank,
-        CSeqdesc::e_Modelev,
-        CSeqdesc::e_Create_date,
-        CSeqdesc::e_Update_date,
-        0
+    constexpr auto ConstructSortMap()
+    {
+        auto init_seqdesc_sortmap = ct::make_array({
+            CSeqdesc::e_Title,
+            CSeqdesc::e_Source,
+            CSeqdesc::e_Molinfo,
+            CSeqdesc::e_Het,
+            CSeqdesc::e_Pub,
+            CSeqdesc::e_Comment,
+            CSeqdesc::e_Name,
+            CSeqdesc::e_User,
+            CSeqdesc::e_Maploc,
+            CSeqdesc::e_Region,
+            CSeqdesc::e_Num,
+            CSeqdesc::e_Dbxref,
+            CSeqdesc::e_Mol_type,
+            CSeqdesc::e_Modif,
+            CSeqdesc::e_Method,
+            CSeqdesc::e_Org,
+            CSeqdesc::e_Sp,
+            CSeqdesc::e_Pir,
+            CSeqdesc::e_Prf,
+            CSeqdesc::e_Pdb,
+            CSeqdesc::e_Embl,
+            CSeqdesc::e_Genbank,
+            CSeqdesc::e_Modelev,
+            CSeqdesc::e_Create_date,
+            CSeqdesc::e_Update_date,
+        });
+        std::array<unsigned char, CSeqdesc::E_ChoiceStopper::e_MaxChoice> _sorted{};
+        static_assert(init_seqdesc_sortmap.size() <= _sorted.size());
+        for (auto& it: _sorted)
+            it = kMax_Char;
+
+        unsigned char index=0;
+        for (auto rec: init_seqdesc_sortmap)
+        {
+            _sorted[rec] = index;
+            ++index;
+        }
+        return _sorted;
     };
 
-    // inverted matrix to speed up the seqdesc sorting
-    class CSeqdescSortMap: public vector<char>
-    {
-    public:
-        void Init()
-        {
-            resize(sizeof(descr_insert_order)/sizeof(char), kMax_Char);
-            unsigned char index = 0;
-            while (descr_insert_order[index] != 0)
-            {
-                if (descr_insert_order[index] >= size())
-                    resize(descr_insert_order[index], kMax_Char);
-                at(descr_insert_order[index]) = (char)index;
-                ++index;
-            }
-        }
-    };
-    static CSeqdescSortMap seqdesc_sortmap;
+    static constexpr
+    auto seqdesc_sortmap = ConstructSortMap();
 
     struct CompareSeqdesc
     {
-        CompareSeqdesc()
-        {
-            if (seqdesc_sortmap.empty())
-                seqdesc_sortmap.Init();
-        }
-
         static char mapit(CSeqdesc::E_Choice c)
         {
             if (c<0 || c>=seqdesc_sortmap.size())
@@ -533,12 +525,12 @@ void AddBioseqToBioseqSet(const CBioseq_set_Handle& set, const CBioseq_Handle& s
 
 bool IsSeqDescInList(const CSeqdesc& desc, const CSeq_descr& set)
 {
-    ITERATE(CSeq_descr::Tdata, it, set.Get()) {
-        if ((*it)->Equals(desc)) {
+    for (auto it: set.Get()) {
+        if (it->Equals(desc)) {
             return true;
-        } else if ((*it)->IsPub() &&
+        } else if (it->IsPub() &&
                    desc.IsPub() &&
-                   (*it)->GetPub().GetPub().SameCitation(desc.GetPub().GetPub())) {
+                   it->GetPub().GetPub().SameCitation(desc.GetPub().GetPub())) {
             return true;
         }
     }
@@ -1677,8 +1669,8 @@ bool HasRepairedIDs(const CUser_object& user, const CBioseq::TId& ids)
 {
     bool rval = false;
     if (user.IsSetData()) {
-        ITERATE(CUser_object::TData, it, user.GetData()) {
-            if (IsMatchingIdMissing(**it, ids)) {
+        for(auto it: user.GetData()) {
+            if (IsMatchingIdMissing(*it, ids)) {
                 rval = true;
                 break;
             }
@@ -2123,7 +2115,7 @@ void s_BasicValidation(CBioseq_Handle bsh,
     }
 }
 
-static TRange s_GetRetainedRange(const TCuts& sorted_merged_cuts, TSeqPos seqLength) 
+static TRange s_GetRetainedRange(const TCuts& sorted_merged_cuts, TSeqPos seqLength)
 {
     const auto num_cuts = sorted_merged_cuts.size();
     _ASSERT(num_cuts==1 || num_cuts==2); // Should only include terminal cuts
@@ -2214,7 +2206,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
                 if (bsh.GetInst().CanGetLength()) {
                     original_nuc_len = bsh.GetInst().GetLength();
                 }
-                
+
                 const auto retainedRange = s_GetRetainedRange(sorted_cuts, original_nuc_len);
                 auto new_frame = sequence::CFeatTrim::GetCdsFrame(original_feat, retainedRange);
                 copy_feat->SetData().SetCdregion().SetFrame(new_frame);
@@ -2459,9 +2451,9 @@ void GetSortedCuts(CBioseq_Handle bsh,
 
 
 /// Update sequence length
-void UpdateSeqLength(CAutoInitRef<CDelta_ext>& pDeltaExt, 
+void UpdateSeqLength(CAutoInitRef<CDelta_ext>& pDeltaExt,
                      CBioseq_Handle& complete_bsh,
-                     CSeqMap_CI& seqmap_ci, 
+                     CSeqMap_CI& seqmap_ci,
                      CSeq_inst_Base::TLength& new_length)
 {
     switch (seqmap_ci.GetType()) {
@@ -2516,7 +2508,7 @@ void TrimSeqData(CBioseq_Handle bsh,
     if (!bsh.IsNucleotide()) {
         return;
     }
-    
+
     // Add the complete bioseq to scope
     CRef<CBioseq> bseq(new CBioseq);
     bseq->Assign(*bsh.GetCompleteBioseq());
@@ -2544,7 +2536,7 @@ void TrimSeqData(CBioseq_Handle bsh,
         objects::eNa_strand_plus,
         size_t(-1),
         CSeqMap::fFindAny|CSeqMap::fIgnoreUnresolved);
-        
+
     // exclude leading and trailing gaps, but take all gaps between data elements
     // so figure out new boundaries - first and last data elements
     CSeqMap_CI seqmap_ci_first, seqmap_ci_last;
@@ -2561,7 +2553,7 @@ void TrimSeqData(CBioseq_Handle bsh,
             }
         }
     }
-    
+
     // seqmap_ci_first, seqmap_ci_last are both inclusive
     CSeq_inst_Base::TLength new_length = 0;
     for (seqmap_ci = seqmap_ci_first; seqmap_ci && seqmap_ci != seqmap_ci_last; ++seqmap_ci) {
@@ -3236,7 +3228,7 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
     // Get partialness and strand of location before cutting
     bool bIsPartialStart = false;
     CSeq_loc::TStrand eStrand = eNa_strand_unknown;
-    TRange cds_range; 
+    TRange cds_range;
     if (cds->CanGetLocation()) {
         bIsPartialStart = cds->GetLocation().IsPartialStart(eExtreme_Biological);
         eStrand = cds->GetLocation().GetStrand();
@@ -3271,7 +3263,7 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
                 if (old_frame == 0) {
                     old_frame = 1;
                 }
-                
+
                 TSignedSeqPos new_frame = old_frame - ((to - from + 1) % 3);
                 if (new_frame < 1) {
                     new_frame += 3;
@@ -3462,12 +3454,12 @@ CRef<CSeqdesc> FindUnverified(const CBioseq& seq)
     if (!seq.IsSetDescr()) {
         return CRef<CSeqdesc>();
     }
-    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
-        if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Unverified) {
-            return *it;
+    for(auto it: seq.GetDescr().Get()) {
+        if (it->IsUser() && it->GetUser().GetObjectType() == CUser_object::eObjectType_Unverified) {
+            return it;
         }
     }
-    return CRef<CSeqdesc>();
+    return {};
 }
 
 
@@ -3476,8 +3468,8 @@ bool IsUnverifiedOrganism(const CBioseq& seq)
     if (!seq.IsSetDescr()) {
         return false;
     }
-    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
-        if ((*it)->IsUser() && (*it)->GetUser().IsUnverifiedOrganism()) {
+    for(auto it: seq.GetDescr().Get()) {
+        if (it->IsUser() && it->GetUser().IsUnverifiedOrganism()) {
             return true;
         }
     }
@@ -3490,8 +3482,8 @@ bool IsUnverifiedFeature(const CBioseq& seq)
     if (!seq.IsSetDescr()) {
         return false;
     }
-    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
-        if ((*it)->IsUser() && (*it)->GetUser().IsUnverifiedFeature()) {
+    for(auto it: seq.GetDescr().Get()) {
+        if (it->IsUser() && it->GetUser().IsUnverifiedFeature()) {
             return true;
         }
     }
@@ -3503,8 +3495,8 @@ bool IsUnverifiedMisassembled(const CBioseq& seq)
     if (!seq.IsSetDescr()) {
         return false;
     }
-    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
-        if ((*it)->IsUser() && (*it)->GetUser().IsUnverifiedMisassembled()) {
+    for(auto it: seq.GetDescr().Get()) {
+        if (it->IsUser() && it->GetUser().IsUnverifiedMisassembled()) {
             return true;
         }
     }
@@ -3517,8 +3509,8 @@ bool IsUnverifiedContaminant(const CBioseq& seq)
     if (!seq.IsSetDescr()) {
         return false;
     }
-    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
-        if ((*it)->IsUser() && (*it)->GetUser().IsUnverifiedContaminant()) {
+    for(auto it: seq.GetDescr().Get()) {
+        if (it->IsUser() && it->GetUser().IsUnverifiedContaminant()) {
             return true;
         }
     }
@@ -3536,9 +3528,9 @@ void SortSeqDescr(CSeq_entry& entry)
     if (entry.IsSetDescr())
         SortSeqDescr(entry.SetDescr());
     if (entry.IsSet())
-        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set())
+    for (auto& it: entry.SetSet().SetSeq_set())
     {
-        SortSeqDescr((**it));
+        SortSeqDescr(*it);
     }
 }
 
