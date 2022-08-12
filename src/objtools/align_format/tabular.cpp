@@ -1054,7 +1054,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
 
         if(x_IsFieldRequested(eSubjectStrand))
         {
-        	if((kTranslated) || (!subject_is_na))
+        	if(!subject_is_na)
         		m_SubjectStrand = NA;
         	else
         		m_SubjectStrand = ((s_start - s_end) > 0 )? "minus":"plus";
