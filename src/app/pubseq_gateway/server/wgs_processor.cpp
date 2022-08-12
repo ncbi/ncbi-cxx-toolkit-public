@@ -277,6 +277,9 @@ void CPSGS_WGSProcessor::Process()
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
+    if ( x_IsCanceled() ) {
+        return;
+    }
 
     try {
         {
