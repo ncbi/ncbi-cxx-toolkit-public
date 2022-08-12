@@ -207,8 +207,7 @@ public:
         const CSeq_entry& ctx,
         Uint4 options = 0);
 
-    bool ValidateStructuredComment(const CUser_object& usr, 
-            const CSeqdesc& desc, 
+    bool ValidateStructuredComment(const CSeqdesc& desc, 
             CValidError& errors);
 
     // externally callable tests
