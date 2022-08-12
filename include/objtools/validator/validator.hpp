@@ -207,6 +207,10 @@ public:
         const CSeq_entry& ctx,
         Uint4 options = 0);
 
+    bool ValidateStructuredComment(const CUser_object& usr, 
+            const CSeqdesc& desc, 
+            CValidError& errors);
+
     // externally callable tests
     CConstRef<CValidError> GetTSANStretchErrors(const CSeq_entry_Handle& se);
     CConstRef<CValidError> GetTSACDSOnMinusStrandErrors (const CSeq_entry_Handle& se);
