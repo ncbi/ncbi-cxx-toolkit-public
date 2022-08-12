@@ -421,6 +421,34 @@ string CEUtilsUpdater::GetTitle(const string&)
     return {};
 }
 
+
+CRef<CPub> CEUtilsUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
+{
+    m_num_requests++;
+    auto it = m_cache.find(pmid);
+    if (it == m_cache.end()) {
+        auto pub = CEUtilsUpdater::GetPub(pmid, perr);
+        if (pub) {
+            m_cache[pmid] = pub;
+        }
+        return pub;
+    } else {
+        m_cache_hits++;
+        return it->second;
+    }
+}
+
+void CEUtilsUpdaterWithCache::ReportStats(std::ostream& os)
+{
+    os << "CEUtilsUpdater: cache hits\n";
+    os << "CEUtilsUpdater: cache_hits " << m_cache_hits << " out of " << m_num_requests << " requests\n";
+}
+
+void CEUtilsUpdaterWithCache::ClearCache()
+{
+    m_cache.clear();
+}
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

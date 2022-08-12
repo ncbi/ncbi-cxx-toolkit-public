@@ -21,6 +21,20 @@ private:
     CRef<CEUtils_ConnContext> m_Ctx;
 };
 
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdater
+{
+    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
+
+public:
+    void ReportStats(std::ostream&);
+    void ClearCache();
+
+private:
+    map<TEntrezId, CRef<CPub>> m_cache;
+    size_t                     m_num_requests = 0;
+    size_t                     m_cache_hits   = 0;
+};
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
