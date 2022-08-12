@@ -155,7 +155,7 @@ public:
 
     void ClearCache()
     {
-        if (m_cache.get() != 0) {
+        if (m_cache) {
             m_cache->clear();
         }
     }
@@ -191,7 +191,7 @@ public:
 
             request.SetRequest().push_back(rq);
             CRef<CTaxon3_reply> result = m_taxon->SendRequest(request);
-            reply                      = *result->SetReply().begin();
+            reply                      = result->SetReply().front();
             if (reply->IsError() && f_logger) {
                 const string& error_message =
                     "Taxon update: " +
@@ -218,7 +218,7 @@ public:
     {
         CRef<CTaxon3_reply> result(new CTaxon3_reply);
 
-        for (auto& it : query) {
+        for (const auto& it : query) {
             result->SetReply().push_back(GetOrgReply(*it, logger));
         }
 
@@ -251,7 +251,6 @@ bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
     arr.push_back(new_pub);
     return true;
 }
-
 
 void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts)
 {
@@ -382,7 +381,7 @@ void CRemoteUpdater::ClearCache()
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
-    if (m_taxClient.get() != 0) {
+    if (m_taxClient) {
         m_taxClient->ClearCache();
     }
 }
@@ -397,18 +396,18 @@ void CRemoteUpdater::UpdatePubReferences(CSeq_entry_EditHandle& obj)
 void CRemoteUpdater::UpdatePubReferences(CSerialObject& obj)
 {
     if (obj.GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
-        CSeq_entry* entry = (CSeq_entry*)(&obj);
+        CSeq_entry* entry = static_cast<CSeq_entry*>(&obj);
         xUpdatePubReferences(*entry);
     } else if (obj.GetThisTypeInfo()->IsType(CSeq_submit::GetTypeInfo())) {
-        CSeq_submit* submit = (CSeq_submit*)(&obj);
+        CSeq_submit* submit = static_cast<CSeq_submit*>(&obj);
         for (auto& it : submit->SetData().SetEntrys()) {
             xUpdatePubReferences(*it);
         }
     } else if (obj.GetThisTypeInfo()->IsType(CSeq_descr::GetTypeInfo())) {
-        CSeq_descr* desc = (CSeq_descr*)(&obj);
+        CSeq_descr* desc = static_cast<CSeq_descr*>(&obj);
         xUpdatePubReferences(*desc);
     } else if (obj.GetThisTypeInfo()->IsType(CSeqdesc::GetTypeInfo())) {
-        CSeqdesc*  desc = (CSeqdesc*)(&obj);
+        CSeqdesc*  desc = static_cast<CSeqdesc*>(&obj);
         CSeq_descr tmp;
         tmp.Set().push_back(CRef<CSeqdesc>(desc));
         xUpdatePubReferences(tmp);
@@ -547,11 +546,9 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry& entry)
         CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(reflist, logger);
 
         if (reply.NotNull()) {
-            CTaxon3_reply::TReply::iterator reply_it = reply->SetReply().begin();
-            {
-                if ((*reply_it)->IsData() && (*reply_it)->SetData().IsSetOrg()) {
-                    xUpdate(it.second.owner, (*reply_it)->SetData().SetOrg());
-                }
+            auto& reply_it = reply->SetReply().front();
+            if (reply_it->IsData() && reply_it->SetData().IsSetOrg()) {
+                xUpdate(it.second.owner, reply_it->SetData().SetOrg());
             }
         }
     }
@@ -604,15 +601,13 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
 void CRemoteUpdater::PostProcessPubs(CSeq_entry& obj)
 {
     if (obj.IsSet()) {
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, obj.SetSet().SetSeq_set())
-        {
-            PostProcessPubs(**it);
+        for (CRef<CSeq_entry>& it : obj.SetSet().SetSeq_set()) {
+            PostProcessPubs(*it);
         }
     } else if (obj.IsSeq() && obj.IsSetDescr()) {
-        NON_CONST_ITERATE(CSeq_descr::Tdata, desc_it, obj.SetSeq().SetDescr().Set())
-        {
-            if ((**desc_it).IsPub()) {
-                PostProcessPubs((**desc_it).SetPub());
+        for (CRef<CSeqdesc>& desc_it : obj.SetSeq().SetDescr().Set()) {
+            if (desc_it->IsPub()) {
+                PostProcessPubs(desc_it->SetPub());
             }
         }
     }
@@ -623,10 +618,9 @@ void CRemoteUpdater::PostProcessPubs(CPubdesc& pubdesc)
     if (! pubdesc.IsSetPub())
         return;
 
-    NON_CONST_ITERATE(CPubdesc::TPub::Tdata, it, pubdesc.SetPub().Set())
-    {
-        if ((**it).IsSetAuthors()) {
-            ConvertToStandardAuthors((**it).SetAuthors());
+    for (CRef<CPub>& it : pubdesc.SetPub().Set()) {
+        if (it->IsSetAuthors()) {
+            ConvertToStandardAuthors(it->SetAuthors());
         }
     }
 }
@@ -635,7 +629,7 @@ void CRemoteUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
 {
     for (CBioseq_CI bioseq_it(obj); bioseq_it; ++bioseq_it) {
         for (CSeqdesc_CI desc_it(bioseq_it->GetEditHandle(), CSeqdesc::e_Pub); desc_it; ++desc_it) {
-            PostProcessPubs((CPubdesc&)desc_it->GetPub());
+            PostProcessPubs(const_cast<CPubdesc&>(desc_it->GetPub()));
         }
     }
 }
@@ -662,11 +656,12 @@ CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_r
     return reply;
 }
 
-void CRemoteUpdater::ReportStats(std::ostream& str)
+void CRemoteUpdater::ReportStats(std::ostream& os)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
-    if (m_taxClient)
-        m_taxClient->ReportStats(str);
+    if (m_taxClient) {
+        m_taxClient->ReportStats(os);
+    }
 }
 
 END_SCOPE(edit)
