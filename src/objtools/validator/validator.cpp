@@ -46,6 +46,7 @@
 
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/validerror_format.hpp>
+#include <objtools/validator/validerror_desc.hpp>
 #include <objtools/validator/validator_context.hpp>
 
 
@@ -338,6 +339,17 @@ CConstRef<CValidError> CValidator::Validate
     imp.Validate(desc, ctx);
     return errors;
 }
+
+
+bool CValidator::ValidateStructuredComment(
+        const CUser_object& usr, 
+        const CSeqdesc& desc,
+        CValidError& errors)
+{
+    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors);
+    return CValidError_desc(imp).ValidateStructuredComment(usr, desc);
+}
+
 
 void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data)
 {
