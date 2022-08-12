@@ -384,6 +384,12 @@ void CRemoteUpdater::ClearCache()
     if (m_taxClient) {
         m_taxClient->ClearCache();
     }
+    if (m_pubmed && m_pm_source == EPubmedSource::eEUtils) {
+        CEUtilsUpdaterWithCache* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+        if (upd) {
+            upd->ClearCache();
+        }
+    }
 }
 
 void CRemoteUpdater::UpdatePubReferences(CSeq_entry_EditHandle& obj)
@@ -443,7 +449,7 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
             case EPubmedSource::eNone:
                 break;
             case EPubmedSource::eEUtils:
-                m_pubmed.reset(new CEUtilsUpdater());
+                m_pubmed.reset(new CEUtilsUpdaterWithCache());
                 break;
             default:
             case EPubmedSource::eMLA:
@@ -661,6 +667,12 @@ void CRemoteUpdater::ReportStats(std::ostream& os)
     std::lock_guard<std::mutex> guard(m_Mutex);
     if (m_taxClient) {
         m_taxClient->ReportStats(os);
+    }
+    if (m_pubmed && m_pm_source == EPubmedSource::eEUtils) {
+        CEUtilsUpdaterWithCache* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+        if (upd) {
+            upd->ReportStats(os);
+        }
     }
 }
 
