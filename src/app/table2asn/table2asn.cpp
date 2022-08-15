@@ -85,6 +85,7 @@
 #include <objtools/logging/listener.hpp>
 
 #include "table2asn.hpp"
+#include "suspect_feat.hpp"
 
 #include <common/ncbi_revision.h>
 
@@ -731,7 +732,7 @@ int CTbl2AsnApp::Run()
         m_context.m_use_hypothetic_protein = true;
 
     if (args["suspect-rules"])
-        m_context.m_suspect_rules.SetRulesFilename(args["suspect-rules"].AsString());
+        m_context.m_suspect_rules->SetRulesFilename(args["suspect-rules"].AsString());
 
     try
     {
@@ -956,8 +957,8 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     if (!IsDryRun())
     {
-        std::function<CNcbiOstream&()> f = [this]()->CNcbiOstream& { return m_context.GetOstream(".fixedproducts"); };
-        m_context.m_suspect_rules.SetupOutput(f);
+        std::function<CSharedOStream()> f = [this]()->CSharedOStream { return m_context.GetOstream(".fixedproducts"); };
+        m_context.m_suspect_rules->SetupOutput(f);
     }
     m_context.ApplyFileTracks(*entry);
 
@@ -1059,16 +1060,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
         if (m_context.m_make_flatfile)
         {
-            CFlatFileGenerator ffgenerator(
-                    CFlatFileConfig::eFormat_GenBank,
-                    CFlatFileConfig::eMode_Entrez);
-
-            auto& ostream = m_context.GetOstream(".gbf");
-
-            if (submit.Empty())
-                ffgenerator.Generate(seh, ostream);
-            else
-                ffgenerator.Generate(*submit, *scope, ostream);
+            MakeFlatFile(entry, submit, m_context.GetOstream(".gbf"));
         }
     }
 }
@@ -1137,12 +1129,16 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
 
     m_context.ApplyFileTracks(*entry);
 
+    { // this is still not thread-safe
+    std::lock_guard<std::mutex> g{m_context.m_mutex};
+
     const bool readModsFromTitle =
         inputFormat == CFormatGuess::eFasta ||
         inputFormat == CFormatGuess::eAlignment;
     ProcessSecretFiles1Phase(
             readModsFromTitle,
             *entry);
+    }
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
@@ -1153,16 +1149,21 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
 
+    { // this is still not thread-safe
+    std::lock_guard<std::mutex> g{m_context.m_mutex};
+
     m_secret_files->m_feature_table_reader->m_replacement_protein = m_secret_files->m_replacement_proteins;
     m_secret_files->m_feature_table_reader->MergeCDSFeatures(*entry);
-
     entry->Parentize();
-    m_secret_files->m_feature_table_reader->MoveProteinSpecificFeats(*entry);
 
-    m_context.CorrectCollectionDates(*entry);
+    m_secret_files->m_feature_table_reader->MoveProteinSpecificFeats(*entry);
 
     if (m_secret_files->m_possible_proteins.NotEmpty())
         m_secret_files->m_feature_table_reader->AddProteins(*m_secret_files->m_possible_proteins, *entry);
+
+    }
+
+    m_context.CorrectCollectionDates(*entry);
 
     if (m_context.m_HandleAsSet)
     {
@@ -1222,20 +1223,27 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
 
     m_validator->CollectDiscrepancies(submit, entry);
 
-    if (m_context.m_make_flatfile)
+    if (m_context.m_make_flatfile && !m_context.m_huge_files_mode)
     {
-        CFlatFileGenerator ffgenerator(
-                CFlatFileConfig::eFormat_GenBank,
-                CFlatFileConfig::eMode_Entrez);
-
-        auto& ostream = m_context.GetOstream(".gbf");
-
-        if (submit.Empty())
-            ffgenerator.Generate(seh, ostream);
-        else
-            ffgenerator.Generate(*submit, *scope, ostream);
+        //auto ff_file = m_context.GetOstream(".gbf");
+        //MakeFlatFile(entry, submit, ff_file);
     }
+}
 
+void CTbl2AsnApp::MakeFlatFile(CConstRef<CSeq_entry> entry, CRef<CSeq_submit> submit, std::ostream& ostream)
+{
+    auto scope = Ref(new CScope(*m_context.m_ObjMgr));
+    scope->AddDefaults();
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CFlatFileGenerator ffgenerator(
+            CFlatFileConfig::eFormat_GenBank,
+            CFlatFileConfig::eMode_Entrez);
+
+    if (submit.Empty())
+        ffgenerator.Generate(seh, ostream);
+    else
+        ffgenerator.Generate(*submit, *scope, ostream);
 }
 
 void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
@@ -1269,8 +1277,8 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 
         if (!IsDryRun())
         {
-            std::function<CNcbiOstream&()> f = [this]()->CNcbiOstream& { return m_context.GetOstream(".fixedproducts"); };
-            m_context.m_suspect_rules.SetupOutput(f);
+            std::function<CSharedOStream()> f = [this]()->CSharedOStream { return m_context.GetOstream(".fixedproducts"); };
+            m_context.m_suspect_rules->SetupOutput(f);
         }
 
         m_context.m_huge_files_mode = false;

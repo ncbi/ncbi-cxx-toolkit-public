@@ -4,8 +4,9 @@
 #include <corelib/ncbistl.hpp>
 #include <objtools/edit/gaps_edit.hpp>
 #include <misc/discrepancy/discrepancy.hpp>
+#include <mutex>
 
-#include "suspect_feat.hpp"
+#include "utils.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -26,6 +27,7 @@ class CSeq_feat;
 class CSourceModParser;
 class CSeq_id;
 class CFeat_CI;
+class CFixSuspectProductName;
 
 namespace edit
 {
@@ -146,7 +148,7 @@ public:
 
     unique_ptr<objects::edit::CRemoteUpdater> m_remote_updater;
 
-    objects::CFixSuspectProductName m_suspect_rules;
+    unique_ptr<objects::CFixSuspectProductName> m_suspect_rules;
 
     //string conffile;
 
@@ -158,7 +160,7 @@ public:
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data);
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
 
-    CNcbiOstream& GetOstream(CTempString suffix, CTempString basename=kEmptyStr);
+    CSharedOStream GetOstream(CTempString suffix, CTempString basename=kEmptyStr);
     void ClearOstream(const CTempString& suffix);
 
     string GenerateOutputFilename(const CTempString& ext, CTempString basename=kEmptyStr) const;
@@ -204,10 +206,12 @@ public:
     static void UpdateTaxonFromTable(objects::CBioseq& bioseq);
 
     static void MergeSeqDescr(objects::CSeq_entry& dest, const objects::CSeq_descr& src, bool only_set);
+    mutable std::mutex m_mutex;
 
 private:
     static void x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq);
-    map<string, pair<string, unique_ptr<CNcbiOstream>>> m_outputs;
+    TSharedStreamMap m_outputs;
+    std::mutex m_outputs_mutex;
 };
 
 void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,

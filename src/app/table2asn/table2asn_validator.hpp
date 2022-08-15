@@ -4,6 +4,8 @@
 #include <objtools/validator/validator_context.hpp>
 #include <objtools/validator/huge_file_validator.hpp>
 
+#include "utils.hpp"
+
 BEGIN_NCBI_SCOPE
 
 namespace objects
@@ -52,6 +54,7 @@ protected:
     };
     CTable2AsnContext*     m_context;
 
+    std::mutex  m_discrep_mutex;
     CRef<objects::CScope>                                  m_discrep_scope;
     CRef<NDiscrepancy::CDiscrepancySet>                    m_discrepancy;
 

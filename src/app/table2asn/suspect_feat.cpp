@@ -66,7 +66,7 @@ void CFixSuspectProductName::SetRulesFilename(const string& filename)
     m_filename = filename;
 }
 
-void CFixSuspectProductName::SetupOutput(std::function<std::ostream&()> f)
+void CFixSuspectProductName::SetupOutput(std::function<CSharedOStream()> f)
 {
     m_output = f;
 }
@@ -90,11 +90,11 @@ void CFixSuspectProductName::ReportFixedProduct(const string& oldproduct, const 
     if (!m_output)
         return;
 
-    auto& report_ostream = m_output();
+    auto report_ostream = m_output();
 
     string label;
     loc.GetLabel(&label);
-    report_ostream << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
+    report_ostream.get() << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
 }
 
 bool CFixSuspectProductName::FixSuspectProductNames(CSeq_feat& feature, CRef<CScope> scope, CRef<feature::CFeatTree> feattree) const
