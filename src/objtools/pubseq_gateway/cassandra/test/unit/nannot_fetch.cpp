@@ -727,7 +727,7 @@ TEST_F(CNAnnotTaskFetchTest, DuplicateFilterTest)
     record.SetSeqIdType(10);
     record.SetAnnotName("NA000353807.1");
 
-    auto copy = record;
+    CNAnnotRecord copy = record;
     copy.SetSatKey(1);
     filter.Store(3, move(copy));
 
@@ -744,15 +744,36 @@ TEST_F(CNAnnotTaskFetchTest, DuplicateFilterTest)
     filter.Store(2, move(copy));
 
     copy = record;
-    record.SetAnnotName("NA000353808.1");
+    copy.SetSatKey(33);
+    copy.SetSeqIdType(11);
+    filter.Store(2, move(copy));
+
+    copy = record;
+    copy.SetAnnotName("NA000353808.1");
     copy.SetSatKey(5);
     filter.Store(2, move(copy));
+
+    copy = record;
+    copy.SetAnnotName("NA000353809.1");
+    copy.SetSatKey(6);
+    filter.Store(2, move(copy));
+
+    copy = record;
+    copy.SetAnnotName("NA000353809.1");
+    copy.SetSatKey(7);
+    filter.Store(1, move(copy));
+
+    copy = record;
+    copy.SetAnnotName("NA000353809.1");
+    copy.SetSatKey(8);
+    filter.Store(1, move(copy));
 
     size_t index{0};
     filter.Consume(
         [&index]
         (int32_t sat, CNAnnotRecord&& entry)
         {
+            // cout << sat << " - " << entry.GetSeqIdType() << " : " << entry.GetAnnotName() << " - " << entry.GetSatKey() << endl;
             switch(++index) {
                 case 1:
                     EXPECT_EQ(sat, 3);
@@ -782,9 +803,25 @@ TEST_F(CNAnnotTaskFetchTest, DuplicateFilterTest)
                     EXPECT_EQ(sat, 2);
                     EXPECT_EQ(entry.GetAccession(), "NC_062543");
                     EXPECT_EQ(entry.GetVersion(), 1);
+                    EXPECT_EQ(entry.GetSeqIdType(), 11);
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000353807.1");
+                    EXPECT_EQ(entry.GetSatKey(), 33);
+                    break;
+                case 5:
+                    EXPECT_EQ(sat, 2);
+                    EXPECT_EQ(entry.GetAccession(), "NC_062543");
+                    EXPECT_EQ(entry.GetVersion(), 1);
                     EXPECT_EQ(entry.GetSeqIdType(), 10);
                     EXPECT_EQ(entry.GetAnnotName(), "NA000353808.1");
                     EXPECT_EQ(entry.GetSatKey(), 5);
+                    break;
+                case 6:
+                    EXPECT_EQ(sat, 2);
+                    EXPECT_EQ(entry.GetAccession(), "NC_062543");
+                    EXPECT_EQ(entry.GetVersion(), 1);
+                    EXPECT_EQ(entry.GetSeqIdType(), 10);
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000353809.1");
+                    EXPECT_EQ(entry.GetSatKey(), 6);
                     break;
                 default:
                     EXPECT_TRUE(false) << "Callback should not be called " << index << " times.";
