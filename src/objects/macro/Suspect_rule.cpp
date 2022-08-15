@@ -37,6 +37,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/macro/Suspect_rule.hpp>
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -59,17 +60,18 @@ static bool IsStringConstraintEmpty(const CString_constraint* constraint)
 
 static const string SkipWeasel(const string& str)
 {
-    static CSafeStatic< vector<string> > weasels;
-    DEFINE_STATIC_FAST_MUTEX(sx_WeaselVecMutex);
-    {
-        CFastMutexGuard guard(sx_WeaselVecMutex);
-        if (weasels->empty()) {
-            NStr::Split(
-                "candidate,hypothetical,novel,possible,potential,predicted,"
-                "probable,putative,uncharacterized,unique", 
-                ",", *weasels, 0);
-        }
-    }
+    static constexpr std::array<string_view, 10> weasels = {
+        "candidate",
+        "hypothetical",
+        "novel",
+        "possible",
+        "potential",
+        "predicted,"
+        "probable",
+        "putative",
+        "uncharacterized",
+        "unique",
+    };
 
     if (str.empty()) {
         return kEmptyStr;
@@ -86,12 +88,12 @@ static const string SkipWeasel(const string& str)
     for (i=0; i< (int)(arr.size() - 1); i++) {
         len = arr[i].size();
         find_w = false;
-        ITERATE (vector <string>, it, *weasels) {
-            len_w = (*it).size(); 
-            if (len != len_w || !NStr::EqualNocase(arr[i], 0, len, *it)) {
+        for(auto& it: weasels) {
+            len_w = it.size();
+            if (len != len_w || !NStr::EqualNocase(arr[i], 0, len, it)) {
                 continue;
             }
-            else { 
+            else {
                 find_w = true;
                 break;
             }
@@ -195,9 +197,9 @@ static bool AdvancedStringCompare(const string& str, const string& str_match, co
                 if (CaseNCompareEqual(word_word[i++], cp_m, len1, wd_case)) {
                     word_start_m = (!pos_match && is_start) || !isalpha(str_match[pos_match - 1]);
                     ch1 = (cp_m.size() <= len1) ? ' ' : cp_m[len1];
-           
+
                     // whole word mch
-                    if (!whole_wd || (!isalpha(ch1) && word_start_m)) { 
+                    if (!whole_wd || (!isalpha(ch1) && word_start_m)) {
                         if ( !(*it)->CanGetSynonyms() || (*it)->GetSynonyms().empty()) {
                             if (AdvancedStringCompare(cp_s, cp_m.substr(len1), str_cons, word_start_m, &target_match_len)) {
                                 recursive_match = true;
@@ -232,7 +234,7 @@ static bool AdvancedStringCompare(const string& str, const string& str_match, co
                 pos_match++;
                 pos_str++;
                 target_match_len++;
-            } 
+            }
             else if ( ig_space && (isspace(cp_m[0]) || isspace(cp_s[0])) ) {
                 if (isspace(cp_m[0])) {
                     pos_match++;
@@ -379,9 +381,9 @@ static bool GetSpanFromHyphenInString(const string& str, const size_t& hyphen, s
     }
 
     /* find range start */
-    size_t cp = str.substr(0, hyphen-1).find_last_not_of(' ');   
+    size_t cp = str.substr(0, hyphen-1).find_last_not_of(' ');
     if (cp != string::npos) {
-        cp = str.substr(0, cp).find_last_not_of(" ,;"); 
+        cp = str.substr(0, cp).find_last_not_of(" ,;");
     }
     if (cp == string::npos) {
         cp = 0;
@@ -390,7 +392,7 @@ static bool GetSpanFromHyphenInString(const string& str, const size_t& hyphen, s
     unsigned len = hyphen - cp;
     first = str.substr(cp, len);
     NStr::TruncateSpacesInPlace(first);
- 
+
     /* find range end */
     cp = str.find_first_not_of(' ', hyphen+1);
     if (cp != string::npos) {
@@ -458,7 +460,7 @@ static bool IsStringInSpan(const string& str, const string& first, const string&
                 rval = true;
             }
         }
-    } 
+    }
     else if (StringIsPositiveAllDigits(second)) {
         prefix_len = first.find_first_of(digit_str) + 1;
 
@@ -474,7 +476,7 @@ static bool IsStringInSpan(const string& str, const string& first, const string&
                 rval = true;
             }
         }
-    } 
+    }
     else {
         /* determine length of prefix */
         prefix_len = 0;
@@ -587,7 +589,7 @@ static bool DoesSingleStringMatchConstraint(const string& str, const CString_con
             rval = false;
         }
         else if (!str_cons->CanGetMatch_text() ||str_cons->GetMatch_text().empty()) {
-            rval = true; 
+            rval = true;
         }
         else {
             tmp_cons.Assign(*str_cons);
@@ -606,7 +608,7 @@ static bool DoesSingleStringMatchConstraint(const string& str, const CString_con
                 if ( (str_cons->GetMatch_location() != eString_location_inlist) && (ig_space || ig_punct)) {
                     search = StripUnimportantCharacters(search, ig_space, ig_punct);
                     pattern = StripUnimportantCharacters(pattern, ig_space, ig_punct);
-                } 
+                }
 
                 size_t pFound = str_cons->GetCase_sensitive() ?  search.find(pattern) : NStr::FindNoCase(search, pattern);
                 switch (str_cons->GetMatch_location()) {
@@ -620,7 +622,7 @@ static bool DoesSingleStringMatchConstraint(const string& str, const CString_con
                                 pFound = (str_cons->GetCase_sensitive()) ?
                                 search.find(pattern, pFound+1):
                                 NStr::FindNoCase(search, pattern, pFound+1);
-                                rval = (pFound != string::npos)? 
+                                rval = (pFound != string::npos)?
                                 IsWholeWordMatch (search, pFound, pattern.size()):
                                 false;
                             }
@@ -692,7 +694,7 @@ bool CSuspect_rule::StringMatchesSuspectProductRule(const CMatchString& str) con
 {
     // CSearch_func: only about string
     const CSearch_func& func = GetFind();
-    if (!func.Empty() && !func.Match(str)) {
+    if (func.Empty() || !func.Match(str)) {
         return false;
     }
     if (CanGetExcept()) {
@@ -703,12 +705,12 @@ bool CSuspect_rule::StringMatchesSuspectProductRule(const CMatchString& str) con
     }
     if (CanGetFeat_constraint()) {
         const CConstraint_choice_set& conset = GetFeat_constraint();
-        ITERATE (list<CRef<CConstraint_choice> >, it, conset.Get()) {
-            if ((*it)->Which() != CConstraint_choice::e_String) {
-                cout << "Bad suspect rule constraint!\n";
+        for (auto& it: conset.Get()) {
+            if (it->Which() != CConstraint_choice::e_String) {
+                cerr << "Bad suspect rule constraint!\n";
                 continue;
             }
-            const CString_constraint& constr = (*it)->GetString();
+            const CString_constraint& constr = it->GetString();
             bool b = DoesSingleStringMatchConstraint (str, &constr);
             if (constr.GetNot_present()) {
                 b = !b;
@@ -913,17 +915,17 @@ string CSuspect_rule::SummarizeLocationConstraint(const CLocation_constraint& lo
     }
     string seq_word;
     if (loc.GetSeq_type() == eSeqtype_constraint_nuc) {
-        seq_word = "nucleotide sequences"; 
+        seq_word = "nucleotide sequences";
     }
     else if (loc.GetSeq_type() == eSeqtype_constraint_prot) {
-        seq_word = "protein sequences"; 
+        seq_word = "protein sequences";
     }
     string strand;
     if (loc.GetStrand() == eStrand_constraint_plus) {
-        strand = " on plus strands"; 
+        strand = " on plus strands";
     }
     else if (loc.GetStrand() == eStrand_constraint_minus) {
-        strand = " on minus strands"; 
+        strand = " on minus strands";
     }
     if (partial.empty() && location_type.empty() && dist5.empty() && dist3.empty() && seq_word.empty() && strand.empty()) {
         return kEmptyStr;

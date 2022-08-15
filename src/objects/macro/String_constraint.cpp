@@ -286,11 +286,11 @@ bool CString_constraint::x_IsFirstEachCap(const CMatchString& s) const
             if (first) {
                 rval = rval && isupper( (unsigned char) str[i] );
                 first = false;
-            } 
+            }
         } else if ( str[i] == '-' ){
             // hyphenated words are considered as one composed word
-            if ((i > 0 && !isalpha( (unsigned char) str[i - 1])) || 
-                (i + 1 < str.size() && !isalpha( (unsigned char) str[i + 1] ))) 
+            if ((i > 0 && !isalpha( (unsigned char) str[i - 1])) ||
+                (i + 1 < str.size() && !isalpha( (unsigned char) str[i + 1] )))
                 first = true;
         } else if (isdigit( (unsigned char) str[i])){
             if (i + 1 < str.size() && isalpha( (unsigned char) str[i + 1])) {
@@ -350,7 +350,7 @@ bool CString_constraint :: x_PartialCompare(const string& str, const string& pat
                     if (x_PartialCompare(str.substr(*len), pattern.substr(word_len), this_prev_char, this_match) &&
                         (!require_end || this_match == str.substr(*len).length())) {
                         match_len += *len;
-                        match_len += this_match;                        
+                        match_len += this_match;
                         return true;
                     }
                 }
@@ -397,7 +397,7 @@ bool CString_constraint :: x_PartialCompare(const string& str, const string& pat
         match_len++;
         return x_PartialCompare(str.substr(1), pattern.substr(1), str[0], match_len);
     }
-        
+
     return false;
 }
 
@@ -476,6 +476,7 @@ CTempString CString_constraint::x_GetConstraintString(ECase e_case) const
         case e_uppercase:
             return m_match.original().uppercase();
     }
+    return {};
 }
 
 
@@ -510,6 +511,7 @@ CTempString CString_constraint::x_GetCompareString(const CMatchString& s, ECase 
                 return s.original().uppercase();
         }
     }
+    return {};
 }
 
 
@@ -548,7 +550,7 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
     if (Empty()) {
         return true;
     }
-    
+
     if (GetIs_all_caps() && !x_IsAllCaps(str)) {
         return false;
     }
@@ -673,7 +675,7 @@ bool CString_constraint::x_ReplaceContains(string& val, const string& replace) c
 bool CString_constraint::ReplaceStringConstraintPortionInString(string& result, const CMatchString& str, const string& replace) const
 {
     bool rval = false;
-    
+
     const string& val = str;
 
     if (val.empty()) {
@@ -697,7 +699,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& result, 
                        size_t match_len = 0;
                        if (x_AdvancedStringCompare(val, GetMatch_text(), 0, &match_len)) {
                            result = replace;
-                           result.append(val.data()+match_len, val.length()-match_len);                           
+                           result.append(val.data()+match_len, val.length()-match_len);
                            rval = true;
                        }
                     }}
@@ -711,9 +713,9 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& result, 
                         size_t offset = 0;
                         while (!rval && offset < val.length()) {
                             size_t match_len = 0;
-                            if (x_AdvancedStringCompare(val.substr(offset), 
+                            if (x_AdvancedStringCompare(val.substr(offset),
                                                          GetMatch_text(),
-                                                         (offset == 0 ? 0 : val.c_str()[offset - 1]), 
+                                                         (offset == 0 ? 0 : val.c_str()[offset - 1]),
                                                           &match_len)
                                 && offset + match_len == val.length()) {
                                 result = val.substr(0, offset) + replace;
@@ -724,10 +726,10 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& result, 
                         }
                     }}
                     break;
-            } 
+            }
         } else {
             result = val;
-            rval = x_ReplaceContains(result, replace);                    
+            rval = x_ReplaceContains(result, replace);
         }
     }
     return rval;
