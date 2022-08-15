@@ -143,6 +143,7 @@ private:
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
     EPubmedSource m_pm_source = EPubmedSource::eNone;
     unique_ptr<IPubmedUpdater> m_pubmed;
+    bool m_pm_use_cache = false;
     unique_ptr<CCachedTaxon3_impl> m_taxClient;
     taxupdate_func_t m_taxon_update;
 
