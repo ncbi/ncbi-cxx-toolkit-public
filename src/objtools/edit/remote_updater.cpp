@@ -388,11 +388,21 @@ void CRemoteUpdater::ClearCache()
     }
 
     if (m_pm_use_cache && m_pubmed) {
-        if (m_pm_source == EPubmedSource::eEUtils) {
-            CEUtilsUpdaterWithCache* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+        switch (m_pm_source) {
+        case EPubmedSource::eMLA: {
+            auto* upd = dynamic_cast<CMLAUpdaterWithCache*>(m_pubmed.get());
             if (upd) {
                 upd->ClearCache();
             }
+            break;
+        }
+        case EPubmedSource::eEUtils: {
+            auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+            if (upd) {
+                upd->ClearCache();
+            }
+            break;
+        }
         }
     }
 }
@@ -462,7 +472,11 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                 break;
             default:
             case EPubmedSource::eMLA:
-                m_pubmed.reset(new CMLAUpdater());
+                if (m_pm_use_cache) {
+                    m_pubmed.reset(new CMLAUpdaterWithCache());
+                } else {
+                    m_pubmed.reset(new CMLAUpdater());
+                }
                 break;
             }
         }
@@ -680,11 +694,21 @@ void CRemoteUpdater::ReportStats(std::ostream& os)
     }
 
     if (m_pm_use_cache && m_pubmed) {
-        if (m_pm_source == EPubmedSource::eEUtils) {
-            CEUtilsUpdaterWithCache* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+        switch (m_pm_source) {
+        case EPubmedSource::eMLA: {
+            auto* upd = dynamic_cast<CMLAUpdaterWithCache*>(m_pubmed.get());
             if (upd) {
                 upd->ReportStats(os);
             }
+            break;
+        }
+        case EPubmedSource::eEUtils: {
+            auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+            if (upd) {
+                upd->ReportStats(os);
+            }
+            break;
+        }
         }
     }
 }
