@@ -48,6 +48,7 @@
 #include <objmgr/data_loader_factory.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objtools/data_loaders/genbank/impl/psg_loader_impl.hpp>
+#include <objtools/data_loaders/genbank/gbloader_params.h>
 #include <objtools/data_loaders/genbank/impl/wgsmaster.hpp>
 #include <util/compress/compress.hpp>
 #include <util/compress/stream.hpp>
@@ -103,14 +104,15 @@ CSeq_id_Handle PsgIdToHandle(const CPSG_BioId& id)
 }
 
 
-const int kMaxCacheLifespanSeconds = 300;
-const size_t kMaxCacheSize = 10000;
+const int kDefaultCacheLifespanSeconds = 2*3600;
+const size_t kDefaultMaxCacheSize = 10000;
 
 
 class CPSGBioseqCache
 {
 public:
-    CPSGBioseqCache(void) {}
+    CPSGBioseqCache(int lifespan, size_t max_size)
+        : m_Lifespan(lifespan), m_MaxSize(max_size) {}
     ~CPSGBioseqCache(void) {}
 
     shared_ptr<SPsgBioseqInfo> Get(const CSeq_id_Handle& idh);
@@ -121,7 +123,8 @@ private:
     typedef list<shared_ptr<SPsgBioseqInfo> > TInfoQueue;
 
     mutable CFastMutex m_Mutex;
-    size_t m_MaxSize = kMaxCacheSize;
+    int m_Lifespan;
+    size_t m_MaxSize;
     TIdMap m_Ids;
     TInfoQueue m_Infos;
 };
@@ -134,7 +137,13 @@ shared_ptr<SPsgBioseqInfo> CPSGBioseqCache::Get(const CSeq_id_Handle& idh)
     if (found == m_Ids.end()) return nullptr;
     shared_ptr<SPsgBioseqInfo> ret = found->second;
     m_Infos.remove(ret);
-    ret->deadline = CDeadline(kMaxCacheLifespanSeconds);
+    if (ret->deadline.IsExpired()) {
+        ITERATE(SPsgBioseqInfo::TIds, id, ret->ids) {
+            m_Ids.erase(*id);
+        }
+        return nullptr;
+    }
+    ret->deadline = CDeadline(m_Lifespan);
     m_Infos.push_back(ret);
     return ret;
 }
@@ -148,11 +157,15 @@ shared_ptr<SPsgBioseqInfo> CPSGBioseqCache::Add(const CPSG_BioseqInfo& info, CSe
     CFastMutexGuard guard(m_Mutex);
     auto found = m_Ids.find(idh);
     if (found != m_Ids.end()) {
-        found->second->Update(info);
-        return found->second;
+        if (!found->second->deadline.IsExpired()) {
+            found->second->Update(info);
+            return found->second;
+        }
+        ITERATE(SPsgBioseqInfo::TIds, id, found->second->ids) {
+            m_Ids.erase(*id);
+        }
+        m_Infos.remove(found->second);
     }
-    // Create new entry.
-    shared_ptr<SPsgBioseqInfo> ret = make_shared<SPsgBioseqInfo>(info);
     while (!m_Infos.empty() && (m_Infos.size() > m_MaxSize || m_Infos.front()->deadline.IsExpired())) {
         auto rm = m_Infos.front();
         m_Infos.pop_front();
@@ -160,6 +173,8 @@ shared_ptr<SPsgBioseqInfo> CPSGBioseqCache::Add(const CPSG_BioseqInfo& info, CSe
             m_Ids.erase(*id);
         }
     }
+    // Create new entry.
+    shared_ptr<SPsgBioseqInfo> ret = make_shared<SPsgBioseqInfo>(info, m_Lifespan);
     m_Infos.push_back(ret);
     if (req_idh) {
         m_Ids[req_idh] = ret;
@@ -216,14 +231,14 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
-SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info)
+SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info, int lifespan)
     : included_info(0),
       molecule_type(CSeq_inst::eMol_not_set),
       length(0),
       state(0),
       tax_id(INVALID_TAX_ID),
       hash(0),
-      deadline(kMaxCacheLifespanSeconds)
+      deadline(lifespan)
 {
     Update(bioseq_info);
 }
@@ -659,7 +674,6 @@ static typename TParamDescription::TValueType s_GetParamValue(const TPluginManag
 
 CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     : m_BlobMap(new CPSGBlobMap()),
-      m_BioseqCache(new CPSGBioseqCache()),
       m_ThreadPool(new CThreadPool(kMax_UInt, TPSG_MaxPoolThreads::GetDefault()))
 {
     unique_ptr<CPSGDataLoader::TParamTree> app_params;
@@ -676,7 +690,7 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     }
 
     string service_name;
-    if (service_name.empty() && psg_params) {
+    if (psg_params) {
         service_name = CPSGDataLoader::GetParam(psg_params, NCBI_PSGLOADER_SERVICE_NAME);
     }
     if (service_name.empty()) {
@@ -726,6 +740,28 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         }
     }
 
+    m_CacheLifespan = kDefaultCacheLifespanSeconds;
+    size_t cache_max_size = kDefaultMaxCacheSize;
+    if (psg_params) {
+        try {
+            string value = CPSGDataLoader::GetParam(psg_params, NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT);
+            if (!value.empty()) {
+                m_CacheLifespan = NStr::StringToNumeric<int>(value);
+            }
+        }
+        catch (CException&) {
+        }
+        try {
+            string value = CPSGDataLoader::GetParam(psg_params, NCBI_GBLOADER_PARAM_ID_GC_SIZE);
+            if (!value.empty()) {
+                cache_max_size = NStr::StringToNumeric<size_t>(value);
+            }
+        }
+        catch (CException&) {
+        }
+    }
+
+    m_BioseqCache.reset(new CPSGBioseqCache(m_CacheLifespan, cache_max_size));
     m_Queue = make_shared<CPSG_Queue>(service_name);
 }
 
@@ -2224,19 +2260,14 @@ public:
 
     ~CPSG_AnnotRecordsNA_Task(void) override {}
 
-    shared_ptr<CPSG_BioseqInfo> m_BioseqInfo;
     list<shared_ptr<CPSG_NamedAnnotInfo>> m_AnnotInfo;
 
     void Finish(void) override {
-        m_BioseqInfo.reset();
         m_AnnotInfo.clear();
     }
 
 protected:
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override {
-        if (item->GetType() == CPSG_ReplyItem::eBioseqInfo) {
-            m_BioseqInfo = static_pointer_cast<CPSG_BioseqInfo>(item);
-        }
         if (item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
             m_AnnotInfo.push_back(static_pointer_cast<CPSG_NamedAnnotInfo>(item));
         }
@@ -2272,8 +2303,7 @@ protected:
 
 static
 pair<CRef<CTSE_Chunk_Info>, string>
-s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
-                const CPSG_BioseqInfo* bioseq_info)
+s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info)
 {
     pair<CRef<CTSE_Chunk_Info>, string> ret;
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
@@ -2396,7 +2426,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                 for ( auto& info : task->m_AnnotInfo ) {
                     CDataLoader::SetProcessedNA(info->GetName(), processed_nas);
                     CRef<CPsgBlobId> blob_id(new CPsgBlobId(info->GetBlobId().GetId()));
-                    auto chunk_info = s_CreateNAChunk(*info, task->m_BioseqInfo.get());
+                    auto chunk_info = s_CreateNAChunk(*info);
                     if ( chunk_info.first ) {
                         CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(blob_id);
                         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
@@ -2870,7 +2900,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
             continue;
         }
         _ASSERT(task->m_BioseqInfo);
-        ret[it->second] = make_shared<SPsgBioseqInfo>(*task->m_BioseqInfo);
+        ret[it->second] = make_shared<SPsgBioseqInfo>(*task->m_BioseqInfo, m_CacheLifespan);
         counts.first += 1;
     }
     return counts;
