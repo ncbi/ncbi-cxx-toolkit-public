@@ -50,7 +50,7 @@ BEGIN_SCOPE(objects)
 
 struct SPsgBioseqInfo
 {
-    SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info);
+    SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info, int lifespan);
 
     typedef CPSG_Request_Resolve::TIncludeInfo TIncludedInfo;
     typedef vector<CSeq_id_Handle> TIds;
@@ -232,6 +232,7 @@ private:
     unique_ptr<CPSGBlobMap> m_BlobMap;
     unique_ptr<CPSGBioseqCache> m_BioseqCache;
     unique_ptr<CThreadPool> m_ThreadPool;
+    int m_CacheLifespan;
 };
 
 END_SCOPE(objects)
