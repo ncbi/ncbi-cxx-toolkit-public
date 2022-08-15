@@ -290,6 +290,8 @@ bool CRemoteUpdater::xSetFromConfig()
             } else if (s == "none") {
                 m_pm_source = EPubmedSource::eNone;
             }
+
+            m_pm_use_cache = cfg.GetBool("RemotePubmedUpdate", "UseCache", false);
         }
 
         if (cfg.HasEntry("RemoteTaxonomyUpdate")) {
@@ -384,10 +386,13 @@ void CRemoteUpdater::ClearCache()
     if (m_taxClient) {
         m_taxClient->ClearCache();
     }
-    if (m_pubmed && m_pm_source == EPubmedSource::eEUtils) {
-        CEUtilsUpdaterWithCache* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
-        if (upd) {
-            upd->ClearCache();
+
+    if (m_pm_use_cache && m_pubmed) {
+        if (m_pm_source == EPubmedSource::eEUtils) {
+            CEUtilsUpdaterWithCache* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+            if (upd) {
+                upd->ClearCache();
+            }
         }
     }
 }
@@ -449,7 +454,11 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
             case EPubmedSource::eNone:
                 break;
             case EPubmedSource::eEUtils:
-                m_pubmed.reset(new CEUtilsUpdaterWithCache());
+                if (m_pm_use_cache) {
+                    m_pubmed.reset(new CEUtilsUpdaterWithCache());
+                } else {
+                    m_pubmed.reset(new CEUtilsUpdater());
+                }
                 break;
             default:
             case EPubmedSource::eMLA:
@@ -665,13 +674,17 @@ CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_r
 void CRemoteUpdater::ReportStats(std::ostream& os)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
+
     if (m_taxClient) {
         m_taxClient->ReportStats(os);
     }
-    if (m_pubmed && m_pm_source == EPubmedSource::eEUtils) {
-        CEUtilsUpdaterWithCache* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
-        if (upd) {
-            upd->ReportStats(os);
+
+    if (m_pm_use_cache && m_pubmed) {
+        if (m_pm_source == EPubmedSource::eEUtils) {
+            CEUtilsUpdaterWithCache* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+            if (upd) {
+                upd->ReportStats(os);
+            }
         }
     }
 }
