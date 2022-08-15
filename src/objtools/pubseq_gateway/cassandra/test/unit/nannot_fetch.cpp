@@ -87,7 +87,7 @@ class CNAnnotTaskFetchTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
 
-    string m_KeyspaceName{"nannotg2"};
+    string m_KeyspaceName{"nannotg3"};
     string m_FrozenKeyspaceName{"psg_test_sat_41"};
     string m_NewNannotSchemaKeyspace{"psg_test_sat_52"};
 };
@@ -273,7 +273,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrieval) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
                     EXPECT_EQ(entry.GetStart(), 9853);
                     EXPECT_EQ(entry.GetStop(), 9858);
-                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_EQ(entry.GetSatKey(), 24715753);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -281,7 +281,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrieval) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
                     EXPECT_EQ(entry.GetStart(), 2506);
                     EXPECT_EQ(entry.GetStop(), 8119);
-                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_EQ(entry.GetSatKey(), 24734212);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -289,7 +289,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrieval) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122204.1");
                     EXPECT_EQ(entry.GetStart(), 640);
                     EXPECT_EQ(entry.GetStop(), 5865);
-                    EXPECT_EQ(entry.GetSatKey(), 39419);
+                    EXPECT_EQ(entry.GetSatKey(), 24754284);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -297,7 +297,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrieval) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122205.1");
                     EXPECT_EQ(entry.GetStart(), 992);
                     EXPECT_EQ(entry.GetStop(), 1445);
-                    EXPECT_EQ(entry.GetSatKey(), 58472);
+                    EXPECT_EQ(entry.GetSatKey(), 24773337);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return false;
@@ -332,7 +332,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrievalWithTimeout) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
                     EXPECT_EQ(entry.GetStart(), 9853);
                     EXPECT_EQ(entry.GetStop(), 9858);
-                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_EQ(entry.GetSatKey(), 24715753);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -340,7 +340,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrievalWithTimeout) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
                     EXPECT_EQ(entry.GetStart(), 2506);
                     EXPECT_EQ(entry.GetStop(), 8119);
-                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_EQ(entry.GetSatKey(), 24734212);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -348,7 +348,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrievalWithTimeout) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122204.1");
                     EXPECT_EQ(entry.GetStart(), 640);
                     EXPECT_EQ(entry.GetStop(), 5865);
-                    EXPECT_EQ(entry.GetSatKey(), 39419);
+                    EXPECT_EQ(entry.GetSatKey(), 24754284);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -356,7 +356,7 @@ TEST_F(CNAnnotTaskFetchTest, MultipleRetrievalWithTimeout) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122205.1");
                     EXPECT_EQ(entry.GetStart(), 992);
                     EXPECT_EQ(entry.GetStop(), 1445);
-                    EXPECT_EQ(entry.GetSatKey(), 58472);
+                    EXPECT_EQ(entry.GetSatKey(), 24773337);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return false;
@@ -397,7 +397,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeout) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
                     EXPECT_EQ(entry.GetStart(), 9853);
                     EXPECT_EQ(entry.GetStop(), 9858);
-                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_EQ(entry.GetSatKey(), 24715753);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -405,7 +405,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeout) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
                     EXPECT_EQ(entry.GetStart(), 2506);
                     EXPECT_EQ(entry.GetStop(), 8119);
-                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_EQ(entry.GetSatKey(), 24734212);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -413,7 +413,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeout) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122204.1");
                     EXPECT_EQ(entry.GetStart(), 640);
                     EXPECT_EQ(entry.GetStop(), 5865);
-                    EXPECT_EQ(entry.GetSatKey(), 39419);
+                    EXPECT_EQ(entry.GetSatKey(), 24754284);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -454,7 +454,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeoutOnEOF) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
                     EXPECT_EQ(entry.GetStart(), 9853);
                     EXPECT_EQ(entry.GetStop(), 9858);
-                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_EQ(entry.GetSatKey(), 24715753);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -462,7 +462,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeoutOnEOF) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
                     EXPECT_EQ(entry.GetStart(), 2506);
                     EXPECT_EQ(entry.GetStop(), 8119);
-                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_EQ(entry.GetSatKey(), 24734212);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -470,7 +470,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeoutOnEOF) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122204.1");
                     EXPECT_EQ(entry.GetStart(), 640);
                     EXPECT_EQ(entry.GetStop(), 5865);
-                    EXPECT_EQ(entry.GetSatKey(), 39419);
+                    EXPECT_EQ(entry.GetSatKey(), 24754284);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -513,7 +513,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithCancel) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
                     EXPECT_EQ(entry.GetStart(), 9853);
                     EXPECT_EQ(entry.GetStop(), 9858);
-                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_EQ(entry.GetSatKey(), 24715753);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -521,7 +521,7 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithCancel) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
                     EXPECT_EQ(entry.GetStart(), 2506);
                     EXPECT_EQ(entry.GetStop(), 8119);
-                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_EQ(entry.GetSatKey(), 24734212);
                     EXPECT_EQ(entry.GetState(), CNAnnotRecord::eStateAlive);
                     EXPECT_FALSE(last);
                     return true;
@@ -563,8 +563,8 @@ TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo) {
                     EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
                     EXPECT_EQ(entry.GetStart(), 6616);
                     EXPECT_EQ(entry.GetStop(), 41589);
-                    EXPECT_EQ(entry.GetSatKey(), 500);
-                    EXPECT_EQ(entry.GetAnnotInfoModified(), 1652276051850);
+                    EXPECT_EQ(entry.GetSatKey(), 24715365);
+                    EXPECT_EQ(entry.GetAnnotInfoModified(), 1658874804940);
                     EXPECT_FALSE(entry.GetSeqAnnotInfo().empty());
                     EXPECT_EQ(gGetSeqAnnotInfoString(&entry),
                         "ID2S-Seq-annot-Info ::= {name \"NA000122202.1\",feat {{type 13}},seq-loc gi-interval {gi 1142972004,start 6616,length 34974}}\n"
@@ -595,7 +595,7 @@ TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo) {
     EXPECT_EQ(call_count, 2UL);
 }
 
-TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo2) {
+TEST_F(CNAnnotTaskFetchTest, DISABLED_RetrievalWithSeqAnnotInfo2) {
     size_t call_count = 0;
     CCassNAnnotTaskFetch fetch(
         m_Connection, m_KeyspaceName,
