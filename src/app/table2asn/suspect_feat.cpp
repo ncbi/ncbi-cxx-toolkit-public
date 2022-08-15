@@ -55,13 +55,6 @@ BEGIN_objects_SCOPE
 
 CFixSuspectProductName::CFixSuspectProductName()
 {
-    bool found = false;
-    std::string filename;
-    auto rules_env = CNcbiApplication::Instance()->GetEnvironment().Get("PRODUCT_RULES_LIST", &found);
-    if (found) {
-        filename = rules_env;
-    }
-    m_rules = NDiscrepancy::GetProductRules(filename);
 }
 
 CFixSuspectProductName::~CFixSuspectProductName()
@@ -70,7 +63,7 @@ CFixSuspectProductName::~CFixSuspectProductName()
 
 void CFixSuspectProductName::SetRulesFilename(const string& filename)
 {
-    m_rules = NDiscrepancy::GetProductRules(filename);
+    m_filename = filename;
 }
 
 void CFixSuspectProductName::SetupOutput(std::function<std::ostream&()> f)
@@ -97,16 +90,31 @@ void CFixSuspectProductName::ReportFixedProduct(const string& oldproduct, const 
     if (!m_output)
         return;
 
-    std::ostream& report_ostream = m_output();
+    auto& report_ostream = m_output();
 
     string label;
     loc.GetLabel(&label);
     report_ostream << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
 }
 
-bool CFixSuspectProductName::FixSuspectProductNames(CSeq_feat& feature, CScope& scope, feature::CFeatTree& feattree) const
+bool CFixSuspectProductName::FixSuspectProductNames(CSeq_feat& feature, CRef<CScope> scope, CRef<feature::CFeatTree> feattree) const
 {
-    static const char hypotetic_protein_name[] = "hypothetical protein"; // sema: interesting optimization...
+    static constexpr string_view hypotetic_protein_name = "hypothetical protein";
+
+    std::lock_guard<COnceMutex> g{m_mutex};
+
+    if (m_mutex.IsFirstRun() && m_rules.Empty())
+    {
+        std::string filename = m_filename;
+        if (filename.empty()) {
+            bool found = false;
+            auto rules_env = CNcbiApplication::Instance()->GetEnvironment().Get("PRODUCT_RULES_LIST", &found);
+            if (found) {
+                filename = rules_env;
+            }
+        }
+        m_rules = NDiscrepancy::GetProductRules(filename);
+    }
 
     bool modified = false;
     if (feature.IsSetData() && feature.GetData().IsProt() && feature.GetData().GetProt().IsSetName())
@@ -115,46 +123,56 @@ bool CFixSuspectProductName::FixSuspectProductNames(CSeq_feat& feature, CScope& 
             return false;
 
 
-        //for (auto& name : feature.SetData().SetProt().SetName())
         auto& prot_name = feature.SetData().SetProt().SetName().front(); // only first name is fixed
         {
             if (0 != NStr::Compare(prot_name, hypotetic_protein_name)) {
+
                 while (auto rule = x_FixSuspectProductName(prot_name)) {
-                    auto mapped(scope.GetSeq_featHandle(feature));
+                    auto mapped(scope->GetSeq_featHandle(feature));
                     auto old_prot_name = NDiscrepancy::FixProductName(
-                        rule, scope, prot_name,
+                        rule, *scope, prot_name,
                         [&mapped, &feattree] {
-                          auto mrna = feature::GetBestParentForFeat(mapped, CSeqFeatData::eSubtype_mRNA, &feattree);
-                          CRef<CSeq_feat> orig_mrna;
-                          if (mrna)
-                              orig_mrna.Reset(&(CSeq_feat&)*mrna.GetOriginalSeq_feat());
-                          return orig_mrna;
+                            //std::cerr << "Func1\n";
+
+                            auto mrna = feature::GetBestParentForFeat(mapped, CSeqFeatData::eSubtype_mRNA, feattree);
+                            CRef<CSeq_feat> orig_mrna;
+                            if (mrna)
+                                orig_mrna.Reset(&(CSeq_feat&)*mrna.GetOriginalSeq_feat());
+                            return orig_mrna;
                         },
                         [&mapped, &feattree] {
-                          CRef<CSeq_feat> orig_cds;
-                          auto cds = feature::GetBestParentForFeat(mapped, CSeqFeatData::eSubtype_cdregion, &feattree);
-                          if (cds)
+                            //std::cerr << "Func2\n";
+
+                            CRef<CSeq_feat> orig_cds;
+                            auto cds = feature::GetBestParentForFeat(mapped, CSeqFeatData::eSubtype_cdregion, feattree);
+                            if (cds)
                             orig_cds.Reset(&(CSeq_feat&)*cds.GetOriginalSeq_feat());
-                          return orig_cds;
+                            return orig_cds;
                         }
                     );
-
                     ReportFixedProduct(old_prot_name, prot_name, feature.GetLocation(), kEmptyStr);
                     modified = true;
                 }
             }
         }
     }
+
     return modified;
 }
 
-void CFixSuspectProductName::FixSuspectProductNames(CSeq_entry& entry, CScope& scope) const
+void CFixSuspectProductName::FixSuspectProductNames(CSeq_entry_Handle seh) const
 {
-    auto feattree= Ref(new feature::CFeatTree(scope.GetTSE_Handle(entry)));
+    CRef<CSeq_entry> entry{const_cast<CSeq_entry*>(seh.GetCompleteSeq_entry().GetPointer())};
 
-    VisitAllFeatures(entry,
+    auto scope = Ref(&seh.GetScope());
+
+    auto feattree = Ref(new feature::CFeatTree(seh));
+
+    VisitAllFeatures(*entry,
         [](const CBioseq& bioseq){return bioseq.IsAa(); },
-        [this, &scope, &feattree](CBioseq&bioseq, CSeq_feat& feature) { this->FixSuspectProductNames(feature, scope, *feattree); });
+        [this, &scope, &feattree](CBioseq& bioseq, CSeq_feat& feature) {
+            this->FixSuspectProductNames(feature, scope, feattree);
+        });
 }
 
 
