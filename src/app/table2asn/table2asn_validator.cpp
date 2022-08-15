@@ -22,9 +22,8 @@
 
 #include "table2asn_validator.hpp"
 #include "table2asn_context.hpp"
-
+#include "suspect_feat.hpp"
 #include "visitors.hpp"
-
 
 BEGIN_NCBI_SCOPE
 
@@ -96,7 +95,7 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
 
     if (flags.find('f') != string::npos)
     {
-        m_context->m_suspect_rules.FixSuspectProductNames(h_entry);
+        m_context->m_suspect_rules->FixSuspectProductNames(h_entry);
     }
 
     // SQD-4386
@@ -242,6 +241,10 @@ void CTable2AsnValidator::x_PopulateDiscrepancy(CRef<NDiscrepancy::CDiscrepancyS
         m_discrep_scope.Reset(new CScope(*m_context->m_ObjMgr));
         m_discrep_scope->AddDefaults();
     }
+
+    if (!discrepancy)
+        discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_discrep_scope);
+
     CSeq_entry_Handle seh;
     CRef<CSerialObject> obj;
     if (submit) {
@@ -252,9 +255,6 @@ void CTable2AsnValidator::x_PopulateDiscrepancy(CRef<NDiscrepancy::CDiscrepancyS
         seh = m_discrep_scope->AddTopLevelSeqEntry(*entry);
         obj = entry;
     }
-
-    if (!discrepancy)
-        discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_discrep_scope);
 
     vector<string> names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
     discrepancy->AddTests(names);
@@ -271,6 +271,8 @@ void CTable2AsnValidator::CollectDiscrepancies(CRef<objects::CSeq_submit> submit
 {
     if (!m_context->m_run_discrepancy)
         return;
+
+    std::lock_guard<std::mutex> g{m_discrep_mutex};
 
     x_PopulateDiscrepancy(m_discrepancy, submit, entry);
     if(m_context->m_split_discrepancy && !m_context->m_huge_files_mode) {
@@ -328,7 +330,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
         {
         case CProt_ref::eEC_deleted:
             xGetLabel(feat, label);
-            m_Context.GetOstream(".ecn") << label << "\tEC number deleted\t" << *it << "\t\n";
+            m_Context.GetOstream(".ecn").get() << label << "\tEC number deleted\t" << *it << "\t\n";
             it = EC.erase(it);
             continue;
             break;
@@ -337,7 +339,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
             xGetLabel(feat, label);
             const string& newvalue = CProt_ref::GetECNumberReplacement(*it);
             bool is_split = newvalue.find('\t') != string::npos;
-            m_Context.GetOstream(".ecn") << label <<
+            m_Context.GetOstream(".ecn").get() << label <<
             (is_split ? "\tEC number split\t" : "\tEC number changed\t")
             << *it << '\t' << newvalue << "\n";
             if (is_split) {
@@ -349,7 +351,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
         break;
         case CProt_ref::eEC_unknown:
             xGetLabel(feat, label);
-            m_Context.GetOstream(".ecn") << label << "\tEC number invalid\t" << *it << "\t\n";
+            m_Context.GetOstream(".ecn").get() << label << "\tEC number invalid\t" << *it << "\t\n";
             break;
         default:
             break;
@@ -365,7 +367,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
 
 void CTable2AsnValidator::UpdateECNumbers(CSeq_entry& entry)
 {
-    std::lock_guard<std::mutex> g{m_mutex};
+    //std::lock_guard<std::mutex> g{m_mutex};
 
     VisitAllFeatures(entry, CUpdateECNumbers(*m_context));
 }
