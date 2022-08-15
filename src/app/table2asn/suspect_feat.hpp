@@ -3,6 +3,8 @@
 
 
 #include <corelib/ncbistl.hpp>
+#include <mutex>
+#include "utils.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -26,16 +28,17 @@ namespace objects
 
         void SetRulesFilename(const string& filename);
         void SetupOutput(std::function<std::ostream&()> f);
-        void FixSuspectProductNames(objects::CSeq_entry& entry, CScope& scope) const;
-        bool FixSuspectProductNames(objects::CSeq_feat& feature, CScope& scope, feature::CFeatTree& feattree) const;
+        void FixSuspectProductNames(CSeq_entry_Handle seh) const;
+        bool FixSuspectProductNames(objects::CSeq_feat& feature, CRef<CScope> scope, CRef<feature::CFeatTree> feattree) const;
 
     protected:
         void ReportFixedProduct(const string& oldproduct, const string& newproduct, const objects::CSeq_loc& loc, const string& locustag) const;
         CConstRef<CSuspect_rule> x_FixSuspectProductName(string& product_name) const;
         std::function<std::ostream&()> m_output;
 
-        string m_rules_filename;
-        CConstRef<CSuspect_rule_set> m_rules;
+        mutable CConstRef<CSuspect_rule_set> m_rules;
+        std::string m_filename;
+        mutable COnceMutex m_mutex;
     };
 }
 
