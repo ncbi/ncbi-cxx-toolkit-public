@@ -86,6 +86,7 @@
 
 
 #include "visitors.hpp"
+#include "suspect_feat.hpp"
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -177,6 +178,7 @@ void x_CorrectCollectionDates(const CTable2AsnContext& context, _T& seq_or_set)
 
 
 CTable2AsnContext::CTable2AsnContext()
+    : m_suspect_rules{new CFixSuspectProductName}
 {
 }
 
@@ -196,31 +198,53 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
-CNcbiOstream& CTable2AsnContext::GetOstream(CTempString suffix, CTempString basename)
+CSharedOStream::CSharedOStream(TSharedStreamMap::mapped_type* owner) : m_owner{owner}
 {
-    auto& rec = m_outputs[suffix];
-    if (!rec.second)
-    {
-        if (rec.first.empty())
-          rec.first = GenerateOutputFilename(suffix, basename);
-        CFile(rec.first).Remove(CFile::fIgnoreMissing);
-        rec.second.reset(new CNcbiOfstream(rec.first));
-    }
-    return *rec.second;
+    std::get<2>(*m_owner).lock();
 }
 
+CSharedOStream::~CSharedOStream()
+{
+    std::get<2>(*m_owner).unlock();
+}
+
+std::ostream& CSharedOStream::get()
+{
+    return *std::get<1>(*m_owner).get();
+}
+
+CSharedOStream CTable2AsnContext::GetOstream(CTempString suffix, CTempString basename)
+{
+    TSharedStreamMap::mapped_type* rec;
+    {
+        std::lock_guard<std::mutex> g{m_outputs_mutex};
+        rec = &m_outputs[suffix];
+        auto& filename = std::get<0>(*rec);
+        auto& stream = std::get<1>(*rec);
+        if (!stream)
+        {
+            if (filename.empty())
+                filename = GenerateOutputFilename(suffix, basename);
+            CFile(filename).Remove(CFile::fIgnoreMissing);
+            stream.reset(new CNcbiOfstream(filename));
+        }
+    }
+    return {rec};
+}
 
 void CTable2AsnContext::ClearOstream(const CTempString& suffix)
 {
+    std::lock_guard<std::mutex> g{m_outputs_mutex};
+
     auto it = m_outputs.find(suffix);
     if (it == m_outputs.end()) {
         return;
     }
 
-    it->second.first.clear();
-    if (it->second.second) {
-        it->second.second.reset();
+    if (get<1>(it->second)) {
+        get<1>(it->second).reset();
     }
+    get<0>(it->second).clear();
 }
 
 

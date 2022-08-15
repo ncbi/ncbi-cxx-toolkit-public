@@ -27,14 +27,14 @@ namespace objects
         ~CFixSuspectProductName();
 
         void SetRulesFilename(const string& filename);
-        void SetupOutput(std::function<std::ostream&()> f);
+        void SetupOutput(std::function<CSharedOStream()> f);
         void FixSuspectProductNames(CSeq_entry_Handle seh) const;
         bool FixSuspectProductNames(objects::CSeq_feat& feature, CRef<CScope> scope, CRef<feature::CFeatTree> feattree) const;
 
     protected:
         void ReportFixedProduct(const string& oldproduct, const string& newproduct, const objects::CSeq_loc& loc, const string& locustag) const;
         CConstRef<CSuspect_rule> x_FixSuspectProductName(string& product_name) const;
-        std::function<std::ostream&()> m_output;
+        std::function<CSharedOStream()> m_output;
 
         mutable CConstRef<CSuspect_rule_set> m_rules;
         std::string m_filename;
