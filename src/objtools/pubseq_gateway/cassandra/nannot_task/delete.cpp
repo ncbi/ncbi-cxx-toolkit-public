@@ -108,6 +108,7 @@ void CCassNAnnotTaskDelete::Wait1()
                         string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na " + writetime +
                             "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? AND sat_key = ? "
                             "IF last_modified = ?";
+                        query->SetSQL(sql, 6 + (m_Writetime > 0));
                     }
                     else {
                         string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na " + writetime +
