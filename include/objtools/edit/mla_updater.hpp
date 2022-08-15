@@ -27,6 +27,20 @@ private:
     CRef<CMLAClient> m_mlac;
 };
 
+class NCBI_XOBJEDIT_EXPORT CMLAUpdaterWithCache : public CMLAUpdater
+{
+    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
+
+public:
+    void ReportStats(std::ostream&);
+    void ClearCache();
+
+private:
+    map<TEntrezId, CRef<CPub>> m_cache;
+    size_t                     m_num_requests = 0;
+    size_t                     m_cache_hits   = 0;
+};
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

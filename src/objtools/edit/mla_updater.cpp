@@ -168,6 +168,33 @@ string CMLAUpdater::GetTitle(const string& title)
     return {};
 }
 
+CRef<CPub> CMLAUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
+{
+    m_num_requests++;
+    auto it = m_cache.find(pmid);
+    if (it == m_cache.end()) {
+        auto pub = CMLAUpdater::GetPub(pmid, perr);
+        if (pub) {
+            m_cache[pmid] = pub;
+        }
+        return pub;
+    } else {
+        m_cache_hits++;
+        return it->second;
+    }
+}
+
+void CMLAUpdaterWithCache::ReportStats(std::ostream& os)
+{
+    os << "CMLAUpdater: cache hits\n";
+    os << "CMLAUpdater: cache_hits " << m_cache_hits << " out of " << m_num_requests << " requests\n";
+}
+
+void CMLAUpdaterWithCache::ClearCache()
+{
+    m_cache.clear();
+}
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
