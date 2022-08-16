@@ -69,11 +69,15 @@ class CCassNAnnotTaskDelete
         TDataErrorCallback data_error_cb
     );
 
-    void SetWritetime(CNAnnotRecord::TWritetime value)
+    // @todo Delete operation uses conditional updates for .bioseq_na table
+    // Cassandra does not support conditional updates with USING TIMESTAMP clause
+    // Later consider to use just one approach. It will be easy to get rid of conditional updates
+    // as (gi, type) => sat_key one to many schema is adopted.
+    void SetWritetime(CNAnnotRecord::TWritetime /*value*/)
     {
-        if (value > 0) {
+        /*if (value > 0) {
             m_Writetime = value;
-        }
+        }*/
     }
 
  protected:
