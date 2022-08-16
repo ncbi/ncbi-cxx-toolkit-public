@@ -64,7 +64,8 @@ public:
 
     void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
 
-    bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
+    bool IsValidStructuredComment(const CSeqdesc& desc); 
+    NCBI_DEPRECATED bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
     bool ValidateDblink(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
 
     void ResetModifCounters();
@@ -73,6 +74,7 @@ private:
     void ValidateComment(const string& comment, const CSeqdesc& desc);
     void ValidateTitle(const string& title, const CSeqdesc& desc, const CSeq_entry& ctx);
     bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, const CComment_rule& rule, bool report);
+    bool x_ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
     bool ValidateStructuredCommentGeneric(const CUser_object& usr, const CSeqdesc& desc, bool report);
     void x_ReportStructuredCommentErrors(const CSeqdesc& desc, const CComment_rule::TErrorList& errors);
     void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);

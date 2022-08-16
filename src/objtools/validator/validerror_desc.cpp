@@ -460,7 +460,26 @@ bool HasBadGenomeAssemblyName(const CUser_object& usr)
 }
 
 
+bool CValidError_desc::IsValidStructuredComment(const CSeqdesc& desc)
+{
+    if (!desc.IsUser()) {
+        return false;
+    }
+    const bool report = false;
+    return x_ValidateStructuredComment(desc.GetUser(), desc, report);
+}
+
+
 bool CValidError_desc::ValidateStructuredComment
+(const CUser_object& usr,
+ const CSeqdesc& desc,
+ bool report) 
+{
+    return x_ValidateStructuredComment(usr, desc, report);
+}
+
+
+bool CValidError_desc::x_ValidateStructuredComment
 (const CUser_object& usr,
  const CSeqdesc& desc,
  bool  report)
@@ -803,7 +822,7 @@ void CValidError_desc::ValidateUser
                 "RefGeneTracking object needs to have Status set", *m_Ctx, desc);
         }
     } else if ( usr.IsStructuredComment()) {
-        ValidateStructuredComment(usr, desc);
+        x_ValidateStructuredComment(usr, desc);
     } else if ( usr.IsDBLink()) {
         ValidateDblink(usr, desc);
     }
