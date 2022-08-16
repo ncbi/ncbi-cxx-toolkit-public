@@ -380,9 +380,9 @@ LZO_LIBS    = @LZO_LIBS@
 ZSTD_INCLUDE= @ZSTD_INCLUDE@
 ZSTD_LIBS   = @ZSTD_LIBS@
 
-CMPRS_INCLUDE = $(Z_INCLUDE) $(BZ2_INCLUDE) $(LZO_INCLUDE)
-CMPRS_LIBS    = $(Z_LIBS) $(BZ2_LIBS) $(LZO_LIBS)
-CMPRS_LIB     = $(Z_LIB) $(BZ2_LIB)
+CMPRS_INCLUDE = $(Z_INCLUDE) $(BZ2_INCLUDE) $(LZO_INCLUDE) $(ZSTD_INCLUDE)
+CMPRS_LIBS    = $(Z_LIBS) $(BZ2_LIBS) $(LZO_LIBS) $(ZSTD_LIBS)
+CMPRS_LIB     = $(Z_LIB) $(BZ2_LIB) $(ZSTD_LIB)
 
 # Perl-Compatible Regular Expressions
 # For historical reasons, the bundled (LIB) version contains the POSIX
