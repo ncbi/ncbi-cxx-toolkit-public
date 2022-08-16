@@ -1060,7 +1060,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
         if (m_context.m_make_flatfile)
         {
-            MakeFlatFile(entry, submit, m_context.GetOstream(".gbf"));
+            MakeFlatFile(seh, submit, m_context.GetOstream(".gbf"));
         }
     }
 }
@@ -1100,9 +1100,14 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
     }
 }
 
-void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_submit> submit, CRef<CSeq_entry>& entry)
+void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncToken& token)
 {
-    auto scope = Ref(new CScope(*m_context.m_ObjMgr));
+    auto& submit = token.submit;
+    auto& entry  = token.top_entry;
+    auto& scope  = token.scope;
+    auto& seh    = token.seh;
+
+    scope = Ref(new CScope(*m_context.m_ObjMgr));
     scope->AddDefaults();
 
     /*
@@ -1192,7 +1197,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
 
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    seh = scope->AddTopLevelSeqEntry(*entry);
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup)
@@ -1223,19 +1228,11 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSe
 
     m_validator->CollectDiscrepancies(submit, entry);
 
-    if (m_context.m_make_flatfile && !m_context.m_huge_files_mode)
-    {
-        //auto ff_file = m_context.GetOstream(".gbf");
-        //MakeFlatFile(entry, submit, ff_file);
-    }
+    // ff generator is invoked in other places
 }
 
-void CTbl2AsnApp::MakeFlatFile(CConstRef<CSeq_entry> entry, CRef<CSeq_submit> submit, std::ostream& ostream)
+void CTbl2AsnApp::MakeFlatFile(CSeq_entry_Handle seh, CRef<CSeq_submit> submit, std::ostream& ostream)
 {
-    auto scope = Ref(new CScope(*m_context.m_ObjMgr));
-    scope->AddDefaults();
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-
     CFlatFileGenerator ffgenerator(
             CFlatFileConfig::eFormat_GenBank,
             CFlatFileConfig::eMode_Entrez);
@@ -1243,7 +1240,7 @@ void CTbl2AsnApp::MakeFlatFile(CConstRef<CSeq_entry> entry, CRef<CSeq_submit> su
     if (submit.Empty())
         ffgenerator.Generate(seh, ostream);
     else
-        ffgenerator.Generate(*submit, *scope, ostream);
+        ffgenerator.Generate(*submit, seh.GetScope(), ostream);
 }
 
 void CTbl2AsnApp::ProcessOneFile(bool isAlignment)

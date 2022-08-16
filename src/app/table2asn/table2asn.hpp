@@ -51,6 +51,17 @@ class CTable2AsnStructuredCommentsReader;
 //class CHugeAsnReader;
 class CFeatureTableReader;
 
+struct TAsyncToken
+{
+    CRef<CSeq_entry>  entry;
+    CRef<CSeq_submit> submit;
+    CRef<CSeq_entry>  top_entry;
+    CRef<CScope>      scope;
+    CSeq_entry_Handle seh;
+    std::string       ff;
+};
+
+
 class CTbl2AsnApp : public CNcbiApplication
 {
 public:
@@ -72,8 +83,8 @@ private:
     void ProcessOneFile(CNcbiOstream* output);
     void ProcessHugeFile(CNcbiOstream* output);
     void ProcessOneEntry(CFormatGuess::EFormat inputFormat, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
-    void ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_submit> submit, CRef<CSeq_entry>& entry);
-    void MakeFlatFile(CConstRef<CSeq_entry> entry, CRef<CSeq_submit> submit, std::ostream& ostr);
+    void ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncToken& token);
+    void MakeFlatFile(CSeq_entry_Handle seh, CRef<CSeq_submit> submit, std::ostream& ostream);
     void ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_update_date, CRef<CSeq_submit>& submit, CRef<CSeq_entry>& entry);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessAlignmentFile(CNcbiOstream* output);

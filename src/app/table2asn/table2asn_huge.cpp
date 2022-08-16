@@ -52,6 +52,7 @@
 #include <future>
 
 BEGIN_NCBI_SCOPE
+
 USING_SCOPE(objects);
 USING_SCOPE(objects::edit);
 
@@ -92,7 +93,7 @@ struct THugeFileWriteContext
     CHugeFile         file;
     CHugeAsnReader    asn_reader;
     bool              is_fasta = false;
-    IHugeAsnSource*   source     = nullptr;
+    IHugeAsnSource*   source   = nullptr;
     CRef<CSeq_entry>  m_topentry;
     CRef<CSeq_submit> m_submit;
 
@@ -148,12 +149,120 @@ struct THugeFileWriteContext
 
 };
 
-class CGenBankAsyncWriter
+template<typename _token>
+class TAsyncPipeline
 {
 public:
-    using TFuture = std::future<CConstRef<CSeq_entry>>;
-    using TPullFutureFunction = std::function<std::future<CConstRef<CSeq_entry>>(void)>;
-    using TPullEntryFunction  = std::function<CConstRef<CSeq_entry>(void)>;
+    using TToken  = _token;
+    using TFuture = std::future<TToken>;
+    using TProcessFunction  = std::function<void(TToken&)>;
+    using TPullNextFunction = std::function<bool(TToken&)>;
+    using TProcessingQueue  = CMessageQueue<TFuture>;
+    TAsyncPipeline() {}
+    ~TAsyncPipeline() {}
+
+    void SetDepth(size_t n) {
+        m_queue.Trottle().m_limit = n;
+    }
+
+    void PostData(TToken data, TProcessFunction process_func)
+    {
+        TFuture fut = std::async(std::launch::async, [process_func](TToken _data) -> TToken
+            {
+                process_func(_data);
+                return _data;
+            },
+            data);
+        m_queue.push_back(std::move(fut));
+    }
+
+    void PostException(std::exception_ptr _excp_ptr)
+    {
+        m_queue.clear();
+        std::promise<TToken> exc_prom;
+        std::future<TToken> fut = exc_prom.get_future();
+        exc_prom.set_exception(_excp_ptr);
+        m_queue.push_back(std::move(fut));
+    }
+
+    void Complete()
+    {
+        m_queue.push_back({});
+    }
+
+    auto ReceiveData(TProcessFunction consume_func)
+    {
+        return std::async(std::launch::async, [consume_func, this]()
+            {
+                while(true)
+                {
+                    auto token_future = x_pop_front();
+                    if (!token_future.valid())
+                        break;
+                    auto token = token_future.get(); // this can throw an exception that was caught within the thread
+                    //if (chain_func) chain_func(token);
+                    if (consume_func) {
+                        consume_func(token);
+                    }
+                }
+            });
+    }
+
+protected:
+    auto x_pop_front()
+    {
+        return m_queue.pop_front();
+    }
+
+    std::future<void> x_make_producer_task(TPullNextFunction pull_next_token, TProcessFunction process_func)
+    {
+        return std::async(std::launch::async, [this, pull_next_token, process_func]()
+            {
+                try
+                {
+                    TAsyncToken token;
+                    while ((pull_next_token(token)))
+                    {
+                        PostData(token, process_func);
+                    }
+                    Complete();
+                }
+                catch(...)
+                {
+                    PostException(std::current_exception());
+                }
+            }
+        );
+    }
+
+private:
+    TProcessingQueue m_queue {5};
+};
+
+class CFlatFileAsyncWriter: public TAsyncPipeline<TAsyncToken>
+{
+public:
+    using _MyBase = TAsyncPipeline<TAsyncToken>;
+    CFlatFileAsyncWriter()  {}
+    ~CFlatFileAsyncWriter() {}
+
+    auto Write(std::ostream& o_stream) {
+        TProcessFunction _f = [&o_stream](TAsyncToken& token)
+            {
+                o_stream << std::move(token.ff);
+            };
+        return ReceiveData(_f);
+    }
+private:
+};
+
+class CGenBankAsyncWriter: public TAsyncPipeline<TAsyncToken>
+{
+public:
+    using _MyBase = TAsyncPipeline<TAsyncToken>;
+    using _MyBase::TProcessFunction;
+    using _MyBase::TPullNextFunction;
+    using _MyBase::TToken;
 
     CGenBankAsyncWriter(CObjectOStream* o_stream)
         : m_ostream{o_stream}
@@ -161,80 +270,74 @@ public:
     ~CGenBankAsyncWriter()
     {}
 
-    virtual void Write(CConstRef<CSerialObject> topobject)
+    void Write(CConstRef<CSerialObject> topobject)
     {
         *m_ostream << *topobject;
     }
 
-    static TFuture MakeEmptyFuture(CConstRef<CSeq_entry> entry)
+    void WriteAsyncMT(CConstRef<CSerialObject> topobject,
+            TPullNextFunction pull_next_token,
+            TProcessFunction process_func,
+            TProcessFunction chain_func)
     {
-        std::promise<CConstRef<CSeq_entry>> prom;
-        std::future<CConstRef<CSeq_entry>> fut = prom.get_future();
-        prom.set_value(entry);
-        return fut;
+        auto pull_next_task = x_make_producer_task(pull_next_token, process_func);
+
+        TPullNextFunction get_next_token = [this, chain_func](TToken& token) -> bool
+        {
+            auto token_future = x_pop_front();
+            if (!token_future.valid())
+                return false;
+            token = token_future.get(); // this can throw an exception that was caught within the thread
+            if (chain_func) {
+                chain_func(token);
+            }
+            return true;
+        };
+
+        x_write(topobject, get_next_token);
     }
 
-    virtual void Write(CConstRef<CSerialObject> topobject, TPullEntryFunction pull_next_entry)
+    void WriteAsyncST(CConstRef<CSerialObject> topobject,
+            TPullNextFunction pull_next_token,
+            TProcessFunction process_func,
+            TProcessFunction chain_func)
     {
-        Write(topobject, [pull_next_entry]() -> TFuture
-            {
-                auto entry = pull_next_entry();
-                if (entry)
-                    return MakeEmptyFuture(entry);
-                else
-                    return {};
+        auto get_next_token = [this, pull_next_token, process_func, chain_func](TToken& token) -> bool
+        {
+            if (!pull_next_token(token))
+                return false;
+
+            process_func(token);
+            if (chain_func) {
+                chain_func(token);
             }
-        );
+            return true;
+        };
+
+        x_write(topobject, get_next_token);
     }
 
-    virtual void Write(CConstRef<CSerialObject> topobject, TPullFutureFunction pull_next_future)
+protected:
+
+    void x_write(CConstRef<CSerialObject> topobject, TPullNextFunction get_next_token)
     {
-        CMessageQueue<TFuture> proc_queue(5);
-        auto pull_future = std::async(std::launch::async, [&proc_queue, pull_next_future, this]
-            {
-                try
-                {
-                    TFuture future_entry;
-                    while ((future_entry = pull_next_future()).valid())
-                    {
-                        proc_queue.push_back(std::move(future_entry));
-                    }
-                    proc_queue.push_back({});
-
-                }
-                catch(...)
-                {
-                    proc_queue.clear();
-
-                    // wrap exception into the process queue
-                    std::promise<CConstRef<CSeq_entry>> exc_prom;
-                    std::future<CConstRef<CSeq_entry>> fut = exc_prom.get_future();
-                    exc_prom.set_exception(std::current_exception());
-                    proc_queue.push_back(std::move(fut));
-                }
-            }
-        );
-
         size_t bioseq_level = 0;
         auto seq_set_member = CObjectTypeInfo(CBioseq_set::GetTypeInfo()).FindMember("seq-set");
         SetLocalWriteHook(seq_set_member.GetMemberType(), *m_ostream,
-            [this, &bioseq_level, &proc_queue]
+            [this, &bioseq_level, get_next_token]
                 (CObjectOStream& out, const CConstObjectInfo& object)
         {
             bioseq_level++;
             if (bioseq_level == 1)
             {
                 COStreamContainer out_container(out, object.GetTypeInfo());
-                while(true)
+                TToken token;
+                while(get_next_token(token))
                 {
-                    auto entry_future = proc_queue.pop_front();
-                    if (!entry_future.valid())
-                        break;
-                    auto entry = entry_future.get(); // this can throw an exception that was caught within the thread
-                    if (entry)
+                    auto entry = token.entry;
+                    if (entry) {
                         out_container << *entry;
-                    else
-                        break;
+                    }
                 }
             } else {
                 object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
@@ -245,7 +348,6 @@ public:
         *m_ostream << *topobject;
     }
 
-protected:
 private:
     CObjectOStream* m_ostream = nullptr;
 };
@@ -357,43 +459,31 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             m_context.MergeSeqDescr(*top_set, *descrs, true);
         }
 
-#ifdef TABLE2ASN_ALLOW_MT
-        std::mutex proc_mutex;
-        auto process_async = [&context, this, &proc_mutex](CRef<CSeq_entry> entry) -> CConstRef<CSeq_entry>
+        auto process_async = [&context, this](TAsyncToken& token)
             {
-                CRef<CSeq_submit> temp_submit;
-                CRef<CSeq_entry> temp_top;
-                context.PopulateTempTopObject(temp_submit, temp_top, entry);
-
-                std::lock_guard<std::mutex> g(proc_mutex);
-                ProcessSingleEntry(context.file.m_format, temp_submit, temp_top);
-                return entry;
+                ProcessSingleEntry(context.file.m_format, token);
             };
 
-        auto produce_next_future = [&context, process_async]() -> CGenBankAsyncWriter::TFuture
-        {
-            CRef<CSeq_entry> entry = context.next_entry();
-            if (entry) {
-                CGenBankAsyncWriter::TFuture fut = std::async(std::launch::async, process_async, entry);
-                //std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                return fut;
-            }
-            return {};
-        };
-#else
-        auto produce_next_entry = [&context, this]() -> CConstRef<CSeq_entry>
-        {
-            CRef<CSeq_entry> entry = context.next_entry();
-            if (entry) {
-                CRef<CSeq_submit> temp_submit;
-                CRef<CSeq_entry> temp_top;
-                context.PopulateTempTopObject(temp_submit, temp_top, entry);
-                ProcessSingleEntry(context.file.m_format, temp_submit, temp_top);
-            }
-            return entry;
+        std::mutex proc_mutex;
+        auto make_ff_async = [this, &proc_mutex](TAsyncToken& token) {
+            std::stringstream ostr;
+
+            std::lock_guard<std::mutex> g{proc_mutex};
+
+            MakeFlatFile(token.seh, token.submit, ostr);
+
+            token.ff = ostr.str();
+            //std::cerr << token.ff;
         };
 
-#endif
+        auto make_next_token = [&context](TAsyncToken& token) -> bool
+        {
+            token.entry = context.next_entry();
+            if (token.entry.Empty())
+                return false;
+            context.PopulateTempTopObject(token.submit, token.top_entry, token.entry);
+            return true;
+        };
 
         CConstRef<CSerialObject> topobject; // top object is used to write output, can be submit, entry, bioseq, bioseq_set
 
@@ -419,23 +509,51 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
         CGenBankAsyncWriter async_writer(ostr.get());
 
+        CGenBankAsyncWriter::TProcessFunction chain_func;
+
+        if (m_context.m_make_flatfile) {
+            chain_func = [this](TAsyncToken& token) {
+                MakeFlatFile(token.seh, token.submit, m_context.GetOstream(".gbf"));
+            };
+        }
+
         if (m_context.m_huge_files_mode)
         {
             bool need_update_date = !context.is_fasta && CheckDescriptors(context.asn_reader, CSeqdesc::e_Create_date);
 
             ProcessTopEntry(context.file.m_format, need_update_date, context.m_submit, context.m_topentry);
-            #ifdef TABLE2ASN_ALLOW_MT
-                async_writer.Write(topobject, produce_next_future);
-            #else
-                async_writer.Write(topobject, produce_next_entry);
+            bool allow_mt = true;
+            #ifdef _DEBUG
+            //allow_mt = true;
             #endif
-
-
+            if (allow_mt) {
+                auto ff_file = m_context.GetOstream(".gbf");
+                unique_ptr<CFlatFileAsyncWriter> ff_writer;
+                std::future<void> ff_task;
+                if (m_context.m_make_flatfile) {
+                    ff_writer.reset(new CFlatFileAsyncWriter);
+                    chain_func = [&ff_writer, make_ff_async](CGenBankAsyncWriter::TToken& token) {
+                        ff_writer->PostData(token, make_ff_async);
+                    };
+                    ff_task = ff_writer->Write(ff_file);
+                }
+                async_writer.WriteAsyncMT(topobject, make_next_token, process_async, chain_func);
+                if (ff_writer) {
+                    // signal ff writer to stop
+                    ff_writer->Complete();
+                }
+                // now it will wait until ff_task completes
+            } else {
+                async_writer.WriteAsyncST(topobject, make_next_token, process_async, chain_func);
+            }
         } else {
-            ProcessSingleEntry(context.file.m_format, context.m_submit, context.m_topentry);
-            //if (context.m_submit.Empty()) topobject = context.m_topentry;
-
+            TAsyncToken token;
+            token.submit = context.m_submit;
+            token.entry  = token.top_entry = context.m_topentry;
+            process_async(token);
             async_writer.Write(topobject);
+            if (chain_func)
+                chain_func(token);
         }
 
     }
