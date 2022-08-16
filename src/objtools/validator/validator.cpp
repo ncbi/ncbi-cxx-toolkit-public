@@ -341,16 +341,15 @@ CConstRef<CValidError> CValidator::Validate
 }
 
 
-bool CValidator::ValidateStructuredComment(
-        const CSeqdesc& desc,
-        CValidError& errors)
+bool CValidator::IsValidStructuredComment(
+        const CSeqdesc& desc) const
 {
     if (!desc.IsUser()) {
         return false;
     }
 
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors);
-    return CValidError_desc(imp).ValidateStructuredComment(desc.GetUser(), desc);
+    CValidError_imp imp(const_cast<CObjectManager&>(*m_ObjMgr), m_pContext, nullptr);
+    return CValidError_desc(imp).IsValidStructuredComment(desc);
 }
 
 
