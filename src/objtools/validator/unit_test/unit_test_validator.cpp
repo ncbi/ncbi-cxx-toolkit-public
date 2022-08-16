@@ -25090,6 +25090,29 @@ BOOST_AUTO_TEST_CASE(Test_RW_1064)
 
 }
 
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_RW_1753)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetLocs();
+
+    auto pObjMgr = CObjectManager::GetInstance();
+    CScope scope(*pObjMgr);
+    auto sah = scope.AddSeq_annot(*annot);
+
+    vector<CExpectedError*> expected_errors;
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "AnnotLOCs",
+                              "Record contains Seq-annot.data.locs"));
+
+    unsigned int options{0};
+    auto pErrors = Ref(new CValidError());
+    CValidator(*pObjMgr).Validate(sah, options, *pErrors);
+    CheckErrors(*pErrors, expected_errors);
+    
+    CLEAR_ERRORS
+}
+
 #if 0
 BOOST_AUTO_TEST_CASE(Test_TM_897)
 {
