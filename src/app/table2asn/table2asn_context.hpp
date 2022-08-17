@@ -40,35 +40,6 @@ class CMemorySrcFileMap;
 
 #include <objects/seq/Seqdesc.hpp>
 
-template<typename _Stream, size_t _bufsize=8192*2>
-class CBufferedStream
-{
-public:
-    CBufferedStream() {}
-    ~CBufferedStream() {}
-
-    operator _Stream&()
-    {
-        return get();
-    }
-    _Stream& get()
-    {
-        if (!m_buffer)
-        {
-            m_buffer.reset(new char[bufsize]);
-            m_stream.rdbuf()->pubsetbuf(m_buffer.get(), bufsize);
-        }
-        return m_stream;
-    }
-private:
-    static constexpr size_t bufsize = _bufsize;
-    unique_ptr<char> m_buffer;
-    _Stream m_stream;
-};
-
-//using CBufferedOutput = CBufferedStream<CNcbiOfstream>;
-using CBufferedInput  = CBufferedStream<CNcbiIfstream>;
-
 // command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
 class CTable2AsnContext
