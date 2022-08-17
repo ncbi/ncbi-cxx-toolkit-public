@@ -52,6 +52,35 @@ private:
     TSharedStreamMap::mapped_type* m_owner = nullptr;
 };
 
+template<typename _Stream, size_t _bufsize=8192*2>
+class CBufferedStream
+{
+public:
+    CBufferedStream() {}
+    ~CBufferedStream() {}
+
+    operator _Stream&()
+    {
+        return get();
+    }
+    _Stream& get()
+    {
+        if (!m_buffer)
+        {
+            m_buffer.reset(new char[bufsize]);
+            m_stream.rdbuf()->pubsetbuf(m_buffer.get(), bufsize);
+        }
+        return m_stream;
+    }
+private:
+    static constexpr size_t bufsize = _bufsize;
+    unique_ptr<char> m_buffer;
+    _Stream m_stream;
+};
+
+//using CBufferedOutput = CBufferedStream<CNcbiOfstream>;
+using CBufferedInput  = CBufferedStream<CNcbiIfstream>;
+
 END_NCBI_SCOPE
 
 #endif
