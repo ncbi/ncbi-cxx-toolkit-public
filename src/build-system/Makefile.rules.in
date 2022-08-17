@@ -226,7 +226,9 @@ clean-common:
 	-$(RMDIR) SunWS_cache
 	-$(RMDIR) ii_files
 	-$(RMDIR) ti_files
+ifeq "no" "$(need_flag_stamps)"
 	-$(RMDIR) $(stamp_dir)
+endif
 	-$(RM) .make.state
 	-$(RM) $(SOURCES:=.d) $(SOURCES:=.gcda) $(SOURCES:=.gcno)
 	-$(RM) ir.out
