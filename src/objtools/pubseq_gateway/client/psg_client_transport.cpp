@@ -67,6 +67,7 @@ NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
 NCBI_PARAM_DEF(size_t, PSG, requests_per_io,          1);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
+NCBI_PARAM_DEF(unsigned, PSG, refused_stream_retries, 2);
 NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
 NCBI_PARAM_DEF(bool,     PSG, user_request_ids,       false);
 NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
@@ -603,7 +604,7 @@ SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestCont
     reply(r),
     context(c),
     m_State(&SPSG_Request::StatePrefix),
-    m_Retries(params.request_retries)
+    m_Retries(params.request_retries, params.refused_stream_retries)
 {
     _ASSERT(reply);
 }
@@ -613,7 +614,7 @@ bool SPSG_Request::StatePrefix(const char*& data, size_t& len)
     static const string kPrefix = "\n\nPSG-Reply-Chunk: ";
 
     // No retries after receiving any data
-    m_Retries = 0;
+    m_Retries = make_pair(0u, 0u);
 
     auto& index = m_Buffer.prefix_index;
 
