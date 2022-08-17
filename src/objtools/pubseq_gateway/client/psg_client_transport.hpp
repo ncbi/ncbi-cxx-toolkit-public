@@ -202,6 +202,7 @@ struct SPSG_Params
     TPSG_DebugPrintout debug_printout;
     TPSG_RequestsPerIo requests_per_io;
     TPSG_RequestRetries request_retries;
+    TPSG_RefusedStreamRetries refused_stream_retries;
     TPSG_UserRequestIds user_request_ids;
     TPSG_PsgClientMode client_mode;
 
@@ -209,6 +210,7 @@ struct SPSG_Params
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         requests_per_io(TPSG_RequestsPerIo::eGetDefault),
         request_retries(TPSG_RequestRetries::eGetDefault),
+        refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
@@ -423,7 +425,8 @@ struct SPSG_Request
 
     unsigned GetRetries(bool refused_stream)
     {
-        return reply->reply_item->state.InProgress() && (m_Retries > 0) ? (refused_stream ? m_Retries : m_Retries--) : 0;
+        auto& retries = refused_stream ? m_Retries.second : m_Retries.first;
+        return reply->reply_item->state.InProgress() && retries ? retries-- : 0;
     }
 
 private:
@@ -452,7 +455,7 @@ private:
 
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
-    unsigned m_Retries;
+    pair<unsigned, unsigned> m_Retries;
 };
 
 struct SPSG_TimedRequest

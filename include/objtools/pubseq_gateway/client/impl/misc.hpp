@@ -351,6 +351,9 @@ using TPSG_RequestsPerIo = PSG_PARAM_VALUE_TYPE(PSG, requests_per_io);
 NCBI_PARAM_DECL(unsigned, PSG, request_retries);
 using TPSG_RequestRetries = PSG_PARAM_VALUE_TYPE(PSG, request_retries);
 
+NCBI_PARAM_DECL(unsigned, PSG, refused_stream_retries);
+using TPSG_RefusedStreamRetries = PSG_PARAM_VALUE_TYPE(PSG, refused_stream_retries);
+
 NCBI_PARAM_DECL(string, PSG, request_user_args);
 typedef NCBI_PARAM_TYPE(PSG, request_user_args) TPSG_RequestUserArgs;
 
