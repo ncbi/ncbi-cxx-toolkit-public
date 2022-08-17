@@ -797,14 +797,14 @@ int CTbl2AsnApp::Run()
                     "The specified input file \"" + m_context.m_current_file + "\" does not exist.",
                     *m_logger);
             }
-            if (argAsFile.GetLength() > TBL2ASN_MAX_ALLOWED_FASTA_SIZE) {
+            if (argAsFile.GetLength() > TBL2ASN_MAX_ALLOWED_FASTA_SIZE && !m_context.m_can_use_huge_files) {
                 if (CFormatGuess::Format(m_context.m_current_file) == CFormatGuess::eFasta) {
                     s_FailOnBadInput(
                         "The specified input file \"" +
                             m_context.m_current_file +
                             "\" is too long. The maximum permissible file size for a FASTA sequence is " +
                             NStr::NumericToString(TBL2ASN_MAX_ALLOWED_FASTA_SIZE, NStr::fWithCommas) +
-                            " bytes.",
+                            " bytes. Consider using experimental huge mode.",
                         *m_logger);
                 }
             }

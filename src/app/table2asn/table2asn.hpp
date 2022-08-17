@@ -58,7 +58,6 @@ struct TAsyncToken
     CRef<CSeq_entry>  top_entry;
     CRef<CScope>      scope;
     CSeq_entry_Handle seh;
-    std::string       ff;
 };
 
 
