@@ -739,7 +739,7 @@ int CTbl2AsnApp::Run()
         if (args["t"])
         {
             m_context.m_t = true;
-            m_reader->LoadTemplate(m_context, args["t"].AsString());
+            m_reader->LoadTemplate(args["t"].AsString());
         }
     }
     catch (const CException&)

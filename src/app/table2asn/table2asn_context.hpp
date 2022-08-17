@@ -180,7 +180,7 @@ public:
     mutable std::mutex m_mutex;
 
 private:
-    static void x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq);
+    static void x_ApplyAccession(const CTable2AsnContext& context, objects::CBioseq& bioseq);
     TSharedStreamMap m_outputs;
     std::mutex m_outputs_mutex;
 };
