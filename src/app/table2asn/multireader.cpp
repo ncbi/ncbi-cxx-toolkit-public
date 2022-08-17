@@ -177,7 +177,7 @@ namespace
     };
 }
 
-CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info)
+CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info) const
 {
     const string& content_type = content_info.mObjectType;
     if (content_type == "Bioseq-set")
@@ -212,7 +212,7 @@ CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, con
     return {};
 }
 
-CRef<CSerialObject> CMultiReader::xReadASN1Text(CObjectIStream& pObjIstrm)
+CRef<CSerialObject> CMultiReader::xReadASN1Text(CObjectIStream& pObjIstrm) const
 {
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
@@ -516,7 +516,7 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 }
 */
 
-void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_desc)
+void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_desc) const
 {
     out_desc.Reset(new CSeq_descr);
 
@@ -564,7 +564,7 @@ void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_
     }
 }
 
-void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname)
+void CMultiReader::LoadTemplate(const string& ifname)
 {
     unique_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(ifname);
 
@@ -573,19 +573,19 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
 
     // do the right thing depending on the input type
     if( sType == CSeq_entry::GetTypeInfo()->GetName() ) {
-        context.m_entry_template.Reset( new CSeq_entry );
-        pObjIstrm->Read(ObjectInfo(*context.m_entry_template), CObjectIStream::eNoFileHeader);
+        m_context.m_entry_template.Reset( new CSeq_entry );
+        pObjIstrm->Read(ObjectInfo(*m_context.m_entry_template), CObjectIStream::eNoFileHeader);
     } else if( sType == CBioseq::GetTypeInfo()->GetName() ) {
         CRef<CBioseq> pBioseq( new CBioseq );
         pObjIstrm->Read(ObjectInfo(*pBioseq), CObjectIStream::eNoFileHeader);
-        context.m_entry_template.Reset( new CSeq_entry );
-        context.m_entry_template->SetSeq( *pBioseq );
+        m_context.m_entry_template.Reset( new CSeq_entry );
+        m_context.m_entry_template->SetSeq( *pBioseq );
     } else if( sType == CSeq_submit::GetTypeInfo()->GetName() ) {
 
-        context.m_submit_template.Reset( new CSeq_submit );
-        pObjIstrm->Read(ObjectInfo(*context.m_submit_template), CObjectIStream::eNoFileHeader);
-        if (!context.m_submit_template->GetData().IsEntrys()
-            || context.m_submit_template->GetData().GetEntrys().size() != 1)
+        m_context.m_submit_template.Reset( new CSeq_submit );
+        pObjIstrm->Read(ObjectInfo(*m_context.m_submit_template), CObjectIStream::eNoFileHeader);
+        if (!m_context.m_submit_template->GetData().IsEntrys()
+            || m_context.m_submit_template->GetData().GetEntrys().size() != 1)
         {
             throw runtime_error("Seq-submit template must contain "
                 "exactly one Seq-entry");
@@ -598,14 +598,14 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
             CObjectIStream::eNoFileHeader);
 
         // Build a Seq-submit containing this plus a bogus Seq-entry
-        context.m_submit_template.Reset( new CSeq_submit );
-        context.m_submit_template->SetSub(*submit_block);
+        m_context.m_submit_template.Reset( new CSeq_submit );
+        m_context.m_submit_template->SetSub(*submit_block);
         CRef<CSeq_entry> ent(new CSeq_entry);
         CRef<CSeq_id> dummy_id(new CSeq_id("lcl|dummy_id"));
         ent->SetSeq().SetId().push_back(dummy_id);
         ent->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
         ent->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
-        context.m_submit_template->SetData().SetEntrys().push_back(ent);
+        m_context.m_submit_template->SetData().SetEntrys().push_back(ent);
     } else if ( sType == CSeqdesc::GetTypeInfo()->GetName()) {
         // it's OK
     } else {
@@ -614,21 +614,21 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
     }
 
     // for submit types, pull out the seq-entry inside and remember it
-    if( context.m_submit_template.NotEmpty() && context.m_submit_template->IsEntrys() ) {
-        context.m_entry_template = context.m_submit_template->SetData().SetEntrys().front();
+    if( m_context.m_submit_template.NotEmpty() && m_context.m_submit_template->IsEntrys() ) {
+        m_context.m_entry_template = m_context.m_submit_template->SetData().SetEntrys().front();
     }
 
     // The template may contain a set rather than a seq.
     // That's OK if it contains only one na entry, which we'll use.
-    if (context.m_entry_template.NotEmpty() && context.m_entry_template->IsSet())
+    if (m_context.m_entry_template.NotEmpty() && m_context.m_entry_template->IsSet())
     {
         CRef<CSeq_entry> tmp(new CSeq_entry);
-        ITERATE(CBioseq_set::TSeq_set, ent_iter, context.m_entry_template->GetSet().GetSeq_set())
+        for(auto ent_iter: m_context.m_entry_template->GetSet().GetSeq_set())
         {
             const CSeq_descr* descr = nullptr;
-            if ((*ent_iter)->IsSetDescr())
+            if (ent_iter->IsSetDescr())
             {
-                descr = &(*ent_iter)->GetDescr();
+                descr = &ent_iter->GetDescr();
             }
             if (descr)
             {
@@ -654,7 +654,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
         }
 
         if (tmp->IsSetDescr() && !tmp->GetDescr().Get().empty())
-            context.m_entry_template = tmp;
+            m_context.m_entry_template = tmp;
 
     }
 
@@ -668,8 +668,8 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
             CRef<CSeqdesc> desc(new CSeqdesc);
             pObjIstrm->Read(ObjectInfo(*desc), CObjectIStream::eNoFileHeader);
 
-            if  (context.m_entry_template.Empty())
-                context.m_entry_template.Reset(new CSeq_entry);
+            if  (m_context.m_entry_template.Empty())
+                m_context.m_entry_template.Reset(new CSeq_entry);
 
             {
                 if (desc->IsUser() && desc->GetUser().IsDBLink())
@@ -682,7 +682,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
                 }
             }
 
-            context.m_entry_template->SetSeq().SetDescr().Set().push_back(desc);
+            m_context.m_entry_template->SetSeq().SetDescr().Set().push_back(desc);
 
             if (pObjIstrm->EndOfData())
                 break;
@@ -697,34 +697,34 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
     }
 
 #if 0
-    if ( context.m_submit_template->IsEntrys() ) {
+    if ( m_context.m_submit_template->IsEntrys() ) {
         // Take Seq-submit.sub.cit and put it in the Bioseq
         CRef<CPub> pub(new CPub);
         pub->SetSub().Assign(context.m_submit_template->GetSub().GetCit());
         CRef<CSeqdesc> pub_desc(new CSeqdesc);
         pub_desc->SetPub().SetPub().Set().push_back(pub);
-        context.m_entry_template->SetSeq().SetDescr().Set().push_back(pub_desc);
+        m_context.m_entry_template->SetSeq().SetDescr().Set().push_back(pub_desc);
     }
 #endif
 
-    if( context.m_entry_template.NotEmpty() && ! context.m_entry_template->IsSeq() ) {
+    if( m_context.m_entry_template.NotEmpty() && ! m_context.m_entry_template->IsSeq() ) {
         throw runtime_error("The Seq-entry must be a Bioseq not a Bioseq-set.");
     }
 
-    if (context.m_submit_template.NotEmpty())
+    if (m_context.m_submit_template.NotEmpty())
     {
-        if (context.m_submit_template->IsSetSub() &&
-            context.m_submit_template->GetSub().IsSetCit())
+        if (m_context.m_submit_template->IsSetSub() &&
+            m_context.m_submit_template->GetSub().IsSetCit())
         {
         CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
-        context.m_submit_template->SetSub().SetCit().SetDate(*date);
+        m_context.m_submit_template->SetSub().SetCit().SetDate(*date);
         }
     }
 
 #if 0
     if( args["output-type"].AsString() == "Seq-entry" ) {
         // force Seq-entry by throwing out the Seq-submit
-        context.m_submit_template.Reset( new CSeq_submit );
+        m_context.m_submit_template.Reset( new CSeq_submit );
     }
 #endif
 }
@@ -756,7 +756,7 @@ namespace
     };
 }
 
-void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source)
+void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source) const
 {
     ITERATE(CSeq_descr::Tdata, it, source.Get())
     {
@@ -764,7 +764,7 @@ void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source
     }
 }
 
-void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
+void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source) const
 {
     bool duplicates = (m_allowed_duplicates.find(source.Which()) != m_allowed_duplicates.end());
 
@@ -772,7 +772,7 @@ void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
     desc.Set(duplicates).Assign(source);
 }
 
-void CMultiReader::ApplyDescriptors(CSeq_entry& entry, const CSeq_descr& source)
+void CMultiReader::ApplyDescriptors(CSeq_entry& entry, const CSeq_descr& source) const
 {
     MergeDescriptors(entry.SetDescr(), source);
     //g_ApplyDescriptors(source.Get(), entry);
@@ -876,7 +876,7 @@ void CMultiReader::GetSeqEntry(CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submi
     }
 }
 
-CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors)
+CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors) const
 {
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
@@ -949,7 +949,7 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
 }
 
 
-void CMultiReader::x_PostProcessAnnots(TAnnots& annots)
+void CMultiReader::x_PostProcessAnnots(TAnnots& annots) const
 {
     unsigned int startingLocusTagNumber = 1;
     unsigned int startingFeatureId = 1;
@@ -986,13 +986,13 @@ void CMultiReader::x_PostProcessAnnots(TAnnots& annots)
 
 
 
-unique_ptr<CObjectIStream> CMultiReader::xCreateASNStream(const string& filename)
+unique_ptr<CObjectIStream> CMultiReader::xCreateASNStream(const string& filename) const
 {
     unique_ptr<istream> instream(new CNcbiIfstream(filename));
     return xCreateASNStream(CFormatGuess::eUnknown, instream);
 }
 
-unique_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream)
+unique_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream) const
 {
     // guess format
     ESerialDataFormat eSerialDataFormat = eSerial_None;
@@ -1152,7 +1152,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     }
         break;
     case CFormatGuess::eGff3:
-        annots = xReadGFF3(*in);
+        annots = xReadGFF3(*in, true);
         break;
     case CFormatGuess::eGtf:
     case CFormatGuess::eGffAugustus:
@@ -1185,23 +1185,6 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
 }
 
 
-bool CMultiReader::LoadAnnot(CScope& scope, const string& filename)
-{
-    CAnnotationLoader annot_loader;
-
-    if (!xGetAnnotLoader(annot_loader, filename)) {
-        return false;
-    }
-
-    CRef<CSeq_annot> annot_it;
-    while ((annot_it = annot_loader.GetNextAnnot()).NotEmpty())
-    {
-        xFixupAnnot(scope, annot_it);
-    }
-    return true;
-}
-
-
 bool CMultiReader::LoadAnnots(const string& filename, list<CRef<CSeq_annot>>& annots)
 {
     CAnnotationLoader annot_loader;
@@ -1217,7 +1200,7 @@ bool CMultiReader::LoadAnnots(const string& filename, list<CRef<CSeq_annot>>& an
 }
 
 
-void CMultiReader::AddAnnots(list<CRef<CSeq_annot>>& annots, CScope& scope)
+void CMultiReader::AddAnnots(list<CRef<CSeq_annot>>& annots, CScope& scope) const
 {
     for (auto& pAnnot : annots) {
         if (pAnnot)
@@ -1226,7 +1209,7 @@ void CMultiReader::AddAnnots(list<CRef<CSeq_annot>>& annots, CScope& scope)
 }
 
 
-bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it)
+bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it) const
 {
     CRef<CSeq_id> annot_id;
     if (annot_it->IsSetId())
