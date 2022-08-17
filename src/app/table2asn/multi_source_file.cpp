@@ -39,6 +39,7 @@
 #include <condition_variable>
 #include <streambuf>
 #include <atomic>
+#include <array>
 
 //#include <iostream>
 
