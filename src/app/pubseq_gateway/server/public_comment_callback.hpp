@@ -32,7 +32,7 @@
  *
  */
 
-#include "http_server_transport.hpp"
+#include "http_daemon.hpp"
 #include "cass_fetch.hpp"
 
 #include <functional>

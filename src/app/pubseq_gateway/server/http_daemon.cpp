@@ -36,7 +36,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 
-#include "http_server_transport.hpp"
+#include "http_daemon.hpp"
 #include "tcp_daemon.hpp"
 #include "http_proto.hpp"
 
