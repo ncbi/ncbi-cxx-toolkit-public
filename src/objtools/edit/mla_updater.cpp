@@ -171,16 +171,18 @@ string CMLAUpdater::GetTitle(const string& title)
 CRef<CPub> CMLAUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     m_num_requests++;
-    auto it = m_cache.find(pmid);
-    if (it == m_cache.end()) {
-        auto pub = CMLAUpdater::GetPub(pmid, perr);
-        if (pub) {
-            m_cache[pmid] = pub;
-        }
-        return pub;
+    auto& pub = m_cache[pmid];
+    if (pub.Empty()) {
+        pub = CMLAUpdater::GetPub(pmid, perr);
     } else {
         m_cache_hits++;
-        return it->second;
+    }
+    if (pub.Empty())
+        return {};
+    else {
+        auto copied = new CPub();
+        copied->Assign(*pub);
+        return Ref(copied);
     }
 }
 
