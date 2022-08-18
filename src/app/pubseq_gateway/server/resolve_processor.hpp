@@ -44,6 +44,8 @@ class CCassFetch;
 class CPSGS_ResolveProcessor : public CPSGS_ResolveBase
 {
 public:
+    virtual bool CanProcess(shared_ptr<CPSGS_Request> request,
+                            shared_ptr<CPSGS_Reply> reply) const;
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                              shared_ptr<CPSGS_Reply> reply,
                                              TProcessorPriority  priority) const;

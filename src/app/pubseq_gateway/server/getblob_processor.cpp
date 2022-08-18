@@ -74,35 +74,47 @@ CPSGS_GetBlobProcessor::~CPSGS_GetBlobProcessor()
 {}
 
 
-IPSGS_Processor*
-CPSGS_GetBlobProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                        shared_ptr<CPSGS_Reply> reply,
-                                        TProcessorPriority  priority) const
+bool
+CPSGS_GetBlobProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                   shared_ptr<CPSGS_Reply> reply) const
 {
     if (!IsCassandraProcessorEnabled(request))
-        return nullptr;
+        return false;
 
     if (request->GetRequestType() != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest)
-        return nullptr;
+        return false;
 
     auto            blob_request = & request->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     SCass_BlobId    blob_id(blob_request->m_BlobId.GetId());
     if (!blob_id.IsValid())
-        return nullptr;
+        return false;
 
     auto *      app = CPubseqGatewayApp::GetInstance();
     auto        startup_data_state = app->GetStartupDataState();
     if (startup_data_state != ePSGS_StartupDataOK) {
         if (request->NeedTrace()) {
-            reply->SendTrace("Cannot create " + kGetblobProcessorName +
-                             " processor because Cassandra DB "
-                             "is not available.\n" +
+            reply->SendTrace(kGetblobProcessorName + " processor cannot process "
+                             "request because Cassandra DB is not available.\n" +
                              GetCassStartupDataStateMessage(startup_data_state),
                              request->GetStartTimestamp());
         }
-        return nullptr;
+        return false;
     }
 
+    return true;
+}
+
+
+IPSGS_Processor*
+CPSGS_GetBlobProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
+                                        shared_ptr<CPSGS_Reply> reply,
+                                        TProcessorPriority  priority) const
+{
+    if (!CanProcess(request, reply))
+        return nullptr;
+
+    auto            blob_request = & request->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
+    SCass_BlobId    blob_id(blob_request->m_BlobId.GetId());
     return new CPSGS_GetBlobProcessor(request, reply, priority, blob_id);
 }
 

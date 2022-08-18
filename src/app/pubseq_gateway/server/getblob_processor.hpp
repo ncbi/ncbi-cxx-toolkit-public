@@ -44,6 +44,8 @@ class CCassFetch;
 class CPSGS_GetBlobProcessor : public CPSGS_CassBlobBase
 {
 public:
+    virtual bool CanProcess(shared_ptr<CPSGS_Request> request,
+                            shared_ptr<CPSGS_Reply> reply) const;
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                              shared_ptr<CPSGS_Reply> reply,
                                              TProcessorPriority  priority) const;

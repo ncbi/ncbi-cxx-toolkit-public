@@ -36,6 +36,9 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 
+#include "http_request.hpp"
+#include "http_reply.hpp"
+#include "http_connection.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "resolve_processor.hpp"
@@ -2305,34 +2308,20 @@ bool CPubseqGatewayApp::x_DispatchRequest(CRef<CRequestContext>   context,
                                           shared_ptr<CPSGS_Request>  request,
                                           shared_ptr<CPSGS_Reply>  reply)
 {
-    // The dispatcher works in terms of processors while the infrastructure
-    // works in terms of pending operation. So, lets create the corresponding
-    // pending operations.
-    // Note: the case when no processors are available is handled in the
-    //       dispatcher (reply is sent to the client).
+    list<string>    processor_names =
+            m_RequestDispatcher->PreliminaryDispatchRequest(request, reply);
+    if (processor_names.empty())
+        return false;
 
-    list<unique_ptr<CPendingOperation>>     pending_ops;
-    for (auto processor: m_RequestDispatcher->DispatchRequest(request, reply)) {
-        pending_ops.push_back(
-            move(
-                unique_ptr<CPendingOperation>(
-                    new CPendingOperation(request, reply, processor))));
+    if (context.NotNull()) {
+        CDiagContext::SetRequestContext(context);
+        GetDiagContext().Extra().Print("psg_request_id", request->GetRequestId());
     }
 
-    if (!pending_ops.empty()) {
-        if (context.NotNull()) {
-            CDiagContext::SetRequestContext(context);
-            GetDiagContext().Extra().Print("psg_request_id", request->GetRequestId());
-        }
+    reply->SetRequestId(request->GetRequestId());
 
-        reply->SetRequestId(request->GetRequestId());
-        request->SetConcurrentProcessorCount(pending_ops.size());
-
-        auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
-        http_conn->Postpone(move(pending_ops), reply);
-        return true;
-    }
-
-    return false;
+    auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
+    http_conn->Postpone(request, reply, move(processor_names));
+    return true;
 }
 

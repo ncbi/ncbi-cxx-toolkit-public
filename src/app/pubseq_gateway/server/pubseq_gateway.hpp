@@ -499,8 +499,7 @@ private:
     bool                                m_TestSeqIdIgnoreError;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
-    unique_ptr<CHttpDaemon<CPendingOperation>>
-                                        m_TcpDaemon;
+    unique_ptr<CHttpDaemon>             m_TcpDaemon;
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
     unique_ptr<CSplitInfoCache>         m_SplitInfoCache;

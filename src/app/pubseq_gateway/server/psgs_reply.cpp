@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include "pending_operation.hpp"
-#include "http_server_transport.hpp"
+#include "http_reply.hpp"
 #include "psgs_reply.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "cass_fetch.hpp"

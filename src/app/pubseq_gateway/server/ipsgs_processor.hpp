@@ -100,6 +100,20 @@ public:
     {}
 
 public:
+    /// Tells if processor can process the given request
+    /// @param request
+    ///  PSG request to retrieve the data for. It is guaranteed to be not null.
+    /// @param reply
+    ///  The way to send reply chunks to the client. It is guaranteed to
+    ///  be not null.
+    /// @return
+    ///  true if the processor can process the request
+    virtual bool CanProcess(shared_ptr<CPSGS_Request> request,
+                            shared_ptr<CPSGS_Reply> reply) const
+    {
+        return true;
+    }
+
     /// Create processor to fulfil PSG request using the data source
     /// @param request
     ///  PSG request to retrieve the data for. It is guaranteed to be not null.

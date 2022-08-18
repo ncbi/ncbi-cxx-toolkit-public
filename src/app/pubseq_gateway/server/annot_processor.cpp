@@ -83,33 +83,43 @@ CPSGS_AnnotProcessor::~CPSGS_AnnotProcessor()
 {}
 
 
-IPSGS_Processor*
-CPSGS_AnnotProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                      shared_ptr<CPSGS_Reply> reply,
-                                      TProcessorPriority  priority) const
+bool
+CPSGS_AnnotProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                 shared_ptr<CPSGS_Reply> reply) const
 {
     if (!IsCassandraProcessorEnabled(request))
-        return nullptr;
+        return false;
 
     if (request->GetRequestType() != CPSGS_Request::ePSGS_AnnotationRequest)
-        return nullptr;
+        return false;
 
     auto    valid_annots = x_FilterNames(request->GetRequest<SPSGS_AnnotRequest>().m_Names);
     if (valid_annots.empty())
-        return nullptr;
+        return false;
 
     auto *      app = CPubseqGatewayApp::GetInstance();
     auto        startup_data_state = app->GetStartupDataState();
     if (startup_data_state != ePSGS_StartupDataOK) {
         if (request->NeedTrace()) {
-            reply->SendTrace("Cannot create " + kAnnotProcessorName +
-                             " processor because Cassandra DB "
-                             "is not available.\n" +
+            reply->SendTrace(kAnnotProcessorName + " processor cannot process "
+                             " request because Cassandra DB is not available.\n" +
                              GetCassStartupDataStateMessage(startup_data_state),
                              request->GetStartTimestamp());
         }
-        return nullptr;
+        return false;
     }
+
+    return true;
+}
+
+
+IPSGS_Processor*
+CPSGS_AnnotProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
+                                      shared_ptr<CPSGS_Reply> reply,
+                                      TProcessorPriority  priority) const
+{
+    if (!CanProcess(request, reply))
+        return nullptr;
 
     return new CPSGS_AnnotProcessor(request, reply, priority);
 }

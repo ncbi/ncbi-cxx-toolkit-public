@@ -70,31 +70,39 @@ CPSGS_ResolveProcessor::~CPSGS_ResolveProcessor()
 {}
 
 
+bool CPSGS_ResolveProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                        shared_ptr<CPSGS_Reply> reply) const
+{
+    if (!IsCassandraProcessorEnabled(request))
+        return false;
+
+    if (request->GetRequestType() != CPSGS_Request::ePSGS_ResolveRequest)
+        return false;
+
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    auto        startup_data_state = app->GetStartupDataState();
+    if (startup_data_state != ePSGS_StartupDataOK) {
+        if (request->NeedTrace()) {
+            reply->SendTrace(kResolveProcessorName + " processor cannot process "
+                             "request because Cassandra DB is not available.\n" +
+                             GetCassStartupDataStateMessage(startup_data_state),
+                             request->GetStartTimestamp());
+        }
+        return false;
+    }
+    return true;
+}
+
+
 IPSGS_Processor*
 CPSGS_ResolveProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                         shared_ptr<CPSGS_Reply> reply,
                                         TProcessorPriority  priority) const
 {
-    if (!IsCassandraProcessorEnabled(request))
+    if (!CanProcess(request, reply))
         return nullptr;
 
-    if (request->GetRequestType() == CPSGS_Request::ePSGS_ResolveRequest) {
-        auto *      app = CPubseqGatewayApp::GetInstance();
-        auto        startup_data_state = app->GetStartupDataState();
-        if (startup_data_state != ePSGS_StartupDataOK) {
-            if (request->NeedTrace()) {
-                reply->SendTrace("Cannot create " + kResolveProcessorName +
-                                 " processor because Cassandra DB "
-                                 "is not available.\n" +
-                                 GetCassStartupDataStateMessage(startup_data_state),
-                                 request->GetStartTimestamp());
-            }
-            return nullptr;
-        }
-
-        return new CPSGS_ResolveProcessor(request, reply, priority);
-    }
-    return nullptr;
+    return new CPSGS_ResolveProcessor(request, reply, priority);
 }
 
 

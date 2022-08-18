@@ -84,6 +84,17 @@ public:
     /// Register processor (one to serve as a processor factory)
     void AddProcessor(unique_ptr<IPSGS_Processor> processor);
 
+    /// Return list of processor names which reported that they can process the
+    /// request.
+    list<string>
+        PreliminaryDispatchRequest(shared_ptr<CPSGS_Request> request,
+                                   shared_ptr<CPSGS_Reply> reply);
+
+    list<shared_ptr<IPSGS_Processor>>
+        DispatchRequest(shared_ptr<CPSGS_Request> request,
+                        shared_ptr<CPSGS_Reply> reply,
+                        const list<string> &  processor_names);
+
     /// Return list of processors which can be used to process the request.
     /// The caller accepts the ownership.
     list<shared_ptr<IPSGS_Processor>>

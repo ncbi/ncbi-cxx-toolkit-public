@@ -77,30 +77,40 @@ CPSGS_AccessionVersionHistoryProcessor::~CPSGS_AccessionVersionHistoryProcessor(
 {}
 
 
+bool
+CPSGS_AccessionVersionHistoryProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                                   shared_ptr<CPSGS_Reply> reply) const
+{
+    if (!IsCassandraProcessorEnabled(request))
+        return false;
+
+    if (request->GetRequestType() != CPSGS_Request::ePSGS_AccessionVersionHistoryRequest)
+        return false;
+
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    auto        startup_data_state = app->GetStartupDataState();
+    if (startup_data_state != ePSGS_StartupDataOK) {
+        if (request->NeedTrace()) {
+            reply->SendTrace(kAccVerHistProcessorName + " processor cannot process "
+                             "request because Cassandra DB is not available.\n" +
+                             GetCassStartupDataStateMessage(startup_data_state),
+                             request->GetStartTimestamp());
+        }
+        return false;
+    }
+
+    return true;
+}
+
+
 IPSGS_Processor*
 CPSGS_AccessionVersionHistoryProcessor::CreateProcessor(
                                         shared_ptr<CPSGS_Request> request,
                                         shared_ptr<CPSGS_Reply> reply,
                                         TProcessorPriority  priority) const
 {
-    if (!IsCassandraProcessorEnabled(request))
+    if (!CanProcess(request, reply))
         return nullptr;
-
-    if (request->GetRequestType() != CPSGS_Request::ePSGS_AccessionVersionHistoryRequest)
-        return nullptr;
-
-    auto *      app = CPubseqGatewayApp::GetInstance();
-    auto        startup_data_state = app->GetStartupDataState();
-    if (startup_data_state != ePSGS_StartupDataOK) {
-        if (request->NeedTrace()) {
-            reply->SendTrace("Cannot create " + kAccVerHistProcessorName +
-                             " processor because Cassandra DB "
-                             "is not available.\n" +
-                             GetCassStartupDataStateMessage(startup_data_state),
-                             request->GetStartTimestamp());
-        }
-        return nullptr;
-    }
 
     return new CPSGS_AccessionVersionHistoryProcessor(request, reply, priority);
 }
