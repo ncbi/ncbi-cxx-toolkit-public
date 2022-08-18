@@ -36,20 +36,30 @@ private:
     std::atomic<size_t> m_counter{0};
 };
 
-using TSharedStreamMap = std::map<std::string, std::tuple<std::string, unique_ptr<std::ostream>, std::mutex>>;
+class CSharedOStream;
+class CSharedStreamMap: public std::map<std::string, std::tuple<std::string, unique_ptr<std::ostream>, std::mutex>>
+{
+public:
+    CSharedOStream GetOstream(CTempString suffix);
+    void ClearOstream(const CTempString& suffix);
+private:
+    std::mutex m_mutex;
+};
 
 class CSharedOStream
 {
 public:
-    CSharedOStream(TSharedStreamMap::mapped_type* owner);
+    CSharedOStream(CSharedStreamMap::mapped_type* owner);
     CSharedOStream(const CSharedOStream&) = delete;
     CSharedOStream(CSharedOStream&&) = default;
+    CSharedOStream& operator=(CSharedOStream&&) = default;
     CSharedOStream() = default;
     ~CSharedOStream();
     operator std::ostream&() { return get(); };
     std::ostream& get();
+    std::string& filename() { return std::get<0>(*m_owner); }
 private:
-    TSharedStreamMap::mapped_type* m_owner = nullptr;
+    CSharedStreamMap::mapped_type* m_owner = nullptr;
 };
 
 template<typename _Stream, size_t _bufsize=8192*2>

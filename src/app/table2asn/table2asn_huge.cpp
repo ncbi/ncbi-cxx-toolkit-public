@@ -530,8 +530,8 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             };
 
         std::mutex ff_mutex;
-        auto make_ff_async = [this, &ff_mutex](TAsyncToken& token, std::ostream& ostr) {
-
+        auto make_ff_async = [this, &ff_mutex](TAsyncToken& token, std::ostream& ostr)
+        {
             //std::lock_guard<std::mutex> g{ff_mutex};
             MakeFlatFile(token.seh, token.submit, ostr);
         };
@@ -585,12 +585,13 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             ProcessTopEntry(context.file.m_format, need_update_date, context.m_submit, context.m_topentry);
             bool allow_mt = false;
             #ifdef _DEBUG
-            //allow_mt = true;
+            allow_mt = true;
             #endif
             if (allow_mt) {
-                auto ff_file = m_context.GetOstream(".gbf");
+                CSharedOStream ff_file;
                 CFlatFileAsyncWriter<TAsyncToken> ff_writer;
                 if (m_context.m_make_flatfile) {
+                    ff_file = m_context.GetOstream(".gbf");
                     ff_chain_func = [&ff_writer, make_ff_async](CGenBankAsyncWriter::TToken& token) {
                         ff_writer.Post(token, make_ff_async);
                     };
@@ -599,8 +600,11 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
                 async_writer.WriteAsyncMT(topobject, make_next_token, process_async, ff_chain_func);
                 // now it will wait until all ff_writer tasks complete
             } else {
-                async_writer.WriteAsync2T(topobject, make_next_token, process_async, ff_chain_func);
-                //async_writer.WriteAsyncST(topobject, make_next_token, process_async, ff_chain_func);
+                #ifdef _DEBUG
+                    async_writer.WriteAsyncST(topobject, make_next_token, process_async, ff_chain_func);
+                #else
+                    async_writer.WriteAsync2T(topobject, make_next_token, process_async, ff_chain_func);
+                #endif
             }
         } else {
             TAsyncToken token;
