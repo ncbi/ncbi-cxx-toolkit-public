@@ -90,9 +90,9 @@
 #include <common/ncbi_revision.h>
 
 #ifndef NCBI_SC_VERSION
-#   define FLATFILE_PARSER_ENABLED
+#   define THIS_IS_TRUNK_BUILD
 #elif (NCBI_SC_VERSION == 0)
-#   define FLATFILE_PARSER_ENABLED
+#   define THIS_IS_TRUNK_BUILD
 #endif
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -908,10 +908,12 @@ int CTbl2AsnApp::Run()
         }
     }
 
-    if (m_logger->Count() == 0)
+    if (m_logger->Count() == 0) {
+        #ifdef THIS_IS_TRUNK_BUILD
+            m_context.m_remote_updater->ReportStats(std::cerr);
+        #endif
         return 0;
-    else
-    {
+    } else {
         m_logger->Dump();
         //m_logger->DumpAsXML(NcbiCout);
 
@@ -965,9 +967,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     const bool readModsFromTitle =
         inputFormat == CFormatGuess::eFasta ||
         inputFormat == CFormatGuess::eAlignment;
-    ProcessSecretFiles1Phase(
-            readModsFromTitle,
-            *entry);
+    ProcessSecretFiles1Phase(readModsFromTitle, *entry);
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
@@ -1140,9 +1140,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
     const bool readModsFromTitle =
         inputFormat == CFormatGuess::eFasta ||
         inputFormat == CFormatGuess::eAlignment;
-    ProcessSecretFiles1Phase(
-            readModsFromTitle,
-            *entry);
+    ProcessSecretFiles1Phase(readModsFromTitle, *entry);
     }
 
     if (m_context.m_RemoteTaxonomyLookup)
@@ -1491,10 +1489,13 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
             m_reader->ApplyDescriptors(result, *m_secret_files->m_descriptors);
     }
 
-    CScope scope(*m_context.m_ObjMgr);
-    scope.AddTopLevelSeqEntry(result);
+    if (!m_global_files.m_Annots.empty() || !m_secret_files->m_Annots.empty())
+    {
+        CScope scope(*m_context.m_ObjMgr);
+        scope.AddTopLevelSeqEntry(result);
 
-    AddAnnots(scope);
+        AddAnnots(scope);
+    }
 }
 
 void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result) const
@@ -1628,7 +1629,7 @@ void CTbl2AsnApp::LoadAdditionalFiles()
         for (auto suffix : {".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
             LoadAnnots(name + suffix, m_secret_files->m_Annots);
         }
-#ifdef FLATFILE_PARSER_ENABLED
+#ifdef THIS_IS_TRUNK_BUILD
         for (auto suffix : {".gbf"}) {
             LoadAnnots(name + suffix, m_secret_files->m_Annots);
         }
