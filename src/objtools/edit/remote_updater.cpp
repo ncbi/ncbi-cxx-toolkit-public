@@ -291,7 +291,9 @@ bool CRemoteUpdater::xSetFromConfig()
                 m_pm_source = EPubmedSource::eNone;
             }
 
-            m_pm_use_cache = cfg.GetBool("RemotePubmedUpdate", "UseCache", false);
+            if (cfg.HasEntry("RemotePubmedUpdate", "UseCache")) {
+                m_pm_use_cache = cfg.GetBool("RemotePubmedUpdate", "UseCache", true);
+            }
         }
 
         if (cfg.HasEntry("RemoteTaxonomyUpdate")) {
