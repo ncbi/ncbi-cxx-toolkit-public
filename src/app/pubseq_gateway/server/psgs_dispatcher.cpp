@@ -199,6 +199,10 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         if (p) {
             m_ProcessorConcurrency[proc_index].IncrementCurrentCount();
 
+            // Memorize the UV thread so that it can be used later to bind to
+            // the proper uv loop
+            p->SetUVThreadId(uv_thread_self());
+
             ret.push_back(p);
 
             procs->m_Processors.emplace_back(p, ePSGS_Up,
