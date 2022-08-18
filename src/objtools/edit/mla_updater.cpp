@@ -186,8 +186,7 @@ CRef<CPub> CMLAUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
 
 void CMLAUpdaterWithCache::ReportStats(std::ostream& os)
 {
-    os << "CMLAUpdater: cache hits\n";
-    os << "CMLAUpdater: cache_hits " << m_cache_hits << " out of " << m_num_requests << " requests\n";
+    os << "CMLAUpdater: " << m_cache_hits << " cache_hits out of " << m_num_requests << " requests\n";
 }
 
 void CMLAUpdaterWithCache::ClearCache()

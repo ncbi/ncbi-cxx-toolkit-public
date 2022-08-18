@@ -440,8 +440,7 @@ CRef<CPub> CEUtilsUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
 
 void CEUtilsUpdaterWithCache::ReportStats(std::ostream& os)
 {
-    os << "CEUtilsUpdater: cache hits\n";
-    os << "CEUtilsUpdater: cache_hits " << m_cache_hits << " out of " << m_num_requests << " requests\n";
+    os << "CEUtilsUpdater: " << m_cache_hits << " cache_hits out of " << m_num_requests << " requests\n";
 }
 
 void CEUtilsUpdaterWithCache::ClearCache()
