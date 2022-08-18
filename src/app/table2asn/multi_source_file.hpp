@@ -37,7 +37,8 @@
 #include <memory>
 #include <ostream>
 
-BEGIN_NCBI_NAMESPACE;
+BEGIN_NCBI_SCOPE;
+BEGIN_NAMESPACE(objects);
 
 // forward declarations
 
@@ -58,32 +59,33 @@ class CMultiSourceWriterImpl;
 
 /*
     {
-        ncbi::CMultiSourceWriter writer;
+        ncbi::objects::CMultiSourceWriter writer;
         writer.Open(std::cerr);
 
         {
-            // creating two streams, the output will be concatenated in the order NewStream is invoked
+            // creating two substreams, the output will be concatenated in the order NewStream is invoked
+            // regardless of the writing order
             auto ostr1 = writer.NewStream();
             auto ostr2 = writer.NewStream();
 
             // note passing streams as a value
             // despite task 1 starts writing after task 2 because of delay of 5 seconds
             // task1's output will appear first in the stderr
-            auto task1 = std::async(std::launch::async, [](ncbi::CMultiSourceOStream ostr)
+            auto task1 = std::async(std::launch::async, [](ncbi::objects::CMultiSourceOStream ostr)
                 {
                     std::this_thread::sleep_for(5s);
                     for (size_t i=0; i<100; ++i) {
                         ostr << "Hello " << i << "\n";
                     }
-                    // ostr destructor will invoked at the thread end
+                    // ostr destructor will be invoked at the thread end
                 }, std::move(ostr1));
 
             //std::this_thread::sleep_for(1s);
 
-            auto task2 = std::async(std::launch::async, [](ncbi::CMultiSourceOStream ostr)
+            auto task2 = std::async(std::launch::async, [](ncbi::objects::CMultiSourceOStream ostr)
                 {
                     ostr << "Last hello\n";
-                    // ostr destructor will invoked at the thread end
+                    // ostr destructor will be invoked at the thread end
                 }, std::move(ostr2));
         }
     }
@@ -124,6 +126,7 @@ private:
     CMultiSourceOStreamBuf* m_buf = nullptr;
 };
 
+END_NAMESPACE(objects);
 END_NCBI_NAMESPACE;
 
 #endif

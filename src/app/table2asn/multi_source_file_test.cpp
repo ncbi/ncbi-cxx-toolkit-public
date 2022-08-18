@@ -44,26 +44,27 @@ void TestMTWriter()
 {
     using namespace std::chrono_literals;
     {
-        ncbi::CMultiSourceWriter writer;
+        ncbi::objects::CMultiSourceWriter writer;
         writer.Open(std::cerr);
         {
-            ncbi::CMultiSourceOStream ostr1;
+            ncbi::objects::CMultiSourceOStream ostr1;
             auto ostr2 = writer.NewStream();
             auto ostr3 = writer.NewStream();
             ostr1 = std::move(ostr2);
 
             ostr2 << "Bad hello\n";
-            auto task1 = std::async(std::launch::async, [](ncbi::CMultiSourceOStream ostr)
+            auto task1 = std::async(std::launch::async, [](ncbi::objects::CMultiSourceOStream ostr)
                 {
                     std::this_thread::sleep_for(5s);
-                    for (size_t i=0; i<100; ++i) {
+                    for (size_t i=0; i<1000; ++i) {
                         ostr << "Hello " << i << "\n";
                     }
+                    std::this_thread::sleep_for(5s);
                 }, std::move(ostr1));
 
             std::this_thread::sleep_for(1s);
 
-            auto task2 = std::async(std::launch::async, [](ncbi::CMultiSourceOStream ostr)
+            auto task2 = std::async(std::launch::async, [](ncbi::objects::CMultiSourceOStream ostr)
                 {
                     ostr << "Not hello\n";
                     //std::this_thread::sleep_for(5s);
