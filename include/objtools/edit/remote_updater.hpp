@@ -143,12 +143,12 @@ private:
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
     EPubmedSource m_pm_source = EPubmedSource::eNone;
     unique_ptr<IPubmedUpdater> m_pubmed;
-    bool m_pm_use_cache = false;
+    bool m_pm_use_cache = true;
     unique_ptr<CCachedTaxon3_impl> m_taxClient;
     taxupdate_func_t m_taxon_update;
 
     std::mutex m_Mutex;
-    int m_MaxMlaAttempts=3;
+    int m_MaxMlaAttempts = 3;
 
     bool m_TaxonTimeoutSet = false;
     unsigned m_TaxonTimeout = 20;   // in seconds
