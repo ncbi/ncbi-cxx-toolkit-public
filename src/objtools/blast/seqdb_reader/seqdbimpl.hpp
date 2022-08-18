@@ -1076,6 +1076,8 @@ public:
     /// @param tax_ids	return taxonomy ids in db
     void GetDBTaxIds(set<TTaxId> & tax_ids);
 
+    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids);
+
     int GetNumOfVols() const;
 
     void GetLMDBFileNames(vector<string> & lmdb_list) const;
