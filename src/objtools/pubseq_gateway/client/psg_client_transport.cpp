@@ -191,10 +191,7 @@ SDebugPrintout::~SDebugPrintout()
             os << fixed << id << '\t' << ms << '\t' << type << '\t' << thread_id << '\n';
         }
 
-        static mutex cout_mutex;
-        lock_guard<mutex> lock(cout_mutex);
-        cout << os.str();
-        cout.flush();
+        cout << os.str() << flush;
     }
 }
 
