@@ -44,179 +44,48 @@
 
 #include "UvHelper.hpp"
 
+#include "http_connection.hpp"
+#include "http_server_transport.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"
 USING_NCBI_SCOPE;
 
-#include "shutdown_data.hpp"
-extern SShutdownData       g_ShutdownData;
-
-
-void CollectGarbage(void);
-void UnregisterUVLoop(uv_thread_t  uv_thread);
-void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop);
-void RegisterDaemonUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop);
-void CancelAllProcessors(void);
-size_t GetActiveProcessorGroups(void);
-
-namespace TSL {
-
-template<typename P, typename U, typename D>
 class CTcpWorkersList;
-
-template<typename P, typename U, typename D>
 class CTcpDaemon;
-
-template<typename U>
-struct connection_ctx_t
-{
-    uv_tcp_t    conn;
-    U           u;
-};
-
-
-template<typename P, typename U, typename D>
 struct CTcpWorker;
 
 
-template<typename P, typename U, typename D>
 class CTcpWorkersList
 {
-    friend class CTcpDaemon<P, U, D>;
+    friend class CTcpDaemon;
 
 private:
-    std::vector<std::unique_ptr<CTcpWorker<P, U, D>>>   m_workers;
-    CTcpDaemon<P, U, D> *                               m_daemon;
-    std::function<void(CTcpDaemon<P, U, D>& daemon)>    m_on_watch_dog;
+    std::vector<std::unique_ptr<CTcpWorker>>    m_workers;
+    CTcpDaemon *                                m_daemon;
+    std::function<void(CTcpDaemon &  daemon)>   m_on_watch_dog;
 
 protected:
-    static void s_WorkerExecute(void *  _worker)
-    {
-        CTcpWorker<P, U, D> *   worker =
-                                    static_cast<CTcpWorker<P, U, D>*>(_worker);
-        worker->Execute();
-        PSG_INFO("worker " << worker->m_id << " finished");
-    }
+    static void s_WorkerExecute(void *  _worker);
 
 public:
     static uv_key_t         s_thread_worker_key;
 
-    CTcpWorkersList(CTcpDaemon<P, U, D> *  daemon) :
+    CTcpWorkersList(CTcpDaemon *  daemon) :
         m_daemon(daemon)
     {}
+    ~CTcpWorkersList();
 
-    ~CTcpWorkersList()
-    {
-        PSG_INFO("CTcpWorkersList::~()>>");
-        JoinWorkers();
-        PSG_INFO("CTcpWorkersList::~()<<");
-        m_daemon->m_workers = nullptr;
-    }
+    void Start(struct uv_export_t *  exp,
+               unsigned short  nworkers,
+               CHttpDaemon &  http_daemon,
+               std::function<void(CTcpDaemon &  daemon)> OnWatchDog = nullptr);
 
-    void Start(struct uv_export_t *  exp, unsigned short  nworkers, D &  d,
-               std::function<void(CTcpDaemon<P, U, D>& daemon)> OnWatchDog = nullptr)
-    {
-        int         err_code;
+    bool AnyWorkerIsRunning(void);
+    void KillAll(void);
+    uint64_t NumOfRequests(void);
+    void JoinWorkers(void);
 
-        for (unsigned int  i = 0; i < nworkers; ++i) {
-            m_workers.emplace_back(new CTcpWorker<P, U, D>(i + 1, exp,
-                                                           m_daemon, this, d));
-        }
-
-        for (auto &  it: m_workers) {
-            CTcpWorker<P, U, D> *worker = it.get();
-            err_code = uv_thread_create(&worker->m_thread, s_WorkerExecute,
-                                        static_cast<void*>(worker));
-            if (err_code != 0)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvThreadCreateFailure,
-                            "uv_thread_create failed", err_code);
-        }
-        m_on_watch_dog = OnWatchDog;
-        m_daemon->m_workers = this;
-    }
-
-    bool AnyWorkerIsRunning(void)
-    {
-        for (auto & it : m_workers)
-            if (!it->m_shutdown)
-                return true;
-        return false;
-    }
-
-    void KillAll(void)
-    {
-        for (auto & it : m_workers)
-            it->Stop();
-    }
-
-    uint64_t NumOfRequests(void)
-    {
-        uint64_t        rv = 0;
-        for (auto & it : m_workers)
-            rv += it->m_request_count;
-        return rv;
-    }
-
-    static void s_OnWatchDog(uv_timer_t *  handle)
-    {
-        CTcpWorkersList<P, U, D> *      self =
-                        static_cast<CTcpWorkersList<P, U, D>*>(handle->data);
-
-        if (g_ShutdownData.m_ShutdownRequested) {
-            size_t      proc_groups = GetActiveProcessorGroups();
-            if (proc_groups == 0) {
-                self->m_daemon->StopDaemonLoop();
-            } else {
-                if (psg_clock_t::now() >= g_ShutdownData.m_Expired) {
-                    if (g_ShutdownData.m_CancelSent) {
-                        PSG_MESSAGE("Shutdown timeout is over when there are "
-                                    "unfinished requests. Exiting immediately.");
-                        _exit(0);
-                    } else {
-                        // Extend the expiration for 2 second;
-                        // Send cancel to all processors;
-                        g_ShutdownData.m_Expired = psg_clock_t::now() + chrono::seconds(2);
-                        g_ShutdownData.m_CancelSent = true;
-
-                        // Canceling processors prevents from the tries to
-                        // write to the reply object
-                        CancelAllProcessors();
-                    }
-                }
-            }
-            return;
-        }
-
-        if (!self->AnyWorkerIsRunning()) {
-            uv_stop(handle->loop);
-        } else {
-            if (self->m_on_watch_dog) {
-                self->m_on_watch_dog(*self->m_daemon);
-            }
-            CollectGarbage();
-        }
-    }
-
-    void JoinWorkers(void)
-    {
-        int         err_code;
-        for (auto & it : m_workers) {
-            CTcpWorker<P, U, D> *worker = it.get();
-            if (!worker->m_joined) {
-                worker->m_joined = true;
-                while (1) {
-                    err_code = uv_thread_join(&worker->m_thread);
-                    if (!err_code) {
-                        worker->m_thread = 0;
-                        break;
-                    } else if (-err_code != EAGAIN) {
-                        PSG_ERROR("uv_thread_join failed: " << err_code);
-                        break;
-                    }
-                }
-            }
-        }
-    }
+    static void s_OnWatchDog(uv_timer_t *  handle);
 };
 
 
@@ -236,32 +105,32 @@ struct CTcpWorkerInternal_t {
 };
 
 
-template<typename P, typename U, typename D>
 struct CTcpWorker
 {
-    unsigned int                            m_id;
-    uv_thread_t                             m_thread;
-    std::atomic_uint_fast64_t               m_request_count;
-    std::atomic_uint_fast16_t               m_connection_count;
-    std::atomic_bool                        m_started;
-    std::atomic_bool                        m_shutdown;
-    std::atomic_bool                        m_shuttingdown;
-    bool                                    m_close_all_issued;
-    bool                                    m_joined;
-    int                                     m_error;
-    std::list<std::tuple<uv_tcp_t, U>>      m_connected_list;
-    std::list<std::tuple<uv_tcp_t, U>>      m_free_list;
-    struct uv_export_t *                    m_exp;
-    CTcpWorkersList<P, U, D> *              m_guard;
-    CTcpDaemon<P, U, D> *                   m_daemon;
-    std::string                             m_last_error;
-    D &                                     m_d;
-    P                                       m_protocol;
-    std::unique_ptr<CTcpWorkerInternal_t>   m_internal;
+    unsigned int                                        m_id;
+    uv_thread_t                                         m_thread;
+    std::atomic_uint_fast64_t                           m_request_count;
+    std::atomic_uint_fast16_t                           m_connection_count;
+    std::atomic_bool                                    m_started;
+    std::atomic_bool                                    m_shutdown;
+    std::atomic_bool                                    m_shuttingdown;
+    bool                                                m_close_all_issued;
+    bool                                                m_joined;
+    int                                                 m_error;
+    std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_connected_list;
+    std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_free_list;
+    struct uv_export_t *                                m_exp;
+    CTcpWorkersList *                                   m_guard;
+    CTcpDaemon *                                        m_daemon;
+    std::string                                         m_last_error;
+    CHttpDaemon &                                       m_HttpDaemon;
+    CHttpProto                                          m_protocol;
+    std::unique_ptr<CTcpWorkerInternal_t>               m_internal;
 
     CTcpWorker(unsigned int  id, struct uv_export_t *  exp,
-               CTcpDaemon<P, U, D> *  daemon,
-               CTcpWorkersList<P, U, D> *  guard, D &  d) :
+               CTcpDaemon *  daemon,
+               CTcpWorkersList *  guard,
+               CHttpDaemon &  http_daemon) :
         m_id(id),
         m_thread(0),
         m_request_count(0),
@@ -275,312 +144,30 @@ struct CTcpWorker
         m_exp(exp),
         m_guard(guard),
         m_daemon(daemon),
-        m_d(d),
-        m_protocol(m_d)
+        m_HttpDaemon(http_daemon),
+        m_protocol(m_HttpDaemon)
     {}
 
-    void Stop(void)
-    {
-        if (m_started && !m_shutdown && !m_shuttingdown) {
-            uv_async_send(&m_internal->m_async_stop);
-        }
-    }
-
-    void Execute(void)
-    {
-        try {
-            if (m_internal)
-                NCBI_THROW(CPubseqGatewayException, eWorkerAlreadyStarted,
-                           "Worker has already been started");
-
-            m_internal.reset(new CTcpWorkerInternal_t);
-
-            int         err_code;
-            uv_key_set(&CTcpWorkersList<P, U, D>::s_thread_worker_key, this);
-
-            m_protocol.BeforeStart();
-            err_code = uv_import(m_internal->m_loop.Handle(),
-                                 reinterpret_cast<uv_stream_t*>(&m_internal->m_listener),
-                                 m_exp);
-            // PSG_ERROR("worker " << worker->m_id << " uv_import: " << err_code);
-            if (err_code != 0)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvImportFailure,
-                            "uv_import failed", err_code);
-
-            m_internal->m_listener.data = this;
-            err_code = uv_listen(reinterpret_cast<uv_stream_t*>(&m_internal->m_listener),
-                                 m_daemon->m_backlog, s_OnTcpConnection);
-            if (err_code != 0)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvListenFailure,
-                            "uv_listen failed", err_code);
-            m_internal->m_listener.data = this;
-
-            err_code = uv_async_init(m_internal->m_loop.Handle(),
-                                     &m_internal->m_async_stop, s_OnAsyncStop);
-            if (err_code != 0)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvAsyncInitFailure,
-                            "uv_async_init failed", err_code);
-            m_internal->m_async_stop.data = this;
-
-            err_code = uv_async_init(m_internal->m_loop.Handle(),
-                                     &m_internal->m_async_work, s_OnAsyncWork);
-            if (err_code != 0)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvAsyncInitFailure,
-                            "uv_async_init failed", err_code);
-            m_internal->m_async_work.data = this;
-
-            err_code = uv_timer_init(m_internal->m_loop.Handle(),
-                                     &m_internal->m_timer);
-            if (err_code != 0)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvTimerInitFailure,
-                            "uv_timer_init failed", err_code);
-            m_internal->m_timer.data = this;
-
-            uv_timer_start(&m_internal->m_timer, s_OnTimer, 1000, 1000);
-
-            m_started = true;
-            m_protocol.ThreadStart(m_internal->m_loop.Handle(), this);
-
-            // Worker thread to uv loop mapping
-            RegisterUVLoop(uv_thread_self(), m_internal->m_loop.Handle());
-
-            err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
-
-            UnregisterUVLoop(uv_thread_self());
-
-            PSG_INFO("uv_run (1) worker " << m_id <<
-                     " returned " <<  err_code);
-        } catch (const CPubseqGatewayUVException &  exc) {
-            m_error = exc.GetUVLibraryErrorCode();
-            m_last_error = exc.GetMsg();
-            PSG_ERROR("Libuv exception while preparing/running worker " << m_id <<
-                      " UV error code: " << m_error <<
-                      " Error: " << m_last_error);
-        } catch (const CException &  exc) {
-            m_error = exc.GetErrCode();
-            m_last_error = exc.GetMsg();
-            PSG_ERROR("NCBI exception while preparing/running worker " << m_id <<
-                      " Error code: " << m_error <<
-                      " Error: " << m_last_error);
-        } catch (const exception &  exc) {
-            m_error = -1;
-            m_last_error = exc.what();
-            PSG_ERROR("Standard exception while preparing/running worker " << m_id <<
-                      " Error: " << exc.what());
-        } catch (...) {
-            m_error = -1;
-            m_last_error = "unknown";
-            PSG_ERROR("Unknown exception while preparing/running worker " << m_id);
-        }
-
-        m_shuttingdown = true;
-        PSG_INFO("worker " << m_id << " is closing");
-        if (m_internal) {
-            try {
-                int         err_code;
-
-                if (m_internal->m_listener.type != 0)
-                    uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_listener),
-                             NULL);
-
-                CloseAll();
-
-                while (m_connection_count > 0)
-                    uv_run(m_internal->m_loop.Handle(), UV_RUN_NOWAIT);
-
-                if (m_internal->m_async_stop.type != 0)
-                    uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_async_stop),
-                             NULL);
-                if (m_internal->m_async_work.type != 0)
-                    uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_async_work),
-                             NULL);
-                if (m_internal->m_timer.type != 0)
-                    uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_timer),
-                             NULL);
-
-                m_protocol.ThreadStop();
-
-                err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
-
-                if (err_code != 0)
-                    PSG_INFO("worker " << m_id <<
-                             ", uv_run (2) returned " << err_code <<
-                             ", st: " << m_started.load());
-                // uv_walk(m_internal->m_loop.Handle(), s_LoopWalk, this);
-                err_code = m_internal->m_loop.Close();
-                if (err_code != 0) {
-                    PSG_INFO("worker " << m_id <<
-                             ", uv_loop_close returned " << err_code <<
-                             ", st: " << m_started.load());
-                    uv_walk(m_internal->m_loop.Handle(), s_LoopWalk, this);
-                }
-                m_internal.reset(nullptr);
-            } catch (const exception &  exc) {
-                PSG_ERROR("Exception while shutting down worker " << m_id <<
-                          ": " << exc.what());
-            } catch (...) {
-                PSG_ERROR("Unexpected exception while shutting down worker " <<
-                          m_id);
-            }
-        }
-    }
-
-    void CloseAll(void)
-    {
-        assert(m_shuttingdown);
-        if (!m_close_all_issued) {
-            m_close_all_issued = true;
-            for (auto  it = m_connected_list.begin();
-                 it != m_connected_list.end(); ++it) {
-                uv_tcp_t *tcp = &std::get<0>(*it);
-                if (uv_is_closing(reinterpret_cast<uv_handle_t*>(tcp)) == 0) {
-                    uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
-                } else {
-                    s_OnClientClosed(reinterpret_cast<uv_handle_t*>(tcp));
-                }
-            }
-        }
-    }
-
-    void OnClientClosed(uv_handle_t *  handle)
-    {
-        m_daemon->ClientDisconnected();
-        --m_connection_count;
-
-        uv_tcp_t *tcp = reinterpret_cast<uv_tcp_t*>(handle);
-        for (auto it = m_connected_list.begin();
-             it != m_connected_list.end(); ++it) {
-            if (tcp == &std::get<0>(*it)) {
-                m_protocol.OnClientClosedConnection(reinterpret_cast<uv_stream_t*>(handle),
-                                                    &std::get<1>(*it));
-                // NOTE: it is important to reset for reuse before moving
-                // between the lists. The CHttpConnection instance holds a list
-                // of the pending requests. Sometimes there are a few items in
-                // the pending list when a connection is canceled. However if
-                // the item is moved to the free list the items from the
-                // pending list magically disappear.
-                // Also, in general prospective, it is better to clean the data
-                // structures as early as possible and this point is the
-                // earliest. On top of it the clearing of the pending requests
-                // process will notify the high level dispatcher that the
-                // processors group can be removed.
-                std::get<1>(*it).ResetForReuse();
-
-                // Move the closed connection instance to the free list for
-                // reuse later.
-                m_free_list.splice(m_free_list.begin(), m_connected_list, it);
-                return;
-            }
-        }
-        assert(false);
-    }
-
-    void WakeWorker(void)
-    {
-        if (m_internal)
-            uv_async_send(&m_internal->m_async_work);
-    }
-
-    std::list<std::tuple<uv_tcp_t, U>> &  GetConnList(void)
-    {
-        return m_connected_list;
-    }
+    void Stop(void);
+    void Execute(void);
+    void CloseAll(void);
+    void OnClientClosed(uv_handle_t *  handle);
+    void WakeWorker(void);
+    std::list<std::tuple<uv_tcp_t, CHttpConnection>> &  GetConnList(void);
 
 private:
-    void OnAsyncWork(void)
-    {
-        // If shutdown is in progress, close outstanding requests
-        // otherwise pick data from them and send back to the client
-        m_protocol.OnAsyncWork(m_shuttingdown || m_shutdown);
-    }
-
-    static void s_OnAsyncWork(uv_async_t *  handle)
-    {
-        PSG_INFO("Worker async work requested");
-        CTcpWorker<P, U, D> *       worker =
-            static_cast<CTcpWorker<P, U, D>*>(
-                    uv_key_get(&CTcpWorkersList<P, U, D>::s_thread_worker_key));
-        worker->OnAsyncWork();
-    }
-
-    void OnTimer(void)
-    {
-        m_protocol.OnTimer();
-    }
-
-    static void s_OnTimer(uv_timer_t *  handle)
-    {
-        CTcpWorker<P, U, D> *           worker =
-            static_cast<CTcpWorker<P, U, D>*>(
-                    uv_key_get(&CTcpWorkersList<P, U, D>::s_thread_worker_key));
-        worker->OnTimer();
-    }
-
-    static void s_OnAsyncStop(uv_async_t *  handle)
-    {
-        PSG_INFO("Worker async stop requested");
-        uv_stop(handle->loop);
-    }
-
-    static void s_OnTcpConnection(uv_stream_t *  listener, const int  status)
-    {
-        if (listener && status == 0) {
-            CTcpWorker<P, U, D> *       worker =
-                static_cast<CTcpWorker<P, U, D>*>(listener->data);
-            worker->OnTcpConnection(listener);
-        }
-    }
-
-    static void s_OnClientClosed(uv_handle_t *  handle)
-    {
-        CTcpWorker<P, U, D> *           worker =
-            static_cast<CTcpWorker<P, U, D>*>(
-                    uv_key_get(&CTcpWorkersList<P, U, D>::s_thread_worker_key));
-        worker->OnClientClosed(handle);
-    }
-
-    static void s_LoopWalk(uv_handle_t *  handle, void *  arg)
-    {
-        CTcpWorker<P, U, D> *           worker = arg ?
-                                static_cast<CTcpWorker<P, U, D>*>(arg) : NULL;
-        PSG_INFO("Handle " << handle <<
-                 " (" << handle->type <<
-                 ") @ worker " << (worker ? worker->m_id : -1) <<
-                 " (" << worker << ")");
-    }
-
-    void OnTcpConnection(uv_stream_t *  listener)
-    {
-        if (m_free_list.empty())
-            m_free_list.push_back(std::make_tuple(uv_tcp_t{0}, U()));
-
-        auto        it = m_free_list.begin();
-        uv_tcp_t *  tcp = &std::get<0>(*it);
-        int         err_code = uv_tcp_init(m_internal->m_loop.Handle(), tcp);
-
-        if (err_code != 0)
-            return;
-
-        uv_tcp_nodelay(tcp, 1);
-
-        tcp->data = this;
-        m_connected_list.splice(m_connected_list.begin(), m_free_list, it);
-
-        err_code = uv_accept(listener, reinterpret_cast<uv_stream_t*>(tcp));
-        ++m_connection_count;
-        bool b = m_daemon->ClientConnected();
-
-        if (err_code != 0 || !b || m_shuttingdown) {
-            uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
-            return;
-        }
-        m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
-                                   &std::get<1>(*it), s_OnClientClosed);
-    }
+    void OnAsyncWork(void);
+    static void s_OnAsyncWork(uv_async_t *  handle);
+    void OnTimer(void);
+    static void s_OnTimer(uv_timer_t *  handle);
+    static void s_OnAsyncStop(uv_async_t *  handle);
+    static void s_OnTcpConnection(uv_stream_t *  listener, const int  status);
+    static void s_OnClientClosed(uv_handle_t *  handle);
+    static void s_LoopWalk(uv_handle_t *  handle, void *  arg);
+    void OnTcpConnection(uv_stream_t *  listener);
 };
 
 
-template<typename P, typename U, typename D>
 class CTcpDaemon
 {
 private:
@@ -589,44 +176,15 @@ private:
     unsigned short                  m_num_workers;
     unsigned short                  m_backlog;
     unsigned short                  m_max_connections;
-    CTcpWorkersList<P, U, D> *      m_workers;
+    CTcpWorkersList *               m_workers;
     std::atomic_uint_fast16_t       m_connection_count;
 
-    friend class CTcpWorkersList<P, U, D>;
-    friend class CTcpWorker<P, U, D>;
+    friend class CTcpWorkersList;
+    friend class CTcpWorker;
 
 private:
-    static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */)
-    {
-        // This is also for Ctrl+C
-        // Note: exit(0) instead of the shutdown request may hang.
-        PSG_MESSAGE("SIGINT received. Immediate shutdown performed.");
-        g_ShutdownData.m_Expired = psg_clock_t::now();
-        g_ShutdownData.m_ShutdownRequested = true;
-
-        // The uv_stop() may hang if some syncronous long operation is in
-        // progress. So the shutdown with 0 delay is chosen. The cases when
-        // some operations require too much time are handled in the
-        // s_OnWatchDog() where the shutdown request is actually processed
-    }
-
-    static void s_OnMainSigTerm(uv_signal_t *  /* req */, int  /* signum */)
-    {
-        auto        now = psg_clock_t::now();
-        auto        expiration = now + chrono::hours(24);
-
-        if (g_ShutdownData.m_ShutdownRequested) {
-            if (expiration >= g_ShutdownData.m_Expired) {
-                PSG_MESSAGE("SIGTERM received. The previous shutdown "
-                            "expiration is shorter than this one. Ignored.");
-                return;
-            }
-        }
-
-        PSG_MESSAGE("SIGTERM received. Graceful shutdown is initiated");
-        g_ShutdownData.m_Expired = expiration;
-        g_ShutdownData.m_ShutdownRequested = true;
-    }
+    static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */);
+    static void s_OnMainSigTerm(uv_signal_t *  /* req */, int  /* signum */);
 
     static void s_OnMainSigHup(uv_signal_t *  /* req */, int  /* signum */)
     { PSG_MESSAGE("SIGHUP received. Ignoring."); }
@@ -640,24 +198,13 @@ private:
     static void s_OnMainSigWinch(uv_signal_t *  /* req */, int  /* signum */)
     { PSG_MESSAGE("SIGWINCH received. Ignoring."); }
 
-    bool ClientConnected(void)
-    {
-        uint16_t n = ++m_connection_count;
-        return n < m_max_connections;
-    }
-
-    bool ClientDisconnected(void)
-    {
-        uint16_t n = --m_connection_count;
-        return n < m_max_connections;
-    }
-
+    bool ClientConnected(void);
+    bool ClientDisconnected(void);
 
 protected:
     static constexpr const char IPC_PIPE_NAME[] = "tcp_daemon_startup_rpc";
 
 public:
-
     CTcpDaemon(const std::string &  Address, unsigned short  Port,
                unsigned short  NumWorkers, unsigned short  BackLog,
                unsigned short  MaxConnections) :
@@ -672,133 +219,15 @@ public:
 
     CUvLoop * m_UVLoop;
 
-    void StopDaemonLoop(void)
-    {
-        m_UVLoop->Stop();
-    }
+    void StopDaemonLoop(void);
+    bool OnRequest(CHttpProto **  http_proto);
+    uint64_t NumOfRequests(void);
+    uint16_t NumOfConnections(void) const;
 
-    bool OnRequest(P **  p)
-    {
-        CTcpWorker<P, U, D> *   worker = static_cast<CTcpWorker<P, U, D>*>(
-                    uv_key_get(&CTcpWorkersList<P, U, D>::s_thread_worker_key));
-        if (worker->m_shutdown) {
-            worker->CloseAll();
-            *p = nullptr;
-            return false;
-        }
-
-        ++worker->m_request_count;
-        *p = &worker->m_protocol;
-        return true;
-    }
-
-    uint64_t NumOfRequests(void)
-    {
-        return m_workers ? m_workers->NumOfRequests() : 0;
-    }
-
-    uint16_t NumOfConnections(void) const
-    {
-        return m_connection_count;
-    }
-
-    void Run(D &  d,
-             std::function<void(CTcpDaemon<P, U, D>& daemon)>
-                                                    OnWatchDog = nullptr)
-    {
-        int         rc;
-
-        if (m_address.empty())
-            NCBI_THROW(CPubseqGatewayException, eAddressEmpty,
-                       "Failed to start daemon: address is empty");
-        if (m_port == 0)
-            NCBI_THROW(CPubseqGatewayException, ePortNotSpecified,
-                       "Failed to start daemon: port is not specified");
-
-        signal(SIGPIPE, SIG_IGN);
-        if (CTcpWorkersList<P, U, D>::s_thread_worker_key == 0) {
-            rc = uv_key_create(&CTcpWorkersList<P, U, D>::s_thread_worker_key);
-            if (rc != 0)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvKeyCreateFailure,
-                            "uv_key_create failed", rc);
-        }
-
-        CTcpWorkersList<P, U, D>    workers(this);
-        {{
-            CUvLoop         loop;
-            m_UVLoop = &loop;
-
-            CUvSignal       sigint(loop.Handle());
-            sigint.Start(SIGINT, s_OnMainSigInt);
-
-            CUvSignal       sigterm(loop.Handle());
-            sigterm.Start(SIGTERM, s_OnMainSigTerm);
-
-            CUvSignal       sighup(loop.Handle());
-            sighup.Start(SIGHUP, s_OnMainSigHup);
-
-            CUvSignal       sigusr1(loop.Handle());
-            sigusr1.Start(SIGUSR1, s_OnMainSigUsr1);
-
-            CUvSignal       sigusr2(loop.Handle());
-            sigusr2.Start(SIGUSR2, s_OnMainSigUsr2);
-
-            CUvSignal       sigwinch(loop.Handle());
-            sigwinch.Start(SIGWINCH, s_OnMainSigWinch);
-
-
-            CUvTcp          listener(loop.Handle());
-            listener.Bind(m_address.c_str(), m_port);
-
-            struct uv_export_t *    exp = NULL;
-            rc = uv_export_start(loop.Handle(),
-                                 reinterpret_cast<uv_stream_t*>(listener.Handle()),
-                                 IPC_PIPE_NAME, m_num_workers, &exp);
-            if (rc)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvExportStartFailure,
-                            "uv_export_start failed", rc);
-
-            try {
-                workers.Start(exp, m_num_workers, d, OnWatchDog);
-            } catch (const exception &  exc) {
-                uv_export_close(exp);
-                throw;
-            }
-
-            rc = uv_export_finish(exp);
-            if (rc)
-                NCBI_THROW2(CPubseqGatewayUVException, eUvExportWaitFailure,
-                            "uv_export_wait failed", rc);
-
-            listener.Close(nullptr);
-
-            P::DaemonStarted();
-
-            uv_timer_t      watch_dog;
-            uv_timer_init(loop.Handle(), &watch_dog);
-            watch_dog.data = &workers;
-            uv_timer_start(&watch_dog, workers.s_OnWatchDog, 1000, 1000);
-
-            RegisterDaemonUVLoop(uv_thread_self(), loop.Handle());
-
-            uv_run(loop.Handle(), UV_RUN_DEFAULT);
-
-            uv_close(reinterpret_cast<uv_handle_t*>(&watch_dog), NULL);
-            workers.KillAll();
-
-            P::DaemonStopped();
-        }}
-    }
+    void Run(CHttpDaemon &  http_daemon,
+             std::function<void(CTcpDaemon &  daemon)>
+                                                    OnWatchDog = nullptr);
 };
 
-
-template<typename P, typename U, typename D>
-uv_key_t CTcpWorkersList<P, U, D>::s_thread_worker_key;
-
-
-template<typename P, typename U, typename D>
-constexpr const char CTcpDaemon<P, U, D>::IPC_PIPE_NAME[];
-
-}
-
 #endif
+

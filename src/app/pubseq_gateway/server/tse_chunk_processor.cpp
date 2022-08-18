@@ -77,16 +77,15 @@ CPSGS_TSEChunkProcessor::~CPSGS_TSEChunkProcessor()
 {}
 
 
-IPSGS_Processor*
-CPSGS_TSEChunkProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
-                                         shared_ptr<CPSGS_Reply> reply,
-                                         TProcessorPriority  priority) const
+bool
+CPSGS_TSEChunkProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                    shared_ptr<CPSGS_Reply> reply) const
 {
     if (!IsCassandraProcessorEnabled(request))
-        return nullptr;
+        return false;
 
     if (request->GetRequestType() != CPSGS_Request::ePSGS_TSEChunkRequest)
-        return nullptr;
+        return false;
 
     auto            tse_chunk_request = & request->GetRequest<SPSGS_TSEChunkRequest>();
 
@@ -94,35 +93,55 @@ CPSGS_TSEChunkProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
     // start with 1. Non negative condition is checked at the time when the
     // request is received.
     if (tse_chunk_request->m_Id2Chunk == 0)
-        return nullptr;
+        return false;
 
     // Check parseability of the id2_info parameter
     shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>  sat_info_chunk_ver_id2info;
     shared_ptr<CPSGS_IdModifiedVerFlavorId2Info>     id_mod_ver_id2info;
     if (x_DetectId2InfoFlavor(tse_chunk_request->m_Id2Info,
                               sat_info_chunk_ver_id2info,
-                              id_mod_ver_id2info) !=
-                                            ePSGS_UnknownId2InfoFlavor) {
-        // Check the DB availability
-        auto *      app = CPubseqGatewayApp::GetInstance();
-        auto        startup_data_state = app->GetStartupDataState();
-        if (startup_data_state != ePSGS_StartupDataOK) {
-            if (request->NeedTrace()) {
-                reply->SendTrace("Cannot create " + kTSEChunkProcessorName +
-                                 " processor because Cassandra DB "
-                                 "is not available.\n" +
-                                 GetCassStartupDataStateMessage(startup_data_state),
-                                 request->GetStartTimestamp());
-            }
-            return nullptr;
-        }
+                              id_mod_ver_id2info) ==
+                                            ePSGS_UnknownId2InfoFlavor)
+        return false;
 
-        return new CPSGS_TSEChunkProcessor(request, reply, priority,
-                                           sat_info_chunk_ver_id2info,
-                                           id_mod_ver_id2info);
+    // Check the DB availability
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    auto        startup_data_state = app->GetStartupDataState();
+    if (startup_data_state != ePSGS_StartupDataOK) {
+        if (request->NeedTrace()) {
+            reply->SendTrace(kTSEChunkProcessorName + " processor cannot process "
+                             " request because Cassandra DB is not available.\n" +
+                             GetCassStartupDataStateMessage(startup_data_state),
+                             request->GetStartTimestamp());
+        }
+        return false;
     }
 
-    return nullptr;
+    return true;
+}
+
+
+IPSGS_Processor*
+CPSGS_TSEChunkProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
+                                         shared_ptr<CPSGS_Reply> reply,
+                                         TProcessorPriority  priority) const
+{
+    if (!CanProcess(request, reply))
+        return nullptr;
+
+    auto        tse_chunk_request = & request->GetRequest<SPSGS_TSEChunkRequest>();
+    shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>  sat_info_chunk_ver_id2info;
+    shared_ptr<CPSGS_IdModifiedVerFlavorId2Info>     id_mod_ver_id2info;
+
+    // No need to check the return value. It has been already checked in
+    // CanProcess()
+    x_DetectId2InfoFlavor(tse_chunk_request->m_Id2Info,
+                          sat_info_chunk_ver_id2info,
+                          id_mod_ver_id2info);
+
+    return new CPSGS_TSEChunkProcessor(request, reply, priority,
+                                       sat_info_chunk_ver_id2info,
+                                       id_mod_ver_id2info);
 }
 
 

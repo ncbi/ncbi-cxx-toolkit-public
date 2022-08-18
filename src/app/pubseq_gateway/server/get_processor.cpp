@@ -84,32 +84,41 @@ CPSGS_GetProcessor::~CPSGS_GetProcessor()
 {}
 
 
+bool
+CPSGS_GetProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                               shared_ptr<CPSGS_Reply> reply) const
+{
+    if (!IsCassandraProcessorEnabled(request))
+        return false;
+
+    if (request->GetRequestType() != CPSGS_Request::ePSGS_BlobBySeqIdRequest)
+        return false;
+
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    auto        startup_data_state = app->GetStartupDataState();
+    if (startup_data_state != ePSGS_StartupDataOK) {
+        if (request->NeedTrace()) {
+            reply->SendTrace(kGetProcessorName + " processor cannot process "
+                             " request because Cassandra DB is not available.\n" +
+                             GetCassStartupDataStateMessage(startup_data_state),
+                             request->GetStartTimestamp());
+        }
+        return false;
+    }
+
+    return true;
+}
+
+
 IPSGS_Processor*
 CPSGS_GetProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> reply,
                                     TProcessorPriority  priority) const
 {
-    if (!IsCassandraProcessorEnabled(request))
+    if (!CanProcess(request, reply))
         return nullptr;
 
-    if (request->GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
-        auto *      app = CPubseqGatewayApp::GetInstance();
-        auto        startup_data_state = app->GetStartupDataState();
-        if (startup_data_state != ePSGS_StartupDataOK) {
-            if (request->NeedTrace()) {
-                reply->SendTrace("Cannot create " + kGetProcessorName +
-                                 " processor because Cassandra DB "
-                                 "is not available.\n" +
-                                 GetCassStartupDataStateMessage(startup_data_state),
-                                 request->GetStartTimestamp());
-            }
-            return nullptr;
-        }
-
-        return new CPSGS_GetProcessor(request, reply, priority);
-    }
-
-    return nullptr;
+    return new CPSGS_GetProcessor(request, reply, priority);
 }
 
 

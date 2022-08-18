@@ -42,7 +42,7 @@
 
 class CPendingOperation;
 class CCassBlobFetch;
-template<typename P> class CHttpReply;
+class CHttpReply;
 namespace idblob { class CCassDataCallbackReceiver; }
 
 // Keeps track of the protocol replies
@@ -57,7 +57,7 @@ public:
     };
 
 public:
-    CPSGS_Reply(unique_ptr<CHttpReply<CPendingOperation>>  low_level_reply) :
+    CPSGS_Reply(unique_ptr<CHttpReply>  low_level_reply) :
         m_Reply(low_level_reply.release()),
         m_ReplyOwned(true),
         m_NextItemIdLock(false),
@@ -72,7 +72,7 @@ public:
 
     // This constructor is to reuse the infrastructure (PSG chunks, counting
     // them etc) in the low level error reports
-    CPSGS_Reply(CHttpReply<CPendingOperation> *  low_level_reply) :
+    CPSGS_Reply(CHttpReply *  low_level_reply) :
         m_Reply(low_level_reply),
         m_ReplyOwned(false),
         m_NextItemIdLock(false),
@@ -121,7 +121,7 @@ public:
     void ConnectionCancel(void);
     shared_ptr<idblob::CCassDataCallbackReceiver> GetDataReadyCB(void);
 
-    CHttpReply<CPendingOperation> *  GetHttpReply(void)
+    CHttpReply *  GetHttpReply(void)
     {
         return m_Reply;
     }
@@ -355,16 +355,16 @@ private:
     }
 
 private:
-    CHttpReply<CPendingOperation> *     m_Reply;
-    bool                                m_ReplyOwned;
-    atomic<bool>                        m_NextItemIdLock;
-    size_t                              m_NextItemId;
-    int32_t                             m_TotalSentReplyChunks;
-    mutex                               m_ChunksLock;
-    vector<h2o_iovec_t>                 m_Chunks;
-    volatile bool                       m_ConnectionCanceled;
-    size_t                              m_RequestId;
-    psg_time_point_t                    m_LastActivityTimestamp;
+    CHttpReply *            m_Reply;
+    bool                    m_ReplyOwned;
+    atomic<bool>            m_NextItemIdLock;
+    size_t                  m_NextItemId;
+    int32_t                 m_TotalSentReplyChunks;
+    mutex                   m_ChunksLock;
+    vector<h2o_iovec_t>     m_Chunks;
+    volatile bool           m_ConnectionCanceled;
+    size_t                  m_RequestId;
+    psg_time_point_t        m_LastActivityTimestamp;
 };
 
 

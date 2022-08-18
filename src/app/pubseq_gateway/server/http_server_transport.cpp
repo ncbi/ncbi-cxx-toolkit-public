@@ -31,512 +31,113 @@
 
 #include <ncbi_pch.hpp>
 
-#include <vector>
-
 #include <connect/ext/ncbi_localnet.h>
-#include <corelib/ncbi_process.hpp>
+#include <uv.h>
 
-#include "pending_operation.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
+
 #include "http_server_transport.hpp"
-#include "pubseq_gateway.hpp"
+#include "tcp_daemon.hpp"
+#include "http_proto.hpp"
 
-#include <h2o.h>
+#include "shutdown_data.hpp"
+extern SShutdownData    g_ShutdownData;
 
-
+USING_NCBI_SCOPE;
 using namespace std;
 
 
-#define HTTP_RAW_PARAM_BUF_SIZE 8192
+const char *  CHttpDaemon::sm_CdUid = nullptr;
 
 
-static bool s_HttpUrlDecode(const char *  what, size_t  len, char *  buf,
-                            size_t  buf_size, size_t *  result_len)
+CHttpDaemon::CHttpDaemon(const vector<CHttpHandler> &  handlers,
+                         const string &  tcp_address,
+                         unsigned short  tcp_port,
+                         unsigned short  tcp_workers,
+                         unsigned short  tcp_backlog,
+                         unsigned short  tcp_max_connections) :
+    m_HttpCfg({0}),
+    m_HttpCfgInitialized(false),
+    m_Handlers(handlers)
 {
-    const char *        pch = what;
-    const char *        end = what + len;
-    char *              dest = buf;
-    char *              dest_end = buf + buf_size;
+    m_TcpDaemon.reset(
+        new CTcpDaemon(tcp_address, tcp_port,
+                       tcp_workers, tcp_backlog,
+                       tcp_max_connections));
 
-    while (pch < end) {
-        char                ch = *pch;
-        unsigned char       v;
-        switch (ch) {
-            case '%':
-                ++pch;
-                if (pch >= end - 1 || dest >= dest_end)
-                    return false;
-                ch = *pch;
-                // To avoid CLang static analizer report on dead assignment
-                // v = 0;
-                if (ch >= '0' && ch <= '9')
-                    v = (ch - '0') * 16;
-                else if (ch >= 'A' && ch <= 'F')
-                    v = (ch - 'A' + 10) * 16;
-                else if (ch >= 'a' && ch <= 'f')
-                    v = (ch - 'a' + 10) * 16;
-                else
-                    return false;
-                ++pch;
-                ch = *pch;
-                if (ch >= '0' && ch <= '9')
-                    v += (ch - '0');
-                else if (ch >= 'A' && ch <= 'F')
-                    v += (ch - 'A' + 10);
-                else if (ch >= 'a' && ch <= 'f')
-                    v += (ch - 'a' + 10);
-                else
-                    return false;
-                *dest = v;
-                ++dest;
-                break;
-            case '+':
-                if (dest >= dest_end)
-                    return false;
-                *dest = ' ';
-                ++dest;
-                break;
-            default:
-                if (dest >= dest_end)
-                    return false;
-                *dest = ch;
-                ++dest;
+    h2o_config_init(&m_HttpCfg);
+    m_HttpCfgInitialized = true;
+
+    sm_CdUid = getenv("CD_UID");
+}
+
+
+CHttpDaemon::~CHttpDaemon()
+{
+    if (m_HttpCfgInitialized) {
+        m_HttpCfgInitialized = false;
+        h2o_config_dispose(&m_HttpCfg);
+    }
+    // h2o_mem_dispose_recycled_allocators();
+}
+
+
+void CHttpDaemon::Run(std::function<void(CTcpDaemon &)> on_watch_dog)
+{
+    h2o_hostconf_t *    hostconf = h2o_config_register_host(
+            &m_HttpCfg, h2o_iovec_init(H2O_STRLIT("default")), kAnyPort);
+
+    for (auto &  it: m_Handlers) {
+        h2o_pathconf_t *        pathconf = h2o_config_register_path(
+                                            hostconf, it.m_Path.c_str(), 0);
+        #if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
+            // No need anymore
+            ;
+        #else
+            h2o_chunked_register(pathconf);
+        #endif
+
+        h2o_handler_t *         handler = h2o_create_handler(
+                                    pathconf, sizeof(CHttpGateHandler));
+        CHttpGateHandler *      rh = reinterpret_cast<CHttpGateHandler*>(handler);
+
+        rh->Init(&it.m_Handler, m_TcpDaemon.get(), this, it.m_GetParser,
+                 it.m_PostParser);
+        handler->on_req = s_OnHttpRequest;
+    }
+
+    m_TcpDaemon->Run(*this, on_watch_dog);
+}
+
+
+h2o_globalconf_t *  CHttpDaemon::HttpCfg(void)
+{
+    return &m_HttpCfg;
+}
+
+
+uint16_t CHttpDaemon::NumOfConnections(void) const
+{
+    return m_TcpDaemon->NumOfConnections();
+}
+
+
+int CHttpDaemon::s_OnHttpRequest(h2o_handler_t *  self, h2o_req_t *  req)
+{
+    try {
+        CHttpGateHandler *  rh = reinterpret_cast<CHttpGateHandler*>(self);
+        CHttpProto *        proto = nullptr;
+
+        if (rh->m_Tcpd->OnRequest(&proto)) {
+            return proto->OnHttpRequest(rh, req, sm_CdUid);
         }
-        ++pch;
+    } catch (const exception &  e) {
+        h2o_send_error_503(req, "Malfunction", e.what(), 0);
+        return 0;
+    } catch (...) {
+        h2o_send_error_503(req, "Malfunction", "unexpected failure", 0);
+        return 0;
     }
-    *result_len = dest - buf;
-    if (dest < dest_end)
-        *dest = 0;
-    return true;
+    return -1;
 }
-
-
-/** CHttpGetParser */
-
-void CHttpGetParser::Parse(CHttpRequest &  Req, char *  Data,
-                           size_t  Length) const
-{
-    bool            has_encodings;
-    char *          buf = nullptr;
-    ssize_t         bufsize = 0;
-
-    Req.GetRawBuffer(&buf, &bufsize);
-    bufsize--;
-
-    char *          begin = Data;
-    const char *    end = Data + Length;
-
-    if (*begin == '?')
-        begin++;
-
-    char *          ch = begin;
-    bool            is_name = true;
-
-    CQueryParam *   prm = nullptr;
-    while (ch < end) {
-        const char *    c_begin = ch;
-        has_encodings = false;
-    // NAME
-        while (ch < end) {
-            switch (*ch) {
-                case '%':
-                case '+':
-                    has_encodings = true;
-                    break;
-                case '=':
-                    if (is_name)
-                        goto done;
-                    break;
-                case '&':
-                    goto done;
-            }
-            ch++;
-        }
-    done:
-        if (is_name)
-            prm = Req.AddParam();
-        if (prm == nullptr)
-            break;
-
-        if (!has_encodings) {
-            *ch = '\0';
-            if (is_name) {
-                prm->m_Name = c_begin;
-                prm->m_NameLen = ch - c_begin;
-                prm->m_ValLen = 0;
-                prm->m_Val = nullptr;
-            }
-            else {
-                prm->m_Val = c_begin;
-                prm->m_ValLen = ch - c_begin;
-            }
-        } else {
-            size_t      len;
-            if (!s_HttpUrlDecode(c_begin, ch - c_begin, buf, bufsize, &len))
-                return;
-            if (is_name) {
-                prm->m_Name = buf;
-                prm->m_NameLen = len;
-                prm->m_ValLen = 0;
-                prm->m_Val = nullptr;
-            }
-            else {
-                prm->m_Val = buf;
-                prm->m_ValLen = len;
-            }
-
-            buf += len;
-            bufsize -= len;
-            if (bufsize > 0) {
-                *buf = '\0';
-                ++buf;
-                --bufsize;
-            }
-            else {
-                Req.RevokeParam();
-                return;
-            }
-        }
-        is_name = !is_name;
-        ++ch;
-    }
-}
-
-
-/** CHttpRequest */
-
-void CHttpRequest::ParseParams(void)
-{
-    m_ParamParsed = true;
-    m_ParamCount = 0;
-
-    if (h2o_memis(m_Req->method.base, m_Req->method.len,
-                  H2O_STRLIT("POST")) && m_PostParser) {
-        ssize_t     cursor = h2o_find_header(&m_Req->headers,
-                                             H2O_TOKEN_CONTENT_TYPE, -1);
-        if (cursor == -1)
-            return;
-
-        if (m_PostParser->Supports(m_Req->headers.entries[cursor].value.base,
-                                    m_Req->headers.entries[cursor].value.len))
-            m_PostParser->Parse(*this, m_Req->entity.base, m_Req->entity.len);
-    } else if (h2o_memis(m_Req->method.base, m_Req->method.len,
-                         H2O_STRLIT("GET")) && m_GetParser) {
-        if (m_Req->query_at == SIZE_MAX || m_Req->query_at >= m_Req->path.len)
-            return;
-
-        char *          begin = &m_Req->path.base[m_Req->query_at];
-        const char *    end = &m_Req->path.base[m_Req->path.len];
-        m_GetParser->Parse(*this, begin, end - begin);
-    }
-}
-
-
-bool CHttpRequest::GetParam(const char *  name, size_t  len, bool  required,
-                            const char **  value, size_t *  value_len)
-{
-    if (!m_ParamParsed)
-        ParseParams();
-
-    for (size_t i = 0; i < m_ParamCount; ++i) {
-        if (m_Params[i].m_NameLen == len &&
-            memcmp(m_Params[i].m_Name, name, len) == 0) {
-            *value = m_Params[i].m_Val;
-            if (value_len)
-                *value_len = m_Params[i].m_ValLen;
-            return true;
-        }
-    }
-    *value = nullptr;
-    if (value_len)
-        *value_len = 0;
-
-    return !required;
-}
-
-
-bool CHttpRequest::GetMultipleValuesParam(const char *  name, size_t  len,
-                                          vector<string> &  values)
-{
-    if (!m_ParamParsed)
-        ParseParams();
-
-    bool        found = false;
-    for (size_t i = 0; i < m_ParamCount; ++i) {
-        if (m_Params[i].m_NameLen == len &&
-            memcmp(m_Params[i].m_Name, name, len) == 0) {
-            values.push_back(string(m_Params[i].m_Val,
-                                    m_Params[i].m_ValLen));
-            found = true;
-        }
-    }
-    return found;
-}
-
-
-CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
-{
-    if (!m_ParamParsed)
-        ParseParams();
-
-    for (size_t i = 0; i < m_ParamCount; i++) {
-        extra.Print(string(m_Params[i].m_Name, m_Params[i].m_NameLen),
-                    string(m_Params[i].m_Val, m_Params[i].m_ValLen));
-    }
-    return extra;
-}
-
-
-void  CHttpRequest::PrintLogFields(const CNcbiLogFields &  log_fields)
-{
-    map<string, string>     env;
-
-    for (size_t  index = 0; index < m_Req->headers.size; ++index) {
-        string      name(m_Req->headers.entries[index].name->base,
-                         m_Req->headers.entries[index].name->len);
-        NStr::ToLower(name);
-        NStr::ReplaceInPlace(name, "_", "-");
-        env[name] = string(m_Req->headers.entries[index].value.base,
-                           m_Req->headers.entries[index].value.len);
-    }
-
-    log_fields.LogFields(env);
-}
-
-
-string CHttpRequest::GetPath(void)
-{
-    return string(m_Req->path_normalized.base,
-                  m_Req->path_normalized.len);
-}
-
-
-string CHttpRequest::GetHeaderValue(const string &  name)
-{
-    string      value;
-    size_t      name_size = name.size();
-
-    for (size_t  index = 0; index < m_Req->headers.size; ++index) {
-        if (m_Req->headers.entries[index].name->len == name_size) {
-            if (strncasecmp(m_Req->headers.entries[index].name->base,
-                            name.data(), name_size) == 0) {
-                value.assign(m_Req->headers.entries[index].value.base,
-                             m_Req->headers.entries[index].value.len);
-                break;
-            }
-        }
-    }
-    return value;
-}
-
-
-// The method to extract the IP address needs an array of pointers to the
-// strings like <name>=<value>. The h2o headers are stored in a different
-// format so a conversion is required
-TNCBI_IPv6Addr CHttpRequest::GetClientIP(void)
-{
-    // "There are no headers larger than 50k", so
-    const size_t        buf_size = 50 * 1024;
-
-    const char *        tracking_env[m_Req->headers.size + 1];
-    unique_ptr<char[]>  buffer(new char[buf_size]);
-    char *              raw_buffer = buffer.get();
-
-    size_t              pos = 0;
-    for (size_t  index = 0; index < m_Req->headers.size; ++index) {
-        size_t      name_val_size = m_Req->headers.entries[index].name->len +
-                                    m_Req->headers.entries[index].value.len +
-                                    2;  // '=' and '\0'
-        if (pos + name_val_size > buf_size) {
-            PSG_WARNING("The buffer for request headers is too small (" <<
-                        buf_size << " bytes)");
-            return TNCBI_IPv6Addr{0};
-        }
-
-        tracking_env[index] = raw_buffer + pos;
-        memcpy(raw_buffer + pos, m_Req->headers.entries[index].name->base,
-               m_Req->headers.entries[index].name->len);
-        pos += m_Req->headers.entries[index].name->len;
-        raw_buffer[pos] = '=';
-        ++pos;
-        memcpy(raw_buffer + pos, m_Req->headers.entries[index].value.base,
-               m_Req->headers.entries[index].value.len);
-        pos += m_Req->headers.entries[index].value.len;
-        raw_buffer[pos] = '\0';
-        ++pos;
-    }
-    tracking_env[m_Req->headers.size] = nullptr;
-
-    return NcbiGetCgiClientIPv6(eCgiClientIP_TryMost, tracking_env);
-}
-
-
-string CHttpRequest::GetPeerIP(void)
-{
-    struct sockaddr     sock_addr;
-    if (m_Req->conn->callbacks->get_peername(m_Req->conn, &sock_addr) == 0)
-        return kEmptyStr;
-
-    char                buf[256];
-    switch (sock_addr.sa_family) {
-        case AF_INET:
-            if (inet_ntop(AF_INET,
-                          &(((struct sockaddr_in *)&sock_addr)->sin_addr),
-                          buf, 256) == NULL)
-                return kEmptyStr;
-            break;
-        case AF_INET6:
-            if (inet_ntop(AF_INET6,
-                          &(((struct sockaddr_in6 *)&sock_addr)->sin6_addr),
-                          buf, 256) == NULL)
-                return kEmptyStr;
-            break;
-        default:
-            return kEmptyStr;
-    }
-
-    return buf;
-}
-
-
-void GetSSLSettings(bool &  enabled,
-                    string &  cert_file,
-                    string &  key_file,
-                    string &  ciphers)
-{
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    enabled = app->GetSSLEnable();
-    cert_file = app->GetSSLCertFile();
-    key_file = app->GetSSLKeyFile();
-    ciphers = app->GetSSLCiphers();
-}
-
-
-void NotifyRequestFinished(size_t  request_id)
-{
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    app->NotifyRequestFinished(request_id);
-}
-
-
-// Moved here to avoid a compiler warning
-template<typename P>
-void CHttpConnection<P>::PostponedStart(shared_ptr<CPSGS_Reply>  reply)
-{
-    auto    http_reply = reply->GetHttpReply();
-    if (!http_reply->IsPostponed())
-        NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
-                   "Request has not been postponed");
-    if (IsClosed())
-        NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
-                   "Request handling can not be started after connection was closed");
-
-    // To avoid a possibility to have cancel->start in progress messages in the
-    // reply in case of multiple processors due to the first one may do things
-    // synchronously and call Cancel() for the other processors right away: the
-    // sending of the start message will be done for all of them before the
-    // actual Start() call
-    for (auto req: http_reply->GetPendingReqs())
-        req->SendProcessorStartMessage();
-
-    // Start the request timer
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetProcessorDispatcher()->StartRequestTimer(reply->GetRequestId());
-
-    // Now start the processors
-    for (auto req: http_reply->GetPendingReqs())
-        req->Start();
-}
-
-
-void IncrementBackloggedCounter(void)
-{
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_BackloggedRequests);
-}
-
-
-void IncrementTooManyRequestsCounter(void)
-{
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_TooManyRequests);
-}
-
-
-void OnLibh2oFinished(size_t  request_id)
-{
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetProcessorDispatcher()->OnLibh2oFinished(request_id);
-}
-
-// Explicit instantiation due to PostponedStart() method is in the .cpp file
-template class CHttpConnection<CPendingOperation>;
-
-
-// Checks if the configured FD limit is reached.
-// If so then produce a log message and initiate a shutdown
-void CheckFDLimit(void)
-{
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    ssize_t limit = app->GetShutdownIfTooManyOpenFD();
-
-    if (limit == 0)
-        return;
-
-    // Get the used FD number
-    int         proc_fd_soft_limit;
-    int         proc_fd_hard_limit;
-    int         proc_fd_used =
-            CCurrentProcess::GetFileDescriptorsCount(&proc_fd_soft_limit,
-                                                     &proc_fd_hard_limit);
-
-    if (proc_fd_used < limit)
-        return;
-
-    #if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
-        // The new library changed the behavior so that the shutdown from this
-        // point strugles with closing sockets and leads to a core dump.
-        // So it was decided to exit immediately
-        ERR_POST(Fatal << "The file descriptor usage limit has reached. Currently in use: " +
-                   to_string(proc_fd_used) + " Limit: " + to_string(limit) +
-                   " Exit immediately.");
-        exit(1);
-    #endif
-
-    PSG_CRITICAL("The file descriptor usage limit has reached. Currently in use: " +
-                 to_string(proc_fd_used) + " Limit: " + to_string(limit));
-
-    // Initiate a shutdown
-    auto        now = psg_clock_t::now();
-    auto        expiration = now + chrono::seconds(2);
-
-    if (g_ShutdownData.m_ShutdownRequested) {
-        // It has already been requested
-        if (expiration >= g_ShutdownData.m_Expired) {
-            // Previous expiration is shorter than this one
-            return;
-        }
-    }
-
-    PSG_CRITICAL("Auto shutdown within 2 seconds is initiated.");
-
-    g_ShutdownData.m_Expired = expiration;
-    g_ShutdownData.m_ShutdownRequested = true;
-}
-
-
-#if H2O_VERSION_MAJOR == 2 && H2O_VERSION_MINOR >= 3
-    #include <h2o/http2_internal.h>
-    h2o_socket_t *  Geth2oConnectionSocketForRequest(h2o_req_t *  req)
-    {
-        // Dirty hack:
-        // all the structures for http1/2 have the same beginning of the
-        // connection structure. However the http1 structure is in the a
-        // .c file while htt2 connection structure is in the available header.
-        // So, the shift of the socket pointer is the same regardless of the
-        // connection type and thus the cast is to http2 connection regardless
-        // of the actual connection type
-        h2o_http2_conn_t *  conn_http2 = (h2o_http2_conn_t * )req->conn;
-        return conn_http2->sock;
-    }
-#endif
 

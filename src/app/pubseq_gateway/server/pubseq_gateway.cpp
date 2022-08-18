@@ -46,6 +46,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 
+#include "http_request.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"
@@ -517,8 +518,8 @@ int CPubseqGatewayApp::Run(void)
                                         m_StatScaleType,
                                         m_SmallBlobSize));
 
-    vector<CHttpHandler<CPendingOperation>>     http_handler;
-    CHttpGetParser                              get_parser;
+    vector<CHttpHandler>        http_handler;
+    CHttpGetParser              get_parser;
 
     http_handler.emplace_back(
             "/ID/getblob",
@@ -656,20 +657,18 @@ int CPubseqGatewayApp::Run(void)
 
     x_InitSSL();
     m_TcpDaemon.reset(
-            new CHttpDaemon<CPendingOperation>(http_handler, "0.0.0.0",
-                                               m_HttpPort,
-                                               m_HttpWorkers,
-                                               m_ListenerBacklog,
-                                               m_TcpMaxConn));
+            new CHttpDaemon(http_handler, "0.0.0.0",
+                            m_HttpPort,
+                            m_HttpWorkers,
+                            m_ListenerBacklog,
+                            m_TcpMaxConn));
 
     // Run the monitoring thread
     int             ret_code = 0;
     std::thread     monitoring_thread(CassMonitorThreadedFunction);
 
     try {
-        m_TcpDaemon->Run([this](TSL::CTcpDaemon<CHttpProto<CPendingOperation>,
-                           CHttpConnection<CPendingOperation>,
-                           CHttpDaemon<CPendingOperation>> &  tcp_daemon)
+        m_TcpDaemon->Run([this](CTcpDaemon &  tcp_daemon)
                 {
                     // This lambda is called once per second.
                     // Earlier implementations printed counters on stdout.
@@ -1820,44 +1819,3 @@ int main(int argc, const char* argv[])
     return ret;
 }
 
-
-void CollectGarbage(void)
-{
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    app->GetExcludeBlobCache()->Purge();
-}
-
-
-void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
-{
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    app->RegisterUVLoop(uv_thread, uv_loop);
-}
-
-
-void RegisterDaemonUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
-{
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    app->RegisterDaemonUVLoop(uv_thread, uv_loop);
-}
-
-
-void UnregisterUVLoop(uv_thread_t  uv_thread)
-{
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    app->UnregisterUVLoop(uv_thread);
-}
-
-
-void CancelAllProcessors(void)
-{
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    app->CancelAllProcessors();
-}
-
-
-size_t GetActiveProcessorGroups(void)
-{
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    return app->GetProcessorDispatcher()->GetActiveProcessorGroups();
-}
