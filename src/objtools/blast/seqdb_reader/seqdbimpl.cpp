@@ -1340,6 +1340,18 @@ void CSeqDBImpl::GetDBTaxIds(set<TTaxId> & tax_ids)
     return;
 }
 
+void CSeqDBImpl::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids)
+{
+    if (m_LMDBSet.IsBlastDBVersion5()) {
+   		m_LMDBSet.GetTaxIdsForOids(oids, tax_ids);
+    }
+    else {
+    	NCBI_THROW(CSeqDBException, eArgErr,
+    			           "Taxonomy list is not supported in v4 BLAST db");
+    }
+
+}
+
 void CSeqDBImpl::AccessionsToOids(const vector<string>& accs, vector<blastdb::TOid>& oids)
 {
     CHECK_MARKER();
