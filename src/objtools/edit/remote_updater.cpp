@@ -72,7 +72,7 @@ namespace
 {
 TEntrezId FindPMID(const list<CRef<CPub>>& arr)
 {
-    for (auto pPub : arr) {
+    for (const auto& pPub : arr) {
         if (pPub->IsPmid()) {
             return pPub->GetPmid().Get();
         }
@@ -403,6 +403,8 @@ void CRemoteUpdater::ClearCache()
             }
             break;
         }
+        default:
+            break;
         }
     }
 }
@@ -709,6 +711,8 @@ void CRemoteUpdater::ReportStats(std::ostream& os)
             }
             break;
         }
+        default:
+            break;
         }
     }
 }
