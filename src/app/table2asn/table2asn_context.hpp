@@ -181,8 +181,7 @@ public:
 
 private:
     static void x_ApplyAccession(const CTable2AsnContext& context, objects::CBioseq& bioseq);
-    TSharedStreamMap m_outputs;
-    std::mutex m_outputs_mutex;
+    CSharedStreamMap m_outputs;
 };
 
 void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,
