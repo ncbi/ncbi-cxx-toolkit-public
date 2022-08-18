@@ -1508,6 +1508,8 @@ public:
     /// @param tax_ids	return taxonomy ids in db
     void GetDBTaxIds(set<TTaxId> & tax_ids) const;
 
+    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
+
     CRef<CBlast_db_metadata> GetDBMetaData(string user_path = kEmptyStr);
 
 

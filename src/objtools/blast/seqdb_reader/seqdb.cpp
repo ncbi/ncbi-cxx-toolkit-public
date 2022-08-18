@@ -264,6 +264,11 @@ void CSeqDB::GetDBTaxIds(set<TTaxId> & tax_ids) const
      m_Impl->GetDBTaxIds(tax_ids);
 }
 
+void CSeqDB::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const
+{
+	m_Impl->GetTaxIdsForOids(oids, tax_ids);
+}
+
 // This could become the primary constructor for SeqDB, and those
 // taking positive and negative lists could be deprecated.  This
 // implies refactoring of code using SeqDB, addition of the third
