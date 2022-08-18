@@ -6517,6 +6517,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SICH\ts\tSimpson College, Biology and Environmental Sciences Department\t\t\t",
 "SIEMEA\ts\tSevertsov Insitute for Evolutionary Morphology and Animal Ecology\t\t\t",
 "SIENA\ts\tUniversita di Siena, Dipartimento di Scienze Ambientali \"G. Sarfatti\"\t\t\t",
+"SIEZC\ts\tZoological collection of the  Southern Institute of Ecology\t\t\t",
 "SIF\ts\tSenckenbergisches Institut\t\t\t",
 "SIFS\ts\tSichuan Forestry School\t\t\t",
 "SIGMA\ts\tStation Internationale de Geobotanique Mediterraneenne et Alpine\t\t\t",

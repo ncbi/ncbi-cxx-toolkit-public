@@ -6484,6 +6484,7 @@ SICAUCC	c	Sichuan Agricultural University Culture Collection
 SICH	s	Simpson College, Biology and Environmental Sciences Department			
 SIEMEA	s	Severtsov Insitute for Evolutionary Morphology and Animal Ecology			
 SIENA	s	Universita di Siena, Dipartimento di Scienze Ambientali "G. Sarfatti"			
+SIEZC	s	Zoological collection of the  Southern Institute of Ecology			
 SIF	s	Senckenbergisches Institut			
 SIFS	s	Sichuan Forestry School			
 SIGMA	s	Station Internationale de Geobotanique Mediterraneenne et Alpine			
