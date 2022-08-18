@@ -43,15 +43,15 @@
 
 //#include <iostream>
 
-BEGIN_NCBI_NAMESPACE;
+BEGIN_NCBI_SCOPE;
+BEGIN_NAMESPACE(objects);
+
 
 class CMultiSourceWriterImpl
 {
 public:
     using TBuffer = std::array<char, 64*1024>;
 
-    //friend class CMultiSourceOStreamBuf;
-    //friend class CMultiSourceOStream;
     CMultiSourceWriterImpl();
     ~CMultiSourceWriterImpl();
     void Open(std::ostream& o_stream);
@@ -60,23 +60,26 @@ public:
     void Flush();
 
     void SetMaxWriters(size_t num) {
-        m_limit = num;
+        m_max_writers = num;
     }
     CMultiSourceWriterImpl(const CMultiSourceWriterImpl&) = delete;
     CMultiSourceWriterImpl(CMultiSourceWriterImpl&&) = delete;
 
-    CMultiSourceOStreamBuf* x_NewStreamBuf();
-    void x_Flush(CMultiSourceOStreamBuf* buf);
-    std::unique_ptr<TBuffer> x_Allocate();
-    void x_Close(CMultiSourceOStreamBuf* buf);
+    CMultiSourceOStreamBuf* NewStreamBuf();
+    void FlushStreamBuf(CMultiSourceOStreamBuf* strbuf);
+    std::unique_ptr<TBuffer> AllocateBuffer();
+    void CloseStreamBuf(CMultiSourceOStreamBuf* strbuf, std::unique_ptr<TBuffer> buf);
 private:
-    std::ostream* m_ostream = nullptr;
+    std::atomic<std::ostream*> m_ostream = nullptr;
     std::deque<std::unique_ptr<CMultiSourceOStreamBuf>> m_writers;
-    std::deque<std::unique_ptr<TBuffer>> m_buffers;
-    std::atomic<size_t> m_limit;
+    std::atomic<size_t> m_max_writers = 10;
+    std::atomic<CMultiSourceOStreamBuf*> m_head;
 
     std::mutex m_mutex;
     std::condition_variable m_cv;
+
+    std::deque<std::unique_ptr<TBuffer>> m_buffers;
+    std::mutex m_buf_mutex;
 };
 
 class CMultiSourceOStreamBuf: public std::streambuf
@@ -84,12 +87,19 @@ class CMultiSourceOStreamBuf: public std::streambuf
 public:
     using TBuffer = CMultiSourceWriterImpl::TBuffer;
 
-    friend class CMultiSourceWriterImpl;
-    friend class CMultiSourceOStream;
-
     using _MyBase = std::streambuf;
     CMultiSourceOStreamBuf(CMultiSourceWriterImpl& parent);
     ~CMultiSourceOStreamBuf();
+    void Close() {
+        m_parent.CloseStreamBuf(this, std::move(m_buffer));
+    }
+    void Dump(std::ostream& ostr)  {
+        auto _pptr   = _MyBase::pptr();
+        auto _pbase  = _MyBase::pbase();
+        size_t size = _pptr - _pbase;
+        if (size)
+            ostr.write(_pbase, size);
+    }
 protected:
     int_type overflow( int_type ch ) override;
 
@@ -126,7 +136,7 @@ CMultiSourceOStream::~CMultiSourceOStream()
     //std::cerr<< "CMultiSourceOStream::~CMultiSourceOStream()\n";
     if (m_buf) {
         //std::cerr<< "CMultiSourceOStream::~CMultiSourceOStream() closing\n";
-        m_buf->m_parent.x_Close(m_buf);
+        m_buf->Close();
     }
 }
 
@@ -138,22 +148,24 @@ CMultiSourceOStreamBuf::~CMultiSourceOStreamBuf()
 std::ostream::int_type CMultiSourceOStreamBuf::overflow( int_type ch )
 {
     if (m_buffer) {
-        m_parent.x_Flush(this);
+        m_parent.FlushStreamBuf(this); // this can block & wait
     } else {
-        m_buffer = m_parent.x_Allocate();
+        m_buffer = m_parent.AllocateBuffer();
     }
 
-    auto head = m_buffer->data();
-    setp(head, head + m_buffer->size());
-    *head = ch;
-    pbump(1);
-    return ch;
+    if (m_buffer) {
+        auto head = m_buffer->data();
+        setp(head, head + m_buffer->size());
+        *head = ch;
+        pbump(1);
+        return ch;
+    } else {
+        setp(nullptr, nullptr);
+        return _MyBase::overflow(ch);
+    }
 }
 
-CMultiSourceWriterImpl::CMultiSourceWriterImpl()
-{
-    m_limit = 10; // number of active writers
-}
+CMultiSourceWriterImpl::CMultiSourceWriterImpl() {}
 
 CMultiSourceWriterImpl::~CMultiSourceWriterImpl()
 {
@@ -163,18 +175,11 @@ CMultiSourceWriterImpl::~CMultiSourceWriterImpl()
 
 void CMultiSourceWriterImpl::Open(std::ostream& o_stream)
 {
+    std::ostream* expected = nullptr;
+    if (!m_ostream.compare_exchange_strong(expected, &o_stream))
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, []{return true;});
-
-        if (m_ostream) {
-            throw std::runtime_error("already open");
-        }
-
-        m_ostream = &o_stream;
+        throw std::runtime_error("already open");
     }
-    m_cv.notify_all();
-
 }
 
 void CMultiSourceWriterImpl::Close()
@@ -188,7 +193,7 @@ void CMultiSourceWriterImpl::Close()
             });
 
         if (m_ostream) {
-            m_ostream->flush();
+            m_ostream.load()->flush();
             m_ostream = nullptr;
         }
     }
@@ -200,28 +205,31 @@ void CMultiSourceWriterImpl::Flush()
 {
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, [] { return true; });
+        //m_cv.wait(lock, [] { return true; });
 
         if (m_ostream) {
-            m_ostream->flush();
+            m_ostream.load()->flush();
         }
     }
 
-    m_cv.notify_all();
+    //m_cv.notify_all();
 }
 
-CMultiSourceOStreamBuf* CMultiSourceWriterImpl::x_NewStreamBuf()
+CMultiSourceOStreamBuf* CMultiSourceWriterImpl::NewStreamBuf()
 {
     CMultiSourceOStreamBuf* buf = nullptr;
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [this]
             {
-                return m_writers.size() < m_limit.load();
+                return m_writers.size() < m_max_writers.load();
             });
 
         auto newbuf = std::make_unique<CMultiSourceOStreamBuf>(*this);
         buf = newbuf.get();
+        if (m_writers.empty()) {
+            m_head = buf;
+        }
         m_writers.push_back(std::move(newbuf));
     }
 
@@ -232,15 +240,14 @@ CMultiSourceOStreamBuf* CMultiSourceWriterImpl::x_NewStreamBuf()
 
 CMultiSourceOStream CMultiSourceWriterImpl::NewStream()
 {
-    return CMultiSourceOStream(x_NewStreamBuf());
+    return {NewStreamBuf()};
 }
 
-std::unique_ptr<CMultiSourceWriterImpl::TBuffer> CMultiSourceWriterImpl::x_Allocate()
+std::unique_ptr<CMultiSourceWriterImpl::TBuffer> CMultiSourceWriterImpl::AllocateBuffer()
 {
     std::unique_ptr<TBuffer> buffer;
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, []{return true;});
+        std::unique_lock<std::mutex> lock(m_buf_mutex);
 
         if (!m_buffers.empty()) {
             buffer = std::move(m_buffers.front());
@@ -248,63 +255,54 @@ std::unique_ptr<CMultiSourceWriterImpl::TBuffer> CMultiSourceWriterImpl::x_Alloc
         }
     }
 
-    m_cv.notify_all();
-
     if (buffer)
         return buffer;
     else
         return make_unique<TBuffer>();
 }
 
-void CMultiSourceWriterImpl::x_Flush(CMultiSourceOStreamBuf* strbuf)
+void CMultiSourceWriterImpl::FlushStreamBuf(CMultiSourceOStreamBuf* strbuf)
+{
+    while (strbuf != m_head.load())
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_cv.wait(lock, [this, strbuf]
+            {
+                bool is_head = strbuf == m_head.load();
+                return is_head;
+            });
+    }
+    strbuf->Dump(*m_ostream);
+
+    // no need to notify
+    // m_cv.notify_all();
+}
+
+void CMultiSourceWriterImpl::CloseStreamBuf(CMultiSourceOStreamBuf* strbuf, std::unique_ptr<TBuffer> buffer)
 {
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [this, strbuf]
             {
-                bool is_head = !m_writers.empty() &&
-                    m_writers.front().get() == strbuf;
+                bool is_head = strbuf == m_head.load();
 
                 return is_head;
             });
 
-        auto pptr   = strbuf->pptr();
-        auto pbase  = strbuf->pbase();
-        size_t size = pptr - pbase;
-        if (size)
-            m_ostream->write(pbase, size);
+        strbuf->Dump(*m_ostream);
+        m_writers.pop_front();
+        m_head = m_writers.empty() ? nullptr : m_writers.front().get();
     }
 
     m_cv.notify_all();
-}
 
-void CMultiSourceWriterImpl::x_Close(CMultiSourceOStreamBuf* strbuf)
-{
-    {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, [this, strbuf]
-            {
-                bool is_head = !m_writers.empty() &&
-                    m_writers.front().get() == strbuf;
-
-                return is_head;
-            });
-
-        auto pptr   = strbuf->pptr();
-        auto pbase  = strbuf->pbase();
-        size_t size = pptr - pbase;
-        if (size)
-            m_ostream->write(pbase, size);
-
-        auto buffer = std::move(strbuf->m_buffer);
+    if (buffer)
+    { // try to save buffer for future reuse, it's expensive resource
+        std::unique_lock<std::mutex> lock(m_buf_mutex);
         if (m_buffers.size() < 10) {
             m_buffers.push_back(std::move(buffer));
         }
-        m_writers.pop_front();
     }
-
-    m_cv.notify_all();
-
 }
 
 CMultiSourceWriter::CMultiSourceWriter() {}
@@ -345,4 +343,5 @@ void CMultiSourceWriter::x_ConstructImpl()
     }
 }
 
+END_NAMESPACE(objects);
 END_NCBI_NAMESPACE;
