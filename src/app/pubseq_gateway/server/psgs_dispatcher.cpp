@@ -32,7 +32,7 @@
 
 #include "psgs_dispatcher.hpp"
 #include "pubseq_gateway_logging.hpp"
-#include "http_server_transport.hpp"
+#include "http_daemon.hpp"
 #include "pubseq_gateway.hpp"
 
 
@@ -361,7 +361,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
 }
 
 
-// Start of the timer is done at http_server_transport.cpp PostponedStart
+// Start of the timer is done at CHttpConnection::x_Start()
 // This guarantees that the timer is created in the same uv loop (i.e. working
 // thread) as the processors will use regardless of:
 // - the request started processed right away

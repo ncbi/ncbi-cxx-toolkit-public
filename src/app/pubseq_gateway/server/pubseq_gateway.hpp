@@ -42,7 +42,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/messages.hpp>
 
 #include "pending_operation.hpp"
-#include "http_server_transport.hpp"
+#include "http_daemon.hpp"
 #include "pubseq_gateway_version.hpp"
 #include "pubseq_gateway_stat.hpp"
 #include "pubseq_gateway_utils.hpp"

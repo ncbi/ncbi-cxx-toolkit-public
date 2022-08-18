@@ -4,7 +4,7 @@
 
 NCBI_begin_app(pubseq_gateway)
   NCBI_sources(
-    pubseq_gateway pending_operation http_server_transport pubseq_gateway_exception
+    pubseq_gateway pending_operation pubseq_gateway_exception
     uv_extra pubseq_gateway_utils pubseq_gateway_stat pubseq_gateway_handlers
     pubseq_gateway_convert_utils pubseq_gateway_cache_utils cass_fetch psgs_reply
     exclude_blob_cache alerts timing
@@ -18,7 +18,7 @@ NCBI_begin_app(pubseq_gateway)
     bioseq_info_record_selector split_info_utils split_info_cache
     wgs_client wgs_processor cass_processor_dispatch snp_client snp_processor
     psgs_seq_id_utils http_request http_connection http_reply http_proto
-    tcp_daemon
+    tcp_daemon http_daemon
   )
   NCBI_uses_toolkit_libraries(cdd_access xregexp id2 seq psg_cassandra
     psg_protobuf psg_cache xconnext connext xconnserv xconnect xcompress

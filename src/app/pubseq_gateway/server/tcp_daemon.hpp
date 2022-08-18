@@ -45,7 +45,7 @@
 #include "UvHelper.hpp"
 
 #include "http_connection.hpp"
-#include "http_server_transport.hpp"
+#include "http_daemon.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"
 USING_NCBI_SCOPE;
