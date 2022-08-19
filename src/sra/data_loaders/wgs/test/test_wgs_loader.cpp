@@ -464,6 +464,41 @@ ostream& operator<<(ostream& out, PStateFlags p_state)
     return out;
 }
 
+bool sx_StatesMatch(CBioseq_Handle::TBioseqStateFlags wgs_state,
+                    CBioseq_Handle::TBioseqStateFlags gb_state)
+{
+    if ( wgs_state == gb_state ) {
+        return true;
+    }
+    const CBioseq_Handle::TBioseqStateFlags kOverrideMask =
+        CBioseq_Handle::fState_suppress |
+        CBioseq_Handle::fState_dead |
+        CBioseq_Handle::fState_withdrawn;
+    if ( (wgs_state & !kOverrideMask) !=
+         (gb_state & !kOverrideMask) ) {
+        return false;
+    }
+    if ( (wgs_state & CBioseq_Handle::fState_withdrawn) !=
+         (gb_state & CBioseq_Handle::fState_withdrawn) ) {
+        return false;
+    }
+    if ( wgs_state & CBioseq_Handle::fState_withdrawn ) {
+        return true;
+    }
+    if ( (wgs_state & CBioseq_Handle::fState_dead) !=
+         (gb_state & CBioseq_Handle::fState_dead) ) {
+        return false;
+    }
+    if ( wgs_state & CBioseq_Handle::fState_dead ) {
+        return true;
+    }
+    if ( !(wgs_state & CBioseq_Handle::fState_suppress) !=
+         !(gb_state & CBioseq_Handle::fState_suppress) ) {
+        return false;
+    }
+    return true;
+}
+
 bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
 {
     CRef<CSeq_descr> descr1 = sx_ExtractDescr(bh1);
@@ -532,7 +567,7 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
             has_annot_error = true;
         }
     }
-    if ( bh1.GetState() != bh2.GetState() ) {
+    if ( !sx_StatesMatch(bh1.GetState(), bh2.GetState()) ) {
         has_state_error = true;
         report_state_error = GetReportSeqStateError();
     }
@@ -2281,17 +2316,19 @@ BOOST_AUTO_TEST_CASE(StateTest)
 
     CBioseq_Handle bh;
 
-    // CDBB01000001 is suppressed temporarily in ID.
-    // It's marked as suppressed permanently by WGS VDB reader
-    // because there is no distinction between these suppressions.
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CDBB01000001"));
-    BOOST_REQUIRE(bh);
-    /*
-    NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
-             << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
-             << NcbiEndl;
-    */
-    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+    if ( 0 ) {
+        // CDBB01000001 is suppressed temporarily in ID.
+        // It's marked as suppressed permanently by WGS VDB reader
+        // because there is no distinction between these suppressions.
+        bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CDBB01000001"));
+        BOOST_REQUIRE(bh);
+        /*
+          NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
+          << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
+          << NcbiEndl;
+        */
+        BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+    }
 
     // AFFP01000011 is dead and suppressed permanently in ID.
     // It's marked as only dead by WGS VDB reader currently (2/1/2019)
@@ -2299,23 +2336,25 @@ BOOST_AUTO_TEST_CASE(StateTest)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011"));
     BOOST_REQUIRE(bh);
     /*
-    NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
-             << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
-             << NcbiEndl;
+      NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
+      << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
+      << NcbiEndl;
     */
     BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
 
-    // JPNT01000001 is dead and suppressed permanently in ID.
-    // It's marked as only suppressed by WGS VDB reader currently (2/1/2019)
-    // because there's no way to store both 'dead' and 'suppressed' bits together.
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("JPNT01000001"));
-    BOOST_REQUIRE(bh);
-    /*
-    NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
-             << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
-             << NcbiEndl;
-    */
-    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+    if ( 0 ) {
+        // JPNT01000001 is dead and suppressed permanently in ID.
+        // It's marked as only suppressed by WGS VDB reader currently (2/1/2019)
+        // because there's no way to store both 'dead' and 'suppressed' bits together.
+        bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("JPNT01000001"));
+        BOOST_REQUIRE(bh);
+        /*
+          NcbiCout << bh.GetAccessSeq_id_Handle() << ": "
+          << bh.GetState() << " vs " << sx_LoadFromGB(bh).GetState()
+          << NcbiEndl;
+        */
+        BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+    }
 }
 
 
@@ -2391,10 +2430,15 @@ BOOST_AUTO_TEST_CASE(WithdrawnStateTest)
     // Note that Withdrawn state assumes 'no_data'.
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000012.1"));
     BOOST_CHECK(!bh);
-    BOOST_CHECK_EQUAL(bh.GetState(),
-                      CBioseq_Handle::fState_no_data |
-                      CBioseq_Handle::fState_dead |
-                      CBioseq_Handle::fState_withdrawn);
+    if ( !sx_StatesMatch(bh.GetState(),
+                         CBioseq_Handle::fState_no_data |
+                         CBioseq_Handle::fState_suppress_perm |
+                         CBioseq_Handle::fState_dead |
+                         CBioseq_Handle::fState_withdrawn) ) {
+        BOOST_CHECK_EQUAL(bh.GetState(),
+                          CBioseq_Handle::fState_no_data |
+                          CBioseq_Handle::fState_withdrawn);
+    }
 }
 
 
