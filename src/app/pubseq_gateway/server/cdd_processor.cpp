@@ -157,6 +157,44 @@ CPSGS_CDDProcessor::~CPSGS_CDDProcessor(void)
 }
 
 
+bool CPSGS_CDDProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                    shared_ptr<CPSGS_Reply> reply) const
+{
+    auto req_type = request->GetRequestType();
+    if (req_type != CPSGS_Request::ePSGS_AnnotationRequest &&
+        req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) return false;
+
+    auto app = CPubseqGatewayApp::GetInstance();
+    bool enabled = app->GetCDDProcessorsEnabled();
+    if ( enabled ) {
+        for (const auto& name : request->GetRequest<SPSGS_RequestBase>().m_DisabledProcessors ) {
+            if ( NStr::EqualNocase(name, kCDDProcessorName) ) {
+                enabled = false;
+                break;
+            }
+        }
+    }
+    else {
+        for (const auto& name : request->GetRequest<SPSGS_RequestBase>().m_EnabledProcessors ) {
+            if ( NStr::EqualNocase(name, kCDDProcessorName) ) {
+                enabled = true;
+                break;
+            }
+        }
+    }
+    if ( !enabled ) return false;
+
+    if (req_type == CPSGS_Request::ePSGS_AnnotationRequest &&
+        !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), 0))
+        return false;
+    if (req_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest &&
+        !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>()))
+        return false;
+    
+    return true;
+}
+
+
 IPSGS_Processor*
 CPSGS_CDDProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> reply,
