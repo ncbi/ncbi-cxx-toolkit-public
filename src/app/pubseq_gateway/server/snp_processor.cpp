@@ -277,6 +277,18 @@ void CPSGS_SNPProcessor::x_InitClient(void) const
 }
 
 
+bool CPSGS_SNPProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                    shared_ptr<CPSGS_Reply> reply) const
+{
+    if (!x_IsEnabled(*request)) return false;
+    x_InitClient();
+    _ASSERT(m_Client);
+    if (!m_Client->CanProcessRequest(*request, 0)) return false;
+
+    return true;
+}
+
+
 IPSGS_Processor* CPSGS_SNPProcessor::CreateProcessor(
     shared_ptr<CPSGS_Request> request,
     shared_ptr<CPSGS_Reply> reply,
