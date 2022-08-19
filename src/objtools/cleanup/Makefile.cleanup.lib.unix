@@ -1,0 +1,6 @@
+# $Id$
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+ ifneq "" "$(filter -static-intel,$(DLL_LDFLAGS))"
+  cleanup_utils.o:  CXXFLAGS += -fno-builtin-strcpy
+ endif
+endif
