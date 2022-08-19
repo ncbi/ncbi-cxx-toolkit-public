@@ -137,7 +137,7 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
     size_t     len, pfx_len, sfx_len, str_len;
     ValNodePtr newnode = NULL, vnp;
     char*      ptr;
-    char*      tmp;
+    string     tmp;
 
     if (str == NULL)
         return NULL;
@@ -173,16 +173,18 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
     if (ptr == NULL)
         return NULL;
 
-    tmp = ptr;
+    tmp.reserve(len);
     if (pfx_len > 0) {
-        StringAppend(tmp, pfx);
+        tmp.append(pfx);
     }
     if (str_len > 0) {
-        StringAppend(tmp, str);
+        tmp.append(str);
     }
     if (sfx_len > 0) {
-        StringAppend(tmp, sfx);
+        tmp.append(sfx);
     }
+
+    StringCpy(ptr, tmp.c_str());
 
     if (newnode != NULL) {
         newnode->choice        = (unsigned char)choice;
@@ -206,7 +208,7 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, c
     char*      sep;
     size_t     sfx_len;
     char*      str;
-    char*      tmp;
+    string     tmp;
     ValNodePtr vnp;
 
     if (list == NULL)
@@ -230,20 +232,24 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, c
     if (ptr == NULL)
         return NULL;
 
-    tmp = ptr;
+    tmp.reserve(len);
     if (pfx_len > 0) {
-        StringAppend(tmp, pfx);
+        tmp.append(pfx);
     }
     sep = NULL;
     for (vnp = list; vnp != NULL; vnp = vnp->next) {
-        StringAppend(tmp, sep);
+        if (sep) {
+            tmp.append(sep);
+        }
         str = (char*)vnp->data.ptrvalue;
-        StringAppend(tmp, str);
+        tmp.append(str);
         sep = separator;
     }
     if (sfx_len > 0) {
-        StringAppend(tmp, sfx);
+        tmp.append(sfx);
     }
+
+    StringCpy(ptr, tmp.c_str());
 
     return ptr;
 }
