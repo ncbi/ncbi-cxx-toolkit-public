@@ -66,6 +66,8 @@ public:
     CPSGS_WGSProcessor(void);
     ~CPSGS_WGSProcessor(void) override;
 
+    virtual bool CanProcess(shared_ptr<CPSGS_Request> request,
+                            shared_ptr<CPSGS_Reply> reply) const override;
     IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                      shared_ptr<CPSGS_Reply> reply,
                                      TProcessorPriority priority) const override;

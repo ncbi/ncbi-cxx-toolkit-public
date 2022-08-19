@@ -247,6 +247,16 @@ void CPSGS_WGSProcessor::x_LoadConfig(void)
 }
 
 
+bool CPSGS_WGSProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                    shared_ptr<CPSGS_Reply> /*reply*/) const
+{
+    if ( !x_IsEnabled(*request) ) return false;
+    x_InitClient();
+    _ASSERT(m_Client);
+    return m_Client->CanProcessRequest(*request);
+}
+
+
 IPSGS_Processor*
 CPSGS_WGSProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> reply,
