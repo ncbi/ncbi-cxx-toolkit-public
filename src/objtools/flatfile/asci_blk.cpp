@@ -1148,8 +1148,8 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
             q++;
         if (q == p) {
             if (*(str - 1) != '~')
-                StringAppend(str, "~");
-            StringAppend(str, "~");
+                *str++ = '~';
+            *str++ = '~';
             continue;
         }
 
@@ -1160,17 +1160,17 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
         size_t size = p - bptr;
 
         if (*bptr == ' ' && *(str - 1) != '~')
-            StringAppend(str, "~");
+            *str++ = '~';
         MemCpy(str, bptr, size);
         str += size;
         if (is_pat && size > 4 &&
             q[0] >= 'A' && q[0] <= 'Z' && q[1] >= 'A' && q[1] <= 'Z' &&
             StringNCmp(q + 2, "   ", 3) == 0)
-            StringAppend(str, "~");
+            *str++ = '~';
         else if (size < 50 || within)
-            StringAppend(str, "~");
+            *str++ = '~';
         else
-            StringAppend(str, " ");
+            *str++ = ' ';
 
         if (within) {
             *p = '\0';
@@ -1446,17 +1446,16 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
 {
     const char* p;
 
-    NON_CONST_ITERATE(TKeywordList, key, keywords)
-    {
-        if (key->empty())
+    for (string& key : keywords) {
+        if (key.empty())
             continue;
 
-        if (NStr::CompareNocase(key->c_str(), "TPA") == 0)
-            *key = "TPA";
-        else if (StringNICmp(key->c_str(), "TPA:", 4) == 0) {
+        if (NStr::CompareNocase(key.c_str(), "TPA") == 0)
+            key = "TPA";
+        else if (StringNICmp(key.c_str(), "TPA:", 4) == 0) {
             string buf("TPA:");
 
-            for (p = key->c_str() + 4; *p == ' ' || *p == '\t';)
+            for (p = key.c_str() + 4; *p == ' ' || *p == '\t';)
                 p++;
 
             buf += p;
@@ -1467,7 +1466,7 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
                 }
             }
 
-            swap(*key, buf);
+            swap(key, buf);
         }
     }
 }
@@ -1846,14 +1845,14 @@ static void GetFirstSegDescrChoice(CBioseq& bioseq, Uint1 choice, CSeq_descr& de
 // for equality according to 'PubEquivMatch' rules
 static bool SameCitation_PubEquivMatch_Logic(const CPub_equiv& a, const CPub_equiv& b)
 {
-    ITERATE (CPub_equiv::Tdata, it1, a.Get()) {
-        ITERATE (CPub_equiv::Tdata, it2, b.Get()) {
-            if ((*it1)->SameCitation(**it2)) {
+    for (const CRef<CPub>& it1 : a.Get()) {
+        for (const CRef<CPub>& it2 : b.Get()) {
+            if (it1->SameCitation(*it2)) {
                 bool same = true;
 
-                if ((*it1)->Which() == CPub::e_Gen && (*it2)->Which() == CPub::e_Gen) {
-                    const CCit_gen& cit_a = (*it1)->GetGen();
-                    const CCit_gen& cit_b = (*it2)->GetGen();
+                if (it1->Which() == CPub::e_Gen && it2->Which() == CPub::e_Gen) {
+                    const CCit_gen& cit_a = it1->GetGen();
+                    const CCit_gen& cit_b = it2->GetGen();
 
                     if (cit_a.IsSetSerial_number() && cit_b.IsSetSerial_number() && cit_a.GetSerial_number() == cit_b.GetSerial_number()) {
                         // The special condition of 'PubEquivMatch'
@@ -1919,13 +1918,12 @@ static bool CheckSegPub(const CPubdesc& pub, TEntryList& entries, std::set<CSeqd
         CSeq_descr& descr = (*next_seq)->SetDescr();
 
         bool not_found = true;
-        NON_CONST_ITERATE(CSeq_descr::Tdata, cur_descr, descr.Set())
-        {
-            if (! (*cur_descr)->IsPub() || ! (*cur_descr)->GetPub().IsSetPub() || ! (*cur_descr)->GetPub().GetPub().IsSet() ||
-                (*cur_descr)->GetPub().GetPub().Get().empty())
+        for (auto& cur_descr : descr.Set()) {
+            if (! cur_descr->IsPub() || ! cur_descr->GetPub().IsSetPub() || ! cur_descr->GetPub().GetPub().IsSet() ||
+                cur_descr->GetPub().GetPub().Get().empty())
                 continue;
 
-            const CPubdesc& cur_pub     = (*cur_descr)->GetPub();
+            const CPubdesc& cur_pub     = cur_descr->GetPub();
             const CPub&     cur_pub_ref = *cur_pub.GetPub().Get().front();
 
             if (! cur_pub_ref.IsGen() || ! cur_pub_ref.GetGen().IsSetSerial_number())
@@ -1937,7 +1935,7 @@ static bool CheckSegPub(const CPubdesc& pub, TEntryList& entries, std::set<CSeqd
                 continue;
 
             if (num == num0) {
-                same_pub_descr.insert(*cur_descr); // store pointer to the same descr for future use
+                same_pub_descr.insert(cur_descr); // store pointer to the same descr for future use
                 not_found = false;
                 break;
             }
@@ -2018,7 +2016,7 @@ static void CleanUpSeqDescrPub(TEntryList& entries, std::set<CSeqdesc*>& to_clea
  **********************************************************/
 static void GetSegPub(TEntryList& entries, CSeq_descr& descr)
 {
-    CBioseq&           bioseq     = (*entries.begin())->SetSeq();
+    CBioseq&           bioseq     = entries.front()->SetSeq();
     CSeq_descr::Tdata& descr_list = bioseq.SetDescr().Set();
 
     for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();) {
@@ -2156,7 +2154,7 @@ static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
  **********************************************************/
 static void SrchSegDescr(TEntryList& entries, CSeq_descr& descr)
 {
-    CRef<CSeq_entry>& entry  = *entries.begin();
+    CRef<CSeq_entry>& entry  = entries.front();
     CBioseq&          bioseq = entry->SetSeq();
 
     char* title = GetBioseqSetDescrTitle(bioseq.GetDescr());
@@ -2200,12 +2198,11 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
     bool bad_gpid   = false;
     bool bad_dblink = false;
 
-    NON_CONST_ITERATE(TEntryList, entry, entries)
-    {
+    for (auto& entry : entries) {
         cur_gpid.Reset();
         cur_dblink.Reset();
 
-        CSeq_descr::Tdata& descr_list = (*entry)->SetDescr();
+        CSeq_descr::Tdata& descr_list = entry->SetDescr();
 
         for (CSeq_descr::Tdata::iterator cur_descr = descr_list.begin(); cur_descr != descr_list.end();) {
             if (! (*cur_descr)->IsUser()) {
@@ -2342,11 +2339,11 @@ static const char* GetMoleculeClassString(Uint1 mol)
  **********************************************************/
 static CSeq_inst::EMol SrchSegSeqMol(const TEntryList& entries)
 {
-    const CBioseq&  orig_bioseq = (*entries.begin())->GetSeq();
+    const CBioseq&  orig_bioseq = entries.front()->GetSeq();
     CSeq_inst::EMol mol         = orig_bioseq.GetInst().GetMol();
 
-    ITERATE (TEntryList, entry, entries) {
-        const CBioseq& cur_bioseq = (*entry)->GetSeq();
+    for (const auto& entry : entries) {
+        const CBioseq& cur_bioseq = entry->GetSeq();
         if (mol == cur_bioseq.GetInst().GetMol())
             continue;
 
@@ -2369,8 +2366,8 @@ static Int4 SrchSegLength(const TEntryList& entries)
 {
     Int4 length = 0;
 
-    ITERATE (TEntryList, entry, entries) {
-        const CBioseq& cur_bioseq = (*entry)->GetSeq();
+    for (const auto& entry : entries) {
+        const CBioseq& cur_bioseq = entry->GetSeq();
         length += cur_bioseq.GetLength();
     }
 
@@ -2406,7 +2403,7 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
         delete[] locusname;
     }
 
-    const CSeq_entry& first_entry = *(*(entries.begin()));
+    const CSeq_entry& first_entry = *(entries.front());
     const CBioseq&    original    = first_entry.GetSeq();
 
     char* title = GetBioseqSetDescrTitle(original.GetDescr());
@@ -2730,28 +2727,26 @@ void AddNIDSeqId(CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata,
 /**********************************************************/
 static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr()) {
                 CGB_block*      gb_block = nullptr;
                 CMolInfo*       molinfo  = nullptr;
                 CMolInfo::TTech tech     = 0;
 
-                NON_CONST_ITERATE(TSeqdescList, descr, bioseq->SetDescr().Set())
-                {
-                    if ((*descr)->IsGenbank() && gb_block == nullptr)
-                        gb_block = &(*descr)->SetGenbank();
-                    else if ((*descr)->IsMolinfo() && molinfo == nullptr) {
-                        molinfo = &(*descr)->SetMolinfo();
+                for (auto& descr : bioseq->SetDescr().Set()) {
+                    if (descr->IsGenbank() && ! gb_block)
+                        gb_block = &descr->SetGenbank();
+                    else if (descr->IsMolinfo() && ! molinfo) {
+                        molinfo = &descr->SetMolinfo();
                         tech    = molinfo->GetTech();
                     }
 
-                    if (gb_block != nullptr && molinfo != nullptr)
+                    if (gb_block && molinfo)
                         break;
                 }
 
-                if (gb_block == nullptr)
+                if (! gb_block)
                     continue;
 
                 IndexblkPtr ibp = pp->entrylist[pp->curindx];
@@ -2773,9 +2768,9 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 static const CBioSource* GetTopBiosource(const CSeq_entry& entry)
 {
     const TSeqdescList& descrs = GetDescrPointer(entry);
-    ITERATE (TSeqdescList, descr, descrs) {
-        if ((*descr)->IsSource())
-            return &((*descr)->GetSource());
+    for (const auto& descr : descrs) {
+        if (descr->IsSource())
+            return &(descr->GetSource());
     }
 
     return nullptr;
@@ -3022,14 +3017,14 @@ static void CheckGBBlock(TSeqdescList& descrs, bool& got)
 {
     const Char* div = NULL;
 
-    ITERATE (TSeqdescList, descr, descrs) {
-        if (! (*descr)->IsEmbl())
+    for (const auto& descr : descrs) {
+        if (! descr->IsEmbl())
             continue;
 
-        if (! (*descr)->GetEmbl().IsSetDiv() || (*descr)->GetEmbl().GetDiv() > 15)
+        if (! descr->GetEmbl().IsSetDiv() || descr->GetEmbl().GetDiv() > 15)
             continue;
 
-        div = GetEmblDiv((*descr)->GetEmbl().GetDiv());
+        div = GetEmblDiv(descr->GetEmbl().GetDiv());
         break;
     }
 
@@ -3107,14 +3102,13 @@ bool fta_EntryCheckGBBlock(TEntryList& seq_entries)
 {
     bool got = false;
 
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 CheckGBBlock(bioseq->SetDescr().Set(), got);
         }
 
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->IsSetDescr())
                 CheckGBBlock(bio_set->SetDescr().Set(), got);
         }
@@ -3127,10 +3121,10 @@ bool fta_EntryCheckGBBlock(TEntryList& seq_entries)
 static int GetSerialNumFromPubEquiv(const CPub_equiv& pub_eq)
 {
     int ret = -1;
-    ITERATE (TPubList, pub, pub_eq.Get()) {
-        if ((*pub)->IsGen()) {
-            if ((*pub)->GetGen().IsSetSerial_number()) {
-                ret = (*pub)->GetGen().GetSerial_number();
+    for (const auto& pub : pub_eq.Get()) {
+        if (pub->IsGen()) {
+            if (pub->GetGen().IsSetSerial_number()) {
+                ret = pub->GetGen().GetSerial_number();
                 break;
             }
         }
@@ -3178,14 +3172,13 @@ static bool descr_cmp(const CRef<CSeqdesc>& desc1,
 /**********************************************************/
 void fta_sort_descr(TEntryList& seq_entries)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 bioseq->SetDescr().Set().sort(descr_cmp);
         }
 
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->IsSetDescr())
                 bio_set->SetDescr().Set().sort(descr_cmp);
         }
@@ -3213,17 +3206,14 @@ static bool pub_cmp(const CRef<CPub>& pub1, const CRef<CPub>& pub2)
 /**********************************************************/
 static void sort_feat_cit(CBioseq::TAnnot& annots)
 {
-    NON_CONST_ITERATE(CBioseq::TAnnot, annot, annots)
-    {
-        if ((*annot)->IsFtable()) {
-            NON_CONST_ITERATE(TSeqFeatList, feat, (*annot)->SetData().SetFtable())
-            {
-                if ((*feat)->IsSetCit() && (*feat)->GetCit().IsPub()) {
-                    // (*feat)->SetCit().SetPub().sort(pub_cmp); TODO: may be this sort would be OK, the only difference with original one is it is stable
+    for (auto& annot : annots) {
+        if (annot->IsFtable()) {
+            for (auto& feat : annot->SetData().SetFtable()) {
+                if (feat->IsSetCit() && feat->GetCit().IsPub()) {
+                    // feat->SetCit().SetPub().sort(pub_cmp); TODO: may be this sort would be OK, the only difference with original one is it is stable
 
-                    TPubList& pubs = (*feat)->SetCit().SetPub();
-                    NON_CONST_ITERATE(TPubList, pub, pubs)
-                    {
+                    TPubList& pubs = feat->SetCit().SetPub();
+                    for (TPubList::iterator pub = pubs.begin(); pub != pubs.end(); ++pub) {
                         TPubList::iterator next_pub = pub;
                         for (++next_pub; next_pub != pubs.end(); ++next_pub) {
                             if (pub_cmp(*next_pub, *pub))
@@ -3239,14 +3229,13 @@ static void sort_feat_cit(CBioseq::TAnnot& annots)
 /**********************************************************/
 void fta_sort_seqfeat_cit(TEntryList& seq_entries)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetAnnot())
                 sort_feat_cit(bioseq->SetAnnot());
         }
 
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->IsSetAnnot())
                 sort_feat_cit(bio_set->SetAnnot());
         }
@@ -3256,10 +3245,10 @@ void fta_sort_seqfeat_cit(TEntryList& seq_entries)
 /**********************************************************/
 bool fta_orgref_has_taxid(const COrg_ref::TDb& dbtags)
 {
-    ITERATE (COrg_ref::TDb, tag, dbtags) {
-        if ((*tag)->IsSetDb() && (*tag)->IsSetTag() &&
-            ! (*tag)->GetTag().IsStr() && (*tag)->GetTag().GetId() > 0 &&
-            (*tag)->GetDb() == "taxon")
+    for (const auto& tag : dbtags) {
+        if (tag->IsSetDb() && tag->IsSetTag() &&
+            ! tag->GetTag().IsStr() && tag->GetTag().GetId() > 0 &&
+            tag->GetDb() == "taxon")
             return true;
     }
     return false;
@@ -3280,18 +3269,18 @@ void fta_fix_orgref_div(const CBioseq::TAnnot& annots, COrg_ref& org_ref, CGB_bl
         count--;
     }
 
-    ITERATE (CBioseq::TAnnot, annot, annots) {
-        if (! (*annot)->IsFtable())
+    for (const auto& annot : annots) {
+        if (! annot->IsFtable())
             continue;
 
-        const CSeq_annot::C_Data::TFtable& feats = (*annot)->GetData().GetFtable();
-        ITERATE (CSeq_annot::C_Data::TFtable, feat, feats) {
-            if (! (*feat)->IsSetData() || ! (*feat)->GetData().IsBiosrc())
+        const CSeq_annot::C_Data::TFtable& feats = annot->GetData().GetFtable();
+        for (const auto& feat : feats) {
+            if (! feat->IsSetData() || ! feat->GetData().IsBiosrc())
                 continue;
 
             count++;
 
-            const CBioSource& bio_src = (*feat)->GetData().GetBiosrc();
+            const CBioSource& bio_src = feat->GetData().GetBiosrc();
             if (bio_src.IsSetOrg() && fta_orgref_has_taxid(bio_src.GetOrg().GetDb()) == false) {
                 org_ref.SetOrgname().SetDiv(gbb.GetDiv());
                 count--;
@@ -3339,9 +3328,8 @@ bool XMLCheckCDS(char* entry, XmlIndexPtr xip)
 /**********************************************************/
 void fta_set_strandedness(TEntryList& seq_entries)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetInst() && bioseq->GetInst().IsSetStrand())
                 continue;
 
@@ -3359,11 +3347,11 @@ void fta_set_strandedness(TEntryList& seq_entries)
 /*****************************************************************************/
 static bool SwissProtIDPresent(const TEntryList& seq_entries)
 {
-    ITERATE (TEntryList, entry, seq_entries) {
-        for (CTypeConstIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (const auto& entry : seq_entries) {
+        for (CTypeConstIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetId()) {
-                ITERATE (TSeqIdList, id, bioseq->GetId()) {
-                    if ((*id)->IsSwissprot())
+                for (const auto& id : bioseq->GetId()) {
+                    if (id->IsSwissprot())
                         return true;
                 }
             }
@@ -3406,9 +3394,8 @@ static void RemoveSerials(TPubList& pubs)
 void StripSerialNumbers(TEntryList& seq_entries)
 {
     if (! SwissProtIDPresent(seq_entries)) {
-        NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-        {
-            for (CTypeIterator<CPubdesc> pubdesc(Begin(*(*entry))); pubdesc; ++pubdesc) {
+        for (auto& entry : seq_entries) {
+            for (CTypeIterator<CPubdesc> pubdesc(Begin(*entry)); pubdesc; ++pubdesc) {
                 if (pubdesc->IsSetPub()) {
                     RemoveSerials(pubdesc->SetPub().Set());
                     if (pubdesc->GetPub().Get().empty())
@@ -3416,7 +3403,7 @@ void StripSerialNumbers(TEntryList& seq_entries)
                 }
             }
 
-            for (CTypeIterator<CSeq_feat> feat(Begin(*(*entry))); feat; ++feat) {
+            for (CTypeIterator<CSeq_feat> feat(Begin(*entry)); feat; ++feat) {
                 if (feat->IsSetData()) {
                     if (feat->GetData().IsPub()) {
                         RemoveSerials(feat->SetData().SetPub().SetPub().Set());
@@ -3495,10 +3482,9 @@ static void RawBioseqPack(CBioseq& bioseq)
 static void DeltaBioseqPack(CBioseq& bioseq)
 {
     if (bioseq.GetInst().IsSetExt() && bioseq.GetInst().GetExt().IsDelta()) {
-        NON_CONST_ITERATE(CDelta_ext::Tdata, delta, bioseq.SetInst().SetExt().SetDelta().Set())
-        {
-            if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data() && ! (*delta)->GetLiteral().GetSeq_data().IsGap()) {
-                CSeqportUtil::Pack(&(*delta)->SetLiteral().SetSeq_data());
+        for (auto& delta : bioseq.SetInst().SetExt().SetDelta().Set()) {
+            if (delta->IsLiteral() && delta->GetLiteral().IsSetSeq_data() && ! delta->GetLiteral().GetSeq_data().IsGap()) {
+                CSeqportUtil::Pack(&delta->SetLiteral().SetSeq_data());
             }
         }
     }
@@ -3507,9 +3493,8 @@ static void DeltaBioseqPack(CBioseq& bioseq)
 /*****************************************************************************/
 void PackEntries(TEntryList& seq_entries)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetInst() && bioseq->GetInst().IsSetRepr()) {
                 CSeq_inst::ERepr repr = bioseq->GetInst().GetRepr();
                 if (repr == CSeq_inst::eRepr_raw || repr == CSeq_inst::eRepr_const)
