@@ -66,11 +66,11 @@ struct FtaMsgModFiles {
 
 struct FtaMsgPost {
     FILE*           lfd;     /* Opened logfile */
-    char*           logfile; /* Logfile full name */
-    std::string     appname;
-    char*           prefix_accession;
-    char*           prefix_locus;
-    char*           prefix_feature;
+    string          logfile; /* Logfile full name */
+    string          appname;
+    string          prefix_accession;
+    string          prefix_locus;
+    string          prefix_feature;
     bool            to_stderr;
     bool            show_msg_codeline;
     bool            show_log_codeline;
@@ -87,10 +87,10 @@ struct FtaMsgPost {
 
     FtaMsgPost() :
         lfd(NULL),
-        logfile(NULL),
-        prefix_accession(NULL),
-        prefix_locus(NULL),
-        prefix_feature(NULL),
+        logfile(),
+        prefix_accession(),
+        prefix_locus(),
+        prefix_feature(),
         to_stderr(true),
         show_msg_codeline(false),
         show_log_codeline(false),
@@ -107,18 +107,10 @@ struct FtaMsgPost {
         if (lfd) {
             fclose(lfd);
         }
-        if (logfile) {
-            MemFree(logfile);
-        }
-        if (prefix_locus) {
-            MemFree(prefix_locus);
-        }
-        if (prefix_accession) {
-            MemFree(prefix_accession);
-        }
-        if (prefix_feature) {
-            MemFree(prefix_feature);
-        }
+        logfile.clear();
+        prefix_locus.clear();
+        prefix_accession.clear();
+        prefix_feature.clear();
         delete bmmf;
     };
 };
@@ -329,28 +321,21 @@ void FtaInstallPrefix(int prefix, const char* name, const char* location)
         return;
 
     if ((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION) {
-        if (bmp->prefix_accession != NULL)
-            MemFree(bmp->prefix_accession);
-        bmp->prefix_accession = (char*)MemNew(strlen(name) + 1);
-        strcpy(bmp->prefix_accession, name);
+        bmp->prefix_accession = name;
     }
     if ((prefix & PREFIX_LOCUS) == PREFIX_LOCUS) {
-        if (bmp->prefix_locus != NULL)
-            MemFree(bmp->prefix_locus);
-        bmp->prefix_locus = (char*)MemNew(strlen(name) + 1);
-        strcpy(bmp->prefix_locus, name);
+        bmp->prefix_locus = name;
     }
     if ((prefix & PREFIX_FEATURE) == PREFIX_FEATURE) {
-        if (bmp->prefix_feature != NULL)
-            MemFree(bmp->prefix_feature);
-        bmp->prefix_feature = (char*)MemNew(160);
-        strcpy(bmp->prefix_feature, "FEAT=");
-        strncat(bmp->prefix_feature, name, 20);
-        bmp->prefix_feature[24] = '\0';
-        strcat(bmp->prefix_feature, "[");
-        strncat(bmp->prefix_feature, location, 127);
-        bmp->prefix_feature[152] = '\0';
-        strcat(bmp->prefix_feature, "]");
+        char tmp[160];
+        strcpy(tmp, "FEAT=");
+        strncat(tmp, name, 20);
+        tmp[24] = '\0';
+        strcat(tmp, "[");
+        strncat(tmp, location, 127);
+        tmp[152] = '\0';
+        strcat(tmp, "]");
+        bmp->prefix_feature = tmp;
     }
 }
 
@@ -358,19 +343,13 @@ void FtaInstallPrefix(int prefix, const char* name, const char* location)
 void FtaDeletePrefix(int prefix)
 {
     if ((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION) {
-        if (bmp->prefix_accession != NULL)
-            MemFree(bmp->prefix_accession);
-        bmp->prefix_accession = NULL;
+        bmp->prefix_accession.clear();
     }
     if ((prefix & PREFIX_LOCUS) == PREFIX_LOCUS) {
-        if (bmp->prefix_locus != NULL)
-            MemFree(bmp->prefix_locus);
-        bmp->prefix_locus = NULL;
+        bmp->prefix_locus.clear();
     }
     if ((prefix & PREFIX_FEATURE) == PREFIX_FEATURE) {
-        if (bmp->prefix_feature != NULL)
-            MemFree(bmp->prefix_feature);
-        bmp->prefix_feature = NULL;
+        bmp->prefix_feature.clear();
     }
 }
 
@@ -387,19 +366,18 @@ bool ErrSetLog(const char* logfile)
     if (! bmp)
         FtaErrInit();
 
-    if (! bmp->logfile) {
-        bmp->logfile = (char*)MemNew(strlen(logfile) + 1);
-        strcpy(bmp->logfile, logfile);
+    if (bmp->logfile.empty()) {
+        bmp->logfile = logfile;
     }
 
-    if (! bmp->lfd && bmp->logfile) {
+    if (! bmp->lfd && ! bmp->logfile.empty()) {
         time(&now);
         tm = localtime(&now);
         i  = tm->tm_hour % 12;
         if (! i)
             i = 12;
 
-        bmp->lfd = fopen(bmp->logfile, "a");
+        bmp->lfd = fopen(bmp->logfile.c_str(), "a");
         fprintf(bmp->lfd,
                 "\n========================[ %s %d, %d %2d:%02d %s ]========================\n",
                 months[tm->tm_mon],
@@ -574,13 +552,13 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
     if (bmp->show_log_codeline) {
         textStream << "{" << fpiFname << ", line  " << fpiLine;
     }
-    if (bmp->prefix_locus) {
+    if (! bmp->prefix_locus.empty()) {
         textStream << bmp->prefix_locus << ": ";
     }
-    if (bmp->prefix_accession) {
+    if (! bmp->prefix_accession.empty()) {
         textStream << bmp->prefix_accession << ": ";
     }
-    if (bmp->prefix_feature) {
+    if (! bmp->prefix_feature.empty()) {
         textStream << bmp->prefix_feature << " ";
     }
     textStream << fpiBuffer;
