@@ -5,6 +5,7 @@ import csv
 from enum import IntEnum, auto
 from functools import partial
 from itertools import product
+import os
 from pathlib import Path
 import re
 import shutil
@@ -266,7 +267,9 @@ def performance_cmd(args, path, input_file, iter_args):
 
     def performance(run_no, service, user_threads, io_threads, requests_per_io, binary):
         output_file = get_filename(path, f'raw.{run_no}', service, user_threads, io_threads, requests_per_io, binary)
-        cmd = [ binary, 'performance', '-output-file', output_file, '-service', service, '-user-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), '-verbose' ]
+        conf_file = binary + '.ini'
+        conf = [ '-conffile', conf_file ] if os.path.isfile(conf_file) else []
+        cmd = [ binary, 'performance', '-output-file', output_file, '-service', service, '-user-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), '-verbose', *conf ]
 
         if delay:
             cmd.extend([ '-delay', str(delay) ])
