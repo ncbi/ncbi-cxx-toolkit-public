@@ -583,8 +583,10 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
             bool need_update_date = !context.is_fasta && CheckDescriptors(context.asn_reader, CSeqdesc::e_Create_date);
 
             ProcessTopEntry(context.file.m_format, need_update_date, context.m_submit, context.m_topentry);
-            bool allow_mt = false;
-            if (allow_mt) {
+            auto num_threads_config = GetConfig().GetString("table2asn", "UseThreads", "one");
+            static constexpr std::array<std::string_view, 3> num_threads_values{"one", "two", "many"};
+            auto num_threads = std::distance(num_threads_values.begin(), std::find(num_threads_values.begin(), num_threads_values.end(), num_threads_config));
+            if (num_threads==2) {
                 CSharedOStream ff_file;
                 CFlatFileAsyncWriter<TAsyncToken> ff_writer;
                 if (m_context.m_make_flatfile) {
@@ -596,12 +598,11 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
                 }
                 async_writer.WriteAsyncMT(topobject, make_next_token, process_async, ff_chain_func);
                 // now it will wait until all ff_writer tasks complete
+            } else
+            if (num_threads == 1) {
+                async_writer.WriteAsync2T(topobject, make_next_token, process_async, ff_chain_func);
             } else {
-                #ifdef _DEBUG
-                    async_writer.WriteAsyncST(topobject, make_next_token, process_async, ff_chain_func);
-                #else
-                    async_writer.WriteAsync2T(topobject, make_next_token, process_async, ff_chain_func);
-                #endif
+                async_writer.WriteAsyncST(topobject, make_next_token, process_async, ff_chain_func);
             }
         } else {
             TAsyncToken token;

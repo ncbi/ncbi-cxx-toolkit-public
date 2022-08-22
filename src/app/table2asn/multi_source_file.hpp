@@ -91,14 +91,16 @@ class CMultiSourceWriterImpl;
     }
 */
 
-// all methods except constructors are thread safe
+// all methods except constructors/destructors are thread safe
 class CMultiSourceWriter
 {
 public:
     CMultiSourceWriter();
     CMultiSourceWriter(const CMultiSourceWriter&) = delete;
     CMultiSourceWriter(CMultiSourceWriter&&) = default;
+    CMultiSourceWriter& operator=(CMultiSourceWriter&&) = default;
     ~CMultiSourceWriter();
+
     void Open(std::ostream& o_stream);
     void Close();
     CMultiSourceOStream NewStream();
@@ -116,14 +118,13 @@ class CMultiSourceOStream: public std::ostream
 public:
     using _MyBase = std::ostream;
     CMultiSourceOStream() = default;
-    CMultiSourceOStream(const CMultiSourceOStream&) = delete;
     CMultiSourceOStream(CMultiSourceOStream&&);
     CMultiSourceOStream& operator=(CMultiSourceOStream&&);
     ~CMultiSourceOStream();
-    CMultiSourceOStream(CMultiSourceOStreamBuf* buf);
+    CMultiSourceOStream(std::shared_ptr<CMultiSourceOStreamBuf> buf);
 
 private:
-    CMultiSourceOStreamBuf* m_buf = nullptr;
+    std::shared_ptr<CMultiSourceOStreamBuf> m_buf;
 };
 
 END_NAMESPACE(objects);
