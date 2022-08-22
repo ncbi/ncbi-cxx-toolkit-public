@@ -108,8 +108,8 @@ private:
 
 private:
     enum EPSGS_BlobCacheCheckResult {
-        ePSGS_InCache,
-        ePSGS_NotInCache
+        ePSGS_SkipRetrieving,
+        ePSGS_ProceedRetrieving
     };
 
     enum EPSGS_BlobOp {
