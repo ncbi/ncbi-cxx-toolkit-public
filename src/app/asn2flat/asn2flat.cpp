@@ -68,6 +68,8 @@
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/huge_file_process.hpp>
+#include <future>
+#include <util/message_queue.hpp>
 
 #define USE_CDDLOADER
 
@@ -312,7 +314,7 @@ void CHTMLFormatterEx::FormatUniProtId(string& str, const string& prot_id) const
     str += "</a>";
 }
 
-class CAsn2FlatApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
+class CAsn2FlatApp : public CNcbiApplication
 {
 public:
     CAsn2FlatApp();
@@ -321,8 +323,8 @@ public:
     void Init() override;
     int Run() override;
 
-    bool HandleSeqEntry(CRef<CSeq_entry>& se) override;
-    bool HandleSeqEntry(const CSeq_entry_Handle& seh);
+    bool HandleSeqEntry(CRef<CSeq_entry>& se);
+    bool HandleSeqEntry(CSeq_entry_Handle seh);
 
 protected:
     void HandleSeqSubmit(CObjectIStream& is);
@@ -665,7 +667,10 @@ int CAsn2FlatApp::Run()
     if ( args[ "batch" ] ) {
         s_INSDSetOpen ( is_insdseq, m_Os );
         CGBReleaseFile in( *is.release(), propagate );
-        in.RegisterHandler( this );
+        in.RegisterHandler( [this](CRef<CSeq_entry>& entry)->bool
+        {
+            return HandleSeqEntry(entry);
+        });
         in.Read();  // HandleSeqEntry will be called from this function
         s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
@@ -697,20 +702,30 @@ int CAsn2FlatApp::Run()
             }
         }
 
-        auto handler = [this](CConstRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry)
-                       {
-                           if (pSubmitBlock) {
-                                auto pSubmit = Ref(new CSeq_submit());
-                                pSubmit->SetSub().Assign(*pSubmitBlock);
-                                pSubmit->SetData().SetEntrys().push_back(pEntry);
-                                this->HandleSeqSubmit(*pSubmit);
-                           }
-                           else {
-                                this->HandleSeqEntry(pEntry);
-                           }
-                       };
+        //CMessageQueue<std::future<std::string>> val_queue{10};
 
-        auto success = in.Read(handler, seqid);
+        auto handler = [this](CConstRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry)->bool
+                    {
+                        //std::ostringstream sstr;
+                        if (pSubmitBlock) {
+                            auto pSubmit = Ref(new CSeq_submit());
+                            pSubmit->SetSub().Assign(*pSubmitBlock);
+                            pSubmit->SetData().SetEntrys().push_back(pEntry);
+                            this->HandleSeqSubmit(*pSubmit);
+                            return true;
+                        }
+                        else {
+                            return this->HandleSeqEntry(pEntry);
+                        }
+                    };
+
+        auto read_task = std::async(std::launch::async, [this, &in, handler, seqid]()->bool
+        {
+            return in.Read(handler, seqid);
+        });
+
+        bool success = read_task.get();
+
         s_INSDSetClose ( is_insdseq, m_Os );
         if (!success || m_Exception) return -1;
         return 0;
@@ -941,7 +956,7 @@ void CAsn2FlatApp::HandleSeqId(
 }
 
 //  ============================================================================
-bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
+bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
