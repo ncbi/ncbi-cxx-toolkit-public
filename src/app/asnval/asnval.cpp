@@ -92,7 +92,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/edit/remote_updater.hpp>
 #include <future>
-#include "message_queue.hpp"
+#include <util/message_queue.hpp>
 #include <objtools/validator/huge_file_validator.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -540,7 +540,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 
         if (use_mt)
         {
-            CMessageQueue<std::future<CConstRef<CValidError>>, CMessageQueueSizeLimit<10>> val_queue;
+            CMessageQueue<std::future<CConstRef<CValidError>>> val_queue{10};
             // start a loop in a separate thread
             auto topids_task = std::async(std::launch::async, [this, &val_queue, &loader_name, &reader]()
             {
@@ -565,15 +565,15 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
                             }
                         });
                     // std::future is not copiable, so passing it for move constructor
-                    val_queue.PostMessage(std::move(params));
+                    val_queue.push_back(std::move(params));
                 }
 
-                val_queue.PostMessage({});
+                val_queue.push_back({});
             });
 
             while(true)
             {
-                auto result = val_queue.RetrieveMessage();
+                auto result = val_queue.pop_front();
                 if (!result.valid())
                     break;
                 auto eval = result.get();
