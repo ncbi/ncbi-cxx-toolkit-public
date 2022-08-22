@@ -45,6 +45,9 @@
                        ? string("NCBI Help Desk <info@ncbi.nlm.nih.gov>") \
                        : m_Email)
 
+#define NCBI_WWW       DEF_CONN_HOST
+#define NCBI_WWW_BEMD  "www.be-md.ncbi.nlm.nih.gov"
+#define NCBI_WWW_STVA  "www.st-va.ncbi.nlm.nih.gov"
 #define NCBI_FWD_BEMD  "130.14.29.112"
 #define NCBI_FWD_STVA  "165.112.7.12"
 
@@ -101,6 +104,7 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
     typedef EIO_Status (CConnTest::*FCheck)(string* reason);
     FCheck check[] = {
         NULL,
+        &CConnTest::DnsOkay,
         &CConnTest::HttpOkay,
         &CConnTest::DispatcherOkay,
         &CConnTest::ServiceOkay,
@@ -117,7 +121,7 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
         reason->clear();
     m_CheckPoint.clear();
 
-    int s = eHttp;
+    int s = eNone + 1;
     EIO_Status status;
     do {
         if ((status = (this->*check[s])(reason)) != eIO_Success) {
@@ -126,7 +130,7 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
         }
     } while (EStage(s++) < stage);
 
-    if (status != eIO_Success  &&  status != eIO_Interrupt)
+    if (stage != eDns  &&  status != eIO_Success  &&  status != eIO_Interrupt)
         ExtraCheckOnFailure();
     return status;
 }
@@ -281,15 +285,15 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     } kTests[] = {
         // 0. NCBI default
         { eURL_Http,
-          0,                            0                      }, // NCBI
+          0,                0        }, // NCBI
         // 1. External server(s)
         { eURL_Https,
-          "www.google.com",             0                      },
+          "www.google.com", 0        },
         // 2. NCBI servers, explicitly
         { eURL_Https,
-          "www.be-md.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }, // NCBI main
+          NCBI_WWW_BEMD,    NCBI_WWW }, // NCBI main
         { eURL_Https,
-          "www.st-va.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }  // NCBI colo
+          NCBI_WWW_STVA,    NCBI_WWW }  // NCBI colo
     };
 
     m_CheckPoint.clear();
@@ -375,6 +379,27 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
 }
 
 
+EIO_Status CConnTest::DnsOkay(string* reason)
+{
+    EIO_Status status;
+    string result;
+
+    PreCheck(eDns, 0/*main*/,
+             "Checking whether NCBI is known to DNS");
+
+    if (CSocketAPI::gethostbyname(NCBI_WWW) == 0) {
+        result = "Unable to resolve " NCBI_WWW;
+        status = eIO_Unknown;
+    } else {
+        result = "OK";
+        status = eIO_Success;
+    }
+
+    PostCheck(eDns, 0/*main*/, status, result);
+    return status;
+}
+
+
 EIO_Status CConnTest::HttpOkay(string* reason)
 {
     PreCheck(eHttp, 0/*main*/,
@@ -382,7 +407,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0, m_DebugPrintout));
     if (!net_info) {
-        PostCheck(eNone, 0/*main*/,
+        PostCheck(eHttp, 0/*main*/,
                   eIO_Unknown, "Unable to create network info structure");
         return eIO_Unknown;
     }
