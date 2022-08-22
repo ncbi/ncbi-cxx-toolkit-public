@@ -86,10 +86,9 @@ class Statistics(list):
             self._data = {}
 
         def add(self, details, rule_name, time):
-            for key, value in details.items():
-                if not self._regex or self._regex.search(f'{key}={value}'):
-                    self._data.setdefault(rule_name, []).append(time)
-                    return True
+            if not self._regex or any(self._regex.search(f'{key}={value}') for key, values in details.items() for value in values):
+                self._data.setdefault(rule_name, []).append(time)
+                return True
 
             return False
 
