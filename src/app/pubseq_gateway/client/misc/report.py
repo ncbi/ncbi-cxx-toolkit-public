@@ -164,14 +164,14 @@ class Statistics(list):
             print(file=self._file)
 
 class Summary:
-    def __init__(self, enabled, total, file=sys.stdout):
+    def __init__(self, enabled, file=sys.stdout):
         self._enabled = enabled
 
         if self._enabled:
             self._min = None
             self._max = None
             self._success = 0
-            self._total = total
+            self._total = 0
             self._file = file
 
     def add(self, request_data, details):
@@ -181,6 +181,7 @@ class Summary:
 
             done = request_data[EventType.DONE][EventIndex.FIRST][EventField.EPOCH]
             self._max = max(self._max or done, done)
+            self._total += 1
 
             try:
                 if details['Reply'] != [ 'Success' ]: return
@@ -213,19 +214,23 @@ def read_raw_metrics(input_file):
 
             request_id = line[EventField.REQUEST_ID]
             event_type = EventType(int(line[EventField.TYPE]))
+
         except:
             continue
 
         requests.setdefault(request_id, {}).setdefault(event_type, []).append(data)
+        event_types = requests[request_id].keys()
 
-    return requests
+        if (event_type == EventType.DONE and (EventType.CLOSE in event_types or EventType.FAIL in event_types) or
+                event_type in {EventType.CLOSE, EventType.FAIL} and EventType.DONE in event_types):
+            yield request_id, requests.pop(request_id)
 
 def report(requests, output_file, per_request, statistics, progress, summary):
     per_request = PerRequest(per_request, file=output_file)
     statistics = Statistics(statistics, file=output_file)
-    summary = Summary(summary, len(requests), file=output_file)
+    summary = Summary(summary, file=output_file)
 
-    for i, (request_id, request_data) in enumerate(requests.items(), start=1):
+    for i, (request_id, request_data) in enumerate(requests, start=1):
         data = []
 
         try:
@@ -323,6 +328,14 @@ def performance_cmd(args, path, input_file, iter_args):
         with open(input_file, 'r') as f:
             subprocess.run(cmd, stdin=f, text=True)
 
+    def adjusted_requests():
+        for run_no in range(args.RUNS):
+            with open(get_filename(path, f'raw.{run_no}', *run_args)) as input_file:
+                run_requests = read_raw_metrics(input_file)
+
+                for key, value in run_requests:
+                    yield f'{key}.{run_no}', value
+
     if args.warm_up:
         run_args = next(product(*iter_args.values()))
         performance('warm_up', *run_args)
@@ -334,14 +347,7 @@ def performance_cmd(args, path, input_file, iter_args):
     aggregate = {}
 
     for run_args in product(*iter_args.values()):
-        requests = {}
-
-        for run_no in range(args.RUNS):
-            with open(get_filename(path, f'raw.{run_no}', *run_args)) as input_file:
-                run_requests = read_raw_metrics(input_file)
-
-                for key, value in run_requests.items():
-                    requests[f'{key}.{run_no}'] = value
+        requests = adjusted_requests()
 
         with open(get_filename(path, 'pro', *run_args), 'w') as output_file:
             statistics = report(requests, output_file, True, [], 0, True)[0]
