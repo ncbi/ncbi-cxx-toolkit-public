@@ -56,6 +56,7 @@ public:
     ///
     enum EStage {
         eNone,                  ///< Zero placeholder
+        eDns,                   ///< Check host names
         eHttp,                  ///< Check whether HTTP works
         eDispatcher,            ///< Check whether NCBI dispatcher works
         eStatelessService,      ///< Check whether simplest NCBI service works
@@ -151,6 +152,7 @@ protected:
     /// it is a failing check that can return an explanation via the "reason"
     /// pointer (if non-NULL) or at least clear the string.
 
+    virtual EIO_Status DnsOkay           (string* reason);
     virtual EIO_Status HttpOkay          (string* reason);
     virtual EIO_Status DispatcherOkay    (string* reason);
     virtual EIO_Status ServiceOkay       (string* reason);
