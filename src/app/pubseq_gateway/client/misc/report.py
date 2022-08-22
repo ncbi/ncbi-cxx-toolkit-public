@@ -200,18 +200,22 @@ def read_raw_metrics(input_file):
     requests = {}
 
     for line in reader:
-        if len(line) < EventField.REST:
-            pass
+        try:
+            if len(line) < EventField.REST:
+                pass
 
-        epoch = float(line[EventField.EPOCH])
-        data = { EventField.EPOCH: epoch }
+            epoch = float(line[EventField.EPOCH])
+            data = { EventField.EPOCH: epoch }
 
-        if len(line) > EventField.REST:
-            for key, value in [ s.split('=') for s in line[EventField.REST:] ]:
-                data.setdefault(EventField.REST, {}).setdefault(key, []).append(value)
+            if len(line) > EventField.REST:
+                for key, value in [ s.split('=') for s in line[EventField.REST:] ]:
+                    data.setdefault(EventField.REST, {}).setdefault(key, []).append(value)
 
-        request_id = line[EventField.REQUEST_ID]
-        event_type = EventType(int(line[EventField.TYPE]))
+            request_id = line[EventField.REQUEST_ID]
+            event_type = EventType(int(line[EventField.TYPE]))
+        except:
+            continue
+
         requests.setdefault(request_id, {}).setdefault(event_type, []).append(data)
 
     return requests
@@ -222,18 +226,26 @@ def report(requests, output_file, per_request, statistics, progress, summary):
     summary = Summary(summary, len(requests), file=output_file)
 
     for i, (request_id, request_data) in enumerate(requests.items(), start=1):
-        details = request_data[EventType.DONE][EventIndex.FIRST][EventField.REST]
+        data = []
 
-        for rule_name, rule_params in rules.items():
-            ((start_type, start_index), (end_type, end_index)) = rule_params
-            start = request_data[start_type][start_index.value][EventField.EPOCH]
-            end = request_data[end_type][end_index.value][EventField.EPOCH]
-            time = end - start
-            per_request.add_to_row(time)
-            statistics.add(details, rule_name, time)
+        try:
+            details = request_data[EventType.DONE][EventIndex.FIRST][EventField.REST]
 
-        summary.add(request_data, details)
-        per_request.print_row(request_id, details)
+            for rule_name, rule_params in rules.items():
+                ((start_type, start_index), (end_type, end_index)) = rule_params
+                start = request_data[start_type][start_index.value][EventField.EPOCH]
+                end = request_data[end_type][end_index.value][EventField.EPOCH]
+                time = end - start
+                data.append([details, rule_name, time])
+        except:
+            pass
+        else:
+            for line in data:
+                per_request.add_to_row(line[-1])
+                statistics.add(*line)
+
+            summary.add(request_data, details)
+            per_request.print_row(request_id, details)
 
         if progress and i % progress == 0:
             statistics.print()
