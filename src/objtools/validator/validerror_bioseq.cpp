@@ -1260,13 +1260,23 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
         ++user;
     }
 
-    CSeqdesc_CI title(bsh, CSeqdesc::e_Title);
-    while (title) {
-        if (NStr::StartsWith(title->GetTitle(), "GRC")) {
-            is_grc = true;
-            break;
+    CSeqdesc_CI ti(bsh, CSeqdesc::e_Title);
+    if (ti) {
+        while (ti) {
+            if (NStr::StartsWith(ti->GetTitle(), "GRC")) {
+                is_grc = true;
+                break;
+            }
+            ++ti;
         }
-        ++title;
+    } else {
+        sequence::CDeflineGenerator defline_generator;
+        string title = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
+        if (!NStr::IsBlank(title)) {
+            if (NStr::StartsWith(title, "GRC")) {
+                is_grc = true;
+            }
+        }
     }
 
     is_wgs = IsWGS(bsh);
@@ -5197,14 +5207,18 @@ void CValidError_bioseq::x_ValidateCompletness
     EDiagSev sev = mi.GetTech() == CMolInfo::eTech_htgs_3 ?
         eDiag_Warning : /* eDiag_Error */ eDiag_Warning;
 
+    string title;
     CSeqdesc_CI desc(m_CurrentHandle, CSeqdesc::e_Title);
     if ( desc ) {
-        const string& title = desc->GetTitle();
-        if (!NStr::IsBlank(title)) {
-            if (NStr::FindNoCase(title, "complete sequence") != string::npos
-                || NStr::FindNoCase(title, "complete genome") != string::npos) {
-                return;
-            }
+        title = desc->GetTitle();
+    } else {
+        sequence::CDeflineGenerator defline_generator;
+        title = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
+    }
+    if (!NStr::IsBlank(title)) {
+        if (NStr::FindNoCase(title, "complete sequence") != string::npos
+            || NStr::FindNoCase(title, "complete genome") != string::npos) {
+            return;
         }
     }
 
@@ -10431,8 +10445,15 @@ void CValidError_bioseq::ValidateCompleteGenome(const CBioseq& seq)
 
     // Completness check
     bool complete_genome = false;
+    string title;
     CSeqdesc_CI ti(m_CurrentHandle, CSeqdesc::e_Title);
-    complete_genome = (ti && NStr::Find(ti->GetTitle(), "complete genome") != string::npos);
+    if (ti) {
+        title = ti->GetTitle();
+    } else {
+        sequence::CDeflineGenerator defline_generator;
+        title = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
+    }
+    complete_genome = (!NStr::IsBlank(title) && NStr::Find(title, "complete genome") != string::npos);
 
     if (!complete_genome) {
 
