@@ -2037,12 +2037,20 @@ const CBioseq_Handle& bsh)
     CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
     CSeqdesc_CI ti(bsh, CSeqdesc::e_Title);
 
+    string title;
+    if ( ti ) {
+        title = ti->GetTitle();
+    } else {
+        sequence::CDeflineGenerator defline_generator;
+        title = defline_generator.GenerateDefline(bsh, sequence::CDeflineGenerator::fIgnoreExisting);
+    }
+
     // look for viral completeness
-    if (mi && mi->IsMolinfo() && ti && ti->IsTitle()) {
+    if (mi && mi->IsMolinfo() && !NStr::IsBlank(title)) {
         const CMolInfo& molinfo = mi->GetMolinfo();
         if (molinfo.IsSetBiomol() && molinfo.GetBiomol() == CMolInfo::eBiomol_genomic
             && molinfo.IsSetCompleteness() && molinfo.GetCompleteness() == CMolInfo::eCompleteness_complete
-            && NStr::Find(ti->GetTitle(), "complete genome") != string::npos
+            && NStr::Find(title, "complete genome") != string::npos
             && s_CompleteGenomeNeedsChromosome(source)) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceNeedsChromosome,
                 "Non-viral complete genome not labeled as chromosome",
