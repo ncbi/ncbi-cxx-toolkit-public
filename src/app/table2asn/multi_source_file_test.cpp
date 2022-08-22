@@ -56,7 +56,7 @@ void TestMTWriter()
             auto task1 = std::async(std::launch::async, [](ncbi::objects::CMultiSourceOStream ostr)
                 {
                     std::this_thread::sleep_for(5s);
-                    for (size_t i=0; i<1000; ++i) {
+                    for (size_t i=0; i<100; ++i) {
                         ostr << "Hello " << i << "\n";
                     }
                     std::this_thread::sleep_for(5s);
