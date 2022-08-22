@@ -331,7 +331,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     // The auto blob skipping needs to be copied
     cass_blob_fetch->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
 
-    if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_InCache)
+    if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_SkipRetrieving)
         return;
 
     load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
@@ -404,7 +404,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // The auto blob skipping needs to be copied
     cass_blob_fetch->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
 
-    if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_NotInCache) {
+    if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_ProceedRetrieving) {
         unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
         CPSGCache                   psg_cache(m_Request, m_Reply);
         auto                        blob_prop_cache_lookup_result =
@@ -536,7 +536,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
         details->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
 
         // Check the already sent cache
-        if (x_CheckExcludeBlobCache(details.get()) == ePSGS_InCache) {
+        if (x_CheckExcludeBlobCache(details.get()) == ePSGS_SkipRetrieving) {
             continue;
         }
 
@@ -780,7 +780,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
         details->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
 
         // Check the already sent cache
-        if (x_CheckExcludeBlobCache(details.get()) == ePSGS_InCache) {
+        if (x_CheckExcludeBlobCache(details.get()) == ePSGS_SkipRetrieving) {
             continue;
         }
 
@@ -868,9 +868,9 @@ CPSGS_CassBlobBase::EPSGS_BlobCacheCheckResult
 CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
 {
     if (!fetch_details->IsBlobFetch())
-        return ePSGS_NotInCache;
+        return ePSGS_ProceedRetrieving;
     if (fetch_details->GetClientId().empty())
-        return ePSGS_NotInCache;
+        return ePSGS_ProceedRetrieving;
 
     bool                completed = true;
     psg_time_point_t    completed_time;
@@ -881,29 +881,29 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
     if (request_type != CPSGS_Request::ePSGS_AnnotationRequest &&
         request_type != CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
         // Only ID/get and ID/get_na may need to skip a blob
-        return ePSGS_NotInCache;
+        return ePSGS_ProceedRetrieving;
     }
 
-    if (cache_result != ePSGS_AlreadyInCache)
-        return ePSGS_NotInCache;
+    if (cache_result == ePSGS_Added)
+        return ePSGS_ProceedRetrieving;
     if (!fetch_details->GetAutoBlobSkipping())
-        return ePSGS_NotInCache;
+        return ePSGS_ProceedRetrieving;
 
     // In case the blob is in process of sending the reply is the same for
     // ID/get and ID/get_na requests
     if (!completed) {
         x_PrepareBlobExcluded(fetch_details, ePSGS_BlobInProgress);
-        return ePSGS_InCache;
+        return ePSGS_SkipRetrieving;
     }
 
-    // Here: the blob is in case and has already bben sent so the
+    // Here: the blob is in case and has already been sent so the
     // resend_timeout needs to be respected when a decision send it or not is
     // made
     unsigned long       sent_mks_ago = GetTimespanToNowMks(completed_time);
     unsigned long       resend_timeout_mks;
     if (request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
-        auto &  blob_request = m_Request->GetRequest<SPSGS_AnnotRequest>();
-        resend_timeout_mks = blob_request.m_ResendTimeoutMks;
+        auto &  annot_request = m_Request->GetRequest<SPSGS_AnnotRequest>();
+        resend_timeout_mks = annot_request.m_ResendTimeoutMks;
     } else {
         // This is CPSGS_Request::ePSGS_BlobBySeqIdRequest request
         auto &  blob_request = m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>();
@@ -915,7 +915,7 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
         // No sending the blob; it was sent recent enough
         x_PrepareBlobExcluded(fetch_details, sent_mks_ago,
                               resend_timeout_mks - sent_mks_ago);
-        return ePSGS_InCache;
+        return ePSGS_SkipRetrieving;
     }
 
     // Sending the blob anyway; it was longer than the resend
@@ -933,7 +933,7 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
                                     fetch_details->GetBlobId().m_SatKey,
                                     false);
     fetch_details->SetExcludeBlobCacheUpdated(true);
-    return ePSGS_NotInCache;
+    return ePSGS_ProceedRetrieving;
 }
 
 
