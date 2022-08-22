@@ -48,7 +48,7 @@
 #include <objects/submit/Submit_block.hpp>
 #include <objects/seq/Seq_descr.hpp>
 
-#include "message_queue.hpp"
+#include <util/message_queue.hpp>
 #include <future>
 #include "multi_source_file.hpp"
 
@@ -584,9 +584,6 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
             ProcessTopEntry(context.file.m_format, need_update_date, context.m_submit, context.m_topentry);
             bool allow_mt = false;
-            #ifdef _DEBUG
-            allow_mt = true;
-            #endif
             if (allow_mt) {
                 CSharedOStream ff_file;
                 CFlatFileAsyncWriter<TAsyncToken> ff_writer;
