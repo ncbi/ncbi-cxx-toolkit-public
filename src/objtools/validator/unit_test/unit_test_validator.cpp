@@ -1012,11 +1012,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ExtNotAllowed)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    /*
     // repr = seg
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_seg);
     expected_errors[0]->SetErrMsg("Missing or incorrect Bioseq-ext on seg Bioseq");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    */
 
     // repr = consen
     entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_consen);
