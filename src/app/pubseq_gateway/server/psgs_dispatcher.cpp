@@ -627,15 +627,19 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                         "the worst because the working processors found nothing "
                         "and there were " + to_string(request->GetLimitedProcessorCount()) +
                         " processor(s) which have not been tried to be instantiated "
-                        "due to their concurrency limit has been exceeded",
+                        "due to their concurrency limit has been exceeded (" +
+                        request->GetLimitedProcessorsMessage() + ")",
                         request, reply);
                 }
 
-                reply->PrepareReplyMessage("Instantiated processors found nothing and there were " +
-                                           to_string(request->GetLimitedProcessorCount()) +
-                                           " processor(s) which have not been tried to be instantiated "
-                                           "due to their concurrency limit has been exceeded", request_status,
+                string  msg = "Instantiated processors found nothing and there were " +
+                              to_string(request->GetLimitedProcessorCount()) +
+                              " processor(s) which have not been tried to be instantiated "
+                              "due to their concurrency limit has been exceeded (" +
+                              request->GetLimitedProcessorsMessage() + ")";
+                reply->PrepareReplyMessage(msg, request_status,
                                            ePSGS_NotFoundAndNotInstantiated, eDiag_Error);
+                PSG_ERROR(msg);
             }
 
             if (need_trace) {
