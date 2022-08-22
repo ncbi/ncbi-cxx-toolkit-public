@@ -241,6 +241,10 @@ endif()
 NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo FIND lzo)
 
 #############################################################################
+# ZSTD
+NCBI_define_Pkgcomponent(NAME ZSTD PACKAGE zstd FIND zstd)
+
+#############################################################################
 # Boost
 NCBI_define_Pkgcomponent(NAME Boost PACKAGE boost FIND Boost)
 set(Boost_FOUND ${NCBI_COMPONENT_Boost_FOUND})
