@@ -90,16 +90,12 @@ public:
         PreliminaryDispatchRequest(shared_ptr<CPSGS_Request> request,
                                    shared_ptr<CPSGS_Reply> reply);
 
-    list<shared_ptr<IPSGS_Processor>>
-        DispatchRequest(shared_ptr<CPSGS_Request> request,
-                        shared_ptr<CPSGS_Reply> reply,
-                        const list<string> &  processor_names);
-
     /// Return list of processors which can be used to process the request.
     /// The caller accepts the ownership.
     list<shared_ptr<IPSGS_Processor>>
         DispatchRequest(shared_ptr<CPSGS_Request> request,
-                        shared_ptr<CPSGS_Reply> reply);
+                        shared_ptr<CPSGS_Reply> reply,
+                        const list<string> &  processor_names);
 
     /// The processor signals that it is going to provide data to the client
     IPSGS_Processor::EPSGS_StartProcessing

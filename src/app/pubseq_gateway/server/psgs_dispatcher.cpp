@@ -173,7 +173,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         size_t      current_count = m_ProcessorConcurrency[proc_index].GetCurrentCount();
 
         if (current_count >= limit) {
-            request->IncrementLimitProcessorCount();
+            request->AddLimitedProcessor(proc->GetName(), limit);
             m_ProcessorConcurrency[proc_index].IncrementLimitReachedCount();
 
             if (request->NeedTrace()) {
@@ -229,12 +229,17 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     if (ret.empty()) {
         string                  msg;
         CRequestStatus::ECode   status_code;
-        if (request->GetLimitedProcessorCount() == 0) {
+        size_t                  limited_processor_count = request->GetLimitedProcessorCount();
+        if (limited_processor_count == 0) {
             msg = "No matching processors found";
             status_code = CRequestStatus::e404_NotFound;
             PSG_WARNING(msg);
         } else {
-            msg = "No processors were instantiated due to the limit on concurrent processors is exceeded";
+            msg = to_string(limited_processor_count) + " of " +
+                  to_string(processor_names.size()) +
+                  " processor(s) were not instantiated due to the limit on "
+                  "concurrent processors is exceeded (" +
+                  request->GetLimitedProcessorsMessage() + ")";
             status_code = CRequestStatus::e503_ServiceUnavailable;
             PSG_ERROR(msg);
         }
@@ -245,109 +250,8 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
 
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
-    } else {
-        auto *  grp = procs.release();
-        pair<size_t,
-             unique_ptr<SProcessorGroup>>   req_grp = make_pair(request_id,
-                                                                unique_ptr<SProcessorGroup>(grp));
 
-        size_t      bucket_index = x_GetBucketIndex(request_id);
-        m_GroupsLock[bucket_index].lock();
-        m_ProcessorGroups[bucket_index].insert(m_ProcessorGroups[bucket_index].end(),
-                                               move(req_grp));
-        m_GroupsLock[bucket_index].unlock();
-    }
-
-    return ret;
-}
-
-
-list<shared_ptr<IPSGS_Processor>>
-CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
-                                  shared_ptr<CPSGS_Reply> reply)
-{
-    list<shared_ptr<IPSGS_Processor>>   ret;
-    size_t                              proc_count = m_RegisteredProcessors.size();
-    TProcessorPriority                  priority = proc_count;
-    auto                                request_id = request->GetRequestId();
-    unique_ptr<SProcessorGroup>         procs(new SProcessorGroup(request_id));
-
-    for (auto const &  proc : m_RegisteredProcessors) {
-        // First check the limit for the number of processors
-        size_t      proc_index = proc_count - priority;
-        size_t      limit = m_ProcessorConcurrency[proc_index].m_Limit;
-
-        size_t      current_count = m_ProcessorConcurrency[proc_index].GetCurrentCount();
-
-        if (current_count >= limit) {
-            request->IncrementLimitProcessorCount();
-            m_ProcessorConcurrency[proc_index].IncrementLimitReachedCount();
-
-            if (request->NeedTrace()) {
-                // false: no need to update the last activity
-                reply->SendTrace("Processor: " + proc->GetName() +
-                                 " will not be tried to create because"
-                                 " the processor group limit has been exceeded."
-                                 " Limit: " + to_string(limit) +
-                                 " Current count: " + to_string(current_count),
-                                 request->GetStartTimestamp(), false);
-            }
-            --priority;
-            continue;
-        }
-
-        if (request->NeedTrace()) {
-            // false: no need to update the last activity
-            reply->SendTrace("Try to create processor: " + proc->GetName(),
-                             request->GetStartTimestamp(), false);
-        }
-        shared_ptr<IPSGS_Processor> p(proc->CreateProcessor(request, reply,
-                                                            priority));
-        if (p) {
-            m_ProcessorConcurrency[proc_index].IncrementCurrentCount();
-
-            ret.push_back(p);
-
-            procs->m_Processors.emplace_back(p, ePSGS_Up,
-                                             IPSGS_Processor::ePSGS_InProgress);
-
-            if (request->NeedTrace()) {
-                // false: no need to update the last activity
-                reply->SendTrace("Processor " + p->GetName() +
-                                 " has been created successfully (priority: " +
-                                 to_string(priority) + ")",
-                                 request->GetStartTimestamp(), false);
-            }
-        } else {
-            if (request->NeedTrace()) {
-                // false: no need to update the last activity
-                reply->SendTrace("Processor " + proc->GetName() +
-                                 " has not been created",
-                                 request->GetStartTimestamp(), false);
-            }
-        }
-        --priority;
-    }
-
-    if (ret.empty()) {
-        string                  msg;
-        CRequestStatus::ECode   status_code;
-        if (request->GetLimitedProcessorCount() == 0) {
-            msg = "No matching processors found";
-            status_code = CRequestStatus::e404_NotFound;
-            PSG_WARNING(msg);
-        } else {
-            msg = "No processors were instantiated due to the limit on concurrent processors is exceeded";
-            status_code = CRequestStatus::e503_ServiceUnavailable;
-            PSG_ERROR(msg);
-        }
-
-        reply->PrepareReplyMessage(msg, status_code,
-                                   ePSGS_NoProcessor, eDiag_Error);
-        reply->PrepareReplyCompletion(request->GetStartTimestamp());
-
-        reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
-        reply->SetCompleted();
+        x_PrintRequestStop(request, status_code);
     } else {
         auto *  grp = procs.release();
         pair<size_t,
