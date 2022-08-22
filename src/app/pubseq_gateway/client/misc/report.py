@@ -10,7 +10,7 @@ from pathlib import Path
 import re
 import shutil
 import socket
-from statistics import mean
+from statistics import mean, median, quantiles, StatisticsError
 import subprocess
 import sys
 from timeit import timeit
@@ -76,8 +76,14 @@ class PerRequest:
             self._row = []
 
 class Statistics(list):
-    def get_percentile(data, percentile):
-        return data[int(percentile * len(data)) - 1]
+    _percentiles_steps = 100 // 5 # 5 is the greatest common divisor of the percentiles
+    _percentiles = {
+            '25th':   0.25,
+            'Median': 0.50,
+            '75th':   0.75,
+            '90th':   0.90,
+            '95th':   0.95,
+        }
 
     class Group(dict):
         def __init__(self, name=None, regex=None):
@@ -94,14 +100,19 @@ class Statistics(list):
 
         def calc(self):
             for rule_name, rule_data in self._data.items():
-                rule_data.sort()
-                self.setdefault('Min ', []).append(rule_data[0])
-                self.setdefault('25th', []).append(Statistics.get_percentile(rule_data, 0.25))
-                self.setdefault('Median', []).append(Statistics.get_percentile(rule_data, 0.50))
-                self.setdefault('75th', []).append(Statistics.get_percentile(rule_data, 0.75))
-                self.setdefault('90th', []).append(Statistics.get_percentile(rule_data, 0.90))
-                self.setdefault('95th', []).append(Statistics.get_percentile(rule_data, 0.95))
-                self.setdefault('Max ', []).append(rule_data[-1])
+                self.setdefault('Min ', []).append(min(rule_data))
+
+                try:
+                    q = quantiles(rule_data, n=Statistics._percentiles_steps, method='inclusive')
+
+                    for name, value in Statistics._percentiles.items():
+                        self.setdefault(name, []).append(q[int(Statistics._percentiles_steps * value) - 1])
+                except StatisticsError:
+                    # rule_data has fewer than two values
+                    for name, value in Statistics._percentiles.items():
+                        self.setdefault(name, []).append(rule_data[0])
+
+                self.setdefault('Max ', []).append(max(rule_data))
                 self.setdefault('Average', []).append(mean(rule_data))
 
         def print(self, file):
@@ -342,7 +353,7 @@ def overall_cmd(input_file_option, args, path, input_file, iter_args):
         with open(get_filename(path, 'pro', *run_args), 'w') as output_file:
             print(*[f'{v:.3f}' for v in run_results], sep='\n', file=output_file)
 
-        aggregate[run_args] = [ Statistics.get_percentile(run_results, 0.50), mean(run_results) ]
+        aggregate[run_args] = [ median(run_results), mean(run_results) ]
 
     return aggregate, statistics_to_output
 
