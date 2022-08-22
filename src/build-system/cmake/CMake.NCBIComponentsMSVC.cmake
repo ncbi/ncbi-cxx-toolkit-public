@@ -50,6 +50,7 @@ set(NCBI_ThirdParty_PCRE       ${NCBI_ThirdPartyBasePath}/pcre/${NCBI_ThirdParty
 set(NCBI_ThirdParty_Z          ${NCBI_ThirdPartyBasePath}/z/${NCBI_ThirdPartyCompiler}/1.2.11 CACHE PATH "Z root")
 set(NCBI_ThirdParty_BZ2        ${NCBI_ThirdPartyBasePath}/bzip2/${NCBI_ThirdPartyCompiler}/1.0.6 CACHE PATH "BZ2 root")
 set(NCBI_ThirdParty_LZO        ${NCBI_ThirdPartyBasePath}/lzo/${NCBI_ThirdPartyCompiler}/2.10 CACHE PATH "LZO root")
+set(NCBI_ThirdParty_ZSTD       ${NCBI_ThirdPartyBasePath}/zstd/${NCBI_ThirdPartyCompiler}/1.5.2 CACHE PATH "ZSTD root")
 set(NCBI_ThirdParty_BerkeleyDB ${NCBI_ThirdPartyBasePath}/berkeleydb/${NCBI_ThirdPartyCompiler}/4.6.21.NC CACHE PATH "BerkeleyDB root")
 set(NCBI_ThirdParty_LMDB       ${NCBI_ThirdPartyBasePath}/lmdb/${NCBI_ThirdPartyCompiler}/0.9.24 CACHE PATH "LMDB root")
 set(NCBI_ThirdParty_JPEG       ${NCBI_ThirdPartyBasePath}/jpeg/${NCBI_ThirdPartyCompiler}/9c CACHE PATH "JPEG root")
@@ -218,6 +219,11 @@ set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 # LZO
 NCBI_define_Wcomponent(LZO liblzo.lib)
 NCBIcomponent_report(LZO)
+
+#############################################################################
+# ZSTD
+NCBI_define_Wcomponent(ZSTD libzstd_static.lib)
+NCBIcomponent_report(ZSTD)
 
 if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
 #############################################################################

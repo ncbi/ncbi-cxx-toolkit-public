@@ -37,6 +37,7 @@ set(NCBI_ThirdParty_BACKWARD      ${NCBI_TOOLS_ROOT}/backward-cpp-1.3.20180206-4
 set(NCBI_ThirdParty_UNWIND        ${NCBI_TOOLS_ROOT}/libunwind-1.1 CACHE PATH "UNWIND root")
 set(NCBI_ThirdParty_LMDB          ${NCBI_TOOLS_ROOT}/lmdb-0.9.24 CACHE PATH "LMDB root")
 set(NCBI_ThirdParty_LZO           ${NCBI_TOOLS_ROOT}/lzo-2.05 CACHE PATH "LZO root")
+set(NCBI_ThirdParty_ZSTD          ${NCBI_TOOLS_ROOT}/zstd-1.5.2 CACHE PATH "ZSTD root")
 set(NCBI_ThirdParty_Boost_VERSION "1.76.0")
 set(NCBI_ThirdParty_Boost         ${NCBI_TOOLS_ROOT}/boost-${NCBI_ThirdParty_Boost_VERSION}-ncbi1 CACHE PATH "Boost root")
 set(NCBI_ThirdParty_FASTCGI       ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FASTCGI root")
@@ -257,6 +258,11 @@ set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 # LZO
 NCBI_define_Xcomponent(NAME LZO LIB lzo2)
 NCBIcomponent_report(LZO)
+
+#############################################################################
+# ZSTD
+NCBI_define_Xcomponent(NAME ZSTD LIB zstd)
+NCBIcomponent_report(ZSTD)
 
 #############################################################################
 # BOOST
