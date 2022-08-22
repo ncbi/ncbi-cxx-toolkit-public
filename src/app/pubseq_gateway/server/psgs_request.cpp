@@ -65,8 +65,7 @@ SPSGS_BlobId::SPSGS_BlobId(int32_t  sat, int32_t  sat_key)
 
 CPSGS_Request::CPSGS_Request() :
     m_RequestId(0),
-    m_ConcurrentProcessorCount(0),
-    m_LimitedProcessorCount(0)
+    m_ConcurrentProcessorCount(0)
 {}
 
 
@@ -106,8 +105,7 @@ CPSGS_Request::CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
     m_Request(move(req)),
     m_RequestContext(request_context),
     m_RequestId(GetNextRequestId()),
-    m_ConcurrentProcessorCount(0),
-    m_LimitedProcessorCount(0)
+    m_ConcurrentProcessorCount(0)
 {}
 
 
@@ -278,6 +276,20 @@ CJsonNode CPSGS_Request::Serialize(void) const
     CJsonNode       json(CJsonNode::NewObjectNode());
     json.SetString("name", GetName());
     return json;
+}
+
+
+string CPSGS_Request::GetLimitedProcessorsMessage(void)
+{
+    string      msg;
+
+    for (auto &  item : m_LimitedProcessors) {
+        if (!msg.empty())
+            msg += "; ";
+        msg += "processor: " + item.first +
+               ", concurrency limit: " + to_string(item.second);
+    }
+    return msg;
 }
 
 

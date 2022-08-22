@@ -178,13 +178,15 @@ public:
 
     size_t GetLimitedProcessorCount(void) const
     {
-        return m_LimitedProcessorCount;
+        return m_LimitedProcessors.size();
     }
 
-    void IncrementLimitProcessorCount(void)
+    void AddLimitedProcessor(const string &  name, size_t  limit)
     {
-        ++m_LimitedProcessorCount;
+        m_LimitedProcessors.push_back(pair<string, size_t>(name, limit));
     }
+
+    string GetLimitedProcessorsMessage(void);
 
     CPSGS_Request(const CPSGS_Request &) = default;
     CPSGS_Request(CPSGS_Request &&) = default;
@@ -219,9 +221,9 @@ private:
     mutex                           m_WaitLock;
     map<string, SWaitData *>        m_Wait;
 
-    // Number of processors which have not been instantiated due to a
-    // concurrency limit is reached
-    size_t                          m_LimitedProcessorCount;
+    // Processors which have not been instantiated due to a concurrency limit
+    // together with the actual limit
+    vector<pair<string, size_t>>    m_LimitedProcessors;
 };
 
 
