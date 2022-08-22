@@ -4,6 +4,7 @@ import argparse
 import csv
 from enum import IntEnum, auto
 from functools import partial
+import io
 from itertools import product
 import os
 from pathlib import Path
@@ -90,6 +91,12 @@ class Statistics(list):
             self._name = name or regex
             self._regex = re.compile(regex) if regex else None
             self._data = {}
+            self._file = io.StringIO()
+
+            if self._name:
+                print(f'{self._name}:', file=self._file)
+
+            print('Statistics', *rules.keys(), sep='\t', file=self._file)
 
         def add(self, details, rule_name, time):
             if not self._regex or any(self._regex.search(f'{key}={value}') for key, values in details.items() for value in values):
@@ -98,7 +105,7 @@ class Statistics(list):
 
             return False
 
-        def calc(self):
+        def print(self):
             for rule_name, rule_data in self._data.items():
                 self.setdefault('Min ', []).append(min(rule_data))
 
@@ -115,17 +122,18 @@ class Statistics(list):
                 self.setdefault('Max ', []).append(max(rule_data))
                 self.setdefault('Average', []).append(mean(rule_data))
 
-        def print(self, file):
-            if self._name:
-                print(f'{self._name}:', file=file)
-
-            print('Statistics', *rules.keys(), sep='\t', file=file)
-
             for row_name, row_data in self.items():
                 values = [ f'{v:7.3f}' for v in row_data ]
-                print(row_name, *values, sep='\t', file=file)
+                print(row_name, *values, sep='\t', file=self._file)
 
-            print(file=file)
+        def clear(self):
+            self._data.clear()
+            super().clear()
+
+        def summary(self, file):
+            self._file.seek(0)
+            for line in self._file:
+                print(line, end='', file=file)
 
     def __init__(self, groups, file=sys.stdout):
         if not isinstance(groups, list):
@@ -144,8 +152,16 @@ class Statistics(list):
 
     def print(self):
         for group in self:
-            group.calc()
-            group.print(self._file)
+            group.print()
+
+    def clear(self):
+        for group in self:
+            group.clear()
+
+    def summary(self):
+        for group in self:
+            group.summary(self._file)
+            print(file=self._file)
 
 class Summary:
     def __init__(self, enabled, total, file=sys.stdout):
@@ -200,12 +216,12 @@ def read_raw_metrics(input_file):
 
     return requests
 
-def report(requests, output_file, per_request, statistics, summary):
+def report(requests, output_file, per_request, statistics, progress, summary):
     per_request = PerRequest(per_request, file=output_file)
     statistics = Statistics(statistics, file=output_file)
     summary = Summary(summary, len(requests), file=output_file)
 
-    for request_id, request_data in requests.items():
+    for i, (request_id, request_data) in enumerate(requests.items(), start=1):
         details = request_data[EventType.DONE][EventIndex.FIRST][EventField.REST]
 
         for rule_name, rule_params in rules.items():
@@ -219,16 +235,24 @@ def report(requests, output_file, per_request, statistics, summary):
         summary.add(request_data, details)
         per_request.print_row(request_id, details)
 
+        if progress and i % progress == 0:
+            statistics.print()
+            statistics.clear()
+
     print(file=output_file)
-    statistics.print()
+
+    if not progress:
+        statistics.print()
+
+    statistics.summary()
     summary.print()
     return statistics
 
 def report_cmd(args):
-    report_all = not args.per_request and args.statistics is None and not args.summary
-    statistics_groups = args.statistics if isinstance(args.statistics, list) else [] if report_all else None
+    report_all = not args.per_request and args.statistics is None and not args.progress and not args.summary
+    statistics_groups = args.statistics if isinstance(args.statistics, list) else [] if report_all or args.progress else None
     requests = read_raw_metrics(args.input_file)
-    report(requests, args.output_file, args.per_request or report_all, statistics_groups, args.summary or report_all)
+    report(requests, args.output_file, args.per_request or report_all, statistics_groups, args.progress, args.summary or report_all)
 
 def check_binaries(binaries):
     for bin in binaries:
@@ -308,7 +332,7 @@ def performance_cmd(args, path, input_file, iter_args):
                     requests[f'{key}.{run_no}'] = value
 
         with open(get_filename(path, 'pro', *run_args), 'w') as output_file:
-            statistics = report(requests, output_file, True, [], True)[0]
+            statistics = report(requests, output_file, True, [], 0, True)[0]
             aggregate[run_args] = [ value[0] for key, value in statistics.items() if key.casefold() in statistics_to_output ]
 
     return aggregate, statistics_to_output
@@ -433,6 +457,7 @@ parser_report.add_argument('-input-file', help='Input file containing raw perfor
 parser_report.add_argument('-output-file', help='Output file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType('w'))
 parser_report.add_argument('-per-request', help='Report per request results', action='store_true')
 parser_report.add_argument('-statistics', help='Report statistics optionally grouping by request details (key=value) matching specified regex', metavar='REGEX', type=str, nargs='*')
+parser_report.add_argument('-progress', help='Report statistics every N requests (default: %(default)s)', metavar='N', default=0, type=int)
 parser_report.add_argument('-summary', help='Report summary', action='store_true')
 
 for mode in [ 'resolve', 'interactive', 'performance' ]:
