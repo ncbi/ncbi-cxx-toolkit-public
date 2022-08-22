@@ -419,6 +419,9 @@
 /* Define to 1 if you have the <poll.h> header file. */
 #cmakedefine HAVE_POLL_H 1
 
+/* Define to 1 to let the GenBank data loader use PubSeq Gateway. */
+#cmakedefine HAVE_PSG_LOADER 1
+
 /* Define to 1 if you have the `pthread_atfork' function. */
 #cmakedefine HAVE_PTHREAD_ATFORK 1
 
@@ -883,6 +886,9 @@
 /* Define to 1 if libgif is available. */
 #cmakedefine HAVE_LIBGIF 1
 
+/* Define to 1 if libgl2ps is available. */
+#cmakedefine HAVE_LIBGL2PS   1
+
 /* Define to 1 if GLEW is available, either in its own library or as part of
    the standard libraries. */
 #cmakedefine HAVE_LIBGLEW 1
@@ -892,6 +898,9 @@
 
 /* Define to 1 if libgnutls is available. */
 #cmakedefine HAVE_LIBGNUTLS 1
+
+/* Define to 1 if libgrpc++ is available. */
+#cmakedefine HAVE_LIBGRPC 1
 
 /* Define to 1 if libgsoapssl++ is available. */
 #cmakedefine HAVE_LIBGSOAP 1
@@ -931,6 +940,9 @@
 /* Define to 1 if libmuparser is available. */
 #define HAVE_LIBMUPARSER 1
 
+/* Define to 1 if libnghttp2 is available. */
+#cmakedefine HAVE_LIBNGHTTP2 1
+
 /* Define to 1 if liboechem is available. */
 /* #undef HAVE_LIBOECHEM */
 
@@ -948,6 +960,9 @@
 
 /* Define to 1 if libpng is available. */
 #cmakedefine HAVE_LIBPNG 1
+
+/* Define to 1 if libprotobuf is available. */
+#cmakedefine HAVE_LIBPROTOBUF 1
 
 /* Define to 1 if RPCSVC is available, either in its own library or as part of
    the standard libraries. */
@@ -1005,6 +1020,9 @@
 /* Define to 1 if libz is available. */
 #cmakedefine HAVE_LIBZ 1
 
+/* Define to 1 if libzstd is available. */
+#cmakedefine HAVE_LIBZSTD 1
+
 /* Define to 1 if local LBSM support is available. */
 #cmakedefine HAVE_LOCAL_LBSM 1
 
@@ -1034,6 +1052,9 @@
 
 /* Define to 1 if libunwind is available. */
 #cmakedefine HAVE_LIBUNWIND 1
+
+/* Define to 1 if libuv is available. */
+#cmakedefine HAVE_LIBUV      1
 
 /* Define to 1 if abi::__cxa_demangle exists in cxxabi.h. */
 #cmakedefine HAVE_CXA_DEMANGLE 1
@@ -1127,11 +1148,3 @@
 
 /* Define to 1 if the X Window System is missing or not being used. */
 /* #undef X_DISPLAY_MISSING */
-
-#cmakedefine HAVE_LIBNGHTTP2 1
-#cmakedefine HAVE_LIBUV      1
-#cmakedefine HAVE_LIBGL2PS   1
-#cmakedefine HAVE_LIBGRPC 1
-#cmakedefine HAVE_LIBPROTOBUF 1
-
-#cmakedefine HAVE_PSG_LOADER 1
