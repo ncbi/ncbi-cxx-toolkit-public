@@ -55,6 +55,36 @@ CPSGS_CassProcessorDispatcher::~CPSGS_CassProcessorDispatcher()
 {}
 
 
+bool
+CPSGS_CassProcessorDispatcher::CanProcess(shared_ptr<CPSGS_Request> request,
+                                          shared_ptr<CPSGS_Reply> reply) const
+{
+    switch (request->GetRequestType()) {
+    case CPSGS_Request::ePSGS_ResolveRequest:
+        return m_ResolveProcessor->CanProcess(request, reply);
+
+    case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+        return m_GetProcessor->CanProcess(request, reply);
+
+    case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+        return m_GetBlobProcessor->CanProcess(request, reply);
+
+    case CPSGS_Request::ePSGS_AnnotationRequest:
+        return m_AnnotProcessor->CanProcess(request, reply);
+
+    case CPSGS_Request::ePSGS_TSEChunkRequest:
+        return m_TSEChunkProcessor->CanProcess(request, reply);
+
+    case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+        return m_AccVerProcessor->CanProcess(request, reply);
+
+    default:
+        break;
+    }
+    return false;
+}
+
+
 IPSGS_Processor*
 CPSGS_CassProcessorDispatcher::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                                shared_ptr<CPSGS_Reply> reply,
