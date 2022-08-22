@@ -425,17 +425,23 @@ string CEUtilsUpdater::GetTitle(const string&)
 CRef<CPub> CEUtilsUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     m_num_requests++;
+    CConstRef<CPub> pub;
     auto it = m_cache.find(pmid);
     if (it == m_cache.end()) {
-        auto pub = CEUtilsUpdater::GetPub(pmid, perr);
+        pub = CEUtilsUpdater::GetPub(pmid, perr);
         if (pub) {
             m_cache[pmid] = pub;
+        } else {
+            return {};
         }
-        return pub;
     } else {
         m_cache_hits++;
-        return it->second;
+        pub = it->second;
     }
+
+    CRef<CPub> copied(new CPub());
+    copied->Assign(*pub);
+    return copied;
 }
 
 void CEUtilsUpdaterWithCache::ReportStats(std::ostream& os)
