@@ -7,7 +7,7 @@ outlog()
   if [ -s "$logfile" ]; then
     echo "=== $logfile ==="
     if [ "`head -801 $logfile 2>/dev/null | wc -l`" -gt "800" ]; then
-      head -200 "$logfile"
+      head -300 "$logfile"
       echo '...'
       tail -500 "$logfile"
     else
