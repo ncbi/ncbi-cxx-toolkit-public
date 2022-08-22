@@ -53,7 +53,7 @@ USING_SCOPE(objects);
 class CGBReleaseFileImpl : public CReadClassMemberHook
 {
 public:
-    typedef CGBReleaseFile::ISeqEntryHandler*   THandler;
+    using THandler=CGBReleaseFile::TSeqEntryHandler;
 
     CGBReleaseFileImpl(const string& file_name, bool propagate);
     CGBReleaseFileImpl(CObjectIStream& in, bool propagate);
@@ -101,7 +101,7 @@ void CGBReleaseFileImpl::Read(void)
     // install the read hook on the top level Bioseq-set's sequence of entries
     CObjectTypeInfo info(CBioseq_set::GetTypeInfo());
     info.FindMember("seq-set").SetLocalReadHook(*m_In, this);
-    
+
     try {
         // read in the file, this will execute the handler's code for each
         // Seq-entry read.
@@ -134,7 +134,7 @@ void CGBReleaseFileImpl::ReadClassMember
                     ADD_DESCRIPTOR_TO_SEQENTRY (*se, CRef<CSeqdesc>(SerialClone(desc)));
                 }
             }
-            if ( !m_Handler->HandleSeqEntry(se) ) {
+            if ( !m_Handler(se) ) {
                 m_Stopped = true;
                 break;
             }
@@ -173,11 +173,20 @@ void CGBReleaseFile::Read(void)
 }
 
 
-void CGBReleaseFile::RegisterHandler(ISeqEntryHandler* handler)
+void CGBReleaseFile::RegisterHandler(ISeqEntryHandler* intf)
 {
+    TSeqEntryHandler handler = [intf](CRef<CSeq_entry>& entry)->bool
+    {
+        return intf->HandleSeqEntry(entry);
+
+    };
     x_GetImpl().RegisterHandler(handler);
 }
 
+void CGBReleaseFile::RegisterHandler(TSeqEntryHandler handler)
+{
+    x_GetImpl().RegisterHandler(handler);
+}
 
 CGBReleaseFileImpl& CGBReleaseFile::x_GetImpl(void)
 {

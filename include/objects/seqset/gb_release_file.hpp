@@ -45,17 +45,27 @@ class CGBReleaseFileImpl;
 /// CGBReleaseFile is a utility class to ease the processing of Genbank
 /// release files one Seq-entry at a time.
 /// It shields the user from the underlying I/O hook mechanism.
-/// 
+///
 /// Usage:
 /// 1. Implement ISeqEntryHandler interface
 /// 2. Create a CGBReleaseFile with the release file's name
 /// 3. Register the handler object.
 /// 4. Call Read(..), the handling method will be called for each Seq-entry.
 
+/* Another way of using CGBReleaseFile is to use lamba function
+The example should look like:
+    CGBReleaseFile gbfile(filename);
+    gbfile.RegisterHandler([&your_captcha](CRef<CSeq_entry>& entry) -> bool)
+    {
+        bool success = your_captcha.ProcessEntry(entry);
+        return success;
+    });
+*/
+
 class NCBI_SEQSET_EXPORT CGBReleaseFile
 {
 public:
-    
+
     /// Interface for handling Seq-entry objects
     class ISeqEntryHandler
     {
@@ -66,7 +76,9 @@ public:
         virtual bool HandleSeqEntry(CRef<CSeq_entry>& entry) = 0;
         virtual ~ISeqEntryHandler(void) {};
     };
-    
+    // alternate approach via lambda or unnamed functions
+    using TSeqEntryHandler=std::function<bool(CRef<CSeq_entry>&)>;
+
     /// constructors
     CGBReleaseFile(const string& file_name, bool propagate=false);
 
@@ -77,15 +89,16 @@ public:
 
     /// destructor
     virtual ~CGBReleaseFile(void);
-    
+
     /// Register handler
     void RegisterHandler(ISeqEntryHandler* handler);
+    void RegisterHandler(TSeqEntryHandler handler);
 
     /// Read the release file
     void Read(void);
 
 private:
-    
+
     CGBReleaseFileImpl& x_GetImpl(void);
     CRef<CObject>   m_Impl;
 };
