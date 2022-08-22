@@ -30,7 +30,7 @@ public:
     void ClearCache();
 
 private:
-    map<TEntrezId, CRef<CPub>> m_cache;
+    map<TEntrezId, CConstRef<CPub>> m_cache;
     size_t                     m_num_requests = 0;
     size_t                     m_cache_hits   = 0;
 };
