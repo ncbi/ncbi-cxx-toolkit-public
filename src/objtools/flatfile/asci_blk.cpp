@@ -830,7 +830,7 @@ void GetLenSubNode(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
+CRef<CPatent_seq_id> MakeUsptoPatSeqId(char* acc)
 {
     CRef<CPatent_seq_id> pat_id;
     char*                p;

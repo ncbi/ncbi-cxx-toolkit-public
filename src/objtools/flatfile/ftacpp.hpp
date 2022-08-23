@@ -64,12 +64,14 @@ inline char*  StringSave(const char* s)
     std::memcpy(p, s, n);
     return p;
 }
-inline char* StringStr(const char* s1, const char* s2) { return const_cast<char*>(std::strstr(s1, s2)); }
+inline const char* StringStr(const char* s1, const char* s2) { return std::strstr(s1, s2); }
+inline char* StringStr(char* s1, const char* s2) { return std::strstr(s1, s2); }
 inline char* StringCat(char* d, const char* s) { return std::strcat(d, s); }
 inline char* StringCpy(char* d, const char* s) { return std::strcpy(d, s); }
 inline char* StringNCpy(char* d, const char* s, size_t n) { return std::strncpy(d, s, n); }
-inline char* StringChr(const char* s, const int c) { return const_cast<char*>(std::strchr(s, c)); }
-inline char* StringRChr(char* s, const int c) { return std::strrchr(s, c); }
+inline const char* StringChr(const char* s, const char c) { return std::strchr(s, c); }
+inline char* StringChr(char* s, const char c) { return std::strchr(s, c); }
+inline char* StringRChr(char* s, const char c) { return std::strrchr(s, c); }
 inline int   StringCmp(const char* s1, const char* s2) { return std::strcmp(s1, s2); }
 inline int   StringNCmp(const char* s1, const char* s2, size_t n) { return std::strncmp(s1, s2, n); }
 inline int   StringNICmp(const char* s1, const char* s2, size_t n)
