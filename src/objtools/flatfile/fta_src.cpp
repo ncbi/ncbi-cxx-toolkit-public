@@ -569,7 +569,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
     const Char* sub_strain;
     const Char* variety;
     char*       genomename;
-    const Char* p;
+    Char* p;
     char*       q;
     bool        ret;
     Int4        i;
@@ -589,12 +589,12 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
         variety          = NULL;
         genomename       = NULL;
 
-        ITERATE (TQualVector, cur, sfbp->quals) {
+        NON_CONST_ITERATE(TQualVector, cur, sfbp->quals) {
             if (! (*cur)->IsSetQual())
                 continue;
 
             const std::string& qual_str = (*cur)->GetQual();
-            const Char*        val_ptr  = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : NULL;
+            char*              val_ptr  = (*cur)->IsSetVal() ? (*cur)->SetVal().data() : nullptr;
 
             if (qual_str == "db_xref") {
                 q = StringChr(val_ptr, ':');
@@ -2032,7 +2032,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                 if (val_ptr == NULL || val_ptr[0] == '\0')
                     continue;
 
-                p = StringChr(val_ptr, ':');
+                const char* p = StringChr(val_ptr, ':');
                 if (p != NULL) {
                     if (StringChr(p + 1, ':') != NULL) {
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_OrganelleQualMultToks, "More than 2 tokens found in /organelle qualifier: \"%s\". Entry dropped.", val_ptr);
@@ -2040,7 +2040,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                         break;
                     }
 
-                    std::string val_str(val_ptr, static_cast<const Char*>(p));
+                    std::string val_str(val_ptr, p);
                     i = StringMatchIcase(OrganelleFirstToken, val_str.c_str());
                     if (i < 0) {
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_OrganelleIllegalClass, "Illegal class in /organelle qualifier: \"%s\". Entry dropped.", val_ptr);
