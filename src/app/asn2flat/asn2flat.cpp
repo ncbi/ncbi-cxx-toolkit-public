@@ -350,17 +350,6 @@ public:
     int Run() override;
 
 protected:
-    bool HandleSeqEntry(CRef<CSeq_entry>& se);
-    bool HandleSeqEntry(CSeq_entry_Handle seh);
-
-    void HandleSeqSubmit(CObjectIStream& is);
-    void HandleSeqSubmit(CSeq_submit& sub);
-    void HandleSeqId(const string& id);
-
-    CSeq_entry_Handle ObtainSeqEntryFromSeqEntry(CObjectIStream& is, bool report = false);
-    CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is, bool report = false);
-    CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is, bool report = false);
-
     bool SetFlatfileOstream(eFlatFileCodes _code, const string& name);
 private:
     // types
@@ -373,9 +362,20 @@ private:
         CFFMultiSourceFileSet::fileset_type m_streams; // multiple streams for each of eFlatFileCodes
     };
 
-    [[nodiscard]] CObjectIStream* x_OpenIStream(const CArgs& args);
+    bool HandleSeqEntry(TFFContext& context, CRef<CSeq_entry>& se) const;
+    bool HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) const;
+    void HandleSeqSubmit(TFFContext& context, CObjectIStream& is) const;
+    void HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const;
+    void HandleSeqId(TFFContext& context, const string& id) const;
 
-    [[nodiscard]] CFlatFileGenerator* x_CreateFlatFileGenerator(const CArgs& args);
+
+    CSeq_entry_Handle ObtainSeqEntryFromSeqEntry(TFFContext& context, CObjectIStream& is, bool report) const;
+    CSeq_entry_Handle ObtainSeqEntryFromBioseq(TFFContext& context, CObjectIStream& is, bool report) const ;
+    CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(TFFContext& context, CObjectIStream& is, bool report) const;
+
+    [[nodiscard]] CObjectIStream* x_OpenIStream(const CArgs& args) const;
+
+    [[nodiscard]] CFlatFileGenerator* x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const;
     [[nodiscard]] TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args) const;
     TSeqPos x_GetFrom(const CArgs& args) const;
     TSeqPos x_GetTo  (const CArgs& args) const;
@@ -385,7 +385,8 @@ private:
     [[nodiscard]] ICanceled* x_CreateCancelBenchmarkCallback() const;
     int x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& context) const;
     void x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const;
-
+    int x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const;
+    int x_GenerateHugeMode(TFFContext& context, const CArgs& args) const;
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -403,7 +404,7 @@ private:
 
     unique_ptr<ICanceled>       m_pCanceledCallback;
     bool                        m_do_cleanup;
-    bool                        m_Exception;
+    mutable std::atomic<bool>   m_Exception;
     bool                        m_FetchFail;
     bool                        m_PSGMode;
     bool                        m_HugeFileMode;
@@ -658,6 +659,7 @@ int CAsn2FlatApp::Run()
         m_context.m_streams = m_writers.OverrideAll(std::cout);
     }
 
+    m_do_cleanup = !args["nocleanup"];
     m_OnlyNucs = false;
     m_OnlyProts = false;
     if (m_writers.Has(eFlatFileCodes::all)) {
@@ -667,33 +669,10 @@ int CAsn2FlatApp::Run()
     }
 
     // create the flat-file generator
-    m_context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
-
-    unique_ptr<CObjectIStream> is;
-    is.reset( x_OpenIStream( args ) );
-    if (!is) {
-        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-            "Unable to read data from stdin";
-        NCBI_THROW(CException, eUnknown, msg);
-    }
-
-    bool propagate = args[ "p" ];
+    m_context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(m_context, args));
 
     if (args["accn"]) {
         m_AccessionFilter = args["accn"].AsString();
-    }
-
-    // do -batch mode before checking -huge flag
-    if ( args[ "batch" ] ) {
-        CWrapINSDSet wrap(this);
-        CGBReleaseFile in( *is.release(), propagate );
-        in.RegisterHandler( [this](CRef<CSeq_entry>& entry)->bool
-        {
-            return HandleSeqEntry(entry);
-        });
-        in.Read();  // HandleSeqEntry will be called from this function
-        if (m_Exception) return -1;
-        return 0;
     }
 
     m_HugeFileMode = ( args[ "huge" ] );
@@ -705,55 +684,15 @@ int CAsn2FlatApp::Run()
         NcbiCerr << "Use of -huge mode is incompatible with -i /dev/stdin. Disabling -huge mode." << endl;
         m_HugeFileMode = false;
     }
+    if (m_HugeFileMode && args["batch"]) {
+        NcbiCerr << "Use of -huge cannot be combined with -batch. Disabling -huge mode." << endl;
+        m_HugeFileMode = false;
+    }
 
-    // -huge flag plus -i input file (not piped) sets huge mode for all data types
     if (m_HugeFileMode)
     {
         CWrapINSDSet wrap(this);
-        is.reset();
-        edit::CHugeFileProcess in (args["i"].AsString());
-        CRef<CSeq_id> seqid;
-        if (!m_AccessionFilter.empty()) {
-            CBioseq::TId ids;
-            CSeq_id::ParseIDs(ids, m_AccessionFilter);
-            if (!ids.empty()) {
-                seqid = ids.front();
-            }
-        }
-
-        //CMessageQueue<std::future<std::string>> val_queue{10};
-
-        auto handler = [this](CConstRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry)->bool
-                    {
-                        //std::ostringstream sstr;
-                        if (pSubmitBlock) {
-                            auto pSubmit = Ref(new CSeq_submit());
-                            pSubmit->SetSub().Assign(*pSubmitBlock);
-                            pSubmit->SetData().SetEntrys().push_back(pEntry);
-                            this->HandleSeqSubmit(*pSubmit);
-                            return true;
-                        }
-                        else {
-                            return this->HandleSeqEntry(pEntry);
-                        }
-                    };
-
-        auto read_task = std::async(std::launch::async, [this, &in, handler, seqid]()->bool
-        {
-            return in.Read(handler, seqid);
-        });
-
-        bool success = read_task.get();
-
-        if (!success || m_Exception) return -1;
-        return 0;
-    }
-
-    if ( args[ "sub" ] ) {
-        CWrapINSDSet wrap(this);
-        HandleSeqSubmit( *is );
-        if (m_Exception) return -1;
-        return 0;
+        return x_GenerateHugeMode(m_context, args);
     }
 
     if ( args[ "ids" ] ) {
@@ -768,7 +707,7 @@ int CAsn2FlatApp::Run()
 
             try {
                 LOG_POST(Error << "id = " << id_str);
-                HandleSeqId( id_str );
+                HandleSeqId( m_context, id_str );
             }
             catch (CException& e) {
                 ERR_POST(Error << e);
@@ -780,27 +719,100 @@ int CAsn2FlatApp::Run()
 
     if ( args[ "id" ] ) {
         CWrapINSDSet wrap(this);
-        HandleSeqId( args[ "id" ].AsString() );
+        HandleSeqId( m_context, args[ "id" ].AsString() );
         if (m_Exception) return -1;
         return 0;
     }
 
-    string asn_type = args["type"].AsString();
+    unique_ptr<CObjectIStream> is{x_OpenIStream( args ) };
+    if (!is) {
+        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+            "Unable to read data from stdin";
+        NCBI_THROW(CException, eUnknown, msg);
+    }
+
+    if ( args[ "batch" ] ) {
+        bool propagate = args[ "p" ];
+
+        CWrapINSDSet wrap(this);
+        CGBReleaseFile in( *is.release(), propagate ); // CGBReleaseFile will delete the input stream
+        in.RegisterHandler( [this](CRef<CSeq_entry>& entry)->bool
+        {
+            return HandleSeqEntry(m_context, entry);
+        });
+        in.Read();  // HandleSeqEntry will be called from this function
+        if (m_Exception) return -1;
+        return 0;
+    }
+
+    if ( args[ "sub" ] ) {
+        CWrapINSDSet wrap(this);
+        HandleSeqSubmit( m_context, *is );
+        if (m_Exception) return -1;
+        return 0;
+    }
 
     CWrapINSDSet wrap(this);
+    return x_GenerateTraditionally(std::move(is), m_context, args);
+}
+
+int CAsn2FlatApp::x_GenerateHugeMode(TFFContext& context, const CArgs& args) const
+{
+    edit::CHugeFileProcess in (args["i"].AsString());
+    CRef<CSeq_id> seqid;
+    if (!m_AccessionFilter.empty()) {
+        CBioseq::TId ids;
+        CSeq_id::ParseIDs(ids, m_AccessionFilter);
+        if (!ids.empty()) {
+            seqid = ids.front();
+        }
+    }
+
+    //CMessageQueue<std::future<std::string>> val_queue{10};
+
+    auto handler = [this, &context](CConstRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry)->bool
+                {
+                    //std::ostringstream sstr;
+                    if (pSubmitBlock) {
+                        auto pSubmit = Ref(new CSeq_submit());
+                        pSubmit->SetSub().Assign(*pSubmitBlock);
+                        pSubmit->SetData().SetEntrys().push_back(pEntry);
+                        this->HandleSeqSubmit(context, *pSubmit);
+                        return true;
+                    }
+                    else {
+                        return this->HandleSeqEntry(context, pEntry);
+                    }
+                };
+
+    auto read_task = std::async(std::launch::async, [this, &in, handler, seqid]()->bool
+    {
+        return in.Read(handler, seqid);
+    });
+
+    bool success = read_task.get();
+
+    if (!success || m_Exception) return -1;
+    return 0;
+}
+
+int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const
+{
+    string asn_type = args["type"].AsString();
+
     if ( asn_type == "seq-entry" ) {
         //
         //  Straight through processing: Read a seq_entry, then process
         //  a seq_entry:
         //
         while ( !is->EndOfData() ) {
-            CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is, true);
+            CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(context, *is, true);
             if ( !seh ) {
                 NCBI_THROW(CException, eUnknown,
                            "Unable to construct Seq-entry object" );
             }
-            HandleSeqEntry(seh);
-            m_context.m_Scope->RemoveTopLevelSeqEntry(seh);
+            HandleSeqEntry(context, seh);
+            context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
     else if ( asn_type == "bioseq" ) {
@@ -809,13 +821,13 @@ int CAsn2FlatApp::Run()
         //  the wrapped bioseq as a seq_entry:
         //
         while ( !is->EndOfData() ) {
-            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseq(*is, true);
+            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseq(context, *is, true);
             if ( !seh ) {
                 NCBI_THROW(CException, eUnknown,
                            "Unable to construct Seq-entry object" );
             }
-            HandleSeqEntry(seh);
-            m_context.m_Scope->RemoveTopLevelSeqEntry(seh);
+            HandleSeqEntry(context, seh);
+            context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
     else if ( asn_type == "bioseq-set" ) {
@@ -824,18 +836,18 @@ int CAsn2FlatApp::Run()
         //  process the wrapped bioseq_set as a seq_entry:
         //
         while ( !is->EndOfData() ) {
-            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseqSet(*is, true);
+            CSeq_entry_Handle seh = ObtainSeqEntryFromBioseqSet(context, *is, true);
             if ( !seh ) {
                 NCBI_THROW(CException, eUnknown,
                            "Unable to construct Seq-entry object" );
             }
-            HandleSeqEntry(seh);
-            m_context.m_Scope->RemoveTopLevelSeqEntry(seh);
+            HandleSeqEntry(context, seh);
+            context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
     else if ( asn_type == "seq-submit" ) {
         while ( !is->EndOfData() ) {
-            HandleSeqSubmit( *is );
+            HandleSeqSubmit( context, *is );
         }
     }
     else if ( asn_type == "any" ) {
@@ -845,22 +857,22 @@ int CAsn2FlatApp::Run()
         while ( !is->EndOfData() ) {
             string strNextTypeName = is->PeekNextTypeName();
 
-            CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(*is);
+            CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(context, *is, false);
             if ( !seh ) {
                 is->Close();
                 is.reset( x_OpenIStream( args ) );
-                seh = ObtainSeqEntryFromBioseqSet(*is);
+                seh = ObtainSeqEntryFromBioseqSet(context, *is, false);
                 if ( !seh ) {
                     is->Close();
                     is.reset( x_OpenIStream( args ) );
-                    seh = ObtainSeqEntryFromBioseq(*is);
+                    seh = ObtainSeqEntryFromBioseq(context, *is, false);
                     if ( !seh ) {
                         is->Close();
                         is.reset( x_OpenIStream( args ) );
                         CRef<CSeq_submit> sub(new CSeq_submit);
                         *is >> *sub;
                         if (sub->IsSetSub() && sub->IsSetData()) {
-                            HandleSeqSubmit(*sub);
+                            HandleSeqSubmit(context, *sub);
                             if (m_Exception) return -1;
                             return 0;
                         } else {
@@ -872,8 +884,8 @@ int CAsn2FlatApp::Run()
                     }
                 }
             }
-            HandleSeqEntry(seh);
-            m_context.m_Scope->RemoveTopLevelSeqEntry(seh);
+            HandleSeqEntry(context, seh);
+            context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
 
@@ -882,14 +894,12 @@ int CAsn2FlatApp::Run()
 }
 
 
-void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
+void CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
 {
     if (!sub.IsSetSub() || !sub.IsSetData() || !sub.GetData().IsEntrys() || sub.GetData().GetEntrys().empty()) {
         return;
     }
 
-    CRef<CScope> scope(new CScope(*m_Objmgr));
-    scope->AddDefaults();
     if (m_do_cleanup) {
         CCleanup cleanup;
         cleanup.BasicCleanup(sub);
@@ -900,36 +910,36 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
     CConstRef<CSeq_entry> e(sub.GetData().GetEntrys().front());
     CSeq_entry_Handle seh;
     try {
-        seh = scope->GetSeq_entryHandle(*e);
+        seh = context.m_Scope->GetSeq_entryHandle(*e);
     } catch (CException&) {}
 
     if (!seh) {  // add to scope if not already in it
-        seh = scope->AddTopLevelSeqEntry(*e);
+        seh = context.m_Scope->AddTopLevelSeqEntry(*e);
     }
     // "remember" the submission block
-    m_context.m_FFGenerator->SetSubmit(sub.GetSub());
+    context.m_FFGenerator->SetSubmit(sub.GetSub());
 
     try {
-        x_FFGenerate(seh, m_context);
+        x_FFGenerate(seh, context);
     } catch (CException& e) {
         ERR_POST(Error << e);
         m_Exception = true;
     }
+    context.m_Scope->RemoveTopLevelSeqEntry(seh);
 }
 
 
 //  ============================================================================
-void CAsn2FlatApp::HandleSeqSubmit(CObjectIStream& is )
+void CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CObjectIStream& is ) const
 //  ============================================================================
 {
     CRef<CSeq_submit> sub(new CSeq_submit);
     is >> *sub;
-    HandleSeqSubmit(*sub);
+    HandleSeqSubmit(context, *sub);
 }
 
 //  ============================================================================
-void CAsn2FlatApp::HandleSeqId(
-    const string& strId )
+void CAsn2FlatApp::HandleSeqId(TFFContext& context, const string& strId ) const
 //  ============================================================================
 {
     CSeq_entry_Handle seh;
@@ -938,7 +948,7 @@ void CAsn2FlatApp::HandleSeqId(
     // to any CScope and puts it into entry.
     {
         CSeq_id id(strId);
-        CBioseq_Handle bsh = m_context.m_Scope->GetBioseqHandle( id );
+        CBioseq_Handle bsh = context.m_Scope->GetBioseqHandle( id );
         if ( ! bsh ) {
             NCBI_THROW(
                 CException, eUnknown,
@@ -957,11 +967,11 @@ void CAsn2FlatApp::HandleSeqId(
     //
     //  ... and use that to generate the flat file:
     //
-    HandleSeqEntry( seh );
+    HandleSeqEntry( context, seh );
 }
 
 //  ============================================================================
-bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
+bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) const
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
@@ -998,7 +1008,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
     if (args["faster"] || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web") {
 
         try {
-            x_FFGenerate(seh, m_context);
+            x_FFGenerate(seh, context);
         } catch (CException& e) {
             ERR_POST(Error << e);
             m_Exception = true;
@@ -1007,7 +1017,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
         return true;
     }
 
-    m_context.m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
+    context.m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
 
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
@@ -1099,12 +1109,12 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
 
         CNcbiOstream* flatfile_os = nullptr;
 
-        auto _Os = m_context.m_streams.GetStream(eFlatFileCodes::all);
-        auto _On = m_context.m_streams.GetStream(eFlatFileCodes::nuc);
-        auto _Og = m_context.m_streams.GetStream(eFlatFileCodes::gen);
-        auto _Or = m_context.m_streams.GetStream(eFlatFileCodes::rna);
-        auto _Op = m_context.m_streams.GetStream(eFlatFileCodes::prot);
-        auto _Ou = m_context.m_streams.GetStream(eFlatFileCodes::unk);
+        auto _Os = context.m_streams.GetStream(eFlatFileCodes::all);
+        auto _On = context.m_streams.GetStream(eFlatFileCodes::nuc);
+        auto _Og = context.m_streams.GetStream(eFlatFileCodes::gen);
+        auto _Or = context.m_streams.GetStream(eFlatFileCodes::rna);
+        auto _Op = context.m_streams.GetStream(eFlatFileCodes::prot);
+        auto _Ou = context.m_streams.GetStream(eFlatFileCodes::unk);
 
         if ( _Os ) {
             if ( m_OnlyNucs && ! bsh.IsNa() ) continue;
@@ -1137,14 +1147,14 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
         if ( !flatfile_os ) continue;
 
         if (m_PSGMode && ( args["enable-external"] || args["policy"].AsString() == "external" ))
-            x_AddSNPAnnots(bsh, m_context);
+            x_AddSNPAnnots(bsh, context);
 
         // generate flat file
         if ( args["from"] || args["to"] || args["strand"] ) {
             CSeq_loc loc;
             x_GetLocation( seh, args, loc );
             try {
-                m_context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+                context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
             }
             catch (CException& e) {
                 ERR_POST(Error << e);
@@ -1158,7 +1168,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
             int count = args["count"].AsInteger();
             for ( int i = 0; i < count; ++i ) {
                 try {
-                    m_context.m_FFGenerator->Generate( bsh, *flatfile_os);
+                    context.m_FFGenerator->Generate( bsh, *flatfile_os);
                 }
                 catch (CException& e) {
                     ERR_POST(Error << e);
@@ -1171,7 +1181,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
     return true;
 }
 
-CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is, bool report)
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(TFFContext& context, CObjectIStream& is, bool report) const
 {
     try {
         CRef<CSeq_entry> se(new CSeq_entry);
@@ -1180,7 +1190,7 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is, b
             NCBI_THROW(CException, eUnknown,
                        "provided Seq-entry is empty");
         }
-        return m_context.m_Scope->AddTopLevelSeqEntry(*se);
+        return context.m_Scope->AddTopLevelSeqEntry(*se);
     }
     catch (CException& e) {
         if (report) {
@@ -1190,12 +1200,12 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is, b
     return CSeq_entry_Handle();
 }
 
-CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseq(CObjectIStream& is, bool report)
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseq(TFFContext& context, CObjectIStream& is, bool report) const
 {
     try {
         CRef<CBioseq> bs(new CBioseq);
         is >> *bs;
-        CBioseq_Handle bsh = m_context.m_Scope->AddBioseq(*bs);
+        CBioseq_Handle bsh = context.m_Scope->AddBioseq(*bs);
         return bsh.GetTopLevelEntry();
     }
     catch (CException& e) {
@@ -1206,12 +1216,12 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseq(CObjectIStream& is, boo
     return CSeq_entry_Handle();
 }
 
-CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is, bool report)
+CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(TFFContext& context, CObjectIStream& is, bool report) const
 {
     try {
         CRef<CSeq_entry> entry(new CSeq_entry);
         is >> entry->SetSet();
-        return m_context.m_Scope->AddTopLevelSeqEntry(*entry);
+        return context.m_Scope->AddTopLevelSeqEntry(*entry);
     }
     catch (CException& e) {
         if (report) {
@@ -1222,27 +1232,27 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is, 
 }
 
 
-bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
+bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CRef<CSeq_entry>& se) const
 {
     if (!se) {
         return false;
     }
 
     // add entry to scope
-    CSeq_entry_Handle entry = m_context.m_Scope->AddTopLevelSeqEntry(*se);
+    CSeq_entry_Handle entry = context.m_Scope->AddTopLevelSeqEntry(*se);
     if ( !entry ) {
         NCBI_THROW(CException, eUnknown, "Failed to insert entry to scope.");
     }
 
-    bool ret = HandleSeqEntry(entry);
+    bool ret = HandleSeqEntry(context, entry);
     // Needed because we can really accumulate a lot of junk otherwise,
     // and we end up with significant slowdown due to repeatedly doing
     // linear scans on a growing CScope.
-    m_context.m_Scope->ResetDataAndHistory();
+    context.m_Scope->ResetDataAndHistory();
     return ret;
 }
 
-CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
+CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args) const
 {
     // determine the file serialization format.
     // default for batch files is binary, otherwise text.
@@ -1289,23 +1299,23 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 }
 
 
-CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
+CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const
 {
     CFlatFileConfig cfg;
     cfg.FromArguments(args);
-    m_do_cleanup = ( ! args["nocleanup"]);
     cfg.BasicCleanup(false);
 
     if (args["html"])
     {
-        CRef<IHTMLFormatter> html_fmt(new CHTMLFormatterEx(m_context.m_Scope));
+        CRef<IHTMLFormatter> html_fmt(new CHTMLFormatterEx(context.m_Scope));
         cfg.SetHTMLFormatter(html_fmt);
     }
 
     CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
     if( args["benchmark-cancel-checking"] ) {
-        m_pCanceledCallback.reset(x_CreateCancelBenchmarkCallback());
+        // temporarly disabled because it's never used
+        //m_pCanceledCallback.reset(x_CreateCancelBenchmarkCallback());
     }
 
     {
