@@ -57,8 +57,8 @@ public:
     ~CMultiSourceWriterImpl();
     void Open(const std::string& filename);
     void Open(std::ostream& o_stream);
+    bool IsOpen() const;
     void Close();
-    CMultiSourceOStream NewStream();
     void Flush();
 
     void SetMaxWriters(size_t num) {
@@ -203,6 +203,11 @@ void CMultiSourceWriterImpl::Open(std::ostream& o_stream)
     }
 }
 
+bool CMultiSourceWriterImpl::IsOpen() const
+{
+    return m_ostream.load() != nullptr;
+}
+
 void CMultiSourceWriterImpl::Close()
 {
     {
@@ -256,11 +261,6 @@ std::shared_ptr<CMultiSourceOStreamBuf> CMultiSourceWriterImpl::NewStreamBuf()
     m_cv.notify_all();
 
     return buf;
-}
-
-CMultiSourceOStream CMultiSourceWriterImpl::NewStream()
-{
-    return {NewStreamBuf()};
 }
 
 std::unique_ptr<CMultiSourceWriterImpl::TBuffer> CMultiSourceWriterImpl::AllocateBuffer()
@@ -352,7 +352,13 @@ void CMultiSourceWriter::Close()
 CMultiSourceOStream CMultiSourceWriter::NewStream()
 {
     x_ConstructImpl();
-    return m_impl->NewStream();
+    return {m_impl->NewStreamBuf()};
+}
+
+std::unique_ptr<CMultiSourceOStream> CMultiSourceWriter::NewStreamPtr()
+{
+    x_ConstructImpl();
+    return std::make_unique<CMultiSourceOStream>(m_impl->NewStreamBuf());
 }
 
 void CMultiSourceWriter::Flush()
@@ -364,6 +370,13 @@ void CMultiSourceWriter::SetMaxWriters(size_t num)
 {
     x_ConstructImpl();
     m_impl->SetMaxWriters(num);
+}
+
+bool CMultiSourceWriter::IsOpen() const
+{
+    if (!m_impl)
+        return false;
+    return m_impl->IsOpen();
 }
 
 void CMultiSourceWriter::x_ConstructImpl()
