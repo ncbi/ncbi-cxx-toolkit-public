@@ -1,4 +1,4 @@
-/*  $Id$
+/*` $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -70,6 +70,8 @@
 #include <objtools/edit/huge_file_process.hpp>
 #include <future>
 #include <util/message_queue.hpp>
+//#include "multi_source_file.hpp"
+#include "fileset.hpp"
 
 #define USE_CDDLOADER
 
@@ -94,6 +96,30 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+
+// all sequence output stream
+// nucleotide output stream
+// genomic output stream
+// RNA output stream
+// protein output stream
+// unknown output stream
+enum class eFlatFileCodes { all, nuc, gen, rna, prot, unk, };
+
+class CFFMultiSourceFileSet: public TMultiSourceFileSet<eFlatFileCodes,
+    eFlatFileCodes::all,
+    eFlatFileCodes::nuc,
+    eFlatFileCodes::gen,
+    eFlatFileCodes::rna,
+    eFlatFileCodes::prot,
+    eFlatFileCodes::unk>
+{
+public:
+    CFFMultiSourceFileSet() {
+        for (auto& rec: m_redirects)
+            rec = 0;
+    }
+};
 
 class CHTMLFormatterEx : public IHTMLFormatter
 {
@@ -323,10 +349,10 @@ public:
     void Init() override;
     int Run() override;
 
+protected:
     bool HandleSeqEntry(CRef<CSeq_entry>& se);
     bool HandleSeqEntry(CSeq_entry_Handle seh);
 
-protected:
     void HandleSeqSubmit(CObjectIStream& is);
     void HandleSeqSubmit(CSeq_submit& sub);
     void HandleSeqId(const string& id);
@@ -335,40 +361,46 @@ protected:
     CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is, bool report = false);
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is, bool report = false);
 
-    CNcbiOstream* OpenFlatfileOstream(const string& name);
-
+    bool SetFlatfileOstream(eFlatFileCodes _code, const string& name);
 private:
     // types
     typedef CFlatFileConfig::CGenbankBlockCallback TGenbankBlockCallback;
+    // Each thread should have its own context
+    struct TFFContext
+    {
+        CRef<CScope>             m_Scope;
+        CRef<CFlatFileGenerator> m_FFGenerator;  // Flat-file generator
+        CFFMultiSourceFileSet::fileset_type m_streams; // multiple streams for each of eFlatFileCodes
+    };
 
-    CObjectIStream* x_OpenIStream(const CArgs& args);
+    [[nodiscard]] CObjectIStream* x_OpenIStream(const CArgs& args);
 
-    CFlatFileGenerator* x_CreateFlatFileGenerator(const CArgs& args);
-    TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args);
-    TSeqPos x_GetFrom(const CArgs& args);
-    TSeqPos x_GetTo  (const CArgs& args);
-    ENa_strand x_GetStrand(const CArgs& args);
-    void x_GetLocation(const CSeq_entry_Handle& entry,
-        const CArgs& args, CSeq_loc& loc);
-    CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
-    void x_CreateCancelBenchmarkCallback();
-    int x_AddSNPAnnots(CBioseq_Handle& bsh);
+    [[nodiscard]] CFlatFileGenerator* x_CreateFlatFileGenerator(const CArgs& args);
+    [[nodiscard]] TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args) const;
+    TSeqPos x_GetFrom(const CArgs& args) const;
+    TSeqPos x_GetTo  (const CArgs& args) const;
+    ENa_strand x_GetStrand(const CArgs& args) const;
+    void x_GetLocation(const CSeq_entry_Handle& entry, const CArgs& args, CSeq_loc& loc) const;
+    CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry) const;
+    [[nodiscard]] ICanceled* x_CreateCancelBenchmarkCallback() const;
+    int x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& context) const;
+    void x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const;
+
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
-    CRef<CScope>                m_Scope;
 
-    CNcbiOstream*               m_Os;           // all sequence output stream
+    // temporaly, only one context exists
+    TFFContext                  m_context;
+
+    // Everything else should be unchangeable within CFlatfileGenerator runs
+
     bool                        m_OnlyNucs;
     bool                        m_OnlyProts;
 
-    CNcbiOstream*               m_On;           // nucleotide output stream
-    CNcbiOstream*               m_Og;           // genomic output stream
-    CNcbiOstream*               m_Or;           // RNA output stream
-    CNcbiOstream*               m_Op;           // protein output stream
-    CNcbiOstream*               m_Ou;           // unknown output stream
+    friend class CWrapINSDSet;
+    CFFMultiSourceFileSet       m_writers;
 
-    CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
     unique_ptr<ICanceled>       m_pCanceledCallback;
     bool                        m_do_cleanup;
     bool                        m_Exception;
@@ -496,35 +528,41 @@ void CAsn2FlatApp::Init()
 }
 
 
-CNcbiOstream* CAsn2FlatApp::OpenFlatfileOstream(const string& name)
+bool CAsn2FlatApp::SetFlatfileOstream(eFlatFileCodes _code, const string& name)
 {
     const CArgs& args = GetArgs();
-
-    if (! args[name])
-        return nullptr;
-
-    CNcbiOstream* flatfile_os = &(args[name].AsOutputFile());
-
-    // so we don't fail silently if, e.g., the output disk gets full
-    flatfile_os->exceptions( ios::failbit | ios::badbit );
-
-    return flatfile_os;
+    if (args[name]) {
+        auto filename = args[name].AsString();
+        m_writers.SetFilename(_code, filename);
+        return true;
+    } else
+        return false;
 }
 
-static void s_INSDSetOpen(bool is_insdseq, CNcbiOstream* os) {
-
-    if (is_insdseq) {
-        *os << "<INSDSet>" << endl;
+// only print <INSDSet> ... </INSDSet> wrappers if single output stream
+class CWrapINSDSet
+{
+public:
+    CWrapINSDSet(CAsn2FlatApp* app)
+    {
+        if (app->GetArgs()["format"].AsString() == "insdseq") {
+            if (app->m_writers.Has(eFlatFileCodes::all)) {
+                m_os = app->m_context.m_streams.GetStream(eFlatFileCodes::all);
+            }
+        }
+        if (m_os) {
+            *m_os << "<INSDSet>" << endl;
+        }
     }
-}
-
-static void s_INSDSetClose(bool is_insdseq, CNcbiOstream* os) {
-
-    if (is_insdseq) {
-        *os << "</INSDSet>" << endl;
+    ~CWrapINSDSet()
+    {
+        if (m_os) {
+            *m_os << "</INSDSet>" << endl;
+        }
     }
-}
-
+private:
+    std::ostream* m_os = nullptr;
+};
 
 int CAsn2FlatApp::Run()
 {
@@ -570,8 +608,8 @@ int CAsn2FlatApp::Run()
         }
     }
 
-    m_Scope.Reset(new CScope(*m_Objmgr));
-    m_Scope->AddDefaults();
+    m_context.m_Scope.Reset(new CScope(*m_Objmgr));
+    m_context.m_Scope->AddDefaults();
 
     const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
     m_PSGMode = cfg.GetBool("genbank", "loader_psg", false, 0, CNcbiRegistry::eReturn);
@@ -586,7 +624,7 @@ int CAsn2FlatApp::Run()
         m_SNPTrackStub =
             ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
         CRef<CSNPDataLoader> snp_data_loader(CSNPDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
-        m_Scope->AddDataLoader(snp_data_loader->GetLoaderNameFromArgs());
+        m_context.m_Scope->AddDataLoader(snp_data_loader->GetLoaderNameFromArgs());
 #endif
 #ifdef USE_CDDLOADER
         bool use_mongo_cdd =
@@ -594,60 +632,42 @@ int CAsn2FlatApp::Run()
             cfg.GetBool("genbank", "always_load_external", false, 0, CNcbiRegistry::eReturn);
         if (use_mongo_cdd) {
             CRef<CCDDDataLoader> cdd_data_loader(CCDDDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
-            m_Scope->AddDataLoader(cdd_data_loader->GetLoaderNameFromArgs());
+            m_context.m_Scope->AddDataLoader(cdd_data_loader->GetLoaderNameFromArgs());
         }
 #endif
     }
 
     // open the output streams
-    m_Os = OpenFlatfileOstream ("o");
-    m_On = OpenFlatfileOstream ("on");
-    m_Og = OpenFlatfileOstream ("og");
-    m_Or = OpenFlatfileOstream ("or");
-    m_Op = OpenFlatfileOstream ("op");
-    m_Ou = OpenFlatfileOstream ("ou");
+    bool has_any_o_args =
+        SetFlatfileOstream (eFlatFileCodes::all,  "o")  |
+        SetFlatfileOstream (eFlatFileCodes::nuc,  "on") |
+        SetFlatfileOstream (eFlatFileCodes::gen,  "og") |
+        SetFlatfileOstream (eFlatFileCodes::rna,  "or") |
+        SetFlatfileOstream (eFlatFileCodes::prot, "op") |
+        SetFlatfileOstream (eFlatFileCodes::unk,  "ou");
+
+    if (has_any_o_args) {
+        #if 0
+        m_writers.OpenFilesForMT();
+        m_context.m_streams = m_writers.MakeNewStreams();
+        #else
+        m_context.m_streams = m_writers.OpenFilesSimple();
+        #endif
+    } else {
+        // No output (-o*) argument given - default to stdout
+        m_context.m_streams = m_writers.OverrideAll(std::cout);
+    }
 
     m_OnlyNucs = false;
     m_OnlyProts = false;
-    if (m_Os) {
-        const string& view = args["view"].AsString();
+    if (m_writers.Has(eFlatFileCodes::all)) {
+        auto view = args["view"].AsString();
         m_OnlyNucs = (view == "nuc");
         m_OnlyProts = (view == "prot");
     }
 
-    if (!m_Os && !m_On && !m_Og && !m_Or && !m_Op && !m_Ou) {
-        // No output (-o*) argument given - default to stdout
-        m_Os = &cout;
-    }
-
-    bool is_insdseq = false;
-    if (args["format"].AsString() == "insdseq") {
-        // only print <INSDSet> ... </INSDSet> wrappers if single output stream
-        if (m_Os) {
-            is_insdseq = true;
-        }
-    }
-
     // create the flat-file generator
-    m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
-    if ( args["no-external"] || args["policy"].AsString() == "internal" ) {
-        m_FFGenerator->SetAnnotSelector().SetExcludeExternal(true);
-    }
-//    else if (!m_Scope->GetKeepExternalAnnotsForEdit()) {
-//       m_Scope->SetKeepExternalAnnotsForEdit();
-//    }
-    if( args["resolve-all"] || args["policy"].AsString() == "external") {
-        m_FFGenerator->SetAnnotSelector().SetResolveAll();
-    }
-    if( args["depth"] ) {
-        m_FFGenerator->SetAnnotSelector().SetResolveDepth(args["depth"].AsInteger());
-    }
-    if( args["max_search_segments"] ) {
-        m_FFGenerator->SetAnnotSelector().SetMaxSearchSegments(args["max_search_segments"].AsInteger());
-    }
-    if( args["max_search_time"] ) {
-        m_FFGenerator->SetAnnotSelector().SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
-    }
+    m_context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
 
     unique_ptr<CObjectIStream> is;
     is.reset( x_OpenIStream( args ) );
@@ -665,14 +685,13 @@ int CAsn2FlatApp::Run()
 
     // do -batch mode before checking -huge flag
     if ( args[ "batch" ] ) {
-        s_INSDSetOpen ( is_insdseq, m_Os );
+        CWrapINSDSet wrap(this);
         CGBReleaseFile in( *is.release(), propagate );
         in.RegisterHandler( [this](CRef<CSeq_entry>& entry)->bool
         {
             return HandleSeqEntry(entry);
         });
         in.Read();  // HandleSeqEntry will be called from this function
-        s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
     }
@@ -690,7 +709,7 @@ int CAsn2FlatApp::Run()
     // -huge flag plus -i input file (not piped) sets huge mode for all data types
     if (m_HugeFileMode)
     {
-        s_INSDSetOpen ( is_insdseq, m_Os );
+        CWrapINSDSet wrap(this);
         is.reset();
         edit::CHugeFileProcess in (args["i"].AsString());
         CRef<CSeq_id> seqid;
@@ -726,21 +745,19 @@ int CAsn2FlatApp::Run()
 
         bool success = read_task.get();
 
-        s_INSDSetClose ( is_insdseq, m_Os );
         if (!success || m_Exception) return -1;
         return 0;
     }
 
     if ( args[ "sub" ] ) {
-        s_INSDSetOpen ( is_insdseq, m_Os );
+        CWrapINSDSet wrap(this);
         HandleSeqSubmit( *is );
-        s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
     }
 
     if ( args[ "ids" ] ) {
-        s_INSDSetOpen ( is_insdseq, m_Os );
+        CWrapINSDSet wrap(this);
         CNcbiIstream& istr = args["ids"].AsInputFile();
         string id_str;
         while (NcbiGetlineEOL(istr, id_str)) {
@@ -757,22 +774,20 @@ int CAsn2FlatApp::Run()
                 ERR_POST(Error << e);
             }
         }
-        s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
     }
 
     if ( args[ "id" ] ) {
-        s_INSDSetOpen ( is_insdseq, m_Os );
+        CWrapINSDSet wrap(this);
         HandleSeqId( args[ "id" ].AsString() );
-        s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
     }
 
     string asn_type = args["type"].AsString();
 
-    s_INSDSetOpen ( is_insdseq, m_Os );
+    CWrapINSDSet wrap(this);
     if ( asn_type == "seq-entry" ) {
         //
         //  Straight through processing: Read a seq_entry, then process
@@ -785,7 +800,7 @@ int CAsn2FlatApp::Run()
                            "Unable to construct Seq-entry object" );
             }
             HandleSeqEntry(seh);
-            m_Scope->RemoveTopLevelSeqEntry(seh);
+            m_context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
     else if ( asn_type == "bioseq" ) {
@@ -800,7 +815,7 @@ int CAsn2FlatApp::Run()
                            "Unable to construct Seq-entry object" );
             }
             HandleSeqEntry(seh);
-            m_Scope->RemoveTopLevelSeqEntry(seh);
+            m_context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
     else if ( asn_type == "bioseq-set" ) {
@@ -815,7 +830,7 @@ int CAsn2FlatApp::Run()
                            "Unable to construct Seq-entry object" );
             }
             HandleSeqEntry(seh);
-            m_Scope->RemoveTopLevelSeqEntry(seh);
+            m_context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
     else if ( asn_type == "seq-submit" ) {
@@ -858,10 +873,9 @@ int CAsn2FlatApp::Run()
                 }
             }
             HandleSeqEntry(seh);
-            m_Scope->RemoveTopLevelSeqEntry(seh);
+            m_context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
-    s_INSDSetClose ( is_insdseq, m_Os );
 
     if (m_Exception) return -1;
     return 0;
@@ -893,19 +907,10 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         seh = scope->AddTopLevelSeqEntry(*e);
     }
     // "remember" the submission block
-    m_FFGenerator->SetSubmit(sub.GetSub());
+    m_context.m_FFGenerator->SetSubmit(sub.GetSub());
 
-    const CArgs& args = GetArgs();
     try {
-        if (args["from"] || args["to"] || args["strand"]) {
-            CSeq_loc loc;
-            x_GetLocation(seh, args, loc);
-            CNcbiOstream* flatfile_os = m_Os;
-            m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, m_Os);
-        } else {
-            CNcbiOstream* flatfile_os = m_Os;
-            m_FFGenerator->Generate(seh, *flatfile_os, true, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
-        }
+        x_FFGenerate(seh, m_context);
     } catch (CException& e) {
         ERR_POST(Error << e);
         m_Exception = true;
@@ -933,7 +938,7 @@ void CAsn2FlatApp::HandleSeqId(
     // to any CScope and puts it into entry.
     {
         CSeq_id id(strId);
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle( id );
+        CBioseq_Handle bsh = m_context.m_Scope->GetBioseqHandle( id );
         if ( ! bsh ) {
             NCBI_THROW(
                 CException, eUnknown,
@@ -993,15 +998,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
     if (args["faster"] || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web") {
 
         try {
-            if (args["from"] || args["to"] || args["strand"]) {
-                CSeq_loc loc;
-                x_GetLocation(seh, args, loc);
-                CNcbiOstream* flatfile_os = m_Os;
-                m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, m_Os);
-            } else {
-                CNcbiOstream* flatfile_os = m_Os;
-                m_FFGenerator->Generate(seh, *flatfile_os, true, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
-            }
+            x_FFGenerate(seh, m_context);
         } catch (CException& e) {
             ERR_POST(Error << e);
             m_Exception = true;
@@ -1010,7 +1007,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
         return true;
     }
 
-    m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
+    m_context.m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
 
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
@@ -1049,8 +1046,6 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
                 continue;
             }
         }
-
-        CNcbiOstream* flatfile_os = nullptr;
 
         bool is_genomic = false;
         bool is_RNA = false;
@@ -1102,29 +1097,38 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
             }
         }
 
-        if ( m_Os ) {
+        CNcbiOstream* flatfile_os = nullptr;
+
+        auto _Os = m_context.m_streams.GetStream(eFlatFileCodes::all);
+        auto _On = m_context.m_streams.GetStream(eFlatFileCodes::nuc);
+        auto _Og = m_context.m_streams.GetStream(eFlatFileCodes::gen);
+        auto _Or = m_context.m_streams.GetStream(eFlatFileCodes::rna);
+        auto _Op = m_context.m_streams.GetStream(eFlatFileCodes::prot);
+        auto _Ou = m_context.m_streams.GetStream(eFlatFileCodes::unk);
+
+        if ( _Os ) {
             if ( m_OnlyNucs && ! bsh.IsNa() ) continue;
             if ( m_OnlyProts && ! bsh.IsAa() ) continue;
-            flatfile_os = m_Os;
+            flatfile_os = _Os;
         } else if ( bsh.IsNa() ) {
-            if ( m_On ) {
-                flatfile_os = m_On;
-            } else if ( (is_genomic || ! closest_molinfo) && m_Og ) {
-                flatfile_os = m_Og;
-            } else if ( is_RNA && m_Or ) {
-                flatfile_os = m_Or;
+            if ( _On ) {
+                flatfile_os = _On;
+            } else if ( (is_genomic || ! closest_molinfo) && _Og ) {
+                flatfile_os = _Og;
+            } else if ( is_RNA && _Or ) {
+                flatfile_os = _Or;
             } else {
                 continue;
             }
         } else if ( bsh.IsAa() ) {
-            if ( m_Op ) {
-                flatfile_os = m_Op;
+            if ( _Op ) {
+                flatfile_os = _Op;
             }
         } else {
-            if ( m_Ou ) {
-                flatfile_os = m_Ou;
-            } else if ( m_On ) {
-                flatfile_os = m_On;
+            if ( _Ou ) {
+                flatfile_os = _Ou;
+            } else if ( _On ) {
+                flatfile_os = _On;
             } else {
                 continue;
             }
@@ -1133,14 +1137,14 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
         if ( !flatfile_os ) continue;
 
         if (m_PSGMode && ( args["enable-external"] || args["policy"].AsString() == "external" ))
-            x_AddSNPAnnots(bsh);
+            x_AddSNPAnnots(bsh, m_context);
 
         // generate flat file
         if ( args["from"] || args["to"] || args["strand"] ) {
             CSeq_loc loc;
             x_GetLocation( seh, args, loc );
             try {
-                m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+                m_context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
             }
             catch (CException& e) {
                 ERR_POST(Error << e);
@@ -1154,7 +1158,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CSeq_entry_Handle seh)
             int count = args["count"].AsInteger();
             for ( int i = 0; i < count; ++i ) {
                 try {
-                    m_FFGenerator->Generate( bsh, *flatfile_os);
+                    m_context.m_FFGenerator->Generate( bsh, *flatfile_os);
                 }
                 catch (CException& e) {
                     ERR_POST(Error << e);
@@ -1176,7 +1180,7 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is, b
             NCBI_THROW(CException, eUnknown,
                        "provided Seq-entry is empty");
         }
-        return m_Scope->AddTopLevelSeqEntry(*se);
+        return m_context.m_Scope->AddTopLevelSeqEntry(*se);
     }
     catch (CException& e) {
         if (report) {
@@ -1191,7 +1195,7 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseq(CObjectIStream& is, boo
     try {
         CRef<CBioseq> bs(new CBioseq);
         is >> *bs;
-        CBioseq_Handle bsh = m_Scope->AddBioseq(*bs);
+        CBioseq_Handle bsh = m_context.m_Scope->AddBioseq(*bs);
         return bsh.GetTopLevelEntry();
     }
     catch (CException& e) {
@@ -1207,7 +1211,7 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is, 
     try {
         CRef<CSeq_entry> entry(new CSeq_entry);
         is >> entry->SetSet();
-        return m_Scope->AddTopLevelSeqEntry(*entry);
+        return m_context.m_Scope->AddTopLevelSeqEntry(*entry);
     }
     catch (CException& e) {
         if (report) {
@@ -1225,7 +1229,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     }
 
     // add entry to scope
-    CSeq_entry_Handle entry = m_Scope->AddTopLevelSeqEntry(*se);
+    CSeq_entry_Handle entry = m_context.m_Scope->AddTopLevelSeqEntry(*se);
     if ( !entry ) {
         NCBI_THROW(CException, eUnknown, "Failed to insert entry to scope.");
     }
@@ -1234,7 +1238,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     // Needed because we can really accumulate a lot of junk otherwise,
     // and we end up with significant slowdown due to repeatedly doing
     // linear scans on a growing CScope.
-    m_Scope->ResetDataAndHistory();
+    m_context.m_Scope->ResetDataAndHistory();
     return ret;
 }
 
@@ -1294,14 +1298,14 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
 
     if (args["html"])
     {
-        CRef<IHTMLFormatter> html_fmt(new CHTMLFormatterEx(m_Scope));
+        CRef<IHTMLFormatter> html_fmt(new CHTMLFormatterEx(m_context.m_Scope));
         cfg.SetHTMLFormatter(html_fmt);
     }
 
     CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
     if( args["benchmark-cancel-checking"] ) {
-        x_CreateCancelBenchmarkCallback();
+        m_pCanceledCallback.reset(x_CreateCancelBenchmarkCallback());
     }
 
     {
@@ -1330,11 +1334,30 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
         generator->SetAnnotSelector().IncludeNamedAnnotAccession("SNP");
     }
 
+    if ( args["no-external"] || args["policy"].AsString() == "internal" ) {
+        generator->SetAnnotSelector().SetExcludeExternal(true);
+    }
+//    else if (!m_Scope->GetKeepExternalAnnotsForEdit()) {
+//       m_Scope->SetKeepExternalAnnotsForEdit();
+//    }
+    if( args["resolve-all"] || args["policy"].AsString() == "external") {
+        generator->SetAnnotSelector().SetResolveAll();
+    }
+    if( args["depth"] ) {
+        generator->SetAnnotSelector().SetResolveDepth(args["depth"].AsInteger());
+    }
+    if( args["max_search_segments"] ) {
+        generator->SetAnnotSelector().SetMaxSearchSegments(args["max_search_segments"].AsInteger());
+    }
+    if( args["max_search_time"] ) {
+        generator->SetAnnotSelector().SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
+    }
+
     return generator;
 }
 
 CAsn2FlatApp::TGenbankBlockCallback*
-CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
+CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args) const
 {
     class CSimpleCallback : public TGenbankBlockCallback {
     public:
@@ -1446,7 +1469,7 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
     }
 }
 
-TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args)
+TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args) const
 {
     return args["from"] ?
         static_cast<TSeqPos>(args["from"].AsInteger() - 1) :
@@ -1454,14 +1477,14 @@ TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args)
 }
 
 
-TSeqPos CAsn2FlatApp::x_GetTo(const CArgs& args)
+TSeqPos CAsn2FlatApp::x_GetTo(const CArgs& args) const
 {
     return args["to"] ?
         static_cast<TSeqPos>(args["to"].AsInteger() - 1) :
         CRange<TSeqPos>::GetWholeTo();
 }
 
-ENa_strand CAsn2FlatApp::x_GetStrand(const CArgs& args)
+ENa_strand CAsn2FlatApp::x_GetStrand(const CArgs& args) const
 {
     return static_cast<ENa_strand>(args["strand"].AsInteger());
 }
@@ -1470,7 +1493,7 @@ ENa_strand CAsn2FlatApp::x_GetStrand(const CArgs& args)
 void CAsn2FlatApp::x_GetLocation
 (const CSeq_entry_Handle& entry,
  const CArgs& args,
- CSeq_loc& loc)
+ CSeq_loc& loc) const
 {
     _ASSERT(entry);
 
@@ -1503,7 +1526,7 @@ void CAsn2FlatApp::x_GetLocation
 
 
 // if the 'from' or 'to' flags are specified try to guess the bioseq.
-CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
+CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry) const
 {
     if ( entry.IsSeq() ) {
         return entry.GetSeq();
@@ -1560,8 +1583,8 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
             "Cannot deduce target bioseq.");
 }
 
-void
-CAsn2FlatApp::x_CreateCancelBenchmarkCallback()
+[[nodiscard]]
+ICanceled* CAsn2FlatApp::x_CreateCancelBenchmarkCallback() const
 {
     // This ICanceled interface always says "keep going"
     // unless SIGUSR1 is received,
@@ -1707,10 +1730,10 @@ CAsn2FlatApp::x_CreateCancelBenchmarkCallback()
         mutable list<Int8>   m_LastFewGaps;
     };
 
-    m_pCanceledCallback.reset( new CCancelBenchmarking );
+    return new CCancelBenchmarking;
 }
 
-int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
+int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& ff_context) const
 {
     int rc = 0;
 
@@ -1752,12 +1775,32 @@ int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
         if (snp_status.ok()) {
             string na_acc = reply.na_track_acc_with_filter();
             if (!na_acc.empty())
-                m_FFGenerator->SetAnnotSelector().IncludeNamedAnnotAccession(na_acc);
+                ff_context.m_FFGenerator->SetAnnotSelector().IncludeNamedAnnotAccession(na_acc);
         }
     }
 #endif
 
     return rc;
+}
+
+void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const
+{
+    const CArgs& args = GetArgs();
+    if (args["from"] || args["to"] || args["strand"]) {
+        CSeq_loc loc;
+        x_GetLocation(seh, args, loc);
+        auto flatfile_os = context.m_streams.GetStream(eFlatFileCodes::all);
+        context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, flatfile_os);
+    } else {
+        auto all  = context.m_streams.GetStream(eFlatFileCodes::all);
+        auto nuc  = context.m_streams.GetStream(eFlatFileCodes::nuc);
+        auto gen  = context.m_streams.GetStream(eFlatFileCodes::gen);
+        auto rna  = context.m_streams.GetStream(eFlatFileCodes::rna);
+        auto prot = context.m_streams.GetStream(eFlatFileCodes::prot);
+        auto unk  = context.m_streams.GetStream(eFlatFileCodes::unk);
+
+        context.m_FFGenerator->Generate(seh, *all, true, all, nuc, gen, rna, prot, unk);
+    }
 }
 
 END_NCBI_SCOPE
