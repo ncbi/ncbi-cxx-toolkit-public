@@ -5375,7 +5375,7 @@ NRC	c	Division of Biological Sciences, National Research Council of Canada
 NRC<EGY>	s	National Research Centre			
 NRCC	s	National Research Council of Canada			
 NRCS	c	National Reference Center for Streptococci in Aachen			
-NREL	s	National Renewable Energy Laboratory			
+NREL	c	National Renewable Energy Laboratory			
 NRI	s	Texas A&M Natural Resources Institute			
 NRIBAS	s	National Research Institute of Biology, Academia Sinica			
 NRIC	c	NODAI Research Institute Culture Collection			
