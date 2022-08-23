@@ -92,7 +92,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/edit/remote_updater.hpp>
 #include <future>
-#include "message_queue.hpp"
+#include <util/message_queue.hpp>
 #include "xml_val_stream.hpp"
 #include "thread_state.hpp"
 #include <objtools/validator/huge_file_validator.hpp>
