@@ -19,6 +19,7 @@ NCBI_begin_lib(xobjwrite)
     aln_writer
     psl_record psl_formatter psl_writer
     genbank_id_resolve
+    multi_source_file
   )
   NCBI_uses_toolkit_libraries(variation_utils xformat xobjread)
   NCBI_project_watchers(ludwigf boukn gotvyans foleyjp)
