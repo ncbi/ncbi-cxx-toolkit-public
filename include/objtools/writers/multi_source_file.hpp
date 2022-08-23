@@ -103,8 +103,10 @@ public:
 
     void Open(std::ostream& o_stream);
     void Open(const std::string& filename);
+    bool IsOpen() const;
     void Close();
     CMultiSourceOStream NewStream();
+    std::unique_ptr<CMultiSourceOStream> NewStreamPtr();
     void Flush();
     void SetMaxWriters(size_t num);
 private:
