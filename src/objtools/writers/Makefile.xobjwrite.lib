@@ -19,7 +19,8 @@ SRC = agp_write \
       fasta_writer \
       aln_writer \
 	  psl_record psl_formatter psl_writer \
-	  genbank_id_resolve
+	  genbank_id_resolve \
+      multi_source_file
 
 DLL_LIB = variation_utils $(XFORMAT_LIBS) $(OBJEDIT_LIBS)
 
