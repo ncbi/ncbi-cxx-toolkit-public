@@ -1,4 +1,4 @@
-/*` $Id$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -340,6 +340,14 @@ void CHTMLFormatterEx::FormatUniProtId(string& str, const string& prot_id) const
     str += "</a>";
 }
 
+// Each thread should have its own context
+struct TFFContext
+{
+    CRef<CScope>             m_Scope;
+    CRef<CFlatFileGenerator> m_FFGenerator;  // Flat-file generator
+    CFFMultiSourceFileSet::fileset_type m_streams; // multiple streams for each of eFlatFileCodes
+};
+
 class CAsn2FlatApp : public CNcbiApplication
 {
 public:
@@ -354,14 +362,6 @@ protected:
 private:
     // types
     typedef CFlatFileConfig::CGenbankBlockCallback TGenbankBlockCallback;
-    // Each thread should have its own context
-    struct TFFContext
-    {
-        CRef<CScope>             m_Scope;
-        CRef<CFlatFileGenerator> m_FFGenerator;  // Flat-file generator
-        CFFMultiSourceFileSet::fileset_type m_streams; // multiple streams for each of eFlatFileCodes
-    };
-
     bool HandleSeqEntry(TFFContext& context, CRef<CSeq_entry>& se) const;
     bool HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) const;
     void HandleSeqSubmit(TFFContext& context, CObjectIStream& is) const;
@@ -386,18 +386,17 @@ private:
     int x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& context) const;
     void x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const;
     int x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const;
-    int x_GenerateHugeMode(TFFContext& context, const CArgs& args) const;
+    int x_GenerateHugeMode(TFFContext& context) const;
+    void x_InitNewContext(TFFContext& context);
 
     // data
-    CRef<CObjectManager>        m_Objmgr;       // Object Manager
-
-    // temporaly, only one context exists
-    TFFContext                  m_context;
+    CRef<CObjectManager>        m_Objmgr;       // Object Manager can be mutable
 
     // Everything else should be unchangeable within CFlatfileGenerator runs
 
     bool                        m_OnlyNucs;
     bool                        m_OnlyProts;
+    bool                        m_has_o_args;
 
     friend class CWrapINSDSet;
     CFFMultiSourceFileSet       m_writers;
@@ -418,6 +417,30 @@ private:
 #endif
 };
 
+// only print <INSDSet> ... </INSDSet> wrappers if single output stream
+class CWrapINSDSet
+{
+public:
+    CWrapINSDSet(const CAsn2FlatApp* app, TFFContext& context)
+    {
+        if (app->GetArgs()["format"].AsString() == "insdseq") {
+            if (app->m_writers.Has(eFlatFileCodes::all)) {
+                m_context = &context;
+                auto os = m_context->m_streams.GetStream(eFlatFileCodes::all);
+                *os << "<INSDSet>" << endl;
+            }
+        }
+    }
+    ~CWrapINSDSet()
+    {
+        if (m_context) {
+            auto os = m_context->m_streams.GetStream(eFlatFileCodes::all);
+            *os << "</INSDSet>" << endl;
+        }
+    }
+private:
+    TFFContext* m_context = nullptr;
+};
 
 // constructor
 CAsn2FlatApp::CAsn2FlatApp()
@@ -540,31 +563,6 @@ bool CAsn2FlatApp::SetFlatfileOstream(eFlatFileCodes _code, const string& name)
         return false;
 }
 
-// only print <INSDSet> ... </INSDSet> wrappers if single output stream
-class CWrapINSDSet
-{
-public:
-    CWrapINSDSet(CAsn2FlatApp* app)
-    {
-        if (app->GetArgs()["format"].AsString() == "insdseq") {
-            if (app->m_writers.Has(eFlatFileCodes::all)) {
-                m_os = app->m_context.m_streams.GetStream(eFlatFileCodes::all);
-            }
-        }
-        if (m_os) {
-            *m_os << "<INSDSet>" << endl;
-        }
-    }
-    ~CWrapINSDSet()
-    {
-        if (m_os) {
-            *m_os << "</INSDSet>" << endl;
-        }
-    }
-private:
-    std::ostream* m_os = nullptr;
-};
-
 int CAsn2FlatApp::Run()
 {
     CTime expires = GetFullVersion().GetBuildInfo().GetBuildTime();
@@ -609,9 +607,6 @@ int CAsn2FlatApp::Run()
         }
     }
 
-    m_context.m_Scope.Reset(new CScope(*m_Objmgr));
-    m_context.m_Scope->AddDefaults();
-
     const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
     m_PSGMode = cfg.GetBool("genbank", "loader_psg", false, 0, CNcbiRegistry::eReturn);
     if (m_PSGMode) {
@@ -624,40 +619,26 @@ int CAsn2FlatApp::Run()
             grpc::CreateChannel(hostport, grpc::InsecureChannelCredentials());
         m_SNPTrackStub =
             ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
-        CRef<CSNPDataLoader> snp_data_loader(CSNPDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
-        m_context.m_Scope->AddDataLoader(snp_data_loader->GetLoaderNameFromArgs());
+        m_SNPDataLoader.Reset(CSNPDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
 #endif
 #ifdef USE_CDDLOADER
         bool use_mongo_cdd =
             cfg.GetBool("genbank", "vdb_cdd", false, 0, CNcbiRegistry::eReturn) &&
             cfg.GetBool("genbank", "always_load_external", false, 0, CNcbiRegistry::eReturn);
         if (use_mongo_cdd) {
-            CRef<CCDDDataLoader> cdd_data_loader(CCDDDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
-            m_context.m_Scope->AddDataLoader(cdd_data_loader->GetLoaderNameFromArgs());
+            m_CDDDataLoader.Reset(CCDDDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
         }
 #endif
     }
 
     // open the output streams
-    bool has_any_o_args =
+    m_has_o_args =
         SetFlatfileOstream (eFlatFileCodes::all,  "o")  |
         SetFlatfileOstream (eFlatFileCodes::nuc,  "on") |
         SetFlatfileOstream (eFlatFileCodes::gen,  "og") |
         SetFlatfileOstream (eFlatFileCodes::rna,  "or") |
         SetFlatfileOstream (eFlatFileCodes::prot, "op") |
         SetFlatfileOstream (eFlatFileCodes::unk,  "ou");
-
-    if (has_any_o_args) {
-        #if 0
-        m_writers.OpenFilesForMT();
-        m_context.m_streams = m_writers.MakeNewStreams();
-        #else
-        m_context.m_streams = m_writers.OpenFilesSimple();
-        #endif
-    } else {
-        // No output (-o*) argument given - default to stdout
-        m_context.m_streams = m_writers.OverrideAll(std::cout);
-    }
 
     m_do_cleanup = !args["nocleanup"];
     m_OnlyNucs = false;
@@ -667,9 +648,6 @@ int CAsn2FlatApp::Run()
         m_OnlyNucs = (view == "nuc");
         m_OnlyProts = (view == "prot");
     }
-
-    // create the flat-file generator
-    m_context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(m_context, args));
 
     if (args["accn"]) {
         m_AccessionFilter = args["accn"].AsString();
@@ -689,14 +667,26 @@ int CAsn2FlatApp::Run()
         m_HugeFileMode = false;
     }
 
+    if (m_has_o_args) {
+        if (m_HugeFileMode)
+            m_writers.OpenFilesForMT();
+    } else {
+        // No output (-o*) argument given - default to stdout
+        m_writers.Override(eFlatFileCodes::all, std::cout);
+    }
+
+    // temporaly, only one context exists
+    TFFContext context;
+    x_InitNewContext(context);
+
+    CWrapINSDSet wrap(this, context);
+
     if (m_HugeFileMode)
     {
-        CWrapINSDSet wrap(this);
-        return x_GenerateHugeMode(m_context, args);
+        return x_GenerateHugeMode(context);
     }
 
     if ( args[ "ids" ] ) {
-        CWrapINSDSet wrap(this);
         CNcbiIstream& istr = args["ids"].AsInputFile();
         string id_str;
         while (NcbiGetlineEOL(istr, id_str)) {
@@ -707,7 +697,7 @@ int CAsn2FlatApp::Run()
 
             try {
                 LOG_POST(Error << "id = " << id_str);
-                HandleSeqId( m_context, id_str );
+                HandleSeqId( context, id_str );
             }
             catch (CException& e) {
                 ERR_POST(Error << e);
@@ -718,8 +708,7 @@ int CAsn2FlatApp::Run()
     }
 
     if ( args[ "id" ] ) {
-        CWrapINSDSet wrap(this);
-        HandleSeqId( m_context, args[ "id" ].AsString() );
+        HandleSeqId( context, args[ "id" ].AsString() );
         if (m_Exception) return -1;
         return 0;
     }
@@ -734,11 +723,10 @@ int CAsn2FlatApp::Run()
     if ( args[ "batch" ] ) {
         bool propagate = args[ "p" ];
 
-        CWrapINSDSet wrap(this);
         CGBReleaseFile in( *is.release(), propagate ); // CGBReleaseFile will delete the input stream
-        in.RegisterHandler( [this](CRef<CSeq_entry>& entry)->bool
+        in.RegisterHandler( [this, &context](CRef<CSeq_entry>& entry)->bool
         {
-            return HandleSeqEntry(m_context, entry);
+            return HandleSeqEntry(context, entry);
         });
         in.Read();  // HandleSeqEntry will be called from this function
         if (m_Exception) return -1;
@@ -746,18 +734,18 @@ int CAsn2FlatApp::Run()
     }
 
     if ( args[ "sub" ] ) {
-        CWrapINSDSet wrap(this);
-        HandleSeqSubmit( m_context, *is );
+        HandleSeqSubmit( context, *is );
         if (m_Exception) return -1;
         return 0;
     }
 
-    CWrapINSDSet wrap(this);
-    return x_GenerateTraditionally(std::move(is), m_context, args);
+    return x_GenerateTraditionally(std::move(is), context, args);
 }
 
-int CAsn2FlatApp::x_GenerateHugeMode(TFFContext& context, const CArgs& args) const
+int CAsn2FlatApp::x_GenerateHugeMode(TFFContext& context) const
 {
+    const CArgs& args = GetArgs();
+
     edit::CHugeFileProcess in (args["i"].AsString());
     CRef<CSeq_id> seqid;
     if (!m_AccessionFilter.empty()) {
@@ -1811,6 +1799,34 @@ void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) cons
 
         context.m_FFGenerator->Generate(seh, *all, true, all, nuc, gen, rna, prot, unk);
     }
+}
+
+void CAsn2FlatApp::x_InitNewContext(TFFContext& context)
+{
+    context.m_Scope.Reset(new CScope(*m_Objmgr));
+    context.m_Scope->AddDefaults();
+
+#ifdef USE_SNPLOADER
+    if (m_SNPDataLoader) {
+        context.m_Scope->AddDataLoader(m_SNPDataLoader->GetLoaderNameFromArgs());
+    }
+#endif
+#ifdef USE_CDDLOADER
+    if (m_CDDDataLoader) {
+        context.m_Scope->AddDataLoader(m_CDDDataLoader->GetLoaderNameFromArgs());
+    }
+#endif
+
+    if (m_HugeFileMode)
+        context.m_streams = m_writers.MakeNewStreams();
+    else
+    if (m_has_o_args)
+        context.m_streams = m_writers.OpenFilesSimple();
+    else
+        context.m_streams = m_writers.OverrideAll(std::cout);
+
+    // create the flat-file generator
+    context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(context, GetArgs()));
 }
 
 END_NCBI_SCOPE
