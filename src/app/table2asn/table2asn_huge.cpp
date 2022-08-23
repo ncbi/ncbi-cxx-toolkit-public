@@ -50,7 +50,7 @@
 
 #include <util/message_queue.hpp>
 #include <future>
-#include "multi_source_file.hpp"
+#include <objtools/writers/multi_source_file.hpp>
 
 BEGIN_NCBI_SCOPE
 
