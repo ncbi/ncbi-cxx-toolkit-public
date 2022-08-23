@@ -173,6 +173,11 @@ public:
         return {std::move(streams), m_redirects};
     }
 
+    void Override(enum_type _enum, std::ostream& ostr) {
+        size_t index = fileset_type::get_enum_index(_enum);
+        m_writers[index].Open(ostr);
+    }
+
     void OpenFilesForMT() {
         for(size_t i=0; i<fileset_type::enum_size; ++i) {
             if (!m_filenames[i].empty()) {
@@ -181,15 +186,26 @@ public:
         }
     }
 
+    [[nodiscard]] std::unique_ptr<std::ostream> MakeNewStream(enum_type _enum) {
+        size_t index = fileset_type::get_enum_index(_enum);
+        if (!m_writers[index].IsOpen())
+            throw std::runtime_error("stream is not confugures");
+
+        auto new_stream = m_writers[index].NewStream();
+        // so we don't fail silently if, e.g., the output disk gets full
+        new_stream.exceptions( ios::failbit | ios::badbit );
+        std::unique_ptr<std::ostream> ostr = std::make_unique<decltype(new_stream)>(std::move(new_stream));
+        return ostr;
+    }
+
     [[nodiscard]] fileset_type MakeNewStreams() {
         typename fileset_type::streams_array streams;
         for(size_t i=0; i<fileset_type::enum_size; ++i) {
-            if (!m_filenames[i].empty()) {
-                auto new_stream = m_writers[i].NewStream();
+            if (m_writers[i].IsOpen()) {
+                auto new_stream = m_writers[i].NewStreamPtr();
                 // so we don't fail silently if, e.g., the output disk gets full
-                new_stream.exceptions( ios::failbit | ios::badbit );
-                std::unique_ptr<std::ostream> ostr = std::make_unique<CMultiSourceOStream>(std::move(new_stream));
-                streams[i] = std::move(ostr);
+                new_stream->exceptions( ios::failbit | ios::badbit );
+                streams[i] = std::move(new_stream);
             }
         }
         return {std::move(streams), m_redirects};
