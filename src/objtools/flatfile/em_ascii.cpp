@@ -401,7 +401,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, char* chentr
 {
     const char** b;
 
-    const char* drline;
+    char* drline;
 
     char* bptr;
     char* eptr;

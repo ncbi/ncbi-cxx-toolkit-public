@@ -2940,12 +2940,12 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
 
         for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
             const std::string& qual_str = (*cur)->GetQual();
-            const std::string& val_str  = (*cur)->IsSetVal() ? (*cur)->GetVal() : "";
+            std::string& val_str  = (*cur)->IsSetVal() ? (*cur)->SetVal() : "";
 
             if (qual_str == "compare") {
                 badcom = true;
                 if (! val_str.empty()) {
-                    q = StringChr(val_str.c_str(), '.');
+                    q = StringChr(val_str.data(), '.');
                     if (q != NULL && q[1] != '\0') {
                         for (p = q + 1; *p >= '0' && *p <= '9';)
                             p++;
