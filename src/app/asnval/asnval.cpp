@@ -93,6 +93,7 @@
 #include <objtools/edit/remote_updater.hpp>
 #include <future>
 #include <util/message_queue.hpp>
+#include "xml_val_stream.hpp"
 #include "thread_state.hpp"
 #include <objtools/validator/huge_file_validator.hpp>
 
@@ -129,8 +130,6 @@ static const set<TTypeInfo> s_known_types {
 };
 
 };
-
-class CValXMLStream;
 
 class CAsnvalApp : public CReadClassMemberHook, public CNcbiApplication
 {
@@ -227,13 +226,6 @@ private:
 #ifdef USE_XMLWRAPP_LIBS
     unique_ptr<CValXMLStream> m_ostr_xml;
 #endif
-};
-
-class CValXMLStream : public CObjectOStreamXml
-{
-public:
-    CValXMLStream(CNcbiOstream& out, EOwnership deleteOut) : CObjectOStreamXml(out, deleteOut){};
-    void Print(const CValidErrItem& item);
 };
 
 class CFileReaderThread : public CThread
