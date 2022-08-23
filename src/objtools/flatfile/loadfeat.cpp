@@ -2939,8 +2939,9 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
         cit_count = 0;
 
         for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
-            const std::string& qual_str = (*cur)->GetQual();
-            std::string& val_str  = (*cur)->IsSetVal() ? (*cur)->SetVal() : "";
+            const string& qual_str = (*cur)->GetQual();
+            string dummy;
+            string& val_str  = (*cur)->IsSetVal() ? (*cur)->SetVal() : dummy;
 
             if (qual_str == "compare") {
                 badcom = true;
