@@ -94,6 +94,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/edit/remote_updater.hpp>
 #include <future>
+///#include "message_queue.hpp"
 #include <objtools/validator/huge_file_validator.hpp>
 
 using namespace ncbi;
@@ -117,61 +118,10 @@ public:
         eVerbosity_min = 1, eVerbosity_max = 4
     };
 
-    CAsnvalThreadState():
-        m_ObjMgr(),
-        m_Options(0),
-        m_Continue(false),
-        m_OnlyAnnots(false),
-        m_Quiet(false),
-        m_Longest(0.0),
-        m_NumFiles(0),
-        m_NumRecords(0),
-        m_Level(0),
-        m_Reported(0),
-        m_verbosity(eVerbosity_min),
-        m_ValidErrorStream(nullptr)
-    {};
+    CAsnvalThreadState();
 
     CAsnvalThreadState(
-        const CAsnvalThreadState& other)
-    {
-        mFilename = other.mFilename;
-        mpIstr.reset();
-        mpHugeFileProcess.reset();
-        m_ObjMgr = other.m_ObjMgr;
-        m_Options = other.m_Options;
-        m_HugeFile = other.m_HugeFile;
-        m_Continue = other.m_Continue;
-        m_OnlyAnnots = other.m_OnlyAnnots;
-        m_Quiet = other.m_Quiet;
-        m_Longest = other.m_Longest;
-        m_CurrentId = other.m_CurrentId;
-        m_LongestId = other.m_LongestId;
-        m_NumFiles = other.m_NumFiles;
-        m_NumRecords = other.m_NumRecords;
-
-        m_Level = other.m_Level;
-        m_Reported = 0;
-        m_ReportLevel = other.m_ReportLevel;
-
-        m_DoCleanup = other.m_DoCleanup;
-        //CCleanup m_Cleanup;
-
-        m_LowCutoff = other.m_LowCutoff;
-        m_HighCutoff = other.m_HighCutoff;
-
-        m_verbosity = other.m_verbosity;
-        m_batch = other.m_batch;
-        m_OnlyError = other.m_OnlyError;
-
-        m_ValidErrorStream = other.m_ValidErrorStream;
-
-        m_pContext.reset(new SValidatorContext());
-        m_pTaxon = other.m_pTaxon;
-#ifdef USE_XMLWRAPP_LIBS
-        m_ostr_xml.reset();
-#endif
-    };
+        const CAsnvalThreadState& other);
 
     ~CAsnvalThreadState() {};
 
@@ -197,44 +147,7 @@ public:
         const string& onlyError,
         CNcbiOstream* validErrorStream,
         shared_ptr<CTaxon3> taxon,
-        const string& filename)
-    {
-        mFilename = filename;
-        mpIstr.reset();
-        mpHugeFileProcess.reset();
-        m_ObjMgr = objMgr;
-        m_Options = options;
-        m_HugeFile = hugeFile;
-        m_Continue = continue_;
-        m_OnlyAnnots = onlyAnnots;
-        m_Quiet = quiet;
-        m_Longest = longest;
-        m_CurrentId = currentId;
-        m_LongestId = longestId;
-        m_NumFiles = numFiles;
-        m_NumRecords = numRecords;
-
-        m_Level = level;
-        m_Reported = 0;
-        m_ReportLevel = reportLevel;
-
-        m_DoCleanup = doCleanup;
-
-        m_LowCutoff = lowCutoff;
-        m_HighCutoff = highCutoff;
-
-        m_verbosity = verbosity;
-        m_batch = batch;
-        m_OnlyError = onlyError;
-
-        m_ValidErrorStream = validErrorStream;
-
-        m_pContext.reset(new SValidatorContext());
-        m_pTaxon = taxon;
-#ifdef USE_XMLWRAPP_LIBS
-        m_ostr_xml.reset();
-#endif
-    };
+        const string& filename);
 
     string mFilename;
     unique_ptr<CObjectIStream> mpIstr;
@@ -279,3 +192,4 @@ public:
 };
 
 #endif
+
