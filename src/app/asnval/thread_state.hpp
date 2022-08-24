@@ -93,8 +93,6 @@
 #include <objtools/edit/huge_asn_loader.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/edit/remote_updater.hpp>
-#include <future>
-///#include "message_queue.hpp"
 #include <objtools/validator/huge_file_validator.hpp>
 
 using namespace ncbi;
@@ -105,6 +103,8 @@ USING_SCOPE(edit);
 #define USE_XMLWRAPP_LIBS
 
 class CValXMLStream;
+extern const set<TTypeInfo> s_known_types;
+string s_GetSeverityLabel(EDiagSev, bool = false);
 
 class CAsnvalThreadState
 {
@@ -119,35 +119,14 @@ public:
     };
 
     CAsnvalThreadState();
-
     CAsnvalThreadState(
-        const CAsnvalThreadState& other);
-
+        CAsnvalThreadState& other);
     ~CAsnvalThreadState() {};
 
-    CAsnvalThreadState(
-        CRef<CObjectManager> objMgr,
-        unsigned int options,
-        bool hugeFile,
-        bool continue_,
-        bool onlyAnnots,
-        bool quiet,
-        double longest,
-        const string& currentId,
-        const string& longestId,
-        size_t numFiles,
-        size_t numRecords,
-        size_t level,
-        EDiagSev reportLevel,
-        bool doCleanup,
-        EDiagSev lowCutoff,
-        EDiagSev highCutoff,
-        EVerbosity verbosity,
-        bool batch,
-        const string& onlyError,
-        CNcbiOstream* validErrorStream,
-        shared_ptr<CTaxon3> taxon,
-        const string& filename);
+    CRef<CScope> BuildScope();
+    unique_ptr<CObjectIStream> OpenFile(TTypeInfo& asn_info);
+    void ConstructOutputStreams();
+    void DestroyOutputStreams();
 
     string mFilename;
     unique_ptr<CObjectIStream> mpIstr;
@@ -184,7 +163,6 @@ public:
     CNcbiOstream* m_ValidErrorStream;
 
     shared_ptr<SValidatorContext> m_pContext;
-    shared_ptr<CTaxon3> m_pTaxon;
 #ifdef USE_XMLWRAPP_LIBS
     unique_ptr<CValXMLStream> m_ostr_xml;
 #endif

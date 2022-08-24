@@ -91,8 +91,6 @@
 #include <objtools/edit/huge_asn_loader.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/edit/remote_updater.hpp>
-#include <future>
-#include <util/message_queue.hpp>
 #include "xml_val_stream.hpp"
 #include "thread_state.hpp"
 #include <objtools/validator/huge_file_validator.hpp>
@@ -101,6 +99,13 @@ using namespace ncbi;
 USING_SCOPE(objects);
 USING_SCOPE(validator);
 USING_SCOPE(edit);
+
+const set<TTypeInfo> s_known_types{
+    CSeq_submit::GetTypeInfo(), CSeq_entry::GetTypeInfo(), CSeq_annot::GetTypeInfo(),
+    CSeq_feat::GetTypeInfo(),   CBioSource::GetTypeInfo(), CPubdesc::GetTypeInfo(),
+    CBioseq_set::GetTypeInfo(), CBioseq::GetTypeInfo(),    CSeqdesc::GetTypeInfo(),
+};
+
 
 //  ============================================================================
 CAsnvalThreadState::CAsnvalThreadState() :
@@ -121,7 +126,7 @@ CAsnvalThreadState::CAsnvalThreadState() :
 
 //  ============================================================================
 CAsnvalThreadState::CAsnvalThreadState(
-    const CAsnvalThreadState& other)
+    CAsnvalThreadState& other)
 //  ============================================================================
 {
     mFilename = other.mFilename;
@@ -156,72 +161,114 @@ CAsnvalThreadState::CAsnvalThreadState(
     m_ValidErrorStream = other.m_ValidErrorStream;
 
     m_pContext.reset(new SValidatorContext());
-    m_pTaxon = other.m_pTaxon;
 #ifdef USE_XMLWRAPP_LIBS
     m_ostr_xml.reset();
 #endif
 };
 
+
 //  ============================================================================
-CAsnvalThreadState::CAsnvalThreadState(
-    CRef<CObjectManager> objMgr,
-    unsigned int options,
-    bool hugeFile,
-    bool continue_,
-    bool onlyAnnots,
-    bool quiet,
-    double longest,
-    const string& currentId,
-    const string& longestId,
-    size_t numFiles,
-    size_t numRecords,
-    size_t level,
-    EDiagSev reportLevel,
-    bool doCleanup,
-    EDiagSev lowCutoff,
-    EDiagSev highCutoff,
-    EVerbosity verbosity,
-    bool batch,
-    const string& onlyError,
-    CNcbiOstream* validErrorStream,
-    shared_ptr<CTaxon3> taxon,
-    const string& filename)
+CRef<CScope> CAsnvalThreadState::BuildScope()
 //  ============================================================================
 {
-    mFilename = filename;
-    mpIstr.reset();
-    mpHugeFileProcess.reset();
-    m_ObjMgr = objMgr;
-    m_Options = options;
-    m_HugeFile = hugeFile;
-    m_Continue = continue_;
-    m_OnlyAnnots = onlyAnnots;
-    m_Quiet = quiet;
-    m_Longest = longest;
-    m_CurrentId = currentId;
-    m_LongestId = longestId;
-    m_NumFiles = numFiles;
-    m_NumRecords = numRecords;
+    CRef<CScope> scope(new CScope(*m_ObjMgr));
+    scope->AddDefaults();
+    return scope;
+}
 
-    m_Level = level;
-    m_Reported = 0;
-    m_ReportLevel = reportLevel;
 
-    m_DoCleanup = doCleanup;
+//  ============================================================================
+unique_ptr<CObjectIStream> CAsnvalThreadState::OpenFile(TTypeInfo& asn_info)
+//  ============================================================================
+{
+    ENcbiOwnership own = eNoOwnership;
+    unique_ptr<CNcbiIstream> hold_stream;
+    CNcbiIstream* InputStream = &NcbiCin;
+    auto& fname = mFilename;
 
-    m_LowCutoff = lowCutoff;
-    m_HighCutoff = highCutoff;
+    if (!fname.empty()) {
+        own = eTakeOwnership;
+        hold_stream = make_unique<CNcbiIfstream>(fname, ios::binary);
+        InputStream = hold_stream.get();
+    }
 
-    m_verbosity = verbosity;
-    m_batch = batch;
-    m_OnlyError = onlyError;
+    CCompressStream::EMethod method;
 
-    m_ValidErrorStream = validErrorStream;
+    CFormatGuessEx FG(*InputStream);
+    CFileContentInfo contentInfo;
+    FG.SetRecognizedGenbankTypes(s_known_types);
+    CFormatGuess::EFormat format = FG.GuessFormatAndContent(contentInfo);
+    switch (format)
+    {
+    case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
+    case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
+    case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
+    default:                   method = CCompressStream::eNone;      break;
+    }
+    if (method != CCompressStream::eNone)
+    {
+        CDecompressIStream* decompress(new CDecompressIStream(*InputStream, method, CCompressStream::fDefault, own));
+        hold_stream.release();
+        hold_stream.reset(decompress);
+        InputStream = hold_stream.get();
+        own = eTakeOwnership;
+        CFormatGuessEx fg(*InputStream);
+        format = fg.GuessFormatAndContent(contentInfo);
+    }
 
-    m_pContext.reset(new SValidatorContext());
-    m_pTaxon = taxon;
+    unique_ptr<CObjectIStream> objectStream;
+    switch (format)
+    {
+    case CFormatGuess::eBinaryASN:
+    case CFormatGuess::eTextASN:
+        objectStream.reset(CObjectIStream::Open(format == CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream, own));
+        hold_stream.release();
+        asn_info = contentInfo.mInfoGenbank.mTypeInfo;
+        break;
+    default:
+        break;
+    }
+    return objectStream;
+}
+
+
+//  ============================================================================
+void CAsnvalThreadState::DestroyOutputStreams()
+//  ============================================================================
+{
 #ifdef USE_XMLWRAPP_LIBS
-    m_ostr_xml.reset();
+    if (m_ostr_xml)
+    {
+        m_ostr_xml.reset();
+        *m_ValidErrorStream << "</asnvalidate>" << "\n";
+    }
 #endif
-};
+    m_ValidErrorStream = nullptr;
+}
+
+
+//  ============================================================================
+void CAsnvalThreadState::ConstructOutputStreams()
+//  ============================================================================
+{
+#ifdef USE_XMLWRAPP_LIBS
+    m_ostr_xml.reset(new CValXMLStream(*m_ValidErrorStream, eNoOwnership));
+    m_ostr_xml->SetEncoding(eEncoding_UTF8);
+    m_ostr_xml->SetReferenceDTD(false);
+    m_ostr_xml->SetEnforcedStdXml(true);
+    m_ostr_xml->WriteFileHeader(CValidErrItem::GetTypeInfo());
+    m_ostr_xml->SetUseIndentation(true);
+    m_ostr_xml->Flush();
+
+    *m_ValidErrorStream << "\n" << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
+        << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
+        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << "\n";
+    m_ValidErrorStream->flush();
+#else
+    * context.m_ValidErrorStream << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
+        << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
+        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << "\n";
+#endif
+}
+
 

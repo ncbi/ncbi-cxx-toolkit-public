@@ -109,26 +109,19 @@ USING_SCOPE(edit);
 namespace
 {
 
-class CAutoRevoker
-{
-public:
-    template<class TLoader>
-    CAutoRevoker(struct SRegisterLoaderInfo<TLoader>& info)
-        : m_loader{info.GetLoader()}  {}
-    ~CAutoRevoker()
+    class CAutoRevoker
     {
-        CObjectManager::GetInstance()->RevokeDataLoader(*m_loader);
-    }
-private:
-    CDataLoader* m_loader = nullptr;
-};
-
-static const set<TTypeInfo> s_known_types {
-    CSeq_submit::GetTypeInfo(), CSeq_entry::GetTypeInfo(), CSeq_annot::GetTypeInfo(),
-    CSeq_feat::GetTypeInfo(),   CBioSource::GetTypeInfo(), CPubdesc::GetTypeInfo(),
-    CBioseq_set::GetTypeInfo(), CBioseq::GetTypeInfo(),    CSeqdesc::GetTypeInfo(),
-};
-
+    public:
+        template<class TLoader>
+        CAutoRevoker(struct SRegisterLoaderInfo<TLoader>& info)
+            : m_loader{info.GetLoader()}  {}
+        ~CAutoRevoker()
+        {
+            CObjectManager::GetInstance()->RevokeDataLoader(*m_loader);
+        }
+    private:
+        CDataLoader* m_loader = nullptr;
+    };
 };
 
 class CAsnvalApp : public CReadClassMemberHook, public CNcbiApplication
@@ -153,7 +146,6 @@ private:
     void x_AliasLogFile();
 
     unique_ptr<CObjectIStream> OpenFile(const string& fname, TTypeInfo& asn_info);
-    static unique_ptr<CObjectIStream> xOpenFile(CAsnvalThreadState& context, TTypeInfo& asn_info);
 
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
     static CConstRef<CValidError> xProcessSeqEntry(CAsnvalThreadState&, CSeq_entry& se);
@@ -197,9 +189,8 @@ private:
     static void xProcessSSMReleaseFile(CAsnvalThreadState& context);
 
     void ConstructOutputStreams();
-    static void xConstructOutputStreams(CAsnvalThreadState&);
     void DestroyOutputStreams();
-    static void xDestroyOutputStreams(CAsnvalThreadState& context);
+    //static void xDestroyOutputStreams(CAsnvalThreadState& context);
 
     /// @param p_exception
     ///   Pointer to the exception with more info on the read failure or nullptr if not available
@@ -210,7 +201,6 @@ private:
         CAsnvalThreadState& context, const CException* p_exception);
 
     CRef<CScope> BuildScope();
-    static CRef<CScope> xBuildScope(CAsnvalThreadState& context);
 
     void PrintValidError(CConstRef<CValidError> errors);
     static void xPrintValidError(CAsnvalThreadState& context, CConstRef<CValidError> errors);
@@ -247,6 +237,24 @@ protected:
 };
 
 CAsnvalApp* theApp;
+
+
+string s_GetSeverityLabel(EDiagSev sev, bool is_xml)
+{
+    static const string str_sev[] = {
+        "NOTE", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
+    };
+    if (sev < 0 || sev > eDiagSevMax) {
+        return "NONE";
+    }
+    if (sev == 0 && is_xml) {
+        return "INFO";
+    }
+
+    return str_sev[sev];
+}
+
+
 
 // constructor
 CAsnvalApp::CAsnvalApp() :
@@ -532,7 +540,7 @@ CConstRef<CValidError> CAsnvalApp::xValidateAsync(
     CAsnvalThreadState& context,
     const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry)
 {
-    CRef<CScope> scope = xBuildScope(context);
+    CRef<CScope> scope = context.BuildScope();
     if (!loader_name.empty())
         scope->AddDataLoader(loader_name);
 
@@ -1015,7 +1023,7 @@ void CAsnvalApp::xValidateOneFile(CAsnvalThreadState& context)
             local_stream.reset(new CNcbiOfstream(path));
             context.m_ValidErrorStream = local_stream.get();
 
-            xConstructOutputStreams(context);
+            context.ConstructOutputStreams();
             close_error_stream = true;
         }
     }
@@ -1026,7 +1034,7 @@ void CAsnvalApp::xValidateOneFile(CAsnvalThreadState& context)
     TTypeInfo asninfo = nullptr;
     //DebugBreak();
     if (context.mFilename.empty())// || true)
-        context.mpIstr = xOpenFile(context, asninfo);
+        context.mpIstr = context.OpenFile(asninfo);
     else {
         context.mpHugeFileProcess.reset(new edit::CHugeFileProcess);
         try
@@ -1047,7 +1055,7 @@ void CAsnvalApp::xValidateOneFile(CAsnvalThreadState& context)
             }
         }
         else {
-            context.mpIstr = xOpenFile(context, asninfo);
+            context.mpIstr = context.OpenFile(asninfo);
         }
 
     }
@@ -1057,7 +1065,7 @@ void CAsnvalApp::xValidateOneFile(CAsnvalThreadState& context)
     {
         xPrintValidError(context, xReportReadFailure(context, nullptr));
         if (close_error_stream) {
-            xDestroyOutputStreams(context);
+            context.DestroyOutputStreams();
         }
         // NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
         LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to open invalid ASN.1 file " + context.mFilename);
@@ -1170,10 +1178,9 @@ void CAsnvalApp::xValidateOneFile(CAsnvalThreadState& context)
     }
     context.m_NumFiles++; 
     if (close_error_stream) {
-        xDestroyOutputStreams(context);
+        context.DestroyOutputStreams();
     }
     context.mpIstr.reset();
-    //cerr << "CAsnvalApp::ValidateOneFile() exit " << context.mFilename << "\n";
 }
 
 
@@ -1215,17 +1222,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
             string fpath = CDirEntry::MakePath(dir_name, fname);
 
             //CAsnvalThreadState context(*this, fpath);
-            CAsnvalThreadState context(
-                mThreadState.m_ObjMgr,
-                mThreadState.m_Options,
-                mThreadState.m_HugeFile, mThreadState.m_Continue, mThreadState.m_OnlyAnnots, mThreadState.m_Quiet,
-                mThreadState.m_Longest, mThreadState.m_CurrentId, mThreadState.m_LongestId, mThreadState.m_NumFiles, mThreadState.m_NumRecords,
-                mThreadState.m_Level, mThreadState.m_ReportLevel,
-                mThreadState.m_DoCleanup, mThreadState.m_LowCutoff, mThreadState.m_HighCutoff,
-                mThreadState.m_verbosity, mThreadState.m_batch,
-                mThreadState.m_OnlyError, mThreadState.m_ValidErrorStream, mThreadState.m_pTaxon,
-                fpath);
-
+            CAsnvalThreadState context(mThreadState);
             CFileReaderThread* pThread(new CFileReaderThread(context));
             pThread->Run();
             threadList.push_back(pThread);
@@ -1361,15 +1358,6 @@ int CAsnvalApp::Run()
 CRef<CScope> CAsnvalApp::BuildScope()
 {
     CRef<CScope> scope(new CScope(*mThreadState.m_ObjMgr));
-    scope->AddDefaults();
-
-    return scope;
-}
-
-
-CRef<CScope> CAsnvalApp::xBuildScope(CAsnvalThreadState& context)
-{
-    CRef<CScope> scope(new CScope(*context.m_ObjMgr));
     scope->AddDefaults();
 
     return scope;
@@ -1780,7 +1768,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqEntry(CAsnvalThreadState& context,
 {
     // Validate Seq-entry
     CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = xBuildScope(context);
+    CRef<CScope> scope = context.BuildScope();
     if (context.m_DoCleanup) {
         context.m_Cleanup.SetScope(scope);
         context.m_Cleanup.BasicCleanup(se);
@@ -1837,7 +1825,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqFeat(CAsnvalThreadState& context)
     if (eval)
         return eval;
 
-    CRef<CScope> scope = xBuildScope(context);
+    CRef<CScope> scope = context.BuildScope();
     if (context.m_DoCleanup) {
         context.m_Cleanup.SetScope(scope);
         context.m_Cleanup.BasicCleanup(*feat);
@@ -1871,7 +1859,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessBioSource(CAsnvalThreadState& context
         return eval;
 
     CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = xBuildScope(context);
+    CRef<CScope> scope = context.BuildScope();
     eval = validator.Validate(*src, scope, context.m_Options);
     context.m_NumRecords++;
     return eval;
@@ -1899,7 +1887,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessPubdesc(CAsnvalThreadState& context)
         return eval;
 
     CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = xBuildScope(context);
+    CRef<CScope> scope = context.BuildScope();
     eval = validator.Validate(*pd, scope, context.m_Options);
     context.m_NumRecords++;
     return eval;
@@ -1942,7 +1930,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqSubmit(CAsnvalThreadState& context
 
     // Validate Seq-submit
     CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = xBuildScope(context);
+    CRef<CScope> scope = context.BuildScope();
     if (ss->GetData().IsEntrys()) {
         NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, se, ss->SetData().SetEntrys()) {
             scope->AddTopLevelSeqEntry(**se);
@@ -2000,7 +1988,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqAnnot(CAsnvalThreadState& context)
 
     // Validate Seq-annot
     CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = xBuildScope(context);
+    CRef<CScope> scope = context.BuildScope();
     if (context.m_DoCleanup) {
         context.m_Cleanup.SetScope(scope);
         context.m_Cleanup.BasicCleanup(*sa);
@@ -2074,7 +2062,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqDesc(CAsnvalThreadState& context)
     CRef<CSeq_entry> ctx = s_BuildGoodSeq();
 
     CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = xBuildScope(context);
+    CRef<CScope> scope = context.BuildScope();
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*ctx);
 
     CConstRef<CValidError> eval = validator.Validate(*sd, *ctx);
@@ -2161,59 +2149,6 @@ unique_ptr<CObjectIStream> CAsnvalApp::OpenFile(const string& fname, TTypeInfo& 
 }
 
 
-unique_ptr<CObjectIStream> CAsnvalApp::xOpenFile(CAsnvalThreadState& context, TTypeInfo& asn_info)
-{
-    ENcbiOwnership own = eNoOwnership;
-    unique_ptr<CNcbiIstream> hold_stream;
-    CNcbiIstream* InputStream = &NcbiCin;
-    auto& fname = context.mFilename;
-
-    if (!fname.empty()) {
-        own = eTakeOwnership;
-        hold_stream = make_unique<CNcbiIfstream>(fname, ios::binary);
-        InputStream = hold_stream.get();
-    }
-
-    CCompressStream::EMethod method;
-
-    CFormatGuessEx FG(*InputStream);
-    CFileContentInfo contentInfo;
-    FG.SetRecognizedGenbankTypes(s_known_types);
-    CFormatGuess::EFormat format = FG.GuessFormatAndContent(contentInfo);
-    switch (format)
-    {
-    case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
-    case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
-    case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
-    default:                   method = CCompressStream::eNone;      break;
-    }
-    if (method != CCompressStream::eNone)
-    {
-        CDecompressIStream* decompress(new CDecompressIStream(*InputStream, method, CCompressStream::fDefault, own));
-        hold_stream.release();
-        hold_stream.reset(decompress);
-        InputStream = hold_stream.get();
-        own = eTakeOwnership;
-        CFormatGuessEx fg(*InputStream);
-        format = fg.GuessFormatAndContent(contentInfo);
-    }
-
-    unique_ptr<CObjectIStream> objectStream;
-    switch (format)
-    {
-    case CFormatGuess::eBinaryASN:
-    case CFormatGuess::eTextASN:
-        objectStream.reset(CObjectIStream::Open(format == CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream, own));
-        hold_stream.release();
-        asn_info = contentInfo.mInfoGenbank.mTypeInfo;
-        break;
-    default:
-        break;
-    }
-    return objectStream;
-}
-
-
 void CAsnvalApp::PrintValidError
 (CConstRef<CValidError> errors)
 {
@@ -2258,22 +2193,6 @@ void CAsnvalApp::xPrintValidError(
         xPrintValidErrItem(context, *vit);
     }
     //m_ValidErrorStream->flush();
-}
-
-
-static string s_GetSeverityLabel(EDiagSev sev, bool is_xml = false)
-{
-    static const string str_sev[] = {
-        "NOTE", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
-    };
-    if (sev < 0 || sev > eDiagSevMax) {
-        return "NONE";
-    }
-    if (sev == 0 && is_xml) {
-        return "INFO";
-    }
-
-    return str_sev[sev];
 }
 
 
@@ -2458,29 +2377,6 @@ void CAsnvalApp::ConstructOutputStreams()
     }
 }
 
-void CAsnvalApp::xConstructOutputStreams(
-    CAsnvalThreadState& context)
-{
-#ifdef USE_XMLWRAPP_LIBS
-    context.m_ostr_xml.reset(new CValXMLStream(*context.m_ValidErrorStream, eNoOwnership));
-    context.m_ostr_xml->SetEncoding(eEncoding_UTF8);
-    context.m_ostr_xml->SetReferenceDTD(false);
-    context.m_ostr_xml->SetEnforcedStdXml(true);
-    context.m_ostr_xml->WriteFileHeader(CValidErrItem::GetTypeInfo());
-    context.m_ostr_xml->SetUseIndentation(true);
-    context.m_ostr_xml->Flush();
-
-    *context.m_ValidErrorStream << "\n" << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
-        << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
-        << s_GetSeverityLabel(context.m_LowCutoff, true) << "\">" << "\n";
-    context.m_ValidErrorStream->flush();
-#else
-    * context.m_ValidErrorStream << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
-        << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
-        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << "\n";
-#endif
-}
-
 void CAsnvalApp::DestroyOutputStreams()
 {
 #ifdef USE_XMLWRAPP_LIBS
@@ -2494,22 +2390,8 @@ void CAsnvalApp::DestroyOutputStreams()
 }
 
 
-void CAsnvalApp::xDestroyOutputStreams(CAsnvalThreadState& context)
-{
-#ifdef USE_XMLWRAPP_LIBS
-    if (context.m_ostr_xml)
-    {
-        context.m_ostr_xml.reset();
-        *context.m_ValidErrorStream << "</asnvalidate>" << "\n";
-    }
-#endif
-    context.m_ValidErrorStream = nullptr;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int main(int argc, const char* argv[])
 {
