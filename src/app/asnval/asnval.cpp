@@ -1223,6 +1223,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
 
             //CAsnvalThreadState context(*this, fpath);
             CAsnvalThreadState context(mThreadState);
+            context.mFilename = fpath;
             CFileReaderThread* pThread(new CFileReaderThread(context));
             pThread->Run();
             threadList.push_back(pThread);
