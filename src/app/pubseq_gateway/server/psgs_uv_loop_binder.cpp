@@ -102,7 +102,7 @@ void CPSGS_UvLoopBinder::PostponeInvoke(TProcessorCB    cb,
                                         void *          user_data)
 {
     m_QueueLock.lock();
-    m_Callbacks.push_back(SUserCallback(user_data, cb));
+    m_Callbacks.emplace_back(user_data, cb);
     m_QueueLock.unlock();
 
     int     ret = uv_async_send(&m_Async);
@@ -119,7 +119,7 @@ void CPSGS_UvLoopBinder::PostponeInvoke(TProcessorCB    cb,
                                         size_t          request_id)
 {
     m_QueueLock.lock();
-    m_Callbacks.push_back(SUserCallback(user_data, cb, request_id));
+    m_Callbacks.emplace_back(user_data, cb, request_id);
     m_QueueLock.unlock();
 
     int     ret = uv_async_send(&m_Async);
