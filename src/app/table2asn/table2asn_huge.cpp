@@ -278,6 +278,24 @@ public:
 private:
     CMultiSourceWriter m_multi_writer;
 };
+    
+using TIdSet = set<CRef<CSeq_id>, PPtrLess<CRef<CSeq_id>>>;
+static void s_ReportDuplicateIds(const TIdSet& duplicateIds)
+{   
+    if (duplicateIds.empty()) {
+        return;
+    }
+    string msg = "duplicate Bioseq id";
+    if (duplicateIds.size() > 1) {
+        msg += "s";
+    }
+    for (auto pId : duplicateIds) {
+        msg += "\n";
+        msg += GetLabel(*pId); 
+    }
+    NCBI_THROW(CHugeFileException, eDuplicateSeqIds, msg);
+}
+
 
 class CGenBankAsyncWriter: public TAsyncPipeline<TAsyncToken>
 {
@@ -384,7 +402,6 @@ public:
 
 
 protected:
-    using TIdSet = set<CRef<CSeq_id>, PPtrLess<CRef<CSeq_id>>>;
 
     void x_write(CConstRef<CSerialObject> topobject, TPullNextFunction get_next_token)
     {
@@ -434,17 +451,7 @@ protected:
 
         *m_ostream << *topobject;
 
-        if (!duplicateIds.empty()) {
-            string msg = "duplicate Bioseq id";
-            if (duplicateIds.size() > 1) {
-                msg += "s";
-            }
-            for (auto pId : duplicateIds) {
-                msg += "\n";
-                msg += GetLabel(*pId); 
-            }
-            NCBI_THROW(CHugeFileException, eDuplicateSeqIds, msg);
-        }
+        s_ReportDuplicateIds(duplicateIds);
     }
 
 private:
