@@ -113,6 +113,7 @@ public:
     bool   m_binary_asn1_output { false };
     bool   m_can_use_huge_files { false };
     bool   m_huge_files_mode { false };
+    size_t m_use_threads { 1 };
 
 
     NDiscrepancy::EGroup m_discrepancy_group{ NDiscrepancy::eOncaller };
