@@ -730,7 +730,7 @@ NCBIcomponent_report(MSGSL)
 
 #############################################################################
 # SGE  (Sun Grid Engine)
-NCBI_define_Xcomponent(NAME SGE LIB drmaa LIBPATH_SUFFIX ncbi-lib/lx-amd64)
+NCBI_define_Xcomponent(NAME SGE LIB drmaa LIBPATH_SUFFIX drmaa/lib/lx-amd64)
 NCBIcomponent_report(SGE)
 
 #############################################################################
