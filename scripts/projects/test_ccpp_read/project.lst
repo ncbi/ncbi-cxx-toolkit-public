@@ -1,8 +1,11 @@
 #define TAGS [perf]
 corelib$
+corelib/hash_impl$
+corelib/impl$
 connect$
 connect/mbedtls
 serial$
+serial/impl$
 serial/datatool$
 util$
 util/compress
