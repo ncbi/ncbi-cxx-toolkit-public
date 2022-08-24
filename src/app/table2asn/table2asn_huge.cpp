@@ -382,12 +382,9 @@ public:
         x_write(topobject, get_next_token);
     }
 
-    using TConflictingIds = set<CRef<CSeq_id>, PPtrLess<CRef<CSeq_id>>>;
-    const TConflictingIds& GetConflictingSeqIds() const {
-        return m_ConflictingSeqIds;
-    }
 
 protected:
+    using TIdSet = set<CRef<CSeq_id>, PPtrLess<CRef<CSeq_id>>>;
 
     void x_write(CConstRef<CSerialObject> topobject, TPullNextFunction get_next_token)
     {
@@ -417,33 +414,32 @@ protected:
         });
 
     
-        TConflictingIds processedIds;
+        TIdSet processedIds, duplicateIds;
         {
             SetLocalWriteHook(CObjectTypeInfo(CType<CBioseq>()).FindMember("id"), 
                     *m_ostream,
-                    [this, &processedIds](CObjectOStream& out, const CConstObjectInfo::CMemberIterator& member)
+                    [&processedIds, &duplicateIds](CObjectOStream& out, const CConstObjectInfoMI& member)
                     {
                         out.BeginClassMember(member.GetMemberInfo()->GetId());
                         COStreamContainer  outContainer(out, member);
                         const auto& container = *CType<CBioseq::TId>::GetUnchecked(*member);
                         for (auto pId : container) {
                             if (!processedIds.insert(pId).second) {
-                                m_ConflictingSeqIds.insert(pId);
+                                duplicateIds.insert(pId);
                             }
                             outContainer << *pId;
                         }
                     });
         }
 
-        m_ConflictingSeqIds.clear();
         *m_ostream << *topobject;
 
-        if (!m_ConflictingSeqIds.empty()) {
+        if (!duplicateIds.empty()) {
             string msg = "duplicate Bioseq id";
-            if (m_ConflictingSeqIds.size() > 1) {
+            if (duplicateIds.size() > 1) {
                 msg += "s";
             }
-            for (auto pId : m_ConflictingSeqIds) {
+            for (auto pId : duplicateIds) {
                 msg += "\n";
                 msg += GetLabel(*pId); 
             }
@@ -452,7 +448,6 @@ protected:
     }
 
 private:
-    TConflictingIds m_ConflictingSeqIds; 
     CObjectOStream* m_ostream = nullptr;
 };
 
