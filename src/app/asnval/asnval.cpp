@@ -538,7 +538,7 @@ CConstRef<CValidError> CAsnvalApp::xValidateAsync(
 
     CConstRef<CValidError> eval;
 
-    CValidator validator(*context.m_ObjMgr, context.m_pContext, context.m_pTaxon);
+    CValidator validator(*context.m_ObjMgr, context.m_pContext);
 
     CSeq_entry_Handle top_h;
     if (pEntry) {
@@ -1168,14 +1168,13 @@ void CAsnvalApp::xValidateOneFile(CAsnvalThreadState& context)
             ++context.m_Reported;
         }
     }
-    context.m_NumFiles++;
+    context.m_NumFiles++; 
     if (close_error_stream) {
         xDestroyOutputStreams(context);
     }
     context.mpIstr.reset();
     //cerr << "CAsnvalApp::ValidateOneFile() exit " << context.mFilename << "\n";
 }
-
 
 
 //LCOV_EXCL_START
@@ -1193,13 +1192,49 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
     string mask = "*" + suffix;
 
     CDir::TEntries files(dir.GetEntries(mask, CDir::eFile));
+    list<CFileReaderThread*> threadList;
+
+    const size_t maxThreadCount = 8;
+    size_t threadCount = 0;
+
     for (CDir::TEntry ii : files) {
+        while (threadCount >= maxThreadCount) {
+            for (auto* pThread : threadList) {
+                if (pThread->mDone) {
+                    pThread->Join();
+                    threadList.remove(pThread);
+                    --threadCount;
+                    break;
+                }
+            }
+            SleepMilliSec(100);
+        }
         string fname = ii->GetName();
         if (ii->IsFile() &&
             (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
             string fpath = CDirEntry::MakePath(dir_name, fname);
-            ValidateOneFile(fpath);
+
+            //CAsnvalThreadState context(*this, fpath);
+            CAsnvalThreadState context(
+                mThreadState.m_ObjMgr,
+                mThreadState.m_Options,
+                mThreadState.m_HugeFile, mThreadState.m_Continue, mThreadState.m_OnlyAnnots, mThreadState.m_Quiet,
+                mThreadState.m_Longest, mThreadState.m_CurrentId, mThreadState.m_LongestId, mThreadState.m_NumFiles, mThreadState.m_NumRecords,
+                mThreadState.m_Level, mThreadState.m_ReportLevel,
+                mThreadState.m_DoCleanup, mThreadState.m_LowCutoff, mThreadState.m_HighCutoff,
+                mThreadState.m_verbosity, mThreadState.m_batch,
+                mThreadState.m_OnlyError, mThreadState.m_ValidErrorStream, mThreadState.m_pTaxon,
+                fpath);
+
+            CFileReaderThread* pThread(new CFileReaderThread(context));
+            pThread->Run();
+            threadList.push_back(pThread);
+            ++threadCount;
+            //pThread->Join();
         }
+    }
+    for (auto* pThread : threadList) {
+        pThread->Join();
     }
     if (recurse) {
         CDir::TEntries subdirs(dir.GetEntries("", CDir::eDir));
@@ -1744,7 +1779,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
 CConstRef<CValidError> CAsnvalApp::xProcessSeqEntry(CAsnvalThreadState& context, CSeq_entry& se)
 {
     // Validate Seq-entry
-    CValidator validator(*context.m_ObjMgr, context.m_pContext, context.m_pTaxon);
+    CValidator validator(*context.m_ObjMgr, context.m_pContext);
     CRef<CScope> scope = xBuildScope(context);
     if (context.m_DoCleanup) {
         context.m_Cleanup.SetScope(scope);
@@ -1808,7 +1843,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqFeat(CAsnvalThreadState& context)
         context.m_Cleanup.BasicCleanup(*feat);
     }
 
-    CValidator validator(*context.m_ObjMgr, context.m_pContext, context.m_pTaxon);
+    CValidator validator(*context.m_ObjMgr, context.m_pContext);
     eval = validator.Validate(*feat, scope, context.m_Options);
     context.m_NumRecords++;
     return eval;
@@ -1835,7 +1870,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessBioSource(CAsnvalThreadState& context
     if (eval)
         return eval;
 
-    CValidator validator(*context.m_ObjMgr, context.m_pContext, context.m_pTaxon);
+    CValidator validator(*context.m_ObjMgr, context.m_pContext);
     CRef<CScope> scope = xBuildScope(context);
     eval = validator.Validate(*src, scope, context.m_Options);
     context.m_NumRecords++;
@@ -1863,7 +1898,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessPubdesc(CAsnvalThreadState& context)
     if (eval)
         return eval;
 
-    CValidator validator(*context.m_ObjMgr, context.m_pContext, context.m_pTaxon);
+    CValidator validator(*context.m_ObjMgr, context.m_pContext);
     CRef<CScope> scope = xBuildScope(context);
     eval = validator.Validate(*pd, scope, context.m_Options);
     context.m_NumRecords++;
@@ -1906,7 +1941,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqSubmit(CAsnvalThreadState& context
         return eval;
 
     // Validate Seq-submit
-    CValidator validator(*context.m_ObjMgr, context.m_pContext, context.m_pTaxon);
+    CValidator validator(*context.m_ObjMgr, context.m_pContext);
     CRef<CScope> scope = xBuildScope(context);
     if (ss->GetData().IsEntrys()) {
         NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, se, ss->SetData().SetEntrys()) {
@@ -1964,7 +1999,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqAnnot(CAsnvalThreadState& context)
     }
 
     // Validate Seq-annot
-    CValidator validator(*context.m_ObjMgr, context.m_pContext, context.m_pTaxon);
+    CValidator validator(*context.m_ObjMgr, context.m_pContext);
     CRef<CScope> scope = xBuildScope(context);
     if (context.m_DoCleanup) {
         context.m_Cleanup.SetScope(scope);
@@ -2038,7 +2073,7 @@ CConstRef<CValidError> CAsnvalApp::xProcessSeqDesc(CAsnvalThreadState& context)
 
     CRef<CSeq_entry> ctx = s_BuildGoodSeq();
 
-    CValidator validator(*context.m_ObjMgr, context.m_pContext, context.m_pTaxon);
+    CValidator validator(*context.m_ObjMgr, context.m_pContext);
     CRef<CScope> scope = xBuildScope(context);
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*ctx);
 
