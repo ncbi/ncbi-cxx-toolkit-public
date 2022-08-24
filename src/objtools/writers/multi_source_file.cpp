@@ -70,6 +70,7 @@ public:
     std::shared_ptr<CMultiSourceOStreamBuf> NewStreamBuf();
     void FlushStreamBuf(CMultiSourceOStreamBuf* strbuf);
     std::unique_ptr<TBuffer> AllocateBuffer();
+    void ReturnBuffer(std::unique_ptr<TBuffer>);
     void CloseStreamBuf(CMultiSourceOStreamBuf* strbuf);
 private:
     std::deque<std::shared_ptr<CMultiSourceOStreamBuf>> m_writers;
@@ -79,7 +80,8 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_cv;
 
-    std::deque<std::unique_ptr<TBuffer>> m_buffers;
+    std::mutex m_buffers_mutex;
+    std::deque<std::unique_ptr<TBuffer>> m_reused_buffers;
 
     std::atomic<std::ostream*> m_ostream = nullptr;
     std::unique_ptr<std::ostream> m_own_stream;
@@ -111,7 +113,7 @@ protected:
 private:
     CMultiSourceWriterImpl& m_parent;
     std::unique_ptr<TBuffer> m_buffer;
-    int m_leftover = -1;
+    std::atomic<int> m_leftover = -1;
 };
 
 CMultiSourceOStream::CMultiSourceOStream(CMultiSourceOStream&& _other) : _MyBase{std::move(_other)}, m_buf{_other.m_buf}
@@ -155,6 +157,7 @@ CMultiSourceOStreamBuf::CMultiSourceOStreamBuf(CMultiSourceWriterImpl& parent): 
 CMultiSourceOStreamBuf::~CMultiSourceOStreamBuf()
 {
     //std::cerr<< "CMultiSourceOStreamBuf::~CMultiSourceOStreamBuf()\n";
+    m_parent.ReturnBuffer(std::move(m_buffer));
 }
 
 std::ostream::int_type CMultiSourceOStreamBuf::overflow( int_type ch )
@@ -263,15 +266,24 @@ std::shared_ptr<CMultiSourceOStreamBuf> CMultiSourceWriterImpl::NewStreamBuf()
     return buf;
 }
 
+void CMultiSourceWriterImpl::ReturnBuffer(std::unique_ptr<CMultiSourceWriterImpl::TBuffer> buffer)
+{
+    std::unique_lock<std::mutex> lock(m_buffers_mutex);
+
+    if (m_reused_buffers.size() < 10) {
+        m_reused_buffers.push_back(std::move(buffer));
+    }
+}
+
 std::unique_ptr<CMultiSourceWriterImpl::TBuffer> CMultiSourceWriterImpl::AllocateBuffer()
 {
     std::unique_ptr<TBuffer> buffer;
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_buffers_mutex);
 
-        if (!m_buffers.empty()) {
-            buffer = std::move(m_buffers.front());
-            m_buffers.pop_front();
+        if (!m_reused_buffers.empty()) {
+            buffer = std::move(m_reused_buffers.front());
+            m_reused_buffers.pop_front();
         }
     }
 
@@ -283,7 +295,8 @@ std::unique_ptr<CMultiSourceWriterImpl::TBuffer> CMultiSourceWriterImpl::Allocat
 
 void CMultiSourceWriterImpl::FlushStreamBuf(CMultiSourceOStreamBuf* strbuf)
 {
-    while (strbuf != m_head.load())
+    //while (strbuf != m_head.load())
+    // wait until we are ahead of all
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [this, strbuf]
@@ -300,29 +313,25 @@ void CMultiSourceWriterImpl::FlushStreamBuf(CMultiSourceOStreamBuf* strbuf)
 
 void CMultiSourceWriterImpl::CloseStreamBuf(CMultiSourceOStreamBuf* strbuf)
 {
-    // if the streambuf is in the middle of queue, just leave it as is
-    if (strbuf == m_head.load())
+    // TODO: if the streambuf is in the middle of queue, just leave it as is
+    //if (strbuf == m_head.load())
     {
         {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [this, strbuf]
             {
                 bool is_head = strbuf == m_head.load();
-
                 return is_head;
             });
 
-        while (strbuf && strbuf->m_leftover >= 0) {
+        {
             strbuf->Dump(*m_ostream);
-            if (m_buffers.size() < 10) {
-                // try to save buffer for future reuse, it's expensive resource
-                m_buffers.push_back(std::move(strbuf->m_buffer));
-            }
             m_writers.pop_front(); // this can destroy CMultiSourceOStreamBuf if it was closed in the middle of queue
             m_head = m_writers.empty() ? nullptr : m_writers.front().get();
 
             strbuf = m_head;
         }
+
         }
         m_cv.notify_all();
     }
@@ -351,14 +360,18 @@ void CMultiSourceWriter::Close()
 
 CMultiSourceOStream CMultiSourceWriter::NewStream()
 {
-    x_ConstructImpl();
-    return {m_impl->NewStreamBuf()};
+    if (m_impl)
+        return {m_impl->NewStreamBuf()};
+    else
+        throw std::runtime_error("CMultiSourceWriter is not configured");
 }
 
 std::unique_ptr<CMultiSourceOStream> CMultiSourceWriter::NewStreamPtr()
 {
-    x_ConstructImpl();
-    return std::make_unique<CMultiSourceOStream>(m_impl->NewStreamBuf());
+    if (m_impl)
+        return std::make_unique<CMultiSourceOStream>(m_impl->NewStreamBuf());
+    else
+        throw std::runtime_error("CMultiSourceWriter is not configured");
 }
 
 void CMultiSourceWriter::Flush()
