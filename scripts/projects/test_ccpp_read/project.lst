@@ -11,6 +11,8 @@ util$
 util/compress
 util/sequtil$
 util/bitset$
+util/cache$
+util/checksum
 objects$
 objects/biblio$
 objects/general$
