@@ -313,7 +313,7 @@ may be implemented in the future; RW-1253
       strobe\n\
       unspecified\n\
       pcr\n\
-      proximity-ligation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);  //done
+      proximity-ligation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
 
     arg_desc->AddOptionalKey("linkage-evidence-file", "InFile", "File listing linkage evidence for gaps of different lengths",  CArgDescriptions::eInputFile);
 
@@ -329,7 +329,7 @@ may be implemented in the future; RW-1253
       unknown (obsolete)\n\
       fragment\n\
       clone\n\
-      other (for future use)", CArgDescriptions::eString);  //done
+      other (for future use)", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
@@ -359,6 +359,10 @@ may be implemented in the future; RW-1253
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
     arg_desc->AddFlag("verbose", "Be verbose on reporting");
     arg_desc->AddFlag("huge", "Try opening files in huge mode");
+    arg_desc->AddOptionalKey("usemt", "String", "Try to use as many threads as:\n\
+      one\n\
+      two\n\
+      many", CArgDescriptions::eString);
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
     arg_desc->AddFlag("fetchall", "Search data in all available databases");
@@ -393,6 +397,18 @@ int CTbl2AsnApp::Run()
     {
         std::cerr << "Will be using huge files scenario" << std::endl;
     }
+    if (m_context.m_can_use_huge_files) {
+        auto num_threads_config = GetConfig().GetString("table2asn", "UseThreads", "one");
+        if (args["usemt"])
+            num_threads_config = args["usemt"].AsString();
+        static constexpr std::array<std::string_view, 3> num_threads_values{"one", "two", "many"};
+        auto num_threads = std::distance(num_threads_values.begin(), std::find(num_threads_values.begin(), num_threads_values.end(), num_threads_config));
+        if (0<=num_threads && num_threads<=2) {
+            m_context.m_use_threads = num_threads + 1;
+            std::cerr << "Will be using " << num_threads_config << " threads" << std::endl;
+        }
+    }
+
 
     m_context.m_split_log_files = args["split-logs"].AsBoolean();
     if (m_context.m_split_log_files && args["logfile"])
