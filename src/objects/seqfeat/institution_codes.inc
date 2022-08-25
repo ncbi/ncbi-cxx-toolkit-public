@@ -4862,6 +4862,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MUGM\ts\tMuseo de Ciencias Naturales, Coleccion \"Gustavo Orces\" (Ecuador)\t\t\t",
 "MUGT\ts\tMuseo de Ciencias Naturales de la Universidad de Guayaquil\t\t\t",
 "MUH\ts\tMirpur University of Science & Technology\t\t\t",
+"MUHNAC\ts\tMuseu Nacional de Historia Natural e da Ciencia\t\t\t",
 "MUHW\ts\tMarshall University, Biological Sciences Department\t\t\t",
 "MUJ\ts\tMuseo Javeriano de Historia Natural, Laboratoriao de Entomologia\t\t\t",
 "MUL\tc\tDepartment of Microbiology MUL-B 250\t\t\t",
