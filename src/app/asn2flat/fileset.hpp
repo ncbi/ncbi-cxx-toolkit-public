@@ -37,67 +37,51 @@
 #include <objtools/writers/multi_source_file.hpp>
 #include <fstream>
 
-//#include <memory>
-//#include <ostream>
-
 BEGIN_NCBI_SCOPE;
 BEGIN_NAMESPACE(objects);
 
+// _Enum options not need to be sequential numbers
 template<class _Stream, class _Enum, _Enum..._options>
 class TFileSet
 {
 public:
-    using enum_type = _Enum;
-    using stream_type = _Stream;
+    using enum_type    = _Enum;
+    using stream_type  = _Stream;
+    using base_stream  = std::ostream;
 
     static constexpr size_t enum_size = sizeof...(_options);
     static constexpr std::array<enum_type, enum_size> sm_enum_mapping = {{_options...}};
-    static constexpr size_t not_open = std::numeric_limits<size_t>::max();
 
-    using streams_array = std::array<stream_type, enum_size>;
-    using streams_ptr_array = std::array<std::ostream*, enum_size>;
-    using redirects_type = std::array<size_t, enum_size>;
+    using streams_array     = std::array<stream_type, enum_size>;
+    using streams_ptr_array = std::array<base_stream*, enum_size>;
 
     TFileSet() = default;
+    TFileSet(const streams_ptr_array& ptrs): m_streams_ptrs{ptrs} {}
 
-    template<size_t _N>
-    TFileSet(std::array<std::ostream*, _N>&& _init2)
-    {
-        for(size_t i=0; i<_N && i<enum_size; ++i) {
-            m_streams_ptrs[i] = _init2[i];
-        }
-    }
-
-    template<size_t _N, typename _T>
-    TFileSet(std::array<_T, _N>&& _init)
-    {
-        for(size_t i=0; i<_N && i<enum_size; ++i) {
-            m_streams[i] = std::move(_init[i]);
-            m_streams_ptrs[i] = x_cast(m_streams[i]);
-        }
-    }
-
-    template<size_t _N, typename _T>
-    TFileSet(std::array<_T, _N>&& _init, const redirects_type& redirects)
-    {
-        for(size_t i=0; i<_N && i<enum_size; ++i) {
-            m_streams[i] = std::move(_init[i]);
-            size_t index = redirects[i];
-            if (index == not_open)
-                m_streams_ptrs[i] = nullptr;
-            else
-                m_streams_ptrs[i] = x_cast(m_streams[index]);
-        }
-    }
-
-    std::ostream* GetStream(enum_type _index)
+    base_stream* operator[](enum_type _index) const
     {
         size_t index = get_enum_index(_index);
         return m_streams_ptrs[index];
     }
 
-    template<typename _Other>
-    TFileSet<_Other, _Enum, _options...> recast();
+    void Set(enum_type _index, std::unique_ptr<base_stream> ostr)
+    {
+        size_t index = get_enum_index(_index);
+        m_streams[index] = std::move(ostr);
+        m_streams_ptrs[index] = x_cast(m_streams[index]);
+    }
+
+    void Set(enum_type _index, base_stream& ostr)
+    {
+        size_t index = get_enum_index(_index);
+        m_streams[index].reset();
+        m_streams_ptrs[index] = x_cast(ostr);
+    }
+
+    TFileSet Clone()
+    { // just copy pointers to streams
+        return {m_streams_ptrs};
+    }
 
     static size_t constexpr get_enum_index(enum_type _index)
     {
@@ -120,106 +104,81 @@ protected:
     }
 
 private:
-    streams_array     m_streams = {};
-    streams_ptr_array m_streams_ptrs = {};
+    streams_array     m_streams = {}; // owned streams
+    streams_ptr_array m_streams_ptrs = {}; // just pointers
 };
 
 template<class _Enum, _Enum..._options>
 class TMultiSourceFileSet
 {
 public:
-    using _MyType = TMultiSourceFileSet<_Enum, _options...>;
-    using fileset_type   = TFileSet<std::unique_ptr<std::ostream>, _Enum, _options...>;
-    using enum_type      = typename fileset_type::enum_type;
-    using writers_type   = std::array<CMultiSourceWriter, fileset_type::enum_size>;
-    using filenames_type = std::array<std::string, fileset_type::enum_size>;
+    using base_stream  = std::ostream;
+    using _MyType      = TMultiSourceFileSet<_Enum, _options...>;
+    using fileset_type = TFileSet<std::unique_ptr<base_stream>, _Enum, _options...>;
+    using enum_type    = typename fileset_type::enum_type;
+    using writers_type = std::array<CMultiSourceWriter, fileset_type::enum_size>;
+    using filestream   = std::ofstream;
 
-    TMultiSourceFileSet() {
-        for(auto& rec: m_redirects)
-            rec = fileset_type::not_open;
+    TMultiSourceFileSet() = default;
+
+    void SetUseMT(bool use_mt) {
+        m_use_mt = use_mt;
     }
 
-    void SetFilename(enum_type _enum, const std::string& filename) {
-        size_t index = fileset_type::get_enum_index(_enum);
-        m_filenames[index] = filename;
-        if (!filename.empty())
-            m_redirects[index] = index;
-    }
-
-    void Redirect(enum_type _enum, enum_type _other) {
-        size_t index1 = fileset_type::get_enum_index(_enum);
-        size_t index2 = fileset_type::get_enum_index(_other);
-        m_redirects[index1] = index2;
-    }
-
-    [[nodiscard]] fileset_type OverrideAll(std::ostream& ostr) {
-        std::array<std::ostream*, fileset_type::enum_size> _init;
-        for(auto& rec: _init)
-            rec = &ostr;
-
-        return {std::move(_init)};
-    }
-
-    [[nodiscard]] fileset_type OpenFilesSimple()
-    {
-        typename fileset_type::streams_array streams;
-        for(size_t i=0; i<fileset_type::enum_size; ++i) {
-            if (!m_filenames[i].empty()) {
-                std::unique_ptr<std::ofstream> new_stream{new std::ofstream(m_filenames[i])};
-                new_stream->exceptions( ios::failbit | ios::badbit );
-                streams[i] = std::move(new_stream);
-            }
-        }
-        return {std::move(streams), m_redirects};
-    }
-
-    void Override(enum_type _enum, std::ostream& ostr) {
-        size_t index = fileset_type::get_enum_index(_enum);
-        m_writers[index].Open(ostr);
-    }
-
-    void OpenFilesForMT() {
-        for(size_t i=0; i<fileset_type::enum_size; ++i) {
-            if (!m_filenames[i].empty()) {
-                m_writers[i].Open(m_filenames[i]);
-            }
+    void Open(enum_type _enum, const std::string& filename) {
+        if (m_use_mt) {
+            size_t index = fileset_type::get_enum_index(_enum);
+            m_writers[index].Open(filename);
+        } else {
+            auto  new_stream = std::make_unique<filestream>(filename);
+            new_stream->exceptions( ios::failbit | ios::badbit );
+            m_simple_files.Set(_enum, std::move(new_stream));
         }
     }
 
-    [[nodiscard]] std::unique_ptr<std::ostream> MakeNewStream(enum_type _enum) {
-        size_t index = fileset_type::get_enum_index(_enum);
-        if (!m_writers[index].IsOpen())
-            throw std::runtime_error("stream is not confugures");
-
-        auto new_stream = m_writers[index].NewStream();
-        // so we don't fail silently if, e.g., the output disk gets full
-        new_stream.exceptions( ios::failbit | ios::badbit );
-        std::unique_ptr<std::ostream> ostr = std::make_unique<decltype(new_stream)>(std::move(new_stream));
-        return ostr;
-    }
-
-    [[nodiscard]] fileset_type MakeNewStreams() {
-        typename fileset_type::streams_array streams;
-        for(size_t i=0; i<fileset_type::enum_size; ++i) {
-            if (m_writers[i].IsOpen()) {
-                auto new_stream = m_writers[i].NewStreamPtr();
-                // so we don't fail silently if, e.g., the output disk gets full
-                new_stream->exceptions( ios::failbit | ios::badbit );
-                streams[i] = std::move(new_stream);
-            }
+    void Open(enum_type _enum, base_stream& ostr) {
+        if (m_use_mt) {
+            size_t index = fileset_type::get_enum_index(_enum);
+            m_writers[index].Open(ostr);
+        } else {
+            m_simple_files.Set(_enum, ostr);
         }
-        return {std::move(streams), m_redirects};
     }
 
-    bool Has(enum_type _enum) const {
-        size_t index = fileset_type::get_enum_index(_enum);
-        return (!m_filenames[index].empty());
+    // set maximum number of writers in the underlying structure
+    void SetDepth(size_t depth) {
+        for(auto& w: m_writers)
+            w.SetMaxWriters(depth);
+    }
+
+    void CloseAll() {
+        for (auto& w: m_writers)
+            w.Close(); // this will block and wait until all writers leave
+    }
+
+    // Create a new set of streams for thread,
+    // this can block and wait if the limit of writers is reached
+    [[nodiscard]] fileset_type MakeNewFileset() {
+        fileset_type result;
+        if (m_use_mt) {
+            for(size_t i=0; i<fileset_type::enum_size; ++i) {
+                if (m_writers[i].IsOpen()) {
+                    auto new_stream = m_writers[i].NewStreamPtr();
+                    // so we don't fail silently if, e.g., the output disk gets full
+                    new_stream->exceptions( ios::failbit | ios::badbit );
+                    result.Set(fileset_type::sm_enum_mapping[i], std::move(new_stream));
+                }
+            }
+        } else {
+            result = m_simple_files.Clone();
+        }
+        return result;
     }
 
 protected:
-    filenames_type m_filenames;
-    writers_type   m_writers;
-    typename fileset_type::redirects_type m_redirects;
+    bool          m_use_mt = false;
+    writers_type  m_writers;
+    fileset_type  m_simple_files;
 };
 
 
