@@ -91,22 +91,24 @@ class CMultiSourceWriterImpl;
     }
 */
 
-// all methods except constructors/destructors are thread safe
+// all methods are thread safe
 class NCBI_XOBJWRITE_EXPORT CMultiSourceWriter
 {
 public:
     CMultiSourceWriter();
-    CMultiSourceWriter(const CMultiSourceWriter&) = delete;
     CMultiSourceWriter(CMultiSourceWriter&&) = default;
     CMultiSourceWriter& operator=(CMultiSourceWriter&&) = default;
+
+    CMultiSourceWriter(const CMultiSourceWriter&) = delete;
+    CMultiSourceWriter& operator=(const CMultiSourceWriter&) = delete;
     ~CMultiSourceWriter();
 
     void Open(std::ostream& o_stream);
     void Open(const std::string& filename);
     bool IsOpen() const;
     void Close();
-    CMultiSourceOStream NewStream();
-    std::unique_ptr<CMultiSourceOStream> NewStreamPtr();
+    [[nodiscard]] CMultiSourceOStream NewStream();
+    [[nodiscard]] std::unique_ptr<CMultiSourceOStream> NewStreamPtr();
     void Flush();
     void SetMaxWriters(size_t num);
 private:
@@ -121,10 +123,16 @@ class NCBI_XOBJWRITE_EXPORT CMultiSourceOStream: public std::ostream
 public:
     using _MyBase = std::ostream;
     CMultiSourceOStream() = default;
+    // move constructor and assignment allowed
     CMultiSourceOStream(CMultiSourceOStream&&);
     CMultiSourceOStream& operator=(CMultiSourceOStream&&);
+    // copy constructor and assignment is deleted in parent class
     ~CMultiSourceOStream();
     CMultiSourceOStream(std::shared_ptr<CMultiSourceOStreamBuf> buf);
+    void close();
+    bool is_open() const {
+        return static_cast<bool>(m_buf);
+    }
 
 private:
     std::shared_ptr<CMultiSourceOStreamBuf> m_buf;
