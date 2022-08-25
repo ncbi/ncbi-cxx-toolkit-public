@@ -70,7 +70,6 @@
 #include <objtools/edit/huge_file_process.hpp>
 #include <future>
 #include <util/message_queue.hpp>
-//#include "multi_source_file.hpp"
 #include "fileset.hpp"
 
 #define USE_CDDLOADER
@@ -106,20 +105,13 @@ USING_SCOPE(objects);
 // unknown output stream
 enum class eFlatFileCodes { all, nuc, gen, rna, prot, unk, };
 
-class CFFMultiSourceFileSet: public TMultiSourceFileSet<eFlatFileCodes,
+using CFFMultiSourceFileSet = TMultiSourceFileSet<eFlatFileCodes,
     eFlatFileCodes::all,
     eFlatFileCodes::nuc,
     eFlatFileCodes::gen,
     eFlatFileCodes::rna,
     eFlatFileCodes::prot,
-    eFlatFileCodes::unk>
-{
-public:
-    CFFMultiSourceFileSet() {
-        for (auto& rec: m_redirects)
-            rec = 0;
-    }
-};
+    eFlatFileCodes::unk>;
 
 class CHTMLFormatterEx : public IHTMLFormatter
 {
@@ -340,13 +332,7 @@ void CHTMLFormatterEx::FormatUniProtId(string& str, const string& prot_id) const
     str += "</a>";
 }
 
-// Each thread should have its own context
-struct TFFContext
-{
-    CRef<CScope>             m_Scope;
-    CRef<CFlatFileGenerator> m_FFGenerator;  // Flat-file generator
-    CFFMultiSourceFileSet::fileset_type m_streams; // multiple streams for each of eFlatFileCodes
-};
+class CWrapINSDSet;
 
 class CAsn2FlatApp : public CNcbiApplication
 {
@@ -356,6 +342,17 @@ public:
 
     void Init() override;
     int Run() override;
+    bool WrapINSDSet(bool unwrap);
+
+    // Each thread should have its own context
+    struct TFFContext
+    {
+        CRef<CScope>             m_Scope;
+        CRef<CFlatFileGenerator> m_FFGenerator;  // Flat-file generator
+        CFFMultiSourceFileSet::fileset_type m_streams; // multiple streams for each of eFlatFileCodes
+    };
+
+    using fileset_type = decltype(TFFContext::m_streams);
 
 protected:
     bool SetFlatfileOstream(eFlatFileCodes _code, const string& name);
@@ -376,17 +373,18 @@ private:
     [[nodiscard]] CObjectIStream* x_OpenIStream(const CArgs& args) const;
 
     [[nodiscard]] CFlatFileGenerator* x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const;
-    [[nodiscard]] TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args) const;
     TSeqPos x_GetFrom(const CArgs& args) const;
     TSeqPos x_GetTo  (const CArgs& args) const;
     ENa_strand x_GetStrand(const CArgs& args) const;
     void x_GetLocation(const CSeq_entry_Handle& entry, const CArgs& args, CSeq_loc& loc) const;
     CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry) const;
+    [[nodiscard]] TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args) const;
     [[nodiscard]] ICanceled* x_CreateCancelBenchmarkCallback() const;
     int x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& context) const;
     void x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const;
+    int x_GenerateBatchMode(unique_ptr<CObjectIStream> is);
     int x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const;
-    int x_GenerateHugeMode(TFFContext& context) const;
+    int x_GenerateHugeMode() const;
     void x_InitNewContext(TFFContext& context);
 
     // data
@@ -396,9 +394,8 @@ private:
 
     bool                        m_OnlyNucs;
     bool                        m_OnlyProts;
-    bool                        m_has_o_args;
+    bool                        m_use_mt = false;
 
-    friend class CWrapINSDSet;
     CFFMultiSourceFileSet       m_writers;
 
     unique_ptr<ICanceled>       m_pCanceledCallback;
@@ -421,25 +418,19 @@ private:
 class CWrapINSDSet
 {
 public:
-    CWrapINSDSet(const CAsn2FlatApp* app, TFFContext& context)
+    CWrapINSDSet(CAsn2FlatApp* app)
     {
-        if (app->GetArgs()["format"].AsString() == "insdseq") {
-            if (app->m_writers.Has(eFlatFileCodes::all)) {
-                m_context = &context;
-                auto os = m_context->m_streams.GetStream(eFlatFileCodes::all);
-                *os << "<INSDSet>" << endl;
-            }
-        }
+        if (app)
+            if (app->WrapINSDSet(false))
+                m_app = app;
     }
     ~CWrapINSDSet()
     {
-        if (m_context) {
-            auto os = m_context->m_streams.GetStream(eFlatFileCodes::all);
-            *os << "</INSDSet>" << endl;
-        }
+        if (m_app)
+            m_app->WrapINSDSet(true);
     }
 private:
-    TFFContext* m_context = nullptr;
+    CAsn2FlatApp* m_app = nullptr;
 };
 
 // constructor
@@ -527,7 +518,6 @@ void CAsn2FlatApp::Init()
          arg_desc->AddFlag("c", "Compressed file");
          // propogate top descriptors
          arg_desc->AddFlag("p", "Propagate top descriptors");
-         arg_desc->AddFlag("huge", "Use Huge files");
      }}
 
     // in flat_file_config.cpp
@@ -537,12 +527,17 @@ void CAsn2FlatApp::Init()
      {{
          arg_desc->SetCurrentGroup("Debugging Options - Subject to change or removal without warning");
 
+         arg_desc->AddFlag("huge", "Use Huge files mode");
+         arg_desc->AddFlag("use_mt", "Use multiple threads when possible");
+
+#if 0
          // benchmark cancel-checking
          arg_desc->AddFlag(
              "benchmark-cancel-checking",
              "Check statistics on how often the flatfile generator checks if "
              "it should be canceled.  This also sets up SIGUSR1 to trigger "
              "cancellation." );
+#endif
      }}
 
      CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
@@ -557,7 +552,7 @@ bool CAsn2FlatApp::SetFlatfileOstream(eFlatFileCodes _code, const string& name)
     const CArgs& args = GetArgs();
     if (args[name]) {
         auto filename = args[name].AsString();
-        m_writers.SetFilename(_code, filename);
+        m_writers.Open(_code, filename);
         return true;
     } else
         return false;
@@ -631,28 +626,6 @@ int CAsn2FlatApp::Run()
 #endif
     }
 
-    // open the output streams
-    m_has_o_args =
-        SetFlatfileOstream (eFlatFileCodes::all,  "o")  |
-        SetFlatfileOstream (eFlatFileCodes::nuc,  "on") |
-        SetFlatfileOstream (eFlatFileCodes::gen,  "og") |
-        SetFlatfileOstream (eFlatFileCodes::rna,  "or") |
-        SetFlatfileOstream (eFlatFileCodes::prot, "op") |
-        SetFlatfileOstream (eFlatFileCodes::unk,  "ou");
-
-    m_do_cleanup = !args["nocleanup"];
-    m_OnlyNucs = false;
-    m_OnlyProts = false;
-    if (m_writers.Has(eFlatFileCodes::all)) {
-        auto view = args["view"].AsString();
-        m_OnlyNucs = (view == "nuc");
-        m_OnlyProts = (view == "prot");
-    }
-
-    if (args["accn"]) {
-        m_AccessionFilter = args["accn"].AsString();
-    }
-
     m_HugeFileMode = ( args[ "huge" ] );
     if (m_HugeFileMode && !args["i"]) {
         NcbiCerr << "Use of -huge mode also requires use of the -i argument. Disabling -huge mode." << endl;
@@ -667,24 +640,60 @@ int CAsn2FlatApp::Run()
         m_HugeFileMode = false;
     }
 
-    if (m_has_o_args) {
-        if (m_HugeFileMode)
-            m_writers.OpenFilesForMT();
-    } else {
+    m_use_mt = args["use_mt"] && args[ "batch" ];
+
+    m_writers.SetUseMT(m_use_mt);
+    m_writers.SetDepth(20);
+
+    // open the output streams
+    bool has_o_args =
+        SetFlatfileOstream (eFlatFileCodes::all,  "o")  |
+        SetFlatfileOstream (eFlatFileCodes::nuc,  "on") |
+        SetFlatfileOstream (eFlatFileCodes::gen,  "og") |
+        SetFlatfileOstream (eFlatFileCodes::rna,  "or") |
+        SetFlatfileOstream (eFlatFileCodes::prot, "op") |
+        SetFlatfileOstream (eFlatFileCodes::unk,  "ou");
+
+    if (!has_o_args) {
         // No output (-o*) argument given - default to stdout
-        m_writers.Override(eFlatFileCodes::all, std::cout);
+        m_writers.Open(eFlatFileCodes::all, std::cout);
+    }
+
+    m_do_cleanup = !args["nocleanup"];
+    m_OnlyNucs = false;
+    m_OnlyProts = false;
+    if (args["o"]) {
+        auto view = args["view"].AsString();
+        m_OnlyNucs = (view == "nuc");
+        m_OnlyProts = (view == "prot");
+    }
+
+    if (args["accn"]) {
+        m_AccessionFilter = args["accn"].AsString();
+    }
+
+    CWrapINSDSet wrap(this);
+
+    if (m_HugeFileMode)
+    {
+        return x_GenerateHugeMode();
+    }
+
+    unique_ptr<CObjectIStream> is{x_OpenIStream( args ) };
+    if (!is) {
+        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+            "Unable to read data from stdin";
+        NCBI_THROW(CException, eUnknown, msg);
+    }
+
+    if ( args[ "batch" ] ) {
+        // batch mode can do multi-threaded, so it has it's own TFFContext(s)
+        return x_GenerateBatchMode(std::move(is));
     }
 
     // temporaly, only one context exists
     TFFContext context;
     x_InitNewContext(context);
-
-    CWrapINSDSet wrap(this, context);
-
-    if (m_HugeFileMode)
-    {
-        return x_GenerateHugeMode(context);
-    }
 
     if ( args[ "ids" ] ) {
         CNcbiIstream& istr = args["ids"].AsInputFile();
@@ -713,26 +722,6 @@ int CAsn2FlatApp::Run()
         return 0;
     }
 
-    unique_ptr<CObjectIStream> is{x_OpenIStream( args ) };
-    if (!is) {
-        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-            "Unable to read data from stdin";
-        NCBI_THROW(CException, eUnknown, msg);
-    }
-
-    if ( args[ "batch" ] ) {
-        bool propagate = args[ "p" ];
-
-        CGBReleaseFile in( *is.release(), propagate ); // CGBReleaseFile will delete the input stream
-        in.RegisterHandler( [this, &context](CRef<CSeq_entry>& entry)->bool
-        {
-            return HandleSeqEntry(context, entry);
-        });
-        in.Read();  // HandleSeqEntry will be called from this function
-        if (m_Exception) return -1;
-        return 0;
-    }
-
     if ( args[ "sub" ] ) {
         HandleSeqSubmit( context, *is );
         if (m_Exception) return -1;
@@ -742,8 +731,59 @@ int CAsn2FlatApp::Run()
     return x_GenerateTraditionally(std::move(is), context, args);
 }
 
-int CAsn2FlatApp::x_GenerateHugeMode(TFFContext& context) const
+int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
 {
+    std::atomic<bool> stopit = false;
+
+    bool propagate = GetArgs()[ "p" ];
+    CGBReleaseFile in( *is.release(), propagate ); // CGBReleaseFile will delete the input stream
+
+    // for multi-threading processing TFFContext instance is associated with thread
+    auto mt_processing = [this, &stopit](CRef<CSeq_entry> entry, TFFContext context)
+    {
+        bool success = HandleSeqEntry(context, entry);
+        if (!success)
+            stopit = true;
+    };
+
+    // in non-mt mode, we can have single context
+    TFFContext single_context;
+    if (m_use_mt) {
+        in.RegisterHandler( [this, &stopit, mt_processing] (CRef<CSeq_entry>& entry)->bool
+        {
+            if (stopit.load())
+                return false;
+
+            // each thread needs to have it's own context
+            // writers queue control how many of them can run simultaneosly
+            TFFContext context;
+            x_InitNewContext(context); // this can block and wait if too many writers already allocated
+
+            // thread can run detached, entry and context will be associated with the thread
+            std::thread(mt_processing, std::move(entry), std::move(context)).detach();
+
+            return true;
+        });
+    } else {
+        x_InitNewContext(single_context);
+        in.RegisterHandler( [this, &single_context](CRef<CSeq_entry>& entry)->bool
+        {
+            return HandleSeqEntry(single_context, entry);
+        });
+    }
+
+    in.Read();  // registered handlers will be called from this function
+
+    m_writers.CloseAll(); // this will wait until all writers quit
+
+    if (m_Exception) return -1;
+    return 0;
+
+}
+
+int CAsn2FlatApp::x_GenerateHugeMode() const
+{
+    TFFContext context;
     const CArgs& args = GetArgs();
 
     edit::CHugeFileProcess in (args["i"].AsString());
@@ -1097,12 +1137,12 @@ bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) co
 
         CNcbiOstream* flatfile_os = nullptr;
 
-        auto _Os = context.m_streams.GetStream(eFlatFileCodes::all);
-        auto _On = context.m_streams.GetStream(eFlatFileCodes::nuc);
-        auto _Og = context.m_streams.GetStream(eFlatFileCodes::gen);
-        auto _Or = context.m_streams.GetStream(eFlatFileCodes::rna);
-        auto _Op = context.m_streams.GetStream(eFlatFileCodes::prot);
-        auto _Ou = context.m_streams.GetStream(eFlatFileCodes::unk);
+        auto _Os = context.m_streams[eFlatFileCodes::all];
+        auto _On = context.m_streams[eFlatFileCodes::nuc];
+        auto _Og = context.m_streams[eFlatFileCodes::gen];
+        auto _Or = context.m_streams[eFlatFileCodes::rna];
+        auto _Op = context.m_streams[eFlatFileCodes::prot];
+        auto _Ou = context.m_streams[eFlatFileCodes::unk];
 
         if ( _Os ) {
             if ( m_OnlyNucs && ! bsh.IsNa() ) continue;
@@ -1299,12 +1339,14 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context,
         cfg.SetHTMLFormatter(html_fmt);
     }
 
+#if 0
+    // temporarly disabled because they never used
     CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
     if( args["benchmark-cancel-checking"] ) {
-        // temporarly disabled because it's never used
-        //m_pCanceledCallback.reset(x_CreateCancelBenchmarkCallback());
+        m_pCanceledCallback.reset(x_CreateCancelBenchmarkCallback());
     }
+#endif
 
     {
         bool nuc = args["og"] || args["or"] || args["on"];
@@ -1352,119 +1394,6 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context,
     }
 
     return generator;
-}
-
-CAsn2FlatApp::TGenbankBlockCallback*
-CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args) const
-{
-    class CSimpleCallback : public TGenbankBlockCallback {
-    public:
-        CSimpleCallback() { }
-        ~CSimpleCallback() override
-        {
-            cerr << endl;
-            cerr << "GENBANK CALLBACK DEMO STATISTICS" << endl;
-            cerr << endl;
-            cerr << "Appearances of each type: " << endl;
-            cerr << endl;
-            x_DumpTypeToCountMap(m_TypeAppearancesMap);
-            cerr << endl;
-            cerr << "Total characters output for each type: " << endl;
-            cerr << endl;
-            x_DumpTypeToCountMap(m_TypeCharsMap);
-            cerr << endl;
-            cerr << "Average characters output for each type: " << endl;
-            cerr << endl;
-            x_PrintAverageStats();
-        }
-
-        EBioseqSkip notify_bioseq( CBioseqContext & ctx ) override
-        {
-            cerr << "notify_bioseq called." << endl;
-            return eBioseqSkip_No;
-        }
-
-        // this macro is the lesser evil compared to the messiness that
-        // you would see here otherwise. (plus it's less error-prone)
-#define SIMPLE_CALLBACK_NOTIFY(TItemClass) \
-        EAction notify( string & block_text, \
-                        const CBioseqContext& ctx, \
-                        const TItemClass & item ) override { \
-        NStr::ReplaceInPlace(block_text, "MODIFY TEST", "WAS MODIFIED TEST" ); \
-        cerr << #TItemClass << " {" << block_text << '}' << endl; \
-        ++m_TypeAppearancesMap[#TItemClass]; \
-        ++m_TypeAppearancesMap["TOTAL"]; \
-        m_TypeCharsMap[#TItemClass] += block_text.length(); \
-        m_TypeCharsMap["TOTAL"] += block_text.length(); \
-        EAction eAction = eAction_Default; \
-        if( block_text.find("SKIP TEST")  != string::npos ) { \
-            eAction = eAction_Skip; \
-        } \
-        if ( block_text.find("HALT TEST") != string::npos ) { \
-            eAction = eAction_HaltFlatfileGeneration;         \
-        } \
-        return eAction; }
-
-        SIMPLE_CALLBACK_NOTIFY(CStartSectionItem);
-        SIMPLE_CALLBACK_NOTIFY(CHtmlAnchorItem);
-        SIMPLE_CALLBACK_NOTIFY(CLocusItem);
-        SIMPLE_CALLBACK_NOTIFY(CDeflineItem);
-        SIMPLE_CALLBACK_NOTIFY(CAccessionItem);
-        SIMPLE_CALLBACK_NOTIFY(CVersionItem);
-        SIMPLE_CALLBACK_NOTIFY(CGenomeProjectItem);
-        SIMPLE_CALLBACK_NOTIFY(CDBSourceItem);
-        SIMPLE_CALLBACK_NOTIFY(CKeywordsItem);
-        SIMPLE_CALLBACK_NOTIFY(CSegmentItem);
-        SIMPLE_CALLBACK_NOTIFY(CSourceItem);
-        SIMPLE_CALLBACK_NOTIFY(CReferenceItem);
-        SIMPLE_CALLBACK_NOTIFY(CCommentItem);
-        SIMPLE_CALLBACK_NOTIFY(CPrimaryItem);
-        SIMPLE_CALLBACK_NOTIFY(CFeatHeaderItem);
-        SIMPLE_CALLBACK_NOTIFY(CSourceFeatureItem);
-        SIMPLE_CALLBACK_NOTIFY(CFeatureItem);
-        SIMPLE_CALLBACK_NOTIFY(CGapItem);
-        SIMPLE_CALLBACK_NOTIFY(CBaseCountItem);
-        SIMPLE_CALLBACK_NOTIFY(COriginItem);
-        SIMPLE_CALLBACK_NOTIFY(CSequenceItem);
-        SIMPLE_CALLBACK_NOTIFY(CContigItem);
-        SIMPLE_CALLBACK_NOTIFY(CWGSItem);
-        SIMPLE_CALLBACK_NOTIFY(CTSAItem);
-        SIMPLE_CALLBACK_NOTIFY(CEndSectionItem);
-#undef SIMPLE_CALLBACK_NOTIFY
-
-    private:
-        typedef map<string, size_t> TTypeToCountMap;
-        // for each type, how many instances of that type did we see?
-        // We use the special string "TOTAL" for a total count.
-        TTypeToCountMap m_TypeAppearancesMap;
-        // Like m_TypeAppearancesMap but counts total number of *characters*
-        // instead of number of items.  Again, there is
-        // the special value "TOTAL"
-        TTypeToCountMap m_TypeCharsMap;
-
-        void x_DumpTypeToCountMap(const TTypeToCountMap & the_map ) {
-            ITERATE( TTypeToCountMap, map_iter, the_map ) {
-                cerr << setw(25) << left << (map_iter->first + ':')
-                     << " " << map_iter->second << endl;
-            }
-        }
-
-        void x_PrintAverageStats() {
-            ITERATE( TTypeToCountMap, map_iter, m_TypeAppearancesMap ) {
-                const string sType = map_iter->first;
-                const size_t iAppearances = map_iter->second;
-                const size_t iTotalCharacters = m_TypeCharsMap[sType];
-                cerr << setw(25) << left << (sType + ':')
-                     << " " << (iTotalCharacters / iAppearances) << endl;
-            }
-        }
-    };
-
-    if( args["demo-genbank-callback"] ) {
-        return new CSimpleCallback;
-    } else {
-        return nullptr;
-    }
 }
 
 TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args) const
@@ -1581,156 +1510,6 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry) cons
             "Cannot deduce target bioseq.");
 }
 
-[[nodiscard]]
-ICanceled* CAsn2FlatApp::x_CreateCancelBenchmarkCallback() const
-{
-    // This ICanceled interface always says "keep going"
-    // unless SIGUSR1 is received,
-    // and it keeps statistics on how often it is checked
-    class CCancelBenchmarking : public ICanceled {
-    public:
-        CCancelBenchmarking()
-            : m_TimeOfLastCheck(CTime::eCurrent)
-        {
-        }
-
-
-        ~CCancelBenchmarking()
-        {
-            // On destruction, we call "IsCanceled" one more time to make
-            // sure there wasn't a point where we stopped
-            // checking IsCanceled.
-            IsCanceled();
-
-            // print statistics
-            cerr << "##### Cancel-checking benchmarks:" << endl;
-            cerr << endl;
-
-            // maybe cancelation was never checked:
-            if( m_GapSizeMap.empty() ) {
-                cerr << "NO DATA" << endl;
-                return;
-            }
-
-            cerr << "(all times in milliseconds)" << endl;
-            cerr << endl;
-            // easy stats
-            cerr << "Min: " << m_GapSizeMap.begin()->first << endl;
-            cerr << "Max: " << m_GapSizeMap.rbegin()->first << endl;
-
-            // find average
-            Int8   iTotalMsecs = 0;
-            size_t uTotalCalls = 0;
-            ITERATE( TGapSizeMap, gap_size_it, m_GapSizeMap ) {
-                iTotalMsecs += gap_size_it->first * gap_size_it->second;
-                uTotalCalls += gap_size_it->second;
-            }
-            cerr << "Avg: " << (iTotalMsecs / uTotalCalls) << endl;
-
-            // find median
-            const size_t uIdxWithMedian = (uTotalCalls / 2);
-            size_t uCurrentIdx = 0;
-            ITERATE( TGapSizeMap, gap_size_it, m_GapSizeMap ) {
-                uCurrentIdx += gap_size_it->second;
-                if( uCurrentIdx >= uIdxWithMedian ) {
-                    cerr << "Median: " << gap_size_it->first << endl;
-                    break;
-                }
-            }
-
-            // first few
-            cerr << "Chronologically first few check times: " << endl;
-            copy( m_FirstFewGaps.begin(),
-                m_FirstFewGaps.end(),
-                ostream_iterator<Int8>(cerr, "\n") );
-
-            // last few
-            cerr << "Chronologically last few check times: " << endl;
-            copy( m_LastFewGaps.begin(),
-                m_LastFewGaps.end(),
-                ostream_iterator<Int8>(cerr, "\n") );
-
-            // slowest few and fastest few
-            cerr << "Frequency distribution of slowest and fastest lookup times: " << endl;
-            cerr << "\t" << "Time" << "\t" << "Count" << endl;
-            if( m_GapSizeMap.size() <= (2 * x_kGetNumToSaveAtStartAndEnd()) ) {
-                // if small enough, show the whole table at once
-                ITERATE( TGapSizeMap, gap_size_it, m_GapSizeMap ) {
-                    cerr << "\t" << gap_size_it ->first << "\t" << gap_size_it->second << endl;
-                }
-            } else {
-                // table is big so only show the first few and the last few
-                TGapSizeMap::const_iterator gap_size_it = m_GapSizeMap.begin();
-                ITERATE_SIMPLE(x_kGetNumToSaveAtStartAndEnd()) {
-                    cerr << "\t" << gap_size_it ->first << "\t" << gap_size_it->second << endl;
-                    ++gap_size_it;
-                }
-
-                cout << "\t...\t..." << endl;
-
-                TGapSizeMap::reverse_iterator gap_size_rit = m_GapSizeMap.rbegin();
-                ITERATE_SIMPLE(x_kGetNumToSaveAtStartAndEnd()) {
-                    cerr << "\t" << gap_size_it ->first << "\t" << gap_size_it->second << endl;
-                    ++gap_size_rit;
-                }
-            }
-
-            // total checks
-            cerr << "Num checks: " << uTotalCalls << endl;
-        }
-
-
-        bool IsCanceled() const override
-        {
-            // getting the current time should be the first
-            // command in this function.
-            CTime timeOfThisCheck(CTime::eCurrent);
-
-            const double dDiffInNsecs =
-                timeOfThisCheck.DiffNanoSecond(m_TimeOfLastCheck);
-            const Int8 iDiffInMsecs = static_cast<Int8>(dDiffInNsecs / 1000000.0);
-
-            ++m_GapSizeMap[iDiffInMsecs];
-
-            if( m_FirstFewGaps.size() < x_kGetNumToSaveAtStartAndEnd() ) {
-                m_FirstFewGaps.push_back(iDiffInMsecs);
-            }
-
-            m_LastFewGaps.push_back(iDiffInMsecs);
-            if( m_LastFewGaps.size() > x_kGetNumToSaveAtStartAndEnd() ) {
-                m_LastFewGaps.pop_front();
-            }
-
-            const bool bIsCanceled =
-                CSignal::IsSignaled(CSignal::eSignal_USR1);
-            if( bIsCanceled ) {
-                cerr << "Canceled by SIGUSR1" << endl;
-            }
-
-            // resetting m_TimeOfLastCheck should be the last command
-            // in this function
-            m_TimeOfLastCheck.SetCurrent();
-            return bIsCanceled;
-        }
-
-    private:
-        // local classes do not allow static fields
-        size_t x_kGetNumToSaveAtStartAndEnd() const { return 10; }
-
-        mutable CTime m_TimeOfLastCheck;
-        // The key is the gap between checks in milliseconds,
-        // (which is more than enough resolution for a human-level action)
-        // and the value is the number of times a gap of that size occurred.
-        typedef map<Int8, size_t> TGapSizeMap;
-        mutable TGapSizeMap m_GapSizeMap;
-
-        mutable vector<Int8> m_FirstFewGaps;
-        mutable list<Int8>   m_LastFewGaps;
-    };
-
-    return new CCancelBenchmarking;
-}
-
 int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& ff_context) const
 {
     int rc = 0;
@@ -1787,17 +1566,19 @@ void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) cons
     if (args["from"] || args["to"] || args["strand"]) {
         CSeq_loc loc;
         x_GetLocation(seh, args, loc);
-        auto flatfile_os = context.m_streams.GetStream(eFlatFileCodes::all);
+        auto flatfile_os = context.m_streams[eFlatFileCodes::all];
         context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, flatfile_os);
     } else {
-        auto all  = context.m_streams.GetStream(eFlatFileCodes::all);
-        auto nuc  = context.m_streams.GetStream(eFlatFileCodes::nuc);
-        auto gen  = context.m_streams.GetStream(eFlatFileCodes::gen);
-        auto rna  = context.m_streams.GetStream(eFlatFileCodes::rna);
-        auto prot = context.m_streams.GetStream(eFlatFileCodes::prot);
-        auto unk  = context.m_streams.GetStream(eFlatFileCodes::unk);
+        auto all  = context.m_streams[eFlatFileCodes::all];
+        auto nuc  = context.m_streams[eFlatFileCodes::nuc];
+        auto gen  = context.m_streams[eFlatFileCodes::gen];
+        auto rna  = context.m_streams[eFlatFileCodes::rna];
+        auto prot = context.m_streams[eFlatFileCodes::prot];
+        auto unk  = context.m_streams[eFlatFileCodes::unk];
 
         context.m_FFGenerator->Generate(seh, *all, true, all, nuc, gen, rna, prot, unk);
+
+        //auto casted = dynamic_cast<CMultiSourceOStream*>(all);
     }
 }
 
@@ -1817,17 +1598,25 @@ void CAsn2FlatApp::x_InitNewContext(TFFContext& context)
     }
 #endif
 
-    if (m_HugeFileMode)
-        context.m_streams = m_writers.MakeNewStreams();
-    else
-    if (m_has_o_args)
-        context.m_streams = m_writers.OpenFilesSimple();
-    else
-        context.m_streams = m_writers.OverrideAll(std::cout);
-
     // create the flat-file generator
     context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(context, GetArgs()));
+
+    context.m_streams = m_writers.MakeNewFileset();
 }
+
+bool CAsn2FlatApp::WrapINSDSet(bool unwrap)
+{
+    auto& args = GetArgs();
+    if (args["o"] && args["format"] && args["format"].AsString() == "insdseq") {
+        auto streams = m_writers.MakeNewFileset();
+        auto os = streams[eFlatFileCodes::all];
+        if (os)
+            *os << (unwrap ? "</INSDSet>" : "<INSDSet>") << endl;
+        return true;
+    }
+    return false;
+}
+
 
 END_NCBI_SCOPE
 
