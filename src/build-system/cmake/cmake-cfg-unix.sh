@@ -308,8 +308,13 @@ if [ -f $tree_root/$extension ]; then
 fi
 
 if [ $do_help = "yes" ]; then
-  Usage
-  exit 0
+  if [ "$cxx_name" = "Xcode" ]; then
+    exec $script_dir/cmake-cfg-xcode.sh  "$@"
+    exit 0
+  else
+    Usage
+    exit 0
+  fi
 fi
 
 if [ -z "$CMAKECFGRECURSIONGUARD" -a -n "$cxx_name" ]; then
