@@ -42,19 +42,28 @@
 #include <array>
 #include <fstream>
 
+#include <objtools/writers/atomics.hpp>
+
 //#include <iostream>
 
 BEGIN_NCBI_SCOPE;
 BEGIN_NAMESPACE(objects);
 
-static constexpr size_t s_preallocated_buffers = 10;
-static constexpr size_t s_default_max_writers  = 10;
+namespace
+{
+
+static constexpr size_t s_reserved_buffers = 10;
+static constexpr size_t s_default_max_writers  = 50;
 static constexpr size_t s_default_buffer_size  = 64*1024;
+
+using TBuffersPool = TResourcePool<std::array<char, s_default_buffer_size>>;
+static TBuffersPool s_reused_buffers(s_reserved_buffers);
+}
 
 class NCBI_XOBJWRITE_EXPORT CMultiSourceWriterImpl
 {
 public:
-    using TBuffer = std::array<char, s_default_buffer_size>;
+    using TBufferPtr = TBuffersPool::TUniqPointer;
 
     CMultiSourceWriterImpl();
     ~CMultiSourceWriterImpl();
@@ -72,8 +81,7 @@ public:
 
     std::shared_ptr<CMultiSourceOStreamBuf> NewStreamBuf();
     void FlushStreamBuf(CMultiSourceOStreamBuf* strbuf);
-    std::unique_ptr<TBuffer> AllocateBuffer();
-    void ReturnBuffer(std::unique_ptr<TBuffer>);
+    TBufferPtr AllocateBuffer();
     void CloseStreamBuf(CMultiSourceOStreamBuf* strbuf);
 private:
     std::deque<std::shared_ptr<CMultiSourceOStreamBuf>> m_writers;
@@ -83,9 +91,6 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_cv;
 
-    std::mutex m_buffers_mutex;
-    std::deque<std::unique_ptr<TBuffer>> m_reused_buffers;
-
     std::atomic<std::ostream*> m_ostream = nullptr;
     std::unique_ptr<std::ostream> m_own_stream;
 };
@@ -93,8 +98,8 @@ private:
 class CMultiSourceOStreamBuf: public std::streambuf
 {
 public:
-    using TBuffer = CMultiSourceWriterImpl::TBuffer;
-    //friend class CMultiSourceWriterImpl;
+    using TBufferPtr = TBuffersPool::TUniqPointer;
+    using TBuffer    = TBuffersPool::value_type;
 
     using _MyBase = std::streambuf;
     CMultiSourceOStreamBuf(CMultiSourceWriterImpl& parent);
@@ -106,7 +111,7 @@ protected:
 
 private:
     CMultiSourceWriterImpl& m_parent;
-    std::unique_ptr<TBuffer> m_buffer;
+    TBufferPtr m_buffer;
     std::atomic<int> m_leftover = -1;
 };
 
@@ -158,7 +163,7 @@ CMultiSourceOStreamBuf::CMultiSourceOStreamBuf(CMultiSourceWriterImpl& parent): 
 CMultiSourceOStreamBuf::~CMultiSourceOStreamBuf()
 {
     //std::cerr<< "CMultiSourceOStreamBuf::~CMultiSourceOStreamBuf()\n";
-    m_parent.ReturnBuffer(std::move(m_buffer));
+    // no need to return m_buffer, it has its own deleter
 }
 
 void CMultiSourceOStreamBuf::Close()
@@ -187,8 +192,9 @@ std::ostream::int_type CMultiSourceOStreamBuf::overflow( int_type ch )
     }
 
     if (m_buffer) {
-        auto head = m_buffer->data();
-        setp(head, head + m_buffer->size());
+        TBuffer& buffer = *m_buffer;
+        auto head = buffer.data();
+        setp(head, head + buffer.size());
         *head = ch;
         pbump(1);
         return ch;
@@ -287,31 +293,9 @@ std::shared_ptr<CMultiSourceOStreamBuf> CMultiSourceWriterImpl::NewStreamBuf()
     return buf;
 }
 
-void CMultiSourceWriterImpl::ReturnBuffer(std::unique_ptr<CMultiSourceWriterImpl::TBuffer> buffer)
+CMultiSourceWriterImpl::TBufferPtr CMultiSourceWriterImpl::AllocateBuffer()
 {
-    std::unique_lock<std::mutex> lock(m_buffers_mutex);
-
-    if (m_reused_buffers.size() < s_preallocated_buffers) {
-        m_reused_buffers.push_back(std::move(buffer));
-    }
-}
-
-std::unique_ptr<CMultiSourceWriterImpl::TBuffer> CMultiSourceWriterImpl::AllocateBuffer()
-{
-    std::unique_ptr<TBuffer> buffer;
-    {
-        std::unique_lock<std::mutex> lock(m_buffers_mutex);
-
-        if (!m_reused_buffers.empty()) {
-            buffer = std::move(m_reused_buffers.front());
-            m_reused_buffers.pop_front();
-        }
-    }
-
-    if (buffer)
-        return buffer;
-    else
-        return make_unique<TBuffer>();
+    return s_reused_buffers.Allocate();
 }
 
 void CMultiSourceWriterImpl::FlushStreamBuf(CMultiSourceOStreamBuf* strbuf)
