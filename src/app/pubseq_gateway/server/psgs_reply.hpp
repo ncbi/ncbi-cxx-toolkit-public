@@ -63,6 +63,7 @@ public:
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
+        m_Chunks(64),   // arbitrary reservation
         m_ConnectionCanceled(false),
         m_RequestId(0),
         m_LastActivityTimestamp(psg_clock_t::now())
@@ -78,6 +79,7 @@ public:
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
+        m_Chunks(64),   // arbitrary reservation
         m_ConnectionCanceled(false),
         m_RequestId(0),
         m_LastActivityTimestamp(psg_clock_t::now())
