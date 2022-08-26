@@ -58,6 +58,14 @@ public:
     TFileSet() = default;
     TFileSet(const streams_ptr_array& ptrs): m_streams_ptrs{ptrs} {}
 
+    void Reset() {
+        for (auto& p: m_streams)
+            p.reset();
+        for (auto& p: m_streams_ptrs)
+            p = nullptr;
+
+    }
+
     base_stream* operator[](enum_type _index) const
     {
         size_t index = get_enum_index(_index);
@@ -151,9 +159,15 @@ public:
             w.SetMaxWriters(depth);
     }
 
-    void CloseAll() {
+    void Reset() {
         for (auto& w: m_writers)
             w.Close(); // this will block and wait until all writers leave
+        m_simple_files.Reset();
+    }
+
+    void FlushAll() {
+        for (auto& w: m_writers)
+            w.Flush(); // this will block and wait until all writers leave
     }
 
     // Create a new set of streams for thread,
