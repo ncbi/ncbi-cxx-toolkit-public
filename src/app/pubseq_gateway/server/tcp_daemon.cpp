@@ -33,9 +33,10 @@
 
 #include "tcp_daemon.hpp"
 #include "pubseq_gateway.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 #include "shutdown_data.hpp"
-extern SShutdownData       g_ShutdownData;
+extern SShutdownData        g_ShutdownData;
 
 using namespace std;
 
@@ -495,7 +496,6 @@ void CTcpWorker::s_LoopWalk(uv_handle_t *  handle, void *  arg)
               " (" << worker << ")");
 }
 
-
 void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 {
     if (m_free_list.empty())
@@ -506,8 +506,18 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     uv_tcp_t *  tcp = & get<0>(*it);
     int         err_code = uv_tcp_init(m_internal->m_loop.Handle(), tcp);
 
-    if (err_code != 0)
+    if (err_code != 0) {
+        CRef<CRequestContext>   context = CreateErrorRequestContext();
+
+        PSG_ERROR("TCP connection accept failed; uv_tcp_init() error code: " << err_code);
+        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_AcceptFailure);
+        app->GetCounters().IncrementRequestStopCounter(503);
+
+        DismissErrorRequestContext(context,
+                                   CRequestStatus::e503_ServiceUnavailable);
         return;
+    }
 
     uv_tcp_nodelay(tcp, 1);
 
@@ -515,10 +525,42 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     m_connected_list.splice(m_connected_list.begin(), m_free_list, it);
 
     err_code = uv_accept(listener, reinterpret_cast<uv_stream_t*>(tcp));
-    ++m_connection_count;
-    bool b = m_daemon->ClientConnected();
+    if (err_code != 0) {
+        CRef<CRequestContext>   context = CreateErrorRequestContext();
 
-    if (err_code != 0 || !b || m_shuttingdown) {
+        PSG_ERROR("TCP connection accept failed; uv_accept() error code: " << err_code);
+        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_AcceptFailure);
+        app->GetCounters().IncrementRequestStopCounter(503);
+
+        DismissErrorRequestContext(context,
+                                   CRequestStatus::e503_ServiceUnavailable);
+
+        uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
+        return;
+    }
+
+    ++m_connection_count;
+
+    bool b = m_daemon->ClientConnected();
+    if (!b) {
+        CRef<CRequestContext>   context = CreateErrorRequestContext();
+
+        PSG_ERROR("TCP Connection accept failed; "
+                  "too many connections (maximum: " <<
+                  m_daemon->GetMaxConnections() << ")");
+        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_AcceptFailure);
+        app->GetCounters().IncrementRequestStopCounter(503);
+
+        DismissErrorRequestContext(context,
+                                   CRequestStatus::e503_ServiceUnavailable);
+
+        uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
+        return;
+    }
+
+    if (m_shuttingdown) {
         uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
         return;
     }

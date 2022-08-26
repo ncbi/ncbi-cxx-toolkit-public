@@ -349,4 +349,8 @@ unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point);
 string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state);
 long PSGToString(long  value, char *  buf);
 
+CRef<CRequestContext> CreateErrorRequestContext(void);
+void DismissErrorRequestContext(CRef<CRequestContext>   context,
+                                int  status);
+
 #endif

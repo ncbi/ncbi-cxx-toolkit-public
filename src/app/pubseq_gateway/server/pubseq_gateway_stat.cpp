@@ -57,6 +57,10 @@ CPSGSCounters::CPSGSCounters()
         new SCounterInfo(
             "NoProcessorInstantiated", "No processor instantiated counter",
             "The number of requests when no processors were instantiated");
+    m_Counters[ePSGS_AcceptFailure] =
+        new SCounterInfo(
+            "AcceptFailure", "TCP socket accept failure",
+            "The number of times a TCP accept failed");
     m_Counters[ePSGS_InsufficientArgs] =
         new SCounterInfo(
             "InsufficientArgumentsCount", "Insufficient arguments counter",

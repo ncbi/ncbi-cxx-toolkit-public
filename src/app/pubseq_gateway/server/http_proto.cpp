@@ -216,6 +216,19 @@ void CHttpProto::OnAsyncWork(bool  cancel)
 }
 
 
+static void FinishReply503(shared_ptr<CPSGS_Reply>     reply,
+                           const string &  msg)
+{
+    reply->SetContentType(ePSGS_PSGMime);
+    reply->PrepareReplyMessage(msg,
+                               CRequestStatus::e503_ServiceUnavailable,
+                               ePSGS_UnknownError, eDiag_Error);
+    reply->PrepareReplyCompletion(psg_clock_t::now());
+    reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
+    reply->SetCompleted();
+}
+
+
 int CHttpProto::OnHttpRequest(CHttpGateHandler *  rh,
                               h2o_req_t *  req,
                               const char *  cd_uid)
@@ -242,47 +255,49 @@ int CHttpProto::OnHttpRequest(CHttpGateHandler *  rh,
             hreq.SetGetParser(rh->m_GetParser);
         if (rh->m_PostParser)
             hreq.SetPostParser(rh->m_PostParser);
+
+        // Call the request handler
         (*rh->m_Handler)(hreq, reply);
+
         switch (reply->GetHttpReply()->GetState()) {
             case CHttpReply::eReplyFinished:
-                return 0;
+                break;
             case CHttpReply::eReplyStarted:
             case CHttpReply::eReplyInitialized:
-                if (!reply->GetHttpReply()->IsPostponed())
-                    NCBI_THROW(CPubseqGatewayException,
-                               eUnfinishedRequestNotScheduled,
-                               "Unfinished request hasn't "
-                               "been scheduled (postponed)");
-                return 0;
+                if (!reply->GetHttpReply()->IsPostponed()) {
+                    string  msg = "Unfinished request hasn't "
+                                  "been scheduled (postponed)";
+                    PSG_ERROR(msg);
+                    FinishReply503(reply, msg);
+                }
+                break;
             default:
-                assert(false);
-                return -1;
+                {
+                    string  msg = "Logic error: unknown CHttpReply state (" +
+                                  to_string(static_cast<int>(reply->GetHttpReply()->GetState()))
+                                  + ")";
+                    PSG_ERROR(msg);
+                    FinishReply503(reply, msg);
+                }
         }
     } catch (const std::exception &  e) {
+        // An exception is not really expected here because:
+        // - the only handler may throw one
+        // - all the handlers handle exceptions
+        PSG_ERROR("Exception while invoking an http request handler: " << e);
         if (!reply->IsFinished()) {
-            reply->SetContentType(ePSGS_PSGMime);
-            reply->PrepareReplyMessage(e.what(),
-                                       CRequestStatus::e503_ServiceUnavailable,
-                                       ePSGS_UnknownError, eDiag_Error);
-            reply->PrepareReplyCompletion(psg_clock_t::now());
-            reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
-            reply->SetCompleted();
-            return 0;
+            FinishReply503(reply, e.what());
         }
-        return -1;
     } catch (...) {
+        // An exception is not really expected here because:
+        // - the only handler may throw one
+        // - all the handlers handle exceptions
+        PSG_ERROR("Unknown exception while invoking an http request handler");
         if (!reply->IsFinished()) {
-            reply->SetContentType(ePSGS_PSGMime);
-            reply->PrepareReplyMessage("Unexpected failure",
-                                       CRequestStatus::e503_ServiceUnavailable,
-                                       ePSGS_UnknownError, eDiag_Error);
-            reply->PrepareReplyCompletion(psg_clock_t::now());
-            reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
-            reply->SetCompleted();
-            return 0;
+            FinishReply503(reply, "Unexpected failure");
         }
-        return -1;
     }
+    return 0;
 }
 
 
