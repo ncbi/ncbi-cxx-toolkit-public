@@ -191,10 +191,10 @@ class CExcludeBlobCache
         CExcludeBlobCache(size_t  inactivity_timeout,
                           size_t  max_cache_size, size_t  purged_size) :
             m_InactivityTimeout(inactivity_timeout),
-            m_MaxCacheSize(max_cache_size), m_PurgedSize(purged_size)
+            m_MaxCacheSize(max_cache_size), m_PurgedSize(purged_size),
+            m_ToPurge(128),     // arbitrary reservation
+            m_ToDiscard(128)    // arbitrary reservation
         {
-            m_ToPurge.reserve(128);     // arbitrary
-            m_ToDiscard.reserve(128);   // arbitrary
         }
 
         ~CExcludeBlobCache()
