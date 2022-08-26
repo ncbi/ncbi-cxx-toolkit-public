@@ -69,8 +69,8 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/huge_file_process.hpp>
 #include <future>
-#include <util/message_queue.hpp>
 #include "fileset.hpp"
+#include <objtools/writers/atomics.hpp>
 
 #define USE_CDDLOADER
 
@@ -347,6 +347,7 @@ public:
     // Each thread should have its own context
     struct TFFContext
     {
+        CRef<CCleanup>           m_cleanup;
         CRef<CScope>             m_Scope;
         CRef<CFlatFileGenerator> m_FFGenerator;  // Flat-file generator
         CFFMultiSourceFileSet::fileset_type m_streams; // multiple streams for each of eFlatFileCodes
@@ -359,6 +360,10 @@ protected:
 private:
     // types
     typedef CFlatFileConfig::CGenbankBlockCallback TGenbankBlockCallback;
+
+    using TThreadStatePool = TResourcePool<TFFContext>;
+
+    bool HandleSeqEntry(TThreadStatePool::TUniqPointer state, CRef<CSeq_entry>& se) const;
     bool HandleSeqEntry(TFFContext& context, CRef<CSeq_entry>& se) const;
     bool HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) const;
     void HandleSeqSubmit(TFFContext& context, CObjectIStream& is) const;
@@ -386,9 +391,12 @@ private:
     int x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const;
     int x_GenerateHugeMode() const;
     void x_InitNewContext(TFFContext& context);
+    void x_ResetContext(TFFContext& context);
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager can be mutable
+    TThreadStatePool            m_state_pool;
+
 
     // Everything else should be unchangeable within CFlatfileGenerator runs
 
@@ -626,6 +634,15 @@ int CAsn2FlatApp::Run()
 #endif
     }
 
+    m_state_pool.SetReserved(20);
+    m_state_pool.SetInitFunc(
+        [this](TFFContext& ctx) {
+            x_InitNewContext(ctx);
+        },
+        [this](TFFContext& ctx) {
+            x_ResetContext(ctx);
+        });
+
     m_HugeFileMode = ( args[ "huge" ] );
     if (m_HugeFileMode && !args["i"]) {
         NcbiCerr << "Use of -huge mode also requires use of the -i argument. Disabling -huge mode." << endl;
@@ -692,8 +709,8 @@ int CAsn2FlatApp::Run()
     }
 
     // temporaly, only one context exists
-    TFFContext context;
-    x_InitNewContext(context);
+    auto thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
+    TFFContext& context = *thread_state;
 
     if ( args[ "ids" ] ) {
         CNcbiIstream& istr = args["ids"].AsInputFile();
@@ -739,42 +756,38 @@ int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
     CGBReleaseFile in( *is.release(), propagate ); // CGBReleaseFile will delete the input stream
 
     // for multi-threading processing TFFContext instance is associated with thread
-    auto mt_processing = [this, &stopit](CRef<CSeq_entry> entry, TFFContext context)
+    auto processing = [this, &stopit](CRef<CSeq_entry> entry, TThreadStatePool::TUniqPointer thread_state)
     {
-        bool success = HandleSeqEntry(context, entry);
+        bool success = HandleSeqEntry(std::move(thread_state), entry);
         if (!success)
             stopit = true;
     };
 
-    // in non-mt mode, we can have single context
-    TFFContext single_context;
-    if (m_use_mt) {
-        in.RegisterHandler( [this, &stopit, mt_processing] (CRef<CSeq_entry>& entry)->bool
-        {
+    in.RegisterHandler( [this, &stopit, processing] (CRef<CSeq_entry>& entry)->bool
+    {
+        if (stopit.load())
+            return false;
+
+        // each thread needs to have it's own context
+        // writers queue control how many of them can run simultaneosly
+        // these resources must allocated sequentially in order of incoming entry's
+        auto thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
+
+        // thread can run detached, entry and context will be associated with the thread
+        if (m_use_mt)
+            std::thread(processing, std::move(entry), std::move(thread_state)).detach();
+        else {
+            processing(std::move(entry), std::move(thread_state));
             if (stopit.load())
                 return false;
+        }
 
-            // each thread needs to have it's own context
-            // writers queue control how many of them can run simultaneosly
-            TFFContext context;
-            x_InitNewContext(context); // this can block and wait if too many writers already allocated
-
-            // thread can run detached, entry and context will be associated with the thread
-            std::thread(mt_processing, std::move(entry), std::move(context)).detach();
-
-            return true;
-        });
-    } else {
-        x_InitNewContext(single_context);
-        in.RegisterHandler( [this, &single_context](CRef<CSeq_entry>& entry)->bool
-        {
-            return HandleSeqEntry(single_context, entry);
-        });
-    }
+        return true;
+    });
 
     in.Read();  // registered handlers will be called from this function
 
-    m_writers.CloseAll(); // this will wait until all writers quit
+    m_writers.FlushAll(); // this will wait until all writers quit
 
     if (m_Exception) return -1;
     return 0;
@@ -929,8 +942,7 @@ void CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
     }
 
     if (m_do_cleanup) {
-        CCleanup cleanup;
-        cleanup.BasicCleanup(sub);
+        context.m_cleanup->BasicCleanup(sub);
     }
     // NB: though the spec specifies a submission may contain multiple entries
     // this is not the case. A submission should only have a single Top-level
@@ -1022,8 +1034,7 @@ bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) co
             tmp_se->SetSeq(const_cast<CBioseq&>(*bseq));
         }
 
-        CCleanup cleanup;
-        cleanup.BasicCleanup( *tmp_se );
+        context.m_cleanup->BasicCleanup( *tmp_se );
 
         if ( tmp_se->IsSet() ) {
             tseh.SelectSet(bseth);
@@ -1259,6 +1270,10 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(TFFContext& context,
     return CSeq_entry_Handle();
 }
 
+bool CAsn2FlatApp::HandleSeqEntry(TThreadStatePool::TUniqPointer state, CRef<CSeq_entry>& se) const
+{
+    return HandleSeqEntry(*state, se);
+}
 
 bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CRef<CSeq_entry>& se) const
 {
@@ -1578,28 +1593,47 @@ void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) cons
 
         context.m_FFGenerator->Generate(seh, *all, true, all, nuc, gen, rna, prot, unk);
 
-        //auto casted = dynamic_cast<CMultiSourceOStream*>(all);
+    }
+}
+
+void CAsn2FlatApp::x_ResetContext(TFFContext& context)
+{
+    context.m_streams.Reset();
+
+    if (context.m_FFGenerator.NotEmpty()) {
+        context.m_FFGenerator->SetFeatTree(nullptr);
+    }
+
+    if (context.m_Scope.NotEmpty()) {
+        context.m_Scope->ResetDataAndHistory();
     }
 }
 
 void CAsn2FlatApp::x_InitNewContext(TFFContext& context)
 {
-    context.m_Scope.Reset(new CScope(*m_Objmgr));
-    context.m_Scope->AddDefaults();
+    if (context.m_Scope.Empty()) {
+        context.m_Scope.Reset(new CScope(*m_Objmgr));
+        context.m_Scope->AddDefaults();
 
-#ifdef USE_SNPLOADER
-    if (m_SNPDataLoader) {
-        context.m_Scope->AddDataLoader(m_SNPDataLoader->GetLoaderNameFromArgs());
+    #ifdef USE_SNPLOADER
+        if (m_SNPDataLoader) {
+            context.m_Scope->AddDataLoader(m_SNPDataLoader->GetLoaderNameFromArgs());
+        }
+    #endif
+    #ifdef USE_CDDLOADER
+        if (m_CDDDataLoader) {
+            context.m_Scope->AddDataLoader(m_CDDDataLoader->GetLoaderNameFromArgs());
+        }
+    #endif
     }
-#endif
-#ifdef USE_CDDLOADER
-    if (m_CDDDataLoader) {
-        context.m_Scope->AddDataLoader(m_CDDDataLoader->GetLoaderNameFromArgs());
-    }
-#endif
 
     // create the flat-file generator
-    context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(context, GetArgs()));
+    if (context.m_FFGenerator.Empty())
+        context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(context, GetArgs()));
+
+    if (context.m_cleanup.Empty())
+        context.m_cleanup.Reset(new CCleanup);
+
 
     context.m_streams = m_writers.MakeNewFileset();
 }
