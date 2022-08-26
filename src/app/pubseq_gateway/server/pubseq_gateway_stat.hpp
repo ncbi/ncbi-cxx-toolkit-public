@@ -93,6 +93,7 @@ class CPSGSCounters
             ePSGS_DestroyedProcessorCallbacks,
             ePSGS_NonProtocolRequests,
             ePSGS_NoProcessorInstantiated,
+            ePSGS_AcceptFailure,
 
             // Request stop statuses
             ePSGS_100,

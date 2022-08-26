@@ -1409,3 +1409,33 @@ string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state)
     return s_CassStartupDataStateMsg[state];
 }
 
+
+CRef<CRequestContext> CreateErrorRequestContext(void)
+{
+    CRef<CRequestContext>   context;
+    if (g_Log) {
+        context.Reset(new CRequestContext());
+        context->SetRequestID();
+        context->SetSessionID();
+        context->SetHitID();
+        CDiagContext::SetRequestContext(context);
+        GetDiagContext().PrintRequestStart();
+        context->SetReadOnly(true);
+    }
+    return context;
+}
+
+
+void DismissErrorRequestContext(CRef<CRequestContext>   context,
+                                int  status)
+{
+    if (context.NotNull()) {
+        CDiagContext::SetRequestContext(context);
+        context->SetReadOnly(false);
+        context->SetRequestStatus(status);
+        GetDiagContext().PrintRequestStop();
+        context.Reset();
+        CDiagContext::SetRequestContext(NULL);
+    }
+}
+

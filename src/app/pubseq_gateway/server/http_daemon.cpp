@@ -132,12 +132,20 @@ int CHttpDaemon::s_OnHttpRequest(h2o_handler_t *  self, h2o_req_t *  req)
             return proto->OnHttpRequest(rh, req, sm_CdUid);
         }
     } catch (const exception &  e) {
+        // An exception is not really expected her because two levels above
+        // both have try-catch blocks which do not let an exception to go.
+        PSG_ERROR("Exception while hadling an http request on a low level: " << e);
         h2o_send_error_503(req, "Malfunction", e.what(), 0);
         return 0;
     } catch (...) {
+        // An exception is not really expected her because two levels above
+        // both have try-catch blocks which do not let an exception to go.
+        PSG_ERROR("Unknown exception while hadling an http request on a low level");
         h2o_send_error_503(req, "Malfunction", "unexpected failure", 0);
         return 0;
     }
+
+    // h2o will send 404
     return -1;
 }
 

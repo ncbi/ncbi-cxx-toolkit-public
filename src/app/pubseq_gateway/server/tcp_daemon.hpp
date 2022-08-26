@@ -223,6 +223,10 @@ public:
     bool OnRequest(CHttpProto **  http_proto);
     uint64_t NumOfRequests(void);
     uint16_t NumOfConnections(void) const;
+    unsigned short GetMaxConnections(void) const
+    {
+        return m_max_connections;
+    }
 
     void Run(CHttpDaemon &  http_daemon,
              std::function<void(CTcpDaemon &  daemon)>

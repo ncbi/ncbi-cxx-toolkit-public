@@ -55,7 +55,6 @@ public:
         eConnectionNotAssigned,
         ePendingReqNotAssigned,
         eRequestPoolNotAvailable,
-        eUnfinishedRequestNotScheduled,
         eWorkerAlreadyStarted,
         eAddressEmpty,
         ePortNotSpecified,
