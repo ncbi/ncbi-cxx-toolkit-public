@@ -237,7 +237,11 @@ bool CMultiSourceWriterImpl::IsOpen() const
 
 void CMultiSourceWriterImpl::Close()
 {
+    if (!m_ostream)
+        return;
+
     {
+
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [this]
             {
@@ -246,7 +250,6 @@ void CMultiSourceWriterImpl::Close()
             });
 
         if (m_ostream) {
-            m_ostream.load()->flush();
             m_ostream = nullptr;
         }
     }
@@ -256,16 +259,18 @@ void CMultiSourceWriterImpl::Close()
 
 void CMultiSourceWriterImpl::Flush()
 {
+    if (m_ostream)
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        //m_cv.wait(lock, [] { return true; });
+        m_cv.wait(lock, [this]
+            {
+                bool is_empty = m_writers.empty();
+                return is_empty;
+            });
 
-        if (m_ostream) {
+        if (m_ostream)
             m_ostream.load()->flush();
-        }
     }
-
-    //m_cv.notify_all();
 }
 
 std::shared_ptr<CMultiSourceOStreamBuf> CMultiSourceWriterImpl::NewStreamBuf()
