@@ -86,6 +86,7 @@ const char* s_ArgFullVersion     = "-version-full";
 const char* s_ArgFullVersionXml  = "-version-full-xml";
 const char* s_ArgFullVersionJson = "-version-full-json";
 const char* s_ArgDryRun          = "-dryrun";
+const char* s_ArgDelimiter       = "--";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2863,8 +2864,8 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
 
     // Check if to start processing the args as positional
     if (*n_plain == kMax_UInt || m_PositionalMode == ePositionalMode_Loose) {
-        // Check for the "--" delimiter
-        if (arg1.compare("--") == 0) {
+        // Check for the s_ArgDelimiter delimiter
+        if (arg1.compare(s_ArgDelimiter) == 0) {
             if (*n_plain == kMax_UInt) {
                 *n_plain = 0;  // pos.args started
             }

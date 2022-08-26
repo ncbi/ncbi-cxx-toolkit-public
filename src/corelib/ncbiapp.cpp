@@ -76,6 +76,7 @@ extern const char* s_ArgFullVersion;
 extern const char* s_ArgFullVersionXml;
 extern const char* s_ArgFullVersionJson;
 extern const char* s_ArgDryRun;
+extern const char* s_ArgDelimiter;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -805,6 +806,9 @@ int CNcbiApplicationAPI::AppMain
             if ( !argv[i] ) {
                 continue;
             }
+            if ( NStr::strcmp(argv[i], s_ArgDelimiter) == 0 ) {
+                break;
+            }
             if ( NStr::strcmp(argv[i], s_ArgLogFile) == 0 ) {
                 if (!argv[++i]) {
                     continue;
@@ -883,8 +887,16 @@ int CNcbiApplicationAPI::AppMain
         const char** v = new const char*[argc];
         v[0] = argv[0];
         int real_arg_index = 1;
+        bool skip = false;
         for (int i = 1;  i < argc;  i++) {
             if ( !argv[i] ) {
+                continue;
+            }
+            if ( NStr::strcmp(argv[i], s_ArgDelimiter) == 0 ) {
+                skip = true;
+            }
+            if (skip) {
+                v[real_arg_index++] = argv[i];
                 continue;
             }
             // Log file - ignore if diag is eDS_User - the user wants to
