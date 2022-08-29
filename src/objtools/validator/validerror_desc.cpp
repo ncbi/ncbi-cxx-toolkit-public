@@ -566,8 +566,10 @@ bool CValidError_desc::x_ValidateStructuredComment
     }
     if (NStr::Equal(prefix, "Genome-Assembly-Data") && HasBadGenomeAssemblyName(usr)) {
         is_valid = false;
-        PostErr(eDiag_Info, eErr_SEQ_DESCR_BadAssemblyName,
-            "Assembly Name should not start with 'NCBI' or 'GenBank' in structured comment", *m_Ctx, desc);
+        if (report) {
+            PostErr(eDiag_Info, eErr_SEQ_DESCR_BadAssemblyName,
+                "Assembly Name should not start with 'NCBI' or 'GenBank' in structured comment", *m_Ctx, desc);
+        }
     }
     if (report && !is_valid && !NStr::IsBlank(prefix)) {
         PostErr(eDiag_Info, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
