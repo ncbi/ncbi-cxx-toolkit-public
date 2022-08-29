@@ -1479,12 +1479,13 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         CRef<CID2S_Split_Info> split;
         if ( blob_id.m_SeqType == 'S' ) {
             if ( CWGSScaffoldIterator it = GetScaffoldIterator(blob_id) ) {
+                state = s_GBStateToOM(it.GetGBState());
                 entry = it.GetSeq_entry();
             }
         }
         else if ( blob_id.m_SeqType == 'P' ) {
             if ( CWGSProteinIterator it = GetProteinIterator(blob_id) ) {
-                state = project_state | s_GBStateToOM(it.GetGBState());
+                state = s_GBStateToOM(it.GetGBState());
                 if ( !(state & CBioseq_Handle::fState_withdrawn) ) {
                     entry = it.GetSeq_entry();
                 }
@@ -1492,7 +1493,7 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         }
         else {
             if ( CWGSSeqIterator it = GetContigIterator(blob_id) ) {
-                state = project_state | s_GBStateToOM(it.GetGBState());
+                state = s_GBStateToOM(it.GetGBState());
                 if ( !(state & CBioseq_Handle::fState_withdrawn) ) {
                     CWGSSeqIterator::TFlags flags = it.fDefaultFlags;
                     if ( !GetSplitQualityGraphParam() ) {
