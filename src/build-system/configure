@@ -17898,6 +17898,17 @@ if test -n "$LZO_LIBS" -a "x$with_bin_release" = xyes \
 fi
 
 if test -d "$ZSTD_PATH"; then
+   ZSTD_ARCH_PATH=$ZSTD_PATH
+for d in "$ZSTD_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$ZSTD_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$ZSTD_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$ZSTD_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      ZSTD_ARCH_PATH=$d
+      break
+   fi
+done
+   ZSTD_PATH=$ZSTD_ARCH_PATH
    ncbi_fix_dir_tmp=`if cd $ZSTD_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $ZSTD_PATH && $smart_pwd 2>/dev/null`
@@ -18003,11 +18014,13 @@ else
        LIBS="$ZSTD_LIBS  $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <zstd.h>
+#define ZSTD_STATIC_LINKING_ONLY 1
+                   #include <zstd.h>
 int
 main ()
 {
 ZSTD_CCtx* cctx = ZSTD_createCCtx();
+        return ZSTD_c_literalCompressionMode;
   ;
   return 0;
 }
@@ -18042,6 +18055,11 @@ $as_echo "#define HAVE_LIBZSTD 1" >>confdefs.h
 
 
 
+if test -n "$ZSTD_LIBS" -a "x$with_bin_release" = xyes \
+        -a \( -f "$ZSTD_PATH/lib$bit64_sfx/libzstd-static.a" \
+              -o -f "$ZSTD_PATH/lib/libzstd-static.a" \); then
+   ZSTD_LIBS="$ZSTD_LIBPATH -lzstd-static"
+fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`
