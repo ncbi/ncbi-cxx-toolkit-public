@@ -526,17 +526,17 @@ bool CValidError_desc::x_ValidateStructuredComment
                 const CComment_rule& rule = *ruler;
 
                 if (rule.GetRequire_order()) {
-                    is_valid = ValidateStructuredComment (usr, desc, rule, report);
+                    is_valid &= ValidateStructuredComment (usr, desc, rule, report);
                 } else {
                     CUser_object tmp;
                     tmp.Assign(usr);
                     CUser_object::TData& fields = tmp.SetData();
                     stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
-                    is_valid = ValidateStructuredComment (tmp, desc, rule, report);
+                    is_valid &= ValidateStructuredComment (tmp, desc, rule, report);
                 }
-            } else if (report) {
+            } else {
                 // no rule for this prefix
-                ValidateStructuredCommentGeneric(usr, desc, true);
+                is_valid &= ValidateStructuredCommentGeneric(usr, desc, report);
             }
         }
         try {
