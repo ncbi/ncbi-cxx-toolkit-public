@@ -47,7 +47,7 @@ inline void* MemNew(size_t sz)
     return p;
 }
 inline void* MemSet(void* p, int n, size_t sz) { return std::memset(p, n, sz); }
-inline void* MemCpy(void* p, void* q, size_t sz) { return std::memcpy(p, q, sz); }
+inline void* MemCpy(void* p, const void* q, size_t sz) { return std::memcpy(p, q, sz); }
 inline void* MemFree(void* p)
 {
     delete[]((char*)p);

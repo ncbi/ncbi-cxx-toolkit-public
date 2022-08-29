@@ -232,7 +232,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
     {
         ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
-        MemFree(entry);
+        delete entry;
         return (NULL);
     }
 
@@ -312,12 +312,11 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
     entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
     entry->mpData  = new EntryBlk();
 
-
     if ((size_t)entry->len != len) /* hardware problem */
     {
         ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
-        MemFree(entry);
+        delete entry;
         return (NULL);
     }
 
