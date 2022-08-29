@@ -4698,11 +4698,20 @@ if test -n "$LZO_LIBS" -a "x$with_bin_release" = xyes \
 fi
 
 if test -d "$ZSTD_PATH"; then
+   NCBI_FIND_ARCH_PATH(ZSTD)
+   ZSTD_PATH=$ZSTD_ARCH_PATH
    NCBI_FIX_DIR(ZSTD_PATH)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(zstd,
- [AC_LANG_PROGRAM([@%:@include <zstd.h>],
-      [[ZSTD_CCtx* cctx = ZSTD_createCCtx();]])])
+ [AC_LANG_PROGRAM([@%:@define ZSTD_STATIC_LINKING_ONLY 1
+                   @%:@include <zstd.h>],
+      [[ZSTD_CCtx* cctx = ZSTD_createCCtx();
+        return ZSTD_c_literalCompressionMode;]])])
+if test -n "$ZSTD_LIBS" -a "x$with_bin_release" = xyes \
+        -a \( -f "$ZSTD_PATH/lib$bit64_sfx/libzstd-static.a" \
+              -o -f "$ZSTD_PATH/lib/libzstd-static.a" \); then
+   ZSTD_LIBS="$ZSTD_LIBPATH -lzstd-static"
+fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`
