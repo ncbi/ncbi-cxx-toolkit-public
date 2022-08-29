@@ -68,6 +68,7 @@ struct SPsgBioseqInfo
     CDeadline deadline;
 
     TIncludedInfo Update(const CPSG_BioseqInfo& bioseq_info);
+    CBioseq_Handle::TBioseqStateFlags GetBioseqStateFlags() const;
 
 private:
     SPsgBioseqInfo(const SPsgBioseqInfo&);
@@ -77,11 +78,12 @@ private:
 
 struct SPsgBlobInfo
 {
-    SPsgBlobInfo(const CPSG_BlobInfo& blob_info);
+    explicit SPsgBlobInfo(const CPSG_BlobInfo& blob_info);
+    explicit SPsgBlobInfo(const CTSE_Info& tse);
 
     string blob_id_main;
     string id2_info;
-    int blob_state;
+    CBioseq_Handle::TBioseqStateFlags blob_state_flags;
     Int8 last_modified;
 
     int GetBlobVersion() const { return int(last_modified/60000); /* ms to minutes */ }
@@ -123,8 +125,8 @@ public:
     CDataLoader::SHashFound GetSequenceHashOnce(const CSeq_id_Handle& idh);
     CDataLoader::STypeFound GetSequenceType(const CSeq_id_Handle& idh);
     CDataLoader::STypeFound GetSequenceTypeOnce(const CSeq_id_Handle& idh);
-    int GetSequenceState(const CSeq_id_Handle& idh);
-    int GetSequenceStateOnce(const CSeq_id_Handle& idh);
+    int GetSequenceState(CDataSource* data_source, const CSeq_id_Handle& idh);
+    int GetSequenceStateOnce(CDataSource* data_source, const CSeq_id_Handle& idh);
 
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
                                          const CSeq_id_Handle& idh,
@@ -171,6 +173,7 @@ public:
     struct SReplyResult {
         CTSE_Lock lock;
         string blob_id;
+        shared_ptr<SPsgBlobInfo> blob_info;
     };
 
     static void NCBI_XLOADER_GENBANK_EXPORT SetGetBlobByIdShouldFail(bool value);
@@ -189,7 +192,11 @@ private:
     CPSG_BioId x_GetBioId(const CSeq_id_Handle& idh);
     SReplyResult x_ProcessBlobReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh, bool retry, bool lock_asap = false, CTSE_LoadLock* load_lock = nullptr);
     SReplyResult x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh);
+    string x_GetCachedBlobId(const CSeq_id_Handle& idh);
     shared_ptr<SPsgBioseqInfo> x_GetBioseqInfo(const CSeq_id_Handle& idh);
+    shared_ptr<SPsgBlobInfo> x_GetBlobInfo(CDataSource* data_source, const string& blob_id);
+    typedef pair<shared_ptr<SPsgBioseqInfo>, shared_ptr<SPsgBlobInfo>> TBioseqAndBlobInfo;
+    TBioseqAndBlobInfo x_GetBioseqAndBlobInfo(CDataSource* data_source, const CSeq_id_Handle& idh);
 
     enum EMainChunkType {
         eNoDelayedMainChunk,
