@@ -128,7 +128,7 @@ CPSGS_AnnotProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
 vector<string>
 CPSGS_AnnotProcessor::x_FilterNames(const vector<string> &  names)
 {
-    vector<string>  valid_annots(names.size());
+    vector<string>  valid_annots;
     for (const auto &  name : names) {
         if (x_IsNameValid(name))
             valid_annots.push_back(name);

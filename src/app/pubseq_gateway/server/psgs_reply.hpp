@@ -63,12 +63,12 @@ public:
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
-        m_Chunks(64),   // arbitrary reservation
         m_ConnectionCanceled(false),
         m_RequestId(0),
         m_LastActivityTimestamp(psg_clock_t::now())
     {
         SetContentType(ePSGS_PSGMime);
+        m_Chunks.reserve(64);
     }
 
     // This constructor is to reuse the infrastructure (PSG chunks, counting
@@ -79,12 +79,12 @@ public:
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
-        m_Chunks(64),   // arbitrary reservation
         m_ConnectionCanceled(false),
         m_RequestId(0),
         m_LastActivityTimestamp(psg_clock_t::now())
     {
         SetContentType(ePSGS_PSGMime);
+        m_Chunks.reserve(64);
     }
 
     ~CPSGS_Reply();
