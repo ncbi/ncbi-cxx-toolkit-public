@@ -501,14 +501,16 @@ bool CValidError_desc::x_ValidateStructuredComment
         if (report) {
             PostErr (eDiag_Info, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix,
                     "Structured Comment lacks prefix and/or suffix", *m_Ctx, desc);
-            is_valid &= ValidateStructuredCommentGeneric(usr, desc, true);
         }
+        is_valid &= ValidateStructuredCommentGeneric(usr, desc, true);
         return is_valid;
     }
-    if (report && !s_IsAllowedPrefix(prefix)) {
-        string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
-        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidPrefix,
-                 report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
+    if (!s_IsAllowedPrefix(prefix)) {
+        if (report) {
+            string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidPrefix,
+                    report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
+        }
         is_valid = false;
     }
 
