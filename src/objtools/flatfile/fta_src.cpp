@@ -569,7 +569,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
     const Char* sub_strain;
     const Char* variety;
     char*       genomename;
-    Char* p;
+    Char*       p;
     char*       q;
     bool        ret;
     Int4        i;
@@ -1904,13 +1904,11 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
     if (*b != NULL) {
         ErrPostEx(SEV_WARNING, ERR_SOURCE_ObsoleteDbXref, "/db_xref type \"%s\" is obsolete.", &val_buf[0]);
         if (NStr::CompareNocase(&val_buf[0], "IFO") == 0) {
-            char* line = new char[25 + StringLen(p + 1)];
-            StringCpy(line, "NBRC:");
-            StringCat(line, p + 1);
+            string line("NBRC:");
+            line.append(p + 1);
             qual->SetVal(line);
-            delete[] line;
 
-            val_buf.assign(line, line + StringLen(line));
+            val_buf.assign(line.begin(), line.end());
             val_buf.push_back(0);
 
             p  = &val_buf[0] + 4;
