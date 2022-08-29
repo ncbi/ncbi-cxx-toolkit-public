@@ -106,7 +106,7 @@ class CValXMLStream;
 extern const set<TTypeInfo> s_known_types;
 string s_GetSeverityLabel(EDiagSev, bool = false);
 
-class CAsnvalThreadState
+class CAsnvalThreadState : public CReadClassMemberHook
 {
 public:
 
@@ -123,10 +123,45 @@ public:
         CAsnvalThreadState& other);
     ~CAsnvalThreadState() {};
 
+    void ReadClassMember(CObjectIStream& in,
+        const CObjectInfo::CMemberIterator& member) override;
+
+
     CRef<CScope> BuildScope();
     unique_ptr<CObjectIStream> OpenFile(TTypeInfo& asn_info);
     void ConstructOutputStreams();
     void DestroyOutputStreams();
+    void PrintValidError(CConstRef<CValidError> errors);
+    void PrintValidErrItem(const CValidErrItem& item);
+    CRef<CValidError> ReportReadFailure(const CException* p_exception);
+
+    CConstRef<CValidError> ReadAny(CRef<CBioseq>& obj);
+    CConstRef<CValidError> ReadAny(CRef<CSeq_entry>& obj);
+    CConstRef<CValidError> ReadAny(CRef<CBioseq_set>& obj);
+    CConstRef<CValidError> ReadAny(CRef<CSeq_feat>& obj);
+    CConstRef<CValidError> ReadAny(CRef<CBioSource>& obj);
+    CConstRef<CValidError> ReadAny(CRef<CPubdesc>& obj);
+    CConstRef<CValidError> ReadAny(CRef<CSeq_submit>& obj);
+
+    void ProcessSSMReleaseFile();
+    void ProcessBSSReleaseFile();
+
+    CConstRef<CValidError> ValidateInput(TTypeInfo asninfo);
+    CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
+    CConstRef<CValidError> ProcessSeqDesc();
+    CConstRef<CValidError> ProcessBioseqset();
+    CConstRef<CValidError> ProcessBioseq();
+    CConstRef<CValidError> ProcessPubdesc();
+    CConstRef<CValidError> ProcessSeqEntry();
+    CConstRef<CValidError> ProcessSeqSubmit();
+    CConstRef<CValidError> ProcessSeqAnnot();
+    CConstRef<CValidError> ProcessSeqFeat();
+    CConstRef<CValidError> ProcessBioSource();
+
+    CConstRef<CValidError> ValidateAsync(
+        const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry);
+    void ValidateOneHugeFile(const string& loader_name, bool use_mt);
+    void ValidateOneFile();
 
     string mFilename;
     unique_ptr<CObjectIStream> mpIstr;
