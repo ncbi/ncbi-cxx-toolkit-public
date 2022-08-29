@@ -377,7 +377,7 @@ CPSGDataLoader::GetSequenceTypeFound(const CSeq_id_Handle& idh)
 
 int CPSGDataLoader::GetSequenceState(const CSeq_id_Handle& idh)
 {
-    return m_Impl->GetSequenceState(idh);
+    return m_Impl->GetSequenceState(GetDataSource(), idh);
 }
 
 
