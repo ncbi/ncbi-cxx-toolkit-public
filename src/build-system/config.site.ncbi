@@ -384,6 +384,8 @@ esac
 
 # : ${ZORBA_PATH=$NCBI/zorba-2.2.0}
 
+: ${ZSTD_PATH=$NCBI/zstd-1.5.2}
+
 for x in `set | grep '^[A-Z0-9_]*_PATH=' | fgrep "_PATH=${NCBI-/nonexistent}/"`
 do
     d=`echo "$x" | cut -d= -f2`
