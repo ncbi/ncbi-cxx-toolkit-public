@@ -881,7 +881,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
         ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped. LOCUS line = \"%s\".", finfo->str);
         if (p != NULL)
             *p = '\n';
-        MemFree(entry);
+        delete entry;
         FreeTokenstatblk(stoken);
         return (NULL);
     }

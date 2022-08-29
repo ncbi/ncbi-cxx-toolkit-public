@@ -2247,7 +2247,7 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
 
         newglp->slibp = GetLowHighFromSeqLoc(cur_loc, length, id);
         if (newglp->slibp == NULL) {
-            MemFree(newglp);
+            delete newglp;
             if (locus_tag != NULL)
                 MemFree(locus_tag);
             continue;
