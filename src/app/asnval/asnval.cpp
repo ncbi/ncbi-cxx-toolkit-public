@@ -138,75 +138,43 @@ public:
     // CReadClassMemberHook override
     void ReadClassMember(CObjectIStream& in,
         const CObjectInfo::CMemberIterator& member) override;
-    static void xValidateOneFile(CAsnvalThreadState&);
 
 private:
 
     void Setup(const CArgs& args);
     void x_AliasLogFile();
 
-    unique_ptr<CObjectIStream> OpenFile(const string& fname, TTypeInfo& asn_info);
-
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
-    static CConstRef<CValidError> xProcessSeqEntry(CAsnvalThreadState&, CSeq_entry& se);
     CConstRef<CValidError> ProcessSeqEntry();
-    static CConstRef<CValidError> xProcessSeqEntry(CAsnvalThreadState&);
     CConstRef<CValidError> ProcessSeqSubmit();
-    static CConstRef<CValidError> xProcessSeqSubmit(CAsnvalThreadState&);
     CConstRef<CValidError> ProcessSeqAnnot();
-    static CConstRef<CValidError> xProcessSeqAnnot(CAsnvalThreadState&);
     CConstRef<CValidError> ProcessSeqFeat();
-    static CConstRef<CValidError> xProcessSeqFeat(CAsnvalThreadState&);
     CConstRef<CValidError> ProcessBioSource();
-    static CConstRef<CValidError> xProcessBioSource(CAsnvalThreadState&);
     CConstRef<CValidError> ProcessPubdesc();
-    static CConstRef<CValidError> xProcessPubdesc(CAsnvalThreadState&);
     CConstRef<CValidError> ProcessBioseqset();
-    static CConstRef<CValidError> xProcessBioseqset(CAsnvalThreadState&);
     CConstRef<CValidError> ProcessBioseq();
-    static CConstRef<CValidError> xProcessBioseq(CAsnvalThreadState&);
     CConstRef<CValidError> ProcessSeqDesc();
-    static CConstRef<CValidError> xProcessSeqDesc(CAsnvalThreadState&);
 
     CConstRef<CValidError> ValidateInput(TTypeInfo asninfo);
-    static CConstRef<CValidError> xValidateInput(CAsnvalThreadState& context, TTypeInfo asninfo);
     void ValidateOneDirectory(string dir_name, bool recurse);
     void ValidateOneFile(const string& fname);
     void ValidateOneHugeFile(const string& loader_name, bool use_mt);
-    static void xValidateOneHugeFile(CAsnvalThreadState& context, const string& loader_name, bool use_mt);
     CConstRef<CValidError> x_ValidateAsync(const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry);
-    static CConstRef<CValidError> xValidateAsync(CAsnvalThreadState& context,
-        const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry);
 
     template<class _Type>
     CConstRef<CValidError> x_ReadAny(CRef<_Type>& obj);
-    template<class _Type>
-    static CConstRef<CValidError> xReadAny(CAsnvalThreadState& context, CRef<_Type>& obj);
 
     void ProcessBSSReleaseFile();
-    static void xProcessBSSReleaseFile(CAsnvalThreadState& context);
     void ProcessSSMReleaseFile();
-    static void xProcessSSMReleaseFile(CAsnvalThreadState& context);
 
     void ConstructOutputStreams();
     void DestroyOutputStreams();
-    //static void xDestroyOutputStreams(CAsnvalThreadState& context);
 
     /// @param p_exception
     ///   Pointer to the exception with more info on the read failure or nullptr if not available
     /// @return
     ///   The error(s) to add to describe the read failure
     CRef<CValidError> ReportReadFailure(const CException* p_exception);
-    static CRef<CValidError> xReportReadFailure(
-        CAsnvalThreadState& context, const CException* p_exception);
-
-    CRef<CScope> BuildScope();
-
-    void PrintValidError(CConstRef<CValidError> errors);
-    static void xPrintValidError(CAsnvalThreadState& context, CConstRef<CValidError> errors);
-
-    void PrintValidErrItem(const CValidErrItem& item);
-    static void xPrintValidErrItem(CAsnvalThreadState& context, const CValidErrItem& item);
 
     CAsnvalThreadState mThreadState;
     unique_ptr<CObjectIStream> m_In;
@@ -228,15 +196,12 @@ public:
 protected:
     void* Main() override
     {
-        //cerr << "CFileReaderThread::Main()\n";
-        CAsnvalApp::xValidateOneFile(mContext);
+        mContext.ValidateOneFile();
         this->mDone = true;
         return nullptr;
     }
     CAsnvalThreadState mContext;
 };
-
-CAsnvalApp* theApp;
 
 
 string s_GetSeverityLabel(EDiagSev sev, bool is_xml)
@@ -443,53 +408,9 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput(TTypeInfo asninfo)
     return eval;
 }
 
-CConstRef<CValidError> CAsnvalApp::xValidateInput(CAsnvalThreadState& context, TTypeInfo asninfo)
-{
-    // Process file based on its content
-    CConstRef<CValidError> eval;
-
-    string asn_type = context.mpIstr->ReadFileHeader();
-    if (asninfo)
-        asn_type = asninfo->GetName();
-
-    if (asn_type == "Seq-submit") {                 // Seq-submit
-        eval = xProcessSeqSubmit(context);
-    }
-    else if (asn_type == "Seq-entry") {           // Seq-entry
-        eval = xProcessSeqEntry(context);
-    }
-    else if (asn_type == "Seq-annot") {           // Seq-annot
-        eval = xProcessSeqAnnot(context);
-    }
-    else if (asn_type == "Seq-feat") {            // Seq-feat
-        eval = xProcessSeqFeat(context);
-    }
-    else if (asn_type == "BioSource") {           // BioSource
-        eval = xProcessBioSource(context);
-    }
-    else if (asn_type == "Pubdesc") {             // Pubdesc
-        eval = xProcessPubdesc(context);
-    }
-    else if (asn_type == "Bioseq-set") {          // Bioseq-set
-        eval = xProcessBioseqset(context);
-    }
-    else if (asn_type == "Bioseq") {              // Bioseq
-        eval = xProcessBioseq(context);
-    }
-    else if (asn_type == "Seqdesc") {             // Seq-desc
-        eval = xProcessSeqDesc(context);
-    }
-    else {
-        NCBI_THROW(CException, eUnknown, "Unhandled type " + asn_type);
-    }
-
-    return eval;
-}
-
-
 CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry)
 {
-    CRef<CScope> scope = BuildScope();
+    CRef<CScope> scope = mThreadState.BuildScope();
     if (!loader_name.empty())
         scope->AddDataLoader(loader_name);
 
@@ -536,59 +457,6 @@ CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CC
     return eval;
 }
 
-CConstRef<CValidError> CAsnvalApp::xValidateAsync(
-    CAsnvalThreadState& context,
-    const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry)
-{
-    CRef<CScope> scope = context.BuildScope();
-    if (!loader_name.empty())
-        scope->AddDataLoader(loader_name);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*context.m_ObjMgr, context.m_pContext);
-
-    CSeq_entry_Handle top_h;
-    if (pEntry) {
-        top_h = scope->AddTopLevelSeqEntry(*pEntry);
-    }
-    else {
-        auto seq_id_h = CSeq_id_Handle::GetHandle(*seqid);
-        if (scope->Exists(seq_id_h)) {
-#ifdef _DEBUG
-            std::cerr << "Taxid for " << scope->GetLabel(seq_id_h) << " : " << scope->GetTaxId(seq_id_h, CScope::fDoNotRecalculate) << "\n";
-#endif
-            auto bioseq_h = scope->GetBioseqHandle(seq_id_h);
-            if (bioseq_h)
-                top_h = bioseq_h.GetTopLevelEntry();
-            if (top_h)
-                pEntry = Ref((CSeq_entry*)(void*)top_h.GetCompleteSeq_entry().GetPointer());
-        }
-    }
-
-    if (top_h) {
-
-        if (context.m_DoCleanup) {
-            CCleanup cleanup;
-            cleanup.SetScope(scope);
-            cleanup.BasicCleanup(*pEntry);
-        }
-
-        if (pSubmitBlock) {
-            auto pSubmit = Ref(new CSeq_submit());
-            pSubmit->SetSub().Assign(*pSubmitBlock);
-            pSubmit->SetData().SetEntrys().push_back(pEntry);
-            eval = validator.Validate(*pSubmit, scope, context.m_Options);
-        }
-        else {
-            eval = validator.Validate(*pEntry, scope, context.m_Options);
-        }
-    }
-
-    scope->ResetDataAndHistory();
-    return eval;
-}
-
 void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 {
     auto& reader = m_pHugeFileProcess->GetReader();
@@ -605,7 +473,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
         catch (const CException& e)
         {
             auto errors = ReportReadFailure(&e);
-            PrintValidError(errors);
+            mThreadState.PrintValidError(errors);
             return;
         }
 
@@ -621,7 +489,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
             {
                 auto errors = Ref(new CValidError);
                 errors->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, e.GetMsg());
-                PrintValidError(errors);
+                mThreadState.PrintValidError(errors);
                 ++mThreadState.m_Reported;
                 continue;
             }
@@ -640,7 +508,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
             CRef<CValidError> pEval;
             hugeFileValidator.ReportGlobalErrors(mThreadState.m_GlobalInfo, pEval);
             if (pEval) {
-                PrintValidError(pEval);
+                mThreadState.PrintValidError(pEval);
             }
         }
 
@@ -684,7 +552,7 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
                 if (!result.valid())
                     break;
                 auto eval = result.get();
-                PrintValidError(eval);
+                mThreadState.PrintValidError(eval);
             }
 
             topids_task.wait();
@@ -700,128 +568,13 @@ void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
 #endif
                 auto seqid_str = seqid->AsFastaString();
                 eval = x_ValidateAsync(loader_name, pSubmitBlock, seqid, {});
-                PrintValidError(eval);
+                mThreadState.PrintValidError(eval);
             }
         }
     }
 }
 
 
-void CAsnvalApp::xValidateOneHugeFile(
-    CAsnvalThreadState& context, const string& loader_name, bool use_mt)
-{
-    auto& reader = context.mpHugeFileProcess->GetReader();
-
-    while (true)
-    {
-        context.m_GlobalInfo.Clear();
-        try
-        {
-            if (!reader.GetNextBlob())
-                break;
-        }
-        catch (const CException& e)
-        {
-            auto errors = xReportReadFailure(context, &e);
-            xPrintValidError(context, errors);
-            return;
-        }
-
-        context.m_NumRecords++;
-
-        try
-        {
-            reader.FlattenGenbankSet();
-        }
-        catch (const edit::CHugeFileException& e)
-        {
-            if (e.GetErrCode() == edit::CHugeFileException::eDuplicateSeqIds)
-            {
-                auto errors = Ref(new CValidError);
-                errors->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, e.GetMsg());
-                xPrintValidError(context, errors);
-                ++context.m_Reported;
-                continue;
-            }
-            throw;
-        }
-
-        auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
-            *context.m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
-
-        CAutoRevoker autorevoker(info);
-        CHugeFileValidator hugeFileValidator(reader, context.m_Options);
-        hugeFileValidator.UpdateValidatorContext(context.m_GlobalInfo, *context.m_pContext);
-
-        if (context.m_pContext->PreprocessHugeFile) {
-            CRef<CValidError> pEval;
-            hugeFileValidator.ReportGlobalErrors(context.m_GlobalInfo, pEval);
-            if (pEval) {
-                xPrintValidError(context, pEval);
-            }
-        }
-
-        if (use_mt)
-        {
-            CMessageQueue<std::future<CConstRef<CValidError>>> val_queue{10};
-            // start a loop in a separate thread
-            auto topids_task = std::async(std::launch::async, [&context, &val_queue, &loader_name, &reader]()
-                {
-                    auto pSubmitBlock = reader.GetSubmitBlock();
-                    for (auto seqid : reader.GetTopIds())
-                    {
-                        auto params = std::async(std::launch::async,
-                            [&context, seqid, &loader_name, pSubmitBlock]() -> CConstRef<CValidError>
-                            {
-                                try
-                                {
-                                    return theApp->x_ValidateAsync(loader_name, pSubmitBlock, seqid, {});
-                                }
-                                catch (const CException& e) {
-                                    string errstr = e.GetMsg();
-                                    errstr = NStr::Replace(errstr, "\n", " * ");
-                                    errstr = NStr::Replace(errstr, " *   ", " * ");
-                                    CRef<CValidError> eval(new CValidError());
-                                    eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, errstr);
-                                    ERR_POST(e);
-                                    ++context.m_Reported;
-                                    return eval;
-                                }
-                            });
-                        // std::future is not copiable, so passing it for move constructor
-                        val_queue.push_back(std::move(params));
-                    }
-
-                    val_queue.push_back({});
-                });
-
-            while (true)
-            {
-                auto result = val_queue.pop_front();
-                if (!result.valid())
-                    break;
-                auto eval = result.get();
-                xPrintValidError(context, eval);
-            }
-
-            topids_task.wait();
-
-        }
-        else {
-            for (auto seqid : reader.GetTopIds())
-            {
-                auto pSubmitBlock = reader.GetSubmitBlock();
-                CConstRef<CValidError> eval;
-#ifdef _DEBUG1
-                cerr << MSerial_AsnText << "Validating: " << seqid->AsFastaString() << "\n";
-#endif
-                auto seqid_str = seqid->AsFastaString();
-                eval = xValidateAsync(context, loader_name, pSubmitBlock, seqid, {});
-                xPrintValidError(context, eval);
-            }
-        }
-    }
-}
 
 void CAsnvalApp::ValidateOneFile(const string& fname)
 {
@@ -831,6 +584,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
         LOG_POST_XX(Corelib_App, 1, fname);
     }
 
+    mThreadState.mFilename = fname;
     mThreadState.m_pContext.reset(new SValidatorContext());
     mThreadState.m_pContext->m_taxon_update = m_remote_updater->GetUpdateFunc();
 
@@ -864,8 +618,10 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     }
 
     TTypeInfo asninfo = nullptr;
-    if (fname.empty())// || true)
-        m_In = OpenFile(fname, asninfo);
+    if (fname.empty()) {// || true)
+        mThreadState.mFilename = fname;
+        m_In = mThreadState.OpenFile(asninfo);
+    }
     else {
         m_pHugeFileProcess.reset(new CHugeFileProcess(new CValidatorHugeAsnReader(mThreadState.m_GlobalInfo)));
         try
@@ -885,14 +641,15 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 m_In = m_pHugeFileProcess->GetReader().MakeObjStream(0);
             }
         } else {
-            m_In = OpenFile(fname, asninfo);
+            mThreadState.mFilename = fname;
+            m_In = mThreadState.OpenFile(asninfo);
         }
 
     }
 
     if (!asninfo)
     {
-        PrintValidError(ReportReadFailure(nullptr));
+        mThreadState.PrintValidError(ReportReadFailure(nullptr));
         if (close_error_stream) {
             DestroyOutputStreams();
         }
@@ -930,7 +687,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                         if (m_In) {
                             CConstRef<CValidError> eval = ValidateInput(asninfo);
                             if (eval)
-                                PrintValidError(eval);
+                                mThreadState.PrintValidError(eval);
 
                             if (!m_In->EndOfData()) { // force to SkipWhiteSpace
                                 try
@@ -942,7 +699,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                                 {
                                     eval = ReportReadFailure(&e);
                                     if (eval) {
-                                        PrintValidError(eval);
+                                        mThreadState.PrintValidError(eval);
                                         doloop = false;
                                     } else
                                         throw;
@@ -977,11 +734,11 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             CRef<CValidError> eval(new CValidError());
             if (NStr::StartsWith(errstr, "duplicate Bioseq id", NStr::eNocase)) {
                 eval->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, errstr);
-                PrintValidError(eval);
+                mThreadState.PrintValidError(eval);
                 // ERR_POST(e);
             } else {
                 eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, errstr);
-                PrintValidError(eval);
+                mThreadState.PrintValidError(eval);
                 ERR_POST(e);
             }
             ++mThreadState.m_Reported;
@@ -993,196 +750,6 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     }
     m_In.reset();
 }
-
-
-void CAsnvalApp::xValidateOneFile(CAsnvalThreadState& context)
-{
-    if (!context.m_Quiet) {
-        LOG_POST_XX(Corelib_App, 1, context.mFilename);
-    }
-
-    unique_ptr<CNcbiOfstream> local_stream;
-    //DebugBreak();
-    bool close_error_stream = false;
-    try {
-        if (!context.m_ValidErrorStream) {
-            string path;
-            if (context.mFilename.empty()) {
-                path = "stdin.val";
-            }
-            else {
-                size_t pos = NStr::Find(context.mFilename, ".", NStr::eNocase, NStr::eReverseSearch);
-                if (pos != NPOS)
-                    path = context.mFilename.substr(0, pos);
-                else
-                    path = context.mFilename;
-
-                path.append(".val");
-            }
-
-            local_stream.reset(new CNcbiOfstream(path));
-            context.m_ValidErrorStream = local_stream.get();
-
-            context.ConstructOutputStreams();
-            close_error_stream = true;
-        }
-    }
-    catch (CException) {
-    }
-    //cerr << "CAsnvalApp::ValidateOneFile() check1 " << context.mFilename << "\n";
-
-    TTypeInfo asninfo = nullptr;
-    //DebugBreak();
-    if (context.mFilename.empty())// || true)
-        context.mpIstr = context.OpenFile(asninfo);
-    else {
-        context.mpHugeFileProcess.reset(new edit::CHugeFileProcess);
-        try
-        {
-            context.mpHugeFileProcess->Open(context.mFilename, &s_known_types);
-            asninfo = context.mpHugeFileProcess->GetFile().RecognizeContent(0);
-        }
-        catch (const CObjReaderParseException&)
-        {
-            context.mpHugeFileProcess.reset();
-        }
-
-        if (asninfo)
-        {
-            if (!context.m_HugeFile || context.m_batch || !edit::CHugeFileProcess::IsSupported(asninfo))
-            {
-                context.mpIstr = context.mpHugeFileProcess->GetReader().MakeObjStream(0);
-            }
-        }
-        else {
-            context.mpIstr = context.OpenFile(asninfo);
-        }
-
-    }
-
-    //cerr << "CAsnvalApp::ValidateOneFile() check2 " << context.mFilename << "\n";
-    if (!asninfo)
-    {
-        xPrintValidError(context, xReportReadFailure(context, nullptr));
-        if (close_error_stream) {
-            context.DestroyOutputStreams();
-        }
-        // NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
-        LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to open invalid ASN.1 file " + context.mFilename);
-    }
-
-    //cerr << "CAsnvalApp::ValidateOneFile() check3 " << context.mFilename << "\n";
-    if (asninfo)
-    {
-        try {
-            if (context.m_batch) {
-                if (asninfo == CBioseq_set::GetTypeInfo()) {
-                    xProcessBSSReleaseFile(context);
-                }
-                else
-                    if (asninfo == CSeq_submit::GetTypeInfo()) {
-                        const auto commandLineOptions = context.m_Options;
-                        context.m_Options |= CValidator::eVal_seqsubmit_parent;
-                        try {
-                            xProcessSSMReleaseFile(context);
-                        }
-                        catch (CException&) {
-                            context.m_Options = commandLineOptions;
-                            throw;
-                        }
-                        context.m_Options = commandLineOptions;
-
-                    }
-                    else {
-                        LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is neither a Seq-submit nor Bioseq-set; do not use -batch to process.");
-                    }
-            }
-            else {
-                size_t num_validated = 0;
-                bool doloop = true;
-                while (doloop) {
-                    CStopWatch sw(CStopWatch::eStart);
-                    try {
-                        if (context.mpIstr) {
-                            CConstRef<CValidError> eval = xValidateInput(context, asninfo);
-                            if (eval)
-                                xPrintValidError(context, eval);
-
-                            if (!context.mpIstr->EndOfData()) { // force to SkipWhiteSpace
-                                try
-                                {
-                                    auto types = context.mpIstr->GuessDataType(s_known_types);
-                                    asninfo = types.empty() ? nullptr : *types.begin();
-                                }
-                                catch (const CException& e)
-                                {
-                                    eval = xReportReadFailure(context, &e);
-                                    if (eval) {
-                                        xPrintValidError(context, eval);
-                                        doloop = false;
-                                    }
-                                    else
-                                        throw;
-                                }
-                            }
-                        }
-                        else {
-                            string loader_name = CDirEntry::ConvertToOSPath(context.mFilename);
-                            bool use_mt = true;
-#ifdef _DEBUG
-                            // multitheading in DEBUG mode is not convinient
-                            use_mt = false;
-#endif
-                            xValidateOneHugeFile(context, loader_name, use_mt);
-                            doloop = false;
-                        }
-
-                        num_validated++;
-                    }
-                    catch (const CEofException&) {
-                        break;
-                    }
-                    catch (const CException& e) {
-                        if (num_validated == 0) {
-                            throw(e);
-                        }
-                        else {
-                            break;
-                        }
-                    }
-                    double elapsed = sw.Elapsed();
-                    if (elapsed > context.m_Longest) {
-                        context.m_Longest = elapsed; 
-                        context.m_LongestId = context.m_CurrentId;
-                    }
-                }
-            }
-        }
-        catch (const CException& e) {
-            string errstr = e.GetMsg();
-            errstr = NStr::Replace(errstr, "\n", " * ");
-            errstr = NStr::Replace(errstr, " *   ", " * ");
-            CRef<CValidError> eval(new CValidError());
-            if (NStr::StartsWith(errstr, "duplicate Bioseq id", NStr::eNocase)) {
-                eval->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, errstr);
-                xPrintValidError(context, eval);
-                // ERR_POST(e);
-            }
-            else {
-                eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, errstr);
-                xPrintValidError(context, eval);
-                ERR_POST(e);
-            }
-            ++context.m_Reported;
-        }
-    }
-    context.m_NumFiles++; 
-    if (close_error_stream) {
-        context.DestroyOutputStreams();
-    }
-    context.mpIstr.reset();
-}
-
 
 //LCOV_EXCL_START
 //unable to exercise with our test framework
@@ -1250,8 +817,6 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
 
 int CAsnvalApp::Run()
 {
-    theApp = this;
-
     const CArgs& args = GetArgs();
     Setup(args);
 
@@ -1356,15 +921,6 @@ int CAsnvalApp::Run()
 }
 
 
-CRef<CScope> CAsnvalApp::BuildScope()
-{
-    CRef<CScope> scope(new CScope(*mThreadState.m_ObjMgr));
-    scope->AddDefaults();
-
-    return scope;
-}
-
-
 void CAsnvalApp::ReadClassMember
 (CObjectIStream& in,
  const CObjectInfo::CMemberIterator& member)
@@ -1383,7 +939,7 @@ void CAsnvalApp::ReadClassMember
 
                 // Validate Seq-entry
                 CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-                CRef<CScope> scope = BuildScope();
+                CRef<CScope> scope = mThreadState.BuildScope();
                 CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
 
                 CBioseq_CI bi(seh);
@@ -1406,7 +962,7 @@ void CAsnvalApp::ReadClassMember
                         CConstRef<CValidError> eval = validator.Validate(sah, mThreadState.m_Options);
                         mThreadState.m_NumRecords++;
                         if ( eval ) {
-                            PrintValidError(eval);
+                            mThreadState.PrintValidError(eval);
                         }
                     }
                 } else {
@@ -1423,7 +979,7 @@ void CAsnvalApp::ReadClassMember
                     //    *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << "\n";
                     //}
                     if ( eval ) {
-                        PrintValidError(eval);
+                        mThreadState.PrintValidError(eval);
                     }
                 }
                 scope->RemoveTopLevelSeqEntry(seh);
@@ -1463,25 +1019,6 @@ void CAsnvalApp::ProcessBSSReleaseFile()
     }
 }
 
-void CAsnvalApp::xProcessBSSReleaseFile(CAsnvalThreadState& context)
-{
-    CRef<CBioseq_set> seqset(new CBioseq_set);
-
-    // Register the Seq-entry hook
-    CObjectTypeInfo set_type = CType<CBioseq_set>();
-    set_type.FindMember("seq-set").SetLocalReadHook(*context.mpIstr, theApp);
-
-    // Read the CBioseq_set, it will call the hook object each time we
-    // encounter a Seq-entry
-    try {
-        *context.mpIstr >> *seqset;
-    }
-    catch (const CException&) {
-        LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a batch Bioseq-set, do not use -a t to process.");
-        ++context.m_Reported;
-    }
-}
-
 
 void CAsnvalApp::ProcessSSMReleaseFile()
 {
@@ -1501,27 +1038,6 @@ void CAsnvalApp::ProcessSSMReleaseFile()
         ++mThreadState.m_Reported;
     }
 }
-
-void CAsnvalApp::xProcessSSMReleaseFile(CAsnvalThreadState& context)
-{
-    CRef<CSeq_submit> seqset(new CSeq_submit);
-
-    // Register the Seq-entry hook
-    CObjectTypeInfo set_type = CType<CSeq_submit>();
-    (*(*(*set_type.FindMember("data")).GetPointedType().FindVariant("entrys")).GetElementType().GetPointedType().FindVariant("set")).FindMember("seq-set").SetLocalReadHook(
-        *context.mpIstr, theApp);
-
-    // Read the CSeq_submit, it will call the hook object each time we
-    // encounter a Seq-entry
-    try {
-        *context.mpIstr >> *seqset;
-    }
-    catch (const CException&) {
-        LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a batch Seq-submit, do not use -a u to process.");
-        ++context.m_Reported;
-    }
-}
-
 
 CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException* p_exception)
 {
@@ -1554,39 +1070,6 @@ CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException* p_exception)
     return errors;
 }
 
-CRef<CValidError> CAsnvalApp::xReportReadFailure(CAsnvalThreadState& context, const CException* p_exception)
-{
-    CRef<CValidError> errors(new CValidError());
-
-    CNcbiOstrstream os;
-    os << "Unable to read invalid ASN.1";
-
-    const CSerialException* p_serial_exception = dynamic_cast<const CSerialException*>(p_exception);
-    if (p_serial_exception) {
-        if (context.mpIstr) {
-            os << ": " << context.mpIstr->GetPosition();
-        }
-        if (p_serial_exception->GetErrCode() == CSerialException::eEOF) {
-            os << ": unexpected end of file";
-        }
-        else {
-            // manually call ReportAll(0) because what() includes a lot of info
-            // that's not of interest to the submitter such as stacktraces and
-            // GetMsg() doesn't include enough info.
-            os << ": " + p_exception->ReportAll(0);
-        }
-    }
-
-    string errstr = CNcbiOstrstreamToString(os);
-    // newlines don't play well with XML
-    errstr = NStr::Replace(errstr, "\n", " * ");
-    errstr = NStr::Replace(errstr, " *   ", " * ");
-
-    errors->AddValidErrItem(eDiag_Critical, eErr_GENERIC_InvalidAsn, errstr);
-    return errors;
-}
-
-
 template<class _Type>
 CConstRef<CValidError> CAsnvalApp::x_ReadAny(CRef<_Type>& obj)
 {
@@ -1599,21 +1082,6 @@ CConstRef<CValidError> CAsnvalApp::x_ReadAny(CRef<_Type>& obj)
     catch (CException& e) {
         ERR_POST(Error << e);
         return ReportReadFailure(&e);
-    }
-}
-
-template<class _Type>
-CConstRef<CValidError> CAsnvalApp::xReadAny(CAsnvalThreadState& context, CRef<_Type>& obj)
-{
-    try {
-        if (!obj)
-            obj.Reset(new _Type);
-        context.mpIstr->Read(obj, _Type::GetTypeInfo(), CObjectIStream::eNoFileHeader);
-        return {};
-    }
-    catch (CException& e) {
-        ERR_POST(Error << e);
-        return xReportReadFailure(context, &e);
     }
 }
 
@@ -1633,22 +1101,6 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioseq()
     return ProcessSeqEntry(*se);
 }
 
-CConstRef<CValidError> CAsnvalApp::xProcessBioseq(CAsnvalThreadState& context)
-{
-    // Get seq-entry to validate
-    CRef<CBioseq> bioseq;
-
-    auto eval = xReadAny(context, bioseq);
-    if (eval)
-        return eval;
-
-    auto se = Ref(new CSeq_entry);
-    se->SetSeq(*bioseq);
-
-    // Validate Seq-entry
-    return xProcessSeqEntry(context, *se);
-}
-
 CConstRef<CValidError> CAsnvalApp::ProcessBioseqset()
 {
     // Get seq-entry to validate
@@ -1664,23 +1116,6 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioseqset()
     // Validate Seq-entry
     return ProcessSeqEntry(*se);
 }
-
-CConstRef<CValidError> CAsnvalApp::xProcessBioseqset(CAsnvalThreadState& context)
-{
-    // Get seq-entry to validate
-    CRef<CBioseq_set> bioseqset;
-
-    auto eval = xReadAny(context, bioseqset);
-    if (eval)
-        return eval;
-
-    auto se = Ref(new CSeq_entry);
-    se->SetSet(*bioseqset);
-
-    // Validate Seq-entry
-    return xProcessSeqEntry(context, *se);
-}
-
 
 CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry()
 {
@@ -1706,35 +1141,12 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry()
     return ProcessSeqEntry(*se);
 }
 
-CConstRef<CValidError> CAsnvalApp::xProcessSeqEntry(CAsnvalThreadState& context)
-{
-    // Get seq-entry to validate
-    CRef<CSeq_entry> se;
-    auto eval = xReadAny(context, se);
-    if (eval)
-        return eval;
-
-#if 0
-    try
-    {
-        return ProcessSeqEntry(*se);
-    }
-    catch (const CObjMgrException& om_ex)
-    {
-        if (om_ex.GetErrCode() == CObjMgrException::eAddDataError)
-            se->ReassignConflictingIds();
-    }
-#endif
-
-    // try again
-    return xProcessSeqEntry(context, *se);
-}
 
 CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
 {
     // Validate Seq-entry
     CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-    CRef<CScope> scope = BuildScope();
+    CRef<CScope> scope = mThreadState.BuildScope();
     if (mThreadState.m_DoCleanup) {
         m_Cleanup.SetScope(scope);
         m_Cleanup.BasicCleanup(se);
@@ -1755,48 +1167,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
             CConstRef<CValidError> eval = validator.Validate(sah, mThreadState.m_Options);
             mThreadState.m_NumRecords++;
             if ( eval ) {
-                PrintValidError(eval);
+                mThreadState.PrintValidError(eval);
             }
         }
         return CConstRef<CValidError>();
     }
     CConstRef<CValidError> eval = validator.Validate(se, scope, mThreadState.m_Options);
     mThreadState.m_NumRecords++;
-    return eval;
-}
-
-CConstRef<CValidError> CAsnvalApp::xProcessSeqEntry(CAsnvalThreadState& context, CSeq_entry& se)
-{
-    // Validate Seq-entry
-    CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = context.BuildScope();
-    if (context.m_DoCleanup) {
-        context.m_Cleanup.SetScope(scope);
-        context.m_Cleanup.BasicCleanup(se);
-    }
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
-    CBioseq_CI bi(seh);
-    if (bi) {
-        context.m_CurrentId = "";
-        bi->GetId().front().GetSeqId()->GetLabel(&context.m_CurrentId);
-        if (!context.m_Quiet) {
-            LOG_POST_XX(Corelib_App, 1, context.m_CurrentId);
-        }
-    }
-
-    if (context.m_OnlyAnnots) {
-        for (CSeq_annot_CI ni(seh); ni; ++ni) {
-            const CSeq_annot_Handle& sah = *ni;
-            CConstRef<CValidError> eval = validator.Validate(sah, context.m_Options);
-            context.m_NumRecords++;
-            if (eval) {
-                xPrintValidError(context, eval);
-            }
-        }
-        return CConstRef<CValidError>();
-    }
-    CConstRef<CValidError> eval = validator.Validate(se, scope, context.m_Options);
-    context.m_NumRecords++;
     return eval;
 }
 
@@ -1807,7 +1184,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat()
     if (eval)
         return eval;
 
-    CRef<CScope> scope = BuildScope();
+    CRef<CScope> scope = mThreadState.BuildScope();
     if (mThreadState.m_DoCleanup) {
         m_Cleanup.SetScope(scope);
         m_Cleanup.BasicCleanup(*feat);
@@ -1819,25 +1196,6 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat()
     return eval;
 }
 
-CConstRef<CValidError> CAsnvalApp::xProcessSeqFeat(CAsnvalThreadState& context)
-{
-    CRef<CSeq_feat> feat;
-    auto eval = xReadAny(context, feat);
-    if (eval)
-        return eval;
-
-    CRef<CScope> scope = context.BuildScope();
-    if (context.m_DoCleanup) {
-        context.m_Cleanup.SetScope(scope);
-        context.m_Cleanup.BasicCleanup(*feat);
-    }
-
-    CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    eval = validator.Validate(*feat, scope, context.m_Options);
-    context.m_NumRecords++;
-    return eval;
-}
-
 CConstRef<CValidError> CAsnvalApp::ProcessBioSource()
 {
     CRef<CBioSource> src;
@@ -1846,23 +1204,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioSource()
         return eval;
 
     CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-    CRef<CScope> scope = BuildScope();
+    CRef<CScope> scope = mThreadState.BuildScope();
     eval = validator.Validate(*src, scope, mThreadState.m_Options);
     mThreadState.m_NumRecords++;
-    return eval;
-}
-
-CConstRef<CValidError> CAsnvalApp::xProcessBioSource(CAsnvalThreadState& context)
-{
-    CRef<CBioSource> src;
-    auto eval = xReadAny(context, src);
-    if (eval)
-        return eval;
-
-    CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = context.BuildScope();
-    eval = validator.Validate(*src, scope, context.m_Options);
-    context.m_NumRecords++;
     return eval;
 }
 
@@ -1874,23 +1218,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessPubdesc()
         return eval;
 
     CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-    CRef<CScope> scope = BuildScope();
+    CRef<CScope> scope = mThreadState.BuildScope();
     eval = validator.Validate(*pd, scope, mThreadState.m_Options);
     mThreadState.m_NumRecords++;
-    return eval;
-}
-
-CConstRef<CValidError> CAsnvalApp::xProcessPubdesc(CAsnvalThreadState& context)
-{
-    CRef<CPubdesc> pd;
-    auto eval = xReadAny(context, pd);
-    if (eval)
-        return eval;
-
-    CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = context.BuildScope();
-    eval = validator.Validate(*pd, scope, context.m_Options);
-    context.m_NumRecords++;
     return eval;
 }
 
@@ -1904,7 +1234,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit()
 
     // Validate Seq-submit
     CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-    CRef<CScope> scope = BuildScope();
+    CRef<CScope> scope = mThreadState.BuildScope();
     if (ss->GetData().IsEntrys()) {
         NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, se, ss->SetData().SetEntrys()) {
             scope->AddTopLevelSeqEntry(**se);
@@ -1917,33 +1247,6 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit()
 
     eval = validator.Validate(*ss, scope, mThreadState.m_Options);
     mThreadState.m_NumRecords++;
-    return eval;
-}
-
-
-CConstRef<CValidError> CAsnvalApp::xProcessSeqSubmit(CAsnvalThreadState& context)
-{
-
-    CRef<CSeq_submit> ss;
-    auto eval = xReadAny(context, ss);
-    if (eval)
-        return eval;
-
-    // Validate Seq-submit
-    CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = context.BuildScope();
-    if (ss->GetData().IsEntrys()) {
-        NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, se, ss->SetData().SetEntrys()) {
-            scope->AddTopLevelSeqEntry(**se);
-        }
-    }
-    if (context.m_DoCleanup) {
-        context.m_Cleanup.SetScope(scope);
-        context.m_Cleanup.BasicCleanup(*ss);
-    }
-
-    eval = validator.Validate(*ss, scope, context.m_Options);
-    context.m_NumRecords++;
     return eval;
 }
 
@@ -1963,7 +1266,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot()
 
     // Validate Seq-annot
     CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-    CRef<CScope> scope = BuildScope();
+    CRef<CScope> scope = mThreadState.BuildScope();
     if (mThreadState.m_DoCleanup) {
         m_Cleanup.SetScope(scope);
         m_Cleanup.BasicCleanup(*sa);
@@ -1971,32 +1274,6 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot()
     CSeq_annot_Handle sah = scope->AddSeq_annot(*sa);
     CConstRef<CValidError> eval = validator.Validate(sah, mThreadState.m_Options);
     mThreadState.m_NumRecords++;
-    return eval;
-}
-
-CConstRef<CValidError> CAsnvalApp::xProcessSeqAnnot(CAsnvalThreadState& context)
-{
-    CRef<CSeq_annot> sa(new CSeq_annot);
-
-    // Get seq-annot to validate
-    try {
-        context.mpIstr->Read(ObjectInfo(*sa), CObjectIStream::eNoFileHeader);
-    }
-    catch (CException& e) {
-        ERR_POST(Error << e);
-        return xReportReadFailure(context, &e);
-    }
-
-    // Validate Seq-annot
-    CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = context.BuildScope();
-    if (context.m_DoCleanup) {
-        context.m_Cleanup.SetScope(scope);
-        context.m_Cleanup.BasicCleanup(*sa);
-    }
-    CSeq_annot_Handle sah = scope->AddSeq_annot(*sa);
-    CConstRef<CValidError> eval = validator.Validate(sah, context.m_Options);
-    context.m_NumRecords++;
     return eval;
 }
 
@@ -2039,35 +1316,11 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqDesc()
     CRef<CSeq_entry> ctx = s_BuildGoodSeq();
 
     CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-    CRef<CScope> scope = BuildScope();
+    CRef<CScope> scope = mThreadState.BuildScope();
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*ctx);
 
     CConstRef<CValidError> eval = validator.Validate(*sd, *ctx);
     mThreadState.m_NumRecords++;
-    return eval;
-}
-
-
-CConstRef<CValidError> CAsnvalApp::xProcessSeqDesc(CAsnvalThreadState& context)
-{
-    CRef<CSeqdesc> sd(new CSeqdesc);
-
-    try {
-        context.mpIstr->Read(ObjectInfo(*sd), CObjectIStream::eNoFileHeader);
-    }
-    catch (CException& e) {
-        ERR_POST(Error << e);
-        return xReportReadFailure(context, &e);
-    }
-
-    CRef<CSeq_entry> ctx = s_BuildGoodSeq();
-
-    CValidator validator(*context.m_ObjMgr, context.m_pContext);
-    CRef<CScope> scope = context.BuildScope();
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*ctx);
-
-    CConstRef<CValidError> eval = validator.Validate(*sd, *ctx);
-    context.m_NumRecords++;
     return eval;
 }
 
@@ -2097,220 +1350,6 @@ void CAsnvalApp::Setup(const CArgs& args)
 
 }
 
-
-unique_ptr<CObjectIStream> CAsnvalApp::OpenFile(const string& fname, TTypeInfo& asn_info)
-{
-    ENcbiOwnership own = eNoOwnership;
-    unique_ptr<CNcbiIstream> hold_stream;
-    CNcbiIstream* InputStream = &NcbiCin;
-
-    if (!fname.empty()) {
-        own = eTakeOwnership;
-        hold_stream = make_unique<CNcbiIfstream>(fname, ios::binary);
-        InputStream = hold_stream.get();
-    }
-
-    CCompressStream::EMethod method;
-
-    CFormatGuessEx FG(*InputStream);
-    CFileContentInfo contentInfo;
-    FG.SetRecognizedGenbankTypes(s_known_types);
-    CFormatGuess::EFormat format = FG.GuessFormatAndContent(contentInfo);
-    switch (format)
-    {
-        case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
-        case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
-        case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
-        default:                   method = CCompressStream::eNone;      break;
-    }
-    if (method != CCompressStream::eNone)
-    {
-        CDecompressIStream* decompress(new CDecompressIStream(*InputStream, method, CCompressStream::fDefault, own));
-        hold_stream.release();
-        hold_stream.reset(decompress);
-        InputStream = hold_stream.get();
-        own = eTakeOwnership;
-        CFormatGuessEx fg(*InputStream);
-        format = fg.GuessFormatAndContent(contentInfo);
-    }
-
-    unique_ptr<CObjectIStream> objectStream;
-    switch (format)
-    {
-        case CFormatGuess::eBinaryASN:
-        case CFormatGuess::eTextASN:
-            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream, own));
-            hold_stream.release();
-            asn_info = contentInfo.mInfoGenbank.mTypeInfo;
-            break;
-        default:
-            break;
-    }
-    return objectStream;
-}
-
-
-void CAsnvalApp::PrintValidError
-(CConstRef<CValidError> errors)
-{
-    if ( errors.Empty() || errors->TotalSize() == 0 ) {
-        return;
-    }
-
-    for ( CValidError_CI vit(*errors); vit; ++vit) {
-        if (vit->GetSeverity() >= mThreadState.m_ReportLevel) {
-            ++mThreadState.m_Reported;
-        }
-        if ( vit->GetSeverity() < mThreadState.m_LowCutoff || vit->GetSeverity() > mThreadState.m_HighCutoff) {
-            continue;
-        }
-        if (!mThreadState.m_OnlyError.empty() && !(NStr::EqualNocase(mThreadState.m_OnlyError, vit->GetErrCode()))) {
-            continue;
-        }
-        PrintValidErrItem(*vit);
-    }
-    //m_ValidErrorStream->flush();
-}
-
-
-void CAsnvalApp::xPrintValidError(
-    CAsnvalThreadState& context,
-    CConstRef<CValidError> errors)
-{
-    if (errors.Empty() || errors->TotalSize() == 0) {
-        return;
-    }
-
-    for (CValidError_CI vit(*errors); vit; ++vit) {
-        if (vit->GetSeverity() >= context.m_ReportLevel) {
-            ++context.m_Reported;
-        }
-        if (vit->GetSeverity() < context.m_LowCutoff || vit->GetSeverity() > context.m_HighCutoff) {
-            continue;
-        }
-        if (!context.m_OnlyError.empty() && !(NStr::EqualNocase(context.m_OnlyError, vit->GetErrCode()))) {
-            continue;
-        }
-        xPrintValidErrItem(context, *vit);
-    }
-    //m_ValidErrorStream->flush();
-}
-
-
-void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
-{
-    CNcbiOstream& os = *mThreadState.m_ValidErrorStream;
-    switch (mThreadState.m_verbosity) {
-    case CAsnvalThreadState::eVerbosity_Normal:
-        os << s_GetSeverityLabel(item.GetSeverity())
-            << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() << "] "
-            << item.GetMsg();
-        if (item.IsSetObjDesc()) {
-            os << " " << item.GetObjDesc();
-        }
-        os << "\n";
-        break;
-    case CAsnvalThreadState::eVerbosity_Spaced:
-    {
-        string spacer = "                    ";
-        string msg = item.GetAccnver() + spacer;
-        msg = msg.substr(0, 15);
-        msg += s_GetSeverityLabel(item.GetSeverity());
-        msg += spacer;
-        msg = msg.substr(0, 30);
-        msg += item.GetErrGroup() + "_" + item.GetErrCode();
-        os << msg << "\n";
-    }
-    break;
-    case CAsnvalThreadState::eVerbosity_Tabbed:
-        os << item.GetAccnver() << "\t"
-            << s_GetSeverityLabel(item.GetSeverity()) << "\t"
-            << item.GetErrGroup() << "_" << item.GetErrCode() << "\n";
-        break;
-#ifdef USE_XMLWRAPP_LIBS
-    case CAsnvalThreadState::eVerbosity_XML:
-    {
-        m_ostr_xml->Print(item);
-    }
-#else
-    case eVerbosity_XML:
-    {
-        string msg = NStr::XmlEncode(item.GetMsg());
-        if (item.IsSetFeatureId()) {
-            os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                << "\" seq-id=\"" << item.GetAccnver()
-                << "\" feat-id=\"" << item.GetFeatureId()
-                << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
-                << "\">" << msg << "</message>" << "\n";
-        } else {
-            os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                << "\" seq-id=\"" << item.GetAccnver()
-                << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
-                << "\">" << msg << "</message>" << "\n";
-        }
-    }
-#endif
-    break;
-    }
-}
-
-void CAsnvalApp::xPrintValidErrItem(CAsnvalThreadState& context, const CValidErrItem& item)
-{
-    CNcbiOstream& os = *context.m_ValidErrorStream;
-    switch (context.m_verbosity) {
-    case CAsnvalThreadState::eVerbosity_Normal:
-        os << s_GetSeverityLabel(item.GetSeverity())
-            << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() << "] "
-            << item.GetMsg();
-        if (item.IsSetObjDesc()) {
-            os << " " << item.GetObjDesc();
-        }
-        os << "\n";
-        break;
-    case CAsnvalThreadState::eVerbosity_Spaced:
-    {
-        string spacer = "                    ";
-        string msg = item.GetAccnver() + spacer;
-        msg = msg.substr(0, 15);
-        msg += s_GetSeverityLabel(item.GetSeverity());
-        msg += spacer;
-        msg = msg.substr(0, 30);
-        msg += item.GetErrGroup() + "_" + item.GetErrCode();
-        os << msg << "\n";
-    }
-    break;
-    case CAsnvalThreadState::eVerbosity_Tabbed:
-        os << item.GetAccnver() << "\t"
-            << s_GetSeverityLabel(item.GetSeverity()) << "\t"
-            << item.GetErrGroup() << "_" << item.GetErrCode() << "\n";
-        break;
-#ifdef USE_XMLWRAPP_LIBS
-    case CAsnvalThreadState::eVerbosity_XML:
-    {
-        context.m_ostr_xml->Print(item);
-    }
-#else
-    case eVerbosity_XML:
-    {
-        string msg = NStr::XmlEncode(item.GetMsg());
-        if (item.IsSetFeatureId()) {
-            os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                << "\" seq-id=\"" << item.GetAccnver()
-                << "\" feat-id=\"" << item.GetFeatureId()
-                << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
-                << "\">" << msg << "</message>" << "\n";
-        }
-        else {
-            os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                << "\" seq-id=\"" << item.GetAccnver()
-                << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
-                << "\">" << msg << "</message>" << "\n";
-        }
-    }
-#endif
-    break;
-    }
-}
 
 
 void CValXMLStream::Print(const CValidErrItem& item)
