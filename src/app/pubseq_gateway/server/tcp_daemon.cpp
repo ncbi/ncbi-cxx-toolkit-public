@@ -520,6 +520,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     }
 
     uv_tcp_nodelay(tcp, 1);
+    uv_tcp_keepalive(tcp, 1, 120);
 
     tcp->data = this;
     m_connected_list.splice(m_connected_list.begin(), m_free_list, it);
