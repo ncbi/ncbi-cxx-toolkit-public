@@ -373,6 +373,9 @@ void CAsnvalThreadState::DestroyOutputStreams()
 void CAsnvalThreadState::ConstructOutputStreams()
 //  ============================================================================
 {
+    if (!m_ValidErrorStream  ||  m_verbosity != CAsnvalThreadState::eVerbosity_XML) {
+        return;
+    }
 #ifdef USE_XMLWRAPP_LIBS
     m_ostr_xml.reset(new CValXMLStream(*m_ValidErrorStream, eNoOwnership));
     m_ostr_xml->SetEncoding(eEncoding_UTF8);
