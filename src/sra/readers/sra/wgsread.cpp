@@ -754,7 +754,7 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_HasNoDefaultGnlId(false),
       m_HasCommonTaxId(false),
       m_FeatLocIdType(eFeatLocIdUninitialized),
-      m_ProjectGBState(0),
+      m_ProjectGBState(NCBI_gb_state_eWGSGenBankLive),
       m_SeqIdType(CSeq_id::e_not_set),
       m_CommonTaxId(ZERO_TAX_ID)
 {
@@ -3475,7 +3475,7 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
         return NCBI_gb_state_eWGSGenBankReplaced;
     }
     CVDBMgr::CRequestContextUpdater ctx_updater;
-    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
+    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): m_Db->GetProjectGBState();
 }
 
 
@@ -5268,7 +5268,7 @@ NCBI_gb_state CWGSScaffoldIterator::GetGBState(void) const
     x_CheckValid("CWGSScaffoldIterator::GetGBState");
 
     CVDBMgr::CRequestContextUpdater ctx_updater;
-    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
+    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): m_Db->GetProjectGBState();
 }
 
 
@@ -6088,7 +6088,7 @@ NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
     x_CheckValid("CWGSProteinIterator::GetGBState");
     x_Cur();
     CVDBMgr::CRequestContextUpdater ctx_updater;
-    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
+    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): m_Db->GetProjectGBState();
 }
 
 
