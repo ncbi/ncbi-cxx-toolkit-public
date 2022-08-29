@@ -502,7 +502,7 @@ bool CValidError_desc::x_ValidateStructuredComment
             PostErr (eDiag_Info, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix,
                     "Structured Comment lacks prefix and/or suffix", *m_Ctx, desc);
         }
-        is_valid &= ValidateStructuredCommentGeneric(usr, desc, true);
+        is_valid &= ValidateStructuredCommentGeneric(usr, desc, report);
         return is_valid;
     }
     if (!s_IsAllowedPrefix(prefix)) {
@@ -534,7 +534,7 @@ bool CValidError_desc::x_ValidateStructuredComment
                     stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
                     is_valid = ValidateStructuredComment (tmp, desc, rule, report);
                 }
-            } else {
+            } else if (report) {
                 // no rule for this prefix
                 ValidateStructuredCommentGeneric(usr, desc, true);
             }
