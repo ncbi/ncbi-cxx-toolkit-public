@@ -50,8 +50,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 USING_SCOPE(edit);
 
-CGenBankAsyncWriter::CGenBankAsyncWriter(CObjectOStream* o_stream)
-    : m_ostream{o_stream} {}
+CGenBankAsyncWriter::CGenBankAsyncWriter(CObjectOStream* o_stream, 
+        EDuplicateIdPolicy policy)
+    : m_ostream{o_stream}, 
+      m_DuplicateIdPolicy{policy} {}
 
 
 CGenBankAsyncWriter::~CGenBankAsyncWriter() {}
@@ -193,25 +195,35 @@ void CGenBankAsyncWriter::x_write(CConstRef<CSerialObject> topobject, TPullNextF
         bioseq_level--;
     });
 
+
+    if (m_DuplicateIdPolicy == eIgnore) { 
+        m_ostream->WriteObject(topobject, topobject->GetThisTypeInfo());
+        return;
+    }
+
     
     TIdSet processedIds, duplicateIds;
     {
         SetLocalWriteHook(CObjectTypeInfo(CType<CBioseq>()).FindMember("id"), 
                 *m_ostream,
-                [&processedIds, &duplicateIds](CObjectOStream& out, const CConstObjectInfoMI& member)
+                [&processedIds, &duplicateIds, this](CObjectOStream& out, const CConstObjectInfoMI& member)
                 {
                     out.WriteClassMember(member);
                     const auto& container = *CType<CBioseq::TId>::GetUnchecked(*member);
                     for (auto pId : container) {
                         if (!processedIds.insert(pId).second) {
-                            duplicateIds.insert(pId);
+                            if (m_DuplicateIdPolicy == eThrowImmediately) {
+                                s_ReportDuplicateIds({pId});
+                            }
+                            else {
+                                duplicateIds.insert(pId);
+                            }
                         }
                     }
                 });
     }
 
     m_ostream->WriteObject(topobject, topobject->GetThisTypeInfo());
-
     s_ReportDuplicateIds(duplicateIds);
 }
 
