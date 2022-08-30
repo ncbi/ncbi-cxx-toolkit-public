@@ -303,8 +303,8 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     m_OSGConnectionPool = new psg::osg::COSGConnectionPool();
     m_OSGConnectionPool->AppParseArgs(args);
-    m_OSGConnectionPool->LoadConfig(registry);
     m_OSGConnectionPool->SetLogging(GetDiagPostLevel());
+    m_OSGConnectionPool->LoadConfig(registry);
 
     m_OSGProcessorsEnabled = registry.GetBool(
             "OSG_PROCESSOR", "enabled",
