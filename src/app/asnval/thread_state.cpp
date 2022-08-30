@@ -514,21 +514,6 @@ CRef<CValidError> CAsnvalThreadState::ReportReadFailure(const CException* p_exce
 }
 
 
-/*template<class _Type>
-CConstRef<CValidError> CAsnvalThreadState::ReadAny(CRef<_Type>& obj)
-{
-    try {
-        if (!obj)
-            obj.Reset(new _Type);
-        mpIstr->Read(obj, _Type::GetTypeInfo(), CObjectIStream::eNoFileHeader);
-        return {};
-    }
-    catch (CException& e) {
-        ERR_POST(Error << e);
-        return ReportReadFailure(&e);
-    }
-}*/
-
 CConstRef<CValidError> CAsnvalThreadState::ReadAny(CRef<CBioseq>& obj)
 {
     try {
@@ -1240,14 +1225,6 @@ void CAsnvalThreadState::ValidateOneFile()
                     }
                     catch (const CEofException&) {
                         break;
-                    }
-                    catch (const CException& e) {
-                        if (num_validated == 0) {
-                            throw(e);
-                        }
-                        else {
-                            break;
-                        }
                     }
                     double elapsed = sw.Elapsed();
                     if (elapsed > m_Longest) {
