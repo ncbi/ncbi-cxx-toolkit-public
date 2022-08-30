@@ -160,6 +160,7 @@ protected:
 
     void x_OpenConnection(COSGConnection& conn);
     TSvrRef x_GetServer();
+    void x_AcceptFeedback(TSvrRef server, int feedback);
     
 private:
     string m_ServiceName;
