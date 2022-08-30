@@ -60,8 +60,11 @@ public:
         operator value_type& () {
             return m_data;
         }
-        operator const value_type& () const {
+        value_type& operator*() {
             return m_data;
+        }
+        value_type* operator->() {
+            return &m_data;
         }
     };
 
@@ -132,6 +135,10 @@ public:
         SetReserved(_reserved);
     }
 
+    ~TResourcePool() {
+        Purge();
+    }
+
     // init and deinit will be called when a resource is allocated or returned back
     // constructors and destructors will be called only when memory is allocated/deallocated
     // init/deinit must not throw exceptions
@@ -143,8 +150,10 @@ public:
     // TUniqPointer has its own deleter that will call protected Deallocate method
     TUniqPointer Allocate() {
         auto ptr = m_stack.pop_front();
-        if (ptr == nullptr)
+        if (ptr == nullptr) {
+            m_size++;
             ptr = new TNode;
+        }
 
         if (ptr && m_init)
             m_init(*ptr); // must be able to perform casting to value_type&
@@ -155,6 +164,20 @@ public:
     // Specify how many resources should be left in the backyard
     void SetReserved(size_t _N) { // atomic operation
         m_reserved_size = _N;
+    }
+
+    size_t size() const { return m_size; }
+
+    void Purge() { // purge all reserved data
+        while (m_size) {
+            TNode* ptr = m_stack.pop_front();
+            if (ptr) {
+                if (m_deinit)
+                    m_deinit(*ptr);  // must be able to perform casting to value_type&
+                delete ptr;
+                m_size--;
+            }
+        }
     }
 
 protected:
@@ -175,16 +198,17 @@ protected:
             if (m_stack.size() >= m_reserved_size) {
                 // not enough space
                 delete ptr;
+                m_size--;
             } else {
                 m_stack.push_front(ptr);
             }
         }
     }
 
-    TStack    m_stack;
-    init_func m_init;
-    init_func m_deinit;
-    std::atomic<size_t> m_reserved_size = std::numeric_limits<size_t>::max();
+    TStack              m_stack;
+    init_func           m_init, m_deinit;
+    std::atomic<size_t> m_size{0};
+    std::atomic<size_t> m_reserved_size{std::numeric_limits<size_t>::max()};
 };
 
 }; // namespace ncbi
