@@ -1622,7 +1622,7 @@ static void s_InitDestination(const char* logfile_path)
 #endif    
 
     /* Reopen all files every 1 minute */
-    
+
     time(&now);
     if (now - sx_Info->last_reopen_time < 60) {
         return;
@@ -1649,6 +1649,7 @@ static void s_InitDestination(const char* logfile_path)
     s_CloseLogFiles(CLOSE_FOR_REOPEN);
     
     if (sx_Info->destination == eNcbiLog_Default  ||
+        sx_Info->destination == eNcbiLog_File     ||
         sx_Info->destination == eNcbiLog_Stdlog   ||
         sx_Info->destination == eNcbiLog_Cwd) {
 
@@ -1660,6 +1661,11 @@ static void s_InitDestination(const char* logfile_path)
             /* Error: failed to reopen */
             s_CloseLogFiles(CLOSE_CLEANUP);
             /* Will try again from scratch (below), can lead to change the logging location */
+        }
+        /* Reopening failed. For a local "file" logging this is an error -- disable logging */
+        if (sx_Info->destination == eNcbiLog_File) {
+            sx_Info->destination = eNcbiLog_Disable;
+            return;
         }
 
         /* Try default log location */
@@ -2007,7 +2013,12 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
     if (sx_Info->destination == eNcbiLog_Disable) {
         return;
     }
+    /* Reopen logging files, if necessary */
     s_InitDestination(NULL);
+    /* Destination can be disabled on reopening, so check again */
+    if (sx_Info->destination == eNcbiLog_Disable) {
+        return;
+    }
 
     switch (diag) {
         case eDiag_Trace:
@@ -3771,7 +3782,13 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
         MT_UNLOCK;
         return;
     }
+    /* Reopen logging files, if necessary */
     s_InitDestination(NULL);
+    /* Destination can be disabled on reopening, so check again */
+    if (sx_Info->destination == eNcbiLog_Disable) {
+        MT_UNLOCK;
+        return;
+    }
     f = sx_Info->file_log;
 
     switch (sx_Info->destination) {
