@@ -581,6 +581,9 @@ CDBConnectionFactory::DispatchServerName(
             }
 
             if (need_exclude) {
+                if (balancer.NotEmpty()) {
+                    balancer->LocallyPenalize(ctx.last_tried);
+                }
                 // Server might be temporarily unavailable ...
                 // Check conn_status ...
                 if (ctx.conn_status == IConnValidator::eTempInvalidConn) {
