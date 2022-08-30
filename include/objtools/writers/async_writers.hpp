@@ -60,7 +60,7 @@ struct NCBI_XOBJWRITE_EXPORT TAsyncToken
 
 
 template<typename _token>
-class NCBI_XOBJWRITE_EXPORT TAsyncPipeline
+class TAsyncPipeline
 {
 public:
     using TToken  = _token;
@@ -158,7 +158,13 @@ public:
     using _MyBase::TPullNextFunction;
     using _MyBase::TToken;
 
-    CGenBankAsyncWriter(CObjectOStream* o_stream);
+    enum EDuplicateIdPolicy {
+        eIgnore,
+        eThrowImmediately,
+        eReportAll
+    };
+
+    CGenBankAsyncWriter(CObjectOStream* o_stream, EDuplicateIdPolicy policy=eReportAll);
     virtual ~CGenBankAsyncWriter();
 
     void Write(CConstRef<CSerialObject> topobject);
@@ -183,6 +189,7 @@ protected:
 
 private:
     CObjectOStream* m_ostream = nullptr;
+    EDuplicateIdPolicy m_DuplicateIdPolicy;
 };
 
 
