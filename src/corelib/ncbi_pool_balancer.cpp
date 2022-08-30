@@ -109,6 +109,23 @@ CPoolBalancer::CPoolBalancer(const string& service_name,
 }
 
 
+void CPoolBalancer::LocallyPenalize(TSvrRef server)
+{
+    if (server.Empty()) {
+        return;
+    }
+    CEndpointKey key(server->GetHost(), server->GetPort());
+    auto it = m_Endpoints.find(key);
+    if (it == m_Endpoints.end()) {
+        return;
+    }
+    m_Rankings.erase(m_Rankings.find(it->second.effective_ranking));
+    ++it->second.penalty_level;
+    it->second.effective_ranking *= numeric_limits<double>::epsilon();
+    m_Rankings.insert(it->second.effective_ranking);
+}
+
+
 void CPoolBalancer::x_InitFromCounts(const TCounts& counts)
 {
     if (m_TotalCount != 0) {
@@ -294,11 +311,6 @@ TSvrRef CPoolBalancer::x_GetServer(const void* params, IBalanceable** conn)
             x_Discard(params, to_discard);
         }
     }
-    // Penalize in case we have to retry
-    m_Rankings.erase(m_Rankings.find(options[i]->second.effective_ranking));
-    ++options[i]->second.penalty_level;
-    options[i]->second.effective_ranking *= numeric_limits<double>::epsilon();
-    m_Rankings.insert(options[i]->second.effective_ranking);
     return TSvrRef(&*options[i]->second.ref);
 }
 
