@@ -40,80 +40,91 @@
 BEGIN_NCBI_SCOPE;
 BEGIN_NAMESPACE(objects);
 
+template<typename _T, class _ParentDeleter>
+class TDeleteWhenOwn
+{
+public:
+    // no assignments from _ParentDeleter possible
+    // all should be performed within TReferenceOrOwnership
+    void operator()(_T* ptr) const
+    {
+        if (m_need_delete)
+            m_parent(ptr);
+    }
+    _ParentDeleter m_parent;
+    bool m_need_delete = true;
+};
+
+template<typename _T, class _Deleter = typename std::unique_ptr<_T>::deleter_type >
+class TReferenceOrOwnership: public std::unique_ptr<_T, TDeleteWhenOwn<_T, _Deleter> >
+{
+public:
+    using _MyBase = std::unique_ptr<_T, TDeleteWhenOwn<_T, _Deleter> >;
+    using pointer      = typename _MyBase::pointer;
+    using element_type = typename _MyBase::element_type;
+    using deleter_type = _Deleter;
+
+    TReferenceOrOwnership() = default;
+
+    void reset(pointer _other = pointer())
+    {
+        _MyBase::reset(_other);
+        _MyBase::get_deleter().m_need_delete = false;
+    }
+
+    template<typename _Up, typename _Ep>
+    TReferenceOrOwnership& operator=(std::unique_ptr<_Up, _Ep>&& _o)
+    {
+        _MyBase::reset(_o.release());
+        _MyBase::get_deleter().m_parent = std::forward<_Ep>(_o.get_deleter());
+        _MyBase::get_deleter().m_need_delete = true;
+        return *this;
+    }
+};
+
 // _Enum options not need to be sequential numbers
 template<class _Stream, class _Enum, _Enum..._options>
 class TFileSet
 {
 public:
-    using enum_type    = _Enum;
-    using stream_type  = _Stream;
-    using base_stream  = std::ostream;
-
     static constexpr size_t enum_size = sizeof...(_options);
+
+    using enum_type     = _Enum;
+    using stream_type   = _Stream;
+    using base_stream   = std::ostream;
+    using TStream       = TReferenceOrOwnership<stream_type>;
+    using streams_array = std::array<TStream, enum_size>;
+
     static constexpr std::array<enum_type, enum_size> sm_enum_mapping = {{_options...}};
-
-    using streams_array     = std::array<stream_type, enum_size>;
-    using streams_ptr_array = std::array<base_stream*, enum_size>;
-
-    TFileSet() = default;
-    TFileSet(const streams_ptr_array& ptrs): m_streams_ptrs{ptrs} {}
-
-    void Reset() {
-        for (auto& p: m_streams)
-            p.reset();
-        for (auto& p: m_streams_ptrs)
-            p = nullptr;
-
-    }
-
-    base_stream* operator[](enum_type _index) const
-    {
-        size_t index = get_enum_index(_index);
-        return m_streams_ptrs[index];
-    }
-
-    void Set(enum_type _index, std::unique_ptr<base_stream> ostr)
-    {
-        size_t index = get_enum_index(_index);
-        m_streams[index] = std::move(ostr);
-        m_streams_ptrs[index] = x_cast(m_streams[index]);
-    }
-
-    void Set(enum_type _index, base_stream& ostr)
-    {
-        size_t index = get_enum_index(_index);
-        m_streams[index].reset();
-        m_streams_ptrs[index] = x_cast(ostr);
-    }
-
-    TFileSet Clone()
-    { // just copy pointers to streams
-        return {m_streams_ptrs};
-    }
 
     static size_t constexpr get_enum_index(enum_type _index)
     {
         return std::distance(sm_enum_mapping.begin(), std::find(sm_enum_mapping.begin(), sm_enum_mapping.end(), _index));
     }
-protected:
-    static std::ostream* x_cast(std::ostream& _orig)
+
+    TFileSet() = default;
+    TStream& operator[](enum_type _index)
     {
-        return &_orig;
-    }
-    template<typename _T>
-    static std::ostream* x_cast(std::unique_ptr<_T>& _orig)
-    {
-        return _orig.get();
-    }
-    template<typename _T>
-    static std::ostream* x_cast(std::shared_ptr<_T>& _orig)
-    {
-        return _orig.get();
+        size_t index = get_enum_index(_index);
+        return m_streams[index];
     }
 
+    void Reset()
+    {
+        for (auto& p: m_streams)
+            p.reset();
+    }
+
+    TFileSet Clone()
+    { // just copy pointers to streams, do not change ownership
+        TFileSet retval;
+        for (size_t i=0; i<enum_size; ++i)
+            retval.m_streams[i].reset(m_streams[i].get());
+
+        return retval;
+    }
 private:
-    streams_array     m_streams = {}; // owned streams
-    streams_ptr_array m_streams_ptrs = {}; // just pointers
+    streams_array m_streams;
 };
 
 template<class _Enum, _Enum..._options>
@@ -122,7 +133,7 @@ class TMultiSourceFileSet
 public:
     using base_stream  = std::ostream;
     using _MyType      = TMultiSourceFileSet<_Enum, _options...>;
-    using fileset_type = TFileSet<std::unique_ptr<base_stream>, _Enum, _options...>;
+    using fileset_type = TFileSet<base_stream, _Enum, _options...>;
     using enum_type    = typename fileset_type::enum_type;
     using writers_type = std::array<CMultiSourceWriter, fileset_type::enum_size>;
     using filestream   = std::ofstream;
@@ -138,9 +149,9 @@ public:
             size_t index = fileset_type::get_enum_index(_enum);
             m_writers[index].Open(filename);
         } else {
-            auto  new_stream = std::make_unique<filestream>(filename);
+            auto new_stream = std::make_unique<filestream>(filename);
             new_stream->exceptions( ios::failbit | ios::badbit );
-            m_simple_files.Set(_enum, std::move(new_stream));
+            m_simple_files[_enum] = std::move(new_stream);
         }
     }
 
@@ -149,7 +160,7 @@ public:
             size_t index = fileset_type::get_enum_index(_enum);
             m_writers[index].Open(ostr);
         } else {
-            m_simple_files.Set(_enum, ostr);
+            m_simple_files[_enum].reset(&ostr);
         }
     }
 
@@ -180,7 +191,7 @@ public:
                     auto new_stream = m_writers[i].NewStreamPtr();
                     // so we don't fail silently if, e.g., the output disk gets full
                     new_stream->exceptions( ios::failbit | ios::badbit );
-                    result.Set(fileset_type::sm_enum_mapping[i], std::move(new_stream));
+                    result[fileset_type::sm_enum_mapping[i]] = std::move(new_stream);
                 }
             }
         } else {
