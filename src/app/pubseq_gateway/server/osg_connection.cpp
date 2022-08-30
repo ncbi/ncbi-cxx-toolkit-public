@@ -142,11 +142,7 @@ double COSGConnection::UpdateTimestamp()
 void COSGConnection::AcceptFeedback(int feedback)
 {
     if ( feedback != 0 && m_RemoveFrom && m_ServerInfo ) {
-        m_RemoveFrom->m_Mapper->AcceptFeedback(m_ServiceName,
-                                               m_ServerInfo->GetHost(), m_ServerInfo->GetPort(),
-                                               (feedback < 0?
-                                                COSGServiceMapper::eNegativeFeedback:
-                                                COSGServiceMapper::ePositiveFeedback));
+        m_RemoveFrom->x_AcceptFeedback(m_ServerInfo, feedback);
     }
 }
 
@@ -233,7 +229,7 @@ CRef<CID2_Reply> COSGConnection::ReceiveReply()
     *m_Stream >> MSerial_AsnBinary >> *reply;
     _ASSERT(m_RemoveFrom);
     if ( GetDebugLevel() >= eDebug_exchange ) {
-        if ( GetDebugLevel() == eDebug_asn ) {
+        if ( GetDebugLevel() >= eDebug_asn ) {
             CTypeIterator<CID2_Reply_Data> iter = Begin(*reply);
             if ( iter && iter->IsSetData() ) {
                 CID2_Reply_Data::TData save;
@@ -645,6 +641,20 @@ void COSGConnectionPool::RemoveConnection(COSGConnection& conn)
     conn.m_RemoveFrom = nullptr;
     --m_ConnectionCount;
     m_WaitConnectionSlot.Post();
+}
+
+
+void COSGConnectionPool::x_AcceptFeedback(TSvrRef server, int feedback)
+{
+    CMutexGuard guard(m_Mutex);
+    if ( feedback < 0 && m_Balancer ) {
+        m_Balancer->LocallyPenalize(server);
+    }
+    m_Mapper->AcceptFeedback(m_ServiceName,
+                             server->GetHost(), server->GetPort(),
+                             (feedback < 0?
+                              COSGServiceMapper::eNegativeFeedback:
+                              COSGServiceMapper::ePositiveFeedback));
 }
 
 
