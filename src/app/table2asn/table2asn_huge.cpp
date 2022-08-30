@@ -51,6 +51,7 @@
 #include <util/message_queue.hpp>
 #include <future>
 #include <objtools/writers/multi_source_file.hpp>
+#include <objtools/writers/async_writers.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -150,6 +151,7 @@ struct THugeFileWriteContext
 
 };
 
+/*
 template<typename _token>
 class TAsyncPipeline
 {
@@ -239,6 +241,7 @@ protected:
 protected:
     TProcessingQueue m_queue {5};
 };
+*/
 
 template<typename _token>
 class CFlatFileAsyncWriter
@@ -279,6 +282,8 @@ private:
     CMultiSourceWriter m_multi_writer;
 };
 
+
+/*
 using TIdSet = set<CRef<CSeq_id>, PPtrLess<CRef<CSeq_id>>>;
 static void s_ReportDuplicateIds(const TIdSet& duplicateIds)
 {
@@ -453,6 +458,7 @@ protected:
 private:
     CObjectOStream* m_ostream = nullptr;
 };
+*/
 
 } // namespace
 

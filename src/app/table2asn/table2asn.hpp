@@ -38,6 +38,9 @@
 #include "table2asn_context.hpp"
 
 BEGIN_NCBI_SCOPE
+namespace objects {
+    struct TAsyncToken;
+};
 
 using namespace objects;
 
@@ -51,6 +54,7 @@ class CTable2AsnStructuredCommentsReader;
 //class CHugeAsnReader;
 class CFeatureTableReader;
 
+/*
 struct TAsyncToken
 {
     CRef<CSeq_entry>  entry;
@@ -59,7 +63,7 @@ struct TAsyncToken
     CRef<CScope>      scope;
     CSeq_entry_Handle seh;
 };
-
+*/
 
 class CTbl2AsnApp : public CNcbiApplication
 {
