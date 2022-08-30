@@ -655,10 +655,10 @@ int CAsnvalApp::Run()
         } else if (args["p"]) {
             // -p is deprecated in favor of -indir
             ValidateOneDirectory(args["p"].AsString(), args["u"]);
-        } else if (args["i"]) {
-            ValidateOneFile(args["i"].AsString());
         } else {
-            ValidateOneFile("");
+            mThreadState.mFilename = (args["i"]) ? args["i"].AsString() : "";
+            mThreadState.m_pContext->m_taxon_update = mRemoteUpdater->GetUpdateFunc();
+            mThreadState.ValidateOneFile();
         }
     } catch (CException& e) {
         ERR_POST(Error << e);
