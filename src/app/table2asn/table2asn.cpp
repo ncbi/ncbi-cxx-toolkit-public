@@ -83,9 +83,11 @@
 
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/logging/listener.hpp>
+#include <objtools/writers/async_writers.hpp>
 
 #include "table2asn.hpp"
 #include "suspect_feat.hpp"
+
 
 #include <common/ncbi_revision.h>
 
