@@ -278,10 +278,10 @@ public:
 private:
     CMultiSourceWriter m_multi_writer;
 };
-    
+
 using TIdSet = set<CRef<CSeq_id>, PPtrLess<CRef<CSeq_id>>>;
 static void s_ReportDuplicateIds(const TIdSet& duplicateIds)
-{   
+{
     if (duplicateIds.empty()) {
         return;
     }
@@ -291,7 +291,7 @@ static void s_ReportDuplicateIds(const TIdSet& duplicateIds)
     }
     for (auto pId : duplicateIds) {
         msg += "\n";
-        msg += GetLabel(*pId); 
+        msg += GetLabel(*pId);
     }
     NCBI_THROW(CHugeFileException, eDuplicateSeqIds, msg);
 }
@@ -430,24 +430,20 @@ protected:
             bioseq_level--;
         });
 
-    
+
         TIdSet processedIds, duplicateIds;
-        {
-            SetLocalWriteHook(CObjectTypeInfo(CType<CBioseq>()).FindMember("id"), 
-                    *m_ostream,
-                    [&processedIds, &duplicateIds](CObjectOStream& out, const CConstObjectInfoMI& member)
-                    {
-                        out.BeginClassMember(member.GetMemberInfo()->GetId());
-                        COStreamContainer  outContainer(out, member);
-                        const auto& container = *CType<CBioseq::TId>::GetUnchecked(*member);
-                        for (auto pId : container) {
-                            if (!processedIds.insert(pId).second) {
-                                duplicateIds.insert(pId);
-                            }
-                            outContainer << *pId;
+        SetLocalWriteHook(CObjectTypeInfo(CType<CBioseq>()).FindMember("id"),
+                *m_ostream,
+                [&processedIds, &duplicateIds](CObjectOStream& out, const CConstObjectInfoMI& member)
+                {
+                    out.WriteClassMember(member);
+                    const auto& container = *CType<CBioseq::TId>::GetUnchecked(*member);
+                    for (auto pId : container) {
+                        if (!processedIds.insert(pId).second) {
+                            duplicateIds.insert(pId);
                         }
-                    });
-        }
+                    }
+                });
 
         *m_ostream << *topobject;
 
