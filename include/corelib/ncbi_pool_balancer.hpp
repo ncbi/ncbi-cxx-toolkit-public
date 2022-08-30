@@ -59,6 +59,8 @@ public:
     TSvrRef GetServer(void)
         { return x_GetServer(nullptr, nullptr); }
 
+    void LocallyPenalize(TSvrRef server);
+
 protected:
     typedef map<string, unsigned int> TCounts; // by server name
 
