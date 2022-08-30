@@ -568,6 +568,9 @@ public:
     /// Set iterator's position.
     void SetPos(size_t pos);
 
+    // Required by range-based for loop.
+    const CSeq_loc_CI& operator*() const { return *this; }
+
 protected:
     const SSeq_loc_CI_RangeInfo& x_GetRangeInfo(void) const;
 
