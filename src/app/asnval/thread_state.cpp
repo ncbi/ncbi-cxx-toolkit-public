@@ -162,7 +162,9 @@ CAsnvalThreadState::CAsnvalThreadState() :
     m_Reported(0),
     m_verbosity(eVerbosity_min),
     m_ValidErrorStream(nullptr)
-{};
+{
+    m_pContext.reset(new SValidatorContext());
+};
 
 //  ============================================================================
 CAsnvalThreadState::CAsnvalThreadState(
@@ -201,6 +203,7 @@ CAsnvalThreadState::CAsnvalThreadState(
     m_ValidErrorStream = other.m_ValidErrorStream;
 
     m_pContext.reset(new SValidatorContext());
+    m_pContext->m_taxon_update = other.m_pContext->m_taxon_update;
 #ifdef USE_XMLWRAPP_LIBS
     m_ostr_xml.reset();
 #endif
