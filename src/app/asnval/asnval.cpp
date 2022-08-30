@@ -106,28 +106,12 @@ USING_SCOPE(edit);
 
 #define USE_XMLWRAPP_LIBS
 
-namespace
-{
+class CFileReaderThread;
 
-    class CAutoRevoker
-    {
-    public:
-        template<class TLoader>
-        CAutoRevoker(struct SRegisterLoaderInfo<TLoader>& info)
-            : m_loader{info.GetLoader()}  {}
-        ~CAutoRevoker()
-        {
-            CObjectManager::GetInstance()->RevokeDataLoader(*m_loader);
-        }
-    private:
-        CDataLoader* m_loader = nullptr;
-    };
-};
-
-//class CAsnvalApp : public CReadClassMemberHook, public CNcbiApplication
 class CAsnvalApp : public CNcbiApplication
 {
     friend class CAsnvalThreadState;
+    friend class CFileReaderThread;
 
 public:
     CAsnvalApp();
@@ -146,10 +130,17 @@ private:
     void x_AliasLogFile();
 
     void ValidateOneDirectory(string dir_name, bool recurse);
-    void ValidateOneFile(const string& fname);
+    bool FinishReaderThread(CFileReaderThread&, bool blocking);
 
     CAsnvalThreadState mThreadState;
     unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
+};
+
+struct CThreadExitData
+{
+    size_t mNumRecords;
+    double mLongest;
+    string mLongestId;
 };
 
 class CFileReaderThread : public CThread
@@ -159,14 +150,18 @@ public:
         CAsnvalThreadState& context) : mContext(context)
     {};
     bool mDone = false;
+    CAsnvalThreadState mContext;
 protected:
     void* Main() override
     {
         mContext.ValidateOneFile();
         this->mDone = true;
-        return nullptr;
+        CThreadExitData* pExitData = new CThreadExitData();
+        pExitData->mNumRecords = mContext.m_NumRecords;
+        pExitData->mLongest = mContext.m_Longest;
+        pExitData->mLongestId = mContext.m_LongestId;
+        return pExitData;
     }
-    CAsnvalThreadState mContext;
 };
 
 
@@ -217,6 +212,27 @@ void CAsnvalApp::x_AliasLogFile()
             SetLogFile(args["L"].AsString());
         }
     }
+}
+
+
+bool CAsnvalApp::FinishReaderThread(
+    CFileReaderThread& thread,
+    bool blocking)
+{
+    if (!blocking &&  !thread.mDone) {
+        return false;
+    }
+    void* ppExitData = nullptr;
+    thread.Join(&ppExitData);
+    CThreadExitData* pExitData = static_cast<CThreadExitData*>(ppExitData);
+    mThreadState.m_NumFiles++;
+    mThreadState.m_NumRecords += pExitData->mNumRecords;
+    if (pExitData->mLongest > mThreadState.m_Longest) {
+        mThreadState.m_Longest = pExitData->mLongest;
+        mThreadState.m_LongestId = pExitData->mLongestId;
+    }
+    delete pExitData;
+    return true;
 }
 
 
@@ -340,181 +356,6 @@ void CAsnvalApp::Init()
 }
 
 
-void CAsnvalApp::ValidateOneFile(const string& fname)
-{
-    const CArgs& args = GetArgs();
-
-    if (! args["quiet"] ) {
-        LOG_POST_XX(Corelib_App, 1, fname);
-    }
-
-    mThreadState.mFilename = fname;
-    mThreadState.m_pContext.reset(new SValidatorContext());
-    mThreadState.m_pContext->m_taxon_update = mRemoteUpdater->GetUpdateFunc();
-
-    unique_ptr<CNcbiOfstream> local_stream;
-
-    bool close_error_stream = false;
-
-    try {
-        if (!mThreadState.m_ValidErrorStream) {
-            string path;
-            if (fname.empty()) {
-                path = "stdin.val";
-            } else {
-                size_t pos = NStr::Find(fname, ".", NStr::eNocase, NStr::eReverseSearch);
-                if (pos != NPOS)
-                    path = fname.substr(0, pos);
-                else
-                    path = fname;
-
-                path.append(".val");
-            }
-
-            local_stream.reset(new CNcbiOfstream(path));
-            mThreadState.m_ValidErrorStream = local_stream.get();
-
-            mThreadState.ConstructOutputStreams();
-            close_error_stream = true;
-        }
-    }
-    catch (const CException&) {
-    }
-
-    TTypeInfo asninfo = nullptr;
-    if (fname.empty()) {// || true)
-        mThreadState.mFilename = fname;
-        mThreadState.mpIstr = mThreadState.OpenFile(asninfo);
-    }
-    else {
-        mThreadState.mpHugeFileProcess.reset(new CHugeFileProcess(new CValidatorHugeAsnReader(mThreadState.m_GlobalInfo)));
-        try
-        {
-            mThreadState.mpHugeFileProcess->Open(fname, &s_known_types);
-            asninfo = mThreadState.mpHugeFileProcess->GetFile().RecognizeContent(0);
-        }
-        catch(const CObjReaderParseException&)
-        {
-            mThreadState.mpHugeFileProcess.reset();
-        }
-
-        if (asninfo)
-        {
-            if (!mThreadState.m_HugeFile || mThreadState.m_batch || !edit::CHugeFileProcess::IsSupported(asninfo))
-            {
-                mThreadState.mpIstr = mThreadState.mpHugeFileProcess->GetReader().MakeObjStream(0);
-            }
-        } else {
-            mThreadState.mFilename = fname;
-            mThreadState.mpIstr = mThreadState.OpenFile(asninfo);
-        }
-
-    }
-
-    if (!asninfo)
-    {
-        mThreadState.PrintValidError(mThreadState.ReportReadFailure(nullptr));
-        if (close_error_stream) {
-            mThreadState.DestroyOutputStreams();
-        }
-        // NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
-        LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to open invalid ASN.1 file " + fname);
-    }
-
-    if (asninfo)
-    {
-        try {
-            if (mThreadState.m_batch) {
-                if (asninfo == CBioseq_set::GetTypeInfo()) {
-                    mThreadState.ProcessBSSReleaseFile();
-                } else
-                if (asninfo == CSeq_submit::GetTypeInfo()) {
-                    const auto commandLineOptions = mThreadState.m_Options;
-                    mThreadState.m_Options |= CValidator::eVal_seqsubmit_parent;
-                    try {
-                        mThreadState.ProcessSSMReleaseFile();
-                    }
-                    catch (CException&) {
-                        mThreadState.m_Options = commandLineOptions;
-                        throw;
-                    }
-                    mThreadState.m_Options = commandLineOptions;
-
-                } else {
-                    LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is neither a Seq-submit nor Bioseq-set; do not use -batch to process.");
-                }
-            } else {
-                bool doloop = true;
-                while (doloop) {
-                    CStopWatch sw(CStopWatch::eStart);
-                    try {
-                        if (mThreadState.mpIstr) {
-                            CConstRef<CValidError> eval = mThreadState.ValidateInput(asninfo);
-                            if (eval)
-                                mThreadState.PrintValidError(eval);
-
-                            if (!mThreadState.mpIstr->EndOfData()) { // force to SkipWhiteSpace
-                                try
-                                {
-                                    auto types = mThreadState.mpIstr->GuessDataType(s_known_types);
-                                    asninfo = types.empty() ? nullptr : *types.begin();
-                                }
-                                catch(const CException& e)
-                                {
-                                    eval = mThreadState.ReportReadFailure(&e);
-                                    if (eval) {
-                                        mThreadState.PrintValidError(eval);
-                                        doloop = false;
-                                    } else
-                                        throw;
-                                }
-                            }
-                        } else {
-                            string loader_name =  CDirEntry::ConvertToOSPath(fname);
-                            bool use_mt = true;
-                            #ifdef _DEBUG
-                                // multitheading in DEBUG mode is not convinient
-                                //use_mt = false;
-                            #endif
-                            mThreadState.ValidateOneHugeFile(loader_name, use_mt);
-                            doloop = false;
-                        }
-
-                    }
-                    catch (const CEofException&) {
-                        break;
-                    }
-                    double elapsed = sw.Elapsed();
-                    if (elapsed > mThreadState.m_Longest) {
-                        mThreadState.m_Longest = elapsed;
-                        mThreadState.m_LongestId = mThreadState.m_CurrentId;
-                    }
-                }
-            }
-        } catch (const CException& e) {
-            string errstr = e.GetMsg();
-            errstr = NStr::Replace(errstr, "\n", " * ");
-            errstr = NStr::Replace(errstr, " *   ", " * ");
-            CRef<CValidError> eval(new CValidError());
-            if (NStr::StartsWith(errstr, "duplicate Bioseq id", NStr::eNocase)) {
-                eval->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, errstr);
-                mThreadState.PrintValidError(eval);
-                // ERR_POST(e);
-            } else {
-                eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, errstr);
-                mThreadState.PrintValidError(eval);
-                ERR_POST(e);
-            }
-            ++mThreadState.m_Reported;
-        }
-    }
-    mThreadState.m_NumFiles++;
-    if (close_error_stream) {
-        mThreadState.DestroyOutputStreams();
-    }
-    mThreadState.mpIstr.reset();
-}
-
 //LCOV_EXCL_START
 //unable to exercise with our test framework
 void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
@@ -538,8 +379,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
     for (CDir::TEntry ii : files) {
         while (threadCount >= maxThreadCount) {
             for (auto* pThread : threadList) {
-                if (pThread->mDone) {
-                    pThread->Join();
+                if (FinishReaderThread(*pThread, false)) {
                     threadList.remove(pThread);
                     --threadCount;
                     break;
@@ -559,11 +399,10 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
             pThread->Run();
             threadList.push_back(pThread);
             ++threadCount;
-            //pThread->Join();
         }
     }
     for (auto* pThread : threadList) {
-        pThread->Join();
+        FinishReaderThread(*pThread, true);
     }
     if (recurse) {
         CDir::TEntries subdirs(dir.GetEntries("", CDir::eDir));
@@ -684,85 +523,6 @@ int CAsnvalApp::Run()
     }
 }
 
-/*
-void CAsnvalApp::ReadClassMember
-(CObjectIStream& in,
- const CObjectInfo::CMemberIterator& member)
-{
-    mThreadState.m_Level++;
-
-    if (mThreadState.m_Level == 1 ) {
-        size_t n = 0;
-        // Read each element separately to a local TSeqEntry,
-        // process it somehow, and... not store it in the container.
-        for ( CIStreamContainerIterator i(in, member); i; ++i ) {
-            try {
-                // Get seq-entry to validate
-                CRef<CSeq_entry> se(new CSeq_entry);
-                i >> *se;
-
-                // Validate Seq-entry
-                CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-                CRef<CScope> scope = mThreadState.BuildScope();
-                CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
-
-                CBioseq_CI bi(seh);
-                if (bi) {
-                    mThreadState.m_CurrentId = "";
-                    bi->GetId().front().GetSeqId()->GetLabel(&mThreadState.m_CurrentId);
-                    if (! mThreadState.m_Quiet ) {
-                        LOG_POST_XX(Corelib_App, 1, mThreadState.m_CurrentId);
-                    }
-                }
-
-                if (mThreadState.m_DoCleanup) {
-                    mThreadState.m_Cleanup.SetScope(scope);
-                    mThreadState.m_Cleanup.BasicCleanup(*se);
-                }
-
-                if ( mThreadState.m_OnlyAnnots ) {
-                    for (CSeq_annot_CI ni(seh); ni; ++ni) {
-                        const CSeq_annot_Handle& sah = *ni;
-                        CConstRef<CValidError> eval = validator.Validate(sah, mThreadState.m_Options);
-                        mThreadState.m_NumRecords++;
-                        if ( eval ) {
-                            mThreadState.PrintValidError(eval);
-                        }
-                    }
-                } else {
-                    // CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
-                    CStopWatch sw(CStopWatch::eStart);
-                    CConstRef<CValidError> eval = validator.Validate(seh, mThreadState.m_Options);
-                    mThreadState.m_NumRecords++;
-                    double elapsed = sw.Elapsed();
-                    if (elapsed > mThreadState.m_Longest) {
-                        mThreadState.m_Longest = elapsed;
-                        mThreadState.m_LongestId = mThreadState.m_CurrentId;
-                    }
-                    //if (m_ValidErrorStream) {
-                    //    *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << "\n";
-                    //}
-                    if ( eval ) {
-                        mThreadState.PrintValidError(eval);
-                    }
-                }
-                scope->RemoveTopLevelSeqEntry(seh);
-                scope->ResetHistory();
-                n++;
-            } catch (exception&) {
-                if ( !mThreadState.m_Continue ) {
-                    throw;
-                }
-                // should we issue some sort of warning?
-            }
-        }
-    } else {
-        in.ReadClassMember(member);
-    }
-
-    mThreadState.m_Level--;
-}
-*/
 
 void CAsnvalApp::Setup(const CArgs& args)
 {
@@ -785,8 +545,6 @@ void CAsnvalApp::Setup(const CArgs& args)
 
     // Set validator options
     mThreadState.m_Options = CValidatorArgUtil::ArgsToValidatorOptions(args);
-
-
 }
 
 
