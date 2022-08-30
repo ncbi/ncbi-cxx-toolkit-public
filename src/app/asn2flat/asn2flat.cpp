@@ -233,7 +233,7 @@ void CHTMLFormatterEx::FormatLocation(string& strLink, const CSeq_loc& loc, TInt
     bool is_prot = false;
     {
         CBioseq_Handle bioseq_h;
-        ITERATE (CSeq_loc, loc_ci, loc) {
+        for (auto& loc_ci: loc) {
             bioseq_h = m_scope->GetBioseqHandle(loc_ci.GetSeq_id());
             if (bioseq_h) {
                 break;
@@ -393,7 +393,7 @@ private:
     void             x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const;
     int              x_GenerateBatchMode(unique_ptr<CObjectIStream> is);
     int              x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const;
-    int              x_GenerateHugeMode() const;
+    int              x_GenerateHugeMode();
     void             x_InitNewContext(TFFContext& context);
     void             x_ResetContext(TFFContext& context);
 
@@ -796,9 +796,10 @@ int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
     return 0;
 }
 
-int CAsn2FlatApp::x_GenerateHugeMode() const
+int CAsn2FlatApp::x_GenerateHugeMode()
 {
-    TFFContext   context;
+    auto        thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
+    TFFContext& context      = *thread_state;
     const CArgs& args = GetArgs();
 
     edit::CHugeFileProcess in(args["i"].AsString());
@@ -811,10 +812,7 @@ int CAsn2FlatApp::x_GenerateHugeMode() const
         }
     }
 
-    // CMessageQueue<std::future<std::string>> val_queue{10};
-
     auto handler = [this, &context](CConstRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry) -> bool {
-        // std::ostringstream sstr;
         if (pSubmitBlock) {
             auto pSubmit = Ref(new CSeq_submit());
             pSubmit->SetSub().Assign(*pSubmitBlock);
@@ -1637,6 +1635,46 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
+    #ifdef _DEBUG
+    // this code converts single argument into multiple, just to simplify testing
+    list<string> split_args;
+    vector<const char*> new_argv;
+
+    if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
+    {
+        NStr::Split(argv[1], " ", split_args);
+
+        auto it = split_args.begin();
+        while (it != split_args.end())
+        {
+            auto next = it; ++next;
+            if (next != split_args.end() &&
+                ((it->front() == '"' && it->back() != '"') ||
+                 (it->front() == '\'' && it->back() != '\'')))
+            {
+                it->append(" "); it->append(*next);
+                next = split_args.erase(next);
+            } else it = next;
+        }
+        for (auto& rec: split_args)
+        {
+            if (rec.front()=='\'' && rec.back()=='\'')
+                rec=rec.substr(1, rec.length()-2);
+        }
+        argc = 1 + split_args.size();
+        new_argv.reserve(argc);
+        new_argv.push_back(argv[0]);
+        for (const string& s : split_args)
+        {
+            new_argv.push_back(s.c_str());
+            std::cerr << s.c_str() << " ";
+        }
+        std::cerr << "\n";
+
+
+        argv = new_argv.data();
+    }
+    #endif
     CScope::SetDefaultKeepExternalAnnotsForEdit(true);
     return CAsn2FlatApp().AppMain(argc, argv);
 }
