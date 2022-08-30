@@ -59,23 +59,16 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
 
     bool rv = false;
     err_msg = "sat2keyspace info is empty";
-
     for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
         try {
-            shared_ptr<CCassQuery>  query = conn->NewQuery();
-
-            query->SetSQL("SELECT\n"
-                          "    sat,\n"
-                          "    keyspace_name,\n"
-                          "    schema_type\n"
-                          "FROM\n"
-                          "    " + mapping_keyspace + ".sat2keyspace", 0);
+            auto query = conn->NewQuery();
+            query->SetSQL("SELECT sat, keyspace_name, schema_type FROM "
+                + mapping_keyspace + ".sat2keyspace", 0);
             query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
-
             rv = true;
             while (query->NextRow() == ar_dataready) {
-                int32_t     sat = query->FieldGetInt32Value(0);
-                string      name = query->FieldGetStrValue(1);
+                int32_t sat = query->FieldGetInt32Value(0);
+                string name = query->FieldGetStrValue(1);
                 ECassSchemaType schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
 
                 if (schema_type <= eUnknownSchema || schema_type > eMaxSchema) {
@@ -88,7 +81,7 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                     else {
                         // More than one resolver keyspace
                         err_msg = "More than one resolver keyspace in the " +
-                                  mapping_keyspace + ".sat2keyspace table";
+                            mapping_keyspace + ".sat2keyspace table";
                         rv = false;
                         break;
                     }
