@@ -1626,7 +1626,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
-    } else if ( NStr::Equal (label_str, "Annotation Name") && NStr::Equal (provider, "NCBI") ) {
+    } else if ( NStr::Equal (label_str, "Annotation Name") && ( NStr::Equal (provider, "NCBI") || NStr::Equal (provider, "NCBI RefSeq") ) ) {
         string fst;
         string snd;
         if (NStr::Find(data_str, "Updated Annotation Release") != NPOS) {
@@ -1639,7 +1639,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << snd
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
-    } else if ( NStr::Equal (label_str, "Annotation Version") && NStr::Equal (provider, "NCBI") && NStr::Equal (status, "Full annotation") && (! has_name) ) {
+    } else if ( NStr::Equal (label_str, "Annotation Version") && ( NStr::Equal (provider, "NCBI") || NStr::Equal (provider, "NCBI RefSeq") ) && NStr::Equal (status, "Full annotation") && (! has_name) ) {
         string fst;
         string snd;
         NStr::Replace( data_str, " Annotation Release ", "/", fst );
