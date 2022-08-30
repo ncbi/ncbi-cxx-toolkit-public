@@ -147,8 +147,6 @@ private:
 
     void ValidateOneDirectory(string dir_name, bool recurse);
     void ValidateOneFile(const string& fname);
-    void ValidateOneHugeFile(const string& loader_name, bool use_mt);
-    CConstRef<CValidError> x_ValidateAsync(const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry);
 
     CAsnvalThreadState mThreadState;
     unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
@@ -342,173 +340,6 @@ void CAsnvalApp::Init()
 }
 
 
-CConstRef<CValidError> CAsnvalApp::x_ValidateAsync(const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry)
-{
-    CRef<CScope> scope = mThreadState.BuildScope();
-    if (!loader_name.empty())
-        scope->AddDataLoader(loader_name);
-
-    CConstRef<CValidError> eval;
-
-    CValidator validator(*mThreadState.m_ObjMgr, mThreadState.m_pContext);
-
-    CSeq_entry_Handle top_h;
-    if (pEntry) {
-        top_h = scope->AddTopLevelSeqEntry(*pEntry);
-    } else {
-        auto seq_id_h = CSeq_id_Handle::GetHandle(*seqid);
-        if (scope->Exists(seq_id_h)) {
-#ifdef _DEBUG
-            std::cerr << "Taxid for " << scope->GetLabel(seq_id_h) << " : " << scope->GetTaxId(seq_id_h, CScope::fDoNotRecalculate) << "\n";
-#endif
-            auto bioseq_h = scope->GetBioseqHandle(seq_id_h);
-            if (bioseq_h)
-                top_h = bioseq_h.GetTopLevelEntry();
-            if (top_h)
-                pEntry = Ref((CSeq_entry*)(void*)top_h.GetCompleteSeq_entry().GetPointer());
-        }
-    }
-
-    if (top_h) {
-
-        if (mThreadState.m_DoCleanup) {
-            CCleanup cleanup;
-            cleanup.SetScope(scope);
-            cleanup.BasicCleanup(*pEntry);
-        }
-
-        if (pSubmitBlock) {
-            auto pSubmit = Ref(new CSeq_submit());
-            pSubmit->SetSub().Assign(*pSubmitBlock);
-            pSubmit->SetData().SetEntrys().push_back(pEntry);
-            eval = validator.Validate(*pSubmit, scope, mThreadState.m_Options);
-        } else {
-            eval = validator.Validate(*pEntry, scope, mThreadState.m_Options);
-        }
-    }
-
-    scope->ResetDataAndHistory();
-    return eval;
-}
-
-void CAsnvalApp::ValidateOneHugeFile(const string& loader_name, bool use_mt)
-{
-    auto& reader = mThreadState.mpHugeFileProcess->GetReader();
-
-
-    while (true)
-    {
-        mThreadState.m_GlobalInfo.Clear();
-        try
-        {
-            if (!reader.GetNextBlob())
-                break;
-        }
-        catch (const CException& e)
-        {
-            auto errors = mThreadState.ReportReadFailure(&e);
-            mThreadState.PrintValidError(errors);
-            return;
-        }
-
-        mThreadState.m_NumRecords++;
-
-        try
-        {
-            reader.FlattenGenbankSet();
-        }
-        catch (const edit::CHugeFileException& e)
-        {
-            if (e.GetErrCode() == edit::CHugeFileException::eDuplicateSeqIds)
-            {
-                auto errors = Ref(new CValidError);
-                errors->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, e.GetMsg());
-                mThreadState.PrintValidError(errors);
-                ++mThreadState.m_Reported;
-                continue;
-            }
-            throw;
-        }
-
-        auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
-            *mThreadState.m_ObjMgr, loader_name, &reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
-
-        CAutoRevoker autorevoker(info);
-        CHugeFileValidator hugeFileValidator(reader, mThreadState.m_Options);
-        hugeFileValidator.UpdateValidatorContext(mThreadState.m_GlobalInfo, *mThreadState.m_pContext);
-
-        if (mThreadState.m_pContext->PreprocessHugeFile) {
-            CRef<CValidError> pEval;
-            hugeFileValidator.ReportGlobalErrors(mThreadState.m_GlobalInfo, pEval);
-            if (pEval) {
-                mThreadState.PrintValidError(pEval);
-            }
-        }
-
-        if (true || use_mt)
-        {
-            CMessageQueue<std::future<CConstRef<CValidError>>> val_queue{10};
-            // start a loop in a separate thread
-            auto topids_task = std::async(std::launch::async, [this, &val_queue, &loader_name, &reader]()
-                {
-                    auto pSubmitBlock = reader.GetSubmitBlock();
-                    for (auto seqid : reader.GetTopIds())
-                    {
-                        auto params = std::async(std::launch::async,
-                            [this, seqid, &loader_name, pSubmitBlock]() -> CConstRef<CValidError>
-                            {
-                                try
-                                {
-                                    return x_ValidateAsync(loader_name, pSubmitBlock, seqid, {});
-                                }
-                                catch (const CException& e) {
-                                    string errstr = e.GetMsg();
-                                    errstr = NStr::Replace(errstr, "\n", " * ");
-                                    errstr = NStr::Replace(errstr, " *   ", " * ");
-                                    CRef<CValidError> eval(new CValidError());
-                                    eval->AddValidErrItem(eDiag_Fatal, eErr_INTERNAL_Exception, errstr);
-                                    ERR_POST(e);
-                                    ++mThreadState.m_Reported;
-                                    return eval;
-                                }
-                            });
-                        // std::future is not copiable, so passing it for move constructor
-                        val_queue.push_back(std::move(params));
-                    }
-
-                    val_queue.push_back({});
-                });
-
-            while (true)
-            {
-                auto result = val_queue.pop_front();
-                if (!result.valid())
-                    break;
-                auto eval = result.get();
-                mThreadState.PrintValidError(eval);
-            }
-
-            topids_task.wait();
-
-        }
-        else {
-            for (auto seqid : reader.GetTopIds())
-            {
-                auto pSubmitBlock = reader.GetSubmitBlock();
-                CConstRef<CValidError> eval;
-#ifdef _DEBUG1
-                cerr << MSerial_AsnText << "Validating: " << seqid->AsFastaString() << "\n";
-#endif
-                auto seqid_str = seqid->AsFastaString();
-                eval = x_ValidateAsync(loader_name, pSubmitBlock, seqid, {});
-                mThreadState.PrintValidError(eval);
-            }
-        }
-    }
-}
-
-
-
 void CAsnvalApp::ValidateOneFile(const string& fname)
 {
     const CArgs& args = GetArgs();
@@ -645,7 +476,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                                 // multitheading in DEBUG mode is not convinient
                                 //use_mt = false;
                             #endif
-                            ValidateOneHugeFile(loader_name, use_mt);
+                            mThreadState.ValidateOneHugeFile(loader_name, use_mt);
                             doloop = false;
                         }
 
