@@ -72,6 +72,13 @@
 #include "fileset.hpp"
 #include <objtools/writers/atomics.hpp>
 
+#define USE_THREAD_POOL1
+
+#ifdef USE_THREAD_POOL
+#include "threadpool.hpp"
+#endif
+
+
 #define USE_CDDLOADER
 
 #if defined(HAVE_LIBGRPC) && defined(HAVE_NCBI_VDB)
@@ -149,8 +156,7 @@ void CHTMLFormatterEx::FormatProteinId(string& str, const CSeq_id& seq_id, const
     string                 index = prot_id;
     CBioseq_Handle         bsh   = m_scope->GetBioseqHandle(seq_id);
     vector<CSeq_id_Handle> ids   = bsh.GetId();
-    ITERATE (vector<CSeq_id_Handle>, it, ids) {
-        CSeq_id_Handle hid = *it;
+    for (auto hid: ids) {
         if (hid.IsGi()) {
             index = NStr::NumericToString(hid.GetGi());
             break;
@@ -169,8 +175,7 @@ void CHTMLFormatterEx::FormatTranscriptId(string& str, const CSeq_id& seq_id, co
     string                 index = nuc_id;
     CBioseq_Handle         bsh   = m_scope->GetBioseqHandle(seq_id);
     vector<CSeq_id_Handle> ids   = bsh.GetId();
-    ITERATE (vector<CSeq_id_Handle>, it, ids) {
-        CSeq_id_Handle hid = *it;
+    for(auto hid: ids) {
         if (hid.IsGi()) {
             index = NStr::NumericToString(hid.GetGi());
             break;
@@ -338,12 +343,19 @@ public:
     int  Run() override;
     bool WrapINSDSet(bool unwrap);
 
+#ifdef USE_THREAD_POOL
+    using TThreadPool = TResourcePool<TLazyWorker>;
+#endif
+
     // Each thread should have its own context
     struct TFFContext {
         CRef<CCleanup>                      m_cleanup;
         CRef<CScope>                        m_Scope;
         CRef<CFlatFileGenerator>            m_FFGenerator; // Flat-file generator
         CFFMultiSourceFileSet::fileset_type m_streams;     // multiple streams for each of eFlatFileCodes
+        #ifdef USE_THREAD_POOL
+        TThreadPool::TUniqPointer           m_worker;
+        #endif
     };
 
     using fileset_type = decltype(TFFContext::m_streams);
@@ -371,26 +383,29 @@ private:
 
     [[nodiscard]] CObjectIStream* x_OpenIStream(const CArgs& args) const;
 
-    [[nodiscard]] CFlatFileGenerator*    x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const;
-    TSeqPos                              x_GetFrom(const CArgs& args) const;
-    TSeqPos                              x_GetTo(const CArgs& args) const;
-    ENa_strand                           x_GetStrand(const CArgs& args) const;
-    void                                 x_GetLocation(const CSeq_entry_Handle& entry, const CArgs& args, CSeq_loc& loc) const;
-    CBioseq_Handle                       x_DeduceTarget(const CSeq_entry_Handle& entry) const;
-    [[nodiscard]] TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args) const;
-    [[nodiscard]] ICanceled*             x_CreateCancelBenchmarkCallback() const;
-    int                                  x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& context) const;
-    void                                 x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const;
-    int                                  x_GenerateBatchMode(unique_ptr<CObjectIStream> is);
-    int                                  x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const;
-    int                                  x_GenerateHugeMode() const;
-    void                                 x_InitNewContext(TFFContext& context);
-    void                                 x_ResetContext(TFFContext& context);
+    void             x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const;
+    TSeqPos          x_GetFrom(const CArgs& args) const;
+    TSeqPos          x_GetTo(const CArgs& args) const;
+    ENa_strand       x_GetStrand(const CArgs& args) const;
+    void             x_GetLocation(const CSeq_entry_Handle& entry, const CArgs& args, CSeq_loc& loc) const;
+    CBioseq_Handle   x_DeduceTarget(const CSeq_entry_Handle& entry) const;
+    int              x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& context) const;
+    void             x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const;
+    int              x_GenerateBatchMode(unique_ptr<CObjectIStream> is);
+    int              x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const;
+    int              x_GenerateHugeMode() const;
+    void             x_InitNewContext(TFFContext& context);
+    void             x_ResetContext(TFFContext& context);
+
+    //[[nodiscard]] TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args) const;
+    //[[nodiscard]] ICanceled*             x_CreateCancelBenchmarkCallback() const;
 
     // data
     CRef<CObjectManager>      m_Objmgr; // Object Manager can be mutable
     TThreadStatePool          m_state_pool;
-
+#ifdef USE_THREAD_POOL
+    TThreadPool               m_thread_pool;
+#endif
 
     // Everything else should be unchangeable within CFlatfileGenerator runs
 
@@ -729,17 +744,21 @@ int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
 {
     std::atomic<bool> stopit = false;
 
-    bool           propagate = GetArgs()["p"];
-    CGBReleaseFile in(*is.release(), propagate); // CGBReleaseFile will delete the input stream
+    bool propagate = GetArgs()[ "p" ];
+    CGBReleaseFile in( *is.release(), propagate ); // CGBReleaseFile will delete the input stream
 
     // for multi-threading processing TFFContext instance is associated with thread
-    auto processing = [this, &stopit](CRef<CSeq_entry> entry, TThreadStatePool::TUniqPointer thread_state) {
-        bool success = HandleSeqEntry(std::move(thread_state), entry);
-        if (! success)
+        // thread can run detached, entry and context will be associated with the thread
+    std::function<void(CRef<CSeq_entry>, TThreadStatePool::TUniqPointer)> processing =
+        [this, &stopit](CRef<CSeq_entry> entry, TThreadStatePool::TUniqPointer thread_state)
+    {
+        bool success = HandleSeqEntry(*thread_state, entry);
+        if (!success)
             stopit = true;
     };
 
-    in.RegisterHandler([this, &stopit, processing](CRef<CSeq_entry>& entry) -> bool {
+    in.RegisterHandler( [this, &stopit, processing] (CRef<CSeq_entry>& in_entry)->bool
+    {
         if (stopit.load())
             return false;
 
@@ -748,10 +767,16 @@ int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
         // these resources must allocated sequentially in order of incoming entry's
         auto thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
 
-        // thread can run detached, entry and context will be associated with the thread
-        if (m_use_mt)
+        CRef<CSeq_entry> entry = in_entry;
+        if (m_use_mt) {
+#ifdef USE_THREAD_POOL
+            TFFContext& context = *thread_state;
+            TLazyWorker& worker = *context.m_worker;
+            worker.OneShot(processing, std::move(entry), std::move(thread_state));
+#else
             std::thread(processing, std::move(entry), std::move(thread_state)).detach();
-        else {
+#endif
+        } else {
             processing(std::move(entry), std::move(thread_state));
             if (stopit.load())
                 return false;
@@ -763,9 +788,11 @@ int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
     in.Read(); // registered handlers will be called from this function
 
     m_writers.FlushAll(); // this will wait until all writers quit
+    #ifdef USE_THREAD_POOL
+    m_thread_pool.Purge();
+    #endif
 
-    if (m_Exception)
-        return -1;
+    if (m_Exception) return -1;
     return 0;
 }
 
@@ -1107,12 +1134,12 @@ bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) co
 
         CNcbiOstream* flatfile_os = nullptr;
 
-        auto _Os = context.m_streams[eFlatFileCodes::all];
-        auto _On = context.m_streams[eFlatFileCodes::nuc];
-        auto _Og = context.m_streams[eFlatFileCodes::gen];
-        auto _Or = context.m_streams[eFlatFileCodes::rna];
-        auto _Op = context.m_streams[eFlatFileCodes::prot];
-        auto _Ou = context.m_streams[eFlatFileCodes::unk];
+        auto _Os = context.m_streams[eFlatFileCodes::all].get();
+        auto _On = context.m_streams[eFlatFileCodes::nuc].get();
+        auto _Og = context.m_streams[eFlatFileCodes::gen].get();
+        auto _Or = context.m_streams[eFlatFileCodes::rna].get();
+        auto _Op = context.m_streams[eFlatFileCodes::prot].get();
+        auto _Ou = context.m_streams[eFlatFileCodes::unk].get();
 
         if (_Os) {
             if (m_OnlyNucs && ! bsh.IsNa())
@@ -1295,7 +1322,7 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args) const
 }
 
 
-CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const
+void CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const
 {
     CFlatFileConfig cfg;
     cfg.FromArguments(args);
@@ -1333,34 +1360,33 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context,
     //     format, mode, style, flags, view, gff_options, genbank_blocks,
     //     genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get(),
     //     args["cleanup"]);
-    CFlatFileGenerator* generator = new CFlatFileGenerator(cfg);
+    context.m_FFGenerator.Reset(new CFlatFileGenerator(cfg));
 
     // ID-5865 : SNP annotations must be explicitly added to the annot selector
     if (! m_PSGMode && cfg.ShowSNPFeatures()) {
         cfg.SetHideSNPFeatures(false);
-        generator->SetAnnotSelector().IncludeNamedAnnotAccession("SNP");
+        context.m_FFGenerator->SetAnnotSelector().IncludeNamedAnnotAccession("SNP");
     }
 
     if (args["no-external"] || args["policy"].AsString() == "internal") {
-        generator->SetAnnotSelector().SetExcludeExternal(true);
+        context.m_FFGenerator->SetAnnotSelector().SetExcludeExternal(true);
     }
     //    else if (!m_Scope->GetKeepExternalAnnotsForEdit()) {
     //       m_Scope->SetKeepExternalAnnotsForEdit();
     //    }
     if (args["resolve-all"] || args["policy"].AsString() == "external") {
-        generator->SetAnnotSelector().SetResolveAll();
+        context.m_FFGenerator->SetAnnotSelector().SetResolveAll();
     }
     if (args["depth"]) {
-        generator->SetAnnotSelector().SetResolveDepth(args["depth"].AsInteger());
+        context.m_FFGenerator->SetAnnotSelector().SetResolveDepth(args["depth"].AsInteger());
     }
     if (args["max_search_segments"]) {
-        generator->SetAnnotSelector().SetMaxSearchSegments(args["max_search_segments"].AsInteger());
+        context.m_FFGenerator->SetAnnotSelector().SetMaxSearchSegments(args["max_search_segments"].AsInteger());
     }
     if (args["max_search_time"]) {
-        generator->SetAnnotSelector().SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
+        context.m_FFGenerator->SetAnnotSelector().SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
     }
 
-    return generator;
 }
 
 TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args) const
@@ -1524,15 +1550,15 @@ void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) cons
     if (args["from"] || args["to"] || args["strand"]) {
         CSeq_loc loc;
         x_GetLocation(seh, args, loc);
-        auto flatfile_os = context.m_streams[eFlatFileCodes::all];
+        auto flatfile_os = context.m_streams[eFlatFileCodes::all].get();
         context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, flatfile_os);
     } else {
-        auto all  = context.m_streams[eFlatFileCodes::all];
-        auto nuc  = context.m_streams[eFlatFileCodes::nuc];
-        auto gen  = context.m_streams[eFlatFileCodes::gen];
-        auto rna  = context.m_streams[eFlatFileCodes::rna];
-        auto prot = context.m_streams[eFlatFileCodes::prot];
-        auto unk  = context.m_streams[eFlatFileCodes::unk];
+        auto all  = context.m_streams[eFlatFileCodes::all].get();
+        auto nuc  = context.m_streams[eFlatFileCodes::nuc].get();
+        auto gen  = context.m_streams[eFlatFileCodes::gen].get();
+        auto rna  = context.m_streams[eFlatFileCodes::rna].get();
+        auto prot = context.m_streams[eFlatFileCodes::prot].get();
+        auto unk  = context.m_streams[eFlatFileCodes::unk].get();
 
         context.m_FFGenerator->Generate(seh, *all, true, all, nuc, gen, rna, prot, unk);
     }
@@ -1549,6 +1575,9 @@ void CAsn2FlatApp::x_ResetContext(TFFContext& context)
     if (context.m_Scope.NotEmpty()) {
         context.m_Scope->ResetDataAndHistory();
     }
+#ifdef USE_THREAD_POOL
+    context.m_worker.reset();
+#endif
 }
 
 void CAsn2FlatApp::x_InitNewContext(TFFContext& context)
@@ -1571,13 +1600,16 @@ void CAsn2FlatApp::x_InitNewContext(TFFContext& context)
 
     // create the flat-file generator
     if (context.m_FFGenerator.Empty())
-        context.m_FFGenerator.Reset(x_CreateFlatFileGenerator(context, GetArgs()));
+        x_CreateFlatFileGenerator(context, GetArgs());
 
     if (context.m_cleanup.Empty())
         context.m_cleanup.Reset(new CCleanup);
 
 
     context.m_streams = m_writers.MakeNewFileset();
+    #ifdef USE_THREAD_POOL
+    context.m_worker  = m_thread_pool.Allocate(); // this won't start new threads until requested
+    #endif
 }
 
 bool CAsn2FlatApp::WrapINSDSet(bool unwrap)
@@ -1585,7 +1617,7 @@ bool CAsn2FlatApp::WrapINSDSet(bool unwrap)
     auto& args = GetArgs();
     if (args["o"] && args["format"] && args["format"].AsString() == "insdseq") {
         auto streams = m_writers.MakeNewFileset();
-        auto os      = streams[eFlatFileCodes::all];
+        auto os      = streams[eFlatFileCodes::all].get();
         if (os)
             *os << (unwrap ? "</INSDSet>" : "<INSDSet>") << endl;
         return true;
