@@ -111,12 +111,18 @@ private:
 #include "test_compress_util.inl"
 
 
-
 void CTest::Init(void)
 {
     SetDiagPostLevel(eDiag_Error);
-    // To see all output, uncomment next line:
-    //SetDiagPostLevel(eDiag_Trace);
+
+    // Enable next block for debug purposes:
+#if 0
+    // DEBUG flags
+    SetDiagPostLevel(eDiag_Trace);
+    UnsetDiagPostFlag(eDPF_Severity);
+    UnsetDiagTraceFlag(eDPF_All);
+    CDiagContext::SetOldPostFormat(true);
+#endif
 
     // Create command-line argument descriptions
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -125,7 +131,7 @@ void CTest::Init(void)
     arg_desc->AddDefaultPositional
         ("lib", "Compression library to test", CArgDescriptions::eString, "all");
     arg_desc->SetConstraint
-        ("lib", &(*new CArgAllow_Strings, "all", "z", "bz2", "lzo"));
+        ("lib", &(*new CArgAllow_Strings, "all", "bz2", "lzo", "z", "zstd"));
     arg_desc->AddDefaultKey
         ("size", "SIZE",
          "Test data size. If not specified, default set of tests will be used. "
@@ -166,13 +172,20 @@ int CTest::Run(void)
 
     // Define available tests
 
-    bool bz2 = (test == "all" || test == "bz2");
-    bool z   = (test == "all" || test == "z");
-    bool lzo = (test == "all" || test == "lzo");
+    bool bz2  = (test == "all" || test == "bz2");
+    bool lzo  = (test == "all" || test == "lzo");
+    bool z    = (test == "all" || test == "z");
+    bool zstd = (test == "all" || test == "zstd");
 #if !defined(HAVE_LIBLZO)
     if (lzo) {
         ERR_POST(Warning << "LZO is not available on this platform, ignored.");
         lzo = false;
+    }
+#endif
+#if !defined(HAVE_LIBZSTD)
+    if (zstd) {
+        ERR_POST(Warning << "Zstd is not available on this platform, ignored.");
+        zstd = false;
     }
 #endif
 
@@ -258,8 +271,17 @@ int CTest::Run(void)
                        CZipStreamCompressor,
                        CZipStreamDecompressor> (src_buf, len, kBufLen);
         }
+#if defined(HAVE_LIBZSTD)
+        if (zstd) {
+            ERR_POST(Trace << "-------------- Zstd -----------------");
+            TestMethod<CZstdCompression,
+                CZstdCompressionFile,
+                CZstdStreamCompressor,
+                CZstdStreamDecompressor>(src_buf, len, kBufLen);
+        }
+#endif
 
-        // Test for (de)compressor's transparent copy
+        // Test for (de)compressor's transparent copy (don't use any algorithm)
         TestTransparentCopy(src_buf, len, kBufLen);
 
         // Restore saved character
@@ -273,12 +295,19 @@ int CTest::Run(void)
         if (bz2) {
             TestEmptyInputData(CCompressStream::eBZip2);
         }
+#if defined(HAVE_LIBLZO)
         if (lzo) {
             TestEmptyInputData(CCompressStream::eLZO);
         }
+#endif
         if (z) {
             TestEmptyInputData(CCompressStream::eZip);
         }
+#if defined(HAVE_LIBZSTD)
+        if (zstd) {
+            TestEmptyInputData(CCompressStream::eZstd);
+        }
+#endif
     }
 
     ERR_POST(Info << "TEST execution completed successfully!");
@@ -304,11 +333,10 @@ template<class TCompression,
          class TCompressionFile,
          class TStreamCompressor,
          class TStreamDecompressor>
-void CTest::TestMethod(const char* src_buf, size_t src_len, size_t buf_len)
+    void CTest::TestMethod(const char* src_buf, size_t src_len, size_t buf_len)
 {
     const string kFileName_str = CFile::ConcatPath(m_Dir, "test_compress.compressed.file");
-    const char*  kFileName = kFileName_str.c_str();
-    
+    const char* kFileName = kFileName_str.c_str();
 #if defined(HAVE_LIBLZO)
     // Initialize LZO compression
     assert(CLZOCompression::Initialize());
@@ -318,7 +346,7 @@ void CTest::TestMethod(const char* src_buf, size_t src_len, size_t buf_len)
 
 
 void CTest::PrintResult(EPrintType type, int last_errcode, 
-                       size_t src_len, size_t dst_len, size_t out_len)
+                        size_t src_len, size_t dst_len, size_t out_len)
 {
     ERR_POST(Trace
         << string((type == eCompress) ? "Compress   " : "Decompress ")
@@ -355,8 +383,6 @@ struct SEmptyInputDataTest
 
 static const SEmptyInputDataTest s_EmptyInputDataTests[] = 
 {
-    { CCompressStream::eZip, CZipCompression::fAllowEmptyData | CZipCompression::fGZip, true, 20, 20 },
-
     { CCompressStream::eBZip2, 0 /* default flags */,              false,  0,  0 },
     { CCompressStream::eBZip2, CBZip2Compression::fAllowEmptyData, true,  14, 14 },
 #if defined(HAVE_LIBLZO)
@@ -366,6 +392,12 @@ static const SEmptyInputDataTest s_EmptyInputDataTests[] =
     { CCompressStream::eLZO,   CLZOCompression::fAllowEmptyData,   true,   0, 15 },
     { CCompressStream::eLZO,   CLZOCompression::fAllowEmptyData |
                                CLZOCompression::fStreamFormat,     true,  15, 15 },
+#endif
+#if defined(HAVE_LIBZSTD)
+    { CCompressStream::eZstd,  0 /* default flags */,              false,  0,  0 },
+    { CCompressStream::eZstd,  CZstdCompression::fAllowEmptyData,  true,   9,  9 },
+    { CCompressStream::eZstd,  CZstdCompression::fAllowEmptyData |
+                               CZstdCompression::fChecksum,        true,   9, 13 },
 #endif
     { CCompressStream::eZip,   0 /* default flags */,              false,  0,  0 },
     { CCompressStream::eZip,   CZipCompression::fGZip,             false,  0,  0 },
@@ -382,6 +414,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
     char   cmp_buf[kLen];
     size_t n;
 
+    // fAllowEmptyData flag should be the same for all compression methods
     assert(
         static_cast<int>(CZipCompression::fAllowEmptyData) == 
         static_cast<int>(CBZip2Compression::fAllowEmptyData)
@@ -390,6 +423,12 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
     assert(
         static_cast<int>(CZipCompression::fAllowEmptyData) == 
         static_cast<int>(CLZOCompression::fAllowEmptyData)
+    );
+#endif
+#ifdef HAVE_LIBZSTD
+    assert(
+        static_cast<int>(CZipCompression::fAllowEmptyData) == 
+        static_cast<int>(CZstdCompression::fAllowEmptyData)
     );
 #endif
 
@@ -416,20 +455,28 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             stream_compressor.reset(new CBZip2StreamCompressor(test.flags));
             stream_decompressor.reset(new CBZip2StreamDecompressor(test.flags));
         } else 
-#if defined(HAVE_LIBLZO)
         if (method == CCompressStream::eLZO) {
+#if defined(HAVE_LIBLZO)
             compression.reset(new CLZOCompression());
             compression->SetFlags(test.flags);
             stream_compressor.reset(new CLZOStreamCompressor(test.flags));
             stream_decompressor.reset(new CLZOStreamDecompressor(test.flags));
-        } else 
 #endif
+        } else 
         if (method == CCompressStream::eZip) {
             compression.reset(new CZipCompression());
             compression->SetFlags(test.flags);
             stream_compressor.reset(new CZipStreamCompressor(test.flags));
             stream_decompressor.reset(new CZipStreamDecompressor(test.flags));
         } else
+        if (method == CCompressStream::eZstd) {
+#if defined(HAVE_LIBZSTD)
+            compression.reset(new CZstdCompression());
+            compression->SetFlags(test.flags);
+            stream_compressor.reset(new CZstdStreamCompressor(test.flags));
+            stream_decompressor.reset(new CZstdStreamDecompressor(test.flags));
+#endif
+        } else 
         {
             _TROUBLE;
         }
@@ -584,7 +631,7 @@ void CTest::TestTransparentCopy(const char* src_buf, size_t src_len, size_t buf_
         // Compare data
         assert(memcmp(src_buf, dst_buf, n) == 0);
         
-        OK_MSG("input");
+        OK_MSG("Transparent processor: input");
     }}
    
     // Output stream test
@@ -626,7 +673,7 @@ void CTest::TestTransparentCopy(const char* src_buf, size_t src_len, size_t buf_
         if ( !m_AllowOstrstream ) {
             CFile(kFileName).Remove();
         }
-        OK_MSG("output");
+        OK_MSG("Transparent processor: output");
     }}
 }
 

@@ -34,13 +34,12 @@
 BEGIN_NCBI_SCOPE
 
 
-// Algorithm-specific defaults
+// Algorithm-specific default flags
 const ICompression::TFlags kDefault_BZip2    = 0;
-#if defined(HAVE_LIBLZO)
 const ICompression::TFlags kDefault_LZO      = 0;
-#endif
 const ICompression::TFlags kDefault_Zip      = 0;
 const ICompression::TFlags kDefault_GZipFile = CZipCompression::fGZip;
+const ICompression::TFlags kDefault_Zstd     = 0;
 
 
 // Type of initialization
@@ -115,6 +114,21 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
         } else {
             processor = new CZipStreamDecompressor(flags);
         }
+        break;
+
+    case CCompressStream::eZstd:
+#if defined(HAVE_LIBZSTD)
+        if (flags == CCompressStream::fDefault) {
+            flags = kDefault_Zstd;
+        } else {
+            flags |= kDefault_Zstd;
+        }
+        if (type == eCompress) {
+            processor = new CZstdStreamCompressor(level, flags);
+        } else {
+            processor = new CZstdStreamDecompressor(flags);
+        }
+#endif
         break;
 
     default:

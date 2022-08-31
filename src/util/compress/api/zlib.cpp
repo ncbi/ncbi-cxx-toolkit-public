@@ -27,13 +27,12 @@
  *           Jean-loup Gailly, Mark Adler
  *           (used a part of zlib library code from: gzio.c, uncompr.c)
  *
- * File Description:  ZLib Compression API
+ * File Description:  ZLib Compression API wrapper
  *
  * NOTE: The zlib documentation can be found here: 
  *           http://zlib.org,  
  *           http://www.gzip.org/zlib/manual.html
  */
-
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
@@ -45,7 +44,13 @@
 #include <stdio.h>
 
 
+/// Error codes for ERR_COMPRESS and OMPRESS_HANDLE_EXCEPTIONS are really
+/// a subcodes and current maximum  value is defined in 'include/util/error_codes.hpp':
+///     NCBI_DEFINE_ERRCODE_X(Util_Compress, 210, max);
+/// For new values use 'max'+1 and update it there.
+///
 #define NCBI_USE_ERRCODE_X   Util_Compress
+
 
 BEGIN_NCBI_SCOPE
 
@@ -297,7 +302,7 @@ unsigned long s_GetCRC32(const void* buf, size_t len)
 
 CVersionInfo CZipCompression::GetVersion(void) const
 {
-    return CVersionInfo(ZLIB_VERSION, "zlib");
+    return CVersionInfo(ZLIB_VER_MAJOR, ZLIB_VER_MINOR, ZLIB_VER_REVISION, "zlib");
 }
 
 
@@ -519,10 +524,10 @@ bool CZipCompression::DecompressBuffer(
 }
 
 
-long CZipCompression::EstimateCompressionBufferSize(size_t src_len)
+size_t CZipCompression::EstimateCompressionBufferSize(size_t src_len)
 {
 #if (ZLIB_VERNUM < 0x1200)
-    return -1;
+    return 0;
 #else
     size_t header_len = 0;
     int    errcode    = Z_OK;
@@ -540,9 +545,9 @@ long CZipCompression::EstimateCompressionBufferSize(size_t src_len)
                             ZLIB_VERSION, (int)sizeof(z_stream));
     if (errcode != Z_OK) {
         SetError(errcode, zError(errcode));
-        return -1;
+        return 0;
     }
-    long n = (long)(deflateBound(STREAM, (unsigned long)src_len) + header_len);
+    size_t n = deflateBound(STREAM, (unsigned long)src_len) + header_len;
     deflateEnd(STREAM);
     return n;
 #endif
