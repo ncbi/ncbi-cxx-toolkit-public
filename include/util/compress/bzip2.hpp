@@ -192,6 +192,8 @@ public:
     ///   Buffer size used to read/write files.
     /// @return
     ///   Return TRUE on success, FALSE on error.
+    /// @note
+    ///   This method don't store any file meta information like name, date/time, owner or attributes.
     /// @sa
     ///   DecompressFile
     virtual bool CompressFile(

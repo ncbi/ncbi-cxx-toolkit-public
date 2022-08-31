@@ -31,6 +31,7 @@
  */
 
 /// @file zlib.hpp
+///
 /// ZLib Compression API.
 ///
 /// CZipCompression        - base methods for compression/decompression
@@ -234,15 +235,14 @@ public:
     /// specified number of bytes of data using the CompressBuffer() function.
     /// This function may return a conservative value that may be larger
     /// than 'src_len'. 
+    ///
     /// @param src_len
-    ///   Size of compressed data.
+    ///   Size of data in source buffer.
     /// @return
-    ///   Estimated buffer size.
-    ///   Return -1 on error, or if this method is not supported by current
-    ///   version of the zlib library. 
+    ///   Estimated buffer size. 0 if unable to determine.
     /// @sa
     ///   CompressBuffer
-    long EstimateCompressionBufferSize(size_t src_len);
+    size_t EstimateCompressionBufferSize(size_t src_len);
 
     /// Compress file.
     ///
@@ -344,7 +344,7 @@ protected:
                          ///< (the size of the history buffer). 
     int    m_MemLevel;   ///< The allocation memory level for the
                          ///< internal compression state.
-    int    m_Strategy;   ///< The parameter to tune compression algorithm.
+    int    m_Strategy;   ///< The parameter to tune up a compression algorithm.
 
 private:
     /// Private copy constructor to prohibit copy.

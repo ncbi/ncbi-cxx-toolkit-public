@@ -31,6 +31,7 @@
  */
 
 /// @file lzo.hpp
+///
 /// LZO Compression API.
 ///
 /// LZO is a data compression library which is suitable for data
@@ -43,10 +44,15 @@
 /// compression on yours own data before making decision to use LZO.
 /// Use zlib if you need a more universal and robust solution, that is also
 /// slower and needs more memory.
-
+///
 /// We don't support all possible algorithms, implemented in LZO.
 /// Only LZO1X is used in this API. Author of LZO says that it is 
 /// often the best choice of all.
+/// 
+/// NOTE:
+///   LZO is a just an compression algorithm to compress buffers,
+///   it doesnt support streaming or file compression out from the box.
+///   We use our own stream/file format to add such support.
 ///
 /// CLZOCompression        - base methods for compression/decompression
 ///                          memory buffers and files.
@@ -285,6 +291,8 @@ public:
     ///   Buffer size used to read/write files.
     /// @return
     ///   Return TRUE on success, FALSE on error.
+    /// @note
+    ///   This method don't store any file meta information like name, date/time, owner or attributes.
     /// @sa
     ///   DecompressFile
     virtual bool CompressFile(

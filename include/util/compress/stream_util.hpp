@@ -44,12 +44,14 @@
 ///     MCompress_Zip,      MDecompress_Zip
 ///     MCompress_GZipFile, MDecompress_GZipFile,
 ///                         MDecompress_ConcatenatedGZipFile
+///     MCompress_Zstd,     MDecompress_Zstd
 
 
 #include <util/compress/stream.hpp>
 #include <util/compress/bzip2.hpp>
-#include <util/compress/zlib.hpp>
 #include <util/compress/lzo.hpp>
+#include <util/compress/zlib.hpp>
+#include <util/compress/zstd.hpp>
 
 
 /** @addtogroup CompressionStreams
@@ -83,12 +85,13 @@ public:
     ///   to the original input/output stream if you know in advance that
     ///   data is uncompressed. 
     enum EMethod {
-        eNone,                ///< no compression method (copy "as is")
-        eBZip2,               ///< BZIP2
-        eLZO,                 ///< LZO (LZO1X)
-        eZip,                 ///< ZLIB (raw zip data / DEFLATE method)
-        eGZipFile,            ///< .gz file (including concatenated files)
-        eConcatenatedGZipFile ///< Synonym for eGZipFile (for backward compatibility)
+        eNone,                 ///< no compression method (copy "as is")
+        eBZip2,                ///< BZIP2
+        eLZO,                  ///< LZO (LZO1X)
+        eZip,                  ///< ZLIB (raw zip data / DEFLATE method)
+        eGZipFile,             ///< .gz file (including concatenated files)
+        eConcatenatedGZipFile, ///< Synonym for eGZipFile (for backward compatibility)
+        eZstd                  ///< ZStandard (raw zstd data)
     };
 
     /// Default algorithm-specific compression/decompression flags.
@@ -239,7 +242,7 @@ public:
 template <class T>  
 string g_GetManipulatorError(T& stream)
 {
-    int    status; 
+    int status; 
     string description;
     if (stream.GetError(status, description)) {
         return description + " (errcode = " + NStr::IntToString(status) + ")";
@@ -439,11 +442,13 @@ class MCompress_Proxy_BZip2      {};
 class MCompress_Proxy_LZO        {};
 class MCompress_Proxy_Zip        {};
 class MCompress_Proxy_GZipFile   {};
+class MCompress_Proxy_Zstd       {};
 class MDecompress_Proxy_BZip2    {};
 class MDecompress_Proxy_LZO      {};
 class MDecompress_Proxy_Zip      {};
 class MDecompress_Proxy_GZipFile {};
 class MDecompress_Proxy_ConcatenatedGZipFile {};
+class MDecompress_Proxy_Zstd     {};
 
 
 /// Manipulator definitions.
@@ -452,11 +457,13 @@ class MDecompress_Proxy_ConcatenatedGZipFile {};
 #define  MCompress_LZO                     MCompress_Proxy_LZO()
 #define  MCompress_Zip                     MCompress_Proxy_Zip()
 #define  MCompress_GZipFile                MCompress_Proxy_GZipFile()
+#define  MCompress_Zstd                    MCompress_Proxy_Zstd()
 #define  MDecompress_BZip2                 MDecompress_Proxy_BZip2()
 #define  MDecompress_LZO                   MDecompress_Proxy_LZO()
 #define  MDecompress_Zip                   MDecompress_Proxy_Zip()
 #define  MDecompress_GZipFile              MDecompress_Proxy_GZipFile()
 #define  MDecompress_ConcatenatedGZipFile  MDecompress_Proxy_ConcatenatedGZipFile()
+#define  MDecompress_Zstd                  MDecompress_Proxy_Zstd()
 
 
 // When you pass an object of type M[Dec|C]ompress_Proxy_* to an
@@ -464,6 +471,8 @@ class MDecompress_Proxy_ConcatenatedGZipFile {};
 // compression/decompression method that has the overloaded operators 
 // >> and <<. This will process the next object and then return 
 // the stream to continue processing as normal.
+
+// --- compression ---
 
 inline
 TCompressOProxy operator<<(ostream& os, MCompress_Proxy_BZip2 const& /*obj*/)
@@ -512,6 +521,20 @@ TCompressIProxy operator>>(istream& is, MCompress_Proxy_GZipFile const& /*obj*/)
 {
     return TCompressIProxy(is, CCompressStream::eGZipFile);
 }
+
+inline
+TCompressOProxy operator<<(ostream& os, MCompress_Proxy_Zstd const& /*obj*/)
+{
+    return TCompressOProxy(os, CCompressStream::eZstd);
+}
+
+inline
+TCompressIProxy operator>>(istream& is, MCompress_Proxy_Zstd const& /*obj*/)
+{
+    return TCompressIProxy(is, CCompressStream::eZstd);
+}
+
+// --- decompression ---
 
 inline
 TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_BZip2 const& /*obj*/)
@@ -571,6 +594,18 @@ inline
 TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_ConcatenatedGZipFile const& /*obj*/)
 {
     return TDecompressIProxy(is, CCompressStream::eConcatenatedGZipFile);
+}
+
+inline
+TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_Zstd const& /*obj*/)
+{
+    return TDecompressOProxy(os, CCompressStream::eZstd);
+}
+
+inline
+TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_Zstd const& /*obj*/)
+{
+    return TDecompressIProxy(is, CCompressStream::eZstd);
 }
 
 

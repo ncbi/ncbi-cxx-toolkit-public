@@ -44,11 +44,13 @@
 
 BEGIN_NCBI_SCOPE
 
-
-/// Default compression I/O stream buffer size.
-const streamsize kCompressionDefaultBufSize = 16*1024;
-
 /// Macro to report errors in compression API.
+///
+/// Error codes for ERR_COMPRESS and OMPRESS_HANDLE_EXCEPTIONS are really
+/// a subcodes and current maximum  value is defined in 'include/util/error_codes.hpp':
+///     NCBI_DEFINE_ERRCODE_X(Util_Compress, 210, max);
+/// For new values use 'max'+1 and update it there.
+///
 #define ERR_COMPRESS(subcode, message) ERR_POST_X(subcode, Warning << message)
 
 /// Macro to catch and handle exceptions (from streams in the destructor)
@@ -75,6 +77,9 @@ const streamsize kCompressionDefaultBufSize = 16*1024;
         }                                                             \
     }                                                                 \
 
+/// Default compression I/O stream buffer size.
+const streamsize kCompressionDefaultBufSize = 16*1024;
+
 
 // Forward declaration
 class CCompressionFile;
@@ -93,12 +98,19 @@ public:
     ///
     /// It is in range [0..9]. Increase of level might mean better compression
     /// and usualy greater time of compression. Usualy 1 gives best speed,
-    /// 9 gives best compression, 0 gives no compression at all.
+    /// 9 gives best compression, 0 gives no compression at all (if supported).
     /// eDefault value requests a compromise between speed and compression
     /// (according to developers of the corresponding compression algorithm).
+    /// @note
+    ///   Each compression library/algorithm have its own set of compression levels,
+    ///   than not usually fit into [0..9] range. But for convenience of use and 
+    ///   easier switching we prowide conversion between levels, whehe "lowest"
+    ///   is a always a minimem allowed compression level, and "best" is a maximum.
+    ///   All other approximately fits in between.
+    /// 
     enum ELevel {
         eLevel_Default       = -1,  // default
-        eLevel_NoCompression =  0,  // just store data
+        eLevel_NoCompression =  0,  // just store data (if supported, or eLevel_Lowest)
         eLevel_Lowest        =  1,
         eLevel_VeryLow       =  2,
         eLevel_Low           =  3,
@@ -410,7 +422,7 @@ protected:
 private:
     size_t  m_ProcessedSize;  //< The number of processed bytes
     size_t  m_OutputSize;     //< The number of output bytes
-    bool    m_Busy;           //< Is true if compressor is ready to begin next session
+    bool    m_Busy;           //< TRUE if compressor is busy and not ready to begin next session
     // Friend classes
     friend class CCompressionStream;
     friend class CCompressionStreambuf;

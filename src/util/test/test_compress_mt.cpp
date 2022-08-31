@@ -124,7 +124,7 @@ bool CTest::TestApp_Args(CArgDescriptions& args)
     args.AddDefaultPositional
         ("lib", "Compression library to test", CArgDescriptions::eString, "all");
     args.SetConstraint
-        ("lib", &(*new CArgAllow_Strings, "all", "z", "bz2", "lzo"));
+        ("lib", &(*new CArgAllow_Strings, "all", "bz2", "lzo", "z", "zstd"));
     return true;
 }
 
@@ -137,13 +137,20 @@ bool CTest::Thread_Run(int idx)
 
     // Define available tests
 
-    bool bz2 = (test == "all" || test == "bz2");
-    bool z   = (test == "all" || test == "z");
-    bool lzo = (test == "all" || test == "lzo");
+    bool bz2  = (test == "all" || test == "bz2");
+    bool z    = (test == "all" || test == "z");
+    bool lzo  = (test == "all" || test == "lzo");
+    bool zstd = (test == "all" || test == "zstd");
 #if !defined(HAVE_LIBLZO)
     if (lzo) {
         ERR_POST(Warning << "LZO is not available on this platform, ignored.");
         lzo = false;
+    }
+#endif
+#if !defined(HAVE_LIBZSTD)
+    if (zstd) {
+        ERR_POST(Warning << "Zstd is not available on this platform, ignored.");
+        zstd = false;
     }
 #endif
 
@@ -204,6 +211,15 @@ bool CTest::Thread_Run(int idx)
                        CZipStreamCompressor,
                        CZipStreamDecompressor> (idx, src_buf, len, kBufLen);
         }
+#if defined(HAVE_LIBZSTD)
+        if ( zstd ) {
+            ERR_POST(Trace << "-------------- Zstd -----------------");
+            TestMethod<CZstdCompression,
+                       CZstdCompressionFile,
+                       CZstdStreamCompressor,
+                       CZstdStreamDecompressor>(idx, src_buf, len, kBufLen);
+        }
+#endif
 
         // Restore saved character
         src_buf[len] = saved;
