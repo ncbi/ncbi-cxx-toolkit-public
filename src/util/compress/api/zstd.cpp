@@ -45,6 +45,7 @@
 
 #if defined(HAVE_LIBZSTD)
 
+#include <zstd.h>
 #include <zstd_errors.h>
 
 

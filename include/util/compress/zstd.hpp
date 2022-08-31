@@ -62,12 +62,6 @@
 
 #if defined(HAVE_LIBZSTD)
 
-#include <zstd.h>
-
-#if ZSTD_VERSION_NUMBER < 10400   // requires zstd v1.4.0+ for its advanced API
-#  undef HAVE_LIBZSTD
-#else
-
 /** @addtogroup Compression
  *
  * @{
@@ -585,8 +579,6 @@ END_NCBI_SCOPE
 
 
 /* @} */
-
-#endif  /* ZSTD_VERSION_NUMBER */
 
 #endif  /* HAVE_LIBZSTD */
 
