@@ -235,6 +235,64 @@ void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is)
 }
 
 
+void NcbiStreamCopyHead(CNcbiOstream& os, CNcbiIstream& is, SIZE_TYPE count)
+{
+    if ( !is.good() ) {
+        is.setstate(NcbiFailbit);
+        NCBI_THROW(CCoreException, eCore, "Input stream already in bad state");
+    }
+    if ( os.bad() ) {
+        os.setstate(NcbiFailbit);
+        NCBI_THROW(CCoreException, eCore,
+                   "Output stream already in bad state");
+    }
+    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
+        // NB: C++ Std says nothing about eofbit (27.6.1.3.27)
+        _ASSERT( !is.good() );
+        if (is.bad()) {
+            NCBI_THROW(CCoreException, eCore,
+                       "Input stream already in bad state (at EOF)");
+        }
+    }
+    char      buffer[16384];
+    SIZE_TYPE ninstream = count, ninbuffer = 0;
+    auto      outbuf = os.rdbuf();
+    while (ninstream > 0  ||  ninbuffer > 0) {
+        _ASSERT(ninbuffer < sizeof(buffer));
+        auto nwanted  = min(sizeof(buffer) - ninbuffer, ninstream);
+        streamsize nread = 0;
+        if (nwanted > 0) {
+            is.read(buffer + ninbuffer, nwanted);
+            nread = is.gcount();
+            if ( !is.good() ) {
+                is.setstate(NcbiFailbit);
+                ninstream = nread;
+            }
+        }
+        auto nwritten = outbuf->sputn(buffer, nread + ninbuffer);
+        if ( os.bad()  ||  nwritten == 0) {
+            os.setstate(NcbiFailbit);
+            NCBI_THROW(CCoreException, eCore, "Write error");
+        }
+        _ASSERT(static_cast<SIZE_TYPE>(nwritten) <= nread + ninbuffer);
+        ninbuffer = nread + ninbuffer - nwritten;
+        if (ninbuffer > 0) {
+            memmove(buffer, buffer + nwritten, ninbuffer);
+        }
+        _ASSERT(static_cast<SIZE_TYPE>(nread) <= ninstream);
+        ninstream -= nread;
+    }
+    if ( !os.flush() ) {
+        NCBI_THROW(CCoreException, eCore, "Flush error");
+    }
+    // Deferred to ensure writing as much as possible when reading fails
+    // and writing sometimes yields leftovers.
+    if ( is.bad() ) {
+        NCBI_THROW(CCoreException, eCore, "Read error");
+    }
+}
+
+
 size_t NcbiStreamToString(string* str, CNcbiIstream& is, size_t pos)
 {
     if (!is.good()) {

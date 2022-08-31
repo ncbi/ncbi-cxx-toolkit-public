@@ -627,16 +627,31 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str,
 /// finalized with a read for the byte count delivered;  otherwise, it may not
 /// work correctly.
 /// @sa
-///   CConn_IOStream
+///   CConn_IOStream, NcbiStreamCopyStart, NcbiStreamCopyThrow
 NCBI_XNCBI_EXPORT
 extern bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is);
 
 
 /// Same as NcbiStreamCopy() but throws an CCoreException when copy fails.
 /// @sa
-///   NcbiStreamCopy, CCoreException
+///   NcbiStreamCopy, NcbiStreamCopyHead, CCoreException
 NCBI_XNCBI_EXPORT
 extern void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is);
+
+
+/// Similar to NcbiStreamCopyThrow() but copies (and consumes) only the
+/// specified number of bytes (and bypasses operator<< altogether).  In
+/// the event of write failure, the number of bytes consumed may fall
+/// anywhere between the number of bytes written and the target count,
+/// inclusive.  If the input stream has less data than requested, copies
+/// what it can, sets that stream's eof and fail flags, and returns
+/// normally; if anything else goes wrong, throws an exception in
+/// addition to setting appropriate flags (and copying what it can).
+/// @sa
+///   NcbiStreamCopy, NcbiStreamCopyThrow, CCoreException
+NCBI_XNCBI_EXPORT
+extern void NcbiStreamCopyHead(CNcbiOstream& os, CNcbiIstream& is,
+                               string::size_type count);
 
 
 /// Input the entire contents of an istream into a string (NULL causes drain).
