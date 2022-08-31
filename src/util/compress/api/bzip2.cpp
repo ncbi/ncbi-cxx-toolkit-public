@@ -25,7 +25,7 @@
  *
  * Authors:  Vladimir Ivanov
  *
- * File Description:  BZip2 Compression API
+ * File Description:  BZip2 Compression API wrapper
  *
  */
 
@@ -36,9 +36,16 @@
 #include <bzlib.h>
 
 
+/// Error codes for ERR_COMPRESS and OMPRESS_HANDLE_EXCEPTIONS are really
+/// a subcodes and current maximum  value is defined in 'include/util/error_codes.hpp':
+///     NCBI_DEFINE_ERRCODE_X(Util_Compress, 210, max);
+/// For new values use 'max'+1 and update it there.
+///
 #define NCBI_USE_ERRCODE_X   Util_Compress
 
+
 BEGIN_NCBI_SCOPE
+
 
 // Macro to check flags
 #define F_ISSET(mask) ((GetFlags() & (mask)) == (mask))
@@ -52,6 +59,7 @@ BEGIN_NCBI_SCOPE
 
 // Maximum size of the chuck compressed by bzip2,
 // but there is no limit to the number of chunks in the buffer.
+// (bzip2 operates with 'unsigned int' values internally)
 const unsigned int kMaxChunkSize = kMax_UInt;
 
 

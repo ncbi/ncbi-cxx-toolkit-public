@@ -25,7 +25,7 @@
  *
  * Authors:  Vladimir Ivanov
  *
- * File Description:  LZO Compression API
+ * File Description:  LZO Compression API wrapper
  *
  */
 
@@ -35,11 +35,18 @@
 #include <util/compress/lzo.hpp>
 #include <util/error_codes.hpp>
 
+
+ /// Error codes for ERR_COMPRESS and OMPRESS_HANDLE_EXCEPTIONS are really
+/// a subcodes and current maximum  value is defined in 'include/util/error_codes.hpp':
+///     NCBI_DEFINE_ERRCODE_X(Util_Compress, 210, max);
+/// For new values use 'max'+1 and update it there.
+///
 #define NCBI_USE_ERRCODE_X   Util_Compress
 
 #if defined(HAVE_LIBLZO)
 
 #include <lzo/lzo1x.h>
+
 
 BEGIN_NCBI_SCOPE
 

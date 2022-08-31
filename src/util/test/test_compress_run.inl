@@ -4,7 +4,6 @@
 //
 //============================================================================
 
-
     // Allocate memory for buffers.Extra byte is necessary just in case... 
     // Some tests trying to read a bit more to get EOF.
     AutoArray<char> dst_buf_arr(buf_len + 1);
@@ -147,8 +146,8 @@
         result = c.CompressBuffer(src_buf, src_len, dst_buf, dst_len, &out_len);
         PrintResult(eCompress, c.GetErrorCode(), src_len, dst_len, out_len);
         assert(!result);
-        // The lzo decoder produce nothing in the buffer overflow case,
-        // bzip2 and zlib can produce some data.
+        // Some decoders (like lzo or zsd) produce nothing if destination buffer is too small,
+        // some other can produce some data.
         assert(out_len == 0 || out_len == dst_len);
         OK;
     }}
@@ -175,6 +174,7 @@
     //------------------------------------------------------------------------
     // Decompress buffer: transparent read
     //------------------------------------------------------------------------
+
     if (allow_transparent_read_test)
     {{
         ERR_POST(Trace << "Decompress buffer (transparent read)...");
@@ -292,6 +292,7 @@
     //------------------------------------------------------------------------
     // File decompression: transparent read test
     //------------------------------------------------------------------------
+
     if (allow_transparent_read_test)
     {{
         ERR_POST(Trace << "Decompress file (transparent read)...");
@@ -633,7 +634,6 @@
     //------------------------------------------------------------------------
     // I/O stream tests
     //------------------------------------------------------------------------
-
     {{
         ERR_POST(Trace << "I/O stream tests...");
         {{
@@ -798,6 +798,7 @@
     // Compress data from char* to stream. 
     // Decompress data from stream to string.
     //------------------------------------------------------------------------
+
     if (m_AllowIstrstream && m_AllowOstrstream)
     {{
         ERR_POST(Trace << "Manipulators: string test...");
@@ -807,6 +808,7 @@
 
         // Compress data using manipulator.
         // The 'src_buf' is zero-terminated and have only printable characters.
+
         if (test_name == "bzip2") {
             os_str << MCompress_BZip2 << src_buf;
         } else
@@ -821,6 +823,11 @@
         if (test_name == "zlib") {
             os_str << MCompress_Zip << src_buf;
         } else {
+#if defined(HAVE_LIBZSTD)
+        if (test_name == "zstd") {
+            os_str << MCompress_Zstd << src_buf;
+        } else 
+#endif
             _TROUBLE;
         }
         string str = CNcbiOstrstreamToString(os_str);
@@ -847,6 +854,11 @@
         if (test_name == "zlib") {
             is_cmp >> MDecompress_Zip >> str_cmp;
         } else {
+#if defined(HAVE_LIBZSTD)
+        if (test_name == "zstd") {
+            is_cmp >> MDecompress_Zstd >> str_cmp;
+        } else 
+#endif
             _TROUBLE;
         }
         str = str_cmp.data();
@@ -866,6 +878,7 @@
     // Compress data from istrstream to ostrstream. 
     // Decompress data from istrstream to ostrstream.
     //------------------------------------------------------------------------
+
     if (m_AllowIstrstream && m_AllowOstrstream)
     {{
         ERR_POST(Trace << "Manipulators: strstream test...");
@@ -888,14 +901,19 @@
             if (test_name == "bzip2") {
                 os_str << MCompress_BZip2 << is_str;
             } else 
-    #if defined(HAVE_LIBLZO)
+#if defined(HAVE_LIBLZO)
             if (test_name == "lzo") {
                 os_str << MCompress_LZO << is_str;
             } else 
-    #endif
+#endif
             if (test_name == "zlib") {
                 os_str << MCompress_Zip << is_str;
             } else {
+#if defined(HAVE_LIBZSTD)
+            if (test_name == "zstd") {
+                os_str << MCompress_Zstd << is_str;
+            } else 
+#endif
                 _TROUBLE;
             }
             string str = CNcbiOstrstreamToString(os_str);
@@ -915,14 +933,19 @@
             if (test_name == "bzip2") {
                 os_cmp << MDecompress_BZip2 << is_cmp;
             } else 
-    #if defined(HAVE_LIBLZO)
+#if defined(HAVE_LIBLZO)
             if (test_name == "lzo") {
                 os_cmp << MDecompress_LZO << is_cmp;
             } else 
-    #endif
+#endif
             if (test_name == "zlib") {
                 os_cmp << MDecompress_Zip << is_cmp;
             } else {
+#if defined(HAVE_LIBZSTD)
+            if (test_name == "zstd") {
+                os_cmp << MDecompress_Zstd << is_cmp;
+            } else 
+#endif
                 _TROUBLE;
             }
             str = CNcbiOstrstreamToString(os_cmp);
@@ -942,14 +965,19 @@
             if (test_name == "bzip2") {
                 is_str >> MCompress_BZip2 >> os_str;
             } else 
-    #if defined(HAVE_LIBLZO)
+#if defined(HAVE_LIBLZO)
             if (test_name == "lzo") {
                 is_str >> MCompress_LZO >> os_str;
             } else 
-    #endif
+#endif
             if (test_name == "zlib") {
                 is_str >> MCompress_Zip >> os_str;
             } else {
+#if defined(HAVE_LIBZSTD)
+            if (test_name == "zstd") {
+                is_str >> MCompress_Zstd >> os_str;
+            } else 
+#endif
                 _TROUBLE;
             }
             string str = CNcbiOstrstreamToString(os_str);
@@ -969,14 +997,19 @@
             if (test_name == "bzip2") {
                 is_cmp >> MDecompress_BZip2 >> os_cmp;
             } else 
-    #if defined(HAVE_LIBLZO)
+#if defined(HAVE_LIBLZO)
             if (test_name == "lzo") {
                 is_cmp >> MDecompress_LZO >> os_cmp;
             } else 
-    #endif
+#endif
             if (test_name == "zlib") {
                 is_cmp >> MDecompress_Zip >> os_cmp;
             } else {
+#if defined(HAVE_LIBZSTD)
+            if (test_name == "zstd") {
+                is_cmp >> MDecompress_Zstd >> os_cmp;
+            } else 
+#endif
                 _TROUBLE;
             }
             str = CNcbiOstrstreamToString(os_cmp);
@@ -996,12 +1029,16 @@
     // Compress data from istrstream to fstream. 
     // Decompress data from fstream to ostrstream.
     //------------------------------------------------------------------------
+
     if (m_AllowIstrstream && m_AllowOstrstream)
     {{
         ERR_POST(Trace << "Manipulators: fstream test...");
         INIT_BUFFERS;
 
         TCompression c;
+
+        // Preparation
+
 #if defined(HAVE_LIBLZO)
         if (test_name == "lzo") {
             // For LZO we should use fStreamFormat flag for CompressBuffer()
@@ -1031,6 +1068,11 @@
         if (test_name == "zlib") {
             os << MCompress_GZipFile << is_str;
         } else {
+#if defined(HAVE_LIBZSTD)
+        if (test_name == "zstd") {
+            os << MCompress_Zstd << is_str;
+        } else 
+#endif
             _TROUBLE;
         }
         os.close();
@@ -1053,6 +1095,11 @@
         if (test_name == "zlib") {
             is >> MDecompress_GZipFile >> os_cmp;
         } else {
+#if defined(HAVE_LIBZSTD)
+        if (test_name == "zstd") {
+            is >> MDecompress_Zstd >> os_cmp;
+        } else 
+#endif
             _TROUBLE;
         }
         string str = CNcbiOstrstreamToString(os_cmp);
