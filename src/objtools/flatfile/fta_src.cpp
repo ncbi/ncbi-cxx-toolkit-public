@@ -68,8 +68,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 typedef struct {
-    const char* name;
-    Uint1       num;
+    const char*       name;
+    COrgMod::ESubtype num;
 } CharUInt1;
 
 #define USE_CULTIVAR         00001
@@ -116,7 +116,7 @@ typedef struct _source_feat_blk {
     bool skip;
     bool useit;
 
-    Uint1                    genome;
+    CBioSource::EGenome      genome;
     struct _source_feat_blk* next;
 
     _source_feat_blk() :
@@ -135,7 +135,7 @@ typedef struct _source_feat_blk {
         lookup(false),
         skip(false),
         useit(false),
-        genome(0),
+        genome(CBioSource::eGenome_unknown),
         next(NULL)
     {
     }
@@ -239,7 +239,7 @@ static const char* SourceBadQuals[] = {
 };
 
 static const char* SourceSubSources[] = {
-    "chromosome",           /*  1 */
+    "chromosome",           /*  1 = CSubSource::eSubtype_chromosome, etc. */
     "map",                  /*  2 */
     "clone",                /*  3 */
     "sub_clone",            /*  4 */
@@ -280,29 +280,30 @@ static const char* SourceSubSources[] = {
     NULL
 };
 
+// clang-format off
 static CharUInt1 SourceOrgMods[] = {
-    { "strain", 2 },
-    { "sub_strain", 3 },
-    { "variety", 6 },
-    { "serotype", 7 },
-    { "serovar", 9 },
-    { "cultivar", 10 },
-    { "isolate", 17 },
-    { "specific_host", 21 },
-    { "host", 21 },
-    { "sub_species", 22 },
-    { "specimen_voucher", 23 },
-    { "ecotype", 27 },
-    { "culture_collection", 35 },
-    { "bio_material", 36 },
-    { "metagenome_source", 37 },
-    { "type_material", 38 },
-    { NULL, 0 }
+    { "strain",             COrgMod::eSubtype_strain },
+    { "sub_strain",         COrgMod::eSubtype_substrain },
+    { "variety",            COrgMod::eSubtype_variety },
+    { "serotype",           COrgMod::eSubtype_serotype },
+    { "serovar",            COrgMod::eSubtype_serovar },
+    { "cultivar",           COrgMod::eSubtype_cultivar },
+    { "isolate",            COrgMod::eSubtype_isolate },
+    { "specific_host",      COrgMod::eSubtype_nat_host },
+    { "host",               COrgMod::eSubtype_nat_host },
+    { "sub_species",        COrgMod::eSubtype_sub_species },
+    { "specimen_voucher",   COrgMod::eSubtype_specimen_voucher },
+    { "ecotype",            COrgMod::eSubtype_ecotype },
+    { "culture_collection", COrgMod::eSubtype_culture_collection },
+    { "bio_material",       COrgMod::eSubtype_bio_material },
+    { "metagenome_source",  COrgMod::eSubtype_metagenome_source },
+    { "type_material",      COrgMod::eSubtype_type_material },
 };
+// clang-format on
 
 static const char* GenomicSourceFeatQual[] = {
-    "unknown",
-    "unknown",
+    "unknown", // CBioSource::eGenome_unknown, etc.
+    "unknown", // ?
     "chloroplast",
     "chromoplast",
     "kinetoplast",
@@ -467,7 +468,7 @@ static void CheckForExemption(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void PopulateSubNames(char* namstr, const Char* name, const Char* value, Uint1 subtype, TOrgModList& mods)
+static void PopulateSubNames(char* namstr, const Char* name, const Char* value, COrgMod::ESubtype subtype, TOrgModList& mods)
 {
     CRef<COrgMod> mod(new COrgMod);
 
@@ -529,26 +530,25 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
     TOrgModList& mods = sfbp->orgname->SetMod();
 
     if ((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar != NULL)
-        PopulateSubNames(sfbp->namstr, "  (cultivar ", cultivar, 10, mods);
+        PopulateSubNames(sfbp->namstr, "  (cultivar ", cultivar, COrgMod::eSubtype_cultivar, mods);
     if ((use_what & USE_ISOLATE) == USE_ISOLATE && isolate != NULL)
-        PopulateSubNames(sfbp->namstr, "  (isolate ", isolate, 17, mods);
+        PopulateSubNames(sfbp->namstr, "  (isolate ", isolate, COrgMod::eSubtype_isolate, mods);
     if ((use_what & USE_SEROTYPE) == USE_SEROTYPE && serotype != NULL)
-        PopulateSubNames(sfbp->namstr, "  (serotype ", serotype, 7, mods);
+        PopulateSubNames(sfbp->namstr, "  (serotype ", serotype, COrgMod::eSubtype_serotype, mods);
     if ((use_what & USE_SEROVAR) == USE_SEROVAR && serovar != NULL)
-        PopulateSubNames(sfbp->namstr, "  (serovar ", serovar, 9, mods);
-    if ((use_what & USE_SPECIMEN_VOUCHER) == USE_SPECIMEN_VOUCHER &&
-        specimen_voucher != NULL)
-        PopulateSubNames(sfbp->namstr, "  (specimen_voucher ", specimen_voucher, 23, mods);
+        PopulateSubNames(sfbp->namstr, "  (serovar ", serovar, COrgMod::eSubtype_serovar, mods);
+    if ((use_what & USE_SPECIMEN_VOUCHER) == USE_SPECIMEN_VOUCHER && specimen_voucher != NULL)
+        PopulateSubNames(sfbp->namstr, "  (specimen_voucher ", specimen_voucher, COrgMod::eSubtype_specimen_voucher, mods);
     if ((use_what & USE_STRAIN) == USE_STRAIN && strain != NULL)
-        PopulateSubNames(sfbp->namstr, "  (strain ", strain, 2, mods);
+        PopulateSubNames(sfbp->namstr, "  (strain ", strain, COrgMod::eSubtype_strain, mods);
     if ((use_what & USE_SUB_SPECIES) == USE_SUB_SPECIES && sub_species != NULL)
-        PopulateSubNames(sfbp->namstr, "  (sub_species ", sub_species, 22, mods);
+        PopulateSubNames(sfbp->namstr, "  (sub_species ", sub_species, COrgMod::eSubtype_sub_species, mods);
     if ((use_what & USE_SUB_STRAIN) == USE_SUB_STRAIN && sub_strain != NULL)
-        PopulateSubNames(sfbp->namstr, "  (sub_strain ", sub_strain, 3, mods);
+        PopulateSubNames(sfbp->namstr, "  (sub_strain ", sub_strain, COrgMod::eSubtype_substrain, mods);
     if ((use_what & USE_VARIETY) == USE_VARIETY && variety != NULL)
-        PopulateSubNames(sfbp->namstr, "  (variety ", variety, 6, mods);
+        PopulateSubNames(sfbp->namstr, "  (variety ", variety, COrgMod::eSubtype_variety, mods);
     if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype != NULL)
-        PopulateSubNames(sfbp->namstr, "  (ecotype ", ecotype, 27, mods);
+        PopulateSubNames(sfbp->namstr, "  (ecotype ", ecotype, COrgMod::eSubtype_ecotype, mods);
 }
 
 /**********************************************************/
@@ -711,24 +711,24 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
                 p = val_ptr;
             else {
                 if (i == 0)
-                    sfbp->genome = 5; /* Mitochondrion */
+                    sfbp->genome = CBioSource::eGenome_mitochondrion;
                 else if (i == 1)
-                    sfbp->genome = 2; /* Chloroplast */
+                    sfbp->genome = CBioSource::eGenome_chloroplast;
                 else if (i == 2)
-                    sfbp->genome = 4; /* Kinetoplast */
+                    sfbp->genome = CBioSource::eGenome_kinetoplast;
                 else if (i == 3)
-                    sfbp->genome = 12; /* Cyanelle */
+                    sfbp->genome = CBioSource::eGenome_cyanelle;
                 else if (i == 4)
-                    sfbp->genome = 6; /* Plastid */
+                    sfbp->genome = CBioSource::eGenome_plastid;
                 else if (i == 5)
-                    sfbp->genome = 3; /* Chromoplast */
+                    sfbp->genome = CBioSource::eGenome_chromoplast;
                 else if (i == 6)
-                    sfbp->genome = 7; /* Macronuclear */
+                    sfbp->genome = CBioSource::eGenome_macronuclear;
                 else if (i == 7)
-                    sfbp->genome = 8; /* Extrachrom */
+                    sfbp->genome = CBioSource::eGenome_extrachrom;
                 else if (i == 8) {
                     p            = val_ptr;
-                    sfbp->genome = 9; /* Plasmid */
+                    sfbp->genome = CBioSource::eGenome_plasmid;
                 }
             }
             name = p;
@@ -776,7 +776,7 @@ static char* CheckSourceFeatOrgs(SourceFeatBlkPtr sfbp, int* status)
         if (sfbp->name != NULL)
             continue;
 
-        *status = (sfbp->genome == 0) ? 1 : 2;
+        *status = (sfbp->genome == CBioSource::eGenome_unknown) ? 1 : 2;
         break;
     }
     if (sfbp != NULL)
@@ -1422,34 +1422,34 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp, Int4 use_wh
             if (org_ref->IsSetOrgname() && org_ref->IsSetOrgMod()) {
                 ITERATE (COrgName::TMod, mod, org_ref->GetOrgname().GetMod()) {
                     switch ((*mod)->GetSubtype()) {
-                    case 10:
+                    case COrgMod::eSubtype_cultivar:
                         cultivar = (*mod)->GetSubname().c_str();
                         break;
-                    case 17:
+                    case COrgMod::eSubtype_isolate:
                         isolate = (*mod)->GetSubname().c_str();
                         break;
-                    case 7:
+                    case COrgMod::eSubtype_serotype:
                         serotype = (*mod)->GetSubname().c_str();
                         break;
-                    case 9:
+                    case COrgMod::eSubtype_serovar:
                         serovar = (*mod)->GetSubname().c_str();
                         break;
-                    case 27:
+                    case COrgMod::eSubtype_ecotype:
                         ecotype = (*mod)->GetSubname().c_str();
                         break;
-                    case 23:
+                    case COrgMod::eSubtype_specimen_voucher:
                         specimen_voucher = (*mod)->GetSubname().c_str();
                         break;
-                    case 2:
+                    case COrgMod::eSubtype_strain:
                         strain = (*mod)->GetSubname().c_str();
                         break;
-                    case 22:
+                    case COrgMod::eSubtype_sub_species:
                         sub_species = (*mod)->GetSubname().c_str();
                         break;
-                    case 3:
+                    case COrgMod::eSubtype_substrain:
                         sub_strain = (*mod)->GetSubname().c_str();
                         break;
-                    case 6:
+                    case COrgMod::eSubtype_variety:
                         variety = (*mod)->GetSubname().c_str();
                         break;
                     }
@@ -1740,7 +1740,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void AddOrgMod(COrg_ref& org_ref, const Char* val, Uint1 type)
+static void AddOrgMod(COrg_ref& org_ref, const Char* val, COrgMod::ESubtype type)
 {
     COrgName& orgname = org_ref.SetOrgname();
 
@@ -1752,10 +1752,9 @@ static void AddOrgMod(COrg_ref& org_ref, const Char* val, Uint1 type)
 }
 
 /**********************************************************/
-static void FTASubSourceAdd(CBioSource& bio, const Char* val, Uint1 type)
+static void FTASubSourceAdd(CBioSource& bio, const Char* val, CSubSource::ESubtype type)
 {
-    if (type != 12) /* dev-stage */
-    {
+    if (type != CSubSource::eSubtype_dev_stage) {
         bool found = false;
         ITERATE (CBioSource::TSubtype, subtype, bio.GetSubtype()) {
             if ((*subtype)->GetSubtype() == type) {
@@ -1788,11 +1787,11 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
 
     if (bio.GetOrg().CanGetOrgname() && bio.GetOrg().GetOrgname().CanGetMod()) {
         ITERATE (COrgName::TMod, mod, bio.GetOrg().GetOrgname().GetMod()) {
-            for (size_t i = 0; SourceOrgMods[i].name != NULL; ++i) {
-                if (SourceOrgMods[i].num != (*mod)->GetSubtype())
+            for (const auto& it : SourceOrgMods) {
+                if (it.num != (*mod)->GetSubtype())
                     continue;
 
-                modnames.push_back(SourceOrgMods[i].name);
+                modnames.push_back(it.name);
                 break;
             }
         }
@@ -1806,7 +1805,7 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
         const Char*        val_ptr  = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : NULL;
 
         if (cur_qual == "note") {
-            FTASubSourceAdd(bio, val_ptr, 255);
+            FTASubSourceAdd(bio, val_ptr, CSubSource::eSubtype_other);
             continue;
         }
 
@@ -1825,9 +1824,9 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
         }
 
         b = SourceSubSources;
-        for (size_t i = 1; *b != NULL; i++, b++) {
+        for (size_t i = CSubSource::eSubtype_chromosome; *b; i++, b++) {
             if (**b != '\0' && cur_qual == *b) {
-                FTASubSourceAdd(bio, val_ptr, (Uint1)i);
+                FTASubSourceAdd(bio, val_ptr, static_cast<CSubSource::ESubtype>(i));
                 break;
             }
         }
@@ -1839,9 +1838,9 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
         if (find(modnames.begin(), modnames.end(), cur_qual) != modnames.end())
             continue;
 
-        for (size_t i = 0; SourceOrgMods[i].name != NULL; i++) {
-            if (cur_qual == SourceOrgMods[i].name) {
-                AddOrgMod(bio.SetOrg(), val_ptr, SourceOrgMods[i].num);
+        for (const auto& it : SourceOrgMods) {
+            if (cur_qual == it.name) {
+                AddOrgMod(bio.SetOrg(), val_ptr, it.num);
                 break;
             }
         }
@@ -2100,7 +2099,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
             }
 
             MemFree(tco);
-            FTASubSourceAdd(bio, val_ptr, 23);
+            FTASubSourceAdd(bio, val_ptr, CSubSource::eSubtype_country);
         }
 
         if (dropped)
@@ -2110,7 +2109,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
             bio.SetGenome(newgen);
         else if (oldgen > -1)
             bio.SetGenome(oldgen);
-        else if (sfbp->genome != 0)
+        else if (sfbp->genome != CBioSource::eGenome_unknown)
             bio.SetGenome(sfbp->genome);
 
         CheckQualsInSourceFeat(bio, sfbp->quals, taxserver);
