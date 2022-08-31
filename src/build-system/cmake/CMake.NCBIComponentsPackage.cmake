@@ -243,6 +243,12 @@ NCBI_define_Pkgcomponent(NAME LZO PACKAGE lzo FIND lzo)
 #############################################################################
 # ZSTD
 NCBI_define_Pkgcomponent(NAME ZSTD PACKAGE zstd FIND zstd)
+if(NCBI_COMPONENT_ZSTD_FOUND AND
+    (NOT DEFINED NCBI_COMPONENT_ZSTD_VERSION OR ${NCBI_COMPONENT_ZSTD_VERSION} VERSION_LESS "1.4"))
+    message("ZSTD: Version requirement not met (required at least v1.4)")
+    set(NCBI_COMPONENT_ZSTD_FOUND NO)
+    set(HAVE_LIBZSTD 0)
+endif()
 
 #############################################################################
 # Boost

@@ -223,6 +223,12 @@ NCBIcomponent_report(LZO)
 #############################################################################
 # ZSTD
 NCBI_define_Wcomponent(ZSTD libzstd_static.lib)
+if(NCBI_COMPONENT_ZSTD_FOUND AND
+    (NOT DEFINED NCBI_COMPONENT_ZSTD_VERSION OR ${NCBI_COMPONENT_ZSTD_VERSION} VERSION_LESS "1.4"))
+    message("ZSTD: Version requirement not met (required at least v1.4)")
+    set(NCBI_COMPONENT_ZSTD_FOUND NO)
+    set(HAVE_LIBZSTD 0)
+endif()
 NCBIcomponent_report(ZSTD)
 
 if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
