@@ -1015,8 +1015,8 @@ string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
         }
     }
 
-    string version = (tsaname.length() == 15) ?
-        tsaname.substr(7, 2) : tsaname.substr(4, 2);
+    SIZE_TYPE len = tsaname.find_first_of("0123456789");
+    string version = tsaname.substr(len, 2);
 
     CNcbiOstrstream text;
     text << "The " << *taxname
@@ -1079,8 +1079,8 @@ string CCommentItem::GetStringForTLS(CBioseqContext& ctx)
         }
     }
 
-    string version = (tlsname.length() == 15) ?
-        tlsname.substr(7, 2) : tlsname.substr(4, 2);
+    SIZE_TYPE len = tlsname.find_first_of("0123456789");
+    string version = tlsname.substr(len, 2);
 
     CNcbiOstrstream text;
     text << "The " << *taxname
