@@ -241,7 +241,8 @@ ANKO	s	Forest Research Institute, Turkey
 ANLW	s	Amt Der Niederosterreichischen Landsregierung			
 ANMR	c	Asian Network on Microbial Researches			
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
-ANSP	s	Academy of Natural Sciences of Drexel University	ANSP		
+ANSP	s	Academy of Natural Sciences			
+ANSP	s	Academy of Natural Sciences of Drexel University			
 ANSP:FISH	s	Academy of Natural Sciences of Drexel University, Ichthyology Collection		
 ANSP:HRP	s	Academy of Natural Sciences of Drexel University, Herpetology collection		
 ANSP:Malacology	s	Academy of Natural Sciences of Drexel University, Malacology Collection		
@@ -308,7 +309,7 @@ ASAY	s	Academy of Science of Armenia
 ASC	s	Northern Arizona University, Biological Sciences Department			
 ASCC	s	Adams State College Collection			
 ASCU	s	Agricultural Scientific Collections Unit			
-ASDM	s	Arizona-Sonora Museum			
+ASDM	s	Arizona-Sonora Desert Museum			
 ASE	s	Universidade Federal de Sergipe, Departamento de Biologia			
 ASH	s	National Institute of Deserts Flora and Fauna			
 ASIB	c	Algensammlung am Institut fur Botanik			
@@ -737,7 +738,7 @@ BROC	s	State University of New York, Biological Sciences Department
 BRPP	s	Botanica Royal Park of Palm Hills			
 BRS	s	Agriculture and Agri-Food Canada			
 BRSL	s	Wroclaw University, Botany Department			
-BRSMG	s	Department of Geology			
+BRSMG	s	Bristol City Museum and Art Gallery			
 BRSN	s	University of Wales, Bangor Research Unit			
 BRSU	s	Bryansk State University			
 BRTN	s	Brighton Natural History Society			
@@ -1925,7 +1926,7 @@ EIHU	s	Entomological Institute, Hokkaido University	SEHU
 EINS	s	Ecuadorian Institute of Natural Sciences			
 EISC	s	Shaanxi Agricultural University, Entomological Institute			
 EIU	s	Eastern Illinois University, Biological Sciences Department			
-EJ	s	?Ein Yabrud collection catalogue entries at The Hebrew University			
+EJ	s	Ein Yabrud collection catalogue entries at The Hebrew University			
 EKU	s	Eastern Kentucky University			
 EKY	s	Eastern Kentucky University, Biological Sciences Department			
 ELCAK	s	Entomological Laboratory, College of Agriculture			
@@ -2208,10 +2209,10 @@ FRR	c	Food Science Australia, Ryde		http://www.foodscience.csiro.au/cgi-bin/rila
 FRS	s	Falconer Museum			
 FRSKU	s	Kyoto University, Fisheries Research Station			
 FRU	s	National Academy of Science, Kyrgyzstan, Laboratory of Flora			
-FSAG	s	Faculte des Sciences Agronomiques de Gembloux			
+FSAG	s	Universite de Liege			
 FSC<CAN>	c	Fredericton Stock Culture Collection			
 FSC<USA-CA>	s	California State University, Fresno			
-FSCA	s	Florida State Collection of Arthropods, Florida Department of  Agriculture and Consumer Services, Division of Plant Industry			
+FSCA	s	Florida State Collection of Arthropods, The Museum of Entomology			
 FSCL	s	Florida Southern College, Biology Department			
 FSFRL	s	Far Seas Fisheries Research Laboratory			
 FSIU	s	Laboratory of Fisheries, Department of Oceanography			
@@ -3312,7 +3313,6 @@ IRRI	sb	International Rice Research Institute
 IRSAC	s	Institute de Recherche Scientific en Afrique Centrale			
 IRSC	s	Institut de Recherches Scientifiques au Congo			
 IRSM	s	Institut Recherche Scientifique de Madagascar			
-IRSN	s	Institut Royal des Sciences Naturelles de Belgique			
 IRSNB	s	Institut Royal des Sciences Naturelles de Belgique			
 IRVC	s	University of California, UCI Arboretum Mail			
 IS	s	University of Molise, Department of Science and Technology for Environment and Territory			
@@ -4407,7 +4407,6 @@ MHLCLF	s	Museum Henri Lecoq Clermont-Ferrand
 MHM	s	Malham Tarn Field Centre			
 MHMN	s	Museu Historic Municipal de Novelda			
 MHNA	s	Museum d'Histoire Naturelle d'Autun			
-MHNB	s	Museum d'Histoire Naturelle de Bale			
 MHNC<CHE>	s	Musee d'Histoire Naturelle - La Chaux-de-Fonds	LCFM		
 MHNC<CHL>	s	Museo de Historia Natural de Concepcion (Chile)			
 MHNCI	s	Museu de Historia Natural Capao da Imbuia	MNHCI		
@@ -4910,7 +4909,7 @@ MZFS-DAR	s	Museu de Zoologia da Universidade Estadual de Feira de Santana
 MZGZ	s	Museum Zoologia del Giardino Zoologico			
 MZH	s	Zoolgical Museum, Finnish Museum of Natural History			
 MZKI	c	Microbial Culture Collection of National Institute of Chemistry			
-MZL	s	Musee Zoologique	MZLS		
+MZL	s	Musee cantonal de zoologie	MZLS		
 MZLU	s	Lund University Museum			
 MZMU	s	Departmental Museum of Zoology, Mizoram University			
 MZN	s	Musee Zoologie			
@@ -5207,7 +5206,7 @@ NMA	s	National Museum Australia -
 NMAC	s	Inner Mongolia Agricultural University, Department of Pratacultural Science			
 NMAG	s	Naturhistorisches Museum, Augsburg			
 NMB	c	Ningbo Marine Biotechnology			
-NMB<CHE>	s	Naturhistorishes Museum			
+NMB<CHE>	s	Naturhistorishes Museum	MHNB		
 NMB<ZAF>	s	National Museum, Bloemfontein			
 NMB<ZAF>:P	s	National Museum, Bloemfontein, The Protozoan collection of the National Museum		
 NMBA<ARG>	s	National Museum, Buenos Aires			
@@ -6024,7 +6023,7 @@ RBCM:Mamm	s	Royal British Columbia Museum, Mammal Collection
 RBCM:Ornith	s	Royal British Columbia Museum, Ornithology Collection		
 RBE	s	Universidade Federal Rural do Rio de Janeiro			
 RBF	c	Raiffeisen Bioforschung			
-RBINS	s	Royal Belgian Institute of Natural Sciences			
+RBINS	s	Royal Belgian Institute of Natural Sciences	IRSN		
 RBR	s	Universidade Federal Rural do Rio de Janeiro, Departamento de Botanica			
 RBS	s	Royal Botanic Society			
 RBY	s	East Divisional Library			
@@ -6365,7 +6364,7 @@ SDM<GBR>	s	Stroud and District Museum
 SDM<USA-CA>	s	San Diego Mesa College, Botany Department			
 SDMP	s	Shandong Institute of Traditional Chinese Medicine and Materia Medica			
 SDN	s	Borough of Thamesdown Museum and Art Gallery			
-SDNCU	cb	The Specimen Depository of the Graduate School of Natural Sciences, Nagoya City University			
+SDNCU	cb	The Specimen Depository of the Graduate School of Science, Nagoya City University			
 SDNH<SWZ>	s	Malkerns Agricultural Research Station			
 SDNHM	s	San Diego Natural History Museum	SDMC,SDNH,SDSNH		
 SDNHM:Birds	s	San Diego Natural History Museum, Bird collection		
@@ -7774,7 +7773,7 @@ USTCMS	c	University of Santo Tomas Collection of Microbial Strains
 USTF	s	Technologische Faculteit			
 USTH	s	University of Santo Tomas			
 USTK	s	University of Science and Technology, Museum of Natural History			
-USU	s	United States Department of Agriculture			
+USU	s	Utah State University, USDA Agricultural Research Service			
 USUUB	s	Utah State University Uintah Basin			
 USZ	s	Universidad Autonoma Gabriel Rene Moreno			
 UT<USA-TN>	s	University of Tennessee			
