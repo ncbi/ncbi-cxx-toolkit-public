@@ -126,7 +126,9 @@ public:
         eFlatFileGenbank     = 65,
         eFlatFileEna         = 66,
         eFlatFileUniProt     = 67,
-        
+
+        eZstd                = 68, ///< Zstandard (zstd) compressed data
+
         // ***  Adding new format codes?  ***
         //  (1) A sanity check in the  implementation depends on the format codes being 
         //      consecutive. Hence no gaps allowed!
@@ -301,6 +303,7 @@ protected:
     bool TestFormatHgvs(EMode);
     bool TestFormatZip(EMode);
     bool TestFormatGZip(EMode);
+    bool TestFormatZstd(EMode);
     bool TestFormatBZip2(EMode);
     bool TestFormatLzo(EMode);
     bool TestFormatSra(EMode);
