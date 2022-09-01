@@ -158,6 +158,7 @@ vector<int> CFormatGuess::sm_CheckOrder =
 {
     eBam, // must precede eGZip!
     eZip,
+    eZstd,
     eGZip,
     eBZip2,
     eLzo,
@@ -269,6 +270,7 @@ const CFormatGuess::NAME_MAP CFormatGuess::sm_FormatNames = {
     {eFlatFileGenbank, "Genbank FlatFile"},
     {eFlatFileEna, "ENA FlatFile"},
     {eFlatFileUniProt, "UniProt FlatFile"},
+    {eZstd, "zstd"},
 };
 
 const char*
@@ -555,6 +557,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatZip( mode );
     case eGZip:
         return TestFormatGZip( mode );
+    case eZstd:
+        return TestFormatZstd( mode );
     case eBZip2:
         return TestFormatBZip2( mode );
     case eLzo:
@@ -1912,14 +1916,12 @@ CFormatGuess::TestFormatZip(
     if ( ! EnsureTestBuffer() ) {
         return false;
     }
-
     // check if the first two bytes match with the zip magic number: 0x504B,
     // or PK and the next two bytes match with any of 0x0102, 0x0304, 0x0506
     // and 0x0708.
     if ( m_iTestDataSize < 4) {
         return false;
     }
-
     if (m_pTestBuffer[0] == 'P'  &&  m_pTestBuffer[1] == 'K'  &&
         ((m_pTestBuffer[2] == (char)1  &&  m_pTestBuffer[3] == (char)2)  ||
          (m_pTestBuffer[2] == (char)3  &&  m_pTestBuffer[3] == (char)4)  ||
@@ -1927,7 +1929,6 @@ CFormatGuess::TestFormatZip(
          (m_pTestBuffer[2] == (char)7  &&  m_pTestBuffer[3] == (char)8) ) ) {
         return true;
     }
-
     return false;
 }
 
@@ -1940,16 +1941,35 @@ CFormatGuess::TestFormatGZip(
     if ( ! EnsureTestBuffer() ) {
         return false;
     }
-
     // check if the first two bytes match the gzip magic number: 0x1F8B
     if ( m_iTestDataSize < 2) {
         return false;
     }
-
     if (m_pTestBuffer[0] == (char)31  &&  m_pTestBuffer[1] == (char)139) {
         return true;
     }
+    return false;
+}
 
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatZstd(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
+    // check if the first 4 bytes match with the zstd magic number: 0xFD2FB528
+    if ( m_iTestDataSize < 4) {
+        return false;
+    }
+    if (m_pTestBuffer[0] == (char)0x28  &&  
+        m_pTestBuffer[1] == (char)0xB5  &&
+        m_pTestBuffer[2] == (char)0x2F  &&
+        m_pTestBuffer[3] == (char)0xFD  ) {
+        return true;
+    }
     return false;
 }
 
