@@ -9209,6 +9209,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid; the field value and/or name are incorrect"));
     //AddChromosomeNoLocation(expected_errors, entry);
     CheckErrors (*eval, expected_errors);
+    
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
 
     CLEAR_ERRORS
 
@@ -9236,6 +9238,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
 
     CLEAR_ERRORS
 
@@ -9266,6 +9270,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
+    
     CLEAR_ERRORS
 
     prefix_field->SetData().SetStr("##MIGS-Data-START##");
@@ -9292,6 +9298,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
+    
     CLEAR_ERRORS
 
     prefix_field->SetData().SetStr("##MIGS:4.0-Data-START##");
@@ -9319,6 +9327,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
+    
     CLEAR_ERRORS
 
     // should complain about missing required field for specific values of sequencing technology
@@ -9339,6 +9349,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
+
     CLEAR_ERRORS
 
     field->SetData().SetStr("something else");
@@ -9350,6 +9362,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
+    
     CLEAR_ERRORS
 
     prefix_field->SetData().SetStr("##HumanSTR-START##");
