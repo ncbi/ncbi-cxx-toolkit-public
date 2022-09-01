@@ -551,15 +551,14 @@ bool CValidError_desc::x_ValidateStructuredComment
         }
         
         if (auto pSuffix = usr.GetFieldRef("StructuredCommentSuffix"); pSuffix) {
-            if (!pSuffix->IsSetData() || !pSuffix->GetData().IsStr()) {
-                return true;
-            }
-            string report_sfx = pSuffix->GetData().GetStr();
-            string sfx = report_sfx;
-            CComment_rule::NormalizePrefix(sfx);
-            if (report && ! s_IsAllowedPrefix (sfx)) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix,
-                    report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
+            if (pSuffix->IsSetData() && pSuffix->GetData().IsStr()) {
+                string report_sfx = pSuffix->GetData().GetStr();
+                string sfx = report_sfx;
+                CComment_rule::NormalizePrefix(sfx);
+                if (report && ! s_IsAllowedPrefix (sfx)) {
+                    PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix,
+                        report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
+                }
             }
         }
     } catch (CException& ) {
