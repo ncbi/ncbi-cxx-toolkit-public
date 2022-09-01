@@ -484,18 +484,22 @@ bool CValidError_desc::x_ValidateStructuredComment
  const CSeqdesc& desc,
  bool  report)
 {
-    bool is_valid = true;
     if (!usr.IsSetType() || !usr.GetType().IsStr()
         || !NStr::EqualCase(usr.GetType().GetStr(), "StructuredComment")) {
         return false;
     }
+    
+    bool is_valid = true;
     if (!usr.IsSetData() || usr.GetData().size() == 0) {
         if (report) {
             PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingUserObject,
                      "Structured Comment user object descriptor is empty", *m_Ctx, desc);
+            is_valid = false;
+        } else{
+            return false;
         }
-        is_valid = false;
     }
+    
     string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
     if (NStr::IsBlank(prefix)) {
         if (report) {
@@ -505,13 +509,16 @@ bool CValidError_desc::x_ValidateStructuredComment
         is_valid &= ValidateStructuredCommentGeneric(usr, desc, report);
         return is_valid;
     }
+
     if (!s_IsAllowedPrefix(prefix)) {
         if (report) {
             string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
             PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidPrefix,
                     report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
+            is_valid = false;
+        } else {
+            return false;
         }
-        is_valid = false;
     }
 
     // find prefix
@@ -538,6 +545,9 @@ bool CValidError_desc::x_ValidateStructuredComment
                 // no rule for this prefix
                 is_valid &= ValidateStructuredCommentGeneric(usr, desc, report);
             }
+            if (!report && !is_valid) {
+                return false;
+            }
         }
         try {
             const CUser_field& suffix = usr.GetField("StructuredCommentSuffix");
@@ -557,19 +567,23 @@ bool CValidError_desc::x_ValidateStructuredComment
     } catch (CException& ) {
         // no prefix, in which case no rules
         // but it is still an error - should have prefix
+        is_valid = false;
         if (report) {
             PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix,
                     "Structured Comment lacks prefix and/or suffix", *m_Ctx, desc);
             ValidateStructuredCommentGeneric(usr, desc, true);
+        } else {
+            return false;
         }
-        is_valid = false;
     }
     if (NStr::Equal(prefix, "Genome-Assembly-Data") && HasBadGenomeAssemblyName(usr)) {
         is_valid = false;
         if (report) {
             PostErr(eDiag_Info, eErr_SEQ_DESCR_BadAssemblyName,
                 "Assembly Name should not start with 'NCBI' or 'GenBank' in structured comment", *m_Ctx, desc);
-        }
+        } else {
+            return false;
+        }   
     }
     if (report && !is_valid && !NStr::IsBlank(prefix)) {
         PostErr(eDiag_Info, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
