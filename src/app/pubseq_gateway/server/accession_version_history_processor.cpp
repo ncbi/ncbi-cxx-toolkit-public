@@ -263,6 +263,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
 
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -280,6 +281,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
     }
 
     if (last) {
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         if (m_RecordCount == 0)
@@ -438,8 +440,8 @@ bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fe
 
         // Mark finished
         UpdateOverallStatus(status);
-        fetch_details->SetReadFinished();
         fetch_details->GetLoader()->ClearError();
+        fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
