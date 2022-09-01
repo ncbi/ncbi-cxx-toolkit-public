@@ -8215,6 +8215,11 @@ if test -n "$MONGODB3_LIBS"; then
    else
       MONGODB3_STATIC_LIBS=$MONGODB3_LIBS
    fi
+   if test -n "$ZSTD_LIBS"; then
+      zsed="s@ -lzstd @ $ZSTD_LIBS @; s/^ //; s/ $//"
+      MONGODB3_LIBS=`echo " $MONGODB3_LIBS " | sed -e "$zsed"`
+      MONGODB3_STATIC_LIBS=`echo " $MONGODB3_STATIC_LIBS " | sed -e "$zsed"`
+   fi
 fi
 
 
