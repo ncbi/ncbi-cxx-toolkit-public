@@ -627,6 +627,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
 {
     auto    record_count = records.size();
     auto    app = CPubseqGatewayApp::GetInstance();
+
+    m_CurrentFetch->GetLoader()->ClearError();
     m_CurrentFetch->SetReadFinished();
 
     if (m_Request->NeedTrace()) {
@@ -764,6 +766,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
 void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                                         vector<CBioseqInfoRecord>&&  records)
 {
+    m_NoSeqIdTypeFetch->GetLoader()->ClearError();
     m_NoSeqIdTypeFetch->SetReadFinished();
 
     auto                app = CPubseqGatewayApp::GetInstance();
@@ -877,10 +880,14 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
 void CPSGS_AsyncResolveBase::x_OnBioseqInfoError(CRequestStatus::ECode  status, int  code,
                                               EDiagSev  severity, const string &  message)
 {
-    if (m_CurrentFetch)
+    if (m_CurrentFetch) {
+        m_CurrentFetch->GetLoader()->ClearError();
         m_CurrentFetch->SetReadFinished();
-    if (m_NoSeqIdTypeFetch)
+    }
+    if (m_NoSeqIdTypeFetch) {
+        m_NoSeqIdTypeFetch->GetLoader()->ClearError();
         m_NoSeqIdTypeFetch->SetReadFinished();
+    }
 
     if (!IsTimeoutError(code)) {
         CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
@@ -906,6 +913,8 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
 {
     auto    record_count = records.size();
     auto    app = CPubseqGatewayApp::GetInstance();
+
+    m_CurrentFetch->GetLoader()->ClearError();
     m_CurrentFetch->SetReadFinished();
 
     if (m_Request->NeedTrace()) {
@@ -965,6 +974,7 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
 void CPSGS_AsyncResolveBase::x_OnSi2csiError(CRequestStatus::ECode  status, int  code,
                                           EDiagSev  severity, const string &  message)
 {
+    m_CurrentFetch->GetLoader()->ClearError();
     m_CurrentFetch->SetReadFinished();
 
     if (!IsTimeoutError(code)) {

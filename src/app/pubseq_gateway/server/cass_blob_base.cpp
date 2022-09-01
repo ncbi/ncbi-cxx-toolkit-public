@@ -121,6 +121,7 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                                  ePSGS_BlobRetrievalIsNotAuthorized,
                                  eDiag_Error);
 
+            fetch_details->GetLoader()->ClearError();
             fetch_details->SetReadFinished();
             return;
         }
@@ -129,6 +130,7 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
             if (!blob.GetId2Info().empty()) {
                 if (!x_ParseId2Info(fetch_details, blob)) {
                     x_PrepareBlobPropCompletion(fetch_details);
+                    fetch_details->GetLoader()->ClearError();
                     fetch_details->SetReadFinished();
                     return;
                 }
@@ -176,6 +178,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNoneTSE(CCassBlobFetch *  fetch_details)
 {
     // Nothing else to be sent
     x_PrepareBlobPropCompletion(fetch_details);
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 }
 
@@ -197,6 +200,7 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(CCassBlobFetch *  fetch_details,
     unsigned int    max_to_send = max(app->GetSendBlobIfSmall(),
                                       blob_request.m_SendBlobIfSmall);
 
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         x_PrepareBlobPropCompletion(fetch_details);
@@ -230,6 +234,7 @@ void
 CPSGS_CassBlobBase::x_OnBlobPropSmartTSE(CCassBlobFetch *  fetch_details,
                                          CBlobRecord const &  blob)
 {
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         // Request original blob chunks
@@ -262,6 +267,7 @@ void
 CPSGS_CassBlobBase::x_OnBlobPropWholeTSE(CCassBlobFetch *  fetch_details,
                                          CBlobRecord const &  blob)
 {
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         // Request original blob chunks
@@ -282,6 +288,7 @@ void
 CPSGS_CassBlobBase::x_OnBlobPropOrigTSE(CCassBlobFetch *  fetch_details,
                                         CBlobRecord const &  blob)
 {
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
     // Request original blob chunks
     x_PrepareBlobPropCompletion(fetch_details);
@@ -977,6 +984,7 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
 
         // If it is an error then regardless what stage it was, props or
         // chunks, there will be no more activity
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
     } else {
         if (fetch_details->IsBlobPropStage())
@@ -1004,6 +1012,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 
     if (cancelled) {
         fetch_details->GetLoader()->Cancel();
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         return;
     }
@@ -1045,6 +1054,7 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
 
         // End of the blob
         x_PrepareBlobCompletion(fetch_details);
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         // Note: no need to set the blob completed in the exclude blob cache.
@@ -1090,6 +1100,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     // Remove from the already-sent cache if necessary
     fetch_details->RemoveFromExcludeBlobCache();
 
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 }
 
@@ -1403,6 +1414,7 @@ CPSGS_CassBlobBase::OnPublicCommentError(
 {
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         return;
     }
@@ -1443,6 +1455,7 @@ CPSGS_CassBlobBase::OnPublicComment(
     CRequestContextResetter     context_resetter;
     m_Request->SetRequestContext();
 
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 
     if (m_Canceled) {

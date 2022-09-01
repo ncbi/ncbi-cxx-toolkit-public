@@ -202,8 +202,10 @@ void CHttpProto::WakeWorker(void)
 void CHttpProto::OnTimer(void)
 {
     auto &      lst = m_Worker->GetConnList();
-    for (auto &  it: lst)
+    for (auto &  it: lst) {
+        // call http connection OnTimer()
         std::get<1>(it).OnTimer();
+    }
 }
 
 

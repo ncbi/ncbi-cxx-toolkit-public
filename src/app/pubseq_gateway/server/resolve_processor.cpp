@@ -306,6 +306,7 @@ bool CPSGS_ResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }

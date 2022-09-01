@@ -627,6 +627,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 ePSGS_NoBlobPropsError, eDiag_Error);
         IPSGS_Processor::m_Reply->PrepareTSEBlobPropCompletion(
                 fetch_details, kTSEChunkProcessorName);
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
     }
 
@@ -672,14 +673,14 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
             fetch_details, kTSEChunkProcessorName);
     }
 
+    // To avoid sending an error in Peek()
+    fetch_details->GetLoader()->ClearError();
+
     if (is_error) {
         // If it is an error then regardless what stage it was, props or
         // chunks, there will be no more activity
         fetch_details->SetReadFinished();
     }
-
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
@@ -699,6 +700,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
 
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             x_Peek(false);
@@ -739,6 +741,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
         // End of the blob
         IPSGS_Processor::m_Reply->PrepareTSEBlobCompletion(
                 fetch_details, kTSEChunkProcessorName);
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         // Note: no need to set the blob completed in the exclude blob cache.
@@ -795,6 +798,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 
     if (m_Canceled) {
@@ -1164,6 +1168,7 @@ bool CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }

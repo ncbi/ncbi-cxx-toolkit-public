@@ -99,7 +99,7 @@ CPSGS_GetProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
     if (startup_data_state != ePSGS_StartupDataOK) {
         if (request->NeedTrace()) {
             reply->SendTrace(kGetProcessorName + " processor cannot process "
-                             " request because Cassandra DB is not available.\n" +
+                             "request because Cassandra DB is not available.\n" +
                              GetCassStartupDataStateMessage(startup_data_state),
                              request->GetStartTimestamp());
         }
@@ -476,6 +476,11 @@ void CPSGS_GetProcessor::ProcessEvent(void)
 
 void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 {
+    if (uv_thread_self() != GetUVThreadId()) {
+cout << "ERROR. CPSGS_GetProcessor::x_Peek() from a different thread. Current: " << uv_thread_self() <<
+    " Memorized: " << GetUVThreadId() << endl;
+    }
+
     if (m_Canceled) {
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;
@@ -533,8 +538,9 @@ bool CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
     if (need_wait)
         if (!fetch_details->ReadFinished()) {
             final_state = fetch_details->GetLoader()->Wait();
-            if (final_state)
+            if (final_state) {
                 fetch_details->SetReadFinished();
+            }
         }
 
     if (fetch_details->GetLoader()->HasError() &&
@@ -552,6 +558,7 @@ bool CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }

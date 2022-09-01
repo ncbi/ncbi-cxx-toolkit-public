@@ -342,6 +342,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
 
     if (m_Canceled) {
         fetch_details->GetLoader()->Cancel();
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         return false;
     }
@@ -357,6 +358,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     }
 
     if (last) {
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
         // There could be many sat_name(s) requested so the callback is called
@@ -668,6 +670,7 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
                                            bool is_found)
 {
     // Annotation blob properties may come only once
+    fetch_details->GetLoader()->ClearError();
     fetch_details->SetReadFinished();
 
     if (m_Canceled) {
@@ -884,6 +887,7 @@ bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
 
         // Mark finished
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
