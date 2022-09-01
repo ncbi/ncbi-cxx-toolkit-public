@@ -555,9 +555,14 @@ bool CValidError_desc::x_ValidateStructuredComment
                 string report_sfx = pSuffix->GetData().GetStr();
                 string sfx = report_sfx;
                 CComment_rule::NormalizePrefix(sfx);
-                if (report && ! s_IsAllowedPrefix (sfx)) {
-                    PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix,
-                        report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
+                if (! s_IsAllowedPrefix (sfx)) {
+                    if (report) {
+                        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix,
+                            report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
+                        is_valid = false;
+                    } else {
+                        return false;
+                    }
                 }
             }
         }
