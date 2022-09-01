@@ -672,7 +672,7 @@ int CAsn2FlatApp::Run()
     m_OnlyNucs   = false;
     m_OnlyProts  = false;
     if (args["o"]) {
-        auto view   = args["view"].AsString();
+        string view = args["view"].AsString();
         m_OnlyNucs  = (view == "nuc");
         m_OnlyProts = (view == "prot");
     }
@@ -824,7 +824,7 @@ int CAsn2FlatApp::x_GenerateHugeMode()
         }
     };
 
-    auto read_task = std::async(std::launch::async, [this, &in, handler, seqid]() -> bool {
+    auto read_task = std::async(std::launch::async, [&in, handler, seqid]() -> bool {
         return in.Read(handler, seqid);
     });
 
@@ -1333,9 +1333,9 @@ void CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context, const CArgs& a
 
 #if 0
     // temporarly disabled because they never used
-    CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
+    CRef<TGenbankBlockCallback> genbank_callback(x_GetGenbankCallback(args));
 
-    if( args["benchmark-cancel-checking"] ) {
+    if (args["benchmark-cancel-checking"]) {
         m_pCanceledCallback.reset(x_CreateCancelBenchmarkCallback());
     }
 #endif
