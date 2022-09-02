@@ -132,7 +132,8 @@ private:
     void ValidateOneDirectory(string dir_name, bool recurse);
     bool FinishReaderThread(CFileReaderThread&, bool blocking);
 
-    CAsnvalThreadState mThreadState;
+    unique_ptr<CAppConfig> mAppConfig;
+    unique_ptr<CAsnvalThreadState> mThreadState;
     unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
 };
 
@@ -183,8 +184,7 @@ string s_GetSeverityLabel(EDiagSev sev, bool is_xml)
 
 
 // constructor
-CAsnvalApp::CAsnvalApp() :
-    mThreadState()
+CAsnvalApp::CAsnvalApp()
 {
     const CVersionInfo vers(3, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY);
     SetVersion(vers);
@@ -225,11 +225,11 @@ bool CAsnvalApp::FinishReaderThread(
     void* ppExitData = nullptr;
     thread.Join(&ppExitData);
     CThreadExitData* pExitData = static_cast<CThreadExitData*>(ppExitData);
-    mThreadState.m_NumFiles++;
-    mThreadState.m_NumRecords += pExitData->mNumRecords;
-    if (pExitData->mLongest > mThreadState.m_Longest) {
-        mThreadState.m_Longest = pExitData->mLongest;
-        mThreadState.m_LongestId = pExitData->mLongestId;
+    mThreadState->m_NumFiles++;
+    mThreadState->m_NumRecords += pExitData->mNumRecords;
+    if (pExitData->mLongest > mThreadState->m_Longest) {
+        mThreadState->m_Longest = pExitData->mLongest;
+        mThreadState->m_LongestId = pExitData->mLongestId;
     }
     delete pExitData;
     return true;
@@ -331,7 +331,7 @@ void CAsnvalApp::Init()
                             "\t3 Accession / Severity / Code(tab delimited)\n"
                             "\t4 XML Report",
                             CArgDescriptions::eInteger, "1");
-    CArgAllow* v_constraint = new CArgAllow_Integers(CAsnvalThreadState::eVerbosity_min, CAsnvalThreadState::eVerbosity_max);
+    CArgAllow* v_constraint = new CArgAllow_Integers(CAppConfig::eVerbosity_min, CAppConfig::eVerbosity_max);
     arg_desc->SetConstraint("v", v_constraint);
 
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
@@ -393,7 +393,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
             string fpath = CDirEntry::MakePath(dir_name, fname);
 
             //CAsnvalThreadState context(*this, fpath);
-            CAsnvalThreadState context(mThreadState);
+            CAsnvalThreadState context(*mThreadState);
             context.mFilename = fpath;
             CFileReaderThread* pThread(new CFileReaderThread(context));
             pThread->Run();
@@ -439,7 +439,7 @@ int CAsnvalApp::Run()
     time_t start_time = time(NULL);
 
     if (args["o"]) {
-        mThreadState.m_ValidErrorStream = &(args["o"].AsOutputFile());
+        mThreadState->m_ValidErrorStream = &(args["o"].AsOutputFile());
     }
 
     if (args["D"]) {
@@ -449,37 +449,7 @@ int CAsnvalApp::Run()
         }
     }
 
-    // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
-    // adjust here to make the inputs to asnvalidate match asnval expectations
-    mThreadState.m_ReportLevel = static_cast<EDiagSev>(args["R"].AsInteger() - 1);
-    mThreadState.m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
-    mThreadState.m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
-
-    mThreadState.m_DoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
-    mThreadState.m_verbosity = static_cast<CAsnvalThreadState::EVerbosity>(args["v"].AsInteger());
-    if (args["batch"]) {
-        mThreadState.m_batch = true;
-    }
-
-    mThreadState.m_Quiet = args["quiet"] && args["quiet"].AsBoolean();
-
-    // Process file based on its content
-    // Unless otherwise specifien we assume the file in hand is
-    // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
-    // Release file (batch processing) where we process each Seq-entry
-    // at a time.
-    mThreadState.m_Reported = 0;
-
-    string m_obj_type = args["a"].AsString();
-
-    if (!m_obj_type.empty()) {
-        if (m_obj_type == "t" || m_obj_type == "u") {
-            mThreadState.m_batch = true;
-            cerr << "Warning: -a t and -a u are deprecated; use -batch instead." << endl;
-        } else {
-            cerr << "Warning: -a is deprecated; ASN.1 type is now autodetected." << endl;
-        }
-    }
+    mThreadState->m_Reported = 0;
 
     if (args["b"]) {
         cerr << "Warning: -b is deprecated; do not use" << endl;
@@ -487,7 +457,7 @@ int CAsnvalApp::Run()
 
     bool exception_caught = false;
     try {
-        mThreadState.ConstructOutputStreams();
+        mThreadState->ConstructOutputStreams();
 
         if (args["indir"]) {
             ValidateOneDirectory(args["indir"].AsString(), args["u"]);
@@ -495,28 +465,28 @@ int CAsnvalApp::Run()
             // -p is deprecated in favor of -indir
             ValidateOneDirectory(args["p"].AsString(), args["u"]);
         } else {
-            mThreadState.mFilename = (args["i"]) ? args["i"].AsString() : "";
-            mThreadState.m_pContext->m_taxon_update = mRemoteUpdater->GetUpdateFunc();
-            mThreadState.ValidateOneFile();
+            mThreadState->mFilename = (args["i"]) ? args["i"].AsString() : "";
+            mThreadState->m_pContext->m_taxon_update = mRemoteUpdater->GetUpdateFunc();
+            mThreadState->ValidateOneFile();
         }
     } catch (CException& e) {
         ERR_POST(Error << e);
         exception_caught = true;
     }
-    if (mThreadState.m_NumFiles == 0) {
+    if (mThreadState->m_NumFiles == 0) {
         ERR_POST("No matching files found");
     }
 
     time_t stop_time = time(NULL);
-    if (! mThreadState.m_Quiet ) {
+    if (! mAppConfig->mQuiet ) {
         LOG_POST_XX(Corelib_App, 1, "Finished in " << stop_time - start_time << " seconds");
-        LOG_POST_XX(Corelib_App, 1, "Longest processing time " << mThreadState.m_Longest << " seconds on " << mThreadState.m_LongestId);
-        LOG_POST_XX(Corelib_App, 1, "Total number of records " << mThreadState.m_NumRecords);
+        LOG_POST_XX(Corelib_App, 1, "Longest processing time " << mThreadState->m_Longest << " seconds on " << mThreadState->m_LongestId);
+        LOG_POST_XX(Corelib_App, 1, "Total number of records " << mThreadState->m_NumRecords);
     }
 
-    mThreadState.DestroyOutputStreams();
+    mThreadState->DestroyOutputStreams();
 
-    if (mThreadState.m_Reported > 0 || exception_caught) {
+    if (mThreadState->m_Reported > 0 || exception_caught) {
         return 1;
     } else {
         return 0;
@@ -532,19 +502,16 @@ void CAsnvalApp::Setup(const CArgs& args)
     // Setup MT-safety for CONNECT library
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
+    mAppConfig.reset(new CAppConfig(args));
+    mThreadState.reset(new CAsnvalThreadState(*mAppConfig));
+
     // Create object manager
-    mThreadState.m_ObjMgr = CObjectManager::GetInstance();
-    CDataLoadersUtil::SetupObjectManager(args, *mThreadState.m_ObjMgr,
+    mThreadState->m_ObjMgr = CObjectManager::GetInstance();
+    CDataLoadersUtil::SetupObjectManager(args, *mThreadState->m_ObjMgr,
                                          CDataLoadersUtil::fDefault |
                                          CDataLoadersUtil::fGenbankOffByDefault);
-
-    mThreadState.m_OnlyAnnots = args["annot"];
-    mThreadState.m_HugeFile = args["huge"];
-    if (args["E"])
-        mThreadState.m_OnlyError = args["E"].AsString();
-
     // Set validator options
-    mThreadState.m_Options = CValidatorArgUtil::ArgsToValidatorOptions(args);
+    mThreadState->m_Options = CValidatorArgUtil::ArgsToValidatorOptions(args);
 }
 
 
