@@ -61,9 +61,10 @@ public:
     void Open(const string& file_name, const set<TTypeInfo>* types = nullptr);
 
     using THandler = std::function<void(CConstRef<CSubmit_block>, CRef<CSeq_entry>)>;
-    using THandlerTopIds = std::function<void(CHugeAsnReader&, const std::list<CConstRef<CSeq_id>>&)>;
+    using THandlerTopIds = std::function<bool(CHugeAsnReader*, const std::list<CConstRef<CSeq_id>>&)>;
 
     [[nodiscard]] bool Read(THandler handler, CRef<CSeq_id> seqid);
+    [[nodiscard]] bool Read(THandlerTopIds handler);
 
     CHugeAsnReader& GetReader() { return *m_pReader; }
     CHugeFile& GetFile() { return *m_pHugeFile; }
