@@ -71,13 +71,13 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CCompressStream
 {
 public:
-    /// Compression/decompression method.
+    /// Compression/decompression methods.
     /// @note
-    ///   Don't mix up "eNone" with compression level. In this mode data
-    ///   will be copied "as is", without parsing or writing any header
-    ///   or footer. On the other hand, CCompress::eLevel_NoCompression
-    ///   use uncompressed data, but reading/writing compression format
-    ///   is always correspond to EMethod.
+    ///   Don't mix up "eNone" with CCompress::eLevel_NoCompression 
+    ///   compression level. In "eNone" mode data will be copied "as is", 
+    ///   without parsing or writing any header or footer. 
+    ///   CCompress::eLevel_NoCompression use no-compression for a choosen 
+    ///   compression format and can have extra data necessary to be valid,
     /// @note
     ///   You can use "eNone" to allow transparent reading/writing data
     ///   from/to an underlying stream using compression streams, but we
@@ -93,6 +93,23 @@ public:
         eConcatenatedGZipFile, ///< Synonym for eGZipFile (for backward compatibility)
         eZstd                  ///< ZStandard (raw zstd data)
     };
+
+    /// Check if specified compression method is supported on a current platform.
+    ///  
+    /// Compression streams can be created for any method. It ignore fact that
+    /// some compression library can be missed on a current platform, that lead
+    /// to throwing an exception on usage of the newly created stream.
+    /// It is recommended to guard library-specific code by HAVE_LIB* macros
+    /// (see comments at the beginning of "compress.hpp"), at least for eLZO and eZstd. 
+    /// But if this is inconvenient for some reason you can use this method 
+    /// to do a check at runtime.
+    ///  
+    /// @param method
+    ///   Method to check.
+    /// @return
+    ///   Return TRUE if selected compression method is supported, FALSE otherwise.
+    /// 
+    static bool HaveSupport(EMethod method);
 
     /// Default algorithm-specific compression/decompression flags.
     /// @sa TFlags, EMethod

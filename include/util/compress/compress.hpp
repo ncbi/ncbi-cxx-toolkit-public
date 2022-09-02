@@ -32,6 +32,36 @@
  *
  */
 
+/// @file compress.hpp
+///
+/// @warning
+///   Compression API have support for some compression libraies. Toolkit checks
+///   existing compressions libraries on a configuration stage. If system version 
+///   of some compression library is not found, for some libraries like BZIP22, ZLIB, 
+///   GZIP we have an embedded alternatives, that will be used automatically. 
+///   But for some others, like LZO and ZSTD, we don’t have such options.
+///   The configure define next macros, that can be used to put specific library
+///   related code to corresponding #if/#endif block to avoid compilation errors
+///   on some platforms that miss a specific compression library:
+/// 
+///   - HAVE_LIBZ       // for ZLIB and GZIP
+///   - HAVE_LIBBZ2     // for BZIP2
+///   - HAVE_LIBLZO     // for LZO
+///   - HAVE_LIBZSTD    // for ZSTD
+/// 
+///   #if defined(HAVE_LIB***)
+///       // use selected library related code here
+///   #else
+///      // some backup code, or error reporting
+///   #endif
+/// 
+///   Theoretically, you need a check for LZO and ZSTD only.
+/// 
+///   This is related to a library-specific classes only. Many other common compession 
+///   classes/interfaces can be used without such guards, like ICompression or streams,
+///   for example.
+
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/version_api.hpp>
 

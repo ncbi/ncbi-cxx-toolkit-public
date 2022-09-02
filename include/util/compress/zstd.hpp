@@ -28,7 +28,7 @@
  *
  * Author:  Vladimir Ivanov
  * 
- * Used comments from zstd.h to describe some parameters.
+ * Used comments from zstd.h to describe some parameters/methods.
  *
  */
 
@@ -56,7 +56,19 @@
 ///     https://github.com/facebook/zstd
 ///     https://datatracker.ietf.org/doc/html/rfc8878
 ///     https://facebook.github.io/zstd/zstd_manual.html
- 
+/// 
+/// @warning
+///   zstd ia an optional compression component and can be missed on a current
+///   platform. It is recommended to guard its usage:
+/// 
+///   #if defined(HAVE_LIBZSTD)
+///       // use zstd related code here
+///   #else
+///      // some backup code, or error reporting
+///   #endif
+///
+/// See also comments at the beginning of "compress.hpp".
+
 
 #include <util/compress/stream.hpp>
 
