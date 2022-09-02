@@ -98,6 +98,10 @@ typedef   int   ssize_t;
 
 #define HAVE_LIBKRB5                    1
 
+/* Next libs always exists, in external or embedded variants, so define them directly */
+#define HAVE_LIBZ                       1
+#define HAVE_LIBBZ2                     1
+
 /* FreeTDS */
 
 #define HAVE_ALARM                      1
