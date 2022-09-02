@@ -42,6 +42,38 @@ const ICompression::TFlags kDefault_GZipFile = CZipCompression::fGZip;
 const ICompression::TFlags kDefault_Zstd     = 0;
 
 
+bool CCompressStream::HaveSupport(EMethod method)
+{
+    switch(method) {
+    case CCompressStream::eNone:
+        return true;
+    case CCompressStream::eBZip2:
+        #if defined(HAVE_LIBBZ2)
+            return true;
+        #endif 
+        break;
+    case CCompressStream::eLZO:
+        #if defined(HAVE_LIBLZO)
+            return true;
+        #endif 
+        break;
+    case CCompressStream::eZip:
+    case CCompressStream::eGZipFile:
+    case CCompressStream::eConcatenatedGZipFile:
+        #if defined(HAVE_LIBZ)
+            return true;
+        #endif 
+        break;
+    case CCompressStream::eZstd:
+        #if defined(HAVE_LIBZSTD)
+            return true;
+        #endif
+        break;
+    }
+    return false;
+}
+
+
 // Type of initialization
 enum EInitType { 
     eCompress,
@@ -86,6 +118,8 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
         } else {
             processor = new CLZOStreamDecompressor(flags);
         }
+#else
+         NCBI_THROW(CCompressionException, eCompression, "LZO compression is not available on this platform");
 #endif 
         break;
 
@@ -128,12 +162,13 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
         } else {
             processor = new CZstdStreamDecompressor(flags);
         }
+#else
+         NCBI_THROW(CCompressionException, eCompression, "ZSTD compression is not available on this platform");
 #endif
         break;
 
     default:
-        NCBI_THROW(CCompressionException, eCompression, 
-            "Unknown compression/decompression method");
+        NCBI_THROW(CCompressionException, eCompression, "Unknown compression/decompression method");
     }
 
     return processor;
@@ -158,7 +193,9 @@ CCompressOStream::CCompressOStream(CNcbiOstream& stream, EMethod method,
 {
     CCompressionStreamProcessor* processor = s_Init(eCompress, method, stm_flags, level);
     if (processor) {
-        Create(stream, processor, own_ostream==eTakeOwnership?CCompressionStream::fOwnAll:CCompressionStream::fOwnProcessor);
+        Create(stream, processor, 
+               own_ostream == eTakeOwnership ? CCompressionStream::fOwnAll : 
+                                               CCompressionStream::fOwnProcessor);
     }
 }
 
@@ -170,7 +207,9 @@ CDecompressIStream::CDecompressIStream(CNcbiIstream& stream, EMethod method,
     CCompressionStreamProcessor* processor = 
         s_Init(eDecompress, method, stm_flags, ICompression::eLevel_Default);
     if (processor) {
-        Create(stream, processor, own_instream==eTakeOwnership?CCompressionStream::fOwnAll:CCompressionStream::fOwnProcessor);
+        Create(stream, processor, 
+               own_instream == eTakeOwnership ? CCompressionStream::fOwnAll : 
+                                                CCompressionStream::fOwnProcessor);
     }
 }
 

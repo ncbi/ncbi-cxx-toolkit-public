@@ -70,6 +70,18 @@
 ///
 /// For more details see LZO documentation:
 ///    http://www.oberhumer.com/opensource/lzo/
+/// 
+/// @warning
+///   LZO ia an optional compression component and can be missed on a current
+///   platform. It is recommended to guard its usage:
+/// 
+///   #if defined(HAVE_LIBLZO)
+///       // use LZO related code here
+///   #else
+///      // some backup code, or error reporting
+///   #endif
+/// 
+/// See also comments at the beginning of "compress.hpp".
 
 
 #include <util/compress/stream.hpp>
