@@ -2723,7 +2723,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                 vhp = tvhp->next;
 
                 CRef<COrgMod> mod(new COrgMod);
-                mod->SetSubtype(21);
+                mod->SetSubtype(COrgMod::eSubtype_nat_host);
                 mod->SetSubname(tvhp->name);
                 orgname.SetMod().push_back(mod);
 

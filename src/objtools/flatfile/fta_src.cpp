@@ -2447,25 +2447,25 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
 
     if (count == 1) {
         sub.Reset(new CSubSource);
-        sub->SetSubtype(33);
+        sub->SetSubtype(CSubSource::eSubtype_fwd_primer_seq);
         sub->SetName(ppp->fwd_seq);
         subs.push_back(sub);
 
         sub.Reset(new CSubSource);
-        sub->SetSubtype(34);
+        sub->SetSubtype(CSubSource::eSubtype_rev_primer_seq);
         sub->SetName(ppp->rev_seq);
         subs.push_back(sub);
 
         if (ppp->fwd_name != NULL && ppp->fwd_name[0] != '\0') {
             sub.Reset(new CSubSource);
-            sub->SetSubtype(35);
+            sub->SetSubtype(CSubSource::eSubtype_fwd_primer_name);
             sub->SetName(ppp->fwd_name);
             subs.push_back(sub);
         }
 
         if (ppp->rev_name != NULL && ppp->rev_name[0] != '\0') {
             sub.Reset(new CSubSource);
-            sub->SetSubtype(36);
+            sub->SetSubtype(CSubSource::eSubtype_rev_primer_name);
             sub->SetName(ppp->rev_name);
             subs.push_back(sub);
         }
@@ -2517,7 +2517,7 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
     StringCat(str_fs, ")");
 
     sub.Reset(new CSubSource);
-    sub->SetSubtype(33);
+    sub->SetSubtype(CSubSource::eSubtype_fwd_primer_seq);
     sub->SetName(str_fs);
     subs.push_back(sub);
 
@@ -2525,7 +2525,7 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
     StringCat(str_rs, ")");
 
     sub.Reset(new CSubSource);
-    sub->SetSubtype(34);
+    sub->SetSubtype(CSubSource::eSubtype_rev_primer_seq);
     sub->SetName(str_rs);
     subs.push_back(sub);
 
@@ -2534,7 +2534,7 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
         StringCat(str_fn, ")");
 
         sub.Reset(new CSubSource);
-        sub->SetSubtype(35);
+        sub->SetSubtype(CSubSource::eSubtype_fwd_primer_name);
         sub->SetName(str_fn);
         subs.push_back(sub);
     }
@@ -2544,7 +2544,7 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
         StringCat(str_rn, ")");
 
         sub.Reset(new CSubSource);
-        sub->SetSubtype(36);
+        sub->SetSubtype(CSubSource::eSubtype_rev_primer_name);
         sub->SetName(str_rn);
         subs.push_back(sub);
     }
@@ -3100,7 +3100,7 @@ static void CheckMetagenome(CBioSource& bio)
 
     if (metalin && metatax) {
         CRef<CSubSource> sub(new CSubSource);
-        sub->SetSubtype(37);
+        sub->SetSubtype(CSubSource::eSubtype_metagenomic);
         sub->SetName("");
         bio.SetSubtype().push_back(sub);
     } else if (! metalin)
