@@ -71,10 +71,18 @@ CHugeAsnReader::CHugeAsnReader(CHugeFile* file, ILineErrorListener * pMessageLis
 void CHugeAsnReader::x_ResetIndex()
 {
     m_max_local_id = 0;
-    m_submit_block.Reset();
     m_bioseq_list.clear();
-    m_bioseq_index.clear();
     m_bioseq_set_list.clear();
+    m_submit_block.Reset();
+
+// flattenization structures, readonly after flattenization, accept m_Current
+    m_bioseq_index.clear();
+    m_FlattenedIndex.clear();
+    m_FlattenedSets.clear();
+    m_top_ids.clear();
+    m_top_entry.Reset();
+    m_Current = m_FlattenedSets.end();
+
 }
 
 void CHugeAsnReader::Open(CHugeFile* file, ILineErrorListener * pMessageListener)
