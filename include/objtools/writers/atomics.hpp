@@ -183,25 +183,24 @@ public:
 protected:
     struct TDeleter
     {
-        _MyType* owner;
+        _MyType* owner = nullptr;
         void operator()(TNode* ptr) const
         {
-            owner->Deallocate(ptr);
+            if (owner && ptr)
+                owner->Deallocate(ptr);
         }
     };
 
     void Deallocate(TNode* ptr) {
-        if (ptr) {
-            if (m_deinit)
-                m_deinit(*ptr);  // must be able to perform casting to value_type&
+        if (m_deinit)
+            m_deinit(*ptr);  // must be able to perform casting to value_type&
 
-            if (m_stack.size() >= m_reserved_size) {
-                // not enough space
-                delete ptr;
-                m_size--;
-            } else {
-                m_stack.push_front(ptr);
-            }
+        if (m_stack.size() >= m_reserved_size) {
+            // not enough space
+            delete ptr;
+            m_size--;
+        } else {
+            m_stack.push_front(ptr);
         }
     }
 
