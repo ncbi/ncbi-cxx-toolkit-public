@@ -90,7 +90,7 @@ void CHugeFileProcess::Open(const string& file_name, const set<TTypeInfo>* types
 }
 
 
-CHugeFileProcess::~CHugeFileProcess(void)
+CHugeFileProcess::~CHugeFileProcess()
 {
 }
 
@@ -133,6 +133,20 @@ bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
         }
         while ( entry && seqid.Empty());
     } while (m_pReader->GetNextBlob());
+
+    return true;
+}
+
+bool CHugeFileProcess::Read(THandlerTopIds handler)
+{
+    while (m_pReader->GetNextBlob()) {
+        m_pReader->FlattenGenbankSet();
+        bool processed = handler(m_pReader.get(), m_pReader->GetTopIds());
+        if (!processed)
+            return false;
+    }
+
+    std::cerr << "CHugeFileProcess::Read completed\n";
 
     return true;
 }
