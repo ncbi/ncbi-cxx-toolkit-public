@@ -68,6 +68,7 @@
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/huge_file_process.hpp>
+#include <objtools/edit/huge_asn_reader.hpp>
 #include <future>
 #include "fileset.hpp"
 #include <objtools/writers/atomics.hpp>
@@ -343,19 +344,12 @@ public:
     int  Run() override;
     bool WrapINSDSet(bool unwrap);
 
-#ifdef USE_THREAD_POOL
-    using TThreadPool = TResourcePool<TLazyWorker>;
-#endif
-
     // Each thread should have its own context
     struct TFFContext {
         CRef<CCleanup>                      m_cleanup;
         CRef<CScope>                        m_Scope;
         CRef<CFlatFileGenerator>            m_FFGenerator; // Flat-file generator
         CFFMultiSourceFileSet::fileset_type m_streams;     // multiple streams for each of eFlatFileCodes
-        #ifdef USE_THREAD_POOL
-        TThreadPool::TUniqPointer           m_worker;
-        #endif
     };
 
     using fileset_type = decltype(TFFContext::m_streams);
@@ -369,13 +363,12 @@ private:
 
     using TThreadStatePool = TResourcePool<TFFContext>;
 
-    bool HandleSeqEntry(TThreadStatePool::TUniqPointer state, CRef<CSeq_entry>& se) const;
-    bool HandleSeqEntry(TFFContext& context, CRef<CSeq_entry>& se) const;
-    bool HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) const;
+    bool HandleSeqEntry(TFFContext& context, CRef<CSeq_entry> se) const;
+    bool HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle seh) const;
     void HandleSeqSubmit(TFFContext& context, CObjectIStream& is) const;
     void HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const;
-    void HandleSeqId(TFFContext& context, const string& id) const;
-
+    void HandleTextId(TFFContext& context, const string& id) const;
+    bool HandleSeqId(TFFContext& context, const edit::CHugeAsnReader* reader, CConstRef<CSeq_id> seqid) const;
 
     CSeq_entry_Handle ObtainSeqEntryFromSeqEntry(TFFContext& context, CObjectIStream& is, bool report) const;
     CSeq_entry_Handle ObtainSeqEntryFromBioseq(TFFContext& context, CObjectIStream& is, bool report) const;
@@ -394,6 +387,11 @@ private:
     int              x_GenerateBatchMode(unique_ptr<CObjectIStream> is);
     int              x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const;
     int              x_GenerateHugeMode();
+    template<typename _TMethod, typename... TArgs>
+    bool             x_OneShot(_TMethod method, TArgs&& ... args);
+    template<typename _TMethod, typename... TArgs>
+    static void      x_OneShotMethod(_TMethod method, const CAsn2FlatApp* app, CAsn2FlatApp::TThreadStatePool::TUniqPointer thread_state, TArgs ... args);
+
     void             x_InitNewContext(TFFContext& context);
     void             x_ResetContext(TFFContext& context);
 
@@ -411,10 +409,8 @@ private:
 
     bool m_OnlyNucs;
     bool m_OnlyProts;
-    bool m_use_mt = false;
-
+    bool                      m_use_mt{false};
     CFFMultiSourceFileSet     m_writers;
-
     unique_ptr<ICanceled>     m_pCanceledCallback;
     bool                      m_do_cleanup;
     mutable std::atomic<bool> m_Exception;
@@ -422,6 +418,8 @@ private:
     bool                      m_PSGMode;
     bool                      m_HugeFileMode;
     string                    m_AccessionFilter;
+    mutable std::atomic<bool> m_stopit{false};
+
 #ifdef USE_SNPLOADER
     CRef<CSNPDataLoader>      m_SNPDataLoader;
     unique_ptr<ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::Stub> m_SNPTrackStub;
@@ -649,7 +647,7 @@ int CAsn2FlatApp::Run()
         m_HugeFileMode = false;
     }
 
-    m_use_mt = args["use_mt"] && args["batch"];
+    m_use_mt = args["use_mt"] && ( args["batch"] || m_HugeFileMode);
 
     m_writers.SetUseMT(m_use_mt);
     m_writers.SetDepth(20);
@@ -672,7 +670,7 @@ int CAsn2FlatApp::Run()
     m_OnlyNucs   = false;
     m_OnlyProts  = false;
     if (args["o"]) {
-        string view = args["view"].AsString();
+        auto view   = args["view"].AsString();
         m_OnlyNucs  = (view == "nuc");
         m_OnlyProts = (view == "prot");
     }
@@ -713,7 +711,7 @@ int CAsn2FlatApp::Run()
 
             try {
                 LOG_POST(Error << "id = " << id_str);
-                HandleSeqId(context, id_str);
+                HandleTextId(context, id_str);
             } catch (CException& e) {
                 ERR_POST(Error << e);
             }
@@ -724,7 +722,7 @@ int CAsn2FlatApp::Run()
     }
 
     if (args["id"]) {
-        HandleSeqId(context, args["id"].AsString());
+        HandleTextId(context, args["id"].AsString());
         if (m_Exception)
             return -1;
         return 0;
@@ -740,49 +738,76 @@ int CAsn2FlatApp::Run()
     return x_GenerateTraditionally(std::move(is), context, args);
 }
 
+template<typename _TMethod, typename... TArgs>
+void CAsn2FlatApp::x_OneShotMethod(_TMethod method, const CAsn2FlatApp* app, CAsn2FlatApp::TThreadStatePool::TUniqPointer thread_state, TArgs ... args)
+{
+    if (app->m_stopit)
+        return;
+
+    CAsn2FlatApp::TFFContext& context = *thread_state;
+    auto success = method(app, context, std::move(args)...);
+    if (!success)
+        app->m_stopit = true;
+}
+
+template<typename _TMethod, typename... TArgs>
+bool CAsn2FlatApp::x_OneShot(_TMethod method, TArgs&& ... args)
+{
+    if (m_stopit)
+        return false;
+
+    // each thread needs to have it's own context
+    // writers queue control how many of them can run simultaneosly
+    // these resources must allocated sequentially in order of incoming entry's
+    auto thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
+
+    // just make an instantiated std::function
+    auto callable = x_OneShotMethod<_TMethod, std::decay_t<TArgs>...>;
+
+    if (m_use_mt) {
+#ifdef USE_THREAD_POOL
+        m_thread_pool.OneShot(callable, std::move(thread_state), std::forward<TArgs>(args)...);
+#else
+        std::thread(callable, method, this, std::move(thread_state), std::forward<TArgs>(args)...).detach();
+#endif
+    } else {
+        callable(method, this, std::move(thread_state), std::forward<TArgs>(args)...);
+    }
+
+    if (m_stopit)
+        return false;
+
+    return true;
+}
+
+bool CAsn2FlatApp::HandleSeqId(TFFContext& context, const edit::CHugeAsnReader* reader, CConstRef<CSeq_id> seqid) const
+{
+    try {
+        if (reader && seqid) {
+            auto entry = reader->LoadSeqEntry(seqid);
+            //*context.m_streams[eFlatFileCodes::all] << MSerial_AsnText << *seqid;
+            if (entry)
+                return HandleSeqEntry(context, entry);
+        }
+    }
+    catch (...)
+    {
+        std::cerr << "Exception HandleSeqId\n";
+    }
+    return false;
+}
+
 int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
 {
-    std::atomic<bool> stopit = false;
-
     bool propagate = GetArgs()[ "p" ];
     CGBReleaseFile in( *is.release(), propagate ); // CGBReleaseFile will delete the input stream
 
     // for multi-threading processing TFFContext instance is associated with thread
-        // thread can run detached, entry and context will be associated with the thread
-    std::function<void(CRef<CSeq_entry>, TThreadStatePool::TUniqPointer)> processing =
-        [this, &stopit](CRef<CSeq_entry> entry, TThreadStatePool::TUniqPointer thread_state)
+    // thread can run detached, entry and context will be associated with the thread
+    in.RegisterHandler( [this] (CRef<CSeq_entry>& entry)->bool
     {
-        bool success = HandleSeqEntry(*thread_state, entry);
-        if (!success)
-            stopit = true;
-    };
-
-    in.RegisterHandler( [this, &stopit, processing] (CRef<CSeq_entry>& in_entry)->bool
-    {
-        if (stopit.load())
-            return false;
-
-        // each thread needs to have it's own context
-        // writers queue control how many of them can run simultaneosly
-        // these resources must allocated sequentially in order of incoming entry's
-        auto thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
-
-        CRef<CSeq_entry> entry = in_entry;
-        if (m_use_mt) {
-#ifdef USE_THREAD_POOL
-            TFFContext& context = *thread_state;
-            TLazyWorker& worker = *context.m_worker;
-            worker.OneShot(processing, std::move(entry), std::move(thread_state));
-#else
-            std::thread(processing, std::move(entry), std::move(thread_state)).detach();
-#endif
-        } else {
-            processing(std::move(entry), std::move(thread_state));
-            if (stopit.load())
-                return false;
-        }
-
-        return true;
+        auto member = std::mem_fn(&CAsn2FlatApp::HandleSeqEntry);
+        return x_OneShot(member, std::move(entry));
     });
 
     in.Read(); // registered handlers will be called from this function
@@ -798,8 +823,6 @@ int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
 
 int CAsn2FlatApp::x_GenerateHugeMode()
 {
-    auto        thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
-    TFFContext& context      = *thread_state;
     const CArgs& args = GetArgs();
 
     edit::CHugeFileProcess in(args["i"].AsString());
@@ -812,23 +835,29 @@ int CAsn2FlatApp::x_GenerateHugeMode()
         }
     }
 
-    auto handler = [this, &context](CConstRef<CSubmit_block> pSubmitBlock, CRef<CSeq_entry> pEntry) -> bool {
-        if (pSubmitBlock) {
-            auto pSubmit = Ref(new CSeq_submit());
-            pSubmit->SetSub().Assign(*pSubmitBlock);
-            pSubmit->SetData().SetEntrys().push_back(pEntry);
-            this->HandleSeqSubmit(context, *pSubmit);
-            return true;
-        } else {
-            return this->HandleSeqEntry(context, pEntry);
-        }
-    };
+    bool success = in.Read([this, seqid](edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist)
+    {
+        auto member = std::mem_fn(&CAsn2FlatApp::HandleSeqId);
 
-    auto read_task = std::async(std::launch::async, [&in, handler, seqid]() -> bool {
-        return in.Read(handler, seqid);
+        bool success = true;
+        if (seqid) {
+            success = x_OneShot(member, reader, seqid);
+        }
+        else {
+            for (auto id: idlist) {
+                if (!x_OneShot(member, reader, id)) {
+                    success = false;
+                    break;
+                }
+            }
+        }
+        m_writers.FlushAll(); // this will wait until all writers quit
+        return success;
     });
 
-    bool success = read_task.get();
+    #ifdef USE_THREAD_POOL
+    m_thread_pool.Purge();
+    #endif
 
     if (! success || m_Exception)
         return -1;
@@ -849,7 +878,7 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
             if (! seh) {
                 NCBI_THROW(CException, eUnknown, "Unable to construct Seq-entry object");
             }
-            HandleSeqEntry(context, seh);
+            HandleSeqEntryHandle(context, seh);
             context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     } else if (asn_type == "bioseq") {
@@ -862,7 +891,7 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
             if (! seh) {
                 NCBI_THROW(CException, eUnknown, "Unable to construct Seq-entry object");
             }
-            HandleSeqEntry(context, seh);
+            HandleSeqEntryHandle(context, seh);
             context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     } else if (asn_type == "bioseq-set") {
@@ -875,7 +904,7 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
             if (! seh) {
                 NCBI_THROW(CException, eUnknown, "Unable to construct Seq-entry object");
             }
-            HandleSeqEntry(context, seh);
+            HandleSeqEntryHandle(context, seh);
             context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     } else if (asn_type == "seq-submit") {
@@ -915,7 +944,7 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
                     }
                 }
             }
-            HandleSeqEntry(context, seh);
+            HandleSeqEntryHandle(context, seh);
             context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
@@ -971,7 +1000,7 @@ void CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CObjectIStream& is) cons
 }
 
 //  ============================================================================
-void CAsn2FlatApp::HandleSeqId(TFFContext& context, const string& strId) const
+void CAsn2FlatApp::HandleTextId(TFFContext& context, const string& strId) const
 //  ============================================================================
 {
     CSeq_entry_Handle seh;
@@ -997,11 +1026,11 @@ void CAsn2FlatApp::HandleSeqId(TFFContext& context, const string& strId) const
     //
     //  ... and use that to generate the flat file:
     //
-    HandleSeqEntry(context, seh);
+    HandleSeqEntryHandle(context, seh);
 }
 
 //  ============================================================================
-bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CSeq_entry_Handle seh) const
+bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle seh) const
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
@@ -1249,12 +1278,7 @@ CSeq_entry_Handle CAsn2FlatApp::ObtainSeqEntryFromBioseqSet(TFFContext& context,
     return CSeq_entry_Handle();
 }
 
-bool CAsn2FlatApp::HandleSeqEntry(TThreadStatePool::TUniqPointer state, CRef<CSeq_entry>& se) const
-{
-    return HandleSeqEntry(*state, se);
-}
-
-bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CRef<CSeq_entry>& se) const
+bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CRef<CSeq_entry> se) const
 {
     if (! se) {
         return false;
@@ -1266,7 +1290,7 @@ bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CRef<CSeq_entry>& se) con
         NCBI_THROW(CException, eUnknown, "Failed to insert entry to scope.");
     }
 
-    bool ret = HandleSeqEntry(context, entry);
+    bool ret = HandleSeqEntryHandle(context, entry);
     // Needed because we can really accumulate a lot of junk otherwise,
     // and we end up with significant slowdown due to repeatedly doing
     // linear scans on a growing CScope.
@@ -1333,9 +1357,9 @@ void CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context, const CArgs& a
 
 #if 0
     // temporarly disabled because they never used
-    CRef<TGenbankBlockCallback> genbank_callback(x_GetGenbankCallback(args));
+    CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
-    if (args["benchmark-cancel-checking"]) {
+    if( args["benchmark-cancel-checking"] ) {
         m_pCanceledCallback.reset(x_CreateCancelBenchmarkCallback());
     }
 #endif
@@ -1573,9 +1597,6 @@ void CAsn2FlatApp::x_ResetContext(TFFContext& context)
     if (context.m_Scope.NotEmpty()) {
         context.m_Scope->ResetDataAndHistory();
     }
-#ifdef USE_THREAD_POOL
-    context.m_worker.reset();
-#endif
 }
 
 void CAsn2FlatApp::x_InitNewContext(TFFContext& context)
@@ -1605,9 +1626,6 @@ void CAsn2FlatApp::x_InitNewContext(TFFContext& context)
 
 
     context.m_streams = m_writers.MakeNewFileset();
-    #ifdef USE_THREAD_POOL
-    context.m_worker  = m_thread_pool.Allocate(); // this won't start new threads until requested
-    #endif
 }
 
 bool CAsn2FlatApp::WrapINSDSet(bool unwrap)
