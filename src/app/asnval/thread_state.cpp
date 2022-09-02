@@ -147,20 +147,45 @@ static CRef<objects::CSeq_entry> s_BuildGoodSeq()
     return entry;
 }
 
+CAppConfig::CAppConfig(const CArgs& args)
+{
+    mQuiet = args["quiet"] && args["quiet"].AsBoolean();
+    mDoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
+    mVerbosity = static_cast<CAppConfig::EVerbosity>(args["v"].AsInteger());
+    mLowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
+    mHighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
+    mReportLevel = static_cast<EDiagSev>(args["R"].AsInteger() - 1);
+
+    mBatch = args["batch"];
+    string objectType = args["a"].AsString();
+    if (!objectType.empty()) {
+        if (objectType == "t" || objectType == "u") {
+            mBatch = true;
+            cerr << "Warning: -a t and -a u are deprecated; use -batch instead." << endl;
+        }
+        else {
+            cerr << "Warning: -a is deprecated; ASN.1 type is now autodetected." << endl;
+        }
+    }
+
+    if (args["E"]) {
+        mOnlyError = args["E"].AsString();
+    }
+    mOnlyAnnots = args["annot"];
+    mHugeFile = args["huge"];
+}
+
 //  ============================================================================
-CAsnvalThreadState::CAsnvalThreadState() :
+CAsnvalThreadState::CAsnvalThreadState(const CAppConfig& appConfig) :
 //  ============================================================================
+    mAppConfig(appConfig),
     m_ObjMgr(),
     m_Options(0),
-    m_Continue(false),
-    m_OnlyAnnots(false),
-    m_Quiet(false),
     m_Longest(0.0),
     m_NumFiles(0),
     m_NumRecords(0),
     m_Level(0),
     m_Reported(0),
-    m_verbosity(eVerbosity_min),
     m_ValidErrorStream(nullptr)
 {
     m_pContext.reset(new SValidatorContext());
@@ -168,18 +193,15 @@ CAsnvalThreadState::CAsnvalThreadState() :
 
 //  ============================================================================
 CAsnvalThreadState::CAsnvalThreadState(
-    CAsnvalThreadState& other)
+    CAsnvalThreadState& other):
 //  ============================================================================
+    mAppConfig(other.mAppConfig)
 {
     mFilename = other.mFilename;
     mpIstr.reset();
     mpHugeFileProcess.reset();
     m_ObjMgr = other.m_ObjMgr;
     m_Options = other.m_Options;
-    m_HugeFile = other.m_HugeFile;
-    m_Continue = other.m_Continue;
-    m_OnlyAnnots = other.m_OnlyAnnots;
-    m_Quiet = other.m_Quiet;
     m_Longest = other.m_Longest;
     m_CurrentId = other.m_CurrentId;
     m_LongestId = other.m_LongestId;
@@ -188,17 +210,6 @@ CAsnvalThreadState::CAsnvalThreadState(
 
     m_Level = other.m_Level;
     m_Reported = 0;
-    m_ReportLevel = other.m_ReportLevel;
-
-    m_DoCleanup = other.m_DoCleanup;
-    //CCleanup m_Cleanup;
-
-    m_LowCutoff = other.m_LowCutoff;
-    m_HighCutoff = other.m_HighCutoff;
-
-    m_verbosity = other.m_verbosity;
-    m_batch = other.m_batch;
-    m_OnlyError = other.m_OnlyError;
 
     m_ValidErrorStream = other.m_ValidErrorStream;
 
@@ -235,17 +246,17 @@ void CAsnvalThreadState::ReadClassMember
                 if (bi) {
                     m_CurrentId = "";
                     bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
-                    if (!m_Quiet) {
+                    if (!mAppConfig.mQuiet) {
                         LOG_POST_XX(Corelib_App, 1, m_CurrentId);
                     }
                 }
 
-                if (m_DoCleanup) {
+                if (mAppConfig.mDoCleanup) {
                     m_Cleanup.SetScope(scope);
                     m_Cleanup.BasicCleanup(*se);
                 }
 
-                if (m_OnlyAnnots) {
+                if (mAppConfig.mOnlyAnnots) {
                     for (CSeq_annot_CI ni(seh); ni; ++ni) {
                         const CSeq_annot_Handle& sah = *ni;
                         CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
@@ -277,7 +288,7 @@ void CAsnvalThreadState::ReadClassMember
                 n++;
             }
             catch (exception&) {
-                if (!m_Continue) {
+                if (!mAppConfig.mContinue) {
                     throw;
                 }
                 // should we issue some sort of warning?
@@ -376,7 +387,7 @@ void CAsnvalThreadState::DestroyOutputStreams()
 void CAsnvalThreadState::ConstructOutputStreams()
 //  ============================================================================
 {
-    if (!m_ValidErrorStream  ||  m_verbosity != CAsnvalThreadState::eVerbosity_XML) {
+    if (!m_ValidErrorStream  ||  mAppConfig.mVerbosity != CAppConfig::eVerbosity_XML) {
         return;
     }
 #ifdef USE_XMLWRAPP_LIBS
@@ -390,7 +401,7 @@ void CAsnvalThreadState::ConstructOutputStreams()
 
     *m_ValidErrorStream << "\n" << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
         << NCBI_TEAMCITY_BUILD_NUMBER_PROXY << "\" severity_cutoff=\""
-        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << "\n";
+        << s_GetSeverityLabel(mAppConfig.mLowCutoff, true) << "\">" << "\n";
     m_ValidErrorStream->flush();
 #else
     * context.m_ValidErrorStream << "<asnvalidate version=\"" << "3." << NCBI_SC_VERSION_PROXY << "."
@@ -403,8 +414,8 @@ void CAsnvalThreadState::ConstructOutputStreams()
 void CAsnvalThreadState::PrintValidErrItem(const CValidErrItem& item)
 {
     CNcbiOstream& os = *m_ValidErrorStream;
-    switch (m_verbosity) {
-    case CAsnvalThreadState::eVerbosity_Normal:
+    switch (mAppConfig.mVerbosity) {
+    case CAppConfig::eVerbosity_Normal:
         os << s_GetSeverityLabel(item.GetSeverity())
             << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() << "] "
             << item.GetMsg();
@@ -413,7 +424,7 @@ void CAsnvalThreadState::PrintValidErrItem(const CValidErrItem& item)
         }
         os << "\n";
         break;
-    case CAsnvalThreadState::eVerbosity_Spaced:
+    case CAppConfig::eVerbosity_Spaced:
     {
         string spacer = "                    ";
         string msg = item.GetAccnver() + spacer;
@@ -425,18 +436,18 @@ void CAsnvalThreadState::PrintValidErrItem(const CValidErrItem& item)
         os << msg << "\n";
     }
     break;
-    case CAsnvalThreadState::eVerbosity_Tabbed:
+    case CAppConfig::eVerbosity_Tabbed:
         os << item.GetAccnver() << "\t"
             << s_GetSeverityLabel(item.GetSeverity()) << "\t"
             << item.GetErrGroup() << "_" << item.GetErrCode() << "\n";
         break;
 #ifdef USE_XMLWRAPP_LIBS
-    case CAsnvalThreadState::eVerbosity_XML:
+    case CAppConfig::eVerbosity_XML:
     {
         m_ostr_xml->Print(item);
     }
 #else
-    case eVerbosity_XML:
+    case CAppConfig::eVerbosity_XML:
     {
         string msg = NStr::XmlEncode(item.GetMsg());
         if (item.IsSetFeatureId()) {
@@ -467,13 +478,13 @@ void CAsnvalThreadState::PrintValidError(
     }
 
     for (CValidError_CI vit(*errors); vit; ++vit) {
-        if (vit->GetSeverity() >= m_ReportLevel) {
+        if (vit->GetSeverity() >= mAppConfig.mReportLevel) {
             ++m_Reported;
         }
-        if (vit->GetSeverity() < m_LowCutoff || vit->GetSeverity() > m_HighCutoff) {
+        if (vit->GetSeverity() < mAppConfig.mLowCutoff || vit->GetSeverity() > mAppConfig.mHighCutoff) {
             continue;
         }
-        if (!m_OnlyError.empty() && !(NStr::EqualNocase(m_OnlyError, vit->GetErrCode()))) {
+        if (!mAppConfig.mOnlyError.empty() && !(NStr::EqualNocase(mAppConfig.mOnlyError, vit->GetErrCode()))) {
             continue;
         }
         PrintValidErrItem(*vit);
@@ -664,7 +675,7 @@ CConstRef<CValidError> CAsnvalThreadState::ProcessSeqEntry(CSeq_entry& se)
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
-    if (m_DoCleanup) {
+    if (mAppConfig.mDoCleanup) {
         m_Cleanup.SetScope(scope);
         m_Cleanup.BasicCleanup(se);
     }
@@ -673,12 +684,12 @@ CConstRef<CValidError> CAsnvalThreadState::ProcessSeqEntry(CSeq_entry& se)
     if (bi) {
         m_CurrentId = "";
         bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
-        if (!m_Quiet) {
+        if (!mAppConfig.mQuiet) {
             LOG_POST_XX(Corelib_App, 1, m_CurrentId);
         }
     }
 
-    if (m_OnlyAnnots) {
+    if (mAppConfig.mOnlyAnnots) {
         for (CSeq_annot_CI ni(seh); ni; ++ni) {
             const CSeq_annot_Handle& sah = *ni;
             CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
@@ -808,7 +819,7 @@ CConstRef<CValidError> CAsnvalThreadState::ProcessSeqSubmit()
             scope->AddTopLevelSeqEntry(**se);
         }
     }
-    if (m_DoCleanup) {
+    if (mAppConfig.mDoCleanup) {
         m_Cleanup.SetScope(scope);
         m_Cleanup.BasicCleanup(*ss);
     }
@@ -835,7 +846,7 @@ CConstRef<CValidError> CAsnvalThreadState::ProcessSeqAnnot()
     // Validate Seq-annot
     CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
-    if (m_DoCleanup) {
+    if (mAppConfig.mDoCleanup) {
         m_Cleanup.SetScope(scope);
         m_Cleanup.BasicCleanup(*sa);
     }
@@ -854,7 +865,7 @@ CConstRef<CValidError> CAsnvalThreadState::ProcessSeqFeat()
         return eval;
 
     CRef<CScope> scope = BuildScope();
-    if (m_DoCleanup) {
+    if (mAppConfig.mDoCleanup) {
         m_Cleanup.SetScope(scope);
         m_Cleanup.BasicCleanup(*feat);
     }
@@ -956,7 +967,7 @@ CConstRef<CValidError> CAsnvalThreadState::ValidateAsync(
 
     if (top_h) {
 
-        if (m_DoCleanup) {
+        if (mAppConfig.mDoCleanup) {
             CCleanup cleanup;
             cleanup.SetScope(scope);
             cleanup.BasicCleanup(*pEntry);
@@ -1091,7 +1102,7 @@ void CAsnvalThreadState::ValidateOneHugeFile(const string& loader_name, bool use
 
 void CAsnvalThreadState::ValidateOneFile()
 {
-    if (!m_Quiet) {
+    if (!mAppConfig.mQuiet) {
         LOG_POST_XX(Corelib_App, 1, mFilename);
     }
 
@@ -1139,7 +1150,7 @@ void CAsnvalThreadState::ValidateOneFile()
         }
 
         if (asninfo) {
-            if (!m_HugeFile || m_batch || !edit::CHugeFileProcess::IsSupported(asninfo)) {
+            if (!mAppConfig.mHugeFile || mAppConfig.mBatch || !edit::CHugeFileProcess::IsSupported(asninfo)) {
                 mpIstr = mpHugeFileProcess->GetReader().MakeObjStream(0);
             }
         }
@@ -1161,7 +1172,7 @@ void CAsnvalThreadState::ValidateOneFile()
     //cerr << "CAsnvalApp::ValidateOneFile() check3 " << context.mFilename << "\n";
     if (asninfo) {
         try {
-            if (m_batch) {
+            if (mAppConfig.mBatch) {
                 if (asninfo == CBioseq_set::GetTypeInfo()) {
                     ProcessBSSReleaseFile();
                 }

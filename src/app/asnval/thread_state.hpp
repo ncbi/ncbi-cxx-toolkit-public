@@ -106,10 +106,9 @@ class CValXMLStream;
 extern const set<TTypeInfo> s_known_types;
 string s_GetSeverityLabel(EDiagSev, bool = false);
 
-class CAsnvalThreadState : public CReadClassMemberHook
+class CAppConfig
 {
 public:
-
     enum EVerbosity {
         eVerbosity_Normal = 1,
         eVerbosity_Spaced = 2,
@@ -118,7 +117,26 @@ public:
         eVerbosity_min = 1, eVerbosity_max = 4
     };
 
-    CAsnvalThreadState();
+    CAppConfig(const CArgs& args);
+
+    bool mQuiet;
+    bool mDoCleanup;
+    EVerbosity mVerbosity;
+    EDiagSev mLowCutoff;
+    EDiagSev mHighCutoff;
+    EDiagSev mReportLevel;
+    bool mBatch = false;
+    string mOnlyError;
+    bool mContinue;
+    bool mOnlyAnnots;
+    bool mHugeFile = false;
+};
+
+class CAsnvalThreadState : public CReadClassMemberHook
+{
+public:
+
+    CAsnvalThreadState(const CAppConfig&);
     CAsnvalThreadState(
         CAsnvalThreadState& other);
     ~CAsnvalThreadState() {};
@@ -163,17 +181,14 @@ public:
     void ValidateOneHugeFile(const string& loader_name, bool use_mt);
     void ValidateOneFile();
 
+    const CAppConfig& mAppConfig;
+
     string mFilename;
     unique_ptr<CObjectIStream> mpIstr;
     unique_ptr<edit::CHugeFileProcess> mpHugeFileProcess;
     ///
     CRef<CObjectManager> m_ObjMgr;
-    //unique_ptr<CObjectIStream> m_In;
     unsigned int m_Options;
-    bool m_HugeFile = false;
-    bool m_Continue;
-    bool m_OnlyAnnots;
-    bool m_Quiet;
     double m_Longest;
     string m_CurrentId;
     string m_LongestId;
@@ -182,17 +197,8 @@ public:
 
     size_t m_Level;
     std::atomic<size_t> m_Reported;
-    EDiagSev m_ReportLevel;
 
-    bool m_DoCleanup;
     CCleanup m_Cleanup;
-
-    EDiagSev m_LowCutoff;
-    EDiagSev m_HighCutoff;
-
-    EVerbosity m_verbosity;
-    bool m_batch = false;
-    string m_OnlyError;
 
     CHugeFileValidator::TGlobalInfo m_GlobalInfo;
     CNcbiOstream* m_ValidErrorStream;
