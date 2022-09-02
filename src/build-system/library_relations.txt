@@ -207,6 +207,7 @@ annotationproto needs spdiproto
 asn_cache needs $(COMPRESS_LIBS)
 asn_cache needs bdb
 asn_cache needs seqset
+asn_cache needs3party $(VDB_LIBS)
 asn_sample_lib needs xser
 asngendefs needs xser
 asnmuxdblb needs dbloadb_asn
@@ -314,6 +315,7 @@ ct_ftds100 needs tds_ftds100
 ctransition needs xncbi
 ctransition_nlmzip needs $(COMPRESS_LIBS)
 ctransition_nlmzip needs xutil
+ctransition_nlmzip needs3party $(VDB_LIBS)
 ctutils needs $(LMDB_LIB)
 ctutils needs3party $(LMDB_LIBS)
 ctutils needs3party $(SYBASE_DLLS)
@@ -352,6 +354,7 @@ dbapi_sample_base needs3party $(SYBASE_LIBS)
 dbapi_util_blobstore needs $(COMPRESS_LIBS)
 dbapi_util_blobstore needs dbapi_driver
 dbapi_util_blobstore needs xutil
+dbapi_util_blobstore needs3party $(VDB_LIBS)
 dbassist needs dbapi
 dbassist needs dbloadb
 dbassist needs ncbi_xdbapi_ftds
@@ -386,6 +389,7 @@ egenedb needs $(CONNEXT)
 egenedb needs dbapi_driver_wrap_s
 egenedb needs entrezgene
 egenedb needs taxon1
+egenedb needs3party $(VDB_LIBS)
 egquery needs xser
 ehistory needs xser
 einfo needs xser
@@ -459,6 +463,7 @@ gencoll_client needs $(SQLITE3_WRAPPER)
 gencoll_client needs genome_collection
 gencoll_client needs xconnect
 gencoll_client needs3party $(SQLITE3_LIBS)
+gencoll_client needs3party $(VDB_LIBS)
 gencoll_load needs xser
 gencoll_stats needs genome_collection
 gendefasn_g needs3party $(NCBI_C_ncbi)
@@ -473,6 +478,7 @@ generic_db_tmpl_utils needs generic_db_utils
 generic_db_utils needs $(COMPRESS_LIBS)
 generic_db_utils needs xconnect
 generic_db_utils needs xser
+generic_db_utils needs3party $(VDB_LIBS)
 generic_db_utils_cgi includes generic_db_utils
 genesbyloc needs xser
 genome_collection needs $(SEQ_LIBS)
@@ -480,6 +486,7 @@ genome_collection needs pub
 genome_size needs $(COMPRESS_LIBS)
 genome_size needs xconnect
 genome_size needs xutil
+genome_size needs3party $(VDB_LIBS)
 gensvc_g needs xser
 geodataset needs biblio
 gi2acc_client needs txclient
@@ -528,6 +535,7 @@ gpipe_curl needs3party $(Z_LIBS)
 gpipe_dateutil needs xregexp
 gpipe_fileutils needs $(COMPRESS_LIBS)
 gpipe_fileutils needs xutil
+gpipe_fileutils needs3party $(VDB_LIBS)
 gpipe_jira needs gpinit_access
 gpipe_jira needs gpipe_attr
 gpipe_jira needs gpipe_curl
@@ -551,6 +559,7 @@ gpipe_sadb needs $(COMPRESS_LIBS)
 gpipe_sadb needs seqset
 gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
+gpipe_sadb needs3party $(VDB_LIBS)
 gpipe_sqlite needs $(SDBAPI_LIB)
 gpipe_sqlite needs $(SEQ_LIBS)
 gpipe_sqlite needs $(SQLITE3_WRAPPER)
@@ -716,6 +725,7 @@ gui_print needs gui_opengl
 gui_utils needs $(COMPRESS_LIBS)
 gui_utils needs ncbi_xcache_netcache
 gui_utils needs tables
+gui_utils needs3party $(VDB_LIBS)
 guide_tree needs phytree_format
 gumbelparams needs tables
 gumbelparams needs xutil
@@ -742,6 +752,7 @@ id1cli needs xconnect
 id2 needs seqsplit
 id2_split needs $(COMPRESS_LIBS)
 id2_split needs $(SOBJMGR_LIBS)
+id2_split needs3party $(VDB_LIBS)
 id2cli needs id2
 id2cli needs xconnect
 ideo needs xmvdatacache
@@ -804,6 +815,7 @@ lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
 lds2 needs $(SQLITE3_WRAPPER)
 lds2 needs3party $(SQLITE3_LIBS)
+lds2 needs3party $(VDB_LIBS)
 linkos_utils needs xid_utils
 linkout needs xser
 linkoutdb needs $(SQLITE3_WRAPPER)
@@ -965,6 +977,7 @@ ncbi_xreader needs $(SOBJMGR_LIBS)
 ncbi_xreader needs id1
 ncbi_xreader needs id2
 ncbi_xreader needs xconnect
+ncbi_xreader needs3party $(VDB_LIBS)
 ncbi_xreader_cache needs ncbi_xreader
 ncbi_xreader_gicache needs $(LMDB_LIB)
 ncbi_xreader_gicache needs ncbi_xreader
@@ -1133,6 +1146,7 @@ refseq_aln_source needs $(COMPRESS_LIBS)
 refseq_aln_source needs dbapi
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
+refseq_aln_source needs3party $(VDB_LIBS)
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
@@ -1190,6 +1204,7 @@ softparse needs $(COMPRESS_LIBS)
 softparse needs affy
 softparse needs taxon1
 softparse needs xmlwrapp
+softparse needs3party $(VDB_LIBS)
 spcgi needs softparse
 spcgi needs xcgi
 spcgi needs xhtml
@@ -1292,6 +1307,7 @@ test_stat_ext needs ncbi_xdbapi_ftds
 test_stat_ext needs xconnect
 test_stat_ext needs xregexp
 test_stat_ext needs xutil
+test_stat_ext needs3party $(VDB_LIBS)
 thriftd needs $(Z_LIB)
 thriftd needs3party $(KRB5_LIBS)
 thriftd needs3party $(NETWORK_LIBS)
@@ -1319,14 +1335,15 @@ trackmgrcli needs xconnect
 trackmgrgridcli needs $(COMPRESS_LIBS)
 trackmgrgridcli needs trackmgr
 trackmgrgridcli needs xconnserv
+trackmgrgridcli needs3party $(VDB_LIBS)
 txclient needs xconnect
 txcscu needs txclient
 txcscu needs xregexp
 txserv needs xmlwrapp
 txxmldoc needs $(COMPRESS_LIBS)
 txxmldoc needs xutil
-txxmldoc needs3party $(LIBXML_LIBS)
 txxmldoc needs3party $(LIBXSLT_LIBS)
+txxmldoc needs3party $(VDB_LIBS)
 u2tl needs $(Z_LIB)
 u2tl needs3party $(NETWORK_LIBS)
 u2tl needs3party $(ORIG_LIBS)
@@ -1341,6 +1358,7 @@ utrtprof needs xncbi
 uudutil needs $(COMPRESS_LIBS)
 uudutil needs gbproj
 uudutil needs xconnserv
+uudutil needs3party $(VDB_LIBS)
 uuid needs3party $(ORIG_LIBS)
 uv needs3party $(ORIG_LIBS)
 valerr needs xser
@@ -1363,7 +1381,6 @@ varrep needs xser
 vdb2blast needs $(BLAST_INPUT_LIBS)
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs3party $(BLAST_THIRD_PARTY_LIBS)
-vdb2blast needs3party $(VDB_LIBS)
 vdb_reader needs xncbi
 vdb_reader needs3party $(VDB_LIBS)
 vibgif needs3party $(NCBI_C_ncbi)
@@ -1543,6 +1560,7 @@ xalgoseqqa needs seqtest
 xalgoseqqa needs xalgognomon
 xalgotext needs $(COMPRESS_LIBS)
 xalgotext needs xutil
+xalgotext needs3party $(VDB_LIBS)
 xalgovmerge needs xncbi
 xalgowinmask needs seqmasks_io
 xaligncleanup needs prosplign
@@ -1592,6 +1610,7 @@ xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
 xcompress needs xutil
 xcompress needs3party $(CMPRS_LIBS)
+xcompress needs3party $(VDB_LIBS)
 xconnect includes connect
 xconnect includes connssl
 xconnect needs xncbi
@@ -1607,6 +1626,7 @@ xdiff needs xncbi
 xdiscrepancy needs $(COMPRESS_LIBS)
 xdiscrepancy needs macro
 xdiscrepancy needs xcleanup
+xdiscrepancy needs3party $(VDB_LIBS)
 xerces-c needs $(Z_LIB)
 xerces-c needs3party $(CURL_LIBS)
 xerces-c needs3party $(KRB5_LIBS)
@@ -1642,14 +1662,15 @@ xid_pubseqos needs $(COMPRESS_LIBS)
 xid_pubseqos needs $(SEQ_LIBS)
 xid_pubseqos needs dbapi_driver
 xid_pubseqos needs pub
+xid_pubseqos needs3party $(VDB_LIBS)
 xid_stream_cass needs $(COMPRESS_LIBS)
 xid_stream_cass needs psg_cassandra
 xid_stream_cass needs xutil
+xid_stream_cass needs3party $(VDB_LIBS)
 xid_utils includes xid_pubseqos
 xid_utils needs $(CONNEXT)
 xid_utils needs xconnect
 xid_utils needs xobjutil
-xid_utils needs3party $(LIBXML_LIBS)
 xid_utils_cgi needs xcgi
 xid_utils_cgi needs xmlwrapp
 xid_utils_cgi needs xslt_libxml
