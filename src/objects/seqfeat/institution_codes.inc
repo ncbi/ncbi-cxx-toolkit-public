@@ -3684,7 +3684,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KM<RUS>\ts\tKotel'nich Museum\t\t\t",
 "KMG\ts\tMcGregor Museum\t\t\t",
 "KMK<MOL>\ts\tKraevedscheskii Musei Kishineva - Museum of Regional Study\t\t\t",
-"KMK<ZAF>\ts\tKaffarian Museum\t\t\t",
+"KMK<ZAF>\ts\tAmathole Museum\t\t\t",
 "KMKV\ts\tKarlovarske muzeum\t\t\t",
 "KMM\tc\tG.B. Elyakov Pacific Institute of Bioorganic Chemistry of the Far Eastern Branch of the Russian Academy of Sciences (PIBOC FEB RAS) Collection of Marine Microorganisms\t\t\t",
 "KMMCC\tc\tKorea Marine Microalgae Culture Center\t\t\t",

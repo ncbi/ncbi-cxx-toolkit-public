@@ -3651,7 +3651,7 @@ KM<POL>	s	Muzeum Przyrodnicze Uniwersytetu Jagiellonskiego
 KM<RUS>	s	Kotel'nich Museum			
 KMG	s	McGregor Museum			
 KMK<MOL>	s	Kraevedscheskii Musei Kishineva - Museum of Regional Study			
-KMK<ZAF>	s	Kaffarian Museum			
+KMK<ZAF>	s	Amathole Museum			
 KMKV	s	Karlovarske muzeum			
 KMM	c	G.B. Elyakov Pacific Institute of Bioorganic Chemistry of the Far Eastern Branch of the Russian Academy of Sciences (PIBOC FEB RAS) Collection of Marine Microorganisms			
 KMMCC	c	Korea Marine Microalgae Culture Center			
