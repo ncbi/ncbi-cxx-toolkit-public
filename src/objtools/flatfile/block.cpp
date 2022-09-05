@@ -351,7 +351,7 @@ _gap_feats::_gap_feats() :
     rightNs(false),
     assembly_gap(false),
     gap_type(NULL),
-    asn_gap_type(0),
+    asn_gap_type(objects::CSeq_gap::eType_unknown),
     next(NULL)
 {
 }

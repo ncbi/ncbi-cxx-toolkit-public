@@ -944,7 +944,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     char*       kwp;
     Char        dataclass[4];
     Char        ch;
-    Int2        div;
+    CEMBL_block::TDiv div;
 
     TKeywordList keywords;
 
@@ -965,7 +965,6 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     bool  cancelled;
     bool  drop;
     char* tempdiv;
-    Int2  thtg;
     char* p;
     Int4  i;
 
@@ -1049,7 +1048,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         return ret;
     }
 
-    div = fta_StringMatch(ParFlat_Embl_DIV_array, bptr);
+    div = static_cast<CEMBL_block::TDiv>(fta_StringMatch(ParFlat_Embl_DIV_array, bptr));
     if (div < 0) {
         ch      = bptr[3];
         bptr[3] = '\0';
@@ -1062,7 +1061,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
      * its "UNA"==10 division to "UNC"==16 (for "unclassified")
      */
     if (div == 16)
-        div = 10;
+        div = CEMBL_block::eDiv_una;
 
     StringCpy(ibp->division, ParFlat_GBDIV_array[div]);
 
@@ -1070,11 +1069,11 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
      * it's temporarily mapped to 'other' in asn.1 embl-block.
      * Divisions GSS, HUM, HTG, CON, ENV and MUS are mapped to other.
      */
-    thtg   = (div == 18) ? 6 : div;
-    *gbdiv = StringSave(ParFlat_GBDIV_array[thtg]);
+    int thtg = (div == 18) ? CEMBL_block::eDiv_pri : div;
+    *gbdiv   = StringSave(ParFlat_GBDIV_array[thtg]);
 
-    if (div <= 15)
-        embl->SetDiv(static_cast<CEMBL_block_Base::TDiv>(div));
+    if (div <= CEMBL_block::eDiv_sts)
+        embl->SetDiv(div);
 
     p = *gbdiv;
     if (ibp->is_tpa &&
@@ -1193,9 +1192,9 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         return ret;
     }
 
-    thtg = mol_info.GetTech();
-    if (thtg == CMolInfo::eTech_htgs_0 || thtg == CMolInfo::eTech_htgs_1 ||
-        thtg == CMolInfo::eTech_htgs_2 || thtg == CMolInfo::eTech_htgs_3) {
+    CMolInfo::TTech tech = mol_info.GetTech();
+    if (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
+        tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
         RemoveHtgPhase(embl->SetKeywords());
     }
 
@@ -1220,10 +1219,11 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     }
 
     if (! ibp->is_contig) {
-        drop       = false;
-        Uint1 tech = mol_info.GetTech();
-        *gbdiv     = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, *gbdiv, &tech, ibp->bases, pp->source, drop);
-        if (tech != 0)
+        drop                 = false;
+        CMolInfo::TTech tech = mol_info.GetTech();
+
+        *gbdiv = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, *gbdiv, &tech, ibp->bases, pp->source, drop);
+        if (tech != CMolInfo::eTech_unknown)
             mol_info.SetTech(tech);
         else
             mol_info.ResetTech();
@@ -1484,7 +1484,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
         bptr = bptr + 3;
 
     GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), bptr, pp, entry, org_ref);
-    if (mol_info->GetBiomol() == 0) // not set
+    if (mol_info->GetBiomol() == CMolInfo::eBiomol_unknown) // not set
         mol_info->ResetBiomol();
 
     if (r != NULL)
@@ -1831,8 +1831,8 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
         ibp->is_contig && ! mol_info->IsSetTech()) {
-        Uint1 tech = fta_check_con_for_wgs(bioseq);
-        if (tech == 0)
+        CMolInfo::TTech tech = fta_check_con_for_wgs(bioseq);
+        if (tech == CMolInfo::eTech_unknown)
             mol_info->ResetTech();
         else
             mol_info->SetTech(tech);
@@ -2453,7 +2453,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
     char*       bptr;
     char*       kw;
     char*       kwp;
-    Int2        div;
+    CEMBL_block::EDiv div;
 
     bool pat_ref = false;
     bool est_kwd = false;
@@ -2470,7 +2470,6 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
     bool cancelled;
 
     char* tempdiv;
-    Int2  thtg;
     char* p;
     char* r;
     Int4  i;
@@ -2499,7 +2498,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
     }
 
     bptr         = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION);
-    div          = fta_StringMatch(ParFlat_Embl_DIV_array, bptr);
+    div          = static_cast<CEMBL_block::TDiv>(fta_StringMatch(ParFlat_Embl_DIV_array, bptr));
     dataclass[0] = '\0';
     if (bptr != NULL) {
         bptr[3] = '\0';
@@ -2519,7 +2518,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
      * its "UNA"==10 division to "UNC"==16 (for "unclassified")
      */
     if (div == 16)
-        div = 10;
+        div = CEMBL_block::eDiv_una;
 
     StringCpy(ibp->division, ParFlat_GBDIV_array[div]);
 
@@ -2527,11 +2526,11 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
      * it's temporarily mapped to 'other' in asn.1 embl-block.
      * Divisions GSS, HUM, HTG, CON, ENV and MUS are mapped to other.
      */
-    thtg   = (div == 18) ? 6 : div;
-    *gbdiv = StringSave(ParFlat_GBDIV_array[thtg]);
+    int thtg = (div == 18) ? CEMBL_block::eDiv_pri : div;
+    *gbdiv   = StringSave(ParFlat_GBDIV_array[thtg]);
 
-    if (div <= 15)
-        embl->SetDiv(static_cast<CEMBL_block_Base::TDiv>(div));
+    if (div <= CEMBL_block::eDiv_sts)
+        embl->SetDiv(div);
 
     p = *gbdiv;
     if (ibp->is_tpa &&
@@ -2651,9 +2650,9 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
         return ret;
     }
 
-    thtg = mol_info.GetTech();
-    if (thtg == CMolInfo::eTech_htgs_0 || thtg == CMolInfo::eTech_htgs_1 ||
-        thtg == CMolInfo::eTech_htgs_2 || thtg == CMolInfo::eTech_htgs_3) {
+    CMolInfo::TTech tech = mol_info.GetTech();
+    if (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
+        tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
         RemoveHtgPhase(embl->SetKeywords());
     }
 
@@ -2674,10 +2673,11 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
         MemFree(kw);
     }
     if (! ibp->is_contig) {
-        bool  drop = false;
-        Uint1 tech = mol_info.GetTech();
-        *gbdiv     = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, *gbdiv, &tech, ibp->bases, pp->source, drop);
-        if (tech != 0)
+        bool            drop = false;
+        CMolInfo::TTech tech = mol_info.GetTech();
+
+        *gbdiv = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, *gbdiv, &tech, ibp->bases, pp->source, drop);
+        if (tech != CMolInfo::eTech_unknown)
             mol_info.SetTech(tech);
         else
             mol_info.ResetTech();

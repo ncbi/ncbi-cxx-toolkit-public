@@ -2546,7 +2546,7 @@ bool IsSegBioseq(const CSeq_id& id)
  *                                              9-09-96
  *
  **********************************************************/
-char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_kwd, bool if_cds, char* div, unsigned char* tech, size_t bases, Parser::ESource source, bool& drop)
+char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_kwd, bool if_cds, char* div, CMolInfo::TTech* tech, size_t bases, Parser::ESource source, bool& drop)
 {
     if (div == NULL)
         return (NULL);
@@ -2582,7 +2582,7 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss
             } else {
                 ErrPostEx(SEV_INFO, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_est)
-                    *tech = 0;
+                    *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 1000) {
             if (StringCmp(div, "EST") == 0) {
@@ -2590,7 +2590,7 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss
             } else {
                 ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the sequence length %ld.", bases);
                 if (*tech == CMolInfo::eTech_est)
-                    *tech = 0;
+                    *tech = CMolInfo::eTech_unknown;
             }
         } else {
             if (StringCmp(div, "EST") != 0)
@@ -2614,7 +2614,7 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss
             } else {
                 ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_sts)
-                    *tech = 0;
+                    *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 1000) {
             if (StringCmp(div, "STS") == 0) {
@@ -2622,7 +2622,7 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss
             } else {
                 ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the sequence length %ld.", bases);
                 if (*tech == CMolInfo::eTech_sts)
-                    *tech = 0;
+                    *tech = CMolInfo::eTech_unknown;
             }
         } else {
             if (StringCmp(div, "STS") != 0)
@@ -2643,7 +2643,7 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss
             } else {
                 ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_survey)
-                    *tech = 0;
+                    *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 2500) {
             if (StringCmp(div, "GSS") == 0) {
@@ -2651,7 +2651,7 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss
             } else {
                 ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the sequence length %ld.", bases);
                 if (*tech == CMolInfo::eTech_survey)
-                    *tech = 0;
+                    *tech = CMolInfo::eTech_unknown;
             }
         } else {
             if (StringCmp(div, "GSS") != 0)
@@ -2732,7 +2732,7 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
             if (bioseq->IsSetDescr()) {
                 CGB_block*      gb_block = nullptr;
                 CMolInfo*       molinfo  = nullptr;
-                CMolInfo::TTech tech     = 0;
+                CMolInfo::TTech tech     = CMolInfo::eTech_unknown;
 
                 for (auto& descr : bioseq->SetDescr().Set()) {
                     if (descr->IsGenbank() && ! gb_block)
@@ -2801,7 +2801,7 @@ void EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 }
 
 /**********************************************************/
-void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled)
+void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled)
 {
     DataBlkPtr   dbp;
     const char** b;
@@ -2874,7 +2874,7 @@ void DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori, boo
 }
 
 /**********************************************************/
-void XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelled)
+void XMLDefVsHTGKeywords(CMolInfo::TTech tech, char* entry, XmlIndexPtr xip, bool cancelled)
 {
     const char** b;
     char*        tmp;
@@ -2931,7 +2931,7 @@ void XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelle
 }
 
 /**********************************************************/
-void CheckHTGDivision(char* div, Uint1 tech)
+void CheckHTGDivision(char* div, CMolInfo::TTech tech)
 {
     if (div != NULL && StringCmp(div, "HTG") == 0 && tech == CMolInfo::eTech_htgs_3) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_ShouldNotBeHTG, "This Phase 3 HTGS sequence is still in the HTG division. If truly complete, it should move to a non-HTG division.");

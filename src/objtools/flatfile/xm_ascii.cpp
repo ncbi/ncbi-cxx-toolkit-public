@@ -463,10 +463,10 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, CMolInfo& mol_in
 
             if (! ibp->is_contig) {
                 drop               = false;
-                Uint1 tech         = mol_info.GetTech();
+                CMolInfo::TTech tech = mol_info.GetTech();
                 char* div_to_check = StringSave(gbb->GetDiv().c_str());
                 char* p_div        = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, div_to_check, &tech, ibp->bases, pp->source, drop);
-                if (tech != 0)
+                if (tech != CMolInfo::eTech_unknown)
                     mol_info.SetTech(tech);
                 else
                     mol_info.ResetTech();
@@ -646,7 +646,7 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* or
 
     MemFree(div);
     GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, *entry, org_ref);
-    if (mol_info->GetBiomol() == 0) // not set
+    if (mol_info->GetBiomol() == CMolInfo::eBiomol_unknown) // not set
         mol_info->ResetBiomol();
 
     if (molstr != NULL)

@@ -145,7 +145,7 @@ void             fta_StringCpy(char* dst, const char* src);
 
 void fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk, bool* htck, bool* flik, bool* wgsk, bool* tpak, bool* envk, bool* mgak, bool* tsak, bool* tlsk);
 
-void fta_remove_keywords(Uint1 tech, TKeywordList& kwds);
+void fta_remove_keywords(int tech, TKeywordList& kwds);
 void fta_remove_tpa_keywords(TKeywordList& kwds);
 void fta_remove_tsa_keywords(TKeywordList& kwds, Parser::ESource source);
 void fta_remove_tls_keywords(TKeywordList& kwds, Parser::ESource source);

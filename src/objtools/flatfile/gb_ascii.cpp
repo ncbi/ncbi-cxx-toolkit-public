@@ -558,10 +558,10 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
 
             if (! ibp->is_contig) {
                 drop               = false;
-                Uint1 tech         = mol_info.GetTech();
+                CMolInfo::TTech tech = mol_info.GetTech();
                 char* div_to_check = gbb->IsSetDiv() ? StringSave(gbb->GetDiv().c_str()) : StringSave("");
                 char* p_div        = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, div_to_check, &tech, ibp->bases, pp->source, drop);
-                if (tech != 0)
+                if (tech != CMolInfo::eTech_unknown)
                     mol_info.SetTech(tech);
                 else
                     mol_info.ResetTech();
@@ -683,8 +683,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
         {
             ITERATE(CBioSource::TSubtype, subtype, bio_src->GetSubtype())
             {
-                if ((*subtype)->GetSubtype() == 27)
-                {
+                if ((*subtype)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                     fta_remove_env_keywords(gbb->SetKeywords());
                     break;
                 }
@@ -700,9 +699,8 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                     if(!(*mod)->IsSetSubtype())
                         continue;
 
-                    int stype = (*mod)->GetSubtype();
-                    if(stype == 37)
-                    {
+                    COrgMod::TSubtype stype = (*mod)->GetSubtype();
+                    if (stype == COrgMod::eSubtype_metagenome_source) {
                         fta_remove_mag_keywords(gbb->SetKeywords());
                         break;
                     }
@@ -1240,9 +1238,9 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     CRef<CGB_block> gbbp = GetGBBlock(pp, entry, *mol_info, bio_src);
 
     if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
-        ibp->is_contig && (! mol_info->IsSetTech() || mol_info->GetTech() == 0)) {
-        Uint1 tech = fta_check_con_for_wgs(bioseq);
-        if (tech == 0)
+        ibp->is_contig && (! mol_info->IsSetTech() || mol_info->GetTech() == CMolInfo::eTech_unknown)) {
+        CMolInfo::TTech tech = fta_check_con_for_wgs(bioseq);
+        if (tech == CMolInfo::eTech_unknown)
             mol_info->ResetTech();
         else
             mol_info->SetTech(tech);

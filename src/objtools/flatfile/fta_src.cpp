@@ -1967,8 +1967,8 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
     char* p;
     char* q;
 
-    Int4 newgen;
-    Int4 oldgen;
+    CBioSource::TGenome newgen;
+    CBioSource::TGenome oldgen;
     Int2 i;
 
     bool is_syn = false;
@@ -1989,12 +1989,12 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
 
         if (! sfbp->lookup) {
             if (is_syn && ! sfbp->tg)
-                bio.SetOrigin(4); /* artificial */
+                bio.SetOrigin(CBioSource::eOrigin_artificial);
         } else {
             if (bio.CanGetOrg() && bio.GetOrg().CanGetOrgname() &&
                 bio.GetOrg().GetOrgname().CanGetDiv() &&
                 bio.GetOrg().GetOrgname().GetDiv() == "SYN") {
-                bio.SetOrigin(4); /* artificial */
+                bio.SetOrigin(CBioSource::eOrigin_artificial);
                 if (is_syn == false && is_pat == false) {
                     const Char* taxname = NULL;
                     if (bio.GetOrg().CanGetTaxname() &&
