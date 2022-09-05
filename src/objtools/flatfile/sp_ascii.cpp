@@ -760,7 +760,7 @@ static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, CInt_fuzz& fuzz)
 }
 
 /**********************************************************/
-static Uint1 GetSPGenome(DataBlkPtr dbp)
+static CBioSource::EGenome GetSPGenome(DataBlkPtr dbp)
 {
     DataBlkPtr subdbp;
     char*      p;
@@ -779,24 +779,24 @@ static Uint1 GetSPGenome(DataBlkPtr dbp)
                 }
         }
     if (gmod == -1)
-        return (0);
+        return CBioSource::eGenome_unknown;
     if (gmod == 0)
-        return (2); /* chloroplast */
+        return CBioSource::eGenome_chloroplast;
     if (gmod == 1)
-        return (12); /* cyanelle */
+        return CBioSource::eGenome_cyanelle;
     if (gmod == 2)
-        return (5); /* mitochondrion */
+        return CBioSource::eGenome_mitochondrion;
     if (gmod == 3)
-        return (9); /* plasmid */
+        return CBioSource::eGenome_plasmid;
     if (gmod == 4)
-        return (15); /* nucleomorph */
+        return CBioSource::eGenome_nucleomorph;
     if (gmod == 5)
-        return (20); /* hydrogenosome */
+        return CBioSource::eGenome_hydrogenosome;
     if (gmod == 6)
-        return (16); /* apicoplast */
+        return CBioSource::eGenome_apicoplast;
     if (gmod == 7 || gmod == 8)
-        return (22); /* chromatophore */
-    return (0);
+        return CBioSource::eGenome_chromatophore;
+    return CBioSource::eGenome_unknown;
 }
 
 /**********************************************************/
@@ -2587,7 +2587,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
 {
     DataBlkPtr dbp;
     char*      offset;
-    Uint1      gmod;
+    CBioSource::TGenome gmod;
     bool       fragment = false;
     TTaxId     taxid;
 
@@ -2732,11 +2732,11 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                     continue;
                 }
 
-                gmod = 0;
+                unsigned char drop = 0;
 
-                CRef<COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, tvhp->taxid, &gmod, true);
+                CRef<COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, tvhp->taxid, &drop, true);
                 if (org_ref_cur.Empty()) {
-                    if (gmod == 0)
+                    if (drop == 0)
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "OH-line TaxId \"%d\" was not found via the NCBI TaxArch service.", TAX_ID_TO(int, tvhp->taxid));
                     else
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"%d\" failed.", TAX_ID_TO(int, tvhp->taxid));

@@ -1377,7 +1377,7 @@ void fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk, boo
 }
 
 /**********************************************************/
-void fta_remove_keywords(Uint1 tech, TKeywordList& kwds)
+void fta_remove_keywords(CMolInfo::TTech tech, TKeywordList& kwds)
 {
     const char** b;
 

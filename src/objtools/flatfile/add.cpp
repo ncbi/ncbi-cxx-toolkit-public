@@ -109,7 +109,7 @@ typedef struct _fta_tpa_block {
     Int4                   version;
     Int4                   from2;
     Int4                   to2;
-    Uint1                  strand;
+    ENa_strand             strand;
     Uint1                  sicho; /* SeqId choice */
     struct _fta_tpa_block* next;
 } FTATpaBlock, *FTATpaBlockPtr;
@@ -310,11 +310,11 @@ static void CreateSeqGap(CSeq_literal& seq_lit, GapFeatsPtr gfp)
     if (! gfp->asn_linkage_evidence.empty())
         sgap.SetLinkage_evidence().swap(gfp->asn_linkage_evidence);
 
-    sgap.SetLinkage(0);
+    sgap.SetLinkage(CSeq_gap::eLinkage_unlinked);
     if (gfp->gap_type) {
         string gapType(gfp->gap_type);
         if (gapType == "unknown" || gapType == "within scaffold" || gapType == "repeat within scaffold") {
-            sgap.SetLinkage(1);
+            sgap.SetLinkage(CSeq_gap::eLinkage_linked);
         }
     }
 }
@@ -1260,11 +1260,11 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         while (*p == ' ')
             p++;
         if (*p == 'c') {
-            tftbp->strand = 2;
+            tftbp->strand = eNa_strand_minus;
             for (p++; *p == ' ';)
                 p++;
         } else
-            tftbp->strand = 1;
+            tftbp->strand = eNa_strand_plus;
         if (*p != '\0') {
             bad_line = true;
             break;
@@ -1348,11 +1348,11 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
 
         seg.SetStrands().push_back(eNa_strand_plus);
-        seg.SetStrands().push_back(static_cast<ENa_strand>(tftbp->strand));
+        seg.SetStrands().push_back(tftbp->strand);
 
         if (len1 != len2) {
             seg.SetStrands().push_back(eNa_strand_plus);
-            seg.SetStrands().push_back(static_cast<ENa_strand>(tftbp->strand));
+            seg.SetStrands().push_back(tftbp->strand);
         }
 
         CRef<CTextseq_id> text_id(new CTextseq_id);
@@ -2057,7 +2057,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
 }
 
 /**********************************************************/
-Uint1 fta_check_con_for_wgs(CBioseq& bioseq)
+CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
 {
     if (bioseq.GetInst().GetRepr() != CSeq_inst::eRepr_delta || ! bioseq.GetInst().IsSetExt() || ! bioseq.GetInst().GetExt().IsDelta())
         return CMolInfo::eTech_unknown;
@@ -2189,8 +2189,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
             new_text_id->Assign(*text_id);
             SetTextId(type, id, *new_text_id);
         }
-    }
-    else if (source == Parser::ESource::Flybase) {
+    } else if (source == Parser::ESource::Flybase) {
         std::string acc(accession);
         id.SetGeneral().SetDb("FlyBase");
         id.SetGeneral().SetTag().SetStr(acc);
@@ -2816,11 +2815,11 @@ void fta_set_molinfo_completeness(CBioseq& bioseq, IndexblkPtr ibp)
     }
 
     if (mol_info != nullptr) {
-        mol_info->SetCompleteness(1);
+        mol_info->SetCompleteness(CMolInfo::eCompleteness_complete);
     } else {
         CRef<CSeqdesc> descr(new CSeqdesc);
         CMolInfo&      mol = descr->SetMolinfo();
-        mol.SetCompleteness(1);
+        mol.SetCompleteness(CMolInfo::eCompleteness_complete);
 
         bioseq.SetDescr().Set().push_back(descr);
     }

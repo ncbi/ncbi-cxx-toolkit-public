@@ -76,12 +76,12 @@ void BuildBioSegHeader(ParserPtr pp, TEntryList& entries, const objects::CSeq_lo
 // LCOV_EXCL_STOP
 
 bool  IsSegBioseq(const objects::CSeq_id& id);
-char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_kwd, bool if_cds, char* div, unsigned char* tech, size_t bases, Parser::ESource source, bool& drop);
+char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_kwd, bool if_cds, char* div, int* tech, size_t bases, Parser::ESource source, bool& drop);
 void  EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp);
 void  AddNIDSeqId(objects::CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata, Parser::ESource source);
-void  DefVsHTGKeywords(Uint1 tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled);
-void  XMLDefVsHTGKeywords(Uint1 tech, char* entry, XmlIndexPtr xip, bool cancelled);
-void  CheckHTGDivision(char* div, Uint1 tech);
+void  DefVsHTGKeywords(int tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled);
+void  XMLDefVsHTGKeywords(int tech, char* entry, XmlIndexPtr xip, bool cancelled);
+void  CheckHTGDivision(char* div, int tech);
 void  fta_sort_biosource(objects::CBioSource& bio);
 bool  fta_EntryCheckGBBlock(TEntryList& seq_entries);
 void  ShrinkSpaces(char* line);

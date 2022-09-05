@@ -56,7 +56,7 @@ using FeatBlkPtr = FeatBlk*;
 void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq);
 int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, Parser::EFormat format);
 
-void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, const DataBlk& entry, const objects::COrg_ref* org_ref);
+void GetFlatBiomol(int& biomol, int tech, char* molstr, ParserPtr pp, const DataBlk& entry, const objects::COrg_ref* org_ref);
 
 bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, char* name);
 

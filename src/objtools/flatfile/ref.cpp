@@ -1950,7 +1950,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
     }
 
     if (dbp->mType == ParFlat_REF_NO_TARGET)
-        desc->SetReftype(3);
+        desc->SetReftype(CPubdesc::eReftype_no_target);
 
     desc->SetPub().Set().push_back(pub_ref);
 
@@ -2101,7 +2101,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
     }
 
     if (dbp->mType == ParFlat_REF_NO_TARGET)
-        desc->SetReftype(3);
+        desc->SetReftype(CPubdesc::eReftype_no_target);
 
     desc->SetPub().Set().push_back(pub_ref);
 
@@ -2260,7 +2260,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     fta_add_article_ids(*pub_ref, doi, agricola);
 
     if (dbp->mType == ParFlat_REF_NO_TARGET)
-        desc->SetReftype(3);
+        desc->SetReftype(CPubdesc::eReftype_no_target);
 
     desc->SetPub().Set().push_back(pub_ref);
 
