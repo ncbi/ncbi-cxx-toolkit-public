@@ -98,20 +98,20 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-#define Seq_descr_GIBB_mol_unknown       0
-#define Seq_descr_GIBB_mol_genomic       1
-#define Seq_descr_GIBB_mol_preRNA        2
-#define Seq_descr_GIBB_mol_mRNA          3
-#define Seq_descr_GIBB_mol_rRNA          4
-#define Seq_descr_GIBB_mol_tRNA          5
-#define Seq_descr_GIBB_mol_uRNA          6
-#define Seq_descr_GIBB_mol_snRNA         6
-#define Seq_descr_GIBB_mol_scRNA         7
-#define Seq_descr_GIBB_mol_other_genetic 9
-#define Seq_descr_GIBB_mol_cRNA          11
-#define Seq_descr_GIBB_mol_snoRNA        12
-#define Seq_descr_GIBB_mol_trRNA         13
-#define Seq_descr_GIBB_mol_other         255
+#define Seq_descr_GIBB_mol_unknown       CMolInfo::eBiomol_unknown
+#define Seq_descr_GIBB_mol_genomic       CMolInfo::eBiomol_genomic
+#define Seq_descr_GIBB_mol_preRNA        CMolInfo::eBiomol_pre_RNA
+#define Seq_descr_GIBB_mol_mRNA          CMolInfo::eBiomol_mRNA
+#define Seq_descr_GIBB_mol_rRNA          CMolInfo::eBiomol_rRNA
+#define Seq_descr_GIBB_mol_tRNA          CMolInfo::eBiomol_tRNA
+#define Seq_descr_GIBB_mol_uRNA          CMolInfo::eBiomol_snRNA
+#define Seq_descr_GIBB_mol_snRNA         CMolInfo::eBiomol_snRNA
+#define Seq_descr_GIBB_mol_scRNA         CMolInfo::eBiomol_scRNA
+#define Seq_descr_GIBB_mol_other_genetic CMolInfo::eBiomol_other_genetic
+#define Seq_descr_GIBB_mol_cRNA          CMolInfo::eBiomol_cRNA
+#define Seq_descr_GIBB_mol_snoRNA        CMolInfo::eBiomol_snoRNA
+#define Seq_descr_GIBB_mol_trRNA         CMolInfo::eBiomol_transcribed_RNA
+#define Seq_descr_GIBB_mol_other         CMolInfo::eBiomol_other
 
 typedef struct _trna_aa {
     const char* name;
@@ -120,7 +120,7 @@ typedef struct _trna_aa {
 
 typedef struct _str_num {
     const char* str;
-    Int4        num;
+    int         num;
 } StrNum, *StrNumPtr;
 
 TrnaAa taa[] = {
@@ -533,33 +533,35 @@ const char* RegulatoryClassValues[] = {
     NULL
 };
 
+// clang-format off
 StrNum GapTypeValues[] = {
-    { "between scaffolds", 8 },        /* contig          */
-    { "within scaffold", 9 },          /* scaffold        */
-    { "telomere", 6 },                 /* telomere        */
-    { "centromere", 5 },               /* centromere      */
-    { "short arm", 3 },                /* short-arm       */
-    { "heterochromatin", 4 },          /* heterochromatin */
-    { "repeat within scaffold", 7 },   /* repeat          */
-    { "repeat between scaffolds", 7 }, /* repeat          */
-    { "unknown", 0 },                  /* unknown         */
+    { "between scaffolds",        CSeq_gap::eType_contig },
+    { "within scaffold",          CSeq_gap::eType_scaffold },
+    { "telomere",                 CSeq_gap::eType_telomere },
+    { "centromere",               CSeq_gap::eType_centromere },
+    { "short arm",                CSeq_gap::eType_short_arm },
+    { "heterochromatin",          CSeq_gap::eType_heterochromatin },
+    { "repeat within scaffold",   CSeq_gap::eType_repeat },
+    { "repeat between scaffolds", CSeq_gap::eType_repeat },
+    { "unknown",                  CSeq_gap::eType_unknown },
     { NULL, -1 }
 };
 
 StrNum LinkageEvidenceValues[] = {
-    { "paired-ends", 0 },         /* paired-end         */
-    { "align genus", 1 },         /* align-genus        */
-    { "align xgenus", 2 },        /* align-xgenus       */
-    { "align trnscpt", 3 },       /* align-trnscpt      */
-    { "within clone", 4 },        /* within-clone       */
-    { "clone contig", 5 },        /* clone-contig       */
-    { "map", 6 },                 /* map                */
-    { "strobe", 7 },              /* strobe             */
-    { "unspecified", 8 },         /* unspecified        */
-    { "pcr", 9 },                 /* pcr                */
-    { "proximity ligation", 10 }, /* proximity-ligation */
+    { "paired-ends",        CLinkage_evidence::eType_paired_ends },
+    { "align genus",        CLinkage_evidence::eType_align_genus },
+    { "align xgenus",       CLinkage_evidence::eType_align_xgenus },
+    { "align trnscpt",      CLinkage_evidence::eType_align_trnscpt },
+    { "within clone",       CLinkage_evidence::eType_within_clone },
+    { "clone contig",       CLinkage_evidence::eType_clone_contig },
+    { "map",                CLinkage_evidence::eType_map },
+    { "strobe",             CLinkage_evidence::eType_strobe },
+    { "unspecified",        CLinkage_evidence::eType_unspecified },
+    { "pcr",                CLinkage_evidence::eType_pcr },
+    { "proximity ligation", CLinkage_evidence::eType_proximity_ligation },
     { NULL, -1 }
 };
+// clang-format on
 
 FeatBlk::~FeatBlk()
 {
@@ -3241,7 +3243,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                                            2 - "assembly_gap" */
     Int4        curr_gap; /* 0 - initial, 1 - "gap",
                                            2 - "assembly_gap" */
-    Int4        asn_gap_type;
+    CSeq_gap::TType asn_gap_type;
 
     ibp = pp->entrylist[pp->curindx];
 
@@ -3917,7 +3919,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
     int        ret;
 
     if (ibp->is_mga)
-        sprintf(loc, "1..%ld", ibp->bases);
+        sprintf(loc, "1..%ld", (long)ibp->bases);
     for (num = 0; dbp != NULL; dbp = dbp->mpNext, num++) {
         fbp          = new FeatBlk;
         fbp->spindex = -1;
@@ -5114,7 +5116,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 }
 
 /**********************************************************/
-static Uint1 GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA, char* snRNA, char* scRNA, char* uRNA, char* snoRNA)
+static CMolInfo::EBiomol GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA, char* snRNA, char* scRNA, char* uRNA, char* snoRNA)
 {
     char* p = NULL;
 
@@ -5147,7 +5149,7 @@ static Uint1 GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA, char* snRNA, 
 }
 
 /**********************************************************/
-void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, const DataBlk& entry, const COrg_ref* org_ref)
+void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr, ParserPtr pp, const DataBlk& entry, const COrg_ref* org_ref)
 {
     Int4       genomic;
     char*      offset;
@@ -5181,7 +5183,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, const Da
 
     if (ibp->is_prot) {
         bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
-        biomol = 8;
+        biomol = CMolInfo::eBiomol_peptide;
         return;
     }
 
@@ -5383,7 +5385,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, const Da
                 same = false;
         } else if (pp->source == Parser::ESource::USPTO &&
                    NStr::CompareNocase(ibp->moltype, "protein") == 0) {
-            biomol = 8;
+            biomol = CMolInfo::eBiomol_peptide;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
         } else {
             ErrPostEx(SEV_REJECT, ERR_SOURCE_InvalidMolType, "Invalid /mol_type value \"%s\" provided in source features. Entry dropped.", ibp->moltype.c_str());
@@ -5455,7 +5457,7 @@ void GetFlatBiomol(int& biomol, Uint1 tech, char* molstr, ParserPtr pp, const Da
         biomol = Seq_descr_GIBB_mol_genomic;
         bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
     } else {
-        biomol = Unknown;
+        biomol = CMolInfo::eBiomol_unknown;
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
     }
 

@@ -248,25 +248,25 @@ bool GetGenomeInfo(objects::CBioSource& bsp, const Char* bptr)
         return false;
 
     if (i == 0)
-        bsp.SetGenome(5);
+        bsp.SetGenome(objects::CBioSource::eGenome_mitochondrion);
     else if (i == 1)
-        bsp.SetGenome(2);
+        bsp.SetGenome(objects::CBioSource::eGenome_chloroplast);
     else if (i == 2)
-        bsp.SetGenome(4);
+        bsp.SetGenome(objects::CBioSource::eGenome_kinetoplast);
     else if (i == 3)
-        bsp.SetGenome(12);
+        bsp.SetGenome(objects::CBioSource::eGenome_cyanelle);
     else if (i == 4)
-        bsp.SetGenome(3);
+        bsp.SetGenome(objects::CBioSource::eGenome_chromoplast);
     else if (i == 5)
-        bsp.SetGenome(6);
+        bsp.SetGenome(objects::CBioSource::eGenome_plastid);
     else if (i == 6)
-        bsp.SetGenome(7);
+        bsp.SetGenome(objects::CBioSource::eGenome_macronuclear);
     else if (i == 7)
-        bsp.SetGenome(8);
+        bsp.SetGenome(objects::CBioSource::eGenome_extrachrom);
     else if (i == 8)
-        bsp.SetGenome(9);
+        bsp.SetGenome(objects::CBioSource::eGenome_plasmid);
     else
-        bsp.SetGenome(17);
+        bsp.SetGenome(objects::CBioSource::eGenome_leucoplast);
 
     return true;
 }

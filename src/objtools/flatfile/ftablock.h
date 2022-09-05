@@ -38,6 +38,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/Linkage_evidence.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/general/Date_std.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -130,8 +131,8 @@ typedef struct _gap_feats {
     bool  rightNs;
     bool  assembly_gap;
     char* gap_type;
-    Int4  asn_gap_type;
 
+    objects::CSeq_gap::TType                      asn_gap_type;
     objects::CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
 
     struct _gap_feats* next;

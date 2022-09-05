@@ -60,7 +60,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 
 void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, unsigned char* drop, CRef<objects::CUser_object>& dbuop);
 
-Uint1 fta_check_con_for_wgs(objects::CBioseq& bioseq);
+int fta_check_con_for_wgs(objects::CBioseq& bioseq);
 
 
 Int4  fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* name, bool iscon);
