@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 class CMemoryFile;
-
+class CObjectIStream;
 
 BEGIN_SCOPE(objects)
 
@@ -67,6 +67,7 @@ public:
 
     ESerialDataFormat               m_serial_format = eSerial_None;
     CFormatGuess::EFormat           m_format = CFormatGuess::eUnknown;
+    TTypeInfo                       m_content = nullptr;
 
     class CMemoryStreamBuf: public std::streambuf
     {
@@ -79,8 +80,10 @@ public:
 
     void Reset();
     void Open(const std::string& filename);
+    bool IsOpen() const { return m_filesize != 0; }
     TTypeInfo RecognizeContent(std::streampos pos);
     TTypeInfo RecognizeContent(std::istream& istr);
+    unique_ptr<CObjectIStream> MakeObjStream(std::streampos pos = 0) const;
 private:
     bool x_TryOpenStreamFile(const string& filename);
     bool x_TryOpenMemoryFile(const string& filename);
