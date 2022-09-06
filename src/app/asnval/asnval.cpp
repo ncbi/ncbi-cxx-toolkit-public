@@ -71,31 +71,12 @@
 
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seq_descr_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objmgr/graph_ci.hpp>
-#include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 
-#include <serial/objostrxml.hpp>
-#include <misc/xmlwrapp/xmlwrapp.hpp>
-#include <util/compress/stream_util.hpp>
-#include <objtools/readers/format_guess_ex.hpp>
-#include <objects/submit/Submit_block.hpp>
-#include <objtools/edit/huge_file_process.hpp>
-#include <objtools/edit/huge_asn_reader.hpp>
-#include <objtools/edit/huge_asn_loader.hpp>
-#include <objtools/readers/reader_exception.hpp>
 #include <objtools/edit/remote_updater.hpp>
-#include <future>
-#include <util/message_queue.hpp>
-#include "xml_val_stream.hpp"
+#include "app_config.hpp"
 #include "thread_state.hpp"
-#include <objtools/validator/huge_file_validator.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 

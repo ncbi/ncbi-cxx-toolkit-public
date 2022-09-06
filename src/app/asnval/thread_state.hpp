@@ -33,67 +33,23 @@
 #ifndef ASNVAL_THREAD_STATE_HPP
 #define ASNVAL_THREAD_STATE_HPP
 
-#include <common/ncbi_source_ver.h>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/error_codes.hpp>
 
-#include <serial/serial.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objectio.hpp>
-
-#include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_util.h>
-
- // Objects includes
-#include <objects/taxon3/taxon3.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/general/Dbtag.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Pubdesc.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/submit/Seq_submit.hpp>
-#include <objects/submit/Submit_block.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+
+#include <objmgr/object_manager.hpp>
+
 #include <objtools/validator/validator.hpp>
-#include <objtools/validator/valid_cmdargs.hpp>
 #include <objtools/validator/validator_context.hpp>
 #include <objtools/cleanup/cleanup.hpp>
-
-#include <objects/seqset/Bioseq_set.hpp>
-
-// Object Manager includes
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seq_descr_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objmgr/graph_ci.hpp>
-#include <objmgr/seq_annot_ci.hpp>
-#include <objmgr/bioseq_ci.hpp>
-#include <misc/data_loaders_util/data_loaders_util.hpp>
-
-#include <serial/objostrxml.hpp>
-#include <misc/xmlwrapp/xmlwrapp.hpp>
-#include <util/compress/stream_util.hpp>
-#include <objtools/readers/format_guess_ex.hpp>
-#include <objects/submit/Submit_block.hpp>
 #include <objtools/edit/huge_file_process.hpp>
-#include <objtools/edit/huge_asn_reader.hpp>
-#include <objtools/edit/huge_asn_loader.hpp>
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/edit/remote_updater.hpp>
 #include <objtools/validator/huge_file_validator.hpp>
+#include "xml_val_stream.hpp"
 
 using namespace ncbi;
 USING_SCOPE(objects);
@@ -102,35 +58,9 @@ USING_SCOPE(edit);
 
 #define USE_XMLWRAPP_LIBS
 
-class CValXMLStream;
 extern const set<TTypeInfo> s_known_types;
 string s_GetSeverityLabel(EDiagSev, bool = false);
-
-class CAppConfig
-{
-public:
-    enum EVerbosity {
-        eVerbosity_Normal = 1,
-        eVerbosity_Spaced = 2,
-        eVerbosity_Tabbed = 3,
-        eVerbosity_XML = 4,
-        eVerbosity_min = 1, eVerbosity_max = 4
-    };
-
-    CAppConfig(const CArgs& args);
-
-    bool mQuiet;
-    bool mDoCleanup;
-    EVerbosity mVerbosity;
-    EDiagSev mLowCutoff;
-    EDiagSev mHighCutoff;
-    EDiagSev mReportLevel;
-    bool mBatch = false;
-    string mOnlyError;
-    bool mContinue;
-    bool mOnlyAnnots;
-    bool mHugeFile = false;
-};
+class CAppConfig;
 
 class CAsnvalThreadState : public CReadClassMemberHook
 {
