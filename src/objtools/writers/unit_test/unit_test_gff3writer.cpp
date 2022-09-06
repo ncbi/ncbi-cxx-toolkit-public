@@ -227,7 +227,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         CRef<CSeq_align_set> pAlignSet(new CSeq_align_set);
         *pI >> *pAlignSet;
         pWriter->WriteHeader();
-        for (const auto alignIt: pAlignSet->Get()) {
+        for (const auto& alignIt: pAlignSet->Get()) {
             pWriter->WriteAlign(*alignIt);
         }
         pWriter->WriteFooter();
@@ -339,7 +339,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         CRef<CSeq_align_set> pAlignSet(new CSeq_align_set);
         *pI >> *pAlignSet;
         pWriter->WriteHeader();
-        for (const auto alignIt: pAlignSet->Get()) {
+        for (const auto& alignIt: pAlignSet->Get()) {
             pWriter->WriteAlign(*alignIt);
         }
         pWriter->WriteFooter();
