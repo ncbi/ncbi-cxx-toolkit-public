@@ -23,7 +23,7 @@
 *
 *========================================================================== =
 *
-*Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko
+*Author:  Frank Ludwig
 *
 * File Description :
 *validator
@@ -94,6 +94,7 @@
 #include <future>
 #include <util/message_queue.hpp>
 #include "xml_val_stream.hpp"
+#include "app_config.hpp"
 #include "thread_state.hpp"
 #include <objtools/validator/huge_file_validator.hpp>
 
@@ -145,34 +146,6 @@ static CRef<objects::CSeq_entry> s_BuildGoodSeq()
     entry->SetSeq().SetDescr().Set().push_back(mdesc);
 
     return entry;
-}
-
-CAppConfig::CAppConfig(const CArgs& args)
-{
-    mQuiet = args["quiet"] && args["quiet"].AsBoolean();
-    mDoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
-    mVerbosity = static_cast<CAppConfig::EVerbosity>(args["v"].AsInteger());
-    mLowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
-    mHighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
-    mReportLevel = static_cast<EDiagSev>(args["R"].AsInteger() - 1);
-
-    mBatch = args["batch"];
-    string objectType = args["a"].AsString();
-    if (!objectType.empty()) {
-        if (objectType == "t" || objectType == "u") {
-            mBatch = true;
-            cerr << "Warning: -a t and -a u are deprecated; use -batch instead." << endl;
-        }
-        else {
-            cerr << "Warning: -a is deprecated; ASN.1 type is now autodetected." << endl;
-        }
-    }
-
-    if (args["E"]) {
-        mOnlyError = args["E"].AsString();
-    }
-    mOnlyAnnots = args["annot"];
-    mHugeFile = args["huge"];
 }
 
 //  ============================================================================
