@@ -374,7 +374,7 @@ private:
     CSeq_entry_Handle ObtainSeqEntryFromBioseq(TFFContext& context, CObjectIStream& is, bool report) const;
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(TFFContext& context, CObjectIStream& is, bool report) const;
 
-    [[nodiscard]] CObjectIStream* x_OpenIStream(const CArgs& args) const;
+    [[nodiscard]] unique_ptr<CObjectIStream> x_OpenIStream(const CArgs& args) const;
 
     void             x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const;
     TSeqPos          x_GetFrom(const CArgs& args) const;
@@ -419,6 +419,7 @@ private:
     bool                      m_HugeFileMode;
     string                    m_AccessionFilter;
     mutable std::atomic<bool> m_stopit{false};
+    edit::CHugeFileProcess    m_huge_process;
 
 #ifdef USE_SNPLOADER
     CRef<CSNPDataLoader>      m_SNPDataLoader;
@@ -646,6 +647,10 @@ int CAsn2FlatApp::Run()
         NcbiCerr << "Use of -huge cannot be combined with -batch. Disabling -huge mode." << endl;
         m_HugeFileMode = false;
     }
+    if (m_HugeFileMode && args["c"]) {
+        NcbiCerr << "Use of -huge cannot be combined with -c. Disabling -huge mode." << endl;
+        m_HugeFileMode = false;
+    }
 
     m_use_mt = args["use_mt"] && ( args["batch"] || m_HugeFileMode);
 
@@ -681,26 +686,19 @@ int CAsn2FlatApp::Run()
 
     CWrapINSDSet wrap(this);
 
-    if (m_HugeFileMode) {
-        return x_GenerateHugeMode();
+    if (args["id"]) {
+        auto        thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
+        TFFContext& context      = *thread_state;
+        HandleTextId(context, args["id"].AsString());
+        if (m_Exception)
+            return -1;
+        return 0;
     }
-
-    unique_ptr<CObjectIStream> is{ x_OpenIStream(args) };
-    if (! is) {
-        string msg = args["i"] ? "Unable to open input file" + args["i"].AsString() : "Unable to read data from stdin";
-        NCBI_THROW(CException, eUnknown, msg);
-    }
-
-    if (args["batch"]) {
-        // batch mode can do multi-threaded, so it has it's own TFFContext(s)
-        return x_GenerateBatchMode(std::move(is));
-    }
-
-    // temporaly, only one context exists
-    auto        thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
-    TFFContext& context      = *thread_state;
 
     if (args["ids"]) {
+        auto        thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
+        TFFContext& context      = *thread_state;
+
         CNcbiIstream& istr = args["ids"].AsInputFile();
         string        id_str;
         while (NcbiGetlineEOL(istr, id_str)) {
@@ -721,12 +719,43 @@ int CAsn2FlatApp::Run()
         return 0;
     }
 
-    if (args["id"]) {
-        HandleTextId(context, args["id"].AsString());
-        if (m_Exception)
-            return -1;
-        return 0;
+    if (args["i"])
+        m_huge_process.OpenFile(args["i"].AsString());
+
+    if (m_HugeFileMode) {
+        m_huge_process.OpenReader();
+        return x_GenerateHugeMode();
     }
+
+    // only uncompressed files go this faster shortcut
+    if (args["i"] && args["batch"] && !args["c"] &&
+        m_huge_process.GetFile().IsOpen() &&
+        (m_huge_process.GetFile().m_serial_format == eSerial_AsnBinary ||
+         m_huge_process.GetFile().m_serial_format == eSerial_AsnText)
+    ) {
+        auto content = m_huge_process.GetFile().RecognizeContent(0);
+        if (content == CBioseq_set::GetTypeInfo()) {
+            auto istr = m_huge_process.GetFile().MakeObjStream();
+            return x_GenerateBatchMode(std::move(istr));
+        }
+    }
+
+    // m_huge_process.GetFile() would be still used if it is already open
+    unique_ptr<CObjectIStream> is = x_OpenIStream(args);
+    if (! is) {
+        string msg = args["i"] ? "Unable to open input file" + args["i"].AsString() : "Unable to read data from stdin";
+        NCBI_THROW(CException, eUnknown, msg);
+    }
+
+    // traditional way of opening batch mode
+    if (args["batch"]) {
+        // batch mode can do multi-threaded, so it has it's own TFFContext(s)
+        return x_GenerateBatchMode(std::move(is));
+    }
+
+    // temporaly, only one context exists
+    auto        thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
+    TFFContext& context      = *thread_state;
 
     if (args["sub"]) {
         HandleSeqSubmit(context, *is);
@@ -740,20 +769,23 @@ int CAsn2FlatApp::Run()
 
 template<typename _TMethod, typename... TArgs>
 void CAsn2FlatApp::x_OneShotMethod(_TMethod method, const CAsn2FlatApp* app, CAsn2FlatApp::TThreadStatePool::TUniqPointer thread_state, TArgs ... args)
-{
+{ // this could called from main or processing threads
     if (app->m_stopit)
         return;
 
     CAsn2FlatApp::TFFContext& context = *thread_state;
-    auto success = method(app, context, std::move(args)...);
-    if (!success)
-        app->m_stopit = true;
+
+    auto success = method(app, context, std::forward<TArgs>(args)...);
+    if (!success) app->m_stopit = true;
 }
 
 template<typename _TMethod, typename... TArgs>
 bool CAsn2FlatApp::x_OneShot(_TMethod method, TArgs&& ... args)
 {
-    if (m_stopit)
+    static_assert(std::is_member_function_pointer<_TMethod>::value,
+        "CAsn2FlatApp::x_OneShot should be used with class member function pointers");
+
+    if (m_stopit) // faster exit if other threads already failed
         return false;
 
     // each thread needs to have it's own context
@@ -761,38 +793,32 @@ bool CAsn2FlatApp::x_OneShot(_TMethod method, TArgs&& ... args)
     // these resources must allocated sequentially in order of incoming entry's
     auto thread_state = m_state_pool.Allocate(); // this can block and wait if too many writers already allocated
 
+    // method is just a pointer to a member function, need to make some calleable out of it
+    auto member = std::mem_fn(method);
     // just make an instantiated std::function
-    auto callable = x_OneShotMethod<_TMethod, std::decay_t<TArgs>...>;
+    auto calleable = x_OneShotMethod<decltype(member), std::decay_t<TArgs>...>;
 
     if (m_use_mt) {
 #ifdef USE_THREAD_POOL
-        m_thread_pool.OneShot(callable, std::move(thread_state), std::forward<TArgs>(args)...);
+        m_thread_pool.OneShot(calleable, member, this, std::move(thread_state), std::forward<TArgs>(args)...);
 #else
-        std::thread(callable, method, this, std::move(thread_state), std::forward<TArgs>(args)...).detach();
+        std::thread(calleable, member, this, std::move(thread_state), std::forward<TArgs>(args)...).detach();
 #endif
     } else {
-        callable(method, this, std::move(thread_state), std::forward<TArgs>(args)...);
+        calleable(member, this, std::move(thread_state), std::forward<TArgs>(args)...);
+        if (m_stopit)
+            return false;
     }
-
-    if (m_stopit)
-        return false;
 
     return true;
 }
 
 bool CAsn2FlatApp::HandleSeqId(TFFContext& context, const edit::CHugeAsnReader* reader, CConstRef<CSeq_id> seqid) const
 {
-    try {
-        if (reader && seqid) {
-            auto entry = reader->LoadSeqEntry(seqid);
-            //*context.m_streams[eFlatFileCodes::all] << MSerial_AsnText << *seqid;
-            if (entry)
-                return HandleSeqEntry(context, entry);
-        }
-    }
-    catch (...)
-    {
-        std::cerr << "Exception HandleSeqId\n";
+    if (reader && seqid) {
+        auto entry = reader->LoadSeqEntry(seqid);
+        if (entry)
+            return HandleSeqEntry(context, entry);
     }
     return false;
 }
@@ -806,16 +832,12 @@ int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
     // thread can run detached, entry and context will be associated with the thread
     in.RegisterHandler( [this] (CRef<CSeq_entry>& entry)->bool
     {
-        auto member = std::mem_fn(&CAsn2FlatApp::HandleSeqEntry);
-        return x_OneShot(member, std::move(entry));
+        return x_OneShot(&CAsn2FlatApp::HandleSeqEntry, std::move(entry));
     });
 
     in.Read(); // registered handlers will be called from this function
 
     m_writers.FlushAll(); // this will wait until all writers quit
-    #ifdef USE_THREAD_POOL
-    m_thread_pool.Purge();
-    #endif
 
     if (m_Exception) return -1;
     return 0;
@@ -823,9 +845,6 @@ int CAsn2FlatApp::x_GenerateBatchMode(unique_ptr<CObjectIStream> is)
 
 int CAsn2FlatApp::x_GenerateHugeMode()
 {
-    const CArgs& args = GetArgs();
-
-    edit::CHugeFileProcess in(args["i"].AsString());
     CRef<CSeq_id>          seqid;
     if (! m_AccessionFilter.empty()) {
         CBioseq::TId ids;
@@ -835,17 +854,15 @@ int CAsn2FlatApp::x_GenerateHugeMode()
         }
     }
 
-    bool success = in.Read([this, seqid](edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist)
+    bool success = m_huge_process.Read([this, seqid](edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist)
     {
-        auto member = std::mem_fn(&CAsn2FlatApp::HandleSeqId);
-
         bool success = true;
         if (seqid) {
-            success = x_OneShot(member, reader, seqid);
+            success = x_OneShot(&CAsn2FlatApp::HandleSeqId, reader, seqid);
         }
         else {
             for (auto id: idlist) {
-                if (!x_OneShot(member, reader, id)) {
+                if (!x_OneShot(&CAsn2FlatApp::HandleSeqId, reader, id)) {
                     success = false;
                     break;
                 }
@@ -855,10 +872,6 @@ int CAsn2FlatApp::x_GenerateHugeMode()
         return success;
     });
 
-    #ifdef USE_THREAD_POOL
-    m_thread_pool.Purge();
-    #endif
-
     if (! success || m_Exception)
         return -1;
     return 0;
@@ -866,9 +879,27 @@ int CAsn2FlatApp::x_GenerateHugeMode()
 
 int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFContext& context, const CArgs& args) const
 {
+    TTypeInfo asn_info = nullptr;
     string asn_type = args["type"].AsString();
 
-    if (asn_type == "seq-entry") {
+    if (m_huge_process.GetConstFile().IsOpen()) {
+        asn_info = m_huge_process.GetConstFile().m_content;
+    }
+
+    if (asn_info == nullptr)
+    { // if we failed to recognize content type let's take user's instruction which is otherwise ignored
+        if (asn_type == "seq-entry") {
+            asn_info = CSeq_entry::GetTypeInfo();
+        } else if (asn_type == "bioseq") {
+            asn_info = CBioseq::GetTypeInfo();
+        } else if (asn_type == "bioseq-set") {
+            asn_info = CBioseq_set::GetTypeInfo();
+        } else if (asn_type == "seq-submit") {
+            asn_info = CSeq_submit::GetTypeInfo();
+        }
+    }
+
+    if (asn_info == CSeq_entry::GetTypeInfo()) {
         //
         //  Straight through processing: Read a seq_entry, then process
         //  a seq_entry:
@@ -881,7 +912,7 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
             HandleSeqEntryHandle(context, seh);
             context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
-    } else if (asn_type == "bioseq") {
+    } else if (asn_info == CBioseq::GetTypeInfo()) {
         //
         //  Read object as a bioseq, wrap it into a seq_entry, then process
         //  the wrapped bioseq as a seq_entry:
@@ -894,7 +925,7 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
             HandleSeqEntryHandle(context, seh);
             context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
-    } else if (asn_type == "bioseq-set") {
+    } else if (asn_info == CBioseq_set::GetTypeInfo()) {
         //
         //  Read object as a bioseq_set, wrap it into a seq_entry, then
         //  process the wrapped bioseq_set as a seq_entry:
@@ -907,7 +938,7 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
             HandleSeqEntryHandle(context, seh);
             context.m_Scope->RemoveTopLevelSeqEntry(seh);
         }
-    } else if (asn_type == "seq-submit") {
+    } else if (asn_info == CSeq_submit::GetTypeInfo()) {
         while (! is->EndOfData()) {
             HandleSeqSubmit(context, *is);
         }
@@ -921,15 +952,15 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
             CSeq_entry_Handle seh = ObtainSeqEntryFromSeqEntry(context, *is, false);
             if (! seh) {
                 is->Close();
-                is.reset(x_OpenIStream(args));
+                is = x_OpenIStream(args);
                 seh = ObtainSeqEntryFromBioseqSet(context, *is, false);
                 if (! seh) {
                     is->Close();
-                    is.reset(x_OpenIStream(args));
+                    is = x_OpenIStream(args);
                     seh = ObtainSeqEntryFromBioseq(context, *is, false);
                     if (! seh) {
                         is->Close();
-                        is.reset(x_OpenIStream(args));
+                        is = x_OpenIStream(args);
                         CRef<CSeq_submit> sub(new CSeq_submit);
                         *is >> *sub;
                         if (sub->IsSetSub() && sub->IsSetData()) {
@@ -1298,7 +1329,7 @@ bool CAsn2FlatApp::HandleSeqEntry(TFFContext& context, CRef<CSeq_entry> se) cons
     return ret;
 }
 
-CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args) const
+unique_ptr<CObjectIStream> CAsn2FlatApp::x_OpenIStream(const CArgs& args) const
 {
     // determine the file serialization format.
     // default for batch files is binary, otherwise text.
@@ -1316,11 +1347,20 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args) const
 
     // make sure of the underlying input stream. If -i was given on the command line
     // then the input comes from a file. Otherwise, it comes from stdin:
-    CNcbiIstream* pInputStream   = &NcbiCin;
+    CNcbiIstream* pInputStream   = nullptr;
     bool          bDeleteOnClose = false;
-    if (args["i"]) {
-        pInputStream   = new CNcbiIfstream(args["i"].AsString(), ios::binary);
-        bDeleteOnClose = true;
+
+    if (m_huge_process.GetConstFile().IsOpen()) {
+        if (!args["c"])
+            return m_huge_process.GetConstFile().MakeObjStream();
+
+        pInputStream = m_huge_process.GetConstFile().m_stream.get();
+    } else {
+        if (args["i"]) {
+            pInputStream   = new CNcbiIfstream(args["i"].AsString(), ios::binary);
+            bDeleteOnClose = true;
+        } else
+            pInputStream   = &std::cin;
     }
 
     // if -c was specified then wrap the input stream into a gzip decompressor before
@@ -1340,7 +1380,8 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args) const
     if (pI) {
         pI->UseMemoryPool();
     }
-    return pI;
+
+    return unique_ptr<CObjectIStream>{pI};
 }
 
 
