@@ -38,6 +38,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objects/submit/Submit_block.hpp>
 
+#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,42 +49,60 @@ CHugeFile::~CHugeFile(){}
 
 void CHugeFile::Open(const std::string& filename)
 {
-    if (!x_TryOpenMemoryFile(filename))
-        x_TryOpenStreamFile(filename);
-
-    RecognizeContent(*m_stream);
+    if (x_TryOpenMemoryFile(filename) ||
+        x_TryOpenStreamFile(filename)) {
+        m_content = RecognizeContent(*m_stream);
+    }
 }
 
 bool CHugeFile::x_TryOpenMemoryFile(const string& filename)
 {
-    std::unique_ptr<CMemoryFile> memfile{new CMemoryFile(filename,
-        CMemoryFile_Base::eMMP_Read,
-        CMemoryFile_Base::eMMS_Private)};
-
-    m_filesize = memfile->GetFileSize();
-    m_filename = filename;
-    m_memory = (const char*)memfile->Map(0, 0);
-
-    if (m_filesize == 0 || m_memory == 0)
+    auto filesize = CFile(filename).GetLength();
+    if (filesize <= 0)
         return false;
 
-    m_memfile = std::move(memfile);
+    try
+    {
+        auto memfile = std::make_unique<CMemoryFile>(filename,
+            CMemoryFile_Base::eMMP_Read,
+            CMemoryFile_Base::eMMS_Private);
 
-    m_streambuf.reset(new CMemoryStreamBuf(m_memory, m_filesize));
-    m_stream.reset(new std::istream(m_streambuf.get()));
+        m_filesize = memfile->GetFileSize();
+        m_filename = filename;
+        m_memory = (const char*)memfile->Map(0, 0);
 
-    return true;
+        if (m_filesize == 0 || m_memory == 0)
+            return false;
+
+        m_memfile = std::move(memfile);
+
+        m_streambuf.reset(new CMemoryStreamBuf(m_memory, m_filesize));
+        m_stream.reset(new std::istream(m_streambuf.get()));
+
+        return true;
+    }
+    catch(const CFileException& e)
+    {
+        if (e.GetErrCode() == CFileException::eMemoryMap &&
+            NStr::StartsWith(e.GetMsg(), "To be memory mapped the file must exist"))
+            return false;
+        else
+            throw;
+    }
+
 }
 
 bool CHugeFile::x_TryOpenStreamFile(const string& filename)
 {
+    auto filesize = CFile(filename).GetLength();
+    if (filesize <= 0)
+        return false;
+
     std::unique_ptr<std::ifstream> stream{new std::ifstream(filename, ios::binary)};
     if (!stream->is_open())
         return false;
 
-    m_filesize = CFile(filename).GetLength();
-    if (m_filesize == 0)
-        return false;
+    m_filesize = filesize;
 
     //stream->seekg(m_filesize-1);
     //stream->seekg(0);
@@ -148,6 +167,26 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
 
     return object_type;
 }
+
+unique_ptr<CObjectIStream> CHugeFile::MakeObjStream(std::streampos pos) const
+{
+    unique_ptr<CObjectIStream> str;
+
+    if (m_memory) {
+        str.reset(CObjectIStream::CreateFromBuffer(
+            m_serial_format, m_memory+pos, m_filesize-pos));
+        str->SetDelayBufferParsingPolicy(CObjectIStream::eDelayBufferPolicyNeverParse);
+    } else {
+        std::unique_ptr<std::ifstream> stream{new std::ifstream(m_filename, ios::binary)};
+        stream->seekg(pos);
+        str.reset(CObjectIStream::Open(m_serial_format, *stream.release(), eTakeOwnership));
+    }
+
+    str->UseMemoryPool();
+
+    return str;
+}
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

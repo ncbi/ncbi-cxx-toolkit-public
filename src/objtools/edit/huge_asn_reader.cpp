@@ -190,7 +190,7 @@ CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(CConstRef<CSeq_id> seqid) const
 CRef<CSeq_entry> CHugeAsnReader::LoadSeqEntry(const TBioseqSetInfo& info, eAddTopEntry add_top_entry) const
 {
     auto entry = Ref(new CSeq_entry);
-    auto obj_stream = MakeObjStream(info.m_pos);
+    auto obj_stream = m_file->MakeObjStream(info.m_pos);
     if (info.m_class == CBioseq_set::eClass_not_set)
     {
         obj_stream->Read(&entry->SetSeq(), CBioseq::GetTypeInfo(), CObjectIStream::eNoFileHeader);
@@ -216,7 +216,7 @@ CRef<CBioseq> CHugeAsnReader::LoadBioseq(CConstRef<CSeq_id> seqid) const
     if (it->first->Compare(*seqid) != CSeq_id::E_SIC::e_YES)
         return {};
 
-    auto obj_stream = MakeObjStream(it->second->m_pos);
+    auto obj_stream = m_file->MakeObjStream(it->second->m_pos);
     auto bioseq = Ref(new CBioseq);
     obj_stream->Read(bioseq, CBioseq::GetTypeInfo(), CObjectIStream::eNoFileHeader);
     return bioseq;
@@ -224,20 +224,7 @@ CRef<CBioseq> CHugeAsnReader::LoadBioseq(CConstRef<CSeq_id> seqid) const
 
 unique_ptr<CObjectIStream> CHugeAsnReader::MakeObjStream(TFileSize pos) const
 {
-    unique_ptr<CObjectIStream> str;
-
-    if (m_file->m_memory)
-        str.reset(CObjectIStream::CreateFromBuffer(
-        m_file->m_serial_format, m_file->m_memory+pos, m_file->m_filesize-pos));
-    else {
-        std::unique_ptr<std::ifstream> stream{new std::ifstream(m_file->m_filename, ios::binary)};
-        stream->seekg(pos);
-        str.reset(CObjectIStream::Open(m_file->m_serial_format, *stream.release(), eTakeOwnership));
-    }
-
-    str->UseMemoryPool();
-
-    return str;
+    return m_file->MakeObjStream(pos);
 }
 
 bool CHugeAsnReader::GetNextBlob()
@@ -371,7 +358,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
     x_ResetIndex();
     auto object_type = m_file->RecognizeContent(m_streampos);
 
-    auto obj_stream = MakeObjStream(m_streampos);
+    auto obj_stream = m_file->MakeObjStream(m_streampos);
 
     TContext context;
     x_SetHooks(*obj_stream, context);
@@ -396,7 +383,7 @@ CRef<CObject> CHugeAsnReader::ReadAny()
     if (object_type == nullptr || !object_type->IsCObject())
         return {};
 
-    auto obj_stream = MakeObjStream(m_streampos);
+    auto obj_stream = m_file->MakeObjStream(m_streampos);
 
     auto obj_info = obj_stream->Read(object_type);
     CRef<CObject> serial(static_cast<CObject*>(obj_info.GetObjectPtr()));

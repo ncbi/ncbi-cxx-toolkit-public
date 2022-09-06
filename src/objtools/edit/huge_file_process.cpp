@@ -83,12 +83,20 @@ bool CHugeFileProcess::IsSupported(TTypeInfo info)
 
 void CHugeFileProcess::Open(const string& file_name, const set<TTypeInfo>* types)
 {
-    m_pHugeFile->m_supported_types = types ? types : &s_supported_types;
-
-    m_pHugeFile->Open(file_name);
-    m_pReader->Open(m_pHugeFile.get(), nullptr);
+    OpenFile(file_name, types);
+    OpenReader();
 }
 
+void CHugeFileProcess::OpenFile(const string& file_name, const set<TTypeInfo>* types)
+{
+    m_pHugeFile->m_supported_types = types ? types : &s_supported_types;
+    m_pHugeFile->Open(file_name);
+}
+
+void CHugeFileProcess::OpenReader()
+{
+    m_pReader->Open(m_pHugeFile.get(), nullptr);
+}
 
 CHugeFileProcess::~CHugeFileProcess()
 {
@@ -137,7 +145,7 @@ bool CHugeFileProcess::Read(THandler handler, CRef<CSeq_id> seqid)
     return true;
 }
 
-bool CHugeFileProcess::Read(THandlerTopIds handler)
+bool CHugeFileProcess::Read(THandlerIds handler)
 {
     while (m_pReader->GetNextBlob()) {
         m_pReader->FlattenGenbankSet();
@@ -145,8 +153,6 @@ bool CHugeFileProcess::Read(THandlerTopIds handler)
         if (!processed)
             return false;
     }
-
-    std::cerr << "CHugeFileProcess::Read completed\n";
 
     return true;
 }
