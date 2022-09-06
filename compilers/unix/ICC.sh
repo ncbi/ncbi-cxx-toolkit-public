@@ -82,10 +82,7 @@ if test "$status" -ne 0 ; then
    cat <<EOF
 
 HINT:  if you are at NCBI, try to run the following command:
-   sh, bash:
-      . $intel_root/Compiler/19.0/bin/iccvars.sh $arch
-   tcsh:
-      source $intel_root/Compiler/19.0/bin/iccvars.csh $arch
+   . $intel_root/Compiler/21.0/bin/setvars.sh
 
 EOF
     exit 1
