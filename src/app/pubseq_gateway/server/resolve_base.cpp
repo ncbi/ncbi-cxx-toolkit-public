@@ -127,8 +127,9 @@ CPSGS_ResolveBase::x_ComposeOSLT(CSeq_id &  parsed_seq_id,
         return false;
     }
 
+    list<string>    secondary_id_list_unfiltered;
     try {
-        primary_id = parsed_seq_id.ComposeOSLT(&secondary_id_list,
+        primary_id = parsed_seq_id.ComposeOSLT(&secondary_id_list_unfiltered,
                                                CSeq_id::fGpipeAddSecondary);
     } catch (...) {
         if (need_trace) {
@@ -136,6 +137,13 @@ CPSGS_ResolveBase::x_ComposeOSLT(CSeq_id &  parsed_seq_id,
                              m_Request->GetStartTimestamp());
         }
         return false;
+    }
+
+    // Sometimes ComposeOSLT() returns secondary ids as '|' which for sure will
+    // not be resolved. Strip those items.
+    for (const auto &  item : secondary_id_list_unfiltered) {
+        if (!StripTrailingVerticalBars(item).empty())
+            secondary_id_list.push_back(item);
     }
 
     if (need_trace) {
