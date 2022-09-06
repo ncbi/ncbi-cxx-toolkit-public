@@ -875,6 +875,9 @@ EOF_launch
         # Always load test results for automated builds on a 'run' command.
         
         if \$is_run && \$is_db_load; then
+           echo "======================================================================" >> "\$build_dir/test_stat_load.log" 2>&1
+           echo "[\$x_work_dir_tail] \$x_name"                                           >> "\$build_dir/test_stat_load.log" 2>&1
+           echo ""                                                                       >> "\$build_dir/test_stat_load.log" 2>&1
            if test -n "\$saved_phid";  then
               NCBI_LOG_HIT_ID=\$saved_phid
               export NCBI_LOG_HIT_ID
