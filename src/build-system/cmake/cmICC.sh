@@ -18,7 +18,7 @@ CXX="icpc"
 
 Usage() {
     echo "USAGE:   $script_name [version] [configure-flags] | -h]"
-    echo "example: $script_name 19.0"
+    echo "example: $script_name 21.0"
 }
 
 if test $# -eq 0 -o "$1" = "-h"; then
