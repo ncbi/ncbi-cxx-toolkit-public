@@ -36,11 +36,14 @@ fi
 
 cxx_version=""
 if [ -z "$CMAKECFGRECURSIONGUARD" ]; then
-  cxx_version=$1
+  cxx_version=${1#20}
 else
   for val in ${script_args}
   do
   case "$val" in 
+    20[0-9][0-9] | 20[0-9][0-9].* )
+      cxx_version=${val#20}
+      ;;
     [1-9]*)
       cxx_version=$val
       ;; 
@@ -55,6 +58,14 @@ if test -z "$cxx_version"; then
   echo ERROR: compiler version was not specified 1>&2
   exit 1
 fi
+
+case "$cxx_version" in
+  *.* )
+    ;;
+  * )
+    cxx_version=$cxx_version.0
+    ;;
+esac
 
 case "$cxx_version" in
   [2-9][0-9] | [2-9][0-9].* )
