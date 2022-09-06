@@ -35,43 +35,19 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <corelib/error_codes.hpp>
 
-#include <serial/serial.hpp>
 #include <serial/objistr.hpp>
-#include <serial/objectio.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 
 // Objects includes
 #include <objects/taxon3/taxon3.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/submit/Seq_submit.hpp>
-#include <objects/submit/Submit_block.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objtools/validator/validator.hpp>
 #include <objtools/validator/valid_cmdargs.hpp>
-#include <objtools/validator/validator_context.hpp>
-#include <objtools/cleanup/cleanup.hpp>
-
-#include <objects/seqset/Bioseq_set.hpp>
 
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
-#include <objmgr/bioseq_ci.hpp>
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include <objtools/edit/remote_updater.hpp>
