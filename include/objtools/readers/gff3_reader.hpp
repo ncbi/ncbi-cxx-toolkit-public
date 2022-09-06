@@ -184,7 +184,7 @@ protected:
         const CGff2Record&);
 
     virtual void xValidateAnnot(
-        const CSeq_annot&);
+        const CSeq_annot&) override;
 
     virtual bool xFeatureSetXrefGrandParent(
         const string&,
