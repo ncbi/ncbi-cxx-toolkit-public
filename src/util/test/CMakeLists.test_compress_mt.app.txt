@@ -6,7 +6,7 @@ NCBI_begin_app(test_compress_mt)
   NCBI_uses_toolkit_libraries(xcompress test_mt)
 
   NCBI_add_test(test_compress_mt z)
-  NCBI_add_test(test_compress_mt zstd)
+  NCBI_add_test(test_compress_mt -threads 20 zstd)
   NCBI_add_test(test_compress_mt bz2)
   NCBI_add_test(test_compress_mt lzo)
 
