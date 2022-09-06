@@ -54,7 +54,7 @@ public:
     {
     friend class TAtomicStack;
     private:
-        atomic_pointer m_next;
+        atomic_pointer m_next{nullptr};
         value_type     m_data;
     public:
         operator value_type& () {
@@ -83,6 +83,7 @@ public:
 
         if (expected) {
             m_size--;
+            expected->m_next = nullptr;
         }
         return expected;
     }

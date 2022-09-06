@@ -59,15 +59,18 @@ public:
     /// destructor
     virtual ~CHugeFileProcess(void);
     void Open(const string& file_name, const set<TTypeInfo>* types = nullptr);
+    void OpenFile(const string& file_name, const set<TTypeInfo>* types = nullptr);
+    void OpenReader();
 
-    using THandler = std::function<void(CConstRef<CSubmit_block>, CRef<CSeq_entry>)>;
-    using THandlerTopIds = std::function<bool(CHugeAsnReader*, const std::list<CConstRef<CSeq_id>>&)>;
+    using THandler    = std::function<void(CConstRef<CSubmit_block>, CRef<CSeq_entry>)>;
+    using THandlerIds = std::function<bool(CHugeAsnReader*, const std::list<CConstRef<CSeq_id>>&)>;
 
     [[nodiscard]] bool Read(THandler handler, CRef<CSeq_id> seqid);
-    [[nodiscard]] bool Read(THandlerTopIds handler);
+    [[nodiscard]] bool Read(THandlerIds handler);
 
-    CHugeAsnReader& GetReader() { return *m_pReader; }
-    CHugeFile& GetFile() { return *m_pHugeFile; }
+    CHugeAsnReader& GetReader()           { return *m_pReader; }
+    CHugeFile& GetFile()                  { return *m_pHugeFile; }
+    const CHugeFile& GetConstFile() const { return *m_pHugeFile; }
     static bool IsSupported(TTypeInfo info);
 
 private:

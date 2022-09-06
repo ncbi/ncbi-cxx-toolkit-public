@@ -121,18 +121,18 @@ public:
     bool IsMultiSequence() const override;
 
     void FlattenGenbankSet();
-    auto& GetTopEntry() const { return m_top_entry; }
+    auto& GetTopEntry()       const { return m_top_entry; }
     auto& GetFlattenedIndex() const { return m_FlattenedIndex; }
-    auto& GetTopIds() const { return m_top_ids; }
+    auto& GetTopIds()         const { return m_top_ids; }
     unique_ptr<CObjectIStream> MakeObjStream(TFileSize pos) const;
 protected:
     // temporary structure for indexing
     struct TBioseqInfoRec
     {
         list<CConstRef<CSeq_id>> m_ids;
-        TSeqPos      m_length  = 0;
+        TSeqPos          m_length  = 0;
         CRef<CSeq_descr> m_descr;
-        CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
+        CSeq_inst::TMol  m_mol = CSeq_inst::eMol_not_set;
         CSeq_inst::TRepr m_repr = CSeq_inst::eRepr_not_set;
     };
 
@@ -164,9 +164,10 @@ private:
     TBioseqIndex              m_bioseq_index;
     TBioseqSetIndex           m_FlattenedIndex;
     CConstRef<CSeq_entry>     m_top_entry;
-    std::list<CConstRef<CSeq_id>> m_top_ids;
     TBioseqSetList            m_FlattenedSets;
     TBioseqSetList::const_iterator  m_Current;
+    std::list<CConstRef<CSeq_id>> m_top_ids;
+
 };
 
 END_SCOPE(edit)
