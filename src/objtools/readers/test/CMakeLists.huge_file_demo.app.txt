@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(huge_file_demo)
+  NCBI_sources(huge_file_demo)
+  NCBI_uses_toolkit_libraries(xobjread xobjedit)
+  NCBI_project_watchers(gotvyans foleyjp)
+NCBI_end_app()
