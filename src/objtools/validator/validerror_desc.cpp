@@ -478,6 +478,48 @@ bool CValidError_desc::ValidateStructuredComment
     return x_ValidateStructuredComment(usr, desc, report);
 }
 
+bool CValidError_desc::x_ValidateStructuredCommentPrefix(
+const string& prefix,
+const CSeqdesc& desc,
+bool report)
+{
+    if (!s_IsAllowedPrefix(prefix)) {
+        if (report) {
+            string report_prefix = CComment_rule::GetStructuredCommentPrefix(desc.GetUser(), false);
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidPrefix,
+                    report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
+        } 
+        return false;
+    }
+
+    return true;
+}
+
+bool CValidError_desc::x_ValidateStructuredCommentSuffix(
+const CUser_field& suffix,
+const CSeqdesc& desc,
+bool report)
+{   // not an error if suffix data isn't set - simply ignore.
+    if (!suffix.IsSetData() ||  !suffix.GetData().IsStr()) {
+        return true;
+    }
+
+    string report_sfx  = suffix.GetData().GetStr();
+    string sfx = report_sfx;
+    CComment_rule::NormalizePrefix(sfx);
+
+    if (s_IsAllowedPrefix (sfx)) {
+        return true;
+    }
+    
+    if (report) {
+        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix,
+                report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
+    } 
+
+    return false;
+}
+
 
 bool CValidError_desc::x_ValidateStructuredComment
 (const CUser_object& usr,
@@ -509,16 +551,11 @@ bool CValidError_desc::x_ValidateStructuredComment
         is_valid &= ValidateStructuredCommentGeneric(usr, desc, report);
         return is_valid;
     }
-
-    if (!s_IsAllowedPrefix(prefix)) {
-        if (report) {
-            string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
-            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidPrefix,
-                    report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
-            is_valid = false;
-        } else {
-            return false;
-        }
+    
+    // Has a prefix
+    is_valid &= x_ValidateStructuredCommentPrefix(prefix, desc, report);
+    if (!report && !is_valid) {
+        return false;
     }
 
     // find prefix
@@ -551,19 +588,9 @@ bool CValidError_desc::x_ValidateStructuredComment
         }
         
         if (auto pSuffix = usr.GetFieldRef("StructuredCommentSuffix"); pSuffix) {
-            if (pSuffix->IsSetData() && pSuffix->GetData().IsStr()) {
-                string report_sfx = pSuffix->GetData().GetStr();
-                string sfx = report_sfx;
-                CComment_rule::NormalizePrefix(sfx);
-                if (! s_IsAllowedPrefix (sfx)) {
-                    if (report) {
-                        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix,
-                            report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
-                        is_valid = false;
-                    } else {
-                        return false;
-                    }
-                }
+            is_valid &= x_ValidateStructuredCommentSuffix(*pSuffix, desc, report);
+            if (!report && !is_valid) {
+                return false;
             }
         }
     } catch (CException& ) {
