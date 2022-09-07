@@ -197,6 +197,10 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
 int CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
 {
     // small optimization to avoid creation of temporary CSeq_id objects
+    if (!m_Info) {
+        return id.m_Info ? -1 : 0;
+    }
+    if (!id.m_Info) return 1;
     if ( int diff = Which() - id.Which() ) {
         return diff;
     }
@@ -209,10 +213,7 @@ int CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
         }
     }
     if (*this == id) return 0;
-    if (m_Info && id.m_Info) {
-        return m_Info->CompareOrdered(*id.m_Info, *this, id);
-    }
-    return GetSeqId()->CompareOrdered(*id.GetSeqId());
+    return m_Info->CompareOrdered(*id.m_Info, *this, id);
 }
 
 
