@@ -75,6 +75,7 @@ private:
     void ValidateTitle(const string& title, const CSeqdesc& desc, const CSeq_entry& ctx);
     bool x_ValidateStructuredCommentPrefix(const string& prefix, const CSeqdesc& desc, bool report);
     bool x_ValidateStructuredCommentSuffix(const CUser_field& suffix, const CSeqdesc& desc, bool report);
+    bool x_ValidateStructuredCommentUsingRule(const CComment_rule& rule, const CSeqdesc& desc, bool report);
     bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, const CComment_rule& rule, bool report);
     bool x_ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
     bool ValidateStructuredCommentGeneric(const CUser_object& usr, const CSeqdesc& desc, bool report);

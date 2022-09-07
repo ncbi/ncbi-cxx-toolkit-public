@@ -521,6 +521,23 @@ bool report)
 }
 
 
+bool CValidError_desc::x_ValidateStructuredCommentUsingRule(
+    const CComment_rule& rule,
+    const CSeqdesc& desc,
+    bool report)
+{
+    if (rule.GetRequire_order()) {
+        return ValidateStructuredComment(desc.GetUser(), desc, rule, report);
+    } 
+                    
+    CUser_object tmp;
+    tmp.Assign(desc.GetUser());
+    auto& fields = tmp.SetData();
+    stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
+    return ValidateStructuredComment(tmp, desc, rule, report);
+}
+
+
 bool CValidError_desc::x_ValidateStructuredComment
 (const CUser_object& usr,
  const CSeqdesc& desc,
@@ -565,19 +582,9 @@ bool CValidError_desc::x_ValidateStructuredComment
     try {
         CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
         if (comment_rules) {
-            CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
-            if (ruler) {
-                const CComment_rule& rule = *ruler;
-
-                if (rule.GetRequire_order()) {
-                    is_valid &= ValidateStructuredComment (usr, desc, rule, report);
-                } else {
-                    CUser_object tmp;
-                    tmp.Assign(usr);
-                    CUser_object::TData& fields = tmp.SetData();
-                    stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
-                    is_valid &= ValidateStructuredComment (tmp, desc, rule, report);
-                }
+            CConstRef<CComment_rule> pRule = comment_rules->FindCommentRuleEx(prefix);
+            if (pRule) {
+                is_valid &= x_ValidateStructuredCommentUsingRule(*pRule, desc, report);
             } else {
                 // no rule for this prefix
                 is_valid &= ValidateStructuredCommentGeneric(usr, desc, report);
