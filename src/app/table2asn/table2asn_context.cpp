@@ -219,6 +219,21 @@ std::ostream& CSharedOStream::get()
     return *stream;
 }
 
+CSharedOStream::CSharedOStream(CSharedOStream&& _other)
+   : m_owner{ _other.m_owner }
+{
+    _other.m_owner = nullptr;
+}
+
+CSharedOStream& CSharedOStream::operator=(CSharedOStream&& _other)
+{
+    if (m_owner && _other.m_owner != m_owner)
+        std::get<2>(*m_owner).unlock();
+
+    m_owner = _other.m_owner; _other.m_owner = nullptr;
+    return *this;
+}
+
 CSharedOStream CSharedStreamMap::GetOstream(CTempString suffix)
 {
     CSharedStreamMap::mapped_type* rec;
