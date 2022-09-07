@@ -2485,6 +2485,7 @@ GXMG	s	Guangxi Medicinal Botanic Garden
 GXMI	s	Guangxi Institute of Traditional Medical and Pharmaceutical Sciences			
 GXNM	s	Guangxi Natural History Museum, Herbarium			
 GXSP	s	Guangxi School of Pharmacy			
+GZAAS	s	Guizhou Academy of Agricultural Sciences			
 GZAC	s	Guizhou Agricultural College, College of Life Science			
 GZCC	c	Guizhou Culture Collection			
 GZM	s	Giessener Zoologisches Museum			
@@ -2862,6 +2863,7 @@ HUEG	s	Universidade Estadual de Goias
 HUEM	s	Universidade Estadual de Maringa, Departamento de Biologia			
 HUESB	s	Universidade Estadual do Sudoeste da Bahia-Campus de Jequie			
 HUESBVC	s	Universidade Estadual do Sudoeste da Bahia-Vitoria  da Conquista			
+HUEST	s	Herbarium of University of Electronic Science and  Technology			
 HUF	s	Hunan Forestry School			
 HUFABC	s	Universidade Federal do ABC			
 HUFS	s	The Bacteriophage Bank of Korea			
@@ -7394,6 +7396,7 @@ UEGQ	s	Universidade Estadual de Goias
 UENF	s	Universidade Estadual do Norte Fluminense			
 UESC	s	Universidade Estadual de Santa Cruz			
 UESS	s	Universidad de El Salvador			
+UESTCC	c	University of Electronic  Science and Technology Culture Collection			
 UEVH	s	Universidade de Evora, Departamento de Biologia			
 UF	sb	University of Florida Museum of Natural History	FLMNH		
 UF/FGS	s	Florida Geological Survey			
