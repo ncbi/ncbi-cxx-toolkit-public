@@ -51,8 +51,8 @@ class CSharedOStream
 public:
     CSharedOStream(CSharedStreamMap::mapped_type* owner);
     CSharedOStream(const CSharedOStream&) = delete;
-    CSharedOStream(CSharedOStream&&) = default;
-    CSharedOStream& operator=(CSharedOStream&&) = default;
+    CSharedOStream(CSharedOStream&&);
+    CSharedOStream& operator=(CSharedOStream&&);
     CSharedOStream() = default;
     ~CSharedOStream();
     operator std::ostream&() { return get(); };
