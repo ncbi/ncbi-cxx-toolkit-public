@@ -333,6 +333,9 @@ PssmParameters ::= SEQUENCE {
     -- bit score threshold for specific conserved domain hits
     bitScoreThresh  REAL OPTIONAL,
 
+    -- bit score threshold for reporting any conserved domain hits
+    bitScoreReportingThresh  REAL OPTIONAL,
+
     -- conserved functional sites with annotations
     annotatedSites  Site-annot-set OPTIONAL
 }
