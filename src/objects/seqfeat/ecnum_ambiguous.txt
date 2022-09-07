@@ -58,8 +58,8 @@
 1.3.98.n	With other, known, acceptors
 1.3.99.-	With other acceptors
 1.3.99.n	With other acceptors
-1.4.-.-	Acting on the CH-NH(2) group of donors
-1.4.n.n	Acting on the CH-NH(2) group of donors
+1.4.-.-	Acting on the CH-NH2 group of donors
+1.4.n.n	Acting on the CH-NH2 group of donors
 1.4.1.-	With NAD(+) or NADP(+) as acceptor
 1.4.1.n	With NAD(+) or NADP(+) as acceptor
 1.4.2.-	With a cytochrome as acceptor
@@ -184,8 +184,8 @@
 1.11.n.n	Acting on a peroxide as acceptor
 1.11.1.-	Peroxidases
 1.11.1.n	Peroxidases
-1.11.2.-	With H(2)O(2) as acceptor, one oxygen atom of which is incorporated into the product
-1.11.2.n	With H(2)O(2) as acceptor, one oxygen atom of which is incorporated into the product
+1.11.2.-	With H2O2 as acceptor, one oxygen atom of which is incorporated into the product
+1.11.2.n	With H2O2 as acceptor, one oxygen atom of which is incorporated into the product
 1.12.-.-	Acting on hydrogen as donors
 1.12.n.n	Acting on hydrogen as donors
 1.12.1.-	With NAD(+) or NADP(+) as acceptor
@@ -200,8 +200,8 @@
 1.12.98.n	With other, known, acceptors
 1.12.99.-	With other acceptors
 1.12.99.n	With other acceptors
-1.13.-.-	Acting on single donors with incorporation of molecular oxygen (oxygenases). The oxygen incorporated need not be derived from O(2)
-1.13.n.n	Acting on single donors with incorporation of molecular oxygen (oxygenases). The oxygen incorporated need not be derived from O(2)
+1.13.-.-	Acting on single donors with incorporation of molecular oxygen (oxygenases). The oxygen incorporated need not be derived from O2
+1.13.n.n	Acting on single donors with incorporation of molecular oxygen (oxygenases). The oxygen incorporated need not be derived from O2
 1.13.1.-	With NADH or NADPH as one donor
 1.13.1.n	With NADH or NADPH as one donor
 1.13.11.-	With incorporation of two atoms of oxygen
@@ -210,8 +210,8 @@
 1.13.12.n	With incorporation of one atom of oxygen (internal monooxygenases or internal mixed function oxidases)
 1.13.99.-	Miscellaneous
 1.13.99.n	Miscellaneous
-1.14.-.-	Acting on paired donors, with incorporation or reduction of molecular oxygen. The oxygen incorporated need not be derived from O(2)
-1.14.n.n	Acting on paired donors, with incorporation or reduction of molecular oxygen. The oxygen incorporated need not be derived from O(2)
+1.14.-.-	Acting on paired donors, with incorporation or reduction of molecular oxygen. The oxygen incorporated need not be derived from O2
+1.14.n.n	Acting on paired donors, with incorporation or reduction of molecular oxygen. The oxygen incorporated need not be derived from O2
 1.14.1.-	With NADH or NADPH as one donor
 1.14.1.n	With NADH or NADPH as one donor
 1.14.2.-	With ascorbate as one donor
@@ -262,8 +262,8 @@
 1.16.98.n	With other known acceptors
 1.16.99.-	With other acceptors
 1.16.99.n	With other acceptors
-1.17.-.-	Acting on CH or CH(2) groups
-1.17.n.n	Acting on CH or CH(2) groups
+1.17.-.-	Acting on CH or CH2 groups
+1.17.n.n	Acting on CH or CH2 groups
 1.17.1.-	With NAD(+) or NADP(+) as acceptor
 1.17.1.n	With NAD(+) or NADP(+) as acceptor
 1.17.2.-	With a cytochrome as acceptor
@@ -344,12 +344,12 @@
 1.97.n.n	Other oxidoreductases
 1.97.1.-	Other oxidoreductases
 1.97.1.n	Other oxidoreductases
-1.98.-.-	Enzymes using H(2) as reductant
-1.98.n.n	Enzymes using H(2) as reductant
+1.98.-.-	Enzymes using H2 as reductant
+1.98.n.n	Enzymes using H2 as reductant
 1.98.1.-	Other oxidoreductases
 1.98.1.n	Other oxidoreductases
-1.99.-.-	Other enzymes using O(2) as oxidant
-1.99.n.n	Other enzymes using O(2) as oxidant
+1.99.-.-	Other enzymes using O2 as oxidant
+1.99.n.n	Other enzymes using O2 as oxidant
 1.99.1.-	Hydroxylases
 1.99.1.n	Hydroxylases
 1.99.2.-	Oxygenases
@@ -662,6 +662,14 @@
 4.7.n.n	Carbon-phosphorus lyases
 4.7.1.-	Carbon-phosphorus lyases
 4.7.1.n	Carbon-phosphorus lyases
+4.8.-.-	Nitrogen-oxygen lyases
+4.8.n.n	Nitrogen-oxygen lyases
+4.8.1.-	Hydro-lyases
+4.8.1.n	Hydro-lyases
+4.98.-.-	ATP-independent chelatases
+4.98.n.n	ATP-independent chelatases
+4.98.1.-	Forming coordination complexes
+4.98.1.n	Forming coordination complexes
 4.99.-.-	Other lyases
 4.99.n.n	Other lyases
 4.99.1.-	Other lyases
@@ -760,6 +768,10 @@
 6.6.n.n	Forming nitrogen-metal bonds
 6.6.1.-	Forming coordination complexes
 6.6.1.n	Forming coordination complexes
+6.7.-.-	Forming nitrogen-nitrogen bonds
+6.7.n.n	Forming nitrogen-nitrogen bonds
+6.7.1.-	Forming diazo bonds
+6.7.1.n	Forming diazo bonds
 7.-.-.-	Translocases
 7.n.n.n	Translocases
 7.1.-.-	Catalysing the translocation of hydrons
