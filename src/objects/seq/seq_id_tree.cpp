@@ -981,7 +981,12 @@ int CSeq_id_Textseq_Info::CompareOrdered(const CSeq_id_Info& other, const CSeq_i
             // NOTE: Comparison should ignore case, so use 0 variant.
             RestoreAccession(this_acc, h_this.GetPacked(), 0);
             pother->RestoreAccession(other_acc, h_other.GetPacked(), 0);
-            return this_acc.compare(other_acc);
+            if (int adiff = this_acc.compare(other_acc)) return adiff;
+            if (int vdiff = IsSetVersion() - pother->IsSetVersion()) return vdiff;
+            if ( IsSetVersion() ) {
+                _ASSERT(pother->IsSetVersion());
+                return GetVersion() - pother->GetVersion();
+            }
         }
     }
     return CSeq_id_Info::CompareOrdered(other, h_this, h_other);
