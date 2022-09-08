@@ -1,12 +1,12 @@
 [components]
-infrastructure  26.0
-core            26.0
-dbase           26.0
-web             26.0
-objects         26.0
-objtools        26.0
-algo            26.0
-app             26.0
-doc             26.0
-misc            26.0
-sra             26.0
+infrastructure  27.0
+core            27.0
+dbase           27.0
+web             27.0
+objects         27.0
+objtools        27.0
+algo            27.0
+app             27.0
+doc             27.0
+misc            27.0
+sra             27.0
