@@ -37,6 +37,7 @@ USING_NCBI_SCOPE;
 #include "id2info.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 
 CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
@@ -49,6 +50,7 @@ CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
 
     // id2_info: "sat.info.nchunks[.splitversion]"
     vector<string>          parts;
+    parts.reserve(4);
     NStr::Split(id2_info, ".", parts);
 
     if (parts.size() < 3) {
@@ -111,15 +113,28 @@ CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
 
 string CPSGS_SatInfoChunksVerFlavorId2Info::Serialize(void) const
 {
-    if (m_SplitVersionPresent)
-        return to_string(m_Sat) + "." +
-               to_string(m_Info) + "." +
-               to_string(m_Chunks) + "." +
-               to_string(m_SplitVersion);
+    char    buf[64];
+    long    len;
 
-    return to_string(m_Sat) + "." +
-           to_string(m_Info) + "." +
-           to_string(m_Chunks);
+    string  ret;
+    ret.reserve(64);
+
+    len = PSGToString(m_Sat, buf);
+    ret.append(buf, len)
+       .append(1, '.');
+    len = PSGToString(m_Info, buf);
+    ret.append(buf, len)
+       .append(1, '.');
+    len = PSGToString(m_Chunks, buf);
+    ret.append(buf, len);
+
+    if (m_SplitVersionPresent) {
+        len = PSGToString(m_SplitVersion, buf);
+        ret.append(1, '.')
+           .append(buf, len);
+    }
+
+    return ret;
 }
 
 
@@ -211,11 +226,23 @@ CPSGS_IdModifiedVerFlavorId2Info::CPSGS_IdModifiedVerFlavorId2Info(
 
 string CPSGS_IdModifiedVerFlavorId2Info::Serialize(void) const
 {
+    char        buf[64];
+    long        len;
     string      ret = kPrefix + kSeparator + kTseId + m_TSEId.ToString();
-    if (m_LastModifiedPresent)
-        ret += kSeparator + kTseLastModified + to_string(m_LastModified);
-    if (m_SplitVersionPresent)
-        ret += kSeparator + kTseSplitVersion + to_string(m_SplitVersion);
+
+    if (m_LastModifiedPresent) {
+        len = PSGToString(m_LastModified, buf);
+        ret.append(kSeparator)
+           .append(kTseLastModified)
+           .append(buf, len);
+    }
+
+    if (m_SplitVersionPresent) {
+        len = PSGToString(m_SplitVersion, buf);
+        ret.append(kSeparator)
+           .append(kTseSplitVersion)
+           .append(buf, len);
+    }
     return ret;
 }
 
