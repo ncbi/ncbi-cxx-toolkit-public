@@ -708,11 +708,12 @@ static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_se
         bool has_match = s_IncludeDeflineTaxid(defline, taxids);
         CRef<CSeq_id> seqID;
         string textSeqID;
-        if(has_match) {
+        TGi cur_gi;
+        if(has_match) {            
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();            
             seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);            
 
-            TGi cur_gi =  FindGi(cur_id);                                   
+            cur_gi =  FindGi(cur_id);                                   
             if(cur_gi != ZERO_GI) {            
                 textSeqID = NStr::NumericToString(cur_gi);                
             }   
@@ -729,8 +730,8 @@ static CRef<CSeq_align> s_ModifySeqAlnWithFilteredSeqIDs(CRef<CBlast_def_line_se
         if(has_match) {
             if(sa_copy.Empty()) {                
                 sa_copy = s_UpdateSubjectInSeqalign(in_align,seqID);
-            }
-            if(seqID->IsGi()) {
+            }            
+            if(cur_gi != ZERO_GI) {            
                 useThisSeqs.push_back("gi:" + textSeqID);
             }
             else {
