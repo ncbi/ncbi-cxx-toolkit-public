@@ -35457,7 +35457,7 @@ if test "$with_libuv" = no; then
    reason="${reason}${sep}LIBUV"
    sep=", "
 fi
-if test "$with_mt" = no; then
+if test "$with_nghttp2" = no; then
    reason="${reason}${sep}NGHTTP2"
    sep=", "
 fi
