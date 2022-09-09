@@ -38,7 +38,6 @@
 #include <ostream>
 
 BEGIN_NCBI_SCOPE;
-BEGIN_NAMESPACE(objects);
 
 // forward declarations
 
@@ -105,6 +104,8 @@ public:
 
     void Open(std::ostream& o_stream);
     void Open(const std::string& filename);
+    void OpenDelayed(const std::string& filename);
+    const std::string& GetFilename() const;
     bool IsOpen() const;
     void Close();
     [[nodiscard]] CMultiSourceOStream NewStream();
@@ -138,7 +139,6 @@ private:
     std::shared_ptr<CMultiSourceOStreamBuf> m_buf;
 };
 
-END_NAMESPACE(objects);
 END_NCBI_NAMESPACE;
 
 #endif
