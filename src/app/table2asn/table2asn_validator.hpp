@@ -40,10 +40,11 @@ public:
 
     void CollectDiscrepancies(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry);
     void ReportDiscrepancies();
+    void ReportDiscrepancies(const string& filename);
 
 protected:
     void x_PopulateDiscrepancy(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry);
-    void x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy);
+    void x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, std::ostream& ostr);
     typedef map<int, size_t> TErrorStatMap;
     class TErrorStats
     {
