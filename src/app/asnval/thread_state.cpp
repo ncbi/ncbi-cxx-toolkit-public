@@ -194,6 +194,10 @@ CAsnvalThreadState::CAsnvalThreadState(
 };
 
 
+CAsnvalThreadState::~CAsnvalThreadState()
+{
+}
+
 void CAsnvalThreadState::ReadClassMember
 (CObjectIStream& in,
     const CObjectInfo::CMemberIterator& member)
@@ -608,8 +612,9 @@ void CAsnvalThreadState::ProcessSSMReleaseFile()
 
     // Register the Seq-entry hook
     CObjectTypeInfo set_type = CType<CSeq_submit>();
-    (*(*(*set_type.FindMember("data")).GetPointedType().FindVariant("entrys")).GetElementType().GetPointedType().FindVariant("set")).FindMember("seq-set").SetLocalReadHook(
-        *mpIstr, this);
+    (*(*(*set_type.FindMember("data")).GetPointedType().FindVariant("entrys"))
+        .GetElementType().GetPointedType().FindVariant("set")).FindMember("seq-set").SetLocalReadHook(
+            *mpIstr, this); // does *not* take possession of hook
 
     // Read the CSeq_submit, it will call the hook object each time we
     // encounter a Seq-entry
@@ -629,12 +634,17 @@ void CAsnvalThreadState::ProcessBSSReleaseFile()
 
     // Register the Seq-entry hook
     CObjectTypeInfo set_type = CType<CBioseq_set>();
-    set_type.FindMember("seq-set").SetLocalReadHook(*mpIstr, this);
+    auto* hook = new CAsnvalThreadState(*this);
+    set_type.FindMember("seq-set").SetLocalReadHook(
+        *mpIstr, hook); // will take possession of hook and eventually destroy it!
 
     // Read the CBioseq_set, it will call the hook object each time we
     // encounter a Seq-entry
     try {
         *mpIstr >> *seqset;
+        m_NumRecords = hook->m_NumRecords;
+        m_Longest = hook->m_Longest;
+        m_LongestId = hook->m_LongestId;
     }
     catch (const CException&) {
         LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a batch Bioseq-set, do not use -a t to process.");

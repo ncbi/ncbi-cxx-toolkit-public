@@ -77,12 +77,7 @@ public:
     void Init() override;
     int Run() override;
 
-    // CReadClassMemberHook override
-    //void ReadClassMember(CObjectIStream& in,
-    //    const CObjectInfo::CMemberIterator& member) override;
-
 private:
-
     void Setup(const CArgs& args);
     void x_AliasLogFile();
 
@@ -139,8 +134,6 @@ string s_GetSeverityLabel(EDiagSev sev, bool is_xml)
 }
 
 
-
-// constructor
 CAsnvalApp::CAsnvalApp()
 {
     const CVersionInfo vers(3, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY);
@@ -148,7 +141,6 @@ CAsnvalApp::CAsnvalApp()
 }
 
 
-// destructor
 CAsnvalApp::~CAsnvalApp()
 {
 }
