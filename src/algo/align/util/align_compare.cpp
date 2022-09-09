@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objects/general/User_object.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -52,6 +53,10 @@
 #include <algo/align/util/align_compare.hpp>
 #include <algo/align/util/score_lookup.hpp>
 #include <algo/align/util/algo_align_util_exceptions.hpp>
+
+#include <corelib/rwstream.hpp>
+
+#include <util/checksum.hpp>
 
 #include <cmath>
 #include <ctype.h>
@@ -437,6 +442,71 @@ static bool s_EquivalentScores(const CAlignCompare::TRealScoreSet &scores1,
     return true;
 }
 
+static void s_PopulateExtSet(const CSeq_align &align,
+                             const set<string> &ext_set,
+                             bool ext_set_as_blacklist,
+                             CAlignCompare::TExtSet &exts)
+{
+    ITERATE (CSeq_align::TExt, ext_it, align.GetExt()) {
+        if (!(*ext_it)->GetType().IsStr()) {
+            continue;
+        }
+        string ext_type = (*ext_it)->GetType().GetStr();
+        bool is_in_set = ext_set.count(ext_type);
+        if ((ext_set_as_blacklist && !is_in_set)||
+            (!ext_set_as_blacklist && is_in_set))
+        {
+            exts[ext_type] = *ext_it;
+        }
+    }
+    if (!ext_set_as_blacklist && exts.size() < ext_set.size()) {
+        NCBI_THROW(CException, eUnknown, "Not all listed exts found");
+    }
+}
+
+string s_ConvertToHexString(unsigned char * ptr, unsigned int length)
+{
+    string retnString;
+
+    for(unsigned int i = 0; i < length; i++) {
+        int top = (ptr[i] & 0xf0) >> 4;
+        int bot = (ptr[i] & 0x0f);
+        retnString += NStr::NumericToString(top, NStr::ENumToStringFlags::fDS_Binary, 16);
+        retnString += NStr::NumericToString(bot, NStr::ENumToStringFlags::fDS_Binary, 16);
+    }
+
+    return retnString;
+}
+static bool s_EquivalentExts(const CAlignCompare::TExtSet &exts1,
+                             const CAlignCompare::TExtSet &exts2)
+{
+    CChecksumStreamWriter exts1_md5(CChecksum::eMD5),
+                          exts2_md5(CChecksum::eMD5);
+    CWStream exts1_wstr(&exts1_md5), exts2_wstr(&exts2_md5);
+    for (CAlignCompare::TExtSet::const_iterator it1 = exts1.begin(),
+                                                it2 = exts2.begin();
+         it1 != exts1.end() || it2 != exts2.end(); ++it1, ++it2)
+    {
+        if (it1 == exts1.end() || it2 == exts2.end()
+                               || it1->first != it2->first)
+        {
+            /// The two don't have the same set of exts
+            return false;
+        }
+        exts1_wstr << MSerial_AsnBinary << *it1->second;
+        exts2_wstr << MSerial_AsnBinary << *it2->second;
+    }
+    exts1_wstr.flush();
+    exts2_wstr.flush();
+    unsigned char exts1_md5_array[16], exts2_md5_array[16];
+    memset(exts1_md5_array, 0, 16);
+    memset(exts2_md5_array, 0, 16);
+    exts1_md5.GetChecksum().GetMD5Digest(exts1_md5_array);
+    exts2_md5.GetChecksum().GetMD5Digest(exts2_md5_array);
+    return s_ConvertToHexString(exts1_md5_array, 16)
+        == s_ConvertToHexString(exts2_md5_array, 16);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // SComparison constructor does the hard work of verifying that two sets of alignment
@@ -532,7 +602,8 @@ SComparison::SComparison(const CAlignCompare::SAlignment& first,
                     first.subject_mismatches == second.subject_mismatches &&
                     first.integer_scores == second.integer_scores &&
                     s_EquivalentScores(first.real_scores, second.real_scores,
-                                       real_score_tolerance);
+                                       real_score_tolerance) &&
+                    s_EquivalentExts(first.exts, second.exts);
     for ( ;  first_it != first.spans.end(); ++first_it) {
         sum_a += first_it->first.GetLength() * first_it->first.GetLength();
         spans_unique_first += first_it->first.GetLength();
@@ -654,6 +725,7 @@ SAlignment(int s, const CRef<CSeq_align> &al, CAlignCompare &compare,
         s_PopulateScores(*align, compare.m_QualityScores, quality_scores);
         s_PopulateScoreSet(*align, compare.m_ScoreSet, compare.m_ScoreSetAsBlacklist,
                            integer_scores, real_scores);
+        s_PopulateExtSet(*align, compare.m_ExtSet, compare.m_ExtSetAsBlacklist, exts);
         switch (compare.m_Mode) {
         case e_Full:
             /// If this alignment was created by slicing an input alignment,
@@ -740,6 +812,18 @@ int CAlignCompare::x_DetermineNextGroupSet()
     } else {
         return 3;
     }
+}
+
+AutoPtr<CAlignCompare::SAlignment> CAlignCompare::
+x_NextAlignment(int set, bool update_counts)
+{
+    AutoPtr<SAlignment> align =
+         new SAlignment(set, (set == 1 ? m_Set1 : m_Set2).GetNext(), *this);
+    if (update_counts) {
+        ++(set == 1 ? m_CountSet1 : m_CountSet2);
+        (set == 1 ? m_CountBasesSet1 : m_CountBasesSet2) += align->length;
+    }
+    return align;
 }
 
 void CAlignCompare::x_GetCurrentGroup(int set)
