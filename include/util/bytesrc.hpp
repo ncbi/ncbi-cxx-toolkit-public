@@ -88,7 +88,7 @@ public:
     // (default implementation throws an exception)
     virtual void Seekg(CNcbiStreampos pos);
 
-    virtual bool IsMultiPart(void) {
+    virtual bool IsMultiPart(void) const {
         return false;
     }
     virtual size_t GetNextPart(char** /*buffer*/, size_t /*copy_count*/) {
@@ -218,7 +218,7 @@ public:
     bool Pushback(const char* data, size_t size);
     virtual void Seekg(CNcbiStreampos pos);
 
-    virtual bool IsMultiPart(void) {
+    virtual bool IsMultiPart(void) const {
         return true;
     }
     virtual size_t GetNextPart(char** buffer, size_t copy_count);
@@ -343,8 +343,12 @@ private:
 class NCBI_XUTIL_EXPORT CMemoryChunk : public CObject 
 {
 public:
+    enum ECopyData {
+        eCopyData = 0,
+        eNoCopyData
+    };
     CMemoryChunk(const char* data, size_t dataSize,
-                 CRef<CMemoryChunk> prevChunk);
+                 CRef<CMemoryChunk> prevChunk, ECopyData copy = eCopyData);
     ~CMemoryChunk(void);
     
     const char* GetData(size_t offset) const
@@ -353,10 +357,14 @@ public:
         { return m_DataSize; }
     CRef<CMemoryChunk> GetNextChunk(void) const
         { return m_NextChunk; }
+    bool IsExternalMemory(void) const {
+        return m_CopyData == eNoCopyData;
+    }
 
 private:
-    char*              m_Data;
+    const char*        m_Data;
     size_t             m_DataSize;
+    ECopyData          m_CopyData;
     CRef<CMemoryChunk> m_NextChunk;
 
 private:
@@ -387,6 +395,13 @@ public:
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
 
+    virtual bool Pushback(const char* data, size_t size);
+
+    virtual bool IsMultiPart(void) const {
+        return m_CurrentChunk.NotNull() && m_CurrentChunk->IsExternalMemory();
+    }
+    virtual size_t GetNextPart(char** buffer, size_t copy_count);
+
 private:
     size_t GetCurrentChunkAvailable(void) const
         {
@@ -403,7 +418,8 @@ class NCBI_XUTIL_EXPORT CMemorySourceCollector : public CSubSourceCollector
 {
 public:
     CMemorySourceCollector(CRef<CSubSourceCollector>
-                           parent = CRef<CSubSourceCollector>());
+                           parent = CRef<CSubSourceCollector>(),
+                           bool no_copy = false);
     ~CMemorySourceCollector(void);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
@@ -412,6 +428,7 @@ public:
 private:
     CConstRef<CMemoryChunk> m_FirstChunk;
     CRef<CMemoryChunk>      m_LastChunk;
+    CMemoryChunk::ECopyData m_CopyData;
 };
 
 
