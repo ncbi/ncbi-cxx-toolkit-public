@@ -393,6 +393,9 @@ static void s_PopulateScoreSet(const CSeq_align &align,
                                CAlignCompare::TRealScoreSet &real_scores)
 {
     if (score_set_as_blacklist) {
+        if (!align.IsSetScore()) {
+            return;
+        }
         ITERATE (CSeq_align::TScore, score_it, align.GetScore()) {
             if ((*score_it)->GetId().IsStr() &&
                 !score_set.count((*score_it)->GetId().GetStr()))
@@ -447,6 +450,12 @@ static void s_PopulateExtSet(const CSeq_align &align,
                              bool ext_set_as_blacklist,
                              CAlignCompare::TExtSet &exts)
 {
+    if (!align.IsSetExt()) {
+        if (!ext_set_as_blacklist && !ext_set.empty()) {
+            NCBI_THROW(CException, eUnknown, "Not all listed exts found");
+        }
+        return;
+    }
     ITERATE (CSeq_align::TExt, ext_it, align.GetExt()) {
         if (!(*ext_it)->GetType().IsStr()) {
             continue;
