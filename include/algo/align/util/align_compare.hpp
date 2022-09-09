@@ -39,6 +39,10 @@
 #include <util/range_coll.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
+    class CUser_object;
+END_objects_SCOPE
+
 USING_SCOPE(objects);
 
 
@@ -73,6 +77,7 @@ public:
 
     typedef map<string,int> TIntegerScoreSet;
     typedef map<string,double> TRealScoreSet;
+    typedef map<string, CRef<CUser_object> > TExtSet;
 
     //////////////////////////////////////////////////////////////////////////////
     //
@@ -98,6 +103,7 @@ public:
         vector<double> quality_scores;
         TIntegerScoreSet integer_scores;
         TRealScoreSet real_scores;
+        TExtSet exts;
     
         CRef<CSeq_align> align;
         TAlignmentSpans  spans;
@@ -132,6 +138,8 @@ public:
                   const set<string> &score_set = set<string>(),
                   bool score_set_as_blacklist = false,
                   double real_score_tolerance = 0,
+                  const set<string> &ext_set = set<string>(),
+                  bool ext_set_as_blacklist = false,
                   const set<string> distributive_scores = set<string>())
     : m_Set1(set1)
     , m_Set2(set2)
@@ -144,6 +152,8 @@ public:
     , m_ScoreSet(score_set)
     , m_ScoreSetAsBlacklist(score_set_as_blacklist)
     , m_RealScoreTolerance(real_score_tolerance)
+    , m_ExtSet(ext_set)
+    , m_ExtSetAsBlacklist(ext_set_as_blacklist)
     , m_DistributiveScores(distributive_scores)
     , m_CountSet1(0)
     , m_CountSet2(0)
@@ -213,6 +223,8 @@ private:
     set<string> m_ScoreSet;
     bool m_ScoreSetAsBlacklist;
     double m_RealScoreTolerance;
+    set<string> m_ExtSet;
+    bool m_ExtSetAsBlacklist;
     set<string> m_DistributiveScores;
 
     size_t m_CountSet1;
@@ -249,16 +261,7 @@ private:
     int x_DetermineNextGroupSet();
 
     /// Get next alignment from the correct set
-    AutoPtr<SAlignment> x_NextAlignment(int set, bool update_counts = true)
-    {
-        AutoPtr<SAlignment> align =
-             new SAlignment(set, (set == 1 ? m_Set1 : m_Set2).GetNext(), *this);
-        if (update_counts) {
-            ++(set == 1 ? m_CountSet1 : m_CountSet2);
-            (set == 1 ? m_CountBasesSet1 : m_CountBasesSet2) += align->length;
-        }
-        return align;
-    }
+    AutoPtr<SAlignment> x_NextAlignment(int set, bool update_counts = true);
 
     void x_GetCurrentGroup(int set);
 
