@@ -41,13 +41,13 @@
 #include <atomic>
 #include <array>
 #include <fstream>
+#include <corelib/ncbistr.hpp>
 
 #include <objtools/writers/atomics.hpp>
 
 //#include <iostream>
 
 BEGIN_NCBI_SCOPE;
-BEGIN_NAMESPACE(objects);
 
 namespace
 {
@@ -69,10 +69,14 @@ public:
     ~CMultiSourceWriterImpl();
     void Open(const std::string& filename);
     void Open(std::ostream& o_stream);
+    void OpenDelayed(const std::string& filename);
     bool IsOpen() const;
     void Close();
     void Flush();
 
+    const std::string& GetFilename() const {
+        return m_filename_delayed;
+    }
     void SetMaxWriters(size_t num) {
         m_max_writers = num;
     }
@@ -82,8 +86,9 @@ public:
     std::shared_ptr<CMultiSourceOStreamBuf> NewStreamBuf();
     void FlushStreamBuf(CMultiSourceOStreamBuf* strbuf);
     TBufferPtr AllocateBuffer();
-    void CloseStreamBuf(CMultiSourceOStreamBuf* strbuf);
+    void CloseStreamBuf(CMultiSourceOStreamBuf* strbuf, int leftover);
 private:
+    void x_OpenReally();
     std::deque<std::shared_ptr<CMultiSourceOStreamBuf>> m_writers;
     std::atomic<size_t> m_max_writers = s_default_max_writers;
     std::atomic<CMultiSourceOStreamBuf*> m_head;
@@ -93,6 +98,7 @@ private:
 
     std::atomic<std::ostream*> m_ostream = nullptr;
     std::unique_ptr<std::ostream> m_own_stream;
+    std::string m_filename_delayed;
 };
 
 class CMultiSourceOStreamBuf: public std::streambuf
@@ -170,8 +176,8 @@ void CMultiSourceOStreamBuf::Close()
 {
     if (m_leftover<0) {
         m_leftover = pptr() - pbase();
-        m_parent.CloseStreamBuf(this);
     }
+    m_parent.CloseStreamBuf(this, m_leftover);
 }
 
 void CMultiSourceOStreamBuf::Dump(std::ostream& ostr)
@@ -214,12 +220,30 @@ CMultiSourceWriterImpl::~CMultiSourceWriterImpl()
 
 void CMultiSourceWriterImpl::Open(const std::string& filename)
 {
-    auto new_stream = std::make_unique<std::ofstream>(filename);
+    auto new_stream = std::make_unique<std::ofstream>();
     new_stream->exceptions( ios::failbit | ios::badbit );
+    new_stream->open(filename);
     Open(*new_stream); // this may throw an exception
     m_own_stream = std::move(new_stream);
 }
 
+void CMultiSourceWriterImpl::OpenDelayed(const std::string& filename)
+{
+    if (m_ostream != nullptr) {
+        throw std::runtime_error("already open");
+    }
+    m_filename_delayed = filename;
+}
+
+void CMultiSourceWriterImpl::x_OpenReally()
+{
+    if (m_ostream == nullptr && !m_filename_delayed.empty()) {
+        Open(m_filename_delayed);
+    }
+    if (m_ostream == nullptr) {
+        throw std::runtime_error("stream is not open");
+    }
+}
 
 void CMultiSourceWriterImpl::Open(std::ostream& o_stream)
 {
@@ -232,12 +256,12 @@ void CMultiSourceWriterImpl::Open(std::ostream& o_stream)
 
 bool CMultiSourceWriterImpl::IsOpen() const
 {
-    return m_ostream.load() != nullptr;
+    return m_ostream || !m_filename_delayed.empty();
 }
 
 void CMultiSourceWriterImpl::Close()
 {
-    if (!m_ostream)
+    if (!m_ostream && m_filename_delayed.empty() )
         return;
 
     {
@@ -252,6 +276,7 @@ void CMultiSourceWriterImpl::Close()
         if (m_ostream) {
             m_ostream = nullptr;
         }
+        m_own_stream.reset();
     }
 
     m_cv.notify_all();
@@ -283,7 +308,7 @@ std::shared_ptr<CMultiSourceOStreamBuf> CMultiSourceWriterImpl::NewStreamBuf()
                 return m_writers.size() < m_max_writers;
             });
 
-        if (m_ostream == nullptr)
+        if (m_ostream == nullptr && m_filename_delayed.empty())
             throw runtime_error("CMultiSourceWriter is not open");
 
         buf = std::make_shared<CMultiSourceOStreamBuf>(*this);
@@ -315,13 +340,14 @@ void CMultiSourceWriterImpl::FlushStreamBuf(CMultiSourceOStreamBuf* strbuf)
                 return is_head;
             });
     }
+    x_OpenReally();
     strbuf->Dump(*m_ostream);
 
     // no need to notify
     // m_cv.notify_all();
 }
 
-void CMultiSourceWriterImpl::CloseStreamBuf(CMultiSourceOStreamBuf* strbuf)
+void CMultiSourceWriterImpl::CloseStreamBuf(CMultiSourceOStreamBuf* strbuf, int leftover)
 {
     // TODO: if the streambuf is in the middle of queue, just leave it as is
     //if (strbuf == m_head.load())
@@ -334,15 +360,15 @@ void CMultiSourceWriterImpl::CloseStreamBuf(CMultiSourceOStreamBuf* strbuf)
                 return is_head;
             });
 
-        {
+        if (leftover>0) {
+            x_OpenReally();
             strbuf->Dump(*m_ostream);
-            m_writers.pop_front(); // this can destroy CMultiSourceOStreamBuf if it was closed in the middle of queue
-            m_head = m_writers.empty() ? nullptr : m_writers.front().get();
-
-            strbuf = m_head;
         }
+        m_writers.pop_front(); // this can destroy CMultiSourceOStreamBuf if it was closed in the middle of queue
+        m_head = m_writers.empty() ? nullptr : m_writers.front().get();
 
         }
+
         m_cv.notify_all();
     }
 }
@@ -356,6 +382,11 @@ void CMultiSourceWriter::Open(const std::string& filename)
     m_impl->Open(filename);
 }
 
+void CMultiSourceWriter::OpenDelayed(const std::string& filename)
+{
+    x_ConstructImpl();
+    m_impl->OpenDelayed(filename);
+}
 
 void CMultiSourceWriter::Open(std::ostream& o_stream)
 {
@@ -366,6 +397,14 @@ void CMultiSourceWriter::Open(std::ostream& o_stream)
 void CMultiSourceWriter::Close()
 {
     if (m_impl) m_impl->Close();
+}
+
+const std::string& CMultiSourceWriter::GetFilename() const
+{
+    if (m_impl)
+        return m_impl->GetFilename();
+    else
+        return kEmptyStr;
 }
 
 CMultiSourceOStream CMultiSourceWriter::NewStream()
@@ -409,5 +448,4 @@ void CMultiSourceWriter::x_ConstructImpl()
     }
 }
 
-END_NAMESPACE(objects);
 END_NCBI_NAMESPACE;
