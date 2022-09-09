@@ -69,7 +69,7 @@ public:
     CAsnvalThreadState(const CAppConfig&);
     CAsnvalThreadState(
         CAsnvalThreadState& other);
-    ~CAsnvalThreadState() {};
+    ~CAsnvalThreadState();
 
     void ReadClassMember(CObjectIStream& in,
         const CObjectInfo::CMemberIterator& member) override;
