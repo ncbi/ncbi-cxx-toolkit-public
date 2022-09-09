@@ -411,7 +411,6 @@ int CTbl2AsnApp::Run()
         }
     }
 
-
     m_context.m_split_log_files = args["split-logs"].AsBoolean();
     if (m_context.m_split_log_files && args["logfile"])
     {
@@ -872,9 +871,12 @@ int CTbl2AsnApp::Run()
 
         if (m_validator->ValTotalErrors() > 0)
         {
-            m_validator->ValReportErrorStats(m_context.GetOstream(".stats", m_context.m_base_name));
+            std::ofstream ostr;
+            ostr.exceptions( ios::failbit | ios::badbit);
+            ostr.open(m_context.GenerateOutputFilename(eFiles::stats, m_context.m_base_name));
+            m_validator->ValReportErrorStats(ostr);
         }
-        m_validator->ReportDiscrepancies();
+        m_validator->ReportDiscrepancies(m_context.GenerateOutputFilename(eFiles::dr, m_context.m_base_name));
     }
     catch (const CMissingInputException&)
     {
@@ -977,7 +979,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     if (!IsDryRun())
     {
-        std::function<CSharedOStream()> f = [this]()->CSharedOStream { return m_context.GetOstream(".fixedproducts"); };
+        std::function<std::ostream&()> f = [this]()->std::ostream& { return m_context.GetOstream(eFiles::fixedproducts); };
         m_context.m_suspect_rules->SetupOutput(f);
     }
     m_context.ApplyFileTracks(*entry);
@@ -1078,7 +1080,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
         if (m_context.m_make_flatfile)
         {
-            MakeFlatFile(seh, submit, m_context.GetOstream(".gbf"));
+            MakeFlatFile(seh, submit, m_context.GetOstream(eFiles::gbf));
         }
     }
 }
@@ -1267,32 +1269,39 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
     CFile log_name;
     if (!IsDryRun() && m_context.m_split_log_files)
     {
-        log_name = m_context.GenerateOutputFilename(".log");
+        log_name = m_context.GenerateOutputFilename(eFiles::log);
         CNcbiOstream* error_log = new CNcbiOfstream(log_name.GetPath());
         m_logger->SetProgressOstream(error_log);
         SetDiagStream(error_log);
     }
 
-    CNcbiOstream* output(nullptr);
-    unique_ptr<CNcbiOfstream> holder;
-    CFile local_file;
+    for (eFiles e: {
+            eFiles::ecn,
+            eFiles::gbf,
+            eFiles::val,
+            eFiles::fixedproducts
+            })
+    {
+        m_context.SetOutputFilename(e, m_context.GenerateOutputFilename(e));
+    }
+
+    if (m_context.m_split_discrepancy) // otherwise leave it unopened
+        m_context.SetOutputFilename(eFiles::dr, m_context.GenerateOutputFilename(eFiles::dr));
+        //, m_context.m_split_discrepancy?kEmptyStr:m_context.m_base_name));
 
     try
     {
-        output = m_context.m_output;
-
-        if (!output) {
-            local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
-            holder.reset(new CNcbiOfstream(local_file.GetPath()));
-            output = holder.get();
+        if (m_context.m_output) {
+            m_context.SetOutputFile(eFiles::asn, *m_context.m_output);
+        } else {
+            m_context.SetOutputFilename(eFiles::asn, m_context.GenerateOutputFilename(eFiles::asn));
         }
-        //m_context.ReleaseOutputs();
 
-        if (!IsDryRun())
-        {
-            std::function<CSharedOStream()> f = [this]()->CSharedOStream { return m_context.GetOstream(".fixedproducts"); };
-            m_context.m_suspect_rules->SetupOutput(f);
-        }
+        m_context.OpenOutputs();
+        CNcbiOstream* output = &m_context.GetOstream(eFiles::asn);
+
+        std::function<std::ostream&()> f = [this]()->std::ostream& { return m_context.GetOstream(eFiles::fixedproducts); };
+        m_context.m_suspect_rules->SetupOutput(f);
 
         m_context.m_huge_files_mode = false;
 
@@ -1324,6 +1333,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
         {
             m_logger->SetProgressOstream(&NcbiCout);
         }
+        m_context.CloseOutputs();
     }
     catch (...)
     {
@@ -1332,17 +1342,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
             m_logger->SetProgressOstream(&NcbiCout);
         }
 
-        if (m_context.m_output)
-        {
-            m_context.m_output = nullptr;
-            GetArgs()["o"].CloseFile();
-            if (!m_context.m_output_filename.empty())
-                CFile(m_context.m_output_filename).Remove(CDirEntry::fIgnoreMissing);
-        } else
-        {
-            holder.reset();
-            local_file.Remove();
-        }
+        m_context.DeleteOutputs();
 
         throw;
     }
@@ -1438,12 +1438,6 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
             {
                 m_context.m_current_file = it->GetPath();
                 ProcessOneFile(false);
-                if (m_context.m_output_filename.empty()) {
-                    m_context.ClearOstream(".gbf");
-                    m_context.ClearOstream(".val");
-                    m_context.ClearOstream(".fixedproducts");
-                    m_context.ClearOstream(".ecn");
-                }
             }
         }
         else

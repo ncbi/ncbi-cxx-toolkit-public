@@ -81,6 +81,7 @@
 
 #include <corelib/stream_utils.hpp>
 #include <common/ncbi_revision.h>
+#include "utils.hpp"
 
 #ifndef NCBI_SC_VERSION
 #   define FLATFILE_PARSER_ENABLED

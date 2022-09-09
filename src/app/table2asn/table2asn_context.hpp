@@ -6,7 +6,7 @@
 #include <misc/discrepancy/discrepancy.hpp>
 #include <mutex>
 
-#include "utils.hpp"
+#include "fileset.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -36,9 +36,46 @@ namespace edit
 
 }
 
-class CMemorySrcFileMap;
-
 #include <objects/seq/Seqdesc.hpp>
+
+enum class eFiles
+{
+    asn,
+    log,
+    ecn,
+    gbf,
+    val,
+    dr,
+    stats,
+    fixedproducts
+};
+
+template<typename _enum, _enum ... _options>
+class TMultiFileSet;
+
+template<typename _enum, _enum ... _options>
+class TMultiFileSet: public TMultiSourceFileSet<_enum, _options...>
+{
+public:
+    using _MyBase   = TMultiSourceFileSet<_enum, _options...>;
+    using enum_type = typename _MyBase::enum_type;
+    //static constexpr size_t enum_size = _MyBase::enum_size;
+    //std::ostream& operator[](enum_type);
+    //void Close(enum_type);
+    //void Close();
+private:
+};
+
+using CMultiFileSet = TMultiFileSet<eFiles,
+    eFiles::asn,
+    eFiles::log,
+    eFiles::ecn,
+    eFiles::gbf,
+    eFiles::val,
+    eFiles::dr,
+    eFiles::stats,
+    eFiles::fixedproducts
+>;
 
 // command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
@@ -85,7 +122,7 @@ public:
     bool   m_HandleAsSet{ false };
     objects::CBioseq_set::TClass m_ClassValue{ objects::CBioseq_set::eClass_genbank };
     bool   m_SetIDFromFile{ false };
-    //int    m_taxid;
+
     TSeqPos m_gapNmin{ 0 };
     TSeqPos m_gap_Unknown_length{ 0 };
     TSeqPos m_minimal_sequence_length{ 0 };
@@ -122,8 +159,6 @@ public:
 
     unique_ptr<objects::CFixSuspectProductName> m_suspect_rules;
 
-    //string conffile;
-
 /////////////
     CTable2AsnContext();
     ~CTable2AsnContext();
@@ -132,11 +167,15 @@ public:
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data);
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
 
-    CSharedOStream GetOstream(CTempString suffix, CTempString basename=kEmptyStr);
-    void ClearOstream(const CTempString& suffix);
+    std::ostream& GetOstream(eFiles suffix);
 
-    string GenerateOutputFilename(const CTempString& ext, CTempString basename=kEmptyStr) const;
-    void ReleaseOutputs();
+    void SetOutputFilename(eFiles kind, const string& filename);
+    void SetOutputFile(eFiles kind, ostream& ostr);
+    void OpenOutputs();
+    void DeleteOutputs();
+    void CloseOutputs();
+
+    string GenerateOutputFilename(eFiles kind, string_view basename = kEmptyStr) const;
 
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const CTempString& type);
@@ -182,7 +221,9 @@ public:
 
 private:
     static void x_ApplyAccession(const CTable2AsnContext& context, objects::CBioseq& bioseq);
-    CSharedStreamMap m_outputs;
+    CMultiFileSet m_writers;
+    // these are used in single threaded mode
+    CMultiFileSet::fileset_type m_current_outputs;
 };
 
 void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,

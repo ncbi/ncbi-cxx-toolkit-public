@@ -174,12 +174,12 @@ void x_CorrectCollectionDates(const CTable2AsnContext& context, _T& seq_or_set)
     }
 }
 
-}
-
+} // anonymous namespace
 
 CTable2AsnContext::CTable2AsnContext()
     : m_suspect_rules{new CFixSuspectProductName}
 {
+    m_writers.SetUseMT(true);
 }
 
 CTable2AsnContext::~CTable2AsnContext()
@@ -198,86 +198,65 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
-CSharedOStream::CSharedOStream(CSharedStreamMap::mapped_type* owner) : m_owner{owner}
+void CTable2AsnContext::OpenOutputs()
 {
-    std::get<2>(*m_owner).lock();
+    m_current_outputs.Reset();
+    m_current_outputs = m_writers.MakeNewFileset();
 }
 
-CSharedOStream::~CSharedOStream()
+std::ostream& CTable2AsnContext::GetOstream(eFiles suffix)
 {
-    if (m_owner)
-        std::get<2>(*m_owner).unlock();
+    auto& ostr = m_current_outputs[suffix];
+    if (ostr)
+        return *ostr;
+    else
+        throw std::runtime_error("output is not open");
 }
 
-std::ostream& CSharedOStream::get()
+void CTable2AsnContext::SetOutputFilename(eFiles kind, const string& filename)
 {
-    auto& stream = std::get<1>(*m_owner);
-    if (!stream)
-    {
-        stream.reset(new CNcbiOfstream(filename()));
+    m_writers.SetFilename(kind, filename);
+}
+
+void CTable2AsnContext::SetOutputFile(eFiles kind, ostream& ostr)
+{
+    m_writers.Open(kind, ostr);
+}
+
+void CTable2AsnContext::CloseOutputs()
+{
+    m_current_outputs.Reset();
+    m_writers.Reset();
+}
+
+
+void CTable2AsnContext::DeleteOutputs()
+{
+    CloseOutputs();
+    for (auto& f: m_writers) {
+            auto& filename = f.GetFilename();
+            if (!filename.empty())
+                CFile(m_output_filename).Remove(CDirEntry::fIgnoreMissing);
     }
-    return *stream;
 }
 
-CSharedOStream::CSharedOStream(CSharedOStream&& _other)
-   : m_owner{ _other.m_owner }
+string CTable2AsnContext::GenerateOutputFilename(eFiles kind, string_view basename) const
 {
-    _other.m_owner = nullptr;
-}
+    static constexpr std::array<string_view, 8> default_suffixes = {
+        ".asn",
+        ".log",
+        ".ecn",
+        ".gbf",
+        ".val",
+        ".dr",
+        ".stats",
+        ".fixedproducts",
+    };
 
-CSharedOStream& CSharedOStream::operator=(CSharedOStream&& _other)
-{
-    if (m_owner && _other.m_owner != m_owner)
-        std::get<2>(*m_owner).unlock();
+    string_view ext = default_suffixes[static_cast<int>(kind)];
+    if (kind == eFiles::asn && !m_asn1_suffix.empty())
+        ext = m_asn1_suffix;
 
-    m_owner = _other.m_owner; _other.m_owner = nullptr;
-    return *this;
-}
-
-CSharedOStream CSharedStreamMap::GetOstream(CTempString suffix)
-{
-    CSharedStreamMap::mapped_type* rec;
-    {
-        std::lock_guard<std::mutex> g{m_mutex};
-        rec = &operator[](suffix);
-    }
-    return {rec};
-}
-
-void CSharedStreamMap::ClearOstream(const CTempString& suffix)
-{
-    std::lock_guard<std::mutex> g{m_mutex};
-
-    auto it = find(suffix);
-    if (it == end()) {
-        return;
-    }
-
-    if (get<1>(it->second)) {
-        get<1>(it->second).reset();
-    }
-    get<0>(it->second).clear();
-}
-
-CSharedOStream CTable2AsnContext::GetOstream(CTempString suffix, CTempString basename)
-{
-    auto sstr = m_outputs.GetOstream(suffix);
-    auto& filename = sstr.filename();
-    if (filename.empty()) {
-        filename = GenerateOutputFilename(suffix, basename);
-        CFile(filename).Remove(CFile::fIgnoreMissing);
-    }
-    return sstr;
-}
-
-void CTable2AsnContext::ClearOstream(const CTempString& suffix)
-{
-    m_outputs.ClearOstream(suffix);
-}
-
-
-string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext, CTempString basename) const
-{
     string dir;
     string outputfile;
     string base;
@@ -287,7 +266,7 @@ string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext, CTempSt
     if (basename.empty())
         basename = m_current_file;
 
-    CDirEntry::SplitPath(basename, &dir, &base);
+    CDirEntry::SplitPath(string(basename), &dir, &base);
     if (basename == "-" || dir == "/dev") {
         CDirEntry::SplitPath(m_current_file, &dir, &base);
         outputfile = m_ResultsDirectory.empty() ? dir : m_ResultsDirectory;
@@ -302,10 +281,6 @@ string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext, CTempSt
     return outputfile;
 }
 
-void CTable2AsnContext::ReleaseOutputs()
-{
-    m_outputs.clear(); // it will close all output files
-}
 
 CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const CTempString& type)
 {

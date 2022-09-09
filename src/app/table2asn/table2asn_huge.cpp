@@ -40,7 +40,6 @@
 #include "feature_table_reader.hpp"
 #include "multireader.hpp"
 
-#include <objtools/readers/objhook_lambdas.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objectio.hpp>
 
@@ -350,7 +349,7 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
         if (m_context.m_make_flatfile) {
             ff_chain_func = [this](TAsyncToken& token) {
-                MakeFlatFile(token.seh, token.submit, m_context.GetOstream(".gbf"));
+                MakeFlatFile(token.seh, token.submit, m_context.GetOstream(eFiles::gbf));
             };
         }
 
@@ -360,14 +359,14 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
             ProcessTopEntry(context.file.m_format, need_update_date, context.m_submit, context.m_topentry);
             if (m_context.m_use_threads>=3) {
-                CSharedOStream ff_file;
+                std::ostream* ff_file = nullptr;
                 CFlatFileAsyncWriter<TAsyncToken> ff_writer;
                 if (m_context.m_make_flatfile) {
-                    ff_file = m_context.GetOstream(".gbf");
+                    ff_file = &m_context.GetOstream(eFiles::gbf);
                     ff_chain_func = [&ff_writer, make_ff_async](CGenBankAsyncWriter::TToken& token) {
                         ff_writer.Post(token, make_ff_async);
                     };
-                    ff_writer.Write(ff_file);
+                    ff_writer.Write(*ff_file);
                 }
                 async_writer.WriteAsyncMT(topobject, make_next_token, process_async, ff_chain_func);
                 // now it will wait until all ff_writer tasks complete

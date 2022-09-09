@@ -36,32 +36,6 @@ private:
     std::atomic<size_t> m_counter{0};
 };
 
-class CSharedOStream;
-class CSharedStreamMap: public std::map<std::string, std::tuple<std::string, unique_ptr<std::ostream>, std::mutex>>
-{
-public:
-    CSharedOStream GetOstream(CTempString suffix);
-    void ClearOstream(const CTempString& suffix);
-private:
-    std::mutex m_mutex;
-};
-
-class CSharedOStream
-{
-public:
-    CSharedOStream(CSharedStreamMap::mapped_type* owner);
-    CSharedOStream(const CSharedOStream&) = delete;
-    CSharedOStream(CSharedOStream&&);
-    CSharedOStream& operator=(CSharedOStream&&);
-    CSharedOStream() = default;
-    ~CSharedOStream();
-    operator std::ostream&() { return get(); };
-    std::ostream& get();
-    std::string& filename() { return std::get<0>(*m_owner); }
-private:
-    CSharedStreamMap::mapped_type* m_owner = nullptr;
-};
-
 template<typename _Stream, size_t _bufsize=8192*2>
 class CBufferedStream
 {
@@ -88,7 +62,6 @@ private:
     _Stream m_stream;
 };
 
-//using CBufferedOutput = CBufferedStream<CNcbiOfstream>;
 using CBufferedInput  = CBufferedStream<CNcbiIfstream>;
 
 END_NCBI_SCOPE

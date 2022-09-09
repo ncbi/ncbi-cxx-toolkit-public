@@ -178,7 +178,7 @@ void CTable2AsnValidator::ValReportErrors()
 {
     std::lock_guard<std::mutex> g{m_mutex};
 
-    CNcbiOstream& out = m_context->GetOstream(".val");
+    CNcbiOstream& out = m_context->GetOstream(eFiles::val);
 
     for (auto& errors: m_val_errors)
     {
@@ -259,7 +259,7 @@ void CTable2AsnValidator::x_PopulateDiscrepancy(CRef<NDiscrepancy::CDiscrepancyS
     vector<string> names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
     discrepancy->AddTests(names);
 
-    CFile nm(m_context->GenerateOutputFilename(m_context->m_asn1_suffix));
+    CFile nm(m_context->GenerateOutputFilename(eFiles::asn));
     discrepancy->SetLineage(m_context->m_disc_lineage);
     //discrepancy->SetEukaryote(m_context->m_eukaryote);
     discrepancy->Parse(*obj, nm.GetName());
@@ -276,28 +276,37 @@ void CTable2AsnValidator::CollectDiscrepancies(CRef<objects::CSeq_submit> submit
 
     x_PopulateDiscrepancy(m_discrepancy, submit, entry);
     if(m_context->m_split_discrepancy && !m_context->m_huge_files_mode) {
-        x_ReportDiscrepancies(m_discrepancy);
+        x_ReportDiscrepancies(m_discrepancy, m_context->GetOstream(eFiles::dr));
     }
 }
 
-void CTable2AsnValidator::x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy)
+void CTable2AsnValidator::x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, std::ostream& ostr)
 {
     discrepancy->Summarize();
     unsigned short output_flags = NDiscrepancy::CDiscrepancySet::eOutput_Files;
     if (!m_context->m_master_genome_flag.empty()) {
         output_flags |= NDiscrepancy::CDiscrepancySet::eOutput_Fatal;
     }
-    discrepancy->OutputText(m_context->GetOstream(".dr", m_context->m_split_discrepancy?"":m_context->m_base_name), output_flags);
+    discrepancy->OutputText(ostr, output_flags);
     discrepancy.Reset();
-    if (m_context->m_split_discrepancy)
-        m_context->ClearOstream(".dr");
 }
 
 void CTable2AsnValidator::ReportDiscrepancies()
 {
     if (m_discrepancy)
     {
-        x_ReportDiscrepancies(m_discrepancy);
+        x_ReportDiscrepancies(m_discrepancy, m_context->GetOstream(eFiles::dr));
+    }
+}
+
+void CTable2AsnValidator::ReportDiscrepancies(const string& filename)
+{
+    if (m_discrepancy)
+    {
+        std::ofstream ostr;
+        ostr.exceptions( ios::failbit | ios::badbit );
+        ostr.open(filename);
+        x_ReportDiscrepancies(m_discrepancy, ostr);
     }
 }
 
@@ -330,7 +339,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
         {
         case CProt_ref::eEC_deleted:
             xGetLabel(feat, label);
-            m_Context.GetOstream(".ecn").get() << label << "\tEC number deleted\t" << *it << "\t\n";
+            m_Context.GetOstream(eFiles::ecn) << label << "\tEC number deleted\t" << *it << "\t\n";
             it = EC.erase(it);
             continue;
             break;
@@ -339,7 +348,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
             xGetLabel(feat, label);
             const string& newvalue = CProt_ref::GetECNumberReplacement(*it);
             bool is_split = newvalue.find('\t') != string::npos;
-            m_Context.GetOstream(".ecn").get() << label <<
+            m_Context.GetOstream(eFiles::ecn) << label <<
             (is_split ? "\tEC number split\t" : "\tEC number changed\t")
             << *it << '\t' << newvalue << "\n";
             if (is_split) {
@@ -351,7 +360,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
         break;
         case CProt_ref::eEC_unknown:
             xGetLabel(feat, label);
-            m_Context.GetOstream(".ecn").get() << label << "\tEC number invalid\t" << *it << "\t\n";
+            m_Context.GetOstream(eFiles::ecn) << label << "\tEC number invalid\t" << *it << "\t\n";
             break;
         default:
             break;
