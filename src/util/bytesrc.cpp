@@ -102,7 +102,7 @@ CRef<CSubSourceCollector>
 CByteSourceReader::SubSource(size_t /*prevent*/,
                              CRef<CSubSourceCollector> parent)
 {
-    return CRef<CSubSourceCollector>(new CMemorySourceCollector(parent));
+    return CRef<CSubSourceCollector>(new CMemorySourceCollector(parent, IsMultiPart()));
 }
 
 
@@ -530,20 +530,27 @@ CRef<CByteSource> CFileSourceCollector::GetSource(void)
 /////////////////////////////////////////////////////////////////////////////
 
 CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
-                           CRef<CMemoryChunk> prevChunk)
-    : m_Data(new char[dataSize]),
-      m_DataSize(dataSize)
+                           CRef<CMemoryChunk> prevChunk, ECopyData copy /*= eCopyData*/)
+    : m_DataSize(dataSize),
+      m_CopyData(copy)
 {
-    memcpy(m_Data, data, dataSize);
+    if (m_CopyData == eNoCopyData) {
+        m_Data = data;
+    } else {
+        char *buffer = new char[dataSize];
+        memcpy(buffer, data, dataSize);
+        m_Data = buffer;
+    }
     if ( prevChunk ) {
         prevChunk->m_NextChunk = this;
     }
 }
 
-
 CMemoryChunk::~CMemoryChunk(void)
 {
-    delete[] m_Data;
+    if (m_CopyData != eNoCopyData) {
+        delete[] m_Data;
+    }
     CRef<CMemoryChunk> next = m_NextChunk;
     m_NextChunk.Reset();
     while ( next && next->ReferencedOnlyOnce() ) {
@@ -623,14 +630,44 @@ bool CMemoryByteSourceReader::EndOfData(void) const
     return !(m_CurrentChunk->GetNextChunk());
 }
 
+bool CMemoryByteSourceReader::Pushback(const char* data, size_t size)
+{
+    if (m_CurrentChunkOffset >= size) {
+        m_CurrentChunkOffset -= size;
+        return true;
+    }
+    return CByteSourceReader::Pushback(data, size);
+}
+
+size_t CMemoryByteSourceReader::GetNextPart(char** buffer, size_t /*copy_count*/)
+{
+    while ( m_CurrentChunk ) {
+        size_t avail = GetCurrentChunkAvailable();
+        if ( avail == 0 ) {
+            // End of current chunk
+            CConstRef<CMemoryChunk> rest = m_CurrentChunk->GetNextChunk();
+            m_CurrentChunk = rest;
+            m_CurrentChunkOffset = 0;
+        }
+        else {
+            size_t c = avail;
+            *buffer = const_cast<char*>(m_CurrentChunk->GetData(m_CurrentChunkOffset));
+            m_CurrentChunkOffset += c;
+            return c;
+        }
+    }
+    return 0;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CMemorySourceCollector
 /////////////////////////////////////////////////////////////////////////////
 
 CMemorySourceCollector::CMemorySourceCollector(CRef<CSubSourceCollector>
-                                               parent)
-    : CSubSourceCollector(parent)
+                                               parent, bool no_copy)
+    : CSubSourceCollector(parent),
+      m_CopyData(no_copy ? CMemoryChunk::eNoCopyData : CMemoryChunk::eCopyData)
 {
 }
 
@@ -644,7 +681,7 @@ void CMemorySourceCollector::AddChunk(const char* buffer,
                                       size_t bufferLength)
 {
     CSubSourceCollector::AddChunk(buffer, bufferLength);
-    m_LastChunk = new CMemoryChunk(buffer, bufferLength, m_LastChunk);
+    m_LastChunk = new CMemoryChunk(buffer, bufferLength, m_LastChunk, m_CopyData);
     if ( !m_FirstChunk ) {
         m_FirstChunk = m_LastChunk;
     }
