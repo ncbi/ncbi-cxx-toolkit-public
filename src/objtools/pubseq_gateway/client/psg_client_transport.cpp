@@ -602,7 +602,7 @@ SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestCont
     reply(r),
     context(c),
     m_State(&SPSG_Request::StatePrefix),
-    m_Retries(params.request_retries, params.refused_stream_retries)
+    m_Retries(params)
 {
     _ASSERT(reply);
 }
@@ -612,7 +612,7 @@ bool SPSG_Request::StatePrefix(const char*& data, size_t& len)
     static const string kPrefix = "\n\nPSG-Reply-Chunk: ";
 
     // No retries after receiving any data
-    m_Retries = make_pair(0u, 0u);
+    m_Retries.Zero();
 
     auto& index = m_Buffer.prefix_index;
 

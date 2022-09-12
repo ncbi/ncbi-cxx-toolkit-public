@@ -410,6 +410,28 @@ struct SPSG_Reply
     void SetFailed(string message, SState::EState state = SState::eError);
 };
 
+struct SPSG_Retries
+{
+    SPSG_Retries(const SPSG_Params& params) : SPSG_Retries(make_pair(params.request_retries, params.refused_stream_retries)) {}
+
+    unsigned Get(bool refused_stream, bool in_progress)
+    {
+        auto& values_pair = m_Values;
+        auto& values = refused_stream ? values_pair.second : values_pair.first;
+        return in_progress && values ? values-- : 0;
+    }
+
+    void Zero() { m_Values = TValues(); }
+
+private:
+    using TValuesPair = pair<unsigned, unsigned>;
+    using TValues = TValuesPair;
+
+    SPSG_Retries(const TValuesPair& values_pair) : m_Values(values_pair) {}
+
+    TValues m_Values;
+};
+
 struct SPSG_Request
 {
     const string full_path;
@@ -425,8 +447,7 @@ struct SPSG_Request
 
     unsigned GetRetries(bool refused_stream)
     {
-        auto& retries = refused_stream ? m_Retries.second : m_Retries.first;
-        return reply->reply_item->state.InProgress() && retries ? retries-- : 0;
+        return m_Retries.Get(refused_stream, reply->reply_item->state.InProgress());
     }
 
 private:
@@ -455,7 +476,7 @@ private:
 
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
-    pair<unsigned, unsigned> m_Retries;
+    SPSG_Retries m_Retries;
 };
 
 struct SPSG_TimedRequest
