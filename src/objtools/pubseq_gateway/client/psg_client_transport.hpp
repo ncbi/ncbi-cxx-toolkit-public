@@ -531,7 +531,7 @@ struct SPSG_Throttling
         EThrottling expected = eUntilDiscovery;
 
         if (m_Active.compare_exchange_strong(expected, eOff)) {
-            ERR_POST(Warning << "Disabling throttling for server " << m_Address.AsString() << " after wait and rediscovery");
+            ERR_POST(Warning << "Disabling throttling for server " << m_Address << " after wait and rediscovery");
         }
     }
 
@@ -566,7 +566,7 @@ private:
         that->m_Active.store(new_value);
 
         if (new_value == eOff) {
-            ERR_POST(Warning << "Disabling throttling for server " << that->m_Address.AsString() << " after wait");
+            ERR_POST(Warning << "Disabling throttling for server " << that->m_Address << " after wait");
         }
     }
 
