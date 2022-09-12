@@ -412,11 +412,13 @@ struct SPSG_Reply
 
 struct SPSG_Retries
 {
+    enum EType { eRetry, eFail };
+
     SPSG_Retries(const SPSG_Params& params) : SPSG_Retries(make_pair(params.request_retries, params.refused_stream_retries)) {}
 
-    unsigned Get(bool refused_stream, bool in_progress)
+    unsigned Get(EType type, bool refused_stream, bool in_progress)
     {
-        auto& values_pair = m_Values;
+        auto& values_pair = type == eRetry ? m_Values.first : m_Values.second;
         auto& values = refused_stream ? values_pair.second : values_pair.first;
         return in_progress && values ? values-- : 0;
     }
@@ -425,9 +427,9 @@ struct SPSG_Retries
 
 private:
     using TValuesPair = pair<unsigned, unsigned>;
-    using TValues = TValuesPair;
+    using TValues = pair<TValuesPair, TValuesPair>;
 
-    SPSG_Retries(const TValuesPair& values_pair) : m_Values(values_pair) {}
+    SPSG_Retries(const TValuesPair& values_pair) : m_Values(values_pair, values_pair) {}
 
     TValues m_Values;
 };
@@ -445,9 +447,9 @@ struct SPSG_Request
         while (len && (this->*m_State)(data, len));
     }
 
-    unsigned GetRetries(bool refused_stream)
+    unsigned GetRetries(SPSG_Retries::EType type, bool refused_stream)
     {
-        return m_Retries.Get(refused_stream, reply->reply_item->state.InProgress());
+        return m_Retries.Get(type, refused_stream, reply->reply_item->state.InProgress());
     }
 
 private:
@@ -500,7 +502,7 @@ struct SPSG_AsyncQueue : SUv_Async
         return m_Queue.PopMove(request);
     }
 
-    bool Push(TRequest&& request)
+    bool Push(TRequest request)
     {
         if (m_Queue.PushMove(request)) {
             Signal();
@@ -640,7 +642,15 @@ private:
         return it == m_Requests.end() ? nullptr : it->second.Get();
     }
 
-    bool Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    void Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    bool Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
+
+    bool RetryOrFail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
+    {
+        Retry(req, error, refused_stream);
+        return Fail(req, error, refused_stream);
+    }
+
     void EraseAndMoveToNext(TRequests::iterator& it);
 
     void OnReset(SUvNgHttp2_Error error) override;
