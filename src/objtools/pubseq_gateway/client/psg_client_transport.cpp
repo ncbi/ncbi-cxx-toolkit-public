@@ -892,21 +892,28 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     return 0;
 }
 
-bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
+void SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
+    SContextSetter setter(req->context);
+
+    if (auto retries = req->GetRetries(SPSG_Retries::eRetry, refused_stream)) {
+        // Return to queue for a re-send
+        if (m_Queue.Push(req)) {
+            req->reply->debug_printout << retries << error << endl;
+        }
+    }
+}
+
+bool SPSG_IoSession::Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
+{
+    if (req->GetRetries(SPSG_Retries::eFail, refused_stream)) {
+        return true;
+    }
+
     SContextSetter setter(req->context);
     server.throttling.AddFailure();
 
     auto& debug_printout = req->reply->debug_printout;
-    auto retries = req->GetRetries(refused_stream);
-
-    if (retries) {
-        // Return to queue for a re-send
-        if (m_Queue.Push(move(req))) {
-            debug_printout << retries << error << endl;
-            return true;
-        }
-    }
 
     debug_printout << error << endl;
     req->reply->SetFailed(error);
@@ -935,7 +942,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
         if (error_code) {
             auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
 
-            if (!Retry(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
+            if (!RetryOrFail(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
                 ERR_POST("Request for " << GetId() << " failed with " << error);
             }
         } else {
@@ -1003,7 +1010,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
         auto error(SUvNgHttp2_Error::FromNgHttp2(stream_id, "on submit"));
 
         // Do not reset all requests unless throttling has been activated
-        if (!Retry(req, error) && server.throttling.Active()) {
+        if (!RetryOrFail(req, error) && server.throttling.Active()) {
             Reset(move(error));
         }
 
@@ -1034,7 +1041,7 @@ void SPSG_IoSession::CheckRequestExpiration()
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         if (it->second.AddSecond() >= m_RequestTimeout) {
             if (auto req = it->second.Get()) {
-                Retry(req, error);
+                RetryOrFail(req, error);
             }
 
             EraseAndMoveToNext(it);
@@ -1050,7 +1057,7 @@ void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
 
     for (auto& pair : m_Requests) {
         if (auto req = pair.second.Get()) {
-            if (!Retry(req, error)) {
+            if (!RetryOrFail(req, error)) {
                 some_requests_failed = true;
             }
         }
