@@ -578,6 +578,9 @@ public:
     bool IsUnverifiedMisassembled (void);
     bool IsUnverifiedContaminant (void);
 
+    bool IsUnreviewed (void);
+    bool IsUnreviewedUnannotated (void);
+
     CTempString GetTargetedLocus (void);
 
     const string& GetComment (void);
@@ -768,6 +771,9 @@ private:
     bool m_IsUnverifiedContaminant;
     CTempString m_UnverifiedPrefix;
 
+    bool m_IsUnreviewed;
+    bool m_IsUnreviewedUnannotated;
+    CTempString m_UnreviewedPrefix;
     CTempString m_TargetedLocus;
 
     // Comment fields

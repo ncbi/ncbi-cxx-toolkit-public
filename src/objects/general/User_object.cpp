@@ -54,6 +54,8 @@ SAFE_CONST_STATIC_STRING(kUnverifiedMisassembled, "Misassembled");
 SAFE_CONST_STATIC_STRING(kUnverifiedFeature,      "Features");
 SAFE_CONST_STATIC_STRING(kUnverifiedContaminant, "Contaminant");
 
+SAFE_CONST_STATIC_STRING(kUnreviewedUnannotated, "Unannotated");
+
 
 // destructor
 CUser_object::~CUser_object(void)
@@ -600,6 +602,7 @@ static const char* kNcbiCleanup           = "NcbiCleanup";
 static const char* kAutoDefOptions        = "AutodefOptions";
 static const char* kFileTrack             = "FileTrack";
 static const char* kRefGeneTracking       = "RefGeneTracking";
+static const char* kUnreviewed            = "Unreviewed";
 
 typedef SStaticPair<const char*, CUser_object::EObjectType>  TObjectTypePair;
 static const TObjectTypePair k_object_type_map[] = {
@@ -610,6 +613,7 @@ static const TObjectTypePair k_object_type_map[] = {
     { kOriginalId, CUser_object::eObjectType_OriginalId },
     { kRefGeneTracking, CUser_object::eObjectType_RefGeneTracking },
     { kStructuredComment, CUser_object::eObjectType_StructuredComment },
+    { kUnreviewed, CUser_object::eObjectType_Unreviewed },
     { kUnverified, CUser_object::eObjectType_Unverified },
     { kValidationSuppression, CUser_object::eObjectType_ValidationSuppression }
 };
@@ -704,16 +708,82 @@ void CUser_object::x_RemoveUnverifiedType(const string& val)
         return;
     }
     CUser_object::TData::iterator it = SetData().begin();
-while (it != SetData().end()) {
-    if (x_IsUnverifiedType(val, **it)) {
-        it = SetData().erase(it);
-    } else {
-        it++;
+    while (it != SetData().end()) {
+        if (x_IsUnverifiedType(val, **it)) {
+            it = SetData().erase(it);
+        } else {
+            it++;
+        }
+    }
+    if (GetData().empty()) {
+        ResetData();
     }
 }
-if (GetData().empty()) {
-    ResetData();
+
+
+bool CUser_object::x_IsUnreviewedType(const string& val, const CUser_field& field) const
+{
+    if (field.IsSetLabel() && field.GetLabel().IsStr()
+        && NStr::Equal(field.GetLabel().GetStr(), "Type")
+        && field.IsSetData()
+        && field.GetData().IsStr()
+        && NStr::Equal(field.GetData().GetStr(), val)) {
+        return true;
+    } else {
+        return false;
+    }
 }
+
+
+bool CUser_object::x_IsUnreviewedType(const string& val) const
+{
+    if (GetObjectType() != eObjectType_Unreviewed) {
+        return false;
+    }
+    if (!IsSetData()) {
+        return false;
+    }
+    bool found = false;
+
+    ITERATE(CUser_object::TData, it, GetData()) {
+        if (x_IsUnreviewedType(val, **it)) {
+            found = true;
+        }
+    }
+    return found;
+}
+
+
+void CUser_object::x_AddUnreviewedType(const string& val)
+{
+    SetObjectType(eObjectType_Unreviewed);
+    if (x_IsUnreviewedType(val)) {
+        // value already set, nothing to do
+        return;
+    }
+    AddField("Type", val);
+}
+
+
+void CUser_object::x_RemoveUnreviewedType(const string& val)
+{
+    if (GetObjectType() != eObjectType_Unreviewed) {
+        return;
+    }
+    if (!IsSetData()) {
+        return;
+    }
+    CUser_object::TData::iterator it = SetData().begin();
+    while (it != SetData().end()) {
+        if (x_IsUnreviewedType(val, **it)) {
+            it = SetData().erase(it);
+        } else {
+            it++;
+        }
+    }
+    if (GetData().empty()) {
+        ResetData();
+    }
 }
 
 
@@ -786,6 +856,24 @@ void CUser_object::AddUnverifiedContaminant()
 void CUser_object::RemoveUnverifiedContaminant()
 {
     x_RemoveUnverifiedType(kUnverifiedContaminant.Get());
+}
+
+
+bool CUser_object::IsUnreviewedUnannotated() const
+{
+    return x_IsUnreviewedType(kUnreviewedUnannotated.Get());
+}
+
+
+void CUser_object::AddUnreviewedUnannotated()
+{
+    x_AddUnreviewedType(kUnreviewedUnannotated.Get());
+}
+
+
+void CUser_object::RemoveUnreviewedUnannotated()
+{
+    x_RemoveUnreviewedType(kUnreviewedUnannotated.Get());
 }
 
 
