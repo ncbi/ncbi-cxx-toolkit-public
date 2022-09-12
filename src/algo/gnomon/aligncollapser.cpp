@@ -195,6 +195,7 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
 
     arg_desc->AddFlag("filtersr","Filter SR");
     arg_desc->AddFlag("filterest","Filter EST");
+    arg_desc->AddFlag("no_lr_only_introns","Filter introns supported only by LR");
     arg_desc->AddFlag("filtermrna","Filter mRNA");
     arg_desc->AddFlag("filterprots","Filter proteins");
     arg_desc->AddFlag("collapsest","Collaps EST");
@@ -303,6 +304,7 @@ CAlignCollapser::CAlignCollapser(string contig, CScope* scope, bool nofilteringc
     } else {
         m_filtersr = args["filtersr"];
         m_filterest = args["filterest"];
+        m_no_lr_only_introns = args["no_lr_only_introns"];
         m_filtermrna = args["filtermrna"];
         m_filterprots = args["filterprots"];
         m_collapsest = args["collapsest"];
@@ -1073,7 +1075,8 @@ void CAlignCollapser::FilterAlignments() {
             SIntronData& data = it->second;
             auto& rslt = intervals[intron.m_range];
             get<0>(rslt) += data.m_weight;
-            if(data.m_not_long || data.m_ident >= m_minident)
+            bool not_long = data.m_sr_support > 0 || data.m_other_support > 0;
+            if(not_long || data.m_ident >= m_minident)
                 get<1>(rslt) = true;
         }
 
@@ -1185,14 +1188,8 @@ void CAlignCollapser::FilterAlignments() {
         bool bad_intron = false;
         SIntronData& id = intron->second;
 
-        if(id.m_selfsp_support) {
-            /*
-            if(id.m_est_support >= minest)
-                id.m_keep_anyway = true;
-            */
-        } else {
-            bad_intron = true;
-        }
+        if(!id.m_selfsp_support)
+            bad_intron = true;        
 
         if(id.m_keep_anyway)
             continue;
@@ -1207,11 +1204,6 @@ void CAlignCollapser::FilterAlignments() {
             if(id.m_weight < minnonconsensussupport)
                 bad_intron = true;
         }
-
-        /* not included in AddAlignment
-        if(id.m_ident < minident && id.m_not_long)
-            bad_intron = true;
-        */
 
         if(bad_intron)
             m_align_introns.erase(intron);
@@ -2611,7 +2603,7 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
                 id.m_keep_anyway = true;
             }
 
-            if((align.Type()&CGeneModel::eSR) || long_read || 
+            if((align.Type()&CGeneModel::eSR) || (long_read && !m_no_lr_only_introns) || 
                (align.Status()&CGeneModel::eGapFiller && sig == "GTAG" && 
                 e[l-1].Limits().GetLength() > 15 && e[l-1].m_ident > 0.99 && 
                 e[l].Limits().GetLength() > 15 && e[l].m_ident > 0.99)) {
@@ -2619,13 +2611,14 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
                 id.m_selfsp_support = true;
             }
 
-            if(!long_read)
-                id.m_not_long = true;
+            if(align.Type()&CGeneModel::eSR)
+                id.m_sr_support += align.Weight()+0.5;
+            else if(align.Type()&CGeneModel::eEST)
+                id.m_est_support += align.Weight()+0.5;
+            else
+                id.m_other_support += align.Weight()+0.5;
 
             id.m_weight += align.Weight();
-
-            if(align.Type()&(CGeneModel::eEST|CGeneModel::emRNA))
-                id.m_est_support += align.Weight()+0.5;
 
             id.m_ident = max(id.m_ident,ident);
         }

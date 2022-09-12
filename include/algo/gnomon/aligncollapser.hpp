@@ -142,13 +142,13 @@ public:
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
     struct SIntronData {
-        SIntronData() : m_weight(0.), m_ident(0.), m_est_support(0), m_keep_anyway(false), m_selfsp_support(false), m_not_long(false) {}
-        double m_weight;
-        double m_ident;
-        int m_est_support;
-        bool m_keep_anyway;
-        bool m_selfsp_support;
-        bool m_not_long;
+        double m_weight = 0.;
+        double m_ident = 0.;
+        int m_sr_support = 0;
+        int m_est_support = 0;
+        int m_other_support = 0;
+        bool m_keep_anyway = false;
+        bool m_selfsp_support = false;
     };
     typedef map<SIntron,SIntronData> TAlignIntrons;
 
@@ -213,6 +213,7 @@ private:
     int m_long_read_count;
     bool m_filtersr;
     bool m_filterest;
+    bool m_no_lr_only_introns;
     bool m_collapsest;
     bool m_collapssr;
     bool m_filtermrna;
