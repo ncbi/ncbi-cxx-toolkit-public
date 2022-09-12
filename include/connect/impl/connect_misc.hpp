@@ -76,6 +76,8 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
     string AsString() const { return GetHostName() + ':' + NStr::UIntToString(port); }
 
     static SSocketAddress Parse(const string& address);
+
+    friend ostream& operator<<(ostream& os, const SSocketAddress& address) { return os << address.AsString(); }
 };
 
 NCBI_XCONNECT_EXPORT bool operator==(const SSocketAddress& lhs, const SSocketAddress& rhs);
