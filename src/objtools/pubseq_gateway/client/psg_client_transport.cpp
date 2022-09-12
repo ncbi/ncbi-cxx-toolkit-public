@@ -139,13 +139,14 @@ struct SContextSetter
     void operator=(const SContextSetter&) = delete;
 };
 
-void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip)
+void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip, SUv_Tcp::TPort port)
 {
-    if (ip.empty()) {
-        ERR_POST(Message << id << ": " << address << path << ";SID=" << sid << ";PHID=" << phid);
-    } else {
-        ERR_POST(Message << id << ": " << address << path << ";SID=" << sid << ";PHID=" << phid << ";IP=" << ip);
-    }
+    ostringstream os;
+
+    if (!ip.empty()) os << ";IP=" << ip;
+    if (port)        os << ";PORT=" << port;
+
+    ERR_POST(Message << id << ": " << address << path << ";SID=" << sid << ";PHID=" << phid << os.str());
 }
 
 void SDebugPrintout::Print(const SPSG_Args& args, const SPSG_Chunk& chunk)
@@ -1009,7 +1010,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
         return false;
     }
 
-    req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << endl;
+    req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << m_Tcp.GetLocalPort() << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
     m_Requests.emplace(stream_id, move(req));
     return Send();

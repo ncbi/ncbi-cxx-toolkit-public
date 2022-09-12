@@ -262,7 +262,7 @@ private:
         m_Events.emplace_back(ms, type, thread_id);
     }
 
-    void Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip);
+    void Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip, SUv_Tcp::TPort port);
     void Print(const SPSG_Args& args, const SPSG_Chunk& chunk);
     void Print(uint32_t error_code);
     void Print(unsigned retries, const SUvNgHttp2_Error& error);
