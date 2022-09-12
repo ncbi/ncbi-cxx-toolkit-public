@@ -251,7 +251,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
 
-        x_PrintRequestStop(request, status_code);
+        x_PrintRequestStop(request, status_code, reply->GetBytesSent());
     } else {
         auto *  grp = procs.release();
         pair<size_t,
@@ -661,7 +661,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             // IsFinished() will return true
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
             reply->SetCompleted();
-            x_PrintRequestStop(request, request_status);
+            x_PrintRequestStop(request, request_status, reply->GetBytesSent());
         }
     }
 
@@ -721,7 +721,8 @@ void CPSGS_Dispatcher::SignalConnectionCanceled(size_t      request_id)
 
 
 void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
-                                          CRequestStatus::ECode  status)
+                                          CRequestStatus::ECode  status,
+                                          size_t  bytes_sent)
 {
     auto &  counters = CPubseqGatewayApp::GetInstance()->GetCounters();
     counters.IncrementRequestStopCounter(status);
@@ -752,6 +753,7 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
     if (request->GetRequestContext().NotNull()) {
         request->SetRequestContext();
         CDiagContext::GetRequestContext().SetRequestStatus(status);
+        CDiagContext::GetRequestContext().SetBytesWr(bytes_sent);
         GetDiagContext().PrintRequestStop();
         CDiagContext::GetRequestContext().Reset();
         CDiagContext::SetRequestContext(NULL);

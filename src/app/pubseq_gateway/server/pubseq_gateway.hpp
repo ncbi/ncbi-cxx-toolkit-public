@@ -367,7 +367,8 @@ private:
     void x_ValidateArgs(void);
     string  x_GetCmdLineArguments(void) const;
     CRef<CRequestContext>  x_CreateRequestContext(CHttpRequest &  req) const;
-    void x_PrintRequestStop(CRef<CRequestContext>  context, int  status);
+    void x_PrintRequestStop(CRef<CRequestContext>  context, int  status,
+                            size_t  bytes_sent);
 
     SRequestParameter  x_GetParam(CHttpRequest &  req,
                                   const string &  name) const;

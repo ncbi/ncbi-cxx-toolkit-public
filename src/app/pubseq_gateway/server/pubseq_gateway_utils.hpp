@@ -351,6 +351,7 @@ long PSGToString(long  value, char *  buf);
 
 CRef<CRequestContext> CreateErrorRequestContext(void);
 void DismissErrorRequestContext(CRef<CRequestContext>   context,
-                                int  status);
+                                int  status,
+                                size_t  bytes_sent);
 
 #endif
