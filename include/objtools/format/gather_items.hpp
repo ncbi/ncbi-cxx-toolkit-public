@@ -177,6 +177,7 @@ protected:
     void x_RemoveExcessNewlines(void) const;
     void x_FlushComments(void) const;
     void x_UnverifiedComment(CBioseqContext& ctx) const;
+    void x_UnreviewedComment(CBioseqContext& ctx) const;
     void x_AuthorizedAccessComment(CBioseqContext& ctx) const;
     void x_MapComment(CBioseqContext& ctx) const;
     void x_BasemodComment(CBioseqContext& ctx) const;

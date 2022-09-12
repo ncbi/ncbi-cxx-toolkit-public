@@ -122,6 +122,7 @@ CBioseqContext::CBioseqContext
     m_IsCrossKingdom(false),
     m_UsePDBCompoundForComment(false),
     m_fUnverified(fUnverified_None),
+    m_fUnreviewed(fUnreviewed_None),
     m_ShowAnnotCommentAsCOMMENT(false),
     m_ShowAnnotCommentAsCOMMENT_checked(false),
     m_FFCtx(ffctx),
@@ -185,6 +186,7 @@ CBioseqContext::CBioseqContext
     m_IsCrossKingdom(false),
     m_UsePDBCompoundForComment(false),
     m_fUnverified(fUnverified_None),
+    m_fUnreviewed(fUnreviewed_None),
     m_ShowAnnotCommentAsCOMMENT(false),
     m_ShowAnnotCommentAsCOMMENT_checked(false),
     m_FFCtx(ffctx),
@@ -655,6 +657,10 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                 // default in the past was to use feature
                 if( m_fUnverified == fUnverified_None ) {
                     m_fUnverified = fUnverified_SequenceOrAnnotation;
+                }
+            } else if (utype == CUser_object::eObjectType_Unreviewed) {
+                if (uo.IsUnreviewedUnannotated()) {
+                    m_fUnreviewed |= fUnreviewed_Unannotated;
                 }
             } else if ( utype == CUser_object::eObjectType_FileTrack ) {
                 x_SetFiletrackURL(uo);

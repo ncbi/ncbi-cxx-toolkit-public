@@ -168,7 +168,8 @@ public:
         eObjectType_Cleanup,
         eObjectType_AutodefOptions,
         eObjectType_FileTrack,
-        eObjectType_RefGeneTracking
+        eObjectType_RefGeneTracking,
+        eObjectType_Unreviewed
     };
 
     EObjectType GetObjectType() const;
@@ -182,6 +183,7 @@ public:
     bool IsAutodefOptions() const { return GetObjectType() == eObjectType_AutodefOptions; }
     bool IsFileTrack() const { return GetObjectType() == eObjectType_FileTrack; }
     bool IsRefGeneTracking() const { return GetObjectType() == eObjectType_RefGeneTracking; }
+    bool IsUnreviewed() const { return GetObjectType() == eObjectType_Unreviewed; }
 
     // for Unverified User-objects: Can have Organism and/or Feature and/or Misassembled
     bool IsUnverifiedOrganism() const;
@@ -196,6 +198,11 @@ public:
     bool IsUnverifiedContaminant() const;
     void AddUnverifiedContaminant();
     void RemoveUnverifiedContaminant();
+
+    // for Unreviewed User-objects: Can have Unannotated
+    bool IsUnreviewedUnannotated() const;
+    void AddUnreviewedUnannotated();
+    void RemoveUnreviewedUnannotated();
 
     void UpdateNcbiCleanup(int version);
 
@@ -347,6 +354,11 @@ private:
     bool x_IsUnverifiedType(const string& val, const CUser_field& field) const;
     void x_AddUnverifiedType(const string& val);
     void x_RemoveUnverifiedType(const string& val);
+
+    bool x_IsUnreviewedType(const string& val) const;
+    bool x_IsUnreviewedType(const string& val, const CUser_field& field) const;
+    void x_AddUnreviewedType(const string& val);
+    void x_RemoveUnreviewedType(const string& val);
 
     // for RefGeneTracking
     void x_SetRefGeneTrackingField(const string& field_name, const string& value);

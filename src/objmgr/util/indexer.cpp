@@ -915,6 +915,9 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_IsUnverifiedMisassembled = false;
     m_IsUnverifiedContaminant = false;
 
+    m_IsUnreviewed = false;
+    m_IsUnreviewedUnannotated = false;
+
     m_TargetedLocus.clear();
 
     m_Comment.clear();
@@ -1744,6 +1747,11 @@ void CBioseqIndex::x_InitDescs (void)
                                 }
                                 if (usr.IsUnverifiedFeature()) {
                                     m_IsUnverifiedFeature = true;
+                                }
+                            } else if (NStr::EqualNocase(type, "Unreviewed")) {
+                                m_IsUnreviewed = true;
+                                if (usr.IsUnreviewedUnannotated()) {
+                                    m_IsUnreviewedUnannotated = true;
                                 }
                             } else if (NStr::EqualNocase(type, "AutodefOptions")) {
                                 FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
@@ -2917,6 +2925,26 @@ bool CBioseqIndex::IsUnverifiedContaminant (void)
     }
 
     return m_IsUnverifiedContaminant;
+}
+
+bool CBioseqIndex::IsUnreviewed (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsUnreviewed;
+}
+
+bool CBioseqIndex::IsUnreviewedUnannotated (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsUnreviewedUnannotated;
 }
 
 CTempString CBioseqIndex::GetTargetedLocus (void)
