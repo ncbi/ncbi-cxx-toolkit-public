@@ -483,8 +483,7 @@ struct SPSG_TimedRequest
 {
     SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Request(move(r)) {}
 
-    shared_ptr<SPSG_Request> operator->() { m_Seconds = 0; return m_Request; }
-    operator shared_ptr<SPSG_Request>()   { m_Seconds = 0; return m_Request; }
+    auto Get() { m_Seconds = 0; return m_Request; }
     unsigned AddSecond() { return m_Seconds++; }
 
 private:
@@ -634,6 +633,12 @@ private:
     enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
 
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
+
+    auto GetRequest(int32_t stream_id)
+    {
+        auto it = m_Requests.find(stream_id);
+        return it == m_Requests.end() ? nullptr : it->second.Get();
+    }
 
     bool Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
     void EraseAndMoveToNext(TRequests::iterator& it);

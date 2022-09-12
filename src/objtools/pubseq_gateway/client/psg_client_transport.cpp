@@ -884,10 +884,9 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
 int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const uint8_t* data, size_t len)
 {
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " received: " << len);
-    auto it = m_Requests.find(stream_id);
 
-    if (it != m_Requests.end()) {
-        it->second->OnReplyData((const char*)data, len);
+    if (auto req = GetRequest(stream_id)) {
+        req->OnReplyData((const char*)data, len);
     }
 
     return 0;
@@ -922,7 +921,11 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
     auto it = m_Requests.find(stream_id);
 
     if (it != m_Requests.end()) {
-        auto& req = it->second;
+        auto req = it->second.Get();
+        EraseAndMoveToNext(it);
+
+        if (!req) return 0;
+
         auto& debug_printout = req->reply->debug_printout;
 
         SContextSetter setter(req->context);
@@ -941,8 +944,6 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
             PSG_THROTTLING_TRACE("Server '" << GetId() << "' processed request '" <<
                     debug_printout.id << "' successfully");
         }
-
-        EraseAndMoveToNext(it);
     }
 
     return 0;
@@ -958,15 +959,14 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
         auto status_str = reinterpret_cast<const char*>(value);
 
         PSG_IO_SESSION_TRACE(this << '/' << stream_id << " status: " << status_str);
-        auto it = m_Requests.find(stream_id);
 
-        if (it != m_Requests.end()) {
+        if (auto req = GetRequest(stream_id)) {
             const auto status = static_cast<CRequestStatus::ECode>(atoi(status_str));
             const auto state = SPSG_Reply::SState::FromRequestStatus(status);
 
             if (state != SPSG_Reply::SState::eSuccess) {
                 const auto error = to_string(status) + ' ' + CRequestStatus::GetStdStatusMessage(status);
-                it->second->reply->SetFailed(error, state);
+                req->reply->SetFailed(error, state);
             }
         }
     }
@@ -1033,7 +1033,10 @@ void SPSG_IoSession::CheckRequestExpiration()
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         if (it->second.AddSecond() >= m_RequestTimeout) {
-            Retry(it->second, error);
+            if (auto req = it->second.Get()) {
+                Retry(req, error);
+            }
+
             EraseAndMoveToNext(it);
         } else {
             ++it;
@@ -1046,8 +1049,10 @@ void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
     bool some_requests_failed = false;
 
     for (auto& pair : m_Requests) {
-        if (!Retry(pair.second, error)) {
-            some_requests_failed = true;
+        if (auto req = pair.second.Get()) {
+            if (!Retry(req, error)) {
+                some_requests_failed = true;
+            }
         }
     }
 
