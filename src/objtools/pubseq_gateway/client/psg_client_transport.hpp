@@ -615,7 +615,7 @@ private:
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
     bool Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
-    void RequestComplete(TRequests::iterator& it);
+    void EraseAndMoveToNext(TRequests::iterator& it);
 
     void OnReset(SUvNgHttp2_Error error) override;
 
