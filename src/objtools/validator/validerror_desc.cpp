@@ -496,10 +496,11 @@ bool report)
 }
 
 bool CValidError_desc::x_ValidateStructuredCommentSuffix(
+const string& prefix,
 const CUser_field& suffix,
 const CSeqdesc& desc,
 bool report)
-{   // not an error if suffix data isn't set - simply ignore.
+{   // The suffix may be empty. However, If it isn't empty, it must match the prefix.
     if (!suffix.IsSetData() ||  !suffix.GetData().IsStr()) {
         return true;
     }
@@ -508,13 +509,13 @@ bool report)
     string sfx = report_sfx;
     CComment_rule::NormalizePrefix(sfx);
 
-    if (s_IsAllowedPrefix (sfx)) {
+    if (NStr::IsBlank(sfx) || NStr::Equal(sfx, prefix)) {
         return true;
     }
-    
+
     if (report) {
         PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix,
-                report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
+                "StructuredCommentSuffix '" + report_sfx + "' does not match prefix", *m_Ctx, desc);
     } 
 
     return false;
@@ -575,14 +576,13 @@ bool CValidError_desc::x_ValidateStructuredComment
         return false;
     }
 
-    // find prefix
-    if (prefix == "HumanSTR" && usr.HasField("Bracketed record seq.", "")) {
-        prefix = "HumanSTRv2";
-    }
     try {
         CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
         if (comment_rules) {
-            CConstRef<CComment_rule> pRule = comment_rules->FindCommentRuleEx(prefix);
+            const bool isV2Prefix = 
+                (prefix == "HumanSTR" && usr.HasField("Bracketed record seq.", ""));
+            const string queryPrefix = isV2Prefix ? "HumanSTRv2" : prefix;
+            CConstRef<CComment_rule> pRule = comment_rules->FindCommentRuleEx(queryPrefix);
             if (pRule) {
                 is_valid &= x_ValidateStructuredCommentUsingRule(*pRule, desc, report);
             } else {
@@ -595,7 +595,7 @@ bool CValidError_desc::x_ValidateStructuredComment
         }
         
         if (auto pSuffix = usr.GetFieldRef("StructuredCommentSuffix"); pSuffix) {
-            is_valid &= x_ValidateStructuredCommentSuffix(*pSuffix, desc, report);
+            is_valid &= x_ValidateStructuredCommentSuffix(prefix, *pSuffix, desc, report);
             if (!report && !is_valid) {
                 return false;
             }
