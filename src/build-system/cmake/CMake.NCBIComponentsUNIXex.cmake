@@ -75,7 +75,7 @@ set(NCBI_ThirdParty_XALAN         ${NCBI_TOOLS_ROOT}/xalan-1.11 CACHE PATH "XALA
 set(NCBI_ThirdParty_GPG           ${NCBI_TOOLS_ROOT}/libgpg-error-1.6 CACHE PATH "GPG root")
 set(NCBI_ThirdParty_GCRYPT        ${NCBI_TOOLS_ROOT}/libgcrypt-1.4.3 CACHE PATH "GCRYPT root")
 set(NCBI_ThirdParty_MSGSL         ${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94 CACHE PATH "MSGSL root")
-set(NCBI_ThirdParty_SGE           "/netmnt/gridengine/current" CACHE PATH "SGE root")
+set(NCBI_ThirdParty_SGE           "/netmnt/gridengine/current/drmaa" CACHE PATH "SGE root")
 set(NCBI_ThirdParty_MONGOCXX      ${NCBI_TOOLS_ROOT}/mongodb-3.6.3 CACHE PATH "MONGOCXX root")
 set(NCBI_ThirdParty_MONGOC        ${NCBI_TOOLS_ROOT}/mongo-c-driver-1.17.5 CACHE PATH "MONGOC root")
 set(NCBI_ThirdParty_LEVELDB       ${NCBI_TOOLS_ROOT}/leveldb-1.21 CACHE PATH "LEVELDB root")
@@ -736,7 +736,7 @@ NCBIcomponent_report(MSGSL)
 
 #############################################################################
 # SGE  (Sun Grid Engine)
-NCBI_define_Xcomponent(NAME SGE LIB drmaa LIBPATH_SUFFIX drmaa/lib/lx-amd64)
+NCBI_define_Xcomponent(NAME SGE LIB drmaa LIBPATH_SUFFIX lib/lx-amd64)
 NCBIcomponent_report(SGE)
 
 #############################################################################
