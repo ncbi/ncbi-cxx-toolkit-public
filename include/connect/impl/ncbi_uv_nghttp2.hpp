@@ -159,6 +159,7 @@ private:
 
 struct NCBI_XXCONNECT2_EXPORT SUv_Tcp : SUv_Handle<uv_tcp_t>
 {
+    using TPort = unsigned short;
     enum ECloseType { eNormalClose, eCloseReset };
 
     using TConnectCb = function<void(int)>;
@@ -172,6 +173,7 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Tcp : SUv_Handle<uv_tcp_t>
     void Close(ECloseType close_type = eCloseReset);
 
     vector<char>& GetWriteBuffer() { return m_Write.GetBuffer(); }
+    TPort GetLocalPort() const { return m_LocalPort; }
 
 private:
     enum EState {
@@ -209,6 +211,7 @@ private:
     vector<char> m_ReadBuffer;
     SUv_Connect m_Connect;
     SUv_Write m_Write;
+    TPort m_LocalPort = 0;
     TConnectCb m_ConnectCb;
     TReadCb m_ReadCb;
     TWriteCb m_WriteCb;
@@ -443,6 +446,12 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_Tls
 
 struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 {
+    struct SId : private pair<const string&, SUv_Tcp::TPort>
+    {
+        using pair<const string&, SUv_Tcp::TPort>::pair;
+        friend ostream& operator<<(ostream& os, const SId& id) { os << id.first; return id.second ? os << "(:" << id.second << ')' : os; }
+    };
+
     using TAddrNCred = SUvNgHttp2_Tls::TAddrNCred;
 
     template <class ...TArgs>
@@ -450,7 +459,7 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 
     virtual ~SUvNgHttp2_SessionBase() {}
 
-    const string& GetId() const { return m_Authority; }
+    SId GetId() const { return { m_Authority, m_Tcp.GetLocalPort() }; }
     void Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type = SUv_Tcp::eCloseReset);
 
 protected:

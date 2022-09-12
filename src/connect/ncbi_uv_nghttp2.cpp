@@ -317,10 +317,24 @@ void SUv_Tcp::OnConnect(uv_connect_t*, int status)
             status = uv_read_start((uv_stream_t*)this, s_OnAlloc, s_OnRead);
 
             if (status >= 0) {
-                NCBI_UV_TCP_TRACE(this << " connected");
-                m_State = eConnected;
-                m_ConnectCb(status);
-                return;
+                struct sockaddr_storage name;
+                auto namelen = static_cast<int>(sizeof(name));
+
+                status = uv_tcp_getsockname(this, reinterpret_cast<sockaddr*>(&name), &namelen);
+
+                if (status >= 0) {
+                    if (name.ss_family == AF_INET) {
+                        auto sin = reinterpret_cast<sockaddr_in*>(&name);
+                        m_LocalPort = CSocketAPI::NetToHostShort(sin->sin_port);
+                    }
+
+                    NCBI_UV_TCP_TRACE(this << " connected: " << m_LocalPort);
+                    m_State = eConnected;
+                    m_ConnectCb(status);
+                    return;
+                } else {
+                    NCBI_UV_TCP_TRACE(this << " getsockname failed: " << SUvNgHttp2_Error::LibuvStr(status));
+                }
             } else {
                 NCBI_UV_TCP_TRACE(this << " read start failed: " << SUvNgHttp2_Error::LibuvStr(status));
             }
