@@ -1028,7 +1028,8 @@ void SPSG_IoSession::RequestComplete(TRequests::iterator& it)
 
 void SPSG_IoSession::CheckRequestExpiration()
 {
-    const SUvNgHttp2_Error error("Request timeout");
+    SUvNgHttp2_Error error;
+    error << "Request timeout for " << GetId();
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         if (it->second.AddSecond() >= m_RequestTimeout) {

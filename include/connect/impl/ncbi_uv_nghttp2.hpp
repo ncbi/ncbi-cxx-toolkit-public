@@ -56,7 +56,7 @@ struct SUvNgHttp2_Error
         friend ostream& operator<<(ostream& os, const SMbedTlsStr& str) { return os << str.data(); }
     };
 
-    SUvNgHttp2_Error(const char* m) : m_Value("error: ") { m_Value += m; }
+    SUvNgHttp2_Error(const char* m = "") { m_Value << "error: " << m; }
 
     template <typename T>
     static SUvNgHttp2_Error FromNgHttp2(T e, const char* w) { return { "nghttp2 error: ", NgHttp2Str<T>, e, w }; }
@@ -79,20 +79,21 @@ struct SUvNgHttp2_Error
     template <typename T, enable_if_t<is_signed<T>::value, T> = 0>
     static SMbedTlsStr MbedTlsStr(T e) { SMbedTlsStr str; str(e); return str; }
 
-    operator string() const { return m_Value; }
+    operator string() const { return m_Value.str(); }
 
-    friend ostream& operator<<(ostream& os, const SUvNgHttp2_Error& error) { return os << error.m_Value; }
+    template <typename T>
+    SUvNgHttp2_Error& operator<<(T&& v) { m_Value << forward<T>(v); return *this; }
+
+    friend ostream& operator<<(ostream& os, const SUvNgHttp2_Error& error) { return os << error.m_Value.str(); }
 
 private:
     template <typename TFunc, typename T>
     SUvNgHttp2_Error(const char* t, TFunc f, T e, const char* w)
     {
-        stringstream os;
-        os << t << f(e) << " (" << e << ") " << w;
-        m_Value = os.str();
+        m_Value << t << f(e) << " (" << e << ") " << w;
     };
 
-    string m_Value;
+    stringstream m_Value;
 };
 
 template <typename THandle>
