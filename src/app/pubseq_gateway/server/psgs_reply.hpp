@@ -110,6 +110,8 @@ public:
     void Clear(void);
     void SetContentType(EPSGS_ReplyMimeType  mime_type);
     void SetContentLength(uint64_t  content_length);
+    size_t GetBytesSent(void) const;
+
     void SendOk(const char *  payload, size_t  payload_len, bool  is_persist);
     void Send202(const char *  payload, size_t  payload_len);
     void Send400(const char *  payload);

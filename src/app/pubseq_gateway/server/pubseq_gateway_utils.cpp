@@ -1427,12 +1427,13 @@ CRef<CRequestContext> CreateErrorRequestContext(void)
 
 
 void DismissErrorRequestContext(CRef<CRequestContext>   context,
-                                int  status)
+                                int  status, size_t  bytes_sent)
 {
     if (context.NotNull()) {
         CDiagContext::SetRequestContext(context);
         context->SetReadOnly(false);
         context->SetRequestStatus(status);
+        context->SetBytesWr(bytes_sent);
         GetDiagContext().PrintRequestStop();
         context.Reset();
         CDiagContext::SetRequestContext(NULL);

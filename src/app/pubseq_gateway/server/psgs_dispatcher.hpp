@@ -126,7 +126,8 @@ public:
 
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
-                            CRequestStatus::ECode  status);
+                            CRequestStatus::ECode  status,
+                            size_t  bytes_sent);
     CRequestStatus::ECode
     x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const;
     void x_SendTrace(const string &  msg,

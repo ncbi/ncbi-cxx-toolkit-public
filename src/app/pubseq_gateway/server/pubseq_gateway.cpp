@@ -1058,7 +1058,7 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
 
 
 void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
-                                           int  status)
+                                           int  status, size_t  bytes_sent)
 {
     GetCounters().IncrementRequestStopCounter(status);
 
@@ -1066,6 +1066,7 @@ void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
         CDiagContext::SetRequestContext(context);
         context->SetReadOnly(false);
         context->SetRequestStatus(status);
+        context->SetBytesWr(bytes_sent);
         GetDiagContext().PrintRequestStop();
         context.Reset();
         CDiagContext::SetRequestContext(NULL);

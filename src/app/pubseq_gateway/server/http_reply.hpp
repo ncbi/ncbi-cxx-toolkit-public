@@ -145,6 +145,13 @@ public:
         m_ReplyContentType = mime_type;
     }
 
+    size_t GetBytesSent(void) const
+    {
+        if (m_Req)
+            return m_Req->bytes_sent;
+        return 0;
+    }
+
     void Send(const char *  payload, size_t  payload_len,
               bool  is_persist, bool  is_last)
     {

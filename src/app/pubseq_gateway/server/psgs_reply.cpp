@@ -155,6 +155,14 @@ void CPSGS_Reply::SetContentLength(uint64_t  content_length)
 }
 
 
+size_t CPSGS_Reply::GetBytesSent(void) const
+{
+    if (m_Reply)
+        return m_Reply->GetBytesSent();
+    return 0;
+}
+
+
 void CPSGS_Reply::SendOk(const char *  payload, size_t  payload_len, bool  is_persist)
 {
     if (m_ConnectionCanceled || IsFinished())

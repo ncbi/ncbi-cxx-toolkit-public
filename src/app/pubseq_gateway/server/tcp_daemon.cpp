@@ -515,7 +515,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,
-                                   CRequestStatus::e503_ServiceUnavailable);
+                                   CRequestStatus::e503_ServiceUnavailable, 0);
         return;
     }
 
@@ -535,7 +535,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,
-                                   CRequestStatus::e503_ServiceUnavailable);
+                                   CRequestStatus::e503_ServiceUnavailable, 0);
 
         uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
         return;
@@ -555,7 +555,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,
-                                   CRequestStatus::e503_ServiceUnavailable);
+                                   CRequestStatus::e503_ServiceUnavailable, 0);
 
         uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
         return;
