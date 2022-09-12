@@ -3,7 +3,11 @@
 NCBI_begin_app(test_compress_archive)
   NCBI_sources(test_compress_archive)
   NCBI_uses_toolkit_libraries(xcompress)
-  NCBI_add_test(test_compress_archive test all)
+
+  NCBI_begin_test(test_compress_archive)
+    NCBI_add_test(test_compress_archive test all)
+  NCBI_end_test()
+
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
 
