@@ -942,7 +942,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
                     debug_printout.id << "' successfully");
         }
 
-        RequestComplete(it);
+        EraseAndMoveToNext(it);
     }
 
     return 0;
@@ -1016,7 +1016,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
     return Send();
 }
 
-void SPSG_IoSession::RequestComplete(TRequests::iterator& it)
+void SPSG_IoSession::EraseAndMoveToNext(TRequests::iterator& it)
 {
     if (IsFull()) {
         // Continue processing of requests in the IO thread queue on next UV loop iteration
@@ -1034,7 +1034,7 @@ void SPSG_IoSession::CheckRequestExpiration()
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         if (it->second.AddSecond() >= m_RequestTimeout) {
             Retry(it->second, error);
-            RequestComplete(it);
+            EraseAndMoveToNext(it);
         } else {
             ++it;
         }
