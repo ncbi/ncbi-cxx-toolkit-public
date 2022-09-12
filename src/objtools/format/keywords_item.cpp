@@ -363,6 +363,15 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         x_AddKeyword("UNVERIFIED_CONTAMINANT");
     }
 
+    CBioseqContext::TUnreviewed urv = ctx.GetUnreviewedType();
+    if (urv == 0) {
+        x_AddKeyword("UNREVIEWED");
+    }
+    if ((urv & CBioseqContext::fUnreviewed_Unannotated) != 0) {
+        x_AddKeyword("UNREVIEWED");
+        x_AddKeyword("UNREVIEWED_UNANNOTATED");
+    }
+
     if (ctx.IsEncode()) {
         x_AddKeyword("ENCODE");
     }

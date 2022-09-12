@@ -229,6 +229,15 @@ public:
     };
     typedef Int8 TUnverified;
     TUnverified GetUnverifiedType(void) const;
+    enum FUnreviewed {
+        fUnreviewed_None = 0, // for convenience
+
+        fUnreviewed_Unannotated = 1 << 0
+        // if you add more here, make sure
+        // to update CFlatGatherer::x_UnreviewedComment
+    };
+    typedef Int8 TUnreviewed;
+    TUnreviewed GetUnreviewedType(void) const;
     bool ShowAnnotCommentAsCOMMENT() const;
 
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
@@ -368,6 +377,7 @@ private:
     mutable bool m_IsCrossKingdom;
     mutable bool m_UsePDBCompoundForComment;
     TUnverified m_fUnverified;
+    TUnreviewed m_fUnreviewed;
     mutable bool m_ShowAnnotCommentAsCOMMENT;
     mutable bool m_ShowAnnotCommentAsCOMMENT_checked;
 
@@ -654,6 +664,12 @@ inline
 CBioseqContext::TUnverified CBioseqContext::GetUnverifiedType(void) const
 {
     return m_fUnverified;
+}
+
+inline
+CBioseqContext::TUnreviewed CBioseqContext::GetUnreviewedType(void) const
+{
+    return m_fUnreviewed;
 }
 
 inline

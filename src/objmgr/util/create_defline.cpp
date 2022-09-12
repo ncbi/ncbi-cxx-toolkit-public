@@ -565,6 +565,15 @@ void CDeflineGenerator::x_SetFlagsIdx (
         }
     }
 
+    m_IsUnreviewed = bsx->IsUnreviewed();
+    m_UnreviewedPrefix.clear();
+    if (m_IsUnreviewed) {
+        m_UnreviewedPrefix = "UNREVIEWED: ";
+        if (bsx->IsUnreviewedUnannotated()) {
+            m_UnreviewedPrefix = "UNREVIEWED_UNANNOT: ";
+        }
+    }
+
     m_Comment = bsx->GetComment();
     m_IsPseudogene = bsx->IsPseudogene();
     m_TargetedLocus = bsx->GetTargetedLocus();
@@ -705,6 +714,8 @@ void CDeflineGenerator::x_SetFlags (
 
     m_IsUnverified = false;
     m_UnverifiedPrefix.clear();
+    m_IsUnreviewed = false;
+    m_UnreviewedPrefix.clear();
     m_TargetedLocus.clear();
 
     m_Comment.clear();
@@ -925,7 +936,7 @@ void CDeflineGenerator::x_SetFlags (
 
         case CSeqdesc::e_User:
         {
-            // process Unverified user object
+            // process Unverified and Unreviewed user objects
             if ((needed_desc_choices & fUser) == 0) {
                 continue; // already covered
             }
@@ -955,6 +966,12 @@ void CDeflineGenerator::x_SetFlags (
                     }
                     if (unverified_count > 1) {
                         // m_UnverifiedPrefix = "UNVERIFIED: ";
+                    }
+                } else if (user_obj.IsUnreviewed()) {
+                    m_IsUnreviewed = true;
+                    m_UnreviewedPrefix = "UNREVIEWED: ";
+                    if (user_obj.IsUnreviewedUnannotated()) {
+                        m_UnreviewedPrefix = "UNREVIEWED_UNANNOT: ";
                     }
                 } else if (user_obj.GetType().GetStr() == "AutodefOptions" ) {
                     FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, user_obj) {
@@ -2791,6 +2808,10 @@ void CDeflineGenerator::x_SetPrefix (
     if (m_IsUnverified) {
         if (m_MainTitle.find ("UNVERIFIED") == NPOS) {
             prefix = m_UnverifiedPrefix;
+        }
+    } else if (m_IsUnreviewed) {
+        if (m_MainTitle.find ("UNREVIEWED") == NPOS) {
+            prefix = m_UnreviewedPrefix;
         }
     } else if (m_ThirdParty) {
         if (m_TPAExp) {

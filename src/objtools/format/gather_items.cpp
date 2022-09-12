@@ -1002,6 +1002,8 @@ void CFlatGatherer::x_GatherComments(void) const
 
     x_UnverifiedComment(ctx);
 
+    x_UnreviewedComment(ctx);
+
     x_AuthorizedAccessComment(ctx);
 
     // Gather comments related to the seq-id
@@ -1200,6 +1202,27 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
         }
         type_string += "GenBank staff has noted that the sequence(s) may be contaminated.";
     }
+
+    if( type_string.empty() ) {
+        type_string = "[ERROR:what?]";
+    }
+
+    x_AddComment( new CCommentItem(type_string, ctx) );
+}
+
+void CFlatGatherer::x_UnreviewedComment(CBioseqContext& ctx) const
+{
+    if( ctx.GetUnreviewedType() == CBioseqContext::fUnreviewed_None ) {
+        return;
+    }
+
+    bool is_unannotated = (ctx.GetUnreviewedType() & CBioseqContext::fUnreviewed_Unannotated) != 0;
+
+    if (!is_unannotated) {
+        return;
+    }
+
+    string type_string = "GenBank staff has not reviewed this submission because annotation was not provided.";
 
     if( type_string.empty() ) {
         type_string = "[ERROR:what?]";
