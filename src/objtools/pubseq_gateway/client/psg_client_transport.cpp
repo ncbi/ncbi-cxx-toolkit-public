@@ -142,9 +142,9 @@ struct SContextSetter
 void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip)
 {
     if (ip.empty()) {
-        ERR_POST(Message << id << ": " << address.AsString() << path << ";SID=" << sid << ";PHID=" << phid);
+        ERR_POST(Message << id << ": " << address << path << ";SID=" << sid << ";PHID=" << phid);
     } else {
-        ERR_POST(Message << id << ": " << address.AsString() << path << ";SID=" << sid << ";PHID=" << phid << ";IP=" << ip);
+        ERR_POST(Message << id << ": " << address << path << ";SID=" << sid << ";PHID=" << phid << ";IP=" << ip);
     }
 }
 
@@ -509,7 +509,7 @@ void SPSG_Stats::Report()
 
     for (const auto& server : *servers_locked) {
         auto n = server.stats.load();
-        if (n) ERR_POST(Note << prefix << report << "\tserver\tname=" << server.address.AsString() << "&requests_sent=" << n);
+        if (n) ERR_POST(Note << prefix << report << "\tserver\tname=" << server.address << "&requests_sent=" << n);
     }
 }
 
@@ -910,8 +910,7 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error&
 
     debug_printout << error << endl;
     req->reply->SetFailed(error);
-    _DEBUG_ARG(const auto& server_name = server.address.AsString());
-    PSG_THROTTLING_TRACE("Server '" << server_name << "' failed to process request '" <<
+    PSG_THROTTLING_TRACE("Server '" << GetId() << "' failed to process request '" <<
             debug_printout.id << "', " << error);
     return false;
 }
@@ -933,13 +932,12 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
             auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
 
             if (!Retry(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
-                ERR_POST("Request for " << server.address.AsString() << " failed with " << error);
+                ERR_POST("Request for " << GetId() << " failed with " << error);
             }
         } else {
             req->reply->SetComplete();
             server.throttling.AddSuccess();
-            _DEBUG_ARG(const auto& server_name = server.address.AsString());
-            PSG_THROTTLING_TRACE("Server '" << server_name << "' processed request '" <<
+            PSG_THROTTLING_TRACE("Server '" << GetId() << "' processed request '" <<
                     debug_printout.id << "' successfully");
         }
 
@@ -1052,7 +1050,7 @@ void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
     }
 
     if (some_requests_failed) {
-        ERR_POST("Some requests for " << server.address.AsString() << " failed with " << error);
+        ERR_POST("Some requests for " << GetId() << " failed with " << error);
     }
 
     m_Requests.clear();
@@ -1132,7 +1130,7 @@ bool SPSG_Throttling::SStats::Adjust(const SSocketAddress& address, bool result)
         failures = 0;
 
     } else if (params.max_failures && (++failures >= params.max_failures)) {
-        ERR_POST(Warning << "Server '" << address.AsString() <<
+        ERR_POST(Warning << "Server '" << address <<
                 "' reached the maximum number of failures in a row (" << params.max_failures << ')');
         Reset();
         return true;
@@ -1147,7 +1145,7 @@ bool SPSG_Throttling::SStats::Adjust(const SSocketAddress& address, bool result)
             reg[index] = failure;
 
             if (failure && (reg.count() >= params.threshold.numerator)) {
-                ERR_POST(Warning << "Server '" << address.AsString() << "' is considered bad/overloaded ("
+                ERR_POST(Warning << "Server '" << address << "' is considered bad/overloaded ("
                         << params.threshold.numerator << '/' << params.threshold.denominator << ')');
                 Reset();
                 return true;
@@ -1204,8 +1202,7 @@ void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_as
         auto& server = servers[servers_size - new_servers];
         m_Sessions.emplace_back(TSessions(), 0.0);
         m_Sessions.back().first.emplace_back(server, queue, handle->loop);
-        _DEBUG_ARG(const auto& server_name = server.address.AsString());
-        PSG_IO_TRACE("Session for server '" << server_name << "' was added");
+        PSG_IO_TRACE("Session for server '" << server.address << "' was added");
     }
 }
 
@@ -1251,8 +1248,6 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             auto& server = server_sessions.front().server;
             auto& session_rate = i->second;
 
-            _DEBUG_ARG(const auto& server_name = server.address.AsString());
-
             auto session = server_sessions.begin();
 
             // Skip all full sessions
@@ -1260,7 +1255,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
             // All existing sessions are full and no new sessions are allowed
             if (session == server_sessions.end()) {
-                PSG_IO_TRACE("Server '" << server_name << "' has no room for a request");
+                PSG_IO_TRACE("Server '" << server.address << "' has no room for a request");
 
             // Session is available or can be created
             } else {
@@ -1285,7 +1280,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                     bool result = session->ProcessRequest(req);
 
                     if (result) {
-                        PSG_IO_TRACE("Server '" << server_name << "' will get request '" <<
+                        PSG_IO_TRACE("Server '" << session->GetId() << "' will get request '" <<
                                 req_id << "' with rate = " << original_rate);
                         --remaining_submits;
                         ++server.stats;
@@ -1295,12 +1290,12 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                                 (distance(session, server_sessions.end()) == 1) &&
                                 (server_sessions.size() < TPSG_MaxSessions::GetDefault())) {
                             server_sessions.emplace_back(server, queue, handle->loop);
-                            PSG_IO_TRACE("Additional session for server '" << server_name << "' was added");
+                            PSG_IO_TRACE("Additional session for server '" << server.address << "' was added");
                         }
 
                         break;
                     } else {
-                        PSG_IO_TRACE("Server '" << server_name << "' failed to process request '" <<
+                        PSG_IO_TRACE("Server '" << session->GetId() << "' failed to process request '" <<
                                 req_id << "' with rate = " << original_rate);
 
                         if (!server.throttling.Active()) {
@@ -1428,8 +1423,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         rate_total += server.second;
 
         if (old_rate != server.second) {
-            _DEBUG_ARG(const auto& server_name = server.first.AsString());
-            PSG_DISCOVERY_TRACE("Rate for '" << server_name << "' adjusted from " << old_rate << " to " << server.second);
+            PSG_DISCOVERY_TRACE("Rate for '" << server.first << "' adjusted from " << old_rate << " to " << server.second);
         }
     }
 
@@ -1441,11 +1435,9 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         auto address_same = [&](CServiceDiscovery::TServer& s) { return s.first == server.address; };
         auto it = find_if(discovered.begin(), discovered.end(), address_same);
 
-        _DEBUG_ARG(const auto& server_name = server.address.AsString());
-
         if ((it == discovered.end()) || (it->second <= numeric_limits<double>::epsilon())) {
             server.rate = 0.0;
-            PSG_DISCOVERY_TRACE("Server '" << server_name << "' disabled in service '" << service_name << '\'');
+            PSG_DISCOVERY_TRACE("Server '" << server.address << "' disabled in service '" << service_name << '\'');
 
         } else {
             server.throttling.Discovered();
@@ -1453,7 +1445,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
 
             if (server.rate != rate) {
                 // This has to be before the rate change for the condition to work (uses old rate)
-                PSG_DISCOVERY_TRACE("Server '" << server_name <<
+                PSG_DISCOVERY_TRACE("Server '" << server.address <<
                         (server.rate ? "' updated in service '" : "' enabled in service '" ) <<
                         service_name << "' with rate = " << rate);
 
@@ -1470,8 +1462,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         if (server.second > numeric_limits<double>::epsilon()) {
             auto rate = server.second / rate_total;
             servers.emplace_back(server.first, rate, m_ThrottleParams, handle->loop);
-            _DEBUG_ARG(const auto& server_name = server.first.AsString());
-            PSG_DISCOVERY_TRACE("Server '" << server_name << "' added to service '" <<
+            PSG_DISCOVERY_TRACE("Server '" << server.first << "' added to service '" <<
                     service_name << "' with rate = " << rate);
         }
     }

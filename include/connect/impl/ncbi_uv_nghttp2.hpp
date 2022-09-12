@@ -450,6 +450,7 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 
     virtual ~SUvNgHttp2_SessionBase() {}
 
+    const string& GetId() const { return m_Authority; }
     void Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type = SUv_Tcp::eCloseReset);
 
 protected:
