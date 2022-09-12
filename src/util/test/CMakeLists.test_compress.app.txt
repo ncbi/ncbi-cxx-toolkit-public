@@ -5,10 +5,21 @@ NCBI_begin_app(test_compress)
   NCBI_headers(test_compress*.inl)
   NCBI_uses_toolkit_libraries(xcompress)
 
-  NCBI_add_test(test_compress z)
-  NCBI_add_test(test_compress zstd)
-  NCBI_add_test(test_compress bz2)
-  NCBI_add_test(test_compress lzo)
+  NCBI_begin_test(test_compress_z)
+    NCBI_add_test(test_compress z)
+  NCBI_end_test()
+
+  NCBI_begin_test(test_compress_zstd)
+    NCBI_add_test(test_compress zstd)
+  NCBI_end_test()
+
+  NCBI_begin_test(test_compress_bz2)
+    NCBI_add_test(test_compress bz2)
+  NCBI_end_test()
+
+  NCBI_begin_test(test_compress_lzo)
+    NCBI_add_test(test_compress lzo)
+  NCBI_end_test()
 
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
