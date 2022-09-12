@@ -56,16 +56,16 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            64 * 1024);
-NCBI_PARAM_DEF(size_t,   PSG, wr_buf_size,            64 * 1024);
-NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
-NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_submits, 150);
-NCBI_PARAM_DEF(unsigned, PSG, max_sessions,           40);
-NCBI_PARAM_DEF(unsigned, PSG, num_io,                 6);
-NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
-NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
-NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
-NCBI_PARAM_DEF(size_t, PSG, requests_per_io,          1);
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, rd_buf_size,                   64 * 1024,          1024    );
+PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, wr_buf_size,                   64 * 1024,          1024    );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_streams,        100,                10      );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_submits,        150,                1       );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_sessions,                  40,                 1       );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, num_io,                        6,                  1       );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, reader_timeout,                12,                 1       );
+PSG_PARAM_VALUE_DEF_MIN(double,         PSG, rebalance_time,                10.0,               1.0     );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, request_timeout,               10,                 1       );
+PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, requests_per_io,               1,                  1       );
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 NCBI_PARAM_DEF(unsigned, PSG, refused_stream_retries, 2);
 NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
