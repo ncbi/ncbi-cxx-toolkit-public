@@ -3798,26 +3798,25 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
         case eNcbiLog_File:
             /* Try to get type of the line to redirect output into correct log file */
             {
-                const char* start = line + NCBILOG_ENTRY_MIN;
+                const char* start = line + NCBILOG_ENTRY_MIN - 1;
                 const char* ptr = strstr(start, (char*)sx_Info->appname);
 
                 if (!ptr || (ptr - start > NCBILOG_APPNAME_MAX)) {
                     break;
                 }
                 ptr += strlen((char*)sx_Info->appname) + 1;
-                assert(len > (size_t)(ptr - line));
 
-                if (strncmp(ptr, "perf", 4) == 0) {
-                    f = sx_Info->file_perf;
-                } else 
-                if (strncmp(ptr, "Trace", 5) == 0  ||
-                    strncmp(ptr, "Info" , 4) == 0) {
-                    f = sx_Info->file_trace;
-                } else 
-                if (strncmp(ptr, "Warning" , 7) == 0  ||
-                    strncmp(ptr, "Error"   , 5) == 0  ||
-                    strncmp(ptr, "Critical", 8) == 0  ||
-                    strncmp(ptr, "Fatal"   , 5) == 0) {
+                if (len > (size_t)(ptr - line) + 5) {
+                    if (strncmp(ptr, "perf", 4) == 0) {
+                        f = sx_Info->file_perf;
+                    } else 
+                    if (strncmp(ptr, "Trace", 5) == 0  ||
+                        strncmp(ptr, "Info" , 4) == 0) {
+                        f = sx_Info->file_trace;
+                    }
+                }
+                if (f == kInvalidFileHandle) {
+                    /* Warning, Error, Critical, Fatal, or any other line */
                     f = sx_Info->file_err;
                 }
             }
