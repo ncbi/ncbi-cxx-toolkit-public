@@ -5,6 +5,7 @@ NCBI_begin_lib(xcser)
   NCBI_optional_components(NCBI_C)
   NCBI_uses_toolkit_libraries(xser)
   NCBI_project_watchers(vasilche)
+  NCBI_project_tags(core)
 NCBI_end_lib()
 
 
