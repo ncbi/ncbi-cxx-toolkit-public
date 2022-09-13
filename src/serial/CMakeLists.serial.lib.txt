@@ -16,5 +16,6 @@ NCBI_begin_lib(xser)
   )
   NCBI_uses_toolkit_libraries(xutil)
   NCBI_project_watchers(gouriano)
+  NCBI_project_tags(core)
 NCBI_end_lib()
 
