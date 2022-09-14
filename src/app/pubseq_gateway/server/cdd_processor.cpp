@@ -296,14 +296,13 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         x_Finish(ePSGS_NotFound);
         return;
     }
-    try {
-        CSeq_id id(annot_request.m_SeqId);
-        m_SeqId = CSeq_id_Handle::GetHandle(id);
+    if (x_CanProcessSeq_id(annot_request.m_SeqId)) {
+        m_SeqIds.push_back(CSeq_id_Handle::GetHandle(annot_request.m_SeqId));
     }
-    catch (exception& e) {
-        PSG_WARNING("Bad seq-id: " << annot_request.m_SeqId);
-        x_Finish(ePSGS_Error);
-        return;
+    for (auto& id : annot_request.m_SeqIds) {
+        if (x_CanProcessSeq_id(id)) {
+            m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
+        }
     }
 
     if (annot_request.m_TSEOption == SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_SmartTSE ||
@@ -342,12 +341,15 @@ void CPSGS_CDDProcessor::GetBlobId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        m_CDDBlob.info = m_ClientPool->GetBlobIdBySeq_id(m_SeqId);
-    }
-    catch (...) {
-        m_CDDBlob.info.Reset();
-        m_CDDBlob.data.Reset();
+    for (auto id : m_SeqIds) {
+        try {
+            m_CDDBlob.info = m_ClientPool->GetBlobIdBySeq_id(id);
+            if (m_CDDBlob.info) break;
+        }
+        catch (...) {
+            m_CDDBlob.info.Reset();
+            m_CDDBlob.data.Reset();
+        }
     }
     PostponeInvoke(s_OnGotBlobId, this);
 }
@@ -357,12 +359,15 @@ void CPSGS_CDDProcessor::GetBlobBySeqId(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    try {
-        m_CDDBlob = m_ClientPool->GetBlobBySeq_id(m_SeqId);
-    }
-    catch (...) {
-        m_CDDBlob.info.Reset();
-        m_CDDBlob.data.Reset();
+    for (auto id : m_SeqIds) {
+        try {
+            m_CDDBlob = m_ClientPool->GetBlobBySeq_id(id);
+            if (m_CDDBlob.info && m_CDDBlob.data) break;
+        }
+        catch (...) {
+            m_CDDBlob.info.Reset();
+            m_CDDBlob.data.Reset();
+        }
     }
     PostponeInvoke(s_OnGotBlobBySeqId, this);
 }
@@ -596,15 +601,36 @@ bool CPSGS_CDDProcessor::x_SignalStartProcessing()
 }
 
 
-bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_request,
-                                                  TProcessorPriority priority) const
+bool CPSGS_CDDProcessor::x_CanProcessSeq_id(const string& psg_id) const
 {
     try {
-        CSeq_id id(annot_request.m_SeqId);
+        CSeq_id id(psg_id);
         if (!id.IsGi() && !id.GetTextseq_Id()) return false;
         if (!m_ClientPool->IsValidId(id)) return false;
     }
     catch (exception& e) {
+        return false;
+    }
+    return true;
+}
+
+
+bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_request,
+                                                  TProcessorPriority priority) const
+{
+    bool have_valid_ids = false;
+    if (x_CanProcessSeq_id(annot_request.m_SeqId)) {
+        have_valid_ids = true;
+    }
+    else {
+        for (const auto& id: annot_request.m_SeqIds) {
+            if (x_CanProcessSeq_id(id)) {
+                have_valid_ids = true;
+                break;
+            }
+        }
+    }
+    if (!have_valid_ids) {
         PSG_WARNING("Bad seq-id: " << annot_request.m_SeqId);
         return false;
     }
