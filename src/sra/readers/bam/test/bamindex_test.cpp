@@ -43,7 +43,7 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <numeric>
-#include <thread>
+#include <future>
 
 #include "bam_test_common.hpp"
 #include <common/test_assert.h>  /* This header must go last */
@@ -817,11 +817,10 @@ int CBamIndexTestApp::Run(void)
     Uint8 total_wrong_level_count = 0, total_wrong_indexed_level_count = 0;
     Uint8 total_wrong_range_count = 0;
     const size_t NQ = queries.size();
-    vector<thread> tt(NQ);
+    vector<future<bool>> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i] =
-            thread([&]
-                   (SQuery q)
+        auto function =
+            [&](SQuery q)->auto
                 {
                     CMutexGuard guard(eEmptyGuard);
                     if ( single_thread ) {
@@ -944,10 +943,18 @@ int CBamIndexTestApp::Run(void)
                         total_wrong_level_count += wrong_level_count;
                         total_wrong_range_count += wrong_range_count;
                     }
-                }, queries[i]);
+                    return true;
+                };
+#ifdef NCBI_THREADS
+        tt[i] = async(launch::async, function, queries[i]);
+#else
+        promise<bool> p;
+        p.set_value(function(queries[i]));
+        tt[i] = p.get_future();
+#endif
     }
     for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i].join();
+        _VERIFY(tt[i].get());
     }
     cout << "Total good align count: "<<
         (total_align_count-total_wrong_range_count-total_wrong_level_count)<<endl;
