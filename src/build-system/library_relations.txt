@@ -440,10 +440,8 @@ ftgl needs3party $(PNG_LIBS)
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
-gc_asn_access needs aligndb_reader
-gc_asn_access needs ncbi_xcache_netcache
-gc_asn_access needs simple_asm
-gc_asn_access needs xgencoll
+gc_asn_access needs $(GPIPE_GENCOLL_LIBS)
+gc_asn_access needs xalnmgr
 gc_common needs xutil
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
@@ -1179,7 +1177,6 @@ seqtest needs $(SEQ_LIBS)
 seqtest needs pub
 sequtil needs xncbi
 simple_asm needs gc_load_utils
-simple_asm needs gencoll_client
 simple_asm needs seqgapscan_utils
 smartasn_g needs submit
 smartnet needs3party vibrant
@@ -1347,7 +1344,6 @@ valerr needs xser
 valid needs general
 valid needs xregexp
 validate_regions needs gc_asn_access
-validate_regions needs valerr
 var_unit_test_lib needs variation_lib
 variation needs $(SEQ_LIBS)
 variation needs pub
@@ -1625,9 +1621,8 @@ xflatfile needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xformat needs gbseq
 xformat needs xalnmgr
 xformat needs xcleanup
-xgencoll needs gc_load_utils
 xgencoll needs gencoll_client
-xgencoll needs seqgapscan_utils
+xgencoll needs simple_asm
 xgp_manifest needs xser
 xgridcgi needs xcgi
 xgridcgi needs xconnserv
