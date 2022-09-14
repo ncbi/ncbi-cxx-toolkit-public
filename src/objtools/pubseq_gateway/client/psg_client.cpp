@@ -761,6 +761,18 @@ const char* s_GetAutoBlobSkipping(ESwitch value)
 }
 
 
+template<class TContainer, class TGet>
+void s_DelimitedOutput(ostream& os, const char* prefix, const TContainer& values, char delimiter, TGet get)
+{
+    os << prefix;
+
+    char d = '=';
+    for (const auto& value : values) {
+        os << d << get(value);
+        d = delimiter;
+    }
+}
+
 void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
 {
     os << "/ID/get?" << m_BioId;
@@ -768,13 +780,7 @@ void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
     if (!m_ExcludeTSEs.empty()) {
-        os << "&exclude_blobs";
-
-        char delimiter = '=';
-        for (const auto& blob_id : m_ExcludeTSEs) {
-            os << delimiter << blob_id.GetId();
-            delimiter = ',';
-        }
+        s_DelimitedOutput(os, "&exclude_blobs", m_ExcludeTSEs, ',', [](const auto& blob_id) { return blob_id.GetId(); });
     }
 
     os << s_GetAccSubstitution(m_AccSubstitution);
@@ -825,14 +831,8 @@ void CPSG_Request_Blob::x_GetAbsPathRef(ostream& os) const
 
 void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/get_na?" << m_BioId << "&names=";
-
-    for (const auto& name : m_AnnotNames) {
-        os << name << ",";
-    }
-
-    // Remove last comma (there must be some output after seekp to succeed)
-    os.seekp(-1, ios_base::cur);
+    os << "/ID/get_na?" << m_BioId;
+    s_DelimitedOutput(os, "&names", m_AnnotNames, ',', [](const auto& name) { return name; });
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
