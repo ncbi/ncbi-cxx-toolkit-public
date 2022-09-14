@@ -16,7 +16,7 @@ CHECK_COPY = all_readers.sh id_unit_test.ini id_unit_test-inhouse.ini
 
 CHECK_CMD = all_readers.sh id_unit_test /CHECK_NAME=id_unit_test
 CHECK_CMD = id_unit_test -conffile id_unit_test-inhouse.ini -psg /CHECK_NAME=id_unit_test_psg
-CHECK_CMD = id_unit_test -conffile id_unit_test-inhouse.ini -id2-service ID2_SNP2_DEV /CHECK_NAME=id_unit_test_osg_psg
+CHECK_CMD = id_unit_test -conffile id_unit_test-inhouse.ini -id2-service ID2_CServerDev /CHECK_NAME=id_unit_test_osg_psg
 CHECK_TIMEOUT = 800
 
 WATCHERS = vasilche
