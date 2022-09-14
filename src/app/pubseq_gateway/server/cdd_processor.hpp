@@ -89,6 +89,7 @@ private:
                        shared_ptr<CPSGS_Reply> reply,
                        TProcessorPriority priority);
 
+    bool x_CanProcessSeq_id(const string& psg_id) const;
     bool x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_request,
                                   TProcessorPriority priority) const;
     bool x_CanProcessBlobRequest(SPSGS_BlobBySatSatKeyRequest& blob_request) const;
@@ -106,7 +107,7 @@ private:
     shared_ptr<objects::CCDDClientPool> m_ClientPool;
     EPSGS_Status m_Status;
     bool m_Canceled;
-    objects::CSeq_id_Handle m_SeqId;
+    vector<objects::CSeq_id_Handle> m_SeqIds;
     CRef<objects::CCDDClientPool::TBlobId> m_BlobId;
     objects::CCDDClientPool::SCDDBlob m_CDDBlob;
     bool m_Unlocked;

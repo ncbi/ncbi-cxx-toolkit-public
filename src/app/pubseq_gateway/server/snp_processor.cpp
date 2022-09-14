@@ -357,8 +357,25 @@ static void s_OnGotAnnotation(void* data)
 
 void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
 {
-    m_PreResolving = true;
-    ResolveInputSeqId();
+    SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+    if (annot_request.m_SeqIds.empty()) {
+        m_PreResolving = true;
+        ResolveInputSeqId();
+        return;
+    }
+
+    try {
+        auto h = CSeq_id_Handle::GetHandle(annot_request.m_SeqId);
+        if (h) m_SeqIds.push_back(h);
+        for (auto& id : annot_request.m_SeqIds) {
+            auto h = CSeq_id_Handle::GetHandle(id);
+            if (h) m_SeqIds.push_back(h);
+        }
+        m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
+    }
+    catch (...) {
+        x_Finish(ePSGS_Error);
+    }
 }
 
 
