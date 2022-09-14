@@ -3439,11 +3439,10 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
         // General ids are always secondary!
         if (secondary_id_list) {
             const CObject_id& dbtag = GetGeneral().GetTag();
-            secondary_id = GetGeneral().GetDb() + "|";
-            if (dbtag.IsId())
-                secondary_id += NStr::IntToString(dbtag.GetId());
-            else
-                secondary_id += dbtag.GetStr();
+            string suffix =
+                (dbtag.IsId() ? NStr::IntToString(dbtag.GetId()) : dbtag.GetStr());
+            if (!suffix.empty())
+                secondary_id = GetGeneral().GetDb() + "|" + suffix;
         }
         break;
     }
