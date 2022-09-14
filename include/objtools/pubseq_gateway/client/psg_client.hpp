@@ -192,6 +192,8 @@ private:
     TType  m_Type;
 };
 
+using CPSG_BioIds = vector<CPSG_BioId>;
+
 
 
 /// Blob data unique ID
@@ -447,20 +449,32 @@ public:
     /// Names of the named annotations
     using TAnnotNames = vector<string>;
 
-    /// @param bio_id
-    ///  ID of the bioseq
+    /// @param bio_ids
+    ///  IDs (aliases) of the bioseq
     /// @param annot_names
     ///  List of NAs for which to request the metainfo
-    CPSG_Request_NamedAnnotInfo(CPSG_BioId       bio_id,
-                                TAnnotNames      annot_names,
-                                shared_ptr<void> user_context = {},
-                                CRef<CRequestContext> request_context = {})
-        : CPSG_Request(user_context, request_context),
-          m_BioId(bio_id),
-          m_AnnotNames(annot_names)
+    CPSG_Request_NamedAnnotInfo(CPSG_BioIds             bio_ids,
+                                TAnnotNames             annot_names,
+                                shared_ptr<void>        user_context = {},
+                                CRef<CRequestContext>   request_context = {})
+        : CPSG_Request(move(user_context), move(request_context)),
+          m_BioIds(move(bio_ids)),
+          m_AnnotNames(move(annot_names))
+    {
+        if (m_BioIds.empty()) {
+            NCBI_THROW(CPSG_Exception, eParameterMissing, "bio_ids cannot be empty");
+        }
+    }
+
+    /// @param bio_id
+    ///  ID of the bioseq
+    template <class... TArgs>
+    CPSG_Request_NamedAnnotInfo(CPSG_BioId bio_id, TArgs&&... args)
+        : CPSG_Request_NamedAnnotInfo(CPSG_BioIds{bio_id}, forward<TArgs>(args)...)
     {}
 
-    const CPSG_BioId&  GetBioId()      const { return m_BioId;      }
+    const CPSG_BioId&  GetBioId()      const { return m_BioIds.front(); }
+    const CPSG_BioIds& GetBioIds()     const { return m_BioIds;     }
     const TAnnotNames& GetAnnotNames() const { return m_AnnotNames; }
 
     /// Set substitution policy for version-less primary seq-ids
@@ -477,7 +491,7 @@ private:
     string x_GetId() const override { return GetBioId().Repr(); }
     void x_GetAbsPathRef(ostream&) const override;
 
-    CPSG_BioId  m_BioId;
+    CPSG_BioIds m_BioIds;
     TAnnotNames m_AnnotNames;
     EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
     EIncludeData m_IncludeData = EIncludeData::eDefault;
@@ -738,7 +752,7 @@ public:
     CPSG_BioId GetCanonicalId() const;
 
     /// Get non-canonical bio-ids (aliases) for the bioseq
-    vector<CPSG_BioId> GetOtherIds() const;
+    CPSG_BioIds GetOtherIds() const;
 
     /// The bioseq's molecule type (DNA, RNA, protein, etc)
     objects::CSeq_inst::TMol GetMoleculeType() const;
