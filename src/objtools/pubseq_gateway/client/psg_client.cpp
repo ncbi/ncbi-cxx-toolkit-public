@@ -829,9 +829,24 @@ void CPSG_Request_Blob::x_GetAbsPathRef(ostream& os) const
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 }
 
+string s_GetFastaString(const CPSG_BioId& bio_id)
+{
+    const auto& id = bio_id.GetId();
+    auto type = bio_id.GetType();
+
+    try {
+        return type ? objects::CSeq_id(type, id).AsFastaString() : id;
+    }
+    catch (objects::CSeqIdException&) {
+        return id;
+    }
+}
+
 void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/get_na?" << m_BioId;
+    os << "/ID/get_na?";
+
+    s_DelimitedOutput(os, "seq_ids", m_BioIds, ' ', s_GetFastaString);
     s_DelimitedOutput(os, "&names", m_AnnotNames, ',', [](const auto& name) { return name; });
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
