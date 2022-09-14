@@ -96,9 +96,9 @@ public:
 
     /// Check if specified compression method is supported on a current platform.
     ///  
-    /// Compression streams can be created for any method. It ignore fact that
-    /// some compression library can be missed on a current platform, that lead
-    /// to throwing an exception on usage of the newly created stream.
+    /// Compression streams can be created for any method. It ignores the fact
+    /// that some compression library can be missed on a current platform, 
+    /// that lead to a throwing an exception on usage of the newly created stream.
     /// It is recommended to guard library-specific code by HAVE_LIB* macros
     /// (see comments at the beginning of "compress.hpp"), at least for eLZO and eZstd. 
     /// But if this is inconvenient for some reason you can use this method 
@@ -146,9 +146,14 @@ public:
     ///   but they can be overridden by using this parameter.
     /// @param level
     ///   Compression level.
+    /// @param own_istream
+    ///   If set to eTakeOwnership then the 'stream' will be owned by
+    ///   CCompressIStream and automatically deleted when necessary.
+    ///
     CCompressIStream(CNcbiIstream& stream, EMethod method, 
                      ICompression::TFlags flags = fDefault,
-                     ICompression::ELevel level = ICompression::eLevel_Default);
+                     ICompression::ELevel level = ICompression::eLevel_Default,
+                     ENcbiOwnership own_istream = eNoOwnership);
 };
 
 
@@ -182,6 +187,10 @@ public:
     ///   but they can be overridden by using this parameter.
     /// @param level
     ///   Compression level.
+    /// @param own_ostream
+    ///   If set to eTakeOwnership then the 'stream' will be owned by
+    ///   CCompressOStream and automatically deleted when necessary.
+    ///
     CCompressOStream(CNcbiOstream& stream, EMethod method, 
                      ICompression::TFlags flags = fDefault,
                      ICompression::ELevel level = ICompression::eLevel_Default,
@@ -214,9 +223,13 @@ public:
     /// @param flags
     ///   By default, predefined algorithm-specific flags will be used,
     ///   but they can be overridden by using this parameter.
+    /// @param own_istream
+    ///   If set to eTakeOwnership then the 'stream' will be owned by
+    ///   CDecompressIStream and automatically deleted when necessary.
+    ///
     CDecompressIStream(CNcbiIstream& stream, EMethod method, 
                        ICompression::TFlags flags = fDefault,
-                       ENcbiOwnership own_instream = eNoOwnership);
+                       ENcbiOwnership own_istream = eNoOwnership);
 };
 
 
@@ -248,10 +261,14 @@ public:
     /// @param flags
     ///   By default, predefined algorithm-specific flags will be used,
     ///   but they can be overridden by using this parameter.
+    /// @param own_istream
+    ///   If set to eTakeOwnership then the 'stream' will be owned by
+    ///   CDecompressOStream and automatically deleted when necessary.
+    ///
     CDecompressOStream(CNcbiOstream& stream, EMethod method, 
-                       ICompression::TFlags flags = fDefault);
+                       ICompression::TFlags flags = fDefault,
+                       ENcbiOwnership own_ostream = eNoOwnership);
 };
-
 
 
 
