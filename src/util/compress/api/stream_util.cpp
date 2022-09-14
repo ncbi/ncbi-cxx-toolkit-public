@@ -181,11 +181,14 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
 
 CCompressIStream::CCompressIStream(CNcbiIstream& stream, EMethod method, 
                                    ICompression::TFlags stm_flags,
-                                   ICompression::ELevel level)
+                                   ICompression::ELevel level,
+                                   ENcbiOwnership own_istream)
 {
     CCompressionStreamProcessor* processor = s_Init(eCompress, method, stm_flags, level);
     if (processor) {
-        Create(stream, processor, CCompressionStream::fOwnProcessor);
+        Create(stream, processor,
+               own_istream == eTakeOwnership ? CCompressionStream::fOwnAll : 
+                                               CCompressionStream::fOwnProcessor);
     }
 }
 
@@ -219,12 +222,15 @@ CDecompressIStream::CDecompressIStream(CNcbiIstream& stream, EMethod method,
 
 
 CDecompressOStream::CDecompressOStream(CNcbiOstream& stream, EMethod method, 
-                                       ICompression::TFlags stm_flags)
+                                       ICompression::TFlags stm_flags,
+                                       ENcbiOwnership own_ostream)
 {
     CCompressionStreamProcessor* processor = 
         s_Init(eDecompress, method, stm_flags, ICompression::eLevel_Default);
     if (processor) {
-        Create(stream, processor, CCompressionStream::fOwnProcessor);
+        Create(stream, processor,
+               own_ostream == eTakeOwnership ? CCompressionStream::fOwnAll : 
+                                               CCompressionStream::fOwnProcessor);
     }
 }
 
