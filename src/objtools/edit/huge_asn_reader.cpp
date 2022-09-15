@@ -434,7 +434,7 @@ void CHugeAsnReader::FlattenGenbankSet()
 
         if (auto _class = parent->m_class; s_ShouldSplitSet(_class))
         { // create fake bioseq_set
-            m_FlattenedSets.push_back({rec.m_pos, m_FlattenedSets.cend(), objects::CBioseq_set::eClass_not_set});
+            m_FlattenedSets.push_back({rec.m_pos, m_bioseq_set_list.cend(), objects::CBioseq_set::eClass_not_set});
             m_top_ids.push_back(rec.m_ids.front());
         } else {
 
@@ -454,7 +454,8 @@ void CHugeAsnReader::FlattenGenbankSet()
             if (existingIndex != m_FlattenedIndex.end()) {
                 x_ThrowDuplicateId(*(existingIndex->second), *last, *id);
             }
-            m_FlattenedIndex[id] = last;
+            //m_FlattenedIndex[id] = last;
+            m_FlattenedIndex[id] = parent;
             m_bioseq_index[id] = it;
         }
     }
