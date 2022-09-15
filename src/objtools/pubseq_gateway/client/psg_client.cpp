@@ -847,9 +847,13 @@ string s_GetFastaString(const CPSG_BioId& bio_id)
 
 void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/get_na?";
+    auto bio_id = m_BioIds.begin();
 
-    s_DelimitedOutput(m_BioIds, os, "seq_ids=", ' ', s_GetFastaString);
+    _ASSERT(bio_id != m_BioIds.end());
+
+    os << "/ID/get_na?" << *bio_id++;
+
+    s_DelimitedOutput(bio_id, m_BioIds.end(), os, "&seq_ids=", ' ', s_GetFastaString);
     s_DelimitedOutput(m_AnnotNames, os, "&names=", ',', [](const auto& name) { return name; });
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
