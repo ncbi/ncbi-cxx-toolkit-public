@@ -548,6 +548,8 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                        info, infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
+        /* for the case of n/w delay */
+        iter->time = (TNCBI_Time) time(0);
         if (info->time > iter->time + LBSM_DEFAULT_TIME) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Excessive expiration (%u) @%p:\n%s", iter->name,
