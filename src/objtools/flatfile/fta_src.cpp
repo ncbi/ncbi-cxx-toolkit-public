@@ -468,13 +468,13 @@ static void CheckForExemption(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void PopulateSubNames(char* namstr, const Char* name, const Char* value, COrgMod::ESubtype subtype, TOrgModList& mods)
+static void PopulateSubNames(string& namstr, const Char* name, const Char* value, COrgMod::ESubtype subtype, TOrgModList& mods)
 {
     CRef<COrgMod> mod(new COrgMod);
 
-    StringCat(namstr, name);
-    StringCat(namstr, value);
-    StringCat(namstr, ")");
+    namstr.append(name);
+    namstr.append(value);
+    namstr.append(")");
 
     mod->SetSubtype(subtype);
     mod->SetSubname(value);
@@ -500,26 +500,25 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
 
     size_t i = StringLen(name) + 1;
     size_t j = i;
-    if ((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar != NULL)
+    if ((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar)
         i += (StringLen(cultivar) + StringLen("cultivar") + 5);
-    if ((use_what & USE_ISOLATE) == USE_ISOLATE && isolate != NULL)
+    if ((use_what & USE_ISOLATE) == USE_ISOLATE && isolate)
         i += (StringLen(isolate) + StringLen("isolate") + 5);
-    if ((use_what & USE_SEROTYPE) == USE_SEROTYPE && serotype != NULL)
+    if ((use_what & USE_SEROTYPE) == USE_SEROTYPE && serotype)
         i += (StringLen(serotype) + StringLen("serotype") + 5);
-    if ((use_what & USE_SEROVAR) == USE_SEROVAR && serovar != NULL)
+    if ((use_what & USE_SEROVAR) == USE_SEROVAR && serovar)
         i += (StringLen(serovar) + StringLen("serovar") + 5);
-    if ((use_what & USE_SPECIMEN_VOUCHER) == USE_SPECIMEN_VOUCHER &&
-        specimen_voucher != NULL)
+    if ((use_what & USE_SPECIMEN_VOUCHER) == USE_SPECIMEN_VOUCHER && specimen_voucher)
         i += (StringLen(specimen_voucher) + StringLen("specimen_voucher") + 5);
-    if ((use_what & USE_STRAIN) == USE_STRAIN && strain != NULL)
+    if ((use_what & USE_STRAIN) == USE_STRAIN && strain)
         i += (StringLen(strain) + StringLen("strain") + 5);
-    if ((use_what & USE_SUB_SPECIES) == USE_SUB_SPECIES && sub_species != NULL)
+    if ((use_what & USE_SUB_SPECIES) == USE_SUB_SPECIES && sub_species)
         i += (StringLen(sub_species) + StringLen("sub_species") + 5);
-    if ((use_what & USE_SUB_STRAIN) == USE_SUB_STRAIN && sub_strain != NULL)
+    if ((use_what & USE_SUB_STRAIN) == USE_SUB_STRAIN && sub_strain)
         i += (StringLen(sub_strain) + StringLen("sub_strain") + 5);
-    if ((use_what & USE_VARIETY) == USE_VARIETY && variety != NULL)
+    if ((use_what & USE_VARIETY) == USE_VARIETY && variety)
         i += (StringLen(variety) + StringLen("variety") + 5);
-    if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype != NULL)
+    if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype)
         i += (StringLen(ecotype) + StringLen("ecotype") + 5);
     sfbp->namstr = (char*)MemNew(i);
     StringCpy(sfbp->namstr, name);
@@ -529,26 +528,29 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
     sfbp->orgname     = new COrgName;
     TOrgModList& mods = sfbp->orgname->SetMod();
 
-    if ((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar != NULL)
-        PopulateSubNames(sfbp->namstr, "  (cultivar ", cultivar, COrgMod::eSubtype_cultivar, mods);
-    if ((use_what & USE_ISOLATE) == USE_ISOLATE && isolate != NULL)
-        PopulateSubNames(sfbp->namstr, "  (isolate ", isolate, COrgMod::eSubtype_isolate, mods);
-    if ((use_what & USE_SEROTYPE) == USE_SEROTYPE && serotype != NULL)
-        PopulateSubNames(sfbp->namstr, "  (serotype ", serotype, COrgMod::eSubtype_serotype, mods);
-    if ((use_what & USE_SEROVAR) == USE_SEROVAR && serovar != NULL)
-        PopulateSubNames(sfbp->namstr, "  (serovar ", serovar, COrgMod::eSubtype_serovar, mods);
-    if ((use_what & USE_SPECIMEN_VOUCHER) == USE_SPECIMEN_VOUCHER && specimen_voucher != NULL)
-        PopulateSubNames(sfbp->namstr, "  (specimen_voucher ", specimen_voucher, COrgMod::eSubtype_specimen_voucher, mods);
-    if ((use_what & USE_STRAIN) == USE_STRAIN && strain != NULL)
-        PopulateSubNames(sfbp->namstr, "  (strain ", strain, COrgMod::eSubtype_strain, mods);
-    if ((use_what & USE_SUB_SPECIES) == USE_SUB_SPECIES && sub_species != NULL)
-        PopulateSubNames(sfbp->namstr, "  (sub_species ", sub_species, COrgMod::eSubtype_sub_species, mods);
-    if ((use_what & USE_SUB_STRAIN) == USE_SUB_STRAIN && sub_strain != NULL)
-        PopulateSubNames(sfbp->namstr, "  (sub_strain ", sub_strain, COrgMod::eSubtype_substrain, mods);
-    if ((use_what & USE_VARIETY) == USE_VARIETY && variety != NULL)
-        PopulateSubNames(sfbp->namstr, "  (variety ", variety, COrgMod::eSubtype_variety, mods);
-    if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype != NULL)
-        PopulateSubNames(sfbp->namstr, "  (ecotype ", ecotype, COrgMod::eSubtype_ecotype, mods);
+    string s;
+    s.reserve(i - j);
+    if ((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar)
+        PopulateSubNames(s, "  (cultivar ", cultivar, COrgMod::eSubtype_cultivar, mods);
+    if ((use_what & USE_ISOLATE) == USE_ISOLATE && isolate)
+        PopulateSubNames(s, "  (isolate ", isolate, COrgMod::eSubtype_isolate, mods);
+    if ((use_what & USE_SEROTYPE) == USE_SEROTYPE && serotype)
+        PopulateSubNames(s, "  (serotype ", serotype, COrgMod::eSubtype_serotype, mods);
+    if ((use_what & USE_SEROVAR) == USE_SEROVAR && serovar)
+        PopulateSubNames(s, "  (serovar ", serovar, COrgMod::eSubtype_serovar, mods);
+    if ((use_what & USE_SPECIMEN_VOUCHER) == USE_SPECIMEN_VOUCHER && specimen_voucher)
+        PopulateSubNames(s, "  (specimen_voucher ", specimen_voucher, COrgMod::eSubtype_specimen_voucher, mods);
+    if ((use_what & USE_STRAIN) == USE_STRAIN && strain)
+        PopulateSubNames(s, "  (strain ", strain, COrgMod::eSubtype_strain, mods);
+    if ((use_what & USE_SUB_SPECIES) == USE_SUB_SPECIES && sub_species)
+        PopulateSubNames(s, "  (sub_species ", sub_species, COrgMod::eSubtype_sub_species, mods);
+    if ((use_what & USE_SUB_STRAIN) == USE_SUB_STRAIN && sub_strain)
+        PopulateSubNames(s, "  (sub_strain ", sub_strain, COrgMod::eSubtype_substrain, mods);
+    if ((use_what & USE_VARIETY) == USE_VARIETY && variety)
+        PopulateSubNames(s, "  (variety ", variety, COrgMod::eSubtype_variety, mods);
+    if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype)
+        PopulateSubNames(s, "  (ecotype ", ecotype, COrgMod::eSubtype_ecotype, mods);
+    StringCat(sfbp->namstr, s.c_str());
 }
 
 /**********************************************************/
