@@ -13,7 +13,7 @@ LIB  = ncbi_xdbapi_ftds \
        dbapi$(STATIC) dbapi_util_blobstore$(STATIC) dbapi_driver$(STATIC) \
        $(XCONNEXT) xconnect $(COMPRESS_LIBS) xutil test_boost xncbi
 
-LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) $(FTDS95_LIBS) \
+LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) \
        $(FTDS100_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
