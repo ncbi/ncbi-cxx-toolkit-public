@@ -1966,14 +1966,22 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         } else if (NStr::CompareNocase(token1, "EMBL") == 0) {
+            p = StringChr(token2, '.');
+            if(p != NULL)
+                *p = '\0';
             ntype = GetNucAccOwner(token2);
             if (ntype == 0) {
+                if(p != NULL)
+                    *p = '.';
                 ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"%s\". Skipped...", token2);
             } else if (AddToList(&acc_list, token2)) {
-                CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, false, 0));
+                CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, p ? true : false,
+                                              p ? (Int2) atoi(p + 1) : 0));
                 if (id.NotEmpty())
                     spb.SetSeqref().push_back(id);
             }
+            if(p != NULL)
+                *p = '\0';
 
             ptype = 0;
             if (token3[0] >= 'A' && token3[0] <= 'Z' &&
