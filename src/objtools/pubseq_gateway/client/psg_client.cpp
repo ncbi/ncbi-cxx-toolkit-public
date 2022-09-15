@@ -761,16 +761,22 @@ const char* s_GetAutoBlobSkipping(ESwitch value)
 }
 
 
-template<class TContainer, class TGet>
-void s_DelimitedOutput(ostream& os, const char* prefix, const TContainer& values, char delimiter, TGet get)
+template <typename TIterator, class TGet>
+void s_DelimitedOutput(TIterator from, TIterator to, ostream& os, const char* prefix, char delimiter, TGet get)
 {
-    os << prefix;
+    if (from != to) {
+        os << prefix << get(*from++);
 
-    char d = '=';
-    for (const auto& value : values) {
-        os << d << get(value);
-        d = delimiter;
+        while (from != to) {
+            os << delimiter << get(*from++);
+        }
     }
+}
+
+template <class TValues, class... TArgs>
+void s_DelimitedOutput(const TValues& values, TArgs&&... args)
+{
+    return s_DelimitedOutput(begin(values), end(values), forward<TArgs>(args)...);
 }
 
 void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
@@ -779,10 +785,7 @@ void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
-    if (!m_ExcludeTSEs.empty()) {
-        s_DelimitedOutput(os, "&exclude_blobs", m_ExcludeTSEs, ',', [](const auto& blob_id) { return blob_id.GetId(); });
-    }
-
+    s_DelimitedOutput(m_ExcludeTSEs, os, "&exclude_blobs=", ',', [](const auto& blob_id) { return blob_id.GetId(); });
     os << s_GetAccSubstitution(m_AccSubstitution);
 
     if (m_ResendTimeout.IsInfinite()) {
@@ -846,8 +849,8 @@ void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 {
     os << "/ID/get_na?";
 
-    s_DelimitedOutput(os, "seq_ids", m_BioIds, ' ', s_GetFastaString);
-    s_DelimitedOutput(os, "&names", m_AnnotNames, ',', [](const auto& name) { return name; });
+    s_DelimitedOutput(m_BioIds, os, "seq_ids=", ' ', s_GetFastaString);
+    s_DelimitedOutput(m_AnnotNames, os, "&names=", ',', [](const auto& name) { return name; });
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
