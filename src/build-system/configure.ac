@@ -4707,10 +4707,14 @@ NCBI_CHECK_THIRD_PARTY_LIB(zstd,
                    @%:@include <zstd.h>],
       [[ZSTD_CCtx* cctx = ZSTD_createCCtx();
         return ZSTD_c_literalCompressionMode;]])])
-if test -n "$ZSTD_LIBS" -a "x$with_bin_release" = xyes \
-        -a \( -f "$ZSTD_PATH/lib$bit64_sfx/libzstd-static.a" \
-              -o -f "$ZSTD_PATH/lib/libzstd-static.a" \); then
-   ZSTD_LIBS="$ZSTD_LIBPATH -lzstd-static"
+if test -n "$ZSTD_LIBS" -a \( -f "$ZSTD_PATH/lib$bit64_sfx/libzstd-static.a" \
+                              -o -f "$ZSTD_PATH/lib/libzstd-static.a" \); then
+   ZSTD_STATIC_LIBS="$ZSTD_LIBPATH -lzstd-static"
+else
+   ZSTD_STATIC_LIBS=$ZSTD_LIBS
+fi
+if test "x$with_bin_release" = xyes; then
+   ZSTD_LIBS=$ZSTD_STATIC_LIBS
 fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
@@ -9556,6 +9560,7 @@ AC_SUBST(DEMANGLE_LIBS)
 AC_SUBST(ICONV_LIBS)
 AC_SUBST(Z_LIB)
 AC_SUBST(BZ2_LIB)
+AC_SUBST(ZSTD_STATIC_LIBS)
 AC_SUBST(PCREPOSIX_LIBS)
 AC_SUBST(PCRE_LIB)
 AC_SUBST(OPENSSL_STATIC_LIBS)
