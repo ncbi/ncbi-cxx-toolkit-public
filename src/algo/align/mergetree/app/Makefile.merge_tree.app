@@ -4,6 +4,8 @@ APP = merge_tree
 SRC = merge_tree_app  
 
 
-LIB = xmergetree xalgoalignutil xalnmgr tables scoremat \
+LIB = xmergetree  \
+      $(DATA_LOADERS_UTIL_LIB) $(SRAREAD_LIBS) $(OBJMGR_LIBS) $(LMDB_LIB) \
       $(GENBANK_LIBS) $(SEQ_LIBS) 
-LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(DATA_LOADERS_UTIL_LIBS) \
+       $(LMDB_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)

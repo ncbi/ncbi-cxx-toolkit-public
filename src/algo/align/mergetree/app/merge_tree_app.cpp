@@ -55,6 +55,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/asn_cache/asn_cache_loader.hpp>
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include <util/sync_queue.hpp>
 
@@ -112,6 +114,7 @@ public:
     double SecondsLimit;
     CMergeTree::SScoring Scoring;
     TSyncQueue  *InQueue, *OutQueue;
+    int TId;
 
     virtual void *  Main (void);
 };
@@ -121,6 +124,8 @@ void *  CMergeTreeThread::Main (void)
 {
     list< CRef<CSeq_align> > MergedAligns;
     
+    cerr << "Merge Thread Starting : " << TId << endl;
+
     CTreeAlignMerger TreeMerger;
     TreeMerger.SetScope(Scope);
     TreeMerger.SetScoring(Scoring);
@@ -137,11 +142,19 @@ void *  CMergeTreeThread::Main (void)
         TAlignVec InAligns, OutAligns;
         try {
             InAligns = InQueue->Pop(&PopSpan);
-        } catch(CException& e) { break; }
+        } catch(CException& e) { cerr <<__LINE__<<"Thread Queue Exception: " << e.ReportAll() << endl; break; }
         
         list< CRef<CSeq_align> > In, Out;
         In.insert(In.end(), InAligns.begin(), InAligns.end());
         
+        {{
+            CRef<CSeq_align> Align = In.front();
+            cerr << "T: " << TId << " : " 
+                 << "Starting Merge: " << Align->GetSeq_id(0).AsFastaString() << (Align->GetSeqStrand(0)==eNa_strand_plus?"+":"-")
+                              << " x " << Align->GetSeq_id(1).AsFastaString() << (Align->GetSeqStrand(1)==eNa_strand_plus?"+":"-")
+                              << " : " << In.size() << " aligns" << endl;
+        }}
+
         CbData.StartTime = CTime(CTime::eCurrent);
         CbData.SecondsLimit = SecondsLimit; 
 
@@ -153,8 +166,49 @@ void *  CMergeTreeThread::Main (void)
         OutQueue->Push(OutAligns);
     }
 
+    cerr << "Merge Thread Finished : " << TId << endl;
     return NULL;
 }
+
+class CMergeOutputThread : public CThread 
+{
+public:
+    
+    CMergeOutputThread() : CThread() { ; }
+
+    TSyncQueue*   InQueue;
+    CNcbiOstream* OutStream;
+    bool Finished;
+
+    virtual void *  Main (void);
+};
+
+void *  CMergeOutputThread::Main (void)
+{
+    Finished = false;
+    CTimeSpan PopSpan((long)10);
+    
+    size_t GroupCount = 0, AlignCount=0;
+
+    // work with queue
+    while(!Finished || !InQueue->IsEmpty()) {
+        TAlignVec InAligns;
+        try {
+            InAligns = InQueue->Pop(&PopSpan);
+        } catch(CException& e) { cerr <<"Thread Output Queue Timeout, repeat." << endl; continue; }
+     
+        GroupCount++;
+
+        ITERATE(TAlignVec, InIter, InAligns) {
+            (*OutStream) << MSerial_AsnText << **InIter;
+            AlignCount++;
+        }
+        OutStream->flush();  
+    }
+
+    cerr << "Output Thread Finished, Wrote "<<GroupCount<< " sets for " << AlignCount<< " alignments"<<endl;
+}
+ 
 
 class CMergeyApp : public CNcbiApplication
 {
@@ -179,7 +233,9 @@ CMergeyApp::Init(void)
     argList->AddDefaultKey("ratio", "integer", "match value", CArgDescriptions::eInteger, "3");    
     argList->AddDefaultKey("threads", "integer", "thread count. core logic is sequential, but seperate seq-id-pairs can thread.", CArgDescriptions::eInteger, "1");    
     
-    argList->AddFlag("G", "no genbank");
+    //argList->AddFlag("G", "no genbank");
+
+    CDataLoadersUtil::AddArgumentDescriptions(*argList);
 
     SetupArgDescriptions(argList.release());
 }
@@ -193,10 +249,11 @@ CMergeyApp::Run()
   
 	CRef<CObjectManager> OM = CObjectManager::GetInstance();
     CRef<CScope> Scope;
-    if(!args["G"].HasValue())
-        CGBDataLoader::RegisterInObjectManager(*OM, NULL, CObjectManager::eDefault, 16000);
-	Scope.Reset(new CScope(*OM));
-	Scope->AddDefaults();
+    Scope = CDataLoadersUtil::GetDefaultScope(args);
+    //if(!args["G"].HasValue())
+    //    CGBDataLoader::RegisterInObjectManager(*OM, NULL, CObjectManager::eDefault, 16000);
+	//Scope.Reset(new CScope(*OM));
+	//Scope->AddDefaults();
 
 
     CNcbiIstream& In = args["input"].AsInputFile();
@@ -333,8 +390,24 @@ CMergeyApp::Run()
         cerr << "No alignments read in." << endl;
         return 0;
     }
-    
-    
+
+    /*{{
+        list<CRef<CSeq_align> > ta;
+        ITERATE(list<CRef<CSeq_align> >, AlignIter, OrigAligns) {
+            if((*AlignIter)->GetSegs().IsDisc()) {
+                ITERATE(CSeq_align_set::Tdata, DiscAlignIter, 
+                    (*AlignIter)->GetSegs().GetDisc().Get()) {
+                    ta.push_back(*DiscAlignIter);
+                }
+            } 
+            else {
+                ta.push_back(*AlignIter);
+            }
+        }
+        OrigAligns = ta;
+        cerr << "After Disc flatten, OrigAligns.size: " << OrigAligns.size() << endl;
+    }}*/
+
     list< CRef<CSeq_align> > MergedAligns;
     
     int ThreadCount = args["threads"].AsInteger();
@@ -365,6 +438,7 @@ CMergeyApp::Run()
             Key.second.second  = Align.GetSeqStrand(1);
             AlignGroupMap[Key].push_back(*AlignIter);
         }
+        cerr << "Thread Queue Length: " << AlignGroupMap.size() << endl;
         CSyncQueue<TAlignVec, deque<TAlignVec>, CSyncQueue_Traits_ConcurrencyOn> ThreadQueue(AlignGroupMap.size());
         CSyncQueue<TAlignVec, deque<TAlignVec>, CSyncQueue_Traits_ConcurrencyOn> ThreadResults(AlignGroupMap.size());
         ITERATE(TAlignGroupMap, AlignGroupIter, AlignGroupMap) {
@@ -373,33 +447,45 @@ CMergeyApp::Run()
 
         // Make threads
         list< CMergeTreeThread* > Threads;
-        list< list<CRef<CSeq_align> >* > Outs;
         for(int i = 0; i < ThreadCount; i++) {
             CMergeTreeThread* New = new CMergeTreeThread();
             //New->Scope = Scope;
-            New->Scope.Reset(new CScope(*OM));
-            New->Scope->AddDefaults();
+            //New->Scope.Reset(new CScope(*OM));
+            //New->Scope->AddDefaults();
+            New->Scope = CDataLoadersUtil::GetDefaultScope(args);
             New->SecondsLimit = Timer;
             New->Scoring = Scoring;
             New->InQueue = &ThreadQueue;
             New->OutQueue = &ThreadResults;
+            New->TId = i+1;
             Threads.push_back(New);
         }
+
+        CNcbiOstream& Out = args["output"].AsOutputFile();
+        CMergeOutputThread* FileOutThread = new CMergeOutputThread();
+        FileOutThread->InQueue = &ThreadResults;
+        FileOutThread->OutStream = &Out; 
 
         // dispatch queue to threads
         ITERATE(list< CMergeTreeThread* >, ThreadIter, Threads) {
             (*ThreadIter)->Run();
         }
+        FileOutThread->Run();
+        cerr<<"Threads Launched, Joining" << endl;
         ITERATE(list< CMergeTreeThread* >, ThreadIter, Threads) {
             (*ThreadIter)->Join();
         }
-        
+        FileOutThread->Finished = true;
+        FileOutThread->Join();
+        cerr<< "Threads Joined, Exiting." << endl;
+       
+        /*
         while(!ThreadResults.IsEmpty()) {
             TAlignVec OutBatch = ThreadResults.Pop();
             ITERATE(TAlignVec, AlignIter, OutBatch) {
                 MergedAligns.push_back(*AlignIter);
             }
-        }
+        }*/
     } // End Non-Zero ThreadCount
     else if(ThreadCount == 0) {
         CTreeAlignMerger TreeMerger;
@@ -412,19 +498,15 @@ CMergeyApp::Run()
         TreeMerger.SetInterruptCallback(s_TimerCallback, &CbData);
 
         TreeMerger.Merge(OrigAligns, MergedAligns);
+    
+        cerr << "MergedAligns.size: " << MergedAligns.size() << endl;
+    
+        CNcbiOstream& Out = args["output"].AsOutputFile();
+        ITERATE(list<CRef<CSeq_align> >, MergeIter, MergedAligns) {
+            Out << MSerial_AsnText << **MergeIter;
+        }
+
     } // end Zero ThreadCount
-    
-    //TreeMerger.Merge_Pairwise(OrigAligns, MergedAligns);
-    //TreeMerger.Merge_Dist(OrigAligns, MergedAligns);
-    
-
-    cerr << "MergedAligns.size: " << MergedAligns.size() << endl;
-    
-    CNcbiOstream& Out = args["output"].AsOutputFile();
-    ITERATE(list<CRef<CSeq_align> >, MergeIter, MergedAligns) {
-        Out << MSerial_AsnText << **MergeIter;
-    }
-
 
     return 0;
 }
