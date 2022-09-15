@@ -716,7 +716,8 @@ void CTreeAlignMerger::Merge_Dist(const list< CRef<CSeq_align> >& Input,
         
 #ifdef MERGE_TREE_VERBOSE_DEBUG
         cerr << "Starting " << QueryIDH.AsString() << (MapIter->first.first.second == eNa_strand_plus ? "+":"-")
-            << " x " << SubjtIDH.AsString() << (MapIter->first.second.second == eNa_strand_plus ? "+":"-") << endl;
+            << " x " << SubjtIDH.AsString() << (MapIter->first.second.second == eNa_strand_plus ? "+":"-") << 
+             " : " << MapIter->second.size() << " aligns"<<endl;
 #endif
 
         CBioseq_Handle QueryBSH, SubjtBSH;
@@ -749,7 +750,11 @@ void CTreeAlignMerger::Merge_Dist(const list< CRef<CSeq_align> >& Input,
             //cerr << "Unique IDs: " << QueryIDH.AsString() << " and " << SubjtIDH.AsString() << endl;
             TAlignVec Unique, Other;
             x_SplitGlobalUnique(Aligns, Unique, Other);
-            //cerr << " Unique Split: " << Aligns.size() << " into " << Unique.size() << " and " << Other.size() << endl;
+            
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+            cerr << "Unique IDs: " << QueryIDH.AsString() << " and " << SubjtIDH.AsString() << endl;
+            cerr << "  Unique Split: " << Aligns.size() << " into " << Unique.size() << " and " << Other.size() << endl;
+#endif
             // Merge the Uniques
             // Then add the result to Others, 
             // Replace the Input , proceed
@@ -757,7 +762,9 @@ void CTreeAlignMerger::Merge_Dist(const list< CRef<CSeq_align> >& Input,
                 list<CRef<CSeq_align> > Ins, Outs;
                 Ins.insert(Ins.end(), Unique.begin(), Unique.end());
                 Merge_AllAtOnce(Ins, Outs);
-                //cerr << "  Unique Merged " << Ins.size() << " to " << Outs.size() << endl;
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+                cerr << "  Unique Merged " << Ins.size() << " to " << Outs.size() << endl;
+#endif
                 ITERATE(list<CRef<CSeq_align> >, OutIter, Outs) {
                     Other.push_back(*OutIter);
                 }
@@ -836,12 +843,25 @@ CTreeAlignMerger::x_MakeMergeableGroups(list<CRef<CSeq_align> > Input,
     ITERATE(list<CRef<CSeq_align> >, AlignIter, Input) {
         const CSeq_align& Align = **AlignIter;
 
+        if(Align.GetSegs().IsDisc()) {
+            ITERATE(list<CRef<CSeq_align> >, DiscAlignIter, 
+                    Align.GetSegs().GetDisc().Get()) {
+                const CSeq_align& DiscAlign = **DiscAlignIter;
+                TMapKey Key;
+                Key.first.first   = CSeq_id_Handle::GetHandle(DiscAlign.GetSeq_id(0));
+                Key.first.second  = DiscAlign.GetSeqStrand(0);
+                Key.second.first  = CSeq_id_Handle::GetHandle(DiscAlign.GetSeq_id(1));
+                Key.second.second = DiscAlign.GetSeqStrand(1);
+                AlignGroupMap[Key].push_back(*DiscAlignIter);
+            }
+            continue;
+        }
+
         TMapKey Key;
         Key.first.first   = CSeq_id_Handle::GetHandle(Align.GetSeq_id(0));
         Key.first.second  = Align.GetSeqStrand(0);
         Key.second.first  = CSeq_id_Handle::GetHandle(Align.GetSeq_id(1));
         Key.second.second = Align.GetSeqStrand(1);
-
         AlignGroupMap[Key].push_back(*AlignIter);
     }
 }
@@ -1015,8 +1035,8 @@ bool CAlignDistGraph::GetAndRemoveNearestPair(TEquivList& First, TEquivList& Sec
 
     size_t OtherI = NearestMap[MinI];
 #ifdef MERGE_TREE_VERBOSE_DEBUG
-    cerr << "Merging " << MinI << " x " << OtherI 
-        << " of " << /*Aligns.size() <<*/ " (" << AlignEquivMap.size() << ")" << endl; 
+    //cerr << "Merging " << MinI << " x " << OtherI 
+    //    << " of " << /*Aligns.size() <<*/ " (" << AlignEquivMap.size() << ")" << endl; 
 #endif
     
     const TEquivList& MinEs = AlignEquivMap[MinI];
@@ -1238,7 +1258,7 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
     CAlignDistGraph OriginalGraph(EquivRangeBuilder);
 
 #ifdef MERGE_TREE_VERBOSE_DEBUG
-    cerr << "Starting : " << Aligns.size() << endl;
+    cerr << "  Starting : " << Aligns.size() << endl;
 #endif
 
     // Sanity checking, same bases in as out
@@ -1258,6 +1278,9 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
         ITERATE(TEquivList, EquivIter, Temp) {
             OrigMatches += EquivIter->Matches;
         }
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+    cerr << "  Inserting align_id: " << s_UniformAlignId(Temp) << endl;
+#endif
         OriginalGraph.AddAlignment(Temp);
     }
 
@@ -1266,13 +1289,20 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
     int PassCounter = 0;
     while(!OriginalGraph.Empty()) {
         CAlignDistGraph CurrGraph(OriginalGraph);
-     
+ 
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+    cerr << "  --Starting : " << CurrGraph.Size() << endl;
+#endif
+    
         // Sort dists. Pick smallest Dist.
         // TreeMerge the two aligns with the smallest Dist.
         // Block out those 2, Insert the Merged result. 
         // Repeat until the list only contains 1.
         
         while(CurrGraph.Size() > 1) {
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+    cerr << "  --++Starting : " << CurrGraph.Size() << " ::::  " << PassCounter << endl;
+#endif
 
             TEquivList MinEs, OtherEs;
             CurrGraph.GetAndRemoveNearestPair(MinEs, OtherEs);
@@ -1291,7 +1321,12 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
             sort(CurrEquivs.begin(), CurrEquivs.end());
             TEquivList SplitEquivs;
             EquivRangeBuilder.SplitIntersections(CurrEquivs, SplitEquivs);
-        
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+    cerr << "  --++ mid: " <<s_UniformAlignId(MinEs) << " oid: " << s_UniformAlignId(OtherEs)<<endl;
+    cerr << "  --++SplitEquivs : " << CurrEquivs.size() << " to " << SplitEquivs.size() << endl;
+#endif
+
+       
             CMergeTree Tree(*this);
             if(Callback != NULL)
                 Tree.SetInterruptCallback(Callback, CallbackData);
@@ -1312,8 +1347,13 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
             EquivRangeBuilder.MergeAbuttings(Path, Abutted);
             sort(Abutted.begin(), Abutted.end());
            
-            if(!Abutted.empty())
-                CurrGraph.AddAlignment(Abutted);
+            if(!Abutted.empty()) {
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+    cerr << "  --++Merged from : " << MinEs.size() << " and " << OtherEs.size() << endl;
+    cerr << "  --++Re-inserting Merged Alignment: " << Abutted.size() << endl;
+#endif
+               CurrGraph.AddAlignment(Abutted);
+            }
 
             // Early Removes. In large enough data sets, going through the N-th 
             //   passes to find every single base a home is slow, and mostly 
@@ -1363,7 +1403,7 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
                 int MinScore = Tree.Score(MinEs);
                 int OtherScore = Tree.Score(OtherEs);
                 int NewScore = Tree.Score(Abutted);
-                cerr << " Scores: " << MinScore << " x " << OtherScore << " => " << NewScore << endl; 
+                //cerr << " Scores: " << MinScore << " x " << OtherScore << " => " << NewScore << endl; 
                 if(NewScore < MinScore || NewScore < OtherScore) {
                     cerr << "BACKWARDS!" << endl;
                 }
