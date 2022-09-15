@@ -429,20 +429,19 @@ static void RemoveSourceFeatSpaces(SourceFeatBlkPtr sfbp)
 {
     for (; sfbp != NULL; sfbp = sfbp->next) {
         RemoveStringSpaces(sfbp->location);
-        NON_CONST_ITERATE(TQualVector, cur, sfbp->quals)
-        {
-            if ((*cur)->IsSetQual()) {
-                std::vector<char> buf((*cur)->GetQual().begin(), (*cur)->GetQual().end());
+        for (auto& cur : sfbp->quals) {
+            if (cur->IsSetQual()) {
+                vector<char> buf(cur->GetQual().begin(), cur->GetQual().end());
                 buf.push_back(0);
                 ShrinkSpaces(&buf[0]);
-                (*cur)->SetQual(&buf[0]);
+                cur->SetQual(&buf[0]);
             }
 
-            if ((*cur)->IsSetVal()) {
-                std::vector<char> buf((*cur)->GetVal().begin(), (*cur)->GetVal().end());
+            if (cur->IsSetVal()) {
+                vector<char> buf(cur->GetVal().begin(), cur->GetVal().end());
                 buf.push_back(0);
                 ShrinkSpaces(&buf[0]);
-                (*cur)->SetVal(&buf[0]);
+                cur->SetVal(&buf[0]);
             }
         }
     }
@@ -454,9 +453,9 @@ static void CheckForExemption(SourceFeatBlkPtr sfbp)
     const char** b;
 
     for (; sfbp != NULL; sfbp = sfbp->next) {
-        ITERATE (TQualVector, cur, sfbp->quals) {
+        for (const auto& cur : sfbp->quals) {
             for (b = exempt_quals; *b != NULL; b++) {
-                if ((*cur)->GetQual() == *b)
+                if (cur->GetQual() == *b)
                     break;
             }
             if (*b != NULL) {
@@ -591,12 +590,12 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
         variety          = NULL;
         genomename       = NULL;
 
-        NON_CONST_ITERATE(TQualVector, cur, sfbp->quals) {
-            if (! (*cur)->IsSetQual())
+        for (auto& cur : sfbp->quals) {
+            if (! cur->IsSetQual())
                 continue;
 
-            const std::string& qual_str = (*cur)->GetQual();
-            char*              val_ptr  = (*cur)->IsSetVal() ? (*cur)->SetVal().data() : nullptr;
+            const std::string& qual_str = cur->GetQual();
+            char*              val_ptr  = cur->IsSetVal() ? cur->SetVal().data() : nullptr;
 
             if (qual_str == "db_xref") {
                 q = StringChr(val_ptr, ':');
@@ -804,8 +803,8 @@ static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
         if (sfbp->skip)
             continue;
 
-        ITERATE (TQualVector, cur, sfbp->quals) {
-            if ((*cur)->GetQual() != "partial")
+        for (const auto& cur : sfbp->quals) {
+            if (cur->GetQual() != "partial")
                 continue;
 
             ErrPostEx(SEV_ERROR, ERR_SOURCE_PartialQualifier, "Source feature location has /partial qualifier. Qualifier has been ignored: \"%s\".", (sfbp->location == NULL) ? "?empty?" : sfbp->location);
@@ -1422,37 +1421,37 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp, Int4 use_wh
             sub_strain       = NULL;
             variety          = NULL;
             if (org_ref->IsSetOrgname() && org_ref->IsSetOrgMod()) {
-                ITERATE (COrgName::TMod, mod, org_ref->GetOrgname().GetMod()) {
-                    switch ((*mod)->GetSubtype()) {
+                for (const auto& mod : org_ref->GetOrgname().GetMod()) {
+                    switch (mod->GetSubtype()) {
                     case COrgMod::eSubtype_cultivar:
-                        cultivar = (*mod)->GetSubname().c_str();
+                        cultivar = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_isolate:
-                        isolate = (*mod)->GetSubname().c_str();
+                        isolate = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_serotype:
-                        serotype = (*mod)->GetSubname().c_str();
+                        serotype = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_serovar:
-                        serovar = (*mod)->GetSubname().c_str();
+                        serovar = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_ecotype:
-                        ecotype = (*mod)->GetSubname().c_str();
+                        ecotype = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_specimen_voucher:
-                        specimen_voucher = (*mod)->GetSubname().c_str();
+                        specimen_voucher = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_strain:
-                        strain = (*mod)->GetSubname().c_str();
+                        strain = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_sub_species:
-                        sub_species = (*mod)->GetSubname().c_str();
+                        sub_species = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_substrain:
-                        sub_strain = (*mod)->GetSubname().c_str();
+                        sub_strain = mod->GetSubname().c_str();
                         break;
                     case COrgMod::eSubtype_variety:
-                        variety = (*mod)->GetSubname().c_str();
+                        variety = mod->GetSubname().c_str();
                         break;
                     }
                 }
@@ -1524,25 +1523,25 @@ static SourceFeatBlkPtr SourceFeatRemoveDups(SourceFeatBlkPtr sfbp)
         }
 
         bool different = false;
-        ITERATE (TQualVector, cur, tsfbp->quals) {
-            const std::string& cur_qual = (*cur)->GetQual();
+        for (const auto& cur : tsfbp->quals) {
+            const string& cur_qual = cur->GetQual();
             if (cur_qual == "focus")
                 continue;
 
             bool found = false;
-            ITERATE (TQualVector, next, sfbp->quals) {
-                const std::string& next_qual = (*next)->GetQual();
+            for (const auto& next : sfbp->quals) {
+                const string& next_qual = next->GetQual();
 
                 if (next_qual == "focus" || next_qual != cur_qual)
                     continue;
 
-                if (! (*cur)->IsSetVal() && ! (*next)->IsSetVal()) {
+                if (! cur->IsSetVal() && ! next->IsSetVal()) {
                     found = true;
                     break;
                 }
 
-                if ((*cur)->IsSetVal() && (*next)->IsSetVal() &&
-                    (*cur)->GetVal() == (*next)->GetVal()) {
+                if (cur->IsSetVal() && next->IsSetVal() &&
+                    cur->GetVal() == next->GetVal()) {
                     found = true;
                     break;
                 }
@@ -1598,7 +1597,7 @@ static SourceFeatBlkPtr SourceFeatDerive(SourceFeatBlkPtr sfbp,
     sfbp         = tsfbp;
 
     for (TQualVector::iterator cur = sfbp->quals.begin(); cur != sfbp->quals.end();) {
-        const std::string& cur_qual = (*cur)->GetQual();
+        const string& cur_qual = (*cur)->GetQual();
         if (cur_qual == "focus") {
             ++cur;
             continue;
@@ -1609,19 +1608,19 @@ static SourceFeatBlkPtr SourceFeatDerive(SourceFeatBlkPtr sfbp,
                 continue;
 
             bool found = false;
-            ITERATE (TQualVector, next, tsfbp->quals) {
-                const std::string& next_qual = (*next)->GetQual();
+            for (const auto& next : tsfbp->quals) {
+                const std::string& next_qual = next->GetQual();
 
                 if (next_qual == "focus" || next_qual != cur_qual)
                     continue;
 
-                if (! (*cur)->IsSetVal() && ! (*next)->IsSetVal()) {
+                if (! (*cur)->IsSetVal() && ! next->IsSetVal()) {
                     found = true;
                     break;
                 }
 
-                if ((*cur)->IsSetVal() && (*next)->IsSetVal() &&
-                    (*cur)->GetVal() == (*next)->GetVal()) {
+                if ((*cur)->IsSetVal() && next->IsSetVal() &&
+                    (*cur)->GetVal() == next->GetVal()) {
                     found = true;
                     break;
                 }
@@ -1758,8 +1757,8 @@ static void FTASubSourceAdd(CBioSource& bio, const Char* val, CSubSource::ESubty
 {
     if (type != CSubSource::eSubtype_dev_stage) {
         bool found = false;
-        ITERATE (CBioSource::TSubtype, subtype, bio.GetSubtype()) {
-            if ((*subtype)->GetSubtype() == type) {
+        for (const auto& subtype : bio.GetSubtype()) {
+            if (subtype->GetSubtype() == type) {
                 found = true;
                 break;
             }
@@ -1788,9 +1787,9 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
     std::vector<std::string> modnames;
 
     if (bio.GetOrg().CanGetOrgname() && bio.GetOrg().GetOrgname().CanGetMod()) {
-        ITERATE (COrgName::TMod, mod, bio.GetOrg().GetOrgname().GetMod()) {
+        for (const auto& mod : bio.GetOrg().GetOrgname().GetMod()) {
             for (const auto& it : SourceOrgMods) {
-                if (it.num != (*mod)->GetSubtype())
+                if (it.num != mod->GetSubtype())
                     continue;
 
                 modnames.push_back(it.name);
@@ -1799,12 +1798,12 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
         }
     }
 
-    ITERATE (TQualVector, cur, quals) {
-        if (! (*cur)->IsSetQual() || (*cur)->GetQual() == "organism")
+    for (const auto& cur : quals) {
+        if (! cur->IsSetQual() || cur->GetQual() == "organism")
             continue;
 
-        const std::string& cur_qual = (*cur)->GetQual();
-        const Char*        val_ptr  = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : NULL;
+        const std::string& cur_qual = cur->GetQual();
+        const Char*        val_ptr  = cur->IsSetVal() ? cur->GetVal().c_str() : NULL;
 
         if (cur_qual == "note") {
             FTASubSourceAdd(bio, val_ptr, CSubSource::eSubtype_other);
@@ -1826,7 +1825,7 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
         }
 
         b = SourceSubSources;
-        for (size_t i = CSubSource::eSubtype_chromosome; *b; i++, b++) {
+        for (int i = CSubSource::eSubtype_chromosome; *b; i++, b++) {
             if (**b != '\0' && cur_qual == *b) {
                 FTASubSourceAdd(bio, val_ptr, static_cast<CSubSource::ESubtype>(i));
                 break;
@@ -2011,14 +2010,13 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
         oldgen = -1;
 
         bool dropped = false;
-        NON_CONST_ITERATE(TQualVector, cur, sfbp->quals)
-        {
-            if (! (*cur)->IsSetQual() || (*cur)->GetQual().empty())
+        for (auto& cur : sfbp->quals) {
+            if (! cur->IsSetQual() || cur->GetQual().empty())
                 continue;
 
-            const std::string& cur_qual = (*cur)->GetQual();
+            const string& cur_qual = cur->GetQual();
             if (cur_qual == "db_xref") {
-                CRef<CDbtag> dbtag = GetSourceDbtag(*cur, source);
+                CRef<CDbtag> dbtag = GetSourceDbtag(cur, source);
                 if (dbtag.Empty())
                     continue;
 
@@ -2026,7 +2024,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                 continue;
             }
 
-            const Char* val_ptr = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : NULL;
+            const Char* val_ptr = cur->IsSetVal() ? cur->GetVal().c_str() : NULL;
             if (cur_qual == "organelle") {
                 if (val_ptr == NULL || val_ptr[0] == '\0')
                     continue;
@@ -2139,11 +2137,11 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq
     if (sfbp == NULL || ! bioseq.IsSetDescr())
         return;
 
-    ITERATE (CSeq_descr::Tdata, descr, bioseq.GetDescr().Get()) {
-        if (! (*descr)->IsSource())
+    for (const auto& descr : bioseq.GetDescr().Get()) {
+        if (! descr->IsSource())
             continue;
 
-        const CBioSource& bio_src = (*descr)->GetSource();
+        const CBioSource& bio_src = descr->GetSource();
 
         if (! bio_src.IsSetOrg() || ! bio_src.GetOrg().IsSetTaxname() ||
             bio_src.GetOrg().GetTaxname().empty())
@@ -2247,11 +2245,11 @@ static void PropogateSuppliedLineage(CBioseq&         bioseq,
         std::string        lineage;
 
         bool found = false;
-        ITERATE (CSeq_descr::Tdata, descr, bioseq.GetDescr().Get()) {
-            if (! (*descr)->IsSource())
+        for (const auto& descr : bioseq.GetDescr().Get()) {
+            if (! descr->IsSource())
                 continue;
 
-            const CBioSource& bio_src = (*descr)->GetSource();
+            const CBioSource& bio_src = descr->GetSource();
 
             if (! bio_src.IsSetOrg() || ! bio_src.GetOrg().IsSetOrgname() ||
                 ! bio_src.GetOrg().IsSetTaxname() || bio_src.GetOrg().GetTaxname().empty() ||
@@ -2364,8 +2362,8 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource 
     ibp->env_sample_qual = false;
     for (envs = 0, sources = 0; sfbp != NULL; sfbp = sfbp->next, sources++) {
         bool env_found = false;
-        ITERATE (TQualVector, cur, sfbp->quals) {
-            if ((*cur)->IsSetQual() && (*cur)->GetQual() == "environmental_sample") {
+        for (const auto& cur : sfbp->quals) {
+            if (cur->IsSetQual() && cur->GetQual() == "environmental_sample") {
                 env_found = true;
                 break;
             }
@@ -2595,9 +2593,9 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
             continue;
 
         count = 0;
-        ITERATE (TQualVector, cur, sfbp->quals) {
-            if ((*cur)->GetQual() != "PCR_primers" ||
-                ! (*cur)->IsSetVal() || (*cur)->GetVal().empty())
+        for (const auto& cur : sfbp->quals) {
+            if (cur->GetQual() != "PCR_primers" ||
+                ! cur->IsSetVal() || cur->GetVal().empty())
                 continue;
 
             count++;
@@ -2610,7 +2608,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
             }
 
             prev = 0;
-            std::vector<Char> val_buf((*cur)->GetVal().begin(), (*cur)->GetVal().end());
+            std::vector<Char> val_buf(cur->GetVal().begin(), cur->GetVal().end());
             val_buf.push_back(0);
 
             for (comma = false, bad_start = false, p = &val_buf[0]; *p != '\0';) {
@@ -2843,13 +2841,13 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
         if (sfbp->quals.empty() || sfbp->bio_src.Empty())
             continue;
 
-        ITERATE (TQualVector, cur, sfbp->quals) {
+        for (const auto& cur : sfbp->quals) {
             bad = 0;
-            if ((*cur)->GetQual() != "collection_date" ||
-                ! (*cur)->IsSetVal() || (*cur)->GetVal().empty())
+            if (cur->GetQual() != "collection_date" ||
+                ! cur->IsSetVal() || cur->GetVal().empty())
                 continue;
 
-            val = (char*)(*cur)->GetVal().c_str();
+            val = (char*)cur->GetVal().c_str();
             for (num_slash = 0, p = val; *p != '\0'; p++)
                 if (*p == '/')
                     num_slash++;
@@ -2864,7 +2862,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
                 continue;
             }
 
-            for (val = (char*)(*cur)->GetVal().c_str();;) {
+            for (val = (char*)cur->GetVal().c_str();;) {
                 r = StringChr(val, '/');
                 if (r != NULL)
                     *r = '\0';
