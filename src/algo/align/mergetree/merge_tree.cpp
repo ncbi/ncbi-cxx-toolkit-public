@@ -46,6 +46,8 @@
 
 #include <algo/align/nw/align_exception.hpp>
 
+//#define MERGE_TREE_VERBOSE_DEBUG
+
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
@@ -1285,7 +1287,16 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
     }
 
     OriginalGraph.CalculateAllDistances();
- 
+
+    typedef pair<size_t, size_t> TAlignIdScorePair;
+    typedef pair<TAlignIdScorePair,TAlignIdScorePair> TAlignIdScoreKey;
+    typedef map<TAlignIdScoreKey, int> TMergeResultMap;
+    TMergeResultMap MergeResultMap;
+    const int ALL_MIN = 1;
+    const int ALL_OTHER = 2;
+    const int FULL_MERGE = 3;
+    const int MIXED = 4;
+
     int PassCounter = 0;
     while(!OriginalGraph.Empty()) {
         CAlignDistGraph CurrGraph(OriginalGraph);
@@ -1314,39 +1325,96 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
                     CurrGraph.AddAlignment(OtherEs);
                 continue;
             }
-           
-            TEquivList CurrEquivs;
-            CurrEquivs.insert(CurrEquivs.end(), MinEs.begin(), MinEs.end());
-            CurrEquivs.insert(CurrEquivs.end(), OtherEs.begin(), OtherEs.end());
-            sort(CurrEquivs.begin(), CurrEquivs.end());
-            TEquivList SplitEquivs;
-            EquivRangeBuilder.SplitIntersections(CurrEquivs, SplitEquivs);
+            
+            TEquivList CachedPath;
+            TAlignIdScoreKey key;
+            key.first.first = s_UniformAlignId(MinEs);
+            key.first.second = s_ScoreFromEquivList(MinEs);
+            key.second.first = s_UniformAlignId(OtherEs);
+            key.second.second = s_ScoreFromEquivList(OtherEs);
 #ifdef MERGE_TREE_VERBOSE_DEBUG
-    cerr << "  --++ mid: " <<s_UniformAlignId(MinEs) << " oid: " << s_UniformAlignId(OtherEs)<<endl;
-    cerr << "  --++SplitEquivs : " << CurrEquivs.size() << " to " << SplitEquivs.size() << endl;
+    cerr << "  --++MinEs   id: " << key.first.first << "  score: " << key.first.second << "  len: " << MinEs.size()<< endl;
+    cerr << "  --++OtherEs id: " << key.second.first << "  score: " << key.second.second << "  len: " << OtherEs.size()<< endl;
+#endif           
+
+            {{
+                if (MergeResultMap.find(key) != MergeResultMap.end()) {
+                    int MergeResult = MergeResultMap[key];
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+    cerr << "  --++ Had Cached Value: " <<  MergeResult << endl;
+#endif           
+                    if(MergeResult == FULL_MERGE) {
+                        CachedPath.insert(CachedPath.end(), MinEs.begin(), MinEs.end());
+                        CachedPath.insert(CachedPath.end(), OtherEs.begin(), OtherEs.end());
+                        sort(CachedPath.begin(), CachedPath.end());
+                    } else if(MergeResult == ALL_MIN) {
+                        CachedPath = MinEs;
+                    } else if(MergeResult == ALL_OTHER) {
+                        CachedPath = OtherEs;
+                    }
+                }
+            }}
+
+            TEquivList Path, Abutted;
+            CMergeTree Tree(*this);
+            if (CachedPath.empty()) {
+                TEquivList CurrEquivs;
+                CurrEquivs.insert(CurrEquivs.end(), MinEs.begin(), MinEs.end());
+                CurrEquivs.insert(CurrEquivs.end(), OtherEs.begin(), OtherEs.end());
+                sort(CurrEquivs.begin(), CurrEquivs.end());
+                TEquivList SplitEquivs;
+                EquivRangeBuilder.SplitIntersections(CurrEquivs, SplitEquivs);
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+        cerr << "  --++ mid: " <<s_UniformAlignId(MinEs) << " oid: " << s_UniformAlignId(OtherEs)<<endl;
+        cerr << "  --++SplitEquivs : " << CurrEquivs.size() << " to " << SplitEquivs.size() << endl;
 #endif
 
-       
-            CMergeTree Tree(*this);
-            if(Callback != NULL)
-                Tree.SetInterruptCallback(Callback, CallbackData);
-            Tree.SetScoring(m_Scoring);
-            Tree.AddEquivs(SplitEquivs);
-            //Tree.Print(cout);
+                       
+                if(Callback != NULL)
+                    Tree.SetInterruptCallback(Callback, CallbackData);
+                Tree.SetScoring(m_Scoring);
+                Tree.AddEquivs(SplitEquivs);
+                //Tree.Print(cout);
+                
+                Tree.Search(Path, true);
+                
+                // Only happens if the Tree's Interrupt is triggered
+                if(Path.empty()) {
+                    Output.insert(Output.end(), EarlyRemoves.begin(), EarlyRemoves.end());
+                    return;
+                }
             
-            TEquivList Path;
-            Tree.Search(Path, true);
-            
-            // Only happens if the Tree's Interrupt is triggered
-            if(Path.empty()) {
-                Output.insert(Output.end(), EarlyRemoves.begin(), EarlyRemoves.end());
-                return;
+                EquivRangeBuilder.MergeAbuttings(Path, Abutted);
+                sort(Abutted.begin(), Abutted.end());
+
+                {{
+                    int ResultId = s_UniformAlignId(Abutted);
+                    int ResultScore = s_ScoreFromEquivList(Abutted);
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+        cerr << "  --++Result id: " << ResultId << "  score: " << ResultScore << "  len: " << Abutted.size()<< endl;
+#endif
+                    int MergeResult = 0;
+                    if (ResultId == -1 && ResultScore == (key.first.second+key.second.second)) {
+                        MergeResult = FULL_MERGE;
+                    } else if (ResultId == key.first.first && ResultScore == key.first.second) {
+                        MergeResult = ALL_MIN;
+                    } else if (ResultId == key.second.first && ResultScore == key.second.second) {
+                        MergeResult = ALL_OTHER;
+                    } else {
+                        MergeResult = MIXED; 
+                    }
+                    MergeResultMap[key] = MergeResult;
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+        cerr << "  --++New MergeResult: " << MergeResult << endl;
+#endif
+                }}
+            } else {
+                Path = CachedPath;
+                EquivRangeBuilder.MergeAbuttings(Path, Abutted);
+                sort(Abutted.begin(), Abutted.end());
             }
 
-            TEquivList Abutted;
-            EquivRangeBuilder.MergeAbuttings(Path, Abutted);
-            sort(Abutted.begin(), Abutted.end());
-           
+            
             if(!Abutted.empty()) {
 #ifdef MERGE_TREE_VERBOSE_DEBUG
     cerr << "  --++Merged from : " << MinEs.size() << " and " << OtherEs.size() << endl;
