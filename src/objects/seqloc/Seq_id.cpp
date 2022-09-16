@@ -2555,8 +2555,14 @@ CSeq_id& CSeq_id::Set(EFastaAsTypeAndContent f, E_Choice the_type,
                       const CTempString& the_content)
 {
     list<CTempString> fasta_pieces;
+    ETypeVariant tv = eTV_plain; // default assumption
     NStr::Split(the_content, "|", fasta_pieces);
-    x_Init(fasta_pieces, the_type, eTV_plain); // explicit assumption
+    if ( !fasta_pieces.empty()
+        &&  WhichInverseSeqId(fasta_pieces.front()) == the_type) {
+        tv = x_IdentifyTypeVariant(the_type, fasta_pieces.front());
+        fasta_pieces.pop_front();
+    }
+    x_Init(fasta_pieces, the_type, tv);
     return *this;
 }
 
