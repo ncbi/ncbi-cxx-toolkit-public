@@ -1192,9 +1192,8 @@ CPSG_BioId::TType SRequestBuilder::GetBioIdType(string type)
     return static_cast<CPSG_BioId::TType>(atoi(type.c_str()));
 }
 
-CPSG_BioId SRequestBuilder::SReader<CJson_ConstObject>::GetBioId() const
+CPSG_BioId SRequestBuilder::SReader<CJson_ConstObject>::GetBioId(const CJson_ConstArray& array) const
 {
-    auto array = input["bio_id"].GetArray();
     auto id = array[0].GetValue().GetString();
 
     if (array.size() == 1) return CPSG_BioId(id);
@@ -1202,6 +1201,23 @@ CPSG_BioId SRequestBuilder::SReader<CJson_ConstObject>::GetBioId() const
     auto value = array[1].GetValue();
     auto type = value.IsString() ? GetBioIdType(value.GetString()) : static_cast<CPSG_BioId::TType>(value.GetInt4());
     return CPSG_BioId(id, type);
+}
+
+CPSG_BioIds SRequestBuilder::SReader<CJson_ConstObject>::GetBioIds() const
+{
+    CPSG_BioIds rv;
+
+    if (input.has("bio_ids")) {
+        auto bio_ids = input["bio_ids"].GetArray();
+
+        for (const auto& bio_id : bio_ids) {
+            rv.push_back(GetBioId(bio_id.GetArray()));
+        }
+    } else {
+        rv.push_back(GetBioId(input["bio_id"].GetArray()));
+    }
+
+    return rv;
 }
 
 CPSG_BlobId SRequestBuilder::SReader<CJson_ConstObject>::GetBlobId() const
@@ -1333,6 +1349,14 @@ CJson_Document CProcessing::RequestSchema()
             ],
             "minItems": 1,
             "maxItems": 2
+        },
+        "bio_ids": {
+            "$id": "#bio_ids",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/bio_id"
+            },
+            "minItems": 1
         },
         "blob_id": {
             "$id": "#blob_id",
@@ -1498,12 +1522,14 @@ CJson_Document CProcessing::RequestSchema()
                     "type": "object",
                     "properties": {
                         "bio_id" : { "$ref": "#/definitions/bio_id" },
+                        "bio_ids" : { "$ref": "#/definitions/bio_ids" },
                         "named_annots": { "$ref": "#/definitions/named_annots" },
                         "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
                         "context": { "$ref": "#/definitions/context" },
                         "user_args": { "$ref": "#/definitions/user_args" }
                     },
-                    "required": [ "bio_id","named_annots" ]
+                    "required": [ "named_annots" ],
+                    "oneOf": [ { "required": [ "bio_id" ] }, { "required": [ "bio_ids" ] } ]
                 },
                 "id": { "$ref": "#/definitions/id" }
             },

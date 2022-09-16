@@ -161,6 +161,7 @@ struct SRequestBuilder::SReader<SPsgCgiEntries>
 
     TSpecified GetSpecified() const;
     CPSG_BioId GetBioId() const;
+    CPSG_BioIds GetBioIds() const;
     CPSG_BlobId GetBlobId() const;
     CPSG_ChunkId GetChunkId() const;
     vector<string> GetNamedAnnots() const { return input.GetStringList("na"); }
@@ -181,6 +182,24 @@ CPSG_BioId SRequestBuilder::SReader<SPsgCgiEntries>::GetBioId() const
 {
     const auto& id = input.GetString("id");
     return input.Get("type", [&](const auto& v) { return CPSG_BioId(id, GetBioIdType(v)); }, id);
+}
+
+CPSG_BioIds SRequestBuilder::SReader<SPsgCgiEntries>::GetBioIds() const
+{
+    CPSG_BioIds rv;
+
+    auto ids = input.GetStringList("id");
+
+    for (const auto& id : ids) {
+        if (rv.empty()) {
+            auto type = input.Get("type", [&](const auto& v) { return GetBioIdType(v); }, objects::CSeq_id::e_not_set);
+            rv.emplace_back(id, type);
+        } else {
+            rv.emplace_back(id);
+        }
+    }
+
+    return rv;
 }
 
 CPSG_BlobId SRequestBuilder::SReader<SPsgCgiEntries>::GetBlobId() const

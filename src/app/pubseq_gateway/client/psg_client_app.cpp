@@ -93,7 +93,7 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_Biodata>       ("biodata",     "Request biodata info and data by bio ID"),
             s_GetCommand<CPSG_Request_Blob>          ("blob",        "Request blob by blob ID"),
             s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID", SCommand::fParallel),
-            s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID"),
+            s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID(s)"),
             s_GetCommand<CPSG_Request_Chunk>         ("chunk",       "Request blob data chunk by chunk ID"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
@@ -236,8 +236,8 @@ template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("na", "NAMED_ANNOT", "Named annotation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
-    arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
-    arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
+    arg_desc.AddExtra(1, kMax_UInt, "Bio ID(s)", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("type", "TYPE", "Type of the first bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
     s_InitDataOnly(arg_desc, false);
     s_InitDataFlags(arg_desc);
@@ -448,6 +448,7 @@ struct SRequestBuilder::SReader<CArgs>
 
     TSpecified GetSpecified() const;
     CPSG_BioId GetBioId() const;
+    CPSG_BioIds GetBioIds() const;
     CPSG_BlobId GetBlobId() const;
     CPSG_ChunkId GetChunkId() const;
     vector<string> GetNamedAnnots() const { return input["na"].GetStringList(); }
@@ -472,6 +473,23 @@ CPSG_BioId SRequestBuilder::SReader<CArgs>::GetBioId() const
 
     const auto type = GetBioIdType(input["type"].AsString());
     return CPSG_BioId(id, type);
+}
+
+CPSG_BioIds SRequestBuilder::SReader<CArgs>::GetBioIds() const
+{
+    const size_t n = input.GetNExtra();
+
+    CPSG_BioIds rv;
+
+    for (size_t i = 1; i <= n; ++i) {
+        if ((i == 1) && input["type"].HasValue()) {
+            rv.emplace_back(input[i].AsString(), GetBioIdType(input["type"].AsString()));
+        } else {
+            rv.emplace_back(input[i].AsString());
+        }
+    }
+
+    return rv;
 }
 
 CPSG_BlobId SRequestBuilder::SReader<CArgs>::GetBlobId() const
