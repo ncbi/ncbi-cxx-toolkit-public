@@ -193,7 +193,7 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
 
     CPSGMessages messages;
     string messages_error;
-    EXPECT_TRUE(FetchMessages("sat_info", m_Connection, messages, messages_error));
+    EXPECT_TRUE(FetchMessages("sat_info2", m_Connection, messages, messages_error));
     EXPECT_EQ("", messages_error);
 
     CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 4317, false, error_function);
@@ -305,7 +305,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage) {
 TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
     CPSGMessages messages;
     string messages_error;
-    EXPECT_TRUE(FetchMessages("sat_info", m_Connection, messages, messages_error));
+    EXPECT_TRUE(FetchMessages("sat_info2", m_Connection, messages, messages_error));
     EXPECT_EQ("", messages_error);
     CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
     blob.SetSuppress(true);
