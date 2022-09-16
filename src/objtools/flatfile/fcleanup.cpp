@@ -150,7 +150,7 @@ static void MoveBiomolToTop(CSeq_entry& seq_entry)
     }
 
     if (parts != nullptr) {
-        int biomol = CMolInfo::eBiomol_unknown;
+        CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
         ITERATE (TEntryList, entry, parts->GetSeq_set()) {
             if (! (*entry)->IsSeq())
                 return;
@@ -159,7 +159,7 @@ static void MoveBiomolToTop(CSeq_entry& seq_entry)
             if (bioseq.IsSetDescr()) {
                 ITERATE (TSeqdescList, desc, bioseq.GetDescr().Get()) {
                     if ((*desc)->IsMolinfo() && (*desc)->GetMolinfo().IsSetBiomol()) {
-                        int cur_biomol = (*desc)->GetMolinfo().GetBiomol();
+                        CMolInfo::TBiomol cur_biomol = (*desc)->GetMolinfo().GetBiomol();
                         if (biomol == CMolInfo::eBiomol_unknown)
                             biomol = cur_biomol;
                         else if (biomol != cur_biomol)

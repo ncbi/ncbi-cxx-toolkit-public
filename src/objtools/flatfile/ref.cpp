@@ -700,7 +700,7 @@ static bool get_parts(char* bptr, char* eptr, CImprint& imp)
  *      Return a CitArt pointer for GENBANK or EMBL mode.
  *
  **********************************************************/
-static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, int pre, bool has_muid, bool* all_zeros, Int4 er)
+static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, CImprint::EPrepub pre, bool has_muid, bool* all_zeros, Int4 er)
 {
     char* eptr;
     char* end_tit;
@@ -813,8 +813,8 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
                 volume--;
         }
     } else {
-        if (pre != 1)
-            pre = 2;
+        if (pre != CImprint::ePrepub_submitted)
+            pre = CImprint::ePrepub_in_press;
 
         end_tit = end_pages;
     }
@@ -837,11 +837,11 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     CImprint&  imp     = journal.SetImp();
 
     if (pre > 0)
-        imp.SetPrepub(static_cast<CImprint::EPrepub>(pre));
+        imp.SetPrepub(pre);
 
     *end_pages = '\0';
     if (pages && StringNCmp(pages, "0-0", 3) != 0) {
-        i = valid_pages_range(pages, tit, is_er, (pre == 2));
+        i = valid_pages_range(pages, tit, is_er, (pre == CImprint::ePrepub_in_press));
         if (i == 0)
             imp.SetPages(pages);
         else if (i == 1)
@@ -850,8 +850,8 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
             cit_art.Reset();
             return cit_art;
         }
-    } else if (pre != 1)
-        pre = 2;
+    } else if (pre != CImprint::ePrepub_submitted)
+        pre = CImprint::ePrepub_in_press;
 
     if (volume) {
         if (! get_parts(volume, end_volume, imp)) {
@@ -859,14 +859,14 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
             return cit_art;
         }
 
-        if (pre != 1 && ! imp.IsSetVolume()) {
+        if (pre != CImprint::ePrepub_submitted && ! imp.IsSetVolume()) {
             if (imp.IsSetPages()) {
                 cit_art.Reset();
                 return cit_art;
             }
-            pre = 2;
+            pre = CImprint::ePrepub_in_press;
         }
-    } else if (is_er > 0 && pre != 2) {
+    } else if (is_er > 0 && pre != CImprint::ePrepub_in_press) {
         cit_art.Reset();
         return cit_art;
     }
@@ -895,7 +895,7 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 
     imp.SetDate(*date);
     if (pre > 0)
-        imp.SetPrepub(static_cast<CImprint::EPrepub>(pre));
+        imp.SetPrepub(pre);
 
     if ((is_er & 01) == 01) {
         if (er == 1)
@@ -906,7 +906,7 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 
     /* check invalid "in-press"
      */
-    if (pre == 2) {
+    if (pre == CImprint::ePrepub_in_press) {
         if (has_muid) {
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvalidInPress, "Reference flagged as In-press, but Medline UID exists, In-press ignored: %s", buf);
             imp.ResetPrepub();
@@ -979,7 +979,7 @@ static CRef<CCit_gen> get_unpub(char* bptr, char* eptr, CRef<CAuth_list>& auth_l
  *                                              11-14-93
  *
  **********************************************************/
-static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, int pre, Parser::EFormat format, char* jour)
+static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, CImprint::EPrepub pre, Parser::EFormat format, char* jour)
 {
     char* s;
     char* ss;
@@ -1018,7 +1018,7 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
     CCit_book&     cit_book = cit_art->SetFrom().SetBook();
 
     if (pre > 0)
-        cit_book.SetImp().SetPrepub(static_cast<CImprint::EPrepub>(pre));
+        cit_book.SetImp().SetPrepub(pre);
 
     p = tbptr;
     CRef<CTitle::C_E> book_title(new CTitle::C_E);
@@ -1145,7 +1145,7 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
  *                                              11-14-93
  *
  **********************************************************/
-static CRef<CCit_let> get_thesis(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, int pre)
+static CRef<CCit_let> get_thesis(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, CImprint::EPrepub pre)
 {
     CRef<CCit_let> cit_let(new CCit_let);
 
@@ -1154,7 +1154,7 @@ static CRef<CCit_let> get_thesis(char* bptr, CRef<CAuth_list>& auth_list, CRef<C
     CCit_book& book = cit_let->SetCit();
 
     if (pre > 0)
-        book.SetImp().SetPrepub(static_cast<CImprint::EPrepub>(pre));
+        book.SetImp().SetPrepub(pre);
 
     char* s;
     for (s = bptr; *s != '\0' && *s != '(';)
@@ -1203,7 +1203,7 @@ static CRef<CCit_let> get_thesis(char* bptr, CRef<CAuth_list>& auth_list, CRef<C
  *                                              11-14-93
  *
  **********************************************************/
-static CRef<CCit_book> get_whole_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, int pre)
+static CRef<CCit_book> get_whole_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, CImprint::EPrepub pre)
 {
     CRef<CCit_book> cit_book;
 
@@ -1224,7 +1224,7 @@ static CRef<CCit_book> get_whole_book(char* bptr, CRef<CAuth_list>& auth_list, C
     cit_book.Reset(new CCit_book);
 
     if (pre > 0)
-        cit_book->SetImp().SetPrepub(static_cast<CImprint::EPrepub>(pre));
+        cit_book->SetImp().SetPrepub(pre);
 
     CRef<CDate> date = get_date(s + 1);
     if (date.NotEmpty())
@@ -1466,7 +1466,7 @@ static CRef<CCit_gen> fta_get_citgen(char* bptr, CRef<CAuth_list>& auth_list, CR
 
 CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, bool has_muid, CRef<CCit_art>& cit_art, Int4 er)
 {
-    int   pre = 0;
+    CImprint::EPrepub pre = static_cast<CImprint::EPrepub>(0);
     char* p;
     char* nearend;
     char* end;
@@ -1490,18 +1490,18 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         nearend -= 8;
         end = nearend + 2;
         if (StringNICmp("In press", nearend + 1, 8) == 0) {
-            pre            = 2;
+            pre            = CImprint::ePrepub_in_press;
             *(nearend + 1) = '\0';
         }
         if (StringNICmp("Submitted", nearend, 9) == 0) {
-            pre      = 1;
+            pre      = CImprint::ePrepub_submitted;
             *nearend = '\0';
         }
         if (pre == 0 && *end == '(' && isdigit(*(end + 1)) != 0) {
             for (nearend = end - 1; nearend > bptr && *nearend != ' ';)
                 nearend--;
             if (StringNICmp("In press", nearend + 1, 8) == 0) {
-                pre            = 2;
+                pre            = CImprint::ePrepub_in_press;
                 *(nearend + 1) = '\0';
             }
         }
@@ -1511,7 +1511,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         p += 6;
         if (StringNCmp(" In press", p, 9) == 0) {
             retval = ParFlat_IN_PRESS;
-            pre    = 2;
+            pre    = CImprint::ePrepub_in_press;
         }
     }
 
