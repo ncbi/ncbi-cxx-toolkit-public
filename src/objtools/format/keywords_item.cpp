@@ -365,7 +365,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 
     CBioseqContext::TUnreviewed urv = ctx.GetUnreviewedType();
     if (urv == 0) {
-        x_AddKeyword("UNREVIEWED");
+        //x_AddKeyword("UNREVIEWED");
     }
     if ((urv & CBioseqContext::fUnreviewed_Unannotated) != 0) {
         x_AddKeyword("UNREVIEWED");
