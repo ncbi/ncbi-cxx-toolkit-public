@@ -368,6 +368,14 @@ def cgi_help_cmd(args):
                 params.add(pos_name, 'mandatory', pos_desc, req_name)
                 requests.param(req_name, pos_name, pos_desc)
 
+            for extra in arg.iterfind('ns:extra', ns):
+                extra_name = 'id'
+                extra_optional = extra.get('optional')
+                extra_type = 'optional' if extra_optional == 'true' else 'mandatory'
+                extra_desc = extra.find('ns:description', ns).text
+                params.add(extra_name, extra_type, extra_desc, req_name)
+                requests.param(req_name, extra_name, extra_desc)
+
             for key in arg.iterfind('ns:key', ns):
                 key_name = key.get('name')
                 key_optional = key.get('optional')

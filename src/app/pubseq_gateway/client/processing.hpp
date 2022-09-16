@@ -353,7 +353,8 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     SReader(const CJson_ConstObject& i) : input(i) {}
 
     TSpecified GetSpecified() const;
-    CPSG_BioId GetBioId() const;
+    CPSG_BioId GetBioId() const { return GetBioId(input["bio_id"].GetArray()); }
+    CPSG_BioIds GetBioIds() const;
     CPSG_BlobId GetBlobId() const;
     CPSG_ChunkId GetChunkId() const;
     vector<string> GetNamedAnnots() const;
@@ -361,6 +362,9 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     CTimeout GetResendTimeout() const { return !input.has("resend_timeout") ? CTimeout::eDefault : CTimeout(input["resend_timeout"].GetValue().GetDouble()); }
     void ForEachTSE(TExclude exclude) const;
     SPSG_UserArgs GetUserArgs() const { return input.has("user_args") ? input["user_args"].GetValue().GetString() : SPSG_UserArgs(); }
+
+private:
+    CPSG_BioId GetBioId(const CJson_ConstArray& array) const;
 };
 
 template <class TRequest>
@@ -496,9 +500,9 @@ template <>
 template <class TReader>
 shared_ptr<CPSG_Request_NamedAnnotInfo> SRequestBuilder::SImpl<CPSG_Request_NamedAnnotInfo>::Build(const TReader& reader)
 {
-    auto bio_id = reader.GetBioId();
+    auto bio_ids = reader.GetBioIds();
     auto named_annots = reader.GetNamedAnnots();
-    auto request =  Create(move(bio_id), move(named_annots));
+    auto request = Create(move(bio_ids), move(named_annots));
     auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     SetAccSubstitution(request, reader.GetAccSubstitution());
