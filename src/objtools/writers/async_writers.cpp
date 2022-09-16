@@ -31,28 +31,26 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
-#include <corelib/ncbistl.hpp>
-
-#include <serial/objostr.hpp>
-#include <serial/objectio.hpp>
-#include <serial/serialbase.hpp>
-
-#include <objmgr/scope.hpp>
-#include <objects/submit/Seq_submit.hpp>
-
 #include <objtools/writers/async_writers.hpp>
+
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
 #include <objtools/edit/huge_file.hpp>
 #include <objtools/readers/objhook_lambdas.hpp>
 
-BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE
+#include <serial/objostr.hpp>
+#include <serial/objectio.hpp>
+#include <objects/seq/seq_id_handle.hpp>
+
+BEGIN_SCOPE(ncbi)
+BEGIN_SCOPE(objects)
 USING_SCOPE(edit);
 
-CGenBankAsyncWriter::CGenBankAsyncWriter(CObjectOStream* o_stream, 
+CGenBankAsyncWriter::CGenBankAsyncWriter(CObjectOStream* o_stream,
         EDuplicateIdPolicy policy)
-    : m_ostream{o_stream}, 
+    : m_ostream{o_stream},
       m_DuplicateIdPolicy{policy} {}
 
 
@@ -63,97 +61,40 @@ void CGenBankAsyncWriter::Write(CConstRef<CSerialObject> topobject) {
     m_ostream->WriteObject(topobject, topobject->GetThisTypeInfo());
 }
 
-
-void CGenBankAsyncWriter::WriteAsyncMT(CConstRef<CSerialObject> topobject,
-        TPullNextFunction pull_next_token,
-        TProcessFunction process_func,
-        TProcessFunction chain_func)
+void CGenBankAsyncWriter::StartWriter(CConstRef<CSerialObject> topobject)
 {
-    auto pull_next_task = x_make_producer_task(pull_next_token, process_func);
-
-    TPullNextFunction get_next_token = [this, chain_func](TToken& token) -> bool
+    auto next_function = [this]()
     {
-        auto token_future = x_pop_front();
-        if (!token_future.valid()) {
-            return false;
-        }
-        token = token_future.get(); // this can throw an exception that was caught within the thread
-        if (chain_func) {
-            chain_func(token);
-        }
-        return true;
+        return m_write_queue.pop_front();
     };
 
-    x_write(topobject, get_next_token);
+    m_writer_task = std::async(std::launch::async, [this, next_function](CConstRef<CSerialObject> topobject)
+    {
+        Write(topobject, next_function);
+    }, std::move(topobject));
 }
 
-
-void CGenBankAsyncWriter::WriteAsync2T(CConstRef<CSerialObject> topobject,
-            TPullNextFunction pull_next_token,
-            TProcessFunction process_func,
-            TProcessFunction chain_func)
+void CGenBankAsyncWriter::PushNextEntry(CConstRef<CSeq_entry> entry)
 {
-    auto produce_tokens_task = std::async(std::launch::async, [this, pull_next_token, process_func, chain_func]()
-        {
-            try
-            {
-                TAsyncToken token;
-                while ((pull_next_token(token)))
-                {
-                    process_func(token);
-                    if (chain_func) {
-                        chain_func(token);
-                    }
-                    std::promise<TToken> empty_promise;
-                    auto fut = empty_promise.get_future();
-                    empty_promise.set_value(std::move(token));
-                    m_queue.push_back(std::move(fut));
-                }
-                Complete();
-            }
-            catch(...)
-            {
-                PostException(std::current_exception());
-            }
-        }
-    );
-
-    auto get_next_token = [this](TToken& token) -> bool
-    {
-        auto token_future = x_pop_front();
-        if (!token_future.valid()) {
-            return false;
-        }
-        token = token_future.get(); // this can throw an exception that was caught within the thread
-        return true;
-    };
-
-    x_write(topobject, get_next_token);
+    m_write_queue.push_back(std::move(entry));
 }
 
-void CGenBankAsyncWriter::WriteAsyncST(CConstRef<CSerialObject> topobject,
-        TPullNextFunction pull_next_token,
-        TProcessFunction process_func,
-        TProcessFunction chain_func)
+void CGenBankAsyncWriter::FinishWriter()
 {
-    auto get_next_token = [pull_next_token, process_func, chain_func](TToken& token) -> bool
-    {
-        if (!pull_next_token(token))
-            return false;
+    m_write_queue.push_back({});
+    m_writer_task.wait();
+}
 
-        process_func(token);
-        if (chain_func) {
-            chain_func(token);
-        }
-        return true;
-    };
-
-    x_write(topobject, get_next_token);
+void CGenBankAsyncWriter::CancelWriter()
+{
+    m_write_queue.clear();
+    m_write_queue.push_back({});
+    m_writer_task.wait();
 }
 
 using TIdSet = set<CRef<CSeq_id>, PPtrLess<CRef<CSeq_id>>>;
 static void s_ReportDuplicateIds(const TIdSet& duplicateIds)
-{   
+{
     if (duplicateIds.empty()) {
         return;
     }
@@ -163,31 +104,30 @@ static void s_ReportDuplicateIds(const TIdSet& duplicateIds)
     }
     for (auto pId : duplicateIds) {
         msg += "\n";
-        msg += GetLabel(*pId); 
+        msg += GetLabel(*pId);
     }
     NCBI_THROW(CHugeFileException, eDuplicateSeqIds, msg);
 }
 
 
-void CGenBankAsyncWriter::x_write(CConstRef<CSerialObject> topobject, TPullNextFunction get_next_token)
+void CGenBankAsyncWriter::Write(CConstRef<CSerialObject> topobject, TGetNextFunction get_next_entry)
 {
     size_t bioseq_level = 0;
     auto seq_set_member = CObjectTypeInfo(CBioseq_set::GetTypeInfo()).FindMember("seq-set");
     SetLocalWriteHook(seq_set_member.GetMemberType(), *m_ostream,
-        [this, &bioseq_level, get_next_token]
+        [this, &bioseq_level, get_next_entry]
             (CObjectOStream& out, const CConstObjectInfo& object)
     {
         bioseq_level++;
         if (bioseq_level == 1)
         {
             COStreamContainer out_container(out, object.GetTypeInfo());
-            TToken token;
-            while(get_next_token(token))
+            CConstRef<CSeq_entry> entry;
+            while((entry = get_next_entry()))
             {
-                auto entry = token.entry;
-                if (entry) {
+                if (entry)
                     out_container << *entry;
-                }
+                entry.Reset();
             }
         } else {
             object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
@@ -196,15 +136,10 @@ void CGenBankAsyncWriter::x_write(CConstRef<CSerialObject> topobject, TPullNextF
     });
 
 
-    if (m_DuplicateIdPolicy == eIgnore) { 
-        m_ostream->WriteObject(topobject, topobject->GetThisTypeInfo());
-        return;
-    }
-
-    
     TIdSet processedIds, duplicateIds;
+    if (m_DuplicateIdPolicy != eIgnore)
     {
-        SetLocalWriteHook(CObjectTypeInfo(CType<CBioseq>()).FindMember("id"), 
+        SetLocalWriteHook(CObjectTypeInfo(CType<CBioseq>()).FindMember("id"),
                 *m_ostream,
                 [&processedIds, &duplicateIds, this](CObjectOStream& out, const CConstObjectInfoMI& member)
                 {
@@ -227,5 +162,5 @@ void CGenBankAsyncWriter::x_write(CConstRef<CSerialObject> topobject, TPullNextF
     s_ReportDuplicateIds(duplicateIds);
 }
 
-END_objects_SCOPE
-END_NCBI_SCOPE
+END_SCOPE(objects)
+END_SCOPE(ncbi)

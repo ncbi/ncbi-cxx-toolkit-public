@@ -872,7 +872,7 @@ int CTbl2AsnApp::Run()
         if (m_validator->ValTotalErrors() > 0)
         {
             std::ofstream ostr;
-            ostr.exceptions( ios::failbit | ios::badbit);
+            ostr.exceptions(ios::failbit | ios::badbit);
             ostr.open(m_context.GenerateOutputFilename(eFiles::stats, m_context.m_base_name));
             m_validator->ValReportErrorStats(ostr);
         }
@@ -915,7 +915,7 @@ int CTbl2AsnApp::Run()
         } else {
             auto seq_map_exc = dynamic_cast<const CSeqMapException*>(original);
             if (seq_map_exc) {
-                if (!args["r"] && !args["vdb"] && msg.find("Cannot resolve") != string::npos) {
+                if (!args["r"] && !(args.Exist("vdb") && args["vdb"]) && msg.find("Cannot resolve") != string::npos) {
                     msg += " - try running with -r to enable remote retrieval of sequences";
                 }
                 m_logger->PutError(*unique_ptr<CLineError>(CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, "", "", "", msg)));
@@ -1453,11 +1453,8 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
 
 void CTbl2AsnApp::Setup(const CArgs& args)
 {
-    // Setup application registry and logs for CONNECT library
-    CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(&GetConfig(), false));
-    // Setup MT-safety for CONNECT library
-    // CORE_SetLOCK(MT_LOCK_cxx2c());
+    // initialize conn library
+    CONNECT_Init(&GetConfig());
 
     // Create object manager and scope
 
