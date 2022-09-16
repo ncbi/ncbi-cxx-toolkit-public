@@ -838,7 +838,7 @@ string s_GetFastaString(const CPSG_BioId& bio_id)
     auto type = bio_id.GetType();
 
     try {
-        return type ? objects::CSeq_id(type, id).AsFastaString() : id;
+        return type ? objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent, type, id).AsFastaString() : id;
     }
     catch (objects::CSeqIdException&) {
         return id;
