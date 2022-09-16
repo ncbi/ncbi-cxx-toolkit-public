@@ -744,7 +744,7 @@ vector<string> CCassConnection::GetClusteringKeyColumnNames(string const & keysp
     return result;
 }
 
-const CassPrepared * CCassConnection::Prepare(const string &  sql)
+const CassPrepared * CCassConnection::Prepare(const string & sql)
 {
     const CassPrepared * rv = nullptr;
     {
