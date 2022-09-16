@@ -342,10 +342,11 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
         unique_ptr<CObjectOStream> ostr{
             CObjectOStream::Open(m_context.m_binary_asn1_output?eSerial_AsnBinary:eSerial_AsnText, *output)};
 
-        CGenBankAsyncWriter async_writer(ostr.get());
+        using TWriter = CGenBankAsyncWriterEx<TAsyncToken>;
+        TWriter async_writer(ostr.get());
         async_writer.SetDepth(10);
 
-        CGenBankAsyncWriter::TProcessFunction ff_chain_func;
+        TWriter::TProcessFunction ff_chain_func;
 
         if (m_context.m_make_flatfile) {
             ff_chain_func = [this](TAsyncToken& token) {
@@ -359,14 +360,16 @@ void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 
             ProcessTopEntry(context.file.m_format, need_update_date, context.m_submit, context.m_topentry);
             if (m_context.m_use_threads>=3) {
-                std::ostream* ff_file = nullptr;
+                std::ofstream ff_file;
+                ff_file.exceptions(ios::failbit | ios::badbit);
+
                 CFlatFileAsyncWriter<TAsyncToken> ff_writer;
                 if (m_context.m_make_flatfile) {
-                    ff_file = &m_context.GetOstream(eFiles::gbf);
-                    ff_chain_func = [&ff_writer, make_ff_async](CGenBankAsyncWriter::TToken& token) {
+                    ff_file.open(m_context.GenerateOutputFilename(eFiles::gbf));
+                    ff_chain_func = [&ff_writer, make_ff_async](TAsyncToken& token) {
                         ff_writer.Post(token, make_ff_async);
                     };
-                    ff_writer.Write(*ff_file);
+                    ff_writer.Write(ff_file);
                 }
                 async_writer.WriteAsyncMT(topobject, make_next_token, process_async, ff_chain_func);
                 // now it will wait until all ff_writer tasks complete

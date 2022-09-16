@@ -43,6 +43,9 @@
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objtools/edit/huge_file_process.hpp>
 #include <objtools/edit/huge_asn_loader.hpp>
+#include <objtools/writers/async_writers.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -65,6 +68,12 @@ protected:
     void x_ShowSeqSizes(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const;
     void x_AddUserObjects(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, const string filename) const;
     bool x_ModifyBioSeq(CBioseq_EditHandle beh) const;
+    void x_ReadAndWritePull(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const;
+    void x_ReadAndWritePush(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const;
+
+    CConstRef<CSerialObject> x_PopulateTopObject() const;
+
+    CConstRef<CSeq_entry> m_top_entry;
 };
 
 void CHugeFileDemoApp::Init()
@@ -97,6 +106,14 @@ int CHugeFileDemoApp::Run()
 
     bool result = huge.Read([this, &context](edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist)->bool
     {
+        m_top_entry = reader->GetTopEntry();
+        if (!m_top_entry && reader->IsMultiSequence()) {
+            auto entry = Ref(new CSeq_entry);
+            entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+            entry->SetSet().SetSeq_set();
+            m_top_entry = entry;
+        }
+
         // one can register as many huge loaders as needed but don't mess with loader's priorities up
         auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
             *context.m_ObjMgr, context.m_loader_name, reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
@@ -119,9 +136,16 @@ void CHugeFileDemoApp::x_RunDemo(TAppContext& context, const std::list<CConstRef
     std::cout << "Reading " << idlist.size() << " records" << std::endl;
 
     if (GetArgs()["o"]) {
-        x_AddUserObjects(context, idlist, GetArgs()["o"].AsString());
+        //x_AddUserObjects(context, idlist, GetArgs()["o"].AsString());
+        std::ofstream outfile;
+        outfile.exceptions(ios::failbit | ios::badbit);
+        outfile.open(GetArgs()["o"].AsString());
+        unique_ptr<CObjectOStream> objstr{ CObjectOStream::Open( false ? eSerial_AsnBinary : eSerial_AsnText, outfile) };
+
+        //x_ReadAndWritePull(context, idlist, objstr.get());
+        x_ReadAndWritePush(context, idlist, objstr.get());
     } else {
-        x_ShowIds(context, idlist);
+        //x_ShowIds(context, idlist);
         x_ShowSeqSizes(context, idlist);
     }
 }
@@ -144,19 +168,33 @@ void CHugeFileDemoApp::x_ShowSeqSizes(TAppContext& context, const std::list<CCon
 
     auto scope = Ref(new CScope(*context.m_ObjMgr));
     scope->AddDataLoader(context.m_loader_name);
-    auto id_it = idlist.begin();
-    for (size_t i=0; i<100 && i<idlist.size(); ++i)
+    size_t i=0;
+    for (auto it: idlist)
     {
-        std::cout
-            << "  "
-            << (**id_it).AsFastaString()
-            << ":" << scope->GetSequenceLength(**id_it)
-            << ":" << scope->GetSequenceType(**id_it)
-            << ":" << scope->GetTaxId(**id_it)
-            << ":" << scope->GetLabel(**id_it)
-            << std::endl;
+        CBioseq_Handle bh = scope->GetBioseqHandle(*it);
+        if (bh) {
+            std::cout
+                << i << ":"
+                << (*it).AsFastaString()
+                << ":" << scope->GetSequenceLength(*it)
+                << ":" << scope->GetSequenceType(*it)
+                << ":" << scope->GetTaxId(*it)
+                << ":" << scope->GetLabel(*it);
 
-        id_it++;
+
+            CSeq_entry_Handle seh = bh.GetParentEntry();
+            if (seh) {
+                auto entry = seh.GetCompleteSeq_entry();
+                if (entry) {
+                    entry->IsSeq();
+                }
+            }
+            std::cout << "\n";
+
+            i++;
+
+        }
+
 
     // copied from CScope
     /// Clean all unused TSEs from the scope's cache and release the memory.
@@ -171,7 +209,7 @@ void CHugeFileDemoApp::x_ShowSeqSizes(TAppContext& context, const std::list<CCon
 
 bool CHugeFileDemoApp::x_ModifyBioSeq(CBioseq_EditHandle beh) const
 {
-    auto& descr = beh.SetDescr();
+    //auto& descr = beh.SetDescr();
     return true;
 }
 
@@ -241,15 +279,120 @@ void CHugeFileDemoApp::x_AddUserObjects(TAppContext& context, const std::list<CC
     }
 }
 
+CConstRef<CSerialObject> CHugeFileDemoApp::x_PopulateTopObject() const
+{
+    return m_top_entry;
+}
+
+void CHugeFileDemoApp::x_ReadAndWritePush(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const
+{
+    auto scope = Ref(new CScope(*context.m_ObjMgr));
+    scope->AddDataLoader(context.m_loader_name);
+
+    auto top_object = x_PopulateTopObject();
+
+    CGenBankAsyncWriter writer(output);
+
+    writer.StartWriter(top_object);
+    size_t index = 0;
+    for (auto id: idlist)
+    {
+        CBioseq_Handle bh = scope->GetBioseqHandle(*id);
+        if (bh)
+        {
+            if (50 <= index && index < 100) {
+                // modify second fifty records
+                CBioseq_EditHandle beh = bh.GetEditHandle();
+                x_ModifyBioSeq(beh);
+            }
+            CSeq_entry_Handle seh = bh.GetParentEntry();
+            writer.PushNextEntry(seh.GetCompleteSeq_entry());
+
+            ++index;
+        }
+        // cleanup leftovers
+        scope->ResetHistory();
+    }
+
+    writer.FinishWriter();
+}
+
+void CHugeFileDemoApp::x_ReadAndWritePull(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const
+{
+    auto scope = Ref(new CScope(*context.m_ObjMgr));
+    scope->AddDataLoader(context.m_loader_name);
+
+    auto top_object = x_PopulateTopObject();
+
+    auto it = idlist.begin();
+    size_t index = 0;
+
+    struct processing_token
+    {
+        CBioseq_Handle m_bh;
+        CSeq_entry_Handle m_seh;
+        size_t m_index = 0;
+        operator CConstRef<CSeq_entry>() const
+        {
+            if (m_seh)
+                return m_seh.GetCompleteSeq_entry();
+            return {};
+        }
+    };
+
+    auto pull_next = [this, &scope, &index, &it, &idlist] (processing_token& token) -> bool
+    {
+        // clean up leftovers
+        scope->ResetHistory();
+
+        if (it == idlist.end())
+            return false; // no more data
+
+        // just to show how to pass some data along m_seh
+        token.m_index = index;
+        // load entry
+        if (*it)
+            token.m_bh = scope->GetBioseqHandle(**it);
+
+        if (!token.m_seh)
+            return false;
+
+        index++;
+        it++;
+        return true;
+    };
+
+    auto process_func = [this](processing_token& token)
+    {
+        if (token.m_bh) {
+            if (50 <= token.m_index && token.m_index < 100) {
+                // modify second fifty records
+                CBioseq_EditHandle beh = token.m_bh.GetEditHandle();
+                x_ModifyBioSeq(beh);
+            }
+        }
+
+        // let the writer the whole nuc-prot-set
+        if (token.m_bh) {
+            token.m_seh = token.m_bh.GetParentEntry();
+        }
+
+    };
+
+    CGenBankAsyncWriterEx<processing_token> writer(output);
+
+    writer.WriteAsyncST(top_object, pull_next, process_func);
+    //writer.WriteAsync2T(top_object, pull_next, process_func);
+    //writer.WriteAsyncMT(top_object, pull_next, process_func);
+}
+
+
 int main(int argc, const char* argv[])
 {
     // Execute main application function
     return CHugeFileDemoApp().AppMain(argc, argv); //, 0, eDS_Default, 0);
 }
 
-// TODO: open, modify some of random records, read some other records and save
 // TODO: need to expose Annotations
 // TODO: we expose the callback for renaming conflicting seqids
 // TODO: follow https://jira.ncbi.nlm.nih.gov/browse/CXX-12650
-//
-//

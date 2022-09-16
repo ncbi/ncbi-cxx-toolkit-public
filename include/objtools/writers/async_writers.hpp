@@ -36,28 +36,16 @@
 #include <functional>
 #include <future>
 #include <util/message_queue.hpp>
-#include <objmgr/seq_entry_handle.hpp>
+#include <corelib/ncbiobj.hpp>
 
-BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(ncbi)
 
 class CObjectOStream;
 class CSerialObject;
 
-BEGIN_objects_SCOPE
+BEGIN_SCOPE(objects)
 
 class CSeq_entry;
-class CSeq_submit;
-class CScope;
-
-struct NCBI_XOBJWRITE_EXPORT TAsyncToken
-{
-    CRef<CSeq_entry>  entry;
-    CRef<CSeq_submit> submit;
-    CRef<CSeq_entry>  top_entry;
-    CRef<CScope>      scope;
-    CSeq_entry_Handle seh;
-};
-
 
 template<typename _token>
 class TAsyncPipeline
@@ -100,37 +88,18 @@ public:
         m_queue.push_back({});
     }
 
-    auto ReceiveData(TProcessFunction consume_func)
-    {
-        return std::async(std::launch::async, [consume_func, this]()
-        {
-            while(true)
-            {
-                auto token_future = x_pop_front();
-                if (!token_future.valid())
-                    break;
-                auto token = token_future.get(); // this can throw an exception that was caught within the thread
-                //if (chain_func) chain_func(token);
-                if (consume_func) {
-                    consume_func(token);
-                }
-            }
-        });
-    }
-
-protected:
-    auto x_pop_front()
+    auto pop_front()
     {
         return m_queue.pop_front();
     }
 
-    std::future<void> x_make_producer_task(TPullNextFunction pull_next_token, TProcessFunction process_func)
+    std::future<void> make_producer_task(TPullNextFunction pull_next_token, TProcessFunction process_func)
     {
         return std::async(std::launch::async, [this, pull_next_token, process_func]()
             {
                 try
                 {
-                    TAsyncToken token;
+                    TToken token;
                     while ((pull_next_token(token)))
                     {
                         PostData(token, process_func);
@@ -150,14 +119,9 @@ protected:
 };
 
 
-class NCBI_XOBJWRITE_EXPORT CGenBankAsyncWriter: public TAsyncPipeline<TAsyncToken>
+class NCBI_XOBJWRITE_EXPORT CGenBankAsyncWriter
 {
 public:
-    using _MyBase = TAsyncPipeline<TAsyncToken>;
-    using _MyBase::TProcessFunction;
-    using _MyBase::TPullNextFunction;
-    using _MyBase::TToken;
-
     enum EDuplicateIdPolicy {
         eIgnore,
         eThrowImmediately,
@@ -167,33 +131,126 @@ public:
     CGenBankAsyncWriter(CObjectOStream* o_stream, EDuplicateIdPolicy policy=eReportAll);
     virtual ~CGenBankAsyncWriter();
 
+    // write any object traditionally
     void Write(CConstRef<CSerialObject> topobject);
+
+    // write genbankset with multiple entries, could be seq_submit, seq_entry, bioseq_set
+    // or any other object, get_next_entry will be called only for genbankset's
+    using TGetNextFunction = std::function<CConstRef<CSeq_entry>()>;
+    void Write(CConstRef<CSerialObject> topobject, TGetNextFunction get_next_entry);
+
+    // the same as above, but write asyncronously
+    void StartWriter(CConstRef<CSerialObject> topobject);
+    void PushNextEntry(CConstRef<CSeq_entry> entry);
+    void FinishWriter();
+    void CancelWriter();
+
+protected:
+    CObjectOStream*    m_ostream = nullptr;
+    EDuplicateIdPolicy m_DuplicateIdPolicy;
+    CMessageQueue<CConstRef<CSeq_entry>> m_write_queue;
+    std::future<void> m_writer_task;
+
+};
+
+template<class _Token>
+class CGenBankAsyncWriterEx: public CGenBankAsyncWriter
+{
+public:
+    using TToken            = _Token;
+    using _Pipeline         = TAsyncPipeline<TToken>;
+    using TProcessFunction  = typename _Pipeline::TProcessFunction;
+    using TPullNextFunction = typename _Pipeline::TPullNextFunction;
+
+    using CGenBankAsyncWriter::CGenBankAsyncWriter;
+
+    void SetDepth(size_t depth) {
+        m_pipeline.SetDepth(depth);
+    }
 
     void WriteAsyncMT(CConstRef<CSerialObject> topobject,
             TPullNextFunction pull_next_token,
-            TProcessFunction process_func,
-            TProcessFunction chain_func);
+            TProcessFunction  process_func = {},
+            TProcessFunction  chain_func   = {})
+    {
+        auto pull_next_task = m_pipeline.make_producer_task(pull_next_token, process_func);
+
+        TGetNextFunction get_next_entry = [this, chain_func]() -> CConstRef<CSeq_entry>
+        {
+            auto token_future = m_pipeline.pop_front();
+            if (!token_future.valid()) {
+                return {};
+            }
+            TToken token = token_future.get(); // this can throw an exception that was caught within the thread
+            if (chain_func) {
+                chain_func(token);
+            }
+
+            return token;
+        };
+
+        Write(topobject, get_next_entry);
+    }
 
     void WriteAsync2T(CConstRef<CSerialObject> topobject,
             TPullNextFunction pull_next_token,
-            TProcessFunction process_func,
-            TProcessFunction chain_func);
+            TProcessFunction  process_func = {},
+            TProcessFunction  chain_func   = {})
+    {
+        StartWriter(topobject);
+        try
+        {
+            TToken token;
+            while ((pull_next_token(token)))
+            {
+                if (process_func)
+                    process_func(token);
+
+                PushNextEntry(token);
+
+                if (chain_func)
+                    chain_func(token);
+            }
+            FinishWriter();
+        }
+        catch(...)
+        {
+            CancelWriter();
+            throw;
+        }
+    }
 
     void WriteAsyncST(CConstRef<CSerialObject> topobject,
             TPullNextFunction pull_next_token,
-            TProcessFunction process_func,
-            TProcessFunction chain_func);
+            TProcessFunction  process_func = {},
+            TProcessFunction  chain_func   = {})
+    {
+        auto get_next_entry = [pull_next_token, process_func, chain_func]() -> CConstRef<CSeq_entry>
+        {
+            TToken token;
+
+            if (!pull_next_token(token))
+                return {};
+
+            if (process_func)
+                process_func(token);
+
+            if (chain_func)
+                chain_func(token);
+
+            return token;
+        };
+
+        Write(topobject, get_next_entry);
+    }
+
+
 protected:
-
-    void x_write(CConstRef<CSerialObject> topobject, TPullNextFunction get_next_token);
-
-private:
-    CObjectOStream* m_ostream = nullptr;
-    EDuplicateIdPolicy m_DuplicateIdPolicy;
+    _Pipeline m_pipeline;
 };
 
 
-END_objects_SCOPE
-END_NCBI_SCOPE
+END_SCOPE(objects)
+END_SCOPE(ncbi)
 
 #endif
