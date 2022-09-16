@@ -76,15 +76,27 @@ xmlNodePtr xml::impl::node_replace (xmlNodePtr old_node, xmlNodePtr new_node) {
     xmlNodePtr copied_node =  xmlCopyNode(new_node, 1);
     if (!copied_node) throw std::bad_alloc();
 
+    // Note: the libxml2 xmlReplaceNode(...) does not tell if it completed successfully.
+    //       The hack is to set a pointer to a document to a certain value. If the pointer
+    //       is changed then the replacement succseeded. Below a temporary empty document
+    //       is created for that purpose.
+    xmlDocPtr temp_to_test_replace_success = xmlNewDoc((const xmlChar *)("1.0"));
+    if (!temp_to_test_replace_success) {
+        xmlFreeNode(copied_node);
+        throw std::bad_alloc();
+    }
+
     // hack to see if xmlReplaceNode was successful
-    copied_node->doc = reinterpret_cast<xmlDocPtr>(old_node);
+    copied_node->doc = temp_to_test_replace_success;
     xmlReplaceNode(old_node, copied_node);
 
-    if (copied_node->doc == reinterpret_cast<xmlDocPtr>(old_node)) {
+    if (copied_node->doc == temp_to_test_replace_success) {
+        xmlFreeDoc(temp_to_test_replace_success);
         xmlFreeNode(copied_node);
         throw xml::exception("failed to replace xml::node; xmlReplaceNode() failed");
     }
 
+    xmlFreeDoc(temp_to_test_replace_success);
     xmlFreeNode(old_node);
 
     if (!copied_node->ns) copied_node->ns = xmlSearchNs(NULL, copied_node->parent, NULL);
