@@ -58,7 +58,7 @@ CGenBankAsyncWriter::~CGenBankAsyncWriter() {}
 
 
 void CGenBankAsyncWriter::Write(CConstRef<CSerialObject> topobject) {
-    m_ostream->WriteObject(topobject, topobject->GetThisTypeInfo());
+    m_ostream->Write(topobject, topobject->GetThisTypeInfo());
 }
 
 void CGenBankAsyncWriter::StartWriter(CConstRef<CSerialObject> topobject)
@@ -158,7 +158,8 @@ void CGenBankAsyncWriter::Write(CConstRef<CSerialObject> topobject, TGetNextFunc
                 });
     }
 
-    m_ostream->WriteObject(topobject, topobject->GetThisTypeInfo());
+    m_ostream->Write(topobject, topobject->GetThisTypeInfo());
+
     s_ReportDuplicateIds(duplicateIds);
 }
 
