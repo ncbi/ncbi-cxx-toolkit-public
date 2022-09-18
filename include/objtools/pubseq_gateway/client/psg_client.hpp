@@ -35,6 +35,7 @@
 #include <corelib/ncbi_url.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/services/json_over_uttp.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -172,11 +173,20 @@ private:
 class CPSG_BioId
 {
 public:
-    using TType = objects::CSeq_id::E_Choice;
+    using CSeq_id = objects::CSeq_id;
+    using TType = CSeq_id::E_Choice;
 
     /// @param id
     ///  Bio ID (like accession)
     CPSG_BioId(string id, TType type = {}) : m_Id(move(id)), m_Type(type) {}
+
+    /// @param seq_id
+    ///  Seq ID
+    CPSG_BioId(const CSeq_id& seq_id) : m_Type(seq_id.Which()) { seq_id.GetLabel(&m_Id, CSeq_id::eFastaContent); }
+
+    /// @param seq_id_handle
+    ///  Seq ID handle
+    CPSG_BioId(const objects::CSeq_id_Handle& seq_id_handle) : CPSG_BioId(*seq_id_handle.GetSeqId()) {}
 
     /// Get tilde-separated string representation of this bio ID (e.g. for logging)
     string Repr() const;
