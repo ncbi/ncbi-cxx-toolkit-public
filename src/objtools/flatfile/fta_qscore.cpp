@@ -918,7 +918,8 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
 
     /* allocate a buffer for reading qs_buf, one line at a time
      */
-    my_buf = (char*)MemNew(QSBUF_MAXLINE);
+    vector<char> mybuf(QSBUF_MAXLINE);
+    my_buf = mybuf.data();
     if (my_buf == NULL) {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for my_buf buffer");
         return;
@@ -926,7 +927,8 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
 
     /* allocate a buffer for the 'title' read from the defline in qs_buf
      */
-    def_title = (char*)MemNew(QSBUF_MAXTITLE);
+    vector<char> deftitle(QSBUF_MAXTITLE);
+    def_title = deftitle.data();
     if (def_title == NULL) {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for def_title buffer");
         return;
@@ -1046,8 +1048,6 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
 
     /* if a problem has been encountered, free the SeqGraph and return NULL */
     if (problem) {
-        MemFree(my_buf);
-        MemFree(def_title);
         return;
     }
 
@@ -1085,9 +1085,6 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
     interval.SetTo(bioseq.GetLength() - 1);
 
     loc.SetId(*(bioseq.GetId().front()));
-
-    MemFree(my_buf);
-    MemFree(def_title);
 
     graphs.push_back(graph);
 }
