@@ -1071,6 +1071,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
     CRef<CDate_std> std_date = get_full_date(q, true, source);
     if (! std_date || std_date.Empty()) {
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: %s", prbp->journal.c_str());
+        MemFree(num);
         return false;
     }
 

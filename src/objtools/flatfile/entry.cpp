@@ -291,8 +291,9 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
             was = true;
     }
 
-    entry->mpData = new EntryBlk();
     Entry* pEntry = new Entry(pp, entry->mOffset);
+    entry->mOffset = nullptr;
+    delete entry;
     return pEntry;
 }
 

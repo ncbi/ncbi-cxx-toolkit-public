@@ -1074,7 +1074,7 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
             return true;
     }
 
-    StringNCpy(msg, StringSave(ptr), 50);
+    StringNCpy(msg, ptr, 50);
     msg[50] = '\0';
     p       = StringChr(msg, '\n');
     if (p != NULL)

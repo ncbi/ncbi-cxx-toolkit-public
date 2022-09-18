@@ -1030,6 +1030,8 @@ static void fta_get_user_object(CSeq_entry& seq_entry, const DataBlk& entry)
             continue;
     }
 
+    MemFree(q);
+
     if (! user_obj->IsSetData())
         return;
 
