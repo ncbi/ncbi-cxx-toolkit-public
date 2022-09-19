@@ -181,6 +181,19 @@ public:
     virtual TFlags GetFlags(void) const = 0;
     virtual void   SetFlags(TFlags flags) = 0;
 
+#if 0
+    /// Algorithm implememntation feature
+    /// Please don't change values  
+    enum EFeature {
+        f_NoCompressionLevel = 1,   ///< No compression method (copy "as is")
+        f_Dictionary         = 2,   ///< Dictionaries
+        f_EstimateCompressionBufferSize
+    };
+    /// Check if specified feature have support by a current compression
+    /// algorithm implememntation.
+    virtual bool HaveSupport(EFeature feature) = 0;
+#endif
+
     //
     // Utility functions 
     //
@@ -205,14 +218,18 @@ public:
     // (De)compress file "src_file" and put result to file "dst_file".
     // Return TRUE on success, FALSE on error.
     virtual bool CompressFile(
-        const string&     src_file,
-        const string&     dst_file,
-        size_t            buf_size = kCompressionDefaultBufSize
+        const string& src_file,
+        const string& dst_file,
+        size_t        file_io_bufsize         = kCompressionDefaultBufSize,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     ) = 0;
     virtual bool DecompressFile(
-        const string&     src_file,
-        const string&     dst_file, 
-        size_t            buf_size = kCompressionDefaultBufSize
+        const string& src_file,
+        const string& dst_file, 
+        size_t        file_io_bufsize         = kCompressionDefaultBufSize,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     ) = 0;
 };
 
@@ -250,18 +267,31 @@ public:
     /// Set flags.
     virtual void   SetFlags(TFlags flags);
 
+    /// Structure to get information about recommended buffer sizes for file/stream I/O
+    /// to tune up a (de)compression performance.
+    /// @sa GetRecommendedBufferSizes
+    struct SRecommendedBufferSizes {
+        size_t  compression_in;     ///< compression: recommended size for input buffer
+        size_t  compression_out;    ///< compression: recommended size for output buffer
+        size_t  decompression_in;   ///< decompression: recommended size for input buffer
+        size_t  decompression_out;  ///< decompression: recommended size for output buffer
+
+        // Round up buffer size to a value divisible by 'precision'
+        size_t RoundUp(size_t value, size_t precision);
+    };
+
 protected:
     // Universal file compression/decompression functions.
     // Return TRUE on success, FALSE on error.
     virtual bool x_CompressFile(
         const string&     src_file,
         CCompressionFile& dst_file,
-        size_t            buf_size = kCompressionDefaultBufSize
+        size_t            file_io_bufsize = kCompressionDefaultBufSize
     );
     virtual bool x_DecompressFile(
         CCompressionFile& src_file,
         const string&     dst_file,
-        size_t            buf_size = kCompressionDefaultBufSize
+        size_t            file_io_bufsize = kCompressionDefaultBufSize
     );
 
     // Set last action error/status code and description
@@ -275,7 +305,7 @@ protected:
         eMode_Decompress,      ///< Generic decompression
         eMode_TransparentRead  ///< Transparent read, the data is uncompressed
     };
-    ///< Decompress mode (Decompress/TransparentRead/Unknown).
+    /// Decompress mode (Decompress/TransparentRead/Unknown).
     EDecompressMode m_DecompressMode;
 
 private:
@@ -314,12 +344,16 @@ public:
 
     // 'ctors
     CCompressionFile(void);
-    CCompressionFile(const string& path, EMode mode); 
+    CCompressionFile(const string& path, EMode mode, 
+                     size_t compression_in_bufsize  = 0,
+                     size_t compression_out_bufsize = 0); 
     virtual ~CCompressionFile(void);
 
     /// Opens a compressed file for reading or writing.
     /// Return NULL if error has been occurred.
-    virtual bool Open(const string& path, EMode mode) = 0; 
+    virtual bool Open(const string& path, EMode mode, 
+                      size_t compression_in_bufsize  = 0,
+                      size_t compression_out_bufsize = 0) = 0; 
 
     /// Read up to "len" uncompressed bytes from the compressed file "file"
     /// into the buffer "buf". Return the number of bytes actually read
@@ -552,6 +586,15 @@ public:
 //===========================================================================
 
 inline
+size_t CCompression::SRecommendedBufferSizes::RoundUp(size_t value, size_t precision)
+{
+    if ( precision <= 1 ) {
+        return value;
+    }
+    return size_t(value / precision) * precision + ((value % precision > 0) ? precision : 0);
+}
+
+inline
 void CCompressionProcessor::Reset(void)
 {
     m_ProcessedSize  = 0;
@@ -598,6 +641,7 @@ size_t CCompressionProcessor::GetOutputSize(void)
 {
     return m_OutputSize;
 }
+
 
 
 END_NCBI_SCOPE

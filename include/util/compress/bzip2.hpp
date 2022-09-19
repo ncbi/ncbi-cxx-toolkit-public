@@ -46,41 +46,6 @@ BEGIN_NCBI_SCOPE
 
 
 //////////////////////////////////////////////////////////////////////////////
-//
-// Special compression parameters (description from bzip2 docs)
-//        
-// <verbosity>
-//    This parameter should be set to a number between 0 and 4 inclusive.
-//    0 is silent, and greater numbers give increasingly verbose
-//    monitoring/debugging output. If the library has been compiled with
-//    -DBZ_NO_STDIO, no such output will appear for any verbosity setting. 
-//
-// <work_factor> 
-//    Parameter work_factor controls how the compression phase behaves when
-//    presented with worst case, highly repetitive, input data.
-//    If compression runs into difficulties caused by repetitive data, the
-//    library switches from the standard sorting algorithm to a fallback
-//    algorithm. The fallback is slower than the standard algorithm by
-//    perhaps a factor of three, but always behaves reasonably, no matter
-//    how bad the input. Lower values of work_factor reduce the amount of
-//    effort the standard algorithm will expend before resorting to the
-//    fallback. You should set this parameter carefully; too low, and many
-//    inputs will be handled by the fallback algorithm and so compress
-//    rather slowly, too high, and your average-to-worst case compression
-//    times can become very large. The default value of 30 gives reasonable
-//    behaviour over a wide range of circumstances. Allowable values range
-//    from 0 to 250 inclusive. 0 is a special case, equivalent to using
-//    the default value of 30.
-//
-// <small_decompress> 
-//    If it is nonzero, the library will use an alternative decompression
-//    algorithm which uses less memory but at the cost of decompressing more
-//    slowly (roughly speaking, half the speed, but the maximum memory
-//    requirement drops to around 2300k).
-//
-
-
-//////////////////////////////////////////////////////////////////////////////
 ///
 /// CBZip2Compression --
 ///
@@ -90,27 +55,36 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CBZip2Compression : public CCompression 
 {
 public:
+    /// Initialize compression  library (for API compatibility, bz2 don't need it).
+    static bool Initialize(void) { return true; };
+
     /// Compression/decompression flags.
     enum EFlags {
-        ///< Allow transparent reading data from buffer/file/stream
-        ///< regardless is it compressed or not. But be aware,
-        ///< if data source contains broken data and API cannot detect that
-        ///< it is compressed data, that you can get binary instead of
-        ///< decompressed data. By default this flag is OFF.
+        /// Allow transparent reading data from buffer/file/stream
+        /// regardless is it compressed or not. But be aware,
+        /// if data source contains broken data and API cannot detect that
+        /// it is compressed data, that you can get binary instead of
+        /// decompressed data. By default this flag is OFF.
         fAllowTransparentRead = (1<<0),
-        ///< Allow to "compress/decompress" empty data. 
-        ///< The output compressed data will have header and footer only.
+        /// Allow to "compress/decompress" empty data. 
+        /// The output compressed data will have header and footer only.
         fAllowEmptyData       = (1<<1)
     };
     typedef CBZip2Compression::TFlags TBZip2Flags; ///< Bitwise OR of EFlags
 
     /// Constructor.
-    CBZip2Compression(
-        ELevel level            = eLevel_Default,
-        int    verbosity        = 0,              // [0..4]
-        int    work_factor      = 0,              // [0..250] 
-        int    small_decompress = 0               // [0,1]
-    );
+    CBZip2Compression(ELevel level = eLevel_Default);
+
+    /// Constructor.
+    /// @deprecated 
+    ///   Use CBZip2Compression(ELevel) constructor without advanced parameters, 
+    ///   that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CBZip2Compression(
+        ELevel level,
+        int    verbosity,                 // this parameter is ignored
+        int    work_factor      = 0,      // [0..250] 
+        int    small_decompress = 0       // [0,1]
+    ));
 
     /// Destructor.
     virtual ~CBZip2Compression(void);
@@ -129,9 +103,9 @@ public:
     virtual ELevel GetDefaultLevel(void) const
         { return eLevel_VeryHigh; };
 
-    //
+    //=======================================================================
     // Utility functions 
-    //
+    //=======================================================================
 
     /// Compress data in the buffer.
     ///
@@ -182,24 +156,55 @@ public:
         /* out */            size_t* dst_len
     );
 
+    /// Get recommended buffer sizes for stream/file I/O.
+    ///
+    /// These buffer sizes are softly recommended. They are not required, (de)compression
+    /// streams accepts any reasonable buffer size, for both input and output.
+    /// Respecting the recommended size just makes it a bit easier for (de)compressor,
+    /// reducing the amount of memory shuffling and buffering, resulting in minor 
+    /// performance savings. If compression library doesn't have preferences about 
+    /// I/O buffer sizes, kCompressionDefaultBufSize will be used.
+    /// @param round_up
+    ///   If specified, round up a returned value by specified amount. 
+    ///   Sp all values will be divisible to this parameter.
+    ///   Usuful for better memory management. 
+    /// @return
+    ///   Structure with recommended buffer sizes.
+    /// @note
+    ///   Applicable for streaming/file operations.
+    /// @sa
+    ///   kCompressionDefaultBufSize, CSystemInfo::GetVirtualMemoryPageSize()
+    /// 
+    static SRecommendedBufferSizes GetRecommendedBufferSizes(size_t round_up = 0);
+
     /// Compress file.
     ///
     /// @param src_file
     ///   File name of source file.
     /// @param dst_file
     ///   File name of result file.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a compressor.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be compressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a compressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @note
     ///   This method don't store any file meta information like name, date/time, owner or attributes.
     /// @sa
-    ///   DecompressFile
+    ///   DecompressFile, GetRecommendedBufferSizes, CBZip2CompressionFile
+    /// 
     virtual bool CompressFile(
         const string& src_file,
         const string& dst_file,
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize         = kCompressionDefaultBufSize,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     );
 
     /// Decompress file.
@@ -208,17 +213,75 @@ public:
     ///   File name of source file.
     /// @param dst_file
     ///   File name of result file.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a decompressor.
+    /// @param decompression_in_bufsize
+    ///   Size of the internal buffer holding input data to be decompressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param decompression_out_bufsize
+    ///   Size of the internal buffer to receive data from a decompressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @sa
-    ///   CompressFile
+    ///   CompressFile, GetRecommendedBufferSizes, CBZip2CompressionFile
+    /// 
     virtual bool DecompressFile(
         const string& src_file,
         const string& dst_file, 
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize           = kCompressionDefaultBufSize,
+        size_t        decompression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        decompression_out_bufsize = kCompressionDefaultBufSize
     );
+
+    //=======================================================================
+    // Advanced compression-specific parameters
+    //=======================================================================
+    // Allow to tune up (de)compression for a specific needs.
+    //
+    // - Pin down compression parameters to some specific values, so these
+    //   values are no longer dynamically selected by the compressor.
+    // - All setting parameters should be in the range [min,max], 
+    //   or equal to default.
+    // - All parameters should be set before starting (de)compression, 
+    //   or it will be ignored for current operation.
+    //=======================================================================
+
+    /// Work factor.
+    ///
+    /// This parameter controls how the compression phase behaves when
+    /// presented with worst case, highly repetitive, input data.
+    /// If compression runs into difficulties caused by repetitive data, 
+    /// the library switches from the standard sorting algorithm to a fallback
+    /// algorithm. The fallback is slower than the standard algorithm by
+    /// perhaps a factor of three, but always behaves reasonably, no matter
+    /// how bad the input. Lower values of work_factor reduce the amount of
+    /// effort the standard algorithm will expend before resorting to the
+    /// fallback. You should set this parameter carefully; too low, and many
+    /// inputs will be handled by the fallback algorithm and so compress
+    /// rather slowly, too high, and your average-to-worst case compression
+    /// times can become very large. The default value 30 gives reasonable
+    /// behaviour over a wide range of circumstances. Allowable values range
+    /// from 0 to 250 inclusive. 0 is a special case, equivalent to using
+    /// the default value of 30.
+    /// 
+    void SetWorkFactor(int work_factor) { m_c_WorkFactor = work_factor; }
+    int  GetWorkFactor(void) const { return m_c_WorkFactor; }
+    static int GetWorkFactorDefault(void);
+    static int GetWorkFactorMin(void);
+    static int GetWorkFactorMax(void);
+
+    /// Small decompress.
+    ///
+    /// If small decompress is set (TRUE), the library will use an alternative
+    /// decompression algorithm which uses less memory but at the cost of 
+    /// decompressing more slowly (roughly speaking, half the speed, but 
+    /// the maximum memory requirement drops to around 2300k).
+    ///
+    void SetSmallDecompress(bool small_decompres) { m_d_SmallDecompress =  small_decompres; }
+    bool GetSmallDecompress(void) const { return (bool)m_d_SmallDecompress; }
+    static bool GetSmallDecompressDefault(void) ;
 
 protected:
     /// Get error description for specified error code.
@@ -228,10 +291,9 @@ protected:
     string FormatErrorMessage(string where, bool use_stream_data = true) const;
 
 protected:
-    void*  m_Stream;          ///< Compressor stream
-    int    m_Verbosity;       ///< Verbose monitoring/debugging output level
-    int    m_WorkFactor;      ///< See description above
-    int    m_SmallDecompress; ///< Use memory-frugal decompression algorithm
+    void*  m_Stream;            ///< Compressor stream
+    int    m_c_WorkFactor;      ///< See description above
+    int    m_d_SmallDecompress; ///< Use memory-frugal decompression algorithm
 
 private:
     /// Private copy constructor to prohibit copy.
@@ -252,25 +314,42 @@ class NCBI_XUTIL_EXPORT CBZip2CompressionFile : public CBZip2Compression,
                                                 public CCompressionFile
 {
 public:
+    // TODO: add compression_in_bufsize / compression_out_bufsize parameters after 
+    // removing deprecated constructors only, to avoid conflicts. See zst as example.
+    // JIRA: CXX-12640
+
     /// Constructor.
-    /// For a special parameters description see CBZip2Compression.
     CBZip2CompressionFile(
         const string& file_name,
         EMode         mode,
-        ELevel        level            = eLevel_Default,
-        int           verbosity        = 0,
-        int           work_factor      = 0,
-        int           small_decompress = 0 
+        ELevel        level = eLevel_Default
     );
 
     /// Conventional constructor.
-    /// For a special parameters description see CBZip2Compression.
     CBZip2CompressionFile(
-        ELevel        level            = eLevel_Default,
-        int           verbosity        = 0,
+        ELevel        level = eLevel_Default
+    );
+
+    /// @deprecated 
+    ///   Use CBZip2CompressionFile(const string&, EMode, ELevel) constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CBZip2CompressionFile(
+        const string& file_name,
+        EMode         mode,
+        ELevel        level,
+        int           verbosity,
         int           work_factor      = 0,
         int           small_decompress = 0 
-    );
+    ));
+    /// @deprecated 
+    ///   Use CBZip2CompressionFile(ELevel) constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CBZip2CompressionFile(
+        ELevel        level,
+        int           verbosity,
+        int           work_factor      = 0,
+        int           small_decompress = 0 
+    ));
 
     /// Destructor.
     ~CBZip2CompressionFile(void);
@@ -282,10 +361,15 @@ public:
     /// @param mode
     ///   File open mode.
     /// @return
-    ///   TRUE if file was opened succesfully or FALSE otherwise.
+    ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CBZip2Compression, Read, Write, Close
-    virtual bool Open(const string& file_name, EMode mode);
+    virtual bool Open(
+        const string& file_name, 
+        EMode         mode,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
+    );
 
     /// Read data from compressed file.
     /// 
@@ -326,9 +410,9 @@ public:
     virtual bool Close(void);
 
 protected:
-    FILE*      m_FileStream;   ///< Underlying file stream
-    bool       m_EOF;          ///< EOF flag for read mode
-    bool       m_HaveData;     ///< Flag that we read/write some data
+    FILE*  m_FileStream;   ///< Underlying file stream
+    bool   m_EOF;          ///< EOF flag for read mode
+    bool   m_HaveData;     ///< Flag that we read/write some data
 
 private:
     /// Private copy constructor to prohibit copy.
@@ -352,11 +436,20 @@ class NCBI_XUTIL_EXPORT CBZip2Compressor : public CBZip2Compression,
 public:
     /// Constructor.
     CBZip2Compressor(
-        ELevel      level       = eLevel_Default,
-        int         verbosity   = 0,           // [0..4]
-        int         work_factor = 0,           // [0..250] 
-        TBZip2Flags flags       = 0
+        ELevel      level = eLevel_Default,
+        TBZip2Flags flags = 0
     );
+
+    /// @deprecated 
+    ///   Use CBZip2Compressor(ELevel = eLevel_Default, TBZip2Flags = 0) constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(
+    CBZip2Compressor(
+        ELevel      level,
+        int         verbosity,
+        int         work_factor = 0,
+        TBZip2Flags flags       = 0
+    ));
 
     /// Destructor.
     virtual ~CBZip2Compressor(void);
@@ -394,11 +487,16 @@ class NCBI_XUTIL_EXPORT CBZip2Decompressor : public CBZip2Compression,
 {
 public:
     /// Constructor.
-    CBZip2Decompressor(
-        int         verbosity        = 0,  // [0..4]
-        int         small_decompress = 0,  // [0,1]
-        TBZip2Flags flags            = 0
-    );
+    CBZip2Decompressor(TBZip2Flags flags = 0 );
+
+    /// @deprecated 
+    ///   Use CZipDecompressor(TZipFlags = 0) constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CBZip2Decompressor(
+        int         verbosity,
+        int         small_decompress,
+        TBZip2Flags flags = 0
+    ));
 
     /// Destructor.
     virtual ~CBZip2Decompressor(void);
@@ -441,31 +539,46 @@ public:
         CBZip2Compression::ELevel level,
         streamsize                in_bufsize,
         streamsize                out_bufsize,
-        int                       verbosity   = 0,
-        int                       work_factor = 0,
         CBZip2Compression::TBZip2Flags flags  = 0
         )
         : CCompressionStreamProcessor(
-              new CBZip2Compressor(level, verbosity, work_factor, flags),
-              eDelete, in_bufsize, out_bufsize)
+              new CBZip2Compressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
+    /// @deprecated 
+    ///   Use CBZip2StreamCompressor() constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CBZip2StreamCompressor(
+        CBZip2Compression::ELevel level,
+        streamsize                in_bufsize,
+        streamsize                out_bufsize,
+        int                       verbosity,
+        int                       work_factor,
+        CBZip2Compression::TBZip2Flags flags
+    ));
+        
     /// Conventional constructor
     CBZip2StreamCompressor(
         CBZip2Compression::ELevel level,
         CBZip2Compression::TBZip2Flags flags = 0
         )
         : CCompressionStreamProcessor(
-              new CBZip2Compressor(level, 0, 0, flags),
+              new CBZip2Compressor(level, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 
     /// Conventional constructor
     CBZip2StreamCompressor(CBZip2Compression::TBZip2Flags flags = 0)
         : CCompressionStreamProcessor(
-              new CBZip2Compressor(CBZip2Compression::eLevel_Default, 0, 0, flags),
+              new CBZip2Compressor(CBZip2Compression::eLevel_Default, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Return a pointer to compressor.
+    /// Can be used mostly for setting an advanced compression-specific parameters.
+    CBZip2Compressor* GetCompressor(void) const {
+        return dynamic_cast<CBZip2Compressor*>(GetProcessor());
+    }
 };
 
 
@@ -484,21 +597,35 @@ public:
     CBZip2StreamDecompressor(
         streamsize                     in_bufsize,
         streamsize                     out_bufsize,
-        int                            verbosity        = 0,
-        int                            small_decompress = 0,
-        CBZip2Compression::TBZip2Flags flags            = 0
+        CBZip2Compression::TBZip2Flags flags = 0
         )
         : CCompressionStreamProcessor(
-             new CBZip2Decompressor(verbosity, small_decompress, flags),
-             eDelete, in_bufsize, out_bufsize)
+             new CBZip2Decompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
+
+   /// @deprecated 
+    ///   Use CBZip2StreamDecompressor() constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CBZip2StreamDecompressor(
+        streamsize                     in_bufsize,
+        streamsize                     out_bufsize,
+        int                            verbosity,
+        int                            small_decompress,
+        CBZip2Compression::TBZip2Flags flags
+    ));
 
     /// Conventional constructor
     CBZip2StreamDecompressor(CBZip2Compression::TBZip2Flags flags = 0)
         : CCompressionStreamProcessor( 
-              new CBZip2Decompressor(0, 0, flags),
+              new CBZip2Decompressor(flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Return a pointer to compressor.
+    /// Can be used mostly for setting an advanced compression-specific parameters.
+    CBZip2Decompressor* GetDecompressor(void) const {
+        return dynamic_cast<CBZip2Decompressor*>(GetProcessor());
+    }
 };
 
 

@@ -135,13 +135,24 @@ struct SCompressionParam {
 };
 
 
+CLZOCompression::CLZOCompression(ELevel level)
+    : CCompression(level)
+{
+    SetBlockSize(GetBlockSizeDefault());
+    m_Param.reset(new SCompressionParam);
+    m_Param->workmem = 0;
+    return;
+}
+
+// @deprecated
 CLZOCompression::CLZOCompression(ELevel level, size_t blocksize)
-    : CCompression(level), m_BlockSize(blocksize)
+    : CCompression(level)
 {
     if (blocksize > kMax_UInt) {
         ERR_COMPRESS(41, FormatErrorMessage("CLZOCompression:: block size is too big"));
         return;
     }
+    m_BlockSize = blocksize;
     m_Param.reset(new SCompressionParam);
     m_Param->workmem = 0;
     return;
@@ -692,11 +703,10 @@ size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len,
     // Check flags
     if ( (flags & fStreamFormat) > 0 ) {
         n += (kMaxHeaderSize + 4 +  // Header size + end-of-data block.
-              n_blocks * 4);        // 4 bytes to store the length of
-                                    // each block.
+              n_blocks * 4);        // 4 bytes to store the length of each block.
     }
     if ( (flags & fChecksum) > 0 ) {
-        n += n_blocks * 4;
+        n += n_blocks * 4;         // 4 bytes for optional checksum
     }
     // Align 'n' to bound of the whole machine word (32/64 bits)
     n = (n + SIZEOF_VOIDP) / SIZEOF_VOIDP * SIZEOF_VOIDP;
@@ -705,20 +715,37 @@ size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len,
 }
 
 
+CCompression::SRecommendedBufferSizes 
+CLZOCompression::GetRecommendedBufferSizes(size_t round_up)
+{
+    SRecommendedBufferSizes sizes;
+    sizes.compression_in    = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.compression_out   = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.decompression_in  = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.decompression_out = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    return sizes;
+}
+
+
 bool CLZOCompression::CompressFile(const string& src_file,
                                    const string& dst_file,
-                                   size_t        buf_size)
+                                   size_t        file_io_bufsize,
+                                   size_t        compression_in_bufsize,
+                                   size_t        compression_out_bufsize)
+
 {
-    CLZOCompressionFile cf(GetLevel(), m_BlockSize);
+    CLZOCompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
+    cf.SetBlockSize(GetBlockSize());
 
     // Open output file
-    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write) ) {
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write
+                  /*, compression_in_bufsize, compression_out_bufsize*/)) {
         SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
     // Make compression
-    if ( !CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+    if ( !CCompression::x_CompressFile(src_file, cf, file_io_bufsize) ) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
@@ -734,18 +761,22 @@ bool CLZOCompression::CompressFile(const string& src_file,
 
 bool CLZOCompression::DecompressFile(const string& src_file,
                                      const string& dst_file,
-                                     size_t        buf_size)
+                                     size_t        file_io_bufsize,
+                                     size_t        decompression_in_bufsize,
+                                     size_t        decompression_out_bufsize)
 {
-    CLZOCompressionFile cf(GetLevel(), m_BlockSize);
+    CLZOCompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
+    cf.SetBlockSize(GetBlockSize());
 
     // Open output file
-    if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
+    if ( !cf.Open(src_file, CCompressionFile::eMode_Read
+                  /*,decompression_in_bufsize, decompression_out_bufsize*/)) {
         SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
     // Make decompression
-    if ( !CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+    if ( !CCompression::x_DecompressFile(cf, dst_file, file_io_bufsize) ) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
@@ -789,6 +820,37 @@ string CLZOCompression::FormatErrorMessage(string where) const
 }
 
 
+//----------------------------------------------------------------------------
+// 
+// Advanced parameters
+//
+
+inline 
+void CLZOCompression::SetBlockSize(size_t block_size)
+{
+    if (block_size > numeric_limits<lzo_uint>::max()) {
+        NCBI_THROW(CCompressionException, eCompression, "[CLZOCompression]  Block size is too big");
+    }
+    m_BlockSize = block_size;
+}
+
+/// We use 24K default block size to reduce overhead with a stream processor's
+/// methods calls, because compression/decompression output streams use
+/// by default (16Kb - 1) as output buffer size. But you can use any value
+/// if you think that it works better for you.
+/// @sa CCompressionStreambuf::CCompressionStreambuf
+///
+inline size_t CLZOCompression::GetBlockSizeDefault(void) { return 24 * 1024; };
+
+/// This is an artifical limit. You can use block size as low as 1, but overhead 
+/// will be too big for practical reasons.
+///
+inline size_t CLZOCompression::GetBlockSizeMin(void)     { return 512; };
+
+/// LZO can compress/decompress data limited by its 'lzo_uint' type
+inline size_t CLZOCompression::GetBlockSizeMax(void)     { return numeric_limits<lzo_uint>::max(); };
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -796,11 +858,11 @@ string CLZOCompression::FormatErrorMessage(string where) const
 //
 
 
-CLZOCompressionFile::CLZOCompressionFile(
-    const string& file_name, EMode mode, ELevel level, size_t blocksize)
-    : CLZOCompression(level, blocksize),
+CLZOCompressionFile::CLZOCompressionFile(const string& file_name, EMode mode, ELevel level)
+    : CLZOCompression(level),
       m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
+    // Open file
     if ( !Open(file_name, mode) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
@@ -810,12 +872,37 @@ CLZOCompressionFile::CLZOCompressionFile(
     return;
 }
 
-
-CLZOCompressionFile::CLZOCompressionFile(
-    ELevel level, size_t blocksize)
-    : CLZOCompression(level, blocksize),
+CLZOCompressionFile::CLZOCompressionFile(ELevel level)
+    : CLZOCompression(level),
       m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
+    return;
+}
+
+// @deprecated
+CLZOCompressionFile::CLZOCompressionFile(
+    const string& file_name, EMode mode, ELevel level, size_t blocksize)
+    : CLZOCompression(level),
+      m_Mode(eMode_Read), m_File(0), m_Stream(0)
+{
+    SetBlockSize(blocksize);
+    if ( !Open(file_name, mode) ) {
+        const string smode = (mode == eMode_Read) ? "reading" : "writing";
+        NCBI_THROW(CCompressionException, eCompressionFile, 
+                   "[CLZOCompressionFile]  Cannot open file '" + file_name +
+                   "' for " + smode + ".");
+    }
+    return;
+}
+
+// @deprecated
+CLZOCompressionFile::CLZOCompressionFile(
+    ELevel level, size_t blocksize)
+    : CLZOCompression(level),
+      m_Mode(eMode_Read), m_File(0), m_Stream(0)
+{
+    // Set advanced compression parameters
+    SetBlockSize(blocksize);
     return;
 }
 
@@ -839,7 +926,8 @@ void CLZOCompressionFile::GetStreamError(void)
 }
 
 
-bool CLZOCompressionFile::Open(const string& file_name, EMode mode)
+bool CLZOCompressionFile::Open(const string& file_name, EMode mode,
+                               size_t compression_in_bufsize, size_t compression_out_bufsize)
 {
     // Collect information about compressed file
     if ( F_ISSET(fStoreFileInfo) &&  mode == eMode_Write) {
@@ -847,11 +935,13 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode)
         s_CollectFileInfo(file_name, info);
         return Open(file_name, mode, &info);
     }
-    return Open(file_name, mode, 0 /* no file info */);
+    return Open(file_name, mode, 0 /* no file info */, 
+                compression_in_bufsize, compression_out_bufsize);
 }
 
 
-bool CLZOCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* info)
+bool CLZOCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* info,
+                               size_t compression_in_bufsize, size_t compression_out_bufsize)
 {
     m_Mode = mode;
 
@@ -884,18 +974,18 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* i
 
     // Create compression stream for I/O
     if ( mode == eMode_Read ) {
-        CLZODecompressor* decompressor = 
-            new CLZODecompressor(blocksize, GetFlags());
+        CLZODecompressor* decompressor = new CLZODecompressor(GetFlags());
+        decompressor->SetBlockSize(GetBlockSize());
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
                 decompressor, CCompressionStreamProcessor::eDelete,
-                kCompressionDefaultBufSize, kCompressionDefaultBufSize);
+                compression_in_bufsize, compression_out_bufsize);
         m_Stream = 
             new CCompressionIOStream(
                 *m_File, processor, 0, CCompressionStream::fOwnReader);
     } else {
-        CLZOCompressor* compressor = 
-            new CLZOCompressor(GetLevel(), m_BlockSize, GetFlags());
+        CLZOCompressor* compressor = new CLZOCompressor(GetLevel(), GetFlags());
+        compressor->SetBlockSize(GetBlockSize());
         if ( info ) {
             // Enable compressor to write info information about
             // compressed file into file header
@@ -904,7 +994,7 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* i
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
                 compressor, CCompressionStreamProcessor::eDelete,
-                kCompressionDefaultBufSize, kCompressionDefaultBufSize);
+                compression_in_bufsize, compression_out_bufsize);
         m_Stream = 
             new CCompressionIOStream(
                 *m_File, 0, processor, CCompressionStream::fOwnWriter);
@@ -1034,10 +1124,18 @@ void CLZOBuffer::ResetBuffer(size_t in_bufsize, size_t out_bufsize)
 //
 
 
-CLZOCompressor::CLZOCompressor(ELevel level, size_t blocksize, TLZOFlags flags)
-    : CLZOCompression(level, blocksize), m_NeedWriteHeader(true)
+CLZOCompressor::CLZOCompressor(ELevel level, TLZOFlags flags)
+    : CLZOCompression(level), m_NeedWriteHeader(true)
 {
     SetFlags(flags | fStreamFormat);
+}
+
+// @deprecated
+CLZOCompressor::CLZOCompressor(ELevel level, size_t blocksize, TLZOFlags flags)
+    : CLZOCompression(level), m_NeedWriteHeader(true)
+{
+    SetFlags(flags | fStreamFormat);
+    SetBlockSize(blocksize);
 }
 
 
@@ -1266,12 +1364,23 @@ bool CLZOCompressor::CompressCache(void)
 //
 
 
-CLZODecompressor::CLZODecompressor(size_t blocksize, TLZOFlags flags)
-    : CLZOCompression(eLevel_Default, blocksize), m_BlockLen(0), 
-      m_HeaderLen(kMaxHeaderSize), m_HeaderFlags(0)
+CLZODecompressor::CLZODecompressor(TLZOFlags flags)
+    : CLZOCompression(eLevel_Default),
+      m_BlockLen(0), m_HeaderLen(kMaxHeaderSize), m_HeaderFlags(0)
 
 {
     SetFlags(flags | fStreamFormat);
+}
+
+
+// @deprecated
+CLZODecompressor::CLZODecompressor(size_t blocksize, TLZOFlags flags)
+    : CLZOCompression(eLevel_Default),
+      m_BlockLen(0), m_HeaderLen(kMaxHeaderSize), m_HeaderFlags(0)
+
+{
+    SetFlags(flags | fStreamFormat);
+    SetBlockSize(blocksize);
 }
 
 
@@ -1558,6 +1667,41 @@ bool CLZODecompressor::DecompressCache(void)
     m_BlockLen = 0;
     return true;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CLZOStreamCompressor /  CLZOStreamDecompressor -- deprecated constructors
+//
+
+// @deprecated
+CLZOStreamCompressor::CLZOStreamCompressor(
+    CLZOCompression::ELevel    level,
+    streamsize                 in_bufsize,
+    streamsize                 out_bufsize,
+    size_t                     blocksize,
+    CLZOCompression::TLZOFlags flags
+    )
+    : CCompressionStreamProcessor(
+            new CLZOCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
+{
+    GetCompressor()->SetBlockSize(blocksize);
+}
+
+// @deprecated
+CLZOStreamDecompressor::CLZOStreamDecompressor(
+    streamsize                 in_bufsize,
+    streamsize                 out_bufsize,
+    size_t                     blocksize,
+    CLZOCompression::TLZOFlags flags
+    )
+    : CCompressionStreamProcessor(
+            new CLZODecompressor(flags), eDelete, in_bufsize, out_bufsize)
+{
+    GetDecompressor()->SetBlockSize(blocksize);
+}
+
+
 
 
 END_NCBI_SCOPE

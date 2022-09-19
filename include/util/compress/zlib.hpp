@@ -62,36 +62,8 @@
 BEGIN_NCBI_SCOPE
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Special compressor's parameters (description from zlib docs)
-//        
-// <window_bits>
-//    This parameter is the base two logarithm of the window size
-//    (the size of the history buffer). It should be in the range 8..15 for
-//    this version of the library. Larger values of this parameter result
-//    in better compression at the expense of memory usage. 
-//
-// <mem_level> 
-//    The "mem_level" parameter specifies how much memory should be
-//    allocated for the internal compression state. mem_level=1 uses minimum
-//    memory but is slow and reduces compression ratio; mem_level=9 uses
-//    maximum memory for optimal speed. The default value is 8. See zconf.h
-//    for total memory usage as a function of windowBits and memLevel.
-//
-// <strategy> 
-//    The strategy parameter is used to tune the compression algorithm.
-//    Use the value Z_DEFAULT_STRATEGY for normal data, Z_FILTERED for data
-//    produced by a filter (or predictor), or Z_HUFFMAN_ONLY to force
-//    Huffman encoding only (no string match). Filtered data consists mostly
-//    of small values with a somewhat random distribution. In this case,
-//    the compression algorithm is tuned to compress them better. The effect
-//    of Z_FILTERED is to force more Huffman coding and less string matching;
-//    it is somewhat intermediate between Z_DEFAULT and Z_HUFFMAN_ONLY.
-//    The strategy parameter only affects the compression ratio but not the
-//    correctness of the compressed output even if it is not set appropriately.
-
 // Use default values, defined in zlib library
+// @deprecated Please don't use, will be deleted later
 const int kZlibDefaultWbits       = -1;
 const int kZlibDefaultMemLevel    = -1;
 const int kZlibDefaultStrategy    = -1;
@@ -108,6 +80,9 @@ const int kZlibDefaultCompression = -1;
 class NCBI_XUTIL_EXPORT CZipCompression : public CCompression
 {
 public:
+    /// Initialize compression  library (for API compatibility, zlib don't need it).
+    static bool Initialize(void) { return true; };
+
     /// Compression/decompression flags.
     enum EFlags {
         /// Allow transparent reading data from buffer/file/stream
@@ -152,12 +127,20 @@ public:
     typedef CZipCompression::TFlags TZipFlags; ///< Bitwise OR of EFlags
 
     /// Constructor.
-    CZipCompression(
-        ELevel level       = eLevel_Default,
-        int    window_bits = kZlibDefaultWbits,     // [8..15]
-        int    mem_level   = kZlibDefaultMemLevel,  // [1..9] 
-        int    strategy    = kZlibDefaultStrategy   // [0..2]
-    );
+    /// @note 
+    ///   For setting up advanced compression parameters see Set*() methods.
+    CZipCompression(ELevel level = eLevel_Default);
+
+    /// Constructor.
+    /// @deprecated 
+    ///   Use CZipCompression(ELevel) constructor without advanced parameters, 
+    ///   that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CZipCompression(
+        ELevel level,
+        int    window_bits,
+        int    mem_level   = kZlibDefaultMemLevel,
+        int    strategy    = kZlibDefaultStrategy
+    ));
 
     /// Destructor.
     virtual ~CZipCompression(void);
@@ -167,11 +150,11 @@ public:
 
     /// Returns default compression level for a compression algorithm.
     virtual ELevel GetDefaultLevel(void) const
-        { return ELevel(kZlibDefaultCompression); };
+        { return ELevel(eLevel_Default); };
 
-    //
+    //=======================================================================
     // Utility functions 
-    //
+    //=======================================================================
 
     /// Compress data in the buffer.
     ///
@@ -244,35 +227,65 @@ public:
     ///   CompressBuffer
     size_t EstimateCompressionBufferSize(size_t src_len);
 
+    /// Get recommended buffer sizes for stream/file I/O.
+    ///
+    /// These buffer sizes are softly recommended. They are not required, (de)compression
+    /// streams accepts any reasonable buffer size, for both input and output.
+    /// Respecting the recommended size just makes it a bit easier for (de)compressor,
+    /// reducing the amount of memory shuffling and buffering, resulting in minor 
+    /// performance savings. If compression library doesn't have preferences about 
+    /// I/O buffer sizes, kCompressionDefaultBufSize will be used.
+    /// @param round_up_by
+    ///   If specified, round up a returned value by specified amount. 
+    ///   Sp all values will be divisible to this parameter.
+    ///   Usuful for better memory management. 
+    /// @return
+    ///   Structure with recommended buffer sizes.
+    /// @note
+    ///   Applicable for streaming/file operations.
+    /// @sa
+    ///   kCompressionDefaultBufSize, CSystemInfo::GetVirtualMemoryPageSize()
+    /// 
+    static SRecommendedBufferSizes GetRecommendedBufferSizes(size_t round_up = 0);
+
     /// Compress file.
     ///
     /// @param src_file
     ///   File name of source file.
     /// @param dst_file
     ///   File name of result file.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a compressor.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be compressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a compressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
-    /// @sa
-    ///   DecompressFile, DecompressFileIntoDir
     /// @note
-    ///   This method, as well as some gzip utilities, always
-    ///   keeps the original file name and timestamp in
-    ///   the compressed file. On this moment DecompressFile()
-    ///   do not use original file name at all, but be aware...
-    ///   If you assign different base name to destination
+    ///   This method, as well as some gzip utilities, always keeps the original
+    ///   file name and timestamp in the compressed file. On this moment 
+    ///   DecompressFile() method do not use original file name at all, 
+    ///   but be aware... If you assign different base name to destination
     ///   compressed file, that behavior of decompression utilities
-    ///   on different platforms may differ.
-    ///   For example, WinZip on MS Windows always restore
-    ///   original file name and timestamp stored in the file.
-    ///   UNIX gunzip have -N option for this, but by default
-    ///   do not use it, and just creates a decompressed file with
-    ///   the name of the compressed file without .gz extension.
+    ///   on different platforms may differ. For example, WinZip on MS Windows
+    ///   always restore original file name and timestamp stored in the file.
+    ///   UNIX gunzip have -N option for this, but by default do not use it,
+    ///   and just creates a decompressed file with the name of the compressed
+    ///   file without .gz extension.
+    /// @sa
+    ///   DecompressFile, DecompressFileIntoDir, GetRecommendedBufferSizes,
+    ///   CZipCompressionFile
+    /// 
     virtual bool CompressFile(
         const string& src_file,
         const string& dst_file,
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize         = kCompressionDefaultBufSize,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     );
 
     /// Decompress file.
@@ -281,23 +294,32 @@ public:
     ///   File name of source file.
     /// @param dst_file
     ///   File name of result file.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a decompressor.
+    /// @param decompression_in_bufsize
+    ///   Size of the internal buffer holding input data to be decompressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param decompression_out_bufsize
+    ///   Size of the internal buffer to receive data from a decompressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @sa
-    ///   CompressFile, DecompressFileIntoDir
+    ///   CompressFile, DecompressFileIntoDir, GetRecommendedBufferSizes, CZipCompressionFile
     /// @note
-    ///   CompressFile() method, as well as some gzip utilities,
-    ///   always keeps the original file name and timestamp in
-    ///   the compressed file. If fRestoreFileAttr flag is set,
-    ///   that time stamp, stored in the file header will be restored.
-    ///   The original file name cannot be restored here,
+    ///   CompressFile() method, as well as some gzip utilities, always keeps
+    ///   the original file name and timestamp in the compressed file. 
+    ///   If fRestoreFileAttr flag is set, that timestamp, stored in the file
+    ///   header will be restored. The original file name cannot be restored here,
     ///   see DecompressFileIntoDir().
+    /// 
     virtual bool DecompressFile(
         const string& src_file,
         const string& dst_file, 
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize           = kCompressionDefaultBufSize,
+        size_t        decompression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        decompression_out_bufsize = kCompressionDefaultBufSize
     );
 
     /// Decompress file into specified directory.
@@ -306,23 +328,32 @@ public:
     ///   File name of source file.
     /// @param dst_dir
     ///   Destination directory.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a decompressor.
+    /// @param decompression_in_bufsize
+    ///   Size of the internal buffer holding input data to be decompressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param decompression_out_bufsize
+    ///   Size of the internal buffer to receive data from a decompressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @sa
-    ///   CompressFile, DecompressFile
+    ///   CompressFile, DecompressFile, GetRecommendedBufferSizes, CZipCompressionFile
     /// @note
-    ///   CompressFile() method, as well as some gzip utilities,
-    ///   always keeps the original file name and timestamp in
-    ///   the compressed file. If fRestoreFileAttr flag is set,
-    ///   that original file name and time stamp, stored in
-    ///   the file header will be restored. If not, that destination
+    ///   CompressFile() method, as well as some gzip utilities, always keeps
+    ///   the original file name and timestamp in the compressed file.
+    ///   If fRestoreFileAttr flag is set, that original file name and timestamp,
+    ///   stored in the file header will be restored. If not, that destination
     ///   file will be named as archive name without extension.
+    ///
     virtual bool DecompressFileIntoDir(
         const string& src_file,
         const string& dst_dir, 
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize           = kCompressionDefaultBufSize,
+        size_t        decompression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        decompression_out_bufsize = kCompressionDefaultBufSize
     );
 
     /// Structure to keep compressed file information.
@@ -333,18 +364,93 @@ public:
         SFileInfo(void) : mtime(0) {};
     };
 
+    //=======================================================================
+    // Advanced compression-specific parameters
+    //=======================================================================
+    // Allow to tune up (de)compression for a specific needs.
+    //
+    // - Pin down compression parameters to some specific values, so these
+    //   values are no longer dynamically selected by the compressor.
+    // - All setting parameters should be in the range [min,max], 
+    //   or equal to default.
+    // - All parameters should be set before starting (de)compression, 
+    //   or it will be ignored for current operation.
+    //=======================================================================
+    // You can use listed Z_* parameters after #include <zlib.h>.
+
+    /// Compression strategy.
+    /// 
+    /// The strategy parameter is used to tune the compression algorithm.
+    /// - Z_DEFAULT_STRATEGY 
+    ///     for normal data;
+    /// - Z_HUFFMAN_ONLY 
+    ///     to force Huffman encoding only (no string match);
+    /// - Z_RLE 
+    ///     run-length encoding (RLE) compression;
+    /// - Z_FILTERED 
+    ///     for data produced by a filter (or predictor);
+    ///     Filtered data consists mostly of small values with a somewhat
+    ///     random distribution. In this case, the compression algorithm 
+    ///     is tuned to compress them better. The effect of Z_FILTERED is 
+    ///     to force more Huffman coding and less string matching; 
+    ///     it is somewhat intermediate between Z_DEFAULT and Z_HUFFMAN_ONLY.
+    /// - Z_FIXED
+    ///     prevents the use of dynamic Huffman codes, allowing for a simpler
+    ///     decoder for special applications;
+    /// 
+    /// The strategy parameter only affects the compression ratio but not the
+    /// correctness of the compressed output even if it is not set appropriately.
+    /// Used for compression only.
+    /// 
+    void SetStrategy(int strategy) { m_c_Strategy = strategy; }
+    int  GetStrategy(void) const { return m_c_Strategy; }
+    static int GetStrategyDefault(void);
+    static int GetStrategyMin(void);
+    static int GetStrategyMax(void);
+
+    /// Memory level.
+    /// 
+    /// The "mem_level" parameter specifies how much memory should be
+    /// allocated for the internal compression state. Low levels uses
+    /// less memory but are slow and reduces compression ratio; maximum level
+    /// uses maximum memory for optimal speed. See zconf.h for total memory usage
+    /// as a function of windowBits and memLevel.
+    /// 
+    void SetMemoryLevel(int mem_level) { m_c_MemLevel = mem_level; }
+    int  GetMemoryLevel(void) const { return m_c_MemLevel; }
+    static int GetMemoryLevelDefault(void);
+    static int GetMemoryLevelMin(void);
+    static int GetMemoryLevelMax(void);
+
+    /// Window bits.
+    ///
+    /// This parameter is the base two logarithm of the window size
+    /// (the size of the history buffer). Larger values of this parameter result
+    /// in better compression at the expense of memory usage.
+    /// Used for compression and decompression. By default it is set to a maximum
+    /// allowed values. Reducing windows bits from default can make to it unable 
+    /// to extract .gz files created by gzip.
+    /// @note
+    ///   API support positive values for this parameters only. RAW deflate
+    ///   data is processed by default, for gzip format we have a apecial 
+    ///   flags, see description for: fGZip, fCheckFileHeader, fWriteGZipFormat.
+    /// 
+    void SetWindowBits(int window_bits) { m_cd_WindowBits = window_bits; }
+    int  GetWindowBits(void) const { return m_cd_WindowBits; }
+    static int GetWindowBitsDefault(void);
+    static int GetWindowBitsMin(void);
+    static int GetWindowBitsMax(void);
+
 protected:
     /// Format string with last error description.
     /// If pos == 0, that use internal m_Stream's position to report.
     string FormatErrorMessage(string where, size_t pos = 0) const;
 
 protected:
-    void*  m_Stream;     ///< Compressor stream.
-    int    m_WindowBits; ///< The base two logarithm of the window size
-                         ///< (the size of the history buffer). 
-    int    m_MemLevel;   ///< The allocation memory level for the
-                         ///< internal compression state.
-    int    m_Strategy;   ///< The parameter to tune up a compression algorithm.
+    void*  m_Stream;        ///< Compressor stream.
+    int    m_cd_WindowBits; ///< The base two logarithm of the window size.
+    int    m_c_MemLevel;    ///< The allocation memory level for the compression.
+    int    m_c_Strategy;    ///< The parameter to tune up a compression algorithm.
 
 private:
     /// Private copy constructor to prohibit copy.
@@ -365,24 +471,41 @@ class NCBI_XUTIL_EXPORT CZipCompressionFile : public CZipCompression,
                                               public CCompressionFile
 {
 public:
+    // TODO: add compression_in_bufsize / compression_out_bufsize parameters after 
+    // removing deprecated constructors only, to avoid conflicts. See zst as example.
+    // JIRA: CXX-12640
+
     /// Constructor.
-    /// For a special parameters description see CZipCompression.
     CZipCompressionFile(
         const string& file_name,
         EMode         mode,
-        ELevel        level       = eLevel_Default,
-        int           window_bits = kZlibDefaultWbits,
-        int           mem_level   = kZlibDefaultMemLevel,
-        int           strategy    = kZlibDefaultStrategy
+        ELevel        level = eLevel_Default
     );
     /// Conventional constructor.
-    /// For a special parameters description see CZipCompression.
     CZipCompressionFile(
-        ELevel        level       = eLevel_Default,
-        int           window_bits = kZlibDefaultWbits,
+        ELevel        level = eLevel_Default
+    );
+
+    /// @deprecated 
+    ///   Use CZipCompressionFile(const string&, EMode, ELevel) constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CZipCompressionFile(
+        const string& file_name,
+        EMode         mode,
+        ELevel        level,
+        int           window_bits,
         int           mem_level   = kZlibDefaultMemLevel,
         int           strategy    = kZlibDefaultStrategy
-    );
+    ));
+    /// @deprecated 
+    ///   Use CZipCompressionFile(ELevel) constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CZipCompressionFile(
+        ELevel        level,
+        int           window_bits,
+        int           mem_level   = kZlibDefaultMemLevel,
+        int           strategy    = kZlibDefaultStrategy
+    ));
 
     /// Destructor
     ~CZipCompressionFile(void);
@@ -393,11 +516,20 @@ public:
     ///   File name of the file to open.
     /// @param mode
     ///   File open mode.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be (de)compressed.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a (de)compressor.
     /// @return
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CZipCompression, Read, Write, Close
-    virtual bool Open(const string& file_name, EMode mode);
+    virtual bool Open(
+        const string& file_name, 
+        EMode         mode,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
+    );
 
     /// Opens a compressed file for reading or writing.
     ///
@@ -410,11 +542,21 @@ public:
     ///   Pointer to file information structure. If it is not NULL,
     ///   that it will be used to get information about compressed file
     ///   in the read mode, and set it in the write mode for gzip files.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be (de)compressed.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a (de)compressor.
     /// @return
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CZipCompression, Read, Write, Close
-    virtual bool Open(const string& file_name, EMode mode, SFileInfo* info);
+    virtual bool Open(
+        const string& file_name, 
+        EMode         mode,
+        SFileInfo*    info,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
+    );
 
     /// Read data from compressed file.
     /// 
@@ -486,12 +628,21 @@ class NCBI_XUTIL_EXPORT CZipCompressor : public CZipCompression,
 public:
     /// Constructor.
     CZipCompressor(
-        ELevel    level       = eLevel_Default,
-        int       window_bits = kZlibDefaultWbits,
+        ELevel    level = eLevel_Default,
+        TZipFlags flags = 0
+    );
+
+    /// @deprecated 
+    ///   Use CZipCompressor(ELevel = eLevel_Default, TZipFlags = 0) constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CZipCompressor(
+        ELevel    level,
+        int       window_bits,
         int       mem_level   = kZlibDefaultMemLevel,
         int       strategy    = kZlibDefaultStrategy,
         TZipFlags flags       = 0
-    );
+    ));
+
     /// Destructor.
     virtual ~CZipCompressor(void);
 
@@ -541,10 +692,13 @@ class NCBI_XUTIL_EXPORT CZipDecompressor : public CZipCompression,
 {
 public:
     /// Constructor.
-    CZipDecompressor(
-        int       window_bits = kZlibDefaultWbits,
-        TZipFlags flags       = 0
-    );
+    CZipDecompressor(TZipFlags flags = 0);
+
+    /// @deprecated 
+    ///   Use CZipDecompressor(TZipFlags = 0) constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CZipDecompressor(int window_bits, TZipFlags flags));
+
     /// Destructor.
     virtual ~CZipDecompressor(void);
 
@@ -598,15 +752,24 @@ public:
         CZipCompression::ELevel    level,
         streamsize                 in_bufsize,
         streamsize                 out_bufsize,
-        int                        window_bits = kZlibDefaultWbits,
-        int                        mem_level   = kZlibDefaultMemLevel,
-        int                        strategy    = kZlibDefaultStrategy,
-        CZipCompression::TZipFlags flags       = 0
+        CZipCompression::TZipFlags flags = 0
         ) 
         : CCompressionStreamProcessor(
-              new CZipCompressor(level,window_bits,mem_level,strategy,flags),
-              eDelete, in_bufsize, out_bufsize)
+              new CZipCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
+
+    /// @deprecated 
+    ///   Use CZipStreamCompressor() constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR( CZipStreamCompressor(
+        CZipCompression::ELevel    level,
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        int                        window_bits,
+        int                        mem_level,
+        int                        strategy,
+        CZipCompression::TZipFlags flags = 0
+    ));
 
     /// Conventional constructor
     CZipStreamCompressor(
@@ -614,20 +777,22 @@ public:
         CZipCompression::TZipFlags flags = 0
         )
         : CCompressionStreamProcessor(
-              new CZipCompressor(level, kZlibDefaultWbits,
-                                 kZlibDefaultMemLevel, kZlibDefaultStrategy,
-                                 flags),
+              new CZipCompressor(level),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 
     /// Conventional constructor
     CZipStreamCompressor(CZipCompression::TZipFlags flags = 0)
         : CCompressionStreamProcessor(
-              new CZipCompressor(CZipCompression::eLevel_Default,
-                                 kZlibDefaultWbits, kZlibDefaultMemLevel,
-                                 kZlibDefaultStrategy, flags),
+              new CZipCompressor(CZipCompression::eLevel_Default, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Return a pointer to compressor.
+    /// Can be used mostly for setting an advanced compression-specific parameters.
+    CZipCompressor* GetCompressor(void) const {
+        return dynamic_cast<CZipCompressor*>(GetProcessor());
+    }
 };
 
 
@@ -651,20 +816,34 @@ public:
     CZipStreamDecompressor(
         streamsize                 in_bufsize,
         streamsize                 out_bufsize,
-        int                        window_bits = kZlibDefaultWbits,
-        CZipCompression::TZipFlags flags       = 0
+        CZipCompression::TZipFlags flags = 0
         )
         : CCompressionStreamProcessor( 
-              new CZipDecompressor(window_bits, flags),
-              eDelete, in_bufsize, out_bufsize)
+              new CZipDecompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
+
+    /// @deprecated 
+    ///   Use CZipStreamDecompressor() constructor
+    ///   without advanced parameters, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CZipStreamDecompressor(
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        int                        window_bits,
+        CZipCompression::TZipFlags flags
+    ));
 
     /// Conventional constructor
     CZipStreamDecompressor(CZipCompression::TZipFlags flags = 0)
         : CCompressionStreamProcessor( 
-              new CZipDecompressor(kZlibDefaultWbits, flags),
+              new CZipDecompressor(flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Return a pointer to decompressor.
+    /// Can be used mostly for setting an advanced compression-specific parameters.
+    CZipDecompressor* GetDecompressor(void) const {
+        return dynamic_cast<CZipDecompressor*>(GetProcessor());
+    }
 };
 
 

@@ -62,6 +62,10 @@ BEGIN_NCBI_SCOPE
 // (bzip2 operates with 'unsigned int' values internally)
 const unsigned int kMaxChunkSize = kMax_UInt;
 
+// Default bzip2 verbosity.
+// Can be changed in range [0..4] for debug purposes only.
+const int kVerbosity = 0;
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -70,11 +74,30 @@ const unsigned int kMaxChunkSize = kMax_UInt;
 //
 
 
-CBZip2Compression::CBZip2Compression(ELevel level, int verbosity,
-                                     int work_factor, int small_decompress)
-    : CCompression(level), m_Verbosity(verbosity), m_WorkFactor(work_factor),
-      m_SmallDecompress(small_decompress)
+CBZip2Compression::CBZip2Compression(ELevel level)
+    : CCompression(level)
 {
+    // Set advanced compression parameters
+    SetWorkFactor( GetWorkFactorDefault() );
+    SetSmallDecompress( GetSmallDecompressDefault() );
+
+    // Initialize the compressor stream structure
+    m_Stream = new bz_stream;
+    if ( m_Stream ) {
+        memset(m_Stream, 0, sizeof(bz_stream));
+    }
+    return;
+}
+
+// @deprecated
+CBZip2Compression::CBZip2Compression(ELevel level, int /*verbosity*/,
+                                     int work_factor, int small_decompress)
+    : CCompression(level)
+{
+    // Set advanced compression parameters
+    SetWorkFactor(work_factor);
+    SetSmallDecompress(small_decompress != 0);
+
     // Initialize the compressor stream structure
     m_Stream = new bz_stream;
     if ( m_Stream ) {
@@ -242,20 +265,36 @@ bool CBZip2Compression::DecompressBuffer(
 }
 
 
+CCompression::SRecommendedBufferSizes 
+CBZip2Compression::GetRecommendedBufferSizes(size_t round_up)
+{
+    SRecommendedBufferSizes sizes;
+    sizes.compression_in    = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.compression_out   = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.decompression_in  = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.decompression_out = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    return sizes;
+}
+
+
 bool CBZip2Compression::CompressFile(const string& src_file,
                                      const string& dst_file,
-                                     size_t        buf_size)
+                                     size_t        file_io_bufsize,
+                                     size_t        compression_in_bufsize,
+                                     size_t        compression_out_bufsize)
 {
-    CBZip2CompressionFile cf(GetLevel(), m_Verbosity, m_WorkFactor, m_SmallDecompress);
+    CBZip2CompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
+    cf.SetWorkFactor(GetWorkFactor());
 
     // Open output file
-    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write) ) {
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write,
+                  compression_in_bufsize, compression_out_bufsize) ) {
         SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
     // Make compression
-    if ( !CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+    if ( !CCompression::x_CompressFile(src_file, cf, file_io_bufsize) ) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
@@ -271,20 +310,24 @@ bool CBZip2Compression::CompressFile(const string& src_file,
 
 bool CBZip2Compression::DecompressFile(const string& src_file,
                                        const string& dst_file,
-                                       size_t        buf_size)
+                                       size_t        file_io_bufsize,
+                                       size_t        decompression_in_bufsize,
+                                       size_t        decompression_out_bufsize)
 {
-    CBZip2CompressionFile cf(GetLevel(), m_Verbosity, m_WorkFactor, m_SmallDecompress);
+    CBZip2CompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
+    cf.SetSmallDecompress(GetSmallDecompress());
 
     // Open output file
-    if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write,
+                  decompression_in_bufsize, decompression_out_bufsize) ) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
         return false;
     } 
     // Make decompression
-    if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+    if ( CCompression::x_DecompressFile(cf, dst_file, file_io_bufsize) ) {
         SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         cf.Close();
         return false;
@@ -335,6 +378,18 @@ string CBZip2Compression::FormatErrorMessage(string where,
 }
 
 
+//----------------------------------------------------------------------------
+// 
+// Advanced parameters
+//
+
+inline int  CBZip2Compression::GetWorkFactorDefault(void)  { return   0; };
+inline int  CBZip2Compression::GetWorkFactorMin(void)      { return   0; };
+inline int  CBZip2Compression::GetWorkFactorMax(void)      { return 250; };
+
+inline bool CBZip2Compression::GetSmallDecompressDefault(void) { return false; };
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -343,11 +398,13 @@ string CBZip2Compression::FormatErrorMessage(string where,
 
 
 CBZip2CompressionFile::CBZip2CompressionFile(
-    const string& file_name, EMode mode,
-    ELevel level, int verbosity, int work_factor, int small_decompress)
-    : CBZip2Compression(level, verbosity, work_factor, small_decompress), 
-      m_FileStream(0)
+    const string& file_name, EMode mode, ELevel level)
+    : CBZip2Compression(level),
+      m_FileStream(0), m_EOF(true), m_HaveData(false)
 {
+    /* We use bzip2 implementation to work with compression files
+       so in/out internal compression buffer sizes are not used.
+    */
     if ( !Open(file_name, mode) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
@@ -358,11 +415,44 @@ CBZip2CompressionFile::CBZip2CompressionFile(
 }
 
 
-CBZip2CompressionFile::CBZip2CompressionFile(
-    ELevel level, int verbosity, int work_factor, int small_decompress)
-    : CBZip2Compression(level, verbosity, work_factor, small_decompress), 
+CBZip2CompressionFile::CBZip2CompressionFile(ELevel level)
+    : CBZip2Compression(level), 
       m_FileStream(0), m_EOF(true), m_HaveData(false)
 {
+    return;
+}
+
+
+// @deprecated
+CBZip2CompressionFile::CBZip2CompressionFile(
+    const string& file_name, EMode mode,
+    ELevel level, int /*verbosity*/, int work_factor, int small_decompress)
+    : CBZip2Compression(level), 
+      m_FileStream(0), m_EOF(true), m_HaveData(false)
+{
+    // Set advanced compression parameters
+    SetWorkFactor(work_factor);
+    SetSmallDecompress(small_decompress != 0);
+
+    if ( !Open(file_name, mode) ) {
+        const string smode = (mode == eMode_Read) ? "reading" : "writing";
+        NCBI_THROW(CCompressionException, eCompressionFile, 
+                   "[CBZip2CompressionFile]  Cannot open file '" + file_name +
+                   "' for " + smode + ".");
+    }
+    return;
+}
+
+// @deprecated
+CBZip2CompressionFile::CBZip2CompressionFile(
+    ELevel level, int /*verbosity*/ , int work_factor, int small_decompress)
+    : CBZip2Compression(level), 
+      m_FileStream(0), m_EOF(true), m_HaveData(false)
+{
+    // Set advanced compression parameters
+    SetWorkFactor(work_factor);
+    SetSmallDecompress(small_decompress != 0);
+
     return;
 }
 
@@ -377,18 +467,23 @@ CBZip2CompressionFile::~CBZip2CompressionFile(void)
 }
 
 
-bool CBZip2CompressionFile::Open(const string& file_name, EMode mode)
+bool CBZip2CompressionFile::Open(const string& file_name, EMode mode,
+                                 size_t /*compression_in_bufsize*/,
+                                 size_t /*compression_out_bufsize*/)
 {
+    /* We use bzip2 implementation to work with compression files
+       so in/out internal compression buffer sizes are not used.
+    */
     int errcode;
 
     if ( mode == eMode_Read ) {
         m_FileStream = fopen(file_name.c_str(), "rb");
-        m_File = BZ2_bzReadOpen(&errcode, m_FileStream, m_SmallDecompress, m_Verbosity, 0, 0);
+        m_File = BZ2_bzReadOpen(&errcode, m_FileStream, GetSmallDecompress() ? 1 : 0, kVerbosity, 0, 0);
         m_DecompressMode = eMode_Unknown;
         m_EOF = false;
     } else {
         m_FileStream = fopen(file_name.c_str(), "wb");
-        m_File = BZ2_bzWriteOpen(&errcode, m_FileStream, GetLevel(), m_Verbosity, m_WorkFactor);
+        m_File = BZ2_bzWriteOpen(&errcode, m_FileStream, GetLevel(), kVerbosity, GetWorkFactor());
     }
     m_Mode = mode;
 
@@ -499,12 +594,21 @@ bool CBZip2CompressionFile::Close(void)
 // CBZip2Compressor
 //
 
-
-CBZip2Compressor::CBZip2Compressor(
-                  ELevel level, int verbosity, int work_factor, TBZip2Flags flags)
-    : CBZip2Compression(level, verbosity, work_factor)
+CBZip2Compressor::CBZip2Compressor(ELevel level, TBZip2Flags flags)
+    : CBZip2Compression(level)
 {
     SetFlags(flags);
+}
+
+
+// @deprecated
+CBZip2Compressor::CBZip2Compressor(
+                  ELevel level, int /*verbosity*/, int work_factor, TBZip2Flags flags)
+    : CBZip2Compression(level)
+{
+    SetFlags(flags);
+    // Set advanced compression parameters
+    SetWorkFactor(work_factor);
 }
 
 
@@ -529,7 +633,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
     // Initialize the compressor stream structure
     memset(STREAM, 0, sizeof(bz_stream));
     // Create a compressor stream
-    int errcode = BZ2_bzCompressInit(STREAM, GetLevel(), m_Verbosity, m_WorkFactor);
+    int errcode = BZ2_bzCompressInit(STREAM, GetLevel(), kVerbosity, GetWorkFactor());
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode == BZ_OK ) {
@@ -673,11 +777,20 @@ CCompressionProcessor::EStatus CBZip2Compressor::End(int abandon)
 //
 
 
-CBZip2Decompressor::CBZip2Decompressor(int verbosity, int small_decompress,
-                                       TBZip2Flags flags)
-    : CBZip2Compression(eLevel_Default, verbosity, 0, small_decompress)
+CBZip2Decompressor::CBZip2Decompressor(TBZip2Flags flags)
+    : CBZip2Compression(eLevel_Default)
 {
     SetFlags(flags);
+}
+
+
+// @deprecated
+CBZip2Decompressor::CBZip2Decompressor(int /*verbosity*/, int small_decompress, TBZip2Flags flags)
+    : CBZip2Compression(eLevel_Default)
+{
+    SetFlags(flags);
+    // Set advanced compression parameters
+    SetSmallDecompress(small_decompress > 0);
 }
 
 
@@ -694,7 +807,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Init(void)
     // Initialize the decompressor stream structure
     memset(STREAM, 0, sizeof(bz_stream));
     // Create a compressor stream
-    int errcode = BZ2_bzDecompressInit(STREAM, m_Verbosity, m_SmallDecompress);
+    int errcode = BZ2_bzDecompressInit(STREAM, kVerbosity, GetSmallDecompress() ? 1 : 0);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode == BZ_OK ) {
@@ -822,6 +935,44 @@ CCompressionProcessor::EStatus CBZip2Decompressor::End(int abandon)
     ERR_COMPRESS(33, FormatErrorMessage("CBZip2Decompressor::End"));
     return eStatus_Error;
 }
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CBZip2StreamCompressor /  CBZip2StreamDecompressor -- deprecated constructors
+//
+
+// @deprecated
+ CBZip2StreamCompressor::CBZip2StreamCompressor(
+        CBZip2Compression::ELevel level,
+        streamsize                     in_bufsize,
+        streamsize                     out_bufsize,
+        int                            /*verbosity*/,
+        int                            work_factor,
+        CBZip2Compression::TBZip2Flags flags
+    )
+    : CCompressionStreamProcessor(
+        new CBZip2Compressor(level,flags), eDelete, in_bufsize, out_bufsize)
+{
+    GetCompressor()->SetWorkFactor(work_factor);
+}
+
+
+ // @deprecated
+ CBZip2StreamDecompressor::CBZip2StreamDecompressor(
+        streamsize                     in_bufsize,
+        streamsize                     out_bufsize,
+        int                            /*verbosity*/,
+        int                            small_decompress,
+        CBZip2Compression::TBZip2Flags flags
+        )
+        : CCompressionStreamProcessor(
+             new CBZip2Decompressor(flags), eDelete, in_bufsize, out_bufsize)
+{
+    GetDecompressor()->SetSmallDecompress(small_decompress > 0);
+}
+
 
 
 END_NCBI_SCOPE

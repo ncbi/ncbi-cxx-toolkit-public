@@ -55,7 +55,16 @@
 BEGIN_NCBI_SCOPE
 
 
+// Some of macro below are defined in zutil.h, but not all installations of zlib 
+// have it available :(
+
+
 // Define some macro if not defined
+
+#ifndef DEF_WBITS
+#  define DEF_WBITS MAX_WBITS
+#endif
+
 #ifndef DEF_MEM_LEVEL
 #  if MAX_MEM_LEVEL >= 8
 #    define DEF_MEM_LEVEL 8
@@ -96,13 +105,32 @@ const unsigned int kMaxChunkSize = kMax_UInt;
 // CZipCompression
 //
 
+CZipCompression::CZipCompression(ELevel level)
+    : CCompression(level)
+{
+    // Set advanced compression parameters
+    SetWindowBits ( GetWindowBitsDefault()  );
+    SetMemoryLevel( GetMemoryLevelDefault() );
+    SetStrategy   ( GetStrategyDefault()    );
+
+    // Initialize the compressor stream structure
+    m_Stream = new z_stream;
+    if ( m_Stream ) {
+        memset(m_Stream, 0, sizeof(z_stream));
+    }
+    return;
+}
+
+// @deprecated
 CZipCompression::CZipCompression(ELevel level,  int window_bits,
                                  int mem_level, int strategy)
     : CCompression(level)
 {
-    m_WindowBits = ( window_bits == kZlibDefaultWbits )  ? MAX_WBITS : window_bits;
-    m_MemLevel   = ( mem_level == kZlibDefaultMemLevel ) ? DEF_MEM_LEVEL : mem_level;
-    m_Strategy   = ( strategy == kZlibDefaultStrategy )  ? Z_DEFAULT_STRATEGY : strategy;
+    // Set advanced compression parameters
+    SetWindowBits  (( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
+    SetMemoryLevel (( mem_level == kZlibDefaultMemLevel ) ? GetMemoryLevelDefault() : mem_level);
+    SetStrategy    (( strategy == kZlibDefaultStrategy )  ? GetStrategyDefault()    : strategy);
+
     // Initialize the compressor stream structure
     m_Stream = new z_stream;
     if ( m_Stream ) {
@@ -345,8 +373,8 @@ bool CZipCompression::CompressBuffer(
     STREAM->opaque = NULL;
 
     errcode = deflateInit2_(STREAM, GetLevel(), Z_DEFLATED,
-                            header_len ? -m_WindowBits : m_WindowBits,
-                            m_MemLevel, m_Strategy,
+                            header_len ? -GetWindowBits() : GetWindowBits(),
+                            GetMemoryLevel(), GetStrategy(),
                             ZLIB_VERSION, (int)sizeof(z_stream));
     if (errcode == Z_OK) {
     
@@ -453,7 +481,7 @@ bool CZipCompression::DecompressBuffer(
         // return Z_STREAM_END. Here the gzip's CRC32 ensures that 4 bytes are
         // present after the compressed stream.
 
-        errcode = inflateInit2_(STREAM, header_len ? -m_WindowBits :m_WindowBits,
+        errcode = inflateInit2_(STREAM, header_len ? -GetWindowBits() : GetWindowBits(),
                                 ZLIB_VERSION, (int)sizeof(z_stream));
         if (errcode != Z_OK) {
             break;
@@ -540,8 +568,8 @@ size_t CZipCompression::EstimateCompressionBufferSize(size_t src_len)
     STREAM->zfree  = NULL;
     STREAM->opaque = NULL;
     errcode = deflateInit2_(STREAM, GetLevel(), Z_DEFLATED,
-                            header_len ? -m_WindowBits : m_WindowBits,
-                            m_MemLevel, m_Strategy,
+                            header_len ? -GetWindowBits() : GetWindowBits(),
+                            GetMemoryLevel(), GetStrategy(),
                             ZLIB_VERSION, (int)sizeof(z_stream));
     if (errcode != Z_OK) {
         SetError(errcode, zError(errcode));
@@ -554,12 +582,29 @@ size_t CZipCompression::EstimateCompressionBufferSize(size_t src_len)
 }
 
 
+CCompression::SRecommendedBufferSizes 
+CZipCompression::GetRecommendedBufferSizes(size_t round_up)
+{
+    SRecommendedBufferSizes sizes;
+    sizes.compression_in    = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.compression_out   = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.decompression_in  = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    sizes.decompression_out = sizes.RoundUp( kCompressionDefaultBufSize, round_up);
+    return sizes;
+}
+
+
 bool CZipCompression::CompressFile(const string& src_file,
                                    const string& dst_file,
-                                   size_t        buf_size)
+                                   size_t        file_io_bufsize,
+                                   size_t        compression_in_bufsize,
+                                   size_t        compression_out_bufsize)
 {
-    CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
+    CZipCompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
+    cf.SetWindowBits(GetWindowBits());
+    cf.SetMemoryLevel(GetMemoryLevel());
+    cf.SetStrategy(GetStrategy());
 
     // Collect info about compressed file
     CZipCompression::SFileInfo info;
@@ -568,12 +613,13 @@ bool CZipCompression::CompressFile(const string& src_file,
     // write gzip file by default.
     s_CollectFileInfo(src_file, info);
     // Open output file
-    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write, &info) ) {
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write, &info,
+                  compression_in_bufsize, compression_out_bufsize) ) {
         SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
     // Make compression
-    if ( !CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+    if ( !CCompression::x_CompressFile(src_file, cf, file_io_bufsize) ) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
@@ -589,17 +635,22 @@ bool CZipCompression::CompressFile(const string& src_file,
 
 bool CZipCompression::DecompressFile(const string& src_file,
                                      const string& dst_file,
-                                     size_t        buf_size)
+                                     size_t        file_io_bufsize,
+                                     size_t        decompression_in_bufsize,
+                                     size_t        decompression_out_bufsize)
 {
-    CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
-    cf.SetFlags(cf.GetFlags() | GetFlags());
+    CZipCompressionFile cf(GetLevel());
+    cf.SetWindowBits(GetWindowBits());
+    cf.SetMemoryLevel(GetMemoryLevel());
+    cf.SetStrategy(GetStrategy());
 
     bool need_restore_attr = false;
     SFileInfo info;
 
     // Open compressed file, and define name of the destination file
     if ( F_ISSET(fRestoreFileAttr) ) {
-        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, &info) ) {
+        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, &info,
+                      decompression_in_bufsize, decompression_out_bufsize) ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
             return false;
         } 
@@ -607,23 +658,25 @@ bool CZipCompression::DecompressFile(const string& src_file,
             need_restore_attr = true;
         }
     } else {
-        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, 0) ) {
+        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, NULL,
+                      decompression_in_bufsize, decompression_out_bufsize) ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
             return false;
         } 
     }
     // Decompress file
-    if ( !CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+    if ( !CCompression::x_DecompressFile(cf, dst_file, file_io_bufsize) ) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
         cf.Close();
         return false;
     }
-    // Close output file and return result
+    // Close output file
     bool status = cf.Close();
     SetError(cf.GetErrorCode(), cf.GetErrorDescription());
-    // Restore time stamp if needed
+
+    // Restore file timestamp if needed
     if ( status  &&  need_restore_attr ) {
         CFile(dst_file).SetTimeT(&info.mtime);
     }
@@ -633,10 +686,15 @@ bool CZipCompression::DecompressFile(const string& src_file,
 
 bool CZipCompression::DecompressFileIntoDir(const string& src_file,
                                             const string& dst_dir,
-                                            size_t        buf_size)
+                                            size_t        file_io_bufsize,
+                                            size_t        decompression_in_bufsize,
+                                            size_t        decompression_out_bufsize)
 {
-    CZipCompressionFile cf(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy);
+    CZipCompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
+    cf.SetWindowBits(GetWindowBits());
+    cf.SetMemoryLevel(GetMemoryLevel());
+    cf.SetStrategy(GetStrategy());
 
     bool need_restore_attr = false;
     SFileInfo info;
@@ -645,7 +703,8 @@ bool CZipCompression::DecompressFileIntoDir(const string& src_file,
 
     // Open compressed file, and define name of the destination file
     if ( F_ISSET(fRestoreFileAttr) ) {
-        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, &info) ) {
+        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, &info,
+                      decompression_in_bufsize, decompression_out_bufsize) ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
             return false;
         } 
@@ -658,7 +717,8 @@ bool CZipCompression::DecompressFileIntoDir(const string& src_file,
             dst_file = CFile::MakePath(dst_dir, info.name);
         }
     } else {
-        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, 0) ) {
+        if ( !cf.Open(src_file, CCompressionFile::eMode_Read, NULL,
+                      decompression_in_bufsize, decompression_out_bufsize) ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
             return false;
         } 
@@ -666,17 +726,18 @@ bool CZipCompression::DecompressFileIntoDir(const string& src_file,
         dst_file = CFile::MakePath(dst_dir, name);
     }
     // Decompress file
-    if ( !CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+    if ( !CCompression::x_DecompressFile(cf, dst_file, file_io_bufsize) ) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
         cf.Close();
         return false;
     }
-    // Close output file and return result
+    // Close output file
     bool status = cf.Close();
     SetError(cf.GetErrorCode(), cf.GetErrorDescription());
-    // Restore time stamp if needed
+
+    // Restore timestamp if needed
     if ( status  &&  need_restore_attr ) {
         CFile(dst_file).SetTimeT(&info.mtime);
     }
@@ -696,17 +757,48 @@ string CZipCompression::FormatErrorMessage(string where, size_t pos) const
 }
 
 
+//----------------------------------------------------------------------------
+// 
+// Advanced parameters
+//
+
+inline int CZipCompression::GetStrategyDefault(void)    { return Z_DEFAULT_STRATEGY; };
+inline int CZipCompression::GetStrategyMin(void)        { return Z_DEFAULT_STRATEGY; /* 0 */ };
+
+inline int CZipCompression::GetStrategyMax(void)
+{
+    #if defined(Z_FIXED)        // from v1.2.2.2
+        return Z_FIXED;
+    #endif
+    #if defined(Z_RLE)          // from v1.2.5.2
+        return Z_RLE;
+    #endif
+    #if defined(Z_HUFFMAN_ONLY) // from v0.5
+        return Z_HUFFMAN_ONLY;
+    #endif
+    #if defined(Z_FILTERED)     // from v0.5
+        return Z_FILTERED;
+    #endif
+    return Z_DEFAULT_STRATEGY; 
+};
+
+inline int CZipCompression::GetWindowBitsDefault(void)  { return MAX_WBITS; };
+inline int CZipCompression::GetWindowBitsMin(void)      { return DEF_WBITS; };
+inline int CZipCompression::GetWindowBitsMax(void)      { return MAX_WBITS; };
+
+inline int CZipCompression::GetMemoryLevelDefault(void) { return DEF_MEM_LEVEL; };
+inline int CZipCompression::GetMemoryLevelMin(void)     { return 1; };
+inline int CZipCompression::GetMemoryLevelMax(void)     { return MAX_MEM_LEVEL; };
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
 // CZipCompressionFile
 //
 
-
-CZipCompressionFile::CZipCompressionFile(
-    const string& file_name, EMode mode,
-    ELevel level, int window_bits, int mem_level, int strategy)
-    : CZipCompression(level, window_bits, mem_level, strategy),
+CZipCompressionFile::CZipCompressionFile(const string& file_name, EMode mode, ELevel level)
+    : CZipCompression(level),
       m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
     // For backward compatibility -- use gzip file format by default
@@ -721,14 +813,53 @@ CZipCompressionFile::CZipCompressionFile(
     return;
 }
 
-
-CZipCompressionFile::CZipCompressionFile(
-    ELevel level, int window_bits, int mem_level, int strategy)
-    : CZipCompression(level, window_bits, mem_level, strategy),
+CZipCompressionFile::CZipCompressionFile(ELevel level)
+    : CZipCompression(level),
       m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
     // For backward compatibility -- use gzip file format by default
     SetFlags(GetFlags() | fGZip);
+    return;
+}
+
+// @deprecated
+CZipCompressionFile::CZipCompressionFile(
+    const string& file_name, EMode mode,
+    ELevel level, int window_bits, int mem_level, int strategy)
+    : CZipCompression(level),
+      m_Mode(eMode_Read), m_File(0), m_Stream(0)
+{
+    // For backward compatibility -- use gzip file format by default
+    SetFlags(GetFlags() | fGZip);
+
+    // Set advanced compression parameters
+    SetWindowBits  (( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
+    SetMemoryLevel (( mem_level == kZlibDefaultMemLevel ) ? GetMemoryLevelDefault() : mem_level);
+    SetStrategy    (( strategy == kZlibDefaultStrategy )  ? GetStrategyDefault()    : strategy);
+
+    if ( !Open(file_name, mode) ) {
+        const string smode = (mode == eMode_Read) ? "reading" : "writing";
+        NCBI_THROW(CCompressionException, eCompressionFile, 
+                   "[CZipCompressionFile]  Cannot open file '" + file_name +
+                   "' for " + smode + ".");
+    }
+    return;
+}
+
+// @deprecated
+CZipCompressionFile::CZipCompressionFile(
+    ELevel level, int window_bits, int mem_level, int strategy)
+    : CZipCompression(level),
+      m_Mode(eMode_Read), m_File(0), m_Stream(0)
+{
+    // For backward compatibility -- use gzip file format by default
+    SetFlags(GetFlags() | fGZip);
+
+    // Set advanced compression parameters
+    SetWindowBits  (( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
+    SetMemoryLevel (( mem_level == kZlibDefaultMemLevel ) ? GetMemoryLevelDefault() : mem_level);
+    SetStrategy    (( strategy == kZlibDefaultStrategy )  ? GetStrategyDefault()    : strategy);
+
     return;
 }
 
@@ -753,13 +884,15 @@ void CZipCompressionFile::GetStreamError(void)
 }
 
 
-bool CZipCompressionFile::Open(const string& file_name, EMode mode)
+bool CZipCompressionFile::Open(const string& file_name, EMode mode,
+                               size_t compression_in_bufsize, size_t compression_out_bufsize)
 {
-    return Open(file_name, mode, 0 /*info*/);
+    return Open(file_name, mode, NULL /*info*/, compression_in_bufsize, compression_out_bufsize);
 }
 
 
-bool CZipCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* info)
+bool CZipCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* info,
+                               size_t compression_in_bufsize, size_t compression_out_bufsize)
 {
     m_Mode = mode;
 
@@ -793,19 +926,29 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* i
 
     // Create compression stream for I/O
     if ( mode == eMode_Read ) {
-        CZipDecompressor* decompressor =  new CZipDecompressor(m_WindowBits, GetFlags());
+        CZipDecompressor* decompressor = new CZipDecompressor(GetFlags());
+
+        decompressor->SetWindowBits(GetWindowBits());
+        decompressor->SetMemoryLevel(GetMemoryLevel());
+        decompressor->SetStrategy(GetStrategy());
+
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
                 decompressor, CCompressionStreamProcessor::eDelete,
                 kCompressionDefaultBufSize, kCompressionDefaultBufSize);
         m_Stream = new CCompressionIOStream(*m_File, processor, 0, CCompressionStream::fOwnReader);
+
     } else {
-        CZipCompressor* compressor = new CZipCompressor(GetLevel(), m_WindowBits, m_MemLevel, m_Strategy, GetFlags());
+        CZipCompressor* compressor = new CZipCompressor(GetLevel(), GetFlags());
         if ( F_ISSET(fWriteGZipFormat)  &&  info) {
             // Enable compressor to write info information about
             // compressed file into gzip file header
             compressor->SetFileInfo(*info);
         }
+        compressor->SetWindowBits(GetWindowBits());
+        compressor->SetMemoryLevel(GetMemoryLevel());
+        compressor->SetStrategy(GetStrategy());
+
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
                 compressor, CCompressionStreamProcessor::eDelete,
@@ -903,12 +1046,24 @@ bool CZipCompressionFile::Close(void)
 //
 
 
-CZipCompressor::CZipCompressor(ELevel level,  int window_bits,
-                               int mem_level, int strategy, TZipFlags flags)
-    : CZipCompression(level, window_bits, mem_level, strategy),
+CZipCompressor::CZipCompressor(ELevel level, TZipFlags flags)
+    : CZipCompression(level),
       m_CRC32(0), m_NeedWriteHeader(true)
 {
     SetFlags(flags);
+}
+
+// @deprecated
+CZipCompressor::CZipCompressor(ELevel level,  int window_bits,
+                               int mem_level, int strategy, TZipFlags flags)
+    : CZipCompression(level),
+      m_CRC32(0), m_NeedWriteHeader(true)
+{
+    SetFlags(flags);
+    // Set advanced compression parameters
+    SetWindowBits  (( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
+    SetMemoryLevel (( mem_level == kZlibDefaultMemLevel ) ? GetMemoryLevelDefault() : mem_level);
+    SetStrategy    (( strategy == kZlibDefaultStrategy )  ? GetStrategyDefault()    : strategy);
 }
 
 
@@ -941,8 +1096,8 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
     memset(STREAM, 0, sizeof(z_stream));
     // Create a compressor stream
     int errcode = deflateInit2_(STREAM, GetLevel(), Z_DEFLATED,
-                                F_ISSET(fWriteGZipFormat) ? -m_WindowBits : m_WindowBits,
-                                m_MemLevel, m_Strategy,
+                                F_ISSET(fWriteGZipFormat) ? -GetWindowBits() : GetWindowBits(),
+                                GetMemoryLevel(), GetStrategy(),
                                 ZLIB_VERSION, (int)sizeof(z_stream));
     SetError(errcode, zError(errcode));
     if ( errcode == Z_OK ) {
@@ -1131,11 +1286,22 @@ CCompressionProcessor::EStatus CZipCompressor::End(int abandon)
 //
 
 
-CZipDecompressor::CZipDecompressor(int window_bits, TZipFlags flags)
-    : CZipCompression(eLevel_Default, window_bits, 0, 0),
+CZipDecompressor::CZipDecompressor(TZipFlags flags)
+    : CZipCompression(eLevel_Default),
       m_NeedCheckHeader(true), m_IsGZ(false), m_SkipInput(0)
 {
     SetFlags(flags);
+}
+
+
+// @deprecated
+CZipDecompressor::CZipDecompressor(int window_bits, TZipFlags flags)
+    : CZipCompression(eLevel_Default),
+      m_NeedCheckHeader(true), m_IsGZ(false), m_SkipInput(0)
+{
+    SetFlags(flags);
+    // Set advanced compression parameters
+    SetWindowBits(( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
 }
 
 
@@ -1163,7 +1329,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Init(void)
     memset(STREAM, 0, sizeof(z_stream));
     
     // Create a compressor stream
-    int errcode = inflateInit2_(STREAM, m_WindowBits, ZLIB_VERSION, (int)sizeof(z_stream));
+    int errcode = inflateInit2_(STREAM, GetWindowBits(), ZLIB_VERSION, (int)sizeof(z_stream));
     SetError(errcode, zError(errcode));
     if ( errcode == Z_OK ) {
         return eStatus_Success;
@@ -1267,7 +1433,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                 // Reinit decompression stream
                 inflateEnd(STREAM);
                 int errcode = inflateInit2_(STREAM,
-                                            m_IsGZ ? -m_WindowBits : m_WindowBits,
+                                            m_IsGZ ? -GetWindowBits() : GetWindowBits(),
                                             ZLIB_VERSION,
                                             (int)sizeof(z_stream));
                 SetError(errcode, zError(errcode));
@@ -1446,6 +1612,51 @@ CCompressionProcessor::EStatus CZipDecompressor::End(int abandon)
 }
 
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CZipStreamCompressor /  CZipStreamDecompressor -- deprecated constructors
+//
+
+
+// @deprecated
+CZipStreamCompressor::CZipStreamCompressor(
+        CZipCompression::ELevel    level,
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        int                        window_bits,
+        int                        mem_level,
+        int                        strategy ,
+        CZipCompression::TZipFlags flags
+        ) 
+        : CCompressionStreamProcessor(
+              new CZipCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
+{
+    // Set advanced parameters
+    CZipCompressor* c = GetCompressor();
+    c->SetWindowBits (( window_bits == kZlibDefaultWbits )  ? c->GetWindowBitsDefault()  : window_bits);
+    c->SetMemoryLevel(( mem_level == kZlibDefaultMemLevel ) ? c->GetMemoryLevelDefault() : mem_level);
+    c->SetStrategy   (( strategy == kZlibDefaultStrategy )  ? c->GetStrategyDefault()    : strategy);
+
+}
+
+// @deprecated
+CZipStreamDecompressor::CZipStreamDecompressor(
+    streamsize                 in_bufsize,
+    streamsize                 out_bufsize,
+    int                        window_bits,
+    CZipCompression::TZipFlags flags
+    )
+    : CCompressionStreamProcessor( 
+            new CZipDecompressor(flags), eDelete, in_bufsize, out_bufsize)
+{
+    // Set advanced parameters
+    CZipDecompressor* d = GetDecompressor();
+    d->SetWindowBits(( window_bits == kZlibDefaultWbits ) ? d->GetWindowBitsDefault() : window_bits);
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Global functions
@@ -1461,7 +1672,6 @@ void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler)
     z_stream strm;                // Compressed stream structure
     int      ret = Z_STREAM_END;  // zlib return status, init with Z_STREAM_END to get a (0,0)
     bool     initialized = false;
-
 
     // Default buffer size
     size_t in_size  = kCompressionDefaultBufSize;
@@ -1505,7 +1715,7 @@ void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler)
                     strm.zalloc = NULL;
                     strm.zfree  = NULL;
                     strm.opaque = NULL;
-                    ret = inflateInit2(&strm, 15+16 /* max windowbits + automatic gzip header decoding */); /* NCBI_FAKE_WARNING */
+                    ret = inflateInit2(&strm, MAX_WBITS+16 /* max windowbits + automatic gzip header decoding */); /* NCBI_FAKE_WARNING */
                     if (ret != Z_OK) {
                         throw "inflateInit2() failed: " + string(zError(ret));
                     }

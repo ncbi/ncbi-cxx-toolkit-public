@@ -223,9 +223,23 @@ size_t CZstdCompression::EstimateCompressionBufferSize(size_t src_len)
 }
 
 
+CCompression::SRecommendedBufferSizes 
+CZstdCompression::GetRecommendedBufferSizes(size_t round_up)
+{
+    SRecommendedBufferSizes sizes;
+    sizes.compression_in    = sizes.RoundUp( ZSTD_CStreamInSize(),  round_up);
+    sizes.compression_out   = sizes.RoundUp( ZSTD_CStreamOutSize(), round_up);
+    sizes.decompression_in  = sizes.RoundUp( ZSTD_DStreamInSize(),  round_up);
+    sizes.decompression_out = sizes.RoundUp( ZSTD_DStreamOutSize(), round_up);
+    return sizes;
+}
+
+
 bool CZstdCompression::CompressFile(const string& src_file,
                                     const string& dst_file,
-                                    size_t        buf_size)
+                                    size_t        file_io_bufsize,
+                                    size_t        compression_in_bufsize,
+                                    size_t        compression_out_bufsize)
 {
     CZstdCompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
@@ -239,12 +253,13 @@ bool CZstdCompression::CompressFile(const string& src_file,
     }
 
     // Open output file
-    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write) ) {
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write,
+                  compression_in_bufsize, compression_out_bufsize) ) {
         SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
     // Make compression
-    if ( !CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+    if ( !CCompression::x_CompressFile(src_file, cf, file_io_bufsize)) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
@@ -260,7 +275,9 @@ bool CZstdCompression::CompressFile(const string& src_file,
 
 bool CZstdCompression::DecompressFile(const string& src_file,
                                       const string& dst_file,
-                                      size_t        buf_size)
+                                      size_t        file_io_bufsize,
+                                      size_t        decompression_in_bufsize,
+                                      size_t        decompression_out_bufsize)
 {
     CZstdCompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
@@ -271,12 +288,13 @@ bool CZstdCompression::DecompressFile(const string& src_file,
     }
 
     // Open output file
-    if ( !cf.Open(src_file, CCompressionFile::eMode_Read) ) {
+    if ( !cf.Open(src_file, CCompressionFile::eMode_Read,
+                  decompression_in_bufsize, decompression_out_bufsize) ) {
         SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         return false;
     } 
     // Make decompression
-    if ( !CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+    if ( !CCompression::x_DecompressFile(cf, dst_file, file_io_bufsize) ) {
         if ( cf.GetErrorCode() ) {
             SetError(cf.GetErrorCode(), cf.GetErrorDescription());
         }
@@ -311,12 +329,18 @@ void CZstdCompression::SetErrorResult(size_t result)
 // Advanced parameters
 //
 
-void CZstdCompression::x_GetCompressionParamBounds(int param, int* vmin, int* vmax)
+
+// zstd have ZSTD_STRATEGY_[MIN|MAX] and ZSTD_WINDOWLOG_[MIN|MAX], but on the current 
+// moment (v1.5.2) they are a part of an experimental API and usually not available. 
+// So, forced to use ZSTD_cParam_getBounds() to get min/max values.
+
+void s_GetParamBounds(int param, int* vmin, int* vmax)
 {
     ZSTD_bounds bounds = ZSTD_cParam_getBounds(ZSTD_cParameter(param));
     if (ZSTD_isError(bounds.error)) {
-        SetErrorResult(bounds.error);
-        ERR_COMPRESS(116, FormatErrorMessage("CZstdCompression::GetCParamBounds"));
+        NCBI_THROW(CCompressionException, eCompressionFile, 
+                   "[CZstdCompression]  Cannot get min/max for ZSTD_cParameter = '" + 
+                   std::to_string(param) + "' : " + ZSTD_getErrorName(bounds.error));
     }
     if (vmin) {
         *vmin = bounds.lowerBound;
@@ -327,11 +351,13 @@ void CZstdCompression::x_GetCompressionParamBounds(int param, int* vmin, int* vm
     return;
 }
 
+inline int CZstdCompression::GetStrategyDefault(void)  { return 0; };
+
 int CZstdCompression::GetStrategyMin(void)
 {
     static int v = 0;
     if ( !v ) {
-        x_GetCompressionParamBounds(ZSTD_c_strategy, &v, NULL);
+        s_GetParamBounds(ZSTD_c_strategy, &v, NULL);
     }
     return v;
 }
@@ -340,16 +366,18 @@ int CZstdCompression::GetStrategyMax(void)
 {
     static int v = 0;
     if ( !v ) {
-        x_GetCompressionParamBounds(ZSTD_c_strategy, NULL, &v);
+        s_GetParamBounds(ZSTD_c_strategy, NULL, &v);
     }
     return v;
 }
+
+inline int CZstdCompression::GetWindowLogDefault(void) { return 0; };
 
 int CZstdCompression::GetWindowLogMin(void)
 {
     static int v = 0;
     if ( !v ) {
-        x_GetCompressionParamBounds(ZSTD_c_windowLog, &v, NULL);
+        s_GetParamBounds(ZSTD_c_windowLog, &v, NULL);
     }
     return v;
 }
@@ -358,7 +386,7 @@ int CZstdCompression::GetWindowLogMax(void)
 {
     static int v = 0;
     if ( !v ) {
-        x_GetCompressionParamBounds(ZSTD_c_windowLog, NULL, &v);
+        s_GetParamBounds(ZSTD_c_windowLog, NULL, &v);
     }
     return v;
 }
@@ -371,11 +399,12 @@ int CZstdCompression::GetWindowLogMax(void)
 //
 
 CZstdCompressionFile::CZstdCompressionFile(
-    const string& file_name, EMode mode, ELevel level)
-    : CZstdCompression(level),
-      m_Mode(eMode_Read), m_File(0), m_Stream(0)
+    const string& file_name, EMode mode, ELevel level,
+    size_t compression_in_bufsize, size_t compression_out_bufsize)
+        : CZstdCompression(level),
+            m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
-    if ( !Open(file_name, mode) ) {
+    if ( !Open(file_name, mode, compression_in_bufsize, compression_out_bufsize) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
                    "[CZstdCompressionFile]  Cannot open file '" + file_name +
@@ -413,7 +442,8 @@ void CZstdCompressionFile::GetStreamError(void)
 }
 
 
-bool CZstdCompressionFile::Open(const string& file_name, EMode mode)
+bool CZstdCompressionFile::Open(const string& file_name, EMode mode,
+                                size_t compression_in_bufsize, size_t compression_out_bufsize)
 {
     m_Mode = mode;
 
@@ -442,7 +472,7 @@ bool CZstdCompressionFile::Open(const string& file_name, EMode mode)
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
                 decompressor, CCompressionStreamProcessor::eDelete,
-                kCompressionDefaultBufSize, kCompressionDefaultBufSize);
+                compression_in_bufsize, compression_out_bufsize);
         m_Stream = 
             new CCompressionIOStream(
                 *m_File, processor, 0, CCompressionStream::fOwnReader);
@@ -458,7 +488,7 @@ bool CZstdCompressionFile::Open(const string& file_name, EMode mode)
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
                 compressor, CCompressionStreamProcessor::eDelete,
-                kCompressionDefaultBufSize, kCompressionDefaultBufSize);
+                compression_in_bufsize, compression_out_bufsize);
         m_Stream = 
             new CCompressionIOStream(
                 *m_File, 0, processor, CCompressionStream::fOwnWriter);
