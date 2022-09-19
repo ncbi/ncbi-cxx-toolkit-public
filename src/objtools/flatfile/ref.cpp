@@ -1267,7 +1267,7 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 {
     const char** b;
     char*        s;
-    Int2         medium = OTHER_MEDIUM;
+    CCit_sub::TMedium medium = CCit_sub::eMedium_other;
 
     CRef<CCit_sub> ret;
 
@@ -1302,10 +1302,10 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 
     s = s + 13;
     if (StringStr(s, "E-mail"))
-        medium = EMAIL_MEDIUM;
+        medium = CCit_sub::eMedium_email;
 
     if (StringNICmp(" on tape", s, 8) == 0) {
-        medium = TAPE_MEDIUM;
+        medium = CCit_sub::eMedium_tape;
         for (s += 8; *s != '\0' && *s != ':';)
             s++;
     }
@@ -1345,7 +1345,7 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     }
 
     ret->SetAuthors(*auth_list);
-    ret->SetMedium(static_cast<CCit_sub::EMedium>(medium));
+    ret->SetMedium(medium);
 
     return ret;
 }
