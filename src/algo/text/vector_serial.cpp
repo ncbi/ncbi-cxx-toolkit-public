@@ -285,12 +285,9 @@ template<>
 void Serialize<string, float>(CNcbiOstream& ostr,
                               const CScoreVector<string, float>& vec)
 {
-    CZipStreamCompressor zipper(CZipCompressor::eLevel_Best,
-                                16384, 16384,
-                                15 /* window bits */,
-                                9  /* memory bits */,
-                                kZlibDefaultStrategy,
-                                0);
+    CZipStreamCompressor zipper(CZipCompressor::eLevel_Best);
+    zipper.GetCompressor()->SetWindowBits(15);
+    zipper.GetCompressor()->SetMemoryLevel(9);
 
     CCompressionOStream zip_str(ostr, &zipper);
 
@@ -311,9 +308,8 @@ void Deserialize<string, float>(CNcbiIstream& istr,
                                 CScoreVector<string, float>& vec)
 {
     vec.clear();
-    CZipStreamDecompressor zipper(16384, 16384,
-                                  15 /* window bits */,
-                                  0);
+    CZipStreamDecompressor zipper;
+    zipper.GetDecompressor()->SetWindowBits(15);
 
     CCompressionIStream zip_istr(istr, &zipper);
     while ((bool)zip_istr) {

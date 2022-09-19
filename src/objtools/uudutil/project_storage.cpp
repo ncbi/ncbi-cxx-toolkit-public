@@ -499,13 +499,16 @@ unique_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw
                 if (m_CmprsFmt != eNC_Uncompressed) {
                     CCompressionStreamProcessor* proc = NULL;
                     if (m_CmprsFmt == eNC_ZlibCompressed) {
-                        proc = new CZipStreamDecompressor(kBufSize, kBufSize,
-                                                          kWindowBits, 0);
+                        auto p = new CZipStreamDecompressor(kBufSize, kBufSize);
+                        p->GetDecompressor()->SetWindowBits(kWindowBits);
+                        p->GetDecompressor()->SetMemoryLevel(kMemLevel);
+                        p->GetDecompressor()->SetStrategy(kStrategy);
+                        proc = p;
                     } else if (m_CmprsFmt == eNC_Bzip2Compressed) {
-                        proc = new CBZip2StreamDecompressor();
+                        proc = new CBZip2StreamDecompressor(kBufSize, kBufSize);
                     } else if (m_CmprsFmt == eNC_LzoCompressed) {
 #if defined(HAVE_LIBLZO)
-                        proc = new CLZOStreamDecompressor();
+                        proc = new CLZOStreamDecompressor(kBufSize, kBufSize);
 #else
                         // The blob is lzo-compressed, but the client
                         // code used to retrived the blob doesn't support
@@ -634,17 +637,16 @@ unique_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigne
         unique_ptr<CCompressionStreamProcessor> compressor;
 
         if (m_CmprsFmt == eNC_ZlibCompressed) {
-            compressor.reset(new CZipStreamCompressor(kCompressionLevel,
-                                                      kBufSize, kBufSize,
-                                                      kWindowBits, kMemLevel,
-                                                      kStrategy, 0));
+            auto p = new CZipStreamCompressor(kCompressionLevel, kBufSize, kBufSize);
+            p->GetCompressor()->SetWindowBits(kWindowBits);
+            p->GetCompressor()->SetMemoryLevel(kMemLevel);
+            p->GetCompressor()->SetStrategy(kStrategy);
+            compressor.reset(p);
         } else if (m_CmprsFmt == eNC_Bzip2Compressed) {
-            compressor.reset(new CBZip2StreamCompressor(kCompressionLevel,
-                                                        kBufSize, kBufSize));
+            compressor.reset(new CBZip2StreamCompressor(kCompressionLevel, kBufSize, kBufSize));
 #if defined(HAVE_LIBLZO)
         } else if (m_CmprsFmt == eNC_LzoCompressed) {
-            compressor.reset(new CLZOStreamCompressor(kCompressionLevel,
-                                                      kBufSize, kBufSize));
+            compressor.reset(new CLZOStreamCompressor(kCompressionLevel, kBufSize, kBufSize));
 #endif // HAVE_LIBLZO
         }
 
