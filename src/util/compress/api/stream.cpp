@@ -54,8 +54,8 @@ CCompressionStreamProcessor::CCompressionStreamProcessor(
     streamsize              out_bufsize)
 
     : m_Processor(processor), 
-      m_InBufSize(in_bufsize <= 1 ? kCompressionDefaultBufSize : in_bufsize),
-      m_OutBufSize(out_bufsize <= 1 ? kCompressionDefaultBufSize :out_bufsize),
+      m_InBufSize(in_bufsize <= 1   ? kCompressionDefaultBufSize : in_bufsize),
+      m_OutBufSize(out_bufsize <= 1 ? kCompressionDefaultBufSize : out_bufsize),
       m_NeedDelete(need_delete), m_State(eDone)
 {
     Init();

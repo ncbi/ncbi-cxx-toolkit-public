@@ -98,26 +98,8 @@
 BEGIN_NCBI_SCOPE
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Special compression parameters (description partialy copied from LZO docs):
-//        
-// <blocksize>
-//    LZO is a block compression algorithm - it compresses and decompresses
-//    a block of data. Block size must be the same for compression
-//    and decompression. This parameter define a block size used only
-//    for file/stream based compression/decompression. The methods operated
-//    with all data located in memory (like CompressBuffer/DecompressBuffer)
-//    works by default with one big block - the whole data buffer.
-//
-
 /// Default LZO block size.
-///
-/// We use such block size to reduce overhead with a stream processor's
-/// methods calls, because compression/decompression output streams use
-/// by default (16Kb - 1) as output buffer size. But you can use any value
-/// if you think that it works better for you.
-/// @sa CCompressionStreambuf::CCompressionStreambuf
+/// @deprecated Please use CLZOCompression::GetBlockSizeDefault() instead
 const size_t kLZODefaultBlockSize = 24*1024;
 
 // Forward declaration of structure to define parameters for some level of compression.
@@ -134,54 +116,6 @@ struct SCompressionParam;
 class NCBI_XUTIL_EXPORT CLZOCompression : public CCompression 
 {
 public:
-    /// Compression/decompression flags.
-    enum EFlags {
-        ///< Allow transparent reading data from buffer/file/stream
-        ///< regardless is it compressed or not. But be aware,
-        ///< if data source contains broken data and API cannot detect that
-        ///< it is compressed data, that you can get binary instead of
-        ///< decompressed data. By default this flag is OFF.
-        fAllowTransparentRead = (1<<0),
-        ///< Allow to "compress/decompress" empty data. Buffer compression
-        ///< functions starts to return TRUE instead of FALSE for zero-length
-        ///< input. And, if this flag is used together with fStreamFormat
-        ///< than the output will have header and footer only.
-        fAllowEmptyData       = (1<<1),
-        ///< Add/check (accordingly to compression or decompression)
-        ///< the compressed data checksum. A checksum is a form of
-        ///< redundancy check. We use the safe decompressor, but this can be
-        ///< not enough, because many data errors will not result in
-        ///< a compressed data violation.
-        fChecksum             = (1<<2),
-        ///< Use stream compatible format for data compression.
-        ///< This flag have an effect only for CompressBuffer/DecompressBuffer.
-        ///< File and stream based compressors always use it by default.
-        ///< Use this flag with DecompressBuffer() to decompress data,
-        ///< compressed using streams, or compress data with CompressBuffer(),
-        ///< that can be decompressed using decompression stream.
-        ///< Also, this flag is reguired to compress data > 4GB.
-        ///< LZO default single block compression cannot handle such large
-        ///< amount of data on some platforms.
-        fStreamFormat         = (1<<3),
-        ///< Store file information like file name and file modification date
-        ///< of the compressed file into the file/stream.
-        ///< Works only with fStreamFormat flag.
-        fStoreFileInfo        = (1<<4) | fStreamFormat
-    }; 
-    typedef CLZOCompression::TFlags TLZOFlags; ///< Bitwise OR of EFlags
-
-    /// Constructor.
-    CLZOCompression(
-        ELevel level      = eLevel_Default,
-        size_t blocksize  = kLZODefaultBlockSize
-    );
-
-    /// Destructor.
-    virtual ~CLZOCompression(void);
-
-    /// Return name and version of the compression library.
-    virtual CVersionInfo GetVersion(void) const;
-
     /// Initialize LZO library.
     ///
     /// You should call this method only once, before any real
@@ -192,6 +126,59 @@ public:
     ///   Initialize() explicitly in the beginning of your main thread,
     ///   before you run any other threads.
     static bool Initialize(void);
+
+    /// Compression/decompression flags.
+    enum EFlags {
+        /// Allow transparent reading data from buffer/file/stream
+        /// regardless is it compressed or not. But be aware,
+        /// if data source contains broken data and API cannot detect that
+        /// it is compressed data, that you can get binary instead of
+        /// decompressed data. By default this flag is OFF.
+        fAllowTransparentRead = (1<<0),
+        /// Allow to "compress/decompress" empty data. Buffer compression
+        /// functions starts to return TRUE instead of FALSE for zero-length
+        /// input. And, if this flag is used together with fStreamFormat
+        /// than the output will have header and footer only.
+        fAllowEmptyData       = (1<<1),
+        /// Add/check (accordingly to compression or decompression)
+        /// the compressed data checksum. A checksum is a form of
+        /// redundancy check. We use the safe decompressor, but this can be
+        /// not enough, because many data errors will not result in
+        /// a compressed data violation.
+        fChecksum             = (1<<2),
+        /// Use stream compatible format for data compression.
+        /// This flag have an effect for CompressBuffer/DecompressBuffer only.
+        /// File and stream based compressors always use it by default.
+        /// Use this flag with DecompressBuffer() to decompress data,
+        /// compressed using streams, or compress data with CompressBuffer(),
+        /// that can be decompressed using decompression stream.
+        /// @note 
+        ///   This flag is reguired to compress data > 4GB.
+        ///   LZO default single block compression cannot handle such large
+        ///   amount of data on some platforms.
+        fStreamFormat         = (1<<3),
+        /// Store file information like file name and file modification date
+        /// of the compressed file into the file/stream.
+        /// Works only with fStreamFormat flag.
+        fStoreFileInfo        = (1<<4) | fStreamFormat
+    }; 
+    typedef CLZOCompression::TFlags TLZOFlags; ///< Bitwise OR of EFlags
+
+    /// Constructor.
+    CLZOCompression(ELevel level = eLevel_Default);
+
+    /// @deprecated 
+    ///   Use CLZOCompression(ELevel) constructor without block size, that can be set separately
+    NCBI_DEPRECATED_CTOR(CLZOCompression(
+        ELevel level,
+        size_t blocksize
+    ));
+
+    /// Destructor.
+    virtual ~CLZOCompression(void);
+
+    /// Return name and version of the compression library.
+    virtual CVersionInfo GetVersion(void) const;
 
     /// Get compression level.
     ///
@@ -268,7 +255,7 @@ public:
     /// Estimate buffer size for data compression.
     ///
     /// Simplified method for estimation of the size of buffer required
-    /// to compress specified number of bytes of data.
+    /// to compress specified number of bytes of data. Uses current flags.
     /// @sa
     ///   EstimateCompressionBufferSize, CompressBuffer
     size_t EstimateCompressionBufferSize(size_t src_len, 
@@ -283,34 +270,64 @@ public:
     ///   Size of data in source buffer.
     /// @blocksize
     ///   Size of blocks used by compressor to compress source data.
-    ///   Value 0 means that will be used block size specified in constructor. 
+    ///   Value 0 means that will be used block size specified for compression (or default).
     /// @flags
     ///   Flags that will be used for compression.
     /// @return
     ///   Estimated buffer size.
     /// @sa
     ///   CompressBuffer
-    size_t EstimateCompressionBufferSize(size_t    src_len, 
-                                         size_t    blocksize, 
-                                         TLZOFlags flags);
+    size_t EstimateCompressionBufferSize(size_t src_len, size_t blocksize, TLZOFlags flags);
+
+    /// Get recommended buffer sizes for stream/file I/O.
+    ///
+    /// These buffer sizes are softly recommended. They are not required, (de)compression
+    /// streams accepts any reasonable buffer size, for both input and output.
+    /// Respecting the recommended size just makes it a bit easier for (de)compressor,
+    /// reducing the amount of memory shuffling and buffering, resulting in minor 
+    /// performance savings. If compression library doesn't have preferences about 
+    /// I/O buffer sizes, kCompressionDefaultBufSize will be used.
+    /// @param round_up_by
+    ///   If specified, round up a returned value by specified amount. 
+    ///   Sp all values will be divisible to this parameter.
+    ///   Usuful for better memory management. 
+    /// @return
+    ///   Structure with recommended buffer sizes.
+    /// @note
+    ///   Applicable for streaming/file operations.
+    /// @sa
+    ///   kCompressionDefaultBufSize, CSystemInfo::GetVirtualMemoryPageSize()
+    /// 
+    static SRecommendedBufferSizes GetRecommendedBufferSizes(size_t round_up = 0);
+
     /// Compress file.
     ///
     /// @param src_file
     ///   File name of source file.
     /// @param dst_file
     ///   File name of result file.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a compressor.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be compressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a compressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @note
     ///   This method don't store any file meta information like name, date/time, owner or attributes.
     /// @sa
-    ///   DecompressFile
+    ///   DecompressFile, GetRecommendedBufferSizes, CLZOCompressionFile
+    /// 
     virtual bool CompressFile(
         const string& src_file,
         const string& dst_file,
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize         = kCompressionDefaultBufSize,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     );
 
     /// Decompress file.
@@ -319,16 +336,26 @@ public:
     ///   File name of source file.
     /// @param dst_file
     ///   File name of result file.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a decompressor.
+    /// @param decompression_in_bufsize
+    ///   Size of the internal buffer holding input data to be decompressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param decompression_out_bufsize
+    ///   Size of the internal buffer to receive data from a decompressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @sa
-    ///   CompressFile
+    ///   CompressFile, GetRecommendedBufferSizes, CLZOCompressionFile
+    /// 
     virtual bool DecompressFile(
         const string& src_file,
         const string& dst_file, 
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize           = kCompressionDefaultBufSize,
+        size_t        decompression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        decompression_out_bufsize = kCompressionDefaultBufSize
     );
 
     /// Structure to keep compressed file information.
@@ -338,6 +365,43 @@ public:
         time_t  mtime;
         SFileInfo(void) : mtime(0) {};
     };
+
+    //=======================================================================
+    // Advanced compression-specific parameters
+    //=======================================================================
+    // Allow to tune up (de)compression for a specific needs.
+    //
+    // - Pin down compression parameters to some specific values, so these
+    //   values are no longer dynamically selected by the compressor.
+    // - All setting parameters should be in the range [min,max], 
+    //   or equal to default.
+    // - All parameters should be set before starting (de)compression, 
+    //   or it will be ignored for current operation.
+    //=======================================================================
+
+    /// Block size 
+    /// 
+    /// LZO is a block compression algorithm - it compresses and decompresses
+    /// blocks of data. Block size must be the same for compression and 
+    /// decompression. This parameter define a block size used
+    /// for file/stream based compression/decompression to divide big 
+    /// data to chunks and compress them separately.
+    /// 
+    /// Block size set a memory budget for streaming (de)compression,
+    /// with larger values of block size requiring more memory and typically
+    /// better compression.
+    ///
+    /// Methods operated with all data located in memory, like CompressBuffer()
+    /// or DecompressBuffer() works by default with one big block, except
+    /// 'fStreamFormat' flag has specified. Stream format stores used block
+    /// size, so it is used automatically for decompression instead of provided
+    /// value.
+    /// 
+    void SetBlockSize(size_t block_size);
+    size_t GetBlockSize(void) const { return m_BlockSize; }
+    static size_t GetBlockSizeDefault(void);
+    static size_t GetBlockSizeMin(void);
+    static size_t GetBlockSizeMax(void);
 
 protected:
     /// Initialize compression parameters.
@@ -405,21 +469,32 @@ class NCBI_XUTIL_EXPORT CLZOCompressionFile : public CLZOCompression,
                                               public CCompressionFile
 {
 public:
+    // TODO: add compression_in_bufsize / compression_out_bufsize parameters after 
+    // removing deprecated constructors only, to avoid conflicts. See zst as example.
+    // JIRA: CXX-12640
+
     /// Constructor.
-    /// For a special parameters description see CLZOCompression.
     CLZOCompressionFile(
         const string& file_name,
         EMode         mode,
-        ELevel        level     = eLevel_Default,
-        size_t        blocksize = kLZODefaultBlockSize
+        ELevel        level = eLevel_Default
     );
-
     /// Conventional constructor.
-    /// For a special parameters description see CLZOCompression.
     CLZOCompressionFile(
-        ELevel        level     = eLevel_Default,
-        size_t        blocksize = kLZODefaultBlockSize
+        ELevel        level = eLevel_Default
     );
+    /// @deprecated Use CLZOCompressionFile(const string&, EMode, ELevel) construtor instead.
+    NCBI_DEPRECATED_CTOR(CLZOCompressionFile(
+        const string& file_name,
+        EMode         mode,
+        ELevel        level,
+        size_t        blocksize
+    ));
+    /// @deprecated Use CLZOCompressionFile(ELevel) construtor instead.
+    NCBI_DEPRECATED_CTOR(CLZOCompressionFile(
+        ELevel        level,
+        size_t        blocksize
+    ));
 
     /// Destructor
     ~CLZOCompressionFile(void);
@@ -430,11 +505,20 @@ public:
     ///   File name of the file to open.
     /// @param mode
     ///   File open mode.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be (de)compressed.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a (de)compressor.
     /// @return
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CLZOCompression, Read, Write, Close
-    virtual bool Open(const string& file_name, EMode mode);
+    virtual bool Open(
+        const string& file_name, 
+        EMode         mode,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
+    );
 
     /// Opens a compressed file for reading or writing.
     ///
@@ -444,15 +528,24 @@ public:
     /// @param mode
     ///   File open mode.
     /// @param info
-    ///   Pointer to file information structure. If it is not NULL,
-    ///   that it will be used to get information about compressed file
-    ///   in the read mode, and set it in the write mode for compressed 
-    ///   files.
+    ///   Pointer to file information structure. If not NULL, that it will
+    ///   be used to get information about compressed file in the read mode,
+    ///   and set it in the write mode for compressed files.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be (de)compressed.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a (de)compressor.
     /// @return
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CLZOCompression, Read, Write, Close
-    virtual bool Open(const string& file_name, EMode mode, SFileInfo* info);
+    virtual bool Open(
+        const string& file_name, 
+        EMode         mode, 
+        SFileInfo*    info,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
+    );
 
     /// Read data from compressed file.
     /// 
@@ -567,10 +660,18 @@ class NCBI_XUTIL_EXPORT CLZOCompressor : public CLZOCompression,
 public:
     /// Constructor.
     CLZOCompressor(
-        ELevel    level       = eLevel_Default,
-        size_t    blocksize   = kLZODefaultBlockSize,
-        TLZOFlags flags       = 0
+        ELevel    level = eLevel_Default,
+        TLZOFlags flags = 0
     );
+    /// @deprecated 
+    ///   Use CLZOCompressor(ELevel = eLevel_Default, TLZOFlags = 0) constructor
+    ///   without block size parameter, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CLZOCompressor(
+        ELevel    level,
+        size_t    blocksize,
+        TLZOFlags flags = 0
+    ));
+
     /// Destructor.
     virtual ~CLZOCompressor(void);
 
@@ -619,10 +720,15 @@ class NCBI_XUTIL_EXPORT CLZODecompressor : public CLZOCompression,
 {
 public:
     /// Constructor.
-    CLZODecompressor(
-        size_t    blocksize = kLZODefaultBlockSize,
+    CLZODecompressor(TLZOFlags flags = 0);
+
+    /// @deprecated 
+    ///   Use CLZODecompressor(TLZOFlags = 0) constructor
+    ///   without block size parameter, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CLZODecompressor(
+        size_t    blocksize,
         TLZOFlags flags     = 0
-    );
+    ));
 
     /// Destructor.
     virtual ~CLZODecompressor(void);
@@ -681,13 +787,22 @@ public:
         CLZOCompression::ELevel    level,
         streamsize                 in_bufsize,
         streamsize                 out_bufsize,
-        size_t                     blocksize = kLZODefaultBlockSize,
         CLZOCompression::TLZOFlags flags = 0
         )
         : CCompressionStreamProcessor(
-              new CLZOCompressor(level, blocksize, flags),
-              eDelete, in_bufsize, out_bufsize)
+              new CLZOCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
+
+    /// @deprecated 
+    ///   Use CLZOStreamCompressor() constructor
+    ///   without block size parameter, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CLZOStreamCompressor(
+        CLZOCompression::ELevel    level,
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        size_t                     blocksize,
+        CLZOCompression::TLZOFlags flags = 0
+    ));
 
     /// Conventional constructor
     CLZOStreamCompressor(
@@ -695,16 +810,22 @@ public:
         CLZOCompression::TLZOFlags flags = 0
         )
         : CCompressionStreamProcessor(
-              new CLZOCompressor(level, kLZODefaultBlockSize, flags),
+              new CLZOCompressor(level, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 
     /// Conventional constructor
     CLZOStreamCompressor(CLZOCompression::TLZOFlags flags = 0)
         : CCompressionStreamProcessor(
-              new CLZOCompressor(CLZOCompression::eLevel_Default, kLZODefaultBlockSize, flags),
+              new CLZOCompressor(CLZOCompression::eLevel_Default, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Return a pointer to compressor.
+    /// Can be used mostly for setting an advanced compression-specific parameters.
+    CLZOCompressor* GetCompressor(void) const {
+        return dynamic_cast<CLZOCompressor*>(GetProcessor());
+    }
 };
 
 
@@ -726,20 +847,34 @@ public:
     CLZOStreamDecompressor(
         streamsize                 in_bufsize,
         streamsize                 out_bufsize,
-        size_t                     blocksize,
         CLZOCompression::TLZOFlags flags   = 0
         )
         : CCompressionStreamProcessor(
-             new CLZODecompressor(blocksize, flags),
-             eDelete, in_bufsize, out_bufsize)
+             new CLZODecompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
+
+    /// @deprecated 
+    ///   Use CLZOStreamDecompressor() constructor
+    ///   without block size parameter, that can be set separately if necessary.
+    NCBI_DEPRECATED_CTOR(CLZOStreamDecompressor(
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        size_t                     blocksize,
+        CLZOCompression::TLZOFlags flags = 0
+    ));
 
     /// Conventional constructor
     CLZOStreamDecompressor(CLZOCompression::TLZOFlags flags = 0)
         : CCompressionStreamProcessor( 
-              new CLZODecompressor(kLZODefaultBlockSize, flags),
+              new CLZODecompressor(flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Return a pointer to decompressor.
+    /// Can be used mostly for setting an advanced compression-specific parameters.
+    CLZODecompressor* GetDecompressor(void) const {
+        return dynamic_cast<CLZODecompressor*>(GetProcessor());
+    }
 };
 
 

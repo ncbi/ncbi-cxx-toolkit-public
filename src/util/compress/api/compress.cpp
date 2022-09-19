@@ -111,22 +111,24 @@ void CCompression::SetFlags(TFlags flags)
 
 bool CCompression::x_CompressFile(const string&     src_file,
                                   CCompressionFile& dst_file,
-                                  size_t            buf_size)
+                                  size_t            file_io_bufsize
+)
 {
-    if ( !buf_size ) {
-        SetError(-1, "Buffer size cannot be zero");
+    if ( file_io_bufsize > kMax_Int ) {
+        SetError(-1, "Buffer size is too big");
         return false;
     }
-    _ASSERT(buf_size <= kMax_Int);
-    
+    if ( !file_io_bufsize ) {
+        file_io_bufsize = kCompressionDefaultBufSize;
+    }
     CNcbiIfstream is(src_file.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !is.good() ) {
         SetError(-1, "Cannot open source file");
         return false;
     }
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[buf_size]);
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[file_io_bufsize]);
     while ( is ) {
-        is.read(buf.get(), buf_size);
+        is.read(buf.get(), file_io_bufsize);
         size_t nread = (size_t)is.gcount();
         size_t nwritten = dst_file.Write(buf.get(), nread); 
         if ( nwritten != nread ) {
@@ -139,25 +141,23 @@ bool CCompression::x_CompressFile(const string&     src_file,
 
 bool CCompression::x_DecompressFile(CCompressionFile& src_file,
                                     const string&     dst_file,
-                                    size_t            buf_size)
+                                    size_t            file_io_bufsize)
 {
-    if ( !buf_size ) {
-        SetError(-1, "Buffer size cannot be zero");
+    if ( file_io_bufsize > kMax_Int ) {
+        SetError(-1, "Buffer size is too big");
         return false;
     }
-    if ( buf_size > kMax_Int ) {
-        buf_size = kMax_Int;
+    if ( !file_io_bufsize ) {
+        file_io_bufsize = kCompressionDefaultBufSize;
     }
-    _ASSERT(buf_size <= kMax_Int);
-    
     CNcbiOfstream os(dst_file.c_str(), IOS_BASE::out | IOS_BASE::binary);
     if ( !os.good() ) {
         SetError(-1, "Cannot open destination file");
         return false;
     }
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[buf_size]);
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[file_io_bufsize]);
     long nread;
-    while ( (nread = src_file.Read(buf.get(), buf_size)) > 0 ) {
+    while ( (nread = src_file.Read(buf.get(), file_io_bufsize)) > 0 ) {
         os.write(buf.get(), nread);
         if ( !os.good() ) {
             SetError(-1, "Error writing to ouput file");
