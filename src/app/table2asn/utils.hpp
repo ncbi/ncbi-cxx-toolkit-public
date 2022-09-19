@@ -18,11 +18,12 @@ public:
             m_counter++;
         else
             m_mutex.unlock();
-    }
+        }
 
     void unlock() {
         auto visited = m_counter--;
         if (visited == 2) {
+            m_counter++;
             m_mutex.unlock();
         }
     }
