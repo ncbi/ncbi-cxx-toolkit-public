@@ -678,3 +678,7 @@ endif()
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+    set(CMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH TRUE)
+endif()
