@@ -136,7 +136,8 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     bool arg_use_list,
     const CWinMaskUtil::CIdSet * arg_ids,
     const CWinMaskUtil::CIdSet * arg_exclude_ids,
-    bool use_ba, string const & metadata )
+    bool use_ba, string const & metadata,
+    double min_pct, double extend_pct, double thres_pct, double max_pct )
 :   input( arg_input ),
     ustat( CSeqMaskerOstatFactory::create( 
                 sformat, os, use_ba, metadata ) ),
@@ -182,13 +183,14 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     bool arg_use_list,
     const CWinMaskUtil::CIdSet * arg_ids,
     const CWinMaskUtil::CIdSet * arg_exclude_ids,
-    bool use_ba, string const & metadata )
+    bool use_ba, string const & metadata,
+    double min_pct, double extend_pct, double thres_pct, double max_pct )
 :   input( arg_input ),
     ustat( CSeqMaskerOstatFactory::create( 
                 sformat, output, use_ba, metadata ) ),
     max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
-    min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
+    min_count( arg_min_count == 0 ? 1 : arg_min_count ),
     // max_count( 1024*1024UL ),
     max_count( 500 ),
     t_high( arg_max_count ),
@@ -210,6 +212,11 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
         th[count++] = atof( arg_th.substr( pos, newpos - pos ).c_str() );
         pos = (newpos == string::npos ) ? newpos : newpos + 1;
     }
+
+    if( min_pct >= 0.0 ) th[0] = min_pct;
+    if( extend_pct >= 0.0 ) th[1] = extend_pct;
+    if( thres_pct >= 0.0 ) th[2] = thres_pct;
+    if( max_pct >= 0.0 ) th[3] = max_pct;
 }
 
 //------------------------------------------------------------------------------

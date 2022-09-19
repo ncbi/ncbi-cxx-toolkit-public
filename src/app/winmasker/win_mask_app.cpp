@@ -165,7 +165,11 @@ int CWinMaskApplication::Run (void)
                                         aConfig.Ids(),
                                         aConfig.ExcludeIds(),
                                         aConfig.UseBA(),
-                                        aConfig.GetMetaData() );
+                                        aConfig.GetMetaData(),
+                                        aConfig.MinScorePct(),
+                                        aConfig.ExtendScorePct(),
+                                        aConfig.ThresScorePct(),
+                                        aConfig.MaxScorePct() );
             cg();
         }
         else {
@@ -184,7 +188,11 @@ int CWinMaskApplication::Run (void)
                                         aConfig.Ids(),
                                         aConfig.ExcludeIds(),
                                         aConfig.UseBA(),
-                                        aConfig.GetMetaData() );
+                                        aConfig.GetMetaData(),
+                                        aConfig.MinScorePct(),
+                                        aConfig.ExtendScorePct(),
+                                        aConfig.ThresScorePct(),
+                                        aConfig.MaxScorePct() );
             cg();
         }
 

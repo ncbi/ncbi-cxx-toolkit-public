@@ -113,6 +113,10 @@ public:
      **\param use_ba use bit array optimization for optimized binary
      **              unit counts format
      **\param metadata the metadata string
+     **\param min_pct min score as percentage of counts
+     **\param extend_pct interval extension score as percentage of counts
+     **\param thres_pct masking threshold score as percentage of counts
+     **\param max_pct max score as percentage of counts
      **
      **/
     CWinMaskCountsGenerator( const string & input,
@@ -130,7 +134,11 @@ public:
                              const CWinMaskUtil::CIdSet * ids,
                              const CWinMaskUtil::CIdSet * exclude_ids,
                              bool use_ba,
-                             string const & metadata );
+                             string const & metadata,
+                             double min_pct = -1.0,
+                             double extend_pct = -1.0,
+                             double thres_pct = -1.0,
+                             double max_pct = -1.0 );
 
     /**
      **\brief Constructor.
@@ -161,6 +169,10 @@ public:
      **\param use_ba use bit array optimization for optimized binary
      **              unit counts format
      **\param metadata the metadata string
+     **\param min_pct min score as percentage of counts
+     **\param extend_pct interval extension score as percentage of counts
+     **\param thres_pct masking threshold score as percentage of counts
+     **\param max_pct max score as percentage of counts
      **
      **/
     CWinMaskCountsGenerator( const string & input,
@@ -178,7 +190,11 @@ public:
                              const CWinMaskUtil::CIdSet * ids,
                              const CWinMaskUtil::CIdSet * exclude_ids,
                              bool use_ba,
-                             string const & metadata );
+                             string const & metadata,
+                             double min_pct = -1.0,
+                             double extend_pct = -1.0,
+                             double thres_pct = -1.0,
+                             double max_pct = -1.0 );
 
     /**
      **\brief Object destructor.
@@ -240,6 +256,10 @@ private:
     const CWinMaskUtil::CIdSet * exclude_ids; /**<\internal set of ids to ignore */
 
     string infmt;                   /**<\internal input format */
+    double t_low_pct,               /**< minimum allowed unit score as percentage of units with lower count */
+           t_extend_pct,            /**< minimum score for interval extension as percentage of units with lower count */
+           t_thres_pct,             /**< threshold score for starting masking as percentage of units with lower count */
+           t_high_pct;              /**< highest allowed unit score as percentage of units with lower count */
 };
 
 END_NCBI_SCOPE
