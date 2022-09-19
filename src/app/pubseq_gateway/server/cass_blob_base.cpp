@@ -896,6 +896,21 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
     if (!fetch_details->GetAutoBlobSkipping())
         return ePSGS_ProceedRetrieving;
 
+    unsigned long       resend_timeout_mks;
+    if (request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
+        auto &  annot_request = m_Request->GetRequest<SPSGS_AnnotRequest>();
+        resend_timeout_mks = annot_request.m_ResendTimeoutMks;
+    } else {
+        // This is CPSGS_Request::ePSGS_BlobBySeqIdRequest request
+        auto &  blob_request = m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>();
+        resend_timeout_mks = blob_request.m_ResendTimeoutMks;
+    }
+
+    if (resend_timeout_mks == 0) {
+        // Essentially it is the same as auto blob skipping is set to off
+        return ePSGS_ProceedRetrieving;
+    }
+
     // In case the blob is in process of sending the reply is the same for
     // ID/get and ID/get_na requests
     if (!completed) {
@@ -907,18 +922,7 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
     // resend_timeout needs to be respected when a decision send it or not is
     // made
     unsigned long       sent_mks_ago = GetTimespanToNowMks(completed_time);
-    unsigned long       resend_timeout_mks;
-    if (request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
-        auto &  annot_request = m_Request->GetRequest<SPSGS_AnnotRequest>();
-        resend_timeout_mks = annot_request.m_ResendTimeoutMks;
-    } else {
-        // This is CPSGS_Request::ePSGS_BlobBySeqIdRequest request
-        auto &  blob_request = m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>();
-        resend_timeout_mks = blob_request.m_ResendTimeoutMks;
-    }
-
-    if (resend_timeout_mks > 0 &&
-        sent_mks_ago < resend_timeout_mks) {
+    if (sent_mks_ago < resend_timeout_mks) {
         // No sending the blob; it was sent recent enough
         x_PrepareBlobExcluded(fetch_details, sent_mks_ago,
                               resend_timeout_mks - sent_mks_ago);

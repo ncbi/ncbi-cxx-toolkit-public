@@ -534,56 +534,59 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
         return;
     }
 
+    bool    need_to_check_blob_exclude_cache =
+        !m_AnnotRequest->m_ClientId.empty() &&   // cache is per client
+        m_AnnotRequest->m_AutoBlobSkipping &&    // auto blob skipping is switched on
+        m_AnnotRequest->m_ResendTimeoutMks > 0;  // resend_timeout == 0 is switching off blob skipping
+
     // Checking only.
     // Here we are requesting blob props only so may be the blob itself will
     // not be requested at all. However if the blob is in cache then its blob
     // properties have already been sent for sure.
-    if (!m_AnnotRequest->m_ClientId.empty()) {
-        if (m_AnnotRequest->m_AutoBlobSkipping) {
-            bool                completed = true;
-            psg_time_point_t    completed_time;  // no need to check for the
-                                                 // annotation processor
-            if (app->GetExcludeBlobCache()->IsInCache(
-                        m_AnnotRequest->m_ClientId,
-                        blob_id.m_Sat, blob_id.m_SatKey,
-                        completed, completed_time)) {
+    if (need_to_check_blob_exclude_cache) {
+        bool                completed = true;
+        psg_time_point_t    completed_time;  // no need to check for the
+                                             // annotation processor
+        if (app->GetExcludeBlobCache()->IsInCache(
+                    m_AnnotRequest->m_ClientId,
+                    blob_id.m_Sat, blob_id.m_SatKey,
+                    completed, completed_time)) {
 
-                bool    finish_processing = true;
+            bool    finish_processing = true;
 
-                if (completed) {
-                    // It depends how long ago it was sent; if too long then
-                    // send anyway; otherwise send a reply specifying how long
-                    // ago it was sent
-                    // Special case: if the effective resend timeout == 0.0
-                    // then the blob needs to be sent right away
-                    unsigned long  sent_mks_ago = GetTimespanToNowMks(completed_time);
-                    if (m_AnnotRequest->m_ResendTimeoutMks > 0 &&
-                        sent_mks_ago < m_AnnotRequest->m_ResendTimeoutMks) {
-                        // No sending; the blob was send recent enough
-                        IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                                blob_id.ToString(), kAnnotProcessorName,
-                                sent_mks_ago,
-                                m_AnnotRequest->m_ResendTimeoutMks - sent_mks_ago);
-                    } else {
-                        // Sending anyway; it was longer than the resend
-                        // timeout
-                        // The easiest way to achieve that is to remove the
-                        // blob from the exclude cache. So the code in the base
-                        // class will add this blob to the cache again as new
-                        app->GetExcludeBlobCache()->Remove(
-                                                m_AnnotRequest->m_ClientId,
-                                                blob_id.m_Sat, blob_id.m_SatKey);
-                        finish_processing = false;
-                    }
-                } else {
+            if (completed) {
+                // It depends how long ago it was sent; if too long then
+                // send anyway; otherwise send a reply specifying how long
+                // ago it was sent
+                // Special case: if the effective resend timeout == 0.0
+                // then the blob needs to be sent right away
+                unsigned long  sent_mks_ago = GetTimespanToNowMks(completed_time);
+                if (m_AnnotRequest->m_ResendTimeoutMks > 0 &&
+                    sent_mks_ago < m_AnnotRequest->m_ResendTimeoutMks) {
+                    // No sending; the blob was send recent enough
                     IPSGS_Processor::m_Reply->PrepareBlobExcluded(
                             blob_id.ToString(), kAnnotProcessorName,
-                            ePSGS_BlobInProgress);
+                            sent_mks_ago,
+                            m_AnnotRequest->m_ResendTimeoutMks - sent_mks_ago);
+                } else {
+                    // Sending anyway; it was longer than the resend
+                    // timeout
+                    // The easiest way to achieve that is to remove the
+                    // blob from the exclude cache. So the code in the base
+                    // class will add this blob to the cache again as new
+                    app->GetExcludeBlobCache()->Remove(
+                                            m_AnnotRequest->m_ClientId,
+                                            blob_id.m_Sat, blob_id.m_SatKey);
+                    finish_processing = false;
                 }
-                if (finish_processing) {
-                    CPSGS_CassProcessorBase::SignalFinishProcessing();
-                    return;
-                }
+            } else {
+                IPSGS_Processor::m_Reply->PrepareBlobExcluded(
+                        blob_id.ToString(), kAnnotProcessorName,
+                        ePSGS_BlobInProgress);
+            }
+            if (finish_processing) {
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
+                return;
             }
         }
     }
