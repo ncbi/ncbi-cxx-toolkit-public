@@ -137,13 +137,33 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
         arg_desc.AddOptionalKey( "t_high", "T_high",
                                   "maximum useful unit score",
                                   CArgDescriptions::eInteger );
+        arg_desc.AddOptionalKey( "t_high_pct", "T_high_pct",
+                                  "maximum useful unit score as percentage",
+                                  CArgDescriptions::eDouble );
+        arg_desc.AddOptionalKey( "t_thres_pct", "T_threshold_pct",
+                                  "window score threshold used to trigger masking as percentage",
+                                  CArgDescriptions::eDouble );
+        arg_desc.AddOptionalKey( "t_extend_pct", "T_extend_pct", 
+                                  "window score above which it is allowed to extend masking as percentage",
+                                  CArgDescriptions::eDouble );
         arg_desc.AddOptionalKey( "t_low", "T_low",
                                   "minimum useful unit score",
                                   CArgDescriptions::eInteger );
+        arg_desc.AddOptionalKey( "t_low_pct", "T_low_pct",
+                                  "minimum useful unit score as percentage",
+                                  CArgDescriptions::eDouble );
         arg_desc.SetConstraint( "t_high",
                                  new CArgAllow_Integers( 1, kMax_Int ) );
+        arg_desc.SetConstraint( "t_high_pct",
+                                 new CArgAllow_Doubles( 0.0, 100.0 ) );
+        arg_desc.SetConstraint( "t_thres_pct",
+                                 new CArgAllow_Doubles( 0.0, 100.0 ) );
+        arg_desc.SetConstraint( "t_extend_pct",
+                                 new CArgAllow_Doubles( 0.0, 100.0 ) );
         arg_desc.SetConstraint( "t_low",
                                  new CArgAllow_Integers( 1, kMax_Int ) );
+        arg_desc.SetConstraint( "t_low_pct",
+                                 new CArgAllow_Doubles( 0.0, 100.0 ) );
         arg_desc.AddDefaultKey( kInputFormat, "input_format",
                                 "controls the format of the masker input",
                                 CArgDescriptions::eString, *kInputFormats );
@@ -304,6 +324,10 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
             ? new CNcbiIfstream( args[kInput].AsString().c_str() ) 
             : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), writer( NULL ),
       lstat_name( app_type >= eGenerateMasks ? args["ustat"].AsString() : "" ),
+      t_low_pct( app_type != eConvertCounts && args["t_low_pct"] ? args["t_low_pct"].AsDouble() : -1.0 ),
+      t_extend_pct( app_type != eConvertCounts && args["t_extend_pct"] ? args["t_extend_pct"].AsDouble() : -1.0 ),
+      t_thres_pct( app_type != eConvertCounts && args["t_thres_pct"] ? args["t_thres_pct"].AsDouble() : -1.0 ),
+      t_high_pct( app_type != eConvertCounts && args["t_high_pct"] ? args["t_high_pct"].AsDouble() : -1.0 ),
       textend( app_type >= eGenerateMasks && args["t_extend"] ? args["t_extend"].AsInteger() : 0 ), 
       cutoff_score( app_type >= eGenerateMasks && args["t_thres"] ? args["t_thres"].AsInteger() : 0 ),
       max_score( app_type != eConvertCounts && args["t_high"] ? args["t_high"].AsInteger() : 0 ),

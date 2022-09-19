@@ -176,6 +176,11 @@ public:
      **/
     Uint4 MinScore() const { return min_score; }
 
+    double MinScorePct() const { return t_low_pct; }
+    double ExtendScorePct() const { return t_extend_pct; }
+    double ThresScorePct() const { return t_thres_pct; }
+    double MaxScorePct() const { return t_high_pct; }
+
     /**
      **\brief Get the alternative score for high scoring units.
      **
@@ -625,6 +630,10 @@ private:
     CMaskReader * reader;           /**< input reader object */
     CMaskWriter * writer;           /**< output writer object */
     string lstat_name;              /**< name of the file containing unit length statitsics */
+    double t_low_pct,               /**< minimum allowed unit score as percentage of units with lower count */
+           t_extend_pct,            /**< minimum score for interval extension as percentage of units with lower count */
+           t_thres_pct,             /**< threshold score for starting masking as percentage of units with lower count */
+           t_high_pct;              /**< highest allowed unit score as percentage of units with lower count */
     Uint4 textend;                  /**< t_extend value for extension of masked intervals */
     Uint4 cutoff_score;             /**< window score that triggers masking */
     Uint4 max_score;                /**< maximum allowed unit score */
