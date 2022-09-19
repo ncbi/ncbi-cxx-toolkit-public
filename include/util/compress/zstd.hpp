@@ -99,29 +99,34 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CZstdCompression : public CCompression
 {
 public:
+    /// Initialize compression  library (for API compatibility, zstd don't need it).
+    static bool Initialize(void) { return true; };
+
     /// Compression/decompression flags.
     enum EFlags {
-        ///< Allow transparent reading data from buffer/file/stream
-        ///< regardless is it compressed or not. But be aware,
-        ///< if data source contains broken data and API cannot detect that
-        ///< it is compressed data, that you can get binary instead of
-        ///< decompressed data. By default this flag is OFF.
+        /// Allow transparent reading data from buffer/file/stream
+        /// regardless is it compressed or not. But be aware,
+        /// if data source contains broken data and API cannot detect that
+        /// it is compressed data, that you can get binary instead of
+        /// decompressed data. By default this flag is OFF.
         fAllowTransparentRead = (1<<0),
-        ///< Allow to "compress/decompress" empty data. 
-        ///< The output compressed data will have header and footer only.
+        /// Allow to "compress/decompress" empty data. 
+        /// The output compressed data will have header and footer only.
         fAllowEmptyData       = (1<<1),
-        ///< Add/check (accordingly to compression or decompression)
-        ///< the compressed data checksum. A checksum is a form of
-        ///< redundancy check. We use the safe decompressor, but this can be
-        ///< not enough, because many data errors will not result in
-        ///< a compressed data violation.
-        ///< Note, this flag is ignored by CompressBuffer/DecompressBuffer,
-        ///< and affect stream/file operations only.
+        /// Add/check (accordingly to compression or decompression)
+        /// the compressed data checksum. A checksum is a form of
+        /// redundancy check. We use the safe decompressor, but this can be
+        /// not enough, because many data errors will not result in
+        /// a compressed data violation.
+        /// Note, this flag is ignored by CompressBuffer/DecompressBuffer,
+        /// and affect stream/file operations only.
         fChecksum             = (1<<2)
     };
     typedef CZstdCompression::TFlags TZstdFlags; ///< Bitwise OR of EFlags
 
     /// Constructor.
+    /// @note 
+    ///   For setting up advanced compression parameters see Set*() methods.
     CZstdCompression(ELevel level = eLevel_Default);
 
     /// Destructor.
@@ -225,24 +230,55 @@ public:
     ///   CompressBuffer
     size_t EstimateCompressionBufferSize(size_t src_len);
 
+    /// Get recommended buffer sizes for stream/file I/O.
+    ///
+    /// These buffer sizes are softly recommended. They are not required, (de)compression
+    /// streams accepts any reasonable buffer size, for both input and output.
+    /// Respecting the recommended size just makes it a bit easier for (de)compressor,
+    /// reducing the amount of memory shuffling and buffering, resulting in minor 
+    /// performance savings. If compression library doesn't have preferences about 
+    /// I/O buffer sizes, kCompressionDefaultBufSize will be used.
+    /// @param round_up_by
+    ///   If specified, round up a returned value by specified amount. 
+    ///   Sp all values will be divisible to this parameter.
+    ///   Usuful for better memory management. 
+    /// @return
+    ///   Structure with recommended buffer sizes.
+    /// @note
+    ///   Applicable for streaming/file operations.
+    /// @sa
+    ///   kCompressionDefaultBufSize, CSystemInfo::GetVirtualMemoryPageSize()
+    /// 
+    static SRecommendedBufferSizes GetRecommendedBufferSizes(size_t round_up = 0);
+
     /// Compress file.
     ///
     /// @param src_file
     ///   File name of source file.
     /// @param dst_file
     ///   File name of result file.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a compressor.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be compressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a compressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @note
     ///   This method don't store any file meta information like name, date/time, owner or attributes.
     /// @sa
-    ///   DecompressFile
+    ///   DecompressFile, GetRecommendedBufferSizes, CZstdCompressionFile
+    /// 
     virtual bool CompressFile(
         const string& src_file,
         const string& dst_file,
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize         = kCompressionDefaultBufSize,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     );
 
     /// Decompress file.
@@ -251,16 +287,26 @@ public:
     ///   File name of source file.
     /// @param dst_file
     ///   File name of result file.
-    /// @param buf_size
-    ///   Buffer size used to read/write files.
+    /// @param file_io_bufsize
+    ///   Size of the buffer used to read from a source file. 
+    ///   Writing happens immediately on receiving some data from a decompressor.
+    /// @param decompression_in_bufsize
+    ///   Size of the internal buffer holding input data to be decompressed.
+    ///   It can be different from 'file_io_bufsize' depending on a using 
+    ///   compression method, OS and file system.
+    /// @param decompression_out_bufsize
+    ///   Size of the internal buffer to receive data from a decompressor.
     /// @return
     ///   Return TRUE on success, FALSE on error.
     /// @sa
-    ///   CompressFile
+    ///   CompressFile, GetRecommendedBufferSizes, CZstdCompressionFile
+    /// 
     virtual bool DecompressFile(
         const string& src_file,
         const string& dst_file, 
-        size_t        buf_size = kCompressionDefaultBufSize
+        size_t        file_io_bufsize           = kCompressionDefaultBufSize,
+        size_t        decompression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        decompression_out_bufsize = kCompressionDefaultBufSize
     );
 
     //=======================================================================
@@ -275,16 +321,18 @@ public:
     // - All parameters should be set before starting (de)compression, 
     //   or it will be ignored for current operation.
     //=======================================================================
+    // You can use listed ZSTD_* parameters after #include <zstd.h>.
 
     /// Compression strategy.
     /// The higher the value of selected strategy, the more complex it is,
-    /// resulting in stronger and slower compression.
+    /// resulting in stronger and slower compression. Lower number strategies
+    /// are usually faster. 
     /// 
-    void SetStrategy(int strategy)  { m_c_Strategy = strategy; }
-    int  GetStrategy(void)          { return m_c_Strategy; }
-    int  GetStrategyDefault(void)   { return 0; };
-    int  GetStrategyMin(void);
-    int  GetStrategyMax(void);
+    void SetStrategy(int strategy) { m_c_Strategy = strategy; }
+    int  GetStrategy(void) const   { return m_c_Strategy; }
+    static int GetStrategyDefault(void);
+    static int GetStrategyMin(void);
+    static int GetStrategyMax(void);
 
     /// Maximum allowed back-reference distance, expressed as power of 2.
     /// This will set a memory budget for streaming decompression,
@@ -294,11 +342,11 @@ public:
     /// requires explicitly allowing such size at streaming decompression stage.
     /// So, if you don't use default value, it is safer to use the same value
     /// for decompression too.
-    void SetWindowLog(int value)    { m_cd_WindowLog = value; }
-    int  GetWindowLog(void)         { return m_cd_WindowLog; }
-    int  GetWindowLogDefault(void)  { return 0; };
-    int  GetWindowLogMin(void);
-    int  GetWindowLogMax(void);
+    void SetWindowLog(int value)  { m_cd_WindowLog = value; }
+    int  GetWindowLog(void) const { return m_cd_WindowLog; }
+    static int GetWindowLogDefault(void);
+    static int GetWindowLogMin(void);
+    static int GetWindowLogMax(void);
 
 protected:
     /// Format string with last error description.
@@ -309,15 +357,12 @@ protected:
     void SetErrorResult(size_t result);
 
 protected:
-    void* m_CCtx;       ///< zstd compress context
-    void* m_DCtx;       ///< zstd decompress context
+    void* m_CCtx;          ///< zstd compress context
+    void* m_DCtx;          ///< zstd decompress context
 
     // Advanced parametes
-    int   m_c_Strategy;    // used for compression
-    int   m_cd_WindowLog;  // used for compression & decompression
-
-    // Get compression parameters bounds
-    void x_GetCompressionParamBounds(int param, int* vmin, int* vmax);
+    int   m_c_Strategy;    ///< used for compression
+    int   m_cd_WindowLog;  ///< used for compression & decompression
 
     // Convert current meta-level to real zstd compression level.
     int  x_GetRealLevel(void);
@@ -342,10 +387,14 @@ class NCBI_XUTIL_EXPORT CZstdCompressionFile : public CZstdCompression,
 {
 public:
     /// Constructor.
+    ///
+    /// @param
     CZstdCompressionFile(
         const string& file_name,
         EMode         mode,
-        ELevel        level = eLevel_Default
+        ELevel        level = eLevel_Default,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     );
     /// Conventional constructor.
     CZstdCompressionFile(
@@ -360,11 +409,20 @@ public:
     ///   File name of the file to open.
     /// @param mode
     ///   File open mode.
+    /// @param compression_in_bufsize
+    ///   Size of the internal buffer holding input data to be (de)compressed.
+    /// @param compression_out_bufsize
+    ///   Size of the internal buffer to receive data from a (de)compressor.
     /// @return
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CZstdCompression, Read, Write, Close
-    virtual bool Open(const string& file_name, EMode mode);
+    virtual bool Open(
+        const string& file_name, 
+        EMode         mode,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
+    );
 
     /// Read data from compressed file.
     /// 
@@ -523,14 +581,13 @@ class NCBI_XUTIL_EXPORT CZstdStreamCompressor
 public:
     /// Full constructor
     CZstdStreamCompressor(
-        CZstdCompression::ELevel   level,
-        streamsize                 in_bufsize,
-        streamsize                 out_bufsize,
+        CZstdCompression::ELevel     level,
+        streamsize                   in_bufsize,
+        streamsize                   out_bufsize,
         CZstdCompression::TZstdFlags flags = 0
         ) 
         : CCompressionStreamProcessor(
-              new CZstdCompressor(level, flags),
-              eDelete, in_bufsize, out_bufsize)
+              new CZstdCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
     /// Conventional constructor
@@ -549,6 +606,12 @@ public:
               new CZstdCompressor(CZstdCompression::eLevel_Default, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Return a pointer to compressor.
+    /// Can be used mostly for setting an advanced compression-specific parameters.
+    CZstdCompressor* GetCompressor(void) const {
+        return dynamic_cast<CZstdCompressor*>(GetProcessor());
+    }
 };
 
 
@@ -569,21 +632,26 @@ class NCBI_XUTIL_EXPORT CZstdStreamDecompressor
 public:
     /// Full constructor
     CZstdStreamDecompressor(
-        streamsize                 in_bufsize,
-        streamsize                 out_bufsize,
+        streamsize                   in_bufsize,
+        streamsize                   out_bufsize,
         CZstdCompression::TZstdFlags flags = 0
         )
         : CCompressionStreamProcessor( 
-              new CZstdDecompressor(flags),
-              eDelete, in_bufsize, out_bufsize)
+              new CZstdDecompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
 
     /// Conventional constructor
     CZstdStreamDecompressor(CZstdCompression::TZstdFlags flags = 0)
         : CCompressionStreamProcessor( 
-              new CZstdDecompressor(flags),
+              new CZstdDecompressor(flags), 
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
+
+    /// Return a pointer to decompressor.
+    /// Can be used mostly for setting an advanced compression-specific parameters.
+    CZstdDecompressor* GetDecompressor(void) const {
+        return dynamic_cast<CZstdDecompressor*>(GetProcessor());
+    }
 };
 
 

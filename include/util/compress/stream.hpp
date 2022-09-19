@@ -234,9 +234,16 @@ public:
     /// (Re)Initialize stream processor.
     void Init(void);
 
-    // Get stream processor's status
+    /// Get stream processor's status
     bool IsOkay(void) const {
         return m_Processor  &&  m_Processor->IsBusy()  &&  m_State != eDone;
+    }
+
+    /// Return a pointer to currently used stream processor.
+    /// Can be used mostly for setting advanced compression-specific parameters
+    /// for stream compressors/decompressors from the upper level code.
+    CCompressionProcessor* GetProcessor(void) const {
+        return m_Processor;
     }
 
 private:
