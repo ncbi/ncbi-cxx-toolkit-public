@@ -49,12 +49,6 @@
 #define ParFlat_GEN_CITATION          11
 #define ParFlat_ONLINE_CITATION       12
 
-#define PAPER_MEDIUM                  1
-#define TAPE_MEDIUM                   2
-#define FLOPPY_MEDIUM                 3
-#define EMAIL_MEDIUM                  4
-#define OTHER_MEDIUM                  255
-
 #define ParFlat_Authors               20
 #define ParFlat_Journal               21
 #define ParFlat_Book                  22
