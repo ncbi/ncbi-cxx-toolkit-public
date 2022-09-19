@@ -176,10 +176,10 @@ static const char *ParFlat_MAG_kw_array[] = {
 };
 
 /**********************************************************/
-static std::string FTAitoa(Int4 m)
+static string FTAitoa(Int4 m)
 {
-    Int4        sign = (m < 0) ? -1 : 1;
-    std::string res;
+    Int4   sign = (m < 0) ? -1 : 1;
+    string res;
 
     for (m *= sign; m > 9; m /= 10)
         res += m % 10 + '0';
@@ -202,17 +202,17 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
     CGB_block::TExtra_accessions ret;
 
     ITERATE (CGB_block::TExtra_accessions, acc, extra_accs) {
-        std::string str = *acc;
+        string str = *acc;
         if (str.empty())
             continue;
 
         size_t dash = str.find('-');
-        if (dash == std::string::npos) {
+        if (dash == string::npos) {
             ret.push_back(str);
             continue;
         }
 
-        std::string first(str.begin(), str.begin() + dash),
+        string first(str.begin(), str.begin() + dash),
             last(str.begin() + dash + 1, str.end());
         size_t acclen = first.size();
 
@@ -222,7 +222,7 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
 
         size_t preflen = p - first.c_str();
 
-        std::string prefix = first.substr(0, preflen);
+        string prefix = first.substr(0, preflen);
         while (*p == '0')
             p++;
 
@@ -243,10 +243,9 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
             continue;
 
         for (num1++; num1 <= num2; num1++) {
-            std::string new_acc = prefix;
-
-            std::string num_str = FTAitoa(num1);
-            size_t      j       = acclen - preflen - num_str.size();
+            string new_acc = prefix;
+            string num_str = FTAitoa(num1);
+            size_t j       = acclen - preflen - num_str.size();
 
             for (size_t i = 0; i < j; i++)
                 new_acc += '0';
@@ -777,7 +776,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
         bptr++;
     }
 
-    std::string tstr = NStr::TruncateSpaces(std::string(retstr), NStr::eTrunc_End);
+    string tstr = NStr::TruncateSpaces(string(retstr), NStr::eTrunc_End);
     MemFree(retstr);
     retstr = StringSave(tstr.c_str());
     return (retstr);
@@ -822,7 +821,7 @@ static size_t SeekLastAlphaChar(const Char* str, size_t len)
 }
 
 /**********************************************************/
-void CleanTailNoneAlphaCharInString(std::string& str)
+void CleanTailNoneAlphaCharInString(string& str)
 {
     size_t ret = SeekLastAlphaChar(str.c_str(), str.size());
     str        = str.substr(0, ret);
@@ -1233,7 +1232,7 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
         ErrPostEx(SEV_ERROR, ERR_KEYWORD_MissingTPATier, "This TPA record lacks a keyword to indicate which tier it belongs to: experimental, inferential, reassembly or specialist_db.");
     }
     if (j > 1) {
-        std::string buf;
+        string buf;
         for (i = 0; i < j; i++) {
             if (i > 0)
                 buf += ';';
@@ -1481,9 +1480,9 @@ void fta_remove_mag_keywords(TKeywordList& kwds)
 
 /**********************************************************/
 void xCheckEstStsGssTpaKeywords(
-    const std::list<std::string> keywordList,
-    bool                         tpa_check,
-    IndexblkPtr                  entry
+    const list<string> keywordList,
+    bool               tpa_check,
+    IndexblkPtr        entry
     // bool& specialist_db,
     // bool& inferential,
     // bool& experimental,

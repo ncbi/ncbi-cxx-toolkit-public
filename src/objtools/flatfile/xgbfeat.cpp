@@ -30,6 +30,8 @@ BEGIN_SCOPE(objects)
 char ValidAminoAcid(const string& abbrev);
 END_SCOPE(objects)
 
+USING_SCOPE(objects);
+
 static const Char* this_module = "validatr";
 
 #ifdef THIS_MODULE
@@ -69,27 +71,27 @@ static const Char* this_module = "validatr";
 
 static int SplitMultiValQual(TQualVector& quals);
 static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform_corrections);
-static int CkQualPosaa(objects::CGb_qual& cur, bool error_msgs);
-static int CkQualNote(objects::CGb_qual& cur,
-                      bool               error_msgs,
-                      bool               perform_corrections);
-static int CkQualText(objects::CGb_qual& cur,
-                      bool*              has_embedded,
-                      bool               from_note,
-                      bool               error_msgs,
-                      bool               perform_corrections);
-static int CkQualTokenType(objects::CGb_qual& cur,
-                           bool               error_msgs,
-                           Uint1              type);
-static int CkQualSeqaa(objects::CGb_qual& cur, bool error_msgs);
-static int CkQualMatchToken(objects::CGb_qual& cur,
-                            bool               error_msgs,
-                            const Char*        array_string[],
-                            Int2               totalstr);
-static int CkQualSite(objects::CGb_qual& cur, bool error_msgs);
-static int CkQualEcnum(objects::CGb_qual& cur,
-                       bool               error_msgs,
-                       bool               perform_corrections);
+static int CkQualPosaa(CGb_qual& cur, bool error_msgs);
+static int CkQualNote(CGb_qual& cur,
+                      bool      error_msgs,
+                      bool      perform_corrections);
+static int CkQualText(CGb_qual& cur,
+                      bool*     has_embedded,
+                      bool      from_note,
+                      bool      error_msgs,
+                      bool      perform_corrections);
+static int CkQualTokenType(CGb_qual& cur,
+                           bool      error_msgs,
+                           Uint1     type);
+static int CkQualSeqaa(CGb_qual& cur, bool error_msgs);
+static int CkQualMatchToken(CGb_qual&   cur,
+                            bool        error_msgs,
+                            const Char* array_string[],
+                            Int2        totalstr);
+static int CkQualSite(CGb_qual& cur, bool error_msgs);
+static int CkQualEcnum(CGb_qual& cur,
+                       bool      error_msgs,
+                       bool      perform_corrections);
 
 static const Char* CkBracketType(const Char* str);
 static const Char* CkNumberType(const Char* str);
@@ -130,7 +132,7 @@ static Int2 GBQualSplit(const Char* qual)
  *    repair done if 'perform_corrections' set
  *                                                                   10-11-93
  *****************************************************************************/
-int XGBFeatKeyQualValid(objects::CSeqFeatData::ESubtype subtype, TQualVector& quals, bool error_msgs, bool perform_corrections)
+int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool error_msgs, bool perform_corrections)
 {
     bool fqual  = false;
     int  retval = GB_FEAT_ERR_NONE;
@@ -150,19 +152,19 @@ int XGBFeatKeyQualValid(objects::CSeqFeatData::ESubtype subtype, TQualVector& qu
     }
 
     for (TQualVector::iterator cur = quals.begin(); cur != quals.end();) {
-        const std::string& qual_str = (*cur)->GetQual();
+        const string& qual_str = (*cur)->GetQual();
         if (qual_str == "gsdb_id") {
             ++cur;
             continue;
         }
 
 
-        objects::CSeqFeatData::EQualifier qual_type = objects::CSeqFeatData::GetQualifierType(qual_str);
-        fqual                                       = objects::CSeqFeatData::IsLegalQualifier(subtype, qual_type);
+        CSeqFeatData::EQualifier qual_type = CSeqFeatData::GetQualifierType(qual_str);
+        fqual                              = CSeqFeatData::IsLegalQualifier(subtype, qual_type);
 
         if (! fqual) {
             /* go back to check, is this a mandatory qualifier ? */
-            ITERATE (objects::CSeqFeatData::TQualifiers, cur_type, objects::CSeqFeatData::GetMandatoryQualifiers(subtype)) {
+            ITERATE (CSeqFeatData::TQualifiers, cur_type, CSeqFeatData::GetMandatoryQualifiers(subtype)) {
                 if (qual_type == *cur_type) {
                     fqual = true;
                     break;
@@ -186,13 +188,13 @@ int XGBFeatKeyQualValid(objects::CSeqFeatData::ESubtype subtype, TQualVector& qu
         ++cur;
     }
 
-    if (! objects::CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
+    if (! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
         /* do they contain all the mandatory qualifiers? */
-        ITERATE (objects::CSeqFeatData::TQualifiers, cur_type, objects::CSeqFeatData::GetMandatoryQualifiers(subtype)) {
+        ITERATE (CSeqFeatData::TQualifiers, cur_type, CSeqFeatData::GetMandatoryQualifiers(subtype)) {
             ITERATE (TQualVector, cur, quals) {
                 fqual = false;
 
-                if (*cur_type == objects::CSeqFeatData::GetQualifierType((*cur)->GetQual())) {
+                if (*cur_type == CSeqFeatData::GetQualifierType((*cur)->GetQual())) {
                     fqual = true;
                     break;
                 }
@@ -200,7 +202,7 @@ int XGBFeatKeyQualValid(objects::CSeqFeatData::ESubtype subtype, TQualVector& qu
 
             if (! fqual) {
                 if (error_msgs) {
-                    std::string str = objects::CSeqFeatData::GetQualifierAsString(*cur_type);
+                    string str = CSeqFeatData::GetQualifierAsString(*cur_type);
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_MissManQual, str.c_str());
                 }
 
@@ -228,8 +230,8 @@ static int SplitMultiValQual(TQualVector& quals)
 
     NON_CONST_ITERATE(TQualVector, cur, quals)
     {
-        const std::string& qual_str = (*cur)->GetQual();
-        val                         = GBQualSplit(qual_str.c_str());
+        const string& qual_str = (*cur)->GetQual();
+        val                    = GBQualSplit(qual_str.c_str());
 
         if (val == -1) {
             continue;
@@ -238,7 +240,7 @@ static int SplitMultiValQual(TQualVector& quals)
             continue;
         }
 
-        std::string val_str = (*cur)->GetVal();
+        string val_str = (*cur)->GetVal();
         if (*val_str.begin() != '(') {
             continue;
         }
@@ -248,7 +250,7 @@ static int SplitMultiValQual(TQualVector& quals)
 
         val_str        = val_str.substr(1, val_str.size() - 2);
         size_t sep_pos = val_str.find(',');
-        if (sep_pos == std::string::npos) {
+        if (sep_pos == string::npos) {
             (*cur)->SetVal(val_str);
             continue;
         }
@@ -259,8 +261,8 @@ static int SplitMultiValQual(TQualVector& quals)
 
         size_t offset = sep_pos + 1;
         sep_pos       = val_str.find(',', offset);
-        while (sep_pos != std::string::npos) {
-            CRef<objects::CGb_qual> qual_new(new objects::CGb_qual);
+        while (sep_pos != string::npos) {
+            CRef<CGb_qual> qual_new(new CGb_qual);
             qual_new->SetQual(qual_str);
             qual_new->SetVal(val_str.substr(offset, sep_pos - offset));
 
@@ -294,144 +296,144 @@ enum ETokenClass {
     eClass_unknown
 };
 
-static ETokenClass GetQualifierClass(objects::CSeqFeatData::EQualifier qual_type)
+static ETokenClass GetQualifierClass(CSeqFeatData::EQualifier qual_type)
 {
-    static map<objects::CSeqFeatData::EQualifier, ETokenClass> QUAL_TYPE_TO_VAL_CLASS_MAP = {
-        { objects::CSeqFeatData::eQual_bad, eClass_none },
-        { objects::CSeqFeatData::eQual_allele, eClass_text },
-        { objects::CSeqFeatData::eQual_altitude, eClass_text },
-        { objects::CSeqFeatData::eQual_anticodon, eClass_pos_aa },
-        { objects::CSeqFeatData::eQual_artificial_location, eClass_text },
-        { objects::CSeqFeatData::eQual_bio_material, eClass_text },
-        { objects::CSeqFeatData::eQual_bond_type, eClass_none },
-        { objects::CSeqFeatData::eQual_bound_moiety, eClass_text },
-        { objects::CSeqFeatData::eQual_calculated_mol_wt, eClass_none },
-        { objects::CSeqFeatData::eQual_cell_line, eClass_text },
-        { objects::CSeqFeatData::eQual_cell_type, eClass_text },
-        { objects::CSeqFeatData::eQual_chloroplast, eClass_none },
-        { objects::CSeqFeatData::eQual_chromoplast, eClass_none },
-        { objects::CSeqFeatData::eQual_chromosome, eClass_text },
-        { objects::CSeqFeatData::eQual_citation, eClass_bracket_int },
-        { objects::CSeqFeatData::eQual_clone, eClass_text },
-        { objects::CSeqFeatData::eQual_clone_lib, eClass_text },
-        { objects::CSeqFeatData::eQual_coded_by, eClass_none },
-        { objects::CSeqFeatData::eQual_codon, eClass_seq_aa },
-        { objects::CSeqFeatData::eQual_codon_start, eClass_int_or },
-        { objects::CSeqFeatData::eQual_collected_by, eClass_text },
-        { objects::CSeqFeatData::eQual_collection_date, eClass_text },
-        { objects::CSeqFeatData::eQual_compare, eClass_text },
-        { objects::CSeqFeatData::eQual_cons_splice, eClass_site },
-        { objects::CSeqFeatData::eQual_country, eClass_text },
-        { objects::CSeqFeatData::eQual_cultivar, eClass_text },
-        { objects::CSeqFeatData::eQual_culture_collection, eClass_text },
-        { objects::CSeqFeatData::eQual_cyanelle, eClass_none },
-        { objects::CSeqFeatData::eQual_db_xref, eClass_text },
-        { objects::CSeqFeatData::eQual_derived_from, eClass_none },
-        { objects::CSeqFeatData::eQual_dev_stage, eClass_text },
-        { objects::CSeqFeatData::eQual_direction, eClass_L_R_B },
-        { objects::CSeqFeatData::eQual_EC_number, eClass_ecnum },
-        { objects::CSeqFeatData::eQual_ecotype, eClass_text },
-        { objects::CSeqFeatData::eQual_environmental_sample, eClass_none },
-        { objects::CSeqFeatData::eQual_estimated_length, eClass_text },
-        { objects::CSeqFeatData::eQual_evidence, eClass_exper },
-        { objects::CSeqFeatData::eQual_exception, eClass_text },
-        { objects::CSeqFeatData::eQual_experiment, eClass_text },
-        { objects::CSeqFeatData::eQual_focus, eClass_none },
-        { objects::CSeqFeatData::eQual_frequency, eClass_text },
-        { objects::CSeqFeatData::eQual_function, eClass_text },
-        { objects::CSeqFeatData::eQual_gap_type, eClass_text },
-        { objects::CSeqFeatData::eQual_gdb_xref, eClass_text },
-        { objects::CSeqFeatData::eQual_gene, eClass_text },
-        { objects::CSeqFeatData::eQual_gene_synonym, eClass_text },
-        { objects::CSeqFeatData::eQual_germline, eClass_none },
-        { objects::CSeqFeatData::eQual_haplogroup, eClass_text },
-        { objects::CSeqFeatData::eQual_haplotype, eClass_text },
-        { objects::CSeqFeatData::eQual_heterogen, eClass_none },
-        { objects::CSeqFeatData::eQual_host, eClass_text },
-        { objects::CSeqFeatData::eQual_identified_by, eClass_text },
-        { objects::CSeqFeatData::eQual_inference, eClass_text },
-        { objects::CSeqFeatData::eQual_insertion_seq, eClass_text },
-        { objects::CSeqFeatData::eQual_isolate, eClass_text },
-        { objects::CSeqFeatData::eQual_isolation_source, eClass_text },
-        { objects::CSeqFeatData::eQual_kinetoplast, eClass_none },
-        { objects::CSeqFeatData::eQual_lab_host, eClass_text },
-        { objects::CSeqFeatData::eQual_label, eClass_token },
-        { objects::CSeqFeatData::eQual_lat_lon, eClass_text },
-        { objects::CSeqFeatData::eQual_linkage_evidence, eClass_text },
-        { objects::CSeqFeatData::eQual_linkage_group, eClass_none },
-        { objects::CSeqFeatData::eQual_locus_tag, eClass_text },
-        { objects::CSeqFeatData::eQual_macronuclear, eClass_none },
-        { objects::CSeqFeatData::eQual_map, eClass_text },
-        { objects::CSeqFeatData::eQual_mating_type, eClass_text },
-        { objects::CSeqFeatData::eQual_metagenome_source, eClass_text },
-        { objects::CSeqFeatData::eQual_metagenomic, eClass_none },
-        { objects::CSeqFeatData::eQual_mitochondrion, eClass_none },
-        { objects::CSeqFeatData::eQual_mobile_element, eClass_text },
-        { objects::CSeqFeatData::eQual_mobile_element_type, eClass_text },
-        { objects::CSeqFeatData::eQual_mod_base, eClass_token },
-        { objects::CSeqFeatData::eQual_mol_type, eClass_text },
-        { objects::CSeqFeatData::eQual_name, eClass_none },
-        { objects::CSeqFeatData::eQual_nomenclature, eClass_none },
-        { objects::CSeqFeatData::eQual_ncRNA_class, eClass_text },
-        { objects::CSeqFeatData::eQual_note, eClass_note },
-        { objects::CSeqFeatData::eQual_number, eClass_number },
-        { objects::CSeqFeatData::eQual_old_locus_tag, eClass_text },
-        { objects::CSeqFeatData::eQual_operon, eClass_text },
-        { objects::CSeqFeatData::eQual_organelle, eClass_text },
-        { objects::CSeqFeatData::eQual_organism, eClass_text },
-        { objects::CSeqFeatData::eQual_partial, eClass_none },
-        { objects::CSeqFeatData::eQual_PCR_conditions, eClass_text },
-        { objects::CSeqFeatData::eQual_PCR_primers, eClass_text },
-        { objects::CSeqFeatData::eQual_phenotype, eClass_text },
-        { objects::CSeqFeatData::eQual_plasmid, eClass_text },
-        { objects::CSeqFeatData::eQual_pop_variant, eClass_text },
-        { objects::CSeqFeatData::eQual_product, eClass_text },
-        { objects::CSeqFeatData::eQual_protein_id, eClass_text },
-        { objects::CSeqFeatData::eQual_proviral, eClass_none },
-        { objects::CSeqFeatData::eQual_pseudo, eClass_none },
-        { objects::CSeqFeatData::eQual_pseudogene, eClass_text },
-        { objects::CSeqFeatData::eQual_rearranged, eClass_none },
-        { objects::CSeqFeatData::eQual_recombination_class, eClass_text },
-        { objects::CSeqFeatData::eQual_region_name, eClass_none },
-        { objects::CSeqFeatData::eQual_regulatory_class, eClass_text },
-        { objects::CSeqFeatData::eQual_replace, eClass_text },
-        { objects::CSeqFeatData::eQual_ribosomal_slippage, eClass_none },
-        { objects::CSeqFeatData::eQual_rpt_family, eClass_text },
-        { objects::CSeqFeatData::eQual_rpt_type, eClass_rpt },
-        { objects::CSeqFeatData::eQual_rpt_unit, eClass_text },
-        { objects::CSeqFeatData::eQual_rpt_unit_range, eClass_text },
-        { objects::CSeqFeatData::eQual_rpt_unit_seq, eClass_text },
-        { objects::CSeqFeatData::eQual_satellite, eClass_text },
-        { objects::CSeqFeatData::eQual_sec_str_type, eClass_none },
-        { objects::CSeqFeatData::eQual_segment, eClass_text },
-        { objects::CSeqFeatData::eQual_sequenced_mol, eClass_text },
-        { objects::CSeqFeatData::eQual_serotype, eClass_text },
-        { objects::CSeqFeatData::eQual_serovar, eClass_text },
-        { objects::CSeqFeatData::eQual_sex, eClass_text },
-        { objects::CSeqFeatData::eQual_site_type, eClass_none },
-        { objects::CSeqFeatData::eQual_specimen_voucher, eClass_text },
-        { objects::CSeqFeatData::eQual_standard_name, eClass_text },
-        { objects::CSeqFeatData::eQual_strain, eClass_text },
-        { objects::CSeqFeatData::eQual_sub_clone, eClass_text },
-        { objects::CSeqFeatData::eQual_sub_species, eClass_text },
-        { objects::CSeqFeatData::eQual_sub_strain, eClass_text },
-        { objects::CSeqFeatData::eQual_submitter_seqid, eClass_text },
-        { objects::CSeqFeatData::eQual_tag_peptide, eClass_text },
-        { objects::CSeqFeatData::eQual_tissue_lib, eClass_text },
-        { objects::CSeqFeatData::eQual_tissue_type, eClass_text },
-        { objects::CSeqFeatData::eQual_trans_splicing, eClass_none },
-        { objects::CSeqFeatData::eQual_transcript_id, eClass_text },
-        { objects::CSeqFeatData::eQual_transgenic, eClass_none },
-        { objects::CSeqFeatData::eQual_translation, eClass_text },
-        { objects::CSeqFeatData::eQual_transl_except, eClass_pos_aa },
-        { objects::CSeqFeatData::eQual_transl_table, eClass_int },
-        { objects::CSeqFeatData::eQual_transposon, eClass_text },
-        { objects::CSeqFeatData::eQual_type_material, eClass_text },
-        { objects::CSeqFeatData::eQual_UniProtKB_evidence, eClass_text },
-        { objects::CSeqFeatData::eQual_usedin, eClass_token },
-        { objects::CSeqFeatData::eQual_variety, eClass_text },
-        { objects::CSeqFeatData::eQual_virion, eClass_none },
-        { objects::CSeqFeatData::eQual_whole_replicon, eClass_none }
+    static map<CSeqFeatData::EQualifier, ETokenClass> QUAL_TYPE_TO_VAL_CLASS_MAP = {
+        { CSeqFeatData::eQual_bad, eClass_none },
+        { CSeqFeatData::eQual_allele, eClass_text },
+        { CSeqFeatData::eQual_altitude, eClass_text },
+        { CSeqFeatData::eQual_anticodon, eClass_pos_aa },
+        { CSeqFeatData::eQual_artificial_location, eClass_text },
+        { CSeqFeatData::eQual_bio_material, eClass_text },
+        { CSeqFeatData::eQual_bond_type, eClass_none },
+        { CSeqFeatData::eQual_bound_moiety, eClass_text },
+        { CSeqFeatData::eQual_calculated_mol_wt, eClass_none },
+        { CSeqFeatData::eQual_cell_line, eClass_text },
+        { CSeqFeatData::eQual_cell_type, eClass_text },
+        { CSeqFeatData::eQual_chloroplast, eClass_none },
+        { CSeqFeatData::eQual_chromoplast, eClass_none },
+        { CSeqFeatData::eQual_chromosome, eClass_text },
+        { CSeqFeatData::eQual_citation, eClass_bracket_int },
+        { CSeqFeatData::eQual_clone, eClass_text },
+        { CSeqFeatData::eQual_clone_lib, eClass_text },
+        { CSeqFeatData::eQual_coded_by, eClass_none },
+        { CSeqFeatData::eQual_codon, eClass_seq_aa },
+        { CSeqFeatData::eQual_codon_start, eClass_int_or },
+        { CSeqFeatData::eQual_collected_by, eClass_text },
+        { CSeqFeatData::eQual_collection_date, eClass_text },
+        { CSeqFeatData::eQual_compare, eClass_text },
+        { CSeqFeatData::eQual_cons_splice, eClass_site },
+        { CSeqFeatData::eQual_country, eClass_text },
+        { CSeqFeatData::eQual_cultivar, eClass_text },
+        { CSeqFeatData::eQual_culture_collection, eClass_text },
+        { CSeqFeatData::eQual_cyanelle, eClass_none },
+        { CSeqFeatData::eQual_db_xref, eClass_text },
+        { CSeqFeatData::eQual_derived_from, eClass_none },
+        { CSeqFeatData::eQual_dev_stage, eClass_text },
+        { CSeqFeatData::eQual_direction, eClass_L_R_B },
+        { CSeqFeatData::eQual_EC_number, eClass_ecnum },
+        { CSeqFeatData::eQual_ecotype, eClass_text },
+        { CSeqFeatData::eQual_environmental_sample, eClass_none },
+        { CSeqFeatData::eQual_estimated_length, eClass_text },
+        { CSeqFeatData::eQual_evidence, eClass_exper },
+        { CSeqFeatData::eQual_exception, eClass_text },
+        { CSeqFeatData::eQual_experiment, eClass_text },
+        { CSeqFeatData::eQual_focus, eClass_none },
+        { CSeqFeatData::eQual_frequency, eClass_text },
+        { CSeqFeatData::eQual_function, eClass_text },
+        { CSeqFeatData::eQual_gap_type, eClass_text },
+        { CSeqFeatData::eQual_gdb_xref, eClass_text },
+        { CSeqFeatData::eQual_gene, eClass_text },
+        { CSeqFeatData::eQual_gene_synonym, eClass_text },
+        { CSeqFeatData::eQual_germline, eClass_none },
+        { CSeqFeatData::eQual_haplogroup, eClass_text },
+        { CSeqFeatData::eQual_haplotype, eClass_text },
+        { CSeqFeatData::eQual_heterogen, eClass_none },
+        { CSeqFeatData::eQual_host, eClass_text },
+        { CSeqFeatData::eQual_identified_by, eClass_text },
+        { CSeqFeatData::eQual_inference, eClass_text },
+        { CSeqFeatData::eQual_insertion_seq, eClass_text },
+        { CSeqFeatData::eQual_isolate, eClass_text },
+        { CSeqFeatData::eQual_isolation_source, eClass_text },
+        { CSeqFeatData::eQual_kinetoplast, eClass_none },
+        { CSeqFeatData::eQual_lab_host, eClass_text },
+        { CSeqFeatData::eQual_label, eClass_token },
+        { CSeqFeatData::eQual_lat_lon, eClass_text },
+        { CSeqFeatData::eQual_linkage_evidence, eClass_text },
+        { CSeqFeatData::eQual_linkage_group, eClass_none },
+        { CSeqFeatData::eQual_locus_tag, eClass_text },
+        { CSeqFeatData::eQual_macronuclear, eClass_none },
+        { CSeqFeatData::eQual_map, eClass_text },
+        { CSeqFeatData::eQual_mating_type, eClass_text },
+        { CSeqFeatData::eQual_metagenome_source, eClass_text },
+        { CSeqFeatData::eQual_metagenomic, eClass_none },
+        { CSeqFeatData::eQual_mitochondrion, eClass_none },
+        { CSeqFeatData::eQual_mobile_element, eClass_text },
+        { CSeqFeatData::eQual_mobile_element_type, eClass_text },
+        { CSeqFeatData::eQual_mod_base, eClass_token },
+        { CSeqFeatData::eQual_mol_type, eClass_text },
+        { CSeqFeatData::eQual_name, eClass_none },
+        { CSeqFeatData::eQual_nomenclature, eClass_none },
+        { CSeqFeatData::eQual_ncRNA_class, eClass_text },
+        { CSeqFeatData::eQual_note, eClass_note },
+        { CSeqFeatData::eQual_number, eClass_number },
+        { CSeqFeatData::eQual_old_locus_tag, eClass_text },
+        { CSeqFeatData::eQual_operon, eClass_text },
+        { CSeqFeatData::eQual_organelle, eClass_text },
+        { CSeqFeatData::eQual_organism, eClass_text },
+        { CSeqFeatData::eQual_partial, eClass_none },
+        { CSeqFeatData::eQual_PCR_conditions, eClass_text },
+        { CSeqFeatData::eQual_PCR_primers, eClass_text },
+        { CSeqFeatData::eQual_phenotype, eClass_text },
+        { CSeqFeatData::eQual_plasmid, eClass_text },
+        { CSeqFeatData::eQual_pop_variant, eClass_text },
+        { CSeqFeatData::eQual_product, eClass_text },
+        { CSeqFeatData::eQual_protein_id, eClass_text },
+        { CSeqFeatData::eQual_proviral, eClass_none },
+        { CSeqFeatData::eQual_pseudo, eClass_none },
+        { CSeqFeatData::eQual_pseudogene, eClass_text },
+        { CSeqFeatData::eQual_rearranged, eClass_none },
+        { CSeqFeatData::eQual_recombination_class, eClass_text },
+        { CSeqFeatData::eQual_region_name, eClass_none },
+        { CSeqFeatData::eQual_regulatory_class, eClass_text },
+        { CSeqFeatData::eQual_replace, eClass_text },
+        { CSeqFeatData::eQual_ribosomal_slippage, eClass_none },
+        { CSeqFeatData::eQual_rpt_family, eClass_text },
+        { CSeqFeatData::eQual_rpt_type, eClass_rpt },
+        { CSeqFeatData::eQual_rpt_unit, eClass_text },
+        { CSeqFeatData::eQual_rpt_unit_range, eClass_text },
+        { CSeqFeatData::eQual_rpt_unit_seq, eClass_text },
+        { CSeqFeatData::eQual_satellite, eClass_text },
+        { CSeqFeatData::eQual_sec_str_type, eClass_none },
+        { CSeqFeatData::eQual_segment, eClass_text },
+        { CSeqFeatData::eQual_sequenced_mol, eClass_text },
+        { CSeqFeatData::eQual_serotype, eClass_text },
+        { CSeqFeatData::eQual_serovar, eClass_text },
+        { CSeqFeatData::eQual_sex, eClass_text },
+        { CSeqFeatData::eQual_site_type, eClass_none },
+        { CSeqFeatData::eQual_specimen_voucher, eClass_text },
+        { CSeqFeatData::eQual_standard_name, eClass_text },
+        { CSeqFeatData::eQual_strain, eClass_text },
+        { CSeqFeatData::eQual_sub_clone, eClass_text },
+        { CSeqFeatData::eQual_sub_species, eClass_text },
+        { CSeqFeatData::eQual_sub_strain, eClass_text },
+        { CSeqFeatData::eQual_submitter_seqid, eClass_text },
+        { CSeqFeatData::eQual_tag_peptide, eClass_text },
+        { CSeqFeatData::eQual_tissue_lib, eClass_text },
+        { CSeqFeatData::eQual_tissue_type, eClass_text },
+        { CSeqFeatData::eQual_trans_splicing, eClass_none },
+        { CSeqFeatData::eQual_transcript_id, eClass_text },
+        { CSeqFeatData::eQual_transgenic, eClass_none },
+        { CSeqFeatData::eQual_translation, eClass_text },
+        { CSeqFeatData::eQual_transl_except, eClass_pos_aa },
+        { CSeqFeatData::eQual_transl_table, eClass_int },
+        { CSeqFeatData::eQual_transposon, eClass_text },
+        { CSeqFeatData::eQual_type_material, eClass_text },
+        { CSeqFeatData::eQual_UniProtKB_evidence, eClass_text },
+        { CSeqFeatData::eQual_usedin, eClass_token },
+        { CSeqFeatData::eQual_variety, eClass_text },
+        { CSeqFeatData::eQual_virion, eClass_none },
+        { CSeqFeatData::eQual_whole_replicon, eClass_none },
     };
 
 
@@ -485,14 +487,14 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
         ret    = 0;
 
     for (TQualVector::iterator cur = quals.begin(); cur != quals.end();) {
-        const std::string& qual_str = (*cur)->GetQual();
+        const string& qual_str = (*cur)->GetQual();
         if (qual_str == "gsdb_id") {
             ++cur;
             continue;
         }
 
-        objects::CSeqFeatData::EQualifier qual_type = objects::CSeqFeatData::GetQualifierType(qual_str);
-        if (qual_type == objects::CSeqFeatData::eQual_bad) {
+        CSeqFeatData::EQualifier qual_type = CSeqFeatData::GetQualifierType(qual_str);
+        if (qual_type == CSeqFeatData::eQual_bad) {
             if (retval < GB_FEAT_ERR_REPAIRABLE) {
                 retval = GB_FEAT_ERR_REPAIRABLE;
             }
@@ -636,7 +638,7 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
  *                                          -Karl 1/28/94
  ****************************************************************************/
 
-static int CkQualPosSeqaa(objects::CGb_qual& cur, bool error_msgs, std::string& aa, const Char* eptr)
+static int CkQualPosSeqaa(CGb_qual& cur, bool error_msgs, string& aa, const Char* eptr)
 {
     const Char* str;
     int         retval = GB_FEAT_ERR_NONE;
@@ -684,7 +686,7 @@ static int CkQualPosSeqaa(objects::CGb_qual& cur, bool error_msgs, std::string& 
  *                  /anticodon=(pos: 34..36, aa: Phe)
  *                                                                 10-12-93
  ****************************************************************************/
-static int CkQualPosaa(objects::CGb_qual& cur, bool error_msgs)
+static int CkQualPosaa(CGb_qual& cur, bool error_msgs)
 {
     const Char* eptr;
     int         retval = GB_FEAT_ERR_NONE;
@@ -714,7 +716,7 @@ static int CkQualPosaa(objects::CGb_qual& cur, bool error_msgs)
                         ++str;
 
                     if ((eptr = StringChr(str, ')')) != NULL) {
-                        std::string aa(str, eptr);
+                        string aa(str, eptr);
                         retval = CkQualPosSeqaa(cur, error_msgs, aa, eptr);
                     }
                 } /* if, aa: */ else {
@@ -765,7 +767,7 @@ static int CkQualPosaa(objects::CGb_qual& cur, bool error_msgs)
 *        token to '_'
 *                                                                 12-20-93
 ****************************************************************************/
-static int CkQualNote(objects::CGb_qual& cur, bool error_msgs, bool perform_corrections)
+static int CkQualNote(CGb_qual& cur, bool error_msgs, bool perform_corrections)
 {
 
     bool has_embedded = false;
@@ -775,7 +777,7 @@ static int CkQualNote(objects::CGb_qual& cur, bool error_msgs, bool perform_corr
 
     if (has_embedded) {
 
-        std::string val_str = cur.GetVal();
+        string val_str = cur.GetVal();
         std::replace(val_str.begin(), val_str.end(), '\"', '\'');
         cur.SetVal(val_str);
     }
@@ -806,8 +808,8 @@ static bool ScanEmbedQual(const Char* value)
                 for (++bptr, ptr = bptr; *bptr != '=' && *bptr != ' ' && *bptr != '\0'; bptr++)
                     continue;
 
-                std::string qual(ptr, bptr);
-                if (objects::CSeqFeatData::GetQualifierType(qual) != objects::CSeqFeatData::eQual_bad)
+                string qual(ptr, bptr);
+                if (CSeqFeatData::GetQualifierType(qual) != CSeqFeatData::eQual_bad)
                     return true;
             }
         } /* for */
@@ -826,11 +828,11 @@ static bool ScanEmbedQual(const Char* value)
  *  if called from /note, ="" will cause qualifier to be dropped.
  *  all others no error, all other, if no qualifier, will add "" value
  ****************************************************************************/
-static int CkQualText(objects::CGb_qual& cur,
-                      bool*              has_embedded,
-                      bool               from_note,
-                      bool               error_msgs,
-                      bool               perform_corrections)
+static int CkQualText(CGb_qual& cur,
+                      bool*     has_embedded,
+                      bool      from_note,
+                      bool      error_msgs,
+                      bool      perform_corrections)
 {
     const Char* bptr;
     const Char* eptr;
@@ -878,7 +880,7 @@ static int CkQualText(objects::CGb_qual& cur,
         /* ERROR  here  sets retval*/
     }
 
-    std::string value(bptr, eptr);
+    string value(bptr, eptr);
     /* Some check must be done for illegal characters in gbpq->val
     for (s = value; *s != '\0'; s++) {
         if (!IS_WHITESP(*s) && !IS_ALPHANUM(*s) && *s != '\"') {
@@ -902,7 +904,7 @@ static int CkQualText(objects::CGb_qual& cur,
  *                  /codon=(seq: "ttt", aa: Leu )
  *                                                                  6-29-93
  ***************************************************************************/
-static int CkQualSeqaa(objects::CGb_qual& cur, bool error_msgs)
+static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
 {
     int retval = GB_FEAT_ERR_NONE;
 
@@ -929,7 +931,7 @@ static int CkQualSeqaa(objects::CGb_qual& cur, bool error_msgs)
                     ++str;
 
                 if ((eptr = StringChr(str, ')')) != NULL) {
-                    std::string aa(str, eptr);
+                    string aa(str, eptr);
                     retval = CkQualPosSeqaa(cur, error_msgs, aa, eptr);
                 }
             } /* if, aa: */ else {
@@ -964,7 +966,7 @@ static int CkQualSeqaa(objects::CGb_qual& cur, bool error_msgs)
  *  CkQualMatchToken:
  *                                                                6-29-93
  *****************************************************************************/
-static int CkQualMatchToken(objects::CGb_qual& cur, bool error_msgs, const Char* array_string[], Int2 totalstr)
+static int CkQualMatchToken(CGb_qual& cur, bool error_msgs, const Char* array_string[], Int2 totalstr)
 {
     const Char* bptr;
     const Char* eptr;
@@ -988,8 +990,8 @@ static int CkQualMatchToken(objects::CGb_qual& cur, bool error_msgs, const Char*
         str++;
 
     if (*str == '\0') {
-        std::string msg(bptr, eptr);
-        bool        found = false;
+        string msg(bptr, eptr);
+        bool   found = false;
         for (Int2 i = 0; i < totalstr; ++i) {
             if (NStr::EqualNocase(msg, array_string[i])) {
                 found = true;
@@ -1021,7 +1023,7 @@ static int CkQualMatchToken(objects::CGb_qual& cur, bool error_msgs, const Char*
  *      but the text only allow digits, period, and hyphen (-)
  *                                                                12-10-93
  ****************************************************************************/
-static int CkQualEcnum(objects::CGb_qual& cur, bool error_msgs, bool perform_corrections)
+static int CkQualEcnum(CGb_qual& cur, bool error_msgs, bool perform_corrections)
 {
     const Char* str;
     int         retval = GB_FEAT_ERR_NONE;
@@ -1056,7 +1058,7 @@ static int CkQualEcnum(objects::CGb_qual& cur, bool error_msgs, bool perform_cor
  *  -- example      /cons_splice=(5'site:YES, 3'site:NO)
  *                                                                  6-29-93
  ***************************************************************************/
-static int CkQualSite(objects::CGb_qual& cur, bool error_msgs)
+static int CkQualSite(CGb_qual& cur, bool error_msgs)
 {
     int         retval = GB_FEAT_ERR_NONE;
     const Char* bptr;
@@ -1153,7 +1155,7 @@ static int CkQualSite(objects::CGb_qual& cur, bool error_msgs)
  *        /usedin=X10087:proteinx
  *                                                                 10-12-93
  ***************************************************************************/
-static int CkQualTokenType(objects::CGb_qual& cur, bool error_msgs, Uint1 type)
+static int CkQualTokenType(CGb_qual& cur, bool error_msgs, Uint1 type)
 {
     const Char* bptr;
     const Char* eptr;
@@ -1184,7 +1186,7 @@ static int CkQualTokenType(objects::CGb_qual& cur, bool error_msgs, Uint1 type)
 
         if (*str == '\0') {
             /*------single token found ----*/
-            std::string token(bptr, eptr);
+            string token(bptr, eptr);
 
             switch (type) {
             case ParFlat_BracketInt_type:

@@ -68,6 +68,7 @@ BEGIN_SCOPE(objects)
 char ValidAminoAcid(const string& abbrev);
 END_SCOPE(objects)
 
+USING_SCOPE(objects);
 
 const char* ParFlat_GImod[] = {
     "Mitochondr",
@@ -101,14 +102,14 @@ const char* valid_organelle[] = {
 };
 
 /**********************************************************/
-bool SeqLocHaveFuzz(const objects::CSeq_loc& loc)
+bool SeqLocHaveFuzz(const CSeq_loc& loc)
 {
     bool flag;
 
-    std::string loc_str;
+    string loc_str;
     loc.GetLabel(&loc_str);
 
-    if (loc_str.find('<') == std::string::npos && loc_str.find('>') == std::string::npos)
+    if (loc_str.find('<') == string::npos && loc_str.find('>') == string::npos)
         flag = false;
     else
         flag = true;
@@ -126,12 +127,12 @@ bool SeqLocHaveFuzz(const objects::CSeq_loc& loc)
  **********************************************************/
 char* CpTheQualValue(const TQualVector& qlist, const Char* qual)
 {
-    std::string qvalue;
+    string qvalue;
     ITERATE (TQualVector, cur, qlist) {
         if ((*cur)->GetQual() != qual)
             continue;
 
-        const std::string& val = (*cur)->GetVal();
+        const string& val = (*cur)->GetVal();
         if (val == "\"\"") {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual %s : %s", qual, val.c_str());
             break;
@@ -165,13 +166,13 @@ char* GetTheQualValue(TQualVector& qlist, const Char* qual)
         if ((*cur)->GetQual() != qual)
             continue;
 
-        const std::string& val = (*cur)->GetVal();
+        const string& val = (*cur)->GetVal();
         if (val == "\"\"") {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual %s : %s", qual, val.c_str());
             break;
         }
 
-        std::vector<Char> buf(val.begin(), val.end());
+        vector<Char> buf(val.begin(), val.end());
         buf.push_back(0);
         qvalue = tata_save(&buf[0]);
 
@@ -241,38 +242,38 @@ Uint1 GetQualValueAa(char* qval, bool checkseq)
 }
 
 /**********************************************************/
-bool GetGenomeInfo(objects::CBioSource& bsp, const Char* bptr)
+bool GetGenomeInfo(CBioSource& bsp, const Char* bptr)
 {
     Int4 i = StringMatchIcase(ParFlat_GImod, bptr);
     if (i == -1)
         return false;
 
     if (i == 0)
-        bsp.SetGenome(objects::CBioSource::eGenome_mitochondrion);
+        bsp.SetGenome(CBioSource::eGenome_mitochondrion);
     else if (i == 1)
-        bsp.SetGenome(objects::CBioSource::eGenome_chloroplast);
+        bsp.SetGenome(CBioSource::eGenome_chloroplast);
     else if (i == 2)
-        bsp.SetGenome(objects::CBioSource::eGenome_kinetoplast);
+        bsp.SetGenome(CBioSource::eGenome_kinetoplast);
     else if (i == 3)
-        bsp.SetGenome(objects::CBioSource::eGenome_cyanelle);
+        bsp.SetGenome(CBioSource::eGenome_cyanelle);
     else if (i == 4)
-        bsp.SetGenome(objects::CBioSource::eGenome_chromoplast);
+        bsp.SetGenome(CBioSource::eGenome_chromoplast);
     else if (i == 5)
-        bsp.SetGenome(objects::CBioSource::eGenome_plastid);
+        bsp.SetGenome(CBioSource::eGenome_plastid);
     else if (i == 6)
-        bsp.SetGenome(objects::CBioSource::eGenome_macronuclear);
+        bsp.SetGenome(CBioSource::eGenome_macronuclear);
     else if (i == 7)
-        bsp.SetGenome(objects::CBioSource::eGenome_extrachrom);
+        bsp.SetGenome(CBioSource::eGenome_extrachrom);
     else if (i == 8)
-        bsp.SetGenome(objects::CBioSource::eGenome_plasmid);
+        bsp.SetGenome(CBioSource::eGenome_plasmid);
     else
-        bsp.SetGenome(objects::CBioSource::eGenome_leucoplast);
+        bsp.SetGenome(CBioSource::eGenome_leucoplast);
 
     return true;
 }
 
 /**********************************************************/
-static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, std::vector<std::string>& names)
+static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, vector<string>& names)
 {
     NON_CONST_ITERATE(TSeqdescList, descr, descrs)
     {
@@ -280,11 +281,11 @@ static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, std::vector<std::stri
             ! (*descr)->GetSource().GetOrg().IsSetTaxname())
             continue;
 
-        const objects::COrg_ref& org_ref = (*descr)->GetSource().GetOrg();
-        names[0]                         = org_ref.GetTaxname();
+        const COrg_ref& org_ref = (*descr)->GetSource().GetOrg();
+        names[0]                = org_ref.GetTaxname();
 
         if (org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod()) {
-            ITERATE (objects::COrgName::TMod, mod, org_ref.GetOrgname().GetMod()) {
+            ITERATE (COrgName::TMod, mod, org_ref.GetOrgname().GetMod()) {
                 if (! (*mod)->IsSetSubname() || ! (*mod)->IsSetSubtype())
                     continue;
 
@@ -303,7 +304,7 @@ static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, std::vector<std::stri
         }
 
         if ((*descr)->GetSource().IsSetSubtype()) {
-            ITERATE (objects::CBioSource::TSubtype, subtype, (*descr)->GetSource().GetSubtype()) {
+            ITERATE (CBioSource::TSubtype, subtype, (*descr)->GetSource().GetSubtype()) {
                 /* subtype = "other"
                 */
                 if (! (*subtype)->IsSetSubtype() || (*subtype)->GetSubtype() != 255 || ! (*subtype)->IsSetName())
@@ -330,18 +331,18 @@ static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, std::vector<std::stri
 }
 
 /**********************************************************/
-static void GetTaxnameName(TEntryList& seq_entries, std::vector<std::string>& names)
+static void GetTaxnameName(TEntryList& seq_entries, vector<string>& names)
 {
     names.resize(3);
 
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
             if (bio_set->IsSetDescr())
                 GetTaxnameNameFromDescrs(bio_set->SetDescr().Set(), names);
         }
 
-        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 GetTaxnameNameFromDescrs(bioseq->SetDescr().Set(), names);
         }
@@ -349,7 +350,7 @@ static void GetTaxnameName(TEntryList& seq_entries, std::vector<std::string>& na
 }
 
 /**********************************************************/
-static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vector<std::string>& names)
+static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<string>& names)
 {
     NON_CONST_ITERATE(TSeqdescList, descr, descrs)
     {
@@ -359,9 +360,9 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
         if (! (*descr)->GetGenbank().IsSetSource())
             break;
 
-        objects::CGB_block& gb_block = (*descr)->SetGenbank();
-        char*               p        = StringSave(gb_block.GetSource().c_str());
-        char*               pper     = 0;
+        CGB_block& gb_block = (*descr)->SetGenbank();
+        char*      p        = StringSave(gb_block.GetSource().c_str());
+        char*      pper     = 0;
 
         size_t len = StringLen(p);
         if (p[len - 1] == '.') {
@@ -382,7 +383,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
         } else if (q != NULL)
             *q = ' ';
 
-        std::vector<std::string>::const_iterator name = names.begin();
+        vector<string>::const_iterator name = names.begin();
         for (name += 2; name != names.end(); ++name) {
             if (name->empty())
                 continue;
@@ -426,8 +427,8 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
             StringCat(pper, ".");
         }
 
-        const std::string& first_name  = names[0];
-        const std::string& second_name = names[1];
+        const string& first_name  = names[0];
+        const string& second_name = names[1];
 
         if (NStr::CompareNocase(p, first_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, first_name.c_str()) == 0)) {
             gb_block.ResetSource();
@@ -443,11 +444,11 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const std::vec
 }
 
 /**********************************************************/
-static void CheckDelGbblockSource(TEntryList& seq_entries, std::vector<std::string>& names)
+static void CheckDelGbblockSource(TEntryList& seq_entries, vector<string>& names)
 {
     NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 CheckDelGbblockSourceFromDescrs(bioseq->SetDescr().Set(), names);
         }
@@ -457,9 +458,9 @@ static void CheckDelGbblockSource(TEntryList& seq_entries, std::vector<std::stri
 /**********************************************************/
 void MaybeCutGbblockSource(TEntryList& seq_entries)
 {
-    std::vector<std::string> names; /* 0 - taxname */
-                                    /* 1 - 254 old-name */
-                                    /* 2 etc. - common name */
+    vector<string> names; /* 0 - taxname */
+                          /* 1 - 254 old-name */
+                          /* 2 etc. - common name */
 
     GetTaxnameName(seq_entries, names);
 
@@ -468,7 +469,7 @@ void MaybeCutGbblockSource(TEntryList& seq_entries)
 }
 
 /**********************************************************/
-void MakeLocStrCompatible(std::string& str)
+void MakeLocStrCompatible(string& str)
 {
     const static Char STR_TO_REPLACE[] = "minus";
 
@@ -484,16 +485,16 @@ void MakeLocStrCompatible(std::string& str)
 
     // for backward compatibility with C-toolkit version
     size_t pos = str.find(STR_TO_REPLACE);
-    while (pos != std::string::npos) {
+    while (pos != string::npos) {
         str.replace(pos, sizeof(STR_TO_REPLACE) - 1, "c");
         pos = str.find(STR_TO_REPLACE);
     }
 }
 
 /**********************************************************/
-string location_to_string(const objects::CSeq_loc& loc)
+string location_to_string(const CSeq_loc& loc)
 {
-    std::string loc_str;
+    string loc_str;
     loc.GetLabel(&loc_str);
 
     MakeLocStrCompatible(loc_str);
