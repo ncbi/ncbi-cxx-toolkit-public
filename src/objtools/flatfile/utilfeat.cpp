@@ -289,15 +289,16 @@ static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, vector<string>& names
                 if (! (*mod)->IsSetSubname() || ! (*mod)->IsSetSubtype())
                     continue;
 
-                int stype = (*mod)->GetSubtype();
+                COrgMod::TSubtype stype = (*mod)->GetSubtype();
 
-                if (stype == 254) /* old-name */
+                if (stype == COrgMod::eSubtype_old_name)
                     names[1] = (*mod)->GetSubname();
                 /* acronym(19), synonym(28), anamorph(29), teleomorph(30),
                 gb-acronym(32), gb-anamorph(33), gb-synonym(34) */
-                else if (stype == 19 || stype == 28 || stype == 29 ||
-                         stype == 30 || stype == 32 || stype == 33 ||
-                         stype == 34) {
+                else if (stype == COrgMod::eSubtype_acronym || stype == COrgMod::eSubtype_synonym ||
+                         stype == COrgMod::eSubtype_anamorph || stype == COrgMod::eSubtype_teleomorph ||
+                         stype == COrgMod::eSubtype_gb_acronym || stype == COrgMod::eSubtype_gb_anamorph ||
+                         stype == COrgMod::eSubtype_gb_synonym) {
                     names.push_back((*mod)->GetSubname());
                 }
             }
@@ -305,9 +306,8 @@ static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, vector<string>& names
 
         if ((*descr)->GetSource().IsSetSubtype()) {
             ITERATE (CBioSource::TSubtype, subtype, (*descr)->GetSource().GetSubtype()) {
-                /* subtype = "other"
-                */
-                if (! (*subtype)->IsSetSubtype() || (*subtype)->GetSubtype() != 255 || ! (*subtype)->IsSetName())
+                /* subtype = "other" */
+                if (! (*subtype)->IsSetSubtype() || (*subtype)->GetSubtype() != CSubSource::eSubtype_other || ! (*subtype)->IsSetName())
                     continue;
 
                 const Char* p = StringIStr((*subtype)->GetName().c_str(), "common:");
