@@ -1205,8 +1205,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt1)
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(total_count, 9);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 14u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 14u);
     TSeqPos len = bh.GetBioseqLength();
     BOOST_CHECK(bh.GetSeqVector().CanGetRange(0, len));
     string data;
@@ -1256,8 +1256,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt2)
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(total_count, 9);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 14u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 14u);
     TSeqPos len = bh.GetBioseqLength();
     BOOST_CHECK(bh.GetSeqVector().CanGetRange(0, len));
     string data;
