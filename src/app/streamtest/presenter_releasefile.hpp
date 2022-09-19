@@ -59,10 +59,10 @@ public:
 
         if (args["compressed"]) {
             CNcbiIstream* pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
-            CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
-                512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
-            CCompressionIStream* pUnzipStream = new CCompressionIStream(
-                *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
+            CZipStreamDecompressor* pDecompressor = 
+                new CZipStreamDecompressor( CZipCompression::fCheckFileHeader );
+            CCompressionIStream* pUnzipStream = 
+                new CCompressionIStream( *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
             m_is.reset(CObjectIStream::Open( args["binary"] ? eSerial_AsnBinary : eSerial_AsnText, *pUnzipStream, eTakeOwnership ));
         } else {
             m_is.reset( 

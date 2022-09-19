@@ -1094,10 +1094,10 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const string& ifname)
     // turning it into an object stream:
     CObjectIStream* pI = nullptr;
     if ( args["c"] ) {
-        CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
-            512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
-        CCompressionIStream* pUnzipStream = new CCompressionIStream(
-            *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
+        CZipStreamDecompressor* pDecompressor = 
+            new CZipStreamDecompressor( CZipCompression::fCheckFileHeader );
+        CCompressionIStream* pUnzipStream = 
+            new CCompressionIStream( *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
         pI = CObjectIStream::Open( serial, *pUnzipStream, eTakeOwnership );
     }
     else {
