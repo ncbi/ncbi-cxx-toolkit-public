@@ -1850,22 +1850,22 @@ static void GetGeneSyns(const TQualVector& quals, char* name, TSynSet& syns)
     if (name == NULL)
         return;
 
-    ITERATE (TQualVector, qual, quals) {
-        if (! (*qual)->IsSetQual() || ! (*qual)->IsSetVal() ||
-            (*qual)->GetQual() != "gene" ||
-            NStr::EqualNocase((*qual)->GetVal(), name))
+    for (const auto& qual : quals) {
+        if (! qual->IsSetQual() || ! qual->IsSetVal() ||
+            qual->GetQual() != "gene" ||
+            NStr::EqualNocase(qual->GetVal(), name))
             continue;
 
-        syns.insert((*qual)->GetVal());
+        syns.insert(qual->GetVal());
     }
 
-    ITERATE (TQualVector, qual, quals) {
-        if (! (*qual)->IsSetQual() || ! (*qual)->IsSetVal() ||
-            (*qual)->GetQual() != "gene_synonym" ||
-            NStr::EqualNocase((*qual)->GetVal(), name))
+    for (const auto& qual : quals) {
+        if (! qual->IsSetQual() || ! qual->IsSetVal() ||
+            qual->GetQual() != "gene_synonym" ||
+            NStr::EqualNocase(qual->GetVal(), name))
             continue;
 
-        syns.insert((*qual)->GetVal());
+        syns.insert(qual->GetVal());
     }
 }
 
@@ -2210,19 +2210,18 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
     if (gnp == NULL)
         return;
 
-    NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat, feats)
-    {
-        pGene.reset(CpTheQualValue((*feat)->GetQual(), "gene"));
-        locus_tag = CpTheQualValue((*feat)->GetQual(), "locus_tag");
+    for (auto& feat : feats) {
+        pGene.reset(CpTheQualValue(feat->GetQual(), "gene"));
+        locus_tag = CpTheQualValue(feat->GetQual(), "locus_tag");
 
-        const CSeq_loc* cur_loc = (*feat)->IsSetLocation() ? &(*feat)->GetLocation() : nullptr;
+        const CSeq_loc* cur_loc = feat->IsSetLocation() ? &feat->GetLocation() : nullptr;
         if (! pGene && locus_tag == NULL) {
-            if (GetFeatNameAndLoc(NULL, *(*feat), gnp))
+            if (GetFeatNameAndLoc(NULL, *feat, gnp))
                 fta_append_feat_list(gnp, cur_loc, pGene.get(), locus_tag);
             continue;
         }
 
-        pseudogene = CpTheQualValue((*feat)->GetQual(), "pseudogene");
+        pseudogene = CpTheQualValue(feat->GetQual(), "pseudogene");
         newglp     = new GeneList;
         if (pGene) {
             newglp->locus = pGene.get();
@@ -2234,15 +2233,15 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         if (pseudogene) {
             newglp->pseudogene = pseudogene;
         }
-        fta_collect_wormbases(newglp, *(*feat));
-        fta_collect_olts(newglp, *(*feat));
-        if (GetFeatNameAndLoc(newglp, *(*feat), gnp))
+        fta_collect_wormbases(newglp, *feat);
+        fta_collect_olts(newglp, *feat);
+        if (GetFeatNameAndLoc(newglp, *feat, gnp))
             fta_append_feat_list(gnp, cur_loc, pGene.get(), locus_tag);
 
         newglp->feat.Reset();
         if (gnp->simple_genes == false && cur_loc != nullptr && cur_loc->IsMix()) {
             newglp->feat.Reset(new CSeq_feat);
-            newglp->feat->Assign(*(*feat));
+            newglp->feat->Assign(*feat);
         }
 
         newglp->slibp = GetLowHighFromSeqLoc(cur_loc, length, id);
@@ -2252,22 +2251,22 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
                 MemFree(locus_tag);
             continue;
         }
-        if (gnp->simple_genes == false && (*feat)->IsSetData() &&
-            WeDontNeedToJoinThis((*feat)->GetData()))
+        if (gnp->simple_genes == false && feat->IsSetData() &&
+            WeDontNeedToJoinThis(feat->GetData()))
             newglp->leave = 1;
 
-        newglp->genefeat = IfCDSGeneFeat(*(*feat), CSeqFeatData::e_Gene, "gene");
+        newglp->genefeat = IfCDSGeneFeat(*feat, CSeqFeatData::e_Gene, "gene");
 
-        // newglp->maploc = ((*feat)->IsSetQual() ? GetTheQualValue((*feat)->SetQual(), "map") : NULL);
-        if ((*feat)->IsSetQual()) {
-            auto qual = GetTheQualValue((*feat)->SetQual(), "map");
+        // newglp->maploc = (feat->IsSetQual() ? GetTheQualValue(feat->SetQual(), "map") : NULL);
+        if (feat->IsSetQual()) {
+            auto qual = GetTheQualValue(feat->SetQual(), "map");
             if (qual) {
                 newglp->maploc = qual;
             }
         }
         newglp->segnum = gnp->segindex;
 
-        GetGeneSyns((*feat)->GetQual(), pGene.get(), newglp->syn);
+        GetGeneSyns(feat->GetQual(), pGene.get(), newglp->syn);
 
         newglp->loc.Reset();
         if (cur_loc != nullptr) {
@@ -2276,14 +2275,14 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         }
 
         newglp->todel = false;
-        if (IfCDSGeneFeat(*(*feat), CSeqFeatData::e_Cdregion, "CDS") == false && newglp->genefeat == false)
+        if (IfCDSGeneFeat(*feat, CSeqFeatData::e_Cdregion, "CDS") == false && newglp->genefeat == false)
             newglp->pseudo = false;
         else
-            newglp->pseudo = (*feat)->IsSetPseudo() ? (*feat)->GetPseudo() : false;
+            newglp->pseudo = feat->IsSetPseudo() ? feat->GetPseudo() : false;
 
-        newglp->allpseudo = (*feat)->IsSetPseudo() ? (*feat)->GetPseudo() : false;
+        newglp->allpseudo = feat->IsSetPseudo() ? feat->GetPseudo() : false;
 
-        if (fta_rnas_cds_feat(*(*feat))) {
+        if (fta_rnas_cds_feat(*feat)) {
             newglp->noleft  = newglp->slibp->noleft;
             newglp->noright = newglp->slibp->noright;
         } else {
@@ -2305,11 +2304,11 @@ static CdssListPtr SrchCdss(CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp,
     CdssListPtr      newclp;
     SeqlocInfoblkPtr slip;
 
-    ITERATE (CSeq_annot::C_Data::TFtable, feat, feats) {
-        if (IfCDSGeneFeat(*(*feat), CSeqFeatData::e_Cdregion, "CDS") == false)
+    for (const auto& feat : feats) {
+        if (IfCDSGeneFeat(*feat, CSeqFeatData::e_Cdregion, "CDS") == false)
             continue;
 
-        const CSeq_loc* cur_loc = (*feat)->IsSetLocation() ? &(*feat)->GetLocation() : nullptr;
+        const CSeq_loc* cur_loc = feat->IsSetLocation() ? &feat->GetLocation() : nullptr;
 
         slip = GetLowHighFromSeqLoc(cur_loc, -99, id);
         if (slip == NULL)
@@ -2355,19 +2354,18 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
     if (! bioseq.IsSetAnnot())
         return;
 
-    NON_CONST_ITERATE(CBioseq::TAnnot, annot, bioseq.SetAnnot())
-    {
-        if (! (*annot)->IsFtable())
+    for (auto& annot : bioseq.SetAnnot()) {
+        if (! annot->IsFtable())
             continue;
 
         CRef<CSeq_id> id = CpSeqIdAcOnly(*first_id, gene_node->accver);
 
         ++(gene_node->segindex); /* > 1, if segment set */
 
-        SrchGene((*annot)->SetData().SetFtable(), gene_node, bioseq.GetLength(), *id);
+        SrchGene(annot->SetData().SetFtable(), gene_node, bioseq.GetLength(), *id);
 
         if (gene_node->skipdiv) {
-            gene_node->clp = SrchCdss((*annot)->SetData().SetFtable(), gene_node->clp, gene_node->segindex, *id);
+            gene_node->clp = SrchCdss(annot->SetData().SetFtable(), gene_node->clp, gene_node->segindex, *id);
         }
 
         if (gene_node->glp != NULL && gene_node->flag == false) {
@@ -2648,13 +2646,12 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
     else
         gnp->skipdiv = false;
 
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             FindGene(*bioseq, gnp);
         }
 
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->GetClass() == CBioseq_set::eClass_parts) /* parts, the place to put GeneRefPtr */
             {
                 gnp->bioseq_set = &(*bio_set);
@@ -2715,17 +2712,16 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
                 annots = &gnp->bioseq->SetAnnot();
             }
 
-            NON_CONST_ITERATE(CBioseq::TAnnot, cur_annot, *annots)
-            {
-                if (! (*cur_annot)->IsFtable())
+            for (auto& cur_annot : *annots) {
+                if (! cur_annot->IsFtable())
                     continue;
 
-                size_t advance = (*cur_annot)->GetData().GetFtable().size();
-                (*cur_annot)->SetData().SetFtable().splice((*cur_annot)->SetData().SetFtable().end(), gnp->feats);
+                size_t advance = cur_annot->GetData().GetFtable().size();
+                cur_annot->SetData().SetFtable().splice(cur_annot->SetData().SetFtable().end(), gnp->feats);
 
-                gene_refs.first = (*cur_annot)->SetData().SetFtable().begin();
+                gene_refs.first = cur_annot->SetData().SetFtable().begin();
                 std::advance(gene_refs.first, advance);
-                gene_refs.last  = (*cur_annot)->SetData().SetFtable().end();
+                gene_refs.last  = cur_annot->SetData().SetFtable().end();
                 gene_refs.valid = true;
                 break;
             }
@@ -2921,14 +2917,13 @@ static void GeneQuals(TEntryList& seq_entries, const char* acnum, GeneRefFeats& 
         }
     }
 
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->IsSetAnnot())
                 FixAnnot(bio_set->SetAnnot(), acnum, gene_refs, llocs);
         }
 
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetAnnot())
                 FixAnnot(bioseq->SetAnnot(), acnum, gene_refs, llocs);
         }
@@ -2938,17 +2933,17 @@ static void GeneQuals(TEntryList& seq_entries, const char* acnum, GeneRefFeats& 
 /**********************************************************/
 static void fta_collect_genes(const CBioseq& bioseq, std::set<std::string>& genes)
 {
-    ITERATE (CBioseq::TAnnot, annot, bioseq.GetAnnot()) {
-        if (! (*annot)->IsFtable())
+    for (const auto& annot : bioseq.GetAnnot()) {
+        if (! annot->IsFtable())
             continue;
 
-        ITERATE (CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable()) {
-            ITERATE (CSeq_feat::TQual, qual, (*feat)->GetQual()) {
-                if (! (*qual)->IsSetQual() || (*qual)->GetQual() != "gene" ||
-                    ! (*qual)->IsSetVal() || (*qual)->GetVal().empty())
+        for (const auto& feat : annot->GetData().GetFtable()) {
+            for (const auto& qual : feat->GetQual()) {
+                if (! qual->IsSetQual() || qual->GetQual() != "gene" ||
+                    ! qual->IsSetVal() || qual->GetVal().empty())
                     continue;
 
-                genes.insert((*qual)->GetVal());
+                genes.insert(qual->GetVal());
             }
         }
     }
@@ -2960,18 +2955,16 @@ static void fta_fix_labels(CBioseq& bioseq, const std::set<std::string>& genes)
     if (! bioseq.IsSetAnnot())
         return;
 
-    NON_CONST_ITERATE(CBioseq::TAnnot, annot, bioseq.SetAnnot())
-    {
-        if (! (*annot)->IsFtable())
+    for (auto& annot : bioseq.SetAnnot()) {
+        if (! annot->IsFtable())
             continue;
 
-        NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat, (*annot)->SetData().SetFtable())
-        {
+        for (auto& feat : annot->SetData().SetFtable()) {
 
-            if (! (*feat)->IsSetQual())
+            if (! feat->IsSetQual())
                 continue;
 
-            NON_CONST_ITERATE(CSeq_feat::TQual, qual, (*feat)->SetQual())
+            NON_CONST_ITERATE(CSeq_feat::TQual, qual, feat->SetQual())
             {
                 if (! (*qual)->IsSetQual() || (*qual)->GetQual() != "label" ||
                     ! (*qual)->IsSetVal() || (*qual)->GetVal().empty())
@@ -2984,7 +2977,7 @@ static void fta_fix_labels(CBioseq& bioseq, const std::set<std::string>& genes)
                     new_qual->SetQual("gene");
                     new_qual->SetVal(cur_val);
 
-                    (*feat)->SetQual().insert(qual, new_qual);
+                    feat->SetQual().insert(qual, new_qual);
                 }
             }
         }
@@ -2996,16 +2989,15 @@ void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
 {
     if (pp->source == Parser::ESource::Flybase) {
         std::set<std::string> genes;
-        ITERATE (TEntryList, entry, seq_entries) {
-            for (CBioseq_CI bioseq(GetScope(), *(*entry)); bioseq; ++bioseq) {
+        for (const auto& entry : seq_entries) {
+            for (CBioseq_CI bioseq(GetScope(), *entry); bioseq; ++bioseq) {
                 fta_collect_genes(*bioseq->GetCompleteBioseq(), genes);
             }
         }
 
         if (! genes.empty()) {
-            NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-            {
-                for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+            for (auto& entry : seq_entries) {
+                for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
                     fta_fix_labels(*bioseq, genes);
                 }
             }

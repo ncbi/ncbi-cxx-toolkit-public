@@ -143,8 +143,8 @@ const char* RSExceptionQualVals[] = {
  **********************************************************/
 static bool FindTheQual(const CSeq_feat& feat, const Char* qual_to_find)
 {
-    ITERATE (TQualVector, qual, feat.GetQual()) {
-        if ((*qual)->IsSetQual() && (*qual)->GetQual() == qual_to_find)
+    for (const auto& qual : feat.GetQual()) {
+        if (qual->IsSetQual() && qual->GetQual() == qual_to_find)
             return true;
     }
 
@@ -213,13 +213,13 @@ static void GuessGeneticCode(ParserPtr pp, const CSeq_descr& descrs)
 
     pbp = pp->pbp;
 
-    ITERATE (TSeqdescList, descr, descrs.Get()) {
-        if (! (*descr)->IsModif())
+    for (const auto& descr : descrs.Get()) {
+        if (! descr->IsModif())
             continue;
 
-        ITERATE (CSeqdesc::TModif, modif, (*descr)->GetModif()) {
-            if (*modif == eGIBB_mod_mitochondrial ||
-                *modif == eGIBB_mod_kinetoplast) {
+        for (EGIBB_mod modif : descr->GetModif()) {
+            if (modif == eGIBB_mod_mitochondrial ||
+                modif == eGIBB_mod_kinetoplast) {
                 pbp->genome = 5; /* mitochondrion */
                 break;
             }
@@ -227,11 +227,11 @@ static void GuessGeneticCode(ParserPtr pp, const CSeq_descr& descrs)
         break;
     }
 
-    ITERATE (TSeqdescList, descr, descrs.Get()) {
-        if (! (*descr)->IsSource())
+    for (const auto& descr : descrs.Get()) {
+        if (! descr->IsSource())
             continue;
 
-        pbp->genome = (*descr)->GetSource().IsSetGenome() ? (*descr)->GetSource().GetGenome() : 0;
+        pbp->genome = descr->GetSource().IsSetGenome() ? descr->GetSource().GetGenome() : 0;
         break;
     }
 
@@ -247,8 +247,8 @@ static void GuessGeneticCode(ParserPtr pp, const CSeq_descr& descrs)
 static void GetGcode(TEntryList& seq_entries, ParserPtr pp)
 {
     if (pp != NULL && pp->pbp != NULL && ! pp->pbp->gcode.IsId()) {
-        ITERATE (TEntryList, entry, seq_entries) {
-            GuessGeneticCode(pp, GetDescrPointer(*(*entry)));
+        for (const auto& entry : seq_entries) {
+            GuessGeneticCode(pp, GetDescrPointer(*entry));
 
             if (pp->pbp->gcode.IsId())
                 break;
@@ -289,9 +289,8 @@ static void ProtBlkInit(ProtBlkPtr pbp)
 static void AssignBioseqSetLevel(TEntryList& seq_entries)
 {
 
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             switch (bio_set->GetClass()) {
             case CBioseq_set::eClass_nuc_prot:
                 bio_set->SetLevel(1);
@@ -372,9 +371,9 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     }
 
     const CTextseq_id* text_id = nullptr;
-    ITERATE (TSeqIdList, id, ibp->ids) {
-        if (! (*id)->IsPatent()) {
-            text_id = (*id)->GetTextseq_Id();
+    for (const auto& id : ibp->ids) {
+        if (! id->IsPatent()) {
+            text_id = id->GetTextseq_Id();
             break;
         }
     }
@@ -677,11 +676,11 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
 
     std::string organism;
 
-    ITERATE (TSeqdescList, desc, bioseq.GetDescr().Get()) {
-        if (! (*desc)->IsSource())
+    for (const auto& desc : bioseq.GetDescr().Get()) {
+        if (! desc->IsSource())
             continue;
 
-        const CBioSource& source = (*desc)->GetSource();
+        const CBioSource& source = desc->GetSource();
         if (source.IsSetOrg() && source.GetOrg().IsSetTaxname()) {
             organism = source.GetOrg().GetTaxname();
             break;
@@ -692,23 +691,23 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
         diff_lowest = -1;
         cdslen      = sequence::GetLength(feat.GetLocation(), &GetScope());
 
-        ITERATE (CBioseq::TAnnot, annot, bioseq.GetAnnot()) {
-            if (! (*annot)->IsFtable())
+        for (const auto& annot : bioseq.GetAnnot()) {
+            if (! annot->IsFtable())
                 continue;
 
             bool found = false;
-            ITERATE (TSeqFeatList, cur_feat, (*annot)->GetData().GetFtable()) {
-                if (! (*cur_feat)->IsSetData() || ! (*cur_feat)->GetData().IsBiosrc())
+            for (const auto& cur_feat : annot->GetData().GetFtable()) {
+                if (! cur_feat->IsSetData() || ! cur_feat->GetData().IsBiosrc())
                     continue;
 
-                orglen = sequence::GetLength((*cur_feat)->GetLocation(), &GetScope());
+                orglen = sequence::GetLength(cur_feat->GetLocation(), &GetScope());
 
-                const CBioSource& source = (*cur_feat)->GetData().GetBiosrc();
+                const CBioSource& source = cur_feat->GetData().GetBiosrc();
                 if (! source.IsSetOrg() || ! source.GetOrg().IsSetTaxname() ||
-                    strand != (*cur_feat)->GetLocation().GetStrand())
+                    strand != cur_feat->GetLocation().GetStrand())
                     continue;
 
-                sequence::ECompare cmp_res = sequence::Compare(feat.GetLocation(), (*cur_feat)->GetLocation(), nullptr, sequence::fCompareOverlapping);
+                sequence::ECompare cmp_res = sequence::Compare(feat.GetLocation(), cur_feat->GetLocation(), nullptr, sequence::fCompareOverlapping);
                 if (cmp_res == sequence::eNoOverlap)
                     continue;
 
@@ -757,13 +756,13 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
     descrs.push_back(descr);
 
     p = NULL;
-    ITERATE (TQualVector, qual, feat.GetQual()) {
-        if ((*qual)->GetQual() != "product")
+    for (const auto& qual : feat.GetQual()) {
+        if (qual->GetQual() != "product")
             continue;
 
-        const std::string& val_str = (*qual)->GetVal();
+        const string& val_str = qual->GetVal();
         if (p == NULL) {
-            p = StringSave((*qual)->GetVal().c_str());
+            p = StringSave(val_str.c_str());
             continue;
         }
 
@@ -1435,12 +1434,10 @@ static bool Translate(CSeq_feat& feat, std::string& prot)
 
     bool change = feat_loc_id && feat.GetData().GetCdregion().IsSetCode_break();
     if (change) {
-
-        NON_CONST_ITERATE(CCdregion::TCode_break, code_break, feat.SetData().SetCdregion().SetCode_break())
-        {
+        for (auto& code_break : feat.SetData().SetCdregion().SetCode_break()) {
             orig_ids.push_back(CRef<CSeq_id>(new CSeq_id));
-            orig_ids.back()->Assign(*(*code_break)->GetLoc().GetId());
-            (*code_break)->SetLoc().SetId(*feat_loc_id);
+            orig_ids.back()->Assign(*code_break->GetLoc().GetId());
+            code_break->SetLoc().SetId(*feat_loc_id);
         }
     }
 
@@ -1453,11 +1450,9 @@ static bool Translate(CSeq_feat& feat, std::string& prot)
     }
 
     if (change) {
-
         std::list<CRef<CSeq_id>>::iterator it = orig_ids.begin();
-        NON_CONST_ITERATE(CCdregion::TCode_break, code_break, feat.SetData().SetCdregion().SetCode_break())
-        {
-            (*code_break)->SetLoc().SetId(**it);
+        for (auto& code_break : feat.SetData().SetCdregion().SetCode_break()) {
+            code_break->SetLoc().SetId(**it);
             ++it;
         }
     }
@@ -1511,11 +1506,11 @@ static Int2 EndAdded(CSeq_feat& feat, GeneRefFeats& gene_refs)
 
     if (cdregion.IsSetCode_break()) {
         bool ret_condition = false;
-        ITERATE (CCdregion::TCode_break, code_break, cdregion.GetCode_break()) {
+        for (const auto& code_break : cdregion.GetCode_break()) {
             pos1 = numeric_limits<int>::max();
             pos2 = -10;
 
-            for (CSeq_loc_CI loc((*code_break)->GetLoc()); loc; ++loc) {
+            for (CSeq_loc_CI loc(code_break->GetLoc()); loc; ++loc) {
                 pos = sequence::LocationOffset(*loc.GetRangeAsSeq_loc(), feat.GetLocation(), sequence::eOffset_FromStart);
                 if (pos < pos1)
                     pos1 = pos;
@@ -1625,8 +1620,8 @@ static Int2 EndAdded(CSeq_feat& feat, GeneRefFeats& gene_refs)
                 continue;
 
             bool found = false;
-            ITERATE (CGene_ref::TSyn, syn, cur_gene_ref.GetSyn()) {
-                if (NStr::CompareNocase(name, syn->c_str()) == 0) {
+            for (const string& syn : cur_gene_ref.GetSyn()) {
+                if (NStr::CompareNocase(name, syn.c_str()) == 0) {
                     found = true;
                     break;
                 }
@@ -1715,10 +1710,9 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
     CGenetic_code&      gen_code = cdregion.SetCode();
     CGenetic_code::C_E* cur_code = nullptr;
 
-    NON_CONST_ITERATE(CGenetic_code::Tdata, gcode, gen_code.Set())
-    {
-        if ((*gcode)->IsId()) {
-            cur_code = (*gcode);
+    for (auto& gcode : gen_code.Set()) {
+        if (gcode->IsId()) {
+            cur_code = gcode;
             break;
         }
     }
@@ -2114,13 +2108,13 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
 
     if (! is_transl) {
         bool found = false;
-        ITERATE (TQualVector, qual, cds.GetQual()) {
-            if (! (*qual)->IsSetQual() || ! (*qual)->IsSetVal())
+        for (const auto& qual : cds.GetQual()) {
+            if (! qual->IsSetQual() || ! qual->IsSetVal())
                 continue;
 
-            if ((*qual)->GetQual() == "product" ||
-                (*qual)->GetQual() == "function" ||
-                (*qual)->GetQual() == "EC_number") {
+            if (qual->GetQual() == "product" ||
+                qual->GetQual() == "function" ||
+                qual->GetQual() == "EC_number") {
                 found = true;
                 break;
             }
@@ -2129,16 +2123,16 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
         if (found) {
             CRef<CSeqFeatXref> xfer(new CSeqFeatXref);
             CProt_ref&         prot_ref = xfer->SetData().SetProt();
-            ITERATE (TQualVector, qual, cds.GetQual()) {
-                if (! (*qual)->IsSetQual() || ! (*qual)->IsSetVal())
+            for (const auto& qual : cds.GetQual()) {
+                if (! qual->IsSetQual() || ! qual->IsSetVal())
                     continue;
 
-                if ((*qual)->GetQual() == "product")
-                    prot_ref.SetName().push_back((*qual)->GetVal());
-                else if ((*qual)->GetQual() == "EC_number")
-                    prot_ref.SetEc().push_back((*qual)->GetVal());
-                else if ((*qual)->GetQual() == "function")
-                    prot_ref.SetActivity().push_back((*qual)->GetVal());
+                if (qual->GetQual() == "product")
+                    prot_ref.SetName().push_back(qual->GetVal());
+                else if (qual->GetQual() == "EC_number")
+                    prot_ref.SetEc().push_back(qual->GetVal());
+                else if (qual->GetQual() == "function")
+                    prot_ref.SetActivity().push_back(qual->GetVal());
             }
 
             DeleteQual(cds.SetQual(), "product");
@@ -2282,17 +2276,16 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
         if (sequence_data.size() < 6 && pp->accver == false && check_short_CDS(pp, cds, true)) {
             /* make xref from prot-ref for short CDS only */
             if (new_bioseq->IsSetAnnot()) {
-                NON_CONST_ITERATE(CBioseq::TAnnot, annot, new_bioseq->SetAnnot())
-                {
-                    if (! (*annot)->IsFtable())
+                for (auto& annot : new_bioseq->SetAnnot()) {
+                    if (! annot->IsFtable())
                         continue;
 
-                    ITERATE (TSeqFeatList, cur_feat, (*annot)->GetData().GetFtable()) {
-                        if (! (*cur_feat)->IsSetData() || ! (*cur_feat)->GetData().IsProt())
+                    for (const auto& cur_feat : annot->GetData().GetFtable()) {
+                        if (! cur_feat->IsSetData() || ! cur_feat->GetData().IsProt())
                             continue;
 
                         CRef<CSeqFeatXref> new_xref(new CSeqFeatXref);
-                        new_xref->SetData().SetProt().Assign((*cur_feat)->GetData().GetProt());
+                        new_xref->SetData().SetProt().Assign(cur_feat->GetData().GetProt());
 
                         cds.SetXref().push_back(new_xref);
                     }
@@ -2396,11 +2389,10 @@ static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRef
 {
     ProtBlkPtr pbp = pp->pbp;
 
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             pbp->segset = true;
-            pbp->biosep = *entry;
+            pbp->biosep = entry;
             break;
         }
 
@@ -2408,9 +2400,8 @@ static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRef
             break;
     }
 
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             const CSeq_id& first_id = *(*bioseq->GetId().begin());
             if (IsSegBioseq(first_id))
                 continue;
@@ -2439,7 +2430,7 @@ static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRef
             }
 
             if (! pbp->segset) {
-                pbp->biosep = *entry;
+                pbp->biosep = entry;
             }
         }
     }
@@ -2452,9 +2443,9 @@ static bool check_GIBB(TSeqdescList& descrs)
         return false;
 
     const CSeqdesc* descr_modif = nullptr;
-    ITERATE (TSeqdescList, descr, descrs) {
-        if ((*descr)->IsModif()) {
-            descr_modif = *descr;
+    for (const auto& descr : descrs) {
+        if (descr->IsModif()) {
+            descr_modif = descr;
             break;
         }
     }
@@ -2594,12 +2585,12 @@ void ProcNucProt(ParserPtr pp, TEntryList& seq_entries, GeneRefFeats& gene_refs)
 static const CDate* GetDateFromDescrs(const TSeqdescList& descrs, CSeqdesc::E_Choice what)
 {
     const CDate* set_date = nullptr;
-    ITERATE (TSeqdescList, descr, descrs) {
-        if ((*descr)->Which() == what) {
+    for (const auto& descr : descrs) {
+        if (descr->Which() == what) {
             if (what == CSeqdesc::e_Create_date)
-                set_date = &(*descr)->GetCreate_date();
+                set_date = &descr->GetCreate_date();
             else if (what == CSeqdesc::e_Update_date)
-                set_date = &(*descr)->GetUpdate_date();
+                set_date = &descr->GetUpdate_date();
 
             if (set_date)
                 break;
@@ -2615,9 +2606,8 @@ static void FixDupDates(CBioseq_set& bio_set, CSeqdesc::E_Choice what)
     if (! bio_set.IsSetSeq_set() || ! bio_set.IsSetDescr())
         return;
 
-    NON_CONST_ITERATE(TEntryList, entry, bio_set.SetSeq_set())
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : bio_set.SetSeq_set()) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (! bioseq->IsSetInst() || ! bioseq->GetInst().IsSetMol() || ! bioseq->GetInst().IsNa() || ! bioseq->IsSetDescr())
                 continue;
 
@@ -2672,18 +2662,17 @@ static void FixEmblUpdateDates(CBioseq_set& bio_set)
     if (! bio_set.IsSetSeq_set() || ! bio_set.IsSetDescr())
         return;
 
-    NON_CONST_ITERATE(TEntryList, entry, bio_set.SetSeq_set())
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : bio_set.SetSeq_set()) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (! bioseq->IsSetInst() || ! bioseq->GetInst().IsSetMol() || ! bioseq->GetInst().IsNa() || ! bioseq->IsSetDescr())
                 continue;
 
             const CDate* set_date = GetDateFromDescrs(bio_set.GetDescr().Get(), CSeqdesc::e_Update_date);
 
             const CEMBL_block* embl_block = nullptr;
-            ITERATE (TSeqdescList, descr, bioseq->GetDescr().Get()) {
-                if ((*descr)->IsEmbl()) {
-                    embl_block = &(*descr)->GetEmbl();
+            for (const auto& descr : bioseq->GetDescr().Get()) {
+                if (descr->IsEmbl()) {
+                    embl_block = &descr->GetEmbl();
                     break;
                 }
             }
@@ -2710,9 +2699,8 @@ static void FixEmblUpdateDates(CBioseq_set& bio_set)
 /**********************************************************/
 void CheckDupDates(TEntryList& seq_entries)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->IsSetClass() && bio_set->GetClass() == CBioseq_set::eClass_nuc_prot) {
                 FixCreateDates(*bio_set);
                 FixUpdateDates(*bio_set);

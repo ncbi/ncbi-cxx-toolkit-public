@@ -307,8 +307,8 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, CMolInfo& mol_in
         return ret;
     }
 
-    ITERATE (TKeywordList, key, gbb->GetKeywords()) {
-        fta_keywords_check(key->c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
+    for (const string& key : gbb->GetKeywords()) {
+        fta_keywords_check(key.c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
     }
 
     if (ibp->env_sample_qual == false && env_kwd) {
@@ -587,8 +587,8 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, CMolInfo& mol_in
         fta_remove_tls_keywords(gbb->SetKeywords(), pp->source);
 
     if (bio_src != NULL && bio_src->IsSetSubtype()) {
-        ITERATE (CBioSource::TSubtype, subtype, bio_src->GetSubtype()) {
-            if ((*subtype)->GetSubtype() == 27) {
+        for (const auto& subtype : bio_src->GetSubtype()) {
+            if (subtype->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                 fta_remove_env_keywords(gbb->SetKeywords());
                 break;
             }
@@ -809,10 +809,9 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 
     /* ORGANISM
      */
-    NON_CONST_ITERATE(CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
-    {
-        if ((*descr)->IsSource()) {
-            bio_src = &((*descr)->SetSource());
+    for (auto& descr : bioseq.SetDescr().Set()) {
+        if (descr->IsSource()) {
+            bio_src = &(descr->SetSource());
             if (bio_src->IsSetOrg())
                 org_ref = &bio_src->SetOrg();
             break;
@@ -1036,10 +1035,9 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
             return;
         }
 
-        NON_CONST_ITERATE(TUserObjVector, user_obj, user_objs)
-        {
+        for (auto& user_obj : user_objs) {
             CRef<CSeqdesc> descr(new CSeqdesc);
-            descr->SetUser(*(*user_obj));
+            descr->SetUser(*user_obj);
             bioseq.SetDescr().Set().push_back(descr);
         }
 

@@ -177,10 +177,10 @@ bool no_date(Parser::EFormat format, const TSeqdescList& descrs)
     bool no_create = true;
     bool no_update = true;
 
-    ITERATE (TSeqdescList, desc, descrs) {
-        if ((*desc)->IsCreate_date())
+    for (const auto& desc : descrs) {
+        if (desc->IsCreate_date())
             no_create = false;
-        else if ((*desc)->IsUpdate_date())
+        else if (desc->IsUpdate_date())
             no_update = false;
 
         if (no_create == false && no_update == false)
@@ -204,25 +204,25 @@ bool no_date(Parser::EFormat format, const TSeqdescList& descrs)
  **********************************************************/
 bool no_reference(const CBioseq& bioseq)
 {
-    ITERATE (TSeqdescList, desc, bioseq.GetDescr().Get()) {
-        if ((*desc)->IsPub())
+    for (const auto& desc : bioseq.GetDescr().Get()) {
+        if (desc->IsPub())
             return false;
     }
 
-    ITERATE (CBioseq::TAnnot, annot, bioseq.GetAnnot()) {
-        if (! (*annot)->IsFtable())
+    for (const auto& annot : bioseq.GetAnnot()) {
+        if (! annot->IsFtable())
             continue;
 
-        ITERATE (CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable()) {
-            if ((*feat)->IsSetData() && (*feat)->GetData().IsPub())
+        for (const auto& feat : annot->GetData().GetFtable()) {
+            if (feat->IsSetData() && feat->GetData().IsPub())
                 return false;
         }
 
-        ITERATE (CSeq_annot::C_Data::TFtable, feat, (*annot)->GetData().GetFtable()) {
-            if (! (*feat)->IsSetData() || ! (*feat)->GetData().IsImp())
+        for (const auto& feat : annot->GetData().GetFtable()) {
+            if (! feat->IsSetData() || ! feat->GetData().IsImp())
                 continue;
 
-            const CImp_feat& imp = (*feat)->GetData().GetImp();
+            const CImp_feat& imp = feat->GetData().GetImp();
             if (imp.GetKey() == "Site-ref") {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_Illegalreference, "The entry has only 'sites' references");
                 return false;
@@ -1636,12 +1636,11 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
     CUser_object* user_obj_ptr;
     bool          got = false;
 
-    NON_CONST_ITERATE(TSeqdescList, descr, descrs)
-    {
-        if (! (*descr)->IsUser() || ! (*descr)->GetUser().IsSetData())
+    for (auto& descr : descrs) {
+        if (! descr->IsUser() || ! descr->GetUser().IsSetData())
             continue;
 
-        user_obj_ptr = &((*descr)->SetUser());
+        user_obj_ptr = &(descr->SetUser());
 
         CObject_id* obj_id = nullptr;
         if (user_obj_ptr->IsSetType())
@@ -2065,11 +2064,11 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
     bool good     = false;
     bool finished = true;
 
-    ITERATE (CDelta_ext::Tdata, delta, bioseq.GetInst().GetExt().GetDelta().Get()) {
-        if (! (*delta)->IsLoc())
+    for (const auto& delta : bioseq.GetInst().GetExt().GetDelta().Get()) {
+        if (! delta->IsLoc())
             continue;
 
-        const CSeq_loc& locs = (*delta)->GetLoc();
+        const CSeq_loc& locs = delta->GetLoc();
         CSeq_loc_CI     ci(locs);
 
         for (; ci; ++ci) {
@@ -2270,39 +2269,37 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
 /**********************************************************/
 static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, char* location, char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
-    NON_CONST_ITERATE(TSeqLocList, loc, locs)
-    {
-        if ((*loc)->IsEmpty()) {
-            fta_fix_seq_id(*(*loc), (*loc)->SetEmpty(), ibp, location, name, slip, iscon, source);
-        } else if ((*loc)->IsWhole()) {
-            fta_fix_seq_id(*(*loc), (*loc)->SetWhole(), ibp, location, name, slip, iscon, source);
-        } else if ((*loc)->IsInt()) {
-            fta_fix_seq_id(*(*loc), (*loc)->SetInt().SetId(), ibp, location, name, slip, iscon, source);
-        } else if ((*loc)->IsPnt()) {
-            fta_fix_seq_id(*(*loc), (*loc)->SetPnt().SetId(), ibp, location, name, slip, iscon, source);
-            if (iscon && ! (*loc)->GetPnt().IsSetFuzz()) {
-                int                 point = (*loc)->GetPnt().GetPoint();
+    for (auto& loc : locs) {
+        if (loc->IsEmpty()) {
+            fta_fix_seq_id(*loc, loc->SetEmpty(), ibp, location, name, slip, iscon, source);
+        } else if (loc->IsWhole()) {
+            fta_fix_seq_id(*loc, loc->SetWhole(), ibp, location, name, slip, iscon, source);
+        } else if (loc->IsInt()) {
+            fta_fix_seq_id(*loc, loc->SetInt().SetId(), ibp, location, name, slip, iscon, source);
+        } else if (loc->IsPnt()) {
+            fta_fix_seq_id(*loc, loc->SetPnt().SetId(), ibp, location, name, slip, iscon, source);
+            if (iscon && ! loc->GetPnt().IsSetFuzz()) {
+                int                 point = loc->GetPnt().GetPoint();
                 CRef<CSeq_interval> interval(new CSeq_interval);
                 interval->SetFrom(point);
                 interval->SetTo(point);
 
-                if ((*loc)->GetPnt().IsSetStrand())
-                    interval->SetStrand((*loc)->GetPnt().GetStrand());
+                if (loc->GetPnt().IsSetStrand())
+                    interval->SetStrand(loc->GetPnt().GetStrand());
 
-                interval->SetId((*loc)->SetPnt().SetId());
-                (*loc)->SetInt(*interval);
+                interval->SetId(loc->SetPnt().SetId());
+                loc->SetInt(*interval);
             }
-        } else if ((*loc)->IsPacked_int()) {
-            NON_CONST_ITERATE(CPacked_seqint::Tdata, interval, (*loc)->SetPacked_int().Set())
-            {
-                fta_fix_seq_id(*(*loc), (*interval)->SetId(), ibp, location, name, slip, iscon, source);
+        } else if (loc->IsPacked_int()) {
+            for (auto& interval : loc->SetPacked_int().Set()) {
+                fta_fix_seq_id(*loc, interval->SetId(), ibp, location, name, slip, iscon, source);
             }
-        } else if ((*loc)->IsPacked_pnt()) {
-            fta_fix_seq_id(*(*loc), (*loc)->SetPacked_pnt().SetId(), ibp, location, name, slip, iscon, source);
-        } else if ((*loc)->IsMix()) {
-            fta_do_fix_seq_loc_id((*loc)->SetMix().Set(), ibp, location, name, slip, iscon, source);
-        } else if ((*loc)->IsEquiv()) {
-            fta_do_fix_seq_loc_id((*loc)->SetEquiv().Set(), ibp, location, name, slip, iscon, source);
+        } else if (loc->IsPacked_pnt()) {
+            fta_fix_seq_id(*loc, loc->SetPacked_pnt().SetId(), ibp, location, name, slip, iscon, source);
+        } else if (loc->IsMix()) {
+            fta_do_fix_seq_loc_id(loc->SetMix().Set(), ibp, location, name, slip, iscon, source);
+        } else if (loc->IsEquiv()) {
+            fta_do_fix_seq_loc_id(loc->SetEquiv().Set(), ibp, location, name, slip, iscon, source);
         }
     }
 }
@@ -2761,11 +2758,11 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
     bool got_comment = false;
     bool got_dblink  = false;
 
-    ITERATE (TSeqdescList, descr, bioseq.GetDescr().Get()) {
-        if (! (*descr)->IsUser())
+    for (const auto& descr : bioseq.GetDescr().Get()) {
+        if (! descr->IsUser())
             continue;
 
-        const CUser_object& user_obj = (*descr)->GetUser();
+        const CUser_object& user_obj = descr->GetUser();
         if (! user_obj.IsSetType() || ! user_obj.GetType().IsStr())
             continue;
 
@@ -2776,9 +2773,9 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
         else if (user_type_str == "GenomeProjectsDB")
             got_dblink = true;
         else if (user_type_str == "DBLink") {
-            ITERATE (CUser_object::TData, field, user_obj.GetData()) {
-                if (! (*field)->IsSetLabel() || ! (*field)->GetLabel().IsStr() ||
-                    (*field)->GetLabel().GetStr() != "BioProject")
+            for (const auto& field : user_obj.GetData()) {
+                if (! field->IsSetLabel() || ! field->GetLabel().IsStr() ||
+                    field->GetLabel().GetStr() != "BioProject")
                     continue;
                 got_dblink = true;
                 break;
@@ -2806,10 +2803,9 @@ void fta_set_molinfo_completeness(CBioseq& bioseq, IndexblkPtr ibp)
         return;
 
     CMolInfo* mol_info = nullptr;
-    NON_CONST_ITERATE(TSeqdescList, descr, bioseq.SetDescr().Set())
-    {
-        if ((*descr)->IsMolinfo()) {
-            mol_info = &(*descr)->SetMolinfo();
+    for (auto& descr : bioseq.SetDescr().Set()) {
+        if (descr->IsMolinfo()) {
+            mol_info = &descr->SetMolinfo();
             break;
         }
     }
@@ -2903,15 +2899,15 @@ bool fta_dblink_has_sra(const CRef<CUser_object>& uop)
 
     bool got = false;
 
-    ITERATE (CUser_object::TData, field, uop->GetData()) {
-        if (! (*field)->IsSetData() || ! (*field)->GetData().IsStrs() || ! (*field)->IsSetNum() || (*field)->GetNum() < 1 ||
-            ! (*field)->IsSetLabel() || ! (*field)->GetLabel().IsStr() || (*field)->GetLabel().GetStr() != "Sequence Read Archive")
+    for (const auto& field : uop->GetData()) {
+        if (! field->IsSetData() || ! field->GetData().IsStrs() || ! field->IsSetNum() || field->GetNum() < 1 ||
+            ! field->IsSetLabel() || ! field->GetLabel().IsStr() || field->GetLabel().GetStr() != "Sequence Read Archive")
             continue;
 
-        ITERATE (CUser_field::C_Data::TStrs, str, (*field)->GetData().GetStrs()) {
-            if (str->size() > 2 &&
-                ((*str)[0] == 'D' || (*str)[0] == 'E' || (*str)[0] == 'S') && (*str)[1] == 'R' &&
-                ((*str)[2] == 'R' || (*str)[2] == 'X' || (*str)[2] == 'Z')) {
+        for (const CStringUTF8& str : field->GetData().GetStrs()) {
+            if (str.size() > 2 &&
+                (str[0] == 'D' || str[0] == 'E' || str[0] == 'S') && str[1] == 'R' &&
+                (str[2] == 'R' || str[2] == 'X' || str[2] == 'Z')) {
                 got = true;
                 break;
             }

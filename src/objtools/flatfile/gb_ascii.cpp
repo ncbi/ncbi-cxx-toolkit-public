@@ -369,8 +369,8 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
         return ret;
     }
 
-    ITERATE (TKeywordList, key, gbb->GetKeywords()) {
-        fta_keywords_check(key->c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
+    for (const string& key : gbb->GetKeywords()) {
+        fta_keywords_check(key.c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
     }
 
     if (ibp->env_sample_qual == false && env_kwd) {
@@ -681,9 +681,8 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     {
         if(bio_src->IsSetSubtype())
         {
-            ITERATE(CBioSource::TSubtype, subtype, bio_src->GetSubtype())
-            {
-                if ((*subtype)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+            for (const auto& subtype : bio_src->GetSubtype()) {
+                if (subtype->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                     fta_remove_env_keywords(gbb->SetKeywords());
                     break;
                 }
@@ -694,12 +693,11 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
             const COrg_ref &org_ref = bio_src->GetOrg();
             if(org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod())
             {
-                ITERATE(COrgName::TMod, mod, org_ref.GetOrgname().GetMod())
-                {
-                    if(!(*mod)->IsSetSubtype())
+                for (const auto& mod : org_ref.GetOrgname().GetMod()) {
+                    if (! mod->IsSetSubtype())
                         continue;
 
-                    COrgMod::TSubtype stype = (*mod)->GetSubtype();
+                    COrgMod::TSubtype stype = mod->GetSubtype();
                     if (stype == COrgMod::eSubtype_metagenome_source) {
                         fta_remove_mag_keywords(gbb->SetKeywords());
                         break;
@@ -1114,10 +1112,9 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* ORGANISM
      */
 
-    NON_CONST_ITERATE(CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
-    {
-        if ((*descr)->IsSource()) {
-            bio_src = &((*descr)->SetSource());
+    for (auto& descr : bioseq.SetDescr().Set()) {
+        if (descr->IsSource()) {
+            bio_src = &(descr->SetSource());
             if (bio_src->IsSetOrg())
                 org_ref = &bio_src->SetOrg();
             break;
@@ -1318,10 +1315,9 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 return;
             }
 
-            NON_CONST_ITERATE(TUserObjVector, user_obj, user_objs)
-            {
+            for (auto& user_obj : user_objs) {
                 CRef<CSeqdesc> descr(new CSeqdesc);
-                descr->SetUser(*(*user_obj));
+                descr->SetUser(*user_obj);
                 bioseq.SetDescr().Set().push_back(descr);
             }
 
@@ -2359,9 +2355,8 @@ static void SrchFeatSeqLoc(TSeqFeatList& feats, CSeq_annot::C_Data::TFtable& fea
  **********************************************************/
 static void FindFeatSeqLoc(TEntryList& seq_entries, TSeqFeatList& feats)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             const CSeq_id& first_id = *(*bioseq->GetId().begin());
             if (IsSegBioseq(first_id) || ! bioseq->IsSetAnnot())
                 continue;
@@ -2392,9 +2387,8 @@ static void FindFeatSeqLoc(TEntryList& seq_entries, TSeqFeatList& feats)
 /**********************************************************/
 static CBioseq_set* GetParts(TEntryList& seq_entries)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->IsSetClass() && bio_set->GetClass() == CBioseq_set::eClass_parts)
                 return bio_set.operator->();
         }
@@ -2424,12 +2418,11 @@ void CheckFeatSeqLoc(TEntryList& seq_entries)
     if (! feats_no_id.empty() && parts != nullptr) /* may need to delete duplicate
                                                            one   9-14-93 */
     {
-        NON_CONST_ITERATE(CBioseq::TAnnot, annot, parts->SetAnnot())
-        {
-            if (! (*annot)->IsFtable())
+        for (auto& annot : parts->SetAnnot()) {
+            if (! annot->IsFtable())
                 continue;
 
-            (*annot)->SetData().SetFtable().splice((*annot)->SetData().SetFtable().end(), feats_no_id);
+            annot->SetData().SetFtable().splice(annot->SetData().SetFtable().end(), feats_no_id);
             break;
         }
 

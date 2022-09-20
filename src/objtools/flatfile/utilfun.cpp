@@ -201,8 +201,8 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
 
     CGB_block::TExtra_accessions ret;
 
-    ITERATE (CGB_block::TExtra_accessions, acc, extra_accs) {
-        string str = *acc;
+    for (const string& acc : extra_accs) {
+        string str = acc;
         if (str.empty())
             continue;
 
@@ -1154,7 +1154,7 @@ DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
 
 const SectionPtr xTrackNodeType(const Entry& entry, int type)
 {
-    for (const auto& sectionPtr : entry.mSections) {
+    for (SectionPtr sectionPtr : entry.mSections) {
         if (sectionPtr->mType == type) {
             return sectionPtr;
         }
@@ -1184,11 +1184,11 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
 
     size_t len = 0;
     j          = 0;
-    ITERATE (TKeywordList, key, kwds) {
-        if (key->empty())
+    for (const string& key : kwds) {
+        if (key.empty())
             continue;
 
-        const char* p = key->c_str();
+        const char* p = key.c_str();
         i             = MatchArrayIString(ParFlat_TPA_kw_array, p);
         if (i == 0)
             kwd_tpa = true;
@@ -1213,7 +1213,7 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
         if (i > 2 && i < 8 && j < 4) {
             b[j] = p;
             ++j;
-            len += key->size() + 1;
+            len += key.size() + 1;
         }
     }
 
@@ -1256,16 +1256,16 @@ bool fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source)
     if (kwds.empty())
         return true;
 
-    ITERATE (TKeywordList, key, kwds) {
-        if (key->empty())
+    for (const string& key : kwds) {
+        if (key.empty())
             continue;
-        i = MatchArrayIString(ParFlat_TSA_kw_array, key->c_str());
+        i = MatchArrayIString(ParFlat_TSA_kw_array, key.c_str());
         if (i == 0)
             kwd_tsa = true;
         else if (i == 1)
             kwd_assembly = true;
         else if (source == Parser::ESource::EMBL &&
-                 NStr::EqualNocase(*key, "Transcript Shotgun Assembly"))
+                 NStr::EqualNocase(key, "Transcript Shotgun Assembly"))
             kwd_assembly = true;
     }
 
@@ -1290,16 +1290,16 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source)
     if (kwds.empty())
         return true;
 
-    ITERATE (TKeywordList, key, kwds) {
-        if (key->empty())
+    for (const string& key : kwds) {
+        if (key.empty())
             continue;
-        i = MatchArrayIString(ParFlat_TLS_kw_array, key->c_str());
+        i = MatchArrayIString(ParFlat_TLS_kw_array, key.c_str());
         if (i == 0)
             kwd_tls = true;
         else if (i == 1)
             kwd_study = true;
         else if (source == Parser::ESource::EMBL &&
-                 NStr::EqualNocase(*key, "Targeted Locus Study"))
+                 NStr::EqualNocase(key, "Targeted Locus Study"))
             kwd_study = true;
     }
 
@@ -1723,8 +1723,8 @@ bool SetTextId(Uint1 seqtype, CSeq_id& seqId, CTextseq_id& textId)
 /**********************************************************/
 bool IsCancelled(const TKeywordList& keywords)
 {
-    ITERATE (TKeywordList, key, keywords) {
-        if (NStr::EqualNocase(*key, "HTGS_CANCELLED"))
+    for (const string& key : keywords) {
+        if (NStr::EqualNocase(key, "HTGS_CANCELLED"))
             return true;
     }
 
@@ -1734,10 +1734,10 @@ bool IsCancelled(const TKeywordList& keywords)
 /**********************************************************/
 bool HasHtg(const TKeywordList& keywords)
 {
-    ITERATE (TKeywordList, key, keywords) {
-        if (*key == "HTG" || *key == "HTGS_PHASE0" ||
-            *key == "HTGS_PHASE1" || *key == "HTGS_PHASE2" ||
-            *key == "HTGS_PHASE3") {
+    for (const string& key : keywords) {
+        if (key == "HTG" || key == "HTGS_PHASE0" ||
+            key == "HTGS_PHASE1" || key == "HTGS_PHASE2" ||
+            key == "HTGS_PHASE3") {
             return true;
         }
     }
@@ -1763,8 +1763,8 @@ void RemoveHtgPhase(TKeywordList& keywords)
 /**********************************************************/
 bool HasHtc(const TKeywordList& keywords)
 {
-    ITERATE (TKeywordList, key, keywords) {
-        if (NStr::EqualNocase(*key, "HTC")) {
+    for (const string& key : keywords) {
+        if (NStr::EqualNocase(key, "HTC")) {
             return true;
         }
     }
