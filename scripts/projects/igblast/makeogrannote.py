@@ -27,7 +27,7 @@ def main():
     
     annotation_type = ["imgt"]
     input_file_names = re.split("\s+", args.germline_file)
-    outfile_name = args.output_file + ".ndm.imgt"
+    outfile_name = args.output_file
     outfile_handle = open(outfile_name, "w")
     
     for each_in_file in input_file_names:
@@ -75,8 +75,9 @@ def main():
                         
                         fwr3_end = j["fwr3_end"] - GetDotCounts(seq, min(len(seq), j["fwr3_end"]))
                         outfile_handle.write(str(fwr3_end) + "\t")
-                        
-                        outfile_handle.write("VH" + "\t")
+
+                        chain_type = each_allele["sequence_type"] + each_allele["locus"][len(each_allele["locus"]) - 1]
+                        outfile_handle.write(chain_type + "\t")
                         outfile_handle.write("0"+ "\n")
 
             
