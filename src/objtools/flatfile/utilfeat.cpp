@@ -128,11 +128,11 @@ bool SeqLocHaveFuzz(const CSeq_loc& loc)
 char* CpTheQualValue(const TQualVector& qlist, const Char* qual)
 {
     string qvalue;
-    ITERATE (TQualVector, cur, qlist) {
-        if ((*cur)->GetQual() != qual)
+    for (const auto& cur : qlist) {
+        if (cur->GetQual() != qual)
             continue;
 
-        const string& val = (*cur)->GetVal();
+        const string& val = cur->GetVal();
         if (val == "\"\"") {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual %s : %s", qual, val.c_str());
             break;
@@ -275,42 +275,41 @@ bool GetGenomeInfo(CBioSource& bsp, const Char* bptr)
 /**********************************************************/
 static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, vector<string>& names)
 {
-    NON_CONST_ITERATE(TSeqdescList, descr, descrs)
-    {
-        if (! (*descr)->IsSource() || ! (*descr)->GetSource().IsSetOrg() ||
-            ! (*descr)->GetSource().GetOrg().IsSetTaxname())
+    for (auto& descr : descrs) {
+        if (! descr->IsSource() || ! descr->GetSource().IsSetOrg() ||
+            ! descr->GetSource().GetOrg().IsSetTaxname())
             continue;
 
-        const COrg_ref& org_ref = (*descr)->GetSource().GetOrg();
+        const COrg_ref& org_ref = descr->GetSource().GetOrg();
         names[0]                = org_ref.GetTaxname();
 
         if (org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod()) {
-            ITERATE (COrgName::TMod, mod, org_ref.GetOrgname().GetMod()) {
-                if (! (*mod)->IsSetSubname() || ! (*mod)->IsSetSubtype())
+            for (const auto& mod : org_ref.GetOrgname().GetMod()) {
+                if (! mod->IsSetSubname() || ! mod->IsSetSubtype())
                     continue;
 
-                COrgMod::TSubtype stype = (*mod)->GetSubtype();
+                COrgMod::TSubtype stype = mod->GetSubtype();
 
                 if (stype == COrgMod::eSubtype_old_name)
-                    names[1] = (*mod)->GetSubname();
+                    names[1] = mod->GetSubname();
                 /* acronym(19), synonym(28), anamorph(29), teleomorph(30),
                 gb-acronym(32), gb-anamorph(33), gb-synonym(34) */
                 else if (stype == COrgMod::eSubtype_acronym || stype == COrgMod::eSubtype_synonym ||
                          stype == COrgMod::eSubtype_anamorph || stype == COrgMod::eSubtype_teleomorph ||
                          stype == COrgMod::eSubtype_gb_acronym || stype == COrgMod::eSubtype_gb_anamorph ||
                          stype == COrgMod::eSubtype_gb_synonym) {
-                    names.push_back((*mod)->GetSubname());
+                    names.push_back(mod->GetSubname());
                 }
             }
         }
 
-        if ((*descr)->GetSource().IsSetSubtype()) {
-            ITERATE (CBioSource::TSubtype, subtype, (*descr)->GetSource().GetSubtype()) {
+        if (descr->GetSource().IsSetSubtype()) {
+            for (const auto& subtype : descr->GetSource().GetSubtype()) {
                 /* subtype = "other" */
-                if (! (*subtype)->IsSetSubtype() || (*subtype)->GetSubtype() != CSubSource::eSubtype_other || ! (*subtype)->IsSetName())
+                if (! subtype->IsSetSubtype() || subtype->GetSubtype() != CSubSource::eSubtype_other || ! subtype->IsSetName())
                     continue;
 
-                const Char* p = StringIStr((*subtype)->GetName().c_str(), "common:");
+                const Char* p = StringIStr(subtype->GetName().c_str(), "common:");
                 if (p == NULL)
                     continue;
 
@@ -335,14 +334,13 @@ static void GetTaxnameName(TEntryList& seq_entries, vector<string>& names)
 {
     names.resize(3);
 
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->IsSetDescr())
                 GetTaxnameNameFromDescrs(bio_set->SetDescr().Set(), names);
         }
 
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 GetTaxnameNameFromDescrs(bioseq->SetDescr().Set(), names);
         }
@@ -352,15 +350,14 @@ static void GetTaxnameName(TEntryList& seq_entries, vector<string>& names)
 /**********************************************************/
 static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<string>& names)
 {
-    NON_CONST_ITERATE(TSeqdescList, descr, descrs)
-    {
-        if (! (*descr)->IsGenbank())
+    for (auto& descr : descrs) {
+        if (! descr->IsGenbank())
             continue;
 
-        if (! (*descr)->GetGenbank().IsSetSource())
+        if (! descr->GetGenbank().IsSetSource())
             break;
 
-        CGB_block& gb_block = (*descr)->SetGenbank();
+        CGB_block& gb_block = descr->SetGenbank();
         char*      p        = StringSave(gb_block.GetSource().c_str());
         char*      pper     = 0;
 
@@ -446,9 +443,8 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
 /**********************************************************/
 static void CheckDelGbblockSource(TEntryList& seq_entries, vector<string>& names)
 {
-    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
-    {
-        for (CTypeIterator<CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq) {
+    for (auto& entry : seq_entries) {
+        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             if (bioseq->IsSetDescr())
                 CheckDelGbblockSourceFromDescrs(bioseq->SetDescr().Set(), names);
         }

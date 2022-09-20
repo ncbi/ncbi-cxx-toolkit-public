@@ -164,8 +164,8 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
 
         if (! fqual) {
             /* go back to check, is this a mandatory qualifier ? */
-            ITERATE (CSeqFeatData::TQualifiers, cur_type, CSeqFeatData::GetMandatoryQualifiers(subtype)) {
-                if (qual_type == *cur_type) {
+            for (const auto& cur_type : CSeqFeatData::GetMandatoryQualifiers(subtype)) {
+                if (qual_type == cur_type) {
                     fqual = true;
                     break;
                 }
@@ -228,19 +228,18 @@ static int SplitMultiValQual(TQualVector& quals)
     Int2 val /*, len -- UNUSED */;
     int  retval = GB_FEAT_ERR_NONE;
 
-    NON_CONST_ITERATE(TQualVector, cur, quals)
-    {
-        const string& qual_str = (*cur)->GetQual();
+    for (auto& cur : quals) {
+        const string& qual_str = cur->GetQual();
         val                    = GBQualSplit(qual_str.c_str());
 
         if (val == -1) {
             continue;
         }
-        if (! (*cur)->IsSetVal()) {
+        if (! cur->IsSetVal()) {
             continue;
         }
 
-        string val_str = (*cur)->GetVal();
+        string val_str = cur->GetVal();
         if (*val_str.begin() != '(') {
             continue;
         }
@@ -251,13 +250,13 @@ static int SplitMultiValQual(TQualVector& quals)
         val_str        = val_str.substr(1, val_str.size() - 2);
         size_t sep_pos = val_str.find(',');
         if (sep_pos == string::npos) {
-            (*cur)->SetVal(val_str);
+            cur->SetVal(val_str);
             continue;
         }
 
         ErrPostEx(SEV_WARNING, ERR_QUALIFIER_MultiValue, "Splited qualifier %s", qual_str.c_str());
 
-        (*cur)->SetVal(val_str.substr(0, sep_pos));
+        cur->SetVal(val_str.substr(0, sep_pos));
 
         size_t offset = sep_pos + 1;
         sep_pos       = val_str.find(',', offset);

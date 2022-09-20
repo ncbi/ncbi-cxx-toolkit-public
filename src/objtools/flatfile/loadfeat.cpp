@@ -1031,8 +1031,8 @@ static bool PackSeqPntCheckCpp(const CSeq_loc& loc)
     if (bio_h.CanGetInst() && bio_h.CanGetInst_Length())
         len = bio_h.GetBioseqLength();
 
-    ITERATE (CSeq_loc::TPoints, point, loc.GetPacked_pnt().GetPoints()) {
-        if (*point >= len)
+    for (TSeqPos point : loc.GetPacked_pnt().GetPoints()) {
+        if (point >= len)
             return false;
     }
 
@@ -2508,17 +2508,17 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
     if (StringStr(fbp->key, "source") == NULL)
         GetImpFeat(*feat, fbp, locmap);
 
-    ITERATE (TQualVector, cur, fbp->quals) {
-        const std::string& qual_str = (*cur)->GetQual();
+    for (const auto& cur : fbp->quals) {
+        const string& qual_str = cur->GetQual();
         if (qual_str == "pseudogene")
             feat->SetPseudo(true);
 
         // Do nothing for 'translation' qualifier in case of its value is empty
-        if (qual_str == "translation" && (! (*cur)->IsSetVal() || (*cur)->GetVal().empty()))
+        if (qual_str == "translation" && (! cur->IsSetVal() || cur->GetVal().empty()))
             continue;
 
         if (! qual_str.empty())
-            feat->SetQual().push_back(*cur);
+            feat->SetQual().push_back(cur);
     }
 
     return feat;
@@ -2588,14 +2588,14 @@ static bool fta_qual_a_in_b(const TQualVector& qual1, const TQualVector& qual2)
 {
     bool found = false;
 
-    ITERATE (TQualVector, gbqp1, qual1) {
+    for (const auto& gbqp1 : qual1) {
         found = false;
-        ITERATE (TQualVector, gbqp2, qual2) {
-            const Char* qual_a = (*gbqp1)->IsSetQual() ? (*gbqp1)->GetQual().c_str() : NULL;
-            const Char* qual_b = (*gbqp2)->IsSetQual() ? (*gbqp2)->GetQual().c_str() : NULL;
+        for (const auto& gbqp2 : qual2) {
+            const Char* qual_a = gbqp1->IsSetQual() ? gbqp1->GetQual().c_str() : NULL;
+            const Char* qual_b = gbqp2->IsSetQual() ? gbqp2->GetQual().c_str() : NULL;
 
-            const Char* val_a = (*gbqp1)->IsSetVal() ? (*gbqp1)->GetVal().c_str() : NULL;
-            const Char* val_b = (*gbqp2)->IsSetVal() ? (*gbqp2)->GetVal().c_str() : NULL;
+            const Char* val_a = gbqp1->IsSetVal() ? gbqp1->GetVal().c_str() : NULL;
+            const Char* val_b = gbqp2->IsSetVal() ? gbqp2->GetVal().c_str() : NULL;
 
             if (fta_strings_same(qual_a, qual_b) && fta_strings_same(val_a, val_b)) {
                 found = true;
@@ -2810,23 +2810,23 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
             *drop = 1;
         } else {
             i = 0;
-            ITERATE (TQualVector, gbqp1, fbp->quals) {
-                if (! (*gbqp1)->IsSetQual() || ! (*gbqp1)->IsSetVal() || ! isLocusTag(*gbqp1))
+            for (const auto& gbqp1 : fbp->quals) {
+                if (! gbqp1->IsSetQual() || ! gbqp1->IsSetVal() || ! isLocusTag(gbqp1))
                     continue;
 
                 i++;
 
-                const std::string& gbqp1_val = (*gbqp1)->GetVal();
+                const string& gbqp1_val = gbqp1->GetVal();
                 if (gbqp1_val.empty())
                     continue;
 
-                ITERATE (TQualVector, gbqp2, fbp->quals) {
-                    if (! (*gbqp2)->IsSetQual() || ! (*gbqp2)->IsSetVal())
+                for (const auto& gbqp2 : fbp->quals) {
+                    if (! gbqp2->IsSetQual() || ! gbqp2->IsSetVal())
                         continue;
 
-                    const std::string& gbqp2_val = (*gbqp2)->GetVal();
+                    const string& gbqp2_val = gbqp2->GetVal();
 
-                    if (! isOldLocusTag(*gbqp2) || ! NStr::EqualNocase(gbqp1_val, gbqp2_val))
+                    if (! isOldLocusTag(gbqp2) || ! NStr::EqualNocase(gbqp1_val, gbqp2_val))
                         continue;
 
                     ErrPostEx(SEV_REJECT, ERR_FEATURE_MatchingOldNewLocusTag, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier with a value that is identical to that of a /locus_tag qualifier: \"%s\". Entry dropped.", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location, gbqp1_val.c_str());
@@ -3257,18 +3257,18 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
     }
 
     is_htg = -1;
-    ITERATE (TKeywordList, key, ibp->keywords) {
+    for (const string& key : ibp->keywords) {
         if (is_htg >= 0 && is_htg <= 2)
             break;
-        if (*key == "HTG")
+        if (key == "HTG")
             is_htg = 3;
-        else if (*key == "HTGS_PHASE0")
+        else if (key == "HTGS_PHASE0")
             is_htg = 0;
-        else if (*key == "HTGS_PHASE1")
+        else if (key == "HTGS_PHASE1")
             is_htg = 1;
-        else if (*key == "HTGS_PHASE2")
+        else if (key == "HTGS_PHASE2")
             is_htg = 2;
-        else if (*key == "HTGS_PHASE3")
+        else if (key == "HTGS_PHASE3")
             is_htg = 3;
     }
 
@@ -3307,12 +3307,12 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             asn_linkage_evidence.clear();
             estimated_length = -1;
 
-            ITERATE (TQualVector, cur, fbp->quals) {
-                if (! (*cur)->IsSetQual() || ! (*cur)->IsSetVal())
+            for (const auto& cur : fbp->quals) {
+                if (! cur->IsSetQual() || ! cur->IsSetVal())
                     continue;
 
-                const std::string& cur_qual = (*cur)->GetQual();
-                const std::string& cur_val  = (*cur)->GetVal();
+                const std::string& cur_qual = cur->GetQual();
+                const std::string& cur_val  = cur->GetVal();
 
                 if (cur_qual.empty() || cur_val.empty())
                     continue;
@@ -3379,14 +3379,14 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                     ErrPostEx(SEV_ERROR, ERR_QUALIFIER_UnexpectedGapTypeForHTG, "assembly_gap has /gap_type of \"%s\", but clone-based HTG records are only expected to have \"within scaffold\" or \"repeat within scaffold\" gaps. assembly_gap feature located at \"%d..%d\".", gap_type, from, to);
 
                 if (is_htg == 0 || is_htg == 1) {
-                    ITERATE (std::list<std::string>, evidence, linkage_evidence_names) {
-                        if (*evidence != LinkageEvidenceValues[CLinkage_evidence_Base::eType_unspecified].str) {
-                            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_LinkageShouldBeUnspecified, "assembly gap has /linkage_evidence of \"%s\", but unoriented and unordered Phase0/Phase1 HTG records are expected to have \"unspecified\" evidence. assembly_gap feature located at \"%d..%d\".", evidence->c_str(), from, to);
+                    for (const string& evidence : linkage_evidence_names) {
+                        if (evidence != LinkageEvidenceValues[CLinkage_evidence_Base::eType_unspecified].str) {
+                            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_LinkageShouldBeUnspecified, "assembly gap has /linkage_evidence of \"%s\", but unoriented and unordered Phase0/Phase1 HTG records are expected to have \"unspecified\" evidence. assembly_gap feature located at \"%d..%d\".", evidence.c_str(), from, to);
                         }
                     }
                 } else if (is_htg == 2 || is_htg == 3) {
-                    ITERATE (std::list<std::string>, evidence, linkage_evidence_names) {
-                        if (*evidence != LinkageEvidenceValues[CLinkage_evidence_Base::eType_unspecified].str)
+                    for (const string& evidence : linkage_evidence_names) {
+                        if (evidence != LinkageEvidenceValues[CLinkage_evidence_Base::eType_unspecified].str)
                             continue;
 
                         ErrPostEx(SEV_ERROR, ERR_QUALIFIER_LinkageShouldNotBeUnspecified, "assembly gap has /linkage_evidence of \"unspecified\", but ordered and oriented HTG records are expected to have some level of linkage for their gaps. assembly_gap feature located at \"%d..%d\".", from, to);
@@ -3435,9 +3435,9 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                         break;
                     }
 
-                    ITERATE (std::list<std::string>, evidence, linkage_evidence_names) {
+                    for (const string& evidence : linkage_evidence_names) {
                         for (snp = LinkageEvidenceValues; snp->str != NULL; snp++)
-                            if (*evidence == snp->str)
+                            if (evidence == snp->str)
                                 break;
                         if (snp->str == NULL) {
                             ErrPostEx(SEV_REJECT,
@@ -3445,7 +3445,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                                       "assembly_gap feature at \"%d..%d\" has an invalid linkage evidence : \"%s\".",
                                       from,
                                       to,
-                                      evidence->c_str());
+                                      evidence.c_str());
                             ibp->drop = 1;
                             break;
                         }
@@ -3662,13 +3662,12 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
 
     size_t size = 0;
 
-    NON_CONST_ITERATE(TQualVector, cur, fbp->quals)
-    {
-        if (! (*cur)->IsSetQual() || ! (*cur)->IsSetVal())
+    for (auto& cur : fbp->quals) {
+        if (! cur->IsSetQual() || ! cur->IsSetVal())
             continue;
 
-        const std::string& cur_qual = (*cur)->GetQual();
-        const std::string& cur_val  = (*cur)->GetVal();
+        const string& cur_qual = cur->GetQual();
+        const string& cur_val  = cur->GetVal();
 
         if (cur_qual != "note" || cur_val.empty())
             continue;
@@ -3689,10 +3688,10 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
         }
 
         *q = '\0';
-        (*cur)->SetVal(&buf[0]);
+        cur->SetVal(&buf[0]);
 
-        size += (*cur)->GetVal().size();
-        for (cp = (*cur)->GetVal().c_str(); *cp != '\0'; ++cp)
+        size += cur->GetVal().size();
+        for (cp = cur->GetVal().c_str(); *cp != '\0'; ++cp)
             if (*cp == '~')
                 ++size;
     }
@@ -4007,8 +4006,8 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             ParseQualifiers(fbp, ptr2, eptr, format);
 
             if (StringCmp(fbp->key, "assembly_gap") != 0) {
-                ITERATE (TQualVector, cur, fbp->quals) {
-                    const std::string& cur_qual = (*cur)->GetQual();
+                for (const auto& cur : fbp->quals) {
+                    const string& cur_qual = cur->GetQual();
                     if (cur_qual == "gap_type" ||
                         cur_qual == "assembly_evidence") {
                         ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key, (fbp->location == NULL) ? "Unknown" : fbp->location);
@@ -4018,8 +4017,8 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             }
 
             if (StringCmp(fbp->key, "source") != 0) {
-                ITERATE (TQualVector, cur, fbp->quals) {
-                    const std::string& cur_qual = (*cur)->GetQual();
+                for (const auto& cur : fbp->quals) {
+                    const string& cur_qual = cur->GetQual();
                     if (cur_qual == "submitter_seqid") {
                         ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key, (fbp->location == NULL) ? "Unknown" : fbp->location);
                         ibp->drop = 1;
@@ -4069,13 +4068,12 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                 retval = GB_FEAT_ERR_REPAIRABLE;
         }
 
-        NON_CONST_ITERATE(TQualVector, cur, fbp->quals)
-        {
-            if (! (*cur)->IsSetQual() || ! (*cur)->IsSetVal())
+        for (auto& cur : fbp->quals) {
+            if (! cur->IsSetQual() || ! cur->IsSetVal())
                 continue;
 
-            const std::string& qual_str = (*cur)->GetQual();
-            const std::string& val_str  = (*cur)->GetVal();
+            const string& qual_str = cur->GetQual();
+            const string& val_str  = cur->GetVal();
 
             std::vector<Char> val_buf(val_str.begin(), val_str.end());
             val_buf.push_back(0);
@@ -4083,12 +4081,12 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             p = &val_buf[0];
             ShrinkSpaces(p);
             if (*p == '\0' && qual_str != "replace") {
-                (*cur)->ResetVal();
+                cur->ResetVal();
                 val_buf[0] = 0;
             } else {
                 if (qual_str == "replace")
                     fta_convert_to_lower_case(p);
-                (*cur)->SetVal(p);
+                cur->SetVal(p);
             }
 
             if (qual_str == "satellite")
@@ -4286,13 +4284,12 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
                 retval = GB_FEAT_ERR_REPAIRABLE;
         }
 
-        NON_CONST_ITERATE(TQualVector, cur, fbp->quals)
-        {
-            if (! (*cur)->IsSetQual() || ! (*cur)->IsSetVal())
+        for (auto& cur : fbp->quals) {
+            if (! cur->IsSetQual() || ! cur->IsSetVal())
                 continue;
 
-            const std::string& qual_str = (*cur)->GetQual();
-            const std::string& val_str  = (*cur)->GetVal();
+            const string& qual_str = cur->GetQual();
+            const string& val_str  = cur->GetVal();
 
             std::vector<Char> val_buf(val_str.begin(), val_str.end());
             val_buf.push_back(0);
@@ -4300,12 +4297,12 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             p = &val_buf[0];
             ShrinkSpaces(p);
             if (*p == '\0' && qual_str != "replace") {
-                (*cur)->ResetVal();
+                cur->ResetVal();
                 val_buf[0] = 0;
             } else {
                 if (qual_str == "replace")
                     fta_convert_to_lower_case(p);
-                (*cur)->SetVal(p);
+                cur->SetVal(p);
             }
         }
     } /* for, each sub-block, or each feature key */
@@ -4319,14 +4316,14 @@ static bool fta_check_ncrna(const CSeq_feat& feat)
     int count = 0;
 
     bool stop = false;
-    ITERATE (CSeq_feat::TQual, qual, feat.GetQual()) {
-        if (! (*qual)->IsSetQual() || (*qual)->GetQual().empty() ||
-            (*qual)->GetQual() != "ncRNA_class")
+    for (const auto& qual : feat.GetQual()) {
+        if (! qual->IsSetQual() || qual->GetQual().empty() ||
+            qual->GetQual() != "ncRNA_class")
             continue;
 
         count++;
 
-        if (! (*qual)->IsSetVal() || (*qual)->GetVal().empty()) {
+        if (! qual->IsSetVal() || qual->GetVal().empty()) {
             string loc = location_to_string_or_unknown(feat.GetLocation());
 
             ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class, "Feature \"ncRNA\" at location \"%s\" has an empty /ncRNA_class qualifier.", loc.empty() ? "unknown" : loc.c_str());
@@ -4334,10 +4331,10 @@ static bool fta_check_ncrna(const CSeq_feat& feat)
             break;
         }
 
-        if (MatchArrayString(ncRNA_class_values, (*qual)->GetVal().c_str()) < 0) {
+        if (MatchArrayString(ncRNA_class_values, qual->GetVal().c_str()) < 0) {
             string loc = location_to_string_or_unknown(feat.GetLocation());
 
-            ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class, "Feature \"ncRNA\" at location \"%s\" has an invalid /ncRNA_class qualifier: \"%s\".", loc.empty() ? "unknown" : loc.c_str(), (*qual)->GetVal().c_str());
+            ErrPostEx(SEV_REJECT, ERR_FEATURE_ncRNA_class, "Feature \"ncRNA\" at location \"%s\" has an invalid /ncRNA_class qualifier: \"%s\".", loc.empty() ? "unknown" : loc.c_str(), qual->GetVal().c_str());
             stop = true;
             break;
         }
@@ -4404,10 +4401,10 @@ static void fta_check_artificial_location(CSeq_feat& feat, char* key)
 static bool fta_check_mobile_element(const CSeq_feat& feat)
 {
     bool found = false;
-    ITERATE (CSeq_feat::TQual, qual, feat.GetQual()) {
-        if ((*qual)->IsSetQual() && (*qual)->GetQual() == "mobile_element_type" &&
-            (*qual)->IsSetVal() && ! (*qual)->GetVal().empty()) {
-            const Char* p_val = (*qual)->GetVal().c_str();
+    for (const auto& qual : feat.GetQual()) {
+        if (qual->IsSetQual() && qual->GetQual() == "mobile_element_type" &&
+            qual->IsSetVal() && ! qual->GetVal().empty()) {
+            const Char* p_val = qual->GetVal().c_str();
             for (; *p_val == '\"';)
                 ++p_val;
 
@@ -4556,11 +4553,11 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
         other_class = false;
         count       = 0;
 
-        ITERATE (TQualVector, cur, fbp->quals) {
-            if (! (*cur)->IsSetQual() || ! (*cur)->IsSetVal())
+        for (const auto& cur : fbp->quals) {
+            if (! cur->IsSetQual() || ! cur->IsSetVal())
                 continue;
 
-            const std::string& qual_str = (*cur)->GetQual();
+            const string& qual_str = cur->GetQual();
 
             if (qual_str != "regulatory_class") {
                 if (qual_str == "note")
@@ -4569,7 +4566,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
             }
 
             count++;
-            if (! (*cur)->IsSetVal() || (*cur)->GetVal().empty()) {
+            if (! cur->IsSetVal() || cur->GetVal().empty()) {
                 ch = '\0';
                 if (fbp->location == NULL || *fbp->location == '\0')
                     p = (char*)"(empty)";
@@ -4587,7 +4584,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
                 continue;
             }
 
-            const std::string& val_str = (*cur)->GetVal();
+            const string& val_str = cur->GetVal();
 
             for (b = RegulatoryClassValues; *b != NULL; b++)
                 if (val_str == *b)
@@ -5070,21 +5067,20 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     bool stop = false;
-    NON_CONST_ITERATE(TSeqFeatList, feat, seq_feats)
-    {
-        if (! (*feat)->GetData().IsImp())
+    for (auto& feat : seq_feats) {
+        if (! feat->GetData().IsImp())
             continue;
 
-        const CImp_feat& imp_feat = (*feat)->GetData().GetImp();
+        const CImp_feat& imp_feat = feat->GetData().GetImp();
 
         if (imp_feat.IsSetKey() &&
             StringStr(imp_feat.GetKey().c_str(), "RNA") != NULL) {
-            if (imp_feat.GetKey() == "ncRNA" && ! fta_check_ncrna(*(*feat))) {
+            if (imp_feat.GetKey() == "ncRNA" && ! fta_check_ncrna(*feat)) {
                 stop = true;
                 break;
             }
 
-            GetRnaRef(*(*feat), bioseq, pp->source, pp->accver);
+            GetRnaRef(*feat, bioseq, pp->source, pp->accver);
         }
     }
 
