@@ -321,7 +321,7 @@ void CLDS2TestApplication::x_InitStressTest(void)
         }
         unique_ptr<CObjectOStream> out;
         unique_ptr<CFastaOstream> fasta_out;
-        if (m_FmtName == "fasta") {
+        if (NStr::StartsWith(m_FmtName, "fasta")) {
             fasta_out.reset(new CFastaOstream(*out_stream));
         }
         else {
