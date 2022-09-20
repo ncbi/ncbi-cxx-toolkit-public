@@ -97,6 +97,7 @@
 #include "app_config.hpp"
 #include "thread_state.hpp"
 #include <objtools/validator/huge_file_validator.hpp>
+#include <objtools/readers/objhook_lambdas.hpp>
 
 using namespace ncbi;
 USING_SCOPE(objects);
@@ -608,18 +609,16 @@ CConstRef<CValidError> CAsnvalThreadState::ReadAny(CRef<CSeq_submit>& obj)
 
 void CAsnvalThreadState::ProcessSSMReleaseFile()
 {
-    CRef<CSeq_submit> seqset(new CSeq_submit);
+    CRef<CSeq_submit> submit(new CSeq_submit);
 
-    // Register the Seq-entry hook
-    CObjectTypeInfo set_type = CType<CSeq_submit>();
-    (*(*(*set_type.FindMember("data")).GetPointedType().FindVariant("entrys"))
-        .GetElementType().GetPointedType().FindVariant("set")).FindMember("seq-set").SetLocalReadHook(
-            *mpIstr, this); // does *not* take possession of hook
+    auto hook = [this](CObjectIStream& in, const CObjectInfo::CMemberIterator& member) {ReadClassMember(in, member); };
+    CObjectTypeInfo info = CType<CBioseq_set>();
+    SetLocalReadHook(info.FindMember("seq-set"), *mpIstr, hook);
 
     // Read the CSeq_submit, it will call the hook object each time we
     // encounter a Seq-entry
     try {
-        *mpIstr >> *seqset;
+        *mpIstr >> *submit;
     }
     catch (const CException&) {
         LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is not a batch Seq-submit, do not use -a u to process.");
