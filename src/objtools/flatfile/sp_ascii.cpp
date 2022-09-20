@@ -2097,8 +2097,8 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             if (tag.NotEmpty()) {
                 bool not_found = true;
 
-                ITERATE (CSP_block::TDbref, cur_tag, spb.SetDbref()) {
-                    if (tag->Match(*(*cur_tag))) {
+                for (const auto& cur_tag : spb.SetDbref()) {
+                    if (tag->Match(*cur_tag)) {
                         not_found = false;
                         break;
                     }
@@ -2355,12 +2355,11 @@ GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         ibp->drop = 1;
     else if (spb->GetClass() == CSP_block::eClass_standard ||
              spb->GetClass() == CSP_block::eClass_prelim) {
-        NON_CONST_ITERATE(CBioseq::TId, cur_id, bioseq.SetId())
-        {
-            if (! (*cur_id)->IsSwissprot())
+        for (auto& cur_id : bioseq.SetId()) {
+            if (! cur_id->IsSwissprot())
                 continue;
 
-            CTextseq_id& id = (*cur_id)->SetSwissprot();
+            CTextseq_id& id = cur_id->SetSwissprot();
             if (ver_num > 0)
                 id.SetVersion(ver_num);
 
@@ -2534,12 +2533,12 @@ static void SPAppendPIRToHist(CBioseq& bioseq, const CSP_block& spb)
 
     CSeq_hist_rec::TIds rep_ids;
 
-    ITERATE (CSP_block::TSeqref, cur_ref, spb.GetSeqref()) {
-        if (! (*cur_ref)->IsPir())
+    for (const auto& cur_ref : spb.GetSeqref()) {
+        if (! cur_ref->IsPir())
             continue;
 
         CRef<CTextseq_id> text_id(new CTextseq_id);
-        text_id->Assign((*cur_ref)->GetPir());
+        text_id->Assign(cur_ref->GetPir());
 
         CRef<CSeq_id> rep_id(new CSeq_id);
         rep_id->SetPir(*text_id);
@@ -2626,12 +2625,12 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
     if (spb.NotEmpty() && pp->accver && pp->histacc && pp->source == Parser::ESource::SPROT) {
         CSeq_hist_rec::TIds rep_ids;
 
-        ITERATE (CSP_block::TExtra_acc, cur_acc, spb->GetExtra_acc()) {
-            if (cur_acc->empty() || ! IsSPROTAccession(cur_acc->c_str()))
+        for (const string& cur_acc : spb->GetExtra_acc()) {
+            if (cur_acc.empty() || ! IsSPROTAccession(cur_acc.c_str()))
                 continue;
 
             CRef<CTextseq_id> text_id(new CTextseq_id);
-            text_id->SetAccession(*cur_acc);
+            text_id->SetAccession(cur_acc);
 
             CRef<CSeq_id> rep_id(new CSeq_id);
             rep_id->SetSwissprot(*text_id);
@@ -4233,12 +4232,12 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
 
     is_trembl = false;
 
-    ITERATE (CBioseq::TId, id, ids) {
-        if (! (*id)->IsSwissprot())
+    for (const auto& id : ids) {
+        if (! id->IsSwissprot())
             continue;
 
-        if ((*id)->GetSwissprot().IsSetRelease() &&
-            NStr::CompareNocase((*id)->GetSwissprot().GetRelease().c_str(), "unreviewed") == 0)
+        if (id->GetSwissprot().IsSetRelease() &&
+            NStr::CompareNocase(id->GetSwissprot().GetRelease().c_str(), "unreviewed") == 0)
             is_trembl = true;
     }
 
@@ -4566,17 +4565,16 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
         curspslp       = spslp;
     }
 
-    NON_CONST_ITERATE(TSeqdescList, descr, bioseq.SetDescr().Set())
-    {
-        if (! (*descr)->IsMolinfo())
+    for (auto& descr : bioseq.SetDescr().Set()) {
+        if (! descr->IsMolinfo())
             continue;
 
         if (spfbp->noleft && spfbp->noright)
-            (*descr)->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_ends);
+            descr->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_ends);
         else if (spfbp->noleft)
-            (*descr)->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_left);
+            descr->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_left);
         else if (spfbp->noright)
-            (*descr)->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
+            descr->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
     }
 
     if (hspslp != NULL)
@@ -4676,12 +4674,11 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
     CBioseq&  bioseq   = seq_entry.SetSeq();
 
     ctr = 0;
-    NON_CONST_ITERATE(TSeqdescList, descr, bioseq.SetDescr().Set())
-    {
-        if (! (*descr)->IsMolinfo())
+    for (auto& descr : bioseq.SetDescr().Set()) {
+        if (! descr->IsMolinfo())
             continue;
 
-        mol_info = &((*descr)->SetMolinfo());
+        mol_info = &(descr->SetMolinfo());
         break;
     }
 

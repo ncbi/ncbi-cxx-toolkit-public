@@ -667,25 +667,25 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
     curr_pos    = 0;
 
     CSeq_annot::C_Data::TGraph new_graphs;
-    ITERATE (CDelta_ext::Tdata, delta, bioseq.GetInst().GetExt().GetDelta().Get()) {
+    for (const auto& delta : bioseq.GetInst().GetExt().GetDelta().Get()) {
         is_gap    = false;
         last_pos  = curr_pos;
         max_score = QS_MIN_VALID_SCORE;
         min_score = QS_MAX_VALID_SCORE;
 
-        if ((*delta)->IsLoc()) {
+        if (delta->IsLoc()) {
             ErrPostEx(SEV_ERROR, ERR_QSCORE_NonLiteralDelta, "Cannot process Delta-seq bioseqs with Seq-loc components.");
             problem = true;
             break;
         }
 
-        if (! (*delta)->IsLiteral()) {
+        if (! delta->IsLiteral()) {
             ErrPostEx(SEV_ERROR, ERR_QSCORE_UnknownDelta, "Encountered Delta-seq component of unknown type.");
             problem = true;
             break;
         }
 
-        const CSeq_literal& literal = (*delta)->GetLiteral();
+        const CSeq_literal& literal = delta->GetLiteral();
 
         if (! literal.IsSetLength() || literal.GetLength() < 1) {
             ErrPostEx(SEV_ERROR, ERR_QSCORE_ZeroLengthLiteral, "Encountered Delta-seq Seq-literal component with length of zero (or less) : cannot be processed.");

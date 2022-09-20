@@ -370,8 +370,8 @@ static void SetXrefObjId(CEMBL_xref& xref, const std::string& str)
     CEMBL_xref::TId& ids = xref.SetId();
 
     bool found = false;
-    ITERATE (CEMBL_xref::TId, id, ids) {
-        if ((*id)->IsStr() && (*id)->GetStr() == str) {
+    for (const auto& id : ids) {
+        if (id->IsStr() && id->GetStr() == str) {
             found = true;
             break;
         }
@@ -516,8 +516,8 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, char* chentr
                     *q = '\n';
             } else {
                 bool found = false;
-                ITERATE (TStringList, val, dr_biosample) {
-                    if (*val == id) {
+                for (const string& val : dr_biosample) {
+                    if (val == id) {
                         found = true;
                         break;
                     }
@@ -545,8 +545,8 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, char* chentr
                     *q = '\n';
             } else {
                 bool found = false;
-                ITERATE (TStringList, val, dr_ena) {
-                    if (*val == id) {
+                for (const string& val : dr_ena) {
+                    if (val == id) {
                         found = true;
                         break;
                     }
@@ -1039,8 +1039,8 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         return ret;
     }
 
-    ITERATE (TKeywordList, key, keywords) {
-        fta_keywords_check(key->c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
+    for (const string& key : keywords) {
+        fta_keywords_check(key.c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
     }
 
     if (ibp->env_sample_qual == false && env_kwd) {
@@ -1324,8 +1324,8 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         fta_remove_tls_keywords(embl->SetKeywords(), pp->source);
 
     if (bio_src != NULL && bio_src->IsSetSubtype()) {
-        ITERATE (CBioSource::TSubtype, subtype, bio_src->GetSubtype()) {
-            if ((*subtype)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+        for (const auto& subtype : bio_src->GetSubtype()) {
+            if (subtype->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                 fta_remove_env_keywords(embl->SetKeywords());
                 break;
             }
@@ -1351,9 +1351,9 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
             (StringNCmp(ibp->acnum, "CT", 2) == 0 ||
              StringNCmp(ibp->acnum, "CU", 2) == 0)) {
             bool found = false;
-            ITERATE (CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc()) {
-                if (fta_if_wgs_acc(acc->c_str()) == 0 &&
-                    ((*acc)[0] == 'C' || (*acc)[0] == 'U')) {
+            for (const string& acc : embl->SetExtra_acc()) {
+                if (fta_if_wgs_acc(acc.c_str()) == 0 &&
+                    (acc[0] == 'C' || acc[0] == 'U')) {
                     found = true;
                     break;
                 }
@@ -1504,8 +1504,8 @@ static CRef<CUser_field> fta_create_user_field(const char* tag, TStringList& lst
     field->SetLabel().SetStr(tag);
     field->SetNum(static_cast<CUser_field::TNum>(lst.size()));
 
-    ITERATE (TStringList, item, lst) {
-        field->SetData().SetStrs().push_back(*item);
+    for (const string& item : lst) {
+        field->SetData().SetStrs().push_back(item);
     }
 
     return field;
@@ -1521,15 +1521,14 @@ void fta_build_ena_user_object(CSeq_descr::Tdata& descrs, TStringList& dr_ena, T
 
     CUser_object* user_obj_ptr = nullptr;
 
-    NON_CONST_ITERATE(CSeq_descr::Tdata, descr, descrs)
-    {
-        if (! (*descr)->IsUser() || ! (*descr)->GetUser().IsSetType())
+    for (auto& descr : descrs) {
+        if (! descr->IsUser() || ! descr->GetUser().IsSetType())
             continue;
 
-        const CObject_id& obj_id = (*descr)->GetUser().GetType();
+        const CObject_id& obj_id = descr->GetUser().GetType();
 
         if (obj_id.IsStr() && obj_id.GetStr() == "DBLink") {
-            user_obj_ptr = &(*descr)->SetUser();
+            user_obj_ptr = &descr->SetUser();
             got          = true;
             break;
         }
@@ -1582,14 +1581,14 @@ static void fta_create_imgt_misc_feat(CBioseq& bioseq, CEMBL_block& embl_block, 
         return;
 
     CSeq_feat::TDbxref xrefs;
-    ITERATE (CEMBL_block::TXref, xref, embl_block.GetXref()) {
-        if (! (*xref)->IsSetDbname() || ! (*xref)->GetDbname().IsName() ||
-            StringNCmp((*xref)->GetDbname().GetName().c_str(), "IMGT/", 5) != 0)
+    for (const auto& xref : embl_block.GetXref()) {
+        if (! xref->IsSetDbname() || ! xref->GetDbname().IsName() ||
+            StringNCmp(xref->GetDbname().GetName().c_str(), "IMGT/", 5) != 0)
             continue;
 
         bool empty = true;
-        ITERATE (CEMBL_xref::TId, id, (*xref)->GetId()) {
-            if ((*id)->IsStr() && ! (*id)->GetStr().empty()) {
+        for (const auto& id : xref->GetId()) {
+            if (id->IsStr() && ! id->GetStr().empty()) {
                 empty = false;
                 break;
             }
@@ -1599,19 +1598,19 @@ static void fta_create_imgt_misc_feat(CBioseq& bioseq, CEMBL_block& embl_block, 
             continue;
 
         CRef<CDbtag> tag(new CDbtag);
-        tag->SetDb((*xref)->GetDbname().GetName());
+        tag->SetDb(xref->GetDbname().GetName());
 
         std::string& id_str = tag->SetTag().SetStr();
 
         bool need_delimiter = false;
-        ITERATE (CEMBL_xref::TId, id, (*xref)->GetId()) {
-            if ((*id)->IsStr() && ! (*id)->GetStr().empty()) {
+        for (const auto& id : xref->GetId()) {
+            if (id->IsStr() && ! id->GetStr().empty()) {
                 if (need_delimiter)
                     id_str += "; ";
                 else
                     need_delimiter = true;
 
-                id_str += (*id)->GetStr();
+                id_str += id->GetStr();
             }
         }
 
@@ -1804,10 +1803,9 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     CBioSource* bio_src = nullptr;
     COrg_ref*   org_ref = nullptr;
 
-    NON_CONST_ITERATE(CSeq_descr::Tdata, descr, bioseq.SetDescr().Set())
-    {
-        if ((*descr)->IsSource()) {
-            bio_src = &((*descr)->SetSource());
+    for (auto& descr : bioseq.SetDescr().Set()) {
+        if (descr->IsSource()) {
+            bio_src = &(descr->SetSource());
             if (bio_src->IsSetOrg())
                 org_ref = &bio_src->SetOrg();
             break;
@@ -1957,10 +1955,9 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 return;
             }
 
-            NON_CONST_ITERATE(TUserObjVector, user_obj, user_objs)
-            {
+            for (auto& user_obj : user_objs) {
                 CRef<CSeqdesc> descr(new CSeqdesc);
-                descr->SetUser(*(*user_obj));
+                descr->SetUser(*user_obj);
                 bioseq.SetDescr().Set().push_back(descr);
             }
 
@@ -2488,8 +2485,8 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
     } else
         XMLGetKeywords(entry, ibp->xip, embl->SetKeywords());
 
-    ITERATE (TKeywordList, key, embl->GetKeywords()) {
-        fta_keywords_check(key->c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
+    for (const string& key : embl->GetKeywords()) {
+        fta_keywords_check(key.c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
     }
 
     if (ibp->env_sample_qual == false && env_kwd) {
@@ -2797,9 +2794,9 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info,
     if (StringCmp(dataclass, "ANN") == 0 || StringCmp(dataclass, "CON") == 0) {
         if (StringLen(ibp->acnum) == 8 && StringNCmp(ibp->acnum, "CT", 2) == 0) {
             bool found = false;
-            ITERATE (CEMBL_block::TExtra_acc, acc, embl->SetExtra_acc()) {
-                if (fta_if_wgs_acc(acc->c_str()) == 0 &&
-                    ((*acc)[0] == 'C' || (*acc)[0] == 'U')) {
+            for (const string& acc : embl->SetExtra_acc()) {
+                if (fta_if_wgs_acc(acc.c_str()) == 0 &&
+                    (acc[0] == 'C' || acc[0] == 'U')) {
                     found = true;
                     break;
                 }
