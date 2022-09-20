@@ -121,6 +121,7 @@ void CHttpGetParser::Parse(CHttpRequest &  Req,
 
     char *          ch = begin;
     bool            is_name = true;
+    bool            param_finished = false;
 
     CQueryParam *   prm = nullptr;
     while (ch < end) {
@@ -134,10 +135,12 @@ void CHttpGetParser::Parse(CHttpRequest &  Req,
                     has_encodings = true;
                     break;
                 case '=':
-                    if (is_name)
+                    if (is_name) {
                         goto done;
+                    }
                     break;
                 case '&':
+                    param_finished = true;
                     goto done;
             }
             ch++;
@@ -187,7 +190,12 @@ void CHttpGetParser::Parse(CHttpRequest &  Req,
                 return;
             }
         }
-        is_name = !is_name;
+        if (param_finished) {
+            param_finished = false;
+            is_name = true;
+        } else {
+            is_name = !is_name;
+        }
         ++ch;
     }
 }
