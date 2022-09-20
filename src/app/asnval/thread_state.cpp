@@ -1122,7 +1122,8 @@ void CAsnvalThreadState::ValidateOneFile()
     if (mFilename.empty())// || true)
         mpIstr = OpenFile(asninfo);
     else {
-        mpHugeFileProcess.reset(new edit::CHugeFileProcess);
+        //mpHugeFileProcess.reset(new edit::CHugeFileProcess);
+        mpHugeFileProcess.reset(new edit::CHugeFileProcess(new CValidatorHugeAsnReader(m_GlobalInfo)));
         try {
             mpHugeFileProcess->Open(mFilename, &s_known_types);
             asninfo = mpHugeFileProcess->GetFile().RecognizeContent(0);
