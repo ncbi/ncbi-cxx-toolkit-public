@@ -777,7 +777,7 @@ public:
         CZipCompression::TZipFlags flags = 0
         )
         : CCompressionStreamProcessor(
-              new CZipCompressor(level),
+              new CZipCompressor(level, flags),
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 
