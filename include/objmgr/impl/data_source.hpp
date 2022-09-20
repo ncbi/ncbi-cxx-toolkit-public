@@ -360,14 +360,12 @@ private:
 
 #ifdef DEBUG_MAPS
     typedef debug::set<TTSE_Ref>                    TTSE_Set;
-    typedef debug::map<CSeq_id_Handle, TTSE_Set>    TSeq_id2TSE_Set;
-    typedef debug::set<TSplitInfoRef>               TSplitInfoSet;
-    typedef debug::map<CSeq_id_Handle, TSplitInfoSet> TSeq_id2SplitInfoSet;
+    typedef debug::multimap<CSeq_id_Handle, TTSE_Ref>      TSeq_id2TSE_Set;
+    typedef debug::multimap<CSeq_id_Handle, TSplitInfoRef> TSeq_id2SplitInfoSet;
 #else
     typedef set<TTSE_Ref>                           TTSE_Set;
-    typedef map<CSeq_id_Handle, TTSE_Set>           TSeq_id2TSE_Set;
-    typedef set<TSplitInfoRef>                      TSplitInfoSet;
-    typedef map<CSeq_id_Handle, TSplitInfoSet>      TSeq_id2SplitInfoSet;
+    typedef multimap<CSeq_id_Handle, TTSE_Ref>      TSeq_id2TSE_Set;
+    typedef multimap<CSeq_id_Handle, TSplitInfoRef> TSeq_id2SplitInfoSet;
 #endif
 
     // registered objects

@@ -460,6 +460,35 @@ void CTSE_Info::x_UnregisterBioObject(CTSE_Info_Object& info)
     }    
 }
 
+CTSE_Info::TBioseqs::iterator CTSE_Info::s_find(TBioseqs& container,
+                                                const CSeq_id_Handle& id,
+                                                CBioseq_Info* info)
+{
+    for ( auto iter = container.lower_bound(id);
+          iter != container.end() && iter->first == id;
+          ++iter ) {
+        if ( iter->second == info ) {
+            return iter;
+        }
+    }
+    return container.end();
+}
+
+
+CTSE_Info::TBioseqs::const_iterator CTSE_Info::s_find_single(const TBioseqs& container,
+                                                             const CSeq_id_Handle& id)
+{
+    auto iter = container.lower_bound(id);
+    if ( iter != container.end() && iter->first == id ) {
+        auto next_iter = next(iter);
+        if ( next_iter == container.end() || next_iter->first != id ) {
+            return iter;
+        }
+    }
+    return container.end();
+}
+
+
 CTSE_Info_Object* CTSE_Info::x_FindBioObject(const CBioObjectId& uniq_id) const
 {
     switch (uniq_id.GetType()) {
@@ -472,11 +501,12 @@ CTSE_Info_Object* CTSE_Info::x_FindBioObject(const CBioObjectId& uniq_id) const
         return NULL;
     case CBioObjectId::eSeqId:
         {
+            
             x_GetRecords(uniq_id.GetSeqId(), true);
             CFastMutexGuard guard(m_BioseqsMutex);
-            TBioseqs::const_iterator it = m_Bioseqs.find(uniq_id.GetSeqId());
-            if ( it != m_Bioseqs.end() ) {
-                return it->second;
+            auto iter = s_find_single(m_Bioseqs, uniq_id.GetSeqId());
+            if ( iter != m_Bioseqs.end() ) {
+                return iter->second;
             }
         }
         return NULL;
@@ -763,9 +793,9 @@ CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
     x_GetRecords(id, true);
     {{
         CFastMutexGuard guard(m_BioseqsMutex);
-        TBioseqs::const_iterator it = m_Bioseqs.find(id);
-        if ( it != m_Bioseqs.end() ) {
-            ret = it->second;
+        auto iter = s_find_single(m_Bioseqs, id);
+        if ( iter != m_Bioseqs.end() ) {
+            ret = iter->second;
         }
     }}
     return ret;
@@ -873,15 +903,7 @@ void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& id,
     _ASSERT(info);
     {{
         CFastMutexGuard guard(m_BioseqsMutex);
-        pair<TBioseqs::iterator, bool> ins =
-            m_Bioseqs.insert(TBioseqs::value_type(id, info));
-        if ( !ins.second ) {
-            // No duplicate bioseqs in the same TSE
-            NCBI_THROW_FMT(CObjMgrException, eAddDataError,
-                           "duplicate Bioseq id " << id << " present in" <<
-                           "\n  seq1: " << ins.first->second->IdString() <<
-                           "\n  seq2: " << info->IdString());
-        }
+        m_Bioseqs.insert(TBioseqs::value_type(id, info));
     }}
     // register this TSE in data source as containing the sequence
     x_IndexSeqTSE(id);
@@ -894,15 +916,7 @@ void CTSE_Info::x_SetBioseqIds(CBioseq_Info* info)
     {{
         CFastMutexGuard guard(m_BioseqsMutex);
         ITERATE ( CBioseq_Info::TId, it, info->GetId() ) {
-            pair<TBioseqs::iterator, bool> ins =
-                m_Bioseqs.insert(TBioseqs::value_type(*it, info));
-            if ( !ins.second ) {
-                // No duplicate bioseqs in the same TSE
-                NCBI_THROW(CObjMgrException, eAddDataError,
-                           "duplicate Bioseq id "+it->AsString()+" present in"+
-                           "\n  seq1: " + ins.first->second->IdString()+
-                           "\n  seq2: " + info->IdString());
-            }
+            m_Bioseqs.insert(TBioseqs::value_type(*it, info));
         }
         if ( m_BioseqUpdater ) {
             m_BioseqUpdater->Update(*info);
@@ -914,23 +928,23 @@ void CTSE_Info::x_SetBioseqIds(CBioseq_Info* info)
     }
 }
 
-
 void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& id,
                                 CBioseq_Info* info)
 {
     {{
         CFastMutexGuard guard(m_BioseqsMutex);
-        TBioseqs::iterator iter = m_Bioseqs.lower_bound(id);
-        if ( iter == m_Bioseqs.end() || iter->first != id ) {
+        TBioseqs::iterator iter = s_find(m_Bioseqs, id, info);
+        if ( iter == m_Bioseqs.end() ) {
             return;
         }
         _ASSERT(iter->second == info);
         m_Bioseqs.erase(iter);
 
         if (m_Split) {
-            iter = m_Removed_Bioseqs.find(id);
-            if (iter == m_Removed_Bioseqs.end())
+            iter = s_find(m_Removed_Bioseqs, id, info);
+            if ( iter == m_Removed_Bioseqs.end() ) {
                 m_Removed_Bioseqs.insert(TBioseqs::value_type(id, info));
+            }
         }
 
     }}
@@ -1363,14 +1377,15 @@ CBioseq_set_Info& CTSE_Info::x_GetBioseq_set(int id)
 CBioseq_Info& CTSE_Info::x_GetBioseq(const CSeq_id_Handle& id)
 {
     CFastMutexGuard guard(m_BioseqsMutex);
-    TBioseqs::iterator iter;
+    TBioseqs::const_iterator iter;
     if (m_Split) {
-        iter = m_Removed_Bioseqs.find(id);
-        if ( iter != m_Removed_Bioseqs.end() ) 
+        iter = s_find_single(m_Removed_Bioseqs, id);
+        if ( iter != m_Removed_Bioseqs.end() ) {
             return *iter->second;
+        }
     }
 
-    iter = m_Bioseqs.find(id);
+    iter = s_find_single(m_Bioseqs, id);
     if ( iter == m_Bioseqs.end() ) {
         NCBI_THROW(CObjMgrException, eRegisterError,
                    "cannot find Bioseq by Seq-id "+id.AsString());

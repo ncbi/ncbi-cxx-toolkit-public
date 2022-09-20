@@ -295,7 +295,7 @@ public:
     // indexes types
     typedef map<TIntId, CBioseq_set_Info*>                   TBioseq_sets;
     typedef CBioseq_Info*                                    TBioseqInfo;
-    typedef map<CSeq_id_Handle, TBioseqInfo>                 TBioseqs;
+    typedef multimap<CSeq_id_Handle, TBioseqInfo>            TBioseqs;
 
     typedef SIdAnnotObjs::TRange                             TRange;
     typedef SIdAnnotObjs::TRangeMap                          TRangeMap;
@@ -732,6 +732,12 @@ private:
     TBioseq_sets           m_Removed_Bioseq_sets;
     TBioseqs               m_Removed_Bioseqs;
     mutable CFastMutex     m_BioseqsMutex;
+
+    static TBioseqs::iterator s_find(TBioseqs& container,
+                                     const CSeq_id_Handle& id,
+                                     CBioseq_Info* info);
+    static TBioseqs::const_iterator s_find_single(const TBioseqs& container,
+                                                  const CSeq_id_Handle& id);
 
     // Split chunks
     CRef<CTSE_Split_Info>  m_Split;
