@@ -782,7 +782,8 @@ string ToJsonString(const CCassNAnnotTaskFetch &  request)
         .append(kSeqIdTypeItem)
         .append(buf, len);
 
-    json.append(kAnnotNamesItem)
+    json.append(kSep)
+        .append(kAnnotNamesItem)
         .append(1, '[');
 
     bool    is_empty_list = true;
