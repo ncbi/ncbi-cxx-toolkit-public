@@ -872,12 +872,22 @@ CRef<CSNPSeqInfo> CSNPFileInfo::GetSeqInfo(const CSNPBlobId& blob_id)
 
 CSeq_id_Handle CSNPClient::GetRequestSeq_id(const SPSGS_AnnotRequest& request)
 {
-    try {
-        return CSeq_id_Handle::GetHandle(request.m_SeqId);
+    CSeq_id_Handle ret;
+    if (!request.m_SeqId.empty()) {
+        try {
+            ret = CSeq_id_Handle::GetHandle(request.m_SeqId);
+            if (ret) return ret;
+        }
+        catch (exception& e) {}
     }
-    catch (exception& e) {
+    for (auto& id : request.m_SeqIds) {
+        try {
+            ret = CSeq_id_Handle::GetHandle(id);
+            if (ret) return ret;
+        }
+        catch (exception& e) {}
     }
-    return CSeq_id_Handle();
+    return ret;
 }
 
 
