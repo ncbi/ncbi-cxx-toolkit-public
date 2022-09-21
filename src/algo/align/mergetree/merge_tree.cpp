@@ -73,6 +73,15 @@ size_t s_ScoreFromEquivList(const TEquivList& Equivs) {
     }
     return Matches;
 }
+size_t s_LengthFromEquivList(const TEquivList& Equivs) {
+    size_t Matches = 0;
+    size_t MisMatches = 0;
+    ITERATE(TEquivList, EquivIter, Equivs) {
+        Matches += EquivIter->Matches;
+        MisMatches += EquivIter->MisMatches;
+    }
+    return Matches+MisMatches;
+}
 
 bool s_SortSeqAlignByQuery_Subjt(CRef<CSeq_align> A, CRef<CSeq_align> B) 
 {
@@ -1329,9 +1338,9 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
             TEquivList CachedPath;
             TAlignIdScoreKey key;
             key.first.first = s_UniformAlignId(MinEs);
-            key.first.second = s_ScoreFromEquivList(MinEs);
+            key.first.second = s_LengthFromEquivList(MinEs);
             key.second.first = s_UniformAlignId(OtherEs);
-            key.second.second = s_ScoreFromEquivList(OtherEs);
+            key.second.second = s_LengthFromEquivList(OtherEs);
 #ifdef MERGE_TREE_VERBOSE_DEBUG
     cerr << "  --++MinEs   id: " << key.first.first << "  score: " << key.first.second << "  len: " << MinEs.size()<< endl;
     cerr << "  --++OtherEs id: " << key.second.first << "  score: " << key.second.second << "  len: " << OtherEs.size()<< endl;
@@ -1389,16 +1398,16 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
 
                 {{
                     int ResultId = s_UniformAlignId(Abutted);
-                    int ResultScore = s_ScoreFromEquivList(Abutted);
+                    int ResultLength = s_LengthFromEquivList(Abutted);
 #ifdef MERGE_TREE_VERBOSE_DEBUG
-        cerr << "  --++Result id: " << ResultId << "  score: " << ResultScore << "  len: " << Abutted.size()<< endl;
+        cerr << "  --++Result id: " << ResultId << "  score: " << ResultLength << "  len: " << Abutted.size()<< endl;
 #endif
                     int MergeResult = 0;
-                    if (ResultId == -1 && ResultScore == (key.first.second+key.second.second)) {
+                    if (ResultId == -1 && ResultLength == (key.first.second+key.second.second)) {
                         MergeResult = FULL_MERGE;
-                    } else if (ResultId == key.first.first && ResultScore == key.first.second) {
+                    } else if (ResultId == key.first.first && ResultLength == key.first.second) {
                         MergeResult = ALL_MIN;
-                    } else if (ResultId == key.second.first && ResultScore == key.second.second) {
+                    } else if (ResultId == key.second.first && ResultLength == key.second.second) {
                         MergeResult = ALL_OTHER;
                     } else {
                         MergeResult = MIXED; 
