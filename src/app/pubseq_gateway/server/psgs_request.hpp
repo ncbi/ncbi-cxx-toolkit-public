@@ -652,6 +652,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
     bool                            m_AutoBlobSkipping;
     unsigned long                   m_ResendTimeoutMks;
     vector<string>                  m_SeqIds;
+    bool                            m_SeqIdResolve;
 
     SPSGS_AnnotRequest(const string &  seq_id,
                        int  seq_id_type,
@@ -663,6 +664,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
                        const string &  client_id,
                        SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option,
                        int  send_blob_if_small,
+                       bool seq_id_resolve,
                        int  hops,
                        EPSGS_Trace  trace,
                        bool  processor_events,
@@ -679,6 +681,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_AutoBlobSkipping(auto_blob_skipping),
         m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
         m_SeqIds(move(seq_ids)),
+        m_SeqIdResolve(seq_id_resolve),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
@@ -687,6 +690,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_SeqIdType(-1),
         m_AutoBlobSkipping(true),
         m_ResendTimeoutMks(0),
+        m_SeqIdResolve(true),   // default
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}

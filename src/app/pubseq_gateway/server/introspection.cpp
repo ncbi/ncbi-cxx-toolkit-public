@@ -256,6 +256,17 @@ void AppendSendBlobIfSmallParameter(CJsonNode &  node)
     node.SetByKey("send_blob_if_small", send_blob_if_small);
 }
 
+void AppendSeqIdResolveParameter(CJsonNode &  node)
+{
+    CJsonNode   seq_id_resolve(CJsonNode::NewObjectNode());
+    seq_id_resolve.SetBoolean("mandatory", false);
+    seq_id_resolve.SetString("description",
+        "If yes then use the full resolution procedure using all provided seq ids. "
+        "Otherwise use only bioseq info table and GI seq ids. "
+        "The accepted values are yes and no. Default: yes");
+    node.SetByKey("seq_id_resolve", seq_id_resolve);
+}
+
 void AppendUsernameParameter(CJsonNode &  node)
 {
     CJsonNode   username(CJsonNode::NewObjectNode());
@@ -506,6 +517,7 @@ CJsonNode  GetIdGetNaRequestNode(void)
     AppendTraceParameter(id_get_na_params);
     AppendClientIdParameter(id_get_na_params);
     AppendSendBlobIfSmallParameter(id_get_na_params);
+    AppendSeqIdResolveParameter(id_get_na_params);
     id_get_na.SetByKey("parameters", id_get_na_params);
 
     CJsonNode   id_get_na_reply(CJsonNode::NewObjectNode());
