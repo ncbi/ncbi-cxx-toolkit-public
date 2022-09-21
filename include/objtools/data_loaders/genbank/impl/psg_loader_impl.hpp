@@ -53,8 +53,7 @@ struct SPsgBioseqInfo
     SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info, int lifespan);
 
     typedef CPSG_Request_Resolve::TIncludeInfo TIncludedInfo;
-    typedef CDataLoader::TIds TIds;
-
+    typedef vector<CSeq_id_Handle> TIds;
     TIncludedInfo included_info;
     CSeq_inst::TMol molecule_type;
     Uint8 length;
@@ -74,26 +73,6 @@ struct SPsgBioseqInfo
 private:
     SPsgBioseqInfo(const SPsgBioseqInfo&);
     SPsgBioseqInfo& operator=(const SPsgBioseqInfo&);
-};
-
-
-struct SPsgAnnotInfo
-{
-    typedef CDataLoader::TIds TIds;
-    typedef list<CRef<CTSE_Chunk_Info>> TChunks;
-
-    SPsgAnnotInfo(const string& _name,
-                  const TIds& _ids,
-                  const TChunks& _chunks,
-                  int lifespan);
-
-    string name;
-    TIds ids;
-    TChunks chunks;
-    CDeadline deadline;
-private:
-    SPsgAnnotInfo(const SPsgAnnotInfo&);
-    SPsgAnnotInfo& operator=(const SPsgAnnotInfo&);
 };
 
 
@@ -118,7 +97,6 @@ private:
 
 
 class CPSGBioseqCache;
-class CPSGAnnotCache;
 class CPSGBlobMap;
 class CPSG_Blob_Task;
 
@@ -173,13 +151,13 @@ public:
     void GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& tse_sets);
 
     CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source,
-                                                const TIds& ids,
+                                                const CSeq_id_Handle& idh,
                                                 const SAnnotSelector* sel,
                                                 CDataLoader::TProcessedNAs* processed_nas);
     CDataLoader::TTSE_LockSet GetAnnotRecordsNAOnce(CDataSource* data_source,
-                                                    const TIds& ids,
-                                                    const SAnnotSelector* sel,
-                                                    CDataLoader::TProcessedNAs* processed_nas);
+                                                const CSeq_id_Handle& idh,
+                                                const SAnnotSelector* sel,
+                                                CDataLoader::TProcessedNAs* processed_nas);
 
     void DropTSE(const CPsgBlobId& blob_id);
 
@@ -211,6 +189,7 @@ private:
     friend class CPSG_Blob_Task;
 
     shared_ptr<CPSG_Reply> x_SendRequest(shared_ptr<CPSG_Request> request);
+    CPSG_BioId x_GetBioId(const CSeq_id_Handle& idh);
     SReplyResult x_ProcessBlobReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh, bool retry, bool lock_asap = false, CTSE_LoadLock* load_lock = nullptr);
     SReplyResult x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh);
     string x_GetCachedBlobId(const CSeq_id_Handle& idh);
@@ -250,13 +229,15 @@ private:
                         const CPSG_BlobInfo& blob_info,
                         const CPSG_BlobData& blob_data);
     
+    // Map seq-id to bioseq info.
+    typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TBioseqCache;
+
     CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
     bool m_AddWGSMasterDescr = true;
     shared_ptr<CPSG_Queue> m_Queue;
     unique_ptr<CPSGBlobMap> m_BlobMap;
     unique_ptr<CPSGBioseqCache> m_BioseqCache;
-    unique_ptr<CPSGAnnotCache> m_AnnotCache;
     unique_ptr<CThreadPool> m_ThreadPool;
     int m_CacheLifespan;
 };
