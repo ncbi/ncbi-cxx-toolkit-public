@@ -65,25 +65,13 @@ CPSGS_OSGResolveBase::~CPSGS_OSGResolveBase()
 
 void CPSGS_OSGResolveBase::SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id)
 {
-    // TODO: seq_id_type
-    //id.Set(CSeq_id::eFasta_AsTypeAndContent, CSeq_id_Base::E_Choice(seq_id_type), seq_id);
-    id.Set(seq_id);
-    if ( seq_id_type <= 0 ) {
+    if (seq_id_type <= 0) {
         // no type check
-        return;
+        id.Set(seq_id);
     }
-    if ( id.Which() == seq_id_type ) {
-        // type matches
-        return;
+    else {
+        id.Set(CSeq_id::eFasta_AsTypeAndContent, CSeq_id::E_Choice(seq_id_type), seq_id);
     }
-    if ( IsINSDCSeqIdType(id.Which()) && IsINSDCSeqIdType(seq_id_type) ) {
-        // TODO
-        // what to do if request types mismatch
-        return;
-    }
-    NCBI_THROW_FMT(CPubseqGatewayException, eSeqIdMismatch,
-                   "Requested Seq-id type mismatch "<<id.AsFastaString()<<
-                   " type "<<id.Which()<<" <> "<<seq_id_type);
 }
 
 
