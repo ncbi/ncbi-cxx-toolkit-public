@@ -80,6 +80,7 @@ static string  kMostRecentTimeParam = "most_recent_time";
 static string  kMostAncientTimeParam = "most_ancient_time";
 static string  kHistogramNamesParam = "histogram_names";
 static string  kSendBlobIfSmallParam = "send_blob_if_small";
+static string  kSeqIdResolveParam = "seq_id_resolve";
 static string  kNA = "n/a";
 
 static vector<pair<string, SPSGS_ResolveRequest::EPSGS_BioseqIncludeData>>
@@ -1062,6 +1063,25 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             return 0;
         }
 
+        bool                seq_id_resolve = true;  // default
+        SRequestParameter   seq_id_resolve_param = x_GetParam(req, kSeqIdResolveParam);
+        if (seq_id_resolve_param.m_Found) {
+            if (!x_IsBoolParamValid(kSeqIdResolveParam,
+                                    seq_id_resolve_param.m_Value,
+                                    err_msg)) {
+                x_SendMessageAndCompletionChunks(reply, now, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 ePSGS_MalformedParameter,
+                                                 eDiag_Error);
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                                   reply->GetBytesSent());
+                m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+                m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+                return 0;
+            }
+            seq_id_resolve = seq_id_resolve_param.m_Value == "yes";
+        }
+
         // Parameters processing has finished
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AnnotRequest(
@@ -1072,7 +1092,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                         seq_ids,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
-                        tse_option, send_blob_if_small,
+                        tse_option, send_blob_if_small, seq_id_resolve,
                         hops, trace, processor_events,
                         enabled_processors, disabled_processors,
                         now));
