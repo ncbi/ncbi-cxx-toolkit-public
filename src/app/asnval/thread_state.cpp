@@ -940,8 +940,15 @@ CConstRef<CValidError> CAsnvalThreadState::ValidateAsync(
             std::cerr << "Taxid for " << scope->GetLabel(seq_id_h) << " : " << scope->GetTaxId(seq_id_h, CScope::fDoNotRecalculate) << "\n";
 #endif
             auto bioseq_h = scope->GetBioseqHandle(seq_id_h);
-            if (bioseq_h)
-                top_h = bioseq_h.GetTopLevelEntry();
+            if (bioseq_h) {
+                if (pSubmitBlock) {
+                    top_h = bioseq_h.GetParentEntry();
+                }
+                else {
+                    top_h = bioseq_h.GetTopLevelEntry();
+                }
+            }
+
             if (top_h)
                 pEntry = Ref((CSeq_entry*)(void*)top_h.GetCompleteSeq_entry().GetPointer());
         }
