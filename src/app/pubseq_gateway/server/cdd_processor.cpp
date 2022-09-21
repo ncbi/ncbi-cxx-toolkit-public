@@ -296,7 +296,7 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
         x_Finish(ePSGS_NotFound);
         return;
     }
-    if (x_CanProcessSeq_id(annot_request.m_SeqId)) {
+    if (!annot_request.m_SeqId.empty() && x_CanProcessSeq_id(annot_request.m_SeqId)) {
         m_SeqIds.push_back(CSeq_id_Handle::GetHandle(annot_request.m_SeqId));
     }
     for (auto& id : annot_request.m_SeqIds) {
@@ -619,7 +619,7 @@ bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_requ
                                                   TProcessorPriority priority) const
 {
     bool have_valid_ids = false;
-    if (x_CanProcessSeq_id(annot_request.m_SeqId)) {
+    if (!annot_request.m_SeqId.empty() && x_CanProcessSeq_id(annot_request.m_SeqId)) {
         have_valid_ids = true;
     }
     else {
