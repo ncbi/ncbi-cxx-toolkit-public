@@ -39,6 +39,7 @@
 #include <corelib/ncbi_limits.hpp>
 
 #include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
@@ -1007,6 +1008,40 @@ private:
 
 ////////////////////////////////////////////////////////////////////
 // e_PDB tree
+
+
+class CSeq_id_PDB_Info : public CSeq_id_Info {
+public:
+    CSeq_id_PDB_Info(const CConstRef<CSeq_id>& seq_id, CSeq_id_Mapper* mapper);
+    
+    CConstRef<CSeq_id> GetPackedSeqId(TPacked packed, TVariant variant) const override;
+    
+    static pair<CConstRef<CSeq_id>, TVariant> Normalize(const CSeq_id& seq_id);
+
+private:
+    static TVariant x_NormalizeDate(const CDate_std& date_std);
+    
+    // variant contains bits describing if chain fields are set,
+    // and normalized date fields - year, month, day, hour, minute, and second
+
+    // base constants
+    static const int kSecondBits = 6; // 0-63, 63 means not set
+    static const int kMinuteBits = 6; // 0-63, 63 means not set
+    static const int kHourBits = 5; // 0-31, 31 means not set
+    static const int kDayBits = 5; // 1-31, 0 means not set
+    static const int kMonthBits = 4; // 1-12, 0 means not set
+    static const int kYearBits = 12; // 1-4095
+
+    // derived constants
+    static const int kNoChainOffset = 0;
+    static const int kNoChain_idOffset = kNoChainOffset + 1;
+    static const int kSecondOffset = kNoChain_idOffset + 1;
+    static const int kMinuteOffset = kSecondOffset + kSecondBits;
+    static const int kHourOffset = kMinuteOffset + kMinuteBits;
+    static const int kDayOffset = kHourOffset + kHourBits;
+    static const int kMonthOffset = kDayOffset + kDayBits;
+    static const int kYearOffset = kMonthOffset + kMonthBits;
+};
 
 
 class CSeq_id_PDB_Tree : public CSeq_id_Which_Tree
