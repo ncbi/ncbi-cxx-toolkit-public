@@ -58,8 +58,6 @@ CCompressionStreamProcessor::CCompressionStreamProcessor(
       m_OutBufSize(out_bufsize <= 1 ? kCompressionDefaultBufSize : out_bufsize),
       m_NeedDelete(need_delete), m_State(eDone)
 {
-    Init();
-    return;
 }
 
 
@@ -74,6 +72,11 @@ CCompressionStreamProcessor::~CCompressionStreamProcessor(void)
     m_Processor = 0;
 }
 
+
+// NOTE"
+//   Init() method will be called on compression/decompression stream creation,
+//   with initialization of CCompressionStreambuf. Calling it to early prevents 
+//   setting advanced compression parameters for a stream processing.
 
 void CCompressionStreamProcessor::Init(void)
 {
@@ -131,7 +134,7 @@ void CCompressionStream::Create(CNcbiIos&                    stream,
     m_Reader    = read_sp;
     m_Writer    = write_sp;
     m_Ownership = ownership;
-    
+
     // Create a new stream buffer
     unique_ptr<CCompressionStreambuf> sb(new CCompressionStreambuf(&stream, read_sp, write_sp));
     init(sb.get());
