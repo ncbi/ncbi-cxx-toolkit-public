@@ -399,6 +399,18 @@ void CPSGDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 }
 
 
+void CPSGDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret)
+{
+    m_Impl->GetSequenceLengths(ids, loaded, ret);
+}
+
+
+void CPSGDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret)
+{
+    m_Impl->GetSequenceTypes(ids, loaded, ret);
+}
+
+
 CGBDataLoader::TNamedAnnotNames
 CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
 {

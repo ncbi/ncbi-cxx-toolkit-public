@@ -108,6 +108,8 @@ public:
 
     typedef CDataLoader::TIds TIds;
     typedef CDataLoader::TGis TGis;
+    typedef CDataLoader::TSequenceLengths TSequenceLengths;
+    typedef CDataLoader::TSequenceTypes TSequenceTypes;
     typedef CDataLoader::TLoaded TLoaded;
     typedef CDataLoader::TTSE_LockSets TTSE_LockSets;
 
@@ -165,6 +167,10 @@ public:
     void GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
     void GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret);
+    void GetSequenceLengths(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret);
+    void GetSequenceLengthsOnce(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret);
+    void GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret);
+    void GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret);
 
     static CObjectIStream* GetBlobDataStream(const CPSG_BlobInfo& blob_info, const CPSG_BlobData& blob_data);
 
