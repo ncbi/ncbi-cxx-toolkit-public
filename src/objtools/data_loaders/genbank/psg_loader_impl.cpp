@@ -2623,6 +2623,63 @@ void CPSGDataLoader_Impl::GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret
 }
 
 
+void CPSGDataLoader_Impl::GetSequenceLengths(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret)
+{
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceLengthsOnce, this,
+                       cref(ids), ref(loaded), ref(ret)),
+                  "GetAccVers",
+                  8);
+}
+
+
+void CPSGDataLoader_Impl::GetSequenceLengthsOnce(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret)
+{
+    vector<shared_ptr<SPsgBioseqInfo>> infos;
+    infos.resize(ret.size());
+    auto counts = x_GetBulkBioseqInfo(CPSG_Request_Resolve::fLength, ids, loaded, infos);
+    if ( counts.first ) {
+        // have loaded infos
+        for (size_t i = 0; i < infos.size(); ++i) {
+            if (loaded[i] || !infos[i].get()) continue;
+            auto length = infos[i]->length;
+            ret[i] = length > 0? TSeqPos(length): kInvalidSeqPos;
+            loaded[i] = true;
+        }
+    }
+    if ( counts.second ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some sequence lengths in bulk request");
+    }
+}
+
+
+void CPSGDataLoader_Impl::GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret)
+{
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceTypesOnce, this,
+                       cref(ids), ref(loaded), ref(ret)),
+                  "GetAccVers",
+                  8);
+}
+
+
+void CPSGDataLoader_Impl::GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret)
+{
+    vector<shared_ptr<SPsgBioseqInfo>> infos;
+    infos.resize(ret.size());
+    auto counts = x_GetBulkBioseqInfo(CPSG_Request_Resolve::fMoleculeType, ids, loaded, infos);
+    if ( counts.first ) {
+        // have loaded infos
+        for (size_t i = 0; i < infos.size(); ++i) {
+            if (loaded[i] || !infos[i].get()) continue;
+            ret[i] = infos[i]->molecule_type;
+            loaded[i] = true;
+        }
+    }
+    if ( counts.second ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some sequence types in bulk request");
+    }
+}
+
+
 CPSG_BioId CPSGDataLoader_Impl::x_GetBioId(const CSeq_id_Handle& idh)
 {
     CConstRef<CSeq_id> id = idh.GetSeqId();
