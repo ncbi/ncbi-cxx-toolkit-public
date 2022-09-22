@@ -164,7 +164,7 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
 
         if (! fqual) {
             /* go back to check, is this a mandatory qualifier ? */
-            for (const auto& cur_type : CSeqFeatData::GetMandatoryQualifiers(subtype)) {
+            for (CSeqFeatData::EQualifier cur_type : CSeqFeatData::GetMandatoryQualifiers(subtype)) {
                 if (qual_type == cur_type) {
                     fqual = true;
                     break;
