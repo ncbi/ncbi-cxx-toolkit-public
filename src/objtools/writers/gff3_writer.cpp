@@ -483,8 +483,7 @@ bool CGff3Writer::xAssignAlignmentSplicedMethod(
         CSeq_id_Handle bestH = sequence::GetId(
             productId, *m_pScope, sequence::eGetId_Best);
         if (bestH) {
-            const CSeq_id& bestId = *bestH.GetSeqId();
-            CWriteUtil::GetIdType(bestId, method);
+            CWriteUtil::GetIdType(*bestH.GetSeqId(), method);
             record.SetMethod(method);
             return true;
         }
@@ -504,8 +503,7 @@ bool CGff3Writer::xAssignAlignmentSplicedMethod(
     CSeq_id_Handle bestH = sequence::GetId(
         genomicId, *m_pScope, sequence::eGetId_Best);
     if (bestH) {
-        const CSeq_id& bestId = *bestH.GetSeqId();
-        CWriteUtil::GetIdType(bestId, method);
+        CWriteUtil::GetIdType(*bestH.GetSeqId(), method);
         record.SetMethod(method);
     }
     // give up and move on
@@ -534,8 +532,7 @@ bool CGff3Writer::xAssignAlignmentSplicedType(
         // MSS-225: There _are_ accessions that are not in ID (yet).
         return true;
     }
-    const CSeq_id& genomicId = *genomicH.GetSeqId();
-    record.SetType(sBestMatchType(genomicId));
+    record.SetType(sBestMatchType(*genomicH.GetSeqId()));
     return true;
 }
 
