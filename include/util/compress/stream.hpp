@@ -323,14 +323,12 @@ protected:
     /// Default constructor.
     ///
     /// Default constructor allow to create stream with specific
-    /// characteristics later, not necessary in the constructor.
-    /// Can be used in derived classes.
+    /// characteristics later. Can be used in derived classes.
     /// @sa CCompressionStream, Create()
     CCompressionIStream(void) : CNcbiIstream(0) { }
 
-    /// Create stream with specific characteristics later,
-    /// not necessary in the constructor. 
-    /// Do nothing, if stream is already initialized.
+    /// Create stream with specific characteristics. 
+    /// Do nothing, if stream is already created.
     /// @sa CCompressionStream
     void Create(CNcbiIos&                    stream,
                 CCompressionStreamProcessor* stream_processor,
