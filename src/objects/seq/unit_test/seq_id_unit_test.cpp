@@ -51,6 +51,7 @@
 #include <util/util_exception.hpp>
 #include <util/util_misc.hpp>
 #include <util/random_gen.hpp>
+#include <thread>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -141,6 +142,29 @@ BOOST_AUTO_TEST_CASE(s_MTTest)
     }
     NON_CONST_ITERATE ( vector< CRef<CThread> >, it, tt ) {
         (*it)->Join();
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(s_MTGiTest)
+{
+    const size_t NQ = 20;
+    vector<thread> tt(NQ);
+    for ( size_t i = 0; i < NQ; ++i ) {
+        tt[i] =
+            thread([&]
+                   (TGi gi)
+                   {
+                       CSeq_id_Handle id1 = CSeq_id_Handle::GetGiHandle(gi);
+                       CSeq_id_Handle id2 = CSeq_id_Handle::GetGiHandle(gi+1);
+                       for ( int i = 0; i < 1000000; ++i ) {
+                           _VERIFY(id1.GetSeqId()->GetGi() == gi);
+                           _VERIFY(id2.GetSeqId()->GetGi() == gi+1);
+                       }
+                   }, GI_FROM(int, i+1));
+    }
+    for ( size_t i = 0; i < NQ; ++i ) {
+        tt[i].join();
     }
 }
 #endif
@@ -2282,4 +2306,104 @@ BOOST_AUTO_TEST_CASE(s_TestTypeMismatch)
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Tpe, acc)));
     BOOST_CHECK_EQUAL(id->IdentifyAccession(), CSeq_id::eAcc_embl_tpa_other);
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession(acc), CSeq_id::eAcc_embl_est);
+}
+
+static CRef<CSeq_id> s_ParsePDB(const char* str)
+{
+    CRef<CSeq_id> ret(new CSeq_id);
+    istringstream in(string("Seq-id::=pdb ")+str);
+    in >> MSerial_AsnText >> *ret;
+    return ret;
+}
+
+template<class C>
+static string s_ToASN(const C& obj)
+{
+    ostringstream out;
+    out << MSerial_AsnText << obj;
+    return out.str();
+}
+
+BOOST_AUTO_TEST_CASE(TestPDB)
+{
+    LOG_POST("Testing PDB equivalence");
+    {{
+        const char* str_eq[] = {
+            "{mol\"4XNU\",chain 65,chain-id \"A\"}",
+            "{mol\"4XNU\",chain-id \"A\"}",
+            "{mol\"4XNU\",chain 65}",
+            "{mol\"4XNU\",chain 65,rel std {year 2017},chain-id \"A\"}",
+            "{mol\"4XNU\",chain 65,rel std {year 2017,month 6,day 2},chain-id \"A\"}",
+            "{mol\"4XNU\",chain 65,rel std {year 2017,month 6,day 2,hour 12,minute 22,second 33},chain-id \"A\"}",
+        };
+        const char* str_ne[] = {
+            "{mol\"4XNU\"}",
+            "{mol\"4XNU\",chain 66,chain-id \"A\"}",
+            "{mol\"4XNU\",chain 65,chain-id \"B\"}",
+            "{mol\"4XNV\",chain 65,chain-id \"A\"}",
+            "{mol\"4XNU\",chain 65,rel std {year 2017,month 6,day 2,season\"summer\"},chain-id \"A\"}",
+            "{mol\"4XNU\",chain 65,rel std {year 0,month 6,day 2,season\"summer\"},chain-id \"A\"}",
+            "{mol\"4XNU\",chain 65,rel str \"02/06/2017\",chain-id \"A\"}",
+        };
+        vector<CRef<CSeq_id>> id_eq;
+        for ( auto str : str_eq ) {
+            id_eq.push_back(s_ParsePDB(str));
+        }
+        vector<CRef<CSeq_id>> id_ne;
+        for ( auto str : str_ne ) {
+            id_ne.push_back(s_ParsePDB(str));
+        }
+        vector<CSeq_id_Handle> idh_eq;
+        for ( auto id : id_eq ) {
+            idh_eq.push_back(CSeq_id_Handle::GetHandle(*id));
+        }
+        vector<CSeq_id_Handle> idh_ne;
+        for ( auto id : id_ne ) {
+            idh_ne.push_back(CSeq_id_Handle::GetHandle(*id));
+        }
+        for ( auto& id1 : idh_eq ) {
+            auto seq_id1 = id1.GetSeqId();
+            for ( auto& id2 : idh_eq ) {
+                BOOST_CHECK_EQUAL(id1, id2);
+                auto seq_id2 = id2.GetSeqId();
+                if ( &id1 == &id2 ) {
+                    BOOST_CHECK_EQUAL(s_ToASN(*seq_id1), s_ToASN(*seq_id2));
+                }
+                else {
+                    BOOST_CHECK_NE(s_ToASN(*seq_id1), s_ToASN(*seq_id2));
+                }
+            }
+            for ( auto& id2 : idh_ne ) {
+                BOOST_CHECK_NE(id1, id2);
+                auto seq_id2 = id2.GetSeqId();
+                BOOST_CHECK_NE(s_ToASN(*seq_id1), s_ToASN(*seq_id2));
+            }
+        }
+        for ( auto& id1 : idh_ne ) {
+            auto seq_id1 = id1.GetSeqId();
+            for ( auto& id2 : idh_ne ) {
+                auto seq_id2 = id2.GetSeqId();
+                if ( &id1 == &id2 ) {
+                    BOOST_CHECK_EQUAL(s_ToASN(*seq_id1), s_ToASN(*seq_id2));
+                }
+                else {
+                    BOOST_CHECK_NE(id1, id2);
+                    BOOST_CHECK_NE(s_ToASN(*seq_id1), s_ToASN(*seq_id2));
+                }
+            }
+        }
+        for ( size_t i = 0; i < size(str_eq); ++i ) {
+            BOOST_CHECK_NE(idh_eq[i].GetSeqId(), id_eq[i]);
+            BOOST_CHECK_EQUAL(s_ToASN(*idh_eq[i].GetSeqId()), s_ToASN(*id_eq[i]));
+        }
+        for ( size_t i = 0; i < size(str_ne); ++i ) {
+            BOOST_CHECK_NE(idh_ne[i].GetSeqId(), id_ne[i]);
+            BOOST_CHECK_EQUAL(s_ToASN(*idh_ne[i].GetSeqId()), s_ToASN(*id_ne[i]));
+        }
+        set<CSeq_id_Handle> idh_set_eq(begin(idh_eq), end(idh_eq));
+        BOOST_CHECK_EQUAL(idh_set_eq.size(), 1u);
+        BOOST_CHECK_EQUAL(s_ToASN(idh_set_eq.begin()->GetSeqId()), s_ToASN(*id_eq[0]));
+        set<CSeq_id_Handle> idh_set_ne(begin(idh_ne), end(idh_ne));
+        BOOST_CHECK_EQUAL(idh_set_ne.size(), size(idh_ne));
+    }}
 }

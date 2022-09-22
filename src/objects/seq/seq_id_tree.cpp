@@ -3219,6 +3219,162 @@ bool CSeq_id_PDB_Tree::Empty(void) const
 }
 
 
+CSeq_id_PDB_Info::CSeq_id_PDB_Info(const CConstRef<CSeq_id>& seq_id, CSeq_id_Mapper* mapper)
+    : CSeq_id_Info(seq_id, mapper)
+{
+}
+
+
+CConstRef<CSeq_id> CSeq_id_PDB_Info::GetPackedSeqId(TPacked /*packed*/, TVariant variant) const
+{
+    if ( !variant ) {
+        // the seq-id is already normalized
+        return m_Seq_id;
+    }
+    CRef<CSeq_id> ret(new CSeq_id);
+    s_AssignSeq_id(*ret, *m_Seq_id);
+    CPDB_seq_id& pdb_id = ret->SetPdb();
+    // update chain/chain-id set
+    if ( variant & (TVariant(1)<<kNoChainOffset) ) {
+        pdb_id.ResetChain();
+    }
+    if ( variant & (TVariant(1)<<kNoChain_idOffset) ) {
+        pdb_id.ResetChain_id();
+    }
+    variant &= ~((TVariant(1)<<kNoChainOffset) |
+                 (TVariant(1)<<kNoChain_idOffset));
+    if ( variant ) {
+        // add date
+        CDate_std& date = pdb_id.SetRel().SetStd();
+        int year = (variant >> kYearOffset) & ((1 << kYearBits)-1);
+        int month = (variant >> kMonthOffset) & ((1 << kMonthBits)-1);
+        int day = (variant >> kDayOffset) & ((1 << kDayBits)-1);
+        int hour = (variant >> kHourOffset) & ((1 << kHourBits)-1);
+        int minute = (variant >> kMinuteOffset) & ((1 << kMinuteBits)-1);
+        int second = (variant >> kSecondOffset) & ((1 << kSecondBits)-1);
+        date.SetYear(year);
+        if ( month != 0 ) {
+            date.SetMonth(month);
+        }
+        if ( day != 0 ) {
+            date.SetDay(day);
+        }
+        if ( hour != (1 << kHourBits)-1 ) {
+            date.SetHour(hour);
+        }
+        if ( minute != (1 << kMinuteBits)-1 ) {
+            date.SetMinute(minute);
+        }
+        if ( second != (1 << kSecondBits)-1 ) {
+            date.SetSecond(second);
+        }
+    }
+    return ret;
+}
+
+
+static inline int x_GetUnset0(int bits)
+{
+    // (1<<bits)-1 is reserved for unset field
+    return (1<<bits)-1;
+}
+
+
+static inline bool x_GetUnset1(int /*bits*/)
+{
+    // 0 is reserved for unset field
+    return 0;
+}
+
+
+static inline bool x_InRange0(int value, int bits)
+{
+    // (1<<bits)-1 is reserved for unset field
+    return value >= 0 && value <= (1<<bits)-2;
+}
+
+
+static inline bool x_InRange1(int value, int bits)
+{
+    // 0 is reserved for unset field
+    return value >= 1 && value <= (1<<bits)-1;
+}
+
+
+CSeq_id_Info::TVariant CSeq_id_PDB_Info::x_NormalizeDate(const CDate_std& date_std)
+{
+    if ( x_InRange1(date_std.GetYear(), kYearBits) &&
+         (!date_std.IsSetMonth() || x_InRange1(date_std.GetMonth(), kMonthBits)) &&
+         (!date_std.IsSetDay() || x_InRange1(date_std.GetDay(), kDayBits)) &&
+         !date_std.IsSetSeason() &&
+         (!date_std.IsSetHour() || x_InRange0(date_std.GetHour(), kHourBits)) &&
+         (!date_std.IsSetMinute() || x_InRange0(date_std.GetMinute(), kMinuteBits)) &&
+         (!date_std.IsSetSecond() || x_InRange0(date_std.GetSecond(), kSecondBits)) ) {
+        int year = date_std.GetYear();
+        int month = date_std.IsSetMonth()? date_std.GetMonth(): x_GetUnset1(kMonthBits);
+        int day = date_std.IsSetDay()? date_std.GetDay(): x_GetUnset1(kDayBits);
+        int hour = date_std.IsSetHour()? date_std.GetHour(): x_GetUnset0(kHourBits);
+        int minute = date_std.IsSetMinute()? date_std.GetMinute(): x_GetUnset0(kMinuteBits);
+        int second = date_std.IsSetSecond()? date_std.GetSecond(): x_GetUnset0(kSecondBits);
+        return
+            (TVariant(year) << kYearOffset) |
+            (TVariant(month) << kMonthOffset) |
+            (TVariant(day) << kDayOffset) |
+            (TVariant(hour) << kHourOffset) |
+            (TVariant(minute) << kMinuteOffset) |
+            (TVariant(second) << kSecondOffset);
+    }
+    return 0;
+}
+
+
+pair<CConstRef<CSeq_id>, CSeq_id_Info::TVariant> CSeq_id_PDB_Info::Normalize(const CSeq_id& seq_id)
+{
+    pair<CConstRef<CSeq_id>, TVariant> ret(Ref(&seq_id), 0);
+    const CPDB_seq_id& pdb_id = seq_id.GetPdb();
+    // try to normalize date
+    if ( pdb_id.IsSetRel() ) {
+        const CDate& date = pdb_id.GetRel();
+        if ( date.IsStd() ) {
+            ret.second = x_NormalizeDate(date.GetStd());
+        }
+        if ( !ret.second ) {
+            // non-normalizable date, use PDB id as is
+            return ret;
+        }
+    }
+    // normalize chain
+    bool normal_has_chain =
+        pdb_id.IsSetChain() || (pdb_id.IsSetChain_id() && pdb_id.GetChain_id().size() == 1);
+    bool normal_has_chain_id =
+        pdb_id.IsSetChain_id() || pdb_id.IsSetChain();
+    if ( ret.second ||
+         pdb_id.IsSetChain() != normal_has_chain ||
+         pdb_id.IsSetChain_id() != normal_has_chain_id ) {
+        // create normalized PDB id
+        CRef<CSeq_id> new_seq_id(new CSeq_id());
+        CPDB_seq_id& new_pdb_id = new_seq_id->SetPdb();
+        new_pdb_id.SetMol(pdb_id.GetMol());
+        if ( normal_has_chain_id ) {
+            if ( pdb_id.IsSetChain_id() ) {
+                new_pdb_id.SetChain_id(pdb_id.GetChain_id());
+            }
+            else {
+                new_pdb_id.SetChain_id(string(1, char(pdb_id.GetChain())));
+            }
+        }
+        if ( normal_has_chain ) {
+            new_pdb_id.SetChain(new_pdb_id.GetChain_id()[0]);
+        }
+        ret.second |=
+            (TVariant(!pdb_id.IsSetChain()) << kNoChainOffset) |
+            (TVariant(!pdb_id.IsSetChain_id()) << kNoChain_idOffset);
+        ret.first = new_seq_id;
+    }
+    return ret;
+}
+
+
 inline string CSeq_id_PDB_Tree::x_IdToStrKey(const CPDB_seq_id& id) const
 {
 // this is an attempt to follow the undocumented rules of PDB
@@ -3239,13 +3395,14 @@ inline string CSeq_id_PDB_Tree::x_IdToStrKey(const CPDB_seq_id& id) const
 CSeq_id_Handle CSeq_id_PDB_Tree::FindInfo(const CSeq_id& id) const
 {
     _ASSERT( id.IsPdb() );
-    const CPDB_seq_id& pid = id.GetPdb();
+    pair<CConstRef<CSeq_id>, CSeq_id_Info::TVariant> normalized_id = CSeq_id_PDB_Info::Normalize(id);
+    const CPDB_seq_id& pid = normalized_id.first->GetPdb();
     TReadLockGuard guard(m_TreeLock);
     TMolMap::const_iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
     if ( mol_it != m_MolMap.end() ) {
         ITERATE( TSubMolList, it, mol_it->second ) {
             if ( pid.Equals((*it)->GetSeqId()->GetPdb()) ) {
-                return CSeq_id_Handle(*it);
+                return CSeq_id_Handle(*it, 0, normalized_id.second);
             }
         }
     }
@@ -3256,17 +3413,24 @@ CSeq_id_Handle CSeq_id_PDB_Tree::FindInfo(const CSeq_id& id) const
 CSeq_id_Handle CSeq_id_PDB_Tree::FindOrCreate(const CSeq_id& id)
 {
     _ASSERT( id.IsPdb() );
-    const CPDB_seq_id& pid = id.GetPdb();
+    pair<CConstRef<CSeq_id>, CSeq_id_Info::TVariant> normalized_id = CSeq_id_PDB_Info::Normalize(id);
+    const CPDB_seq_id& pid = normalized_id.first->GetPdb();
     TWriteLockGuard guard(m_TreeLock);
-    TSubMolList& sub = m_MolMap[x_IdToStrKey(id.GetPdb())];
+    TSubMolList& sub = m_MolMap[x_IdToStrKey(pid)];
     ITERATE ( TSubMolList, it, sub ) {
         if ( pid.Equals((*it)->GetSeqId()->GetPdb()) ) {
-            return CSeq_id_Handle(*it);
+            return CSeq_id_Handle(*it, 0, normalized_id.second);
         }
     }
-    CSeq_id_Info* info = CreateInfo(id);
+    if ( normalized_id.first == &id ) {
+        // create a copy
+        CRef<CSeq_id> id_ref(new CSeq_id);
+        s_AssignSeq_id(*id_ref, id);
+        normalized_id.first = id_ref;
+    }
+    CSeq_id_Info* info = new CSeq_id_PDB_Info(normalized_id.first, m_Mapper);
     sub.push_back(info);
-    return CSeq_id_Handle(info);
+    return CSeq_id_Handle(info, 0, normalized_id.second);
 }
 
 
@@ -3280,7 +3444,7 @@ void CSeq_id_PDB_Tree::x_Unindex(const CSeq_id_Info* info)
     _ASSERT(mol_it != m_MolMap.end());
     NON_CONST_ITERATE(TSubMolList, it, mol_it->second) {
         if (*it == info) {
-            _ASSERT(pid.Equals((*it)->GetSeqId()->GetPdb()));
+            //_ASSERT(pid.Equals((*it)->GetSeqId()->GetPdb()));
             mol_it->second.erase(it);
             break;
         }
