@@ -176,7 +176,7 @@ unique_ptr<CObjectIStream> CHugeFile::MakeObjStream(std::streampos pos) const
         auto chunk = Ref(new CMemoryChunk(m_memory+pos, m_filesize-pos, {}, CMemoryChunk::eNoCopyData));
         CMemoryByteSource source(chunk);
         str.reset(CObjectIStream::Create( m_serial_format, source ));
-        str->SetDelayBufferParsingPolicy(CObjectIStream::eDelayBufferPolicyNeverParse);
+        //str->SetDelayBufferParsingPolicy(CObjectIStream::eDelayBufferPolicyNeverParse);
     } else {
         std::unique_ptr<std::ifstream> stream{new std::ifstream(m_filename, ios::binary)};
         stream->seekg(pos);
