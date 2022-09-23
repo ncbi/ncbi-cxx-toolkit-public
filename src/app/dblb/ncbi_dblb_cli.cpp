@@ -140,6 +140,12 @@ void CDBLBClientApp::x_InitLookup(CArgDescriptions& arg_desc)
         ("service", "Service",
          "Desired service name; use -url to supply a full DBAPI URL.",
          CArgDescriptions::eString);
+    arg_desc.AddKey("url", "URL",
+                    "DBAPI URL consolidating all of the above",
+                    CArgDescriptions::eString);
+    arg_desc.SetConstraint("url", new CArgAllow_Regexp("dbapi://.*"));
+    arg_desc.SetDependency("url", CArgDescriptions::eExcludes, "service");
+
     arg_desc.AddDefaultKey("username", "Name",
                            "Username for confirming usability",
                            CArgDescriptions::eString, "anyone");
@@ -151,11 +157,6 @@ void CDBLBClientApp::x_InitLookup(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("database", "Name", "Database name to try using",
                             CArgDescriptions::eString);
     arg_desc.SetDependency("database", CArgDescriptions::eRequires, "service");
-    arg_desc.AddOptionalKey("url", "URL",
-                            "DBAPI URL consolidating all of the above",
-                            CArgDescriptions::eString);
-    arg_desc.SetConstraint("url", new CArgAllow_Regexp("dbapi://.*"));
-    arg_desc.SetDependency("url", CArgDescriptions::eExcludes, "service");
     arg_desc.AddFlag("kerberos",
                      "Authenticate via existing Kerberos credentials");
     arg_desc.SetDependency("kerberos", CArgDescriptions::eExcludes,
