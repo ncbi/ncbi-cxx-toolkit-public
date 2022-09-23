@@ -427,6 +427,13 @@ void CHugeAsnReader::FlattenGenbankSet()
     m_top_ids.clear();
     m_FlattenedIndex.clear();
 
+    // single bioseq not contained in set
+    if (m_bioseq_list.size() == 1 && m_bioseq_set_list.size() == 1) {
+        auto rec = m_bioseq_list.front();
+        m_bioseq_set_list.begin()->m_pos = rec.m_pos;
+    }
+
+
     for (auto it = m_bioseq_list.begin(); it!= m_bioseq_list.end(); ++it)
     {
         auto rec = *it;
