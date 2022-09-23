@@ -53,9 +53,9 @@ USING_SCOPE(objects);
 BEGIN_LOCAL_NAMESPACE;
 
 // Blob id:
-// sat = 2001-2099 : SNP NA version 1 - 99
+// sat = 2001-2099 : SNP NA version 1 - 999
 // or, for primary SNP track:
-// sat = 3001-3099 : SNP NA version 1 - 99
+// sat = 3001-3099 : SNP NA version 1 - 999
 // subsat : NA accession number
 // or, for primary SNP graph track:
 // NA accession number + kSNPSubSatGraph(=1000000000)
@@ -76,7 +76,7 @@ const int kSNPSatBase = 2000;
 const int kSNPSatPrimary = 3000;
 const int kSNPSubSatGraph = 1000000000;
 const int kNAVersionMin = 1;
-const int kNAVersionMax = 99;
+const int kNAVersionMax = 999;
 const int kSeqIndexCount = 1000000;
 const int kFilterIndexCount = 2000;
 const int kFilterIndexMaxLength = 4;
