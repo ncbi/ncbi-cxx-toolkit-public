@@ -1592,7 +1592,7 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
 
     do {
         do {
-            if (m_Io[idx]->queue.Push(move(req))) return true;
+            if (m_Io[idx]->queue.Push(req)) return true;
 
             // No room for the request
 
