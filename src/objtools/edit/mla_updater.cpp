@@ -122,7 +122,10 @@ CRef<CPub> CMLAUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
     CMLAClient::TReply reply;
 
     try {
-        return m_mlac->AskGetpubpmid(CPubMedId(pmid), &reply);
+        CRef<CPub> ret = m_mlac->AskGetpubpmid(CPubMedId(pmid), &reply);
+        if (m_pub_interceptor)
+            m_pub_interceptor(ret);
+        return ret;
     } catch (CException&) {
     }
 

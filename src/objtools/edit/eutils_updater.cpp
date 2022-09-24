@@ -391,6 +391,8 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
                 if (mle.IsSetCit()) {
                     CRef<CPub> cit_art(new CPub);
                     cit_art->SetArticle().Assign(mle.GetCit());
+                    if (m_pub_interceptor)
+                        m_pub_interceptor(cit_art);
                     return cit_art;
                 }
             }
@@ -402,6 +404,8 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
                 if (mle.IsSetCit()) {
                     CRef<CPub> cit_art(new CPub);
                     cit_art->SetArticle().Assign(mle.GetCit());
+                    if (m_pub_interceptor)
+                        m_pub_interceptor(cit_art);
                     return cit_art;
                 }
             }
