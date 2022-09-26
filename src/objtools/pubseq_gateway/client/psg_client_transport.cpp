@@ -897,34 +897,43 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     return 0;
 }
 
-void SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
+bool SPSG_Request::Retry(const SUvNgHttp2_Error& error, bool refused_stream)
 {
-    auto context_guard = req->context.Set();
+    auto context_guard = context.Set();
 
-    if (auto retries = req->GetRetries(SPSG_Retries::eRetry, refused_stream)) {
-        // Return to queue for a re-send
-        if (m_Queue.Push(req)) {
-            req->reply->debug_printout << retries << error << endl;
-        }
+    if (auto retries = GetRetries(SPSG_Retries::eRetry, refused_stream)) {
+        reply->debug_printout << retries << error << endl;
+        return true;
     }
+
+    return false;
+}
+
+bool SPSG_Request::Fail(TPSG_InternalId processor_id, const SUvNgHttp2_Error& error, bool refused_stream)
+{
+    if (GetRetries(SPSG_Retries::eFail, refused_stream)) {
+        return false;
+    }
+
+    auto context_guard = context.Set();
+
+    reply->debug_printout << error << endl;
+    OnReplyDone(processor_id)->SetFailed(error);
+    return true;
 }
 
 bool SPSG_IoSession::Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
-    if (req->GetRetries(SPSG_Retries::eFail, refused_stream)) {
-        return false;
+    auto context_guard = req->context.Set();
+    auto rv = req->Fail(GetInternalId(), error, refused_stream);
+
+    if (rv) {
+        server.throttling.AddFailure();
+        PSG_THROTTLING_TRACE("Server '" << GetId() << "' failed to process request '" <<
+                req->reply->debug_printout.id << "', " << error);
     }
 
-    auto context_guard = req->context.Set();
-    server.throttling.AddFailure();
-
-    auto& debug_printout = req->reply->debug_printout;
-
-    debug_printout << error << endl;
-    req->OnReplyDone(GetInternalId())->SetFailed(error);
-    PSG_THROTTLING_TRACE("Server '" << GetId() << "' failed to process request '" <<
-            debug_printout.id << "', " << error);
-    return true;
+    return rv;
 }
 
 int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t error_code)
