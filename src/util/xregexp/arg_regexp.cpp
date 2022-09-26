@@ -65,7 +65,7 @@ bool CArgAllow_Regexp::Verify(const string& value) const
 
 string CArgAllow_Regexp::GetUsage(void) const
 {
-    return "to match Perl regular expression: '" + m_Pattern + "'";
+    return "to match extended regular expression: '" + m_Pattern + "'";
 }
 
 
