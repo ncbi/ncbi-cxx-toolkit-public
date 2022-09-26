@@ -202,6 +202,7 @@ struct SPSG_Params
     TPSG_DebugPrintout debug_printout;
     TPSG_MaxConcurrentSubmits max_concurrent_submits;
     TPSG_RequestTimeout request_timeout;
+    TPSG_CompetitiveAfter competitive_after;
     TPSG_RequestsPerIo requests_per_io;
     TPSG_RequestRetries request_retries;
     TPSG_RefusedStreamRetries refused_stream_retries;
@@ -212,6 +213,7 @@ struct SPSG_Params
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
         request_timeout(TPSG_RequestTimeout::eGetDefault),
+        competitive_after(TPSG_CompetitiveAfter::eGetDefault, [&](auto v) { auto t = request_timeout.Get(); return v > 0 && v < t ? v : t; }),
         requests_per_io(TPSG_RequestsPerIo::eGetDefault),
         request_retries(TPSG_RequestRetries::eGetDefault),
         refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
@@ -438,6 +440,8 @@ private:
     TValues m_Values;
 };
 
+using TPSG_InternalId = const void*;
+
 struct SPSG_Request
 {
     const string full_path;
@@ -446,15 +450,25 @@ struct SPSG_Request
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
-    void OnReplyData(const char* data, size_t len)
+    void OnReplyData(TPSG_InternalId processor_id, const char* data, size_t len)
     {
+        SetProcessedBy(processor_id);
         while (len && (this->*m_State)(data, len));
+    }
+
+    auto& OnReplyDone(TPSG_InternalId processor_id)
+    {
+        SetProcessedBy(processor_id);
+        return reply;
     }
 
     unsigned GetRetries(SPSG_Retries::EType type, bool refused_stream)
     {
         return m_Retries.Get(type, refused_stream, reply->reply_item->state.InProgress());
     }
+
+    bool CanBeProcessedBy(TPSG_InternalId processor_id) const { return !m_ProcessedBy || (m_ProcessedBy == processor_id); }
+    void SetProcessedBy(TPSG_InternalId processor_id) { _ASSERT(CanBeProcessedBy(processor_id)); m_ProcessedBy = processor_id; }
 
 private:
     bool StatePrefix(const char*& data, size_t& len);
@@ -483,14 +497,21 @@ private:
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
     SPSG_Retries m_Retries;
+    TPSG_InternalId m_ProcessedBy = nullptr;
 };
 
 struct SPSG_TimedRequest
 {
     SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Request(move(r)) {}
 
-    auto Get() { m_Seconds = 0; return m_Request; }
-    unsigned AddSecond() { return m_Seconds++; }
+    auto Get(TPSG_InternalId processor_id)
+    {
+        _ASSERT(processor_id);
+        _ASSERT(m_Request);
+        return m_Request->CanBeProcessedBy(processor_id) ? m_Request : nullptr;
+    }
+
+    unsigned AddSecond() { return ++m_Seconds; }
 
 private:
     shared_ptr<SPSG_Request> m_Request;
@@ -640,10 +661,12 @@ private:
 
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
+    TPSG_InternalId GetInternalId() const { return this; }
+
     auto GetRequest(int32_t stream_id)
     {
         auto it = m_Requests.find(stream_id);
-        return it == m_Requests.end() ? nullptr : it->second.Get();
+        return it == m_Requests.end() ? nullptr : it->second.Get(GetInternalId());
     }
 
     void Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
@@ -896,6 +919,8 @@ protected:
     void AfterExecute();
 
 private:
+    TPSG_InternalId GetInternalId() const { return this; }
+
     void CheckForNewServers(uv_async_t* handle)
     {
         const auto servers_size = m_Servers->size();
