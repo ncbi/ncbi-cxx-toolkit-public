@@ -1018,6 +1018,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
         return false;
     }
 
+    req->SetSubmittedBy(GetInternalId());
     req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << m_Tcp.GetLocalPort() << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
     m_Requests.emplace(stream_id, move(req));
@@ -1273,6 +1274,14 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
             auto session = server_sessions.begin();
 
+            auto last_session = [&]() { return distance(session, server_sessions.end()) == 1; };
+            auto add_session = [&]() {
+                    if (server_sessions.size() >= TPSG_MaxSessions::GetDefault()) return false;
+                    server_sessions.emplace_back(server, m_Params, queue, handle->loop);
+                    PSG_IO_TRACE("Additional session for server '" << server.address << "' was added");
+                    return true;
+                };
+
             // Skip all full sessions
             for (; (session != server_sessions.end()) && session->IsFull(); ++session);
 
@@ -1300,6 +1309,27 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                     }
 
                     _DEBUG_ARG(const auto req_id = req->reply->debug_printout.id);
+
+                    // Try to submit to a different session if this is a competitive stream
+                    if (!session->CanProcessRequest(req)) {
+                        auto original_session = session;
+
+                        do {
+                            if (last_session()) {
+                                if (add_session()) {
+                                    ++session;
+                                } else {
+                                    session = original_session;
+                                }
+
+                                break;
+                            }
+
+                            ++session;
+                        }
+                        while (session->IsFull());
+                    }
+
                     bool result = session->ProcessRequest(req);
 
                     if (result) {
@@ -1309,11 +1339,8 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         ++server.stats;
 
                         // Add new session if allowed to
-                        if (session->IsFull() &&
-                                (distance(session, server_sessions.end()) == 1) &&
-                                (server_sessions.size() < TPSG_MaxSessions::GetDefault())) {
-                            server_sessions.emplace_back(server, m_Params, queue, handle->loop);
-                            PSG_IO_TRACE("Additional session for server '" << server.address << "' was added");
+                        if (session->IsFull() && last_session()) {
+                            add_session();
                         }
 
                         break;
