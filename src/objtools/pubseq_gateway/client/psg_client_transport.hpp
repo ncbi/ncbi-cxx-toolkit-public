@@ -200,6 +200,8 @@ struct SPSG_Chunk : string
 struct SPSG_Params
 {
     TPSG_DebugPrintout debug_printout;
+    TPSG_MaxConcurrentSubmits max_concurrent_submits;
+    TPSG_RequestTimeout request_timeout;
     TPSG_RequestsPerIo requests_per_io;
     TPSG_RequestRetries request_retries;
     TPSG_RefusedStreamRetries refused_stream_retries;
@@ -208,6 +210,8 @@ struct SPSG_Params
 
     SPSG_Params() :
         debug_printout(TPSG_DebugPrintout::eGetDefault),
+        max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
+        request_timeout(TPSG_RequestTimeout::eGetDefault),
         requests_per_io(TPSG_RequestsPerIo::eGetDefault),
         request_retries(TPSG_RequestRetries::eGetDefault),
         refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
@@ -619,7 +623,7 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     SPSG_Server& server;
 
     template <class... TNgHttp2Cbs>
-    SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
+    SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
 
     bool ProcessRequest(shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
@@ -655,8 +659,8 @@ private:
 
     void OnReset(SUvNgHttp2_Error error) override;
 
+    SPSG_Params m_Params;
     array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME>, eSize> m_Headers;
-    const TPSG_RequestTimeout m_RequestTimeout;
     SPSG_AsyncQueue& m_Queue;
     TRequests m_Requests;
 };
@@ -879,8 +883,8 @@ struct SPSG_IoImpl
 {
     SPSG_AsyncQueue queue;
 
-    SPSG_IoImpl(SPSG_Servers::TTS& servers) :
-        m_MaxConcurrentSubmits(TPSG_MaxConcurrentSubmits::eGetDefault),
+    SPSG_IoImpl(const SPSG_Params& params, SPSG_Servers::TTS& servers) :
+        m_Params(params),
         m_Servers(servers),
         m_Random(piecewise_construct, {}, forward_as_tuple(random_device()()))
     {}
@@ -914,7 +918,7 @@ private:
 
     using TSessions = deque<SUvNgHttp2_Session<SPSG_IoSession>>;
 
-    const TPSG_MaxConcurrentSubmits m_MaxConcurrentSubmits;
+    SPSG_Params m_Params;
     SPSG_Servers::TTS& m_Servers;
     deque<pair<TSessions, double>> m_Sessions;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;
@@ -922,8 +926,8 @@ private:
 
 struct SPSG_DiscoveryImpl
 {
-    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, SPSG_Servers::TTS& servers) :
-        m_NoServers(servers),
+    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers) :
+        m_NoServers(params, servers),
         m_Service(move(service)),
         m_Stats(move(stats)),
         m_Servers(servers)
@@ -938,7 +942,7 @@ protected:
 private:
     struct SNoServers
     {
-        SNoServers(SPSG_Servers::TTS& servers);
+        SNoServers(const SPSG_Params& params, SPSG_Servers::TTS& servers);
 
         bool operator()(bool discovered, SUv_Timer* timer);
 
