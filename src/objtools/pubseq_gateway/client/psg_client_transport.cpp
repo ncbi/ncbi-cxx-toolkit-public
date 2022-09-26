@@ -1380,7 +1380,9 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
     }
 
     // Continue processing of requests in the IO thread queue on next UV loop iteration
-    queue.Signal();
+    if (sessions) {
+        queue.Signal();
+    }
 
     PSG_IO_TRACE((sessions ? "Max concurrent submits reached" : "No sessions available [anymore]") <<
             ", submitted: " << m_Params.max_concurrent_submits - remaining_submits);
@@ -1529,6 +1531,8 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
                     service_name << "' with rate = " << rate);
         }
     }
+
+    m_OnDiscovery();
 }
 
 void SPSG_IoImpl::OnTimer(uv_timer_t*)
@@ -1649,7 +1653,7 @@ uint64_t s_GetDiscoveryRepeat(const CServiceDiscovery& service)
 SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     stats(s_GetStats(m_Servers)),
     m_Barrier(TPSG_NumIo::GetDefault() + 2),
-    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers),
+    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers, bind(&SPSG_IoCoordinator::OnDiscovery, this)),
     m_RequestCounter(0),
     m_RequestId(1)
 {
