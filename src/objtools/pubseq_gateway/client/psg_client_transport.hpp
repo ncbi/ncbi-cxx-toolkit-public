@@ -60,7 +60,6 @@
 #include <unordered_set>
 #include <optional>
 
-#include "mpmc_nw.hpp"
 #include <connect/impl/ncbi_uv_nghttp2.hpp>
 #include <connect/services/netservice_api.hpp>
 #include <corelib/ncbi_param.hpp>
@@ -541,23 +540,27 @@ struct SPSG_AsyncQueue : SUv_Async
 
     bool Pop(TRequest& request)
     {
-        return m_Queue.PopMove(request);
-    }
-
-    bool Push(TRequest request)
-    {
-        if (m_Queue.PushMove(request)) {
-            Signal();
-            return true;
-        } else {
-            return false;
+        if (auto locked = m_Queue.GetLock()) {
+            if (!locked->empty()) {
+                request = locked->front().Get(nullptr);
+                _ASSERT(request);
+                locked->pop_front();
+                return true;
+            }
         }
+
+        return false;
     }
 
-    using SUv_Async::Signal;
+    void Push(TRequest request)
+    {
+        _ASSERT(request);
+        m_Queue.GetLock()->push_back(move(request));
+        Signal();
+    }
 
 private:
-    CMPMCQueue<TRequest> m_Queue;
+    SThreadSafe<list<SPSG_TimedRequest>> m_Queue;
 };
 
 struct SPSG_ThrottleParams
