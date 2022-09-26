@@ -941,12 +941,7 @@ CConstRef<CValidError> CAsnvalThreadState::ValidateAsync(
 #endif
             auto bioseq_h = scope->GetBioseqHandle(seq_id_h);
             if (bioseq_h) {
-                if (pSubmitBlock) {
-                    top_h = bioseq_h.GetParentEntry();
-                }
-                else {
-                    top_h = bioseq_h.GetTopLevelEntry();
-                }
+                top_h = bioseq_h.GetTopLevelEntry();
             }
 
             if (top_h)
