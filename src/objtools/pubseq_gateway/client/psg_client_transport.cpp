@@ -856,7 +856,7 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
 /** SPSG_IoSession */
 
 template <class... TNgHttp2Cbs>
-SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks) :
+SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks) :
     SUvNgHttp2_SessionBase(
             loop,
             TAddrNCred(s.address, SUvNgHttp2_Tls::TCred()),
@@ -866,6 +866,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
             TPSG_MaxConcurrentStreams::GetDefault(),
             forward<TNgHttp2Cbs>(callbacks)...),
     server(s),
+    m_Params(params),
     m_Headers{{
         { ":method", "GET" },
         { ":scheme", TPSG_Https::GetDefault() ? "https" : "http" },
@@ -876,7 +877,6 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
         { "http_ncbi_phid" },
         { "x-forwarded-for" }
     }},
-    m_RequestTimeout(TPSG_RequestTimeout::eGetDefault),
     m_Queue(queue)
 {
 }
@@ -1039,7 +1039,7 @@ void SPSG_IoSession::CheckRequestExpiration()
     error << "Request timeout for " << GetId();
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
-        if (it->second.AddSecond() >= m_RequestTimeout) {
+        if (it->second.AddSecond() >= m_Params.request_timeout) {
             if (auto req = it->second.Get()) {
                 RetryFail(req, error);
             }
@@ -1215,7 +1215,7 @@ void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_as
     for (auto new_servers = servers_size - sessions_size; new_servers; --new_servers) {
         auto& server = servers[servers_size - new_servers];
         m_Sessions.emplace_back(TSessions(), 0.0);
-        m_Sessions.back().first.emplace_back(server, queue, handle->loop);
+        m_Sessions.back().first.emplace_back(server, m_Params, queue, handle->loop);
         PSG_IO_TRACE("Session for server '" << server.address << "' was added");
     }
 }
@@ -1237,7 +1237,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
         }
     }
 
-    TPSG_MaxConcurrentSubmits::TValue remaining_submits = m_MaxConcurrentSubmits;
+    TPSG_MaxConcurrentSubmits::TValue remaining_submits = m_Params.max_concurrent_submits;
     auto d = m_Random.first;
     auto i = m_Sessions.begin();
     auto next_i = [&]() { if (++i == m_Sessions.end()) i = m_Sessions.begin(); };
@@ -1303,7 +1303,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         if (session->IsFull() &&
                                 (distance(session, server_sessions.end()) == 1) &&
                                 (server_sessions.size() < TPSG_MaxSessions::GetDefault())) {
-                            server_sessions.emplace_back(server, queue, handle->loop);
+                            server_sessions.emplace_back(server, m_Params, queue, handle->loop);
                             PSG_IO_TRACE("Additional session for server '" << server.address << "' was added");
                         }
 
@@ -1334,7 +1334,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
     queue.Signal();
 
     PSG_IO_TRACE((sessions ? "Max concurrent submits reached" : "No sessions available [anymore]") <<
-            ", submitted: " << m_MaxConcurrentSubmits - remaining_submits);
+            ", submitted: " << m_Params.max_concurrent_submits - remaining_submits);
 }
 
 void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
@@ -1514,9 +1514,9 @@ void SPSG_IoImpl::AfterExecute()
     m_Sessions.clear();
 }
 
-SPSG_DiscoveryImpl::SNoServers::SNoServers(SPSG_Servers::TTS& servers) :
+SPSG_DiscoveryImpl::SNoServers::SNoServers(const SPSG_Params& params, SPSG_Servers::TTS& servers) :
     m_RetryDelay(SecondsToMs(TPSG_NoServersRetryDelay::GetDefault())),
-    m_Timeout(SecondsToMs(TPSG_RequestTimeout::GetDefault() * (1 + TPSG_RequestRetries::GetDefault()))),
+    m_Timeout(SecondsToMs(params.request_timeout * (1 + params.request_retries))),
     m_FailRequests(const_cast<atomic_bool&>(servers->fail_requests))
 {
 }
@@ -1568,13 +1568,13 @@ uint64_t s_GetDiscoveryRepeat(const CServiceDiscovery& service)
 SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     stats(s_GetStats(m_Servers)),
     m_Barrier(TPSG_NumIo::GetDefault() + 2),
-    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, stats, m_Servers),
+    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers),
     m_RequestCounter(0),
     m_RequestId(1)
 {
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
         // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, milli::den, milli::den, m_Servers));
+        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, milli::den, milli::den, params, m_Servers));
     }
 
     m_Barrier.Wait();
