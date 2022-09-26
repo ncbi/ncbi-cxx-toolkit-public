@@ -460,8 +460,7 @@ void CHugeAsnReader::FlattenGenbankSet()
             if (existingIndex != m_FlattenedIndex.end()) {
                 x_ThrowDuplicateId(*(existingIndex->second), *last, *id);
             }
-            //m_FlattenedIndex[id] = last;
-            m_FlattenedIndex[id] = parent;
+            m_FlattenedIndex[id] = last;
             m_bioseq_index[id] = it;
         }
     }
@@ -477,6 +476,9 @@ void CHugeAsnReader::FlattenGenbankSet()
             {
                 m_FlattenedSets.clear();
                 m_FlattenedSets.push_back(*top);
+                for (auto it : m_FlattenedIndex) {
+                    it.second = m_FlattenedSets.begin();
+                }
             }
         }
         else { // m_FlattenedSets.size() > 1)
