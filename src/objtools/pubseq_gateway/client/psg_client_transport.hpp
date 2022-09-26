@@ -980,11 +980,12 @@ private:
 
 struct SPSG_DiscoveryImpl
 {
-    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers) :
+    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers, function<void()> on_discovery) :
         m_NoServers(params, servers),
         m_Service(move(service)),
         m_Stats(move(stats)),
-        m_Servers(servers)
+        m_Servers(servers),
+        m_OnDiscovery(move(on_discovery))
     {}
 
 protected:
@@ -1011,6 +1012,7 @@ private:
     CServiceDiscovery m_Service;
     shared_ptr<SPSG_Stats> m_Stats;
     SPSG_Servers::TTS& m_Servers;
+    function<void()> m_OnDiscovery;
     SPSG_ThrottleParams m_ThrottleParams;
 };
 
@@ -1029,6 +1031,8 @@ public:
     bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
+    void OnDiscovery() { for (auto& io : m_Io) io->queue.Signal(); }
+
     SUv_Barrier m_Barrier;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
