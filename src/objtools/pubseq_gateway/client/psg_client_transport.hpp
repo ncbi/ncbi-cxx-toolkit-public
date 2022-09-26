@@ -483,6 +483,9 @@ struct SPSG_Request
     bool CanBeProcessedBy(TPSG_InternalId processor_id) const { return !m_ProcessedBy || (m_ProcessedBy == processor_id); }
     void SetProcessedBy(TPSG_InternalId processor_id) { _ASSERT(CanBeProcessedBy(processor_id)); m_ProcessedBy = processor_id; }
 
+    bool Retry(const SUvNgHttp2_Error& error, bool refused_stream);
+    bool Fail(TPSG_InternalId processor_id, const SUvNgHttp2_Error& error, bool refused_stream);
+
 private:
     bool StatePrefix(const char*& data, size_t& len);
     bool StateArgs(const char*& data, size_t& len);
@@ -684,7 +687,13 @@ private:
         return it == m_Requests.end() ? nullptr : it->second.Get(GetInternalId());
     }
 
-    void Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    void Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
+    {
+        if (req->Retry(error, refused_stream)) {
+            m_Queue.Push(req);
+        }
+    }
+
     bool Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
 
     bool RetryFail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
