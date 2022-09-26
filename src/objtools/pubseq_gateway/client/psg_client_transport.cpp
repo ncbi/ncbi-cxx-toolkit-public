@@ -907,7 +907,7 @@ void SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error&
 bool SPSG_IoSession::Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
     if (req->GetRetries(SPSG_Retries::eFail, refused_stream)) {
-        return true;
+        return false;
     }
 
     SContextSetter setter(req->context);
@@ -919,7 +919,7 @@ bool SPSG_IoSession::Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& 
     req->reply->SetFailed(error);
     PSG_THROTTLING_TRACE("Server '" << GetId() << "' failed to process request '" <<
             debug_printout.id << "', " << error);
-    return false;
+    return true;
 }
 
 int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t error_code)
@@ -942,7 +942,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
         if (error_code) {
             auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
 
-            if (!RetryOrFail(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
+            if (RetryFail(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
                 ERR_POST("Request for " << GetId() << " failed with " << error);
             }
         } else {
@@ -1010,7 +1010,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
         auto error(SUvNgHttp2_Error::FromNgHttp2(stream_id, "on submit"));
 
         // Do not reset all requests unless throttling has been activated
-        if (!RetryOrFail(req, error) && server.throttling.Active()) {
+        if (RetryFail(req, error) && server.throttling.Active()) {
             Reset(move(error));
         }
 
@@ -1041,7 +1041,7 @@ void SPSG_IoSession::CheckRequestExpiration()
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         if (it->second.AddSecond() >= m_RequestTimeout) {
             if (auto req = it->second.Get()) {
-                RetryOrFail(req, error);
+                RetryFail(req, error);
             }
 
             EraseAndMoveToNext(it);
@@ -1057,7 +1057,7 @@ void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
 
     for (auto& pair : m_Requests) {
         if (auto req = pair.second.Get()) {
-            if (!RetryOrFail(req, error)) {
+            if (RetryFail(req, error)) {
                 some_requests_failed = true;
             }
         }
