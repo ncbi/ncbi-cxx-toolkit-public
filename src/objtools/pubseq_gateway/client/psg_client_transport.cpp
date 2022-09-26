@@ -131,15 +131,6 @@ SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::TType SPSG_ArgsBase::SArg<SPSG_A
     return { SPSG_ArgsBase::eUnknownChunk, cref(value) };
 };
 
-struct SContextSetter
-{
-    SContextSetter(CRequestContext* context) { CDiagContext::SetRequestContext(context); }
-    ~SContextSetter()            { CDiagContext::SetRequestContext(nullptr);      }
-
-    SContextSetter(const SContextSetter&) = delete;
-    void operator=(const SContextSetter&) = delete;
-};
-
 void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip, SUv_Tcp::TPort port)
 {
     ostringstream os;
@@ -598,6 +589,19 @@ void SPSG_Reply::SetFailed(string message, SState::EState state)
     queue->CV().NotifyOne();
 }
 
+shared_ptr<void> SPSG_Request::SContext::Set()
+{
+    auto guard = m_ExistingGuard.lock();
+
+    if (!guard) {
+        CDiagContext::SetRequestContext(m_Context);
+        guard.reset(this, [](void*) { CDiagContext::SetRequestContext(nullptr); });
+        m_ExistingGuard = guard;
+    }
+
+    return guard;
+}
+
 SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
     full_path(move(p)),
     reply(r),
@@ -704,7 +708,7 @@ EDiagSev s_GetSeverity(const string& severity)
 
 void SPSG_Request::Add()
 {
-    SContextSetter setter(context);
+    auto context_guard = context.Set();
 
     auto& args = m_Buffer.args;
     reply->debug_printout << args << m_Buffer.chunk << endl;
@@ -895,7 +899,7 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
 
 void SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
-    SContextSetter setter(req->context);
+    auto context_guard = req->context.Set();
 
     if (auto retries = req->GetRetries(SPSG_Retries::eRetry, refused_stream)) {
         // Return to queue for a re-send
@@ -911,7 +915,7 @@ bool SPSG_IoSession::Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& 
         return false;
     }
 
-    SContextSetter setter(req->context);
+    auto context_guard = req->context.Set();
     server.throttling.AddFailure();
 
     auto& debug_printout = req->reply->debug_printout;
@@ -936,7 +940,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
 
         auto& debug_printout = req->reply->debug_printout;
 
-        SContextSetter setter(req->context);
+        auto context_guard = req->context.Set();
         debug_printout << error_code << endl;
 
         // If there is an error and the request is allowed to Retry
@@ -986,7 +990,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
-    SContextSetter setter(req->context);
+    auto context_guard = req->context.Set();
     CRequestContext& context = CDiagContext::GetRequestContext();
 
     const auto& path = req->full_path;
@@ -1531,7 +1535,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
         shared_ptr<SPSG_Request> req;
 
         while (queue.Pop(req)) {
-            SContextSetter setter(req->context);
+            auto context_guard = req->context.Set();
             auto& debug_printout = req->reply->debug_printout;
             debug_printout << error << endl;
             req->OnReplyDone(GetInternalId())->SetFailed(error);

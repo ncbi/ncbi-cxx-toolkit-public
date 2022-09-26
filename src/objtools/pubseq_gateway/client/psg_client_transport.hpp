@@ -444,9 +444,19 @@ using TPSG_InternalId = const void*;
 
 struct SPSG_Request
 {
+    struct SContext
+    {
+        SContext(CRef<CRequestContext> context) : m_Context(context) {}
+        shared_ptr<void> Set();
+
+    private:
+        CRef<CRequestContext> m_Context;
+        weak_ptr<void> m_ExistingGuard;
+    };
+
     const string full_path;
     shared_ptr<SPSG_Reply> reply;
-    CRef<CRequestContext> context;
+    SContext context;
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
