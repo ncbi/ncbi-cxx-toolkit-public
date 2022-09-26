@@ -559,6 +559,8 @@ struct SPSG_AsyncQueue : SUv_Async
         Signal();
     }
 
+    auto GetLockedQueue() { return m_Queue.GetLock(); }
+
 private:
     SThreadSafe<list<SPSG_TimedRequest>> m_Queue;
 };

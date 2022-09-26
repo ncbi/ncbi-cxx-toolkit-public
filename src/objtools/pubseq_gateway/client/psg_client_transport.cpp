@@ -1539,6 +1539,38 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
         }
     }
 
+    if (auto queue_locked = queue.GetLockedQueue()) {
+        SUvNgHttp2_Error error("Request timeout before submitting");
+
+        for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
+            auto inserted = false;
+            auto seconds = it->AddSecond();
+
+            if (seconds == m_Params.competitive_after) {
+                if (auto req = it->Get(GetInternalId())) {
+                    if (req->Retry(error, false)) {
+                        it = prev(queue_locked->insert(next(it), req));
+                        inserted = true;
+                    }
+                }
+            }
+
+            if (seconds >= m_Params.request_timeout) {
+                if (auto req = it->Get(GetInternalId())) {
+                    req->Fail(GetInternalId(), error, false);
+                }
+
+                it = queue_locked->erase(it);
+            } else {
+                ++it;
+            }
+
+            if (inserted) {
+                ++it;
+            }
+        }
+    }
+
     if (m_Servers->fail_requests) {
         const SUvNgHttp2_Error error("No servers to process request");
         shared_ptr<SPSG_Request> req;
