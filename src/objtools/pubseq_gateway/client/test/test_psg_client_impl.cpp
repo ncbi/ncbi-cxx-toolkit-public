@@ -355,7 +355,7 @@ void SFixture::MtReading()
             chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
 
             if (auto read = chunk_stream.gcount()) {
-                request.OnReplyData(buf.data(), read);
+                request.OnReplyData(this, buf.data(), read);
             }
 
             auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(Request)
             chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
 
             if (auto read = chunk_stream.gcount()) {
-                request.OnReplyData(buf.data(), read);
+                request.OnReplyData(this, buf.data(), read);
             }
         } while (chunk_stream);
     }
