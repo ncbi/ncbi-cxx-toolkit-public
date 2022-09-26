@@ -645,7 +645,7 @@ private:
     void Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
     bool Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
 
-    bool RetryOrFail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
+    bool RetryFail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
     {
         Retry(req, error, refused_stream);
         return Fail(req, error, refused_stream);
