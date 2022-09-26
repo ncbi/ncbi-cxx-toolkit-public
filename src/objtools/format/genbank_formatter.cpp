@@ -1363,10 +1363,13 @@ void CGenbankFormatter::FormatComment
             TryToSanitizeHtml(*comment_it);
         }
 
-        if (!is_first) {
-            Wrap(l, kEmptyStr, *comment_it, eSubp, bHtml, internalIndent);
+        string& comm = *comment_it;
+        if (is_first) {
+            Wrap(l, "COMMENT", comm, ePara, bHtml, internalIndent);
+        } else if (NStr::StartsWith(comm, "##") && NStr::Find(comm, "START") != NPOS) {
+            Wrap(l, "\n", comm, eSubp, bHtml, internalIndent);
         } else {
-            Wrap(l, "COMMENT", *comment_it, ePara, bHtml, internalIndent);
+            Wrap(l, kEmptyStr, comm, eSubp, bHtml, internalIndent);
         }
 
         // Sometimes Wrap gets overzealous and wraps us right after the "::"
