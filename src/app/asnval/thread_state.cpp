@@ -939,13 +939,12 @@ CConstRef<CValidError> CAsnvalThreadState::ValidateAsync(
 #ifdef _DEBUG
             std::cerr << "Taxid for " << scope->GetLabel(seq_id_h) << " : " << scope->GetTaxId(seq_id_h, CScope::fDoNotRecalculate) << "\n";
 #endif
-            auto bioseq_h = scope->GetBioseqHandle(seq_id_h);
-            if (bioseq_h) {
+            if (auto bioseq_h = scope->GetBioseqHandle(seq_id_h); bioseq_h) {
                 top_h = bioseq_h.GetTopLevelEntry();
+                if (top_h) {
+                    pEntry = Ref(const_cast<CSeq_entry*>(top_h.GetCompleteSeq_entry().GetPointer()));
+                }
             }
-
-            if (top_h)
-                pEntry = Ref((CSeq_entry*)(void*)top_h.GetCompleteSeq_entry().GetPointer());
         }
     }
 
@@ -968,7 +967,6 @@ CConstRef<CValidError> CAsnvalThreadState::ValidateAsync(
         }
     }
 
-    scope->ResetDataAndHistory();
     return eval;
 }
 
