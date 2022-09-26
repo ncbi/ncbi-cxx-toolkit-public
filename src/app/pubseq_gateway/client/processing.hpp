@@ -241,7 +241,7 @@ public:
     void operator()(string id) { m_InputQueue.Push(move(id)); }
 
 private:
-    using TInputQueue = CPSG_WaitingStack<string>;
+    using TInputQueue = CPSG_WaitingQueue<string>;
 
     struct BatchResolve
     {

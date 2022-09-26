@@ -566,7 +566,7 @@ void SPSG_Reply::SetComplete()
     }
 
     reply_item.NotifyOne();
-    queue->CV().NotifyOne();
+    queue->NotifyOne();
 }
 
 void SPSG_Reply::SetFailed(string message, SState::EState state)
@@ -586,7 +586,7 @@ void SPSG_Reply::SetFailed(string message, SState::EState state)
     }
 
     reply_item.NotifyOne();
-    queue->CV().NotifyOne();
+    queue->NotifyOne();
 }
 
 shared_ptr<void> SPSG_Request::SContext::Set()
@@ -759,7 +759,7 @@ void SPSG_Request::Add()
         item_by_id->NotifyOne();
     }
 
-    reply->queue->CV().NotifyOne();
+    reply->queue->NotifyOne();
     m_Buffer = SBuffer();
 }
 
