@@ -1629,37 +1629,15 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     m_Barrier.Wait();
 }
 
-bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline)
+bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool&, const CDeadline&)
 {
     if (m_Io.size() == 0) {
         ERR_POST(Fatal << "IO is not open");
     }
 
-    auto counter = m_RequestCounter++;
-    const auto first = (counter++ / params.requests_per_io) % m_Io.size();
-    auto idx = first;
-
-    do {
-        do {
-            if (m_Io[idx]->queue.Push(req)) return true;
-
-            // No room for the request
-
-            // Try to update request counter once so the next IO thread would be tried for new requests
-            if (idx == first) {
-                m_RequestCounter.compare_exchange_weak(counter, counter + params.requests_per_io);
-            }
-
-            // Try next IO thread for this request, too
-            idx = (idx + 1) % m_Io.size();
-        }
-        while (idx != first);
-
-        this_thread::yield();
-    }
-    while (!deadline.IsExpired() && !stopped);
-
-    return false;
+    const auto idx = (m_RequestCounter++ / params.requests_per_io) % m_Io.size();
+    m_Io[idx]->queue.Push(move(req));
+    return true;
 }
 
 
