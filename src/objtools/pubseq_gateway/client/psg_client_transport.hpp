@@ -467,6 +467,9 @@ struct SPSG_Request
         return m_Retries.Get(type, refused_stream, reply->reply_item->state.InProgress());
     }
 
+    bool CanBeSubmittedBy(TPSG_InternalId processor_id) const { return !m_SubmittedBy || (m_SubmittedBy != processor_id); }
+    void SetSubmittedBy(TPSG_InternalId processor_id) { m_SubmittedBy = processor_id; }
+
     bool CanBeProcessedBy(TPSG_InternalId processor_id) const { return !m_ProcessedBy || (m_ProcessedBy == processor_id); }
     void SetProcessedBy(TPSG_InternalId processor_id) { _ASSERT(CanBeProcessedBy(processor_id)); m_ProcessedBy = processor_id; }
 
@@ -497,6 +500,7 @@ private:
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
     SPSG_Retries m_Retries;
+    TPSG_InternalId m_SubmittedBy = nullptr;
     TPSG_InternalId m_ProcessedBy = nullptr;
 };
 
@@ -646,6 +650,7 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     template <class... TNgHttp2Cbs>
     SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
 
+    bool CanProcessRequest(shared_ptr<SPSG_Request>& req) { return req->CanBeSubmittedBy(GetInternalId()); }
     bool ProcessRequest(shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
