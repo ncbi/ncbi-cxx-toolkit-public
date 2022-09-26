@@ -66,6 +66,7 @@ PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, reader_timeout,                12, 
 PSG_PARAM_VALUE_DEF_MIN(double,         PSG, rebalance_time,                10.0,               1.0     );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, request_timeout,               10,                 1       );
 PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, requests_per_io,               1,                  1       );
+NCBI_PARAM_DEF(unsigned, PSG, competitive_after,      2);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 NCBI_PARAM_DEF(unsigned, PSG, refused_stream_retries, 2);
 NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
@@ -886,7 +887,7 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " received: " << len);
 
     if (auto req = GetRequest(stream_id)) {
-        req->OnReplyData((const char*)data, len);
+        req->OnReplyData(GetInternalId(), (const char*)data, len);
     }
 
     return 0;
@@ -916,7 +917,7 @@ bool SPSG_IoSession::Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& 
     auto& debug_printout = req->reply->debug_printout;
 
     debug_printout << error << endl;
-    req->reply->SetFailed(error);
+    req->OnReplyDone(GetInternalId())->SetFailed(error);
     PSG_THROTTLING_TRACE("Server '" << GetId() << "' failed to process request '" <<
             debug_printout.id << "', " << error);
     return true;
@@ -928,7 +929,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
     auto it = m_Requests.find(stream_id);
 
     if (it != m_Requests.end()) {
-        auto req = it->second.Get();
+        auto req = it->second.Get(GetInternalId());
         EraseAndMoveToNext(it);
 
         if (!req) return 0;
@@ -946,7 +947,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
                 ERR_POST("Request for " << GetId() << " failed with " << error);
             }
         } else {
-            req->reply->SetComplete();
+            req->OnReplyDone(GetInternalId())->SetComplete();
             server.throttling.AddSuccess();
             PSG_THROTTLING_TRACE("Server '" << GetId() << "' processed request '" <<
                     debug_printout.id << "' successfully");
@@ -973,7 +974,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
 
             if (state != SPSG_Reply::SState::eSuccess) {
                 const auto error = to_string(status) + ' ' + CRequestStatus::GetStdStatusMessage(status);
-                req->reply->SetFailed(error, state);
+                req->OnReplyDone(GetInternalId())->SetFailed(error, state);
             }
         }
     }
@@ -1039,9 +1040,17 @@ void SPSG_IoSession::CheckRequestExpiration()
     error << "Request timeout for " << GetId();
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
-        if (it->second.AddSecond() >= m_Params.request_timeout) {
-            if (auto req = it->second.Get()) {
-                RetryFail(req, error);
+        auto seconds = it->second.AddSecond();
+
+        if (seconds == m_Params.competitive_after) {
+            if (auto req = it->second.Get(GetInternalId())) {
+                Retry(req, error);
+            }
+        }
+
+        if (seconds >= m_Params.request_timeout) {
+            if (auto req = it->second.Get(GetInternalId())) {
+                Fail(req, error);
             }
 
             EraseAndMoveToNext(it);
@@ -1056,7 +1065,7 @@ void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
     bool some_requests_failed = false;
 
     for (auto& pair : m_Requests) {
-        if (auto req = pair.second.Get()) {
+        if (auto req = pair.second.Get(GetInternalId())) {
             if (RetryFail(req, error)) {
                 some_requests_failed = true;
             }
@@ -1498,7 +1507,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
             SContextSetter setter(req->context);
             auto& debug_printout = req->reply->debug_printout;
             debug_printout << error << endl;
-            req->reply->SetFailed(error);
+            req->OnReplyDone(GetInternalId())->SetFailed(error);
             PSG_IO_TRACE("No servers to process request '" << debug_printout.id << '\'');
         }
     }
