@@ -140,7 +140,7 @@ struct SThreadSafe
     NCBI_DEPRECATED const volatile TType& GetMTSafe() const { return m_Object; }
 
 protected:
-    mutex m_Mutex;
+    mutable mutex m_Mutex;
 
 private:
     TType m_Object;

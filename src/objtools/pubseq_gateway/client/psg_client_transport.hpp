@@ -339,7 +339,7 @@ private:
 
 struct SPSG_Stats;
 
-using TPSG_Queue = CPSG_WaitingStack<shared_ptr<CPSG_Reply>>;
+using TPSG_Queue = CPSG_WaitingQueue<shared_ptr<CPSG_Reply>>;
 
 struct SPSG_Reply
 {
