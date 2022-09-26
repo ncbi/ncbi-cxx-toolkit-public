@@ -88,7 +88,7 @@ class NCBI_FORMAT_EXPORT CStartSectionItem : public CCtrlItem
 {
 public:
     CStartSectionItem(CBioseqContext& ctx) : CCtrlItem(&ctx) {
-        CCommentItem::ResetFirst();
+        // CCommentItem::ResetFirst();
     }
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.StartSection(*this, text_os);

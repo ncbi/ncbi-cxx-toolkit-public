@@ -1110,6 +1110,8 @@ void CFlatGatherer::x_FlushComments(void) const
     if ( m_Comments.empty() ) {
         return;
     }
+    // set isFirst flag on actual first comment
+    m_Comments.front()->SetFirst(true);
     // add a period to the last comment (if needed)
     if (m_Comments.back()->NeedPeriod()) {
         m_Comments.back()->AddPeriod();

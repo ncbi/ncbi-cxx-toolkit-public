@@ -73,7 +73,7 @@ BEGIN_SCOPE(objects)
 
 
 // static variables initialization
-bool CCommentItem::sm_FirstComment = true;
+// bool CCommentItem::sm_FirstComment = true;
 
 static const string kRefSeq = "REFSEQ";
 static const string kRefSeqInformation = "REFSEQ INFORMATION";
@@ -90,7 +90,7 @@ CCommentItem::CCommentItem(CBioseqContext& ctx, bool need_period) :
     m_First(false),
     m_NeedPeriod(need_period)
 {
-    swap(m_First, sm_FirstComment);
+    // swap(m_First, sm_FirstComment);
 }
 
 IFlatItem::EItem CCommentItem::GetItemType(void) const
@@ -112,7 +112,7 @@ CCommentItem::CCommentItem
     if (! ctx.Config().IsFormatGBSeq() && ! ctx.Config().IsFormatINSDSeq()) {
         ExpandTildes(m_Comment.back(), eTilde_comment);
     }
-    swap(m_First, sm_FirstComment);
+    // swap(m_First, sm_FirstComment);
     if ( obj != 0 ) {
         x_SetObject(*obj);
     }
@@ -125,7 +125,7 @@ CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
     m_First(false),
     m_NeedPeriod(true)
 {
-    swap(m_First, sm_FirstComment);
+    // swap(m_First, sm_FirstComment);
     x_SetObject(desc);
     x_GatherInfo(ctx);
     if ( x_IsCommentEmpty() ) {
@@ -140,7 +140,7 @@ CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx) :
     m_First(false),
     m_NeedPeriod(true)
 {
-    swap(m_First, sm_FirstComment);
+    // swap(m_First, sm_FirstComment);
     x_SetObject(feat);
     x_GatherInfo(ctx);
     NON_CONST_ITERATE( list<string>, it, m_Comment ) {
@@ -157,7 +157,7 @@ CCommentItem::CCommentItem(const CUser_object & userObject, CBioseqContext& ctx)
     m_First(false),
     m_NeedPeriod(true)
 {
-    swap(m_First, sm_FirstComment);
+    // swap(m_First, sm_FirstComment);
     x_SetObject(userObject);
     x_GatherInfo(ctx);
     if ( x_IsCommentEmpty() ) {
@@ -1510,10 +1510,6 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
         return CNcbiOstrstreamToString(str);
     }
 
-    if( ! sm_FirstComment ) {
-        str << "\n";
-    }
-
     if ( numBases == 1 ) {
         str << "This genome has a ";
         if( bHtml ) {
@@ -1760,9 +1756,11 @@ void s_GetStrForStructuredComment(
     }
     out_prefix_len = (longest_label_len + 4); // "+4" because we add " :: " after the prefix
 
+    /*
     if( ! is_first ) {
         out_lines.push_back( "\n" );
     }
+    */
     out_lines.push_back( prefix );
     out_lines.back().append( "\n" );
 
@@ -1916,7 +1914,7 @@ void CCommentItem::x_GatherUserObjInfo(const CUser_object& userObject )
 void CCommentItem::x_SetSkip(void)
 {
     CFlatItem::x_SetSkip();
-    swap(m_First, sm_FirstComment);
+    // swap(m_First, sm_FirstComment);
 }
 
 

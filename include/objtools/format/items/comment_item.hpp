@@ -104,6 +104,7 @@ public:
     const list<string>& GetCommentList(void) const;
 
     bool IsFirst(void) const;
+    void SetFirst(bool val);
     int GetCommentInternalIndent(void) const;
 
     bool NeedPeriod(void) const;
@@ -147,7 +148,7 @@ public:
     static string GetStringForBaseMod(CBioseqContext& ctx);
     static string GetStringForUnique(CBioseqContext& ctx);
 
-    static void ResetFirst(void) { sm_FirstComment = true; }
+    // static void ResetFirst(void) { sm_FirstComment = true; }
 
     virtual EItem GetItemType(void) const;
 protected:
@@ -172,7 +173,7 @@ protected:
     void x_SetSkip(void);
 
 private:
-    static bool sm_FirstComment; 
+    // static bool sm_FirstComment;
 
     list<string>  m_Comment;
     int           m_CommentInternalIndent;
@@ -286,6 +287,12 @@ inline
 bool CCommentItem::IsFirst(void) const
 {
     return m_First;
+}
+
+inline
+void CCommentItem::SetFirst(bool val)
+{
+    m_First = val;
 }
 
 
