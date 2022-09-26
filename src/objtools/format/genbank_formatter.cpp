@@ -1366,8 +1366,6 @@ void CGenbankFormatter::FormatComment
         string& comm = *comment_it;
         if (is_first) {
             Wrap(l, "COMMENT", comm, ePara, bHtml, internalIndent);
-        } else if (NStr::StartsWith(comm, "##") && NStr::Find(comm, "START") != NPOS) {
-            Wrap(l, "\n", comm, eSubp, bHtml, internalIndent);
         } else {
             Wrap(l, kEmptyStr, comm, eSubp, bHtml, internalIndent);
         }
@@ -1384,7 +1382,17 @@ void CGenbankFormatter::FormatComment
     //    if ( bHtml ) {
     //        s_FixLineBrokenWeblinks( l );
     //    }
-    text_os.AddParagraph(l, comment.GetObject());
+
+    list<string> x;
+    ITERATE(list<string>, line, l) {
+        if (NStr::Find(*line, "START##") != NPOS && NStr::Find(*line, "COMMENT") == NPOS) {
+            x.push_back("\n" + *line);
+        } else {
+            x.push_back(*line);
+        }
+    }
+
+    text_os.AddParagraph(x, comment.GetObject());
 
     text_os.Flush();
 }
