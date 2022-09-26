@@ -35,6 +35,7 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <deque>
 #include <thread>
 
 #include <corelib/ncbitime.hpp>
@@ -150,95 +151,30 @@ private:
 };
 
 template <class TValue>
-struct CPSG_Stack
+struct CPSG_WaitingQueue : SPSG_CV<deque<TValue>>
 {
-private:
-    struct TElement
-    {
-        shared_ptr<TElement> next;
-        TValue value;
-
-        template <class... TArgs>
-        TElement(shared_ptr<TElement> n, TArgs&&... args) : next(n), value(forward<TArgs>(args)...) {}
-    };
-
-public:
-    ~CPSG_Stack() { Clear(); }
-
-    template <class... TArgs>
-    void Emplace(TArgs&&... args)
-    {
-        auto head = make_shared<TElement>(atomic_load(&m_Head), forward<TArgs>(args)...);
-
-        while (!atomic_compare_exchange_weak(&m_Head, &head->next, head));
-    }
-
-    void Push(TValue value)
-    {
-        auto head = make_shared<TElement>(atomic_load(&m_Head), move(value));
-
-        while (!atomic_compare_exchange_weak(&m_Head, &head->next, head));
-    }
-
-    bool Pop(TValue& value)
-    {
-        while (auto head = atomic_load(&m_Head)) {
-            if (atomic_compare_exchange_weak(&m_Head, &head, head->next)) {
-                value = move(head->value);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    void Clear()
-    {
-        while (auto head = atomic_load(&m_Head)) {
-            if (atomic_compare_exchange_weak(&m_Head, &head, {})) {
-                while (auto old_head = head) {
-                    head = head->next;
-                }
-            }
-        }
-    }
-
-    bool Empty() const { return !atomic_load(&m_Head); }
-
-private:
-    shared_ptr<TElement> m_Head;
-};
-
-template <class TValue>
-struct CPSG_WaitingStack : private CPSG_Stack<TValue>
-{
-    CPSG_WaitingStack() : m_Stopped(false) {}
-
-    template <class... TArgs>
-    void Emplace(TArgs&&... args)
-    {
-        if (m_Stopped) return;
-
-        CPSG_Stack<TValue>::Emplace(forward<TArgs>(args)...);
-        m_CV.NotifyOne();
-    }
+    CPSG_WaitingQueue() : m_Stopped(false) {}
 
     void Push(TValue value)
     {
         if (m_Stopped) return;
 
-        CPSG_Stack<TValue>::Push(move(value));
-        m_CV.NotifyOne();
+        this->GetLock()->push_back(move(value));
+        this->NotifyOne();
     }
 
     bool Pop(TValue& value, const CDeadline& deadline = CDeadline::eInfinite)
     {
         do {
-            if (CPSG_Stack<TValue>::Pop(value)) {
-                return true;
+            if (auto locked = this->GetLock()) {
+                if (!locked->empty()) {
+                    value = move(locked->front());
+                    locked->pop_front();
+                    return true;
+                }
             }
         }
-        while (m_CV.WaitUntil(m_Stopped, deadline));
+        while (this->WaitUntil(m_Stopped, deadline));
 
         return false;
     }
@@ -247,16 +183,14 @@ struct CPSG_WaitingStack : private CPSG_Stack<TValue>
     void Stop(EStop stop)
     {
         m_Stopped.store(true);
-        if (stop == eClear) CPSG_Stack<TValue>::Clear();
-        m_CV.NotifyAll();
+        if (stop == eClear) this->GetLock()->clear();
+        this->NotifyAll();
     }
 
     const atomic_bool& Stopped() const { return m_Stopped; }
-    SPSG_CV<>& CV() { return m_CV; }
-    bool Empty() const { return m_Stopped && CPSG_Stack<TValue>::Empty(); }
+    bool Empty() const { return m_Stopped && this->GetLock()->empty(); }
 
 private:
-    SPSG_CV<> m_CV;
     atomic_bool m_Stopped;
 };
 

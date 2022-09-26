@@ -917,8 +917,8 @@ bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
 {
     _ASSERT(queue);
 
-    if (queue->CV().WaitUntil(queue->Stopped(), move(deadline), false, true)) {
-        queue->CV().Reset();
+    if (queue->WaitUntil(queue->Stopped(), move(deadline), false, true)) {
+        queue->Reset();
         return true;
     }
 
