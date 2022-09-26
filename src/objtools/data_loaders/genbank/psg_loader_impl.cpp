@@ -3089,7 +3089,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
         }
         CPSG_BioId bio_id = x_GetBioId(ids[i]);
         shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(move(bio_id));
-        request->IncludeInfo(info);
+        request->IncludeInfo(info|CPSG_Request_Resolve::fAllInfo);
         auto reply = x_SendRequest(request);
         CRef<CPSG_BioseqInfo_Task> task(new CPSG_BioseqInfo_Task(reply, group));
         guards.push_back(make_shared<CPSG_Task_Guard>(*task));
@@ -3112,7 +3112,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
             continue;
         }
         _ASSERT(task->m_BioseqInfo);
-        ret[it->second] = make_shared<SPsgBioseqInfo>(*task->m_BioseqInfo, m_CacheLifespan);
+        ret[it->second] = m_BioseqCache->Add(*task->m_BioseqInfo, ids[it->second]);
         counts.first += 1;
     }
     return counts;
