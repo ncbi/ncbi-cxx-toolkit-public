@@ -1034,15 +1034,6 @@ void CValidError_imp::PostErr
         return;
     }
     
-    if ((GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) && 
-        ss.IsEntrys() && !ss.GetData().GetEntrys().empty() && 
-        ss.GetData().GetEntrys().front()->IsSet() && 
-        ss.GetData().GetEntrys().front()->GetSet().IsSetClass() &&
-        ss.GetData().GetEntrys().front()->GetSet().GetClass() == CBioseq_set::eClass_genbank){
-        // put stuff here
-       return; 
-    }
-
     string desc = "Seq-submit: ";
     x_AddValidErrItem(sv, et, msg, desc, ss, "", 0);
 }
