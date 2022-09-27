@@ -5,9 +5,9 @@ src_services=$@
 
 # You can add or remove variants in the following two lists in your local
 # version of this script to reduce or to extend the test sets
-builds="T"
+builds="P T"
+#builds="P S T"
 #builds="S T"
-#builds="O P S"
 #builds="O P S T"
 projects="objtools/test/objmgr app/objmgr/test app/pubseq_gateway/client"
 
@@ -97,6 +97,7 @@ do_check() {
         do_build $build $proj
         error=$?
         if [ $error -ne 0 ]; then
+            cd $res_dir
             return
         fi
         for s in $parsed_services; do
