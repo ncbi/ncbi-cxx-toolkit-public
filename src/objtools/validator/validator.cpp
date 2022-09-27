@@ -235,12 +235,7 @@ CRef<CValidError> CValidator::Validate
     CValidErrorFormat::SetSuppressionRules(ss, *errors);
     CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), options);
     imp.Validate(ss, scope);
-    if (ss.IsSetSub() && ss.GetSub().IsSetContact() && ss.GetSub().GetContact().IsSetContact()
-        && ss.GetSub().GetContact().GetContact().IsSetAffil()
-        && ss.GetSub().GetContact().GetContact().GetAffil().IsStd()) {
-        imp.ValidateAffil(ss.GetSub().GetContact().GetContact().GetAffil().GetStd(),
-                             ss, nullptr);
-    }
+
     x_SetEntryInfo(imp.GetEntryInfo());
 
     return errors;

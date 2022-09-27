@@ -1033,6 +1033,15 @@ void CValidError_imp::PostErr
         m_ErrRepository->AddValidErrItem(sv, et, msg);
         return;
     }
+    
+    if ((GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) && 
+        ss.IsEntrys() && !ss.GetData().GetEntrys().empty() && 
+        ss.GetData().GetEntrys().front()->IsSet() && 
+        ss.GetData().GetEntrys().front()->GetSet().IsSetClass() &&
+        ss.GetData().GetEntrys().front()->GetSet().GetClass() == CBioseq_set::eClass_genbank){
+        // put stuff here
+       return; 
+    }
 
     string desc = "Seq-submit: ";
     x_AddValidErrItem(sv, et, msg, desc, ss, "", 0);
@@ -1514,6 +1523,12 @@ void CValidError_imp::ValidateSubmitBlock(const CSubmit_block& block, const CSeq
         PostErr(eDiag_Warning, eErr_GENERIC_PastReleaseDate,
             "Record release date has already passed", ss);
     }
+    
+    if (block.IsSetContact() && block.GetContact().IsSetContact()
+         && block.GetContact().GetContact().IsSetAffil()
+         && block.GetContact().GetContact().GetAffil().IsStd()) {
+        ValidateAffil(block.GetContact().GetContact().GetAffil().GetStd(), ss, nullptr);
+    }
 }
 
 
@@ -1526,7 +1541,15 @@ void CValidError_imp::Validate(
     }
 
     x_SetEntryInfo().SetSeqSubmit();
-    ValidateSubmitBlock(ss.GetSub(), ss);
+    if (ss.IsSetSub()) {
+        if (GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) {
+            call_once(SetContext().SubmitBlockOnceFlag,
+                [this, &ss](){ ValidateSubmitBlock(ss.GetSub(), ss); });
+        }
+        else {
+            ValidateSubmitBlock(ss.GetSub(), ss);
+        }
+    }
 
     // Get CCit_sub pointer
     const CCit_sub* cs = &ss.GetSub().GetCit();
