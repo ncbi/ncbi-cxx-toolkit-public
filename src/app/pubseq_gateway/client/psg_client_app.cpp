@@ -155,7 +155,7 @@ void s_InitDataFlags(CArgDescriptions& arg_desc)
 void s_AddLatencyOptions(CArgDescriptions& arg_desc)
 {
     auto names = { "First", "Last", "All" };
-    auto option = [](string option) { return NStr::ToLower(option) + "-latency"; };
+    auto option = [](string name) { return NStr::ToLower(name) + "-latency"; };
 
     for (string name : names) {
         arg_desc.AddFlag(option(name), name + " latency output", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);

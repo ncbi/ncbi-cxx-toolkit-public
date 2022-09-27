@@ -413,10 +413,10 @@ int CPsgCgiApp::Help(const string& request, bool json, CCgiResponse& response)
         h2->AppendPlainText(string("=") + r.name);
 
         auto r_obj = r.value.GetObject();
-        auto i = r_obj.find("method");
+        auto k = r_obj.find("method");
 
-        if (i != r_obj.end()) {
-            for (const auto& m : i->value.GetObject()) {
+        if (k != r_obj.end()) {
+            for (const auto& m : k->value.GetObject()) {
                 auto m_obj = m.value.GetObject();
                 NewChild<CHTML_h3>(body, m.name + string(":"));
                 NewChild<CHTMLPlainText>(body, m_obj["description"].GetValue().GetString());
