@@ -8,20 +8,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public IPubmedUpdater
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterBase : public IPubmedUpdater
 {
 public:
-    CEUtilsUpdater();
+    CEUtilsUpdaterBase();
     TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
     TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) override;
-    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
+    CRef<CPub> x_GetPub(TEntrezId pmid, EPubmedError*);
     string     GetTitle(const string&) override;
 
 private:
     CRef<CEUtils_ConnContext> m_Ctx;
 };
 
-class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdater
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdaterBase
 {
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 
@@ -33,6 +33,12 @@ private:
     map<TEntrezId, CConstRef<CPub>> m_cache;
     size_t                     m_num_requests = 0;
     size_t                     m_cache_hits   = 0;
+};
+
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public CEUtilsUpdaterWithCache
+{
+public:
+    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 };
 
 END_SCOPE(edit)
