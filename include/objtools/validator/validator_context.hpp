@@ -57,6 +57,7 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     bool        NoPubsFound{false};
     bool        NoCitSubsFound{false};
     once_flag   DescriptorsOnceFlag;
+    once_flag   SubmitBlockOnceFlag;
 
     using taxupdate_func_t = function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>& list)>;
     taxupdate_func_t m_taxon_update;
