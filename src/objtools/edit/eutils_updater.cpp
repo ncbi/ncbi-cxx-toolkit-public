@@ -291,13 +291,13 @@ public:
 };
 
 
-CEUtilsUpdater::CEUtilsUpdater()
+CEUtilsUpdaterBase::CEUtilsUpdaterBase()
 {
     m_Ctx.Reset(new CEUtils_ConnContext);
 }
 
 
-TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
+TEntrezId CEUtilsUpdaterBase::CitMatch(const CPub& pub, EPubmedError* perr)
 {
     if (pub.IsArticle()) {
         SCitMatch cm;
@@ -311,7 +311,7 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
     }
 }
 
-TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
+TEntrezId CEUtilsUpdaterBase::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 {
     unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
     req->SetField("title");
@@ -358,7 +358,7 @@ TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 }
 
 
-CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
+CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     unique_ptr<CEFetch_Request> req(
         new CEFetch_Literature_Request(CEFetch_Literature_Request::eDB_pubmed, m_Ctx)
@@ -419,12 +419,17 @@ CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
 }
 
 
-string CEUtilsUpdater::GetTitle(const string&)
+string CEUtilsUpdaterBase::GetTitle(const string&)
 {
     // Not yet implemented
     return {};
 }
 
+
+CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
+{
+    return x_GetPub(pmid, perr);
+}
 
 CRef<CPub> CEUtilsUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
 {
@@ -432,7 +437,7 @@ CRef<CPub> CEUtilsUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
     CConstRef<CPub> pub;
     auto it = m_cache.find(pmid);
     if (it == m_cache.end()) {
-        pub = CEUtilsUpdater::GetPub(pmid, perr);
+        pub = x_GetPub(pmid, perr);
         if (pub) {
             m_cache[pmid] = pub;
         } else {

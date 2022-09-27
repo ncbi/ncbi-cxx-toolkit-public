@@ -20,12 +20,12 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
-CMLAUpdater::CMLAUpdater()
+CMLAUpdaterBase::CMLAUpdaterBase()
   : m_mlac(new CMLAClient())
 {
 }
 
-bool CMLAUpdater::Init()
+bool CMLAUpdaterBase::Init()
 {
     CMla_back reply;
     try {
@@ -36,7 +36,7 @@ bool CMLAUpdater::Init()
     return reply.IsInit();
 }
 
-void CMLAUpdater::Fini()
+void CMLAUpdaterBase::Fini()
 {
     try {
         m_mlac->AskFini();
@@ -44,12 +44,12 @@ void CMLAUpdater::Fini()
     }
 }
 
-void CMLAUpdater::SetClient(CMLAClient* mla)
+void CMLAUpdaterBase::SetClient(CMLAClient* mla)
 {
     m_mlac.Reset(mla);
 }
 
-TEntrezId CMLAUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
+TEntrezId CMLAUpdaterBase::CitMatch(const CPub& pub, EPubmedError* perr)
 {
     CMLAClient::TReply reply;
 
@@ -110,14 +110,14 @@ static void SetArticle(CCit_art& art, const SCitMatch& cm)
     }
 }
 
-TEntrezId CMLAUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
+TEntrezId CMLAUpdaterBase::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 {
     CPub pub;
     SetArticle(pub.SetArticle(), cm);
     return this->CitMatch(pub, perr);
 }
 
-CRef<CPub> CMLAUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
+CRef<CPub> CMLAUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     CMLAClient::TReply reply;
 
@@ -136,7 +136,7 @@ CRef<CPub> CMLAUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
     return {};
 }
 
-string CMLAUpdater::GetTitle(const string& title)
+string CMLAUpdaterBase::GetTitle(const string& title)
 {
     CRef<CTitle> title_new(new CTitle);
     CRef<CTitle::C_E> type_new(new CTitle::C_E);
@@ -171,12 +171,17 @@ string CMLAUpdater::GetTitle(const string& title)
     return {};
 }
 
+CRef<CPub> CMLAUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
+{
+    return x_GetPub(pmid, perr);
+}
+
 CRef<CPub> CMLAUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     m_num_requests++;
     auto& pub = m_cache[pmid];
     if (pub.Empty()) {
-        pub = CMLAUpdater::GetPub(pmid, perr);
+        pub = x_GetPub(pmid, perr);
     } else {
         m_cache_hits++;
     }
