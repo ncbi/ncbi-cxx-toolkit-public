@@ -977,7 +977,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 net_info->scheme = eURL_Http;
             ConnNetInfo_SetArgs(net_info, 0);
             assert(!uuu->descr);
-            uuu->descr = ConnNetInfo_URL(net_info);
             return 0;
         }
         if (net_info->firewall == eFWMode_Fallback
@@ -1003,7 +1002,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     else if (!net_info->scheme)
         net_info->scheme = eURL_Http;
     assert(!uuu->descr);
-    uuu->descr = ConnNetInfo_URL(net_info);
     return !uuu->extra.adjust
         ||  uuu->extra.adjust(net_info, uuu->extra.data, (unsigned int)(-1))
         ? HTTP_CreateConnectorEx(net_info,
@@ -1093,6 +1091,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         const char* type;
         int stateless;
         CONNECTOR c;
+        char* descr;
 
         assert(!uuu->meta.list  &&  status != eIO_Success);
 
@@ -1128,6 +1127,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         }
 
         c = s_Open(uuu, timeout, info, net_info, &status);
+        descr = uuu->descr ? (char*) uuu->descr : ConnNetInfo_URL(net_info);
         stateless = net_info->stateless;
 
         ConnNetInfo_Destroy(net_info);
@@ -1135,6 +1135,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         if (!c) {
             if (status == eIO_Success)
                 status  = eIO_Unknown;
+            uuu->descr = descr;
             continue;
         }
         {{
@@ -1145,6 +1146,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             if (meta_status != eIO_Success) {
                 x_DestroyConnector(c);
                 status = meta_status;
+                uuu->descr = descr;
                 continue;
             }
         }}
@@ -1153,8 +1155,13 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         c->next = meta->list;
         meta->list = c;
 
-        if (!uuu->descr  &&  uuu->meta.descr)
+        if (!uuu->meta.descr)
+            uuu->descr = descr;
+        else if (!uuu->descr) {
+            if (descr)
+                free(descr);
             CONN_SET_METHOD(meta, descr,  uuu->meta.descr, uuu->meta.c_descr);
+        }
         CONN_SET_METHOD    (meta, wait,   uuu->meta.wait,  uuu->meta.c_wait);
         CONN_SET_METHOD    (meta, write,  uuu->meta.write, uuu->meta.c_write);
         CONN_SET_METHOD    (meta, flush,  uuu->meta.flush, uuu->meta.c_flush);
