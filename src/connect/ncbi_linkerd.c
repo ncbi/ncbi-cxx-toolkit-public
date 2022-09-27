@@ -82,6 +82,12 @@ enum ELINKERD_Subcodes {
 #define REG_LINKERD_PORT         REG_CONN_PORT
 #define DEF_LINKERD_PORT         "4140"
 
+#define REG_LINKERD_PATH         REG_CONN_PATH
+#define DEF_LINKERD_PATH         "/"
+
+#define REG_LINKERD_ARGS         REG_CONN_ARGS
+#define DEF_LINKERD_ARGS         ""
+
 
 #define LINKERD_VHOST_DOMAIN     ".linkerd.ncbi.nlm.nih.gov"
 
@@ -375,8 +381,8 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
 static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
 {
     SConnNetInfo* net_info = ((struct SLINKERD_Data*) iter->data)->net_info;
-    char buf[40];
-    int  n;
+    char buf[CONN_PATH_LEN + 1];
+    int  namerd;
 
     if (!net_info->scheme) {
         if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
@@ -401,19 +407,18 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
         }
     }
     if (!net_info->scheme) {
-        int retval;
         /*NB: ncbi_service.c*/
         if (!(!*do_namerd  ||
               (*do_namerd < 0  &&  !(*do_namerd
                                      = SERV_IsMapperConfiguredInternal
                                      (iter->name, REG_CONN_NAMERD_ENABLE))))) {
-            retval  = x_SetupFromNamerd(iter, do_namerd);
-            if (!retval)
+            namerd  = x_SetupFromNamerd(iter, do_namerd);
+            if (!namerd)
                 return 0/*failed*/;
         } else
-            retval  = 0;
-        if (retval <= 0) {
-            if (!retval  &&  iter->arglen) {
+            namerd  = 0;
+        if (namerd <= 0) {
+            if (!namerd  &&  iter->arglen) {
                 assert(iter->arg);
                 CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
                             ("[%s]  LINKERD does not support argument affinity"
@@ -422,9 +427,11 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
                              iter->val ? iter->val : "",  &"\""[!iter->val]));
             }
             net_info->scheme = eURL_Http;
+            namerd = 0;
         } else
             assert(net_info->scheme);
-    }
+    } else
+        namerd = 0;
 
     /* N.B. Proxy configuration (including 'http_proxy' env. var. detected and
        parsed by the toolkit) may be used to override the default host:port for
@@ -435,6 +442,7 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
     if (!net_info->http_proxy_host[0]  ||
         !net_info->http_proxy_port     ||
         !net_info->http_proxy_only) {
+        int n;
         if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
                                            REG_LINKERD_HOST,
                                            net_info->host,
@@ -470,6 +478,39 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
     } else {
         strcpy(net_info->host,  net_info->http_proxy_host);
                net_info->port = net_info->http_proxy_port;
+    }
+
+    if (!namerd) {
+        /* Path */
+        if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                           REG_LINKERD_PATH,
+                                           buf, sizeof(buf),
+                                           DEF_LINKERD_PATH)) {
+            CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                        ("[%s]  Unable to get LINKERD path", iter->name));
+            return 0/*failed*/;
+        }
+        if (!ConnNetInfo_SetPath(net_info, buf)) {
+            CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                        ("[%s]  Failed to set LINKERD path \"%s\"", iter->name,
+                         buf));
+            return 0/*failed*/;
+        }
+        /* Args */
+        if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                           REG_LINKERD_ARGS,
+                                           buf, sizeof(buf),
+                                           DEF_LINKERD_ARGS)) {
+            CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                        ("[%s] Unable to get LINKERD args", iter->name));
+            return 0/*failed*/;
+        }
+        if ( ! ConnNetInfo_PreOverrideArg(net_info, buf, 0)){
+            CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                        ("[%s] Failed to set LINKERD args \"%s\"", iter->name,
+                         buf));
+            return 0/*failed*/;
+        }
     }
 
     return 1/*succeeded*/;
