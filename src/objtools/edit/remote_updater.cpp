@@ -701,14 +701,14 @@ void CRemoteUpdater::ReportStats(std::ostream& os)
         switch (m_pm_source) {
         case EPubmedSource::eMLA: {
             auto* upd = dynamic_cast<CMLAUpdaterWithCache*>(m_pubmed.get());
-            if (upd) {
+            if (upd && ! dynamic_cast<CMLAUpdater*>(m_pubmed.get())) {
                 upd->ReportStats(os);
             }
             break;
         }
         case EPubmedSource::eEUtils: {
             auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
-            if (upd) {
+            if (upd && ! dynamic_cast<CEUtilsUpdater*>(m_pubmed.get())) {
                 upd->ReportStats(os);
             }
             break;
