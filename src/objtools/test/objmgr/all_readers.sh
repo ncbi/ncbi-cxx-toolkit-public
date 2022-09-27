@@ -16,31 +16,61 @@ disabled() {
     return 0;
 }
 
-# test readers of native GenBank loader (not PSG)
-GENBANK_LOADER_PSG=0
-export GENBANK_LOADER_PSG
+only_id2_test=0
+no_id2_test=0
+only_vdb_wgs_test=0
+no_vdb_wgs_test=0
+no_cache=0
 
-if test "$1" = "-id2"; then
-    shift
-    methods="ID2"
-else
+while true; do
+    case "$1" in
+	-id2)
+	    only_id2_test=1
+	    shift
+	    ;;
+	-xid2|-no-id2)
+	    no_id2_test=1
+	    shift
+	    ;;
+	-vdb-wgs)
+	    only_vdb_wgs_test=1
+	    shift
+	    ;;
+	-no-vdb-wgs)
+	    no_vdb_wgs_test=1
+	    shift
+	    ;;
+	-no-cache)
+	    no_cache=1
+	    shift
+	    ;;
+	*)
+	    break
+	    ;;
+    esac
+done
+
+methods=""
+if test "$only_id2_test" == 0 -a "$only_vdb_wgs_test" == 0; then
     if disabled PubSeqOS; then
-	echo "Skipping PUBSEQOS loader test (loader unavailable)"
-	m1=""
+        echo "Skipping PUBSEQOS loader test (loader unavailable)"
+        methods="$methods ID1"
     elif disabled in-house-resources; then
-	echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
-	m1=""
+        echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
+        methods="$methods ID1"
     else
-	m1="PUBSEQOS PUBSEQOS2"
+        methods="$methods PUBSEQOS ID1"
     fi
-    if test "$1" = "-no-id1"; then
-	shift
-	m2="ID2"
-    else
-	m2="ID1 ID2"
-    fi
-    methods="$m1 $m2"
 fi
+if test "$no_id2_test" == 0 -a "$no_vdb_wgs_test" == 0; then
+    methods="$methods ID2"
+fi
+if test "$no_id2_test" == 1 -o "$no_vdb_wgs_test" == 1 || disabled PSGLoader || disabled in-house-resources; then
+    echo "Skipping PSG loader test"
+else
+    methods="$methods PSG"
+fi
+
 if disabled DLL_BUILD; then
     # enable dll plugins for ftds and bdb
     NCBI_LOAD_PLUGINS_FROM_DLLS=1
@@ -114,9 +144,20 @@ init_cache() {
 exitcode=0
 failed=''
 for method in $methods; do
+    caches="1"
     GENBANK_LOADER_METHOD_BASE="$method"
     export GENBANK_LOADER_METHOD_BASE
-    for cache in 1 2 3; do
+    if test "$method" = "PSG"; then
+	GENBANK_LOADER_PSG=1
+	unset GENBANK_LOADER_METHOD_BASE
+    else
+	GENBANK_LOADER_PSG=0
+	if test "$no_cache" == 0; then
+	    caches="1 2 3"
+	fi
+    fi
+    export GENBANK_LOADER_PSG
+    for cache in $caches; do
         GENBANK_ALLOW_INCOMPLETE_COMMANDS=1
         export GENBANK_ALLOW_INCOMPLETE_COMMANDS
         if test "$cache" = 1; then
@@ -133,15 +174,20 @@ for method in $methods; do
         else
             m="cache"
         fi
-        echo "Checking GenBank loader $m (base: $method):"
+	if test "$m" = "$method"; then
+	    mdescr="$m"
+	else
+	    mdescr="$m (base: $method)"
+	fi
+        echo "Checking GenBank loader $mdescr:"
         GENBANK_LOADER_METHOD="$m"
         export GENBANK_LOADER_METHOD
-        $CHECK_EXEC "$@"
+        $CHECK_EXEC "$@" $ALL_READERS_EXTRA_ARGUMENTS
         error=$?
         if test $error -ne 0; then
-            echo "Test of GenBank loader $m failed (base: $method): $error"
+            echo "Test of GenBank loader $mdescr failed: $error"
             exitcode=$error
-            failed="$failed $m (base: $method)"
+            failed="$failed $mdescr"
             case $error in
             # signal 1 (HUP), 2 (INTR), 9 (KILL), or 15 (TERM).
                 129|130|137|143) echo "Apparently killed"; break ;;

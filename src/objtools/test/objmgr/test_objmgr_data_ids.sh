@@ -4,6 +4,12 @@
 GENBANK_LOADER_METHOD="$1"
 export GENBANK_LOADER_METHOD
 shift
+if test "$GENBANK_LOADER_METHOD" = psg; then
+    GENBANK_LOADER_PSG=1
+else
+    GENBANK_LOADER_PSG=0
+fi
+export GENBANK_LOADER_PSG
 
 status_dir="$CFG_LIB/../status"
 if test ! -d "$status_dir"; then
@@ -34,12 +40,20 @@ if test "$GENBANK_LOADER_METHOD" = pubseqos; then
     export NCBI_LOAD_PLUGINS_FROM_DLLS
 fi
 
-OBJMGR_SCOPE_AUTORELEASE_SIZE=0
-export OBJMGR_SCOPE_AUTORELEASE_SIZE
-OBJMGR_BLOB_CACHE=0
-export OBJMGR_BLOB_CACHE
-GENBANK_ID2_DEBUG=5
-export GENBANK_ID2_DEBUG
+if test "$GENBANK_LOADER_METHOD" = psg; then
+    # special check for PSG loader availability
+    if disabled PSGLoader || disabled in-house-resources; then
+        echo PSG loader is disabled or not accessible: skipping PSG loader test
+        exit 0
+    fi
+fi
+
+#OBJMGR_SCOPE_AUTORELEASE_SIZE=0
+#export OBJMGR_SCOPE_AUTORELEASE_SIZE
+#OBJMGR_BLOB_CACHE=0
+#export OBJMGR_BLOB_CACHE
+#GENBANK_ID2_DEBUG=5
+#export GENBANK_ID2_DEBUG
 
 exitcode=0
 for mode in "" "-no_reset" "-keep_handles" "-no_reset -keep_handles"; do
