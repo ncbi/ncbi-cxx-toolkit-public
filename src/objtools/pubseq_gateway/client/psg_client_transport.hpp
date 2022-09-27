@@ -254,7 +254,7 @@ private:
     enum EType { eSend = 1000, eReceive, eClose, eRetry, eFail };
 
     template <class ...TArgs>
-    void Event(SSocketAddress, TArgs&&... args)     { Event(eSend);    }
+    void Event(SSocketAddress, TArgs&&...)          { Event(eSend);    }
     void Event(const SPSG_Args&, const SPSG_Chunk&) { Event(eReceive); }
     void Event(uint32_t)                            { Event(eClose);   }
     void Event(unsigned, const SUvNgHttp2_Error&)   { Event(eRetry);   }
@@ -530,6 +530,7 @@ struct SPSG_TimedRequest
     unsigned AddSecond() { return ++m_Seconds; }
 
 private:
+    friend struct SPSG_AsyncQueue;
     shared_ptr<SPSG_Request> m_Request;
     unsigned m_Seconds = 0;
 };
@@ -542,7 +543,7 @@ struct SPSG_AsyncQueue : SUv_Async
     {
         if (auto locked = m_Queue.GetLock()) {
             if (!locked->empty()) {
-                request = locked->front().Get(nullptr);
+                request = locked->front().m_Request;
                 _ASSERT(request);
                 locked->pop_front();
                 return true;
