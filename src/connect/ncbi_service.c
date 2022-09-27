@@ -36,7 +36,6 @@
 #include "ncbi_local.h"
 #ifdef NCBI_CXX_TOOLKIT
 #  include "ncbi_lbdns.h"
-#  include "ncbi_lbosp.h"
 #  include "ncbi_linkerd.h"
 #  include "ncbi_namerd.h"
 #endif /*NCBI_CXX_TOOLKIT*/
@@ -273,7 +272,6 @@ static SERV_ITER x_Open(const char*         service,
 #  endif /*NCBI_OS_UNIX*/
         do_linkerd = -1/*unassigned*/,
         do_namerd  = -1/*unassigned*/,
-        do_lbos    = -1/*unassigned*/,
 #endif /*NCBI_CXX_TOOLKIT*/
         do_dispd   = -1/*unassigned*/;
     const SSERV_VTable* op;
@@ -363,7 +361,7 @@ static SERV_ITER x_Open(const char*         service,
             do_lbsmd = 0/*false*/;
     } else {
 #ifdef NCBI_CXX_TOOLKIT
-        do_linkerd = do_namerd = do_lbos =
+        do_linkerd = do_namerd =
 #endif /*NCBI_CXX_TOOLKIT*/
             do_dispd = 0/*false*/;
     }
@@ -394,10 +392,6 @@ static SERV_ITER x_Open(const char*         service,
                                 (!do_namerd                                  ||
                                  !(do_namerd = s_IsMapperConfigured
                                    (svc, REG_CONN_NAMERD_ENABLE)))
-                                &&
-                                (!do_lbos                                    ||
-                                 !(do_lbos = s_IsMapperConfigured
-                                   (svc, REG_CONN_LBOS_ENABLE)))
 #endif /*NCBI_CXX_TOOLKIT*/
                                 )))
 
@@ -419,11 +413,6 @@ static SERV_ITER x_Open(const char*         service,
          (do_namerd < 0  &&  !(do_namerd = s_IsMapperConfigured
                                (svc, REG_CONN_NAMERD_ENABLE)))               ||
          !(op = SERV_NAMERD_Open(iter, net_info, info)))
-        &&
-        (!do_lbos                                                            ||
-         (do_lbos < 0  &&  !(do_lbos = s_IsMapperConfigured
-                             (svc, REG_CONN_LBOS_ENABLE)))                   ||
-         !(op = SERV_LBOS_Open(iter, net_info, info)))
 #endif /*NCBI_CXX_TOOLKIT*/
 
         &&
@@ -431,13 +420,14 @@ static SERV_ITER x_Open(const char*         service,
          (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
                               (svc, REG_CONN_DISPD_DISABLE)))                ||
          !(op = SERV_DISPD_Open(iter, net_info, info)))) {
-        if (!do_local  &&  !do_lbsmd  &&  !do_dispd
+        if (!do_local  &&  !do_lbsmd
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
             &&  !do_lbdns
 #  endif /*NCBI_OS_UNIX*/
-            &&  !do_linkerd  &&  !do_namerd  &&  !do_lbos
+            &&  !do_linkerd  &&  !do_namerd
 #endif /*NCBI_CXX_TOOLKIT*/
+            &&  !do_dispd
             ) {
             if (svc  &&  strcasecmp(service, svc) == 0)
                 svc = 0;
