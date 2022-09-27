@@ -1386,7 +1386,7 @@ void CGenbankFormatter::FormatComment
     list<string> x;
     ITERATE(list<string>, line, l) {
         if (NStr::Find(*line, "START##") != NPOS && NStr::Find(*line, "COMMENT") == NPOS) {
-            x.push_back("\n" + *line);
+            x.push_back("            \n" + *line);
         } else {
             x.push_back(*line);
         }
