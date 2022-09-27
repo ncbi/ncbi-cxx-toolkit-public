@@ -106,25 +106,24 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *  Preferred host to use the service at, nbo.
  * @param net_info
  *  Connection information (NULL prevents the use of the network-based
- *  dispatching via LBOS, LINKERD, NAMERD, and DISPD)
+ *  dispatching via LINKERD, NAMERD, and DISPD)
  * @note If "net_info" is NULL, only the following mappers will be consulted:
  *          LOCAL(if enabled, see below), LBSMD, and LBDNS.
  *       If "net_info" is not NULL, the above mappers are consulted first,
  *       followed by
- *          LINKERD, NAMERD, LBOS, and DISPD
+ *          LINKERD, NAMERD, and DISPD
  *       (using the connection information provided) but only if mapping with
  *       the preceding mapper(s), if any occurred, has failed.
  * @note The registry section [CONN], keys:
  *          LOCAL_ENABLE, LBSMD_DISABLE, LBDNS_ENABLE, LINKERD_ENABLE,
- *          NAMERD_ENABLE, LBOS_ENABLE, DISPD_DISABLE
+ *          NAMERD_ENABLE, DISPD_DISABLE
  *       which can be overridden by the environment variables:
  *          CONN_LOCAL_ENABLE, CONN_LBSMD_DISABLE, CONN_LBDNS_ENABLE,
- *          CONN_LINKERD_ENABLE, CONN_NAMERD_ENABLE, CONN_LBOS_ENABLE, and
- *          CONN_DISPD_DISABLE
- *       can be used to add(for LOCAL, LBDNS, LINKERD, NAMERD, and LBOS) or to
- *       skip(for LBSMD and DISPD) the corresponding service mapper(s).  This
- *       scheme  permits to use any combination of the service mappers (local/
- *       lbsmd/lbdns/linkerd/namerd/lbos/dispd, network-aware or not).
+ *          CONN_LINKERD_ENABLE, CONN_NAMERD_ENABLE, and CONN_DISPD_DISABLE
+ *       can be used to add(for LOCAL, LBDNS, LINKERD, NAMERD) or to skip (for
+ *       LBSMD and DISPD) the corresponding service mapper(s).  This scheme
+ *       permits to use any combination of the service mappers (local/lbsmd/
+ *       lbdns/linkerd/namerd/dispd, network-aware or not).
  *       These keys can also be used for even more granular, per-service basis,
  *       as described in <connect/ncbi_connutil.h> -- when used in the registry
  *       section '[service]' or prefixed with the service name in the process
@@ -255,7 +254,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfo
  *  Preferred host to use the service at, nbo.
  * @param net_info
  *  Connection information (NULL disables network-based dispatching via
- *  LBOS, LINKERD, NAMERD, and DISPD)
+ *  LINKERD, NAMERD, and DISPD)
  * @param skip[]
  *  An array of servers NOT to select, see SERV_OpenEx() for notes.
  * @param n_skip

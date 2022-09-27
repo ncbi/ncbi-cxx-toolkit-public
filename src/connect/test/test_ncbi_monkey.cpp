@@ -472,8 +472,6 @@ NCBITEST_INIT_TREE()
 
 NCBITEST_INIT_CMDLINE(args)
 {
-    args->AddOptionalPositional("lbos", "Primary address to LBOS",
-                                CArgDescriptions::eString);
 }
 
 

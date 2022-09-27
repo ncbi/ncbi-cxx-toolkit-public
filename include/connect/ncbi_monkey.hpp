@@ -74,7 +74,7 @@ public:
        ,e_MonkeyUnknown     = 1   /**< Not classified as anything above    */
     };
 
-    /** Get original status code and status message from LBOS in a string */
+    /** Get original status code and a status message in a string */
     virtual const char* what(void)  const noexcept;
 
 private:

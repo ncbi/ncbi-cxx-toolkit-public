@@ -56,7 +56,7 @@ set(SRC_C
     ncbi_socket_connector ncbi_file_connector ncbi_http_connector
     ncbi_memory_connector ncbi_service_connector ncbi_ftp_connector
     ncbi_version ncbi_iprange ncbi_local ncbi_dispd
-    ncbi_lbos ncbi_linkerd ncbi_namerd parson
+    ncbi_linkerd ncbi_namerd parson
     ncbi_localip ncbi_lbdns
     ${lbsm_src}
     )
@@ -66,7 +66,7 @@ set(SRC_CXX
     ncbi_conn_streambuf ncbi_conn_stream ncbi_conn_test
     ncbi_misc ncbi_namedpipe ncbi_namedpipe_connector
     ncbi_pipe ncbi_pipe_connector ncbi_conn_reader_writer
-    ncbi_userhost ncbi_http_session ncbi_lbos_cxx ncbi_monkey
+    ncbi_userhost ncbi_http_session ncbi_monkey
     ncbi_service_cxx ncbi_localip_cxx ncbi_blowfish ncbi_usage_report
     connect_misc
     ${SRC_TLS}
