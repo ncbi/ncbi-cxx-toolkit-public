@@ -561,25 +561,18 @@ private:
 		eCommonName,
 		eSuperKingdom,
 		eBlastName,
+        eNumSeqs,
 		eMaxFields
 	};
 	CNcbiOstream & m_Out;
 	vector<int> m_Fields;
 	vector<string> m_Seperators;
 	bool m_NeedTaxInfoLookup;
+	bool m_NeedNumSeqs;
 public:
-	CPrintTaxFields(CNcbiOstream & out, const string & fmt): m_Out(out), m_NeedTaxInfoLookup(true) {
+	CPrintTaxFields(CNcbiOstream & out, const string & fmt): m_Out(out), m_NeedTaxInfoLookup(false), m_NeedNumSeqs(false) {
 		vector<string> fields;
         string sp = kEmptyStr;
-		if(fmt == "%f") {
-			m_Seperators.push_back(sp);
-			for(unsigned int i=eTaxID; i < eMaxFields; i++){
-				m_Fields.push_back(i);
-				m_Seperators.push_back("\t");
-			}
-			return;
-		}
-
 	    for (unsigned int i = 0; i < fmt.size(); i++) {
 	    	if (fmt[i] == '%') {
 		        if (fmt[i+1] == '%') {
@@ -588,20 +581,37 @@ public:
 		        }
 		        i++;
 		        switch (fmt[i]) {
+		        case 'f' :
+		        	m_NeedTaxInfoLookup = true;
+		      		m_Seperators.push_back(sp);
+		      		for(unsigned int i=eTaxID; i < eMaxFields; i++){
+		                if ( i == eNumSeqs ) continue;
+		      		    m_Fields.push_back(i);
+		      		    m_Seperators.push_back("\t");
+		      		}
+		        break;
 		        case 'T' :
        				m_Fields.push_back(eTaxID);
        			break;
 		        case 'S' :
 		        	m_Fields.push_back(eSciName);
+			        m_NeedTaxInfoLookup = true;
                 break;
 		        case 'L' :
 		        	m_Fields.push_back(eCommonName);
+			        m_NeedTaxInfoLookup = true;
 		        break;
 		        case 'K' :
 		        	m_Fields.push_back(eSuperKingdom);
+			        m_NeedTaxInfoLookup = true;
                 break;
 		        case 'B' :
 		        	m_Fields.push_back(eBlastName);
+			        m_NeedTaxInfoLookup = true;
+		        break;
+		        case 'n' :
+		        	m_Fields.push_back(eNumSeqs);
+                    m_NeedNumSeqs = true;
 		        break;
 		        default:
 	                sp += fmt[i-1];
@@ -622,12 +632,9 @@ public:
 			NCBI_THROW(CInputException, eInvalidInput,
 				       "Invalid format options for tax_info.");
 		}
-		if((m_Fields.size() == 1) && (m_Fields[0] == eTaxID)){
-			m_NeedTaxInfoLookup = false;
-		}
 	}
 
-	void PrintEntry(const SSeqDBTaxInfo & t){
+	void PrintEntry(const SSeqDBTaxInfo & t, int num_seqs){
 		for(unsigned int i=0; i < m_Fields.size(); i++) {
 			m_Out << m_Seperators[i];
 			switch (m_Fields[i]){
@@ -646,6 +653,9 @@ public:
 				case eBlastName:
 					m_Out << t.blast_name;
 				break;
+				case eNumSeqs:
+					m_Out << num_seqs;
+				break;
 				default:
 					NCBI_THROW(CInputException, eInvalidInput,
 					           "Invalid format options for tax_info.");
@@ -656,6 +666,7 @@ public:
 		m_Out << "\n";
 	}
 	bool NeedTaxNames(){return m_NeedTaxInfoLookup;}
+	bool NeedNumSeqs(){return m_NeedNumSeqs;}
 };
 
 
@@ -670,6 +681,7 @@ CBlastDBCmdApp::x_PrintBlastDatabaseTaxInformation()
     CPrintTaxFields tf(out, kFmt);
     set<TTaxId> tax_ids;
     m_BlastDb->GetDBTaxIds(tax_ids);
+
     // Print basic database information
     out << "# of Tax IDs in Database: " << tax_ids.size() << endl;
 	SSeqDBTaxInfo info;
@@ -688,7 +700,15 @@ CBlastDBCmdApp::x_PrintBlastDatabaseTaxInformation()
     	else {
    			info.taxid = *itr;
     	}
-   		tf.PrintEntry(info);
+        int num_seqs = 0;
+        if(tf.NeedNumSeqs()) {
+            vector<blastdb::TOid> rv;
+            set<TTaxId> ti;
+            ti.insert(*itr);
+            m_BlastDb->TaxIdsToOids(ti, rv);
+            num_seqs = rv.size();
+        }
+   		tf.PrintEntry(info, num_seqs);
     }
 }
 
@@ -959,6 +979,7 @@ void CBlastDBCmdApp::Init()
     		          "\t\t%S means scientific name\n"
     		          "\t\t%K means taxonomic super kingdom\n"
     		          "\t\t%B means BLAST name\n"
+    		          "\t\t%n means num of seqs\n"
     		          "By default it prints: '%T %S %L %K %B'\n", true);
     // All other options to this program should be here
     const char* tax_info_exclusions[]  = { "info", "entry", "entry_batch", "strand",
