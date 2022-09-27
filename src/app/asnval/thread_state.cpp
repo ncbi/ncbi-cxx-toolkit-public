@@ -1010,6 +1010,14 @@ void CAsnvalThreadState::ValidateOneHugeFile(const string& loader_name, bool use
         CAutoRevoker autorevoker(info);
         CHugeFileValidator hugeFileValidator(reader, m_Options);
         hugeFileValidator.UpdateValidatorContext(m_GlobalInfo, *m_pContext);
+            
+        if (!mAppConfig.mQuiet && !reader.GetSubmitBlock()) {
+            if (const auto& topIds = reader.GetTopIds(); !topIds.empty()) {
+                m_CurrentId.clear();
+                topIds.front()->GetLabel(&m_CurrentId); 
+                LOG_POST_XX(Corelib_App, 1, m_CurrentId); 
+            }
+        }
 
         if (m_pContext->PreprocessHugeFile) {
             CRef<CValidError> pEval;
