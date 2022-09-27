@@ -3912,6 +3912,7 @@ LIA	c	Cryobank of Microorganisms
 LIAIP	s	Laboratory of Ichthyology			
 LIB	s	University of Liberia			
 LICPP	s	The Crown Prince's Palace			
+LID	c	Collection of Cyanoprokaryotes of Polar-Alpine Botanical Garden-Institute of Kola Science Centre of RAS			
 LIG	s	Sociedade de Geografia de Lisboa			
 LIH-UNAM	c	Culture Collection of Histoplasma capsulatum Strains from the Fungal Immunology Laboratory of the Department of Microbiology and Parasitology, Faculty of Medicine, UNAM			
 LIHUBA	s	Universidad de Buenos Aires, Laboratorio de Investigaciones Herpetologicas			
