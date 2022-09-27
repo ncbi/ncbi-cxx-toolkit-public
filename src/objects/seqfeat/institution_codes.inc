@@ -3945,6 +3945,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LIAIP\ts\tLaboratory of Ichthyology\t\t\t",
 "LIB\ts\tUniversity of Liberia\t\t\t",
 "LICPP\ts\tThe Crown Prince's Palace\t\t\t",
+"LID\tc\tCollection of Cyanoprokaryotes of Polar-Alpine Botanical Garden-Institute of Kola Science Centre of RAS\t\t\t",
 "LIG\ts\tSociedade de Geografia de Lisboa\t\t\t",
 "LIH-UNAM\tc\tCulture Collection of Histoplasma capsulatum Strains from the Fungal Immunology Laboratory of the Department of Microbiology and Parasitology, Faculty of Medicine, UNAM\t\t\t",
 "LIHUBA\ts\tUniversidad de Buenos Aires, Laboratorio de Investigaciones Herpetologicas\t\t\t",
