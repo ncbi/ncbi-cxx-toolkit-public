@@ -46,12 +46,11 @@ inline void* MemNew(size_t sz)
     std::memset(p, 0, sz);
     return p;
 }
-inline void* MemSet(void* p, int n, size_t sz) { return std::memset(p, n, sz); }
-inline void* MemCpy(void* p, const void* q, size_t sz) { return std::memcpy(p, q, sz); }
-inline void* MemFree(void* p)
+inline void MemSet(void* p, int n, size_t sz) { std::memset(p, n, sz); }
+inline void MemCpy(void* p, const void* q, size_t sz) { if (q) std::memcpy(p, q, sz); }
+inline void MemFree(void* p)
 {
     delete[]((char*)p);
-    return 0;
 }
 
 inline size_t StringLen(const char* s) { return s ? std::strlen(s) : 0; }
@@ -66,15 +65,46 @@ inline char*  StringSave(const char* s)
 }
 inline const char* StringStr(const char* s1, const char* s2) { return std::strstr(s1, s2); }
 inline char* StringStr(char* s1, const char* s2) { return std::strstr(s1, s2); }
-inline char* StringCat(char* d, const char* s) { return std::strcat(d, s); }
-inline char* StringCpy(char* d, const char* s) { return std::strcpy(d, s); }
-inline char* StringNCpy(char* d, const char* s, size_t n) { return std::strncpy(d, s, n); }
+inline void StringCat(char* d, const char* s) { std::strcat(d, s); }
+inline void StringCpy(char* d, const char* s) { std::strcpy(d, s); }
+inline void StringNCpy(char* d, const char* s, size_t n) { std::strncpy(d, s, n); }
 inline const char* StringChr(const char* s, const char c) { return std::strchr(s, c); }
 inline char* StringChr(char* s, const char c) { return std::strchr(s, c); }
 inline char* StringRChr(char* s, const char c) { return std::strrchr(s, c); }
-inline int   StringCmp(const char* s1, const char* s2) { return std::strcmp(s1, s2); }
-inline int   StringNCmp(const char* s1, const char* s2, size_t n) { return std::strncmp(s1, s2, n); }
-inline int   StringNICmp(const char* s1, const char* s2, size_t n)
+
+inline int StringCmp(const char* s1, const char* s2)
+{
+    if (s1) {
+        if (s2) {
+            return std::strcmp(s1, s2);
+        } else {
+            return 1;
+        }
+    } else {
+        if (s2) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+}
+inline int StringNCmp(const char* s1, const char* s2, size_t n)
+{
+    if (s1) {
+        if (s2) {
+            return std::strncmp(s1, s2, n);
+        } else {
+            return 1;
+        }
+    } else {
+        if (s2) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+}
+inline int StringNICmp(const char* s1, const char* s2, size_t n)
 {
     const string S1(s1), S2(s2);
     return NStr::CompareNocase(S1.substr(0, n), S2.substr(0, n));
