@@ -808,6 +808,7 @@ SYBASE_LIBS
 SYBASE_INCLUDE
 SYBASE_LCL_PATH
 SYBASE_PATH
+CURL_STATIC_LIBS
 OPENSSL_STATIC_LIBS
 PCRE_LIB
 PCREPOSIX_LIBS
@@ -1063,6 +1064,7 @@ FTDS100_LIBS
 FTDS100_INCLUDE
 CURL_LIBS
 CURL_INCLUDE
+CURL_CONFIG
 KRB5_LIBS
 KRB5_INCLUDE
 KRB5_CONFIG
@@ -19823,6 +19825,161 @@ done
 fi
 
 
+case "$with_curl" in
+   no       ) ac_cv_path_CURL_CONFIG=no ;;
+   yes | "" )                           ;;
+   *        ) CURL_PATH=$with_curl      ;;
+esac
+if test -d "$CURL_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $CURL_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $CURL_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            CURL_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$CURL_PATH" in
+               /*) ;;
+               * ) CURL_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) CURL_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   CURL_ARCH_PATH=$CURL_PATH
+for d in "$CURL_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$CURL_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$CURL_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$CURL_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      CURL_ARCH_PATH=$d
+      break
+   fi
+done
+   ncbi_fix_dir_tmp=`if cd $CURL_ARCH_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $CURL_ARCH_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            CURL_ARCH_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$CURL_ARCH_PATH" in
+               /*) ;;
+               * ) CURL_ARCH_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) CURL_ARCH_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+# Extract the first word of "curl-config", so it can be a program name with args.
+set dummy curl-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CURL_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CURL_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CURL_CONFIG="$CURL_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$CURL_ARCH_PATH/bin:$PATH"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CURL_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CURL_CONFIG=$ac_cv_path_CURL_CONFIG
+if test -n "$CURL_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CURL_CONFIG" >&5
+$as_echo "$CURL_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test -x "$CURL_CONFIG"; then
+   : ${CURL_INCLUDE=`"$CURL_CONFIG" --cflags`}
+   if test -z "${CURL_LIBPATH+set}"; then
+    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    CURL_LIBPATH=`"$CURL_CONFIG" --libs | sed -e "s/ -lcurl[^ ]*//; "`
+ else
+    CURL_LIBPATH=
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `"$CURL_CONFIG" --libs | sed -e "s/ -lcurl[^ ]*//; "`; do
+       case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
+          -L*)
+             CURL_LIBPATH="$CURL_LIBPATH${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             CURL_LIBPATH="$CURL_LIBPATH${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    CURL_LIBPATH="$CURL_LIBPATH${ncbi_rp_R_flags}"
+ fi
+ fi
+   CURL_PATH=`"$CURL_CONFIG" --prefix`
+elif test -d "$CURL_ARCH_PATH"; then
+   : ${CURL_INCLUDE=-I$CURL_PATH/include}
+   if test -z "${CURL_LIBPATH+set}"; then
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $CURL_ARCH_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    CURL_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $CURL_ARCH_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    CURL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+ fi
+fi
 if test "$with_curl" != "no"; then
     case "$CURL_PATH:$with_curl" in
        *:yes | *: | $with_curl* ) ;;
@@ -19952,6 +20109,15 @@ $as_echo "#define HAVE_LIBCURL 1" >>confdefs.h
 
 
 
+if test -n "$CURL_LIBS"; then
+   if test -x "$CURL_CONFIG"; then
+      CURL_STATIC_LIBS=`"$CURL_CONFIG" --static-libs`
+   elif test -f "$CURL_ARCH_PATH/lib/libcurl-static.a"; then
+      # Speculative
+      CURL_STATIC_LIBS="$CURL_LIBPATH -lcurl-static $OPENSSL_LIBS $Z_LIBS"
+   fi
+   : ${CURL_STATIC_LIBS:=$CURL_LIBS}
+fi
 
 
 ## SYBASE libraries
@@ -35879,6 +36045,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
