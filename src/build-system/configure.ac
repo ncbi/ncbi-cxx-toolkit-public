@@ -69,6 +69,11 @@ case "$with_3psw" in
       else
          with_aws_sdk=no
       fi
+      if test "${with_google_cloud-no}" != "no"; then
+         AC_MSG_ERROR([incompatible options: --with-google-cloud but --without-3psw])
+      else
+         with_google_cloud=no
+      fi
       if test "${with_apache_arrow-no}" != "no"; then
          AC_MSG_ERROR([incompatible options: --with-apache-arrow but --without-3psw])
       else
@@ -97,7 +102,7 @@ case "$with_3psw" in
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
-                     libxlsxwriter, protobuf, grpc, msgsl, hiredis,
+                     libxlsxwriter, protobuf, grpc, msgsl, crc32c, hiredis,
                      librdkafka, cppkafka, thrift, opentracing, jaeger],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
@@ -612,6 +617,14 @@ AC_ARG_WITH(aws-sdk,
    [ --with-aws-sdk=DIR      use Amazon Web Services SDK installation in DIR])
 AC_ARG_WITH(aws-sdk,
    [ --without-aws-sdk       do not use the Amazon Web Services SDK])
+AC_ARG_WITH(crc32c,
+   [ --with-crc32c=DIR       use fast CRC32C installation in DIR])
+AC_ARG_WITH(crc32c,
+   [ --without-crc32c        do not use fast CRC32C])
+AC_ARG_WITH(google-cloud,
+   [ --with-google-cloud=DIR use Google Cloud C++ interface in DIR])
+AC_ARG_WITH(google-cloud,
+   [ --without-google-cloud  do not use Google Cloud])
 AC_ARG_WITH(hiredis,
    [ --with-hiredis=DIR      use Hiredis installation in DIR])
 AC_ARG_WITH(hiredis,
@@ -717,7 +730,7 @@ gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
-libxlsxwriter protobuf grpc msgsl aws-sdk hiredis \
+libxlsxwriter protobuf grpc msgsl aws-sdk crc32c google-cloud hiredis \
 apache-arrow librdkafka cppkafka \
 thrift nlohmann-json yaml-cpp opentracing jaeger \
 3psw local-lbsm ncbi-crypt connext \
@@ -798,6 +811,7 @@ for x_arg in "$@" ; do
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
       | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* \
+      | --with-crc32c=* | --with-google-cloud=* \
       | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* \
       | --with-thrift=* | --with-nlohmann-json=* | --with-yaml-cpp=* \
       | --with-opentracing=* | --with-jaeger=* )
@@ -8749,6 +8763,50 @@ if test "$with_aws_sdk" != no -a \
 else
     AWS_SDK_STATIC_LIBS=$AWS_SDK_LIBS
 fi
+
+case "$with_crc32c" in
+   no       ) ;;
+   yes | "" ) ;;
+   *        ) CRC32C_PATH=$with_crc32c ;;
+esac
+if test -d "$CRC32C_PATH"; then
+   NCBI_FIND_ARCH_PATH(CRC32C)
+   CRC32C_PATH=$CRC32C_ARCH_PATH
+   NCBI_FIX_DIR(CRC32C_PATH)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(crc32c,
+   [AC_LANG_PROGRAM([@%:@include <crc32c/crc32c.h>],
+      [crc32c_value((const uint8_t*)"foo", 3);])])
+if test "$with_crc32c" != no \
+   -a -f "$CRC32C_PATH/lib/libcrc32c-static.a"; then
+   CRC32C_STATIC_LIBS="-L$CRC32C_PATH/lib -lcrc32c-static"
+fi
+
+case "$with_google_cloud" in
+   no       ) ;;
+   yes | "" ) ;;
+   *        ) GOOGLE_CLOUD_PATH=$with_google_cloud ;;
+esac
+if test -d "$GOOGLE_CLOUD_PATH"; then
+   NCBI_FIND_ARCH_PATH(GOOGLE_CLOUD)
+   GOOGLE_CLOUD_PATH=$GOOGLE_CLOUD_ARCH_PATH
+   if test -d "$GOOGLE_CLOUD_PATH$asan_sfx"; then
+      GOOGLE_CLOUD_PATH="$GOOGLE_CLOUD_PATH$asan_sfx"
+   fi
+   NCBI_FIX_DIR(GOOGLE_CLOUD_PATH)
+fi
+if test -d $GOOGLE_CLOUD_PATH/lib${bit64_sfx}; then
+   GOOGLE_CLOUD_LIBDIR=$GOOGLE_CLOUD_PATH/lib${bit64_sfx}
+else
+   GOOGLE_CLOUD_LIBDIR=$GOOGLE_CLOUD_PATH/lib
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(google_cloud, GOOGLE_CLOUD,
+   google_cloud_cpp_storage,
+   [AC_LANG_PROGRAM([@%:@include <google/cloud/storage/client.h>],
+       [google::cloud::storage::Client client])],
+   [-lgoogle_cloud_cpp_common],
+   [$CRC32C_LIBS $GRPC_LIBS $CURL_LIBS $OPENSSL_LIBS $Z_LIBS],
+   [$GRPC_INCLUDE])
 
 NCBI_CHECK_THIRD_PARTY_LIB(hiredis,
    [AC_LANG_PROGRAM([[@%:@include <hiredis/hiredis.h>]],

@@ -822,6 +822,15 @@ JAEGER_INCLUDE          = @JAEGER_INCLUDE@
 JAEGER_LIBS             = @JAEGER_LIBS@
 JAEGER_STATIC_LIBS      = @JAEGER_STATIC_LIBS@
 
+# Fast CRC32C implementation (used by Google Cloud libraries)
+CRC32C_INCLUDE     = @CRC32C_INCLUDE@
+CRC32C_LIBS        = @CRC32C_LIBS@
+CRC32C_STATIC_LIBS = @CRC32C_STATIC_LIBS@
+
+# Google Cloud libraries (storage and its dependencies, for now)
+GOOGLE_CLOUD_INCLUDE = @GOOGLE_CLOUD_INCLUDE@
+GOOGLE_CLOUD_LIBS    = @GOOGLE_CLOUD_LIBS@
+
 # Compress
 COMPRESS_LDEP = $(CMPRS_LIB)
 COMPRESS_LIBS = xcompress $(COMPRESS_LDEP)
