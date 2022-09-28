@@ -44,6 +44,7 @@ typedef pair<string,string> TCharAlign;
 class CCigar {
 public:
     CCigar(int qto = -1, int sto = -1) : m_qfrom(qto+1), m_qto(qto), m_sfrom(sto+1), m_sto(sto) {}
+    CCigar(string& cigar_string, int qfrom, int sfrom);
     struct SElement {
         SElement(int l, char t) : m_len(l), m_type(t) {}
         int m_len;
@@ -60,6 +61,7 @@ public:
     int Matches(const  char* query, const  char* subject) const;
     int Distance(const  char* query, const  char* subject) const;
     int Score(const  char* query, const  char* subject, int gopen, int gapextend, const char delta[256][256]) const;
+    const list<SElement>& Elements() { return m_elements; }
 
 private:
     list<SElement> m_elements;

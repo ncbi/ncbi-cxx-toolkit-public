@@ -39,6 +39,38 @@ BEGIN_SCOPE(gnomon)
 
 using namespace std;
 
+CCigar::CCigar(string& cigar_string, int qfrom, int sfrom) {
+    m_qfrom = qfrom;
+    m_sfrom = sfrom;
+
+    m_qto = m_qfrom-1;
+    m_sto = m_sfrom-1;
+    istringstream istr(cigar_string);
+    int len;
+    char c;
+    int clip_pos = 0;
+    while(istr >> len >> c) {
+        if(c == 'S') {
+            if(m_elements.empty()) {  //new query start
+                m_qfrom += len;
+                m_qto = m_qfrom-1;
+            }
+        } else if(c == 'N') {
+            if(m_elements.empty()) { // new subject start
+                m_sfrom += len;
+                m_sto = m_sfrom-1;
+            } else {
+                cigar_string = cigar_string.substr(clip_pos); // put back intron for next exon cigar
+                return;
+            }
+        } else {
+            PushBack(SElement(len, c));
+        }
+        clip_pos = istr.tellg();
+    }
+    cigar_string.clear();
+}
+
 void CCigar::PushFront(const SElement& el) {
     if(el.m_type == 'M') {
         m_qfrom -= el.m_len;
@@ -257,7 +289,6 @@ int CCigar::Score(const  char* query, const  char* subject, int gopen, int gapex
 
     return score;
 }
-
 
 CCigar GlbAlign(const  char* a, int na, const  char*  b, int nb, int rho, int sigma, const char delta[256][256]) {
     //	rho - new gap penalty (one base gap rho+sigma)
