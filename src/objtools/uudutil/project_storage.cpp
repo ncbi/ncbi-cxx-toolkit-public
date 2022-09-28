@@ -638,7 +638,6 @@ unique_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigne
             auto p = new CZipStreamCompressor(kCompressionLevel, kBufSize, kBufSize);
             p->GetCompressor()->SetWindowBits(kWindowBits);
             p->GetCompressor()->SetMemoryLevel(kMemLevel);
-            p->GetCompressor()->SetStrategy(kStrategy);
             compressor.reset(p);
         } else if (m_CmprsFmt == eNC_Bzip2Compressed) {
             compressor.reset(new CBZip2StreamCompressor(kCompressionLevel, kBufSize, kBufSize));
