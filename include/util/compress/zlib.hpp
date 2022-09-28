@@ -402,7 +402,9 @@ public:
     /// correctness of the compressed output even if it is not set appropriately.
     /// Used for compression only.
     /// 
-    void SetStrategy(int strategy) { m_c_Strategy = strategy; }
+    void SetStrategy(int strategy) { 
+        m_c_Strategy = (strategy == kZlibDefaultStrategy ) ? GetStrategyDefault() : strategy; 
+    }
     int  GetStrategy(void) const { return m_c_Strategy; }
     static int GetStrategyDefault(void);
     static int GetStrategyMin(void);
@@ -416,7 +418,9 @@ public:
     /// uses maximum memory for optimal speed. See zconf.h for total memory usage
     /// as a function of windowBits and memLevel.
     /// 
-    void SetMemoryLevel(int mem_level) { m_c_MemLevel = mem_level; }
+    void SetMemoryLevel(int mem_level) { 
+        m_c_MemLevel = (mem_level == kZlibDefaultMemLevel) ? GetMemoryLevelDefault() : mem_level;
+    }
     int  GetMemoryLevel(void) const { return m_c_MemLevel; }
     static int GetMemoryLevelDefault(void);
     static int GetMemoryLevelMin(void);
@@ -435,7 +439,9 @@ public:
     ///   data is processed by default, for gzip format we have a apecial 
     ///   flags, see description for: fGZip, fCheckFileHeader, fWriteGZipFormat.
     /// 
-    void SetWindowBits(int window_bits) { m_cd_WindowBits = window_bits; }
+    void SetWindowBits(int window_bits) { 
+        m_cd_WindowBits = (window_bits == kZlibDefaultWbits) ? GetWindowBitsDefault() : window_bits;
+    }
     int  GetWindowBits(void) const { return m_cd_WindowBits; }
     static int GetWindowBitsDefault(void);
     static int GetWindowBitsMin(void);
