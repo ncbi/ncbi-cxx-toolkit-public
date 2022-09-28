@@ -5033,9 +5033,38 @@ if test "x$with_krb5" != xno; then
 fi
 
 
+case "$with_curl" in
+   no       ) ac_cv_path_CURL_CONFIG=no ;;
+   yes | "" )                           ;;
+   *        ) CURL_PATH=$with_curl      ;;
+esac
+if test -d "$CURL_PATH"; then
+   NCBI_FIX_DIR(CURL_PATH)
+   NCBI_FIND_ARCH_PATH(CURL)
+   NCBI_FIX_DIR(CURL_ARCH_PATH)
+fi
+AC_PATH_PROG(CURL_CONFIG, curl-config, [], [$CURL_ARCH_PATH/bin:$PATH])
+if test -x "$CURL_CONFIG"; then
+   : ${CURL_INCLUDE=`"$CURL_CONFIG" --cflags`}
+   NCBI_RPATHIFY_OUTPUT_COND(CURL_LIBPATH, ["$CURL_CONFIG" --libs],
+      [s/ -lcurl[[^ ]]*//; ])
+   CURL_PATH=`"$CURL_CONFIG" --prefix`
+elif test -d "$CURL_ARCH_PATH"; then
+   : ${CURL_INCLUDE=-I$CURL_PATH/include}
+   NCBI_RPATHIFY_COND(CURL_LIBPATH, $CURL_ARCH_PATH/lib)
+fi
 NCBI_CHECK_THIRD_PARTY_LIB(curl,
    [AC_LANG_PROGRAM([@%:@include <curl/curl.h>],
        [char* v = curl_version();])])
+if test -n "$CURL_LIBS"; then
+   if test -x "$CURL_CONFIG"; then
+      CURL_STATIC_LIBS=`"$CURL_CONFIG" --static-libs`
+   elif test -f "$CURL_ARCH_PATH/lib/libcurl-static.a"; then
+      # Speculative
+      CURL_STATIC_LIBS="$CURL_LIBPATH -lcurl-static $OPENSSL_LIBS $Z_LIBS"
+   fi
+   : ${CURL_STATIC_LIBS:=$CURL_LIBS}
+fi
 
 
 ## SYBASE libraries
@@ -9585,6 +9614,7 @@ AC_SUBST(ZSTD_STATIC_LIBS)
 AC_SUBST(PCREPOSIX_LIBS)
 AC_SUBST(PCRE_LIB)
 AC_SUBST(OPENSSL_STATIC_LIBS)
+AC_SUBST(CURL_STATIC_LIBS)
 AC_SUBST(SYBASE_PATH)
 AC_SUBST(SYBASE_LCL_PATH)
 AC_SUBST(SYBASE_INCLUDE)
