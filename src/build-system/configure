@@ -3621,6 +3621,16 @@ case "$with_3psw" in
       else
          with_apache_arrow=no
       fi
+      if test "${with_nlohmann_json-no}" != "no"; then
+         as_fn_error $? "incompatible options: --with-nlohmann-json but --without-3psw"
+      else
+         with_nlohmann_json=no
+      fi
+      if test "${with_yaml_cpp-no}" != "no"; then
+         as_fn_error $? "incompatible options: --with-yaml-cpp but --without-3psw"
+      else
+         with_yaml_cpp=no
+      fi
       if test "${with_sss-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-sss but --without-3psw"
          else
@@ -4050,16 +4060,6 @@ case "$with_3psw" in
             as_fn_error $? "incompatible options: --with-thrift but --without-3psw"
          else
             with_thrift=no
-         fi
-        if test "${with_nlohmann-json-no}" != "no"; then
-            as_fn_error $? "incompatible options: --with-nlohmann-json but --without-3psw"
-         else
-            with_nlohmann-json=no
-         fi
-        if test "${with_yaml-cpp-no}" != "no"; then
-            as_fn_error $? "incompatible options: --with-yaml-cpp but --without-3psw"
-         else
-            with_yaml-cpp=no
          fi
         if test "${with_opentracing-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-opentracing but --without-3psw"
