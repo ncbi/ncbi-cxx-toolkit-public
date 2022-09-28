@@ -342,7 +342,7 @@ esac
 
 : ${SYBASE_PATH=/opt/sybase/clients/16.0-64bit}
 net_sybase_root="/netopt/Sybase/clients"
-local_sybase_root="/export/home/sybase/clients"
+local_sybase_root="/opt/sybase/clients"
 
 : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
 
