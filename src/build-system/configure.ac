@@ -4685,6 +4685,11 @@ if test -z "$BZ2_LIBS"; then
    NCBI_PACKAGE(LocalBZ2)
 fi
 
+case "$with_lzo" in
+   no       ) ;;
+   yes | "" ) ;;
+   *        ) LZO_PATH=$with_lzo ;;
+esac
 if test -d "$LZO_PATH"; then
    NCBI_FIX_DIR(LZO_PATH)
 fi
@@ -4697,6 +4702,11 @@ if test -n "$LZO_LIBS" -a "x$with_bin_release" = xyes \
    LZO_LIBS="$LZO_LIBPATH -llzo2-static"
 fi
 
+case "$with_zstd" in
+   no       ) ;;
+   yes | "" ) ;;
+   *        ) ZSTD_PATH=$with_zstd ;;
+esac
 if test -d "$ZSTD_PATH"; then
    NCBI_FIND_ARCH_PATH(ZSTD)
    ZSTD_PATH=$ZSTD_ARCH_PATH
@@ -4717,6 +4727,11 @@ if test "x$with_bin_release" = xyes; then
    ZSTD_LIBS=$ZSTD_STATIC_LIBS
 fi
 
+case "$with_pcre" in
+   no       ) ;;
+   yes | "" ) ;;
+   *        ) PCRE_PATH=$with_pcre ;;
+esac
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`
     test "x$p" = "x/usr"  ||  PCRE_PATH=$p
@@ -7114,6 +7129,12 @@ if test -f "${EXPAT_PATH}/lib${bit64_sfx}/libexpat-static.a"; then
 else
    EXPAT_STATIC_LIBS=${EXPAT_LIBS}
 fi
+
+case "$with_sablot" in
+   no       ) ;;
+   yes | "" ) ;;
+   *        ) SABLOT_PATH=$with_sablot ;;
+esac
 vpath="$SABLOT_PATH/${compiler_vpfx}build"
 test -d "$vpath"  &&  SABLOT_PATH=$vpath
 if test -d "$SABLOT_PATH"; then
