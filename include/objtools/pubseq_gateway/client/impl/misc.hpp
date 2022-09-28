@@ -201,11 +201,8 @@ struct SPSG_ParamValue
 
     // Getting default incurs some performance penalty, so this ctor is explicit
     enum EGetDefault { eGetDefault };
-    explicit SPSG_ParamValue(EGetDefault, function<TValue(TValue)> adjust = nullptr) :
-        SPSG_ParamValue(adjust, TParam::GetDefault())
-    {
-        _DEBUG_ARG(sm_Used = true);
-    }
+    explicit SPSG_ParamValue(EGetDefault)                     : SPSG_ParamValue(sm_Adjust(TParam::GetDefault())) {}
+    explicit SPSG_ParamValue(function<TValue(TValue)> adjust) : SPSG_ParamValue(   adjust(TParam::GetDefault())) {}
 
     operator TValue() const { return m_Value; }
     TValue Get() const { return m_Value; }
@@ -241,8 +238,7 @@ struct SPSG_ParamValue
     }
 
 private:
-    SPSG_ParamValue(function<TValue(TValue)> adjust, TValue value) : SPSG_ParamValue(adjust ? adjust(value) : value) {}
-    SPSG_ParamValue(TValue value) : m_Value(sm_Adjust(value)) {}
+    SPSG_ParamValue(TValue value) : m_Value(value) { _DEBUG_ARG(sm_Used = true); }
 
     // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
     // This templated method circumvents that shortcoming.
@@ -262,17 +258,21 @@ _DEBUG_ARG(template <class TParam> bool SPSG_ParamValue<TParam>::sm_Used = false
 
 #define PSG_PARAM_VALUE_TYPE(section, name) SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>
 
-#define PSG_PARAM_VALUE_DEF(type, section, name, default_value, adjust)                                                         \
+#define PSG_PARAM_VALUE_DEF_ADJUST(type, section, name, default_value)                                                          \
+    NCBI_PARAM_DEF(type, section, name, default_value);                                                                         \
     template <>                                                                                                                 \
     typename SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue                                                            \
-    SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::sm_Adjust(SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue value)   \
-    {                                                                                                                           \
-        return adjust;                                                                                                          \
-    }                                                                                                                           \
-    NCBI_PARAM_DEF(type, section, name, default_value)
+    SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::sm_Adjust(SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue value)
 
 #define PSG_PARAM_VALUE_DEF_MIN(type, section, name, default_value, min_value)                                                  \
-    PSG_PARAM_VALUE_DEF(type, section, name, default_value, value > min_value ? value : min_value)
+    PSG_PARAM_VALUE_DEF_ADJUST(type, section, name, default_value)                                                              \
+    {                                                                                                                           \
+        if (value >= min_value) return value;                                                                                   \
+                                                                                                                                \
+        ERR_POST(Warning << "[" #section "] " #name " ('" << value << "')"                                                      \
+                " was increased to the minimum allowed value ('" #min_value "')");                                              \
+        return min_value;                                                                                                       \
+    }
 
 NCBI_PARAM_DECL(unsigned, PSG, rd_buf_size);
 typedef NCBI_PARAM_TYPE(PSG, rd_buf_size) TPSG_RdBufSize;

@@ -212,13 +212,25 @@ struct SPSG_Params
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
         request_timeout(TPSG_RequestTimeout::eGetDefault),
-        competitive_after(TPSG_CompetitiveAfter::eGetDefault, [&](auto v) { auto t = request_timeout.Get(); return v > 0 && v < t ? v : t; }),
+        competitive_after([&](auto v) { return LimitCompetitiveAfter(v, request_timeout); }),
         requests_per_io(TPSG_RequestsPerIo::eGetDefault),
         request_retries(TPSG_RequestRetries::eGetDefault),
         refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
+
+    static TPSG_CompetitiveAfter::TValue LimitCompetitiveAfter(TPSG_CompetitiveAfter::TValue v, TPSG_RequestTimeout::TValue t)
+    {
+        if (v >= t) {
+            ERR_POST(Warning << "[PSG] competitive_after ('" << v << "') was disabled, "
+                    "as it was greater or equal to request timeout ('" << t << "')");
+        } else if (v > 0) {
+            return v;
+        }
+
+        return t;
+    }
 };
 
 struct SDebugPrintout
