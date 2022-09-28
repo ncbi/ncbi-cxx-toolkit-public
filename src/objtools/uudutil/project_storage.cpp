@@ -78,7 +78,7 @@ static const CCompression::ELevel kCompressionLevel = CCompression::eLevel_Lowes
 static const streamsize kBufSize = 16384;
 static const int kWindowBits = 15;
 static const int kMemLevel = 9;
-static const int kStrategy = kZlibDefaultStrategy;
+static const int kStrategy = CZipCompression::GetStrategyDefault();
 
 
 
