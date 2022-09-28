@@ -47,6 +47,7 @@ try_local() {
         test -f "$d/include/cassandra.h"   &&  : ${CASSANDRA_PATH=$d}
         test -d "$d/include/cereal"        &&  : ${CEREAL_PATH=$d}
         test -d "$d/include/cppkafka"      &&  : ${CPPKAFKA_PATH=$d}
+        test -d "$d/include/crc32c"        &&  : ${CRC32C_PATH=$d}
         test -d "$d/include/curl"          &&  : ${CURL_PATH=$d}
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
@@ -59,6 +60,7 @@ try_local() {
         test -d "$d/include/gmock"         &&  : ${GMOCK_PATH=$d}
         test -f "$d/include/gmp.h"         &&  : ${GMP_PATH=$d}
         test -f "$d/include/gnutls/gnutls.h"  &&  : ${GNUTLS_PATH=$d}
+        test -d "$d/include/google/cloud"  &&  : ${GOOGLE_CLOUD_PATH=$d}
         test -f "$d/include/grpc++/grpc++.h"  &&  : ${GRPC_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/h2o.h"         &&  : ${H2O_PATH=$d}
@@ -177,6 +179,10 @@ esac
 
 : ${CPPKAFKA_PATH=$NCBI/cppkafka-0.3.1+boost-1.76}
 
+: ${CRC32C_PATH=$NCBI/crc32c-1.1.2}
+
+: ${CURL_PATH=$NCBI/curl-7.85.0}
+
 : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}
 
 : ${FASTCGIPP_PATH=$NCBI/fastcgi++-3.1~a1+20210601-ncbi2}
@@ -216,6 +222,8 @@ case "$ncbi_platform" in
     Linux64    ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
     *MAC       ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
 esac
+
+: ${GOOGLE_CLOUD_PATH=$NCBI/google-cloud-cpp-1.31.1-ncbi1}
 
 : ${GRPC_PATH=$NCBI/grpc-1.36.4-ncbi1}
 
