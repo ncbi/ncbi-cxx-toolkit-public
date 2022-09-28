@@ -74,6 +74,16 @@ case "$with_3psw" in
       else
          with_apache_arrow=no
       fi
+      if test "${with_nlohmann_json-no}" != "no"; then
+         AC_MSG_ERROR([incompatible options: --with-nlohmann-json but --without-3psw])
+      else
+         with_nlohmann_json=no
+      fi
+      if test "${with_yaml_cpp-no}" != "no"; then
+         AC_MSG_ERROR([incompatible options: --with-yaml-cpp but --without-3psw])
+      else
+         with_yaml_cpp=no
+      fi
       m4_foreach(X, [sss, sssutils, sssdb, vdb, ngs, libunwind,
                      z, bz2, lzo, zstd, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
@@ -88,8 +98,7 @@ case "$with_3psw" in
                      mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, hiredis,
-                     librdkafka, cppkafka, thrift, nlohmann-json, yaml-cpp,
-                     opentracing, jaeger],
+                     librdkafka, cppkafka, thrift, opentracing, jaeger],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
