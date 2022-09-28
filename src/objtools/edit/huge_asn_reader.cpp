@@ -476,7 +476,7 @@ void CHugeAsnReader::FlattenGenbankSet()
             {
                 m_FlattenedSets.clear();
                 m_FlattenedSets.push_back(*top);
-                for (auto it : m_FlattenedIndex) {
+                for (auto& it : m_FlattenedIndex) {
                     it.second = m_FlattenedSets.begin();
                 }
             }
