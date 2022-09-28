@@ -78,7 +78,6 @@ static const CCompression::ELevel kCompressionLevel = CCompression::eLevel_Lowes
 static const streamsize kBufSize = 16384;
 static const int kWindowBits = 15;
 static const int kMemLevel = 9;
-static const int kStrategy = CZipCompression::GetStrategyDefault();
 
 
 
@@ -502,7 +501,6 @@ unique_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw
                         auto p = new CZipStreamDecompressor(kBufSize, kBufSize);
                         p->GetDecompressor()->SetWindowBits(kWindowBits);
                         p->GetDecompressor()->SetMemoryLevel(kMemLevel);
-                        p->GetDecompressor()->SetStrategy(kStrategy);
                         proc = p;
                     } else if (m_CmprsFmt == eNC_Bzip2Compressed) {
                         proc = new CBZip2StreamDecompressor(kBufSize, kBufSize);
