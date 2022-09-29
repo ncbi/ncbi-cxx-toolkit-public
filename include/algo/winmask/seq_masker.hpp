@@ -174,7 +174,11 @@ public:
                 Uint1 tmin_count,
                 bool arg_discontig,
                 Uint4 arg_pattern,
-                bool arg_use_ba );
+                bool arg_use_ba,
+                double min_pct = -1.0,
+                double extend_pct = -1.0,
+                double thres_pct = -1.0,
+                double max_pct = -1.0 );
 
     /**
      **\brief Object destructor.
