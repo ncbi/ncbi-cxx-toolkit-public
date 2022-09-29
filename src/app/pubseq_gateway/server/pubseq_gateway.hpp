@@ -389,9 +389,6 @@ private:
                                   const CTempString &  param_value,
                                   double &  converted,
                                   string &  err_msg) const;
-    bool x_IsResolutionParamValid(const string &  param_name,
-                                  const CTempString &  param_value,
-                                  string &  err_msg) const;
     SPSGS_ResolveRequest::EPSGS_OutputFormat x_GetOutputFormat(
                                     const string &  param_name,
                                     const CTempString &  param_value,
@@ -411,13 +408,13 @@ private:
                                             const CTempString &  param_value,
                                             string &  err_msg) const;
     bool x_GetTraceParameter(CHttpRequest &  req,
-                             const string &  param_name,
-                             SPSGS_RequestBase::EPSGS_Trace &  trace,
-                             string &  err_msg);
+                             shared_ptr<CPSGS_Reply>  reply,
+                             const psg_time_point_t &  create_timestamp,
+                             SPSGS_RequestBase::EPSGS_Trace &  trace);
     bool x_GetProcessorEventsParameter(CHttpRequest &  req,
-                                       const string &  param_name,
-                                       bool &  processor_events,
-                                       string &  err_msg);
+                                       shared_ptr<CPSGS_Reply>  reply,
+                                       const psg_time_point_t &  create_timestamp,
+                                       bool &  processor_events);
     bool x_GetHops(CHttpRequest &  req,
                    shared_ptr<CPSGS_Reply>  reply,
                    const psg_time_point_t &  create_timestamp,
@@ -426,6 +423,10 @@ private:
                             shared_ptr<CPSGS_Reply>  reply,
                             const psg_time_point_t &  create_timestamp,
                             double &  resend_timeout);
+    bool x_GetSeqIdResolveParameter(CHttpRequest &  req,
+                                    shared_ptr<CPSGS_Reply>  reply,
+                                    const psg_time_point_t &  create_timestamp,
+                                    bool &  seq_id_resolve);
     bool x_GetEnabledAndDisabledProcessors(CHttpRequest &  req,
                                            shared_ptr<CPSGS_Reply>  reply,
                                            const psg_time_point_t &  create_timestamp,

@@ -74,13 +74,10 @@ static string  kId2ChunkParam = "id2_chunk";
 static string  kId2InfoParam = "id2_info";
 static string  kAccSubstitutionParam = "acc_substitution";
 static string  kAutoBlobSkippingParam = "auto_blob_skipping";
-static string  kTraceParam = "trace";
-static string  kProcessorEventsParam = "processor_events";
 static string  kMostRecentTimeParam = "most_recent_time";
 static string  kMostAncientTimeParam = "most_ancient_time";
 static string  kHistogramNamesParam = "histogram_names";
 static string  kSendBlobIfSmallParam = "send_blob_if_small";
-static string  kSeqIdResolveParam = "seq_id_resolve";
 static string  kNA = "n/a";
 
 static vector<pair<string, SPSGS_ResolveRequest::EPSGS_BioseqIncludeData>>
@@ -264,10 +261,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
-        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter, eDiag_Error);
+        if (!x_GetTraceParameter(req, reply, now, trace)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -275,12 +269,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         }
 
         bool    processor_events = false;
-        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
-                                           processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -332,6 +321,14 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
             return 0;
         }
 
+        bool                seq_id_resolve = true;  // default
+        if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            return 0;
+        }
+
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_BlobBySeqIdRequest(
                         string(seq_id.data(), seq_id.size()),
@@ -341,7 +338,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                         resend_timeout,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
-                        send_blob_if_small, hops, trace,
+                        send_blob_if_small, seq_id_resolve,
+                        hops, trace,
                         processor_events,
                         enabled_processors, disabled_processors,
                         now));
@@ -438,10 +436,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
-        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter, eDiag_Error);
+        if (!x_GetTraceParameter(req, reply, now, trace)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -449,12 +444,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         }
 
         bool    processor_events = false;
-        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
-                                           processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -645,11 +635,15 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
-        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetTraceParameter(req, reply, now, trace)) {
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            return 0;
+        }
+
+        bool                seq_id_resolve = true;  // default
+        if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -657,12 +651,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         }
 
         bool    processor_events = false;
-        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
-                                           processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -684,7 +673,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
             req(new SPSGS_ResolveRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, include_data_flags, output_format,
-                        use_cache, subst_option, hops, trace,
+                        use_cache, subst_option, seq_id_resolve, hops, trace,
                         processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
@@ -793,10 +782,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
-        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter, eDiag_Error);
+        if (!x_GetTraceParameter(req, reply, now, trace)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -804,12 +790,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         }
 
         bool    processor_events = false;
-        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
-                                           processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -978,11 +959,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
-        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetTraceParameter(req, reply, now, trace)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -990,12 +967,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         bool    processor_events = false;
-        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
-                                           processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -1064,22 +1036,11 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         bool                seq_id_resolve = true;  // default
-        SRequestParameter   seq_id_resolve_param = x_GetParam(req, kSeqIdResolveParam);
-        if (seq_id_resolve_param.m_Found) {
-            if (!x_IsBoolParamValid(kSeqIdResolveParam,
-                                    seq_id_resolve_param.m_Value,
-                                    err_msg)) {
-                x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                                 CRequestStatus::e400_BadRequest,
-                                                 ePSGS_MalformedParameter,
-                                                 eDiag_Error);
-                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
-                                   reply->GetBytesSent());
-                m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-                m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-                return 0;
-            }
-            seq_id_resolve = seq_id_resolve_param.m_Value == "yes";
+        if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            return 0;
         }
 
         // Parameters processing has finished
@@ -1160,12 +1121,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
-        string                          err_msg;
-        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetTraceParameter(req, reply, now, trace)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -1173,12 +1129,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         }
 
         bool    processor_events = false;
-        if (!x_GetProcessorEventsParameter(req, kProcessorEventsParam,
-                                           processor_events, err_msg)) {
-            x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
+        if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -1301,6 +1252,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                                          SPSGS_ResolveRequest::ePSGS_JsonFormat,
                                          SPSGS_RequestBase::ePSGS_CacheOnly,
                                          SPSGS_RequestBase::ePSGS_NeverAccSubstitute,
+                                         true,
                                          0, SPSGS_RequestBase::ePSGS_NoTracing,
                                          false,     // no processor messages
                                          enabled_processors, disabled_processors,
@@ -2027,7 +1979,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
                 x_SendMessageAndCompletionChunks(
                         reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
-                PSG_ERROR(err_msg);
+                PSG_WARNING(err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -2219,7 +2171,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                 x_SendMessageAndCompletionChunks(
                         reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
-                PSG_ERROR(err_msg);
+                PSG_WARNING(err_msg);
                 m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
                 return 0;
             }
@@ -2349,12 +2301,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     if (seq_id_type_param.m_Found) {
         if (!x_ConvertIntParameter(kSeqIdTypeParam, seq_id_type_param.m_Value,
                                    seq_id_type, err_msg)) {
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
-            PSG_WARNING(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return false;
         }
 
@@ -2362,12 +2309,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
             err_msg = "The '" + kSeqIdTypeParam +
                       "' value must be >= 0 and less than " +
                       to_string(CSeq_id::e_MaxChoice);
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
-            PSG_WARNING(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return false;
         }
     } else {
@@ -2411,24 +2353,14 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
         if (!x_ConvertIntParameter(kSendBlobIfSmallParam,
                                    send_blob_if_small_param.m_Value,
                                    send_blob_if_small_value, err_msg)) {
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
-            PSG_WARNING(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return -1;
         }
 
         if (send_blob_if_small_value < 0) {
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             err_msg = "Invalid " + kSendBlobIfSmallParam +
                       " value. It must be an integer >= 0";
-            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
-            PSG_WARNING(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return -1;
         }
     }

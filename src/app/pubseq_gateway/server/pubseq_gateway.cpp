@@ -1191,24 +1191,27 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
 
 bool
 CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
-                                       const string &  param_name,
-                                       SPSGS_RequestBase::EPSGS_Trace &  trace,
-                                       string &  err_msg)
+                                       shared_ptr<CPSGS_Reply>  reply,
+                                       const psg_time_point_t &  create_timestamp,
+                                       SPSGS_RequestBase::EPSGS_Trace &  trace)
 {
-    trace = SPSGS_RequestBase::ePSGS_NoTracing;
-    SRequestParameter   trace_protocol_param = x_GetParam(req, param_name);
+    static string  kTraceParam = "trace";
+
+    trace = SPSGS_RequestBase::ePSGS_NoTracing;     // default
+    SRequestParameter   trace_protocol_param = x_GetParam(req, kTraceParam);
 
     if (trace_protocol_param.m_Found) {
-        if (!x_IsBoolParamValid(param_name,
+        string      err_msg;
+
+        if (!x_IsBoolParamValid(kTraceParam,
                                 trace_protocol_param.m_Value, err_msg)) {
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            PSG_WARNING(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return false;
         }
         if (trace_protocol_param.m_Value == "yes")
             trace = SPSGS_RequestBase::ePSGS_WithTracing;
         else
-            trace = SPSGS_RequestBase::ePSGS_NoTracing;;
+            trace = SPSGS_RequestBase::ePSGS_NoTracing;
     }
     return true;
 }
@@ -1216,18 +1219,21 @@ CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
 
 bool
 CPubseqGatewayApp::x_GetProcessorEventsParameter(CHttpRequest &  req,
-                                                 const string &  param_name,
-                                                 bool &  processor_events,
-                                                 string &  err_msg)
+                                                 shared_ptr<CPSGS_Reply>  reply,
+                                                 const psg_time_point_t &  create_timestamp,
+                                                 bool &  processor_events)
 {
-    processor_events = false;
-    SRequestParameter   processor_events_param = x_GetParam(req, param_name);
+    static string  kProcessorEventsParam = "processor_events";
+
+    processor_events = false;   // default
+    SRequestParameter   processor_events_param = x_GetParam(req, kProcessorEventsParam);
 
     if (processor_events_param.m_Found) {
-        if (!x_IsBoolParamValid(param_name,
+        string      err_msg;
+
+        if (!x_IsBoolParamValid(kProcessorEventsParam,
                                 processor_events_param.m_Value, err_msg)) {
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            PSG_WARNING(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return false;
         }
         processor_events = processor_events_param.m_Value == "yes";
@@ -1252,26 +1258,40 @@ CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
         if (!x_ConvertDoubleParameter(kResendTimeoutParam,
                                       resend_timeout_param.m_Value,
                                       resend_timeout, err_msg)) {
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
-            PSG_ERROR(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return false;
         }
 
         if (resend_timeout < 0.0) {
             err_msg = "Invalid '" + kResendTimeoutParam + "' value " +
                       to_string(resend_timeout) + ". It must be >= 0.0";
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
-            PSG_ERROR(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return false;
         }
+    }
+    return true;
+}
+
+
+bool
+CPubseqGatewayApp::x_GetSeqIdResolveParameter(CHttpRequest &  req,
+                                              shared_ptr<CPSGS_Reply>  reply,
+                                              const psg_time_point_t &  create_timestamp,
+                                              bool &  seq_id_resolve)
+{
+    static string  kSeqIdResolveParam = "seq_id_resolve";
+
+    seq_id_resolve = true;      // default
+    SRequestParameter   seq_id_resolve_param = x_GetParam(req, kSeqIdResolveParam);
+
+    if (seq_id_resolve_param.m_Found) {
+        string      err_msg;
+        if (!x_IsBoolParamValid(kSeqIdResolveParam,
+                                seq_id_resolve_param.m_Value, err_msg)) {
+            x_MalformedArguments(reply, create_timestamp, err_msg);
+            return false;
+        }
+        seq_id_resolve = seq_id_resolve_param.m_Value == "yes";
     }
     return true;
 }
@@ -1292,24 +1312,14 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
         string      err_msg;
         if (!x_ConvertIntParameter(kHopsParam, hops_param.m_Value,
                                    hops, err_msg)) {
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
-            PSG_ERROR(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return false;
         }
 
         if (hops < 0) {
             err_msg = "Invalid '" + kHopsParam + "' value " + to_string(hops) +
                       ". It must be > 0.";
-            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
-            x_SendMessageAndCompletionChunks(reply, create_timestamp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             ePSGS_MalformedParameter,
-                                             eDiag_Error);
-            PSG_ERROR(err_msg);
+            x_MalformedArguments(reply, create_timestamp, err_msg);
             return false;
         }
 
@@ -1640,22 +1650,6 @@ void CPubseqGatewayApp::CheckCassMapping(void)
         }
         m_Alerts.Register(ePSGS_InvalidCassandraMapping, combined_error);
     }
-}
-
-
-bool CPubseqGatewayApp::x_IsResolutionParamValid(const string &  param_name,
-                                                 const CTempString &  param_value,
-                                                 string &  err_msg) const
-{
-    static string   fast = "fast";
-    static string   full = "full";
-
-    if (param_value != fast && param_value != full) {
-        err_msg = "Malformed '" + param_name + "' parameter. "
-                  "Acceptable values are '" + fast + "' and '" + full + "'.";
-        return false;
-    }
-    return true;
 }
 
 

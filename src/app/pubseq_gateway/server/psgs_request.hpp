@@ -407,6 +407,7 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
     EPSGS_OutputFormat          m_OutputFormat;
     EPSGS_CacheAndDbUse         m_UseCache;
     EPSGS_AccSubstitutioOption  m_AccSubstOption;
+    bool                        m_SeqIdResolve;
 
     SPSGS_ResolveRequest(const string &  seq_id,
                          int  seq_id_type,
@@ -414,6 +415,7 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
                          EPSGS_OutputFormat  output_format,
                          EPSGS_CacheAndDbUse  use_cache,
                          EPSGS_AccSubstitutioOption  subst_option,
+                         bool seq_id_resolve,
                          int  hops,
                          EPSGS_Trace  trace,
                          bool  processor_events,
@@ -427,7 +429,8 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
         m_UseCache(use_cache),
-        m_AccSubstOption(subst_option)
+        m_AccSubstOption(subst_option),
+        m_SeqIdResolve(seq_id_resolve)
     {}
 
     SPSGS_ResolveRequest() :
@@ -435,7 +438,8 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
         m_IncludeDataFlags(0),
         m_OutputFormat(ePSGS_UnknownFormat),
         m_UseCache(ePSGS_UnknownUseCache),
-        m_AccSubstOption(ePSGS_UnknownAccSubstitution)
+        m_AccSubstOption(ePSGS_UnknownAccSubstitution),
+        m_SeqIdResolve(true)    // default
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
@@ -540,6 +544,7 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
     EPSGS_AccSubstitutioOption      m_AccSubstOption;
     bool                            m_AutoBlobSkipping;
     unsigned long                   m_ResendTimeoutMks;
+    bool                            m_SeqIdResolve;
 
     SPSGS_BlobBySeqIdRequest(const string &  seq_id,
                              int  seq_id_type,
@@ -551,6 +556,7 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
                              double  resend_timeout,
                              const string &  client_id,
                              int  send_blob_if_small,
+                             bool seq_id_resolve,
                              int  hops,
                              EPSGS_Trace  trace,
                              bool  processor_events,
@@ -566,14 +572,16 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
         m_ExcludeBlobs(move(exclude_blobs)),
         m_AccSubstOption(subst_option),
         m_AutoBlobSkipping(auto_blob_skipping),
-        m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000))
+        m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
+        m_SeqIdResolve(seq_id_resolve)
     {}
 
     SPSGS_BlobBySeqIdRequest() :
         m_SeqIdType(-1),
         m_AccSubstOption(ePSGS_UnknownAccSubstitution),
         m_AutoBlobSkipping(true),
-        m_ResendTimeoutMks(0)
+        m_ResendTimeoutMks(0),
+        m_SeqIdResolve(true)    // default
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
