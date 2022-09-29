@@ -179,7 +179,8 @@ void x_CorrectCollectionDates(const CTable2AsnContext& context, _T& seq_or_set)
 CTable2AsnContext::CTable2AsnContext()
     : m_suspect_rules{new CFixSuspectProductName}
 {
-    m_writers.SetUseMT(true);
+    mDiagnosticWriters.SetUseMT(true);
+    mDataWriters.SetUseMT(true);
 }
 
 CTable2AsnContext::~CTable2AsnContext()
@@ -198,15 +199,28 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
-void CTable2AsnContext::OpenOutputs()
+void CTable2AsnContext::OpenDiagnosticOutputs()
 {
-    m_current_outputs.Reset();
-    m_current_outputs = m_writers.MakeNewFileset();
+    mCurrentDiagnosticOutputs.Reset();
+    mCurrentDiagnosticOutputs = mDiagnosticWriters.MakeNewFileset();
+}
+
+void CTable2AsnContext::OpenDataOutputs()
+{
+    mCurrentDataOutputs.Reset();
+    mCurrentDataOutputs = mDataWriters.MakeNewFileset();
 }
 
 std::ostream& CTable2AsnContext::GetOstream(eFiles suffix)
 {
-    auto& ostr = m_current_outputs[suffix];
+    if (suffix == eFiles::asn) {
+        auto& ostr = mCurrentDataOutputs[suffix];
+        if (ostr)
+            return *ostr;
+        else
+            throw std::runtime_error("output is not open");
+    }
+    auto& ostr = mCurrentDiagnosticOutputs[suffix];
     if (ostr)
         return *ostr;
     else
@@ -215,28 +229,51 @@ std::ostream& CTable2AsnContext::GetOstream(eFiles suffix)
 
 void CTable2AsnContext::SetOutputFilename(eFiles kind, const string& filename)
 {
-    m_writers.SetFilename(kind, filename);
+    if (kind == eFiles::asn) {
+        mDataWriters.SetFilename(kind, filename);
+    }
+    else {
+        mDiagnosticWriters.SetFilename(kind, filename);
+    }
 }
 
 void CTable2AsnContext::SetOutputFile(eFiles kind, ostream& ostr)
 {
-    m_writers.Open(kind, ostr);
+    if (kind == eFiles::asn) {
+        mDataWriters.Open(kind, ostr);
+    }
+    else {
+        mDiagnosticWriters.Open(kind, ostr);
+    }
 }
 
-void CTable2AsnContext::CloseOutputs()
+void CTable2AsnContext::CloseDiagnosticOutputs()
 {
-    m_current_outputs.Reset();
-    m_writers.Reset();
+    mCurrentDiagnosticOutputs.Reset();
+    mDiagnosticWriters.Reset();
+}
+
+
+void CTable2AsnContext::CloseDataOutputs()
+{
+    mCurrentDataOutputs.Reset();
+    mDataWriters.Reset();
 }
 
 
 void CTable2AsnContext::DeleteOutputs()
 {
-    CloseOutputs();
-    for (auto& f: m_writers) {
+    CloseDiagnosticOutputs();
+    CloseDataOutputs();
+    for (auto& f: mDiagnosticWriters) {
             auto& filename = f.GetFilename();
             if (!filename.empty())
-                CFile(m_output_filename).Remove(CDirEntry::fIgnoreMissing);
+                CFile(filename).Remove(CDirEntry::fIgnoreMissing);
+    }
+    for (auto& f : mDataWriters) {
+        auto& filename = f.GetFilename();
+        if (!filename.empty())
+            CFile(filename).Remove(CDirEntry::fIgnoreMissing);
     }
 }
 
