@@ -66,8 +66,8 @@ public:
 private:
 };
 
-using CMultiFileSet = TMultiFileSet<eFiles,
-    eFiles::asn,
+using CDiagnosticFileSet = TMultiFileSet<eFiles,
+    //eFiles::asn,
     eFiles::log,
     eFiles::ecn,
     eFiles::gbf,
@@ -75,6 +75,10 @@ using CMultiFileSet = TMultiFileSet<eFiles,
     eFiles::dr,
     eFiles::stats,
     eFiles::fixedproducts
+>;
+
+using CDataFileSet = TMultiFileSet<eFiles,
+    eFiles::asn
 >;
 
 // command line parameters are mapped into the context
@@ -171,9 +175,12 @@ public:
 
     void SetOutputFilename(eFiles kind, const string& filename);
     void SetOutputFile(eFiles kind, ostream& ostr);
-    void OpenOutputs();
+    //void OpenOutputs();
+    void OpenDiagnosticOutputs();
+    void OpenDataOutputs();
     void DeleteOutputs();
-    void CloseOutputs();
+    void CloseDiagnosticOutputs();
+    void CloseDataOutputs();
 
     string GenerateOutputFilename(eFiles kind, string_view basename = kEmptyStr) const;
 
@@ -221,9 +228,11 @@ public:
 
 private:
     static void x_ApplyAccession(const CTable2AsnContext& context, objects::CBioseq& bioseq);
-    CMultiFileSet m_writers;
+    CDiagnosticFileSet mDiagnosticWriters;
+    CDataFileSet mDataWriters;
     // these are used in single threaded mode
-    CMultiFileSet::fileset_type m_current_outputs;
+    CDiagnosticFileSet::fileset_type mCurrentDiagnosticOutputs;
+    CDataFileSet::fileset_type mCurrentDataOutputs;
 };
 
 void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,

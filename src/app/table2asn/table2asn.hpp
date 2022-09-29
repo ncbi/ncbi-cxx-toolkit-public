@@ -88,7 +88,7 @@ private:
     static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
     void Setup(const CArgs& args);
 
-    void ProcessOneFile(bool isAlignment);
+    void ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams = true, bool manageDataStream=true);
     void ProcessOneFile(CNcbiOstream* output);
     void ProcessHugeFile(CNcbiOstream* output);
     void ProcessOneEntry(CFormatGuess::EFormat inputFormat, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
@@ -109,7 +109,10 @@ private:
     void LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments);
     void LoadAnnots(const string& pathname, list<CRef<CSeq_annot>>& annots);
     void AddAnnots(CScope& scope);
-
+    void SetupAndOpenDiagnosticStreams();
+    void SetupAndOpenDataStreams();
+    void CloseDiagnosticStreams();
+    void CloseDataStreams();
     void xProcessHugeEntries();
 
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
