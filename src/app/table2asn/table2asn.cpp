@@ -1261,7 +1261,41 @@ void CTbl2AsnApp::MakeFlatFile(CSeq_entry_Handle seh, CRef<CSeq_submit> submit, 
         ffgenerator.Generate(*submit, seh.GetScope(), ostream);
 }
 
-void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
+void CTbl2AsnApp::SetupAndOpenDiagnosticStreams()
+{
+    for (eFiles e : { eFiles::ecn, eFiles::gbf, eFiles::val, eFiles::fixedproducts }) {
+        m_context.SetOutputFilename(e, m_context.GenerateOutputFilename(e));
+    }
+
+    if (m_context.m_split_discrepancy) {// otherwise leave it unopened
+        m_context.SetOutputFilename(eFiles::dr, m_context.GenerateOutputFilename(eFiles::dr));
+    }
+    m_context.OpenDiagnosticOutputs();
+}
+
+void CTbl2AsnApp::SetupAndOpenDataStreams()
+{
+    if (m_context.m_output) {
+        m_context.SetOutputFile(eFiles::asn, *m_context.m_output);
+    }
+    else {
+        m_context.SetOutputFilename(eFiles::asn, m_context.GenerateOutputFilename(eFiles::asn));
+    }
+    m_context.OpenDataOutputs();
+}
+
+void CTbl2AsnApp::CloseDiagnosticStreams()
+{
+    m_context.CloseDiagnosticOutputs();
+}
+
+void CTbl2AsnApp::CloseDataStreams()
+{
+    m_context.CloseDataOutputs();
+}
+
+
+void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams, bool manageDataStreams)
 {
     if (m_context.m_split_log_files)
         m_context.m_logger->ClearAll();
@@ -1275,29 +1309,14 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
         SetDiagStream(error_log);
     }
 
-    for (eFiles e: {
-            eFiles::ecn,
-            eFiles::gbf,
-            eFiles::val,
-            eFiles::fixedproducts
-            })
-    {
-        m_context.SetOutputFilename(e, m_context.GenerateOutputFilename(e));
-    }
-
-    if (m_context.m_split_discrepancy) // otherwise leave it unopened
-        m_context.SetOutputFilename(eFiles::dr, m_context.GenerateOutputFilename(eFiles::dr));
-        //, m_context.m_split_discrepancy?kEmptyStr:m_context.m_base_name));
-
     try
     {
-        if (m_context.m_output) {
-            m_context.SetOutputFile(eFiles::asn, *m_context.m_output);
-        } else {
-            m_context.SetOutputFilename(eFiles::asn, m_context.GenerateOutputFilename(eFiles::asn));
+        if (manageDiagnosticStreams) {
+            SetupAndOpenDiagnosticStreams();
         }
-
-        m_context.OpenOutputs();
+        if (manageDataStreams) {
+            SetupAndOpenDataStreams();
+        }
         CNcbiOstream* output = &m_context.GetOstream(eFiles::asn);
 
         std::function<std::ostream&()> f = [this]()->std::ostream& { return m_context.GetOstream(eFiles::fixedproducts); };
@@ -1333,7 +1352,12 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
         {
             m_logger->SetProgressOstream(&NcbiCout);
         }
-        m_context.CloseOutputs();
+        if (manageDiagnosticStreams) {
+            CloseDiagnosticStreams();
+        }
+        if (manageDataStreams) {
+            CloseDataStreams();
+        }
     }
     catch (...)
     {
@@ -1425,28 +1449,33 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
         ++vec_it;
     }
 
-    sort(vec.begin(), vec.end(), [](const auto& l, const auto& r)
-    {
-        return l->GetPath() < r->GetPath();
-    });
-    for (const auto& it : vec)
-    {
+    auto compareNames = [](const auto& l, const auto& r) { return l->GetPath() < r->GetPath(); };
+    sort(vec.begin(), vec.end(), compareNames);
+    
+    bool commonOutputStream = GetArgs()["o"];
+    if (commonOutputStream) {
+        SetupAndOpenDataStreams();
+    }
+    SetupAndOpenDiagnosticStreams();
+
+    for (const auto& it : vec) {
         // first process files and then recursivelly access other folders
-        if (!it->IsDir())
-        {
-            if (mask.Match(it->GetPath()))
-            {
-                m_context.m_current_file = it->GetPath();
-                ProcessOneFile(false);
+        if (!it->IsDir()) {
+            auto pathName = it->GetPath();
+            if (mask.Match(pathName)) {
+                m_context.m_current_file = pathName;
+                ProcessOneFile(false, !commonOutputStream, !commonOutputStream);
             }
         }
         else
-            if (recurse)
-            {
-            ProcessOneDirectory(*it, mask, recurse);
+            if (recurse) {
+                ProcessOneDirectory(*it, mask, recurse);
             }
     }
-
+    if (commonOutputStream) {
+        CloseDataStreams();
+    }
+    CloseDiagnosticStreams();
     return true;
 }
 
