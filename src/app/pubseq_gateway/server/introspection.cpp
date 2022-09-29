@@ -427,6 +427,7 @@ CJsonNode  GetIdGetRequestNode(void)
     AppendAccSubstitutionParameter(id_get_params);
     AppendTraceParameter(id_get_params);
     AppendSendBlobIfSmallParameter(id_get_params);
+    AppendSeqIdResolveParameter(id_get_params);
     id_get.SetByKey("parameters", id_get_params);
 
     CJsonNode   id_get_reply(CJsonNode::NewObjectNode());
@@ -488,6 +489,7 @@ CJsonNode  GetIdResolveRequestNode(void)
     AppendBioseqFlagParameter(id_resolve_params, "seq_state");
     AppendAccSubstitutionParameter(id_resolve_params);
     AppendTraceParameter(id_resolve_params);
+    AppendSeqIdResolveParameter(id_resolve_params);
     id_resolve.SetByKey("parameters", id_resolve_params);
 
     CJsonNode   id_resolve_reply(CJsonNode::NewObjectNode());
