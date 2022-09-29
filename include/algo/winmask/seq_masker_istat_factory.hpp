@@ -111,7 +111,11 @@ public:
                                         Uint4 use_max_count,
                                         Uint4 min_count,
                                         Uint4 use_min_count,
-                                        bool use_ba );
+                                        bool use_ba,
+                                        double min_pct = -1.0,
+                                        double extend_pct = -1.0,
+                                        double thres_pct = -1.0,
+                                        double max_pct = -1.0 );
 
 private:
 

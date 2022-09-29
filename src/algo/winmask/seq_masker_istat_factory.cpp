@@ -203,6 +203,16 @@ CSeqMaskerIstatFactory::EStatType CSeqMaskerIstatFactory::DiscoverStatType(
     return DiscoverStatType( name, md, skip );
 }
 
+static Uint4 s_GetCountByPct( double pct, std::vector< double > const & count_map )
+{
+    for( size_t i( 0 ); i < count_map.size(); ++i )
+    {
+        if( count_map[i] >= pct ) return i;
+    }
+
+    return count_map.size() - 1;
+}
+
 //------------------------------------------------------------------------------
 CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                                   Uint4 threshold,
@@ -211,7 +221,11 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                                   Uint4 use_max_count,
                                                   Uint4 min_count,
                                                   Uint4 use_min_count,
-                                                  bool use_ba )
+                                                  bool use_ba,
+                                                  double min_pct,
+                                                  double extend_pct,
+                                                  double thres_pct,
+                                                  double max_pct )
 {
     try
     {
@@ -260,6 +274,36 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                 }
             }
         }
+
+        if( count_map.empty() )
+        {
+            std::string pname;
+            if( min_pct >= 0.0 ) pname += " min_pct";
+            else if( extend_pct >= 0.0 ) pname += " extend_pct";
+            else if( thres_pct >= 0.0 ) pname += " thres_pct";
+            else if( max_pct >= 0.0 ) pname += " max_pct";
+
+            if( !pname.empty() )
+            {
+                ERR_POST( Warning
+                    << "counts file contains no percentage information;"
+                    << pname << " settings will not be applied" );
+            }
+        }
+        else
+        {
+            if( min_pct >= 0.0 ) min_count = s_GetCountByPct( min_pct, count_map );
+            if( extend_pct >= 0.0 ) textend = s_GetCountByPct( extend_pct, count_map );
+            if( thres_pct >= 0.0 ) threshold = s_GetCountByPct( thres_pct, count_map );
+            if( max_pct >= 0.0 ) max_count = s_GetCountByPct( max_pct, count_map );
+        }
+
+        /*
+        std::cerr << "min_count: " << min_count << '\n'
+                  << "textend:   " << textend   << '\n'
+                  << "threshold: " << threshold << '\n'
+                  << "max_count  " << max_count << std::endl;
+        */
 
         switch( stat_type ) {
             case eAscii: res = new CSeqMaskerIstatAscii( 
