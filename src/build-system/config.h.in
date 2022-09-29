@@ -321,6 +321,9 @@
 /* Define to 1 if libcppkafka is available. */
 #undef HAVE_LIBCPPKAFKA
 
+/* Define to 1 if libcrc32c is available. */
+#undef HAVE_LIBCRC32C
+
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBCRYPT
@@ -387,6 +390,9 @@
 
 /* Define to 1 if libgnutls is available. */
 #undef HAVE_LIBGNUTLS
+
+/* Define to 1 if libgoogle_cloud_cpp_storage is available. */
+#undef HAVE_LIBGOOGLE_CLOUD
 
 /* Define to 1 if libgrpc++ is available. */
 #undef HAVE_LIBGRPC
