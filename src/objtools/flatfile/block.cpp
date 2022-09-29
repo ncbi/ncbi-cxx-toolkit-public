@@ -163,7 +163,7 @@ void FreeIndexblk(IndexblkPtr ibp)
 }
 
 /**********************************************************/
-static bool AccsCmp(const IndexblkPtr& ibp1, const IndexblkPtr& ibp2)
+static bool AccsCmp(const Indexblk* ibp1, const Indexblk* ibp2)
 {
     int i = StringCmp(ibp1->acnum, ibp2->acnum);
     if (i != 0)
@@ -176,7 +176,7 @@ static bool AccsCmp(const IndexblkPtr& ibp1, const IndexblkPtr& ibp2)
 }
 
 /**********************************************************/
-static bool QSCmp(const QSStructPtr& qs1, const QSStructPtr& qs2)
+static bool QSCmp(const QSStruct* qs1, const QSStruct* qs2)
 {
     int i = StringCmp(qs1->accession, qs2->accession);
     if (i != 0)
