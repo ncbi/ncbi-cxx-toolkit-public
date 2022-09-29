@@ -320,6 +320,8 @@ void CWinMaskCountsGenerator::operator()()
         ustat->setComment( s.str() );
     }
 
+    ustat->SetMaxCount( max_count );
+
     for( Uint4 i( 1 ); i <= max_count; ++i )
     {
         current = 100.0*(((double)(score_counts[i - 1] + offset))
@@ -331,6 +333,7 @@ void CWinMaskCountsGenerator::operator()()
             s << " " << dec << i << "\t" << score_counts[i - 1] + offset << "\t"
               << current;
             ustat->setComment( s.str() );
+            ustat->SetCount( i, current );
         }
 
         for( Uint1 j( 0 ); j < 4; ++j )
@@ -382,6 +385,7 @@ void CWinMaskCountsGenerator::operator()()
             s << " " << dec << i << "\t" << score_counts[i - 1] + offset << "\t"
               << current;
             ustat->setComment( s.str() );
+            ustat->SetCount( i, current );
         }
     }
 

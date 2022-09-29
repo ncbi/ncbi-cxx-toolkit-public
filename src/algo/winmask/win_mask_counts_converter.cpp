@@ -124,6 +124,15 @@ int CWinMaskCountsConverter::operator()()
     ostat->setParam( "t_high     ", t_high );
     LOG_POST( "final processing..." );
     ostat->SetStatAlgoVersion( istat->GetStatAlgoVersion() );
+
+    if( !istat->GetCountMap().empty() )
+    {
+        Uint4 max_count( istat->GetMaxCount() );
+        auto const & cm( istat->GetCountMap() );
+        ostat->SetMaxCount( max_count );
+        for( size_t i( 0 ); i <= max_count; ++i ) ostat->SetCount( i, cm[i] );
+    }
+
     ostat->finalize();
     return 0;
 }

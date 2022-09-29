@@ -33,6 +33,7 @@
 #ifndef C_WIN_MASK_USTAT_H
 #define C_WIN_MASK_USTAT_H
 
+#include <cassert>
 #include <string>
 
 #include <corelib/ncbistre.hpp>
@@ -145,6 +146,18 @@ public:
     /** Get actual counts format version. */
     virtual CSeqMaskerVersion const & GetStatFmtVersion() const = 0;
 
+    void SetMaxCount( Uint4 mc )
+    {
+        max_count = mc;
+        count_map.resize( max_count + 1, 0.0 );
+    }
+
+    void SetCount( Uint4 count, double pct )
+    {
+        assert( count <= max_count );
+        count_map[count] = pct;
+    }
+
 protected:
 
     /** Algorithm parameter names. */
@@ -194,6 +207,10 @@ protected:
 
     /** version of the algorithm used to generate counts */
     CSeqMaskerVersion fmt_gen_algo_ver;
+
+    /** information about counts and corresponding pct cutoffs */
+    Uint4 max_count = 0;
+    std::vector< double > count_map;
 
 private:
 
