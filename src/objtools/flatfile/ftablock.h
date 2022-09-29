@@ -357,12 +357,6 @@ struct EntryBlk : public CFlatFileData {
 };
 using EntryBlkPtr = EntryBlk*;
 
-
-typedef struct keyword_block {
-    const char* str;
-    Int2        len;
-} KwordBlk, *KwordBlkPtr;
-
 /**************************************************************************/
 
 void xFreeEntry(DataBlkPtr entry);

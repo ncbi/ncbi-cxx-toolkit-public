@@ -88,7 +88,12 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-static KwordBlk PubStatus[] = {
+struct KwordBlk {
+    const char* str;
+    Int2        len;
+};
+
+static const KwordBlk PubStatus[] = {
     { "Publication Status: Available-Online prior to print", 51 },
     { "Publication Status : Available-Online prior to print", 52 },
     { "Publication_Status: Available-Online prior to print", 51 },
@@ -111,7 +116,7 @@ static KwordBlk PubStatus[] = {
 };
 
 /**********************************************************/
-static char* fta_strip_pub_comment(char* comment, KwordBlkPtr kbp)
+static char* fta_strip_pub_comment(char* comment, const KwordBlk* kbp)
 {
     char* p;
     char* q;
