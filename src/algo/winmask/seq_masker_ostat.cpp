@@ -92,6 +92,17 @@ void CSeqMaskerOstat::WriteBinMetaData( std::ostream & os ) const {
         sz += s4.size() + 1;
     }
 
+    std::string th_formatted;
+
+    if( !count_map.empty() )
+    {
+        std::ostringstream oss;
+        oss << "##pct: " << max_count;
+        for( size_t i( 0 ); i <= max_count; ++i ) oss << ' ' << count_map[i];
+        th_formatted = oss.str();
+        sz += th_formatted.size() + 1;
+    }
+
     char zero( 0 );
     os.write( (char *)&sz, sizeof( sz ) );
     os.write( s1.c_str(), s1.size() );
@@ -105,6 +116,12 @@ void CSeqMaskerOstat::WriteBinMetaData( std::ostream & os ) const {
         os.write( s4.c_str(), s4.size() );
         os.write( &zero, 1 );
     }
+
+    if( !th_formatted.empty() )
+    {
+        os.write( th_formatted.c_str(), th_formatted.size() );
+        os.write( &zero, 1 );
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -114,6 +131,15 @@ string CSeqMaskerOstat::FormatMetaData() const {
     os << "##" << fmt_gen_algo_ver.Print() << endl;
     os << FormatParameters() << endl;
     if( !metadata.empty() ) os << "##note:" << metadata << endl;
+
+    if( !count_map.empty() )
+    {
+        for( size_t i( 0 ); i <= max_count; ++i )
+        {
+            os << "##pct: " << i << ' ' << count_map[i] << endl;
+        }
+    }
+
     return os.str();
 }
 

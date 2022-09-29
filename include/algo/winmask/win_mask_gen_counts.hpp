@@ -256,10 +256,6 @@ private:
     const CWinMaskUtil::CIdSet * exclude_ids; /**<\internal set of ids to ignore */
 
     string infmt;                   /**<\internal input format */
-    double t_low_pct,               /**< minimum allowed unit score as percentage of units with lower count */
-           t_extend_pct,            /**< minimum score for interval extension as percentage of units with lower count */
-           t_thres_pct,             /**< threshold score for starting masking as percentage of units with lower count */
-           t_high_pct;              /**< highest allowed unit score as percentage of units with lower count */
 };
 
 END_NCBI_SCOPE

@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 #define STAT_FMT_COMPONENT_NAME "windowmasker-statistics-format-version"
 #define STAT_FMT_VER_MAJOR 1
-#define STAT_FMT_VER_MINOR 0
+#define STAT_FMT_VER_MINOR 1
 #define STAT_FMT_VER_PATCH 0
 #define STAT_FMT_VER_PFX "ascii "
 

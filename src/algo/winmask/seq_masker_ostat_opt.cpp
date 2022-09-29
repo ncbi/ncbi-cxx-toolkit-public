@@ -50,7 +50,7 @@ const char * CSeqMaskerOstat::PARAMS[] = { "t_low", "t_extend", "t_threshold", "
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstat::CSeqMaskerOstat( 
-        CNcbiOstream & os, bool alloc, string const & metadata ) 
+        CNcbiOstream & os, bool alloc, string const & metadata )
     : out_stream( os ), alloc( alloc ), metadata( metadata ), 
       pvalues( sizeof( PARAMS )/sizeof( const char * ) ),
       fmt_gen_algo_ver( StatAlgoVersion ),
