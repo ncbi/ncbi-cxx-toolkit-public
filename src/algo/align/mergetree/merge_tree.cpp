@@ -1297,7 +1297,7 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
 
     OriginalGraph.CalculateAllDistances();
 
-    typedef pair<size_t, size_t> TAlignIdScorePair;
+    typedef pair<int, size_t> TAlignIdScorePair;
     typedef pair<TAlignIdScorePair,TAlignIdScorePair> TAlignIdScoreKey;
     typedef map<TAlignIdScoreKey, int> TMergeResultMap;
     TMergeResultMap MergeResultMap;
@@ -1346,7 +1346,7 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
     cerr << "  --++OtherEs id: " << key.second.first << "  score: " << key.second.second << "  len: " << OtherEs.size()<< endl;
 #endif           
 
-            {{
+            if(key.first.first != -1 && key.second.first != -1) {{
                 if (MergeResultMap.find(key) != MergeResultMap.end()) {
                     int MergeResult = MergeResultMap[key];
 #ifdef MERGE_TREE_VERBOSE_DEBUG
@@ -1396,7 +1396,7 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
                 EquivRangeBuilder.MergeAbuttings(Path, Abutted);
                 sort(Abutted.begin(), Abutted.end());
 
-                {{
+                if(key.first.first != -1 && key.second.first != -1) {{
                     int ResultId = s_UniformAlignId(Abutted);
                     int ResultLength = s_LengthFromEquivList(Abutted);
 #ifdef MERGE_TREE_VERBOSE_DEBUG
