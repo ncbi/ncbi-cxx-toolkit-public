@@ -225,7 +225,11 @@ int CWinMaskApplication::Run (void)
                           aConfig.TMin_Count(),
                           aConfig.Discontig(),
                           aConfig.Pattern(),
-                          aConfig.UseBA() );
+                          aConfig.UseBA(),
+                          aConfig.MinScorePct(),
+                          aConfig.ExtendScorePct(),
+                          aConfig.ThresScorePct(),
+                          aConfig.MaxScorePct() );
     CRef< CSeq_entry > aSeqEntry( 0 );
     Uint4 total = 0, total_masked = 0;
     CSDustMasker * duster( 0 );
