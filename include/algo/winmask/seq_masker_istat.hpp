@@ -332,6 +332,14 @@ public:
     /** Set metadata string. */
     void SetMetaData( string const & md ) { metadata = md; }
 
+    void SetMaxCount( Uint4 mc ) { max_map_count = mc; }
+    Uint4 GetMaxCount() const { return max_map_count; }
+
+    void SetCountMap( std::vector< double > const & cm )
+    { count_map = cm; }
+
+    std::vector< double > const & GetCountMap() const { return count_map; }
+
 protected:
 
     /** Set the statistics file format encoding. */
@@ -372,6 +380,9 @@ private:
 
     /** version of the algorithm used to generate counts */
     CSeqMaskerVersion fmt_gen_algo_ver;
+
+    Uint4 max_map_count = 0;
+    std::vector< double > count_map;
 };
 
 END_NCBI_SCOPE

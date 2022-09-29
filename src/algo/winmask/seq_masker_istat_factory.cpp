@@ -40,6 +40,7 @@
 
 #include <corelib/ncbifile.hpp>
 
+#include <cassert>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
@@ -218,6 +219,47 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
         vector< string > md;
         EStatType stat_type( DiscoverStatType( name , md, skip ) );
         CSeqMaskerIstat * res( 0 );
+        Uint4 max_map_count = 0;
+        std::vector< double > count_map;
+
+        if( stat_type == eAscii || stat_type == eOAscii )
+        {
+            for( auto const & line : md )
+            {
+                if( !line.empty() && line.substr( 0, 6 ) == "##pct:" )
+                {
+                    double pct( 0.0 );
+                    Uint4 count;
+                    std::istringstream iss(
+                        line.substr( 7, line.size() - 7 ) );
+                    iss >> count >> pct;
+                    count_map.push_back( pct );
+                }
+            }
+
+            max_map_count = count_map.size() - 1;
+        }
+
+        if( stat_type == eBinary || stat_type == eOBinary )
+        {
+            for( auto const & line : md )
+            {
+                if( !line.empty() && line.substr( 0, 6 ) == "##pct:" )
+                {
+                    std::istringstream iss(
+                        line.substr( 7, line.size() - 7 ) );
+                    iss >> max_map_count;
+                    count_map.resize( max_map_count + 1 );
+
+                    for( size_t i( 0 ); i <= max_map_count; ++i )
+                    {
+                        iss >> count_map[i];
+                    }
+
+                    break;
+                }
+            }
+        }
 
         switch( stat_type ) {
             case eAscii: res = new CSeqMaskerIstatAscii( 
@@ -263,6 +305,8 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
             if( !md_str.empty() ) res->SetMetaData( md_str );
         }
 
+        res->SetMaxCount( max_map_count );
+        res->SetCountMap( count_map );
         return res;
     }
     catch( CException & e)
