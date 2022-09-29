@@ -1,3 +1,7 @@
+1.4.4 (09/29/2022)
+    - NcbiLogP_Raw2() – improve choosing correct file handle for a "file" destination. CXX-12534
+    - Add a guard on a local file reopening and disable logging on a critical errors. CXX-12534
+
 1.4.3 (07/29/2022)
     - Unix: switch back to geteuipid() instead to make log file names more unique when writing to /log. CXX-12534 
     - Ensure that write() is used only once per log line. CXX-12534
