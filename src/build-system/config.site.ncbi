@@ -135,6 +135,9 @@ case "$ncbi_platform" in
     Linux64   )
         ncbi_rpath_sed="s,\\(/netmnt/gridengine\\)/uge[0-9]*,\\1/current,"
         ncbi_rpath_sed="$ncbi_rpath_sed; s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&,"
+        if [ -d /opt/curl/lib ]; then
+            ncbi_rpath_sed="$ncbi_rpath_sed; s,/opt/ncbi/64/curl-7\.85\.0/[^: ]*,/opt/curl/lib,"
+        fi
         ;;
 esac
 case "$with_vdb" in
