@@ -840,15 +840,15 @@ void CLZOCompression::SetBlockSize(size_t block_size)
 /// if you think that it works better for you.
 /// @sa CCompressionStreambuf::CCompressionStreambuf
 ///
-inline size_t CLZOCompression::GetBlockSizeDefault(void) { return 24 * 1024; };
+size_t CLZOCompression::GetBlockSizeDefault(void) { return 24 * 1024; };
 
 /// This is an artifical limit. You can use block size as low as 1, but overhead 
 /// will be too big for practical reasons.
 ///
-inline size_t CLZOCompression::GetBlockSizeMin(void)     { return 512; };
+size_t CLZOCompression::GetBlockSizeMin(void)     { return 512; };
 
 /// LZO can compress/decompress data limited by its 'lzo_uint' type
-inline size_t CLZOCompression::GetBlockSizeMax(void)     { return numeric_limits<lzo_uint>::max(); };
+size_t CLZOCompression::GetBlockSizeMax(void)     { return numeric_limits<lzo_uint>::max(); };
 
 
 
