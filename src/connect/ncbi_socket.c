@@ -2743,14 +2743,14 @@ static EIO_Status s_Select(size_t                n,
 
 
 #if defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ANY_CLANG)
-#  pragma GCC diagnostic push                       /* NCBI_FAKE_WARNING */
-#  pragma GCC diagnostic ignored "-Wuninitialized"  /* NCBI_FAKE_WARNING */
+#  pragma GCC diagnostic push                           /* NCBI_FAKE_WARNING */
+#  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"/* NCBI_FAKE_WARNING */
 static inline void x_tvcpy(struct timeval* dst, struct timeval* src)
 {
     memcpy(dst, src, sizeof(*dst));
 }
-#  pragma GCC diagnostic warning "-Wuninitialized"  /* NCBI_FAKE_WARNING */
-#  pragma GCC diagnostic pop                        /* NCBI_FAKE_WARNING */
+#  pragma GCC diagnostic warning "-Wmaybe-uninitialized"/* NCBI_FAKE_WARNING */
+#  pragma GCC diagnostic pop                            /* NCBI_FAKE_WARNING */
 #else
 #  define x_tvcpy(d, s)  (void) memcpy((d), (s), sizeof(*(d)))
 #endif /*NCBI_COMPILER_GCC*/
