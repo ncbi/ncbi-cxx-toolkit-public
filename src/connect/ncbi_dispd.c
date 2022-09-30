@@ -440,8 +440,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
     if (!data->n_cand  &&  (data->fail
                             ||  !(data->net_info->stateless  &&
                                   data->net_info->firewall))) {
-        CORE_LOGF(eLOG_Trace,
-                  ("SERV_DISPD_Open(\"%s\"): Service not found", iter->name));
+        CORE_TRACEF(("SERV_DISPD_Open(\"%s\"): Service not found",iter->name));
         s_Reset(iter);
         s_Close(iter);
         return 0;
