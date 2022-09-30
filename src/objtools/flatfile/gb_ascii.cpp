@@ -509,7 +509,9 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                 if (i == 2 && ibp->htg > 0 && env_kwd)
                     ErrPostEx(SEV_WARNING, ERR_KEYWORD_HTGPlusENV, "This HTG record also has the ENV keyword, which is an unusual combination. Confirmation that isolation and cloning steps actually occured might be appropriate.");
                 else if ((i == 2 && wgs_kwd && tpa_kwd) ||
-                         (i == 2 && tsa_kwd && tpa_kwd)) {
+                         (i == 2 && tsa_kwd && tpa_kwd) ||
+                         (i == 2 && pp->source == Parser::ESource::DDBJ &&
+                          env_kwd && tpa_kwd)) {
                 } else if (i != 2 || env_kwd == false ||
                            (est_kwd == false && gss_kwd == false && wgs_kwd == false)) {
                     if (i != 2 || pp->source != Parser::ESource::DDBJ ||
