@@ -39,8 +39,6 @@
 #include <corelib/rwstream.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_socket.hpp>
-#include <stdlib.h>
-#include <time.h>
 
 #include "test_assert.h"  // This header must go last
 
@@ -61,6 +59,7 @@ static string s_GetHttpToken(void)
         path += "/http/test_ncbi_http_upload_token";
         credfile = path.c_str();
     }
+    errno = 0;
     ifstream ifs(credfile);
     if (!ifs)
         return kEmptyStr;
@@ -164,8 +163,12 @@ int CTestHttpUploadApp::Run(void)
         = "https://dsubmit.ncbi.nlm.nih.gov/ft/byid/";
 
     string token = s_GetHttpToken();
-    if (token.empty())
-        ERR_POST(Fatal << "Empty credentials");
+    if (token.empty()) {
+        int err = errno;
+        string errstr(err ? strerror(err) : kEmptyStr);
+        ERR_POST(Fatal << "Empty credentials"
+                 << (errstr.empty() ? kEmptyStr : " (" + errstr + ')'));
+    }
 
     const CArgs& args = GetArgs();
     if (args["seed"].HasValue()) {
