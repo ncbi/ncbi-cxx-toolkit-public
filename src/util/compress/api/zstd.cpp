@@ -351,7 +351,7 @@ void s_GetParamBounds(int param, int* vmin, int* vmax)
     return;
 }
 
-inline int CZstdCompression::GetStrategyDefault(void)  { return 0; };
+int CZstdCompression::GetStrategyDefault(void)  { return 0; };
 
 int CZstdCompression::GetStrategyMin(void)
 {
@@ -371,7 +371,7 @@ int CZstdCompression::GetStrategyMax(void)
     return v;
 }
 
-inline int CZstdCompression::GetWindowLogDefault(void) { return 0; };
+int CZstdCompression::GetWindowLogDefault(void) { return 0; };
 
 int CZstdCompression::GetWindowLogMin(void)
 {

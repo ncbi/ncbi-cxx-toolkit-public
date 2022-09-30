@@ -762,10 +762,10 @@ string CZipCompression::FormatErrorMessage(string where, size_t pos) const
 // Advanced parameters
 //
 
-inline int CZipCompression::GetStrategyDefault(void)    { return Z_DEFAULT_STRATEGY; };
-inline int CZipCompression::GetStrategyMin(void)        { return Z_DEFAULT_STRATEGY; /* 0 */ };
+int CZipCompression::GetStrategyDefault(void)    { return Z_DEFAULT_STRATEGY; };
+int CZipCompression::GetStrategyMin(void)        { return Z_DEFAULT_STRATEGY; /* 0 */ };
 
-inline int CZipCompression::GetStrategyMax(void)
+int CZipCompression::GetStrategyMax(void)
 {
     #if defined(Z_FIXED)        // from v1.2.2.2
         return Z_FIXED;
@@ -782,13 +782,13 @@ inline int CZipCompression::GetStrategyMax(void)
     return Z_DEFAULT_STRATEGY; 
 };
 
-inline int CZipCompression::GetWindowBitsDefault(void)  { return MAX_WBITS; };
-inline int CZipCompression::GetWindowBitsMin(void)      { return DEF_WBITS; };
-inline int CZipCompression::GetWindowBitsMax(void)      { return MAX_WBITS; };
+int CZipCompression::GetWindowBitsDefault(void)  { return MAX_WBITS; };
+int CZipCompression::GetWindowBitsMin(void)      { return DEF_WBITS; };
+int CZipCompression::GetWindowBitsMax(void)      { return MAX_WBITS; };
 
-inline int CZipCompression::GetMemoryLevelDefault(void) { return DEF_MEM_LEVEL; };
-inline int CZipCompression::GetMemoryLevelMin(void)     { return 1; };
-inline int CZipCompression::GetMemoryLevelMax(void)     { return MAX_MEM_LEVEL; };
+int CZipCompression::GetMemoryLevelDefault(void) { return DEF_MEM_LEVEL; };
+int CZipCompression::GetMemoryLevelMin(void)     { return 1; };
+int CZipCompression::GetMemoryLevelMax(void)     { return MAX_MEM_LEVEL; };
 
 
 
