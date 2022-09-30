@@ -215,6 +215,11 @@ bool g_IsDataFileOld(const CTempString& path, const CTempString& id_line)
     }
     CTempString builtin_timestamp_str = id_line.substr(pos, end - pos);
     CTime       builtin_timestamp(builtin_timestamp_str, "Y-M-D h:m:sZ");
+    return g_IsDataFileOld(path, builtin_timestamp);
+}
+
+bool g_IsDataFileOld(const CTempString& path, const CTime& builtin_timestamp)
+{
     CTime       file_timestamp;
     CFile(path).GetTime(&file_timestamp);
     return file_timestamp < builtin_timestamp;
