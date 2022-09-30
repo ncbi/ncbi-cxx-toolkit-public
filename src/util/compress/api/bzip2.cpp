@@ -383,11 +383,11 @@ string CBZip2Compression::FormatErrorMessage(string where,
 // Advanced parameters
 //
 
-inline int  CBZip2Compression::GetWorkFactorDefault(void)  { return   0; };
-inline int  CBZip2Compression::GetWorkFactorMin(void)      { return   0; };
-inline int  CBZip2Compression::GetWorkFactorMax(void)      { return 250; };
+int  CBZip2Compression::GetWorkFactorDefault(void)  { return   0; };
+int  CBZip2Compression::GetWorkFactorMin(void)      { return   0; };
+int  CBZip2Compression::GetWorkFactorMax(void)      { return 250; };
 
-inline bool CBZip2Compression::GetSmallDecompressDefault(void) { return false; };
+bool CBZip2Compression::GetSmallDecompressDefault(void) { return false; };
 
 
 
