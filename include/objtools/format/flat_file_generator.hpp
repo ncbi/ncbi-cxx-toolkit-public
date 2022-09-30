@@ -118,7 +118,7 @@ public:
     void SetSubmit(const CSubmit_block& sub) { m_Ctx->SetSubmit(sub); }
 
     static string GetSeqFeatText(const CMappedFeat& feat, CScope& scope,
-        const CFlatFileConfig& cfg);
+        const CFlatFileConfig& cfg, CRef<feature::CFeatTree> ftree = null);
 
     void x_GetLocation(const CSeq_entry_Handle& entry,
          TSeqPos from, TSeqPos to, ENa_strand strand, CSeq_loc& loc);
