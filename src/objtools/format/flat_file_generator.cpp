@@ -1145,7 +1145,8 @@ void CFlatFileGenerator::Generate
 string CFlatFileGenerator::GetSeqFeatText
 (const CMappedFeat& feat,
  CScope& scope,
- const CFlatFileConfig& cfg)
+ const CFlatFileConfig& cfg,
+ CRef<feature::CFeatTree> ftree)
 {
     CBioseq_Handle seq = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), scope);
     if (!seq) {
@@ -1163,10 +1164,11 @@ string CFlatFileGenerator::GetSeqFeatText
 
     CBioseqContext bctx(seq, *ctx);
 
-    CSeq_entry_Handle tseh = seq.GetTopLevelEntry();
-    CFeat_CI iter (tseh);
-    CRef<feature::CFeatTree> ftree;
-    ftree.Reset (new feature::CFeatTree (iter));
+    if (ftree.Empty()) {
+        CSeq_entry_Handle tseh = seq.GetTopLevelEntry();
+        CFeat_CI iter (tseh);
+        ftree.Reset (new feature::CFeatTree (iter));
+    }
 
     CConstRef<IFlatItem> item;
     if (feat.GetData().IsBiosrc()) {
@@ -1181,6 +1183,7 @@ string CFlatFileGenerator::GetSeqFeatText
     os.ToString(&text);
     return text;
 }
+
 
 void CFlatFileGenerator::x_GetLocation
 (const CSeq_entry_Handle& entry,
