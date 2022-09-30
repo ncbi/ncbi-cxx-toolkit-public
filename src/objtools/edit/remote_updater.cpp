@@ -473,6 +473,8 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                 } else {
                     m_pubmed.reset(new CEUtilsUpdater());
                 }
+                if (m_pm_interceptor)
+                    m_pubmed->SetPubInterceptor(m_pm_interceptor);
                 break;
             default:
             case EPubmedSource::eMLA:
@@ -481,6 +483,8 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                 } else {
                     m_pubmed.reset(new CMLAUpdater());
                 }
+                if (m_pm_interceptor)
+                    m_pubmed->SetPubInterceptor(m_pm_interceptor);
                 break;
             }
         }
