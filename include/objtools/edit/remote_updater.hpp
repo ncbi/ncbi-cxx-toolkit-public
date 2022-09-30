@@ -130,6 +130,12 @@ public:
     NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
     void ReportStats(std::ostream& str);
     taxupdate_func_t GetUpdateFunc() const { return m_taxon_update; }
+    TPubInterceptor SetPubmedInterceptor(TPubInterceptor f)
+    {
+        TPubInterceptor old = m_pm_interceptor;
+        m_pm_interceptor = f;
+        return old;
+    }
 
 private:
     void xUpdatePubReferences(CSeq_entry& entry);
@@ -141,9 +147,12 @@ private:
 
     IObjtoolsListener* m_pMessageListener = nullptr;
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
-    EPubmedSource m_pm_source = EPubmedSource::eNone;
+
+    EPubmedSource              m_pm_source = EPubmedSource::eNone;
     unique_ptr<IPubmedUpdater> m_pubmed;
-    bool m_pm_use_cache = true;
+    bool                       m_pm_use_cache = true;
+    TPubInterceptor            m_pm_interceptor = nullptr;
+
     unique_ptr<CCachedTaxon3_impl> m_taxClient;
     taxupdate_func_t m_taxon_update;
 
