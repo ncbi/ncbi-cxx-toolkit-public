@@ -101,6 +101,13 @@ NCBI_XUTIL_EXPORT
 extern bool g_IsDataFileOld(const CTempString& path,
                             const CTempString& id_line);
 
+/// Check whether the given file (a full path, as returned by
+/// g_FindDataFile) is older than a built-in version with the
+/// specified timestamp.
+NCBI_XUTIL_EXPORT
+extern bool g_IsDataFileOld(const CTempString& path,
+                            const CTime& builtin_timestamp);
+
 END_NCBI_SCOPE
 
 
