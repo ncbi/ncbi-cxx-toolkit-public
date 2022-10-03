@@ -365,8 +365,8 @@ private:
 
     bool HandleSeqEntry(TFFContext& context, CRef<CSeq_entry> se) const;
     bool HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle seh) const;
-    void HandleSeqSubmit(TFFContext& context, CObjectIStream& is) const;
-    void HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const;
+    bool HandleSeqSubmit(TFFContext& context, CObjectIStream& is) const;
+    bool HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const;
     void HandleTextId(TFFContext& context, const string& id) const;
     bool HandleSeqId(TFFContext& context, const edit::CHugeAsnReader* reader, CConstRef<CSeq_id> seqid) const;
 
@@ -817,8 +817,18 @@ bool CAsn2FlatApp::HandleSeqId(TFFContext& context, const edit::CHugeAsnReader* 
 {
     if (reader && seqid) {
         auto entry = reader->LoadSeqEntry(seqid);
-        if (entry)
+        if (!entry) {
+            return false;
+        }
+        if (auto pSubmitBlock = reader->GetSubmitBlock(); pSubmitBlock) {
+            auto pSeqSubmit = Ref(new CSeq_submit());
+            pSeqSubmit->SetSub().Assign(*pSubmitBlock);
+            pSeqSubmit->SetData().SetEntrys().push_back(entry);
+            return HandleSeqSubmit(context, *pSeqSubmit); 
+        }
+        else {
             return HandleSeqEntry(context, entry);
+        }
     }
     return false;
 }
@@ -986,10 +996,10 @@ int CAsn2FlatApp::x_GenerateTraditionally(unique_ptr<CObjectIStream> is, TFFCont
 }
 
 
-void CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
+bool CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
 {
     if (! sub.IsSetSub() || ! sub.IsSetData() || ! sub.GetData().IsEntrys() || sub.GetData().GetEntrys().empty()) {
-        return;
+        return false;
     }
 
     if (m_do_cleanup) {
@@ -1018,16 +1028,17 @@ void CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
         m_Exception = true;
     }
     context.m_Scope->RemoveTopLevelSeqEntry(seh);
+    return true;
 }
 
 
 //  ============================================================================
-void CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CObjectIStream& is) const
+bool CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CObjectIStream& is) const
 //  ============================================================================
 {
     CRef<CSeq_submit> sub(new CSeq_submit);
     is >> *sub;
-    HandleSeqSubmit(context, *sub);
+    return HandleSeqSubmit(context, *sub);
 }
 
 //  ============================================================================
