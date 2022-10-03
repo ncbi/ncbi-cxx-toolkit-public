@@ -1,4 +1,3 @@
-			
 # $Id$
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
@@ -1290,7 +1289,7 @@ CMN:Herp	s	Canadian Museum of Nature, Amphibian and Reptile Collection
 CMN:Insect	s	Canadian Museum of Nature, Insect Collection		
 CMN:Mammal	s	Canadian Museum of Nature, Mammal Collection		
 CMN:Mollusc	s	Canadian Museum of Nature, Mollusc Collection		
-CMN:Parasite	s	Canadian Museum of Nature, Parasite Collection		
+CMN:Parasite	s	Canadian Museum of Nature, Parasite Collection	
 CMNAR	s	Canadian Museum of Nature, Amphibian and Reptile Collection			
 CMNC	s	Canadian Museum of Nature, Neotropical Cerambycidae Collection			
 CMNFI	s	Canadian Museum of Nature, Fish Collection			
@@ -2998,7 +2997,7 @@ IBSBF	c	Biological Institute Culture Collection of Phytopathogenic Bacteria
 IBSC	s	South China Botanical Garden			
 IBSD	s	Dinghushan Biosphere Reserve			
 IBSI	s	Instituto de Biologia Subtropical			
-IBSP	s	Instituto Biologico de Sao Paulo			
+IBSP	s	Instituto Butantan			
 IBT	c	IBT Culture Collection of Fungi, Mycology Group, Technical University of Denmark			
 IBTS	s	Institutul de Biologie, Tr. Savulescu			
 IBUG	s	Universidad de Guadalajara			
@@ -4728,7 +4727,7 @@ MSB:Herp	s	Museum of Southwestern Biology, Herpetology Collection
 MSB:Mamm	s	Museum of Southwestern Biology, Mammal Collection	http://arctos.database.museum/SpecimenDetail.cfm?GUID=
 MSB:Para	s	Museum of Southwestern Biology, Parasitology Collection	http://arctos.database.museum/SpecimenDetail.cfm?GUID=
 MSB<BGR>	s	Museum Sophia			
-MSB<DEU>	s	Ludwig-Maximilians-Universitaet			
+MSB<DEU>	s	Ludwig-Maximilians-Universitat			
 MSC	s	Michigan State University, Botany and Plant Pathology Department			
 MSCL	c	Microbial Strain Collection of Latvia			
 MSCMU	c	Microbiology Section, Chiang Mai University (MSCMU)			
@@ -5818,7 +5817,7 @@ PNICMM-INP	s	Instituto Nacional de la Pesca (Mexico)
 PNL	s	Polytechnic of North London, Food and Biological Sciences Department			
 PNM	s	Philippine National Museum	NMP		
 PNPC	s	Chickasaw National Recreational Area [formerly Platt National Park]			
-PNUH	s	Princess Nourah Bint Abdulrahman University, Riyadh, Kingdom Saudi Arabia
+PNUH	s	Princess Nourah Bint Abdulrahman University, Riyadh, Kingdom Saudi  Arabia			
 PNZ	s	Penlee House Museum			
 PO<PRT>	s	Universidade do Porto, Departamento de Botanica			
 PO<RUS>	s	Collection of the Zoological Institute of the Russian Academy of Sciences			
@@ -7419,15 +7418,15 @@ UFMA	sc	Universidade Federal do Maranhao, Curso de Farmacia
 UFMA:LMBA	c	Universidade Federal do Maranhao, Curso de Farmacia,  Laboratorio de Microbiologia Basica e Aplicada do Departamento de Patologia		
 UFMG<BRA>	s	Universidade Federal de Minas Gerais			
 UFMI	s	Universidade Federal de Mato Grosso, Instituto de Biociencias			
-UFMT	s	Universidade Federal de Mato Grosso, Herbario Central			
+UFMT	s	Universidade Federal de Mato Grosso			
 UFNH	s	Utah Field House Natural History [address unknown]			
 UFOP	s	 Universidade Federal de Ouro Preto			
 UFP	s	Universidade Federal de Pernambuco, Departamento de Botanica			
 UFPA	sc	Universidade Federal do Para (Federal University of Para)			
-UFPB	s	Departamento de Sistematica e Ecologia			
+UFPB	s	Universidade Federal da Paraiba			
 UFPEDA	c	Universidade Federal de Pernambuco			
 UFRG	s	Instituto de Biologia			
-UFRGS	s	Universidade Federale do Rio Grande do Sul			
+UFRGS	s	Universidade Federal do Rio Grande do Sul			
 UFRJ<herbarium>	sc	Herbario e Colecao Fitopathologica "Verlande Duarte Silveira"			
 UFRJ<museum>	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro			
 UFRJ<museum>:POR	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro, Porifera collection		
