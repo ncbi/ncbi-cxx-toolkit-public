@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 
-Script to generate V gene FWR/CDR annotation file given one or more ODRDB JSON file
+Script to generate V gene FWR/CDR annotation file given one or more OGRDB JSON file
 """
 
 

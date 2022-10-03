@@ -17,7 +17,7 @@ import argparse
 from pathlib import Path
 
 
-parser = argparse.ArgumentParser(description = "Script to build blast dbs from OGR germline sets JSON files")
+parser = argparse.ArgumentParser(description = "Script to build blast dbs from OGRDB germline sets JSON files")
 parser.add_argument('--germline_file', required=True,
                     help="JSON file name(s). Need to put multiple files inside quotation marks, i.e., \"file1 file2 file3\"")
 parser.add_argument('--output_file', required=True,
