@@ -121,7 +121,7 @@ protected:
 };
 
 
-class CCitArtCleaner : public CPubCleaner
+class NCBI_CLEANUP_EXPORT CCitArtCleaner : public CPubCleaner
 {
 public:
     CCitArtCleaner(CCit_art& art) : m_Art(art) { }
