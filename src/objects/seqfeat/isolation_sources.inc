@@ -23,13 +23,16 @@
  *
  * ===========================================================================
  *
- * Author:  NCBI developers  
+ * Author:  NCBI developers
  *
  * File Description:
  *   Built-in copy of isolation_sources.txt.
  *
  */
 
+/* time_t value corresponding to Thu Nov  1 10:37:07 EDT 2018; formally
+ * expressed as unsigned long so output can stand fully on its own. */
+static const unsigned long k_isolation_sources_Timestamp = 1541083027UL;
 static const char* const k_isolation_sources[] = {
     "abdomen\tabdomen",
     "abdominal fluid\tabdominal fluid",
