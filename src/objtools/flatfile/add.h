@@ -46,7 +46,7 @@ bool no_date(Parser::EFormat format, const TSeqdescList& descrs);
 bool no_reference(const objects::CBioseq& bioseq);
 
 bool check_cds(const DataBlk& entry, Parser::EFormat format);
-void err_install(IndexblkPtr ibp, bool accver);
+void err_install(const Indexblk* ibp, bool accver);
 void SeqToDelta(objects::CBioseq& bioseq, Int2 tech);
 void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
 void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
@@ -68,7 +68,7 @@ void  fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs);
 char* GetQSFromFile(FILE* fd, IndexblkPtr ibp);
 void  fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry);
 void  fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq, bool is_tsa);
-void  fta_set_molinfo_completeness(objects::CBioseq& bioseq, IndexblkPtr ibp);
+void  fta_set_molinfo_completeness(objects::CBioseq& bioseq, const Indexblk* ibp);
 bool  fta_number_is_huge(const char* s);
 
 void fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num);
@@ -76,7 +76,7 @@ bool fta_if_valid_biosample(const char* id, bool dblink);
 bool fta_if_valid_sra(const char* id, bool dblink);
 void StripECO(char* str);
 void xStripECO(string&);
-void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, Int4 acctype, bool pricon, char* acc);
+void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, Int4 acctype, bool pricon, const char* acc);
 
 char* StringRStr(char* where, const char* what);
 bool  fta_dblink_has_sra(const CRef<objects::CUser_object>& uop);

@@ -105,7 +105,7 @@ USING_SCOPE(objects);
  *  Returns:     TRUE upon success, otherwise FALSE
  *
  ***********************************************************/
-static bool QSbuf_ReadLine(char* qs_buf, char* dest_buf, Int2 max_len, int* line)
+static bool QSbuf_ReadLine(const char* qs_buf, char* dest_buf, Int2 max_len, int* line)
 {
     Int4 i;
 
@@ -863,7 +863,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
  *  Returns:     pointer to SeqGraph upon success, otherwise NULL
  *
  ***********************************************************/
-static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
+static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
                                             CBioseq&                    bioseq,
                                             char*                       def_acc,
                                             char*                       def_ver,
@@ -1091,7 +1091,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(char*                       qs_buf,
 
 /**********************************************************/
 // TODO: functionality in this file was never tested
-bool QscoreToSeqAnnot(char* qscore, CBioseq& bioseq, char* acc, Int2 ver, bool check_minmax, bool allow_na)
+bool QscoreToSeqAnnot(const char* qscore, CBioseq& bioseq, char* acc, Int2 ver, bool check_minmax, bool allow_na)
 {
     Char charver[100];
 
