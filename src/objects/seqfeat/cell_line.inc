@@ -30,6 +30,9 @@
  *
  */
 
+/* time_t value corresponding to Fri Mar 10 13:09:40 EST 2017; formally
+ * expressed as unsigned long so output can stand fully on its own. */
+static const unsigned long kCellLine_Timestamp = 1489169380UL;
 static const char* const kCellLine[] = {
     "1483\tHomo sapiens\tUM-SCC-1\tHuman",
     "183\tHomo sapiens\tT404, T406, Tu-138, Tu-158LN, Tu-159, Tu-182, Tu-212, Tu-212LN (genetically identical)\tHuman",

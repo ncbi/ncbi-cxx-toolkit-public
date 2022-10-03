@@ -30,6 +30,9 @@
  *
  */
 
+/* time_t value corresponding to Wed Sep  7 13:44:13 EDT 2022; formally
+ * expressed as unsigned long so output can stand fully on its own. */
+static const unsigned long kECNum_replaced_Timestamp = 1662572653UL;
 static const char* const kECNum_replaced[] = {
     "1.1.1.5\t1.1.1.303\t1.1.1.304",
     "1.1.1.63\t1.1.1.239",
