@@ -5,7 +5,7 @@
 
 TEST_NCBI_HTTP_UPLOAD_TOKEN="$NCBI_TEST_DATA/http/test_ncbi_http_upload_token"
 
-if [ ! -f "$TEST_NCBI_HTTP_UPLOAD_TOKEN" ]; then
+if [ ! -r "$TEST_NCBI_HTTP_UPLOAD_TOKEN" ]; then
   echo "NCBI_UNITTEST_SKIPPED"
   exit
 fi
