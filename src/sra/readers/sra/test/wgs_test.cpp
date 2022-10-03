@@ -54,6 +54,7 @@
 #include <serial/objistrasnb.hpp>
 
 #include <util/random_gen.hpp>
+#include <numeric>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -155,6 +156,8 @@ void CWGSTestApp::Init(void)
     arg_desc->AddDefaultKey("seed", "RandomSeed",
                             "Seed for random number generator",
                             CArgDescriptions::eInteger, "1");
+    arg_desc->AddFlag("analyze-4na",
+                      "Analyze 4na ambiguity fields");
     arg_desc->AddDefaultKey("seq_acc_count", "SequentialAccCount",
                             "size of spans of sequential accessions",
                             CArgDescriptions::eInteger, "10");
@@ -192,6 +195,107 @@ string sx_GetSeqData(const CBioseq& seq)
         cout << endl;
     }
     return ret;
+}
+
+
+//static const char k4naTable[] = "-ACMGRSVTWYHKDBN";
+
+string sx_GetSeqData(const vector<char>& seq_4na, size_t len)
+{
+    string ret;
+    ret.reserve(len);
+    for ( size_t i = 0; i < len; i += 2 ) {
+        Uint1 v = seq_4na[i/2];
+        ret += v>>4;
+        if ( i+1 < len ) {
+           ret += v&0xf;
+        }
+    }
+    return ret;
+}
+
+
+static const TSeqPos kAmbiguityBlockSize = 1024; // defined by WGS VDB schema
+
+
+void sx_Analyze_4na(CTempString seq, const CWGSSeqIterator& it)
+{
+    CWGSSeqIterator::TWGSContigGapInfo gap_info;
+    it.GetGapInfo(gap_info);
+    string acc_ver = it.GetAccSeq_id()->AsFastaString();
+    
+    size_t total_bases = seq.size();
+    size_t ambig_block_count = (total_bases+kAmbiguityBlockSize-1)/kAmbiguityBlockSize;
+    vector<bool> ambig_block(ambig_block_count);
+    size_t ambig_bases = 0;
+    size_t ambig_bases_counts[16] = {};
+    size_t cur_ambig_count = 0;
+    size_t gap_bases = 0;
+    for ( size_t i = 0; i < seq.size(); ++i ) {
+        Uint1 c = seq[i];
+        if ( gap_info.IsInGap(i) ) {
+            ++gap_bases;
+            _ASSERT(c == 0xf);
+            if ( i == gap_info.GetTo() ) {
+                ++gap_info;
+            }
+            continue;
+        }
+        if ( (c&(c-1)) != 0 || c == 0 ) {
+            // ambiguity
+            ++ambig_bases;
+            ++ambig_bases_counts[c];
+            ++cur_ambig_count;
+            ambig_block[i/kAmbiguityBlockSize] = true;
+        }
+        else {
+            cur_ambig_count = 0;
+        }
+    }
+    cout << acc_ver<< ": Gap bases: "<<gap_bases<<endl;
+    cout << acc_ver<< ": Ambiguous bases: "<<ambig_bases<<" of "<<total_bases<<endl;
+    for ( size_t i = 0; i < 16; ++i ) {
+        if ( ambig_bases_counts[i] ) {
+            cout << acc_ver<< ": Ambiguous count["<<i<<"]: "<<ambig_bases_counts[i]<<endl;
+        }
+    }
+    cout << acc_ver<< ": Ambiguous blocks: "
+         << accumulate(ambig_block.begin(), ambig_block.end(), size_t(0))
+         << " of "<<ambig_block.size()<<endl;
+    auto ambig_bytes = it.GetAmbiguityBytes();
+    cout << acc_ver<< ": Ambiguous blocks bytes: "<<ambig_bytes.size()<<endl;
+    _ASSERT(ambig_bytes.size() == (ambig_block_count+63)/64*8);
+    size_t correct_0 = 0, correct_1 = 0;
+    size_t wrong_0 = 0, wrong_1 = 0;
+    for ( size_t i = 0; i < ambig_block_count; ++i ) {
+        bool ambig1 = ambig_block[i];
+        bool ambig2 = i/8 < ambig_bytes.size()? (ambig_bytes[i/8]>>i%8)&1: 0;
+        if ( ambig1 != ambig2 ) {
+            if ( ambig2 ) {
+                ++wrong_1;
+            }
+            else {
+                ++wrong_0;
+            }
+        }
+        else {
+            if ( ambig2 ) {
+                ++correct_1;
+            }
+            else {
+                ++correct_0;
+            }
+        }
+    }
+    if ( wrong_0 ) {
+        cout << acc_ver<< ": Wrong ambiguity bits not set: "<<wrong_0<<endl;
+    }
+    if ( wrong_1 ) {
+        cout << acc_ver<< ": Wrong ambiguity bits set: "<<wrong_1<<endl;
+    }
+    if ( correct_1 ) {
+        cout << acc_ver<< ": Correct ambiguity bits set: "<<correct_1<<endl;
+    }
 }
 
 
@@ -620,6 +724,7 @@ int CWGSTestApp::Run(void)
 
     vector< CConstRef<CBioseq> > all_seqs;
     bool keep_seqs = args["keep_sequences"];
+    bool analyze_4na = args["analyze-4na"];
     
     CWGSSeqIterator::TIncludeFlags include_flags = CWGSSeqIterator::fIncludeLive;
     if ( args["withdrawn"] ) {
@@ -685,7 +790,7 @@ int CWGSTestApp::Run(void)
             out << "Loaded bioseq in "<<sw.Elapsed()<<"s"<<endl;
             sw.Restart();
             CRef<CBioseq> seq2 = it.GetBioseq(it.fDefaultIds|it.fInst_ncbi4na);
-            out << "Loaded bioseq(na4) in "<<sw.Elapsed()<<"s"<<endl;
+            out << "Loaded bioseq(4na) in "<<sw.Elapsed()<<"s"<<endl;
             if ( print_seq ) {
                 out << MSerial_AsnText << *seq1;
             }
@@ -704,6 +809,19 @@ int CWGSTestApp::Run(void)
                 }
                 ERR_POST(Fatal<<"Different Seq-data at " << pos << ": " <<
                          MSerial_AsnText << *seq1 << MSerial_AsnText << *seq2);
+            }
+            string data3 = sx_GetSeqData(it.Get4na(0, it.GetSeqLength())->GetNcbi4na().Get(), it.GetSeqLength());
+            if ( data1 != data3 ) {
+                size_t pos = 0;
+                while ( data1[pos] == data3[pos] ) {
+                    ++pos;
+                }
+                ERR_POST(Fatal<<"Different raw Seq-data at " << pos << ": " <<
+                         MSerial_AsnText << *seq1 << MSerial_AsnText << *seq2<<
+                         "\nRaw: "<<data3);
+            }
+            if ( analyze_4na ) {
+                sx_Analyze_4na(data1, it);
             }
             if ( keep_seqs ) {
                 all_seqs.push_back(seq1);
