@@ -381,8 +381,7 @@ static
 void s_PubCleanup(CRef<CPub>& pub)
 {
     if (pub->IsArticle()) {
-        CCitArtCleaner cleaner(pub->SetArticle());
-        cleaner.Clean(true, true);
+        CCitArtCleaner::CleanArticle(pub->SetArticle(), true, true);
     }
 }
 
