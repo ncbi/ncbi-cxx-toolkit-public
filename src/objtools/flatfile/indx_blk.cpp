@@ -374,9 +374,9 @@ bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
  *   reject if not.
  *
  **********************************************************/
-static bool CheckLocus(char* locus, Parser::ESource source)
+static bool CheckLocus(const char* locus, Parser::ESource source)
 {
-    char* p = locus;
+    const char* p = locus;
     if (StringNCmp(locus, "SEG_", 4) == 0 &&
         (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
         p += 4;
@@ -479,13 +479,13 @@ int CheckSTRAND(const string& str)
 }
 
 /**********************************************************/
-Int2 XMLCheckSTRAND(char* str)
+Int2 XMLCheckSTRAND(const char* str)
 {
     return (StringMatchIcase(XML_STRAND_array, str));
 }
 
 /**********************************************************/
-Int2 XMLCheckTPG(char* str)
+Int2 XMLCheckTPG(const char* str)
 {
     Int2 i;
 
@@ -514,19 +514,19 @@ int CheckTPG(const string& str)
 }
 
 /**********************************************************/
-Int2 CheckNADDBJ(char* str)
+Int2 CheckNADDBJ(const char* str)
 {
     return (fta_StringMatch(ParFlat_NA_array_DDBJ, str));
 }
 
 /**********************************************************/
-Int2 CheckNA(char* str)
+Int2 CheckNA(const char* str)
 {
     return (fta_StringMatch(ParFlat_NA_array, str));
 }
 
 /**********************************************************/
-Int2 CheckDIV(char* str)
+Int2 CheckDIV(const char* str)
 {
     return (fta_StringMatch(ParFlat_DIV_array, str));
 }
@@ -605,7 +605,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
  *   or "NODATE"; otherwise, return Date-std pointer.
  *
  **********************************************************/
-CRef<CDate_std> GetUpdateDate(char* ptr, Parser::ESource source)
+CRef<CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source)
 {
     Char date[12];
 
@@ -1930,7 +1930,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
 */
 
 
-bool GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip)
+bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
 {
     Char            acc[200];
     Char            temp[400];

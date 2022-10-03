@@ -284,7 +284,7 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
 }
 
 /**********************************************************/
-void err_install(IndexblkPtr ibp, bool accver)
+void err_install(const Indexblk* ibp, bool accver)
 {
     Char temp[210];
 
@@ -774,7 +774,7 @@ static int sGetPrefixLength(const CTempString& accession)
 
 
 /**********************************************************/
-void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, Int4 acctype, bool pricon, char* acc)
+void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, Int4 acctype, bool pricon, const char* acc)
 {
     Int4 pri_acc;
     Int4 sec_acc;
@@ -2193,7 +2193,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
         id.SetGeneral().SetDb("FlyBase");
         id.SetGeneral().SetTag().SetStr(acc);
     } else if (source == Parser::ESource::USPTO) {
-        CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId((char*)accession);
+        CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(accession);
         id.SetPatent(*pat_id);
     } else {
         if (StringLen(location) > 50) {
@@ -2797,7 +2797,7 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
 }
 
 /**********************************************************/
-void fta_set_molinfo_completeness(CBioseq& bioseq, IndexblkPtr ibp)
+void fta_set_molinfo_completeness(CBioseq& bioseq, const Indexblk* ibp)
 {
     if (bioseq.GetInst().GetTopology() != 2 || (ibp != NULL && ibp->gaps != NULL))
         return;

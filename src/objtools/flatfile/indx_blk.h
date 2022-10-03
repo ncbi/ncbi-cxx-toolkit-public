@@ -52,7 +52,7 @@ typedef struct ind_blk_next {
     struct ind_blk_next* next;
 } IndBlkNext, *IndBlkNextPtr;
 
-CRef<objects::CDate_std> GetUpdateDate(char* ptr, Parser::ESource source);
+CRef<objects::CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source);
 
 /**********************************************************/
 bool XReadFileBuf(FileBuf& fileBuf, FinfoBlkPtr finfo);
@@ -60,7 +60,7 @@ bool SkipTitleBuf(FileBuf& fileBuf, FinfoBlkPtr finfo, const CTempString& keywor
 bool FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, FinfoBlkPtr finfo, const CTempString& keyword);
 
 IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo);
-bool        GetAccession(ParserPtr pp, char* str, IndexblkPtr entry, Int4 skip);
+bool        GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip);
 //bool        GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip);
 void CloseFiles(ParserPtr pp);
 void MsgSkipTitleFail(const Char* flatfile, FinfoBlkPtr finfo);
@@ -74,13 +74,13 @@ void DelNoneDigitTail(char* str);
 int  fta_if_wgs_acc(const CTempString& accession);
 int  CheckSTRAND(const string& str);
 int  CheckTPG(const string& str);
-Int2 CheckDIV(char* str);
+Int2 CheckDIV(const char* str);
 Int4 IsNewAccessFormat(const char* acnum);
 bool IsSPROTAccession(const char* acc);
-Int2 XMLCheckSTRAND(char* str);
-Int2 XMLCheckTPG(char* str);
-Int2 CheckNADDBJ(char* str);
-Int2 CheckNA(char* str);
+Int2 XMLCheckSTRAND(const char* str);
+Int2 XMLCheckTPG(const char* str);
+Int2 CheckNADDBJ(const char* str);
+Int2 CheckNA(const char* str);
 
 bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool is_mga);
 

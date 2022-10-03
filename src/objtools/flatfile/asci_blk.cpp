@@ -830,11 +830,11 @@ void GetLenSubNode(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-CRef<CPatent_seq_id> MakeUsptoPatSeqId(char* acc)
+CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
 {
     CRef<CPatent_seq_id> pat_id;
-    char*                p;
-    char*                q;
+    const char*          p;
+    const char*          q;
 
     if (acc == NULL || *acc == '\0')
         return (pat_id);
@@ -844,19 +844,13 @@ CRef<CPatent_seq_id> MakeUsptoPatSeqId(char* acc)
     p = StringChr(acc, '|');
 
     q  = StringChr(p + 1, '|');
-    *q = '\0';
-    pat_id->SetCit().SetCountry(p + 1);
-    *q = '|';
+    pat_id->SetCit().SetCountry(string(p + 1, q));
 
     p  = StringChr(q + 1, '|');
-    *p = '\0';
-    pat_id->SetCit().SetId().SetNumber(q + 1);
-    *p = '|';
+    pat_id->SetCit().SetId().SetNumber(string(q + 1, p));
 
     q  = StringChr(p + 1, '|');
-    *q = '\0';
-    pat_id->SetCit().SetDoc_type(p + 1);
-    *q = '|';
+    pat_id->SetCit().SetDoc_type(string(p + 1, q));
 
     pat_id->SetSeqid(atoi(q + 1));
 
@@ -960,7 +954,7 @@ CRef<CSeq_id> MakeLocusSeqId(const char* locus, Uint1 seqtype)
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************/
-static CRef<CSeq_id> MakeSegSetSeqId(char* accession, char* locus, Uint1 seqtype, bool is_tpa)
+static CRef<CSeq_id> MakeSegSetSeqId(const char* accession, const char* locus, Uint1 seqtype, bool is_tpa)
 {
     CRef<CSeq_id> res;
     if (locus == NULL || *locus == '\0')
@@ -1031,7 +1025,7 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
     IndexblkPtr ibp;
 
     char* locus;
-    char* acc;
+    const char* acc;
     Uint1 seqtype;
 
     CRef<CBioseq> res(new CBioseq);
@@ -2452,7 +2446,7 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
  **********************************************************/
 void GetSeqExt(ParserPtr pp, CSeq_loc& seq_loc)
 {
-    IndexblkPtr ibp;
+    const Indexblk* ibp;
 
     ibp = pp->entrylist[pp->curindx];
 

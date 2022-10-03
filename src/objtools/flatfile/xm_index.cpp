@@ -193,7 +193,7 @@ static void XMLRestoreSpecialCharacters(char* buf)
 }
 
 /**********************************************************/
-char* XMLGetTagValue(char* entry, XmlIndexPtr xip)
+char* XMLGetTagValue(const char* entry, const XmlIndex* xip)
 {
     if (entry == NULL || xip == NULL || xip->start == 0 || xip->end == 0 ||
         xip->start >= xip->end)
@@ -209,7 +209,7 @@ char* XMLGetTagValue(char* entry, XmlIndexPtr xip)
 }
 
 /**********************************************************/
-char* XMLFindTagValue(char* entry, XmlIndexPtr xip, Int4 tag)
+char* XMLFindTagValue(const char* entry, const XmlIndex* xip, Int4 tag)
 {
     for (; xip != NULL; xip = xip->next)
         if (xip->tag == tag)
@@ -1498,7 +1498,7 @@ bool XMLIndex(ParserPtr pp)
 }
 
 /**********************************************************/
-DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, int type)
+DataBlkPtr XMLBuildRefDataBlk(char* entry, const XmlIndex* xip, int type)
 {
     XmlIndexPtr txip;
     DataBlkPtr  dbp;
@@ -1531,7 +1531,7 @@ DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, int type)
 }
 
 /**********************************************************/
-void XMLGetKeywords(char* entry, XmlIndexPtr xip, TKeywordList& keywords)
+void XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywords)
 {
     XmlIndexPtr xipkwd;
     char*       p;
@@ -1557,11 +1557,11 @@ void XMLGetKeywords(char* entry, XmlIndexPtr xip, TKeywordList& keywords)
 }
 
 /**********************************************************/
-char* XMLConcatSubTags(char* entry, XmlIndexPtr xip, Int4 tag, Char sep)
+char* XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char sep)
 {
     XmlIndexPtr txip;
     char*       buf;
-    char*       p;
+    const char* p;
     char*       q;
     size_t      i;
 
