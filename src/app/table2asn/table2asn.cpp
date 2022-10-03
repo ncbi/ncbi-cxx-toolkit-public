@@ -84,6 +84,7 @@
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/logging/listener.hpp>
 #include <objtools/writers/async_writers.hpp>
+#include <objtools/cleanup/cleanup_pub.hpp>
 
 #include "table2asn.hpp"
 #include "suspect_feat.hpp"
@@ -376,6 +377,14 @@ may be implemented in the future; RW-1253
     SetupArgDescriptions(arg_desc.release());
 }
 
+static
+void s_PubCleanup(CRef<CPub>& pub)
+{
+    if (pub->IsArticle()) {
+        CCitArtCleaner cleaner(pub->SetArticle());
+        cleaner.Clean(true, true);
+    }
+}
 
 int CTbl2AsnApp::Run()
 {
@@ -426,6 +435,7 @@ int CTbl2AsnApp::Run()
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
+    m_context.m_remote_updater->SetPubmedInterceptor(s_PubCleanup);
     m_validator.Reset(new CTable2AsnValidator(m_context));
 
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
