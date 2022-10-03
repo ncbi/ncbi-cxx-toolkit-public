@@ -45,6 +45,7 @@
 BEGIN_NCBI_SCOPE
 
 class CThreadPool;
+class CThreadPool_Task;
 
 BEGIN_SCOPE(objects)
 
@@ -53,7 +54,8 @@ struct SPsgBioseqInfo
     SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info, int lifespan);
 
     typedef CPSG_Request_Resolve::TIncludeInfo TIncludedInfo;
-    typedef vector<CSeq_id_Handle> TIds;
+    typedef CDataLoader::TIds TIds;
+
     TIncludedInfo included_info;
     CSeq_inst::TMol molecule_type;
     Uint8 length;
@@ -97,14 +99,17 @@ private:
 
 
 class CPSGBioseqCache;
+class CPSGCDDInfoCache;
 class CPSGBlobMap;
 class CPSG_Blob_Task;
+class CPSG_PrefetchCDD_Task;
 
 
 class CPSGDataLoader_Impl : public CObject
 {
 public:
     explicit CPSGDataLoader_Impl(const CGBLoaderParams& params);
+    ~CPSGDataLoader_Impl(void) override;
 
     typedef CDataLoader::TIds TIds;
     typedef CDataLoader::TGis TGis;
@@ -191,6 +196,8 @@ public:
                   const char* name,
                   int retry_count = 0);
     
+    void PrefetchCDD(const TIds& ids);
+
 private:
     friend class CPSG_Blob_Task;
 
@@ -234,9 +241,6 @@ private:
                         CDataLoader::TChunk chunk,
                         const CPSG_BlobInfo& blob_info,
                         const CPSG_BlobData& blob_data);
-    
-    // Map seq-id to bioseq info.
-    typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TBioseqCache;
 
     CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
@@ -244,7 +248,9 @@ private:
     shared_ptr<CPSG_Queue> m_Queue;
     unique_ptr<CPSGBlobMap> m_BlobMap;
     unique_ptr<CPSGBioseqCache> m_BioseqCache;
+    unique_ptr<CPSGCDDInfoCache> m_CDDInfoCache;
     unique_ptr<CThreadPool> m_ThreadPool;
+    CRef<CPSG_PrefetchCDD_Task> m_CDDPrefetchTask;
     int m_CacheLifespan;
 };
 
