@@ -107,11 +107,11 @@
 BEGIN_NCBI_SCOPE
 
 char*      XMLLoadEntry(ParserPtr pp, bool err);
-char*      XMLGetTagValue(char* entry, XmlIndexPtr xip);
-char*      XMLFindTagValue(char* entry, XmlIndexPtr xip, Int4 tag);
-DataBlkPtr XMLBuildRefDataBlk(char* entry, XmlIndexPtr xip, int type);
-char*      XMLConcatSubTags(char* entry, XmlIndexPtr xip, Int4 tag, Char sep);
-void       XMLGetKeywords(char* entry, XmlIndexPtr xip, TKeywordList& keywords);
+char*      XMLGetTagValue(const char* entry, const XmlIndex* xip);
+char*      XMLFindTagValue(const char* entry, const XmlIndex* xip, Int4 tag);
+DataBlkPtr XMLBuildRefDataBlk(char* entry, const XmlIndex* xip, int type);
+char*      XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char sep);
+void       XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywords);
 
 END_NCBI_SCOPE
 

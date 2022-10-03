@@ -182,7 +182,7 @@ static void GetSegment(char* str, IndexblkPtr entry)
 // LCOV_EXCL_STOP
 
 /**********************************************************/
-static Uint1 gb_err_field(char* str)
+static Uint1 gb_err_field(const char* str)
 {
     ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "No %s data in GenBank format file, entry dropped", str);
     return (1);
@@ -670,29 +670,29 @@ bool GenBankIndex(ParserPtr pp)
                         entry->drop = 1;
 
                     if (entry->is_mga && after_MGA == false)
-                        entry->drop = gb_err_field((char*)"MGA");
+                        entry->drop = gb_err_field("MGA");
 
                     if (after_LOCUS == false)
-                        entry->drop = gb_err_field((char*)"LOCUS");
+                        entry->drop = gb_err_field("LOCUS");
 
                     if (after_VERSION == false && pp->accver)
-                        entry->drop = gb_err_field((char*)"VERSION");
+                        entry->drop = gb_err_field("VERSION");
 
                     if (after_DEFNTN == false)
-                        entry->drop = gb_err_field((char*)"DEFINITION");
+                        entry->drop = gb_err_field("DEFINITION");
 
                     if (after_SOURCE == false)
-                        entry->drop = gb_err_field((char*)"SOURCE");
+                        entry->drop = gb_err_field("SOURCE");
 
                     if (after_REFER == false && pp->source != Parser::ESource::Flybase &&
                         entry->is_wgs == false &&
                         (pp->source != Parser::ESource::Refseq ||
                          StringNCmp(entry->acnum, "NW_", 3) != 0)) {
-                        entry->drop = gb_err_field((char*)"REFERENCE");
+                        entry->drop = gb_err_field("REFERENCE");
                     }
 
                     if (after_FEAT == false) {
-                        entry->drop = gb_err_field((char*)"FEATURES");
+                        entry->drop = gb_err_field("FEATURES");
                     }
                 } // !Parser::EMode::Relaxed
 
