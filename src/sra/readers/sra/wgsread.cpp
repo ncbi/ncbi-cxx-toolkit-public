@@ -3998,7 +3998,7 @@ void s_Set_4na_gap(vector<char>& dst_4na_vec,
         ++dst;
     }
     while ( len >= 2 ) {
-        *dst = 0xff;
+        *dst = char(0xff);
         len -= 2;
         ++dst;
     }
@@ -4015,7 +4015,7 @@ void s_SetAmbiguities(vector<char>& dst_4na_vec,
                       const vector<INSDC_coord_zero>& amb_pos,
                       const vector<INSDC_4na_bin>& amb_4na)
 {
-    auto iter_pos = lower_bound(amb_pos.begin(), amb_pos.end(), pos);
+    auto iter_pos = lower_bound(amb_pos.begin(), amb_pos.end(), INSDC_coord_zero(pos));
     auto iter_4na = amb_4na.begin() + (iter_pos-amb_pos.begin());
     INSDC_coord_zero end = pos + len;
     for ( ; iter_pos != amb_pos.end() && *iter_pos < end; ++iter_pos, ++iter_4na ) {
