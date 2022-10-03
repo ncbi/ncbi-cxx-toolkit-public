@@ -479,16 +479,16 @@ bool CCitSubCleaner::IsEmpty()
 }
 
 
-bool CCitArtCleaner::Clean(bool fix_initials, bool strip_serial)
+bool CCitArtCleaner::CleanArticle(CCit_art& art, bool fix_initials, bool strip_serial)
 {
     bool change = false;
-    if (m_Art.IsSetAuthors()) {
-        if (CCleanup::CleanupAuthList(m_Art.SetAuthors(), fix_initials)) {
+    if (art.IsSetAuthors()) {
+        if (CCleanup::CleanupAuthList(art.SetAuthors(), fix_initials)) {
             change = true;
         }
     }
-    if (m_Art.IsSetFrom()) {
-        auto& from = m_Art.SetFrom();
+    if (art.IsSetFrom()) {
+        auto& from = art.SetFrom();
         if (from.IsBook()) {
             CCitBookCleaner cleaner(from.SetBook());
             change |= cleaner.Clean(fix_initials, strip_serial);
