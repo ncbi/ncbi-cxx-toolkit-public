@@ -30,6 +30,9 @@
  *
  */
 
+/* time_t value corresponding to Thu Dec 17 14:51:01 EST 2015; formally
+ * expressed as unsigned long so output can stand fully on its own. */
+static const unsigned long kDBAPI_get_cursor_textptrs_Timestamp = 1450381861UL;
 static const char* const kDBAPI_get_cursor_textptrs[] = {
     "-- $Id$",
     "",

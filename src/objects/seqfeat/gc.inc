@@ -30,6 +30,9 @@
  *
  */
 
+/* time_t value corresponding to Tue Jun  9 12:17:55 EDT 2020; formally
+ * expressed as unsigned long so output can stand fully on its own. */
+static const unsigned long s_GenCodeTblMemStr_Timestamp = 1591719475UL;
 static const char* const s_GenCodeTblMemStr[] = {
     "",
     "Genetic-code-table ::= {",
@@ -206,4 +209,3 @@ static const char* const s_GenCodeTblMemStr[] = {
     " }",
     "}"
 };
-

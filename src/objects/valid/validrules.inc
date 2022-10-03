@@ -30,6 +30,9 @@
  *
  */
 
+/* time_t value corresponding to Mon May 23 09:37:40 EDT 2022; formally
+ * expressed as unsigned long so output can stand fully on its own. */
+static const unsigned long s_Defaultvalidrules_Timestamp = 1653313060UL;
 static const char* const s_Defaultvalidrules[] = {
     "Comment-set ::= {",
     "  {",

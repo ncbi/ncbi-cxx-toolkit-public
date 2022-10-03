@@ -30,6 +30,9 @@
  *
  */
 
+/* time_t value corresponding to Mon Oct  3 12:13:15 EDT 2022; formally
+ * expressed as unsigned long so output can stand fully on its own. */
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1664813595UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
