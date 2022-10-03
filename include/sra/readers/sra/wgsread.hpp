@@ -1010,6 +1010,7 @@ public:
 
     bool HasGapInfo(void) const;
     void GetGapInfo(TWGSContigGapInfo& gap_info) const;
+    vector<Uint1> GetAmbiguityBytes() const;
 
     CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;

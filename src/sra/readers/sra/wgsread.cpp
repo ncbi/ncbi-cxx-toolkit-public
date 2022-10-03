@@ -61,6 +61,7 @@
 
 //#define COLLECT_PROFILE
 //#define TEST_ACC_VERSION
+//#define USE_TEST_PATH
 
 BEGIN_NCBI_NAMESPACE;
 
@@ -84,6 +85,19 @@ static bool s_GetClipByQuality(void)
     static CSafeStatic<NCBI_PARAM_TYPE(WGS, CLIP_BY_QUALITY)> s_Value;
     return s_Value->Get();
 }
+
+
+NCBI_PARAM_DECL(bool, WGS, USE_AMBIGUITY_4NA);
+NCBI_PARAM_DEF_EX(bool, WGS, USE_AMBIGUITY_4NA, true,
+                  eParam_NoThread, WGS_USE_AMBIGUITY_4NA);
+
+
+#ifdef USE_TEST_PATH
+NCBI_PARAM_DECL(string, WGS, TEST_PATH);
+NCBI_PARAM_DEF_EX(string, WGS, TEST_PATH, "",
+                  eParam_NoThread, WGS_TEST_PATH);
+#endif
+
 
 // fixed WGS VDB parameters
 static const char kSeq_descrFirstByte = 49; // first byte of Seq-descr ASN.1
@@ -190,6 +204,7 @@ static SProfiler sw____Get4naLen;
 static SProfiler sw____GetGapLen;
 static SProfiler sw____GetRaw2na;
 static SProfiler sw____GetRaw4na;
+static SProfiler sw____GetAmb4na;
 static SProfiler sw____GetUnp4na;
 static SProfiler sw___GetContigInst;
 static SProfiler sw___GetContigDescr;
@@ -418,6 +433,8 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     typedef pair<TVDBRowId, TVDBRowId> row_range_t;
     DECLARE_VDB_COLUMN_AS(row_range_t, CONTIG_NAME_ROW_RANGE);
     DECLARE_VDB_COLUMN_AS(Uint1, AMBIGUITY_MASK);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, AMBIGUITY_POS);
+    DECLARE_VDB_COLUMN_AS(INSDC_4na_bin, AMBIGUITY_4NA);
     CVDBColumnBits<2> m_READ_2na;
     CVDBColumnBits<4> m_READ_4na;
     DECLARE_VDB_COLUMN_AS(INSDC_4na_bin, READ); // unpacked 4na
@@ -431,6 +448,8 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     mutable TVDBRowId m_AmbiguityRow;
     mutable CSimpleBufferT<Uint1> m_AmbiguityMask;
     mutable CSimpleBufferT<Uint1> m_AmbiguityMaskDone;
+    mutable vector<INSDC_coord_zero> m_AmbiguityPos;
+    mutable vector<INSDC_4na_bin> m_Ambiguity4na;
 
     void GetAmbiguity(TVDBRowId row) const;
 
@@ -482,11 +501,10 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID),
       INIT_OPTIONAL_VDB_COLUMN(CONTIG_NAME_ROW_RANGE),
       INIT_OPTIONAL_VDB_COLUMN(AMBIGUITY_MASK),
+      INIT_OPTIONAL_VDB_COLUMN(AMBIGUITY_POS),
+      INIT_OPTIONAL_VDB_COLUMN(AMBIGUITY_4NA),
       m_READ_2na(m_Cursor, "(INSDC:2na:packed)READ",
                  NULL, CVDBColumn::eMissing_Allow), // packed 2na
-      m_READ_4na(m_Cursor, "(INSDC:4na:packed)READ",
-                 NULL, CVDBColumn::eMissing_Allow), // packed 4na
-      INIT_VDB_COLUMN_AS(READ, INSDC:4na:bin), // unpacked 4na
       m_4naCacheRow(0),
       m_AmbiguityRow(0),
       m_GapInfoRow(0)
@@ -494,6 +512,19 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
     // uncomment lines to test algorithm on data without these columns
     //m_AMBIGUITY_MASK = CVDBColumnBits<8>();
     //m_GAP_START = CVDBColumnBits<32>();
+    if ( m_GAP_START && m_GAP_LEN && m_AMBIGUITY_POS && m_AMBIGUITY_4NA ) {
+        // all fields to restore ambiguities are present
+    }
+    else {
+        // otherwise we need 4na data
+        m_AMBIGUITY_POS.Reset();
+        m_AMBIGUITY_4NA.Reset();
+        
+        m_READ_4na = CVDBColumnBits<4>(m_Cursor, "(INSDC:4na:packed)READ",
+                                       NULL, CVDBColumn::eMissing_Allow); // packed 4na
+        m_READ = CVDBColumnBits<8>(m_Cursor, "(INSDC:4na:bin)READ",
+                                   NULL, CVDBColumn::eMissing_Allow); // unpacked 4na
+    }
 
     // optimization - treat completely empty QUALITY column as inexistent - no quality graphs
     m_QUALITY.ResetIfAlwaysEmpty(m_Cursor);
@@ -1020,18 +1051,18 @@ void CWGSDb_Impl::x_InitIdParams(void)
 string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
-    if ( 0 ) {
-        static bool kTryTestFiles =
-            getenv("HOME") && strcmp(getenv("HOME"), "/home/vasilche") == 0;
-        if ( kTryTestFiles ) {
-            string test_dir = "/home/dondosha/TEST";
-            string path = CDirEntry::MakePath(test_dir, path_or_acc);
-            if ( CDirEntry(path).Exists() ) {
-                LOG_POST("Using local test file: "<<path);
-                return path;
+#ifdef USE_TEST_PATH
+    {
+        string test_path = NCBI_PARAM_TYPE(WGS, TEST_PATH)::GetDefault();
+        if ( !test_path.empty() ) {
+            string file_path = CDirEntry::MakePath(test_path, path_or_acc);
+            if ( CDirEntry(file_path).Exists() ) {
+                LOG_POST(Warning<<"Using local test file: "<<file_path);
+                return file_path;
             }
         }
     }
+#endif
     if ( !vol_path.empty() ) {
         vector<CTempString> dirs;
         NStr::Split(vol_path, ":", dirs);
@@ -2441,6 +2472,13 @@ void CWGSDb_Impl::SSeqTableCursor::GetAmbiguity(TVDBRowId row) const
                               m_AmbiguityMask.data());
         // mark all done
         m_AmbiguityMaskDone.clear();
+
+        if ( m_AMBIGUITY_POS ) {
+            auto arr_pos = AMBIGUITY_POS(row);
+            m_AmbiguityPos.assign(arr_pos.begin(), arr_pos.end());
+            auto arr_4na = AMBIGUITY_4NA(row);
+            m_Ambiguity4na.assign(arr_4na.begin(), arr_4na.end());
+        }
     }
     else {
         // init ambiguity bit mask cache
@@ -3719,6 +3757,14 @@ TSeqPos CWGSSeqIterator::x_GetGapLengthExact(TSeqPos pos, TSeqPos len) const
 }
 
 
+vector<Uint1> CWGSSeqIterator::GetAmbiguityBytes() const
+{
+    m_Cur->GetAmbiguity(m_CurrId);
+    return vector<Uint1>(m_Cur->m_AmbiguityMask.data(),
+                         m_Cur->m_AmbiguityMask.data()+m_Cur->m_AmbiguityMask.size());
+}
+
+
 bool CWGSSeqIterator::x_AmbiguousBlock(TSeqPos block_index) const
 {
     m_Cur->GetAmbiguity(m_CurrId);
@@ -3852,6 +3898,161 @@ CRef<CSeq_data> CWGSSeqIterator::Get2na(TSeqPos pos, TSeqPos len) const
 }
 
 
+static
+inline
+char s_ConvertBits_2na_to_4na(char bits_2na)
+{
+    static const unsigned char table[16] = {
+        0x11, 0x12, 0x14, 0x18,
+        0x21, 0x22, 0x24, 0x28,
+        0x41, 0x42, 0x44, 0x48,
+        0x81, 0x82, 0x84, 0x88
+    };
+    return table[bits_2na & 0xf];
+}
+
+
+static
+inline
+char s_ConvertBits_2na_to_4na_1st(char bits_2na)
+{
+    return s_ConvertBits_2na_to_4na(bits_2na >> 4);
+}
+
+
+static
+inline
+char s_ConvertBits_2na_to_4na_2nd(char bits_2na)
+{
+    return s_ConvertBits_2na_to_4na(bits_2na);
+}
+
+
+static
+void s_Convert_2na_to_4na(char* dst_4na, const char* src_2na, size_t base_count)
+{
+    while ( base_count >= 4 ) {
+        char bits_2na = src_2na[0];
+        dst_4na[0] = s_ConvertBits_2na_to_4na_1st(bits_2na);
+        dst_4na[1] = s_ConvertBits_2na_to_4na_2nd(bits_2na);
+        base_count -= 4;
+        src_2na += 1;
+        dst_4na += 2;
+    }
+    if ( base_count ) {
+        char bits_2na = src_2na[0];
+        {{
+            char bits_4na = s_ConvertBits_2na_to_4na_1st(bits_2na);
+            if ( base_count < 2 ) {
+                bits_4na &= 0xf0;
+            }
+            dst_4na[0] = bits_4na;
+        }}
+        if ( base_count > 2 ) {
+            dst_4na[1] = s_ConvertBits_2na_to_4na_2nd(bits_2na) & 0xf0;
+        }
+    }
+}
+
+
+static
+void s_Convert_2na_to_4na(vector<char>& dst_4na_vec,
+                          const vector<char>& src_2na_vec,
+                          size_t base_count)
+{
+    size_t dst_4na_byte_count = (base_count+1)/2;
+    // allocate 8-byte aligned memory to allow multi-byte operations at end
+    dst_4na_vec.reserve((dst_4na_byte_count+7)/8*8);
+    dst_4na_vec.resize(dst_4na_byte_count);
+    s_Convert_2na_to_4na(dst_4na_vec.data(), src_2na_vec.data(), base_count);
+}
+
+
+static
+inline
+void s_Set_4na(vector<char>& dst_4na_vec,
+               size_t offset,
+               INSDC_4na_bin amb)
+{
+    char& dst = dst_4na_vec[offset/2];
+    if ( offset%2 == 0 ) {
+        dst = (dst & 0xf) | (amb << 4);
+    }
+    else {
+        dst = (dst & 0xf0) | amb;
+    }
+}
+
+
+static
+inline
+void s_Set_4na_gap(vector<char>& dst_4na_vec,
+                   size_t offset,
+                   size_t len)
+{
+    char* dst = dst_4na_vec.data()+ (offset/2);
+    if ( len && offset%2 == 1 ) {
+        // start with odd gap base
+        *dst |= 0xf;
+        --len;
+        ++dst;
+    }
+    while ( len >= 2 ) {
+        *dst = 0xff;
+        len -= 2;
+        ++dst;
+    }
+    if ( len ) {
+        // end with odd gap base
+        *dst |= 0xf0;
+    }
+}
+
+
+static
+void s_SetAmbiguities(vector<char>& dst_4na_vec,
+                      TSeqPos pos, TSeqPos len,
+                      const vector<INSDC_coord_zero>& amb_pos,
+                      const vector<INSDC_4na_bin>& amb_4na)
+{
+    auto iter_pos = lower_bound(amb_pos.begin(), amb_pos.end(), pos);
+    auto iter_4na = amb_4na.begin() + (iter_pos-amb_pos.begin());
+    INSDC_coord_zero end = pos + len;
+    for ( ; iter_pos != amb_pos.end() && *iter_pos < end; ++iter_pos, ++iter_4na ) {
+        s_Set_4na(dst_4na_vec, *iter_pos-pos, *iter_4na);
+    }
+}
+
+
+static
+void s_SetGaps(vector<char>& dst_4na_vec,
+               TSeqPos pos, TSeqPos len,
+               CWGSSeqIterator::TWGSContigGapInfo gap_info)
+{
+    TSeqPos pos0 = pos;
+    gap_info.SetPos(pos);
+    for ( ; len > 0; ) {
+        if ( gap_info.IsInGap(pos) ) {
+            // add gap
+            TSeqPos gap_len = gap_info.GetGapLength(pos, len);
+            _ASSERT(gap_len <= len);
+            s_Set_4na_gap(dst_4na_vec, pos-pos0, gap_len);
+            ++gap_info;
+            len -= gap_len;
+            pos += gap_len;
+            _ASSERT(!gap_info || pos <= gap_info.GetFrom());
+        }
+        else {
+            // data segment
+            TSeqPos rem_len = gap_info.GetDataLength(pos, len);
+            _ASSERT(rem_len <= len);
+            len -= rem_len;
+            pos += rem_len;
+        }
+    }
+}
+
+
 // return 4na Seq-data for specified range
 CRef<CSeq_data> CWGSSeqIterator::Get4na(TSeqPos pos, TSeqPos len) const
 {
@@ -3865,6 +4066,18 @@ CRef<CSeq_data> CWGSSeqIterator::Get4na(TSeqPos pos, TSeqPos len) const
         data.resize(bytes);
         m_Cur->m_Cursor.ReadElements(m_CurrId, m_Cur->m_READ_4na, 4, pos, len,
                                      data.data());
+        return ret;
+    }
+
+    if ( m_Cur->m_AMBIGUITY_4NA ) {
+        PROFILE(sw____GetAmb4na);
+        CRef<CSeq_data> ret(new CSeq_data);
+        vector<char>& data = ret->SetNcbi4na().Set();
+        s_Convert_2na_to_4na(data, Get2na(pos, len)->GetNcbi2na().Get(), len);
+        // set ambiguities
+        m_Cur->GetAmbiguity(m_CurrId);
+        s_SetGaps(data, pos, len, m_Cur->GetGapInfo(m_CurrId));
+        s_SetAmbiguities(data, pos,len, m_Cur->m_AmbiguityPos, m_Cur->m_Ambiguity4na);
         return ret;
     }
 
