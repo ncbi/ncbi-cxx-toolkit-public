@@ -187,53 +187,50 @@ shared_ptr<SPsgBioseqInfo> CPSGBioseqCache::Add(const CPSG_BioseqInfo& info, CSe
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CPSGBlobMap
+// CPSGCache_Base
 /////////////////////////////////////////////////////////////////////////////
 
-
-class CPSGBlobMap
+template<class TK, class TV>
+class CPSGCache_Base
 {
 public:
-    CPSGBlobMap(int lifespan, size_t max_size)
-        : m_Lifespan(lifespan), m_MaxSize(max_size) {}
-    ~CPSGBlobMap(void) {}
+    typedef TK TKey;
+    typedef TV TValue;
+    typedef CPSGCache_Base<TKey, TValue> TParent;
 
-    shared_ptr<SPsgBlobInfo> FindBlob(const string& bid) {
+    CPSGCache_Base(int lifespan, size_t max_size)
+        : m_Lifespan(lifespan), m_MaxSize(max_size) {}
+
+    TValue Find(const TKey& key) {
         CFastMutexGuard guard(m_Mutex);
         x_Expire();
-        auto found = m_Blobs.find(bid);
-        return found != m_Blobs.end() ? found->second.value : nullptr;
+        auto found = m_Values.find(key);
+        return found != m_Values.end() ? found->second.value : TValue(nullptr);
     }
     
-    void AddBlob(const string& bid, shared_ptr<SPsgBlobInfo> blob) {
+    void Add(const TKey& key, const TValue& value) {
         CFastMutexGuard guard(m_Mutex);
-        auto iter = m_Blobs.lower_bound(bid);
-        if ( iter != m_Blobs.end() && bid == iter->first ) {
+        auto iter = m_Values.lower_bound(key);
+        if ( iter != m_Values.end() && key == iter->first ) {
             // erase old value
             x_Erase(iter++);
         }
         // insert
-        iter = m_Blobs.insert(iter, TBlobs::value_type(bid, SNode(blob, m_Lifespan)));
+        iter = m_Values.insert(iter,
+            typename TValues::value_type(key, SNode(value, m_Lifespan)));
         iter->second.remove_list_iterator = m_RemoveList.insert(m_RemoveList.end(), iter);
         x_LimitSize();
     }
 
-    void DropBlob(const CPsgBlobId& blob_id) {
-        //ERR_POST("DropBlob("<<blob_id.ToPsgId()<<")");
-        CFastMutexGuard guard(m_Mutex);
-        auto iter = m_Blobs.find(blob_id.ToPsgId());
-        if ( iter != m_Blobs.end() ) {
-            x_Erase(iter);
-        }
-    }
-
-private:
+protected:
     // Map blob-id to blob info
-    typedef string key_type;
-    typedef shared_ptr<SPsgBlobInfo> mapped_type;
+    typedef TKey key_type;
+    typedef TValue mapped_type;
     struct SNode;
-    typedef map<key_type, SNode> TBlobs;
-    typedef list<TBlobs::iterator> TRemoveList;
+    typedef map<key_type, SNode> TValues;
+    typedef typename TValues::iterator TValueIter;
+    typedef list<TValueIter> TRemoveList;
+    typedef typename TRemoveList::iterator TRemoveIter;
     struct SNode {
         SNode(const mapped_type& value, unsigned lifespan)
             : value(value),
@@ -241,12 +238,12 @@ private:
             {}
         mapped_type value;
         CDeadline deadline;
-        TRemoveList::iterator remove_list_iterator;
+        TRemoveIter remove_list_iterator;
     };
 
-    void x_Erase(TBlobs::iterator iter) {
+    void x_Erase(TValueIter iter) {
         m_RemoveList.erase(iter->second.remove_list_iterator);
-        m_Blobs.erase(iter);
+        m_Values.erase(iter);
     }
     void x_Expire() {
         while ( !m_RemoveList.empty() &&
@@ -255,23 +252,57 @@ private:
         }
     }
     void x_LimitSize() {
-        while ( m_Blobs.size() > m_MaxSize ) {
+        while ( m_Values.size() > m_MaxSize ) {
             x_PopFront();
         }
     }
     void x_PopFront() {
         _ASSERT(!m_RemoveList.empty());
-        _ASSERT(m_RemoveList.front() != m_Blobs.end());
+        _ASSERT(m_RemoveList.front() != m_Values.end());
         _ASSERT(m_RemoveList.front()->second.remove_list_iterator == m_RemoveList.begin());
-        m_Blobs.erase(m_RemoveList.front());
+        m_Values.erase(m_RemoveList.front());
         m_RemoveList.pop_front();
     }
     
     CFastMutex m_Mutex;
     int m_Lifespan;
     size_t m_MaxSize;
-    TBlobs m_Blobs;
+    TValues m_Values;
     TRemoveList m_RemoveList;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CPSGCDDInfoCache
+/////////////////////////////////////////////////////////////////////////////
+
+class CPSGCDDInfoCache : public CPSGCache_Base<string, bool>
+{
+public:
+    CPSGCDDInfoCache(int lifespan, size_t max_size)
+        : TParent(lifespan, max_size) {}
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CPSGBlobMap
+/////////////////////////////////////////////////////////////////////////////
+
+
+class CPSGBlobMap : public CPSGCache_Base<string, shared_ptr<SPsgBlobInfo>>
+{
+public:
+    CPSGBlobMap(int lifespan, size_t max_size)
+        : TParent(lifespan, max_size) {}
+
+    void DropBlob(const CPsgBlobId& blob_id) {
+        //ERR_POST("DropBlob("<<blob_id.ToPsgId()<<")");
+        CFastMutexGuard guard(m_Mutex);
+        auto iter = m_Values.find(blob_id.ToPsgId());
+        if ( iter != m_Values.end() ) {
+            x_Erase(iter);
+        }
+    }
 };
 
 
@@ -663,6 +694,65 @@ void CPSG_Task::ReadReply(void)
 }
 
 
+class CPSG_PrefetchCDD_Task : public CThreadPool_Task
+{
+public:
+    CPSG_PrefetchCDD_Task(CPSGDataLoader_Impl& loader)
+        : m_Semaphore(0, kMax_UInt), m_Loader(loader)
+    {}
+    ~CPSG_PrefetchCDD_Task(void) override
+    {}
+
+    EStatus Execute(void) override;
+
+    void AddRequest(const CDataLoader::TIds& ids)
+    {
+        CFastMutexGuard guard(m_Mutex);
+        m_Ids.push_back(ids);
+        m_Semaphore.Post();
+    }
+
+    void Cancel(void)
+    {
+        RequestToCancel();
+        m_Semaphore.Post();
+    }
+
+private:
+    CSemaphore m_Semaphore;
+    CFastMutex m_Mutex;
+    CPSGDataLoader_Impl& m_Loader;
+    list<CDataLoader::TIds> m_Ids;
+};
+
+
+CPSG_Task::EStatus CPSG_PrefetchCDD_Task::Execute(void)
+{
+    while (true) {
+        m_Semaphore.Wait();
+        if (IsCancelRequested()) return eCanceled;
+        CDataLoader::TIds ids;
+        {
+            CFastMutexGuard guard(m_Mutex);
+            if (m_Ids.empty()) continue;
+            ids = m_Ids.front();
+            m_Ids.pop_front();
+        }
+        try {
+            m_Loader.PrefetchCDD(ids);
+        }
+        catch (CException& exc) {
+            LOG_POST("CPSGDataLoader: exception in CDD prefetch thread: "<<exc);
+        }
+        catch (exception& exc) {
+            LOG_POST("CPSGDataLoader: exception in CDD prefetch thread: "<<exc.what());
+        }
+    }
+    // Never executed
+    return eCompleted;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CPSGDataLoader_Impl
 /////////////////////////////////////////////////////////////////////////////
@@ -698,6 +788,11 @@ NCBI_PARAM_DECL(unsigned int, PSG_LOADER, MAX_POOL_THREADS);
 NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, MAX_POOL_THREADS, 10,
     eParam_NoThread, PSG_LOADER_MAX_POOL_THREADS);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, MAX_POOL_THREADS) TPSG_MaxPoolThreads;
+
+NCBI_PARAM_DECL(bool, PSG_LOADER, PREFETCH_CDD);
+NCBI_PARAM_DEF_EX(bool, PSG_LOADER, PREFETCH_CDD, false,
+    eParam_NoThread, PSG_LOADER_PREFETCH_CDD);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, PREFETCH_CDD) TPSG_PrefetchCDD;
 
 
 template<class TParamType>
@@ -841,6 +936,20 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     m_BioseqCache.reset(new CPSGBioseqCache(m_CacheLifespan, cache_max_size));
     m_BlobMap.reset(new CPSGBlobMap(m_CacheLifespan, cache_max_size));
     m_Queue = make_shared<CPSG_Queue>(service_name);
+
+    if (TPSG_PrefetchCDD::GetDefault()) {
+        m_CDDInfoCache.reset(new CPSGCDDInfoCache(m_CacheLifespan, cache_max_size));
+        m_CDDPrefetchTask.Reset(new CPSG_PrefetchCDD_Task(*this));
+        m_ThreadPool->AddTask(m_CDDPrefetchTask);
+    }
+}
+
+
+CPSGDataLoader_Impl::~CPSGDataLoader_Impl(void)
+{
+    if (m_CDDPrefetchTask) {
+        m_CDDPrefetchTask->Cancel();
+    }
 }
 
 
@@ -1105,6 +1214,19 @@ int CPSGDataLoader_Impl::GetSequenceStateOnce(CDataSource* data_source, const CS
 }
 
 
+struct SCDDIds
+{
+    CSeq_id_Handle gi;
+    CSeq_id_Handle acc_ver;
+};
+
+static SCDDIds x_GetCDDIds(const CDataLoader::TIds& ids);
+static bool x_IsLocalCDDEntryId(const CPsgBlobId& blob_id);
+static bool x_ParseLocalCDDEntryId(const CPsgBlobId& blob_id, SCDDIds& ids);
+static CTSE_Lock x_CreateLocalCDDEntry(CDataSource* data_source, const SCDDIds& ids);
+static string x_MakeLocalCDDEntryId(const SCDDIds& cdd_ids);
+
+
 CDataLoader::TTSE_LockSet
 CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
     const CSeq_id_Handle& idh,
@@ -1159,6 +1281,16 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     }
     else {
         locks.insert(tse_lock);
+        if (m_CDDPrefetchTask) {
+            _ASSERT(m_CDDInfoCache);
+            auto bioseq_info = m_BioseqCache->Get(idh);
+            if (bioseq_info) {
+                auto cdd_ids = x_GetCDDIds(bioseq_info->ids);
+                if (cdd_ids.gi && cdd_ids.acc_ver && !m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids))) {
+                    m_CDDPrefetchTask->AddRequest(bioseq_info->ids);
+                }
+            }
+        }
     }
     return locks;
 }
@@ -1191,15 +1323,6 @@ CRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& idh)
     }
     return ret;
 }
-
-
-static bool x_IsLocalCDDEntryId(const CPsgBlobId& blob_id);
-static bool x_ParseLocalCDDEntryId(const CPsgBlobId& blob_id,
-                                   CSeq_id_Handle& gi, CSeq_id_Handle& acc_ver);
-static CTSE_Lock x_CreateLocalCDDEntry(CDataSource* data_source,
-                                       const CSeq_id_Handle& gi,
-                                       const CSeq_id_Handle& acc_ver);
-
 
 
 static bool s_GetBlobByIdShouldFail = false;
@@ -1256,9 +1379,9 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
         if ( s_GetDebugLevel() >= 5 ) {
             LOG_POST(Info<<"PSG loader: Re-loading CDD blob: " << blob_id.ToString());
         }
-        CSeq_id_Handle gi, acc_ver;
-        if ( x_ParseLocalCDDEntryId(blob_id, gi, acc_ver) ) {
-            ret = x_CreateLocalCDDEntry(data_source, gi, acc_ver);
+        SCDDIds cdd_ids;
+        if ( x_ParseLocalCDDEntryId(blob_id, cdd_ids) ) {
+            ret = x_CreateLocalCDDEntry(data_source, cdd_ids);
         }
     }
     else {
@@ -1536,7 +1659,7 @@ void CPSG_Blob_Task::DoExecute(void)
     if ( main_blob_slot && main_blob_slot->first ) {
         // create and save new main blob-info entry
         m_ReplyResult.blob_info = make_shared<SPsgBlobInfo>(*main_blob_slot->first);
-        m_Loader.m_BlobMap->AddBlob(m_ReplyResult.blob_id, m_ReplyResult.blob_info);
+        m_Loader.m_BlobMap->Add(m_ReplyResult.blob_id, m_ReplyResult.blob_info);
     }
     
     if ( !m_LoadLockPtr ) {
@@ -1978,13 +2101,52 @@ const bool kCreateLocalCDDEntries = true;
 const char kLocalCDDEntryIdPrefix[] = "CDD:";
 const char kLocalCDDEntryIdSeparator = '|';
 
-static string x_MakeLocalCDDEntryId(const CSeq_id_Handle& gi, const CSeq_id_Handle& acc_ver)
+
+static SCDDIds x_GetCDDIds(const CDataLoader::TIds& ids)
+{
+    SCDDIds ret;
+    bool is_protein = true;
+    for ( auto id : ids ) {
+        if ( id.IsGi() ) {
+            ret.gi = id;
+            continue;
+        }
+        if ( id.Which() == CSeq_id::e_Pdb ) {
+            if ( !ret.acc_ver ) {
+                ret.acc_ver = id;
+            }
+            continue;
+        }
+        auto seq_id = id.GetSeqId();
+        if ( auto text_id = seq_id->GetTextseq_Id() ) {
+            auto acc_type = seq_id->IdentifyAccession();
+            if ( acc_type & CSeq_id::fAcc_nuc ) {
+                is_protein = false;
+                break;
+            }
+            else if ( text_id->IsSetAccession() && text_id->IsSetVersion() &&
+                        (acc_type & CSeq_id::fAcc_prot) ) {
+                is_protein = true;
+                ret.acc_ver = CSeq_id_Handle::GetHandle(text_id->GetAccession()+'.'+
+                    NStr::NumericToString(text_id->GetVersion()));
+            }
+        }
+    }
+    if (!is_protein) {
+        ret.gi.Reset();
+        ret.acc_ver.Reset();
+    }
+    return ret;
+}
+
+
+static string x_MakeLocalCDDEntryId(const SCDDIds& cdd_ids)
 {
     ostringstream str;
-    _ASSERT(gi && gi.IsGi());
-    str << kLocalCDDEntryIdPrefix << gi.GetGi();
-    if ( acc_ver ) {
-        str << kLocalCDDEntryIdSeparator << acc_ver;
+    _ASSERT(cdd_ids.gi && cdd_ids.gi.IsGi());
+    str << kLocalCDDEntryIdPrefix << cdd_ids.gi.GetGi();
+    if ( cdd_ids.acc_ver ) {
+        str << kLocalCDDEntryIdSeparator << cdd_ids.acc_ver;
     }
     return str.str();
 }
@@ -1996,8 +2158,7 @@ static bool x_IsLocalCDDEntryId(const CPsgBlobId& blob_id)
 }
 
 
-static bool x_ParseLocalCDDEntryId(const CPsgBlobId& blob_id,
-                                   CSeq_id_Handle& gi, CSeq_id_Handle& acc_ver)
+static bool x_ParseLocalCDDEntryId(const CPsgBlobId& blob_id, SCDDIds& cdd_ids)
 {
     if ( !x_IsLocalCDDEntryId(blob_id) ) {
         return false;
@@ -2008,11 +2169,11 @@ static bool x_ParseLocalCDDEntryId(const CPsgBlobId& blob_id,
     if ( !gi_id ) {
         return false;
     }
-    gi = CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, gi_id));
+    cdd_ids.gi = CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, gi_id));
     if ( str.get() == kLocalCDDEntryIdSeparator ) {
         string extra;
         str >> extra;
-        acc_ver = CSeq_id_Handle::GetHandle(extra);
+        cdd_ids.acc_ver = CSeq_id_Handle::GetHandle(extra);
     }
     return true;
 }
@@ -2027,10 +2188,9 @@ static CPSG_BioId x_LocalCDDEntryIdToBioId(const CPsgBlobId& blob_id)
 }
 
 
-static CRef<CTSE_Chunk_Info> x_CreateLocalCDDEntryChunk(const CSeq_id_Handle& id1,
-                                                        const CSeq_id_Handle& id2)
+static CRef<CTSE_Chunk_Info> x_CreateLocalCDDEntryChunk(const SCDDIds& cdd_ids)
 {
-    if ( !id1 && !id2 ) {
+    if ( !cdd_ids.gi && !cdd_ids.acc_ver ) {
         return null;
     }
     CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole();
@@ -2041,26 +2201,13 @@ static CRef<CTSE_Chunk_Info> x_CreateLocalCDDEntryChunk(const CSeq_id_Handle& id
         CSeqFeatData::eSubtype_region,
         CSeqFeatData::eSubtype_site
     };
-    vector<CSeq_id_Handle> ids;
+    set<CSeq_id_Handle> ids;
     for ( int i = 0; i < 2; ++i ) {
-        const CSeq_id_Handle& id = i? id2: id1;
+        const CSeq_id_Handle& id = i ? cdd_ids.acc_ver : cdd_ids.gi;
         if ( !id ) {
             continue;
         }
-        ids.push_back(id);
-        if ( id.Which() == CSeq_id::e_Pdb ) {
-            // unfortunately PDB chain can be specified differently so we have
-            // to add all variants
-            auto seq_id = id.GetSeqId();
-            auto& pdb_id = seq_id->GetPdb();
-            if ( pdb_id.IsSetMol() && pdb_id.IsSetChain() && pdb_id.IsSetChain_id() ) {
-                CRef<CSeq_id> new_id(new CSeq_id);
-                auto& new_pdb_id = new_id->SetPdb();
-                new_pdb_id.SetMol(pdb_id.GetMol());
-                new_pdb_id.SetChain_id(pdb_id.GetChain_id());
-                ids.push_back(CSeq_id_Handle::GetHandle(*new_id));
-            }
-        }
+        ids.insert(id);
     }
     if ( s_GetDebugLevel() >= 6 ) {
         for ( auto& id : ids ) {
@@ -2077,12 +2224,10 @@ static CRef<CTSE_Chunk_Info> x_CreateLocalCDDEntryChunk(const CSeq_id_Handle& id
 }
 
 
-static CTSE_Lock x_CreateLocalCDDEntry(CDataSource* data_source,
-                                       const CSeq_id_Handle& gi,
-                                       const CSeq_id_Handle& acc_ver)
+static CTSE_Lock x_CreateLocalCDDEntry(CDataSource* data_source, const SCDDIds& cdd_ids)
 {
-    CRef<CPsgBlobId> blob_id(new CPsgBlobId(x_MakeLocalCDDEntryId(gi, acc_ver)));
-    if ( auto chunk = x_CreateLocalCDDEntryChunk(gi, acc_ver) ) {
+    CRef<CPsgBlobId> blob_id(new CPsgBlobId(x_MakeLocalCDDEntryId(cdd_ids)));
+    if ( auto chunk = x_CreateLocalCDDEntryChunk(cdd_ids) ) {
         CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(blob_id);
         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
         if ( load_lock ) {
@@ -2276,6 +2421,10 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
             const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId());
             shared_ptr<CPSG_Request_Blob> request;
             if ( x_IsLocalCDDEntryId(blob_id) ) {
+                if (m_CDDInfoCache && m_CDDInfoCache->Find(blob_id.ToPsgId())) {
+                    x_CreateEmptyLocalCDDEntry(data_source, *it);
+                    continue;
+                }
                 request = x_MakeLoadLocalCDDEntryRequest(data_source, *it);
                 if ( !request ) {
                     continue;
@@ -2518,44 +2667,67 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
         }
     }
     if ( kCreateLocalCDDEntries ) {
-        CSeq_id_Handle gi;
-        CSeq_id_Handle acc_ver;
-        bool is_protein = true;
+        // TEMP
         TIds ids;
         GetIds(idh, ids);
-        for ( auto id : ids ) {
-            if ( id.IsGi() ) {
-                gi = id;
-                continue;
-            }
-            if ( id.Which() == CSeq_id::e_Pdb ) {
-                if ( !acc_ver ) {
-                    acc_ver = id;
-                }
-                continue;
-            }
-            auto seq_id = id.GetSeqId();
-            if ( auto text_id = seq_id->GetTextseq_Id() ) {
-                auto acc_type = seq_id->IdentifyAccession();
-                if ( acc_type & CSeq_id::fAcc_nuc ) {
-                    is_protein = false;
-                    break;
-                }
-                else if ( text_id->IsSetAccession() && text_id->IsSetVersion() &&
-                          (acc_type & CSeq_id::fAcc_prot) ) {
-                    is_protein = true;
-                    acc_ver = CSeq_id_Handle::GetHandle(text_id->GetAccession()+'.'+
-                                                        NStr::NumericToString(text_id->GetVersion()));
-                }
-            }
-        }
-        if ( is_protein && gi ) {
-            if ( auto tse_lock = x_CreateLocalCDDEntry(data_source, gi, acc_ver) ) {
+        SCDDIds cdd_ids = x_GetCDDIds(ids);
+        if ( cdd_ids.gi ) {
+            if ( auto tse_lock = x_CreateLocalCDDEntry(data_source, cdd_ids) ) {
                 locks.insert(tse_lock);
             }
         }
     }
     return locks;
+}
+
+
+void CPSGDataLoader_Impl::PrefetchCDD(const TIds& ids)
+{
+    if (ids.empty()) return;
+    _ASSERT(m_CDDInfoCache);
+    _ASSERT(m_CDDPrefetchTask);
+
+    SCDDIds cdd_ids = x_GetCDDIds(ids);
+    if (!cdd_ids.gi) return;
+    string blob_id = x_MakeLocalCDDEntryId(cdd_ids);
+
+    if (m_CDDInfoCache->Find(blob_id)) return;
+    //auto cached = m_AnnotCache->Get(kCDDAnnotName, ids.front());
+    //if (cached) return;
+
+    CPSG_BioIds bio_ids;
+    for (auto& id : ids) {
+        bio_ids.push_back(CPSG_BioId(id));
+    }
+    CPSG_Request_NamedAnnotInfo::TAnnotNames annot_names({kCDDAnnotName});
+    //auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_ids), annot_names);
+    // TEMP - use single-id request until servers fully support multi-id ones.
+    auto request = make_shared<CPSG_Request_NamedAnnotInfo>(CPSG_BioId(cdd_ids.gi), annot_names);
+    auto reply = x_SendRequest(request);
+    for (;;) {
+        if (m_CDDPrefetchTask->IsCancelRequested()) return;
+        auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
+        if (!reply_item) continue;
+        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
+        if (m_CDDPrefetchTask->IsCancelRequested()) return;
+        EPSG_Status status = reply_item->GetStatus(CDeadline::eInfinite);
+        if (m_CDDPrefetchTask->IsCancelRequested()) return;
+        if (status != EPSG_Status::eSuccess) {
+            ReportStatus(reply_item, status);
+            if ( status == EPSG_Status::eNotFound ) {
+                continue;
+            }
+            if ( status == EPSG_Status::eForbidden ) {
+                continue;
+            }
+            return;
+        }
+        if (reply_item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
+            return;
+        }
+    }
+    // No named annot info returned, mark the bioseq as having no CDDs.
+    m_CDDInfoCache->Add(blob_id, true);
 }
 
 
@@ -2945,7 +3117,7 @@ shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(CDataSource* data_so
                                                             const string& blob_id)
 {
     // lookup cached blob info
-    if ( shared_ptr<SPsgBlobInfo> ret = m_BlobMap->FindBlob(blob_id) ) {
+    if ( shared_ptr<SPsgBlobInfo> ret = m_BlobMap->Find(blob_id) ) {
         return ret;
     }
     // use blob info from already loaded TSE
