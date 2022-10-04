@@ -38,8 +38,6 @@
 #include <string>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
-#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
-
 #include <objtools/pubseq_gateway/impl/cassandra/changelog/bisi_record.hpp>
 
 BEGIN_IDBLOB_SCOPE

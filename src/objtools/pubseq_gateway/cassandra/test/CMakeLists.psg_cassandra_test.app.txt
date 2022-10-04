@@ -7,7 +7,7 @@ NCBI_begin_app(psg_cassandra_test)
     unit/cassandra_connection unit/bioseq_info_task unit/blob_retrieval_performance
     unit/blob_insert
   )
-  NCBI_uses_toolkit_libraries(id2 psg_cassandra psg_diag)
+  NCBI_uses_toolkit_libraries(id2 psg_cassandra)
   NCBI_requires(CASSANDRA GMOCK)
   NCBI_project_watchers(saprykin)
 NCBI_end_app()
