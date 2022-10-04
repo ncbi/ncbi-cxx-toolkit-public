@@ -453,8 +453,12 @@ private:
                             CTSE_Split_Info* split_info);
     void x_IndexSplitInfo(const CSeq_id_Handle& id,
                           CTSE_Split_Info* split_info);
+    void x_UnindexSplitInfo(const CSeq_id_Handle& id,
+                            CTSE_Split_Info* split_info);
     void x_IndexSplitInfo(const vector<CSeq_id_Handle>& ids,
                           CTSE_Split_Info* split_info);
+    void x_UnindexSplitInfo(const vector<CSeq_id_Handle>& ids,
+                            CTSE_Split_Info* split_info);
     void x_IndexAnnotTSE(const CSeq_id_Handle& idh,
                          CTSE_Info* tse_info,
                          bool orphan);
