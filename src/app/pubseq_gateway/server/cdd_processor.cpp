@@ -618,23 +618,12 @@ bool CPSGS_CDDProcessor::x_CanProcessSeq_id(const string& psg_id) const
 bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_request,
                                                   TProcessorPriority priority) const
 {
-    bool have_valid_ids = false;
-    if (!annot_request.m_SeqId.empty() && x_CanProcessSeq_id(annot_request.m_SeqId)) {
-        have_valid_ids = true;
+    if (!x_NameIncluded(annot_request.GetNotProcessedName(priority))) return false;
+    if (!annot_request.m_SeqId.empty() && x_CanProcessSeq_id(annot_request.m_SeqId)) return true;
+    for (const auto& id: annot_request.m_SeqIds) {
+        if (x_CanProcessSeq_id(id)) return true;
     }
-    else {
-        for (const auto& id: annot_request.m_SeqIds) {
-            if (x_CanProcessSeq_id(id)) {
-                have_valid_ids = true;
-                break;
-            }
-        }
-    }
-    if (!have_valid_ids) {
-        PSG_WARNING("Bad seq-id: " << annot_request.m_SeqId);
-        return false;
-    }
-    return x_NameIncluded(annot_request.GetNotProcessedName(priority));
+    return false;
 }
 
 
