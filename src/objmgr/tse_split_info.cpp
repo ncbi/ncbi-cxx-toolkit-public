@@ -122,7 +122,7 @@ void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
     if ( !m_DataLoader && ds.GetDataLoader() ) {
         m_DataLoader = &ds;
         _ASSERT(m_DataLoader);
-        if ( m_ContainsBioseqs ) {
+        if ( ds.x_IsTrackingSplitSeq() && m_ContainsBioseqs ) {
             vector<CSeq_id_Handle> ids;
             {{
                 CMutexGuard guard(m_ChunksMutex);
@@ -139,6 +139,16 @@ void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
 void CTSE_Split_Info::x_DSDetach(CDataSource& ds)
 {
     if ( m_DataLoader == &ds ) {
+        if ( ds.x_IsTrackingSplitSeq() && m_ContainsBioseqs ) {
+            vector<CSeq_id_Handle> ids;
+            {{
+                CMutexGuard guard(m_ChunksMutex);
+                for ( auto& chunk : m_Chunks ) {
+                    chunk.second->GetBioseqsIds(ids);
+                }
+            }}
+            ds.x_UnindexSplitInfo(ids, this);
+        }
         m_DataLoader = 0;
     }
 }

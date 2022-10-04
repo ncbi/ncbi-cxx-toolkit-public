@@ -1111,6 +1111,28 @@ void CDataSource::x_IndexSplitInfo(const vector<CSeq_id_Handle>& ids,
 }
 
 
+void CDataSource::x_UnindexSplitInfo(const CSeq_id_Handle& id,
+                                     CTSE_Split_Info* split_info)
+{
+    if ( x_IsTrackingSplitSeq() ) {
+        TSeqLock::TWriteLockGuard guard(m_DSSeqLock);
+        x_UnindexSplitInfo(m_TSE_split_seq, id, split_info);
+    }
+}
+
+
+void CDataSource::x_UnindexSplitInfo(const vector<CSeq_id_Handle>& ids,
+                                     CTSE_Split_Info* split_info)
+{
+    if ( x_IsTrackingSplitSeq() ) {
+        TSeqLock::TWriteLockGuard guard(m_DSSeqLock);
+        for ( auto& id : ids ) {
+            x_UnindexSplitInfo(m_TSE_split_seq, id, split_info);
+        }
+    }
+}
+
+
 void CDataSource::x_IndexSeqTSE(const vector<CSeq_id_Handle>& ids,
                                 CTSE_Info* tse_info)
 {
