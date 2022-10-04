@@ -866,7 +866,7 @@ CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
  **********************************************************/
 static Uint1 ValidSeqType(const char* accession, Uint1 type)
 {
-    //    Uint1 cho;
+    // CSeq_id::E_Choice cho;
 
     if (type == CSeq_id::e_Swissprot || type == CSeq_id::e_Pir || type == CSeq_id::e_Prf ||
         type == CSeq_id::e_Pdb || type == CSeq_id::e_Other)
@@ -874,7 +874,7 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type)
 
     if (type != CSeq_id::e_Genbank && type != CSeq_id::e_Embl && type != CSeq_id::e_Ddbj &&
         type != CSeq_id::e_Tpg && type != CSeq_id::e_Tpe && type != CSeq_id::e_Tpd)
-        return (0);
+        return (CSeq_id::e_not_set);
 
     if (accession == NULL)
         return (type);
@@ -915,7 +915,7 @@ CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 ver
 
     seqtype = ValidSeqType(acc, seqtype);
 
-    if (seqtype == 0)
+    if (seqtype == CSeq_id::e_not_set)
         return id;
 
     CRef<CTextseq_id> text_id(new CTextseq_id);
@@ -936,7 +936,7 @@ CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 ver
  *                                              5-13-93
  *
  **********************************************************/
-CRef<CSeq_id> MakeLocusSeqId(const char* locus, Uint1 seqtype)
+CRef<CSeq_id> MakeLocusSeqId(const char* locus, CSeq_id::E_Choice seqtype)
 {
     CRef<CSeq_id> res;
     if (locus == NULL || *locus == '\0')
@@ -962,7 +962,7 @@ static CRef<CSeq_id> MakeSegSetSeqId(const char* accession, const char* locus, U
 
     seqtype = ValidSeqType(accession, seqtype);
 
-    if (seqtype == 0)
+    if (seqtype == CSeq_id::e_not_set)
         return res;
 
     CRef<CTextseq_id> text_id(new CTextseq_id);
@@ -1048,7 +1048,7 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
     else
         seqtype = ValidSeqType(acc, pp->seqtype);
 
-    if (seqtype == 0) {
+    if (seqtype == CSeq_id::e_not_set) {
         if (acc && ! NStr::IsBlank(acc)) {
             auto pId = Ref(new CSeq_id(CSeq_id::e_Local, acc));
             res->SetId().push_back(move(pId));
@@ -1288,8 +1288,8 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     bool unusual_wgs_msg;
     bool is_cp;
 
-    Uint1 pri_owner;
-    Uint1 sec_owner;
+    CSeq_id::E_Choice pri_owner;
+    CSeq_id::E_Choice sec_owner;
 
     if (ibp->secaccs == NULL) {
         return;

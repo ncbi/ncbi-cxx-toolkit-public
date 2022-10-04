@@ -986,7 +986,7 @@ void fta_init_pp(Parser& pp)
     pp.indx                  = 0;
     pp.entrylist             = nullptr;
     pp.curindx               = 0;
-    pp.seqtype               = 0;
+    pp.seqtype               = CSeq_id::e_not_set;
     pp.num_drop              = 0;
     pp.acprefix              = nullptr;
     pp.pbp                   = nullptr;
