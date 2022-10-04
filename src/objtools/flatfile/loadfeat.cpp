@@ -2954,7 +2954,7 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
                             p++;
                         if (*p == '\0') {
                             *q = '\0';
-                            if (GetNucAccOwner(val_str.c_str()) > 0)
+                            if (GetNucAccOwner(val_str.c_str()) > CSeq_id::e_not_set)
                                 badcom = false;
                             *q = '.';
                         }

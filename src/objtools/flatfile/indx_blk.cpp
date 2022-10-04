@@ -2278,7 +2278,7 @@ CSeq_id::E_Choice GetNucAccOwner(const char* acc)
 
 
 /**********************************************************/
-Uint1 GetProtAccOwner(const Char* acc)
+CSeq_id::E_Choice GetProtAccOwner(const Char* acc)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
@@ -2288,7 +2288,7 @@ Uint1 GetProtAccOwner(const Char* acc)
         }
     }
 
-    return 0;
+    return CSeq_id::e_not_set;
 }
 
 END_NCBI_SCOPE

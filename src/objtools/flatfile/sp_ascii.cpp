@@ -1708,7 +1708,7 @@ static bool AddToList(ValNodePtr* head, char* str)
         }
         *dot = '.';
     }
-    vnp = ConstructValNode(NULL, 0, StringSave(str));
+    vnp = ConstructValNode(NULL, CSeq_id::e_not_set, StringSave(str));
     ValNodeLink(head, vnp);
 
     return true;
@@ -1793,7 +1793,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
                 StringCmp(p, (char*)vnpn->data.ptrvalue) == 0) {
                 if (q != NULL)
                     *q = '\0';
-                if (GetProtAccOwner(p) > 0)
+                if (GetProtAccOwner(p) > CSeq_id::e_not_set)
                     ErrPostEx(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"%s\" associated with \"%s\" and \"%s\".", (char*)vnpn->data.ptrvalue, n, (char*)vnpn->next->data.ptrvalue);
                 if (q != NULL)
                     *q = '.';
@@ -1895,8 +1895,8 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
     bool         pdbnew;
     bool         check_embl_prot;
     size_t       len = 0;
-    Uint1        ptype;
-    Uint1        ntype;
+    CSeq_id::E_Choice ptype;
+    CSeq_id::E_Choice ntype;
     Char         ch;
 
     spb.ResetSeqref();
@@ -1970,7 +1970,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             if(p != NULL)
                 *p = '\0';
             ntype = GetNucAccOwner(token2);
-            if (ntype == 0) {
+            if (ntype == CSeq_id::e_not_set) {
                 if(p != NULL)
                     *p = '.';
                 ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"%s\". Skipped...", token2);
@@ -1983,7 +1983,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             if(p != NULL)
                 *p = '\0';
 
-            ptype = 0;
+            ptype = CSeq_id::e_not_set;
             if (token3[0] >= 'A' && token3[0] <= 'Z' &&
                 token3[1] >= 'A' && token3[1] <= 'Z') {
                 p = StringChr(token3, '.');
@@ -1996,14 +1996,14 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
                     if (q == p + 1 || *q != '\0')
                         p = NULL;
                 }
-                if (p == NULL || ptype == 0) {
+                if (p == NULL || ptype == CSeq_id::e_not_set) {
                     ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect protein accession is used in DR line [ACC:%s; PID:%s]. Skipped...", token2, token3);
                     continue;
                 }
             } else
                 p = NULL;
 
-            if (ntype > 0) {
+            if (ntype > CSeq_id::e_not_set) {
                 embl_vnp->next = ConstructValNode(NULL, ptype, StringSave(token3));
                 embl_vnp       = embl_vnp->next;
                 embl_vnp->next = ConstructValNode(NULL, ntype, StringSave(token2));
@@ -2052,7 +2052,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
                     spb.SetDbref().push_back(tag);
             }
         } else if (NStr::CompareNocase(token1, "REFSEQ") == 0) {
-            ptype = 0;
+            ptype = CSeq_id::e_not_set;
             if (token2[0] >= 'A' && token2[0] <= 'Z' &&
                 token2[1] >= 'A' && token2[1] <= 'Z') {
                 p = StringChr(token2, '.');
