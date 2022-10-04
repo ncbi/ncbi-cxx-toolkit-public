@@ -127,7 +127,7 @@ public:
     CCitArtCleaner(CCit_art& art) : m_Art(art) { }
     virtual ~CCitArtCleaner() {};
 
-    static bool NCBI_CLEANUP_EXPORT CleanArticle(CCit_art&, bool fix_initials, bool strip_serial);
+    static bool CleanArticle(CCit_art&, bool fix_initials, bool strip_serial);
     bool Clean(bool fix_initials, bool strip_serial) override
     {
         return CleanArticle(m_Art, fix_initials, strip_serial);
