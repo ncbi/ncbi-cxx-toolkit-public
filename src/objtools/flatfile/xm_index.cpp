@@ -855,7 +855,7 @@ static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Parser::ESource sourc
         MemFree(p);
     }
 
-    vnp = ConstructValNode(NULL, 0, buf);
+    vnp = ConstructValNode(NULL, objects::CSeq_id::e_not_set, buf);
     check_est_sts_gss_tpa_kwds(vnp, len, ibp, tpa_check, ibp->specialist_db, ibp->inferential, ibp->experimental, ibp->assembly);
     MemFree(buf);
     MemFree(vnp);

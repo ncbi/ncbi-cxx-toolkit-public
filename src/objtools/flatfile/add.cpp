@@ -110,7 +110,7 @@ typedef struct _fta_tpa_block {
     Int4                   from2;
     Int4                   to2;
     ENa_strand             strand;
-    Uint1                  sicho; /* SeqId choice */
+    CSeq_id::E_Choice      sicho;
     struct _fta_tpa_block* next;
 } FTATpaBlock, *FTATpaBlockPtr;
 
@@ -774,7 +774,7 @@ static int sGetPrefixLength(const CTempString& accession)
 
 
 /**********************************************************/
-void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, Int4 acctype, bool pricon, const char* acc)
+void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, CSeq_id::E_Choice acctype, bool pricon, const char* acc)
 {
     Int4 pri_acc;
     Int4 sec_acc;
@@ -1103,7 +1103,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     Int4  to1;
     Int4  len1;
     Int4  len2;
-    Uint1 choice;
+    CSeq_id::E_Choice choice;
 
     if (offset == NULL || acnum == NULL || len < 2)
         return false;
@@ -2799,7 +2799,7 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
 /**********************************************************/
 void fta_set_molinfo_completeness(CBioseq& bioseq, const Indexblk* ibp)
 {
-    if (bioseq.GetInst().GetTopology() != 2 || (ibp != NULL && ibp->gaps != NULL))
+    if (bioseq.GetInst().GetTopology() != CSeq_inst::eTopology_circular || (ibp != NULL && ibp->gaps != NULL))
         return;
 
     CMolInfo* mol_info = nullptr;

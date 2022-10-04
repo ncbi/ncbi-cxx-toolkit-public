@@ -76,7 +76,7 @@ bool fta_if_valid_biosample(const char* id, bool dblink);
 bool fta_if_valid_sra(const char* id, bool dblink);
 void StripECO(char* str);
 void xStripECO(string&);
-void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, Int4 acctype, bool pricon, const char* acc);
+void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, objects::CSeq_id::E_Choice acctype, bool pricon, const char* acc);
 
 char* StringRStr(char* where, const char* what);
 bool  fta_dblink_has_sra(const CRef<objects::CUser_object>& uop);

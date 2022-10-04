@@ -339,8 +339,8 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     char*  p;
     char*  q;
     ErrSev sev;
-    Uint1  cho;
-    Uint1  ncho;
+    CSeq_id::E_Choice cho;
+    CSeq_id::E_Choice ncho;
     Char   str[100];
 
     if (pp->mode == Parser::EMode::Relaxed) {
@@ -437,7 +437,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     q   = p + 1;
     *p  = '\0';
     cho = GetProtAccOwner(protacc);
-    if (cho == 0) {
+    if (cho == CSeq_id::e_not_set) {
         string loc = location_to_string(cds.GetLocation());
         ErrPostEx(SEV_FATAL, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession \"%s\" for CDS feature: \"%s\".", protacc, loc.c_str());
         MemFree(protacc);

@@ -111,7 +111,7 @@ typedef struct parser_ref_block {
         cit(NULL),
         year(NULL),
         country(NULL),
-        reftype(0)
+        reftype(ParFlat_ReftypeIgnore)
     {
     }
 
