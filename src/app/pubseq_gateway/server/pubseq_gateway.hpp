@@ -351,17 +351,28 @@ private:
 
     void x_SendMessageAndCompletionChunks(
         shared_ptr<CPSGS_Reply>  reply,
-        const psg_time_point_t &  create_timestamp,
+        const psg_time_point_t &  now,
         const string &  message,
         CRequestStatus::ECode  status, int  code, EDiagSev  severity);
 
     bool x_ProcessCommonGetAndResolveParams(
         CHttpRequest &  req,
         shared_ptr<CPSGS_Reply>  reply,
-        const psg_time_point_t &  create_timestamp,
+        const psg_time_point_t &  now,
         CTempString &  seq_id, int &  seq_id_type,
         SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache,
         bool  seq_id_is_optional=false);
+
+    // Common URL parameters for all ../ID/.. requests
+    bool x_GetCommonIDRequestParams(
+            CHttpRequest &  req,
+            shared_ptr<CPSGS_Reply>  reply,
+            const psg_time_point_t &  now,
+            SPSGS_RequestBase::EPSGS_Trace &  trace,
+            int &  hops,
+            vector<string> &  enabled_processors,
+            vector<string> &  disabled_processors,
+            bool &  processor_events);
 
 private:
     void x_ValidateArgs(void);
@@ -372,12 +383,10 @@ private:
 
     SRequestParameter  x_GetParam(CHttpRequest &  req,
                                   const string &  name) const;
-    SPSGS_RequestBase::EPSGS_CacheAndDbUse x_GetUseCacheParameter(
-                                                CHttpRequest &  req,
-                                                string &  err_msg);
-    int  x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
-                                       shared_ptr<CPSGS_Reply>  reply,
-                                       const psg_time_point_t &  create_timestamp);
+    bool  x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
+                                        shared_ptr<CPSGS_Reply>  reply,
+                                        const psg_time_point_t &  now,
+                                        int &  send_blob_if_small);
     bool x_IsBoolParamValid(const string &  param_name,
                             const CTempString &  param_value,
                             string &  err_msg) const;
@@ -389,59 +398,90 @@ private:
                                   const CTempString &  param_value,
                                   double &  converted,
                                   string &  err_msg) const;
-    SPSGS_ResolveRequest::EPSGS_OutputFormat x_GetOutputFormat(
-                                    const string &  param_name,
-                                    const CTempString &  param_value,
-                                    string &  err_msg) const;
-    SPSGS_BlobRequestBase::EPSGS_TSEOption x_GetTSEOption(
-                              const string &  param_name,
-                              const CTempString &  param_value,
-                              string &  err_msg) const;
-    vector<string> x_GetExcludeBlobs(const string &  param_name,
-                                     const CTempString &  param_value) const;
+    bool x_GetUseCacheParameter(CHttpRequest &  req,
+                                shared_ptr<CPSGS_Reply>  reply,
+                                const psg_time_point_t &  now,
+                                SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache);
+    bool x_GetOutputFormat(CHttpRequest &  req,
+                           shared_ptr<CPSGS_Reply>  reply,
+                           const psg_time_point_t &  now,
+                           SPSGS_ResolveRequest::EPSGS_OutputFormat &  output_format);
+    bool x_GetTSEOption(CHttpRequest &  req,
+                        shared_ptr<CPSGS_Reply>  reply,
+                        const psg_time_point_t &  now,
+                        SPSGS_BlobRequestBase::EPSGS_TSEOption &  tse_option);
+    bool x_GetLastModified(CHttpRequest &  req,
+                           shared_ptr<CPSGS_Reply>  reply,
+                           const psg_time_point_t &  now,
+                           int64_t &  last_modified);
+    bool x_GetBlobId(CHttpRequest &  req,
+                     shared_ptr<CPSGS_Reply>  reply,
+                     const psg_time_point_t &  now,
+                     SPSGS_BlobId &  blob_id);
+    bool x_GetResolveFlags(CHttpRequest &  req,
+                           shared_ptr<CPSGS_Reply>  reply,
+                           const psg_time_point_t &  now,
+                           SPSGS_ResolveRequest::TPSGS_BioseqIncludeData &  include_data_flags);
+    bool x_GetId2Chunk(CHttpRequest &  req,
+                       shared_ptr<CPSGS_Reply>  reply,
+                       const psg_time_point_t &  now,
+                       int64_t &  id2_chunk);
+    vector<string> x_GetExcludeBlobs(CHttpRequest &  req) const;
     unsigned long x_GetDataSize(const IRegistry &  reg,
                                 const string &  section,
                                 const string &  entry,
                                 unsigned long  default_val);
-    SPSGS_RequestBase::EPSGS_AccSubstitutioOption x_GetAccessionSubstitutionOption(
-                                            const string &  param_name,
-                                            const CTempString &  param_value,
-                                            string &  err_msg) const;
+    bool x_GetAccessionSubstitutionOption(CHttpRequest &  req,
+                                          shared_ptr<CPSGS_Reply>  reply,
+                                          const psg_time_point_t &  now,
+                                          SPSGS_RequestBase::EPSGS_AccSubstitutioOption & acc_subst_option);
     bool x_GetTraceParameter(CHttpRequest &  req,
                              shared_ptr<CPSGS_Reply>  reply,
-                             const psg_time_point_t &  create_timestamp,
+                             const psg_time_point_t &  now,
                              SPSGS_RequestBase::EPSGS_Trace &  trace);
     bool x_GetProcessorEventsParameter(CHttpRequest &  req,
                                        shared_ptr<CPSGS_Reply>  reply,
-                                       const psg_time_point_t &  create_timestamp,
+                                       const psg_time_point_t &  now,
                                        bool &  processor_events);
     bool x_GetHops(CHttpRequest &  req,
                    shared_ptr<CPSGS_Reply>  reply,
-                   const psg_time_point_t &  create_timestamp,
+                   const psg_time_point_t &  now,
                    int &  hops);
     bool x_GetResendTimeout(CHttpRequest &  req,
                             shared_ptr<CPSGS_Reply>  reply,
-                            const psg_time_point_t &  create_timestamp,
+                            const psg_time_point_t &  now,
                             double &  resend_timeout);
     bool x_GetSeqIdResolveParameter(CHttpRequest &  req,
                                     shared_ptr<CPSGS_Reply>  reply,
-                                    const psg_time_point_t &  create_timestamp,
-                                    bool &  seq_id_resolve);
+                                    const psg_time_point_t &  now,
+                                    bool &  auto_blob_skipping);
+    bool x_GetAutoBlobSkippingParameter(CHttpRequest &  req,
+                                        shared_ptr<CPSGS_Reply>  reply,
+                                        const psg_time_point_t &  now,
+                                        bool &  seq_id_resolve);
     bool x_GetEnabledAndDisabledProcessors(CHttpRequest &  req,
                                            shared_ptr<CPSGS_Reply>  reply,
-                                           const psg_time_point_t &  create_timestamp,
+                                           const psg_time_point_t &  now,
                                            vector<string> &  enabled_processors,
                                            vector<string> &  disabled_processors);
+    bool x_GetNames(CHttpRequest &  req,
+                    shared_ptr<CPSGS_Reply>  reply,
+                    const psg_time_point_t &  now,
+                    vector<string> &  names);
 
 private:
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
-                                 const psg_time_point_t &  create_timestamp,
+                                 const psg_time_point_t &  now,
                                  const string &  err_msg);
     void x_MalformedArguments(shared_ptr<CPSGS_Reply>  reply,
-                              const psg_time_point_t &  create_timestamp,
+                              const psg_time_point_t &  now,
                               const string &  err_msg);
+    void x_Finish500(shared_ptr<CPSGS_Reply>  reply,
+                     const psg_time_point_t &  now,
+                     EPSGS_PubseqGatewayErrorCode  code,
+                     const string &  err_msg);
     bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
-                          const psg_time_point_t &  create_timestamp);
+                          const psg_time_point_t &  now);
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
     void x_RegisterProcessors(void);
