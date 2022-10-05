@@ -107,7 +107,6 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,         311,  16);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,         312,   5);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalIP,       313,   5);
 NCBI_C_DEFINE_ERRCODE_X(Connect_NamerdLinkerd, 314,  14);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBOS,          319, 600); /*safe upper bound*/
 
 
 /** Make one identifier from 2 parts */
