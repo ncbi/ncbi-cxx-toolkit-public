@@ -1234,7 +1234,7 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
     mlp                  = NULL;
     Int4            i    = 1;
     const CSeq_loc& locs = c->feat->GetLocation();
-    ITERATE (CSeq_loc, loc, locs) {
+    for (CSeq_loc::const_iterator loc = locs.begin(); loc != locs.end(); ++loc) {
         noleft  = false;
         noright = false;
         CRef<CSeq_id> pId;
@@ -2559,7 +2559,7 @@ static bool GeneLocusCheck(const TSeqFeatList& feats, bool diff_lt)
 {
     bool ret = true;
 
-    ITERATE (TSeqFeatList, feat, feats) {
+    for (TSeqFeatList::const_iterator feat = feats.begin(); feat != feats.end(); ++feat) {
         const CGene_ref& gene_ref1 = (*feat)->GetData().GetGene();
         if (! gene_ref1.IsSetLocus() || ! gene_ref1.IsSetLocus_tag())
             continue;
@@ -2964,8 +2964,7 @@ static void fta_fix_labels(CBioseq& bioseq, const std::set<std::string>& genes)
             if (! feat->IsSetQual())
                 continue;
 
-            NON_CONST_ITERATE(CSeq_feat::TQual, qual, feat->SetQual())
-            {
+            for (CSeq_feat::TQual::iterator qual = feat->SetQual().begin(); qual != feat->SetQual().end(); ++qual) {
                 if (! (*qual)->IsSetQual() || (*qual)->GetQual() != "label" ||
                     ! (*qual)->IsSetVal() || (*qual)->GetVal().empty())
                     continue;

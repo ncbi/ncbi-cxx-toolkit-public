@@ -161,8 +161,7 @@ char* GetTheQualValue(TQualVector& qlist, const Char* qual)
 {
     char* qvalue = NULL;
 
-    NON_CONST_ITERATE(TQualVector, cur, qlist)
-    {
+    for (TQualVector::iterator cur = qlist.begin(); cur != qlist.end(); ++cur) {
         if ((*cur)->GetQual() != qual)
             continue;
 

@@ -2130,8 +2130,7 @@ static void GetImpFeat(CSeq_feat& feat, FeatBlkPtr fbp, bool locmap)
 void fta_sort_biosource(CBioSource& bio)
 {
     if (bio.CanGetOrg() && ! bio.GetOrg().GetDb().empty()) {
-        NON_CONST_ITERATE(COrg_ref::TDb, db, bio.SetOrg().SetDb())
-        {
+        for (COrg_ref::TDb::iterator db = bio.SetOrg().SetDb().begin(); db != bio.SetOrg().SetDb().end(); ++db) {
             if (! (*db)->CanGetDb())
                 continue;
 
@@ -2164,10 +2163,10 @@ void fta_sort_biosource(CBioSource& bio)
         }
 
         if (bio.GetOrg().IsSetOrgname() && bio.GetOrg().GetOrgname().IsSetMod()) {
-            NON_CONST_ITERATE(COrgName::TMod, mod, bio.SetOrg().SetOrgname().SetMod())
-            {
+            COrgName::TMod& rmod = bio.SetOrg().SetOrgname().SetMod();
+            for (COrgName::TMod::iterator mod = rmod.begin(); mod != rmod.end(); ++mod) {
                 COrgName::TMod::iterator tmod = mod;
-                for (++tmod; tmod != bio.SetOrg().SetOrgname().SetMod().end(); ++tmod) {
+                for (++tmod; tmod != rmod.end(); ++tmod) {
                     if ((*mod)->GetSubtype() < (*tmod)->GetSubtype())
                         continue;
 
@@ -2184,10 +2183,10 @@ void fta_sort_biosource(CBioSource& bio)
     if (! bio.IsSetSubtype())
         return;
 
-    NON_CONST_ITERATE(CBioSource::TSubtype, sub, bio.SetSubtype())
-    {
+    CBioSource::TSubtype& rsub = bio.SetSubtype();
+    for (CBioSource::TSubtype::iterator sub = rsub.begin(); sub != rsub.end(); ++sub) {
         CBioSource::TSubtype::iterator tsub = sub;
-        for (++tsub; tsub != bio.SetSubtype().end(); ++tsub) {
+        for (++tsub; tsub != rsub.end(); ++tsub) {
             if ((*sub)->GetSubtype() < (*tsub)->GetSubtype())
                 continue;
 
@@ -2540,8 +2539,7 @@ static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
     if (fbp == NULL)
         return;
 
-    NON_CONST_ITERATE(TQualVector, q, fbp->quals)
-    {
+    for (TQualVector::iterator q = fbp->quals.begin(); q != fbp->quals.end(); ++q) {
         if ((*q)->GetQual() == "gene" ||
             (! qamode && (*q)->GetQual() == "product"))
             continue;
@@ -2838,7 +2836,7 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
         if (olt == 1)
             continue;
 
-        ITERATE (TQualVector, gbqp1, fbp->quals) {
+        for (TQualVector::const_iterator gbqp1 = fbp->quals.begin(); gbqp1 != fbp->quals.end(); ++gbqp1) {
             const std::string& gbqp1_val = (*gbqp1)->GetVal();
             if (isOldLocusTag(*gbqp1) || gbqp1_val.empty())
                 continue;
@@ -3186,8 +3184,7 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
     if (fbp == NULL || fbp->quals.empty())
         return;
 
-    NON_CONST_ITERATE(TQualVector, cur, fbp->quals)
-    {
+    for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end(); ++cur) {
         const char* cur_qual = (*cur)->IsSetQual() ? (*cur)->GetQual().c_str() : NULL;
         const char* cur_val  = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : NULL;
 
@@ -4356,8 +4353,7 @@ static bool fta_check_ncrna(const CSeq_feat& feat)
 /**********************************************************/
 static void fta_check_artificial_location(CSeq_feat& feat, char* key)
 {
-    NON_CONST_ITERATE(CSeq_feat::TQual, qual, feat.SetQual())
-    {
+    for (auto qual = feat.SetQual().begin(); qual != feat.SetQual().end(); ++qual) {
         if (! (*qual)->IsSetQual() || (*qual)->GetQual() != "artificial_location")
             continue;
 

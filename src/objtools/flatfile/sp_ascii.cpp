@@ -1717,10 +1717,8 @@ static bool AddToList(ValNodePtr* head, char* str)
 /**********************************************************/
 static void CheckSPDupPDBXrefs(CSP_block::TSeqref& refs)
 {
-    NON_CONST_ITERATE(CSP_block::TSeqref, cur_ref, refs)
-    {
-        if ((*cur_ref)->Which() != CSeq_id::e_Pdb ||
-            (*cur_ref)->GetPdb().IsSetRel())
+    for (CSP_block::TSeqref::iterator cur_ref = refs.begin(); cur_ref != refs.end(); ++cur_ref) {
+        if ((*cur_ref)->Which() != CSeq_id::e_Pdb || (*cur_ref)->GetPdb().IsSetRel())
             continue;
 
         bool got = false;
