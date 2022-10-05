@@ -61,7 +61,6 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_UnknownSatellite                   = 300,
     ePSGS_BadURL                             = 301,
     ePSGS_NoUsefulCassandra                  = 302,
-    ePSGS_MissingParameter                   = 303,
     ePSGS_MalformedParameter                 = 304,
     ePSGS_UnknownResolvedSatellite           = 305,
     ePSGS_NoBioseqInfo                       = 306,

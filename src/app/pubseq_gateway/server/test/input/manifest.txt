@@ -307,3 +307,6 @@ getna_multiple_2                        | -url "ID/get_na?fmt=json&all_info=yes&
 
 osg_getchunk_ok                         | -url "ID/get_tse_chunk?id2_chunk=2041&id2_info=1000/69892021.2.0.0&disable_processor=cassandra"                                                                                   | OSG processor getchunk OK                                                     | osg
 
+url_bad_param_1                         | -url "ID/resolve?bad&seq_id=817747779&seq_id_type=12&fmt=json&all_info=yes&disable_processor=osg"                                                                                 | bad url parameter (no '=', no value)                                          | resolve
+url_bad_param_2                         | -url "ID/resolve?bad=&seq_id=817747779&seq_id_type=12&fmt=json&all_info=yes&disable_processor=osg"                                                                                | bad url parameter (no value)                                                  | resolve
+
