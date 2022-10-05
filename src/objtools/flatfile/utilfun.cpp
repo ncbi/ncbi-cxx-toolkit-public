@@ -1614,7 +1614,7 @@ bool fta_check_mga_keywords(CMolInfo& mol_info, const TKeywordList& kwds)
 
     bool got = false;
     if (! kwds.empty() && NStr::EqualNocase(kwds.front(), "MGA")) {
-        ITERATE (TKeywordList, key, kwds) {
+        for (TKeywordList::const_iterator key = kwds.begin(); key != kwds.end(); ++key) {
             if (MatchArrayIString(ParFlat_MGA_more_kw_array,
                                   key->c_str()) < 0)
                 continue;

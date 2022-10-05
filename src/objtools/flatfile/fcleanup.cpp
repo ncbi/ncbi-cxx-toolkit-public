@@ -198,8 +198,7 @@ static void LookForProductName(CSeq_feat& feat)
 
         if (! prot_ref.IsSetName() || prot_ref.GetName().empty() || (prot_ref.GetName().size() == 1 && prot_ref.GetName().front() == "unnamed")) {
             if (feat.IsSetQual()) {
-                NON_CONST_ITERATE(TQualVector, qual, feat.SetQual())
-                {
+                for (TQualVector::iterator qual = feat.SetQual().begin(); qual != feat.SetQual().end(); ++qual) {
                     if ((*qual)->IsSetQual() && (*qual)->GetQual() == "product" && (*qual)->IsSetVal()) {
                         prot_ref.SetName().clear();
                         prot_ref.SetName().push_back((*qual)->GetVal());

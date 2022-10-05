@@ -90,20 +90,20 @@ static bool XISAGappedSeqLoc(const CSeq_loc& loc)
  **********************************************************/
 void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
 {
-    ITERATE (TSeqLocList, loc, locs) {
+    for (const auto& loc : locs) {
         CRef<CDelta_seq> delta(new CDelta_seq);
-        if (XISAGappedSeqLoc(*(*loc))) {
-            const CSeq_interval& interval = (*loc)->GetInt();
+        if (XISAGappedSeqLoc(*loc)) {
+            const CSeq_interval& interval = loc->GetInt();
             delta->SetLiteral().SetLength(interval.GetTo() - interval.GetFrom() + 1);
 
-            const CSeq_id* id = (*loc)->GetId();
+            const CSeq_id* id = loc->GetId();
             if (id != nullptr) {
                 const CDbtag& tag = id->GetGeneral();
                 if (tag.GetDb() == unkseqlitdbtag)
                     delta->SetLiteral().SetFuzz().SetLim();
             }
         } else
-            delta->SetLoc().Assign(*(*loc));
+            delta->SetLoc().Assign(*loc);
 
         deltas.push_back(delta);
     }
