@@ -190,11 +190,11 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
 
     if (! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
         /* do they contain all the mandatory qualifiers? */
-        ITERATE (CSeqFeatData::TQualifiers, cur_type, CSeqFeatData::GetMandatoryQualifiers(subtype)) {
-            ITERATE (TQualVector, cur, quals) {
+        for (CSeqFeatData::EQualifier cur_type : CSeqFeatData::GetMandatoryQualifiers(subtype)) {
+            for (const auto& cur : quals) {
                 fqual = false;
 
-                if (*cur_type == CSeqFeatData::GetQualifierType((*cur)->GetQual())) {
+                if (cur_type == CSeqFeatData::GetQualifierType(cur->GetQual())) {
                     fqual = true;
                     break;
                 }
@@ -202,7 +202,7 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
 
             if (! fqual) {
                 if (error_msgs) {
-                    string str = CSeqFeatData::GetQualifierAsString(*cur_type);
+                    string str = CSeqFeatData::GetQualifierAsString(cur_type);
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_MissManQual, str.c_str());
                 }
 

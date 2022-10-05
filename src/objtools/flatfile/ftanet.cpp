@@ -226,43 +226,41 @@ static void fta_fix_last_initials(CName_std& namestd,
 /**********************************************************/
 static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
 {
-    NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
-    {
-        if (! (*pub)->IsPmid())
+    for (const auto& pub : pub_list) {
+        if (! pub->IsPmid())
             continue;
         // got_pmid = true;
         break;
     }
 
-    NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
-    {
+    for (auto& pub : pub_list) {
         CAuth_list* authors;
-        if ((*pub)->IsArticle()) {
-            CCit_art& art = (*pub)->SetArticle();
+        if (pub->IsArticle()) {
+            CCit_art& art = pub->SetArticle();
             if (! art.IsSetAuthors() || ! art.CanGetAuthors())
                 continue;
 
             authors = &art.SetAuthors();
-        } else if ((*pub)->IsSub()) {
-            CCit_sub& sub = (*pub)->SetSub();
+        } else if (pub->IsSub()) {
+            CCit_sub& sub = pub->SetSub();
             if (! sub.IsSetAuthors() || ! sub.CanGetAuthors())
                 continue;
 
             authors = &sub.SetAuthors();
-        } else if ((*pub)->IsGen()) {
-            CCit_gen& gen = (*pub)->SetGen();
+        } else if (pub->IsGen()) {
+            CCit_gen& gen = pub->SetGen();
             if (! gen.IsSetAuthors() || ! gen.CanGetAuthors())
                 continue;
 
             authors = &gen.SetAuthors();
-        } else if ((*pub)->IsBook()) {
-            CCit_book& book = (*pub)->SetBook();
+        } else if (pub->IsBook()) {
+            CCit_book& book = pub->SetBook();
             if (! book.IsSetAuthors() || ! book.CanGetAuthors())
                 continue;
 
             authors = &book.SetAuthors();
-        } else if ((*pub)->IsMan()) {
-            CCit_let& man = (*pub)->SetMan();
+        } else if (pub->IsMan()) {
+            CCit_let& man = pub->SetMan();
             if (! man.IsSetCit() || ! man.CanGetCit())
                 continue;
 
@@ -271,8 +269,8 @@ static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
                 continue;
 
             authors = &book.SetAuthors();
-        } else if ((*pub)->IsPatent()) {
-            CCit_pat& pat = (*pub)->SetPatent();
+        } else if (pub->IsPatent()) {
+            CCit_pat& pat = pub->SetPatent();
             if (! pat.IsSetAuthors() || ! pat.CanGetAuthors())
                 continue;
 
@@ -319,12 +317,11 @@ static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
 /**********************************************************/
 static void fta_fix_imprint_language(TPubList& pub_list)
 {
-    NON_CONST_ITERATE(CPub_equiv::Tdata, pub, pub_list)
-    {
-        if (! (*pub)->IsArticle())
+    for (auto& pub : pub_list) {
+        if (! pub->IsArticle())
             continue;
 
-        CCit_art& art = (*pub)->SetArticle();
+        CCit_art& art = pub->SetArticle();
         if (! art.IsSetFrom() || ! art.GetFrom().IsJournal())
             continue;
 
@@ -348,11 +345,11 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
     if (! pub_descr.IsSetComment())
         return;
 
-    ITERATE (CPub_equiv::Tdata, pub, pub_descr.GetPub().Get()) {
-        if (! (*pub)->IsArticle())
+    for (const auto& pub : pub_descr.GetPub().Get()) {
+        if (! pub->IsArticle())
             continue;
 
-        const CCit_art& art = (*pub)->GetArticle();
+        const CCit_art& art = pub->GetArticle();
         if (! art.IsSetFrom() || ! art.GetFrom().IsJournal())
             continue;
 
@@ -535,8 +532,8 @@ private:
 static void fta_check_pub_ids(TPubList& pub_list)
 {
     bool found = false;
-    ITERATE (CPub_equiv::Tdata, pub, pub_list) {
-        if ((*pub)->IsArticle()) {
+    for (const auto& pub : pub_list) {
+        if (pub->IsArticle()) {
             found = true;
             break;
         }
@@ -784,13 +781,10 @@ static void new_synonym(COrg_ref& org_ref, COrg_ref& tax_org_ref)
     if (!org_ref.CanGetSyn() || !tax_org_ref.CanGetSyn())
         return;
 
-    ITERATE(COrg_ref::TSyn, org_syn, org_ref.GetSyn())
-    {
+    for (const string& org_syn : org_ref.GetSyn()) {
         bool found = false;
-        ITERATE(COrg_ref::TSyn, tax_syn, tax_org_ref.GetSyn())
-        {
-            if (*org_syn == *tax_syn)
-            {
+        for (const string& tax_syn : tax_org_ref.GetSyn()) {
+            if (org_syn == tax_syn) {
                 found = true;
                 break;
             }
@@ -800,7 +794,7 @@ static void new_synonym(COrg_ref& org_ref, COrg_ref& tax_org_ref)
         {
             ErrPostEx(SEV_INFO, ERR_ORGANISM_NewSynonym,
                       "New synonym: %s for [%s].",
-                      org_syn->c_str(), org_ref.GetTaxname().c_str());
+                      org_syn.c_str(), org_ref.GetTaxname().c_str());
         }
     }
 }
