@@ -498,8 +498,6 @@ NCBITEST_AUTO_INIT()
 #else
     srand(time(NULL));
 #endif
-    boost::unit_test::framework::master_test_suite().p_name->assign(
-        "lbos mapper Unit Test");
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(&config);
     s_ResponseThread = new CResponseThread;
