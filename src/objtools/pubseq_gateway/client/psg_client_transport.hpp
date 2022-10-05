@@ -1047,8 +1047,8 @@ private:
     void OnDiscovery() { for (auto& io : m_Io) io->queue.Signal(); }
 
     SUv_Barrier m_Barrier;
-    SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
+    SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
     atomic<size_t> m_RequestCounter;
     atomic<size_t> m_RequestId;
 };
