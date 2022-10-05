@@ -1385,18 +1385,12 @@ void CGenbankFormatter::FormatComment
 
     list<string> x;
     // tilde after "Documentation of NCBI's Annotation Process" text leaves trailing "blank" line of 12 spaces
-    bool okayForBlankLine = false;
     ITERATE(list<string>, line, l) {
         const string& txt = *line;
-        if (NStr::Find(txt, "START##") != NPOS && NStr::Find(txt, "COMMENT") == NPOS && okayForBlankLine) {
+        if (NStr::Find(txt, "START##") != NPOS && NStr::Find(txt, "COMMENT") == NPOS) {
             x.push_back("            \n" + txt);
         } else {
             x.push_back(txt);
-        }
-        if (NStr::EndsWith(txt, "            ")) {
-            okayForBlankLine = true;
-        } else {
-            okayForBlankLine = false;
         }
     }
 
