@@ -1839,6 +1839,10 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                     break;
 
                 }
+                if (m_IgOptions->m_CustomInternalData != NcbiEmptyString){
+                    //only use top hit custom annotation.  This is not done via alignment mapping. 
+                    break;
+                }
             }
         }
         ++iq;
