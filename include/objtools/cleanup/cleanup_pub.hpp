@@ -79,10 +79,10 @@ class CPubEquivCleaner : public CPubCleaner
 {
 public:
     CPubEquivCleaner(CPub_equiv& equiv) : m_Equiv(equiv) {};
-    virtual ~CPubEquivCleaner() {};
+    ~CPubEquivCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty();
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override;
 
     static bool ShouldWeFixInitials(const CPub_equiv& equiv);
 
@@ -97,10 +97,10 @@ class CCitGenCleaner : public CPubCleaner
 {
 public:
     CCitGenCleaner(CCit_gen& gen) : m_Gen(gen) { }
-    virtual ~CCitGenCleaner() {};
+    ~CCitGenCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty();
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override;
 
 protected:
     CCit_gen& m_Gen;
@@ -111,10 +111,10 @@ class CCitSubCleaner : public CPubCleaner
 {
 public:
     CCitSubCleaner(CCit_sub& sub) : m_Sub(sub) { }
-    virtual ~CCitSubCleaner() {};
+    ~CCitSubCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty();
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override;
 
 protected:
     CCit_sub& m_Sub;
@@ -125,14 +125,14 @@ class NCBI_CLEANUP_EXPORT CCitArtCleaner : public CPubCleaner
 {
 public:
     CCitArtCleaner(CCit_art& art) : m_Art(art) { }
-    virtual ~CCitArtCleaner() {};
+    ~CCitArtCleaner() override {}
 
     static bool CleanArticle(CCit_art&, bool fix_initials, bool strip_serial);
     bool Clean(bool fix_initials, bool strip_serial) override
     {
         return CleanArticle(m_Art, fix_initials, strip_serial);
     }
-    virtual bool IsEmpty() { return false; }
+    bool IsEmpty() override { return false; }
 
 protected:
     CCit_art& m_Art;
@@ -143,10 +143,10 @@ class CCitBookCleaner : public CPubCleaner
 {
 public:
     CCitBookCleaner(CCit_book& book) : m_Book(book) { }
-    virtual ~CCitBookCleaner() {};
+    ~CCitBookCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty() { return false; }
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override { return false; }
 
 protected:
     CCit_book& m_Book;
@@ -157,10 +157,10 @@ class CCitJourCleaner : public CPubCleaner
 {
 public:
     CCitJourCleaner(CCit_jour& jour) : m_Jour(jour) { }
-    virtual ~CCitJourCleaner() {};
+    ~CCitJourCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty() { return false; }
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override { return false; }
 
 protected:
     CCit_jour& m_Jour;
@@ -171,10 +171,10 @@ class CCitProcCleaner : public CPubCleaner
 {
 public:
     CCitProcCleaner(CCit_proc& proc) : m_Proc(proc) { }
-    virtual ~CCitProcCleaner() {};
+    ~CCitProcCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty() { return false; }
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override { return false; }
 
 protected:
     CCit_proc& m_Proc;
@@ -185,10 +185,10 @@ class CCitPatCleaner : public CPubCleaner
 {
 public:
     CCitPatCleaner(CCit_pat& pat) : m_Pat(pat) { }
-    virtual ~CCitPatCleaner() {};
+    ~CCitPatCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty() { return false; }
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override { return false; }
 
 protected:
     CCit_pat& m_Pat;
@@ -199,10 +199,10 @@ class CCitLetCleaner : public CPubCleaner
 {
 public:
     CCitLetCleaner(CCit_let& let) : m_Let(let) { }
-    virtual ~CCitLetCleaner() {};
+    ~CCitLetCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty() { return false; }
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override { return false; }
 
 protected:
     CCit_let& m_Let;
@@ -213,10 +213,10 @@ class CMedlineEntryCleaner : public CPubCleaner
 {
 public:
     CMedlineEntryCleaner(CMedline_entry& men) : m_Men(men) { }
-    virtual ~CMedlineEntryCleaner() {};
+    ~CMedlineEntryCleaner() override {}
 
-    virtual bool Clean(bool fix_initials, bool strip_serial);
-    virtual bool IsEmpty() { return false; }
+    bool Clean(bool fix_initials, bool strip_serial) override;
+    bool IsEmpty() override { return false; }
 
 protected:
     CMedline_entry& m_Men;
@@ -230,7 +230,6 @@ class NCBI_CLEANUP_EXPORT CCleanupPub : public CObject
 {
 public:
     static bool CleanPubdesc(CPubdesc& pubdesc, bool strip_serial);
-
 
 private:
     static bool x_CleanPubdescComment(string& str);
