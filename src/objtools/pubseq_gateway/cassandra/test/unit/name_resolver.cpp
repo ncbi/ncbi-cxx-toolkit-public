@@ -138,7 +138,6 @@ TEST(CCassNameResolverTest, NoneResolverTest) {
         {"CONN_LBSMD_DISABLE", "1"},
         {"CONN_NAMERD_ENABLE", "0"},
         {"CONN_LBDNS_ENABLE", "0"},
-        {"CONN_LBOS_ENABLE", "0"},
         {"CONN_LINKERD_ENABLE", "0"},
         {"CONN_LOCAL_ENABLE", "0"},
         {"CONN_DISPD_DISABLE", "1"}};
