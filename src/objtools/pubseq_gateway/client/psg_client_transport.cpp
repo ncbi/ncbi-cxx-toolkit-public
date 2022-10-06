@@ -1330,7 +1330,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         do {
                             if (last_session()) {
                                 if (add_session()) {
-                                    ++session;
+                                    session = prev(server_sessions.end());
                                 } else {
                                     session = original_session;
                                 }
