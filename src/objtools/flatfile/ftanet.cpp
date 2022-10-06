@@ -949,7 +949,7 @@ void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop, char* 
     int  merge;
 
     if (org_ref.IsSetTaxname()) {
-        std::string taxname = org_ref.GetTaxname();
+        string taxname = org_ref.GetTaxname();
 
         size_t last_char = taxname.size();
         for (; last_char; --last_char) {
@@ -968,11 +968,11 @@ void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop, char* 
     if (pp->taxserver == 2)
         pp->taxserver = fta_init_tax_server();
 
-    std::string old_taxname;
+    string old_taxname;
     if (organelle != NULL) {
-        std::string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "",
-                    organelle_str(organelle),
-                    space(taxname.size() ? " " : "");
+        string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "",
+               organelle_str(organelle),
+               space(taxname.size() ? " " : "");
 
         old_taxname = taxname;
         taxname     = organelle_str + space + taxname;
@@ -982,7 +982,7 @@ void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop, char* 
         attempt = 2;
     }
 
-    std::string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "";
+    string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "";
     if (pp->taxserver == 2) {
         ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"%s\", because the server is down. Cannot generate ASN.1 for this entry.", taxname.c_str());
         *drop = 1;

@@ -550,7 +550,7 @@ Int2 fta_main(ParserPtr pp, bool already)
 }
 
 /**********************************************************/
-static bool FillAccsBySource(Parser& pp, const std::string& source, bool all)
+static bool FillAccsBySource(Parser& pp, const string& source, bool all)
 {
     if (NStr::EqualNocase(source, "SPROT")) {
         pp.acprefix = ParFlat_SPROT_AC;
@@ -940,7 +940,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     TransTableFreeAll();*/
 }
 
-bool fta_set_format_source(Parser& pp, const std::string& format, const std::string& source)
+bool fta_set_format_source(Parser& pp, const string& format, const string& source)
 {
     if (format == "embl")
         pp.format = Parser::EFormat::EMBL;

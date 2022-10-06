@@ -659,7 +659,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
         return;
     }
 
-    std::string def_title;
+    string def_title;
     if (big_graph.IsSetTitle())
         def_title = big_graph.GetTitle();
 

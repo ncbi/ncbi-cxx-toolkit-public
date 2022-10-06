@@ -163,7 +163,7 @@ static bool FindTheQual(const CSeq_feat& feat, const Char* qual_to_find)
  **********************************************************/
 static char* CpTheQualValueNext(TQualVector::iterator& cur_qual, const TQualVector::iterator& end_qual, const char* qual)
 {
-    std::string qvalue;
+    string qvalue;
 
     for (; cur_qual != end_qual; ++cur_qual) {
         if (! (*cur_qual)->IsSetQual() || (*cur_qual)->GetQual() != qual || ! (*cur_qual)->IsSetVal())
@@ -387,7 +387,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
         sprintf(str, "%d", (int)*num);
 
         CRef<CSeq_id> seq_id(new CSeq_id);
-        std::string&  obj_id_str = seq_id->SetLocal().SetStr();
+        string&       obj_id_str = seq_id->SetLocal().SetStr();
         obj_id_str               = text_id->GetAccession();
         obj_id_str += "_";
         obj_id_str += str;
@@ -410,7 +410,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
         sprintf(str, "%d", (int)*num);
 
         CRef<CSeq_id> seq_id(new CSeq_id);
-        std::string&  obj_id_str = seq_id->SetLocal().SetStr();
+        string&       obj_id_str = seq_id->SetLocal().SetStr();
         obj_id_str               = text_id->GetAccession();
         obj_id_str += "_";
         obj_id_str += str;
@@ -493,7 +493,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     seq_id.Reset(new CSeq_id);
     seq_id->SetGeneral().SetTag().SetStr(protacc);
 
-    std::string& db = seq_id->SetGeneral().SetDb();
+    string& db = seq_id->SetGeneral().SetDb();
     if (pp->entrylist[pp->curindx]->is_tsa != false)
         db = "TSA:";
     else if (pp->entrylist[pp->curindx]->is_tls != false)
@@ -580,7 +580,7 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
         if (qval == NULL)
             break;
 
-        std::string qval_str = qval;
+        string qval_str = qval;
         MemFree(qval);
         qval = NULL;
 
@@ -674,7 +674,7 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
 
     strand = feat.GetLocation().GetStrand();
 
-    std::string organism;
+    string organism;
 
     for (const auto& desc : bioseq.GetDescr().Get()) {
         if (! desc->IsSource())
@@ -1034,7 +1034,7 @@ static void ProcessForDbxref(CBioseq& bioseq, CSeq_feat& feat, Parser::ESource s
 }
 
 /**********************************************************/
-static CRef<CBioseq> BldProtRefSeqEntry(ProtBlkPtr pbp, CSeq_feat& feat, std::string& seq_data, Uint1 method, ParserPtr pp, const CBioseq& bioseq, CBioseq::TId& ids)
+static CRef<CBioseq> BldProtRefSeqEntry(ProtBlkPtr pbp, CSeq_feat& feat, string& seq_data, Uint1 method, ParserPtr pp, const CBioseq& bioseq, CBioseq::TId& ids)
 {
     CRef<CBioseq> new_bioseq;
 
@@ -1086,7 +1086,7 @@ static char* SimpleValuePos(char* qval)
     for (eptr = bptr; *eptr != ',' && *eptr != '\0';)
         eptr++;
 
-    return StringSave(std::string(bptr, eptr).c_str());
+    return StringSave(string(bptr, eptr).c_str());
 }
 
 /**********************************************************
@@ -1236,7 +1236,7 @@ static void check_end_internal(size_t protlen, const CSeq_feat& feat, Uint1 dif)
  *   to delete for "buildcds.c program.
  *
  **********************************************************/
-static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const std::string& prot)
+static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const string& prot)
 {
     char* qval;
 
@@ -1268,7 +1268,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const std:
  *      If intercodon = TRUE, then no comparison.
  *
  **********************************************************/
-static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, std::string& prot, CSeq_feat& feat, char* qval, bool intercodon, char* gcode, unsigned char* method)
+static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, char* qval, bool intercodon, char* gcode, unsigned char* method)
 {
     char*  ptr;
     Char   msg2[1100];
@@ -1389,7 +1389,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, std::string& prot, 
  *      If bsp != translation's value return FALSE.
  *
  **********************************************************/
-static bool check_translation(std::string& prot, char* qval)
+static bool check_translation(string& prot, char* qval)
 {
     size_t len  = 0;
     size_t blen = prot.size();
@@ -1425,7 +1425,7 @@ static bool check_translation(std::string& prot, char* qval)
 // Therefore, this function changes all IDs of the codebreaks to feat->location->id before translation,
 // and return all this stuff back after translation.
 // TODO: it probably should be organized in another way
-static bool Translate(CSeq_feat& feat, std::string& prot)
+static bool Translate(CSeq_feat& feat, string& prot)
 {
     std::list<CRef<CSeq_id>> orig_ids;
     const CSeq_id*           feat_loc_id = nullptr;
@@ -1554,7 +1554,7 @@ static Int2 EndAdded(CSeq_feat& feat, GeneRefFeats& gene_refs)
         last_interval->SetTo(oldto + remainder);
     }
 
-    std::string newprot;
+    string newprot;
     Translate(feat, newprot);
 
     if (newprot.empty()) {
@@ -1684,7 +1684,7 @@ static void fta_check_codon_quals(CSeq_feat& feat)
  *   end_stop_codon) instead.
  *
  **********************************************************/
-static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, unsigned char* method, Uint1 dif, GeneRefFeats& gene_refs, std::string& seq_data)
+static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, unsigned char* method, Uint1 dif, GeneRefFeats& gene_refs, string& seq_data)
 {
     char* qval;
     bool  intercodon = false;
@@ -1725,7 +1725,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
         for (int cur_code_id = cur_code->GetId(); again && cur_code_id < 14; ++cur_code_id) {
             cur_code->SetId(cur_code_id);
 
-            std::string prot;
+            string prot;
             if (! Translate(feat, prot))
                 pp->entrylist[pp->curindx]->drop = 1;
 
@@ -1738,7 +1738,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
             if (residue == '*')
                 prot = prot.substr(0, prot.size() - 1);
 
-            intercodon = prot.find('*') != std::string::npos;
+            intercodon = prot.find('*') != string::npos;
 
             if (! intercodon) {
                 qval = CpTheQualValue(feat.GetQual(), "translation");
@@ -1762,7 +1762,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
         }
     }
 
-    std::string prot;
+    string prot;
     if (! Translate(feat, prot))
         pp->entrylist[pp->curindx]->drop = 1;
 
@@ -2242,7 +2242,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     if (! ids.empty())
         fta_check_codon_quals(cds);
 
-    std::string sequence_data;
+    string sequence_data;
     InternalStopCodon(pp, pbp->ibp, cds, &method, dif, gene_refs, sequence_data);
 
     if (cds.GetQual().empty())

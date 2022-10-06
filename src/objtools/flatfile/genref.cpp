@@ -74,9 +74,9 @@ struct SeqLocInfo {
 };
 
 typedef std::list<SeqLocInfo> TSeqLocInfoList;
-typedef std::set<std::string> TSynSet;
-typedef std::set<std::string> TWormbaseSet;
-typedef std::set<std::string> TLocusTagSet;
+typedef std::set<string>      TSynSet;
+typedef std::set<string>      TWormbaseSet;
+typedef std::set<string>      TLocusTagSet;
 
 struct AccMinMax {
     CRef<CSeq_id> pId;
@@ -236,7 +236,7 @@ Int2 leave_rna_feat[] = {
 };
 
 /**********************************************************/
-static void GetLocationStr(const CSeq_loc& loc, std::string& str)
+static void GetLocationStr(const CSeq_loc& loc, string& str)
 {
     loc.GetLabel(&str);
     MakeLocStrCompatible(str);
@@ -1877,7 +1877,7 @@ static bool fta_rnas_cds_feat(const CSeq_feat& feat)
 
     if (feat.GetData().IsImp()) {
         if (feat.GetData().GetImp().IsSetKey()) {
-            const std::string& key = feat.GetData().GetImp().GetKey();
+            const string& key = feat.GetData().GetImp().GetKey();
             if (key == "CDS" || key == "rRNA" ||
                 key == "tRNA" || key == "mRNA")
                 return true;
@@ -2580,8 +2580,7 @@ static bool GeneLocusCheck(const TSeqFeatList& feats, bool diff_lt)
             if (gene_ref1.GetLocus_tag() == gene_ref2.GetLocus_tag())
                 continue;
 
-            std::string loc1_str,
-                loc2_str;
+            string loc1_str, loc2_str;
 
             GetLocationStr((*feat)->GetLocation(), loc1_str);
             GetLocationStr((*feat_next)->GetLocation(), loc2_str);
@@ -2931,7 +2930,7 @@ static void GeneQuals(TEntryList& seq_entries, const char* acnum, GeneRefFeats& 
 }
 
 /**********************************************************/
-static void fta_collect_genes(const CBioseq& bioseq, std::set<std::string>& genes)
+static void fta_collect_genes(const CBioseq& bioseq, std::set<string>& genes)
 {
     for (const auto& annot : bioseq.GetAnnot()) {
         if (! annot->IsFtable())
@@ -2950,7 +2949,7 @@ static void fta_collect_genes(const CBioseq& bioseq, std::set<std::string>& gene
 }
 
 /**********************************************************/
-static void fta_fix_labels(CBioseq& bioseq, const std::set<std::string>& genes)
+static void fta_fix_labels(CBioseq& bioseq, const std::set<string>& genes)
 {
     if (! bioseq.IsSetAnnot())
         return;
@@ -2969,8 +2968,8 @@ static void fta_fix_labels(CBioseq& bioseq, const std::set<std::string>& genes)
                     ! (*qual)->IsSetVal() || (*qual)->GetVal().empty())
                     continue;
 
-                const std::string&                    cur_val = (*qual)->GetVal();
-                std::set<std::string>::const_iterator ci      = genes.lower_bound(cur_val);
+                const string&                    cur_val = (*qual)->GetVal();
+                std::set<string>::const_iterator ci      = genes.lower_bound(cur_val);
                 if (*ci == cur_val) {
                     CRef<CGb_qual> new_qual(new CGb_qual);
                     new_qual->SetQual("gene");
@@ -2987,7 +2986,7 @@ static void fta_fix_labels(CBioseq& bioseq, const std::set<std::string>& genes)
 void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
 {
     if (pp->source == Parser::ESource::Flybase) {
-        std::set<std::string> genes;
+        std::set<string> genes;
         for (const auto& entry : seq_entries) {
             for (CBioseq_CI bioseq(GetScope(), *entry); bioseq; ++bioseq) {
                 fta_collect_genes(*bioseq->GetCompleteBioseq(), genes);

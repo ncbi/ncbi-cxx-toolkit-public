@@ -362,7 +362,7 @@ static bool OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& seq_entries)
     return true;
 }
 
-static void SetXrefObjId(CEMBL_xref& xref, const std::string& str)
+static void SetXrefObjId(CEMBL_xref& xref, const string& str)
 {
     if (str.empty())
         return;
@@ -439,7 +439,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, char* chentr
         bptr += col_data; /* bptr points to database_identifier */
         code = fta_StringMatch(ParFlat_DBname_array, bptr);
 
-        std::string name;
+        string name;
         if (code < 0) {
             ptr = SrchTheChar(bptr, eptr, ';');
             name.assign(bptr, ptr);
@@ -474,7 +474,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, char* chentr
         p    = SrchTheChar(bptr, eptr, '\n');
         ptr  = SrchTheChar(bptr, eptr, ';');
 
-        std::string id, id1;
+        string id, id1;
 
         if (ptr != NULL && ptr < p) {
             id.assign(bptr, ptr);
@@ -1600,7 +1600,7 @@ static void fta_create_imgt_misc_feat(CBioseq& bioseq, CEMBL_block& embl_block, 
         CRef<CDbtag> tag(new CDbtag);
         tag->SetDb(xref->GetDbname().GetName());
 
-        std::string& id_str = tag->SetTag().SetStr();
+        string& id_str = tag->SetTag().SetStr();
 
         bool need_delimiter = false;
         for (const auto& id : xref->GetId()) {
@@ -1675,7 +1675,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     str    = NULL;
     offset = xSrchNodeType(entry, ParFlat_DE, &len);
 
-    std::string title;
+    string title;
 
     if (offset != NULL) {
         str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_EMBL);
@@ -2005,8 +2005,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
 
         if (std_creation_date.NotEmpty() && std_creation_date->Compare(*std_update_date) == CDate::eCompare_after) {
-            std::string crdate_str,
-                update_str;
+            string crdate_str, update_str;
             std_creation_date->GetDate(&crdate_str, "%2M-%2D-%4Y");
             std_update_date->GetDate(&crdate_str, "%2M-%2D-%4Y");
             ErrPostEx(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"%s\" precedes create-date \"%s\".", update_str.c_str(), crdate_str.c_str());
@@ -2041,8 +2040,8 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
         CRef<CBioSource> bio_src(new CBioSource);
         bio_src->SetOrg(*org_ref);
 
-        std::string& taxname_str = org_ref->SetTaxname();
-        size_t       off_pos     = 0;
+        string& taxname_str = org_ref->SetTaxname();
+        size_t  off_pos     = 0;
         if (GetGenomeInfo(*bio_src, taxname_str.c_str()) && bio_src->GetGenome() != 9) /* ! Plasmid */
         {
             while (taxname_str[off_pos] != ' ' && off_pos < taxname_str.size())

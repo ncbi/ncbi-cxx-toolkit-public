@@ -651,8 +651,8 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
         text_id = id.GetTextseq_Id();
 
     if (text_id != nullptr) {
-        Int2               text_id_ver = text_id->IsSetVersion() ? text_id->GetVersion() : numeric_limits<short>::min();
-        const std::string& text_id_acc = text_id->GetAccession();
+        Int2          text_id_ver = text_id->IsSetVersion() ? text_id->GetVersion() : numeric_limits<short>::min();
+        const string& text_id_acc = text_id->GetAccession();
         for (use_indx = 0; use_indx < pp->indx; use_indx++) {
             acnum  = pp->entrylist[use_indx]->acnum;
             vernum = pp->entrylist[use_indx]->vernum;
@@ -727,28 +727,28 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         return tag;
     }
 
-    const std::string& val = qual.GetVal();
+    const string& val = qual.GetVal();
     if (NStr::CompareNocase(val.c_str(), "taxon") == 0)
         return tag;
 
-    std::string line = val;
+    string line = val;
 
     if (StringNICmp(line.c_str(), "MGD:MGI:", 8) == 0)
         line = line.substr(4);
 
     size_t colon = line.find(':');
-    if (colon == std::string::npos) {
+    if (colon == string::npos) {
         ErrPostEx(SEV_ERROR, ERR_QUALIFIER_DbxrefIncorrect, "Badly formatted /db_xref qualifier: \"%s\". Qualifier dropped.", val.c_str());
         return tag;
     }
 
-    std::string tail = line.substr(colon + 1);
-    line             = line.substr(0, colon);
+    string tail = line.substr(colon + 1);
+    line        = line.substr(0, colon);
 
     if (MatchArrayIString(DbxrefObsolete, line.c_str()) > -1) {
         ErrPostEx(SEV_WARNING, ERR_FEATURE_ObsoleteDbXref, "/db_xref type \"%s\" is obsolete.", line.c_str());
 
-        std::string buf;
+        string buf;
         if (NStr::CompareNocase(line.c_str(), "BHB") == 0)
             buf = "IRD";
         else if (NStr::CompareNocase(line.c_str(), "BioHealthBase") == 0)
@@ -767,7 +767,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
 
     if (NStr::CompareNocase(line.c_str(), "UNIPROT/SWISS-PROT") == 0 ||
         NStr::CompareNocase(line.c_str(), "UNIPROT/TREMBL") == 0) {
-        std::string buf("UniProtKB");
+        string buf("UniProtKB");
         buf += line.substr(7);
 
         line = buf;
@@ -980,7 +980,7 @@ static char* CheckLocStr(const Char* str)
     while (*eptr == ' ' || *eptr == ')')
         --eptr;
 
-    location = StringSave(std::string(ptr, eptr + 1).c_str());
+    location = StringSave(string(ptr, eptr + 1).c_str());
     return (location);
 }
 
@@ -1201,7 +1201,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         } else if (pp->format == Parser::EFormat::GenBank) {
             for (p = dbp->mOffset + col_data; *p != '\0' && *p != '(';)
                 p++;
-            location = CheckLocStr(std::string(p, dbp->mOffset + dbp->len - p).c_str());
+            location = CheckLocStr(string(p, dbp->mOffset + dbp->len - p).c_str());
         } else if (pp->format == Parser::EFormat::EMBL) {
             subdbp = (DataBlkPtr)dbp->mpData;
             for (; subdbp != NULL; subdbp = subdbp->mpNext) {
@@ -1436,7 +1436,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
     if (feat.GetQual().empty())
         feat.ResetQual();
 
-    std::string qval_str;
+    string qval_str;
     if (qval) {
         qval_str = qval;
         MemFree(qval);
@@ -1445,8 +1445,8 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
 
     size_t len = 0;
     if (qval_str.empty() && feat.IsSetComment() && rna_ref.GetType() == CRNA_ref::eType_rRNA) {
-        std::string comment = feat.GetComment();
-        len                 = comment.size();
+        string comment = feat.GetComment();
+        len            = comment.size();
 
         if (len > 15 && len < 20) {
             if (StringNICmp(comment.c_str() + len - 15, "S ribosomal RNA", 15) == 0) {
@@ -1776,7 +1776,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
     if (! feat.IsSetComment())
         feat.SetComment("fMet");
     else if (StringIStr(feat.GetComment().c_str(), "fmet") == NULL) {
-        std::string& comment = feat.SetComment();
+        string& comment = feat.SetComment();
         comment += "; fMet";
     }
 
@@ -1916,7 +1916,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
                 if (! feat.IsSetComment())
                     feat.SetComment(p);
                 else {
-                    std::string& comment = feat.SetComment();
+                    string& comment = feat.SetComment();
                     comment += "; ";
                     comment += p;
                 }
@@ -2202,8 +2202,8 @@ void fta_sort_biosource(CBioSource& bio)
 /**********************************************************/
 static void ConvertQualifierValue(CRef<CGb_qual>& qual)
 {
-    std::string val       = qual->GetVal();
-    bool        has_comma = val.find(',') != std::string::npos;
+    string val       = qual->GetVal();
+    bool   has_comma = val.find(',') != string::npos;
 
     if (has_comma) {
         std::replace(val.begin(), val.end(), ',', ';');
@@ -2259,7 +2259,7 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
         return;
 
     if (count == 1) {
-        const std::string& val = (*first)->GetVal();
+        const string& val = (*first)->GetVal();
         if (*val.begin() == '(' && *val.rbegin() == ')') {
             ConvertQualifierValue(*first);
         }
@@ -2306,8 +2306,8 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
     inf_bad  = 0;
 
     for (TQualVector::iterator qual = fbp->quals.begin(); qual != fbp->quals.end();) {
-        const std::string& qual_str = (*qual)->IsSetQual() ? (*qual)->GetQual() : "";
-        const std::string& val_str  = (*qual)->IsSetVal() ? (*qual)->GetVal() : "";
+        const string& qual_str = (*qual)->IsSetQual() ? (*qual)->GetQual() : "";
+        const string& val_str  = (*qual)->IsSetVal() ? (*qual)->GetVal() : "";
         if (qual_str == "experiment") {
             if (val_str == "experimental evidence, no additional details recorded") {
                 exp_good++;
@@ -2475,7 +2475,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
             if (! feat->IsSetExcept_text())
                 feat->SetExcept_text("trans-splicing");
             else {
-                std::string& exc_text = feat->SetExcept_text();
+                string& exc_text = feat->SetExcept_text();
                 exc_text += ", trans-splicing";
             }
         }
@@ -2546,8 +2546,8 @@ static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
 
         TQualVector::iterator tq = q;
         for (++tq; tq != fbp->quals.end(); ++tq) {
-            const std::string& q_qual  = (*q)->GetQual();
-            const std::string& tq_qual = (*tq)->GetQual();
+            const string& q_qual  = (*q)->GetQual();
+            const string& tq_qual = (*tq)->GetQual();
 
             if (! tq_qual.empty()) {
                 if (q_qual == "gene")
@@ -2559,8 +2559,8 @@ static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
                 if (i == 0) {
                     /* Do not sort /gene qualifiers
                      */
-                    const std::string q_val  = (*q)->GetVal();
-                    const std::string tq_val = (*tq)->GetVal();
+                    const string q_val  = (*q)->GetVal();
+                    const string tq_val = (*tq)->GetVal();
 
                     if (q_val.empty())
                         continue;
@@ -2669,8 +2669,8 @@ static void fta_check_rpt_unit_range(FeatBlkPtr fbp, size_t length)
             continue;
         }
 
-        const std::string& qual_str = (*cur)->GetQual();
-        const std::string& val_str  = (*cur)->GetVal();
+        const string& qual_str = (*cur)->GetQual();
+        const string& val_str  = (*cur)->GetVal();
 
         if (qual_str != "rpt_unit_range" || fta_check_rpt_unit_span(val_str.c_str(), length)) {
             ++cur;
@@ -2746,7 +2746,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
 class PredIsGivenQual
 {
 public:
-    PredIsGivenQual(const std::string& qual) :
+    PredIsGivenQual(const string& qual) :
         qual_(qual) {}
 
     bool operator()(const CRef<CGb_qual>& qual)
@@ -2755,7 +2755,7 @@ public:
     }
 
 private:
-    std::string qual_;
+    string qual_;
 };
 
 static void fta_check_multiple_locus_tag(DataBlkPtr dbp, unsigned char* drop)
@@ -2837,13 +2837,13 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
             continue;
 
         for (TQualVector::const_iterator gbqp1 = fbp->quals.begin(); gbqp1 != fbp->quals.end(); ++gbqp1) {
-            const std::string& gbqp1_val = (*gbqp1)->GetVal();
+            const string& gbqp1_val = (*gbqp1)->GetVal();
             if (isOldLocusTag(*gbqp1) || gbqp1_val.empty())
                 continue;
 
             TQualVector::const_iterator gbqp2 = gbqp1;
             for (++gbqp2; gbqp2 != fbp->quals.end(); ++gbqp2) {
-                const std::string& gbqp2_val = (*gbqp2)->GetVal();
+                const string& gbqp2_val = (*gbqp2)->GetVal();
                 if (isOldLocusTag(*gbqp2) || gbqp2_val.empty())
                     continue;
 
@@ -2875,8 +2875,8 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
         got_pseudogene = false;
 
         for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
-            const std::string& qual_str = (*cur)->GetQual();
-            const std::string& val_str  = (*cur)->IsSetVal() ? (*cur)->GetVal() : "";
+            const string& qual_str = (*cur)->GetQual();
+            const string& val_str  = (*cur)->IsSetVal() ? (*cur)->GetVal() : "";
 
             if (qual_str != "pseudogene") {
                 if (! got_pseudo && qual_str == "pseudo")
@@ -3224,7 +3224,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
     FeatBlkPtr  fbp;
 
     CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
-    std::list<std::string>               linkage_evidence_names;
+    list<string>                         linkage_evidence_names;
 
     StrNumPtr   snp;
     char*       p;
@@ -3308,8 +3308,8 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 if (! cur->IsSetQual() || ! cur->IsSetVal())
                     continue;
 
-                const std::string& cur_qual = cur->GetQual();
-                const std::string& cur_val  = cur->GetVal();
+                const string& cur_qual = cur->GetQual();
+                const string& cur_val  = cur->GetVal();
 
                 if (cur_qual.empty() || cur_val.empty())
                     continue;
@@ -3705,8 +3705,8 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
             continue;
         }
 
-        const std::string& cur_qual = (*cur)->GetQual();
-        const std::string& cur_val  = (*cur)->GetVal();
+        const string& cur_qual = (*cur)->GetQual();
+        const string& cur_val  = (*cur)->GetVal();
 
         if (cur_qual != "note") {
             ++cur;
@@ -3741,9 +3741,9 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
 }
 
 /**********************************************************/
-static bool CheckLegalQual(const Char* val, Char ch, std::string* qual)
+static bool CheckLegalQual(const Char* val, Char ch, string* qual)
 {
-    std::string qual_name;
+    string qual_name;
     for (; *val && *val != ch && (isalpha(*val) || *val == '_'); ++val)
         qual_name += *val;
 
@@ -3944,7 +3944,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
             fbp->key = StringSave("misc_feature");
         } else
-            fbp->key = StringSave(std::string(ptr1, ptr2).c_str());
+            fbp->key = StringSave(string(ptr1, ptr2).c_str());
 
         for (ptr1 = ptr2; *ptr1 == ' ';)
             ptr1++;
@@ -4044,7 +4044,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
         } else if (subtype == CSeqFeatData::eSubtype_bad && ! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
             if (StringCmp(fbp->key, "mobile_element") != 0) {
                 auto        qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
-                std::string str1     = CSeqFeatData::GetQualifierAsString(qual_idx);
+                string      str1     = CSeqFeatData::GetQualifierAsString(qual_idx);
                 const char* str      = str1.c_str();
                 if ((StringCmp(fbp->key, "old_sequence") != 0 &&
                      StringCmp(fbp->key, "conflict") != 0) ||
@@ -4105,10 +4105,10 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
         return;
 
     for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
-        const std::string& qual_str = (*cur)->GetQual();
+        const string& qual_str = (*cur)->GetQual();
 
         if ((*cur)->IsSetVal()) {
-            const std::string& val_str = (*cur)->GetVal();
+            const string& val_str = (*cur)->GetVal();
             std::vector<Char>  val_buf(val_str.begin(), val_str.end());
             val_buf.push_back(0);
 
@@ -4171,7 +4171,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
         }
 
         if ((*cur)->IsSetVal() && qual_str == "note") {
-            std::string val = (*cur)->GetVal();
+            string val = (*cur)->GetVal();
             std::replace(val.begin(), val.end(), '\"', '\'');
             (*cur)->SetVal(val);
         }
@@ -4260,7 +4260,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
         } else if (subtype == CSeqFeatData::eSubtype_bad && ! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
             if (StringCmp(fbp->key, "mobile_element") != 0) {
                 auto        qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
-                std::string str1     = CSeqFeatData::GetQualifierAsString(qual_idx);
+                string      str1     = CSeqFeatData::GetQualifierAsString(qual_idx);
                 const char* str      = str1.c_str();
                 if ((StringCmp(fbp->key, "old_sequence") != 0 &&
                      StringCmp(fbp->key, "conflict") != 0) ||
@@ -4366,7 +4366,7 @@ static void fta_check_artificial_location(CSeq_feat& feat, char* key)
                 (*qual)->ResetVal();
         }
 
-        std::string val = (*qual)->IsSetVal() ? (*qual)->GetVal() : "";
+        string val = (*qual)->IsSetVal() ? (*qual)->GetVal() : "";
 
         if (val == "heterogenous population sequenced" ||
             val == "low-quality sequence region") {
@@ -4375,7 +4375,7 @@ static void fta_check_artificial_location(CSeq_feat& feat, char* key)
             if (! feat.IsSetExcept_text())
                 feat.SetExcept_text(val);
             else {
-                std::string& except_text = feat.SetExcept_text();
+                string& except_text = feat.SetExcept_text();
                 except_text += ", ";
                 except_text += val;
             }

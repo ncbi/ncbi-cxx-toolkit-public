@@ -321,7 +321,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, CMolInfo& mol_in
         if_cds = XMLCheckCDS(entry, ibp->xip);
         div    = CheckDIV(bptr);
         if (div != -1) {
-            std::string div_str(bptr, bptr + 3);
+            string div_str(bptr, bptr + 3);
             gbb->SetDiv(div_str);
 
             if (div == 16) /* "ORG" replaced by "UNA" */
@@ -710,8 +710,8 @@ static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, CBioseq& bioseq, Par
     MemFree(organism);
 
     if (org_ref.GetTaxname() == "Unknown.") {
-        std::string& taxname = org_ref.SetTaxname();
-        taxname              = taxname.substr(0, taxname.size() - 1);
+        string& taxname = org_ref.SetTaxname();
+        taxname         = taxname.substr(0, taxname.size() - 1);
     }
 
     if (taxonomy != NULL) {
@@ -825,7 +825,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     /* DEFINITION data ==> descr_title
      */
     str = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DEFINITION);
-    std::string title;
+    string title;
 
     if (str != NULL) {
         for (p = str; *p == ' ';)
