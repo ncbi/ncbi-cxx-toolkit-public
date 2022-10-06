@@ -85,15 +85,15 @@ typedef struct parser_ref_block {
                                                        AUTHORS for GenBank, RA for Embl
                                                        and Swiss-Prot */
     char*            title;   /* TITLE for GenBank */
-    std::string      journal; /* JOURNAL for GenBank, RL for Embl
+    string           journal; /* JOURNAL for GenBank, RL for Embl
                                            and Swiss-Prot */
     char*            cit;     /* for cit-gen in Swiss-Prot */
-    std::string      vol;
-    std::string      pages;
+    string           vol;
+    string           pages;
     char*            year;
-    std::string      affil;
+    string           affil;
     char*            country;
-    std::string      comment; /* STANDARD for GenBank, RP for
+    string           comment; /* STANDARD for GenBank, RP for
                                            Swiss-Prot, RC for Embl */
     Uint1            reftype; /* 0 if ignore the reference,
                                            1 if non-parseable,
@@ -186,7 +186,7 @@ static Int4 GetDataFromRN(DataBlkPtr dbp, Int4 col_data)
     for (str = bptr; isdigit(*str) != 0 && str < eptr;)
         str++;
 
-    num = NStr::StringToInt(std::string(bptr, str), NStr::fAllowTrailingSymbols);
+    num = NStr::StringToInt(string(bptr, str), NStr::fAllowTrailingSymbols);
     return (num);
 }
 
@@ -699,7 +699,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     if (prbp == NULL || prbp->journal.empty())
         return false;
 
-    std::string bptr = prbp->journal;
+    string bptr = prbp->journal;
 
     SIZE_TYPE ed_pos = NStr::FindNoCase(bptr, "ED.");
     if (ed_pos == NPOS)
@@ -710,7 +710,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     if (ed_pos == NPOS) /* no authors found */
         return false;
 
-    std::string temp1 = bptr.substr(0, ed_pos);
+    string temp1 = bptr.substr(0, ed_pos);
     const Char* temp2 = bptr.c_str() + ed_pos;
     if (*temp2 == 'S')
         temp2++;
@@ -772,7 +772,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
         for (temp2 = page; *temp2 != '\0' && *temp2 != ',';)
             temp2++;
 
-        book.SetImp().SetPages(std::string(page, temp2));
+        book.SetImp().SetPages(string(page, temp2));
     }
 
     const Char* eptr = bptr.c_str() + bptr.size() - 1;
@@ -808,7 +808,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
             p--;
         if (p != year)
             p++;
-        std::string affil = NStr::Sanitize(std::string(temp2, p));
+        string affil = NStr::Sanitize(string(temp2, p));
         book.SetImp().SetPub().SetStr(affil);
     }
 
@@ -818,7 +818,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
         for (s = vol; *s != '\0' && isdigit(*s) != 0;)
             s++;
 
-        book.SetImp().SetVolume(std::string(vol, s));
+        book.SetImp().SetVolume(string(vol, s));
     }
 
     if (prbp->authors.NotEmpty())

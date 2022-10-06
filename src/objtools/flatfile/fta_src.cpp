@@ -594,8 +594,8 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
             if (! cur->IsSetQual())
                 continue;
 
-            const std::string& qual_str = cur->GetQual();
-            char*              val_ptr  = cur->IsSetVal() ? cur->SetVal().data() : nullptr;
+            const string& qual_str = cur->GetQual();
+            char*         val_ptr  = cur->IsSetVal() ? cur->SetVal().data() : nullptr;
 
             if (qual_str == "db_xref") {
                 q = StringChr(val_ptr, ':');
@@ -690,7 +690,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
 
             p = StringChr(val_ptr, ' ');
 
-            std::string str_to_find;
+            string str_to_find;
             if (p != NULL)
                 str_to_find.assign(val_ptr, p);
             else
@@ -1609,7 +1609,7 @@ static SourceFeatBlkPtr SourceFeatDerive(SourceFeatBlkPtr sfbp,
 
             bool found = false;
             for (const auto& next : tsfbp->quals) {
-                const std::string& next_qual = next->GetQual();
+                const string& next_qual = next->GetQual();
 
                 if (next_qual == "focus" || next_qual != cur_qual)
                     continue;
@@ -1784,7 +1784,7 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
     if (! bio.CanGetOrg())
         return;
 
-    std::vector<std::string> modnames;
+    vector<string> modnames;
 
     if (bio.GetOrg().CanGetOrgname() && bio.GetOrg().GetOrgname().CanGetMod()) {
         for (const auto& mod : bio.GetOrg().GetOrgname().GetMod()) {
@@ -1802,8 +1802,8 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
         if (! cur->IsSetQual() || cur->GetQual() == "organism")
             continue;
 
-        const std::string& cur_qual = cur->GetQual();
-        const Char*        val_ptr  = cur->IsSetVal() ? cur->GetVal().c_str() : NULL;
+        const string& cur_qual = cur->GetQual();
+        const Char*   val_ptr  = cur->IsSetVal() ? cur->GetVal().c_str() : NULL;
 
         if (cur_qual == "note") {
             FTASubSourceAdd(bio, val_ptr, CSubSource::eSubtype_other);
@@ -2037,7 +2037,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                         break;
                     }
 
-                    std::string val_str(val_ptr, p);
+                    string val_str(val_ptr, p);
                     i = StringMatchIcase(OrganelleFirstToken, val_str.c_str());
                     if (i < 0) {
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_OrganelleIllegalClass, "Illegal class in /organelle qualifier: \"%s\". Entry dropped.", val_ptr);
@@ -2147,13 +2147,13 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq
             bio_src.GetOrg().GetTaxname().empty())
             continue;
 
-        const std::string& taxname = bio_src.GetOrg().GetTaxname();
-        std::string        orgdescr;
+        const string& taxname = bio_src.GetOrg().GetTaxname();
+        string        orgdescr;
         std::remove_copy_if(taxname.begin(), taxname.end(), std::back_inserter(orgdescr), is_a_space_char);
 
-        std::string commdescr;
+        string commdescr;
         if (bio_src.GetOrg().IsSetCommon()) {
-            const std::string& common = bio_src.GetOrg().GetCommon();
+            const string& common = bio_src.GetOrg().GetCommon();
             std::remove_copy_if(common.begin(), common.end(), std::back_inserter(commdescr), is_a_space_char);
         }
 
@@ -2162,7 +2162,7 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq
                 continue;
 
             size_t      name_len = strlen(tsfbp->name);
-            std::string orgfeat;
+            string orgfeat;
             std::remove_copy_if(tsfbp->name, tsfbp->name + name_len, std::back_inserter(orgfeat), is_a_space_char);
 
             if (NStr::CompareNocase(orgdescr.c_str(), "unknown") == 0) {
@@ -2241,8 +2241,8 @@ static void PropogateSuppliedLineage(CBioseq&         bioseq,
             orgname.ResetLineage();
         }
 
-        const std::string& taxname = sfbp->bio_src->GetOrg().GetTaxname();
-        std::string        lineage;
+        const string& taxname = sfbp->bio_src->GetOrg().GetTaxname();
+        string        lineage;
 
         bool found = false;
         for (const auto& descr : bioseq.GetDescr().Get()) {
@@ -2256,8 +2256,8 @@ static void PropogateSuppliedLineage(CBioseq&         bioseq,
                 ! bio_src.GetOrg().GetOrgname().IsSetLineage())
                 continue;
 
-            lineage                        = bio_src.GetOrg().GetOrgname().GetLineage();
-            const std::string& cur_taxname = bio_src.GetOrg().GetTaxname();
+            lineage                   = bio_src.GetOrg().GetOrgname().GetLineage();
+            const string& cur_taxname = bio_src.GetOrg().GetTaxname();
 
             if (NStr::CompareNocase(cur_taxname.c_str(), taxname.c_str()) == 0) {
                 found = true;

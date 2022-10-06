@@ -248,7 +248,7 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
         return;
     }
 
-    std::string label;
+    string label;
     if (! pub->GetLabel(&label, CPub::fLabel_Unique)) {
         new_pub.Reset(new CPub);
         new_pub->Assign(*pub);

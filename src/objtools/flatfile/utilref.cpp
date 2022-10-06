@@ -113,10 +113,10 @@ ValNodePtr get_tokens(char* pt, const Char* delimeter)
 }
 
 /**********************************************************/
-static void RemoveSpacesAndCommas(std::string& str)
+static void RemoveSpacesAndCommas(string& str)
 {
-    std::string buf;
-    for (std::string::iterator it = str.begin(); it != str.end(); ++it)
+    string buf;
+    for (string::iterator it = str.begin(); it != str.end(); ++it)
         if (*it != ',' && *it != '\t' && *it != ' ')
             buf.push_back(*it);
 
@@ -145,12 +145,12 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
         }
 
         if (author->GetName().GetName().IsSetInitials()) {
-            std::string& initials = author->SetName().SetName().SetInitials();
+            string& initials = author->SetName().SetName().SetInitials();
             RemoveSpacesAndCommas(initials);
         }
 
         if (author->GetName().GetName().IsSetSuffix()) {
-            std::string& suffix = author->SetName().SetName().SetSuffix();
+            string& suffix = author->SetName().SetName().SetSuffix();
             RemoveSpacesAndCommas(suffix);
         }
 
@@ -186,14 +186,14 @@ CRef<CAuthor> get_std_auth(const Char* token, Uint1 format)
                 namestd.SetInitials(auth + 1);
         }
 
-        namestd.SetLast(std::string(token, auth));
+        namestd.SetLast(string(token, auth));
     } else if (format == PDB_REF) {
         for (auth = eptr; auth > token && *auth != '.';)
             auth--;
         if (*auth == '.') {
             if (auth[1] != '\0' && auth[1] != '.')
                 namestd.SetLast(auth + 1);
-            namestd.SetInitials(std::string(token, auth + 1));
+            namestd.SetInitials(string(token, auth + 1));
         } else
             namestd.SetLast(token);
     } else if (format == EMBL_REF || format == SP_REF) {
@@ -210,7 +210,7 @@ CRef<CAuthor> get_std_auth(const Char* token, Uint1 format)
         } else
             auth = eptr + 1;
 
-        namestd.SetLast(std::string(token, auth));
+        namestd.SetLast(string(token, auth));
     } else if (format == ML_REF) {
         _TROUBLE;
     }
@@ -500,8 +500,8 @@ CRef<CDate> get_date(const Char* year)
         return ret;
     }
 
-    std::string year_str(year, year + 4);
-    time_t      now = 0;
+    string year_str(year, year + 4);
+    time_t now = 0;
     time(&now);
     struct tm* tm = localtime(&now);
 
