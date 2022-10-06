@@ -163,7 +163,7 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
             object_type = content_info.mInfoGenbank.mTypeInfo;
 
     if (object_type == nullptr)
-        NCBI_THROW2(CObjReaderParseException, eFormat, "File format not supported", 0);
+        NCBI_THROW2(CObjReaderParseException, eFormat, "Object type not supported", 0);
 
     return object_type;
 }
