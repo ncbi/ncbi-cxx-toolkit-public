@@ -5744,7 +5744,6 @@ PHIL	s	University of the Sciences in Philadelphia, Biological Sciences Departmen
 PHL	s	University of Messina			
 PI<DEU>	s	Institut und Museum fuer Geologie und Palaeontologie			
 PI<ITA>	s	Universita di Pisa, Dipartimento di Scienze Botaniche			
-PI<RUS>	s	Paleontological Institute	PIN<RUS>		
 PIAGR	s	University of Pisa			
 PICRC	s	Palau International Coral Reef Center			
 PIHG	s	Florida Department of Agriculture and Consumer Services			
@@ -5753,7 +5752,7 @@ PIKN	s	Koronivia Research Station
 PIMUI	s	Palaontologische Institut und Museum der Universitat in Innsbruck			
 PIMUZ	s	Palaontologisches Institut und Museum der Universitat Zurich			
 PIN<GBR>	s	Philosophical Institution of Newport			
-PIN<RUS>	s	Paleontological Institute, Russian Academy of Sciences	PI<RUS>		
+PIN<RUS>	s	Paleontological Institute, Russian Academy of Sciences			
 PINN	s	Pinnacles National Monument			
 PIR	c	Bulgarian Research Culture Collection			
 PISR	s	Pechora-Ilych State Reserve, Russia			
