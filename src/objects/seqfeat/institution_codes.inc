@@ -30,6 +30,9 @@
  *
  */
 
+/* time_t value corresponding to ; formally
+ * expressed as unsigned long so output can stand fully on its own. */
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -5777,7 +5780,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PHL\ts\tUniversity of Messina\t\t\t",
 "PI<DEU>\ts\tInstitut und Museum fuer Geologie und Palaeontologie\t\t\t",
 "PI<ITA>\ts\tUniversita di Pisa, Dipartimento di Scienze Botaniche\t\t\t",
-"PI<RUS>\ts\tPaleontological Institute\tPIN<RUS>\t\t",
 "PIAGR\ts\tUniversity of Pisa\t\t\t",
 "PICRC\ts\tPalau International Coral Reef Center\t\t\t",
 "PIHG\ts\tFlorida Department of Agriculture and Consumer Services\t\t\t",
@@ -5786,7 +5788,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PIMUI\ts\tPalaontologische Institut und Museum der Universitat in Innsbruck\t\t\t",
 "PIMUZ\ts\tPalaontologisches Institut und Museum der Universitat Zurich\t\t\t",
 "PIN<GBR>\ts\tPhilosophical Institution of Newport\t\t\t",
-"PIN<RUS>\ts\tPaleontological Institute, Russian Academy of Sciences\tPI<RUS>\t\t",
+"PIN<RUS>\ts\tPaleontological Institute, Russian Academy of Sciences\t\t\t",
 "PINN\ts\tPinnacles National Monument\t\t\t",
 "PIR\tc\tBulgarian Research Culture Collection\t\t\t",
 "PISR\ts\tPechora-Ilych State Reserve, Russia\t\t\t",
