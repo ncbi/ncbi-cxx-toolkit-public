@@ -390,7 +390,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                 bptr++;
             len = eptr - bptr;
             if (len > 0) {
-                gbb->SetOrigin(std::string(bptr, eptr));
+                gbb->SetOrigin(string(bptr, eptr));
             }
         }
     }
@@ -403,7 +403,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
         if_cds = check_cds(entry, pp->format);
         div    = CheckDIV(bptr);
         if (div != -1) {
-            std::string div_str(bptr, bptr + 3);
+            string div_str(bptr, bptr + 3);
             gbb->SetDiv(div_str);
 
             if (div == 16) /* "ORG" replaced by "UNA" */
@@ -842,7 +842,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
         }
 
         bptr += ParFlat_COL_DATA;
-        std::string& taxname = org_ref.SetTaxname();
+        string& taxname = org_ref.SetTaxname();
         taxname += ' ';
         taxname += bptr;
 
@@ -852,8 +852,8 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
     *end = ch;
 
     if (org_ref.GetTaxname() == "Unknown.") {
-        std::string& taxname = org_ref.SetTaxname();
-        taxname              = taxname.substr(0, taxname.size() - 1);
+        string& taxname = org_ref.SetTaxname();
+        taxname         = taxname.substr(0, taxname.size() - 1);
     }
 
     ptr = GetGenBankLineage(bptr, end);
@@ -1133,7 +1133,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     size_t len = 0;
     offset     = xSrchNodeType(entry, ParFlat_DEFINITION, &len);
 
-    std::string title;
+    string title;
     if (offset != NULL) {
         str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA);
 

@@ -294,7 +294,7 @@ static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
     sprintf(str1, "(bases 1 to %d;", (int)bases);
     sprintf(str2, "(residues 1 to %daa)", (int)bases);
 
-    std::string ref(bptr, bptr + dbp->len);
+    string ref(bptr, bptr + dbp->len);
 
     while (bptr < eptr && *bptr != '\n' && *bptr != '(')
         bptr++;
@@ -2039,9 +2039,9 @@ static void GetSegPub(TEntryList& entries, CSeq_descr& descr)
  **********************************************************/
 static bool CheckSegDescrChoice(const TEntryList& entries, Uint1 choice)
 {
-    std::string org;
-    CDate       date;
-    Int4        modif = -1;
+    string org;
+    CDate  date;
+    Int4   modif = -1;
 
     bool no_problem_found = true;
     for (TEntryList::const_iterator seq = entries.begin(); seq != entries.end(); ++seq) {
@@ -2121,7 +2121,7 @@ static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
     }
 
     if (ptr != NULL) {
-        str = StringSave(std::string(title, ptr).c_str());
+        str = StringSave(string(title, ptr).c_str());
         CleanTailNoneAlphaChar(str);
     } else {
         str = StringSave(title);
@@ -2210,7 +2210,7 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
                 continue;
             }
 
-            std::string type_str = user.GetType().GetStr();
+            string type_str = user.GetType().GetStr();
 
             if (type_str == "DBLink") {
                 if (cur_dblink.NotEmpty())
@@ -2686,7 +2686,7 @@ CRef<CSeq_id> StrToSeqId(const char* pch, bool pid)
 
             id = new CSeq_id;
             CRef<CObject_id> tag(new CObject_id);
-            tag->SetStr(std::string(pch, pchEnd - pch));
+            tag->SetStr(string(pch, pchEnd - pch));
 
             CRef<CDbtag> dbtag(new CDbtag);
             dbtag->SetTag(*tag);
@@ -2946,7 +2946,7 @@ const CSeq_descr& GetDescrPointer(const CSeq_entry& entry)
 }
 
 /**********************************************************/
-static void CleanVisString(std::string& str)
+static void CleanVisString(string& str)
 {
     if (str.empty())
         return;
@@ -2994,9 +2994,9 @@ static void CleanVisString(std::string& str)
 }
 
 /**********************************************************/
-static void CleanVisStringList(std::list<std::string>& str_list)
+static void CleanVisStringList(list<string>& str_list)
 {
-    for (std::list<std::string>::iterator it = str_list.begin(); it != str_list.end();) {
+    for (list<string>::iterator it = str_list.begin(); it != str_list.end();) {
         CleanVisString(*it);
 
         if (it->empty())
@@ -3053,28 +3053,28 @@ static void CheckGBBlock(TSeqdescList& descrs, bool& got)
         }
 
         if (gb_block.IsSetSource()) {
-            std::string& buf = gb_block.SetSource();
+            string& buf = gb_block.SetSource();
             CleanVisString(buf);
             if (buf.empty())
                 gb_block.ResetSource();
         }
 
         if (gb_block.IsSetOrigin()) {
-            std::string& buf = gb_block.SetOrigin();
+            string& buf = gb_block.SetOrigin();
             CleanVisString(buf);
             if (buf.empty())
                 gb_block.ResetOrigin();
         }
 
         if (gb_block.IsSetDate()) {
-            std::string& buf = gb_block.SetDate();
+            string& buf = gb_block.SetDate();
             CleanVisString(buf);
             if (buf.empty())
                 gb_block.ResetDate();
         }
 
         if (gb_block.IsSetDiv()) {
-            std::string& buf = gb_block.SetDiv();
+            string& buf = gb_block.SetDiv();
             CleanVisString(buf);
             if (buf.empty())
                 gb_block.ResetDiv();
@@ -3420,8 +3420,8 @@ void StripSerialNumbers(TEntryList& seq_entries)
 /*****************************************************************************/
 static void PackSeqData(CSeq_data::E_Choice code, CSeq_data& seq_data)
 {
-    const std::string*       seq_str = nullptr;
-    const std::vector<Char>* seq_vec = nullptr;
+    const string*       seq_str = nullptr;
+    const vector<Char>* seq_vec = nullptr;
 
     CSeqUtil::ECoding old_coding = CSeqUtil::e_not_set;
     size_t            old_size   = 0;

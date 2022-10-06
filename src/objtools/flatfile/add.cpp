@@ -380,7 +380,7 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
     if (gfp == NULL || ! bioseq.GetInst().IsSetSeq_data())
         return;
 
-    const std::string& sequence = bioseq.GetInst().GetSeq_data().GetIupacna();
+    const string& sequence = bioseq.GetInst().GetSeq_data().GetIupacna();
 
     if (sequence.empty() || sequence.size() != bioseq.GetLength())
         return;
@@ -499,7 +499,7 @@ void SeqToDelta(CBioseq& bioseq, Int2 tech)
     if (! bioseq.GetInst().IsSetSeq_data())
         return;
 
-    const std::string& sequence = bioseq.GetInst().GetSeq_data().GetIupacna();
+    const string& sequence = bioseq.GetInst().GetSeq_data().GetIupacna();
     if (sequence.empty() || sequence.size() != bioseq.GetLength())
         return;
 
@@ -532,7 +532,7 @@ void SeqToDelta(CBioseq& bioseq, Int2 tech)
             j  = (Int4)(r - q);
 
             delta->SetLiteral().SetLength(j);
-            delta->SetLiteral().SetSeq_data().SetIupacna().Set(std::string(q, r));
+            delta->SetLiteral().SetSeq_data().SetIupacna().Set(string(q, r));
 
             deltas.push_back(delta);
 
@@ -555,7 +555,7 @@ void SeqToDelta(CBioseq& bioseq, Int2 tech)
 
         CRef<CDelta_seq> delta(new CDelta_seq);
         delta->SetLiteral().SetLength(j);
-        delta->SetLiteral().SetSeq_data().SetIupacna().Set(std::string(q, p));
+        delta->SetLiteral().SetSeq_data().SetIupacna().Set(string(q, p));
 
         deltas.push_back(delta);
     }
@@ -590,16 +590,16 @@ void SeqToDelta(CBioseq& bioseq, Int2 tech)
 /**********************************************************/
 static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
 {
-    std::string ppacc1;
-    std::string ppacc2;
-    char*       master;
-    char*       range;
-    char*       acc1;
-    char*       acc2;
-    char*       p;
-    char*       q;
-    Char        ch1;
-    Char        ch2;
+    string ppacc1;
+    string ppacc2;
+    char*  master;
+    char*  range;
+    char*  acc1;
+    char*  acc2;
+    char*  p;
+    char*  q;
+    Char   ch1;
+    Char   ch2;
 
     if (extra_accs.empty())
         return false;
@@ -2032,7 +2032,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
 
             user_field.Reset(new CUser_field);
 
-            std::string lstr((char*)tvnp->data.ptrvalue);
+            string lstr((const char*)tvnp->data.ptrvalue);
             lstr = lstr.substr(0, lstr.size() - 1);
             user_field->SetLabel().SetStr(lstr);
             user_field->SetNum(i);
@@ -2189,9 +2189,8 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
             SetTextId(type, id, *new_text_id);
         }
     } else if (source == Parser::ESource::Flybase) {
-        std::string acc(accession);
         id.SetGeneral().SetDb("FlyBase");
-        id.SetGeneral().SetTag().SetStr(acc);
+        id.SetGeneral().SetTag().SetStr(accession);
     } else if (source == Parser::ESource::USPTO) {
         CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(accession);
         id.SetPatent(*pat_id);
@@ -2356,7 +2355,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* n
             p   = (char*)"";
         }
         if (name == NULL) {
-            std::string label;
+            string label;
             if (sli.badslp != nullptr)
                 sli.badslp->GetLabel(&label);
 
@@ -2766,7 +2765,7 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
         if (! user_obj.IsSetType() || ! user_obj.GetType().IsStr())
             continue;
 
-        const std::string& user_type_str = user_obj.GetType().GetStr();
+        const string& user_type_str = user_obj.GetType().GetStr();
 
         if (user_type_str == "StructuredComment")
             got_comment = true;

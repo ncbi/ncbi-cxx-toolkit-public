@@ -403,10 +403,10 @@ typedef struct _sprot_de_fields {
 } SPDEFields, *SPDEFieldsPtr;
 
 typedef struct sprot_feat_input {
-    std::string              key;     /* column 6-13 */
-    std::string              from;    /* column 15-20 */
-    std::string              to;      /* column 22-27 */
-    std::string              descrip; /* column 35-75, continue
+    string                   key;     /* column 6-13 */
+    string                   from;    /* column 15-20 */
+    string                   to;      /* column 22-27 */
+    string                   descrip; /* column 35-75, continue
                                                    line if a blank key */
     struct sprot_feat_input* next;    /* next FT */
 
@@ -580,7 +580,7 @@ const char* PE_values[] = {
  *   also memory free out str1 and str2.
  *
  **********************************************************/
-static void StringCombine(std::string& dest, const std::string& to_add, const Char* delim)
+static void StringCombine(string& dest, const string& to_add, const Char* delim)
 {
     if (to_add.empty())
         return;
@@ -1157,7 +1157,7 @@ static void fix_taxname_dot(COrg_ref& org_ref)
     if (! org_ref.IsSetTaxname())
         return;
 
-    std::string& taxname = org_ref.SetTaxname();
+    string& taxname = org_ref.SetTaxname();
 
     size_t len = taxname.size();
     if (len < 3)
@@ -1214,7 +1214,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
                 if (! org_ref->IsSetTaxname())
                     org_ref->SetTaxname(p);
                 else {
-                    std::string& taxname = org_ref->SetTaxname();
+                    string& taxname = org_ref->SetTaxname();
                     taxname += " (";
                     taxname += p;
                     taxname += ")";
@@ -1228,7 +1228,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
             if (! org_ref->IsSetTaxname())
                 org_ref->SetTaxname(p);
             else {
-                std::string& taxname = org_ref->SetTaxname();
+                string& taxname = org_ref->SetTaxname();
                 taxname += " (";
                 taxname += p;
                 taxname += ")";
@@ -1272,7 +1272,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
                 p--;
                 i = StringLen(*b) + 1;
                 if (*p == ' ' && (p[i] == ' ' || p[i] == '\t' || p[i] == '\0')) {
-                    std::string& taxname = org_ref->SetTaxname();
+                    string& taxname = org_ref->SetTaxname();
                     taxname += " (";
                     taxname += synsp->synname;
                     taxname += ")";
@@ -1285,7 +1285,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
             continue;
         }
 
-        std::string& taxname = org_ref->SetTaxname();
+        string& taxname = org_ref->SetTaxname();
         if (! taxname.empty())
             taxname += " ";
 
@@ -1586,7 +1586,7 @@ static void get_plasmid(DataBlkPtr entry, CSP_block::TPlasnm& plasms)
             ptr++;
         ptr--;
         if (ptr > str) {
-            plasms.push_back(std::string(str, ptr));
+            plasms.push_back(string(str, ptr));
         } else
             ErrPostEx(SEV_ERROR, ERR_SOURCE_MissingPlasmidName, "Plasmid name is missing from OG line of SwissProt record.");
         offset = ptr;
@@ -2667,8 +2667,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
 
     if (spb->CanGetCreated() && has_update_date &&
         spb->GetCreated().Compare(upd_date) == CDate::eCompare_after) {
-        std::string upd_date_str,
-            create_date_str;
+        string upd_date_str, create_date_str;
 
         upd_date.GetDate(&upd_date_str);
         spb->GetCreated().GetDate(&create_date_str);
@@ -2748,7 +2747,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                 } else {
                     std::vector<Char> org_taxname;
                     if (org_ref_cur->IsSetTaxname()) {
-                        const std::string& cur_taxname = org_ref_cur->GetTaxname();
+                        const string& cur_taxname = org_ref_cur->GetTaxname();
                         org_taxname.assign(cur_taxname.begin(), cur_taxname.end());
                     }
 
@@ -2890,7 +2889,7 @@ static void fta_remove_dup_spfeats(SPFeatInputPtr spfip)
 }
 
 /**********************************************************/
-static void SPPostProcVarSeq(std::string& varseq)
+static void SPPostProcVarSeq(string& varseq)
 {
     char* temp;
     char* end;
@@ -3182,16 +3181,16 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
                 p = NULL;
 
             if (quotes) {
-                StringCombine(temp->descrip, std::string(bptr, quotes), delim);
+                StringCombine(temp->descrip, string(bptr, quotes), delim);
                 if (p && p - 1 >= bptr && *(p - 1) == '.')
-                    StringCombine(temp->descrip, std::string(quotes + 1, endline - 1), "");
+                    StringCombine(temp->descrip, string(quotes + 1, endline - 1), "");
                 else
                     StringCombine(temp->descrip, std::string(quotes + 1, endline), "");
             } else {
                 if (p && p - 1 >= bptr && *(p - 1) == '.')
-                    StringCombine(temp->descrip, std::string(bptr, endline - 1), delim);
+                    StringCombine(temp->descrip, string(bptr, endline - 1), delim);
                 else
-                    StringCombine(temp->descrip, std::string(bptr, endline), delim);
+                    StringCombine(temp->descrip, string(bptr, endline), delim);
             }
 
             if (p)
@@ -3377,7 +3376,7 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
  *
  **********************************************************/
 /* bsv : 03/04/2020 : no Seq-feat.exp-ev setting anymore
-static void DelTheStr(std::string& sourcestr, const std::string& targetstr)
+static void DelTheStr(string& sourcestr, const string& targetstr)
 {
     NStr::ReplaceInPlace(sourcestr, targetstr, "", 0, 1);
     NStr::TruncateSpacesInPlace(sourcestr, NStr::eTrunc_End);
@@ -3437,7 +3436,7 @@ static bool SPFeatNoExp(ParserPtr pp, SPFeatInputPtr spfip)
  *                                              10-18-93
  *
  **********************************************************/
-static Int2 GetSPSitesMod(std::string& retstr)
+static Int2 GetSPSitesMod(string& retstr)
 {
     Int2 ret = ParFlatSPSitesModB;
 
@@ -3482,12 +3481,12 @@ Int2 SpFeatKeyNameValid(const Char* keystr)
 /**********************************************************/
 CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
 {
-    std::string descrip;
-    char*       loc;
-    char*       p;
-    Uint1       type;
-    Int2        indx;
-    bool        err = false;
+    string descrip;
+    char*  loc;
+    char*  p;
+    Uint1  type;
+    Int2   indx;
+    bool   err = false;
 
     descrip.assign(CpTheQualValue(fbp->quals, "note"));
 
@@ -4094,7 +4093,7 @@ static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
 }
 
 /**********************************************************/
-static void SPValidateEcnum(std::string& ecnum)
+static void SPValidateEcnum(string& ecnum)
 {
     char* p;
     char* q;
@@ -4374,8 +4373,8 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
 
     char* offset;
 
-    char*       str;
-    std::string str1;
+    char*  str;
+    string str1;
 
     char* ptr;
     char* bptr;
@@ -4444,7 +4443,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
         for (bptr = ptr; *ptr != '\0' && *ptr != ' ' && *ptr != symb;)
             ptr++;
         if (ptr > bptr) {
-            std::string ecnum(bptr, ptr);
+            string ecnum(bptr, ptr);
             SPValidateEcnum(ecnum);
 
             if (! ecnum.empty())
@@ -4633,8 +4632,8 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
 
     CBioseq& bioseq = seq_entry.SetSeq();
 
-    CSeq_data&   data     = bioseq.SetInst().SetSeq_data();
-    std::string& sequence = data.SetIupacaa().Set();
+    CSeq_data& data     = bioseq.SetInst().SetSeq_data();
+    string&    sequence = data.SetIupacaa().Set();
 
     if (from == 0) {
         spfbp->initmet = true;
@@ -4720,10 +4719,10 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
         ErrPostEx(SEV_WARNING, ERR_FEATURE_PartialNoNonTerNonCons, "Entry is partial but has no NON_TER or NON_CONS features.");
     } else if (mol_info->GetCompleteness() != 2) {
         if (bioseq.GetInst().IsSetSeq_data()) {
-            const CSeq_data&   data     = bioseq.GetInst().GetSeq_data();
-            const std::string& sequence = data.GetIupacaa().Get();
+            const CSeq_data& data     = bioseq.GetInst().GetSeq_data();
+            const string&    sequence = data.GetIupacaa().Get();
 
-            for (std::string::const_iterator value = sequence.begin(); value != sequence.end(); ++value) {
+            for (string::const_iterator value = sequence.begin(); value != sequence.end(); ++value) {
                 if (*value != 'X') {
                     ctr = 0; /* reset counter */
                     continue;
@@ -4745,8 +4744,8 @@ static void SeqToDeltaSP(CBioseq& bioseq, SPSegLocPtr spslp)
     if (spslp == NULL || ! bioseq.GetInst().IsSetSeq_data())
         return;
 
-    CSeq_ext::TDelta&  deltas      = bioseq.SetInst().SetExt().SetDelta();
-    const std::string& bioseq_data = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
+    CSeq_ext::TDelta& deltas      = bioseq.SetInst().SetExt().SetDelta();
+    const string&     bioseq_data = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
 
     for (; spslp != NULL; spslp = spslp->next) {
         CRef<CDelta_seq> delta(new CDelta_seq);
@@ -4761,7 +4760,7 @@ static void SeqToDeltaSP(CBioseq& bioseq, SPSegLocPtr spslp)
         delta->SetLiteral().SetLength(spslp->len);
 
 
-        std::string data_str = bioseq_data.substr(spslp->from, spslp->len);
+        string data_str = bioseq_data.substr(spslp->from, spslp->len);
 
         delta->SetLiteral().SetSeq_data().SetIupacaa().Set(data_str);
         deltas.Set().push_back(delta);

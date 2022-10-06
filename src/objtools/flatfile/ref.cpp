@@ -123,10 +123,10 @@ static const char* ERRemarks[] = {
 };
 
 /**********************************************************/
-static void normalize_comment(std::string& comment)
+static void normalize_comment(string& comment)
 {
-    std::string new_comment = comment;
-    char *      q, *r;
+    string new_comment = comment;
+    char * q, *r;
 
     for (r = (char*)new_comment.c_str();;) {
         r = strstr(r, "; ");
@@ -497,7 +497,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     if (p)
         *p = ch;
 
-    std::string msg = NStr::Sanitize(number);
+    string msg = NStr::Sanitize(number);
     if (pp->format == Parser::EFormat::EMBL ||
         pp->source == Parser::ESource::USPTO)
         *number = '\0';
@@ -654,7 +654,7 @@ static bool get_parts(char* bptr, char* eptr, CImprint& imp)
                 q--;
             *++q = '\0';
 
-            std::string supi(" ");
+            string supi(" ");
             supi += p;
             imp.SetPart_supi(supi);
         }
@@ -663,7 +663,7 @@ static bool get_parts(char* bptr, char* eptr, CImprint& imp)
         if (imp.IsSetPart_supi() && issue_str &&
             (issue_str[0] == 'P' || issue_str[0] == 'p') && (issue_str[1] == 'T' || issue_str[1] == 't') &&
             issue_str[2] == '\0') {
-            std::string& issue = imp.SetIssue();
+            string& issue = imp.SetIssue();
             issue += imp.GetPart_supi();
             imp.ResetPart_supi();
         }
@@ -956,7 +956,7 @@ static CRef<CCit_gen> get_unpub(char* bptr, char* eptr, CRef<CAuth_list>& auth_l
         if (s < eptr && *s != '\0' && auth_list.NotEmpty())
             auth_list->SetAffil().SetStr(NStr::Sanitize(s));
 
-        cit_gen->SetCit(std::string(bptr, str + 1));
+        cit_gen->SetCit(string(bptr, str + 1));
     }
 
     if (auth_list.NotEmpty())
@@ -1093,7 +1093,7 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
                 if (i == 0)
                     cit_book.SetImp().SetPages(NStr::Sanitize(pages));
                 else if (i == 1) {
-                    std::string new_title = book_title->GetName();
+                    string new_title = book_title->GetName();
                     new_title += ": ";
                     new_title += pages;
                     book_title->SetName(new_title);
@@ -1235,7 +1235,7 @@ static CRef<CCit_book> get_whole_book(char* bptr, CRef<CAuth_list>& auth_list, C
         s++;
 
     CRef<CTitle::C_E> book_title(new CTitle::C_E);
-    book_title->SetName(std::string(bptr, s));
+    book_title->SetName(string(bptr, s));
     cit_book->SetTitle().Set().push_back(book_title);
 
     if (*s == '.') {
@@ -1731,7 +1731,7 @@ static void XMLGetXrefs(char* entry, XmlIndexPtr xip, TQualVector& quals)
 }
 
 /**********************************************************/
-static void fta_add_article_ids(CPub& pub, const std::string& doi, const std::string& agricola)
+static void fta_add_article_ids(CPub& pub, const string& doi, const string& agricola)
 {
     if (doi.empty() && agricola.empty())
         return;
@@ -1930,8 +1930,8 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
             XMLGetXrefs(dbp->mOffset, xip->subtags, xrefs);
     }
 
-    std::string doi;
-    std::string agricola;
+    string doi;
+    string agricola;
     for (const auto& xref : xrefs) {
         if (! xref->IsSetQual())
             continue;
@@ -2145,8 +2145,8 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     has_muid = false;
     pmid     = ZERO_ENTREZ_ID;
 
-    std::string doi;
-    std::string agricola;
+    string doi;
+    string agricola;
 
     if (ind[ParFlat_RC])
         desc->SetComment(NStr::Sanitize(ind[ParFlat_RC]->mOffset));
