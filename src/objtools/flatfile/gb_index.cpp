@@ -106,7 +106,7 @@ vector<string> genbankKeywords = {
 static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
 {
     char* str;
-    char* p;
+    const char* p;
     char* q;
 
     if (segnum == NULL)
@@ -377,7 +377,7 @@ bool GenBankIndex(ParserPtr pp)
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo, "LOCUS");
 
     if (end_of_file) {
-        MsgSkipTitleFail((char*)"GenBank", finfo);
+        MsgSkipTitleFail("GenBank", finfo);
         return false;
     }
 
@@ -599,7 +599,7 @@ bool GenBankIndex(ParserPtr pp)
                         pp->source != Parser::ESource::EMBL)
                         break;
                     if (kwds != NULL)
-                        kwds = ValNodeFreeData(kwds);
+                        ValNodeFreeData(kwds);
                     kwds     = ConstructValNode(NULL, objects::CSeq_id::e_not_set, StringSave(finfo->str + 8));
                     tkwds    = kwds;
                     kwds_len = StringLen(finfo->str) - 8;

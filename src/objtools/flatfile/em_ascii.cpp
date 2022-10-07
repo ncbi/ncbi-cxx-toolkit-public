@@ -397,7 +397,7 @@ static void SetXrefObjId(CEMBL_xref& xref, const string& str)
  *   type (DR) line.
  *
  **********************************************************/
-static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, char* chentry, TStringList& dr_ena, TStringList& dr_biosample, unsigned char* drop, CEMBL_block& embl)
+static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, unsigned char* drop, CEMBL_block& embl)
 {
     const char** b;
 
@@ -934,7 +934,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
  *
  **********************************************************/
 static CRef<CEMBL_block> GetDescrEmblBlock(
-    ParserPtr pp, const DataBlk& entry, CMolInfo& mol_info, char** gbdiv, CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
+    ParserPtr pp, const DataBlk& entry, CMolInfo& mol_info, char** gbdiv, const CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
 {
     CRef<CEMBL_block> ret, embl(new CEMBL_block);
 
@@ -2440,7 +2440,7 @@ const char* GetEmblDiv(Uint1 num)
 }
 
 /**********************************************************/
-CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, CMolInfo& mol_info, char** gbdiv, CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
+CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol_info, char** gbdiv, CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
 {
     CRef<CEMBL_block> embl(new CEMBL_block),
         ret;

@@ -136,8 +136,8 @@ ValNode*         ConstructValNode(ValNode* head, objects::CSeq_id::E_Choice choi
 ValNode*         ConstructValNodeInt(ValNode* head, objects::CSeq_id::E_Choice choice, Int4 data);
 bool             fta_is_tpa_keyword(const char* str);
 bool             fta_tpa_keywords_check(const TKeywordList& kwds);
-bool             fta_is_tsa_keyword(char* str);
-bool             fta_is_tls_keyword(char* str);
+bool             fta_is_tsa_keyword(const char* str);
+bool             fta_is_tls_keyword(const char* str);
 bool             fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source);
 bool             fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source);
 bool             fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwds);

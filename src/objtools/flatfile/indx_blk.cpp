@@ -414,9 +414,9 @@ static bool CheckLocus(const char* locus, Parser::ESource source)
  *      Example:  RL1_ECOLI   FER_HALHA
  *
  **********************************************************/
-static bool CheckLocusSP(char* locus)
+static bool CheckLocusSP(const char* locus)
 {
-    char* p;
+    const char* p;
     bool  underscore = false;
     Int2  x;
     Int2  y;
@@ -448,7 +448,7 @@ static bool CheckLocusSP(char* locus)
  *      Return FALSE if date != dd-mmm-yyyy format.
  *
  **********************************************************/
-static bool CkDateFormat(char* date)
+static bool CkDateFormat(const char* date)
 {
     if (date[2] == '-' && date[6] == '-' &&
         isdigit(date[0]) != 0 && isdigit(date[1]) != 0 &&

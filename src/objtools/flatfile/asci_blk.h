@@ -80,14 +80,14 @@ char* check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss
 void  EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp);
 void  AddNIDSeqId(objects::CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata, Parser::ESource source);
 void  DefVsHTGKeywords(int tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled);
-void  XMLDefVsHTGKeywords(int tech, char* entry, XmlIndexPtr xip, bool cancelled);
+void  XMLDefVsHTGKeywords(int tech, const char* entry, XmlIndexPtr xip, bool cancelled);
 void  CheckHTGDivision(char* div, int tech);
 void  fta_sort_biosource(objects::CBioSource& bio);
 bool  fta_EntryCheckGBBlock(TEntryList& seq_entries);
 void  ShrinkSpaces(char* line);
 void  fta_sort_descr(TEntryList& seq_entries);
 void  fta_sort_seqfeat_cit(TEntryList& seq_entries);
-bool  XMLCheckCDS(char* entry, XmlIndexPtr xip);
+bool  XMLCheckCDS(const char* entry, XmlIndexPtr xip);
 void  fta_set_strandedness(TEntryList& seq_entries);
 
 bool GetEmblInstContig(const DataBlk& entry, objects::CBioseq& bioseq, ParserPtr pp);

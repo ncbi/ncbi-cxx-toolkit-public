@@ -130,7 +130,7 @@ const char* ParFlat_SPRefRcToken[] = {
  *   like name.
  *
  **********************************************************/
-static bool NotName(char* name)
+static bool NotName(const char* name)
 {
     ValNodePtr vnp;
     char*      tmp;
@@ -199,9 +199,9 @@ static Int4 GetDataFromRN(DataBlkPtr dbp, Int4 col_data)
  *   s.t.  RC   STRAIN=SPRAGUE-DAWLEY; TISSUE=LIVER; STRAIN=ISOLATE JAPAN;
  *
  **********************************************************/
-static void CkSPComTopics(ParserPtr pp, char* str)
+static void CkSPComTopics(ParserPtr pp, const char* str)
 {
-    char* ptr1;
+    const char* ptr1;
 
     for (ptr1 = str; *ptr1 != '\0';) {
         if (fta_StringMatch(ParFlat_SPRefRcToken, ptr1) == -1) {
@@ -225,7 +225,7 @@ static void CkSPComTopics(ParserPtr pp, char* str)
  *                                              10-28-93
  *
  **********************************************************/
-static char* ParseYear(char* str)
+static char* ParseYear(const char* str)
 {
     Int2  i;
     char* year;
@@ -253,10 +253,10 @@ static char* ParseYear(char* str)
  *                                              10-28-93
  *
  **********************************************************/
-static bool ParseJourLine(ParserPtr pp, ParRefBlkPtr prbp, char* str)
+static bool ParseJourLine(ParserPtr pp, ParRefBlkPtr prbp, const char* str)
 {
-    char* ptr1;
-    char* ptr2;
+    const char* ptr1;
+    const char* ptr2;
 
     ptr1 = StringChr(str, ':');
     if (ptr1 == NULL)
