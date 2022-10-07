@@ -177,6 +177,24 @@ public:
         }
     }
 
+    static void NormalizeJournal(string& s)
+    {
+        for (char& c : s) {
+            switch (c) {
+            case '.':
+            case ':':
+            case '[':
+            case ']':
+            case '(':
+            case ')':
+                c = ' ';
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
     static void NormalizeTitle(string& s)
     {
         for (char& c : s) {
@@ -225,7 +243,9 @@ public:
 
         vector<string> v;
         if (rule & e_J) {
-            v.push_back(cm.Journal + "[Journal]");
+            string journal = cm.Journal;
+            NormalizeJournal(journal);
+            v.push_back(journal + "[Journal]");
         }
         if (rule & e_Y) {
             v.push_back(cm.Year + "[pdat]");

@@ -213,3 +213,20 @@ BOOST_AUTO_TEST_CASE(Test5)
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(15'008'398));
     }
 }
+
+BOOST_AUTO_TEST_CASE(HF933230)
+{
+    SCitMatch cm;
+    cm.Journal = "G3 (Bethesda)";
+    cm.Volume  = "4";
+    cm.Page    = "433";
+    cm.Year    = "2014";
+    cm.Author  = "Spivakov M";
+    cm.Issue   = "3";
+    cm.Title   = "Genomic and phenotypic characterization of a wild medaka population: towards the establishment of an isogenic population genetic resource in fish";
+
+    for (auto upd : updaters) {
+        TEntrezId pmid = upd->CitMatch(cm);
+        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(24'408'034));
+    }
+}
