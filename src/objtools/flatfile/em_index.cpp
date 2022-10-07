@@ -221,7 +221,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
     if (end_of_file) {
-        MsgSkipTitleFail((char*)"Embl", finfo);
+        MsgSkipTitleFail("Embl", finfo);
         return false;
     }
 

@@ -272,9 +272,9 @@ bool GetGenomeInfo(CBioSource& bsp, const Char* bptr)
 }
 
 /**********************************************************/
-static void GetTaxnameNameFromDescrs(TSeqdescList& descrs, vector<string>& names)
+static void GetTaxnameNameFromDescrs(const TSeqdescList& descrs, vector<string>& names)
 {
-    for (auto& descr : descrs) {
+    for (const auto& descr : descrs) {
         if (! descr->IsSource() || ! descr->GetSource().IsSetOrg() ||
             ! descr->GetSource().GetOrg().IsSetTaxname())
             continue;
@@ -440,7 +440,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
 }
 
 /**********************************************************/
-static void CheckDelGbblockSource(TEntryList& seq_entries, vector<string>& names)
+static void CheckDelGbblockSource(TEntryList& seq_entries, const vector<string>& names)
 {
     for (auto& entry : seq_entries) {
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {

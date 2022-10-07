@@ -2868,7 +2868,7 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
 }
 
 /**********************************************************/
-void XMLDefVsHTGKeywords(CMolInfo::TTech tech, char* entry, XmlIndexPtr xip, bool cancelled)
+void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xip, bool cancelled)
 {
     const char** b;
     char*        tmp;
@@ -3289,7 +3289,7 @@ void fta_fix_orgref_div(const CBioseq::TAnnot& annots, COrg_ref& org_ref, CGB_bl
 }
 
 /**********************************************************/
-bool XMLCheckCDS(char* entry, XmlIndexPtr xip)
+bool XMLCheckCDS(const char* entry, XmlIndexPtr xip)
 {
     XmlIndexPtr txip;
     XmlIndexPtr fxip;

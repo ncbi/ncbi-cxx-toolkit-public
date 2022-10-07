@@ -598,7 +598,7 @@ static void StringCombine(string& dest, const string& to_add, const Char* delim)
  *                                              10-1-93
  *
  **********************************************************/
-static CRef<CDbtag> MakeStrDbtag(char* dbname, char* str)
+static CRef<CDbtag> MakeStrDbtag(const char* dbname, const char* str)
 {
     CRef<CDbtag> tag;
 
@@ -620,7 +620,7 @@ static CRef<CDbtag> MakeStrDbtag(char* dbname, char* str)
  *   a dd-mmm-yyyy format.
  *
  **********************************************************/
-static CRef<CDate> MakeDatePtr(char* str, Parser::ESource source)
+static CRef<CDate> MakeDatePtr(const char* str, Parser::ESource source)
 {
     static Char msg[11];
 
@@ -647,7 +647,7 @@ static CRef<CDate> MakeDatePtr(char* str, Parser::ESource source)
 }
 
 /**********************************************************/
-static void fta_create_pdb_seq_id(CSP_block_Base::TSeqref& refs, char* mol, Uint1 chain)
+static void fta_create_pdb_seq_id(CSP_block_Base::TSeqref& refs, const char* mol, Uint1 chain)
 {
     if (mol == NULL)
         return;
@@ -665,7 +665,7 @@ static void fta_create_pdb_seq_id(CSP_block_Base::TSeqref& refs, char* mol, Uint
 }
 
 /**********************************************************/
-static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, char* mol, char* chain)
+static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, char* chain)
 {
     char* fourth;
     char* p;
@@ -723,7 +723,7 @@ static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, char* mol, char* ch
  *                                              10-1-93
  *
  **********************************************************/
-static void MakePDBSeqId(CSP_block_Base::TSeqref& refs, char* mol, char* rel, char* chain, unsigned char* drop, Parser::ESource source)
+static void MakePDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, const char* rel, char* chain, unsigned char* drop, Parser::ESource source)
 {
     if (mol == NULL)
         return;
@@ -760,7 +760,7 @@ static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, CInt_fuzz& fuzz)
 }
 
 /**********************************************************/
-static CBioSource::EGenome GetSPGenome(DataBlkPtr dbp)
+static CBioSource::EGenome GetSPGenome(const DataBlk* dbp)
 {
     DataBlkPtr subdbp;
     char*      p;
@@ -837,7 +837,7 @@ static void SpAddToIndexBlk(DataBlkPtr entry, IndexblkPtr pIndex)
  *                                              9-23-93
  *
  **********************************************************/
-static void GetSprotSubBlock(ParserPtr pp, DataBlkPtr entry)
+static void GetSprotSubBlock(ParserPtr pp, const DataBlk* entry)
 {
     DataBlkPtr dbp;
 
@@ -2552,10 +2552,10 @@ static void SPAppendPIRToHist(CBioseq& bioseq, const CSP_block& spb)
 }
 
 /**********************************************************/
-static bool IfOHTaxIdMatchOHName(char* orpname, char* ohname)
+static bool IfOHTaxIdMatchOHName(const char* orpname, const char* ohname)
 {
-    char* p;
-    char* q;
+    const char* p;
+    const char* q;
     Char  chp;
     Char  chq;
 
