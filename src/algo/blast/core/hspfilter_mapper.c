@@ -43,10 +43,26 @@
 #define PAIR_PARALLEL 2
 #define PAIR_NONE 3
 
+
+static Int4 s_GetChainScore(const HSPChain* chain)
+{
+    if (!chain) {
+        return 0;
+    }
+
+    if (chain->pair) {
+        return chain->score + chain->pair->score;
+    }
+    else {
+        return chain->score;
+    }
+}
+
+
 /* Insert a single chain into the list so that the list is sorted in decending
    order of chain scores. */
-static Int4 s_HSPChainListInsertOne(HSPChain** list, HSPChain* chain,
-                                    Boolean check_for_duplicates)
+static Int4 s_HSPChainListInsertOne_OLD(HSPChain** list, HSPChain* chain,
+                                        Boolean check_for_duplicates)
 {
     HSPChain* ch = NULL;
 
@@ -141,9 +157,84 @@ static Boolean s_TestCutoffs(HSPChain* chain, Int4 cutoff_score,
     return FALSE;
 }
 
-/* Insert chains into the list so that the list is sorted in descending order
-   of chain scores. If chain is a list, each element is added separately. The
-   list must be sorted before adding chain */
+
+/* FIXME: This function is needed for s_FindBestPairs to work. Its
+   functionality should be implemented in s_FindBestPairs */
+/* Compare the best scoring chains in the list and the new chain and leave
+   only the best scoring chains in the list */
+static Int4 s_HSPChainListInsertOne(HSPChain** list, HSPChain* chain,
+                                    Boolean check_for_duplicates)
+{
+    Int4 list_score, chain_score;
+
+    if (!list || !chain) {
+        return -1;
+    }
+
+    if (!*list) {
+        *list = chain;
+        return 0;
+    }
+
+    list_score = s_GetChainScore(*list);
+    chain_score = s_GetChainScore(chain);
+
+
+    if (list_score > chain_score) {
+        /* delete the new chain */
+        HSPChainFree(chain);
+    }
+    else if (list_score < chain_score) {
+        /* clear list */
+        HSPChainFree(*list);
+        *list = chain;
+    }
+    else {
+        /* add to list */
+        HSPChain* ch = *list;
+
+        /* check for duplicate chain: the new chains may be the same as already
+           saved; this may come from writing HSPs to HSP stream for each chunk */
+        if (check_for_duplicates &&
+            ch->oid == chain->oid && ch->score == chain->score &&
+            ch->hsps->hsp->query.frame == chain->hsps->hsp->query.frame &&
+            ch->hsps->hsp->subject.offset ==
+            chain->hsps->hsp->subject.offset) {
+
+            chain->next = NULL;
+            chain = HSPChainFree(chain);
+            return 0;
+        }
+
+        while (ch->next && ch->next->score >= chain->score){
+            
+            /* check for duplicate chain: the new chains may be the same as already
+               saved; this may come from writing HSPs to HSP stream for each chunk */
+            if (check_for_duplicates &&
+                ch->next->oid == chain->oid && ch->next->score == chain->score &&
+                ch->next->hsps->hsp->query.frame == chain->hsps->hsp->query.frame &&
+                ch->next->hsps->hsp->subject.offset ==
+                chain->hsps->hsp->subject.offset) {
+
+                chain->next = NULL;
+                chain = HSPChainFree(chain);
+                return 0;
+            }
+            
+            ch = ch->next;
+        }
+
+        while (ch->next) {
+            ch = ch->next;
+        }
+        ch->next = chain;
+    }
+    return 0;
+}
+
+
+/* Insert chains into the list so that only the best scoring chains are in
+   the list, */
 static Int4 HSPChainListInsert(HSPChain** list, HSPChain** chain,
                                Int4 cutoff_score, Int4 cutoff_edit_dist,
                                Boolean check_for_duplicates)
@@ -159,7 +250,12 @@ static Int4 HSPChainListInsert(HSPChain** list, HSPChain** chain,
     while (ch) {
         HSPChain* next = ch->next;
         ch->next = NULL;
-        if (ch->score >= cutoff_score) {
+        /* for s_FindBestPairs() */
+        /* FIXME: this list insertion should be handled in s_FindBestPairs */
+        if (cutoff_score <= 0) {
+            status = s_HSPChainListInsertOne_OLD(list, ch, check_for_duplicates);
+        }
+        else if (ch->score >= cutoff_score) {
             status = s_HSPChainListInsertOne(list, ch, check_for_duplicates);
         }
         else {
