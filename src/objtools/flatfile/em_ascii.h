@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 typedef std::list<std::string> TStringList;
 
-CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, char* entry, objects::CMolInfo& mol_info, char** gbdiv, objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample);
+CRef<objects::CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, objects::CMolInfo& mol_info, char** gbdiv, objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample);
 
 bool EmblAscii(ParserPtr pp);
 void fta_build_ena_user_object(objects::CSeq_descr::Tdata& descrs, TStringList& dr_ena, TStringList& dr_biosample, CRef<objects::CUser_object>& dbuop);

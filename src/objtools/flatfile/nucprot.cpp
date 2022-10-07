@@ -244,7 +244,7 @@ static void GuessGeneticCode(ParserPtr pp, const CSeq_descr& descrs)
 }
 
 /**********************************************************/
-static void GetGcode(TEntryList& seq_entries, ParserPtr pp)
+static void GetGcode(const TEntryList& seq_entries, ParserPtr pp)
 {
     if (pp != NULL && pp->pbp != NULL && ! pp->pbp->gcode.IsId()) {
         for (const auto& entry : seq_entries) {
@@ -506,7 +506,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
 }
 
 /**********************************************************/
-static char* stripStr(char* base, char* str)
+static char* stripStr(char* base, const char* str)
 {
     char* bptr;
     char* eptr;
@@ -1034,7 +1034,7 @@ static void ProcessForDbxref(CBioseq& bioseq, CSeq_feat& feat, Parser::ESource s
 }
 
 /**********************************************************/
-static CRef<CBioseq> BldProtRefSeqEntry(ProtBlkPtr pbp, CSeq_feat& feat, string& seq_data, Uint1 method, ParserPtr pp, const CBioseq& bioseq, CBioseq::TId& ids)
+static CRef<CBioseq> BldProtRefSeqEntry(ProtBlkPtr pbp, CSeq_feat& feat, const string& seq_data, Uint1 method, ParserPtr pp, const CBioseq& bioseq, CBioseq::TId& ids)
 {
     CRef<CBioseq> new_bioseq;
 
@@ -1071,10 +1071,10 @@ static void AddProtRefSeqEntry(ProtBlkPtr pbp, CBioseq& bioseq)
 }
 
 /**********************************************************/
-static char* SimpleValuePos(char* qval)
+static char* SimpleValuePos(const char* qval)
 {
-    char* bptr;
-    char* eptr;
+    const char* bptr;
+    const char* eptr;
 
     bptr = StringStr(qval, "(pos:");
     if (bptr == NULL)
@@ -1268,7 +1268,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
  *      If intercodon = TRUE, then no comparison.
  *
  **********************************************************/
-static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, char* qval, bool intercodon, char* gcode, unsigned char* method)
+static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, char* qval, bool intercodon, const char* gcode, unsigned char* method)
 {
     char*  ptr;
     Char   msg2[1100];
@@ -1389,7 +1389,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
  *      If bsp != translation's value return FALSE.
  *
  **********************************************************/
-static bool check_translation(string& prot, char* qval)
+static bool check_translation(string& prot, const char* qval)
 {
     size_t len  = 0;
     size_t blen = prot.size();
@@ -1877,7 +1877,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 }
 
 /**********************************************************/
-static void check_gen_code(char* qval, ProtBlkPtr pbp, Uint1 taxserver)
+static void check_gen_code(const char* qval, ProtBlkPtr pbp, Uint1 taxserver)
 {
     ErrSev sev;
     Uint1  gcpvalue;
@@ -2276,7 +2276,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
         if (sequence_data.size() < 6 && pp->accver == false && check_short_CDS(pp, cds, true)) {
             /* make xref from prot-ref for short CDS only */
             if (new_bioseq->IsSetAnnot()) {
-                for (auto& annot : new_bioseq->SetAnnot()) {
+                for (const auto& annot : new_bioseq->GetAnnot()) {
                     if (! annot->IsFtable())
                         continue;
 

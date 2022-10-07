@@ -202,18 +202,17 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
     CGB_block::TExtra_accessions ret;
 
     for (const string& acc : extra_accs) {
-        string str = acc;
-        if (str.empty())
+        if (acc.empty())
             continue;
 
-        size_t dash = str.find('-');
+        size_t dash = acc.find('-');
         if (dash == string::npos) {
-            ret.push_back(str);
+            ret.push_back(acc);
             continue;
         }
 
-        string first(str.begin(), str.begin() + dash),
-            last(str.begin() + dash + 1, str.end());
+        string first(acc.begin(), acc.begin() + dash),
+            last(acc.begin() + dash + 1, acc.end());
         size_t acclen = first.size();
 
         const Char* p = first.c_str();
@@ -1144,7 +1143,7 @@ DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
     EntryBlkPtr ebp;
 
     ebp  = (EntryBlkPtr)entry.mpData;
-    temp = (DataBlkPtr)ebp->chain;
+    temp = ebp->chain;
     while (temp != NULL && temp->mType != type)
         temp = temp->mpNext;
 
@@ -1323,7 +1322,7 @@ bool fta_is_tpa_keyword(const char* str)
 }
 
 /**********************************************************/
-bool fta_is_tsa_keyword(char* str)
+bool fta_is_tsa_keyword(const char* str)
 {
     if (str == NULL || *str == '\0' || MatchArrayIString(ParFlat_TSA_kw_array, str) < 0)
         return false;
@@ -1331,7 +1330,7 @@ bool fta_is_tsa_keyword(char* str)
 }
 
 /**********************************************************/
-bool fta_is_tls_keyword(char* str)
+bool fta_is_tls_keyword(const char* str)
 {
     if (str == NULL || *str == '\0' || MatchArrayIString(ParFlat_TLS_kw_array, str) < 0)
         return false;
