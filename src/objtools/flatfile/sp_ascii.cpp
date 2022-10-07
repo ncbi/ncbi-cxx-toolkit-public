@@ -1540,6 +1540,7 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
 
     if (org_ref.NotEmpty() && line_OC != NULL && line_OC[0] != '\0') {
         org_ref->SetOrgname().SetLineage(line_OC);
+        MemFree(line_OC);
     }
 
     return org_ref;

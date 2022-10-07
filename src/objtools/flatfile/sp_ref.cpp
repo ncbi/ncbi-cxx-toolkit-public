@@ -1021,11 +1021,11 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
  **********************************************************/
 static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pat)
 {
-    char* num;
-    char* p;
-    char* q;
-    char  ch;
-    char  country[3];
+    string num;
+    char*  p;
+    char*  q;
+    char   ch;
+    char   country[3];
 
     if (! prbp || prbp->journal.empty())
         return (false);
@@ -1042,16 +1042,20 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
 
     ch  = *q;
     *q  = '\0';
-    num = StringSave(p);
+    num = p;
     *q  = ch;
 
-    for (p = num; *p != '\0'; p++)
-        if (*p >= 'a' && *p <= 'z')
-            *p &= ~040;
+    for (char& c : num)
+        if ('a' <= c && c <= 'z')
+            c &= ~040; // toupper
 
-    for (p = num; *p >= 'A' && *p <= 'Z';)
-        p++;
-    if (p - num == 2) {
+    unsigned j = 0;
+    for (char c : num) {
+        if (! ('A' <= c && c <= 'Z'))
+            break;
+        j++;
+    }
+    if (j == 2) {
         country[0] = num[0];
         country[1] = num[1];
         country[2] = '\0';
@@ -1064,14 +1068,12 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
         q++;
     if (*q == '\0') {
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: %s", prbp->journal.c_str());
-        MemFree(num);
         return (false);
     }
 
     CRef<CDate_std> std_date = get_full_date(q, true, source);
     if (! std_date || std_date.Empty()) {
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: %s", prbp->journal.c_str());
-        MemFree(num);
         return false;
     }
 
@@ -1084,10 +1086,8 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
         pat.SetTitle("");
 
     pat.SetDoc_type("");
-    if (*num != '\0')
+    if (! num.empty())
         pat.SetNumber(num);
-    else
-        MemFree(num);
 
     if (prbp->authors.NotEmpty())
         pat.SetAuthors(*prbp->authors);
