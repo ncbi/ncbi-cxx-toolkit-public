@@ -3529,7 +3529,7 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
         }
         neg_info = " -" + neg_info;
         NStr::Wrap(neg_info, width, arr, NStr::fWrap_Hyphenate,
-                string(indent + 2, ' '), kEmptyStr);
+                   string(indent + 2, ' '), kEmptyStr);
 
         // Print description
         string neg_comment = arg.GetComment();
@@ -3813,7 +3813,7 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
 
     // SYNOPSIS
     arr.push_back("USAGE");
-    x.AddSynopsis(arr, m_UsageName,"    ");
+    x.AddSynopsis(arr, m_UsageName, "    ");
 
     // DESCRIPTION
     arr.push_back(kEmptyStr);
@@ -4168,7 +4168,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
 
         // SYNOPSIS
         arr.push_back("USAGE");
-        x.AddSynopsis(arr, m_UsageName + " " + cmd,"    ");
+        x.AddSynopsis(arr, m_UsageName + " " + cmd, "    ");
 
         // DESCRIPTION
         arr.push_back(kEmptyStr);
@@ -4193,7 +4193,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
     arr.push_back("USAGE");
     arr.push_back(string("  ")+ m_UsageName +" <command> [options]");
     arr.push_back("or");
-    x.AddSynopsis(arr, m_UsageName,"    ");
+    x.AddSynopsis(arr, m_UsageName, "    ");
 
     arr.push_back(kEmptyStr);
     x.AddDescription(arr, detailed);
