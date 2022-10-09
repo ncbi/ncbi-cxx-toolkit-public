@@ -420,7 +420,8 @@ static SERV_ITER x_Open(const char*         service,
          (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
                               (svc, REG_CONN_DISPD_DISABLE)))                ||
          !(op = SERV_DISPD_Open(iter, net_info, info)))) {
-        if (!do_local  &&  !do_lbsmd
+        if (!s_Fast  &&  net_info
+            &&  !do_local  &&  !do_lbsmd
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
             &&  !do_lbdns
