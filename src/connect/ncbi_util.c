@@ -142,8 +142,7 @@ extern void CORE_SetLOGFILE_Ex
 (FILE*       fp,
  ELOG_Level  cut_off,
  ELOG_Level  fatal_err,
- int/*bool*/ auto_close
- )
+ int/*bool*/ auto_close)
 {
     LOG lg = LOG_Create(0, 0, 0, 0);
     LOG_ToFILE_Ex(lg, fp, cut_off, fatal_err, auto_close);
@@ -155,7 +154,7 @@ extern void CORE_SetLOGFILE
 (FILE*       fp,
  int/*bool*/ auto_close)
 {
-    CORE_SetLOGFILE_Ex(fp, eLOG_Trace, eLOG_Fatal, auto_close);
+    CORE_SetLOGFILE_Ex(fp, CORE_LOGFILE_CUTOFF_LEVEL, eLOG_Fatal, auto_close);
 }
 
 
@@ -171,16 +170,16 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME_Ex
         return 0/*false*/;
     }
 
-    CORE_SetLOGFILE_Ex(fp, cut_off, fatal_err, 1/*autoclose*/);
+    CORE_SetLOGFILE_Ex(fp, cut_off, fatal_err, 1/*auto_close*/);
     return 1/*true*/;
 }
 
 
 extern int/*bool*/ CORE_SetLOGFILE_NAME
-(const char* logfile
- )
+(const char* logfile)
 {
-    return CORE_SetLOGFILE_NAME_Ex(logfile, eLOG_Trace, eLOG_Fatal);
+    return CORE_SetLOGFILE_NAME_Ex(logfile,
+                                   CORE_LOGFILE_CUTOFF_LEVEL, eLOG_Fatal);
 }
 
 
@@ -189,7 +188,6 @@ static TLOG_FormatFlags s_LogFormatFlags = fLOG_Default;
 extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags flags)
 {
     TLOG_FormatFlags old_flags = s_LogFormatFlags;
-
     s_LogFormatFlags = flags;
     return old_flags;
 }
@@ -565,7 +563,7 @@ typedef struct {
     ELOG_Level  cut_off;
     ELOG_Level  fatal_err;
     int/*bool*/ auto_close;
-} SLogData;
+} SFILELogData;
 
 
 /* Callback for LOG_ToFILE[_Ex]() */
@@ -574,7 +572,7 @@ extern "C" {
 #endif /*__cplusplus*/
 static void s_LOG_FileHandler(void* data, const SLOG_Message* mess)
 {
-    SLogData* logdata = (SLogData*) data;
+    SFILELogData* logdata = (SFILELogData*) data;
     assert(logdata->fp);
 
     if (mess->level >= logdata->cut_off  ||
@@ -608,13 +606,14 @@ extern "C" {
 #endif /*__cplusplus*/
 static void s_LOG_FileCleanup(void* data)
 {
-    SLogData* logdata = (SLogData*) data;
+    SFILELogData* logdata = (SFILELogData*) data;
 
     assert(logdata->fp);
     if (logdata->auto_close)
         fclose(logdata->fp);
     else
         fflush(logdata->fp);
+    logdata->fp = 0;
     free(logdata);
 }
 #ifdef __cplusplus
@@ -630,10 +629,10 @@ extern void LOG_ToFILE_Ex
  int/*bool*/ auto_close
  )
 {
-    SLogData* logdata;
+    SFILELogData* logdata;
     if (fp) {
         fflush(fp);
-        logdata = (SLogData*) malloc(sizeof(*logdata));
+        logdata = (SFILELogData*) malloc(sizeof(*logdata));
     } else
         logdata = 0;
     if (logdata) {

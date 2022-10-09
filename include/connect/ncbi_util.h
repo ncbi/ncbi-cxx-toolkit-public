@@ -164,7 +164,7 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
       (defined(__MWERKS__)        &&  (__MWERKS__ >= 0x3000))  ||     \
       (defined(__ICC)             &&  (__ICC >= 600))
 #  define CORE_CURRENT_FUNCTION  __PRETTY_FUNCTION__
-#elif defined(__FUNCSIG__)
+#elif  defined(__FUNCSIG__)
 #  define CORE_CURRENT_FUNCTION  __FUNCSIG__
 #elif (defined(__INTEL_COMPILER)  &&  (__INTEL_COMPILER >= 600))  ||  \
       (defined(__IBMCPP__)        &&  (__IBMCPP__ >= 500))
@@ -178,8 +178,19 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 #endif
 
 
+/** Default CORE LOG cut off log level.
+ * @sa
+ *  CORE_SetLOGFILE, CORE_SetLOGFILE_NAME
+ */
+#if !defined(NCBI_CXX_TOOLKIT)  &&  defined(_DEBUG)  &&  !defined(NDEBUG)
+#  define CORE_LOGFILE_CUTOFF_LEVEL  eLOG_Trace
+#else
+#  define CORE_LOGFILE_CUTOFF_LEVEL  eLOG_Note
+#endif /*!NCBI_CXX_TOOLKIT &&_DEBUG && !NDEBUG*/
+
+
 /** Set the log handle (no logging if "lg" is passed zero) -- to be used by
- * the core internals.
+ * the core internals (CORE LOG).
  * If there is an active log handler set already, and it is different from the
  * new one, then LOG_Delete is called internally for the old logger (that is,
  * the one being replaced).
@@ -191,7 +202,7 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 extern NCBI_XCONNECT_EXPORT void CORE_SetLOG(LOG lg);
 
 
-/** Get the log handle that is to be used by the core internals.
+/** Get the log handle that is to be used by the core internals (CORE LOG).
  * @return
  *  LOG handle as previously set by CORE_SetLOG() or NULL if no logging is
  *  currently active
@@ -204,7 +215,7 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetLOG(LOG lg);
 extern NCBI_XCONNECT_EXPORT LOG  CORE_GetLOG(void);
 
 
-/** Standard logging to the specified file stream.
+/** Standard logging (CORE LOG) to the specified file stream.
  * @param fp
  *  The file stream to log to
  * @param cut_off
@@ -213,7 +224,7 @@ extern NCBI_XCONNECT_EXPORT LOG  CORE_GetLOG(void);
  *  Severity greater than or equal to the specified level always posts to log,
  *  and then aborts the application
  * @param auto_close
- *  Do "fclose(fp)" when the LOG is reset/destroyed
+ *  Whether to call "fclose(fp)" when the CORE LOG is reset/destroyed
  * @sa
  *  LOG_ToFILE_Ex, CORE_SetLOG
  */
@@ -225,7 +236,8 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE_Ex
  );
 
 
-/** Same as CORE_SetLOGFILE_Ex(fp, eLOG_Trace, eLOG_Fatal, auto_close).
+/** Same as
+ *  CORE_SetLOGFILE_Ex(fp, CORE_LOGFILE_CUTOFF_LEVEL, eLOG_Fatal, auto_close).
  * @sa
  *  CORE_SetLOGFILE_Ex, CORE_SetLOG
  */
@@ -255,7 +267,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME_Ex
  );
 
 
-/** Same as CORE_SetLOGFILE_NAME_Ex(logfile, eLOG_Trace, eLOG_Fatal).
+/** Same as
+ *  CORE_SetLOGFILE_NAME_Ex(logfile, CORE_LOGFILE_CUTOFF_LEVEL, eLOG_Fatal).
  * @sa
  *  CORE_SetLOGFILE_NAME_Ex, CORE_SetLOG
  */
@@ -320,7 +333,7 @@ extern NCBI_XCONNECT_EXPORT char* LOG_ComposeMessage
  * @param fatal_err
  *  Severity greater or equal to "fatal_err" always logs and aborts the program
  * @param auto_close
- *  Whether to do "fclose(fp)" when the LOG is reset/destroyed
+ *  Whether to call "fclose(fp)" when the LOG is reset/destroyed
  * @sa
  *  LOG_Create, LOG_Reset, LOG_ComposeMessage, LOG_ToFILE
  */
