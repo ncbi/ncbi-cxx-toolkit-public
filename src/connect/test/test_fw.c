@@ -106,7 +106,7 @@ extern int main(int argc, char** argv)
             perror("Failed to open \"test_fw.log\" for writing");
             return 2;
         }
-        CORE_SetLOGFILE(log_fp, 1/*true*/);
+        CORE_SetLOGFILE_Ex(log_fp, eLOG_Trace, eLOG_Fatal, 1/*auto-close*/);
     }}
     SOCK_SetDataLoggingAPI(eOn);
 

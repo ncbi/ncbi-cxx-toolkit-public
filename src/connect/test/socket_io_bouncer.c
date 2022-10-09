@@ -126,7 +126,7 @@ int main(int argc, const char* argv[])
     assert(s_LogFile);
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE(s_LogFile, 1/*auto-close*/);
+    CORE_SetLOGFILE_Ex(s_LogFile, eLOG_Trace, eLOG_Fatal, 1/*auto-close*/);
 
     assert((net_info = ConnNetInfo_Create(0)) != 0);
 
