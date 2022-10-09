@@ -45,7 +45,7 @@ int main(int argc, const char* argv[])
     int n, err = 0;
 
     CORE_SetLOGFormatFlags(fLOG_None | fLOG_Short | fLOG_OmitNoteLevel);
-    CORE_SetLOGFILE(stderr, 0/*no auto-close*/);
+    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*no auto-close*/);
 
     for (n = 1;  n < argc;  ++n) {
         SIPRange range;

@@ -86,7 +86,7 @@ int main(int argc, const char* argv[])
     /* log and data log streams */
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE(stderr, 0/*false*/);
+    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*no auto-close*/);
 
     /* registry */
     CORE_SetREG(REG_Create(0, s_REG_Get, 0, 0, 0));

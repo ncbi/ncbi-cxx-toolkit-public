@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE(stderr, 0/*false*/);
+    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*no auto-close*/);
     LBSMD_FastHeapAccess(eOn);
     wildcard
         = service && (!*service  ||  strpbrk(service, "?*["))? 1/*T*/ : 0/*F*/;
