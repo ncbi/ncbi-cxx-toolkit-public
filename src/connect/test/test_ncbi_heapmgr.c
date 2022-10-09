@@ -123,9 +123,9 @@ int main(int argc, const char* argv[])
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
-    /* the first init needed to clear up uninited mutex, if any */
-    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*false*/);
-    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Warning, 0/*false*/);
+    /* the 1st init needed to pass an uninited mutex (which warns), if any */
+    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal,   0/*no auto-close*/);
+    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Warning, 0/*no auto-close*/);
     if (argc > 1)
         g_NCBI_ConnectRandomSeed = (unsigned int) atoi(argv[1]);
     else {
