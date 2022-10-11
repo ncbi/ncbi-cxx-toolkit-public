@@ -891,8 +891,8 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " received: " << len);
 
     if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
-        if (auto req = it->second.Get(GetInternalId())) {
-            req->OnReplyData(GetInternalId(), (const char*)data, len);
+        if (auto processor_id = GetInternalId(); auto req = it->second.Get(processor_id)) {
+            req->OnReplyData(processor_id, (const char*)data, len);
         }
     }
 
@@ -924,10 +924,10 @@ bool SPSG_Request::Fail(TPSG_InternalId processor_id, const SUvNgHttp2_Error& er
     return true;
 }
 
-bool SPSG_IoSession::Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
+bool SPSG_IoSession::Fail(TPSG_InternalId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
     auto context_guard = req->context.Set();
-    auto rv = req->Fail(GetInternalId(), error, refused_stream);
+    auto rv = req->Fail(processor_id, error, refused_stream);
 
     if (rv) {
         server.throttling.AddFailure();
@@ -943,7 +943,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " closed: " << error_code);
 
     if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
-        if (auto req = it->second.Get(GetInternalId())) {
+        if (auto processor_id = GetInternalId(); auto req = it->second.Get(processor_id)) {
             auto context_guard = req->context.Set();
             auto& debug_printout = req->reply->debug_printout;
             debug_printout << error_code << endl;
@@ -952,11 +952,11 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
             if (error_code) {
                 auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
 
-                if (RetryFail(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
+                if (RetryFail(processor_id, req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
                     ERR_POST("Request for " << GetId() << " failed with " << error);
                 }
             } else {
-                req->OnReplyDone(GetInternalId())->SetComplete();
+                req->OnReplyDone(processor_id)->SetComplete();
                 server.throttling.AddSuccess();
                 PSG_THROTTLING_TRACE("Server '" << GetId() << "' processed request '" <<
                         debug_printout.id << "' successfully");
@@ -981,13 +981,13 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
         PSG_IO_SESSION_TRACE(this << '/' << stream_id << " status: " << status_str);
 
         if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
-            if (auto req = it->second.Get(GetInternalId())) {
+            if (auto processor_id = GetInternalId(); auto req = it->second.Get(processor_id)) {
                 const auto status = static_cast<CRequestStatus::ECode>(atoi(status_str));
                 const auto state = SPSG_Reply::SState::FromRequestStatus(status);
 
                 if (state != SPSG_Reply::SState::eSuccess) {
                     const auto error = to_string(status) + ' ' + CRequestStatus::GetStdStatusMessage(status);
-                    req->OnReplyDone(GetInternalId())->SetFailed(error, state);
+                    req->OnReplyDone(processor_id)->SetFailed(error, state);
                 }
             }
         }
@@ -996,7 +996,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
     return 0;
 }
 
-bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
+bool SPSG_IoSession::ProcessRequest(TPSG_InternalId processor_id, shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
@@ -1025,7 +1025,7 @@ bool SPSG_IoSession::ProcessRequest(shared_ptr<SPSG_Request>& req)
         auto error(SUvNgHttp2_Error::FromNgHttp2(stream_id, "on submit"));
 
         // Do not reset all requests unless throttling has been activated
-        if (RetryFail(req, error) && server.throttling.Active()) {
+        if (RetryFail(processor_id, req, error) && server.throttling.Active()) {
             Reset(move(error));
         }
 
@@ -1056,7 +1056,7 @@ void SPSG_IoSession::CheckRequestExpiration()
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         auto seconds = it->second.AddSecond();
-        auto req = it->second.Get(GetInternalId());
+        auto processor_id = GetInternalId(); auto req = it->second.Get(processor_id);
 
         if (seconds == m_Params.competitive_after) {
             if (req) {
@@ -1068,7 +1068,7 @@ void SPSG_IoSession::CheckRequestExpiration()
 
         if (seconds >= m_Params.request_timeout) {
             if (req) {
-                Fail(req, error);
+                Fail(processor_id, req, error);
             }
 
             EraseAndMoveToNext(it);
@@ -1083,8 +1083,8 @@ void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
     bool some_requests_failed = false;
 
     for (auto& pair : m_Requests) {
-        if (auto req = pair.second.Get(GetInternalId())) {
-            if (RetryFail(req, error)) {
+        if (auto processor_id = GetInternalId(); auto req = pair.second.Get(processor_id)) {
+            if (RetryFail(processor_id, req, error)) {
                 some_requests_failed = true;
             }
         }
@@ -1318,7 +1318,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
                 // Checking if throttling has been activated in a different thread
                 if (!server.throttling.Active()) {
-                    shared_ptr<SPSG_Request> req;
+                    auto processor_id = GetInternalId(); shared_ptr<SPSG_Request> req;
 
                     if (!queue.Pop(req)) {
                         PSG_IO_TRACE("No [more] requests pending");
@@ -1347,7 +1347,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         while (session->IsFull());
                     }
 
-                    bool result = session->ProcessRequest(req);
+                    bool result = session->ProcessRequest(processor_id, req);
 
                     if (result) {
                         PSG_IO_TRACE("Server '" << session->GetId() << "' will get request '" <<
@@ -1555,7 +1555,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
 
         for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
             auto seconds = it->AddSecond();
-            auto req = it->Get(GetInternalId());
+            auto processor_id = GetInternalId(); auto req = it->Get(processor_id);
 
             if (seconds == m_Params.competitive_after) {
                 if (req) {
@@ -1567,7 +1567,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
 
             if (seconds >= m_Params.request_timeout) {
                 if (req) {
-                    req->Fail(GetInternalId(), error);
+                    req->Fail(processor_id, error);
                 }
 
                 it = queue_locked->erase(it);
@@ -1583,11 +1583,11 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
     SUvNgHttp2_Error error("No servers to process request");
 
     for (auto& timed_req : *queue_locked) {
-        if (auto req = timed_req.Get(GetInternalId())) {
+        if (auto processor_id = GetInternalId(); auto req = timed_req.Get(processor_id)) {
             auto context_guard = req->context.Set();
             auto& debug_printout = req->reply->debug_printout;
             debug_printout << error << endl;
-            req->OnReplyDone(GetInternalId())->SetFailed(error);
+            req->OnReplyDone(processor_id)->SetFailed(error);
             PSG_IO_TRACE("No servers to process request '" << debug_printout.id << '\'');
         }
     }
