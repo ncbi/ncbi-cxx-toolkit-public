@@ -555,14 +555,14 @@ private:
     {
         auto timed_req = move(queue.front());
         queue.pop_front();
-        return timed_req.Get();
+        return tuple_cat(make_tuple(timed_req), timed_req.Get());
     }
 
 public:
     auto Pop()
     {
         auto locked = m_Queue.GetLock();
-        return locked->empty() ? decltype(s_Pop(*locked)){} : s_Pop(*locked);
+        return locked->empty() ? decltype(s_Pop(*locked)){nullptr, TPSG_ProcessorId(), nullptr} : s_Pop(*locked);
     }
 
     void Push(shared_ptr<SPSG_Request> request)
@@ -574,7 +574,6 @@ public:
 
     auto GetLockedQueue() { return m_Queue.GetLock(); }
 
-private:
     SThreadSafe<list<SPSG_TimedRequest>> m_Queue;
 };
 
@@ -682,7 +681,7 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
 
     bool CanProcessRequest(shared_ptr<SPSG_Request>& req) { return req->CanBeSubmittedBy(GetInternalId()); }
-    bool ProcessRequest(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request>& req);
+    bool ProcessRequest(SPSG_TimedRequest timed_req, TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
 
