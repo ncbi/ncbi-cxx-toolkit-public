@@ -1543,18 +1543,19 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
         }
     }
 
-    if (auto queue_locked = queue.GetLockedQueue()) {
+    auto queue_locked = queue.GetLockedQueue();
+
+    if (!m_Servers->fail_requests) {
+        list<SPSG_TimedRequest> retries;
         SUvNgHttp2_Error error("Request timeout before submitting");
 
         for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
-            auto inserted = false;
             auto seconds = it->AddSecond();
 
             if (seconds == m_Params.competitive_after) {
                 if (auto req = it->Get(GetInternalId())) {
                     if (req->Retry(error, false)) {
-                        it = prev(queue_locked->insert(next(it), req));
-                        inserted = true;
+                        retries.emplace_back(req);
                     }
                 }
             }
@@ -1568,18 +1569,16 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
             } else {
                 ++it;
             }
-
-            if (inserted) {
-                ++it;
-            }
         }
+
+        queue_locked->splice(queue_locked->end(), retries);
+        return;
     }
 
-    if (m_Servers->fail_requests) {
-        const SUvNgHttp2_Error error("No servers to process request");
-        shared_ptr<SPSG_Request> req;
+    SUvNgHttp2_Error error("No servers to process request");
 
-        while (queue.Pop(req)) {
+    for (auto& timed_req : *queue_locked) {
+        if (auto req = timed_req.Get(GetInternalId())) {
             auto context_guard = req->context.Set();
             auto& debug_printout = req->reply->debug_printout;
             debug_printout << error << endl;
@@ -1587,6 +1586,8 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
             PSG_IO_TRACE("No servers to process request '" << debug_printout.id << '\'');
         }
     }
+
+    queue_locked->clear();
 }
 
 void SPSG_IoImpl::OnExecute(uv_loop_t& loop)
