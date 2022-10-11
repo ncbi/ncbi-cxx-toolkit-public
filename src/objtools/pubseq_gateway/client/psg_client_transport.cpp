@@ -1055,8 +1055,15 @@ void SPSG_IoSession::CheckRequestExpiration()
     error << "Request timeout for " << GetId();
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
-        auto seconds = it->second.AddSecond();
         auto [processor_id, req] = it->second.Get();
+
+        // Remove competitive requests if one is already being processed
+        if (!req) {
+            EraseAndMoveToNext(it);
+            continue;
+        }
+
+        auto seconds = it->second.AddSecond();
 
         if (seconds == m_Params.competitive_after) {
             if (req) {
@@ -1554,8 +1561,15 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
         SUvNgHttp2_Error error("Request timeout before submitting");
 
         for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
-            auto seconds = it->AddSecond();
             auto [processor_id, req] = it->Get();
+
+            // Remove competitive requests if one is already being processed
+            if (!req) {
+                it = queue_locked->erase(it);
+                continue;
+            }
+
+            auto seconds = it->AddSecond();
 
             if (seconds == m_Params.competitive_after) {
                 if (req) {
