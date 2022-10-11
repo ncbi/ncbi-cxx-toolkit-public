@@ -996,7 +996,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
     return 0;
 }
 
-bool SPSG_IoSession::ProcessRequest(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request>& req)
+bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
@@ -1035,7 +1035,7 @@ bool SPSG_IoSession::ProcessRequest(TPSG_ProcessorId processor_id, shared_ptr<SP
     req->SetSubmittedBy(GetInternalId());
     req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << m_Tcp.GetLocalPort() << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
-    m_Requests.emplace(stream_id, move(req));
+    m_Requests.emplace(stream_id, move(timed_req));
     return Send();
 }
 
@@ -1318,7 +1318,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
                 // Checking if throttling has been activated in a different thread
                 if (!server.throttling.Active()) {
-                    auto [processor_id, req] = queue.Pop();
+                    auto [timed_req, processor_id, req] = queue.Pop();
 
                     if (!req) {
                         PSG_IO_TRACE("No [more] requests pending");
@@ -1347,7 +1347,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         while (session->IsFull());
                     }
 
-                    bool result = session->ProcessRequest(processor_id, req);
+                    bool result = session->ProcessRequest(move(timed_req), processor_id, req);
 
                     if (result) {
                         PSG_IO_TRACE("Server '" << session->GetId() << "' will get request '" <<
