@@ -1060,7 +1060,9 @@ void SPSG_IoSession::CheckRequestExpiration()
 
         if (seconds == m_Params.competitive_after) {
             if (req) {
-                Retry(req, error);
+                if (req->Retry(error)) {
+                    m_Queue.Push(req);
+                }
             }
         }
 
@@ -1557,7 +1559,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
 
             if (seconds == m_Params.competitive_after) {
                 if (req) {
-                    if (req->Retry(error, false)) {
+                    if (req->Retry(error)) {
                         retries.emplace_back(req);
                     }
                 }
@@ -1565,7 +1567,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
 
             if (seconds >= m_Params.request_timeout) {
                 if (req) {
-                    req->Fail(GetInternalId(), error, false);
+                    req->Fail(GetInternalId(), error);
                 }
 
                 it = queue_locked->erase(it);
