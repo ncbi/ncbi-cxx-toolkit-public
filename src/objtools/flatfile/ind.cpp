@@ -141,7 +141,7 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat ban
         ind[j] = NULL;
 
     n_rest = 0;
-    for (subdbp = (DataBlkPtr)dbp->mpData; subdbp != NULL; subdbp = subdbp->mpNext) {
+    for (subdbp = static_cast<DataBlk*>(dbp->mpData); subdbp != NULL; subdbp = subdbp->mpNext) {
         if (ind[subdbp->mType] != NULL) {
             if (n_rest >= 21) {
                 fprintf(stderr, "Too many rest\n");

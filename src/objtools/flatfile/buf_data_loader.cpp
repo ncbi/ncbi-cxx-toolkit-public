@@ -280,7 +280,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
     char*       eptr;
 
     ibp  = pp->entrylist[pp->curindx];
-    ebp  = (EntryBlkPtr)entry->mpData;
+    ebp  = static_cast<EntryBlk*>(entry->mpData);
     ptr  = entry->mOffset;
     eptr = ptr + entry->len;
 
@@ -361,7 +361,7 @@ static DataBlkPtr make_entry(char* entry_str)
         entry->mpNext  = NULL; /* assume no segment at this time */
         entry->mOffset = entry_str;
         entry->len     = StringLen(entry->mOffset);
-        entry->mpData  = (EntryBlkPtr)MemNew(sizeof(EntryBlk));
+        entry->mpData  = new EntryBlk;
     }
 
     return entry;
@@ -450,7 +450,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
         old_indx = pp->curindx;
     pp->curindx  = ix;
 
-    EntryBlkPtr ebp   = (EntryBlkPtr)entry->mpData;
+    EntryBlkPtr ebp   = static_cast<EntryBlk*>(entry->mpData);
     char*       ptr   = entry->mOffset; /* points to beginning of the memory line */
     char*       eptr  = ptr + entry->len;
     Int2        curkw = ParFlat_ID;

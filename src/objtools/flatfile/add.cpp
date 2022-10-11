@@ -263,12 +263,12 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
             continue;
 
         size_t len = 0;
-        for (dbp = (DataBlkPtr)temp->mpData; dbp != NULL; dbp = dbp->mpNext)
+        for (dbp = static_cast<DataBlk*>(temp->mpData); dbp != NULL; dbp = dbp->mpNext)
             len += dbp->len;
         if (len == 0)
             continue;
 
-        dbp               = (DataBlkPtr)temp->mpData;
+        dbp               = static_cast<DataBlk*>(temp->mpData);
         ch                = dbp->mOffset[len];
         dbp->mOffset[len] = '\0';
         p                 = StringStr(dbp->mOffset, str);

@@ -338,7 +338,7 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
     bptr = ptr + 1;
 
     while (bptr < eptr) {
-        InsertDatablkVal((DataBlkPtr*)&dbp->mpData, ParFlat_FEATBLOCK, bptr, eptr - bptr);
+        InsertDatablkVal(reinterpret_cast<DataBlk**>(&dbp->mpData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
         do {
             bptr = SrchTheChar(bptr, eptr, '\n');
@@ -720,8 +720,8 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(temp);
     }
 
-    ebp    = (EntryBlkPtr)entry.mpData;
-    temp   = (DataBlkPtr)ebp->chain;
+    ebp    = static_cast<EntryBlk*>(entry.mpData);
+    temp   = ebp->chain;
     predbp = temp;
     curdbp = temp->mpNext;
     while (curdbp != NULL) {
@@ -767,7 +767,7 @@ void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char* subkw)
     eptr = bptr + dbp->len;
 
     if (GetSubNodeType(subkw, &bptr, eptr)) {
-        InsertDatablkVal((DataBlkPtr*)&dbp->mpData, subtype, bptr, eptr - bptr);
+        InsertDatablkVal(reinterpret_cast<DataBlk**>(&dbp->mpData), subtype, bptr, eptr - bptr);
     }
 }
 
@@ -799,7 +799,7 @@ void GetLenSubNode(DataBlkPtr dbp)
         s++;
     n    = atoi(s);
     ldbp = NULL;
-    for (ndbp = (DataBlkPtr)dbp->mpData; ndbp != NULL; ndbp = ndbp->mpNext) {
+    for (ndbp = static_cast<DataBlk*>(dbp->mpData); ndbp != NULL; ndbp = ndbp->mpNext) {
         size_t l = ndbp->mOffset - offset;
         if (l > 0 && l < dbp->len) {
             dbp->len = l;
@@ -812,11 +812,11 @@ void GetLenSubNode(DataBlkPtr dbp)
         done = true;
     }
 
-    curdbp = (DataBlkPtr)dbp->mpData;
+    curdbp = static_cast<DataBlk*>(dbp->mpData);
     for (; curdbp->mpNext != NULL; curdbp = curdbp->mpNext) {
         offset = curdbp->mOffset;
         ldbp   = NULL;
-        for (ndbp = (DataBlkPtr)dbp->mpData; ndbp != NULL; ndbp = ndbp->mpNext) {
+        for (ndbp = static_cast<DataBlk*>(dbp->mpData); ndbp != NULL; ndbp = ndbp->mpNext) {
             size_t l = ndbp->mOffset - offset;
             if (l > 0 && l < curdbp->len) {
                 curdbp->len = l;
@@ -995,7 +995,7 @@ char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len
     if (mdbp == NULL)
         return (NULL);
 
-    sdbp = (DataBlkPtr)mdbp->mpData;
+    sdbp = static_cast<DataBlk*>(mdbp->mpData);
 
     while (sdbp != NULL && sdbp->mType != subtype)
         sdbp = sdbp->mpNext;

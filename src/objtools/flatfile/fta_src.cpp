@@ -391,8 +391,8 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
     for (; dbp != NULL; dbp = dbp->mpNext) {
         if (dbp->mType != type)
             continue;
-        for (tdbp = (DataBlkPtr)dbp->mpData; tdbp != NULL; tdbp = tdbp->mpNext) {
-            fbp = (FeatBlkPtr)tdbp->mpData;
+        for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp != NULL; tdbp = tdbp->mpNext) {
+            fbp = static_cast<FeatBlk*>(tdbp->mpData);
             if (fbp == NULL || fbp->key == NULL ||
                 StringCmp(fbp->key, "source") != 0)
                 continue;
