@@ -61,26 +61,17 @@ void GapFeatsFree(GapFeatsPtr gfp)
 {
     GapFeatsPtr tgfp;
 
-    for (; gfp != NULL; gfp = tgfp) {
-        if (gfp->gap_type != NULL)
-            MemFree(gfp->gap_type);
-
+    for (; gfp; gfp = tgfp) {
         tgfp = gfp->next;
         delete gfp;
     }
-}
-
-void s_FreeDataBlk(DataBlkPtr dbp)
-{
-    delete dbp;
-    dbp = nullptr;
 }
 
 DataBlk::~DataBlk()
 {
     int MAX_HEAD_RECURSION(100);
 
-    delete[] mpQscore;
+    mpQscore.clear();
     delete mpData;
     if (mType == ParFlat_ENTRYNODE) {
         delete[] mOffset;
@@ -118,7 +109,7 @@ void xFreeEntry(DataBlkPtr entry)
         entry->mpData = nullptr;
     }
 
-    s_FreeDataBlk(entry);
+    delete entry;
 }
 
 /**********************************************************/
@@ -126,7 +117,7 @@ void xFreeEntry(DataBlkPtr entry)
 EntryBlk::~EntryBlk()
 {
     if (chain) {
-        s_FreeDataBlk(chain);
+        delete chain;
         chain = nullptr;
     }
 }
@@ -338,22 +329,6 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
     MemFree(ibpp);
 
     return (ret);
-}
-
-/*********************************************************
-_gap_feats constructor
-**********************************************************/
-_gap_feats::_gap_feats() :
-    from(0),
-    to(0),
-    estimated_length(0),
-    leftNs(false),
-    rightNs(false),
-    assembly_gap(false),
-    gap_type(NULL),
-    asn_gap_type(objects::CSeq_gap::eType_unknown),
-    next(NULL)
-{
 }
 
 END_NCBI_SCOPE
