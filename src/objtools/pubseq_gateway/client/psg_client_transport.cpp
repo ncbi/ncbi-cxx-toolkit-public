@@ -939,32 +939,29 @@ bool SPSG_IoSession::Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& 
 int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t error_code)
 {
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " closed: " << error_code);
-    auto it = m_Requests.find(stream_id);
 
-    if (it != m_Requests.end()) {
-        auto req = it->second.Get(GetInternalId());
-        EraseAndMoveToNext(it);
+    if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
+        if (auto req = it->second.Get(GetInternalId())) {
+            auto context_guard = req->context.Set();
+            auto& debug_printout = req->reply->debug_printout;
+            debug_printout << error_code << endl;
 
-        if (!req) return 0;
+            // If there is an error and the request is allowed to Retry
+            if (error_code) {
+                auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
 
-        auto& debug_printout = req->reply->debug_printout;
-
-        auto context_guard = req->context.Set();
-        debug_printout << error_code << endl;
-
-        // If there is an error and the request is allowed to Retry
-        if (error_code) {
-            auto error(SUvNgHttp2_Error::FromNgHttp2(error_code, "on close"));
-
-            if (RetryFail(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
-                ERR_POST("Request for " << GetId() << " failed with " << error);
+                if (RetryFail(req, error, error_code == NGHTTP2_REFUSED_STREAM)) {
+                    ERR_POST("Request for " << GetId() << " failed with " << error);
+                }
+            } else {
+                req->OnReplyDone(GetInternalId())->SetComplete();
+                server.throttling.AddSuccess();
+                PSG_THROTTLING_TRACE("Server '" << GetId() << "' processed request '" <<
+                        debug_printout.id << "' successfully");
             }
-        } else {
-            req->OnReplyDone(GetInternalId())->SetComplete();
-            server.throttling.AddSuccess();
-            PSG_THROTTLING_TRACE("Server '" << GetId() << "' processed request '" <<
-                    debug_printout.id << "' successfully");
         }
+
+        EraseAndMoveToNext(it);
     }
 
     return 0;
@@ -1055,15 +1052,16 @@ void SPSG_IoSession::CheckRequestExpiration()
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         auto seconds = it->second.AddSecond();
+        auto req = it->second.Get(GetInternalId());
 
         if (seconds == m_Params.competitive_after) {
-            if (auto req = it->second.Get(GetInternalId())) {
+            if (req) {
                 Retry(req, error);
             }
         }
 
         if (seconds >= m_Params.request_timeout) {
-            if (auto req = it->second.Get(GetInternalId())) {
+            if (req) {
                 Fail(req, error);
             }
 
@@ -1551,9 +1549,10 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
 
         for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
             auto seconds = it->AddSecond();
+            auto req = it->Get(GetInternalId());
 
             if (seconds == m_Params.competitive_after) {
-                if (auto req = it->Get(GetInternalId())) {
+                if (req) {
                     if (req->Retry(error, false)) {
                         retries.emplace_back(req);
                     }
@@ -1561,7 +1560,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
             }
 
             if (seconds >= m_Params.request_timeout) {
-                if (auto req = it->Get(GetInternalId())) {
+                if (req) {
                     req->Fail(GetInternalId(), error, false);
                 }
 
