@@ -451,7 +451,8 @@ private:
     TValues m_Values;
 };
 
-using TPSG_InternalId = const void*;
+using TPSG_SubmitterId = const void*;
+using TPSG_ProcessorId = const void*;
 
 struct SPSG_Request
 {
@@ -471,13 +472,13 @@ struct SPSG_Request
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
-    void OnReplyData(TPSG_InternalId processor_id, const char* data, size_t len)
+    void OnReplyData(TPSG_ProcessorId processor_id, const char* data, size_t len)
     {
         SetProcessedBy(processor_id);
         while (len && (this->*m_State)(data, len));
     }
 
-    auto& OnReplyDone(TPSG_InternalId processor_id)
+    auto& OnReplyDone(TPSG_ProcessorId processor_id)
     {
         SetProcessedBy(processor_id);
         return reply;
@@ -488,14 +489,14 @@ struct SPSG_Request
         return m_Retries.Get(type, refused_stream, reply->reply_item->state.InProgress());
     }
 
-    bool CanBeSubmittedBy(TPSG_InternalId processor_id) const { return !m_SubmittedBy || (m_SubmittedBy != processor_id); }
-    void SetSubmittedBy(TPSG_InternalId processor_id) { m_SubmittedBy = processor_id; }
+    bool CanBeSubmittedBy(TPSG_SubmitterId submitter_id) const { return !m_SubmittedBy || (m_SubmittedBy != submitter_id); }
+    void SetSubmittedBy(TPSG_SubmitterId submitter_id) { m_SubmittedBy = submitter_id; }
 
-    bool CanBeProcessedBy(TPSG_InternalId processor_id) const { return !m_ProcessedBy || (m_ProcessedBy == processor_id); }
-    void SetProcessedBy(TPSG_InternalId processor_id) { _ASSERT(CanBeProcessedBy(processor_id)); m_ProcessedBy = processor_id; }
+    bool CanBeProcessedBy(TPSG_ProcessorId processor_id) const { return !m_ProcessedBy || (m_ProcessedBy == processor_id); }
+    void SetProcessedBy(TPSG_ProcessorId processor_id) { _ASSERT(CanBeProcessedBy(processor_id)); m_ProcessedBy = processor_id; }
 
     bool Retry(const SUvNgHttp2_Error& error, bool refused_stream = false);
-    bool Fail(TPSG_InternalId processor_id, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    bool Fail(TPSG_ProcessorId processor_id, const SUvNgHttp2_Error& error, bool refused_stream = false);
 
 private:
     bool StatePrefix(const char*& data, size_t& len);
@@ -524,8 +525,8 @@ private:
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
     SPSG_Retries m_Retries;
-    TPSG_InternalId m_SubmittedBy = nullptr;
-    TPSG_InternalId m_ProcessedBy = nullptr;
+    TPSG_SubmitterId m_SubmittedBy = nullptr;
+    TPSG_ProcessorId m_ProcessedBy = nullptr;
 };
 
 struct SPSG_TimedRequest
@@ -542,7 +543,7 @@ struct SPSG_TimedRequest
     unsigned AddSecond() { return ++m_Seconds; }
 
 private:
-    TPSG_InternalId GetInternalId() const { return this; }
+    TPSG_ProcessorId GetInternalId() const { return this; }
 
     shared_ptr<SPSG_Request> m_Request;
     unsigned m_Seconds = 0;
@@ -682,7 +683,7 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
 
     bool CanProcessRequest(shared_ptr<SPSG_Request>& req) { return req->CanBeSubmittedBy(GetInternalId()); }
-    bool ProcessRequest(TPSG_InternalId processor_id, shared_ptr<SPSG_Request>& req);
+    bool ProcessRequest(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
 
@@ -697,11 +698,11 @@ private:
 
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
-    TPSG_InternalId GetInternalId() const { return this; }
+    TPSG_SubmitterId GetInternalId() const { return this; }
 
-    bool Fail(TPSG_InternalId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    bool Fail(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
 
-    bool RetryFail(TPSG_InternalId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
+    bool RetryFail(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
     {
         if (req->Retry(error, refused_stream)) {
             m_Queue.Push(req);
