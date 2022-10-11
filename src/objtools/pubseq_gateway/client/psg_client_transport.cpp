@@ -890,8 +890,10 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
 {
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " received: " << len);
 
-    if (auto req = GetRequest(stream_id)) {
-        req->OnReplyData(GetInternalId(), (const char*)data, len);
+    if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
+        if (auto req = it->second.Get(GetInternalId())) {
+            req->OnReplyData(GetInternalId(), (const char*)data, len);
+        }
     }
 
     return 0;
@@ -978,13 +980,15 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
 
         PSG_IO_SESSION_TRACE(this << '/' << stream_id << " status: " << status_str);
 
-        if (auto req = GetRequest(stream_id)) {
-            const auto status = static_cast<CRequestStatus::ECode>(atoi(status_str));
-            const auto state = SPSG_Reply::SState::FromRequestStatus(status);
+        if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
+            if (auto req = it->second.Get(GetInternalId())) {
+                const auto status = static_cast<CRequestStatus::ECode>(atoi(status_str));
+                const auto state = SPSG_Reply::SState::FromRequestStatus(status);
 
-            if (state != SPSG_Reply::SState::eSuccess) {
-                const auto error = to_string(status) + ' ' + CRequestStatus::GetStdStatusMessage(status);
-                req->OnReplyDone(GetInternalId())->SetFailed(error, state);
+                if (state != SPSG_Reply::SState::eSuccess) {
+                    const auto error = to_string(status) + ' ' + CRequestStatus::GetStdStatusMessage(status);
+                    req->OnReplyDone(GetInternalId())->SetFailed(error, state);
+                }
             }
         }
     }
