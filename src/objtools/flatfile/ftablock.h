@@ -124,21 +124,18 @@ using LocusContPtr = LocusCont*;
 
 
 typedef struct _gap_feats {
-    Int4  from;
-    Int4  to;
-    Int4  estimated_length;
-    bool  leftNs;
-    bool  rightNs;
-    bool  assembly_gap;
-    char* gap_type;
+    Int4   from             = 0;
+    Int4   to               = 0;
+    Int4   estimated_length = 0;
+    bool   leftNs           = false;
+    bool   rightNs          = false;
+    bool   assembly_gap     = false;
+    string gap_type;
 
-    objects::CSeq_gap::TType                      asn_gap_type;
+    objects::CSeq_gap::TType                      asn_gap_type = objects::CSeq_gap::eType_unknown;
     objects::CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
 
-    struct _gap_feats* next;
-
-    _gap_feats();
-
+    struct _gap_feats* next = nullptr;
 } GapFeats, *GapFeatsPtr;
 
 typedef struct token_block {
@@ -319,7 +316,6 @@ public:
         mpData(nullptr),
         mOffset(offset),
         len(len_),
-        mpQscore(nullptr),
         mDrop(0),
         mpNext(nullptr)
     {
@@ -339,7 +335,7 @@ public:
     CFlatFileData* mpData;   // any pointer type points to information block
     char*          mOffset;  // points to beginning of the entry in the memory
     size_t         len;      // lenght of data in bytes
-    char*          mpQscore; // points to quality score buffer
+    string         mpQscore; // points to quality score buffer
     bool           mDrop;
     DataBlk*       mpNext; // next in line
 };

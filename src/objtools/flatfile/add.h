@@ -65,7 +65,7 @@ int fta_check_con_for_wgs(objects::CBioseq& bioseq);
 
 Int4  fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* name, bool iscon);
 void  fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs);
-char* GetQSFromFile(FILE* fd, IndexblkPtr ibp);
+string GetQSFromFile(FILE* fd, const Indexblk* ibp);
 void  fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry);
 void  fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq, bool is_tsa);
 void  fta_set_molinfo_completeness(objects::CBioseq& bioseq, const Indexblk* ibp);

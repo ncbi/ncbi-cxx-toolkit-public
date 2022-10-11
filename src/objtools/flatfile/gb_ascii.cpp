@@ -679,10 +679,8 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     if (ibp->is_tls)
         fta_remove_tls_keywords(gbb->SetKeywords(), pp->source);
 
-    if(bio_src != NULL)
-    {
-        if(bio_src->IsSetSubtype())
-        {
+    if (bio_src != NULL) {
+        if (bio_src->IsSetSubtype()) {
             for (const auto& subtype : bio_src->GetSubtype()) {
                 if (subtype->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                     fta_remove_env_keywords(gbb->SetKeywords());
@@ -690,11 +688,9 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                 }
             }
         }
-        if(bio_src->IsSetOrg())
-        {
-            const COrg_ref &org_ref = bio_src->GetOrg();
-            if(org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod())
-            {
+        if (bio_src->IsSetOrg()) {
+            const COrg_ref& org_ref = bio_src->GetOrg();
+            if (org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod()) {
                 for (const auto& mod : org_ref.GetOrgname().GetMod()) {
                     if (! mod->IsSetSubtype())
                         continue;
@@ -1558,7 +1554,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
             }
         }
 
-        if (pEntry->mpQscore == NULL && pp->accver) {
+        if (pEntry->mpQscore.empty() && pp->accver) {
             if (pp->ff_get_qscore != NULL)
                 pEntry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
             else if (pp->ff_get_qscore_pp != NULL)
@@ -1581,10 +1577,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
             }
         }
 
-        if (pEntry->mpQscore != NULL) {
-            MemFree(pEntry->mpQscore);
-            pEntry->mpQscore = NULL;
-        }
+        pEntry->mpQscore.clear();
 
         if (ibp->psip.NotEmpty()) {
             CRef<CSeq_id> id(new CSeq_id);

@@ -311,8 +311,8 @@ static void CreateSeqGap(CSeq_literal& seq_lit, GapFeatsPtr gfp)
         sgap.SetLinkage_evidence().swap(gfp->asn_linkage_evidence);
 
     sgap.SetLinkage(CSeq_gap::eLinkage_unlinked);
-    if (gfp->gap_type) {
-        string gapType(gfp->gap_type);
+    if (! gfp->gap_type.empty()) {
+        const string& gapType(gfp->gap_type);
         if (gapType == "unknown" || gapType == "within scaffold" || gapType == "repeat within scaffold") {
             sgap.SetLinkage(CSeq_gap::eLinkage_linked);
         }
@@ -2698,23 +2698,22 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 }
 
 /**********************************************************/
-char* GetQSFromFile(FILE* fd, IndexblkPtr ibp)
+string GetQSFromFile(FILE* fd, const Indexblk* ibp)
 {
-    char* ret;
-    Char  buf[1024];
+    string ret;
+    Char   buf[1024];
 
     if (fd == NULL || ibp->qslength < 1)
-        return (NULL);
+        return ret;
 
-    ret    = (char*)MemNew(ibp->qslength + 10);
-    ret[0] = '\0';
+    ret.reserve(ibp->qslength + 10);
     fseek(fd, static_cast<long>(ibp->qsoffset), 0);
     while (fgets(buf, 1023, fd) != NULL) {
         if (buf[0] == '>' && ret[0] != '\0')
             break;
-        StringCat(ret, buf);
+        ret.append(buf);
     }
-    return (ret);
+    return ret;
 }
 
 /**********************************************************/

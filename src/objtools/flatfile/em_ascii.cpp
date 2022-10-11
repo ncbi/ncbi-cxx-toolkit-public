@@ -2298,7 +2298,7 @@ bool EmblAscii(ParserPtr pp)
                     AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
             }
 
-            if (pEntry->mpQscore == NULL && pp->accver) {
+            if (pEntry->mpQscore.empty() && pp->accver) {
                 if (pp->ff_get_qscore != NULL)
                     pEntry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
                 else if (pp->ff_get_qscore_pp != NULL)
@@ -2307,7 +2307,7 @@ bool EmblAscii(ParserPtr pp)
                     pEntry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
             }
 
-            if (QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, false) == false) {
+            if (! QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, false)) {
                 if (pp->ign_bad_qs == false) {
                     ibp->drop = 1;
                     ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
@@ -2319,10 +2319,7 @@ bool EmblAscii(ParserPtr pp)
                 ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore.");
             }
 
-            if (pEntry->mpQscore != NULL) {
-                MemFree(pEntry->mpQscore);
-                pEntry->mpQscore = NULL;
-            }
+            pEntry->mpQscore.clear();
 
             /* add PatentSeqId if patent is found in reference
              */

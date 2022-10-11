@@ -1280,7 +1280,7 @@ bool XMLAscii(ParserPtr pp)
             }
         }
 
-        if (dbp->mpQscore == NULL && pp->accver) {
+        if (dbp->mpQscore.empty() && pp->accver) {
             if (pp->ff_get_qscore != NULL)
                 dbp->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
             else if (pp->ff_get_qscore_pp != NULL)
@@ -1305,10 +1305,7 @@ bool XMLAscii(ParserPtr pp)
             }
         }
 
-        if (dbp->mpQscore != NULL) {
-            MemFree(dbp->mpQscore);
-            dbp->mpQscore = NULL;
-        }
+        dbp->mpQscore.clear();
 
         if (ibp->psip.NotEmpty()) {
             CRef<CSeq_id> id(new CSeq_id);

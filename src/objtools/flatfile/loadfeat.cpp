@@ -3515,8 +3515,8 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             gfp->estimated_length = estimated_length;
             if (curr_gap == 2) /* /assembly_gap feature */
                 gfp->assembly_gap = true;
-            if (gap_type != NULL) {
-                gfp->gap_type     = StringSave(gap_type);
+            if (gap_type) {
+                gfp->gap_type     = gap_type;
                 gfp->asn_gap_type = asn_gap_type;
             }
             if (! asn_linkage_evidence.empty()) {
