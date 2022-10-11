@@ -452,7 +452,7 @@ private:
 };
 
 using TPSG_SubmitterId = const void*;
-using TPSG_ProcessorId = const void*;
+using TPSG_ProcessorId = unsigned;
 
 struct SPSG_Request
 {
@@ -526,27 +526,26 @@ private:
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
     SPSG_Retries m_Retries;
     TPSG_SubmitterId m_SubmittedBy = nullptr;
-    TPSG_ProcessorId m_ProcessedBy = nullptr;
+    TPSG_ProcessorId m_ProcessedBy = TPSG_ProcessorId{};
 };
 
 struct SPSG_TimedRequest
 {
-    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Request(move(r)) {}
+    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Id(++sm_NextId), m_Request(move(r)) {}
 
     auto Get()
     {
         _ASSERT(m_Request);
-        auto processor_id = GetInternalId();
-        return make_pair(processor_id, m_Request->CanBeProcessedBy(processor_id) ? m_Request : nullptr);
+        return make_pair(m_Id, m_Request->CanBeProcessedBy(m_Id) ? m_Request : nullptr);
     }
 
     unsigned AddSecond() { return ++m_Seconds; }
 
 private:
-    TPSG_ProcessorId GetInternalId() const { return this; }
-
+    const TPSG_ProcessorId m_Id;
     shared_ptr<SPSG_Request> m_Request;
     unsigned m_Seconds = 0;
+    inline thread_local static TPSG_ProcessorId sm_NextId = TPSG_ProcessorId{};
 };
 
 struct SPSG_AsyncQueue : SUv_Async
