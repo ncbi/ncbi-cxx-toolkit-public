@@ -682,7 +682,7 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
 
     bool CanProcessRequest(shared_ptr<SPSG_Request>& req) { return req->CanBeSubmittedBy(GetInternalId()); }
-    bool ProcessRequest(shared_ptr<SPSG_Request>& req);
+    bool ProcessRequest(TPSG_InternalId processor_id, shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
 
@@ -699,15 +699,15 @@ private:
 
     TPSG_InternalId GetInternalId() const { return this; }
 
-    bool Fail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    bool Fail(TPSG_InternalId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
 
-    bool RetryFail(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
+    bool RetryFail(TPSG_InternalId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
     {
         if (req->Retry(error, refused_stream)) {
             m_Queue.Push(req);
         }
 
-        return Fail(req, error, refused_stream);
+        return Fail(processor_id, req, error, refused_stream);
     }
 
     void EraseAndMoveToNext(TRequests::iterator& it);
