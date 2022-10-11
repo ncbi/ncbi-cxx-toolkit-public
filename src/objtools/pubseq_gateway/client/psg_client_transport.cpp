@@ -911,7 +911,7 @@ bool SPSG_Request::Retry(const SUvNgHttp2_Error& error, bool refused_stream)
     return false;
 }
 
-bool SPSG_Request::Fail(TPSG_InternalId processor_id, const SUvNgHttp2_Error& error, bool refused_stream)
+bool SPSG_Request::Fail(TPSG_ProcessorId processor_id, const SUvNgHttp2_Error& error, bool refused_stream)
 {
     if (GetRetries(SPSG_Retries::eFail, refused_stream)) {
         return false;
@@ -924,7 +924,7 @@ bool SPSG_Request::Fail(TPSG_InternalId processor_id, const SUvNgHttp2_Error& er
     return true;
 }
 
-bool SPSG_IoSession::Fail(TPSG_InternalId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
+bool SPSG_IoSession::Fail(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
     auto context_guard = req->context.Set();
     auto rv = req->Fail(processor_id, error, refused_stream);
@@ -996,7 +996,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
     return 0;
 }
 
-bool SPSG_IoSession::ProcessRequest(TPSG_InternalId processor_id, shared_ptr<SPSG_Request>& req)
+bool SPSG_IoSession::ProcessRequest(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
