@@ -1091,7 +1091,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
 
 /**********************************************************/
 // TODO: functionality in this file was never tested
-bool QscoreToSeqAnnot(const char* qscore, CBioseq& bioseq, char* acc, Int2 ver, bool check_minmax, bool allow_na)
+bool QscoreToSeqAnnot(const string& qscore, CBioseq& bioseq, char* acc, Int2 ver, bool check_minmax, bool allow_na)
 {
     Char charver[100];
 
@@ -1101,7 +1101,7 @@ bool QscoreToSeqAnnot(const char* qscore, CBioseq& bioseq, char* acc, Int2 ver, 
     sprintf(charver, "%d", (int)ver);
 
     CSeq_annot::C_Data::TGraph graphs;
-    QSbuf_To_Single_Qscore_SeqGraph(qscore, bioseq, acc, charver, check_minmax, allow_na, graphs);
+    QSbuf_To_Single_Qscore_SeqGraph(qscore.c_str(), bioseq, acc, charver, check_minmax, allow_na, graphs);
     if (graphs.empty())
         return false;
 
