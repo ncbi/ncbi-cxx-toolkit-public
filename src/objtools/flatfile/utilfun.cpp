@@ -1142,7 +1142,7 @@ DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
     DataBlkPtr  temp;
     EntryBlkPtr ebp;
 
-    ebp  = (EntryBlkPtr)entry.mpData;
+    ebp  = static_cast<EntryBlk*>(entry.mpData);
     temp = ebp->chain;
     while (temp != NULL && temp->mType != type)
         temp = temp->mpNext;

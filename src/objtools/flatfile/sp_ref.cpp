@@ -468,7 +468,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 
 #endif
 
-    for (subdbp = (DataBlkPtr)dbp->mpData; subdbp != NULL; subdbp = subdbp->mpNext) {
+    for (subdbp = static_cast<DataBlk*>(dbp->mpData); subdbp != NULL; subdbp = subdbp->mpNext) {
         /* process REFERENCE subkeywords
          */
         bptr       = subdbp->mOffset;
