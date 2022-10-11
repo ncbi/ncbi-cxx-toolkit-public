@@ -532,40 +532,40 @@ struct SPSG_TimedRequest
 {
     SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Request(move(r)) {}
 
-    auto Get(TPSG_InternalId processor_id)
+    auto Get()
     {
-        _ASSERT(processor_id);
         _ASSERT(m_Request);
-        return m_Request->CanBeProcessedBy(processor_id) ? m_Request : nullptr;
+        auto processor_id = GetInternalId();
+        return make_pair(processor_id, m_Request->CanBeProcessedBy(processor_id) ? m_Request : nullptr);
     }
 
     unsigned AddSecond() { return ++m_Seconds; }
 
 private:
-    friend struct SPSG_AsyncQueue;
+    TPSG_InternalId GetInternalId() const { return this; }
+
     shared_ptr<SPSG_Request> m_Request;
     unsigned m_Seconds = 0;
 };
 
 struct SPSG_AsyncQueue : SUv_Async
 {
-    using TRequest = shared_ptr<SPSG_Request>;
-
-    bool Pop(TRequest& request)
+private:
+    static auto s_Pop(list<SPSG_TimedRequest>& queue)
     {
-        if (auto locked = m_Queue.GetLock()) {
-            if (!locked->empty()) {
-                request = locked->front().m_Request;
-                _ASSERT(request);
-                locked->pop_front();
-                return true;
-            }
-        }
-
-        return false;
+        auto timed_req = move(queue.front());
+        queue.pop_front();
+        return timed_req.Get();
     }
 
-    void Push(TRequest request)
+public:
+    auto Pop()
+    {
+        auto locked = m_Queue.GetLock();
+        return locked->empty() ? decltype(s_Pop(*locked)){} : s_Pop(*locked);
+    }
+
+    void Push(shared_ptr<SPSG_Request> request)
     {
         _ASSERT(request);
         m_Queue.GetLock()->push_back(move(request));
@@ -951,8 +951,6 @@ protected:
     void AfterExecute();
 
 private:
-    TPSG_InternalId GetInternalId() const { return this; }
-
     void CheckForNewServers(uv_async_t* handle)
     {
         const auto servers_size = m_Servers->size();
