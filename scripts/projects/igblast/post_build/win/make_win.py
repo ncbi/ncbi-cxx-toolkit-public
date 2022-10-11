@@ -43,6 +43,8 @@ def main():
     
     apps = [ "igblastn.exe", "igblastp.exe",
             "edit_imgt_file.pl",
+             "makeogrannote.py",
+             "makeogrdb.py",
              "ncbi-vdb-md.dll",
              "makeblastdb.exe",
              "blastdbcmd.exe"
