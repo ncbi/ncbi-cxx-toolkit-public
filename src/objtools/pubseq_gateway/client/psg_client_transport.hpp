@@ -699,12 +699,6 @@ private:
 
     TPSG_InternalId GetInternalId() const { return this; }
 
-    auto GetRequest(int32_t stream_id)
-    {
-        auto it = m_Requests.find(stream_id);
-        return it == m_Requests.end() ? nullptr : it->second.Get(GetInternalId());
-    }
-
     void Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
     {
         if (req->Retry(error, refused_stream)) {
