@@ -362,6 +362,11 @@ may be implemented in the future; RW-1253
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
     arg_desc->AddFlag("verbose", "Be verbose on reporting");
     arg_desc->AddFlag("huge", "Try opening files in huge mode");
+    arg_desc->AddFlag("disable-huge", "Explicitly disable huge-files mode");
+    arg_desc->SetDependency("disable-huge",
+                            CArgDescriptions::eExcludes,
+                            "huge");
+
     arg_desc->AddOptionalKey("usemt", "String", "Try to use as many threads as:\n\
       one\n\
       two\n\
@@ -385,6 +390,29 @@ void s_PubCleanup(CRef<CPub>& pub)
     }
 }
 
+
+size_t CTbl2AsnApp::xGetNumThreads() const
+{
+    const auto& args = GetArgs();
+    string numThreadsConfig;
+    if (args["usemt"]) {
+        numThreadsConfig = args["usemt"].AsString();
+    }
+    else {
+        numThreadsConfig = GetConfig().GetString("table2asn", "UseThreads", "one");
+    }
+    static constexpr array<string_view, 3> numThreadsValues{"one", "two", "many"};
+    auto numThreads = distance(begin(numThreadsValues), 
+            find(begin(numThreadsValues), end(numThreadsValues), numThreadsConfig));
+    numThreads += 1;
+    if (1 <= numThreads && numThreads <= 3) {
+        cerr << "Will be using " << numThreadsConfig << " threads" << endl;
+        return numThreads;
+    }
+    // default to using a single thread
+    return 1;
+}
+
 int CTbl2AsnApp::Run()
 {
     const CArgs& args = GetArgs();
@@ -401,21 +429,13 @@ int CTbl2AsnApp::Run()
                      << " is more than 1 year old. Please download the current version if it is newer." << endl;
         }
     }
-
-    m_context.m_can_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false) || args["huge"];
-    if (m_context.m_can_use_huge_files)
-    {
-        std::cerr << "Will be using huge files scenario" << std::endl;
-    }
-    if (m_context.m_can_use_huge_files) {
-        auto num_threads_config = GetConfig().GetString("table2asn", "UseThreads", "one");
-        if (args["usemt"])
-            num_threads_config = args["usemt"].AsString();
-        static constexpr std::array<std::string_view, 3> num_threads_values{"one", "two", "many"};
-        auto num_threads = std::distance(num_threads_values.begin(), std::find(num_threads_values.begin(), num_threads_values.end(), num_threads_config));
-        if (0<=num_threads && num_threads<=2) {
-            m_context.m_use_threads = num_threads + 1;
-            std::cerr << "Will be using " << num_threads_config << " threads" << std::endl;
+    
+    m_context.m_disable_huge_files = args["disable-huge"]; 
+    if  (!m_context.m_disable_huge_files) {
+        m_context.m_can_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false) || args["huge"];
+        if (m_context.m_can_use_huge_files)
+        {
+            std::cerr << "Will be using huge files scenario" << std::endl;
         }
     }
 
@@ -823,7 +843,7 @@ int CTbl2AsnApp::Run()
                     "The specified input file \"" + m_context.m_current_file + "\" does not exist.",
                     *m_logger);
             }
-            if (argAsFile.GetLength() > TBL2ASN_MAX_ALLOWED_FASTA_SIZE && !m_context.m_can_use_huge_files) {
+            if (argAsFile.GetLength() > TBL2ASN_MAX_ALLOWED_FASTA_SIZE && m_context.m_disable_huge_files) {
                 if (CFormatGuess::Format(m_context.m_current_file) == CFormatGuess::eFasta) {
                     s_FailOnBadInput(
                         "The specified input file \"" +
@@ -1303,6 +1323,17 @@ void CTbl2AsnApp::CloseDataStreams()
     m_context.CloseDataOutputs();
 }
 
+static bool s_UseHugeFileMode(const CTable2AsnContext& context, CFormatGuess::EFormat format)
+{   
+    if (context.m_disable_huge_files) {
+        return false;
+    }
+    
+    return (context.m_can_use_huge_files || 
+            format == CFormatGuess::eFasta ||
+            format == CFormatGuess::eGff3);
+}
+
 
 void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams, bool manageDataStreams)
 {
@@ -1342,10 +1373,42 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
 
             m_validator->Clear();
 
-            if (m_context.m_can_use_huge_files)
-                ProcessHugeFile(output);
-            else
-                ProcessOneFile(output);
+            static const set<TTypeInfo> supported_types =
+            {
+                CBioseq_set::GetTypeInfo(),
+                CBioseq::GetTypeInfo(),
+                CSeq_entry::GetTypeInfo(),
+                CSeq_submit::GetTypeInfo(),
+            };
+            edit::CHugeFile hugeFile;
+            hugeFile.m_supported_types = &supported_types;
+            try {
+                hugeFile.Open(m_context.m_current_file);
+            }
+            catch (CObjReaderParseException& e) {
+                auto message = e.GetMsg();
+                if (message == "File format not supported") {
+                    hugeFile.m_format = CFormatGuess::eFasta;
+                } 
+                else {
+                    throw;
+                }
+            }
+           
+            if (s_UseHugeFileMode(m_context, hugeFile.m_format)) {
+                    
+                if (!m_context.m_use_threads) {
+                    m_context.m_use_threads = xGetNumThreads();
+                }
+
+                ProcessHugeFile(hugeFile, output);
+            }
+            else {
+                ProcessOneFile(hugeFile.m_format, 
+                        hugeFile.m_content->GetName(), 
+                        *(hugeFile.m_stream),
+                        output);
+            }
 
             if (!m_context.m_validate.empty())
                 m_validator->ValReportErrors();
@@ -1381,11 +1444,37 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
     }
 }
 
+void CTbl2AsnApp::ProcessOneFile(CFormatGuess::EFormat format, 
+        const string& contentType,
+        CNcbiIstream& istr,
+        CNcbiOstream* output)
+{
+    CMultiReader::TAnnots annots;
+    CRef<CSerialObject> pInputObject = 
+        m_reader->FetchEntry(format,
+                             contentType,
+                             istr,
+                             annots);
+
+    xProcessOneFile(format, pInputObject, annots, output);
+}
+
+
 void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
 {
     CRef<CSerialObject> input_obj;
     CMultiReader::TAnnots annots;
     CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj, annots);
+    xProcessOneFile(format, input_obj, annots, output);
+}
+
+void CTbl2AsnApp::xProcessOneFile(
+        CFormatGuess::EFormat format,
+        CRef<CSerialObject> input_obj, 
+        CMultiReader::TAnnots& annots,
+        CNcbiOstream* output)
+{
+
     if (!annots.empty()) {
        m_secret_files->m_Annots.splice(m_secret_files->m_Annots.end(), annots);
        annots.clear();
