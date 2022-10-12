@@ -281,8 +281,10 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
         return;
     }
     string file = g_FindDataFile("institution_codes.txt");
+    CTime builtin_timestamp
+        (static_cast<time_t>(kInstitutionCollectionCodeList_Timestamp));
     CRef<ILineReader> lr;
-    if ( !file.empty() && !g_IsDataFileOld(file, kInstitutionCollectionCodeList[0])) {
+    if ( !file.empty() && !g_IsDataFileOld(file, builtin_timestamp) ) {
         try {
             lr = ILineReader::New(file);
         } NCBI_CATCH("s_InitializeInstitutionCollectionCodeMaps")
