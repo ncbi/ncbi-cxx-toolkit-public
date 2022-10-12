@@ -26,7 +26,7 @@ cd c++/*/build
 %__mkdir_p $RPM_BUILD_ROOT/%_bindir
 %__install -m755 c++/*/bin/igblast[pn] c++/*/bin/edit_imgt_file.pl $RPM_BUILD_ROOT/%_bindir
 %__install -m755 c++/*/bin/igblast[pn] c++/*/bin/makeogrannote.py $RPM_BUILD_ROOT/%_bindir
-%__install -m755 c++/*/bin/igblast[pn] c++/*/bin/makeogrannote.py $RPM_BUILD_ROOT/%_bindir
+%__install -m755 c++/*/bin/igblast[pn] c++/*/bin/makeogrdb.py $RPM_BUILD_ROOT/%_bindir
 %__mkdir_p $RPM_BUILD_ROOT/%{_prefix}/share/igblast
 cp -R c++/src/app/igblast/internal_data $RPM_BUILD_ROOT/%{_prefix}/share/igblast
 cp -R c++/src/app/igblast/optional_file $RPM_BUILD_ROOT/%{_prefix}/share/igblast
