@@ -99,6 +99,7 @@ private:
 
 
 class CPSGBioseqCache;
+class CPSGAnnotCache;
 class CPSGCDDInfoCache;
 class CPSGBlobMap;
 class CPSG_Blob_Task;
@@ -158,13 +159,13 @@ public:
     void GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& tse_sets);
 
     CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source,
-                                                const CSeq_id_Handle& idh,
+                                                const TIds& ids,
                                                 const SAnnotSelector* sel,
                                                 CDataLoader::TProcessedNAs* processed_nas);
     CDataLoader::TTSE_LockSet GetAnnotRecordsNAOnce(CDataSource* data_source,
-                                                const CSeq_id_Handle& idh,
-                                                const SAnnotSelector* sel,
-                                                CDataLoader::TProcessedNAs* processed_nas);
+                                                    const TIds& ids,
+                                                    const SAnnotSelector* sel,
+                                                    CDataLoader::TProcessedNAs* processed_nas);
 
     void DropTSE(const CPsgBlobId& blob_id);
 
@@ -202,7 +203,6 @@ private:
     friend class CPSG_Blob_Task;
 
     shared_ptr<CPSG_Reply> x_SendRequest(shared_ptr<CPSG_Request> request);
-    CPSG_BioId x_GetBioId(const CSeq_id_Handle& idh);
     SReplyResult x_ProcessBlobReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh, bool retry, bool lock_asap = false, CTSE_LoadLock* load_lock = nullptr);
     SReplyResult x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh);
     string x_GetCachedBlobId(const CSeq_id_Handle& idh);
@@ -241,6 +241,11 @@ private:
                         CDataLoader::TChunk chunk,
                         const CPSG_BlobInfo& blob_info,
                         const CPSG_BlobData& blob_data);
+    bool x_CheckAnnotCache(const string& name,
+                           const TIds& ids,
+                           CDataSource* data_source,
+                           CDataLoader::TProcessedNAs* processed_nas,
+                           CDataLoader::TTSE_LockSet& locks);
 
     CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
@@ -248,6 +253,7 @@ private:
     shared_ptr<CPSG_Queue> m_Queue;
     unique_ptr<CPSGBlobMap> m_BlobMap;
     unique_ptr<CPSGBioseqCache> m_BioseqCache;
+    unique_ptr<CPSGAnnotCache> m_AnnotCache;
     unique_ptr<CPSGCDDInfoCache> m_CDDInfoCache;
     unique_ptr<CThreadPool> m_ThreadPool;
     CRef<CPSG_PrefetchCDD_Task> m_CDDPrefetchTask;
