@@ -1,0 +1,19 @@
+function(makeogrdb_definition)
+  set(SCRIPT_NAME "${NCBI_CURRENT_SOURCE_DIR}/makeogrdb.py")
+  if(WIN32 OR XCODE)
+    set(DEST_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>")
+  else()
+    set(DEST_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+  endif()
+
+  add_custom_target(makeogrdb
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SCRIPT_NAME}" "${DEST_DIR}"
+    DEPENDS ${SCRIPT_NAME}
+    SOURCES ${SCRIPT_NAME})
+endfunction()
+
+NCBI_begin_custom_target(makeogrdb)
+  NCBI_custom_target_definition(makeogrdb_definition)
+NCBI_end_custom_target()
+
+
