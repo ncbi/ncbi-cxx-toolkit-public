@@ -113,9 +113,6 @@ public:
     virtual TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
         const SAnnotSelector* sel,
         TProcessedNAs* processed_nas) override;
-    virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
-        const SAnnotSelector* sel,
-        TProcessedNAs* processed_nas) override;
     virtual TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
         const SAnnotSelector* sel,
         TProcessedNAs* processed_nas) override;
