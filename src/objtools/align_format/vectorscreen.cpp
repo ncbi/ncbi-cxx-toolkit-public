@@ -65,7 +65,6 @@ static const string kMatchUrlLegend[] =
     {"Strong match", "Moderate match", "Weak match", "Suspect origin"};
 
 static const TSeqPos kSupectLength = 50;
-static const TSeqPos kTerminalFexibility = 25;
 
 static const TSeqPos kMasterPixel = 600;
 static const TSeqPos kBarHeight = 20;
@@ -186,7 +185,7 @@ void CVecscreen::x_GetEdgeRanges(const objects::CSeq_align& seqalign,
                    seqalign.GetSeqRange(0).GetFrom());
     CAlignFormatUtil::GetAlnScores(seqalign, score, bits, evalue,
                                    sum_n, num_ident,use_this_gi);
-    if(aln_start < kTerminalFexibility ){
+    if(aln_start < m_TerminalFlexibility ){
         if (aln_stop > start_edge) {
             if(score >= kTerminalMatchScore[eStrong]){
                 start_edge=aln_stop;
@@ -196,7 +195,7 @@ void CVecscreen::x_GetEdgeRanges(const objects::CSeq_align& seqalign,
                 start_edge=aln_stop;
             }
         }
-    } else if (aln_stop > master_len - 1 - kTerminalFexibility){
+    } else if (aln_stop > master_len - 1 - m_TerminalFlexibility){
         if (aln_start < end_edge) {
             if(score >= kTerminalMatchScore[eStrong]){
                 end_edge = aln_start;
@@ -227,8 +226,8 @@ CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
     CAlignFormatUtil::GetAlnScores(seqalign, score, bits, evalue,
                                    sum_n, num_ident,use_this_gi);
     
-    if(aln_start < kTerminalFexibility || 
-       aln_stop > master_len - 1 - kTerminalFexibility){
+    if(aln_start < m_TerminalFlexibility || 
+       aln_stop > master_len - 1 - m_TerminalFlexibility){
         //terminal match       
         if(score >= kTerminalMatchScore[eStrong]){
             return eStrong;
@@ -325,13 +324,14 @@ void CVecscreen::x_MergeLowerRankSeqalign(CSeq_align_set& seqalign_higher,
    
 }
 
-CVecscreen::CVecscreen(const CSeq_align_set& seqalign, TSeqPos master_length){
+CVecscreen::CVecscreen(const CSeq_align_set& seqalign, TSeqPos master_length, TSeqPos terminal_flexibility){
     m_SeqalignSetRef = &seqalign;
     m_ImagePath = "./";
     m_MasterLen = master_length;
     m_FinalSeqalign = new CSeq_align_set;
     m_HelpDocsUrl = "//www.ncbi.nlm.nih.gov/tools/vecscreen/about/";    
     m_ShowWeakMatch = true;
+    m_TerminalFlexibility = terminal_flexibility;
 }
 
 CVecscreen::~CVecscreen()
