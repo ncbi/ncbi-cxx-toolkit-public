@@ -3775,7 +3775,7 @@ void CRNAValidator::x_ValidateTrnaOverlap()
                                                        CSeqFeatData::eSubtype_cdregion,
                                                        eOverlap_Contained, m_Scope);
     if (cds) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadCDScomponentOverlapTRNA,
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_BadCDScomponentOverlapTRNA,
             "tRNA overlaps CDS");
     }
 }
