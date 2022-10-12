@@ -4,7 +4,7 @@ APP_PROJ = igblastp igblastn
 
 REQUIRES = objects algo
 
-USR_PROJ = edit_imgt_file
+USR_PROJ = edit_imgt_file makeogrdb makeogrannote
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
