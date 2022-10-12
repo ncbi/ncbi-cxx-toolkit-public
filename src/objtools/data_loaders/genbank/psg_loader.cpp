@@ -226,14 +226,6 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetOrphanAnnotRecordsNA(const CSeq_
 }
 
 
-CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CSeq_id_Handle& idh,
-    const SAnnotSelector* sel,
-    TProcessedNAs* processed_nas)
-{
-    return m_Impl->GetAnnotRecordsNA(GetDataSource(), idh, sel, processed_nas);
-}
-
-
 namespace {
     struct SBetterId
     {
@@ -288,17 +280,9 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CBi
     const SAnnotSelector* sel,
     TProcessedNAs* processed_nas)
 {
-    TTSE_LockSet ret;
     TIds ids = bioseq.GetId();
     sort(ids.begin(), ids.end(), SBetterId());
-    ITERATE ( TIds, it, ids ) {
-        TTSE_LockSet ret2 = m_Impl->GetAnnotRecordsNA(GetDataSource(), *it, sel, processed_nas);
-        if (!ret2.empty()) {
-            ret.swap(ret2);
-            break;
-        }
-    }
-    return ret;
+    return m_Impl->GetAnnotRecordsNA(GetDataSource(), ids, sel, processed_nas);
 }
 
 
