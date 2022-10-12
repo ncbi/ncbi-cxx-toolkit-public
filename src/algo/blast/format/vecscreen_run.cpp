@@ -205,8 +205,10 @@ list<CRef<CSeq_id> > s_SetIdList(const CBioseq_Handle& bh, string& title)
 
 
 
-CVecscreenRun::CVecscreenRun(CRef<CSeq_loc> seq_loc, CRef<CScope> scope, const string & db)
- : m_SeqLoc(seq_loc), m_Scope(scope), m_DB(db), m_Vecscreen(0)
+CVecscreenRun::CVecscreenRun(CRef<CSeq_loc> seq_loc, CRef<CScope> scope, 
+                             const string & db, TSeqPos terminal_flexibility)
+ : m_SeqLoc(seq_loc), m_Scope(scope), m_DB(db), 
+   m_TerminalFlexibility(terminal_flexibility), m_Vecscreen(0)
 {
     m_Queries.Reset(new CBlastQueryVector());
     CRef<CBlastSearchQuery> q(new CBlastSearchQuery(*seq_loc, *scope));
@@ -237,7 +239,9 @@ void CVecscreenRun::x_RunBlast()
    CRef<CBlastAncillaryData> ancillary_data((*m_RawBlastResults)[0].GetAncillaryData());
    
    // The vecscreen stuff follows.
-   m_Vecscreen = new CVecscreen(*((*m_RawBlastResults)[0].GetSeqAlign()), GetLength(*m_SeqLoc, m_Scope));
+   CRef<CSeq_align_set>  results_copy(new CSeq_align_set);
+   results_copy->Assign( *((*m_RawBlastResults)[0].GetSeqAlign()) );
+   m_Vecscreen = new CVecscreen(*results_copy, GetLength(*m_SeqLoc, m_Scope), m_TerminalFlexibility);
 
    // This actually does the vecscreen work.
    m_Seqalign_set = m_Vecscreen->ProcessSeqAlign();
@@ -246,8 +250,10 @@ void CVecscreenRun::x_RunBlast()
    CRef<CSearchResults> results(new CSearchResults(id, m_Seqalign_set,
                                                    TQueryMessages(),
                                                    ancillary_data));
-   m_RawBlastResults->clear();
-   m_RawBlastResults->push_back(results);
+   // this part wrote over the original hits with the post-processed results. 
+   // I cant see why this was here
+   //m_RawBlastResults->clear();
+   //m_RawBlastResults->push_back(results);
 }
 
 CRef<blast::CSearchResultSet> 
@@ -311,7 +317,7 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
     const bool kPrintAlignments = static_cast<bool>(m_Outfmt == eShowAlignments);
     const bool kPrintBlastTab = static_cast<bool>(m_Outfmt == eBlastTab);
     const bool kPrintJson = static_cast<bool>(m_Outfmt == eJson);
-    const bool kPrintAsnText = static_cast<bool>(m_Outfmt == eAsnText);
+    const bool kPrintAsnText = static_cast<bool>(m_Outfmt == eAsnText || m_Outfmt == eAsnTextNoProcess);
     const CFormattingArgs::EOutputFormat fmt = (kPrintBlastTab ? CFormattingArgs::eTabular : (kPrintAsnText?CFormattingArgs::eAsnText : CFormattingArgs::ePairwise));
     const string custom_output = ( kPrintBlastTab ? "qaccver qstart qend saccver salltitles "  : "" );
     const bool kBelieveQuery(false);
@@ -339,21 +345,47 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
         CRef<CSearchResultSet> result_set = m_Screener.GetSearchResultSet();
         _ASSERT(result_set->size() == 1);
 
-       // CSeq_align_set& alignments = * ((*result_set)[0]).SetSeqAlign();
-        CSeq_align_set& alignments = * m_Screener.GetSeqalignSet();
+       // CSeq_align_set* alignments = * ((*result_set)[0]).SetSeqAlign();
+        CSeq_align_set* alignments =  m_Screener.GetSeqalignSet();
+        if(m_Outfmt == eAsnTextNoProcess) {
+            CRef<CSearchResultSet> result_set = m_Screener.GetSearchResultSet();
+            alignments =  ((*result_set)[0]).SetSeqAlign().GetPointer();
+        }
 
-        ITERATE(list<SVecscreenSummary>, mi, match_list) {
-            NON_CONST_ITERATE(list<CRef<CSeq_align> >, align_iter, alignments.Set()) {
-                if(mi->range.IntersectionWith((*align_iter)->GetSeqRange(0))==mi->range ||
-                   mi->range.IntersectionWith((*align_iter)->GetSeqRange(0))==(*align_iter)->GetSeqRange(0)) {
-                    if(mi->seqid->Equals( (*align_iter)->GetSeq_id(0))) {
-                        (*align_iter)->SetNamedScore("match_type", match_type_ints[mi->match_type]);
-                    }
-                }    
+        if(m_Outfmt != eAsnTextNoProcess) {
+            ITERATE(list<SVecscreenSummary>, mi, match_list) {
+                NON_CONST_ITERATE(list<CRef<CSeq_align> >, align_iter, alignments->Set()) {
+                    if(mi->range.IntersectionWith((*align_iter)->GetSeqRange(0))==mi->range ||
+                       mi->range.IntersectionWith((*align_iter)->GetSeqRange(0))==(*align_iter)->GetSeqRange(0)) {
+                        if(mi->seqid->Equals( (*align_iter)->GetSeq_id(0))) {
+                            (*align_iter)->SetNamedScore("match_type", match_type_ints[mi->match_type]);
+                        }
+                    }    
+                }
             }
         }
         
         if(kPrintAsnText)  {
+            
+            CSeq_align_set fixed_ids;
+            ITERATE(list<CRef<CSeq_align> >, align_iter, alignments->Set()) {
+                string qid, qtitle, sid, stitle;
+                x_GetIdsAndTitlesForSeqAlign(**align_iter, qid, qtitle, sid, stitle);
+                CRef<CSeq_align> fixed(new CSeq_align);
+                fixed->Assign(**align_iter);
+                try {
+                    fixed->SetSegs().SetDenseg().SetIds()[0]->Set(qid);
+                } catch(...) {
+                    fixed->SetSegs().SetDenseg().SetIds()[0]->Set("lcl|"+qid);
+                }
+                try {
+                    fixed->SetSegs().SetDenseg().SetIds()[1]->Set(sid);
+                } catch(...) {
+                    fixed->SetSegs().SetDenseg().SetIds()[1]->Set("lcl|"+sid);
+                }
+                fixed_ids.Set().push_back(fixed);
+            }
+            (*result_set)[0].SetSeqAlign()->Assign(fixed_ids);
             blast_formatter.PrintOneResultSet((*result_set)[0],
                                               m_Screener.m_Queries);
         }
@@ -434,6 +466,7 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
                     jobj.insert("query_id", qid);
                     jobj.insert("query_start", align.GetSeqStart(0)+1);
                     jobj.insert("query_end", align.GetSeqStop(0)+1);
+                    jobj.insert("query_strand", (align.GetSeqStrand(0)==eNa_strand_plus?"+":"-"));
                     jobj.insert("match_strength", match_type_strs[match_score]);
                     jobj.insert("drop_count", mi->drops.size());
                     jobj.insert("subject_id", sid);

@@ -137,8 +137,9 @@ public:
     ///Constructors
     ///@param seqalign: alignment to show
     ///@param master_length: master seq length
+    ///@param terminal_flexibility: wiggle room from sequence edge, default 25
     ///
-    CVecscreen(const objects::CSeq_align_set& seqalign, TSeqPos master_length);
+    CVecscreen(const objects::CSeq_align_set& seqalign, TSeqPos master_length, TSeqPos terminal_flexibility=25);
     
     ///Destructor
     ~CVecscreen();
@@ -200,6 +201,8 @@ protected:
     list<AlnInfo*> m_AlnInfoList;
     ///Show weak match?
     bool m_ShowWeakMatch;
+    // how close to an edge still counts as an 'edge', defaults to 25, 
+    TSeqPos m_TerminalFlexibility;
 
     ///Sort on range from
     ///@param info1: the first range

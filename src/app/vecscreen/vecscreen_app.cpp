@@ -80,6 +80,10 @@ void CVecScreenApp::Init()
     arg_desc->SetCurrentGroup("BLAST database options");
     arg_desc->AddDefaultKey(kArgDb, "dbname", "BLAST database name", 
                             CArgDescriptions::eString, kDefaultVectorDb);
+    
+    arg_desc->SetCurrentGroup("Post-processing options");
+    arg_desc->AddDefaultKey("term-flex", "int", "terminal flexibility, in bases, default 25", 
+                            CArgDescriptions::eInteger, NStr::NumericToString(kDefaultTerminalFlexibility));
 
     arg_desc->SetCurrentGroup("Output configuration options");
     arg_desc->AddDefaultKey(kArgOutput, "output_file", "Output file name", 
@@ -92,9 +96,10 @@ void CVecScreenApp::Init()
             "  1 = Do not show alignments, just contaminated range offsets,\n"
             "  2 = Contaminated ranges, as a blast-tabular-like report,\n"
             "  3 = Contaminated ranges, as a series of json objects,\n"
-            "  4 = Seq-align-set ASN Text\n",
+            "  4 = Seq-align-set ASN Text,\n"
+            "  5 = Seq-align-set ASN Text, no post-processing\n",
             CArgDescriptions::eInteger, 
-            NStr::IntToString(kDfltArgOutputFormat));
+            NStr::NumericToString(kDfltArgOutputFormat));
     arg_desc->SetConstraint(kArgOutputFormat, 
        new CArgAllowValuesBetween(0, CVecscreenRun::CFormatter::eEndValue-1, true));
     // Produce Text output?
@@ -134,6 +139,7 @@ int CVecScreenApp::Run(void)
         const CVecscreenRun::CFormatter::TOutputFormat kFmt = 
             args[kArgOutputFormat].AsInteger();
         const bool kHtmlOutput = !args["text_output"].AsBoolean();
+        const TSeqPos kTermFlex = args["term-flex"].AsInteger();
         
         /*** Process the input ***/
         while ( !input.End() ) {
@@ -141,7 +147,7 @@ int CVecScreenApp::Run(void)
             _ASSERT(query_batch->Size() == 1);
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
             CVecscreenRun vs(CRef<CSeq_loc>(const_cast<CSeq_loc*>(&*query_batch->GetQuerySeqLoc(0))),
-                             query_batch->GetScope(0), kDbName);
+                             query_batch->GetScope(0), kDbName, kTermFlex);
             CVecscreenRun::CFormatter vs_format(vs, *scope, kFmt, kHtmlOutput);
             vs_format.FormatResults(args[kArgOutput].AsOutputFile(), opts_hndl);
         }

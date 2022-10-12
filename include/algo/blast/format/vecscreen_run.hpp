@@ -61,7 +61,9 @@ public:
                        kVecScreenPatchVersion) {}
 };
 
-#define kDefaultVectorDb "UniVec"
+const string kDefaultVectorDb = "UniVec";
+// value from src/objtools/align_format/vectorscreen.cpp
+const TSeqPos kDefaultTerminalFlexibility = 25;
 
 /// This class runs vecscreen
 class NCBI_XBLASTFORMAT_EXPORT CVecscreenRun
@@ -85,8 +87,10 @@ public:
      ///@param seq_loc sequence locations to screen.
      ///@param scope CScope used to fetch sequence on seq_loc
      ///@param db Database to screen with (UniVec is default).
+     ///@param terminal_flexibility wiggle room for edge distance, default 25
      CVecscreenRun(CRef<CSeq_loc> seq_loc, CRef<CScope> scope, 
-                   const string & db = string(kDefaultVectorDb));
+                   const string & db = string(kDefaultVectorDb),
+                   const TSeqPos terminal_flexibility=kDefaultTerminalFlexibility);
 
      /// Destructor 
      ~CVecscreenRun() {delete m_Vecscreen;}
@@ -109,6 +113,7 @@ public:
              eBlastTab = 2,             ///< switch to a blast-tab-like fmt
              eJson = 3,                 ///< blast-tab values, but json formatted
              eAsnText = 4,              ///< entire seq-aligns in asn text
+             eAsnTextNoProcess = 5,     ///< entire seq-aligns in asn text, the raw blast hits without post-processing
              eEndValue                  ///< Sentinel value, not an actual output format
          };
          typedef int TOutputFormat;
@@ -156,15 +161,17 @@ private:
      CRef<CScope> m_Scope;
      /// Database to use (UniVec is default).
      string m_DB;
+     /// edge wiggle room
+     TSeqPos m_TerminalFlexibility;
      /// vecscreen instance for search.
      CVecscreen* m_Vecscreen;
      /// The queries to run VecScreen on
      CRef<blast::CBlastQueryVector> m_Queries;
      /// Processed Seq-align
      CRef<objects::CSeq_align_set> m_Seqalign_set;
-     /// The raw  BLAST results
+     /// The raw  BLAST results 
      CRef<blast::CSearchResultSet> m_RawBlastResults;
-
+     
 
      /// Prohibit copy constructor
      CVecscreenRun(const CVecscreenRun&);
