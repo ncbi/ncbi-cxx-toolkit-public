@@ -280,10 +280,8 @@ void CAsn2FastaApp::Init()
 
         // filtering options for use with old style single output file:
         arg_desc->AddFlag("nucs-only", "Only emit nucleotide sequences");
-        arg_desc->SetDependency("nucs-only", CArgDescriptions::eRequires, "o");
 
         arg_desc->AddFlag("prots-only", "Only emit protein sequences");
-        arg_desc->SetDependency("prots-only", CArgDescriptions::eRequires, "o");
         arg_desc->SetDependency("prots-only", CArgDescriptions::eExcludes,
                                 "nucs-only");
 
@@ -855,8 +853,6 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
 {
     CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
 
-    CFastaOstreamEx* fasta_os = nullptr;
-
     bool is_genomic = false;
     bool is_RNA = false;
 
@@ -913,11 +909,15 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
     if ( m_Os ) {
         if ( m_OnlyNucs && ! bsh.IsNa() ) return nullptr;
         if ( m_OnlyProts && ! bsh.IsAa() ) return nullptr;
-        fasta_os = m_Os.get();
-    } else if ( bsh.IsNa() ) {
+        return m_Os.get();
+    } 
+    
+    if ( bsh.IsNa() ) {
         if ( m_On ) {
-            fasta_os = m_On.get();
-        } else if ( (is_genomic || ! closest_molinfo) && m_Og ) {
+            return m_On.get();
+        } 
+        CFastaOstreamEx* fasta_os = nullptr;
+        if ( (is_genomic || ! closest_molinfo) && m_Og ) {
             fasta_os = m_Og.get();
             if (! m_OgHead.empty() && ! m_OgTail.empty()) {
                 TSeqPos len = bsr->GetLength();
@@ -932,23 +932,24 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
             }
         } else if ( is_RNA && m_Or ) {
             fasta_os = m_Or.get();
-        } else {
-            return nullptr;
         }
-    } else if ( bsh.IsAa() ) {
+        return fasta_os;
+    } 
+    
+    
+    if ( bsh.IsAa() ) {
         if ( m_Op ) {
-            fasta_os = m_Op.get();
+           return m_Op.get();
         }
-    } else {
+    } 
+    else {
         if ( m_Ou ) {
-            fasta_os = m_Ou.get();
+            return m_Ou.get();
         } else if ( m_On ) {
-            fasta_os = m_On.get();
-        } else {
-            return nullptr;
+            return m_On.get();
         }
     }
-    return fasta_os;
+    return nullptr;
 }
 
 
