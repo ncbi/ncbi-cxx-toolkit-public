@@ -334,6 +334,7 @@ void CAsn2FastaApp::Init()
 
         arg_desc->AddFlag("ignore-origid", "Ignore OriginalID descriptor when constructing defline");
 
+        arg_desc->AddFlag("gnlacc", "Display general id and genbank accession in defline");
     }}
 
     // misc
@@ -394,6 +395,10 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
     if (args["ignore-origid"])
     {
         fasta_os->SetFlag(CFastaOstreamEx::fIgnoreOriginalID);
+    }
+
+    if (args["gnlacc"]) {
+        fasta_os->SetFlag(CFastaOstreamEx::fShowGnlAndAcc);
     }
 
     if( args["gap-mode"] ) {
