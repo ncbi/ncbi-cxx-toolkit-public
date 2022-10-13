@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Oct  7 10:15:08 EDT 2022; formally
+/* time_t value corresponding to Thu Oct 13 09:34:04 EDT 2022; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1665152108UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1665668044UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -2195,6 +2195,23 @@ static const char* const kBuiltInGuide[] = {
     "special  CAMQFL000000000-CAMQFL999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAMQFR000000000-CAMQFT999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAMQGL000000000-CAMQPX999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQQL000000000-CAMQTP999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQTS000000000-CAMQTV999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQTX000000000-CAMQUC999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQUF000000000-CAMQUZ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQVB000000000-CAMQVC999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQVF000000000-CAMQVU999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQVW000000000-CAMQWJ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQWL000000000-CAMQWP999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQWR000000000-CAMQWS999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQWU000000000-CAMQWW999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQWZ000000000-CAMQZL999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMQZN000000000-CAMQZY999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMRAA000000000-CAMRAR999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMRAT000000000-CAMRAX999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMRBA000000000-CAMREN999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMREP000000000-CAMRFE999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMRGM000000000-CAMRGM999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc # 4+8",
