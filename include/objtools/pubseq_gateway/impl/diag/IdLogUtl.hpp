@@ -51,7 +51,9 @@ USING_NCBI_SCOPE;
 	TypeName(const TypeName&);				\
 	TypeName& operator=(const TypeName&)
 
-class EError: public CException { 
+class
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted. Replace IdLogUtil::EError with project/library specific class")
+EError: public CException {
 public:
     enum EErrCode {
         eUnknown = 0x10000,
@@ -90,17 +92,29 @@ public:
         NCBI_THROW(IdLogUtil::EError, errc, comm);  \
     } while (0)
 
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted.")
 void DumpBinBuffer(const unsigned char* buf, size_t len);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted.")
 void DumpBinBuffer(const unsigned char* buf, size_t len, const string& filename);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted.")
 void StringReplace(string& where, const string& what, const string& replace);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted.")
 string StringFetch(string& src, char delim);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted.")
 void StringFromFile(const string& filename, string& str);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted.")
 void StringToFile(const string& filename, const string& str);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted. Replace gettime() call with gettime() in psg_cassandra (cass_util.hpp) library.")
 int64_t gettime(void);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted.")
 int64_t gettime_ns(void);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted.")
 string Int64ToDt(int64_t dt, bool inUTC);
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted. Use ncbistr.hpp")
 string TrimRight(const string& s, const string& delimiters = " \f\n\r\t\v");
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted. Use ncbistr.hpp")
 string TrimLeft(const string& s, const string& delimiters = " \f\n\r\t\v");
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted. Use ncbistr.hpp")
 string Trim(const string& s, const string& delimiters = " \f\n\r\t\v" );
 
 END_SCOPE(IdLogUtil)
