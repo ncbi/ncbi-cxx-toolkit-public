@@ -47,8 +47,6 @@ namespace IdLogUtil {
 USING_NCBI_SCOPE;
 
 typedef CSpinLock CAppPerfMux;
-//typedef CFastMutex CAppPerfMux;
-
 
 // 5sec average
 #define TAVG  5
@@ -61,7 +59,9 @@ typedef CSpinLock CAppPerfMux;
 			avg = (1 - (coff)) * avg + (coff) * (curr);	\
 	} while(0)
 
-class CAppOp {
+class
+NCBI_STD_DEPRECATED("CAppOp is deprecated and will be deleted.")
+CAppOp {
 public:
 	struct perf_t {
 		int64_t m_curpos;
@@ -71,11 +71,11 @@ public:
 		bool Empty() const {
 			return (m_rowcount != 0 || m_bytecount != 0);
 		}
-		perf_t() : 
-            m_curpos(0), 
-            m_tottime(0), 
-            m_rowcount(0), 
-            m_bytecount(0) 
+		perf_t() :
+            m_curpos(0),
+            m_tottime(0),
+            m_rowcount(0),
+            m_bytecount(0)
         {}
 		void Clear() {
 			memset(this, 0, sizeof(perf_t));
@@ -99,7 +99,7 @@ public:
 		double m_avg_wr_kbsec;
 		stat_t() {
 			Clear();
-		}		
+		}
 		void Clear() {
 			memset(this, 0, sizeof(stat_t));
 		}
@@ -118,7 +118,7 @@ public:
 
 				double tavg = (op_interval < TAVG * 1000000L) ? op_interval : TAVG * 1000000L;
 				double T = interval * 1.0 / (interval + tavg); // 5sec average
-				
+
 				LOWPASS_FILTER_UPD(m_avg_rd_rowsec, m_curr_rd_rowsec, T);
 				LOWPASS_FILTER_UPD(m_avg_rd_kbsec, m_curr_rd_kbsec, T);
 				LOWPASS_FILTER_UPD(m_avg_wr_rowsec, m_curr_wr_rowsec, T);
@@ -127,20 +127,20 @@ public:
 		}
 	};
 
-	CAppOp(CAppOp* parent = nullptr) : 
-        m_log(false), 
+	CAppOp(CAppOp* parent = nullptr) :
+        m_log(false),
         m_produce_output(true),
-		m_rowstart(0), 
-        m_lastrowupdate(0), 
-        m_tstart(0), 
+		m_rowstart(0),
+        m_lastrowupdate(0),
+        m_tstart(0),
         m_tstop(0),
-		m_parent(parent), 
+		m_parent(parent),
         m_stat(nullptr),
-		m_relaxt(0), 
-        m_rd_cap("read: "), 
+		m_relaxt(0),
+        m_rd_cap("read: "),
         m_wr_cap("write: ") {}
-	CAppOp(const string& rd_cap, const string& wr_cap) : 
-        CAppOp(nullptr) 
+	CAppOp(const string& rd_cap, const string& wr_cap) :
+        CAppOp(nullptr)
     {
         SetCaptions(rd_cap, wr_cap);
 	}
@@ -167,7 +167,7 @@ public:
 		LOG4(("%p: wr:", LOG_CPTR(this)));
 		m_wr_perf.__log();
 	}
-private:	
+private:
 	friend class CAppPerf;
 	bool m_log; // anyting logged
 	bool m_produce_output;
@@ -179,10 +179,10 @@ private:
 
 	CAppOp* m_parent;	// used in multithreading case
 	stat_t* m_stat;
-	
+
 	perf_t m_rd_perf;
 	perf_t m_wr_perf;
-	
+
 	int m_relaxt;
 	string m_rd_cap;
 	string m_wr_cap;

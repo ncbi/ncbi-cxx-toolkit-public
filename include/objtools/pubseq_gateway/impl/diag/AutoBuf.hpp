@@ -45,13 +45,14 @@ namespace IdLogUtil {
 
 USING_NCBI_SCOPE;
 
-
-class CAutoBuf {
+class
+NCBI_STD_DEPRECATED("CAutoBuf is deprecated and will be deleted. Replace it with std::vector<unsigned char>.")
+CAutoBuf {
 public:
 	explicit CAutoBuf(unsigned int rsrv = 0) :
         m_buf(nullptr),
         m_len(0),
-        m_limit(0) 
+        m_limit(0)
     {
 		if (rsrv > 0)
 			Reserve(rsrv);
@@ -59,7 +60,7 @@ public:
 	CAutoBuf(const CAutoBuf& src) :
         m_buf(nullptr),
         m_len(0),
-        m_limit(0) 
+        m_limit(0)
     {
 		*this = src; // call assignment operator
 	}
@@ -80,7 +81,7 @@ public:
 	CAutoBuf(CAutoBuf&& src) :
         m_buf(src.m_buf),
         m_len(src.m_len),
-        m_limit(src.m_limit) 
+        m_limit(src.m_limit)
     {
 		src.Detach();
 	}

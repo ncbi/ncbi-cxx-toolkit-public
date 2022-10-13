@@ -2,6 +2,8 @@
 #ifndef _APPLOG_WRAP_H_
 #define _APPLOG_WRAP_H_
 
+#include <corelib/ncbistl.hpp>
+
 namespace IdLogUtil {
 typedef enum {
 	lkNone,
@@ -46,7 +48,7 @@ typedef enum {
 
 
 
-
+NCBI_STD_DEPRECATED("psg_diag library is deprecated and will be deleted. Minimal subset of logging API migrated to id_diag (internal/ID/diag) library.")
 void LogAppStart(const char* appname);
 int /*bool*/ LogQueuePeek();
 void LogPush(log_kind_t akind, const char *str);

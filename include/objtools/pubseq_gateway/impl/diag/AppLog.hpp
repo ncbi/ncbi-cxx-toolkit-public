@@ -68,8 +68,6 @@
 namespace IdLogUtil {
 USING_NCBI_SCOPE;
 
-//typedef CFastMutex CAppLogMux;
-//typedef CFastMutexGuard CAppLogMuxGuard;
 typedef CSpinGuard CAppLogMuxGuard;
 typedef CSpinLock CAppLogMux;
 
@@ -211,7 +209,7 @@ private:
 			return m_logfile != -1;
 		}
 	};
-	
+
 	static CAppLogMux m_LogMux;
 	static CAppLogMux m_LogFileMux;
 	static CAppLogMux m_LogFileBufMux;
@@ -234,9 +232,6 @@ private:
 	static void DoLogLine(const char* str, int len = -1, bool eol = false, bool stay = false) {
 		if (len < 0)
 			len = str ? strlen(str) : 0;
-//		if (!stay)
-//			FlushBOL();
-			
 		if (str) {
 			if (m_BOL || stay) {
 				string pad;
@@ -303,7 +298,7 @@ private:
 			}
 		}
 	}
-	
+
 
 public:
 	static void LogToFile(const char* msg, int len = -1, bool flush = false);
@@ -326,17 +321,7 @@ public:
 	}
 	static void UseNcbiAppLog(string AppName) {
 		m_logf.Close();
-		//GetDiagContext().SetAppName(AppName);
-		//CDiagContext::SetOldPostFormat(false);
-		//GetDiagContext().PrintStart("Daemon app start");
 		LogAppStart(AppName.c_str());
-		//NcbiLog_InitMT(AppName);
-		//NcbiLog_SetDestination(eNcbiLog_Cwd);
-		//NcbiLog_AppStart(argv);
-		//NcbiLog_AppRun();
-		//NcbiLog_AppSetClient("UNKNOWN");
-		//NcbiLog_AppSetSession("UNKNOWN");
-		//NcbiLog_SetPostLevel(eNcbiLog_Info);
 		m_IsNcbiAppLog = true;
 	}
 	static void MirrorErrorsToNcbiAppLog(bool mirrorerr) {
@@ -356,7 +341,7 @@ public:
 		}
 		CAppLogMuxGuard guard(m_LogMux);
 		FlushBOL();
-		ERR_POST(string(str));		
+		ERR_POST(string(str));
 		Flush();
 	}
 	static void Err0Post(const string& str) {
@@ -378,29 +363,12 @@ public:
 			CAppLogMuxGuard guard(m_LogMux);
 			FlushBOL();
 			ERR_POST(str);
-		}		
+		}
 	}
 	static void Err1Post(const string& str) {
 		if (m_loglevel >= 1)
 			Err1Post(str.c_str(), str.size());
 	}
-/*
-	static void Log1(const string& msg) {
-		DoLog(1, msg);
-	}
-	static void Log2(const string& msg) {
-		DoLog(2, msg);
-	}
-	static void Log3(const string& msg) {
-		DoLog(3, msg);
-	}
-	static void Log4(const string& msg) {
-		DoLog(4, msg);
-	}
-	static void Log5(const string& msg) {
-		DoLog(5, msg);
-	}
-*/
 	static void VarLog1(const char* format,...) __attribute__ ((format (printf, 1, 2)))	{
 		__VARLOG(1);
 	}
@@ -449,7 +417,7 @@ public:
 			bytes_rd = s ? atoll(s) : 0;
 			s = strval(params, "bytes_wrote=");
 			bytes_wr = s ? atoll(s) : 0;
-			
+
 			__LOGN(2, ("request-stop, status: %d, Bytes RD: %" PRId64 ", Bytes WR: %" PRId64, status, bytes_rd, bytes_wr));
 		}
 	}
@@ -519,7 +487,7 @@ public:
 	static int STime(char* buf, int bufsz, bool fmt);
 };
 
-			
+
 
 #define LOG5(a) __LOGN(5, a)
 #define LOG4(a) __LOGN(4, a)
@@ -537,14 +505,14 @@ public:
 	if (IdLogUtil::CAppLog::GetLogLevelFile() >= REQ_LOG_LEVEL) {	\
 		IdLogUtil::CAppLog::RequestStart a;						\
 	}													\
-} while(0)	
+} while(0)
 
 #define REQE(a)											\
 {														\
 	if (IdLogUtil::CAppLog::GetLogLevelFile() >= REQ_LOG_LEVEL) {	\
 		IdLogUtil::CAppLog::RequestEnd a;							\
 	}													\
-} while(0)	
+} while(0)
 
 }
 
