@@ -2843,8 +2843,41 @@ void CFastaOstream::x_GetBestId(CConstRef<CSeq_id>& gi_id, CConstRef<CSeq_id>& b
     }
 }
 
+static void s_WriteGnlAndAcc(const CBioseq& bioseq, CNcbiOstream& ostr)
+{
+    CRef<CSeq_id> pGnlId;
+    CRef<CSeq_id> pAccession;
+
+    for (const auto& pId : bioseq.GetId()) {
+        if (pId->IsGeneral()) {
+            pGnlId = pId;
+            continue;
+        }
+        if (pId->IsGenbank()) {
+            pAccession = pId;
+        }
+    }
+
+    if (pGnlId) {
+        pGnlId->WriteAsFasta(ostr);
+    }
+
+    if (pAccession) {
+        if (pGnlId) {
+            ostr << '|';
+        }
+        pAccession->WriteAsFasta(ostr);
+    }
+}
+
 void CFastaOstream::x_WriteAsFasta(const CBioseq& bioseq)
 {
+
+    if (m_Flags & fShowGnlAndAcc) {
+        s_WriteGnlAndAcc(bioseq, m_Out);
+        return;
+    }
+
     CConstRef<CSeq_id> best_id;
     CConstRef<CSeq_id> gi_id;
     bool hide_prefix = false;
