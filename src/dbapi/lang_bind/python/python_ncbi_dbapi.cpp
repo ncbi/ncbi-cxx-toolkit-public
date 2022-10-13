@@ -4573,7 +4573,6 @@ PyObject* init_common(const string& module_name)
     
     DBLB_INSTALL_DEFAULT();
 
-    const char* rev_str = "$Revision$";
     PyObject *module;
 
     // Fix plugin manager ...
@@ -4587,7 +4586,7 @@ PyObject* init_common(const string& module_name)
 
     // Define module attributes ...
     pythonpp::CModuleExt::AddConst("apilevel", "2.0");
-    pythonpp::CModuleExt::AddConst("__version__", string( rev_str + 11, strlen( rev_str + 11 ) - 2 ));
+    pythonpp::CModuleExt::AddConst("__version__", NCBI_PACKAGE_VERSION);
     pythonpp::CModuleExt::AddConst("threadsafety", 1);
     pythonpp::CModuleExt::AddConst("paramstyle", "qmark");
 
