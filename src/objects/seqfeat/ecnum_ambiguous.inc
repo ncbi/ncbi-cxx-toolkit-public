@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Sep  7 13:44:13 EDT 2022; formally
+/* time_t value corresponding to Thu Oct 13 13:07:45 EDT 2022; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_ambiguous_Timestamp = 1662572653UL;
+static const unsigned long kECNum_ambiguous_Timestamp = 1665680865UL;
 static const char* const kECNum_ambiguous[] = {
     "1.-.-.-\tOxidoreductases",
     "1.n.n.n\tOxidoreductases",
@@ -422,6 +422,8 @@ static const char* const kECNum_ambiguous[] = {
     "2.4.1.n\tHexosyltransferases",
     "2.4.2.-\tPentosyltransferases",
     "2.4.2.n\tPentosyltransferases",
+    "2.4.3.-\tSialyltransferases",
+    "2.4.3.n\tSialyltransferases",
     "2.4.99.-\tTransferring other glycosyl groups",
     "2.4.99.n\tTransferring other glycosyl groups",
     "2.5.-.-\tTransferring alkyl or aryl groups, other than methyl groups",
@@ -650,6 +652,8 @@ static const char* const kECNum_ambiguous[] = {
     "3.13.n.n\tActing on carbon-sulfur bonds",
     "3.13.1.-\tActing on carbon-sulfur bonds",
     "3.13.1.n\tActing on carbon-sulfur bonds",
+    "3.13.2.-\tThioether and trialkylsulfonium hydrolases",
+    "3.13.2.n\tThioether and trialkylsulfonium hydrolases",
     "4.-.-.-\tLyases",
     "4.n.n.n\tLyases",
     "4.1.-.-\tCarbon-carbon lyases",
