@@ -386,6 +386,8 @@
 2.4.1.n	Hexosyltransferases
 2.4.2.-	Pentosyltransferases
 2.4.2.n	Pentosyltransferases
+2.4.3.-	Sialyltransferases
+2.4.3.n	Sialyltransferases
 2.4.99.-	Transferring other glycosyl groups
 2.4.99.n	Transferring other glycosyl groups
 2.5.-.-	Transferring alkyl or aryl groups, other than methyl groups
@@ -614,6 +616,8 @@
 3.13.n.n	Acting on carbon-sulfur bonds
 3.13.1.-	Acting on carbon-sulfur bonds
 3.13.1.n	Acting on carbon-sulfur bonds
+3.13.2.-	Thioether and trialkylsulfonium hydrolases
+3.13.2.n	Thioether and trialkylsulfonium hydrolases
 4.-.-.-	Lyases
 4.n.n.n	Lyases
 4.1.-.-	Carbon-carbon lyases
