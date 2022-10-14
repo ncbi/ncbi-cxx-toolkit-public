@@ -164,7 +164,7 @@ struct Parser {
     bool            no_code      = false;          /* no genetic code from server try to guess */
     bool            seg_acc      = false;          /* use accession for segmented set Id */
     bool            convert      = false;          /* convert to new asn.1 spec (ver. 4.0) */
-    char**          accpref      = nullptr;        /* a list of allowable 2-letter
+    const char**    accpref      = nullptr;        /* a list of allowable 2-letter
                                      prefixes in new format of accession
                                     numbers 2 letters + 6 digits */
     bool            accver       = false;          /* ACCESSION.VERSION */
@@ -221,9 +221,9 @@ struct Parser {
     // not a good place but until CFlatFileParser develops, pretty much the only
     // possible place.
     // and unique_ptr didn't work here because of template initialization issues.
-    void InitializeKeywordParser(
-        EFormat);
+    void InitializeKeywordParser(EFormat);
     CKeywordParser& KeywordParser();
+
 private:
     CKeywordParser* mpKeywordParser;
 };
