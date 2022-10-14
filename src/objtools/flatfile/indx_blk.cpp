@@ -1041,22 +1041,22 @@ Int4 IsNewAccessFormat(const Char* acnum)
 
 
 /**********************************************************/
-static bool IsValidAccessPrefix(const char* acc, char** accpref)
+static bool IsValidAccessPrefix(const char* acc, const char** accpref)
 {
     Int4 i = IsNewAccessFormat(acc);
-    if (i == 0 || accpref == NULL)
+    if (i == 0 || ! accpref)
         return false;
 
-    if (i > 2 && i < 10)
+    if (2 < i && i < 10)
         return true;
 
-    char** b = accpref;
-    for (; *b != NULL; b++) {
+    const char** b = accpref;
+    for (; *b; b++) {
         if (StringNCmp(acc, *b, StringLen(*b)) == 0)
-            break;
+            return true;
     }
 
-    return (*b != NULL);
+    return false;
 }
 
 /**********************************************************/
@@ -2034,7 +2034,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
 
     if (pp->mode != Parser::EMode::Relaxed) {
         if (acc[0] >= 'A' && acc[0] <= 'Z' && acc[1] >= 'A' && acc[1] <= 'Z') {
-            if (IsValidAccessPrefix(acc, pp->accpref) == false && pp->accpref != NULL)
+            if (pp->accpref && ! IsValidAccessPrefix(acc, pp->accpref))
                 get = false;
             if (acc[2] >= 'A' && acc[2] <= 'Z' && acc[3] >= 'A' && acc[3] <= 'Z') {
                 if (acc[4] >= 'A' && acc[4] <= 'Z') {

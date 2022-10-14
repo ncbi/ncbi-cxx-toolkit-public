@@ -628,7 +628,7 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
         pp.all      = true;
         pp.accpref  = NULL;
     } else
-        pp.accpref = (char**)GetAccArray(pp.source);
+        pp.accpref = GetAccArray(pp.source);
 
     pp.citat = (pp.source != Parser::ESource::SPROT);
 
