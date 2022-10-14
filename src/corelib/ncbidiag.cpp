@@ -2288,7 +2288,8 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnRequest(void)
         const SBuildInfo& bi = ver.GetBuildInfo();
         initializer_list<SBuildInfo::EExtra> bi_num =
             {   SBuildInfo::eProductionVersion,       SBuildInfo::eDevelopmentVersion,
-                SBuildInfo::eStableComponentsVersion, SBuildInfo::eSubversionRevision};
+                SBuildInfo::eStableComponentsVersion, SBuildInfo::eSubversionRevision,
+                SBuildInfo::eRevision};
         for(SBuildInfo::EExtra key : bi_num) {
             string value = bi.GetExtraValue(key);
             if (!value.empty()) {
