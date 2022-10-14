@@ -68,11 +68,12 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
         eTeamCityBuildConf,
         eTeamCityBuildNumber,
         eBuildID,
-        eSubversionRevision,
+        eSubversionRevision, ///< Numeric if present
         eStableComponentsVersion,
         eDevelopmentVersion,
         eProductionVersion,
-        eBuiltAs
+        eBuiltAs,
+        eRevision ///< Not necessarily numeric
     };
     string date;
     string tag;

@@ -24,6 +24,13 @@
  * ===========================================================================
  */
 
+#ifdef HAVE_NCBI_REVISION
+#  ifdef NCBI_REVISION
+#    undef NCBI_REVISION
+#  endif
+#  define NCBI_REVISION "@NCBI_REVISION@"
+#endif
+
 #if @NCBI_SUBVERSION_REVISION@ != 0
 #  ifdef NCBI_SUBVERSION_REVISION
 #    undef NCBI_SUBVERSION_REVISION

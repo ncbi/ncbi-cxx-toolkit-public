@@ -1070,16 +1070,32 @@ else
    NCBI_TEAMCITY_BUILD_NUMBER=0
 fi
 
-AC_MSG_CHECKING([Subversion revision])
+AC_MSG_CHECKING([VCS revision])
+gitrev=`git -C "$srcdir" log -1 --format=%h 2>/dev/null`
 svnrev=`svn info "$srcdir" 2>/dev/null | sed -ne 's/^Revision: //p'`
 if test -n "$svnrev"; then
-   AC_MSG_RESULT($svnrev)
    NCBI_SUBVERSION_REVISION=$svnrev
+fi
+if test -n "$gitrev"; then
+   AC_MSG_RESULT([$gitrev (Git)])
+   NCBI_REVISION=$gitrev
+   : ${NCBI_SUBVERSION_REVISION=0}
+elif test -n "$svnrev"; then
+   AC_MSG_RESULT([$svnrev (Subversion)])
+   NCBI_SUBVERSION_REVISION=$svnrev
+   NCBI_REVISION=$svnrev
 elif test -n "$NCBI_SUBVERSION_REVISION"; then
    AC_MSG_RESULT($NCBI_SUBVERSION_REVISION)
+   NCBI_REVISION=$NCBI_SUBVERSION_REVISION
 else
    AC_MSG_RESULT(unknown)
    NCBI_SUBVERSION_REVISION=0
+fi
+if test -n "$NCBI_REVISION"; then
+   # The overall presence or absence of revision info should be stable,
+   # even if the specific revision ID evolves.
+   AC_DEFINE(HAVE_NCBI_REVISION, 1,
+      [Define to 1 if an overall revision ID is available.])
 fi
 
 AC_MSG_CHECKING([NCBI stable components' version])
@@ -9877,6 +9893,7 @@ AC_SUBST(NCBI_TEAMCITY_BUILD_NUMBER)
 AC_SUBST(NCBI_TEAMCITY_PROJECT_NAME)
 AC_SUBST(NCBI_TEAMCITY_BUILDCONF_NAME)
 AC_SUBST(NCBI_TEAMCITY_BUILD_ID)
+AC_SUBST(NCBI_REVISION)
 AC_SUBST(NCBI_SUBVERSION_REVISION)
 AC_SUBST(NCBI_SC_VERSION)
 

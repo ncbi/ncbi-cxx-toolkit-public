@@ -31,6 +31,9 @@
 /* Define to 1 to indicate that the generated build version header is present */
 #define HAVE_COMMON_NCBI_BUILD_VER_H 1
 
+/* Define to 1 if an overall revision ID is available. */
+#cmakedefine HAVE_NCBI_REVISION @HAVE_NCBI_REVISION@
+
 /* ======================================================================= */
 /* Full GNU-style system type */
 #cmakedefine HOST "@HOST@"
