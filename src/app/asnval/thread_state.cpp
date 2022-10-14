@@ -190,7 +190,7 @@ CAsnvalThreadState::CAsnvalThreadState(
     m_pContext.reset(new SValidatorContext());
     m_pContext->m_taxon_update = other.m_pContext->m_taxon_update;
 #ifdef USE_XMLWRAPP_LIBS
-    m_ostr_xml.reset();
+    m_ostr_xml = other.m_ostr_xml;
 #endif
 };
 
@@ -392,8 +392,10 @@ void CAsnvalThreadState::ConstructOutputStreams()
 void CAsnvalThreadState::PrintValidErrItem(const CValidErrItem& item)
 {
     CNcbiOstream& os = *m_ValidErrorStream;
+    //auto verbosity = CAppConfig::eVerbosity_Normal;
     switch (mAppConfig.mVerbosity) {
-    case CAppConfig::eVerbosity_Normal:
+    //switch (verbosity) {
+        case CAppConfig::eVerbosity_Normal:
         os << s_GetSeverityLabel(item.GetSeverity())
             << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() << "] "
             << item.GetMsg();
