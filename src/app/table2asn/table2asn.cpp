@@ -1439,6 +1439,10 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
         }
 
         m_context.DeleteOutputs();
+        if (m_context.m_output) {
+            _ASSERT(!m_context.m_output_filename.empty());
+            CFile(m_context.m_output_filename).Remove(CDirEntry::fIgnoreMissing);
+        }
 
         throw;
     }
