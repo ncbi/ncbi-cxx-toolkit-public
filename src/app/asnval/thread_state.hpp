@@ -74,7 +74,11 @@ public:
     void ReadClassMember(CObjectIStream& in,
         const CObjectInfo::CMemberIterator& member) override;
 
-
+    void ResetStats()
+    {
+        m_Longest = m_NumFiles = m_NumRecords = 0;
+        m_LongestId = "";
+    };
     CRef<CScope> BuildScope();
     unique_ptr<CObjectIStream> OpenFile(TTypeInfo& asn_info);
     void ConstructOutputStreams();
