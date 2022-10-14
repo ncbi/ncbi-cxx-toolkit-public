@@ -58,6 +58,7 @@ private:
     typedef map<string, char> TConfigSite;
     TConfigSite  m_ConfigSite;
     bool         m_HaveBuildVer;
+    bool         m_HaveRevision;
 
     void InitializeFrom(const CMsvcSite& site);
     bool ProcessDefine (const string& define, const CMsvcSite& site, const SConfigInfo& config) const;

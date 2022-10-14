@@ -110,8 +110,15 @@ set(NCBI_CPP_TOOLKIT_VERSION
     ${NCBI_CPP_TOOLKIT_VERSION_MAJOR}.${NCBI_CPP_TOOLKIT_VERSION_MINOR}.${NCBI_CPP_TOOLKIT_VERSION_PATCH}${NCBI_CPP_TOOLKIT_VERSION_EXTRA})
 
 #############################################################################
-# Subversion
-# This is needed for some use cases
+# Version control systems
+# These are needed for some use cases
+include(FindGit)
+if (GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} -C ${top_src_dir} log -1 --format=%h
+        OUTPUT_VARIABLE TOOLKIT_GIT_REVISION ERROR_QUIET)
+    message(STATUS "Git revision = ${TOOLKIT_GIT_REVISION}")
+endif()
 
 include(FindSubversion)
 set(TOOLKIT_WC_REVISION 0)
@@ -129,6 +136,14 @@ endif()
 set(NCBI_SUBVERSION_REVISION ${TOOLKIT_WC_REVISION})
 message(STATUS "SVN revision = ${TOOLKIT_WC_REVISION}")
 message(STATUS "SVN URL = ${TOOLKIT_WC_URL}")
+
+if(NOT "${TOOLKIT_GIT_REVISION}" STREQUAL "")
+    set(NCBI_REVISION ${TOOLKIT_GIT_REVISION})
+    set(HAVE_NCBI_REVISION 1)
+elseif(NOT "${TOOLKIT_WC_REVISION}" STREQUAL "")
+    set(NCBI_REVISION ${TOOLKIT_WC_REVISION})
+    set(HAVE_NCBI_REVISION 1)
+endif()
 
 if (Subversion_FOUND AND EXISTS ${top_src_dir}/src/build-system/.svn)
     NCBI_Subversion_WC_INFO(${top_src_dir}/src/build-system CORELIB)

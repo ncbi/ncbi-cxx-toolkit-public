@@ -605,6 +605,9 @@
 /* Define to 1 if the real version of ncbi_crypt support is available. */
 #undef HAVE_NCBI_CRYPT
 
+/* Define to 1 if an overall revision ID is available. */
+#undef HAVE_NCBI_REVISION
+
 /* Define to 1 to catch incomplete rebuilds. */
 #undef HAVE_NCBI_SKEW_GUARD
 
