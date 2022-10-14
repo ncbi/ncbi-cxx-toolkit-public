@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 
 
 CMsvcConfigure::CMsvcConfigure(void)
-    : m_HaveBuildVer(false)
+    : m_HaveBuildVer(false), m_HaveRevision(false)
 {
 }
 
@@ -334,6 +334,7 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     string tc_prj   = GetApp().GetEnvironment().Get("TEAMCITY_PROJECT_NAME");
     string tc_conf  = GetApp().GetEnvironment().Get("TEAMCITY_BUILDCONF_NAME");
     string svn_rev  = GetApp().GetEnvironment().Get("SVNREV");
+    string git_rev;
     string sc_ver   = GetApp().GetEnvironment().Get("SCVER");
 
     // Get content of the Teamcity property file, if any
@@ -355,11 +356,19 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
         tree_root = GetApp().GetProjectTreeInfo().m_Root;
     }
     if (!tree_root.empty()) {
-        // Get SVN info
+        // Get VCS info
         string tmp_file = CFile::GetTmpName();
 
-        string cmd = "svn info " + tree_root + " > " + tmp_file;
+        string cmd = "git -C " + tree_root + " log -1 --format=%h > " + tmp_file;
         TExitCode ret = CExec::System(cmd.c_str());
+        if (ret == 0) {
+            CNcbiIfstream is(tmp_file.c_str(), IOS_BASE::in);
+            is >> git_rev;
+            CFile(tmp_file).Remove();            
+        }
+
+        cmd = "svn info " + tree_root + " > " + tmp_file;
+        ret = CExec::System(cmd.c_str());
         if (ret == 0) {
             // SVN client present, parse results
             string info;
@@ -405,8 +414,12 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     build_vars["NCBI_TEAMCITY_BUILD_ID"] = tc_build_id;
     build_vars["NCBI_TEAMCITY_PROJECT_NAME"] = tc_prj;
     build_vars["NCBI_TEAMCITY_BUILDCONF_NAME"] = tc_conf;
+    build_vars["NCBI_REVISION"]
+        = (git_rev.empty()  &&  svn_rev != "0") ? svn_rev : git_rev;
     build_vars["NCBI_SUBVERSION_REVISION"] = svn_rev;
     build_vars["NCBI_SC_VERSION"] = sc_ver;
+
+    m_HaveRevision = !build_vars["NCBI_REVISION"].empty();
 
     auto converter = [](const string& file_in, const string& file_out, const map<string,string>& vocabulary) {
         string candidate = file_out + ".candidate";
@@ -478,6 +491,9 @@ void CMsvcConfigure::AnalyzeDefines(
     if (m_HaveBuildVer) {
         // Add define that we have build version info file
         m_ConfigSite["HAVE_COMMON_NCBI_BUILD_VER_H"] = '1';
+    }
+    if (m_HaveRevision) {
+        m_ConfigSite["HAVE_NCBI_REVISION"] = '1';
     }
 
     string signature;
