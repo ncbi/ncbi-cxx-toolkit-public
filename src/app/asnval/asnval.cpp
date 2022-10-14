@@ -94,6 +94,11 @@ struct CThreadExitData
     size_t mNumRecords;
     double mLongest;
     string mLongestId;
+
+    CThreadExitData():
+        mNumRecords(0),
+        mLongest(0)
+    {};
 };
 
 class CFileReaderThread : public CThread
@@ -344,6 +349,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
             //CAsnvalThreadState context(*this, fpath);
             CAsnvalThreadState context(*mThreadState);
             context.mFilename = fpath;
+            context.ResetStats();
             CFileReaderThread* pThread(new CFileReaderThread(context));
             pThread->Run();
             threadList.push_back(pThread);
