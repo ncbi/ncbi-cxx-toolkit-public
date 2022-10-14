@@ -3205,7 +3205,7 @@ INC	s	Instituto Nacional de Cultura, Museo de Ciencias Naturales (Panama)
 INCQS	c	Fundacao Oswaldo Cruz-FIOCRUZ			
 IND	s	Indiana University, Department of Biology			
 IND-AN	s	Amphibian Collection			
-IND-M	s	La Unidad de Investigacion "Federico Medem"-Inderena (Colombia)			
+IND-M	s	La Unidad de Investigacion Federico Medem-Inderena (Colombia)			
 INDRE	c	Pathogen Fungi and Actinomycetes Collection			
 INEGI	s	Instituto Nacional de Estadistica Geografia e Informatica, Departamento de Botanica			
 INEP	s	Institute of the Industrial Ecology Problems of the North of Kola Science Center of the Russian Academy of Sciences.			
