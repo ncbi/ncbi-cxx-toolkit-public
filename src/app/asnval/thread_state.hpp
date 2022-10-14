@@ -135,7 +135,7 @@ public:
 
     shared_ptr<SValidatorContext> m_pContext;
 #ifdef USE_XMLWRAPP_LIBS
-    unique_ptr<CValXMLStream> m_ostr_xml;
+    shared_ptr<CValXMLStream> m_ostr_xml;
 #endif
 
 };
