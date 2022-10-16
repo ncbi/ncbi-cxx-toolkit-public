@@ -934,7 +934,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
  *
  **********************************************************/
 static CRef<CEMBL_block> GetDescrEmblBlock(
-    ParserPtr pp, const DataBlk& entry, CMolInfo& mol_info, char** gbdiv, const CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
+    ParserPtr pp, const DataBlk& entry, CMolInfo& mol_info, string& gbdiv, const CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
 {
     CRef<CEMBL_block> ret, embl(new CEMBL_block);
 
@@ -965,7 +965,6 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     bool  cancelled;
     bool  drop;
     char* tempdiv;
-    char* p;
     Int4  i;
 
     ibp = pp->entrylist[pp->curindx];
@@ -1070,12 +1069,12 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
      * Divisions GSS, HUM, HTG, CON, ENV and MUS are mapped to other.
      */
     int thtg = (div == 18) ? CEMBL_block::eDiv_pri : div;
-    *gbdiv   = StringSave(ParFlat_GBDIV_array[thtg]);
+    gbdiv    = ParFlat_GBDIV_array[thtg];
 
     if (div <= CEMBL_block::eDiv_sts)
         embl->SetDiv(div);
 
-    p = *gbdiv;
+    const char* p = gbdiv.c_str();
     if (ibp->is_tpa &&
         (StringCmp(p, "EST") == 0 || StringCmp(p, "GSS") == 0 ||
          StringCmp(p, "PAT") == 0 || StringCmp(p, "HTG") == 0)) {
@@ -1105,9 +1104,8 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     DefVsHTGKeywords(mol_info.GetTech(), entry, ParFlat_DE, ParFlat_SQ, cancelled);
     if ((mol_info.GetTech() == CMolInfo::eTech_htgs_0 || mol_info.GetTech() == CMolInfo::eTech_htgs_1 ||
          mol_info.GetTech() == CMolInfo::eTech_htgs_2) &&
-        *gbdiv != NULL) {
-        MemFree(*gbdiv);
-        *gbdiv = NULL;
+        ! gbdiv.empty()) {
+        gbdiv.clear();
     }
 
     CheckHTGDivision(tempdiv, mol_info.GetTech());
@@ -1222,7 +1220,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         drop                 = false;
         CMolInfo::TTech tech = mol_info.GetTech();
 
-        *gbdiv = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, *gbdiv, &tech, ibp->bases, pp->source, drop);
+        check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, gbdiv, &tech, ibp->bases, pp->source, drop);
         if (tech != CMolInfo::eTech_unknown)
             mol_info.SetTech(tech);
         else
@@ -1231,25 +1229,24 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         if (drop) {
             return ret;
         }
-    } else if (*gbdiv != NULL && StringCmp(*gbdiv, "CON") == 0) {
-        MemFree(*gbdiv);
-        *gbdiv = NULL;
+    } else if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "CON") == 0) {
+        gbdiv.clear();
     }
 
     bool has_htc = HasHtc(embl->GetKeywords());
 
-    if (*gbdiv != NULL && StringCmp(*gbdiv, "HTC") == 0 && ! has_htc) {
+    if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0 && ! has_htc) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_MissingHTCKeyword, "This record is in the HTC division, but lacks the required HTC keyword.");
         return ret;
     }
-    if ((*gbdiv == NULL || StringCmp(*gbdiv, "HTC") != 0) && has_htc) {
+    if ((gbdiv.empty() || StringCmp(gbdiv.c_str(), "HTC") != 0) && has_htc) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_InvalidHTCKeyword, "This record has the special HTC keyword, but is not in HTC division. If this record has graduated out of HTC, then the keyword should be removed.");
         return ret;
     }
 
-    if (*gbdiv != NULL && StringCmp(*gbdiv, "HTC") == 0) {
-        p = entry.mOffset + ParFlat_COL_DATA_EMBL; /* p points to 1st
-                                                           token */
+    if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0) {
+        char* p;
+        p = entry.mOffset + ParFlat_COL_DATA_EMBL; /* p points to 1st token */
         p = PointToNextToken(p);                   /* p points to 2nd token */
         p = PointToNextToken(p);                   /* p points to 3rd token */
 
@@ -1279,26 +1276,24 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     /* will be used in flat file database
      */
-    if (*gbdiv != NULL) {
-        if (StringCmp(*gbdiv, "EST") == 0) {
+    if (! gbdiv.empty()) {
+        if (StringCmp(gbdiv.c_str(), "EST") == 0) {
             ibp->EST = true;
             mol_info.SetTech(CMolInfo::eTech_est);
-        } else if (StringCmp(*gbdiv, "STS") == 0) {
+        } else if (StringCmp(gbdiv.c_str(), "STS") == 0) {
             ibp->STS = true;
             mol_info.SetTech(CMolInfo::eTech_sts);
-        } else if (StringCmp(*gbdiv, "GSS") == 0) {
+        } else if (StringCmp(gbdiv.c_str(), "GSS") == 0) {
             ibp->GSS = true;
             mol_info.SetTech(CMolInfo::eTech_survey);
-        } else if (StringCmp(*gbdiv, "HTC") == 0) {
+        } else if (StringCmp(gbdiv.c_str(), "HTC") == 0) {
             ibp->HTC = true;
             mol_info.SetTech(CMolInfo::eTech_htc);
-            MemFree(*gbdiv);
-            *gbdiv = NULL;
-        } else if (StringCmp(*gbdiv, "SYN") == 0 && bio_src != NULL &&
+            gbdiv.clear();
+        } else if (StringCmp(gbdiv.c_str(), "SYN") == 0 && bio_src != NULL &&
                    bio_src->IsSetOrigin() && bio_src->GetOrigin() == 5) /* synthetic */
         {
-            MemFree(*gbdiv);
-            *gbdiv = NULL;
+            gbdiv.clear();
         }
     } else if (mol_info.IsSetTech()) {
         if (mol_info.GetTech() == CMolInfo::eTech_est)
@@ -1367,7 +1362,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 }
 
 
-static bool s_DuplicatesBiosource(const CBioSource& biosource, const char* gbdiv)
+static bool s_DuplicatesBiosource(const CBioSource& biosource, const string& gbdiv)
 {
     return (biosource.IsSetOrg() &&
             biosource.GetOrg().IsSetOrgname() &&
@@ -1376,7 +1371,7 @@ static bool s_DuplicatesBiosource(const CBioSource& biosource, const char* gbdiv
 }
 
 /**********************************************************/
-static CRef<CGB_block> GetEmblGBBlock(ParserPtr pp, const DataBlk& entry, char* gbdiv, CBioSource* bio_src)
+static CRef<CGB_block> GetEmblGBBlock(ParserPtr pp, const DataBlk& entry, const string& gbdiv, CBioSource* bio_src)
 {
     IndexblkPtr ibp;
 
@@ -1391,8 +1386,8 @@ static CRef<CGB_block> GetEmblGBBlock(ParserPtr pp, const DataBlk& entry, char* 
         gbb->SetKeywords() = pp->KeywordParser().KeywordList();
     }
 
-    if (gbdiv) {
-        if (NStr::EqualNocase(gbdiv, "ENV") &&
+    if (! gbdiv.empty()) {
+        if (NStr::EqualNocase(gbdiv.c_str(), "ENV") &&
             bio_src && bio_src->IsSetSubtype()) {
             const auto& subtype = bio_src->GetSubtype();
             const auto  it =
@@ -1654,12 +1649,12 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     IndexblkPtr ibp;
     DataBlkPtr  dbp;
 
-    char* offset;
-    char* str;
-    char* str1;
-    char* gbdiv;
-    char* p;
-    char* q;
+    char*  offset;
+    char*  str;
+    char*  str1;
+    string gbdiv;
+    char*  p;
+    char*  q;
 
     bool is_htg = false;
 
@@ -1816,13 +1811,11 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     CRef<CMolInfo> mol_info = GetEmblMolInfo(pp, entry, org_ref);
 
-    gbdiv = NULL;
-
     TStringList dr_ena,
         dr_biosample;
 
     CRef<CEMBL_block> embl_block =
-        GetDescrEmblBlock(pp, entry, *mol_info, &gbdiv, bio_src, dr_ena, dr_biosample);
+        GetDescrEmblBlock(pp, entry, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample);
 
     if (pp->source == Parser::ESource::EMBL && embl_block.NotEmpty())
         fta_create_imgt_misc_feat(bioseq, *embl_block, ibp);
@@ -1867,12 +1860,11 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     CRef<CGB_block> gbb;
 
-    if (pp->source == Parser::ESource::NCBI || (! embl_block->IsSetDiv() && gbdiv)) {
+    if (pp->source == Parser::ESource::NCBI || (! embl_block->IsSetDiv() && ! gbdiv.empty())) {
         gbb = GetEmblGBBlock(pp, entry, gbdiv, bio_src); /* GB-block */
     }
 
-    if (gbdiv != NULL)
-        MemFree(gbdiv);
+    gbdiv.clear();
 
     bool hasEmblBlock = false;
     if (pp->source != Parser::ESource::NCBI) {
@@ -2437,7 +2429,7 @@ const char* GetEmblDiv(Uint1 num)
 }
 
 /**********************************************************/
-CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol_info, char** gbdiv, CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
+CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol_info, string& gbdiv, CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
 {
     CRef<CEMBL_block> embl(new CEMBL_block),
         ret;
@@ -2463,7 +2455,6 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     bool cancelled;
 
     char* tempdiv;
-    char* p;
     char* r;
     Int4  i;
     Char  dataclass[4];
@@ -2520,12 +2511,12 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
      * Divisions GSS, HUM, HTG, CON, ENV and MUS are mapped to other.
      */
     int thtg = (div == 18) ? CEMBL_block::eDiv_pri : div;
-    *gbdiv   = StringSave(ParFlat_GBDIV_array[thtg]);
+    gbdiv    = ParFlat_GBDIV_array[thtg];
 
     if (div <= CEMBL_block::eDiv_sts)
         embl->SetDiv(div);
 
-    p = *gbdiv;
+    const char* p = gbdiv.c_str();
     if (ibp->is_tpa &&
         (StringCmp(p, "EST") == 0 || StringCmp(p, "GSS") == 0 ||
          StringCmp(p, "PAT") == 0 || StringCmp(p, "HTG") == 0)) {
@@ -2555,9 +2546,8 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     XMLDefVsHTGKeywords(mol_info.GetTech(), entry, ibp->xip, cancelled);
     if ((mol_info.GetTech() == CMolInfo::eTech_htgs_0 || mol_info.GetTech() == CMolInfo::eTech_htgs_1 ||
          mol_info.GetTech() == CMolInfo::eTech_htgs_2) &&
-        *gbdiv != NULL) {
-        MemFree(*gbdiv);
-        *gbdiv = NULL;
+        ! gbdiv.empty()) {
+        gbdiv.clear();
     }
 
     CheckHTGDivision(tempdiv, mol_info.GetTech());
@@ -2669,7 +2659,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         bool            drop = false;
         CMolInfo::TTech tech = mol_info.GetTech();
 
-        *gbdiv = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, *gbdiv, &tech, ibp->bases, pp->source, drop);
+        check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, gbdiv, &tech, ibp->bases, pp->source, drop);
         if (tech != CMolInfo::eTech_unknown)
             mol_info.SetTech(tech);
         else
@@ -2678,23 +2668,22 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         if (drop) {
             return ret;
         }
-    } else if (*gbdiv != NULL && StringCmp(*gbdiv, "CON") == 0) {
-        MemFree(*gbdiv);
-        *gbdiv = NULL;
+    } else if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "CON") == 0) {
+        gbdiv.clear();
     }
 
     bool has_htc = HasHtc(embl->GetKeywords());
 
-    if (*gbdiv != NULL && StringCmp(*gbdiv, "HTC") == 0 && ! has_htc) {
+    if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0 && ! has_htc) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_MissingHTCKeyword, "This record is in the HTC division, but lacks the required HTC keyword.");
         return ret;
     }
-    if ((*gbdiv == NULL || StringCmp(*gbdiv, "HTC") != 0) && has_htc) {
+    if ((gbdiv.empty() || StringCmp(gbdiv.c_str(), "HTC") != 0) && has_htc) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_InvalidHTCKeyword, "This record has the special HTC keyword, but is not in HTC division. If this record has graduated out of HTC, then the keyword should be removed.");
         return ret;
     }
 
-    if (*gbdiv != NULL && StringCmp(*gbdiv, "HTC") == 0) {
+    if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0) {
         r = XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE);
         if (r != NULL) {
             p = r;
@@ -2719,26 +2708,24 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
     /* will be used in flat file database
      */
-    if (*gbdiv != NULL) {
-        if (StringCmp(*gbdiv, "EST") == 0) {
+    if (! gbdiv.empty()) {
+        if (StringCmp(gbdiv.c_str(), "EST") == 0) {
             ibp->EST = true;
             mol_info.SetTech(CMolInfo::eTech_est);
-        } else if (StringCmp(*gbdiv, "STS") == 0) {
+        } else if (StringCmp(gbdiv.c_str(), "STS") == 0) {
             ibp->STS = true;
             mol_info.SetTech(CMolInfo::eTech_sts);
-        } else if (StringCmp(*gbdiv, "GSS") == 0) {
+        } else if (StringCmp(gbdiv.c_str(), "GSS") == 0) {
             ibp->GSS = true;
             mol_info.SetTech(CMolInfo::eTech_survey);
-        } else if (StringCmp(*gbdiv, "HTC") == 0) {
+        } else if (StringCmp(gbdiv.c_str(), "HTC") == 0) {
             ibp->HTC = true;
             mol_info.SetTech(CMolInfo::eTech_htc);
-            MemFree(*gbdiv);
-            *gbdiv = NULL;
-        } else if (StringCmp(*gbdiv, "SYN") == 0 && bio_src != NULL &&
+            gbdiv.clear();
+        } else if (StringCmp(gbdiv.c_str(), "SYN") == 0 && bio_src &&
                    bio_src->IsSetOrigin() && bio_src->GetOrigin() == 5) /* synthetic */
         {
-            MemFree(*gbdiv);
-            *gbdiv = NULL;
+            gbdiv.clear();
         }
     } else if (mol_info.IsSetTech()) {
         if (mol_info.GetTech() == CMolInfo::eTech_est)
@@ -2767,16 +2754,13 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     GetExtraAccession(ibp, pp->allow_uwsec, pp->source, embl->SetExtra_acc());
 
 
-    p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE);
-    CRef<CDate_std> std_creation_date,
-        std_update_date;
-    if (p != NULL) {
+    CRef<CDate_std> std_creation_date, std_update_date;
+    if (char* p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE)) {
         std_creation_date = GetUpdateDate(p, pp->source);
         embl->SetCreation_date().SetStd(*std_creation_date);
         MemFree(p);
     }
-    p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_UPDATE_DATE);
-    if (p != NULL) {
+    if (char* p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_UPDATE_DATE)) {
         std_update_date = GetUpdateDate(p, pp->source);
         embl->SetUpdate_date().SetStd(*std_update_date);
         MemFree(p);

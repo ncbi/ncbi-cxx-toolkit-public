@@ -559,19 +559,22 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
             }
 
             if (! ibp->is_contig) {
-                drop               = false;
+                drop                 = false;
                 CMolInfo::TTech tech = mol_info.GetTech();
-                char* div_to_check = gbb->IsSetDiv() ? StringSave(gbb->GetDiv().c_str()) : StringSave("");
-                char* p_div        = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, div_to_check, &tech, ibp->bases, pp->source, drop);
+                string          p_div;
+                if (gbb->IsSetDiv())
+                    p_div = gbb->GetDiv();
+
+                check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, p_div, &tech, ibp->bases, pp->source, drop);
+
                 if (tech != CMolInfo::eTech_unknown)
                     mol_info.SetTech(tech);
                 else
                     mol_info.ResetTech();
 
-                if (p_div != NULL) {
+                if (! p_div.empty())
                     gbb->SetDiv(p_div);
-                    MemFree(p_div);
-                } else
+                else
                     gbb->ResetDiv();
 
                 if (drop) {
