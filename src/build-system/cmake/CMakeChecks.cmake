@@ -116,7 +116,8 @@ include(FindGit)
 if (GIT_FOUND)
     execute_process(
         COMMAND ${GIT_EXECUTABLE} -C ${top_src_dir} log -1 --format=%h
-        OUTPUT_VARIABLE TOOLKIT_GIT_REVISION ERROR_QUIET)
+        OUTPUT_VARIABLE TOOLKIT_GIT_REVISION ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
     message(STATUS "Git revision = ${TOOLKIT_GIT_REVISION}")
 endif()
 
