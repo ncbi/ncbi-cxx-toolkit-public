@@ -462,19 +462,20 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, CMolInfo& mol_in
             }
 
             if (! ibp->is_contig) {
-                drop               = false;
-                CMolInfo::TTech tech = mol_info.GetTech();
-                char* div_to_check = StringSave(gbb->GetDiv().c_str());
-                char* p_div        = check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, div_to_check, &tech, ibp->bases, pp->source, drop);
+                drop                  = false;
+                CMolInfo::TTech tech  = mol_info.GetTech();
+                string          p_div = gbb->GetDiv();
+
+                check_div(ibp->is_pat, pat_ref, est_kwd, sts_kwd, gss_kwd, if_cds, p_div, &tech, ibp->bases, pp->source, drop);
+
                 if (tech != CMolInfo::eTech_unknown)
                     mol_info.SetTech(tech);
                 else
                     mol_info.ResetTech();
 
-                if (p_div != NULL) {
+                if (! p_div.empty())
                     gbb->SetDiv(p_div);
-                    MemFree(p_div);
-                } else
+                else
                     gbb->SetDiv("");
 
                 if (drop) {
@@ -794,13 +795,13 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     DataBlkPtr dbp;
     DataBlkPtr dbpnext;
 
-    char* crdate;
-    char* update;
-    char* offset;
-    char* str;
-    char* p;
-    char* q;
-    char* gbdiv;
+    char*  crdate;
+    char*  update;
+    char*  offset;
+    char*  str;
+    char*  p;
+    char*  q;
+    string gbdiv;
 
     ibp = pp->entrylist[pp->curindx];
 
@@ -925,8 +926,6 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         MemFree(dbp);
     }
 
-    gbdiv = NULL;
-
     TStringList dr_ena,
         dr_biosample;
 
@@ -934,7 +933,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     CRef<CGB_block>   gbb;
 
     if (pp->source == Parser::ESource::EMBL)
-        embl = XMLGetEMBLBlock(pp, entry->mOffset, *mol_info, &gbdiv, bio_src, dr_ena, dr_biosample);
+        embl = XMLGetEMBLBlock(pp, entry->mOffset, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample);
     else
         gbb = XMLGetGBBlock(pp, entry->mOffset, *mol_info, bio_src);
 
@@ -977,9 +976,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         if (gbdiv != NULL) {
             gbb.Reset(new CGB_block);
             gbb->SetDiv(gbdiv);
-
-            MemFree(gbdiv);
-            gbdiv = NULL;
+            gbdiv.clear();
         }
 
         CRef<CSeqdesc> descr(new CSeqdesc);
