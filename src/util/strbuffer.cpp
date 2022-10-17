@@ -593,11 +593,14 @@ void CIStreamBuffer::SetStreamOffset(CNcbiStreampos pos)
 void CIStreamBuffer::SetStreamPos(CNcbiStreampos pos)
 {
     if ( m_Input ) {
+        m_Line = 1;
+        if (m_Input->IsMultiPart() && TrySetCurrentPos(m_Buffer + (size_t)pos)) {
+            return;
+        }
         m_Input->Seekg(pos);
         m_BufferPos = pos;
         m_DataEndPos = m_Buffer;
         m_CurrentPos = m_Buffer;
-        m_Line = 1;
     }
     else {
         if ( pos < 0 || pos > m_DataEndPos - m_Buffer ) {
