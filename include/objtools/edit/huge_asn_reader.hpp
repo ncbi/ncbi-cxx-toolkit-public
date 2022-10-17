@@ -68,7 +68,7 @@ public:
     bool GetNextBlob() override;
     CRef<CSeq_entry> GetNextSeqEntry() override;
     CConstRef<CSubmit_block> GetSubmitBlock() const override;
-    CRef<CObject> ReadAny();
+    CRef<CSerialObject> ReadAny();
 
     struct TBioseqInfo;
     struct TBioseqSetInfo;
@@ -151,9 +151,10 @@ private:
         const TBioseqSetInfo& existingInfo,const TBioseqSetInfo& newInfo, const CSeq_id& duplicateId);
 
     ILineErrorListener * mp_MessageListener = nullptr;
-    std::streampos m_streampos = 0;
-    CHugeFile*     m_file = nullptr;
-    int            m_max_local_id = 0;
+    std::streampos       m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
+    std::streampos       m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
+    CHugeFile*           m_file             = nullptr;
+    int                  m_max_local_id     = 0;
 
 // global lists, readonly after indexing
     TBioseqList               m_bioseq_list;
