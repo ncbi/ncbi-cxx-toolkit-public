@@ -144,7 +144,7 @@ public:
 protected:
     unique_ptr<CFormatGuess> m_Guesser;
     std::stringstream m_LocalBuffer;
-    set<TTypeInfo>& m_EffectiveRecognizedGenbankObjectTypes;
+    const set<TTypeInfo>* m_pEffectiveRecognizedGenbankObjectTypes;
 
     bool x_FillLocalBuffer(CNcbiIstream& In);
     bool x_TryFormat(CFormatGuess::EFormat Format);
