@@ -89,14 +89,14 @@ set<TTypeInfo> CFormatGuessEx::sDefaultRecognizedGenbankObjectTypes = {
 
 CFormatGuessEx::CFormatGuessEx() :
     m_Guesser(new CFormatGuess),
-    m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
+    m_pEffectiveRecognizedGenbankObjectTypes(&sDefaultRecognizedGenbankObjectTypes)
 {
 }
 
 
 CFormatGuessEx::CFormatGuessEx(const string& FileName) :
     m_Guesser(new CFormatGuess(FileName)),
-    m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
+    m_pEffectiveRecognizedGenbankObjectTypes(&sDefaultRecognizedGenbankObjectTypes)
 {
     CNcbiIfstream FileIn(FileName.c_str());
     x_FillLocalBuffer(FileIn);
@@ -105,7 +105,7 @@ CFormatGuessEx::CFormatGuessEx(const string& FileName) :
 
 CFormatGuessEx::CFormatGuessEx(CNcbiIstream& In) :
     m_Guesser(new CFormatGuess(In)),
-    m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
+    m_pEffectiveRecognizedGenbankObjectTypes(&sDefaultRecognizedGenbankObjectTypes)
 {
     x_FillLocalBuffer(In);
 }
@@ -476,7 +476,7 @@ TTypeInfo CFormatGuessEx::xGuessGenbankObjectType(
         return nullptr;
     }
 
-    set<TTypeInfo> types = pObjStream->GuessDataType(m_EffectiveRecognizedGenbankObjectTypes);
+    set<TTypeInfo> types = pObjStream->GuessDataType(*m_pEffectiveRecognizedGenbankObjectTypes);
     if ( types.size() != 1 ) {
         return nullptr;
     }
@@ -486,7 +486,7 @@ TTypeInfo CFormatGuessEx::xGuessGenbankObjectType(
 void CFormatGuessEx::SetRecognizedGenbankTypes(
     const set<TTypeInfo>& recognizedGenbankTypes)
 {
-    m_EffectiveRecognizedGenbankObjectTypes = recognizedGenbankTypes;
+    m_pEffectiveRecognizedGenbankObjectTypes = &recognizedGenbankTypes;
 }
 
 CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
