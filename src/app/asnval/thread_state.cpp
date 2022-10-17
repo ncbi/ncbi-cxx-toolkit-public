@@ -1124,7 +1124,7 @@ void CAsnvalThreadState::ValidateOneFile()
             close_error_stream = true;
         }
     }
-    catch (CException) {
+    catch (const CException&) {
     }
 
     TTypeInfo asninfo = nullptr;
