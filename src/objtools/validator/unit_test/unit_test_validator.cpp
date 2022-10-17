@@ -5341,7 +5341,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrganelle)
     CheckErrors (*eval, expected_errors);
 
     unit_test_util::SetGenome (entry, CBioSource::eGenome_nucleomorph);
-    expected_errors[0]->SetErrMsg("Only Chlorarachniophyceae and Cryptophyta have nucleomorphs");
+    expected_errors[0]->SetErrMsg("Only Chlorarachniophyceae and Cryptophyceae have nucleomorphs");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TaxonomyNucleomorphProblem",
                                                  "Taxonomy lookup does not have expected nucleomorph flag"));
     eval = validator.Validate(seh, options);
@@ -6297,7 +6297,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
     unit_test_util::SetTaxname(entry, "Homo sapiens");
     unit_test_util::SetGenome(entry, CBioSource::eGenome_nucleomorph);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadOrganelleLocation",
-                              "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs"));
+                              "Only Chlorarachniophyceae and Cryptophyceae have nucleomorphs"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
         "BioSource is missing taxon ID"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TaxonomyNucleomorphProblem",
