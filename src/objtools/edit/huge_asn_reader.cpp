@@ -484,13 +484,38 @@ void CHugeAsnReader::FlattenGenbankSet()
             }
         }
         else { // m_FlattenedSets.size() > 1)
-            if (top->m_descr ||
-                    (top->m_class != CBioseq_set::eClass_genbank &&
-                     top->m_class != CBioseq_set::eClass_not_set)) {
+
+            CRef<CSeq_descr> pDescriptors;
+            if (top->m_descr) {
+                pDescriptors = Ref(new CSeq_descr());
+                pDescriptors->Assign(*top->m_descr);
+            }
+
+            for (auto it = next(top); it != end(GetBiosets()); ++it) {
+                if (!s_ShouldSplitSet(it->m_class)) {
+                    break;
+                }
+
+                if (it->m_descr) {
+                    if (!pDescriptors) {
+                        pDescriptors = Ref(new CSeq_descr());
+                        pDescriptors->Assign(*it->m_descr);
+                    }
+                    else {
+                        for (auto pDesc : it->m_descr->Get()) {
+                            pDescriptors->Set().push_back(pDesc);     
+                        }
+                    }
+                }
+            }
+
+            
+
+            if (pDescriptors || !s_ShouldSplitSet(top->m_class)) {
                 auto top_entry = Ref(new CSeq_entry());
                 top_entry->SetSet().SetClass() = top->m_class;
-                if (top->m_descr)
-                    top_entry->SetSet().SetDescr().Assign(*top->m_descr);
+                if (pDescriptors)
+                    top_entry->SetSet().SetDescr().Assign(*pDescriptors);
                 m_top_entry = top_entry;
             }
         }
