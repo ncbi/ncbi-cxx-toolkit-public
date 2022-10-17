@@ -229,7 +229,7 @@ unique_ptr<CObjectIStream> CHugeAsnReader::MakeObjStream(TFileSize pos) const
 
 bool CHugeAsnReader::GetNextBlob()
 {
-    if (m_streampos >= m_file->m_filesize)
+    if (m_next_pos >= m_file->m_filesize)
         return false;
 
     x_IndexNextAsn1();
@@ -316,7 +316,7 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     SetLocalSkipHook(bioseq_info, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
-        auto pos = in.GetStreamPos() + m_streampos;
+        auto pos = in.GetStreamPos() + m_next_pos;
 
         context.bioseq_stack.push_back({});
         auto parent = context.bioseq_set_stack.back();
@@ -331,7 +331,7 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     SetLocalSkipHook(bioseq_set_info, objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
-        auto pos = in.GetStreamPos() + m_streampos;
+        auto pos = in.GetStreamPos() + m_next_pos;
 
         auto parent = context.bioseq_set_stack.back();
         m_bioseq_set_list.push_back({pos, parent});
@@ -356,39 +356,41 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
 void CHugeAsnReader::x_IndexNextAsn1()
 {
     x_ResetIndex();
-    auto object_type = m_file->RecognizeContent(m_streampos);
+    m_current_pos = m_next_pos;
+    auto object_type = m_file->RecognizeContent(m_current_pos);
 
-    auto obj_stream = m_file->MakeObjStream(m_streampos);
+    auto obj_stream = m_file->MakeObjStream(m_current_pos);
 
     TContext context;
     x_SetHooks(*obj_stream, context);
 
 
-    // Ensure there is at least on bioseq_set_info object exists
+    // Ensure there is at least one bioseq_set_info object exists
     obj_stream->SkipFileHeader(object_type);
     m_bioseq_set_list.push_back({ 0, m_bioseq_set_list.end() });
     context.bioseq_set_stack.push_back(m_bioseq_set_list.begin());
     obj_stream->Skip(object_type, CObjectIStream::eNoFileHeader);
     obj_stream->EndOfData(); // force to SkipWhiteSpace
-    m_streampos += obj_stream->GetStreamPos();
+    m_next_pos += obj_stream->GetStreamPos();
 }
 
-CRef<CObject> CHugeAsnReader::ReadAny()
+CRef<CSerialObject> CHugeAsnReader::ReadAny()
 {
-    if (m_streampos >= m_file->m_filesize)
+    if (m_current_pos >= m_file->m_filesize)
         return {};
 
     x_ResetIndex();
-    auto object_type = m_file->RecognizeContent(m_streampos);
+    auto object_type = m_file->RecognizeContent(m_current_pos);
     if (object_type == nullptr || !object_type->IsCObject())
         return {};
 
-    auto obj_stream = m_file->MakeObjStream(m_streampos);
+    auto obj_stream = m_file->MakeObjStream(m_current_pos);
 
     auto obj_info = obj_stream->Read(object_type);
-    CRef<CObject> serial(static_cast<CObject*>(obj_info.GetObjectPtr()));
+    CRef<CSerialObject> serial(static_cast<CSerialObject*>(obj_info.GetObjectPtr()));
     obj_stream->EndOfData(); // force to SkipWhiteSpace
-    m_streampos += obj_stream->GetStreamPos();
+    m_current_pos += obj_stream->GetStreamPos();
+    //_ASSERT(m_current_pos == m_next_pos);
 
     return serial;
 }
