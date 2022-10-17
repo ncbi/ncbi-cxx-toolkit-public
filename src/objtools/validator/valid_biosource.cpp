@@ -948,9 +948,10 @@ const CSeq_entry *ctx)
             }
         } else if (bsrc.GetGenome() == CBioSource::eGenome_nucleomorph) {
             if (lineage.find("Chlorarachniophyceae") == string::npos  &&
-                lineage.find("Cryptophyta") == string::npos) {
+                lineage.find("Cryptophyceae") == string::npos) {
+                // RW-1807 Cryptophyta changed to Cryptophyceae
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelleLocation,
-                    "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs", obj, ctx);
+                    "Only Chlorarachniophyceae and Cryptophyceae have nucleomorphs", obj, ctx);
             }
         } else if (bsrc.GetGenome() == CBioSource::eGenome_macronuclear) {
             if (lineage.find("Ciliophora") == string::npos) {
