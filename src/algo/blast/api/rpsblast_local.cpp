@@ -338,7 +338,7 @@ CLocalRPSBlast::CLocalRPSBlast(CRef<CBlastQueryVector> query_vector,
               	  	  	  	   m_query_vector(query_vector),
               	  	  	  	   m_num_of_dbs(0)
 {
-	CSeqDB::FindVolumePaths(db, CSeqDB::eProtein, m_rps_databases, NULL, false);
+	CSeqDB::FindVolumePaths(db, CSeqDB::eProtein, m_rps_databases, NULL, true, true);
 	m_num_of_dbs = m_rps_databases.size();
 	if( 1 == m_num_of_dbs)
 	{
