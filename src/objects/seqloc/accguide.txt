@@ -3902,6 +3902,7 @@ special  CAMRAT000000000-CAMRAX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMRBA000000000-CAMREN999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMREP000000000-CAMRFE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMRGM000000000-CAMRGM999999999  embl_tpa_wgs_nuc # 6+9
+special  CAMRSF000000000-CAMRXA999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
