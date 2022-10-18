@@ -836,11 +836,10 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         if (pp->xml_comp && pp->source != Parser::ESource::EMBL) {
             p = StringRChr(str, '.');
             if (p == NULL || p[1] != '\0') {
-                p = (char*)MemNew(StringLen(str) + 2);
-                StringCpy(p, str);
-                StringCat(p, ".");
+                string s = str;
+                s += '.';
                 MemFree(str);
-                str = p;
+                str = StringSave(s.c_str());
                 p   = NULL;
             }
         }
@@ -973,7 +972,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     }
 
     if (pp->source == Parser::ESource::EMBL) {
-        if (gbdiv != NULL) {
+        if (! gbdiv.empty()) {
             gbb.Reset(new CGB_block);
             gbb->SetDiv(gbdiv);
             gbdiv.clear();

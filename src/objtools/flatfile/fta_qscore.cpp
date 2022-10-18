@@ -1095,7 +1095,7 @@ bool QscoreToSeqAnnot(const string& qscore, CBioseq& bioseq, char* acc, Int2 ver
 {
     Char charver[100];
 
-    if (qscore == NULL || ver < 1)
+    if (qscore.empty() || ver < 1)
         return true;
 
     sprintf(charver, "%d", (int)ver);
