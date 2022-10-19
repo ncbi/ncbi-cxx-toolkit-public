@@ -555,14 +555,14 @@ private:
     {
         auto timed_req = move(queue.front());
         queue.pop_front();
-        return tuple_cat(make_tuple(timed_req), timed_req.Get());
+        return tuple_cat(make_tuple(make_optional(timed_req)), timed_req.Get());
     }
 
 public:
     auto Pop()
     {
         auto locked = m_Queue.GetLock();
-        return locked->empty() ? decltype(s_Pop(*locked)){nullptr, TPSG_ProcessorId(), nullptr} : s_Pop(*locked);
+        return locked->empty() ? decltype(s_Pop(*locked)){} : s_Pop(*locked);
     }
 
     template <class... TArgs>
