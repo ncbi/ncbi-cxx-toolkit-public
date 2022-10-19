@@ -1622,7 +1622,7 @@ void SPSG_IoImpl::AfterExecute()
 
 SPSG_DiscoveryImpl::SNoServers::SNoServers(const SPSG_Params& params, SPSG_Servers::TTS& servers) :
     m_RetryDelay(SecondsToMs(TPSG_NoServersRetryDelay::GetDefault())),
-    m_Timeout(SecondsToMs(params.request_timeout * (1 + params.request_retries))),
+    m_Timeout(SecondsToMs(params.request_timeout + params.competitive_after * params.request_retries)),
     m_FailRequests(const_cast<atomic_bool&>(servers->fail_requests))
 {
 }
