@@ -1049,35 +1049,47 @@ void SPSG_IoSession::EraseAndMoveToNext(TRequests::iterator& it)
     it = m_Requests.erase(it);
 }
 
+template <class TOnRetry, class TOnFail>
+bool SPSG_TimedRequest::CheckExpiration(const SPSG_Params& params, const SUvNgHttp2_Error& error, TOnRetry on_retry, TOnFail on_fail)
+{
+    auto [processor_id, req] = Get();
+
+    // Remove competitive requests if one is already being processed
+    if (!req) {
+        return true;
+    }
+
+    auto seconds = AddSecond();
+
+    if (seconds == params.competitive_after) {
+        if (req) {
+            if (req->Retry(error)) {
+                on_retry(req);
+            }
+        }
+    }
+
+    if (seconds >= params.request_timeout) {
+        if (req) {
+            on_fail(processor_id, req);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 void SPSG_IoSession::CheckRequestExpiration()
 {
-    SUvNgHttp2_Error error;
-    error << "Request timeout for " << GetId();
+    SUvNgHttp2_Error error("Request timeout for ");
+    error << GetId();
+
+    auto on_retry = [&](auto req) { m_Queue.Emplace(req); };
+    auto on_fail = [&](auto processor_id, auto req) { Fail(processor_id, req, error); };
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
-        auto [processor_id, req] = it->second.Get();
-
-        // Remove competitive requests if one is already being processed
-        if (!req) {
-            EraseAndMoveToNext(it);
-            continue;
-        }
-
-        auto seconds = it->second.AddSecond();
-
-        if (seconds == m_Params.competitive_after) {
-            if (req) {
-                if (req->Retry(error)) {
-                    m_Queue.Emplace(req);
-                }
-            }
-        }
-
-        if (seconds >= m_Params.request_timeout) {
-            if (req) {
-                Fail(processor_id, req, error);
-            }
-
+        if (it->second.CheckExpiration(m_Params, error, on_retry, on_fail)) {
             EraseAndMoveToNext(it);
         } else {
             ++it;
@@ -1567,31 +1579,11 @@ void SPSG_IoImpl::CheckRequestExpiration()
     list<SPSG_TimedRequest> retries;
     SUvNgHttp2_Error error("Request timeout before submitting");
 
+    auto on_retry = [&](auto req) { retries.emplace_back(req); this->queue.Signal(); }; // MS VS requires 'this' here
+    auto on_fail = [&](auto processor_id, auto req) { req->Fail(processor_id, error); };
+
     for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
-        auto [processor_id, req] = it->Get();
-
-        // Remove competitive requests if one is already being processed
-        if (!req) {
-            it = queue_locked->erase(it);
-            continue;
-        }
-
-        auto seconds = it->AddSecond();
-
-        if (seconds == m_Params.competitive_after) {
-            if (req) {
-                if (req->Retry(error)) {
-                    retries.emplace_back(req);
-                    queue.Signal();
-                }
-            }
-        }
-
-        if (seconds >= m_Params.request_timeout) {
-            if (req) {
-                req->Fail(processor_id, error);
-            }
-
+        if (it->CheckExpiration(m_Params, error, on_retry, on_fail)) {
             it = queue_locked->erase(it);
         } else {
             ++it;
