@@ -1068,7 +1068,7 @@ void SPSG_IoSession::CheckRequestExpiration()
         if (seconds == m_Params.competitive_after) {
             if (req) {
                 if (req->Retry(error)) {
-                    m_Queue.Push(req);
+                    m_Queue.Emplace(req);
                 }
             }
         }
@@ -1693,7 +1693,7 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
     }
 
     const auto idx = (m_RequestCounter++ / params.requests_per_io) % m_Io.size();
-    m_Io[idx]->queue.Push(move(req));
+    m_Io[idx]->queue.Emplace(move(req));
     return true;
 }
 
