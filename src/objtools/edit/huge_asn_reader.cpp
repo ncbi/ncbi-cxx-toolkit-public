@@ -511,7 +511,7 @@ void CHugeAsnReader::FlattenGenbankSet()
 
             
 
-            if (pDescriptors || !s_ShouldSplitSet(top->m_class)) {
+            if (pDescriptors) {
                 auto top_entry = Ref(new CSeq_entry());
                 top_entry->SetSet().SetClass() = top->m_class;
                 if (pDescriptors)
