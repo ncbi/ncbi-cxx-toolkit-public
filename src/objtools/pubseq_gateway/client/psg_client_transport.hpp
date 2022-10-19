@@ -565,10 +565,10 @@ public:
         return locked->empty() ? decltype(s_Pop(*locked)){nullptr, TPSG_ProcessorId(), nullptr} : s_Pop(*locked);
     }
 
-    void Push(shared_ptr<SPSG_Request> request)
+    template <class... TArgs>
+    void Emplace(TArgs&&... args)
     {
-        _ASSERT(request);
-        m_Queue.GetLock()->push_back(move(request));
+        m_Queue.GetLock()->emplace_back(forward<TArgs>(args)...);
         Signal();
     }
 
@@ -703,7 +703,7 @@ private:
     bool RetryFail(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
     {
         if (req->Retry(error, refused_stream)) {
-            m_Queue.Push(req);
+            m_Queue.Emplace(req);
         }
 
         return Fail(processor_id, req, error, refused_stream);
