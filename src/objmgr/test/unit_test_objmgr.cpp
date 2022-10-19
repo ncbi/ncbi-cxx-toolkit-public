@@ -695,7 +695,7 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT1)
         scope.AddTopLevelSeqEntry(*entries[i]);
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
-        BOOST_REQUIRE_EQUAL(c, unsigned(COUNT));
+        BOOST_REQUIRE_EQUAL(c, COUNT);
     }
 }
 
@@ -722,7 +722,7 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT2)
         sehs.push_back(scope.AddTopLevelSeqEntry(*entries[i]).GetEditHandle());
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
-        BOOST_REQUIRE_EQUAL(c, unsigned(COUNT));
+        BOOST_REQUIRE_EQUAL(c, COUNT);
     }
     vector<CBioseq_EditHandle> bhs;
     for ( int i = 0; i < COUNT; ++i ) {
@@ -736,7 +736,7 @@ BOOST_AUTO_TEST_CASE(TestReResolveMT2)
         sehs[i].SelectSeq(bhs[i]);
     }
     for ( auto c : s_GetBioseqParallel(THREADS, scope, ids, ids2) ) {
-        BOOST_REQUIRE_EQUAL(c, unsigned(COUNT));
+        BOOST_REQUIRE_EQUAL(c, COUNT);
     }
 }
 
@@ -1183,100 +1183,6 @@ BOOST_AUTO_TEST_CASE(AddSeqIdHistory)
         BOOST_CHECK(diag.m_Messages.empty());
         BOOST_CHECK(scope.GetBioseqHandle(*id1));
         BOOST_CHECK(diag.m_Messages.empty());
-    }}
-    SetDiagPostLevel(old_level);
-}
-
-
-static CRef<CSeq_entry> s_CreateEntryFromASN(const char* asn_str)
-{
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    istringstream stream(asn_str);
-    stream >> MSerial_AsnText >> *entry;
-    return entry;
-}
-
-
-BOOST_AUTO_TEST_CASE(DuplicateId)
-{
-    // check Seq-id history reset and re-resolve
-    auto old_level = SetDiagPostLevel(eDiag_Info);
-    CExpectDiagHandler diag;
-    {{
-        diag.Start();
-        CScope scope(*CObjectManager::GetInstance());
-        const char* entry1 =
-            "Seq-entry ::= set {"
-            " seq-set {"
-            "  seq {"
-            "   id {"
-            "    general { db \"LCL\", tag id 1 },"
-            "    local id 1"
-            "   },"
-            "   inst {"
-            "    repr raw,"
-            "    mol dna,"
-            "    seq-data iupacaa \"ACGT\""
-            "   }"
-            "  }"
-            " }"
-            "}";
-        const char* entry2 =
-            "Seq-entry ::= set {"
-            " seq-set {"
-            "  seq {"
-            "   id {"
-            "    general { db \"LCL\", tag id 2 },"
-            "    local id 1"
-            "   },"
-            "   inst {"
-            "    repr raw,"
-            "    mol dna,"
-            "    seq-data iupacaa \"TGCA\""
-            "   }"
-            "  }"
-            " }"
-            "}";
-        scope.AddTopLevelSeqEntry(*s_CreateEntryFromASN(entry1));
-        scope.AddTopLevelSeqEntry(*s_CreateEntryFromASN(entry2));
-        BOOST_CHECK(scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|LCL|1")));
-        BOOST_CHECK(scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|LCL|2")));
-        BOOST_CHECK(scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("lcl|1"))); // first one
-    }}
-    {{
-        diag.Start();
-        CScope scope(*CObjectManager::GetInstance());
-        const char* entry12 =
-            "Seq-entry ::= set {"
-            " seq-set {"
-            "  seq {"
-            "   id {"
-            "    general { db \"LCL\", tag id 1 },"
-            "    local id 1"
-            "   },"
-            "   inst {"
-            "    repr raw,"
-            "    mol dna,"
-            "    seq-data iupacaa \"ACGT\""
-            "   }"
-            "  },"
-            "  seq {"
-            "   id {"
-            "    general { db \"LCL\", tag id 2 },"
-            "    local id 1"
-            "   },"
-            "   inst {"
-            "    repr raw,"
-            "    mol dna,"
-            "    seq-data iupacaa \"TGCA\""
-            "   }"
-            "  }"
-            " }"
-            "}";
-        scope.AddTopLevelSeqEntry(*s_CreateEntryFromASN(entry12));
-        BOOST_CHECK(scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|LCL|1")));
-        BOOST_CHECK(scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|LCL|2")));
-        BOOST_CHECK(!scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("lcl|1")));
     }}
     SetDiagPostLevel(old_level);
 }
