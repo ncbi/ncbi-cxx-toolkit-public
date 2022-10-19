@@ -1059,9 +1059,9 @@ bool SPSG_TimedRequest::CheckExpiration(const SPSG_Params& params, const SUvNgHt
         return true;
     }
 
-    auto seconds = AddSecond();
+    auto time = AddTime();
 
-    if (seconds == params.competitive_after) {
+    if (time == params.competitive_after) {
         if (req) {
             if (req->Retry(error)) {
                 on_retry(req);
@@ -1069,7 +1069,7 @@ bool SPSG_TimedRequest::CheckExpiration(const SPSG_Params& params, const SUvNgHt
         }
     }
 
-    if (seconds >= params.request_timeout) {
+    if (time >= params.request_timeout) {
         if (req) {
             on_fail(processor_id, req);
         }
