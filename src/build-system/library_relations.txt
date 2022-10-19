@@ -561,6 +561,7 @@ id2_split needs $(COMPRESS_LIBS)
 id2_split needs $(SOBJMGR_LIBS)
 id2cli needs id2
 id2cli needs xconnect
+id_diag needs psg_cassandra
 ideo needs xmvdatacache
 ideo_gridcli needs ideo
 ideo_gridcli needs trackmgrgridcli
