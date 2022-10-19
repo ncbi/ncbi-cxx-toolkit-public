@@ -1575,6 +1575,7 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
                 if (req) {
                     if (req->Retry(error)) {
                         retries.emplace_back(req);
+                        queue.Signal();
                     }
                 }
             }
