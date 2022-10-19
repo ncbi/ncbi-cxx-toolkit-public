@@ -298,11 +298,14 @@ typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
 NCBI_PARAM_DECL(double, PSG, rebalance_time);
 typedef NCBI_PARAM_TYPE(PSG, rebalance_time) TPSG_RebalanceTime;
 
-NCBI_PARAM_DECL(unsigned, PSG, request_timeout);
-using TPSG_RequestTimeout = PSG_PARAM_VALUE_TYPE(PSG, request_timeout);
+NCBI_PARAM_DECL(double, PSG, io_timer_period);
+using TPSG_IoTimerPeriod = PSG_PARAM_VALUE_TYPE(PSG, io_timer_period);
 
-NCBI_PARAM_DECL(unsigned, PSG, competitive_after);
-using TPSG_CompetitiveAfter = PSG_PARAM_VALUE_TYPE(PSG, competitive_after);
+NCBI_PARAM_DECL(double, PSG, request_timeout);
+typedef NCBI_PARAM_TYPE(PSG, request_timeout) TPSG_RequestTimeout;
+
+NCBI_PARAM_DECL(double, PSG, competitive_after);
+typedef NCBI_PARAM_TYPE(PSG, competitive_after) TPSG_CompetitiveAfter;
 
 NCBI_PARAM_DECL(size_t, PSG, requests_per_io);
 using TPSG_RequestsPerIo = PSG_PARAM_VALUE_TYPE(PSG, requests_per_io);
