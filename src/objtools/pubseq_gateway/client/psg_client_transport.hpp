@@ -539,7 +539,7 @@ struct SPSG_TimedRequest
         return make_pair(m_Id, m_Request->CanBeProcessedBy(m_Id) ? m_Request : nullptr);
     }
 
-    unsigned AddSecond() { return ++m_Seconds; }
+    unsigned AddTime() { return ++m_Time; }
 
     template <class TOnRetry, class TOnFail>
     bool CheckExpiration(const SPSG_Params& params, const SUvNgHttp2_Error& error, TOnRetry on_retry, TOnFail on_fail);
@@ -547,7 +547,7 @@ struct SPSG_TimedRequest
 private:
     const TPSG_ProcessorId m_Id;
     shared_ptr<SPSG_Request> m_Request;
-    unsigned m_Seconds = 0;
+    unsigned m_Time = 0;
     inline thread_local static TPSG_ProcessorId sm_NextId = TPSG_ProcessorId{};
 };
 
