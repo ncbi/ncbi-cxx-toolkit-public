@@ -423,6 +423,50 @@ void CHugeAsnReader::x_ThrowDuplicateId(
     NCBI_THROW(CHugeFileException, eDuplicateSeqIds, msg);
 }
 
+
+CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const 
+{
+    CRef<CSeq_descr> pDescriptors;
+    if (GetBiosets().size() < 2) {
+        return pDescriptors;
+    }
+
+    auto top = next(GetBiosets().begin());
+    if (top->m_descr) {
+        pDescriptors = Ref(new CSeq_descr());
+        pDescriptors->Assign(*top->m_descr);
+    }
+
+    for (auto it = next(top); it != end(GetBiosets()); ++it) {
+        if (!s_ShouldSplitSet(it->m_class)) {
+            break;
+        }
+
+        if (it->m_descr) {
+            if (!pDescriptors) {
+                pDescriptors = Ref(new CSeq_descr());
+                pDescriptors->Assign(*it->m_descr);
+            }
+            else {
+                for (auto pDesc : it->m_descr->Get()) {
+                    pDescriptors->Set().push_back(pDesc);     
+                }
+            }
+        }
+    }
+    return pDescriptors;
+}
+
+bool CHugeAsnReader::x_HasNestedGenbankSets() const
+{
+    if (GetBiosets().size() <= 2) {
+        return false;       
+    }
+    auto it = next(GetBiosets().begin());
+    return (it->m_class == CBioseq_set::eClass_genbank &&
+            next(it)->m_class == CBioseq_set::eClass_genbank);
+}
+
 void CHugeAsnReader::FlattenGenbankSet()
 {
     m_FlattenedSets.clear();
@@ -472,45 +516,27 @@ void CHugeAsnReader::FlattenGenbankSet()
         auto top = next(GetBiosets().begin());
         if (m_FlattenedSets.size() == 1) {
             // exposing the whole top entry
-            if (GetSubmitBlock().NotEmpty()
-                || (top->m_class != CBioseq_set::eClass_genbank)
-                || top->m_descr.NotEmpty())
-            {
+            if (x_HasNestedGenbankSets()) {
+                auto pDescriptors = x_GetTopLevelDescriptors();
+                auto pTopEntry = Ref(new CSeq_entry());
+                pTopEntry->SetSet().SetClass() = top->m_class;
+                if (pDescriptors) {
+                    pTopEntry->SetSet().SetDescr().Assign(*pDescriptors);
+                }
+                m_top_entry = pTopEntry;
+            } 
+            else if (GetSubmitBlock() ||
+                    top->m_descr ||
+                    !s_ShouldSplitSet(top->m_class)) {
                 m_FlattenedSets.clear();
                 m_FlattenedSets.push_back(*top);
                 for (auto& it : m_FlattenedIndex) {
                     it.second = m_FlattenedSets.begin();
                 }
-            }
+            } 
         }
         else { // m_FlattenedSets.size() > 1)
-
-            CRef<CSeq_descr> pDescriptors;
-            if (top->m_descr) {
-                pDescriptors = Ref(new CSeq_descr());
-                pDescriptors->Assign(*top->m_descr);
-            }
-
-            for (auto it = next(top); it != end(GetBiosets()); ++it) {
-                if (!s_ShouldSplitSet(it->m_class)) {
-                    break;
-                }
-
-                if (it->m_descr) {
-                    if (!pDescriptors) {
-                        pDescriptors = Ref(new CSeq_descr());
-                        pDescriptors->Assign(*it->m_descr);
-                    }
-                    else {
-                        for (auto pDesc : it->m_descr->Get()) {
-                            pDescriptors->Set().push_back(pDesc);     
-                        }
-                    }
-                }
-            }
-
-            
-
+            auto pDescriptors = x_GetTopLevelDescriptors();
             if (pDescriptors) {
                 auto top_entry = Ref(new CSeq_entry());
                 top_entry->SetSet().SetClass() = top->m_class;
@@ -536,8 +562,14 @@ CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
         m_Current = m_FlattenedSets.end();
         return {};
     }
+   
+    const auto addTopEntry = 
+        (m_FlattenedSets.size() == 1 &&
+           x_HasNestedGenbankSets()) ? 
+        eAddTopEntry::yes :
+        eAddTopEntry::no;
 
-    return LoadSeqEntry(*m_Current++, eAddTopEntry::no);
+    return LoadSeqEntry(*m_Current++, addTopEntry);
 }
 
 END_SCOPE(edit)

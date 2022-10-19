@@ -150,6 +150,10 @@ private:
     void x_ThrowDuplicateId(
         const TBioseqSetInfo& existingInfo,const TBioseqSetInfo& newInfo, const CSeq_id& duplicateId);
 
+    CRef<CSeq_descr> x_GetTopLevelDescriptors() const;
+    bool x_HasNestedGenbankSets() const;
+
+
     ILineErrorListener * mp_MessageListener = nullptr;
     std::streampos       m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
     std::streampos       m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
