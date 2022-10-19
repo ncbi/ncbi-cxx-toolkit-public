@@ -1548,53 +1548,62 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
 
 void SPSG_IoImpl::OnTimer(uv_timer_t*)
 {
+    if (m_Servers->fail_requests) {
+        FailRequests();
+    } else {
+        CheckRequestExpiration();
+    }
+
     for (auto& server_sessions : m_Sessions) {
         for (auto& session : server_sessions.first) {
             session.CheckRequestExpiration();
         }
     }
+}
 
+void SPSG_IoImpl::CheckRequestExpiration()
+{
     auto queue_locked = queue.GetLockedQueue();
+    list<SPSG_TimedRequest> retries;
+    SUvNgHttp2_Error error("Request timeout before submitting");
 
-    if (!m_Servers->fail_requests) {
-        list<SPSG_TimedRequest> retries;
-        SUvNgHttp2_Error error("Request timeout before submitting");
+    for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
+        auto [processor_id, req] = it->Get();
 
-        for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
-            auto [processor_id, req] = it->Get();
+        // Remove competitive requests if one is already being processed
+        if (!req) {
+            it = queue_locked->erase(it);
+            continue;
+        }
 
-            // Remove competitive requests if one is already being processed
-            if (!req) {
-                it = queue_locked->erase(it);
-                continue;
-            }
+        auto seconds = it->AddSecond();
 
-            auto seconds = it->AddSecond();
-
-            if (seconds == m_Params.competitive_after) {
-                if (req) {
-                    if (req->Retry(error)) {
-                        retries.emplace_back(req);
-                        queue.Signal();
-                    }
+        if (seconds == m_Params.competitive_after) {
+            if (req) {
+                if (req->Retry(error)) {
+                    retries.emplace_back(req);
+                    queue.Signal();
                 }
-            }
-
-            if (seconds >= m_Params.request_timeout) {
-                if (req) {
-                    req->Fail(processor_id, error);
-                }
-
-                it = queue_locked->erase(it);
-            } else {
-                ++it;
             }
         }
 
-        queue_locked->splice(queue_locked->end(), retries);
-        return;
+        if (seconds >= m_Params.request_timeout) {
+            if (req) {
+                req->Fail(processor_id, error);
+            }
+
+            it = queue_locked->erase(it);
+        } else {
+            ++it;
+        }
     }
 
+    queue_locked->splice(queue_locked->end(), retries);
+}
+
+void SPSG_IoImpl::FailRequests()
+{
+    auto queue_locked = queue.GetLockedQueue();
     SUvNgHttp2_Error error("No servers to process request");
 
     for (auto& timed_req : *queue_locked) {

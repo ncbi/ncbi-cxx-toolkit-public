@@ -962,6 +962,8 @@ private:
 
     void AddNewServers(size_t servers_size, size_t sessions_size, uv_async_t* handle);
     void OnQueue(uv_async_t* handle);
+    void CheckRequestExpiration();
+    void FailRequests();
 
     static void s_OnQueue(uv_async_t* handle)
     {
