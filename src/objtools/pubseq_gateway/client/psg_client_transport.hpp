@@ -200,9 +200,10 @@ struct SPSG_Params
 {
     TPSG_DebugPrintout debug_printout;
     TPSG_MaxConcurrentSubmits max_concurrent_submits;
-    TPSG_RequestTimeout request_timeout;
-    TPSG_CompetitiveAfter competitive_after;
     TPSG_RequestsPerIo requests_per_io;
+    TPSG_IoTimerPeriod io_timer_period;
+    const unsigned request_timeout;
+    const unsigned competitive_after;
     TPSG_RequestRetries request_retries;
     TPSG_RefusedStreamRetries refused_stream_retries;
     TPSG_UserRequestIds user_request_ids;
@@ -211,26 +212,19 @@ struct SPSG_Params
     SPSG_Params() :
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
-        request_timeout(TPSG_RequestTimeout::eGetDefault),
-        competitive_after([&](auto v) { return LimitCompetitiveAfter(v, request_timeout); }),
         requests_per_io(TPSG_RequestsPerIo::eGetDefault),
+        io_timer_period(TPSG_IoTimerPeriod::eGetDefault),
+        request_timeout(s_GetRequestTimeout(io_timer_period)),
+        competitive_after(s_GetCompetitiveAfter(io_timer_period, request_timeout)),
         request_retries(TPSG_RequestRetries::eGetDefault),
         refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
 
-    static TPSG_CompetitiveAfter::TValue LimitCompetitiveAfter(TPSG_CompetitiveAfter::TValue v, TPSG_RequestTimeout::TValue t)
-    {
-        if (v >= t) {
-            ERR_POST(Warning << "[PSG] competitive_after ('" << v << "') was disabled, "
-                    "as it was greater or equal to request timeout ('" << t << "')");
-        } else if (v > 0) {
-            return v;
-        }
-
-        return t;
-    }
+private:
+    static unsigned s_GetRequestTimeout(double io_timer_period);
+    static unsigned s_GetCompetitiveAfter(double io_timer_period, double timeout);
 };
 
 struct SDebugPrintout

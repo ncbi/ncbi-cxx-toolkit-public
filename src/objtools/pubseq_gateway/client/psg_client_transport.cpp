@@ -64,9 +64,10 @@ PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_sessions,                  40, 
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, num_io,                        6,                  1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, reader_timeout,                12,                 1       );
 PSG_PARAM_VALUE_DEF_MIN(double,         PSG, rebalance_time,                10.0,               1.0     );
-PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, request_timeout,               10,                 1       );
 PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, requests_per_io,               1,                  1       );
-NCBI_PARAM_DEF(unsigned, PSG, competitive_after,      2);
+PSG_PARAM_VALUE_DEF_MIN(double,         PSG, io_timer_period,               0.4,                0.1     );
+NCBI_PARAM_DEF(double,   PSG, request_timeout,        10.0);
+NCBI_PARAM_DEF(double,   PSG, competitive_after,      2.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 NCBI_PARAM_DEF(unsigned, PSG, refused_stream_retries, 2);
 NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
@@ -130,6 +131,40 @@ SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::TType SPSG_ArgsBase::SArg<SPSG_A
     if (value == "message_and_meta")  return { SPSG_ArgsBase::eMessageAndMeta,  cref(value) };
     return { SPSG_ArgsBase::eUnknownChunk, cref(value) };
 };
+
+unsigned SPSG_Params::s_GetRequestTimeout(double io_timer_period)
+{
+    auto value = TPSG_RequestTimeout::GetDefault();
+
+    if (value < io_timer_period) {
+        ERR_POST(Warning << "[PSG] request_timeout ('" << value << "')"
+                " was increased to the minimum allowed value ('" << io_timer_period << "')");
+        value = io_timer_period;
+    }
+
+    return static_cast<unsigned>(value / io_timer_period);
+}
+
+unsigned SPSG_Params::s_GetCompetitiveAfter(double io_timer_period, double timeout)
+{
+    auto value = TPSG_CompetitiveAfter::GetDefault();
+    timeout *= io_timer_period;
+
+    if ((value > 0.0) && (value < io_timer_period)) {
+        ERR_POST(Warning << "[PSG] competitive_after ('" << value << "')"
+                " was increased to the minimum allowed value ('" << io_timer_period << "')");
+        value = io_timer_period;
+    }
+
+    if (value >= timeout) {
+        ERR_POST(Warning << "[PSG] competitive_after ('" << value << "') was disabled, "
+                "as it was greater or equal to request timeout ('" << timeout << "')");
+    } else if (value > 0.0) {
+        timeout = value;
+    }
+
+    return static_cast<unsigned>(timeout / io_timer_period);
+}
 
 void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip, SUv_Tcp::TPort port)
 {
@@ -1623,7 +1658,7 @@ void SPSG_IoImpl::AfterExecute()
 
 SPSG_DiscoveryImpl::SNoServers::SNoServers(const SPSG_Params& params, SPSG_Servers::TTS& servers) :
     m_RetryDelay(SecondsToMs(TPSG_NoServersRetryDelay::GetDefault())),
-    m_Timeout(SecondsToMs(params.request_timeout + params.competitive_after * params.request_retries)),
+    m_Timeout(SecondsToMs((params.request_timeout + params.competitive_after * params.request_retries) * params.io_timer_period)),
     m_FailRequests(const_cast<atomic_bool&>(servers->fail_requests))
 {
 }
@@ -1679,9 +1714,11 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     m_RequestCounter(0),
     m_RequestId(1)
 {
+    const auto io_timer_period = SecondsToMs(params.io_timer_period);
+
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
         // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, milli::den, milli::den, params, m_Servers));
+        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, io_timer_period, io_timer_period, params, m_Servers));
     }
 
     m_Barrier.Wait();
