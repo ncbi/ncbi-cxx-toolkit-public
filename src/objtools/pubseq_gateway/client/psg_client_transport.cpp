@@ -1354,7 +1354,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         while (session->IsFull());
                     }
 
-                    bool result = session->ProcessRequest(move(timed_req), processor_id, req);
+                    bool result = session->ProcessRequest(*move(timed_req), processor_id, req);
 
                     if (result) {
                         PSG_IO_TRACE("Server '" << session->GetId() << "' will get request '" <<
