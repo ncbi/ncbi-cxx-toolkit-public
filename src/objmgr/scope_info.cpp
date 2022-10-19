@@ -939,11 +939,6 @@ void CDataSource_ScopeInfo::x_SetMatch(SSeqMatch_Scope& match,
     _ASSERT(match.m_Seq_id);
     _ASSERT(match.m_TSE_Lock);
     match.m_Bioseq = match.m_TSE_Lock->GetTSE_Lock()->FindBioseq(idh);
-    if ( !match.m_Bioseq ) {
-        match.m_Seq_id.Reset();
-        match.m_TSE_Lock.Reset();
-        return;
-    }
     _ASSERT(match.m_Bioseq);
     _ASSERT(match.m_Bioseq == match.m_TSE_Lock->m_TSE_Lock->FindBioseq(match.m_Seq_id));
 }
