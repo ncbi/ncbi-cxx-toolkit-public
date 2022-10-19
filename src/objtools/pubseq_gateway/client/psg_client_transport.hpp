@@ -541,6 +541,9 @@ struct SPSG_TimedRequest
 
     unsigned AddSecond() { return ++m_Seconds; }
 
+    template <class TOnRetry, class TOnFail>
+    bool CheckExpiration(const SPSG_Params& params, const SUvNgHttp2_Error& error, TOnRetry on_retry, TOnFail on_fail);
+
 private:
     const TPSG_ProcessorId m_Id;
     shared_ptr<SPSG_Request> m_Request;
