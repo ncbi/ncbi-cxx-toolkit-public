@@ -202,8 +202,6 @@ static bool QSNoSequenceRecordErr(bool accver, QSStructPtr qssp)
 /**********************************************************/
 bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
 {
-    IndexblkPtr* ibpp;
-    QSStructPtr* qsspp;
     QSStructPtr  qssp;
     QSStructPtr  tqssp;
     QSStructPtr  tqsspprev;
@@ -263,13 +261,13 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         return false;
     }
 
-    qsspp = (QSStructPtr*)MemNew(count * sizeof(QSStructPtr));
+    vector<QSStructPtr> qsspp(count);
     tqssp = qssp;
-    for (j = 0; j < count && tqssp != NULL; j++, tqssp = tqssp->next)
+    for (j = 0; j < count && tqssp; j++, tqssp = tqssp->next)
         qsspp[j] = tqssp;
 
     if (count > 1) {
-        std::sort(qsspp, qsspp + count, QSCmp);
+        std::sort(qsspp.begin(), qsspp.end(), QSCmp);
 
         for (j = 0, count--; j < count; j++)
             if (StringCmp(qsspp[j]->accession, qsspp[j + 1]->accession) == 0)
@@ -284,18 +282,17 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
                 ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s\".", qsspp[j]->accession);
 
             QSStructFree(qssp);
-            MemFree(qsspp);
             return false;
         }
         count++;
     }
 
-    ibpp = (IndexblkPtr*)MemNew(pp->indx * sizeof(IndexblkPtr));
-    for (j = 0; j < pp->indx && ibnp != NULL; j++, ibnp = ibnp->next)
+    vector<IndexblkPtr> ibpp(pp->indx);
+    for (j = 0; j < pp->indx && ibnp; j++, ibnp = ibnp->next)
         ibpp[j] = ibnp->ibp;
 
     if (pp->indx > 1)
-        std::sort(ibpp, ibpp + pp->indx, AccsCmp);
+        std::sort(ibpp.begin(), ibpp.end(), AccsCmp);
 
     for (ret = true, j = 0, k = 0; j < count; j++) {
         if (k == pp->indx) {
@@ -325,8 +322,6 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
     }
 
     QSStructFree(qssp);
-    MemFree(qsspp);
-    MemFree(ibpp);
 
     return (ret);
 }

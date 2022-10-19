@@ -498,18 +498,17 @@ static GeneNodePtr sort_gnp_list(GeneNodePtr gnp)
     Int4         index;
     Int4         total;
     GeneListPtr  glp;
-    GeneListPtr* temp;
 
     total = 0;
-    for (glp = gnp->glp; glp != NULL; glp = glp->next)
+    for (glp = gnp->glp; glp; glp = glp->next)
         total++;
 
-    temp = (GeneListPtr*)MemNew(total * sizeof(GeneListPtr));
+    vector<GeneListPtr> temp(total);
 
-    for (index = 0, glp = gnp->glp; glp != NULL; glp = glp->next)
+    for (index = 0, glp = gnp->glp; glp; glp = glp->next)
         temp[index++] = glp;
 
-    std::sort(temp, temp + index, CompareGeneListName);
+    std::sort(temp.begin(), temp.end(), CompareGeneListName);
 
     gnp->glp = glp = temp[0];
     for (index = 0; index < total - 1; glp = glp->next, index++)
@@ -517,8 +516,6 @@ static GeneNodePtr sort_gnp_list(GeneNodePtr gnp)
 
     glp       = temp[total - 1];
     glp->next = NULL;
-
-    MemFree(temp);
 
     return (gnp);
 }
@@ -2122,18 +2119,17 @@ static GeneLocsPtr fta_sort_feat_list(GeneLocsPtr gelop)
     Int4         index;
     Int4         total;
     GeneLocsPtr  glp;
-    GeneLocsPtr* temp;
 
     total = 0;
-    for (glp = gelop; glp != NULL; glp = glp->next)
+    for (glp = gelop; glp; glp = glp->next)
         total++;
 
-    temp = (GeneLocsPtr*)MemNew(total * sizeof(GeneLocsPtr));
+    vector<GeneLocsPtr> temp(total);
 
-    for (index = 0, glp = gelop; glp != NULL; glp = glp->next)
+    for (index = 0, glp = gelop; glp; glp = glp->next)
         temp[index++] = glp;
 
-    std::sort(temp, temp + index, CompareGeneLocsMinMax);
+    std::sort(temp.begin(), temp.end(), CompareGeneLocsMinMax);
 
     gelop = glp = temp[0];
     for (index = 0; index < total - 1; glp = glp->next, index++)
@@ -2141,8 +2137,6 @@ static GeneLocsPtr fta_sort_feat_list(GeneLocsPtr gelop)
 
     glp       = temp[total - 1];
     glp->next = NULL;
-
-    MemFree(temp);
 
     return (gelop);
 }
