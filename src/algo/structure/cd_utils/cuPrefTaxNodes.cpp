@@ -181,17 +181,23 @@ unsigned int CPriorityTaxNodes::TaxIdsToCddOrgRefSet(const vector< TTaxId >& tax
 {
 
     unsigned int nAdded = 0, nTaxa = taxids.size();
-    CCdd_org_ref_set::Tdata cddOrgRefList = cddOrgRefSet.Set();
+    CCdd_org_ref_set::Tdata& cddOrgRefList = cddOrgRefSet.Set();
 
     if (notAddedTaxids) notAddedTaxids->clear();
 
     for (unsigned int i = 0; i < nTaxa; ++i) {
         CRef< CCdd_org_ref > cddOrgRef( new CCdd_org_ref );
-        CRef< CCdd_org_ref::TReference > orgRef( &cddOrgRef->SetReference());
-        if (cddOrgRef.NotEmpty() && taxClient.GetOrgRef(taxids[i], orgRef)) {
-            cddOrgRef->SetActive(true);
-            cddOrgRefList.push_back(cddOrgRef);
-            ++nAdded;
+        if (cddOrgRef.NotEmpty()) {
+            COrg_ref& orgRef = cddOrgRef->SetReference();
+            if (taxClient.GetOrgRef(taxids[i], orgRef)) {
+//            CRef< CCdd_org_ref::TReference > orgRef( &cddOrgRef->SetReference());
+//            if (taxClient.GetOrgRef(taxids[i], orgRef)) {
+                cddOrgRef->SetActive(true);
+                cddOrgRefList.push_back(cddOrgRef);
+                ++nAdded;
+            } else if (notAddedTaxids) {
+                notAddedTaxids->push_back(taxids[i]);
+            }
         } else if (notAddedTaxids) {
             notAddedTaxids->push_back(taxids[i]);
         }
