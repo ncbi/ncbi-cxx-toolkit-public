@@ -188,7 +188,10 @@ if(NCBI_COMPONENT_BACKWARD_FOUND)
     endif()
 endif()
 if(NOT CYGWIN OR (DEFINED NCBI_COMPONENT_UNWIND_DISABLED AND NOT NCBI_COMPONENT_UNWIND_DISABLED))
-    NCBI_define_Xcomponent(NAME UNWIND MODULE libunwind LIB unwind)
+    check_include_file(libunwind.h HAVE_LIBUNWIND_H)
+    if(HAVE_LIBUNWIND_H)
+        NCBI_define_Xcomponent(NAME UNWIND MODULE libunwind LIB unwind)
+    endif()
 endif()
 
 ############################################################################
