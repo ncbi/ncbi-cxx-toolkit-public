@@ -73,7 +73,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-typedef struct parser_ref_block {
+struct ParRefBlk {
     Int4  refnum; /* REFERENCE for GenBank, RN for Embl
                                            and Swiss-Prot */
     Int4  muid;   /* RM for Swiss-Prot */
@@ -101,7 +101,7 @@ typedef struct parser_ref_block {
                                            3 if article,
                                            4 submitted etc. */
 
-    parser_ref_block() :
+    ParRefBlk() :
         refnum(0),
         muid(0),
         pmid(0),
@@ -115,7 +115,8 @@ typedef struct parser_ref_block {
     {
     }
 
-} ParRefBlk, *ParRefBlkPtr;
+};
+using ParRefBlkPtr = ParRefBlk*;
 
 const char* ParFlat_SPRefRcToken[] = {
     "MEDLINE", "PLASMID", "SPECIES", "STRAIN", "TISSUE", "TRANSPOSON", NULL

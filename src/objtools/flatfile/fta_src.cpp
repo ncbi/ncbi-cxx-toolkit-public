@@ -67,10 +67,10 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-typedef struct {
+struct CharUInt1 {
     const char*       name;
     COrgMod::ESubtype num;
-} CharUInt1;
+};
 
 #define USE_CULTIVAR         00001
 #define USE_ISOLATE          00002
@@ -86,69 +86,50 @@ typedef struct {
 
 #define BIOSOURCES_THRESHOLD 20
 
-typedef struct _pcr_primers {
-    char*                fwd_name;
-    char*                fwd_seq;
-    char*                rev_name;
-    char*                rev_seq;
-    struct _pcr_primers* next;
-} PcrPrimers, *PcrPrimersPtr;
+struct PcrPrimers {
+    char*       fwd_name;
+    char*       fwd_seq;
+    char*       rev_name;
+    char*       rev_seq;
+    PcrPrimers* next;
+};
+using PcrPrimersPtr = PcrPrimers*;
 
-typedef struct _source_feat_blk {
-    char* name;
-    char* strain;
-    char* organelle;
-    char* isolate;
-    char* namstr;
-    char* location;
-    char* moltype;
-    char* genomename;
-    char* submitter_seqid;
+struct SourceFeatBlk {
+    char* name            = nullptr;
+    char* strain          = nullptr;
+    char* organelle       = nullptr;
+    char* isolate         = nullptr;
+    char* namstr          = nullptr;
+    char* location        = nullptr;
+    char* moltype         = nullptr;
+    char* genomename      = nullptr;
+    char* submitter_seqid = nullptr;
 
     TQualVector      quals;
     CRef<CBioSource> bio_src;
     CRef<COrgName>   orgname;
 
-    bool full;
-    bool focus;
-    bool tg;
-    bool lookup;
-    bool skip;
-    bool useit;
+    bool full   = false;
+    bool focus  = false;
+    bool tg     = false;
+    bool lookup = false;
+    bool skip   = false;
+    bool useit  = false;
 
-    CBioSource::EGenome      genome;
-    struct _source_feat_blk* next;
+    CBioSource::EGenome genome = CBioSource::eGenome_unknown;
+    SourceFeatBlk*      next   = nullptr;
+};
+using SourceFeatBlkPtr = SourceFeatBlk*;
 
-    _source_feat_blk() :
-        name(NULL),
-        strain(NULL),
-        organelle(NULL),
-        isolate(NULL),
-        namstr(NULL),
-        location(NULL),
-        moltype(NULL),
-        genomename(NULL),
-        submitter_seqid(NULL),
-        full(false),
-        focus(false),
-        tg(false),
-        lookup(false),
-        skip(false),
-        useit(false),
-        genome(CBioSource::eGenome_unknown),
-        next(NULL)
-    {
-    }
-
-} SourceFeatBlk, *SourceFeatBlkPtr;
-
-typedef struct _min_max {
-    char*            orgname; /* Do not free! It's just a pointer */
-    Int4             min;
-    Int4             max;
-    bool             skip;
-    struct _min_max* next;
-} MinMax, *MinMaxPtr;
+struct MinMax {
+    const char* orgname; /* Do not free! It's just a pointer */
+    Int4        min;
+    Int4        max;
+    bool        skip;
+    MinMax*     next;
+};
+using MinMaxPtr = MinMax*;
 
 static const char* ObsoleteSourceDbxrefTag[] = {
     "IFO",
