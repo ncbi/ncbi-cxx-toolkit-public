@@ -35,7 +35,11 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/submit/Submit_block.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objtools/edit/huge_file.hpp>
@@ -46,10 +50,8 @@ class CObjectIStream;
 
 BEGIN_SCOPE(objects)
 
-class CSeq_id;
 class CBioseq;
 class CSeq_submit;
-class CSeq_descr;
 class CSeqdesc;
 
 BEGIN_SCOPE(edit)
@@ -120,7 +122,7 @@ public:
 
     bool IsMultiSequence() const override;
 
-    void FlattenGenbankSet();
+    virtual void FlattenGenbankSet();
     auto& GetTopEntry()       const { return m_top_entry; }
     auto& GetFlattenedIndex() const { return m_FlattenedIndex; }
     auto& GetTopIds()         const { return m_top_ids; }
@@ -143,6 +145,7 @@ protected:
     };
 
     virtual void x_SetHooks(CObjectIStream& objStream, TContext& context);
+    void x_ResetTopEntry();
 
 private:
     void x_ResetIndex();

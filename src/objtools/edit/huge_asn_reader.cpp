@@ -33,13 +33,9 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/seq/Bioseq.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/submit/Seq_submit.hpp>
-#include <objects/submit/Submit_block.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
 #include <serial/objistr.hpp>
@@ -351,6 +347,11 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
         m_submit_block = submit_block;
     });
 
+}
+
+void CHugeAsnReader::x_ResetTopEntry()
+{
+    m_top_entry.Reset();
 }
 
 void CHugeAsnReader::x_IndexNextAsn1()
