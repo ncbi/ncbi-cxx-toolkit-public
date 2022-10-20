@@ -114,15 +114,16 @@ bool CHugeFile::x_TryOpenStreamFile(const string& filename)
 
 TTypeInfo CHugeFile::RecognizeContent(std::streampos pos)
 {
-    if (m_memory)
-    {
+    if (!m_memory  &&  !m_stream) {
+        return nullptr;
+    }
+    if (m_memory) {
         CMemoryStreamBuf strbuf(m_memory + pos, m_filesize - pos);
         std::istream istr(&strbuf);
         return RecognizeContent(istr);
-    } else {
-        m_stream->seekg(pos);
-        return RecognizeContent(*m_stream);
     }
+    m_stream->seekg(pos);
+    return RecognizeContent(*m_stream);
 }
 
 TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
