@@ -65,6 +65,7 @@ public:
     virtual TTaxId GetTaxIDForSeqId(CConstRef< CSeq_id > sid);  // was GetTaxIDForSequence
     virtual TTaxId GetTaxIDForGI(TGi gi);
 
+    virtual bool GetOrgRef(TTaxId taxId, COrg_ref& orgRef);
     virtual bool GetOrgRef(TTaxId taxId, CRef< COrg_ref >& orgRef);
 
 	virtual short GetRankID(TTaxId taxId, string& rankName);
