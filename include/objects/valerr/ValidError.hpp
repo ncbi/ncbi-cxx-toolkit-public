@@ -128,6 +128,8 @@ public:
     bool ShouldSuppress(unsigned int ec);
     void ClearSuppressions();
 
+    bool IsCatastrophic() const;
+
 protected:
     friend class CValidError_CI;
 

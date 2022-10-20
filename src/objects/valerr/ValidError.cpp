@@ -208,6 +208,26 @@ CValidError::~CValidError()
 }
 
 
+bool CValidError::IsCatastrophic() const
+{
+    // Note:
+    // This function primarily serves as a loop terminator in the validator-
+    //  if the error is catastrophic then don't attempt to read anything else
+    //  and terminate with as much digity as possible.
+    // What counts as catastrophic is somewhat murky. Invalid ASN.1 qualifies. 
+    //  Error level eSev_critical alone does *not*.
+    // Feel free to amend with any other conditions that are discovered and verified 
+    //  to truly be catastrophic (verification: TeamCity tests).
+    //
+    for (const auto& errorItem: GetErrs()) {
+        if (errorItem->IsSetErrorName()  &&  errorItem->GetErrorName() == "InvalidAsn") {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 // ************************ CValidError_CI implementation **************
 
 CValidError_CI::CValidError_CI(void) :

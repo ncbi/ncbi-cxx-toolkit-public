@@ -1197,6 +1197,8 @@ void CAsnvalThreadState::ValidateOneFile()
                             CConstRef<CValidError> eval = ValidateInput(asninfo);
                             if (eval) {
                                 PrintValidError(eval);
+                            }
+                            if (eval->IsCatastrophic()) {
                                 doloop = false;
                             }
                             if (!mpIstr->EndOfData()) { // force to SkipWhiteSpace
