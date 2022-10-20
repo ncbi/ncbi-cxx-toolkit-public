@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Mon Oct 17 10:21:02 EDT 2022; formally
+/* time_t value corresponding to Thu Oct 20 10:53:18 EDT 2022; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1666016462UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1666277598UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -2213,6 +2213,11 @@ static const char* const kBuiltInGuide[] = {
     "special  CAMREP000000000-CAMRFE999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAMRGM000000000-CAMRGM999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAMRSF000000000-CAMRXA999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMSBO000000000-CAMSEK999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMSEM000000000-CAMSLM999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMSLO000000000-CAMSTW999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMSTY000000000-CAMTCG999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMTDX000000000-CAMTGA999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc # 4+8",
