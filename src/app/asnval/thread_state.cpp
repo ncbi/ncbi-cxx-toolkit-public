@@ -1195,9 +1195,10 @@ void CAsnvalThreadState::ValidateOneFile()
                     try {
                         if (mpIstr) {
                             CConstRef<CValidError> eval = ValidateInput(asninfo);
-                            if (eval)
+                            if (eval) {
                                 PrintValidError(eval);
-
+                                doloop = false;
+                            }
                             if (!mpIstr->EndOfData()) { // force to SkipWhiteSpace
                                 try {
                                     auto types = mpIstr->GuessDataType(s_known_types);
