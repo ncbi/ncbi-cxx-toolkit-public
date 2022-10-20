@@ -5,7 +5,7 @@ NCBI_begin_app(asn_cleanup)
   NCBI_uses_toolkit_libraries(
     data_loaders_util
     xcleanup xobjedit xvalidate taxon1
+    xobjwrite
   )
   NCBI_project_watchers(stakhovv)
 NCBI_end_app()
-
