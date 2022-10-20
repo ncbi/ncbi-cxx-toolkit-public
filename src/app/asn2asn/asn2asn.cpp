@@ -350,7 +350,7 @@ private:
 
 CAsn2Asn::CAsn2Asn()
 {
-    SetVersionByBuild(1);
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
 
 /*****************************************************************************

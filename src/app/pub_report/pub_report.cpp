@@ -63,7 +63,7 @@ class CPubReportApp : public CNcbiApplication
 public:
     CPubReportApp()
     {
-        SetVersionByBuild(0);
+        SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
     }
 
 private:
