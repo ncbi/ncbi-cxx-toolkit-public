@@ -48,13 +48,14 @@
 #define THIS_FILE "block.cpp"
 BEGIN_NCBI_SCOPE
 
-typedef struct _qs_struct {
-    char*              accession;
-    Int2               version;
-    size_t             offset;
-    size_t             length;
-    struct _qs_struct* next;
-} QSStruct, *QSStructPtr;
+struct QSStruct {
+    char*     accession;
+    Int2      version;
+    size_t    offset;
+    size_t    length;
+    QSStruct* next;
+};
+using QSStructPtr = QSStruct*;
 
 /**********************************************************/
 void GapFeatsFree(GapFeatsPtr gfp)

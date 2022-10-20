@@ -123,7 +123,7 @@ struct LocusCont {
 using LocusContPtr = LocusCont*;
 
 
-typedef struct _gap_feats {
+struct GapFeats {
     Int4   from             = 0;
     Int4   to               = 0;
     Int4   estimated_length = 0;
@@ -135,21 +135,23 @@ typedef struct _gap_feats {
     objects::CSeq_gap::TType                      asn_gap_type = objects::CSeq_gap::eType_unknown;
     objects::CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
 
-    struct _gap_feats* next = nullptr;
-} GapFeats, *GapFeatsPtr;
+    GapFeats* next = nullptr;
+};
+using GapFeatsPtr = GapFeats*;
 
-typedef struct token_block {
-    char*               str;  /* the token string */
-    struct token_block* next; /* points to next token */
-} TokenBlk, *TokenBlkPtr;
+struct TokenBlk {
+    char*     str;  /* the token string */
+    TokenBlk* next; /* points to next token */
+};
+using TokenBlkPtr = TokenBlk*;
 
-typedef struct token_statistics_block {
+struct TokenStatBlk {
     TokenBlkPtr list; /* a pointer points to the first
                                            token */
     Int2        num;  /* total number of token in the
                                            chain list */
-} TokenStatBlk, *TokenStatBlkPtr;
-
+};
+using TokenStatBlkPtr = TokenStatBlk*;
 
 class CFlatFileData
 {

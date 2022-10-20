@@ -43,13 +43,14 @@
 #define ParFlatSPNonTer  6
 #define ParFlatSPNonCons 7
 
-typedef struct sprot_feat_type {
+struct SPFeatType {
     const char* inkey;     /* input key string */
     Uint1       type;      /* SITES, REGIONS, BONDS, IMPORTS */
     Int4        keyint;    /* output keyname for SITES, BONDS */
     const char* keystring; /* output keyname for REGIONS, IMPORTS,
                                            or description string from SITES */
-} SPFeatType, *SPFeatTypePtr;
+};
+using SPFeatTypePtr = SPFeatType*;
 
 /* Table of valid Comment topic (CC line), change
  * "comment-topic-key:" to "[comment-topic-key]"
