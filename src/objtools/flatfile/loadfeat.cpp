@@ -113,15 +113,15 @@ USING_SCOPE(objects);
 #define Seq_descr_GIBB_mol_trRNA         CMolInfo::eBiomol_transcribed_RNA
 #define Seq_descr_GIBB_mol_other         CMolInfo::eBiomol_other
 
-typedef struct _trna_aa {
+struct TrnaAa {
     const char* name;
     Uint1       aa;
-} TrnaAa, *TrnaAaPtr;
+};
 
-typedef struct _str_num {
+struct StrNum {
     const char* str;
     int         num;
-} StrNum, *StrNumPtr;
+};
 
 TrnaAa taa[] = {
     { "alanine", 'A' },
@@ -150,12 +150,12 @@ TrnaAa taa[] = {
     { NULL, '\0' }
 };
 
-typedef struct _aa_codons {
+struct AaCodons {
     const char* straa;
     Uint1       intaa;
     Uint1       gencode;
     Int4        vals[8];
-} AaCodons, *AaCodonsPtr;
+};
 
 AaCodons aacodons[] = {
     { "Ala", 'A', 0, { 52, 53, 54, 55, -1, -1, -1, -1 } },   /* GCT, GCC, GCA, GCG */
@@ -1572,7 +1572,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
 /**********************************************************/
 static Uint1 fta_get_aa_from_symbol(Char ch)
 {
-    AaCodonsPtr acp;
+    AaCodons* acp;
 
     for (acp = aacodons; acp->straa != NULL; acp++)
         if (acp->intaa == ch)
@@ -1586,8 +1586,8 @@ static Uint1 fta_get_aa_from_symbol(Char ch)
 /**********************************************************/
 static Uint1 fta_get_aa_from_string(char* str)
 {
-    AaCodonsPtr acp;
-    TrnaAaPtr   tap;
+    AaCodons* acp;
+    TrnaAa*   tap;
 
     for (tap = taa; tap->name != NULL; tap++)
         if (NStr::CompareNocase(str, tap->name) == 0)
@@ -3226,7 +3226,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
     CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
     list<string>                         linkage_evidence_names;
 
-    StrNumPtr   snp;
+    StrNum*     snp;
     char*       p;
     char*       q;
     const char* gap_type;

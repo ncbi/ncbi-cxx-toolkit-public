@@ -52,13 +52,14 @@ typedef union dataval {
     Int8 bigintvalue;
 } DataVal;
 
-typedef struct valnode {
-    unsigned char   choice;   /* to pick a choice */
-    unsigned char   extended; /* extra fields reserved to NCBI allocated in structure */
-    DataVal         data;     /* attached data */
-    bool            fatal;
-    struct valnode* next; /* next in linked list */
-} ValNode, *ValNodePtr;
+struct ValNode {
+    unsigned char choice;   /* to pick a choice */
+    unsigned char extended; /* extra fields reserved to NCBI allocated in structure */
+    DataVal       data;     /* attached data */
+    bool          fatal;
+    ValNode*      next; /* next in linked list */
+};
+using ValNodePtr = ValNode*;
 
 ValNodePtr ValNodeNew(ValNodePtr vnp);
 ValNodePtr ValNodeFree(ValNodePtr vnp);

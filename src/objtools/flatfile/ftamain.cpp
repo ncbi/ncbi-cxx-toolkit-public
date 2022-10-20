@@ -82,15 +82,6 @@ extern bool XMLAscii(ParserPtr pp);
 extern void fta_init_gbdataloader();
 
 
-typedef struct ff_entries {
-    char*              offset;
-    char*              acc;
-    Int2               vernum;
-    struct ff_entries* next;
-} FFEntries, *FFEntriesPtr;
-
-FFEntriesPtr ffep = NULL;
-
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 // Must be restored to test parsing from string buffer

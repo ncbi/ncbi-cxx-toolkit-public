@@ -84,7 +84,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-typedef struct _seq_loc_ids {
+struct SeqLocIds {
     CSeq_loc*   badslp;
     const Char* wgsacc;
     const Char* wgscont;
@@ -100,25 +100,28 @@ typedef struct _seq_loc_ids {
     Int4        tpe;
     Int4        tpd;
     Int4        total;
-} SeqLocIds, *SeqLocIdsPtr;
+};
+using SeqLocIdsPtr = SeqLocIds*;
 
-typedef struct _fta_tpa_block {
-    Int4                   from1;
-    Int4                   to1;
-    char*                  accession;
-    Int4                   version;
-    Int4                   from2;
-    Int4                   to2;
-    ENa_strand             strand;
-    CSeq_id::E_Choice      sicho;
-    struct _fta_tpa_block* next;
-} FTATpaBlock, *FTATpaBlockPtr;
+struct FTATpaBlock {
+    Int4              from1;
+    Int4              to1;
+    char*             accession;
+    Int4              version;
+    Int4              from2;
+    Int4              to2;
+    ENa_strand        strand;
+    CSeq_id::E_Choice sicho;
+    FTATpaBlock*      next;
+};
+using FTATpaBlockPtr = FTATpaBlock*;
 
-typedef struct _fta_tpa_span {
-    Int4                  from;
-    Int4                  to;
-    struct _fta_tpa_span* next;
-} FTATpaSpan, *FTATpaSpanPtr;
+struct FTATpaSpan {
+    Int4        from;
+    Int4        to;
+    FTATpaSpan* next;
+};
+using FTATpaSpanPtr = FTATpaSpan*;
 
 /**********************************************************/
 static void fta_tpa_block_free(FTATpaBlockPtr ftbp)

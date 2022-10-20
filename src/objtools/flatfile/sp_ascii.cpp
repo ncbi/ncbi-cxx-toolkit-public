@@ -389,65 +389,66 @@ SPFeatType ParFlat_SPFeat[] = {
 #define SPDE_CD_ANTIGEN 004000
 #define SPDE_INN        010000
 
-typedef struct _char_int_len {
+struct CharIntLen {
     const char* str;
     Int4        num;
     Int4        len;
-} CharIntLen, *CharIntLenPtr;
+};
 
-typedef struct _sprot_de_fields {
-    Int4                     tag;
-    char*                    start;
-    char*                    end;
-    struct _sprot_de_fields* next;
-} SPDEFields, *SPDEFieldsPtr;
+struct SPDEFields {
+    Int4        tag;
+    char*       start;
+    char*       end;
+    SPDEFields* next;
+};
+using SPDEFieldsPtr = SPDEFields*;
 
-typedef struct sprot_feat_input {
-    string                   key;     /* column 6-13 */
-    string                   from;    /* column 15-20 */
-    string                   to;      /* column 22-27 */
-    string                   descrip; /* column 35-75, continue
+struct SPFeatInput {
+    string       key;            /* column 6-13 */
+    string       from;           /* column 15-20 */
+    string       to;             /* column 22-27 */
+    string       descrip;        /* column 35-75, continue
                                                    line if a blank key */
-    struct sprot_feat_input* next;    /* next FT */
+    SPFeatInput* next = nullptr; /* next FT */
+};
+using SPFeatInputPtr = SPFeatInput*;
 
-    sprot_feat_input() :
-        next(NULL) {}
-
-} SPFeatInput, *SPFeatInputPtr;
-
-typedef struct sprot_feat_boolean {
+struct SPFeatBln {
     bool initmet;
     bool nonter;
     bool noright;
     bool noleft;
-} SPFeatBln, *SPFeatBlnPtr;
+};
+using SPFeatBlnPtr = SPFeatBln*;
 
 /* segment location, data from NON_CONS
  */
-typedef struct sprot_seg_location {
-    Int4                       from; /* the beginning point of the
-                                                   segment */
-    Int4                       len;  /* total length of the
-                                                   segment */
-    struct sprot_seg_location* next;
-} SPSegLoc, *SPSegLocPtr;
+struct SPSegLoc {
+    Int4      from; /* the beginning point of the segment */
+    Int4      len;  /* total length of the segment */
+    SPSegLoc* next;
+};
+using SPSegLocPtr = SPSegLoc*;
 
-typedef struct set_of_syns {
-    char*               synname;
-    struct set_of_syns* next;
-} SetOfSyns, *SetOfSynsPtr;
+struct SetOfSyns {
+    char*      synname;
+    SetOfSyns* next;
+};
+using SetOfSynsPtr = SetOfSyns*;
 
-typedef struct set_of_species {
+struct SetOfSpecies {
     char*        fullname;
     char*        name;
     SetOfSynsPtr syn;
-} SetOfSpecies, *SetOfSpeciesPtr;
+};
+using SetOfSpeciesPtr = SetOfSpecies*;
 
-typedef struct _viral_host {
-    TTaxId              taxid;
-    char*               name;
-    struct _viral_host* next;
-} ViralHost, *ViralHostPtr;
+struct ViralHost {
+    TTaxId     taxid;
+    char*      name;
+    ViralHost* next;
+};
+using ViralHostPtr = ViralHost*;
 
 // clang-format off
 CharIntLen spde_tags[] = {
@@ -4212,7 +4213,7 @@ static void SPValidateDefinition(SPDEFieldsPtr sfp, Uint1* drop, bool is_trembl)
 /**********************************************************/
 static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ibp, CProt_ref& prot)
 {
-    CharIntLenPtr cilp;
+    CharIntLen*   cilp;
     SPDEFieldsPtr sfp;
     SPDEFieldsPtr tsfp;
 

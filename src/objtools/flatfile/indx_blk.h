@@ -47,10 +47,11 @@ struct FinfoBlk {
 using FinfoBlkPtr = FinfoBlk*;
 
 
-typedef struct ind_blk_next {
-    IndexblkPtr          ibp;
-    struct ind_blk_next* next;
-} IndBlkNext, *IndBlkNextPtr;
+struct IndBlkNext {
+    IndexblkPtr ibp;
+    IndBlkNext* next;
+};
+using IndBlkNextPtr = IndBlkNext*;
 
 CRef<objects::CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source);
 
