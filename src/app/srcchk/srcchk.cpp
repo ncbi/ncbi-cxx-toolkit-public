@@ -212,7 +212,7 @@ bool CSrcChkApp::xTryProcessIdFile(
     try {
         pIfstr = args["i"] ? &args["i"].AsInputFile() : &cin;
     }
-    catch(std::exception&) {
+    catch(const std::exception&) {
         string error_msg = args["i"] ? 
                      "Unable to open ID file \"" + args["i"].AsString() + "\"." :
                      "Unable to read IDs from stdin.";
@@ -290,7 +290,7 @@ bool CSrcChkApp::xTryProcessSeqEntry(
     try {
         pI->Read(ObjectInfo(*pSe));
     }
-    catch (CException&) {
+    catch (const CException&) {
         string msg("Unable to process Seq-entry file \"" + args["seq-entry"].AsString() + "\".");
         CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, msg);
         m_pErrors->PutError(*pE);
@@ -325,7 +325,7 @@ bool CSrcChkApp::xGetDesiredFields(
         try {
             pIfstr = &args["F"].AsInputFile();
         }
-        catch (std::exception e) {
+        catch (const std::exception& e) {
             CSrcError* pE = CSrcError::Create(
                 ncbi::eDiag_Error,
                 "Unable to open fields file \"" + args["F"].AsString() + "\".");
@@ -369,7 +369,7 @@ CNcbiOstream* CSrcChkApp::xInitOutputStream(
     try {
         return &args["o"].AsOutputFile();
     }
-    catch(std::exception&) {
+    catch(const std::exception&) {
         return 0;
     }
 }
