@@ -94,6 +94,8 @@ public:
         TBioseqSetList::const_iterator m_parent_set;
         CBioseq_set::TClass m_class = CBioseq_set::eClass_not_set;
         CConstRef<CSeq_descr> m_descr;
+        bool m_HasAnnot{false};
+        optional<int> m_Level;
     };
 
     using CRefLess = PPtrLess<CConstRef<CSeq_id>>;
@@ -121,6 +123,8 @@ public:
     CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;
 
     bool IsMultiSequence() const override;
+    bool HasGenbankSetAnnot() const;
+
 
     virtual void FlattenGenbankSet();
     auto& GetTopEntry()       const { return m_top_entry; }
@@ -175,6 +179,7 @@ private:
     TBioseqSetList            m_FlattenedSets;
     TBioseqSetList::const_iterator  m_Current;
     std::list<CConstRef<CSeq_id>> m_top_ids;
+    bool m_HasGenbankSetAnnot{ false };
 
 };
 
