@@ -43,6 +43,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objtools/edit/huge_file.hpp>
+#include <optional>
 
 BEGIN_NCBI_SCOPE
 
