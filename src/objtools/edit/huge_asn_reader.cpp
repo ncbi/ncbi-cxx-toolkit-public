@@ -294,22 +294,12 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
         }
     });
 
-    SetLocalReadHook(CType<CFeat_id>(), objStream,
-            [this, &context](CObjectIStream& in, const CObjectInfo& objectInfo)
-    {
-        objectInfo.GetTypeInfo()->DefaultReadData(in, objectInfo.GetObjectPtr());
-        const CFeat_id* pFeatId = static_cast<CFeat_id*>(objectInfo.GetObjectPtr());
-        if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
-        {
-            m_max_local_id = std::max(m_max_local_id, pFeatId->GetLocal().GetId());
-        }
-    });
-
     SetLocalReadHook(bioseqset_seqset_mi, objStream,
             [](CObjectIStream& in, const CObjectInfoMI& member)
             {
                 (*member).GetTypeInfo()->DefaultSkipData(in);         
             });
+
 
     SetLocalReadHook(bioseqset_annot_mi, objStream,
             [&context](CObjectIStream& in, const CObjectInfoMI& member)
@@ -317,7 +307,6 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
                 context.bioseq_set_stack.back()->m_HasAnnot = true;
                 (*member).GetTypeInfo()->DefaultSkipData(in);
             });
-
 
 
     SetLocalSkipHook(bioseq_set_info, objStream,
