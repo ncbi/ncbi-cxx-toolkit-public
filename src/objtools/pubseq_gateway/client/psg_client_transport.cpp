@@ -65,9 +65,9 @@ PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, num_io,                        6,  
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, reader_timeout,                12,                 1       );
 PSG_PARAM_VALUE_DEF_MIN(double,         PSG, rebalance_time,                10.0,               1.0     );
 PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, requests_per_io,               1,                  1       );
-PSG_PARAM_VALUE_DEF_MIN(double,         PSG, io_timer_period,               0.4,                0.1     );
+PSG_PARAM_VALUE_DEF_MIN(double,         PSG, io_timer_period,               1.0,                0.1     );
 NCBI_PARAM_DEF(double,   PSG, request_timeout,        10.0);
-NCBI_PARAM_DEF(double,   PSG, competitive_after,      2.0);
+NCBI_PARAM_DEF(double,   PSG, competitive_after,      0.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 NCBI_PARAM_DEF(unsigned, PSG, refused_stream_retries, 2);
 NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
