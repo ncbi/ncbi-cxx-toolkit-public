@@ -57,6 +57,7 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
 #include <numeric>
+#include <thread>
 
 #ifndef NCBI_THROW2_FMT
 # define NCBI_THROW2_FMT(exception_class, err_code, message, extra)     \
@@ -548,6 +549,27 @@ static const SVDBSeverityTag* s_GetVDBSeverityTag(CTempString token)
     return 0;
 }
 
+#ifndef NCBI_THREADS
+static thread::id s_DiagCheckThreadID;
+#endif
+
+static inline void s_InitDiagCheck()
+{
+#ifndef NCBI_THREADS
+    s_DiagCheckThreadID = this_thread::get_id();
+#endif
+}
+
+static inline bool s_DiagIsSafe()
+{
+#ifndef NCBI_THREADS
+    return s_DiagCheckThreadID == this_thread::get_id();
+#else
+    return true;
+#endif
+}
+
+
 static
 rc_t VDBLogWriter(void* /*data*/, const char* buffer, size_t size, size_t* written)
 {
@@ -566,10 +588,14 @@ rc_t VDBLogWriter(void* /*data*/, const char* buffer, size_t size, size_t* writt
         }
     }
     if ( sev_manip == Trace ) {
-        _TRACE("VDB "<<s_VDBVersion<<": "<<msg);
+        if ( s_DiagIsSafe() ) {
+            _TRACE("VDB "<<s_VDBVersion<<": "<<msg);
+        }
     }
     else {
-        ERR_POST(sev_manip<<"VDB "<<s_VDBVersion<<": "<<msg);
+        if ( s_DiagIsSafe() ) {
+            ERR_POST(sev_manip<<"VDB "<<s_VDBVersion<<": "<<msg);
+        }
     }
     *written = size;
     return 0;
@@ -710,7 +736,9 @@ static void s_VDBInit()
 #else
             ask_level = klogInfo;
 #endif
+            s_InitDiagCheck();
             KLogLevelSet(ask_level);
+            KLogHandlerSet(VDBLogWriter, 0);
             KLogLibHandlerSet(VDBLogWriter, 0);
             if ( CBamDb::GetDebugLevel() >= 2 ) {
                 const char* msg = "info: VDB initialized";
