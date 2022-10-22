@@ -464,8 +464,7 @@ static void XMLPerformIndex(ParserPtr pp)
         }
     }
 
-    pp->entrylist = (IndexblkPtr*)MemNew((pp->indx + 1) *
-                                         sizeof(IndexblkPtr));
+    pp->entrylist.resize(pp->indx + 1, nullptr);
     for (tibnp = ibnp, i = 0; tibnp != NULL; i++, tibnp = ibnp) {
         pp->entrylist[i] = tibnp->ibp;
         ibnp             = tibnp->next;
@@ -1430,9 +1429,8 @@ static bool XMLIndexReferences(char* entry, XmlIndexPtr xip, size_t bases)
 /**********************************************************/
 bool XMLIndex(ParserPtr pp)
 {
-    IndexblkPtr* ibpp;
-    IndexblkPtr  ibp;
-    char*        entry;
+    IndexblkPtr ibp;
+    char*       entry;
 
     XMLPerformIndex(pp);
 
@@ -1440,7 +1438,7 @@ bool XMLIndex(ParserPtr pp)
         return false;
 
     pp->curindx = 0;
-    for (ibpp = pp->entrylist; *ibpp != NULL; ibpp++, pp->curindx++) {
+    for (auto ibpp = pp->entrylist.begin(); *ibpp; ++ibpp, pp->curindx++) {
         ibp = *ibpp;
         if (ibp->len == 0) {
             ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end tag of XML record, which starts at line %d. Entry dropped.", ibp->linenum);
@@ -1488,7 +1486,8 @@ bool XMLIndex(ParserPtr pp)
         MemFree(entry);
     }
 
-    for (pp->num_drop = 0, ibpp = pp->entrylist; *ibpp != NULL; ibpp++)
+    pp->num_drop = 0;
+    for (auto ibpp = pp->entrylist.begin(); *ibpp; ++ibpp)
         if ((*ibpp)->drop != 0)
             pp->num_drop++;
 

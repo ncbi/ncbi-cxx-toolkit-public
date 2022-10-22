@@ -3825,7 +3825,7 @@ static void GetOneGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, char
     char* str;
     char* ptr;
 
-    if (pp == NULL || pp->entrylist == NULL)
+    if (pp == NULL || pp->entrylist.empty())
         return;
 
     ibp = pp->entrylist[pp->curindx];
@@ -3890,7 +3890,7 @@ static void SPGetOneGeneRefNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats,
 {
     IndexblkPtr ibp;
 
-    if (pp == NULL || pp->entrylist == NULL ||
+    if (pp == NULL || pp->entrylist.empty() ||
         (name == NULL && syns == NULL && ltags == NULL && orfs == NULL))
         return;
 
@@ -3928,7 +3928,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
     char* q;
     char* r;
 
-    if (pp == NULL || pp->entrylist == NULL || bptr == NULL)
+    if (pp == NULL || pp->entrylist.empty() || bptr == NULL)
         return;
 
     ibp = pp->entrylist[pp->curindx];
