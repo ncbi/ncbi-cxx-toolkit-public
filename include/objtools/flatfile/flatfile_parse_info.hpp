@@ -93,8 +93,9 @@ struct Parser {
 
     Int4         indx      = 0;       /* total number of records in the
                                            flat file, exclude BadLocusName entries */
-    IndexblkPtr* entrylist = nullptr; /* a pointer points to the index block */
+    vector<IndexblkPtr> entrylist;    /* the index block */
     Int4         curindx   = 0;       /* current index of the entrylist */
+    Indexblk*    CurEntry() { return entrylist[curindx]; }
 
     /* all the files will be produced in the directory where the program was
      * executed except the input file which located in the argument path

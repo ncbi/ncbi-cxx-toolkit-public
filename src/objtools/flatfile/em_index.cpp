@@ -440,8 +440,8 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     if (pp->qsfd != NULL && QSIndex(pp, ibnp->next) == false)
         return false;
 
-    pp->entrylist = (IndexblkPtr*)MemNew(indx * sizeof(IndexblkPtr));
-    tibnp         = ibnp->next;
+    pp->entrylist.resize(indx);
+    tibnp = ibnp->next;
     MemFree(ibnp);
     for (j = 0; j < indx && tibnp != NULL; j++, tibnp = ibnp) {
         pp->entrylist[j] = tibnp->ibp;

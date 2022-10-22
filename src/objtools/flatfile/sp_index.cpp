@@ -241,8 +241,8 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     pp->indx = indx;
 
-    pp->entrylist = (IndexblkPtr*)MemNew(indx * sizeof(IndexblkPtr));
-    tibnp         = ibnp->next;
+    pp->entrylist.resize(indx);
+    tibnp = ibnp->next;
     MemFree(ibnp);
     for (i = 0; i < indx && tibnp != NULL; i++, tibnp = ibnp) {
         pp->entrylist[i] = tibnp->ibp;
