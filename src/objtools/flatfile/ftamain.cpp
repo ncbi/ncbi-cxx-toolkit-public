@@ -268,13 +268,11 @@ static void CheckDupEntries(ParserPtr pp)
     Int4         j;
     IndexblkPtr  first;
     IndexblkPtr  second;
-    IndexblkPtr* tibp;
 
-    i    = pp->indx * sizeof(IndexblkPtr);
-    tibp = (IndexblkPtr*)MemNew(i);
-    MemCpy(tibp, pp->entrylist, i);
+    vector<IndexblkPtr> tibp = pp->entrylist;
+    tibp.resize(pp->indx);
 
-    std::sort(tibp, tibp + pp->indx, (pp->accver ? CompareAccsV : CompareAccs));
+    std::sort(tibp.begin(), tibp.end(), (pp->accver ? CompareAccsV : CompareAccs));
 
     for (i = 0; i < pp->indx; i++) {
         first = tibp[i];
@@ -318,7 +316,6 @@ static void CheckDupEntries(ParserPtr pp)
             }
         }
     }
-    MemFree(tibp);
 }
 
 static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
@@ -487,7 +484,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
     /* CompareData: group all the segments data together
      */
     if (pp->sort) {
-        std::sort(pp->entrylist, pp->entrylist + pp->indx, (pp->accver ? CompareDataV : CompareData));
+        std::sort(pp->entrylist.begin(), pp->entrylist.end(), (pp->accver ? CompareDataV : CompareData));
     }
 
     CkSegmentSet(pp); /* check for missing entries in segment set */
@@ -878,7 +875,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     */
 
     if (pp.sort) {
-        std::sort(pp.entrylist, pp.entrylist + pp.indx, (pp.accver ? CompareDataV : CompareData));
+        std::sort(pp.entrylist.begin(), pp.entrylist.end(), (pp.accver ? CompareDataV : CompareData));
     }
 
     CkSegmentSet(&pp); /* check for missing entries in segment set */
@@ -975,7 +972,7 @@ void fta_init_pp(Parser& pp)
     //fta_fill_find_pub_option(&pp, false, false);
 
     pp.indx                  = 0;
-    pp.entrylist             = nullptr;
+    pp.entrylist.clear();
     pp.curindx               = 0;
     pp.seqtype               = CSeq_id::e_not_set;
     pp.num_drop              = 0;

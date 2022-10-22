@@ -2108,13 +2108,12 @@ void ResetParserStruct(ParserPtr pp)
     if (pp == NULL)
         return;
 
-    if (pp->entrylist != NULL) {
+    if (! pp->entrylist.empty()) {
         for (Int4 i = 0; i < pp->indx; i++)
-            if (pp->entrylist[i] != NULL)
+            if (pp->entrylist[i])
                 FreeIndexblk(pp->entrylist[i]);
 
-        MemFree(pp->entrylist);
-        pp->entrylist = NULL;
+        pp->entrylist.clear();
     }
 
     pp->indx    = 0;

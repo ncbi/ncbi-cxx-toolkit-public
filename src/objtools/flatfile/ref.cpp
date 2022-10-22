@@ -1281,7 +1281,7 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     ret.Reset(new CCit_sub);
     CRef<CDate> date;
 
-    if (pp && pp->entrylist &&
+    if (pp && ! pp->entrylist.empty() &&
         IsNewAccessFormat(pp->entrylist[pp->curindx]->acnum) == 0 &&
         StringChr(ParFlat_LANL_AC, pp->entrylist[pp->curindx]->acnum[0]) &&
         isdigit((int)*(s + 1)) == 0) {

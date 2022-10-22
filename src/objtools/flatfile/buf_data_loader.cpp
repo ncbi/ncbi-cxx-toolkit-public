@@ -174,10 +174,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     if (i < pp->indx)
         return i;
 
-    IndexblkPtr* temp = (IndexblkPtr*)MemNew((pp->indx + 1) * sizeof(IndexblkPtr));
-    copy(pp->entrylist, pp->entrylist + pp->indx, temp);
-    MemFree(pp->entrylist);
-    pp->entrylist = temp;
+    pp->entrylist.resize(pp->indx + 1, nullptr);
 
     IndexblkPtr cur_block = (IndexblkPtr)MemNew(sizeof(Indexblk));
     StringCpy(cur_block->acnum, acc);
