@@ -45,10 +45,10 @@ struct FileBuf {
     const char* current = nullptr;
 };
 struct Indexblk;
-struct protein_block;
+struct ProtBlk;
 class CKeywordParser;
 using IndexblkPtr = Indexblk*;
-typedef struct protein_block* ProtBlkPtr;
+using ProtBlkPtr = ProtBlk*;
 
 using TEntryList = list<CRef<objects::CSeq_entry>>;
 
