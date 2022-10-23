@@ -85,30 +85,21 @@ struct InfoBioseq
 };
 using InfoBioseqPtr = InfoBioseq*;
 
-typedef struct protein_block {
-    objects::CSeq_entry* biosep;  /* for the toppest level of the BioseqSet */
-    bool                 segset;  /* TRUE if a BioseqSet SeqEntry */
-    TEntryList           entries; /* a ProtRef SeqEntry list, link to above
+struct ProtBlk {
+    objects::CSeq_entry* biosep = nullptr; /* for the toppest level of the BioseqSet */
+    bool                 segset = false;   /* TRUE if a BioseqSet SeqEntry */
+    TEntryList           entries;          /* a ProtRef SeqEntry list, link to above
                                    biosep */
-    TSeqFeatList         feats;   /* a CodeRegionPtr list to link the BioseqSet
+    TSeqFeatList         feats;            /* a CodeRegionPtr list to link the BioseqSet
                                    with class = nuc-prot */
 
     objects::CGenetic_code::C_E gcode; /* for this Bioseq */
 
-    InfoBioseqPtr ibp;
-    Uint1         genome;
-    Int4          orig_gcode;
-
-    protein_block() :
-        biosep(nullptr),
-        segset(false),
-        ibp(NULL),
-        genome(0),
-        orig_gcode(0)
-    {
-    }
-
-} ProtBlk, *ProtBlkPtr;
+    InfoBioseq* ibp        = nullptr;
+    Uint1       genome     = 0;
+    Int4        orig_gcode = 0;
+};
+using ProtBlkPtr = ProtBlk*;
 
 struct LocusCont {
     Int4 bases    = 0;
