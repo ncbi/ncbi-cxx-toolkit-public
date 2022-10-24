@@ -54,6 +54,11 @@ public:
         TDataErrorCallback error_cb
     );
 
+    void SetThrowOnNotFound(bool value)
+    {
+        m_ThrowOnVersionsNotFound = value;
+    }
+
 protected:
     void Wait1() override;
 
@@ -75,6 +80,7 @@ private:
     };
 
     vector<SBlobVersionInfo> m_ExtendedVersions;
+    bool m_ThrowOnVersionsNotFound{true};
 };
 
 END_IDBLOB_SCOPE
