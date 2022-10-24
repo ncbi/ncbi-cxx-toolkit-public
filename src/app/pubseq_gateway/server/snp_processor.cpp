@@ -177,6 +177,7 @@ END_LOCAL_NAMESPACE;
 #define PARAM_VDB_FILES "vdb_files"
 #define PARAM_ANNOT_NAME "annot_name"
 #define PARAM_ADD_PTIS "add_ptis"
+#define PARAM_ALLOW_NON_REFSEQ "allow_non_refseq"
 
 #define DEFAULT_GC_CACHE_SIZE 10
 #define DEFAULT_MISSING_GC_SIZE 10000
@@ -184,6 +185,7 @@ END_LOCAL_NAMESPACE;
 #define DEFAULT_VDB_FILES ""
 #define DEFAULT_ANNOT_NAME ""
 #define DEFAULT_ADD_PTIS true
+#define DEFAULT_ALLOW_NON_REFSEQ false
 
 
 CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
@@ -196,8 +198,7 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
 
 
 CPSGS_SNPProcessor::CPSGS_SNPProcessor(
-    const shared_ptr<CSNPClient>& client,
-    shared_ptr<ncbi::CThreadPool> thread_pool,
+    const CPSGS_SNPProcessor& parent,
     shared_ptr<CPSGS_Request> request,
     shared_ptr<CPSGS_Reply> reply,
     TProcessorPriority priority)
@@ -208,11 +209,12 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
         bind(&CPSGS_SNPProcessor::x_OnSeqIdResolveError,
             this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4),
         bind(&CPSGS_SNPProcessor::x_OnResolutionGoodData, this)),
-      m_Client(client),
+      m_Config(parent.m_Config),
+      m_Client(parent.m_Client),
+      m_ThreadPool(parent.m_ThreadPool),
       m_Status(ePSGS_InProgress),
       m_Unlocked(true),
-      m_PreResolving(false),
-      m_ThreadPool(thread_pool)
+      m_PreResolving(false)
 {
 }
 
@@ -240,6 +242,7 @@ void CPSGS_SNPProcessor::x_LoadConfig(void)
         PSG_ERROR("CSNPClient: SNP primary track is disabled due to lack of GRPC support");
         m_Config->m_AddPTIS = false;
     }
+    m_Config->m_AllowNonRefSeq = registry.GetBool(kSNPProcessorSection, PARAM_ALLOW_NON_REFSEQ, DEFAULT_ALLOW_NON_REFSEQ);
 
     unsigned int max_conn = registry.GetInt(kSNPProcessorSection, kParamMaxConn, kDefaultMaxConn);
     if (max_conn == 0) max_conn = 1;
@@ -299,7 +302,7 @@ IPSGS_Processor* CPSGS_SNPProcessor::CreateProcessor(
     _ASSERT(m_Client);
     if (!m_Client->CanProcessRequest(*request, m_Priority)) return nullptr;
 
-    return new CPSGS_SNPProcessor(m_Client, m_ThreadPool, request, reply, priority);
+    return new CPSGS_SNPProcessor(*this, request, reply, priority);
 }
 
 
@@ -358,23 +361,28 @@ static void s_OnGotAnnotation(void* data)
 void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
 {
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
-    if (!annot_request.m_SeqId.empty() && annot_request.m_SeqIds.empty()) {
-        m_PreResolving = true;
-        ResolveInputSeqId();
-        return;
-    }
-
     if (!annot_request.m_SeqId.empty()) {
+        if (annot_request.m_SeqIds.empty() &&
+            !m_Client->IsValidSeqId(annot_request.m_SeqId, annot_request.m_SeqIdType)) {
+            // Got a single non-RefSeq id, try to resolve it.
+            m_PreResolving = true;
+            ResolveInputSeqId();
+            return;
+        }
         try {
             auto h = CSeq_id_Handle::GetHandle(annot_request.m_SeqId);
-        if (h) m_SeqIds.push_back(h);
+            if (m_Client->IsValidSeqId(h)) {
+                m_SeqIds.push_back(h);
+            }
         }
         catch (exception& e) {}
     }
     for (auto& id : annot_request.m_SeqIds) {
         try {
             auto h = CSeq_id_Handle::GetHandle(id);
-            if (h) m_SeqIds.push_back(h);
+            if (m_Client->IsValidSeqId(h)) {
+                m_SeqIds.push_back(h);
+            }
         }
         catch (exception& e) {}
     }
@@ -751,11 +759,15 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
 
     try {
         auto& info = bioseq_resolution.GetBioseqInfo();
-        CSeq_id id(CSeq_id::E_Choice(info.GetSeqIdType()),
-            info.GetAccession(), info.GetName(), info.GetVersion());
-        m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
+        if (m_Client->IsValidSeqId(info.GetAccession(), info.GetSeqIdType())) {
+            CSeq_id id(CSeq_id::E_Choice(info.GetSeqIdType()),
+                info.GetAccession(), info.GetName(), info.GetVersion());
+            m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
+        }
+        CSeq_id id;
         for (auto& it : info.GetSeqIds()) {
             string err;
+            if (!m_Client->IsValidSeqId(get<1>(it), get<0>(it))) continue;
             if (ParseInputSeqId(id, get<1>(it), get<0>(it), &err) != ePSGS_ParsedOK) {
                 PSG_ERROR("Error parsing seq-id: " << err);
                 continue;

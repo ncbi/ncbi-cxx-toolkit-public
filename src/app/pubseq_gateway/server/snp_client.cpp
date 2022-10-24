@@ -870,24 +870,47 @@ CRef<CSNPSeqInfo> CSNPFileInfo::GetSeqInfo(const CSNPBlobId& blob_id)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CSeq_id_Handle CSNPClient::GetRequestSeq_id(const SPSGS_AnnotRequest& request)
+CSeq_id_Handle CSNPClient::GetRequestSeq_id(const SPSGS_AnnotRequest& request) const
 {
-    CSeq_id_Handle ret;
     if (!request.m_SeqId.empty()) {
+        // If RefSeq only is on, look for RefSeq id. Otherwise return any valid one.
         try {
-            ret = CSeq_id_Handle::GetHandle(request.m_SeqId);
-            if (ret) return ret;
+            auto ret = CSeq_id_Handle::GetHandle(request.m_SeqId);
+            if (IsValidSeqId(ret)) return ret;
         }
         catch (exception& e) {}
     }
     for (auto& id : request.m_SeqIds) {
         try {
-            ret = CSeq_id_Handle::GetHandle(id);
-            if (ret) return ret;
+            auto ret = CSeq_id_Handle::GetHandle(id);
+            if (IsValidSeqId(ret)) return ret;
         }
         catch (exception& e) {}
     }
-    return ret;
+    return CSeq_id_Handle();
+}
+
+
+const unsigned int kRefSeqAccFlags = CSeq_id::e_Other | CSeq_id::fAcc_nuc;
+
+bool CSNPClient::IsValidSeqId(const CSeq_id_Handle& idh) const
+{
+    if (!idh) return false;
+    if (m_Config.m_AllowNonRefSeq) return true;
+    return (idh.IdentifyAccession() & kRefSeqAccFlags) == kRefSeqAccFlags;
+}
+
+
+bool CSNPClient::IsValidSeqId(const string& id, int id_type) const
+{
+    if (id_type != CSeq_id::e_Other) return false;
+    try {
+        CSeq_id seq_id(id);
+        return (seq_id.IdentifyAccession() & kRefSeqAccFlags) == kRefSeqAccFlags;
+    }
+    catch (...) {
+    }
+    return false;
 }
 
 
@@ -1030,6 +1053,8 @@ bool CSNPClient::CanProcessRequest(CPSGS_Request& request, TProcessorPriority pr
 vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const vector<string>& names)
 {
     vector<SSNPData> ret;
+    // RefSeq ids only
+    if (!IsValidSeqId(id)) return ret;
     {
         CMutexGuard guard(m_Mutex);
         if (m_FixedFiles.empty()) {
