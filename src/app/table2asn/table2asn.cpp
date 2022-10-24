@@ -1328,10 +1328,13 @@ static bool s_UseHugeFileMode(const CTable2AsnContext& context, CFormatGuess::EF
     if (context.m_disable_huge_files) {
         return false;
     }
-    
+
+    return context.m_can_use_huge_files;
+/* 
     return (context.m_can_use_huge_files || 
             format == CFormatGuess::eFasta ||
             format == CFormatGuess::eGff3);
+            */
 }
 
 
