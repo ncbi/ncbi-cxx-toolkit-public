@@ -104,9 +104,16 @@ void CCassBlobTaskDelete::Wait1()
 
                 CloseAll();
                 if (m_ExtendedVersions.empty()) {
-                    RAISE_DB_ERROR(eInconsistentData, "Blob versions not found. key: "
-                        + GetKeySpace() + "." + to_string(GetKey())
-                    );
+                    if (m_ThrowOnVersionsNotFound) {
+                        RAISE_DB_ERROR(eInconsistentData, "Blob versions not found. key: "
+                                + GetKeySpace() + "." + to_string(GetKey())
+                        );
+                    }
+                    else {
+                        CloseAll();
+                        m_State = eDone;
+                        break;
+                    }
                 }
                 m_State = eDeleteData;
                 b_need_repeat = true;
