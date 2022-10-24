@@ -2843,7 +2843,7 @@ void CFastaOstream::x_GetBestId(CConstRef<CSeq_id>& gi_id, CConstRef<CSeq_id>& b
     }
 }
 
-static void s_WriteGnlAndAcc(const CBioseq& bioseq, CNcbiOstream& ostr)
+static bool s_WriteGnlAndAcc(const CBioseq& bioseq, CNcbiOstream& ostr)
 {
     CRef<CSeq_id> pGnlId;
     CRef<CSeq_id> pAccession;
@@ -2868,13 +2868,15 @@ static void s_WriteGnlAndAcc(const CBioseq& bioseq, CNcbiOstream& ostr)
         }
         pAccession->WriteAsFasta(ostr);
     }
+
+    return (pAccession || pGnlId);
 }
 
 void CFastaOstream::x_WriteAsFasta(const CBioseq& bioseq)
 {
 
-    if (m_Flags & fShowGnlAndAcc) {
-        s_WriteGnlAndAcc(bioseq, m_Out);
+    if ((m_Flags & fShowGnlAndAcc) &&
+        s_WriteGnlAndAcc(bioseq, m_Out)) {
         return;
     }
 
