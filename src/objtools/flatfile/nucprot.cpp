@@ -621,7 +621,7 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
     while ((qval = GetTheQualValue(feat.SetQual(), "EC_number")) != nullptr) {
         // qval may hold newly allocated memory!!!
         prot_ref->SetEc().push_back(qval);
-        delete[] qval;
+        MemFree(qval);
     }
 
     while ((qval = GetTheQualValue(feat.SetQual(), "function")) != NULL) {

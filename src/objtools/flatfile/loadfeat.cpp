@@ -1921,7 +1921,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
                     comment += p;
                 }
             }
-            delete[] p;
+            MemFree(p);
         }
 
         if (qval == NULL && type == CRNA_ref::eType_mRNA &&
@@ -1980,7 +1980,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
                 rna_ref->SetExt().SetName(qval);
             }
         }
-        delete[] qval;
+        MemFree(qval);
     }
 
     if (feat.GetQual().empty())
