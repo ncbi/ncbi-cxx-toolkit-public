@@ -91,8 +91,7 @@ public:
     void ProcessEvent(void) override;
 
 private:
-    CPSGS_SNPProcessor(const shared_ptr<CSNPClient>& client,
-                       shared_ptr<ncbi::CThreadPool> thread_pool,
+    CPSGS_SNPProcessor(const CPSGS_SNPProcessor& parent,
                        shared_ptr<CPSGS_Request> request,
                        shared_ptr<CPSGS_Reply> reply,
                        TProcessorPriority priority);
@@ -134,6 +133,7 @@ private:
 
     shared_ptr<SSNPProcessor_Config> m_Config;
     mutable shared_ptr<CSNPClient> m_Client;
+    shared_ptr<ncbi::CThreadPool> m_ThreadPool;
 
     CFastMutex m_Mutex;
     EPSGS_Status m_Status = ePSGS_NotFound;
@@ -145,7 +145,6 @@ private:
     vector<SSNPData> m_SNPData;
     bool m_Unlocked;
     bool m_PreResolving;
-    shared_ptr<ncbi::CThreadPool> m_ThreadPool;
 };
 
 

@@ -66,6 +66,7 @@ struct SSNPProcessor_Config
     string m_AnnotName;
     bool m_AddPTIS = true;
     vector<string> m_VDBFiles;
+    bool m_AllowNonRefSeq = false;
 };
 
 
@@ -308,8 +309,11 @@ public:
     CRef<CSNPFileInfo> FindFile(const string& acc);
     CRef<CSNPFileInfo> GetFileInfo(const string& acc);
     CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
+    
+    objects::CSeq_id_Handle GetRequestSeq_id(const SPSGS_AnnotRequest& request) const;
 
-    static objects::CSeq_id_Handle GetRequestSeq_id(const SPSGS_AnnotRequest& request);
+    bool IsValidSeqId(const objects::CSeq_id_Handle& idh) const;
+    bool IsValidSeqId(const string& id, int id_type) const;
 
 private:
     friend class CSNPFileInfo;
