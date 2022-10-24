@@ -230,3 +230,19 @@ BOOST_AUTO_TEST_CASE(HF933230)
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(24'408'034));
     }
 }
+
+BOOST_AUTO_TEST_CASE(AJ251216)
+{
+    SCitMatch cm;
+    cm.Journal = "Genomics";
+    cm.Title   = "Characterization of the human analogue of a scrapie-responsive gene";
+    cm.Author  = "Dron M";
+    cm.Year    = "2000";
+    cm.Volume  = "703";
+    cm.Page    = "140";
+
+    for (auto upd : updaters) {
+        TEntrezId pmid = upd->CitMatch(cm);
+        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'087'671));
+    }
+}
