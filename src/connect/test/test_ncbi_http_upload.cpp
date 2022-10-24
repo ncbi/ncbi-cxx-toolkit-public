@@ -274,8 +274,8 @@ int CTestHttpUploadApp::Run(void)
                  + NStr::NumericToString(s) + " reported");
     }
     if (ntry >= max_try)
-        ERR_POST(Fatal << "Failed to upload after " << ntry << " attempt(s)");
-    ERR_POST(Info << "Upload complete (attempt " << (ntry + 1) << ')');
+        ERR_POST(Fatal << "Failed to upload in " << ntry << " attempt(s)");
+    ERR_POST(Info << "Upload complete (in attempt " << (ntry + 1) << ')');
 
     for (ntry = 0;  ntry < max_try;  ++ntry) {
         s = 0;
@@ -294,8 +294,8 @@ int CTestHttpUploadApp::Run(void)
                  + NStr::NumericToString(s) + " received");
     }
     if (ntry >= max_try)
-        ERR_POST(Fatal << "Failed to verify after " << ntry << " attemp(s)");
-    ERR_POST(Info << "Upload verified (attempt " << (ntry + 1) << ')');
+        ERR_POST(Fatal << "Failed to verify in " << ntry << " attempt(s)");
+    ERR_POST(Info << "Upload verified (in attempt " << (ntry + 1) << ')');
 
     ConnNetInfo_Destroy(net_info);
     ERR_POST(Info << "TEST completed successfully");
