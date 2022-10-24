@@ -427,7 +427,7 @@ NCBI_define_Pkgcomponent(NAME TIFF PACKAGE libtiff REQUIRES zlib;libdeflate;xz_u
 
 #############################################################################
 # FASTCGI
-NCBI_define_Pkgcomponent(NAME FASTCGI PACKAGE ncbi-fastcgi)
+NCBI_define_Pkgcomponent(NAME FASTCGI PACKAGE ncbi-fastcgi FIND ncbi-fastcgi)
 
 #############################################################################
 # SQLITE3
