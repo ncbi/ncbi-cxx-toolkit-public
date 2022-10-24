@@ -426,6 +426,10 @@ NCBI_define_Pkgcomponent(NAME GIF PACKAGE giflib FIND GIF)
 NCBI_define_Pkgcomponent(NAME TIFF PACKAGE libtiff REQUIRES zlib;libdeflate;xz_utils;libjpeg;jbig;zstd;libwebp FIND TIFF)
 
 #############################################################################
+# FASTCGI
+NCBI_define_Pkgcomponent(NAME FASTCGI PACKAGE ncbi-fastcgi)
+
+#############################################################################
 # SQLITE3
 NCBI_define_Pkgcomponent(NAME SQLITE3 PACKAGE sqlite3 FIND SQLite3)
 if(NCBI_COMPONENT_SQLITE3_FOUND)
