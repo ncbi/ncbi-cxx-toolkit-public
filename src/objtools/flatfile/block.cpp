@@ -75,7 +75,7 @@ DataBlk::~DataBlk()
     mpQscore.clear();
     delete mpData;
     if (mType == ParFlat_ENTRYNODE) {
-        delete[] mOffset;
+        MemFree(mOffset);
     }
     auto p = mpNext;
     for (int i = 0; p && i < MAX_HEAD_RECURSION; ++i) {
