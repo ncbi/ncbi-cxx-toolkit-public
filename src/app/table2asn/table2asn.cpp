@@ -1404,8 +1404,12 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
                 ProcessHugeFile(hugeFile, output);
             }
             else {
+                const string objectType = 
+                    hugeFile.m_content ?
+                    hugeFile.m_content->GetName() :
+                    "";
                 ProcessOneFile(hugeFile.m_format, 
-                        hugeFile.m_content->GetName(), 
+                        objectType,
                         *(hugeFile.m_stream),
                         output);
             }
