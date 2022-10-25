@@ -16,6 +16,12 @@ USING_SCOPE(edit);
 
 class CTestRemoteUpdaterApplication : public CNcbiApplication
 {
+public:
+    CTestRemoteUpdaterApplication()
+    {
+        SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+    }
+
     void Init() override
     {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -35,7 +41,7 @@ class CTestRemoteUpdaterApplication : public CNcbiApplication
         TEntrezId pmid = ZERO_ENTREZ_ID;
         if (args["id"]) {
             TIntId id = args["id"].AsIntId();
-            pmid = ENTREZ_ID_FROM(TIntId, id);
+            pmid      = ENTREZ_ID_FROM(TIntId, id);
         }
         if (pmid <= ZERO_ENTREZ_ID) {
             return 1;
@@ -63,7 +69,7 @@ class CTestRemoteUpdaterApplication : public CNcbiApplication
         }
 
         CRemoteUpdater upd(nullptr, bTypeMLA ? edit::EPubmedSource::eMLA : edit::EPubmedSource::eEUtils);
-        CRef<CPub> pub(new CPub);
+        CRef<CPub>     pub(new CPub);
         pub->SetPmid().Set(pmid);
         CRef<CSeqdesc> desc(new CSeqdesc);
         desc->SetPub().SetPub().Set().push_back(pub);

@@ -45,6 +45,12 @@ USING_SCOPE(edit);
 
 class CPubmedFetchApplication : public CNcbiApplication
 {
+public:
+    CPubmedFetchApplication()
+    {
+        SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+    }
+
     void Init() override
     {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -85,7 +91,7 @@ class CPubmedFetchApplication : public CNcbiApplication
             }
         } else if (args["idfile"]) {
             CNcbiIstream& is = args["idfile"].AsInputFile();
-            string id_str;
+            string        id_str;
             while (NcbiGetlineEOL(is, id_str)) {
                 NStr::TruncateSpacesInPlace(id_str);
                 if (id_str.empty() || id_str.front() == '#') {
