@@ -592,7 +592,7 @@ static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
             dbp->mpData = NULL;
         }
         if (format == Parser::EFormat::XML)
-            MemFree(dbp);
+            delete dbp;
     }
 }
 
@@ -2713,7 +2713,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
             tdbpnext = tdbp->mpNext;
             if (tdbp->mpData == NULL) {
                 tdbpprev->mpNext = tdbpnext;
-                MemFree(tdbp);
+                delete tdbp;
                 continue;
             }
 
@@ -2737,7 +2737,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
 
             delete fbp2;
             tdbpprev->mpNext = tdbpnext;
-            MemFree(tdbp);
+            delete tdbp;
         }
     }
 }
@@ -3627,15 +3627,15 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
                 XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
         }
         if (headdbp == NULL) {
-            headdbp = (DataBlkPtr)MemNew(sizeof(DataBlk));
+            headdbp = new DataBlk;
             dbp     = headdbp;
         } else {
-            dbp->mpNext = (DataBlkPtr)MemNew(sizeof(DataBlk));
+            dbp->mpNext = new DataBlk;
             dbp         = dbp->mpNext;
         }
         dbp->mpData = fbp;
     }
-    ret         = (DataBlkPtr)MemNew(sizeof(DataBlk));
+    ret         = new DataBlk;
     ret->mType  = XML_FEATURES;
     ret->mpData = headdbp;
     ret->mpNext = NULL;
@@ -4940,7 +4940,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             dabnext = dab->mpNext;
             FreeFeatBlk(static_cast<DataBlk*>(dab->mpData), pp->format);
             if (pp->format == Parser::EFormat::XML)
-                MemFree(dab);
+                delete dab;
         }
         xinstall_gbparse_range_func(NULL, NULL);
         return;
@@ -4971,7 +4971,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         dabnext = dab->mpNext;
         if (dab->mType != type) {
             if (pp->format == Parser::EFormat::XML)
-                MemFree(dab);
+                delete dab;
             continue;
         }
 
@@ -5052,7 +5052,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
         FreeFeatBlk(static_cast<DataBlk*>(dab->mpData), pp->format);
         if (pp->format == Parser::EFormat::XML)
-            MemFree(dab);
+            delete dab;
     }
 
     if (! fta_perform_operon_checks(seq_feats, ibp)) {
