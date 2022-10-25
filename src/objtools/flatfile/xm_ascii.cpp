@@ -908,7 +908,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
             bioseq.SetDescr().Set().push_back(descr);
         }
 
-        delete dbp;
+        dbp->SimpleDelete();
     }
 
     dbp = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_NO_TARGET);
@@ -922,7 +922,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
             bioseq.SetDescr().Set().push_back(descr);
         }
 
-        delete dbp;
+        dbp->SimpleDelete();
     }
 
     TStringList dr_ena,
