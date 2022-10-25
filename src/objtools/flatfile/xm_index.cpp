@@ -1515,10 +1515,10 @@ DataBlkPtr XMLBuildRefDataBlk(char* entry, const XmlIndex* xip, int type)
         if (txip->type != type || txip->subtags == NULL)
             continue;
         if (dbp == NULL) {
-            dbp  = (DataBlkPtr)MemNew(sizeof(DataBlk));
+            dbp  = new DataBlk;
             tdbp = dbp;
         } else {
-            tdbp->mpNext = (DataBlkPtr)MemNew(sizeof(DataBlk));
+            tdbp->mpNext = new DataBlk;
             tdbp         = tdbp->mpNext;
         }
         tdbp->mType   = txip->type;
