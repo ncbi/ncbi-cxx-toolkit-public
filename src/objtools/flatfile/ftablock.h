@@ -323,6 +323,13 @@ public:
     //static void operator delete(void* p);
     ~DataBlk();
 
+    bool mSimpleDelete = false;
+    void SimpleDelete()
+    {
+        this->mSimpleDelete = true;
+        delete this;
+    }
+
 public:
     int            mType;    // which keyword block or node type
     CFlatFileData* mpData;   // any pointer type points to information block

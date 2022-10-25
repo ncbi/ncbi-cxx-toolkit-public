@@ -592,7 +592,7 @@ static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
             dbp->mpData = NULL;
         }
         if (format == Parser::EFormat::XML)
-            delete dbp;
+            dbp->SimpleDelete();
     }
 }
 
@@ -2713,7 +2713,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
             tdbpnext = tdbp->mpNext;
             if (tdbp->mpData == NULL) {
                 tdbpprev->mpNext = tdbpnext;
-                delete tdbp;
+                tdbp->SimpleDelete();
                 continue;
             }
 
@@ -2737,7 +2737,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
 
             delete fbp2;
             tdbpprev->mpNext = tdbpnext;
-            delete tdbp;
+            tdbp->SimpleDelete();
         }
     }
 }
@@ -4940,7 +4940,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             dabnext = dab->mpNext;
             FreeFeatBlk(static_cast<DataBlk*>(dab->mpData), pp->format);
             if (pp->format == Parser::EFormat::XML)
-                delete dab;
+                dab->SimpleDelete();
         }
         xinstall_gbparse_range_func(NULL, NULL);
         return;
@@ -4971,7 +4971,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         dabnext = dab->mpNext;
         if (dab->mType != type) {
             if (pp->format == Parser::EFormat::XML)
-                delete dab;
+                dab->SimpleDelete();
             continue;
         }
 
@@ -5052,7 +5052,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
         FreeFeatBlk(static_cast<DataBlk*>(dab->mpData), pp->format);
         if (pp->format == Parser::EFormat::XML)
-            delete dab;
+            dab->SimpleDelete();
     }
 
     if (! fta_perform_operon_checks(seq_feats, ibp)) {

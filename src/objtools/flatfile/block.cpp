@@ -70,6 +70,9 @@ void GapFeatsFree(GapFeatsPtr gfp)
 
 DataBlk::~DataBlk()
 {
+    if (mSimpleDelete)
+        return;
+
     int MAX_HEAD_RECURSION(100);
 
     mpQscore.clear();
