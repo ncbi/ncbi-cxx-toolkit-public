@@ -19,7 +19,7 @@ SRC = pubseq_gateway  \
       bioseq_info_record_selector split_info_utils split_info_cache \
       wgs_client wgs_processor cass_processor_dispatch snp_client snp_processor \
       psgs_seq_id_utils http_request http_connection http_reply http_proto \
-      tcp_daemon http_daemon url_param_utils
+      tcp_daemon http_daemon url_param_utils dummy_processor
 
 LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) \
        $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) \

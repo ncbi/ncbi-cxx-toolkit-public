@@ -58,6 +58,7 @@
 #include "cdd_processor.hpp"
 #include "wgs_processor.hpp"
 #include "snp_processor.hpp"
+#include "dummy_processor.hpp"
 #include "favicon.hpp"
 
 
@@ -1353,6 +1354,13 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
         unique_ptr<IPSGS_Processor>(new psg::wgs::CPSGS_WGSProcessor()));
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::snp::CPSGS_SNPProcessor()));
+
+    #if 0
+    // For testing during development. The processor code does nothing and can
+    // be switched on to receive requests.
+    m_RequestDispatcher->AddProcessor(
+        unique_ptr<IPSGS_Processor>(new CPSGS_DummyProcessor()));
+    #endif
 }
 
 

@@ -37,7 +37,6 @@
 #include "pubseq_gateway_logging.hpp"
 
 
-#if 0
 
 void timer_socket_io_cb(uv_timer_t *  handle)
 {
@@ -51,6 +50,23 @@ void poll_socket_io_cb(uv_poll_t *  handle, int  status, int  events)
     socket_io_cb->x_UvOnSocketEvent(status);
 }
 
+void poll_timer_close_cb(uv_handle_t *   handle)
+{
+    CPSGS_SocketIOCallback *    socket_io_cb = (CPSGS_SocketIOCallback*)(handle->data);
+    socket_io_cb->x_UvTimerHandleClosedEvent();
+
+    if (socket_io_cb->IsSafeToDelete())
+        delete socket_io_cb;
+}
+
+void poll_close_cb(uv_handle_t *   handle)
+{
+    CPSGS_SocketIOCallback *    socket_io_cb = (CPSGS_SocketIOCallback*)(handle->data);
+    socket_io_cb->x_UvSocketPollHandleClosedEvent();
+
+    if (socket_io_cb->IsSafeToDelete())
+        delete socket_io_cb;
+}
 
 // The interface implementation has been commented out
 // - At the moment nobody uses it
@@ -59,50 +75,77 @@ void poll_socket_io_cb(uv_poll_t *  handle, int  status, int  events)
 // -- make facilities to get a reference to the main uv loop and to processor
 //    loops
 
-CPSGS_SocketIOCallback::CPSGS_SocketIOCallback(int  fd,
+CPSGS_SocketIOCallback::CPSGS_SocketIOCallback(uv_loop_t *  loop,
+                                               size_t  request_id,
+                                               int  fd,
                                                EPSGS_Event  event,
                                                uint64_t  timeout_millisec,
                                                void *  user_data,
                                                TEventCB  event_cb,
                                                TTimeoutCB  timeout_cb,
                                                TErrorCB  error_cb) :
+    m_Loop(loop),
+    m_RequestId(request_id),
+    m_FD(fd),
+    m_Event(event),
     m_TimerMillisec(timeout_millisec),
     m_TimerActive(false),
     m_PollActive(false),
+    m_TimerHandleClosed(true),
+    m_PollHandleClosed(true),
     m_UserData(user_data),
     m_EventCB(event_cb),
     m_TimeoutCB(timeout_cb),
     m_ErrorCB(error_cb)
-{
-    x_StartTimer();
-    try {
-        x_StartPolling(fd, event);
-    } catch (...) {
-        x_StopTimer();
-        throw;
-    }
-}
+{}
 
 
 CPSGS_SocketIOCallback::~CPSGS_SocketIOCallback()
 {
-    x_StopTimer();
-    x_StopPolling();
+    // NOTE: the destruction must be done only when both timer and poll
+    // handles have been closed. So the 'delete' is called when both close
+    // callbacks have been invoked by libuv
 }
 
 
-void CPSGS_SocketIOCallback::x_StartPolling(int  fd,
-                                            EPSGS_Event  event)
+void CPSGS_SocketIOCallback::StartPolling(void)
 {
-    uv_loop_t * loop = CPubseqGatewayApp::GetInstance()->GetUVLoop();
+    x_StartTimer();
+    x_StartPolling();
+}
 
-    int     ret = uv_poll_init(loop, &m_PollReq, fd);
+
+void CPSGS_SocketIOCallback::StopPolling(void)
+{
+    x_StopPolling();
+    x_StopTimer();
+
+    if (!m_TimerHandleClosed)
+        uv_close(reinterpret_cast<uv_handle_t*>(&m_TimerReq),
+                 poll_timer_close_cb);
+
+    if (!m_PollHandleClosed)
+        uv_close(reinterpret_cast<uv_handle_t*>(&m_PollReq),
+                 poll_close_cb);
+}
+
+
+bool CPSGS_SocketIOCallback::IsSafeToDelete(void)
+{
+    return m_TimerHandleClosed && m_PollHandleClosed;
+}
+
+
+void CPSGS_SocketIOCallback::x_StartPolling(void)
+{
+    int     ret = uv_poll_init(m_Loop, &m_PollReq, m_FD);
     if (ret < 0) {
         NCBI_THROW(CPubseqGatewayException, eInvalidPollInit, uv_strerror(ret));
     }
+    m_PollHandleClosed = false;
     m_PollReq.data = this;
 
-    switch (event) {
+    switch (m_Event) {
         case ePSGS_Readable:
             ret = uv_poll_start(&m_PollReq, UV_READABLE, poll_socket_io_cb);
             break;
@@ -138,12 +181,11 @@ void CPSGS_SocketIOCallback::x_StopPolling(void)
 
 void CPSGS_SocketIOCallback::x_StartTimer(void)
 {
-    uv_loop_t * loop = CPubseqGatewayApp::GetInstance()->GetUVLoop();
-
-    int     ret = uv_timer_init(loop, &m_TimerReq);
+    int     ret = uv_timer_init(m_Loop, &m_TimerReq);
     if (ret < 0) {
         NCBI_THROW(CPubseqGatewayException, eInvalidTimerInit, uv_strerror(ret));
     }
+    m_TimerHandleClosed = false;
     m_TimerReq.data = this;
 
     ret = uv_timer_start(&m_TimerReq, timer_socket_io_cb, m_TimerMillisec, 0);
@@ -151,6 +193,19 @@ void CPSGS_SocketIOCallback::x_StartTimer(void)
         NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart, uv_strerror(ret));
     }
     m_TimerActive = true;
+}
+
+
+void CPSGS_SocketIOCallback::x_RestartTimer(void)
+{
+    if (m_TimerActive) {
+        // Consequent call just updates the timer
+        int     ret = uv_timer_start(&m_TimerReq, timer_socket_io_cb, m_TimerMillisec, 0);
+        if (ret < 0) {
+            NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
+                       uv_strerror(ret));
+        }
+    }
 }
 
 
@@ -168,18 +223,41 @@ void CPSGS_SocketIOCallback::x_StopTimer(void)
 
 void CPSGS_SocketIOCallback::x_UvOnTimer(void)
 {
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    if (!app->GetProcessorDispatcher()->IsGroupAlive(m_RequestId)) {
+        // Callback happened after a group was deleted
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
+        StopPolling();
+
+        // Need to inform the loop binder that the callback is scheduled for
+        // deletion
+        app->GetUvLoopBinder(uv_thread_self()).DismissSocketIOCallback(this);
+        return;
+    }
+
     EPSGS_PollContinue  ret = m_TimeoutCB(m_UserData);
     if (ret == ePSGS_StopPolling) {
-        x_StopPolling();
+        StopPolling();
+        app->GetUvLoopBinder(uv_thread_self()).DismissSocketIOCallback(this);
     } else {
-        x_StartTimer();
+        x_RestartTimer();
     }
 }
 
 
 void CPSGS_SocketIOCallback::x_UvOnSocketEvent(int  status)
 {
-    x_StopTimer();
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    if (!app->GetProcessorDispatcher()->IsGroupAlive(m_RequestId)) {
+        // Callback happened after a group was deleted
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
+        StopPolling();
+
+        // Need to inform the loop binder that the callback is scheduled for
+        // deletion
+        app->GetUvLoopBinder(uv_thread_self()).DismissSocketIOCallback(this);
+        return;
+    }
 
     EPSGS_PollContinue  ret;
     if (status < 0) {
@@ -192,11 +270,22 @@ void CPSGS_SocketIOCallback::x_UvOnSocketEvent(int  status)
     }
 
     if (ret == ePSGS_StopPolling) {
-        x_StopPolling();
+        StopPolling();
+        app->GetUvLoopBinder(uv_thread_self()).DismissSocketIOCallback(this);
     } else {
-        x_StartTimer();
+        x_RestartTimer();
     }
 }
 
-#endif
+
+void CPSGS_SocketIOCallback::x_UvTimerHandleClosedEvent(void)
+{
+    m_TimerHandleClosed = true;
+}
+
+
+void CPSGS_SocketIOCallback::x_UvSocketPollHandleClosedEvent(void)
+{
+    m_PollHandleClosed = true;
+}
 

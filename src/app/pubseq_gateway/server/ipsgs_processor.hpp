@@ -35,6 +35,7 @@
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
 #include "psgs_uv_loop_binder.hpp"
+#include "psgs_io_callbacks.hpp"
 #include <objects/seqloc/Seq_id.hpp>
 
 USING_NCBI_SCOPE;
@@ -196,6 +197,33 @@ public:
     ///  The data to be passed to the callback
     void PostponeInvoke(CPSGS_UvLoopBinder::TProcessorCB  cb,
                         void *  user_data);
+
+    /// The provided callbacks will be called from the libuv loop assigned to
+    /// the processor when the corresponding event appeared on the provided
+    /// socket.
+    /// @param fd
+    ///  The socket to poll
+    /// @param event
+    ///  The event to wait for
+    /// @param timeout_millisec
+    ///  The timeout of waiting for the event
+    /// @param user_data
+    ///  The data to be passed to the callback
+    /// @param event_cb
+    ///  The event callback
+    /// @param timeout_cb
+    ///  The timeout callback
+    /// @param error_cb
+    ///  The error callback
+    /// @note
+    ///  The processor must make sure the socket is valid
+    void SetSocketCallback(int  fd,
+                           CPSGS_SocketIOCallback::EPSGS_Event  event,
+                           uint64_t  timeout_millisec,
+                           void *  user_data,
+                           CPSGS_SocketIOCallback::TEventCB  event_cb,
+                           CPSGS_SocketIOCallback::TTimeoutCB  timeout_cb,
+                           CPSGS_SocketIOCallback::TErrorCB  error_cb);
 
     /// Saves the libuv worker thread id which runs the processor.
     /// To be used by the server framework only.

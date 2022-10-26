@@ -40,6 +40,7 @@
 #include <list>
 using namespace std;
 
+#include "psgs_io_callbacks.hpp"
 
 // libuv offers two places for the callbacks:
 // - prepare (before io)
@@ -88,6 +89,16 @@ class CPSGS_UvLoopBinder
         // The method is thread safe.
         void PostponeInvoke(TProcessorCB  cb, void *  user_data, size_t  request_id);
 
+        void SetSocketCallback(int  fd,
+                               CPSGS_SocketIOCallback::EPSGS_Event  event,
+                               uint64_t  timeout_millisec,
+                               void *  user_data,
+                               CPSGS_SocketIOCallback::TEventCB  event_cb,
+                               CPSGS_SocketIOCallback::TTimeoutCB  timeout_cb,
+                               CPSGS_SocketIOCallback::TErrorCB  error_cb,
+                               size_t  request_id);
+        void DismissSocketIOCallback(CPSGS_SocketIOCallback *  callback);
+
     public:
         // Internal usage only.
         // The libuv C-style callback calls this method upon the prepare
@@ -132,6 +143,9 @@ class CPSGS_UvLoopBinder
 
         mutex                   m_QueueLock;
         list<SUserCallback>     m_Callbacks;
+
+        mutex                           m_SocketIOLock;
+        list<CPSGS_SocketIOCallback *>  m_SocketIOCallbacks;
 };
 
 

@@ -134,6 +134,47 @@ void IPSGS_Processor::PostponeInvoke(CPSGS_UvLoopBinder::TProcessorCB  cb,
 }
 
 
+void IPSGS_Processor::SetSocketCallback(int  fd,
+                                        CPSGS_SocketIOCallback::EPSGS_Event  event,
+                                        uint64_t  timeout_millisec,
+                                        void *  user_data,
+                                        CPSGS_SocketIOCallback::TEventCB  event_cb,
+                                        CPSGS_SocketIOCallback::TTimeoutCB  timeout_cb,
+                                        CPSGS_SocketIOCallback::TErrorCB  error_cb)
+{
+    auto *          app = CPubseqGatewayApp::GetInstance();
+    uv_thread_t     uv_thread_id = GetUVThreadId();
+
+    if (uv_thread_id == 0) {
+        // The processor has not started yet. There is no uv loop (and thread)
+        // to bind to.
+        string  msg = "Processor '" + GetName() + "' "
+                      "tries to schedule a socket callback before "
+                      "a thread was assigned to the processor (request id: " +
+                      to_string(m_Request->GetRequestId()) + ").";
+        PSG_ERROR(msg);
+        NCBI_THROW(CPubseqGatewayException, eLogic, msg);
+    }
+
+    try {
+        app->GetUvLoopBinder(uv_thread_id).SetSocketCallback(
+                                            fd, event, timeout_millisec, user_data,
+                                            event_cb, timeout_cb, error_cb,
+                                            m_Request->GetRequestId());
+    } catch (const exception &  exc) {
+        PSG_ERROR("Error scheduling a socket callback by the processor '" +
+                  GetName() + "' (while serving request id: " +
+                  to_string(m_Request->GetRequestId()) + "): " + exc.what());
+        throw;
+    } catch (...) {
+        PSG_ERROR("Unknown error scheduling a socket callback by the processor '" +
+                  GetName() + "' (while serving request id: " +
+                  to_string(m_Request->GetRequestId()) + ")");
+        throw;
+    }
+}
+
+
 bool IPSGS_Processor::GetEffectiveSeqIdType(
     const CSeq_id& parsed_seq_id,
     int request_seq_id_type,
