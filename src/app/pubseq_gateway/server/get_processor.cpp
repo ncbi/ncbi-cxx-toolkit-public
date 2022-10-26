@@ -480,11 +480,6 @@ void CPSGS_GetProcessor::ProcessEvent(void)
 
 void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 {
-    if (uv_thread_self() != GetUVThreadId()) {
-cout << "ERROR. CPSGS_GetProcessor::x_Peek() from a different thread. Current: " << uv_thread_self() <<
-    " Memorized: " << GetUVThreadId() << endl;
-    }
-
     if (m_Canceled) {
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return;

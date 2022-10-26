@@ -128,6 +128,49 @@ void CPSGS_UvLoopBinder::PostponeInvoke(TProcessorCB    cb,
 }
 
 
+void CPSGS_UvLoopBinder::SetSocketCallback(int  fd,
+                                           CPSGS_SocketIOCallback::EPSGS_Event  event,
+                                           uint64_t  timeout_millisec,
+                                           void *  user_data,
+                                           CPSGS_SocketIOCallback::TEventCB  event_cb,
+                                           CPSGS_SocketIOCallback::TTimeoutCB  timeout_cb,
+                                           CPSGS_SocketIOCallback::TErrorCB  error_cb,
+                                           size_t  request_id)
+{
+    CPSGS_SocketIOCallback *  callback =
+        new CPSGS_SocketIOCallback(m_Loop, request_id, fd, event, timeout_millisec,
+                                   user_data, event_cb, timeout_cb, error_cb);
+
+    try {
+        // NOTE: this call may throw an exception.
+        // It is possible that some uv handles are opened
+        callback->StartPolling();
+
+        m_SocketIOLock.lock();
+        m_SocketIOCallbacks.push_back(callback);
+        m_SocketIOLock.unlock();
+    } catch (...) {
+        if (callback->IsSafeToDelete()) {
+            delete callback;
+        } else {
+            callback->StopPolling();
+        }
+    }
+}
+
+
+void CPSGS_UvLoopBinder::DismissSocketIOCallback(CPSGS_SocketIOCallback *  callback)
+{
+    m_SocketIOLock.lock();
+
+    auto    it = find(m_SocketIOCallbacks.begin(), m_SocketIOCallbacks.end(), callback);
+    if (it != m_SocketIOCallbacks.end()) {
+        m_SocketIOCallbacks.erase(it);
+    }
+    m_SocketIOLock.unlock();
+}
+
+
 void CPSGS_UvLoopBinder::x_UvOnCallback(void)
 {
     list<SUserCallback>     callbacks;
@@ -154,7 +197,19 @@ void CPSGS_UvLoopBinder::x_UvOnCallback(void)
 
 void CPSGS_UvLoopBinder::x_Unregister(void)
 {
-    // See the comment in the destructor
+    // Schedule the closing for the socket IO callbacks
+    m_SocketIOLock.lock();
+    for (auto cb : m_SocketIOCallbacks) {
+        // Note: the destruction can be done only after libuv closes both
+        // handles (timer and polling). So the pointer is just dismissed from
+        // the list and the actual destruction will be done in the closing
+        // handle callbacks.
+        cb->StopPolling();
+    }
+    m_SocketIOCallbacks.clear();
+    m_SocketIOLock.unlock();
+
+    // See the comment in the destructor as well
 
     uv_close(reinterpret_cast<uv_handle_t*>(&m_Async), NULL);
 

@@ -18,7 +18,7 @@ NCBI_begin_app(pubseq_gateway)
     bioseq_info_record_selector split_info_utils split_info_cache
     wgs_client wgs_processor cass_processor_dispatch snp_client snp_processor
     psgs_seq_id_utils http_request http_connection http_reply http_proto
-    tcp_daemon http_daemon url_param_utils
+    tcp_daemon http_daemon url_param_utils dummy_processor
   )
   NCBI_uses_toolkit_libraries(cdd_access xregexp id2 seq psg_cassandra
     psg_protobuf psg_cache xconnext connext xconnserv xconnect xcompress

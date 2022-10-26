@@ -68,7 +68,9 @@ class CPSGS_SocketIOCallback
                                                      void *  user_data)>;
 
         // Starts polling the given fd for the given event
-        CPSGS_SocketIOCallback(int  fd,
+        CPSGS_SocketIOCallback(uv_loop_t *  loop,
+                               size_t  request_id,
+                               int  fd,
                                EPSGS_Event  event,
                                uint64_t  timeout_millisec,
                                void *  user_data,
@@ -82,22 +84,35 @@ class CPSGS_SocketIOCallback
         CPSGS_SocketIOCallback(CPSGS_SocketIOCallback &&) = delete;
         CPSGS_SocketIOCallback & operator=(const CPSGS_SocketIOCallback &) = delete;
 
+        void StartPolling(void);
+        void StopPolling(void);
+        bool IsSafeToDelete(void);
+
     public:
         void x_UvOnTimer(void);
         void x_UvOnSocketEvent(int  status);
+        void x_UvTimerHandleClosedEvent(void);
+        void x_UvSocketPollHandleClosedEvent(void);
 
     private:
-        void x_StartPolling(int  fd, EPSGS_Event  event);
+        void x_StartPolling(void);
         void x_StopPolling(void);
         void x_StartTimer(void);
         void x_StopTimer(void);
+        void x_RestartTimer(void);
 
     private:
+        uv_loop_t *     m_Loop;
+        size_t          m_RequestId;
+        int             m_FD;
+        EPSGS_Event     m_Event;
         uv_timer_t      m_TimerReq;
         uint64_t        m_TimerMillisec;
         bool            m_TimerActive;
         uv_poll_t       m_PollReq;
         bool            m_PollActive;
+        bool            m_TimerHandleClosed;
+        bool            m_PollHandleClosed;
 
         void *          m_UserData;
         TEventCB        m_EventCB;
