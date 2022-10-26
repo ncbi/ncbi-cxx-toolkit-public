@@ -393,6 +393,8 @@ protected:
     bool GetFastCGIHonorExitRequest(void) const;
     bool GetFastCGIDebug(void) const;
     bool GetFastCGIStopIfFailed(void) const;
+    unsigned int GetFastCGIMTMaxThreads(void) const;
+
     static CTime GetFileModificationTime(const string& filename);
     // Return true if current memory usage is above the limit.
     bool CheckMemoryLimit(void);
