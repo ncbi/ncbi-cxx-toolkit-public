@@ -6724,6 +6724,14 @@ if test "$with_wxwidgets" != "no" ; then
      &&  "$wxconf" $wxcfflags --list 2>/dev/null \
        | grep 'Default config is gtk2' >/dev/null; then
       gtkconf="pkg-config gtk+-2.0"
+   elif test -x "$wxconf" \
+     &&  "$wxconf" $wxcfflags --list 2>/dev/null \
+       | grep 'Default config is gtk3' >/dev/null; then
+      gtkconf="pkg-config gtk+-3.0"
+   elif test -x "$wxconf" \
+     &&  "$wxconf" $wxcfflags --list 2>/dev/null \
+       | grep 'Default config is gtk4' >/dev/null; then
+      gtkconf="pkg-config gtk4"
    elif test -x "$WXWIDGETS_BINPATH/gtk-config"; then
       gtkconf=$WXWIDGETS_BINPATH/gtk-config
    elif gtk-config --version >/dev/null 2>&1; then
