@@ -1943,7 +1943,13 @@ bool CCgiApplication::GetFastCGIDebug(void) const
 
 bool CCgiApplication::GetFastCGIStopIfFailed(void) const
 {
-    return GetConfig().GetBool("FastCGI","StopIfFailed", false, 0, CNcbiRegistry::eErrPost);
+    return GetConfig().GetBool("FastCGI", "StopIfFailed", false, 0, CNcbiRegistry::eErrPost);
+}
+
+
+unsigned int CCgiApplication::GetFastCGIMTMaxThreads(void) const
+{
+    return (unsigned int)GetConfig().GetInt("FastCGI", "MaxThreads", 0, 0, CNcbiRegistry::eErrPost);
 }
 
 

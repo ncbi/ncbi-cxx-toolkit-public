@@ -142,7 +142,8 @@ bool CFastCgiApplicationMT::x_RunFastCGI(int* result, unsigned int def_iter)
     }
 
     TManager::setupSignals();
-    m_Manager.reset(new TManager());
+    unsigned int max_threads = GetFastCGIMTMaxThreads();
+    m_Manager.reset(max_threads ? new TManager(max_threads) : new TManager());
 
     // If to run as a standalone server on local port or named socket
     string path = GetFastCGIStandaloneServer();
