@@ -1,0 +1,215 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Vitaly Stakhovsky, NCBI
+ *
+ * File Description:
+ *  PubMed Citation Match test application: MedArch vs EUtils
+ *
+ */
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
+
+#include <objects/pub/Pub.hpp>
+
+#include <objtools/edit/mla_updater.hpp>
+#include <objtools/edit/eutils_updater.hpp>
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+USING_SCOPE(edit);
+
+namespace
+{
+    void dump_cm_list(CNcbiOstream& os, const vector<SCitMatch>& cm_list)
+    {
+        for (const auto& cm : cm_list) {
+            if (! cm.Journal.empty()) {
+                os << "Journal=" << cm.Journal << endl;
+            }
+            if (! cm.Volume.empty()) {
+                os << "Volume=" << cm.Volume << endl;
+            }
+            if (! cm.Page.empty()) {
+                os << "Page=" << cm.Page << endl;
+            }
+            if (! cm.Year.empty()) {
+                os << "Year=" << cm.Year << endl;
+            }
+            if (! cm.Author.empty()) {
+                os << "Author=" << cm.Author << endl;
+            }
+            if (! cm.Issue.empty()) {
+                os << "Issue=" << cm.Issue << endl;
+            }
+            if (! cm.Title.empty()) {
+                os << "Title=" << cm.Title << endl;
+            }
+            if (cm.InPress) {
+                os << "InPress=" << cm.InPress << endl;
+            }
+            os << endl;
+        }
+    }
+
+    void read_cm_list(CNcbiIstream& is, vector<SCitMatch>& cm_list)
+    {
+        string                line;
+        unique_ptr<SCitMatch> cm;
+
+        while (NcbiGetlineEOL(is, line)) {
+            NStr::Sanitize(line);
+            if (line.empty()) {
+                if (cm) {
+                    cm_list.push_back(*cm);
+                    cm.reset();
+                } else {
+                    break;
+                }
+            } else {
+                string key, val;
+                NStr::SplitInTwo(line, "=", key, val);
+
+                if (! val.empty()) {
+                    if (NStr::EqualNocase(key, "Journal")) {
+                        if (! cm)
+                            cm.reset(new SCitMatch);
+                        cm->Journal = val;
+                    } else if (NStr::EqualNocase(key, "Volume")) {
+                        if (! cm)
+                            cm.reset(new SCitMatch);
+                        cm->Volume = val;
+                    } else if (NStr::EqualNocase(key, "Page")) {
+                        if (! cm)
+                            cm.reset(new SCitMatch);
+                        cm->Page = val;
+                    } else if (NStr::EqualNocase(key, "Year")) {
+                        if (! cm)
+                            cm.reset(new SCitMatch);
+                        cm->Year = val;
+                    } else if (NStr::EqualNocase(key, "Author")) {
+                        if (! cm)
+                            cm.reset(new SCitMatch);
+                        cm->Author = val;
+                    } else if (NStr::EqualNocase(key, "Issue")) {
+                        if (! cm)
+                            cm.reset(new SCitMatch);
+                        cm->Issue = val;
+                    } else if (NStr::EqualNocase(key, "Title")) {
+                        if (! cm)
+                            cm.reset(new SCitMatch);
+                        cm->Title = val;
+                    } else if (NStr::EqualNocase(key, "InPress")) {
+                        if (! cm)
+                            cm.reset(new SCitMatch);
+                        cm->InPress = NStr::EqualNocase(key, "true");
+                    }
+                }
+            }
+        }
+        _ASSERT(! cm);
+    }
+}
+
+class CPubmedFetchApplication : public CNcbiApplication
+{
+public:
+    CPubmedFetchApplication()
+    {
+        SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+    }
+
+    void Init() override
+    {
+        unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+        arg_desc->SetUsageContext("", "Match publications from medarch/eutils and print PubMed Ids");
+        arg_desc->AddKey("i", "InFile", "Data to match", CArgDescriptions::eInputFile);
+        arg_desc->AddDefaultKey("pubmed", "source", "Source of data", CArgDescriptions::eString, "eutils");
+        arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
+        arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
+        arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
+        SetupArgDescriptions(arg_desc.release());
+    }
+
+    int Run() override
+    {
+        const CArgs& args = GetArgs();
+
+        vector<SCitMatch> cm_list;
+        CNcbiIstream&     is = args["i"].AsInputFile();
+        read_cm_list(is, cm_list);
+
+        if (cm_list.empty()) {
+            cerr << "Warning: No input data" << endl;
+            return 0;
+        }
+
+        bool bTypeMLA = false;
+        if (args["pubmed"]) {
+            string s = args["pubmed"].AsString();
+            if (s == "medarch") {
+                bTypeMLA = true;
+            } else if (s == "eutils") {
+                bTypeMLA = false;
+                if (args["url"]) {
+                    string url = args["url"].AsString();
+                    CEUtils_Request::SetBaseURL(url);
+                }
+            }
+        }
+
+        ostream* output = nullptr;
+        if (args["o"]) {
+            output = &args["o"].AsOutputFile();
+        } else {
+            output = &NcbiCout;
+        }
+
+        unique_ptr<IPubmedUpdater> upd;
+        if (bTypeMLA) {
+            upd.reset(new CMLAUpdater());
+        } else {
+            upd.reset(new CEUtilsUpdater());
+        }
+
+        EPubmedError err;
+        for (const SCitMatch& cm : cm_list) {
+            TEntrezId pmid = upd->CitMatch(cm, &err);
+            *output << pmid << endl;
+        }
+
+        if (args["o"]) {
+            args["o"].CloseFile();
+        }
+
+        return 0;
+    }
+};
+
+int main(int argc, const char* argv[])
+{
+    return CPubmedFetchApplication().AppMain(argc, argv);
+}
