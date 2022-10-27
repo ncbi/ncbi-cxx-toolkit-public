@@ -81,6 +81,7 @@ public:
     short int GetGeneticCode(TTaxid taxid);
     CConstRef<objects::COrg_ref> GetOrgRef(TTaxid taxid);
     void LookupMerge(objects::COrg_ref& org);
+    list<string> GetSynonyms(TTaxId taxid);
 
 public: // lookups other than taxid
 
@@ -98,6 +99,7 @@ private: // data types
         TTaxid taxid;
         bool is_valid;
         string scientific_name;
+        list<string> synonyms;
         string rank;
         TNodeRef parent;
         short int genetic_code;
