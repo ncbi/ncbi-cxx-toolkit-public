@@ -91,6 +91,7 @@ bool CheckDescriptors(const CHugeAsnReader& asn_reader, CSeqdesc::E_Choice which
 
 struct THugeFileWriteContext
 {
+    CHugeFile         file;
     CHugeAsnReader    asn_reader;
     bool              is_fasta = false;
     IHugeAsnSource*   source   = nullptr;
@@ -193,24 +194,45 @@ private:
 
 } // namespace
 
-void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
+void CTbl2AsnApp::ProcessHugeFile(CNcbiOstream* output)
 {
-    THugeFileWriteContext context;
+    static const set<TTypeInfo> supported_types =
+    {
+        CBioseq_set::GetTypeInfo(),
+        CBioseq::GetTypeInfo(),
+        CSeq_entry::GetTypeInfo(),
+        CSeq_submit::GetTypeInfo(),
+    };
+
     CHugeFastaReader fasta_reader(m_context);
-    if (hugeFile.m_format == CFormatGuess::eGff3) {
+    THugeFileWriteContext context;
+
+    context.file.m_supported_types = &supported_types;
+
+    try {
+        context.file.Open(m_context.m_current_file);
+    }
+    catch (CObjReaderParseException& e) {
+        auto message = e.GetMsg();
+        if (message == "File format not supported") {
+            context.file.m_format = CFormatGuess::eFasta;
+        }
+        else throw;
+    }
+    if (context.file.m_format == CFormatGuess::eGff3) {
         list<CRef<CSeq_annot>> annots;
-        m_reader->LoadGFF3Fasta(*hugeFile.m_stream, annots);
+        m_reader->LoadGFF3Fasta(*context.file.m_stream, annots);
         m_secret_files->m_Annots.splice(m_secret_files->m_Annots.end(), annots);
-        fasta_reader.Open(&hugeFile, m_context.m_logger);
+        fasta_reader.Open(&context.file, m_context.m_logger);
         context.source = &fasta_reader;
         context.is_fasta = true;
     } else
-    if (hugeFile.m_format == CFormatGuess::eFasta) {
-        fasta_reader.Open(&hugeFile, m_context.m_logger);
+    if (context.file.m_format == CFormatGuess::eFasta) {
+        fasta_reader.Open(&context.file, m_context.m_logger);
         context.source = &fasta_reader;
         context.is_fasta = true;
     } else {
-        context.asn_reader.Open(&hugeFile, m_context.m_logger);
+        context.asn_reader.Open(&context.file, m_context.m_logger);
         context.source = &context.asn_reader;
 
         if (m_context.m_t) {
@@ -277,9 +299,9 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
             m_context.MergeSeqDescr(*top_set, *descrs, true);
         }
 
-        auto process_async = [&hugeFile, this](TAsyncToken& token)
+        auto process_async = [&context, this](TAsyncToken& token)
             {
-                ProcessSingleEntry(hugeFile.m_format, token);
+                ProcessSingleEntry(context.file.m_format, token);
             };
 
         std::mutex ff_mutex;
@@ -334,11 +356,10 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
 
         if (m_context.m_huge_files_mode)
         {
-            const size_t numThreads = m_context.m_use_threads.value_or(1);
             bool need_update_date = !context.is_fasta && CheckDescriptors(context.asn_reader, CSeqdesc::e_Create_date);
 
-            ProcessTopEntry(hugeFile.m_format, need_update_date, context.m_submit, context.m_topentry);
-            if (numThreads>=3) {
+            ProcessTopEntry(context.file.m_format, need_update_date, context.m_submit, context.m_topentry);
+            if (m_context.m_use_threads>=3) {
                 std::ofstream ff_file;
                 ff_file.exceptions(ios::failbit | ios::badbit);
 
@@ -353,7 +374,7 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
                 async_writer.WriteAsyncMT(topobject, make_next_token, process_async, ff_chain_func);
                 // now it will wait until all ff_writer tasks complete
             } else
-            if (numThreads == 2) {
+            if (m_context.m_use_threads == 2) {
                 async_writer.WriteAsync2T(topobject, make_next_token, process_async, ff_chain_func);
             } else {
                 async_writer.WriteAsyncST(topobject, make_next_token, process_async, ff_chain_func);
