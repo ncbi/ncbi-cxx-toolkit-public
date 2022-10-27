@@ -34,6 +34,20 @@
 #include <corelib/test_boost.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
+#if defined(_MSC_VER) && (!defined(__clang__) || (_MSC_VER < 1910))
+#  ifndef _SILENCE_CXX17_UNCAUGHT_EXCEPTION_DEPRECATION_WARNING
+#    define _SILENCE_CXX17_UNCAUGHT_EXCEPTION_DEPRECATION_WARNING
+#  endif
+#endif
+
+#ifndef HAS_UNCAUGHT_EXCEPTIONS
+#  if __cplusplus > 201703 || (defined(_MSVC_LANG) && _MSVC_LANG > 201703L)
+#    define HAS_UNCAUGHT_EXCEPTIONS 1
+#  else
+#    define HAS_UNCAUGHT_EXCEPTIONS 0
+#  endif
+#endif  // HAS_UNCAUGHT_EXCEPTIONS
+
 
 USING_NCBI_SCOPE;
 
@@ -54,7 +68,11 @@ class ExceptionInDestructor
             noexcept(false)
         #endif
         {
+#if HAS_UNCAUGHT_EXCEPTIONS
+            if (std::uncaught_exceptions() > 0) {
+#else
             if (std::uncaught_exception()) {
+#endif
                 flag = true;
                 return;
             }
