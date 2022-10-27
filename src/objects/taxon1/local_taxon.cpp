@@ -321,6 +321,20 @@ CLocalTaxon::TTaxid CLocalTaxon::GetTaxIdByName(const string& orgname)
     
 }
 
+list<string> CLocalTaxon::GetSynonyms(TTaxId taxid)
+{
+    if (m_SqliteConn.get()) {
+        x_Cache(taxid);
+        return m_Nodes.find(taxid)->second.synonyms;
+    } else {
+        list<string> lNames; // TNameList - second parameter to GetAllNames is currently list<string>
+        // we are using false because currently all 
+        // other usages of this API in gpipe code is with this value:
+        m_TaxonConn->GetAllNames(taxid, lNames, false); 
+        return lNames;
+    }
+}
+
 //
 //  Implementation
 //
@@ -376,7 +390,7 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
         //  thereby caching all successful and unsuccessful queries
         //
         it = m_Nodes.insert(TNodes::value_type(taxid, STaxidNode())).first;
-        {{
+        {{ 
              CSQLITE_Statement stmt
                  (m_SqliteConn.get(),
                   "SELECT scientific_name, rank, parent, genetic_code "
@@ -394,6 +408,18 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
                  }
                  parent = TAX_ID_FROM(int, stmt.GetInt(2));
                  it->second.genetic_code = stmt.GetInt(3);
+             }
+       }}
+        {{ // synonyms
+             CSQLITE_Statement stmt
+                 (m_SqliteConn.get(),
+                  "SELECT scientific_name "
+                  "FROM Synonym "
+                  "WHERE taxid = ? ");
+             stmt.Bind(1, TAX_ID_TO(TIntId, taxid));
+             stmt.Execute();
+             while (stmt.Step()) {
+                 it->second.synonyms.push_back( stmt.GetString(0));
              }
        }}
        if (parent > TAX_ID_CONST(1)) {
