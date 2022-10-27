@@ -392,15 +392,14 @@ static void XMLPerformIndex(ParserPtr pp)
 
             within = true;
             if (ibnp == NULL) {
-                ibnp  = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
+                ibnp  = new IndBlkNode;
                 tibnp = ibnp;
             } else {
-                tibnp->next = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
+                tibnp->next = new IndBlkNode;
                 tibnp       = tibnp->next;
             }
-            tibnp->next  = NULL;
-            tibnp->ibp   = new Indexblk;
-            ibp          = tibnp->ibp;
+            ibp          = new Indexblk;
+            tibnp->ibp   = ibp;
             ibp->xip     = NULL;
             ibp->offset  = count - start_len;
             ibp->linenum = line;
@@ -468,7 +467,7 @@ static void XMLPerformIndex(ParserPtr pp)
     for (tibnp = ibnp, i = 0; tibnp != NULL; i++, tibnp = ibnp) {
         pp->entrylist[i] = tibnp->ibp;
         ibnp             = tibnp->next;
-        MemFree(tibnp);
+        delete tibnp;
     }
     pp->entrylist[i] = NULL;
 }
