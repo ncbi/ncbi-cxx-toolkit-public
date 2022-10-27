@@ -135,18 +135,16 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
         return false;
     }
 
-    ibnp       = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
-    ibnp->next = NULL;
-    tibnp      = ibnp;
+    ibnp  = new IndBlkNode;
+    tibnp = ibnp;
 
     while (! end_of_file) {
         entry = InitialEntry(pp, &finfo);
         if (entry != NULL) {
             pp->curindx = indx;
-            tibnp->next = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
+            tibnp->next = new IndBlkNode;
             tibnp       = tibnp->next;
             tibnp->ibp  = entry;
-            tibnp->next = NULL;
 
             indx++;
 
@@ -243,11 +241,11 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     pp->entrylist.resize(indx);
     tibnp = ibnp->next;
-    MemFree(ibnp);
+    delete ibnp;
     for (i = 0; i < indx && tibnp != NULL; i++, tibnp = ibnp) {
         pp->entrylist[i] = tibnp->ibp;
         ibnp             = tibnp->next;
-        MemFree(tibnp);
+        delete tibnp;
     }
 
     return end_of_file;

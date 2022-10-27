@@ -383,9 +383,8 @@ bool GenBankIndex(ParserPtr pp)
 
     bool tpa_check = (pp->source == Parser::ESource::EMBL);
 
-    ibnp       = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
-    ibnp->next = NULL;
-    tibnp      = ibnp;
+    ibnp  = new IndBlkNode;
+    tibnp = ibnp;
 
     pp->num_drop = 0;
     kwds         = NULL;
@@ -394,10 +393,9 @@ bool GenBankIndex(ParserPtr pp)
         entry = InitialEntry(pp, finfo);
         if (entry != NULL) {
             pp->curindx = indx;
-            tibnp->next = (IndBlkNextPtr)MemNew(sizeof(IndBlkNext));
+            tibnp->next = new IndBlkNode;
             tibnp       = tibnp->next;
             tibnp->ibp  = entry;
-            tibnp->next = NULL;
 
             indx++;
 
@@ -754,11 +752,11 @@ bool GenBankIndex(ParserPtr pp)
 
     pp->entrylist.resize(indx);
     tibnp = ibnp->next;
-    MemFree(ibnp);
+    delete ibnp;
     for (int j = 0; j < indx && tibnp != NULL; j++, tibnp = ibnp) {
         pp->entrylist[j] = tibnp->ibp;
         ibnp             = tibnp->next;
-        MemFree(tibnp);
+        delete tibnp;
     }
 
     MemFree(finfo);
