@@ -1842,7 +1842,7 @@ static bool WeDontNeedToJoinThis(const CSeqFeatData& data)
 }
 
 /**********************************************************/
-static void GetGeneSyns(const TQualVector& quals, char* name, TSynSet& syns)
+static void GetGeneSyns(const TQualVector& quals, const char* name, TSynSet& syns)
 {
     if (name == NULL)
         return;
@@ -2078,7 +2078,7 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
 }
 
 /**********************************************************/
-static void fta_append_feat_list(GeneNodePtr gnp, const CSeq_loc* location, char* gene, char* locus_tag)
+static void fta_append_feat_list(GeneNodePtr gnp, const CSeq_loc* location, const char* gene, char* locus_tag)
 {
 
     if (gnp == NULL || location == NULL)
@@ -2196,29 +2196,33 @@ static void fta_collect_olts(GeneListPtr glp, CSeq_feat& feat)
  **********************************************************/
 static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 length, const CSeq_id& id)
 {
-    GeneListPtr        newglp;
-    char*              pseudogene;
-    char*              locus_tag;
-    unique_ptr<char[]> pGene;
+    GeneList* newglp;
+    char*     pseudogene;
+    char*     locus_tag;
 
-    if (gnp == NULL)
+    if (! gnp)
         return;
 
     for (auto& feat : feats) {
-        pGene.reset(CpTheQualValue(feat->GetQual(), "gene"));
+        string gene;
+        if (char* pGene = CpTheQualValue(feat->GetQual(), "gene")) {
+            gene = pGene;
+            MemFree(pGene);
+        }
+
         locus_tag = CpTheQualValue(feat->GetQual(), "locus_tag");
 
         const CSeq_loc* cur_loc = feat->IsSetLocation() ? &feat->GetLocation() : nullptr;
-        if (! pGene && locus_tag == NULL) {
-            if (GetFeatNameAndLoc(NULL, *feat, gnp))
-                fta_append_feat_list(gnp, cur_loc, pGene.get(), locus_tag);
+        if (gene.empty() && ! locus_tag) {
+            if (GetFeatNameAndLoc(nullptr, *feat, gnp))
+                fta_append_feat_list(gnp, cur_loc, nullptr, locus_tag);
             continue;
         }
 
         pseudogene = CpTheQualValue(feat->GetQual(), "pseudogene");
         newglp     = new GeneList;
-        if (pGene) {
-            newglp->locus = pGene.get();
+        if (! gene.empty()) {
+            newglp->locus = gene;
         }
         if (locus_tag) {
             newglp->locus_tag = locus_tag;
@@ -2230,7 +2234,7 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         fta_collect_wormbases(newglp, *feat);
         fta_collect_olts(newglp, *feat);
         if (GetFeatNameAndLoc(newglp, *feat, gnp))
-            fta_append_feat_list(gnp, cur_loc, pGene.get(), locus_tag);
+            fta_append_feat_list(gnp, cur_loc, gene.c_str(), locus_tag);
 
         newglp->feat.Reset();
         if (gnp->simple_genes == false && cur_loc != nullptr && cur_loc->IsMix()) {
@@ -2260,7 +2264,7 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         }
         newglp->segnum = gnp->segindex;
 
-        GetGeneSyns(feat->GetQual(), pGene.get(), newglp->syn);
+        GetGeneSyns(feat->GetQual(), gene.c_str(), newglp->syn);
 
         newglp->loc.Reset();
         if (cur_loc != nullptr) {
