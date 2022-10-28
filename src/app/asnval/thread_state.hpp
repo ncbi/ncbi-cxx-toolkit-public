@@ -66,7 +66,7 @@ struct CThreadExitData
     double mLongest    = 0;
     string mLongestId;
     size_t mReported   = 0;
-    CConstRef<CValidError> mEval;
+    std::list<CConstRef<CValidError>> mEval;
 };
 
 class CAsnvalOutput
@@ -154,7 +154,7 @@ protected:
     CHugeFileValidator::TGlobalInfo m_GlobalInfo;
 
     shared_ptr<SValidatorContext> m_pContext;
-    CConstRef<CValidError> m_eval;
+    std::list<CConstRef<CValidError>> m_eval;
 };
 
 #endif
