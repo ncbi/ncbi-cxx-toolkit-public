@@ -94,8 +94,8 @@ CThreadExitData CAsnvalApp::xFileReaderThread(const string& filename, bool save_
     auto result = mContext.ValidateOneFile(filename);
     if (save_output) {
         CAsnvalOutput out(*mAppConfig, filename);
-        result.mReported += out.Write({result.mEval});
-        result.mEval.Reset();
+        result.mReported += out.Write(result.mEval);
+        result.mEval.clear();
     }
     return result;
 }
@@ -335,8 +335,8 @@ CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* ofile)
             combined_exit_data.mLongestId = exit_data.mLongestId;
         }
 
-        if (ofile && exit_data.mEval && exit_data.mEval.NotEmpty()) {
-            eval.push_back(exit_data.mEval);
+        if (ofile && !exit_data.mEval.empty()) {
+            eval.splice(eval.end(), std::move(exit_data.mEval));
         }
     }
     if (ofile) {

@@ -312,7 +312,8 @@ unique_ptr<CObjectIStream> CAsnvalThreadState::OpenFile(TTypeInfo& asn_info)
 
 void CAsnvalThreadState::PrintValidError(CConstRef<CValidError> errors)
 {
-    m_eval = errors;
+    if (errors)
+        m_eval.push_back(errors);
 }
 
 
