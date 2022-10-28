@@ -4568,8 +4568,13 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat,
         return false;
     }
 
-    if (FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) == eNa_strand_minus) {
-        break_loc->SetStrand(GET_FIELD(feat.GetLocation(), Strand));
+    if (FIELD_IS_SET(feat.GetLocation(), Strand)) {
+        if (GET_FIELD(feat.GetLocation(), Strand) == eNa_strand_minus) {
+            break_loc->SetStrand(eNa_strand_minus);
+        }
+        else if (GET_FIELD(feat.GetLocation(), Strand) == eNa_strand_plus) {
+            break_loc->SetStrand(eNa_strand_plus);
+        }
     } else {
         RESET_FIELD(*break_loc, Strand);
     }
