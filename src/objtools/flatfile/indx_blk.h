@@ -42,6 +42,12 @@ struct FinfoBlk {
     Char   str[256]; /* the current string data */
     Int4   line;     /* the current line number */
     size_t pos;      /* the current file position */
+
+    FinfoBlk() :
+        line(0), pos(0)
+    {
+        str[0] = 0;
+    }
 };
 
 using FinfoBlkPtr = FinfoBlk*;
@@ -50,8 +56,9 @@ using FinfoBlkPtr = FinfoBlk*;
 struct IndBlkNode {
     Indexblk*   ibp;
     IndBlkNode* next;
-    IndBlkNode() :
-        ibp(nullptr), next(nullptr) {}
+
+    IndBlkNode(Indexblk* ibp_) :
+        ibp(ibp_), next(nullptr) {}
 };
 using IndBlkNextPtr = IndBlkNode*;
 

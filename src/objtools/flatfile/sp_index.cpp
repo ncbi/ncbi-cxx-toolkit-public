@@ -135,16 +135,15 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
         return false;
     }
 
-    ibnp  = new IndBlkNode;
+    ibnp  = new IndBlkNode(nullptr);
     tibnp = ibnp;
 
     while (! end_of_file) {
         entry = InitialEntry(pp, &finfo);
-        if (entry != NULL) {
+        if (entry) {
             pp->curindx = indx;
-            tibnp->next = new IndBlkNode;
+            tibnp->next = new IndBlkNode(entry);
             tibnp       = tibnp->next;
-            tibnp->ibp  = entry;
 
             indx++;
 

@@ -342,7 +342,7 @@ static bool fta_check_mga_line(char* line, IndexblkPtr ibp)
 /**********************************************************/
 bool GenBankIndex(ParserPtr pp)
 {
-    FinfoBlkPtr finfo;
+    FinfoBlk finfo;
 
     bool acwflag;
     bool end_of_file;
@@ -372,30 +372,27 @@ bool GenBankIndex(ParserPtr pp)
     ValNodePtr    dbl;
     ValNodePtr    tdbl;
 
-    finfo = (FinfoBlkPtr)MemNew(sizeof(FinfoBlk));
-
-    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, "LOCUS");
+    end_of_file = SkipTitleBuf(pp->ffbuf, &finfo, "LOCUS");
 
     if (end_of_file) {
-        MsgSkipTitleFail("GenBank", finfo);
+        MsgSkipTitleFail("GenBank", &finfo);
         return false;
     }
 
     bool tpa_check = (pp->source == Parser::ESource::EMBL);
 
-    ibnp  = new IndBlkNode;
+    ibnp  = new IndBlkNode(nullptr);
     tibnp = ibnp;
 
     pp->num_drop = 0;
     kwds         = NULL;
     dbl          = NULL;
     while (! end_of_file) {
-        entry = InitialEntry(pp, finfo);
-        if (entry != NULL) {
+        entry = InitialEntry(pp, &finfo);
+        if (entry) {
             pp->curindx = indx;
-            tibnp->next = new IndBlkNode;
+            tibnp->next = new IndBlkNode(entry);
             tibnp       = tibnp->next;
-            tibnp->ibp  = entry;
 
             indx++;
 
@@ -433,7 +430,7 @@ bool GenBankIndex(ParserPtr pp)
                         entry->drop = 1;
                     } else {
                         after_LOCUS = true;
-                        line_locus  = StringSave(finfo->str);
+                        line_locus  = StringSave(finfo.str);
                     }
                     break;
                 case ParFlat_COMMENT:
@@ -445,7 +442,7 @@ bool GenBankIndex(ParserPtr pp)
 
                     break;
                 case ParFlat_VERSION:
-                    p = StringStr(finfo->str + ParFlat_COL_DATA, "GI:");
+                    p = StringStr(finfo.str + ParFlat_COL_DATA, "GI:");
                     if (p != NULL && atol(p + 3) > 0)
                         entry->wgs_and_gi |= 01;
                     if (pp->accver == false)
@@ -456,7 +453,7 @@ bool GenBankIndex(ParserPtr pp)
                         break;
                     }
                     after_VERSION = true;
-                    p             = finfo->str + ParFlat_COL_DATA;
+                    p             = finfo.str + ParFlat_COL_DATA;
                     while (*p == ' ' || *p == '\t')
                         p++;
                     for (q = p; *q != '\0' && *q != '\r' && *q != '\n';)
@@ -477,7 +474,7 @@ bool GenBankIndex(ParserPtr pp)
                     if (pp->source == Parser::ESource::DDBJ || pp->accver == false ||
                         line_nid != NULL)
                         break;
-                    p = finfo->str + ParFlat_COL_DATA;
+                    p = finfo.str + ParFlat_COL_DATA;
                     while (*p == ' ' || *p == '\t')
                         p++;
                     for (q = p; *q != '\0' && *q != ' ' && *q != '\t' &&
@@ -525,7 +522,7 @@ bool GenBankIndex(ParserPtr pp)
                         ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"MGA\" is allowed for CAGE records only. Entry dropped.");
                         entry->drop = 1;
                     }
-                    if (fta_check_mga_line(finfo->str + ParFlat_COL_DATA, entry) == false) {
+                    if (fta_check_mga_line(finfo.str + ParFlat_COL_DATA, entry) == false) {
                         ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectMGALine, "Incorrect range of accessions supplied in MGA line of CAGE record. Entry dropped.");
                         entry->drop = 1;
                     }
@@ -566,7 +563,7 @@ bool GenBankIndex(ParserPtr pp)
                     if (acwflag == false) /* first accession line */
                     {
                         acwflag = true;
-                        if (! GetAccession(pp, finfo->str, entry, 2)) {
+                        if (! GetAccession(pp, finfo.str, entry, 2)) {
                             if (pp->mode != Parser::EMode::Relaxed) {
                                 pp->num_drop++;
                             }
@@ -576,7 +573,7 @@ bool GenBankIndex(ParserPtr pp)
                 case ParFlat_SEGMENT:
                     // LCOV_EXCL_START
                     // Excluded per Mark's request on 12/14/2016
-                    GetSegment(finfo->str, entry);
+                    GetSegment(finfo.str, entry);
                     // LCOV_EXCL_STOP
                     break;
                 case ParFlat_USER:
@@ -598,43 +595,43 @@ bool GenBankIndex(ParserPtr pp)
                         break;
                     if (kwds != NULL)
                         ValNodeFreeData(kwds);
-                    kwds     = ConstructValNode(NULL, objects::CSeq_id::e_not_set, StringSave(finfo->str + 8));
+                    kwds     = ConstructValNode(NULL, objects::CSeq_id::e_not_set, StringSave(finfo.str + 8));
                     tkwds    = kwds;
-                    kwds_len = StringLen(finfo->str) - 8;
+                    kwds_len = StringLen(finfo.str) - 8;
                     break;
                 case ParFlat_DBLINK:
                     if (dbl != NULL)
                         ValNodeFreeData(dbl);
-                    dbl     = ConstructValNode(NULL, objects::CSeq_id::e_not_set, StringSave(finfo->str + 8));
+                    dbl     = ConstructValNode(NULL, objects::CSeq_id::e_not_set, StringSave(finfo.str + 8));
                     tdbl    = dbl;
-                    dbl_len = StringLen(finfo->str) - 8;
+                    dbl_len = StringLen(finfo.str) - 8;
                     break;
                 default:
                     break;
                 } /* switch */
 
-                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, &finfo);
 
-                while (! end_of_file && (finfo->str[0] == ' ' || finfo->str[0] == '\t')) {
+                while (! end_of_file && (finfo.str[0] == ' ' || finfo.str[0] == '\t')) {
                     if (currentKeyword == ParFlat_KEYWORDS && tkwds != NULL) {
                         tkwds->next          = ValNodeNew(NULL);
                         tkwds                = tkwds->next;
-                        tkwds->data.ptrvalue = StringSave(finfo->str);
-                        kwds_len += StringLen(finfo->str);
+                        tkwds->data.ptrvalue = StringSave(finfo.str);
+                        kwds_len += StringLen(finfo.str);
                     }
 
                     if (currentKeyword == ParFlat_DBLINK && tdbl != NULL) {
                         tdbl->next          = ValNodeNew(NULL);
                         tdbl                = tdbl->next;
-                        tdbl->data.ptrvalue = StringSave(finfo->str);
-                        dbl_len += StringLen(finfo->str);
+                        tdbl->data.ptrvalue = StringSave(finfo.str);
+                        dbl_len += StringLen(finfo.str);
                     }
 
                     if (currentKeyword == ParFlat_ACCESSION && entry->drop == 0 &&
-                        GetAccession(pp, finfo->str, entry, 0) == false)
+                        GetAccession(pp, finfo.str, entry, 0) == false)
                         pp->num_drop++;
 
-                    end_of_file = XReadFileBuf(pp->ffbuf, finfo);
+                    end_of_file = XReadFileBuf(pp->ffbuf, &finfo);
                 }
 
 
@@ -645,15 +642,15 @@ bool GenBankIndex(ParserPtr pp)
                 }
 
                 if (pp->mode == Parser::EMode::Relaxed &&
-                    NStr::IsBlank(finfo->str)) {
+                    NStr::IsBlank(finfo.str)) {
                     currentKeyword = ParFlat_UNKW;
                     continue;
                 }
 
-                currentKeyword = SrchKeyword(finfo->str, genbankKeywords);
+                currentKeyword = SrchKeyword(finfo.str, genbankKeywords);
 
-                if (finfo->str[0] != ' ' && finfo->str[0] != '\t' &&
-                    CheckLineType(finfo->str, finfo->line, genbankKeywords, after_ORIGIN) == false)
+                if (finfo.str[0] != ' ' && finfo.str[0] != '\t' &&
+                    CheckLineType(finfo.str, finfo.line, genbankKeywords, after_ORIGIN) == false)
                     entry->drop = 1;
 
             } /* while, end of one entry */
@@ -736,10 +733,10 @@ bool GenBankIndex(ParserPtr pp)
             }
         } /* if, entry */
         else {
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "//");
+            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, &finfo, "//");
         }
 
-        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "LOCUS");
+        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, &finfo, "LOCUS");
 
     } /* while, end_of_file */
 
@@ -758,8 +755,6 @@ bool GenBankIndex(ParserPtr pp)
         ibnp             = tibnp->next;
         delete tibnp;
     }
-
-    MemFree(finfo);
 
     return (end_of_file);
 }
