@@ -317,6 +317,8 @@ CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* ofile)
 
     std::list<CConstRef<CValidError>> eval;
 
+    CAsnvalOutput out(*mAppConfig, ofile);
+
     while(true)
     {
         auto fut = m_tasks_queue.pop_front();
@@ -336,12 +338,11 @@ CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* ofile)
         }
 
         if (ofile && !exit_data.mEval.empty()) {
-            eval.splice(eval.end(), std::move(exit_data.mEval));
+            if (ofile) {
+                combined_exit_data.mReported += out.Write(exit_data.mEval);
+            }
+
         }
-    }
-    if (ofile) {
-        CAsnvalOutput out(*mAppConfig, *ofile);
-        combined_exit_data.mReported += out.Write(eval);
     }
 
     return combined_exit_data;
@@ -394,14 +395,14 @@ int CAsnvalApp::Run()
 
             m_tasks_queue.push_back({}); // this will finish writer task
 
-            exit_data = writer_task.get();
+            exit_data = writer_task.get(); // this will wait writer task completion
 
         } else {
             string in_filename = (args["i"]) ? args["i"].AsString() : "";
             exit_data = xFileReaderThread(in_filename, ValidErrorStream==nullptr);
             m_NumFiles++;
             if (ValidErrorStream) {
-                CAsnvalOutput out(*mAppConfig, *ValidErrorStream);
+                CAsnvalOutput out(*mAppConfig, ValidErrorStream);
                 exit_data.mReported += out.Write({exit_data.mEval});
             }
         }
