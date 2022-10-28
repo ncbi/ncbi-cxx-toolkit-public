@@ -75,7 +75,7 @@ void CSubSource::GetLabel(string* str) const
             // used here.
             type_name = GetSubtypeName(GetSubtype());
             replace(type_name.begin(), type_name.end(), '_', '-');
-        } catch (CSerialException&) {
+        } catch (const CSerialException&) {
             type_name = "unknown";
         }
     }
@@ -292,7 +292,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
     if (!NStr::IsBlank(month)) {
         try {
             month_val = CTime::MonthNameToNum(month);
-        } catch (CTimeException&) {
+        } catch (const CTimeException&) {
             NCBI_THROW (CException, eUnknown,
                             "collection-date string has invalid month");
         }
@@ -462,7 +462,7 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
 
             in_future = IsCollectionDateAfterTime(*coll_date, t);
         }
-    } catch (CException ) {
+    } catch (const CException& ) {
         bad_format = true;
     }
 }
@@ -484,7 +484,7 @@ size_t CSubSource::CheckDateFormat(const string& date_string)
                 if (d2->Compare(*d1) == CDate::eCompare_before) {
                     rval |= eDateFormatFlag_out_of_order;
                 }
-            } catch (CException) {
+            } catch (const CException&) {
                 rval |= eDateFormatFlag_bad_format;
             }
         }
@@ -514,7 +514,7 @@ size_t CSubSource::CheckDateFormat(const string& date_string)
                 rval |= eDateFormatFlag_in_future;
             }
         }
-    } catch (CException) {
+    } catch (const CException&) {
         rval |= eDateFormatFlag_bad_format;
     }
     return rval;
@@ -958,7 +958,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 int month_num = CTime::MonthNameToNum(one_token);
                 found = true;
                 month = CTime::MonthNumToName(month_num, CTime::eAbbr);
-            } catch (CTimeException&) {
+            } catch (const CTimeException&) {
             }
         } else {
             try {
@@ -1078,7 +1078,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             if (!IsDayValueOkForMonth(day, month_num, year)) {
                 return kEmptyStr;
             }
-        } catch (CTimeException&) {
+        } catch (const CTimeException&) {
             return kEmptyStr;
         }
     }
