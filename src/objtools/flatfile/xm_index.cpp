@@ -52,11 +52,12 @@
 
 BEGIN_NCBI_SCOPE
 
-typedef struct _XmlKwordBlk {
+struct XmlKwordBlk {
     const char* str;
     Int4        order;
     Int4        tag;
-} XmlKwordBlk, *XmlKwordBlkPtr;
+};
+using XmlKwordBlkPtr = const XmlKwordBlk*;
 
 // clang-format off
 XmlKwordBlk xmkwl[] = {
@@ -389,21 +390,20 @@ static void XMLPerformIndex(ParserPtr pp)
         if (StringCmp(s, INSDSEQ_START) == 0) {
             if (within)
                 continue;
-
             within = true;
-            if (ibnp == NULL) {
-                ibnp  = new IndBlkNode;
-                tibnp = ibnp;
-            } else {
-                tibnp->next = new IndBlkNode;
-                tibnp       = tibnp->next;
-            }
+
             ibp          = new Indexblk;
-            tibnp->ibp   = ibp;
-            ibp->xip     = NULL;
             ibp->offset  = count - start_len;
             ibp->linenum = line;
-            ibp->len     = 0;
+
+            if (! ibnp) {
+                ibnp  = new IndBlkNode(ibp);
+                tibnp = ibnp;
+            } else {
+                tibnp->next = new IndBlkNode(ibp);
+                tibnp       = tibnp->next;
+            }
+
             pp->indx++;
             continue;
         }
