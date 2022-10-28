@@ -60,6 +60,26 @@ USING_SCOPE(objects::edit);
 namespace
 {
 
+bool s_AddUpdateDescriptor(const CHugeAsnReader& asn_reader)
+{
+    for (auto rec: asn_reader.GetBioseqs()) {
+        if (rec.m_descr) {
+            if (auto parentClass = rec.m_parent_set->m_class; 
+                    parentClass != CBioseq_set::eClass_genbank &&
+                    parentClass != CBioseq_set::eClass_not_set) {
+                continue;
+            }
+            for (auto descr: rec.m_descr->Get()) {
+                if (descr->Which() == CSeqdesc::e_Create_date) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/*
 bool CheckDescriptors(const CHugeAsnReader& asn_reader, CSeqdesc::E_Choice which)
 {
     for (auto rec: asn_reader.GetBioseqs())
@@ -73,7 +93,7 @@ bool CheckDescriptors(const CHugeAsnReader& asn_reader, CSeqdesc::E_Choice which
             }
         }
     }
-    /*
+    
     for (auto rec: asn_reader.GetBiosets())
     {
         if (rec.m_descr.NotEmpty())
@@ -85,9 +105,9 @@ bool CheckDescriptors(const CHugeAsnReader& asn_reader, CSeqdesc::E_Choice which
             }
         }
     }
-    */
     return false;
 }
+*/
 
 struct THugeFileWriteContext
 {
@@ -335,7 +355,7 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
         if (m_context.m_huge_files_mode)
         {
             const size_t numThreads = m_context.m_use_threads.value_or(1);
-            bool need_update_date = !context.is_fasta && CheckDescriptors(context.asn_reader, CSeqdesc::e_Create_date);
+            bool need_update_date = !context.is_fasta && s_AddUpdateDescriptor(context.asn_reader);
 
             ProcessTopEntry(hugeFile.m_format, need_update_date, context.m_submit, context.m_topentry);
             if (numThreads>=3) {
