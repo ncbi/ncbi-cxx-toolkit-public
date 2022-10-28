@@ -856,7 +856,7 @@ void CAsnvalThreadState::ValidateOneHugeFile(const string& loader_name, bool use
             if (const auto& topIds = reader.GetTopIds(); !topIds.empty()) {
                 m_CurrentId.clear();
                 topIds.front()->GetLabel(&m_CurrentId);
-                //LOG_POST_XX(Corelib_App, 1, m_CurrentId);
+                LOG_POST_XX(Corelib_App, 1, m_CurrentId);
             }
         }
 
