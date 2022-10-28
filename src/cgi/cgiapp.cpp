@@ -1949,7 +1949,10 @@ bool CCgiApplication::GetFastCGIStopIfFailed(void) const
 
 unsigned int CCgiApplication::GetFastCGIMTMaxThreads(void) const
 {
-    return (unsigned int)GetConfig().GetInt("FastCGI", "MaxThreads", 0, 0, CNcbiRegistry::eErrPost);
+    const int kDefaultMaxThreads = 8;
+    int ret = GetConfig().GetInt("FastCGI", "MaxThreads", kDefaultMaxThreads, 0, CNcbiRegistry::eErrPost);
+    if (ret <= 0) ret = kDefaultMaxThreads;
+    return (unsigned int)ret;
 }
 
 
