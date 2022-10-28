@@ -56,33 +56,52 @@ USING_SCOPE(objects);
 USING_SCOPE(validator);
 USING_SCOPE(edit);
 
-#define USE_XMLWRAPP_LIBS
-
 extern const set<TTypeInfo> s_known_types;
 string s_GetSeverityLabel(EDiagSev, bool = false);
 class CAppConfig;
 
-class CAsnvalThreadState : public CReadClassMemberHook
+struct CThreadExitData
+{
+    size_t mNumRecords = 0;
+    double mLongest    = 0;
+    string mLongestId;
+    size_t mReported   = 0;
+    CConstRef<CValidError> mEval;
+};
+
+class CAsnvalOutput
+{
+public:
+    CAsnvalOutput(const CAppConfig& config, const string& in_filename);
+    CAsnvalOutput(const CAppConfig& config, std::ostream& file);
+    ~CAsnvalOutput();
+    size_t Write(const std::list<CConstRef<CValidError>>& eval);
+private:
+    void StartOutput();
+    void FinishOutput();
+    void PrintValidErrItem(const CValidErrItem& item);
+    const CAppConfig& mAppConfig;
+    unique_ptr<CValXMLStream> m_ostr_xml;
+    std::ostream* m_file = nullptr;
+    std::unique_ptr<std::ostream> m_own_file;
+};
+
+class CAsnvalThreadState
 {
 public:
 
-    CAsnvalThreadState(const CAppConfig&);
-    CAsnvalThreadState(
-        CAsnvalThreadState& other);
+    CAsnvalThreadState(const CAppConfig&, SValidatorContext::taxupdate_func_t taxon);
+    CAsnvalThreadState(const CAsnvalThreadState& other) = delete;
     ~CAsnvalThreadState();
+    CThreadExitData ValidateOneFile(const std::string& filename);
 
-    void ReadClassMember(CObjectIStream& in,
-        const CObjectInfo::CMemberIterator& member) override;
+protected:
 
-    void ResetStats()
-    {
-        m_Longest = m_NumFiles = m_NumRecords = 0;
-        m_LongestId = "";
-    };
+    void ReadClassMember(CObjectIStream& in, const CObjectInfo::CMemberIterator& member);
+
     CRef<CScope> BuildScope();
     unique_ptr<CObjectIStream> OpenFile(TTypeInfo& asn_info);
-    void ConstructOutputStreams();
-    void DestroyOutputStreams();
+
     void PrintValidError(CConstRef<CValidError> errors);
     void PrintValidErrItem(const CValidErrItem& item);
     CRef<CValidError> ReportReadFailure(const CException* p_exception);
@@ -113,7 +132,6 @@ public:
     CConstRef<CValidError> ValidateAsync(
         const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry);
     void ValidateOneHugeFile(const string& loader_name, bool use_mt);
-    void ValidateOneFile();
 
     const CAppConfig& mAppConfig;
 
@@ -122,27 +140,21 @@ public:
     unique_ptr<edit::CHugeFileProcess> mpHugeFileProcess;
     ///
     CRef<CObjectManager> m_ObjMgr;
-    unsigned int m_Options;
-    double m_Longest;
+    unsigned int m_Options = 0;
+    double m_Longest = 0;
     string m_CurrentId;
     string m_LongestId;
-    size_t m_NumFiles;
-    size_t m_NumRecords;
+    size_t m_NumRecords = 0;
 
-    size_t m_Level;
-    std::atomic<size_t> m_Reported;
+    size_t m_Level = 0;
+    std::atomic<size_t> m_Reported {0};
 
     CCleanup m_Cleanup;
 
     CHugeFileValidator::TGlobalInfo m_GlobalInfo;
-    CNcbiOstream* m_ValidErrorStream;
 
     shared_ptr<SValidatorContext> m_pContext;
-#ifdef USE_XMLWRAPP_LIBS
-    shared_ptr<CValXMLStream> m_ostr_xml;
-#endif
-
+    CConstRef<CValidError> m_eval;
 };
 
 #endif
-

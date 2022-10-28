@@ -39,8 +39,6 @@
 
 using namespace ncbi;
 
-#define USE_XMLWRAPP_LIBS
-
 class CAppConfig
 {
 public:
@@ -65,7 +63,7 @@ public:
     bool mContinue;
     bool mOnlyAnnots;
     bool mHugeFile = false;
+    unsigned int m_Options = 0;
 };
 
 #endif
-
