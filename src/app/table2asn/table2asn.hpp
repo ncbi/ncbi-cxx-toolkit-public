@@ -51,6 +51,10 @@ class CTable2AsnStructuredCommentsReader;
 class CFeatureTableReader;
 class CMemorySrcFileMap;
 
+namespace objects::edit {
+    class CHugeFile;
+}
+
 struct TAsyncToken
 {
     CRef<CSeq_entry>  entry;
@@ -90,7 +94,12 @@ private:
 
     void ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams = true, bool manageDataStream=true);
     void ProcessOneFile(CNcbiOstream* output);
-    void ProcessHugeFile(CNcbiOstream* output);
+    void xProcessOneFile(CFormatGuess::EFormat format, 
+            CRef<CSerialObject> pInputObject, 
+            list<CRef<CSeq_annot>>& annots,
+            CNcbiOstream* output);
+    void ProcessHugeFile(edit::CHugeFile& hugeFile, CNcbiOstream* output);
+    void ProcessOneFile(CFormatGuess::EFormat format, const string& contentType, unique_ptr<CNcbiIstream>& pIstr, CNcbiOstream* output);
     void ProcessOneEntry(CFormatGuess::EFormat inputFormat, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
     void ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncToken& token);
     void MakeFlatFile(CSeq_entry_Handle seh, CRef<CSeq_submit> submit, std::ostream& ostream);
@@ -114,6 +123,7 @@ private:
     void CloseDiagnosticStreams();
     void CloseDataStreams();
     void xProcessHugeEntries();
+    size_t xGetNumThreads() const; 
 
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
 

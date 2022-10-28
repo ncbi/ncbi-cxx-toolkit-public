@@ -178,9 +178,8 @@ namespace
     };
 }
 
-CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info) const
+CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, const string& content_type) const
 {
-    const string& content_type = content_info.mObjectType;
     if (content_type == "Bioseq-set")
     {
         auto obj = Ref(new CSeq_entry);
@@ -188,21 +187,21 @@ CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, con
         pObjIstrm.Read(ObjectInfo(bioseq_set));
         return obj;
     }
-    else
+
     if (content_type == "Seq-submit")
     {
         auto seqsubmit = Ref(new CSeq_submit);
         pObjIstrm.Read(ObjectInfo(*seqsubmit));
         return seqsubmit;
     }
-    else
+
     if (content_type == "Seq-entry")
     {
         auto obj = Ref(new CSeq_entry);
         pObjIstrm.Read(ObjectInfo(*obj));
         return obj;
     }
-    else
+
     if (content_type == "Bioseq")
     {
         auto obj = Ref(new CSeq_entry);
@@ -814,6 +813,41 @@ void CMultiReader::LoadGFF3Fasta(istream& in, TAnnots& annots)
     x_PostProcessAnnots(annots);
 }
 
+
+CRef<CSerialObject> CMultiReader::FetchEntry(const CFormatGuess::EFormat& format, 
+        const string& objectType,
+        unique_ptr<istream>& pIstr, 
+        TAnnots& annots)
+{
+    CRef<CSerialObject> pInputObject;
+    switch (format) {
+        case CFormatGuess::eBinaryASN:
+            m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, *pIstr.release(), eTakeOwnership));
+            pInputObject = xReadASN1Binary(*m_obj_stream, objectType);
+            break;
+        case CFormatGuess::eTextASN:
+            m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, *pIstr.release(), eTakeOwnership));
+            pInputObject = xReadASN1Text(*m_obj_stream);
+            break;
+        case CFormatGuess::eGff3:
+            LoadGFF3Fasta(*pIstr, annots);
+        case CFormatGuess::eFasta: // What about buffered input?
+        default:  
+            m_iFlags = CFastaReader::fNoUserObjs;
+            pInputObject = xReadFasta(*pIstr);
+    }
+
+    if (!pInputObject) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "File format not recognized", 0);
+    }
+    // RW-617: apply template descriptors only if input is *not* ASN1:
+    // What about binary ASN.1?
+    bool merge_template_descriptors = (format != CFormatGuess::eTextASN);
+    return xApplyTemplate(pInputObject, merge_template_descriptors);
+}
+
+
 CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnots& annots)
 {
     CFormatGuess::EFormat format;
@@ -827,7 +861,7 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
     {
         case CFormatGuess::eBinaryASN:
             m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, filename));
-            input_sequence = xReadASN1Binary(*m_obj_stream, content_info.mInfoGenbank);
+            input_sequence = xReadASN1Binary(*m_obj_stream, content_info.mInfoGenbank.mObjectType);
             break;
         case CFormatGuess::eTextASN:
             m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));

@@ -50,6 +50,8 @@ public:
     CRef<objects::CSeq_entry> ReadAlignment(CNcbiIstream& instream, const CArgs& args);
     CRef<CSerialObject> ReadNextEntry();
     CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnots& annots);
+    CRef<CSerialObject> FetchEntry(const CFormatGuess::EFormat& format, const string& objectType,
+            unique_ptr<CNcbiIstream>& pIstr, TAnnots& annots);
     static
     void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);
 
@@ -63,7 +65,7 @@ private:
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
     CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors) const;
     CRef<CSerialObject> xReadASN1Text(CObjectIStream& pObjIstrm) const;
-    CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info) const;
+    CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, const string& content_type) const;
     TAnnots xReadGFF3(CNcbiIstream& instream, bool post_process);
     TAnnots xReadGTF(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
