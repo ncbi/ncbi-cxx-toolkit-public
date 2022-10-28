@@ -73,17 +73,17 @@ class CAsnvalOutput
 {
 public:
     CAsnvalOutput(const CAppConfig& config, const string& in_filename);
-    CAsnvalOutput(const CAppConfig& config, std::ostream& file);
+    CAsnvalOutput(const CAppConfig& config, std::ostream* file);
     ~CAsnvalOutput();
     size_t Write(const std::list<CConstRef<CValidError>>& eval);
 private:
-    void StartOutput();
-    void FinishOutput();
+    void StartXML();
+    void FinishXML();
     void PrintValidErrItem(const CValidErrItem& item);
     const CAppConfig& mAppConfig;
-    unique_ptr<CValXMLStream> m_ostr_xml;
-    std::ostream* m_file = nullptr;
     std::unique_ptr<std::ostream> m_own_file;
+    std::ostream* m_file = nullptr;
+    unique_ptr<CValXMLStream> m_ostr_xml;
 };
 
 class CAsnvalThreadState

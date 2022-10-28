@@ -1068,7 +1068,7 @@ CThreadExitData CAsnvalThreadState::ValidateOneFile(const std::string& filename)
     return { m_NumRecords, m_Longest, m_LongestId, m_Reported, m_eval };
 }
 
-void CAsnvalOutput::FinishOutput()
+void CAsnvalOutput::FinishXML()
 {
     if (m_ostr_xml)
     {
@@ -1097,19 +1097,19 @@ CAsnvalOutput::CAsnvalOutput(const CAppConfig& config, const string& in_filename
     m_own_file.reset(new ofstream(path));
     m_file = m_own_file.get();
 
-    StartOutput();
+    StartXML();
 }
 
-CAsnvalOutput::CAsnvalOutput(const CAppConfig& config, std::ostream& file)
+CAsnvalOutput::CAsnvalOutput(const CAppConfig& config, std::ostream* file)
 : mAppConfig{config},
-  m_file{&file}
+  m_file{file}
 {
-    StartOutput();
+    StartXML();
 }
 
 CAsnvalOutput::~CAsnvalOutput()
 {
-    FinishOutput();
+    FinishXML();
 }
 
 size_t CAsnvalOutput::Write(const std::list<CConstRef<CValidError>>& eval)
@@ -1174,7 +1174,7 @@ void CAsnvalOutput::PrintValidErrItem(const CValidErrItem& item)
     }
 }
 
-void CAsnvalOutput::StartOutput()
+void CAsnvalOutput::StartXML()
 {
     if (!m_file  ||  mAppConfig.mVerbosity != CAppConfig::eVerbosity_XML) {
         return;
