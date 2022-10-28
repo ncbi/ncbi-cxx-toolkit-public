@@ -53,6 +53,8 @@
 #include <objtools/edit/remote_updater.hpp>
 #include "app_config.hpp"
 #include "thread_state.hpp"
+#include <util/message_queue.hpp>
+#include <future>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -61,14 +63,8 @@ USING_SCOPE(objects);
 USING_SCOPE(validator);
 USING_SCOPE(edit);
 
-#define USE_XMLWRAPP_LIBS
-
-class CFileReaderThread;
-
 class CAsnvalApp : public CNcbiApplication
 {
-    friend class CAsnvalThreadState;
-    friend class CFileReaderThread;
 
 public:
     CAsnvalApp();
@@ -81,47 +77,28 @@ private:
     void Setup(const CArgs& args);
     void x_AliasLogFile();
 
+    CThreadExitData xFileReaderThread(const string& filename, bool save_output);
+    CThreadExitData xCombinedWriterTask(std::ostream* ofile);
+
     void ValidateOneDirectory(string dir_name, bool recurse);
-    bool FinishReaderThread(CFileReaderThread&, bool blocking);
+    CMessageQueue<std::future<CThreadExitData>> m_tasks_queue{8};
 
     unique_ptr<CAppConfig> mAppConfig;
-    unique_ptr<CAsnvalThreadState> mThreadState;
     unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
+    size_t m_NumFiles = 0;
 };
 
-struct CThreadExitData
+CThreadExitData CAsnvalApp::xFileReaderThread(const string& filename, bool save_output)
 {
-    size_t mNumRecords;
-    double mLongest;
-    string mLongestId;
-
-    CThreadExitData():
-        mNumRecords(0),
-        mLongest(0)
-    {};
-};
-
-class CFileReaderThread : public CThread
-{
-public:
-    CFileReaderThread(
-        CAsnvalThreadState& context) : mContext(context)
-    {};
-    bool mDone = false;
-    CAsnvalThreadState mContext;
-protected:
-    void* Main() override
-    {
-        mContext.ValidateOneFile();
-        this->mDone = true;
-        CThreadExitData* pExitData = new CThreadExitData();
-        pExitData->mNumRecords = mContext.m_NumRecords;
-        pExitData->mLongest = mContext.m_Longest;
-        pExitData->mLongestId = mContext.m_LongestId;
-        return pExitData;
+    CAsnvalThreadState mContext(*mAppConfig, mRemoteUpdater->GetUpdateFunc());
+    auto result = mContext.ValidateOneFile(filename);
+    if (save_output) {
+        CAsnvalOutput out(*mAppConfig, filename);
+        result.mReported += out.Write({result.mEval});
+        result.mEval.Reset();
     }
-};
-
+    return result;
+}
 
 string s_GetSeverityLabel(EDiagSev sev, bool is_xml)
 {
@@ -168,28 +145,6 @@ void CAsnvalApp::x_AliasLogFile()
     }
 }
 
-
-bool CAsnvalApp::FinishReaderThread(
-    CFileReaderThread& thread,
-    bool blocking)
-{
-    if (!blocking &&  !thread.mDone) {
-        return false;
-    }
-    void* ppExitData = nullptr;
-    thread.Join(&ppExitData);
-    CThreadExitData* pExitData = static_cast<CThreadExitData*>(ppExitData);
-    mThreadState->m_NumFiles++;
-    mThreadState->m_NumRecords += pExitData->mNumRecords;
-    if (pExitData->mLongest > mThreadState->m_Longest) {
-        mThreadState->m_Longest = pExitData->mLongest;
-        mThreadState->m_LongestId = pExitData->mLongestId;
-    }
-    delete pExitData;
-    return true;
-}
-
-
 void CAsnvalApp::Init()
 {
     // Prepare command line descriptions
@@ -200,9 +155,6 @@ void CAsnvalApp::Init()
     arg_desc->AddOptionalKey
         ("indir", "Directory", "Path to ASN.1 Files",
         CArgDescriptions::eInputFile);
-    arg_desc->AddOptionalKey
-        ("p", "Directory", "Deprecated Path to ASN.1 Files",
-        CArgDescriptions::eInputFile, CArgDescriptions::fHidden);
 
     arg_desc->AddOptionalKey
         ("i", "InFile", "Single Input File",
@@ -325,39 +277,24 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
     string mask = "*" + suffix;
 
     CDir::TEntries files(dir.GetEntries(mask, CDir::eFile));
-    list<CFileReaderThread*> threadList;
-
-    const size_t maxThreadCount = 8;
-    size_t threadCount = 0;
 
     for (CDir::TEntry ii : files) {
-        while (threadCount >= maxThreadCount) {
-            for (auto* pThread : threadList) {
-                if (FinishReaderThread(*pThread, false)) {
-                    threadList.remove(pThread);
-                    --threadCount;
-                    break;
-                }
-            }
-            SleepMilliSec(100);
-        }
         string fname = ii->GetName();
         if (ii->IsFile() &&
             (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
             string fpath = CDirEntry::MakePath(dir_name, fname);
 
-            //CAsnvalThreadState context(*this, fpath);
-            CAsnvalThreadState context(*mThreadState);
-            context.mFilename = fpath;
-            context.ResetStats();
-            CFileReaderThread* pThread(new CFileReaderThread(context));
-            pThread->Run();
-            threadList.push_back(pThread);
-            ++threadCount;
+            bool separate_outputs = !args.Exist("o");
+
+            auto task = std::async(std::launch::async,
+                [this](const string& filename, bool separate_outputs)
+                {
+                    return xFileReaderThread(filename, separate_outputs);
+                },
+                fpath, separate_outputs);
+
+            m_tasks_queue.push_back(std::move(task));
         }
-    }
-    for (auto* pThread : threadList) {
-        FinishReaderThread(*pThread, true);
     }
     if (recurse) {
         CDir::TEntries subdirs(dir.GetEntries("", CDir::eDir));
@@ -369,9 +306,46 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
             }
         }
     }
+
 }
 //LCOV_EXCL_STOP
 
+
+CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* ofile)
+{
+    CThreadExitData combined_exit_data;
+
+    std::list<CConstRef<CValidError>> eval;
+
+    while(true)
+    {
+        auto fut = m_tasks_queue.pop_front();
+        if (!fut.valid())
+            break;
+
+        auto exit_data = fut.get();
+
+        m_NumFiles++;
+
+        combined_exit_data.mReported += exit_data.mReported;
+
+        combined_exit_data.mNumRecords += exit_data.mNumRecords;
+        if (exit_data.mLongest > combined_exit_data.mLongest) {
+            combined_exit_data.mLongest = exit_data.mLongest;
+            combined_exit_data.mLongestId = exit_data.mLongestId;
+        }
+
+        if (ofile && exit_data.mEval && exit_data.mEval.NotEmpty()) {
+            eval.push_back(exit_data.mEval);
+        }
+    }
+    if (ofile) {
+        CAsnvalOutput out(*mAppConfig, *ofile);
+        combined_exit_data.mReported += out.Write(eval);
+    }
+
+    return combined_exit_data;
+}
 
 int CAsnvalApp::Run()
 {
@@ -393,8 +367,9 @@ int CAsnvalApp::Run()
 
     time_t start_time = time(NULL);
 
-    if (args["o"]) {
-        mThreadState->m_ValidErrorStream = &(args["o"].AsOutputFile());
+    std::ostream* ValidErrorStream = nullptr;
+    if (args["o"]) { // combined output
+        ValidErrorStream = &args["o"].AsOutputFile();
     }
 
     if (args["D"]) {
@@ -404,44 +379,48 @@ int CAsnvalApp::Run()
         }
     }
 
-    mThreadState->m_Reported = 0;
-
     if (args["b"]) {
         cerr << "Warning: -b is deprecated; do not use" << endl;
     }
 
+    CThreadExitData exit_data;
     bool exception_caught = false;
     try {
-        mThreadState->ConstructOutputStreams();
-
         if (args["indir"]) {
+
+            auto writer_task = std::async([this, ValidErrorStream] { return xCombinedWriterTask(ValidErrorStream); });
+
             ValidateOneDirectory(args["indir"].AsString(), args["u"]);
-        } else if (args["p"]) {
-            // -p is deprecated in favor of -indir
-            ValidateOneDirectory(args["p"].AsString(), args["u"]);
+
+            m_tasks_queue.push_back({}); // this will finish writer task
+
+            exit_data = writer_task.get();
+
         } else {
-            mThreadState->mFilename = (args["i"]) ? args["i"].AsString() : "";
-            mThreadState->m_pContext->m_taxon_update = mRemoteUpdater->GetUpdateFunc();
-            mThreadState->ValidateOneFile();
+            string in_filename = (args["i"]) ? args["i"].AsString() : "";
+            exit_data = xFileReaderThread(in_filename, ValidErrorStream==nullptr);
+            m_NumFiles++;
+            if (ValidErrorStream) {
+                CAsnvalOutput out(*mAppConfig, *ValidErrorStream);
+                exit_data.mReported += out.Write({exit_data.mEval});
+            }
         }
     } catch (CException& e) {
         ERR_POST(Error << e);
         exception_caught = true;
     }
-    if (mThreadState->m_NumFiles == 0) {
+    if (m_NumFiles == 0) {
         ERR_POST("No matching files found");
     }
 
     time_t stop_time = time(NULL);
     if (! mAppConfig->mQuiet ) {
         LOG_POST_XX(Corelib_App, 1, "Finished in " << stop_time - start_time << " seconds");
-        LOG_POST_XX(Corelib_App, 1, "Longest processing time " << mThreadState->m_Longest << " seconds on " << mThreadState->m_LongestId);
-        LOG_POST_XX(Corelib_App, 1, "Total number of records " << mThreadState->m_NumRecords);
+        LOG_POST_XX(Corelib_App, 1, "Longest processing time " << exit_data.mLongest << " seconds on " << exit_data.mLongestId);
+        LOG_POST_XX(Corelib_App, 1, "Total number of records " << exit_data.mNumRecords);
     }
 
-    mThreadState->DestroyOutputStreams();
-
-    if (mThreadState->m_Reported > 0 || exception_caught) {
+    if (exit_data.mReported > 0 || exception_caught) {
         return 1;
     } else {
         return 0;
@@ -458,24 +437,16 @@ void CAsnvalApp::Setup(const CArgs& args)
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
     mAppConfig.reset(new CAppConfig(args));
-    mThreadState.reset(new CAsnvalThreadState(*mAppConfig));
 
     // Create object manager
-    mThreadState->m_ObjMgr = CObjectManager::GetInstance();
-    CDataLoadersUtil::SetupObjectManager(args, *mThreadState->m_ObjMgr,
+    CDataLoadersUtil::SetupObjectManager(args, *CObjectManager::GetInstance(),
                                          CDataLoadersUtil::fDefault |
                                          CDataLoadersUtil::fGenbankOffByDefault);
-    // Set validator options
-    mThreadState->m_Options = CValidatorArgUtil::ArgsToValidatorOptions(args);
 }
 
 
 void CValXMLStream::Print(const CValidErrItem& item)
 {
-#if 0
-    TTypeInfo info = item.GetThisTypeInfo();
-    WriteObject(&item, info);
-#else
     m_Output.PutString("  <message severity=\"");
     m_Output.PutString(s_GetSeverityLabel(item.GetSeverity(), true));
     if (item.IsSetAccnver()) {
@@ -507,7 +478,6 @@ void CValXMLStream::Print(const CValidErrItem& item)
 
     m_Output.PutString("</message>");
     m_Output.PutEol();
-#endif
 }
 
 
@@ -516,5 +486,45 @@ void CValXMLStream::Print(const CValidErrItem& item)
 
 int main(int argc, const char* argv[])
 {
+    #ifdef _DEBUG
+    // this code converts single argument into multiple, just to simplify testing
+    list<string> split_args;
+    vector<const char*> new_argv;
+
+    if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
+    {
+        NStr::Split(argv[1], " ", split_args);
+
+        auto it = split_args.begin();
+        while (it != split_args.end())
+        {
+            auto next = it; ++next;
+            if (next != split_args.end() &&
+                ((it->front() == '"' && it->back() != '"') ||
+                 (it->front() == '\'' && it->back() != '\'')))
+            {
+                it->append(" "); it->append(*next);
+                next = split_args.erase(next);
+            } else it = next;
+        }
+        for (auto& rec: split_args)
+        {
+            if (rec.front()=='\'' && rec.back()=='\'')
+                rec=rec.substr(1, rec.length()-2);
+        }
+        argc = 1 + split_args.size();
+        new_argv.reserve(argc);
+        new_argv.push_back(argv[0]);
+        for (const string& s : split_args)
+        {
+            new_argv.push_back(s.c_str());
+            std::cerr << s.c_str() << " ";
+        }
+        std::cerr << "\n";
+
+
+        argv = new_argv.data();
+    }
+    #endif
     return CAsnvalApp().AppMain(argc, argv);
 }

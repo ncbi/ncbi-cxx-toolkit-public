@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include "app_config.hpp"
+#include <objtools/validator/valid_cmdargs.hpp>
 
 using namespace ncbi;
 
@@ -62,5 +63,6 @@ CAppConfig::CAppConfig(const CArgs& args)
     mOnlyAnnots = args["annot"];
     mHugeFile = args["huge"];
     mContinue = false;
+    // Set validator options
+    m_Options = objects::validator::CValidatorArgUtil::ArgsToValidatorOptions(args);
 }
-
