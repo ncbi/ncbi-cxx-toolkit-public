@@ -6848,13 +6848,16 @@ if test "$with_fastcgi" != "no" ; then
    esac
    if test -d "$FASTCGI_PATH"; then
       NCBI_FIX_DIR(FASTCGI_PATH)
+      NCBI_FIND_ARCH_PATH(FASTCGI)
    fi
-   FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
-   if test "$with_debug" = "no" ; then
-      FASTCGI_LIBDIR="$FASTCGI_PATH/lib${bit64_sfx}"
+   FASTCGI_INCLUDE="-I$FASTCGI_PATH/include"
+   if test "$with_debug" != "no" \
+      -a -d "$FASTCGI_ARCH_PATH/altlib${bit64_sfx}"; then
+      FASTCGI_LIBDIR="$FASTCGI_ARCH_PATH/altlib${bit64_sfx}"
    else
-      FASTCGI_LIBDIR="$FASTCGI_PATH/altlib${bit64_sfx}"
+      FASTCGI_LIBDIR="$FASTCGI_ARCH_PATH/lib${bit64_sfx}"
    fi
+   NCBI_FIX_DIR(FASTCGI_LIBDIR)
    NCBI_RPATHIFY(FASTCGI_LIBS, $FASTCGI_LIBDIR, [ -lfcgi $NETWORK_LIBS])
    FASTCGI_OBJS="fcgibuf"
    LIBS="$FASTCGI_LIBS $orig_LIBS"
