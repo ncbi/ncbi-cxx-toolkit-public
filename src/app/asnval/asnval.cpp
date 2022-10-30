@@ -77,18 +77,21 @@ private:
     void Setup(const CArgs& args);
     void x_AliasLogFile();
 
-    CThreadExitData xFileReaderThread(const string& filename, bool save_output);
+    CThreadExitData xValidate(const string& filename, bool save_output);
+    void xValidateThread(const string& filename, bool save_output);
     CThreadExitData xCombinedWriterTask(std::ostream* ofile);
 
     void ValidateOneDirectory(string dir_name, bool recurse);
     CMessageQueue<std::future<CThreadExitData>> m_tasks_queue{8};
+    CSemaphore m_tasks_sema{8, 8};
 
+    std::atomic<size_t> m_running = 0;
     unique_ptr<CAppConfig> mAppConfig;
     unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
     size_t m_NumFiles = 0;
 };
 
-CThreadExitData CAsnvalApp::xFileReaderThread(const string& filename, bool save_output)
+CThreadExitData CAsnvalApp::xValidate(const string& filename, bool save_output)
 {
     CAsnvalThreadState mContext(*mAppConfig, mRemoteUpdater->GetUpdateFunc());
     auto result = mContext.ValidateOneFile(filename);
@@ -98,6 +101,24 @@ CThreadExitData CAsnvalApp::xFileReaderThread(const string& filename, bool save_
         result.mEval.clear();
     }
     return result;
+}
+
+void CAsnvalApp::xValidateThread(const string& filename, bool save_output)
+{
+    CThreadExitData result = xValidate(filename, save_output);
+
+    std::promise<CThreadExitData> prom;
+    prom.set_value(std::move(result));
+    auto fut = prom.get_future();
+
+    m_tasks_sema.Post();
+    m_tasks_queue.push_back(std::move(fut));
+
+    size_t current = m_running.fetch_sub(1);
+    if (current == 1)
+    { // the last task completed, singal main thread to finish
+        m_tasks_queue.push_back({});
+    }
 }
 
 string s_GetSeverityLabel(EDiagSev sev, bool is_xml)
@@ -284,16 +305,14 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
             (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
             string fpath = CDirEntry::MakePath(dir_name, fname);
 
-            bool separate_outputs = !args.Exist("o");
+            bool separate_outputs = !args["o"];
 
-            auto task = std::async(std::launch::async,
-                [this](const string& filename, bool separate_outputs)
-                {
-                    return xFileReaderThread(filename, separate_outputs);
-                },
-                fpath, separate_outputs);
-
-            m_tasks_queue.push_back(std::move(task));
+            m_running++;
+            m_tasks_sema.Wait();
+            // start thread detached, it will post results to the queue itself
+            std::thread([this, fpath, separate_outputs]()
+                { xValidateThread(fpath, separate_outputs); })
+                .detach();
         }
     }
     if (recurse) {
@@ -311,13 +330,13 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
 //LCOV_EXCL_STOP
 
 
-CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* ofile)
+CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* combined_file)
 {
     CThreadExitData combined_exit_data;
 
     std::list<CConstRef<CValidError>> eval;
 
-    CAsnvalOutput out(*mAppConfig, ofile);
+    CAsnvalOutput out(*mAppConfig, combined_file);
 
     while(true)
     {
@@ -337,11 +356,8 @@ CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* ofile)
             combined_exit_data.mLongestId = exit_data.mLongestId;
         }
 
-        if (ofile && !exit_data.mEval.empty()) {
-            if (ofile) {
-                combined_exit_data.mReported += out.Write(exit_data.mEval);
-            }
-
+        if (combined_file && !exit_data.mEval.empty()) {
+            combined_exit_data.mReported += out.Write(exit_data.mEval);
         }
     }
 
@@ -391,15 +407,20 @@ int CAsnvalApp::Run()
 
             auto writer_task = std::async([this, ValidErrorStream] { return xCombinedWriterTask(ValidErrorStream); });
 
+            m_running++;
             ValidateOneDirectory(args["indir"].AsString(), args["u"]);
 
-            m_tasks_queue.push_back({}); // this will finish writer task
+            size_t current = m_running.fetch_sub(1);
+            if (current == 1)
+            { // the last task completed, singal writer thread to finish
+                m_tasks_queue.push_back({});
+            }
 
             exit_data = writer_task.get(); // this will wait writer task completion
 
         } else {
             string in_filename = (args["i"]) ? args["i"].AsString() : "";
-            exit_data = xFileReaderThread(in_filename, ValidErrorStream==nullptr);
+            exit_data = xValidate(in_filename, ValidErrorStream==nullptr);
             m_NumFiles++;
             if (ValidErrorStream) {
                 CAsnvalOutput out(*mAppConfig, ValidErrorStream);
