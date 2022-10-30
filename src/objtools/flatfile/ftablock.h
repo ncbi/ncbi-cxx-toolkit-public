@@ -131,16 +131,14 @@ struct GapFeats {
 using GapFeatsPtr = GapFeats*;
 
 struct TokenBlk {
-    char*     str;  /* the token string */
-    TokenBlk* next; /* points to next token */
+    char*     str  = nullptr; /* the token string */
+    TokenBlk* next = nullptr; /* points to next token */
 };
 using TokenBlkPtr = TokenBlk*;
 
 struct TokenStatBlk {
-    TokenBlkPtr list; /* a pointer points to the first
-                                           token */
-    Int2        num;  /* total number of token in the
-                                           chain list */
+    TokenBlkPtr list = nullptr; /* a pointer points to the first token */
+    Int2        num  = 0;       /* total number of token in the chain list */
 };
 using TokenStatBlkPtr = TokenStatBlk*;
 
@@ -152,17 +150,17 @@ public:
 
 
 struct XmlIndex : public CFlatFileData {
-    Int4      tag;
-    Int4      order;
-    size_t    start; /* Offset from the beginning of the
+    Int4      tag        = 0;
+    Int4      order      = 0;
+    size_t    start      = 0; /* Offset from the beginning of the
                                            record, not file! */
-    size_t    end;   /* Offset from the beginning of the
+    size_t    end        = 0; /* Offset from the beginning of the
                                            record, not file! */
-    Int4      start_line;
-    Int4      end_line;
-    Int2      type; /* Used for references */
-    XmlIndex* subtags;
-    XmlIndex* next;
+    Int4      start_line = 0;
+    Int4      end_line   = 0;
+    Int2      type       = 0; /* Used for references */
+    XmlIndex* subtags    = nullptr;
+    XmlIndex* next       = nullptr;
 };
 
 using XmlIndexPtr = XmlIndex*;
@@ -309,7 +307,7 @@ public:
         mpData(nullptr),
         mOffset(offset),
         len(len_),
-        mDrop(0),
+        mDrop(false),
         mpNext(nullptr)
     {
         if (parent) {

@@ -40,14 +40,14 @@
 BEGIN_NCBI_SCOPE
 
 struct XmlObj {
-    char*   name;
-    char*   contents;
-    short   level;
-    XmlObj* attributes;
-    XmlObj* children;
-    XmlObj* next;
-    XmlObj* parent;
-    XmlObj* successor; /* linearizes a recursive exploration */
+    char*   name       = nullptr;
+    char*   contents   = nullptr;
+    short   level      = 0;
+    XmlObj* attributes = nullptr;
+    XmlObj* children   = nullptr;
+    XmlObj* next       = nullptr;
+    XmlObj* parent     = nullptr;
+    XmlObj* successor  = nullptr; /* linearizes a recursive exploration */
 };
 using XmlObjPtr = XmlObj*;
 

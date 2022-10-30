@@ -108,7 +108,7 @@ ValNodePtr get_tokens(char* pt, const Char* delimeter)
     } /* for, completed parsing author list */
 
     vnp = token->next;
-    MemFree(token);
+    delete token;
     return (vnp);
 }
 

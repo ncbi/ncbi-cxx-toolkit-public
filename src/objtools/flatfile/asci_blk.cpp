@@ -1228,7 +1228,7 @@ static void fta_fix_secondaries(TokenBlkPtr secs)
         StringCmp(secs->next->str, "-") != 0)
         return;
 
-    tbp        = (TokenBlkPtr)MemNew(sizeof(TokenBlk));
+    tbp        = new TokenBlk;
     tbp->str   = StringSave(secs->str);
     tbp->next  = secs->next;
     secs->next = tbp;
