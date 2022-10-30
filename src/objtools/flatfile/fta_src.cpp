@@ -87,10 +87,10 @@ struct CharUInt1 {
 #define BIOSOURCES_THRESHOLD 20
 
 struct PcrPrimers {
-    char*       fwd_name;
-    char*       fwd_seq;
-    char*       rev_name;
-    char*       rev_seq;
+    char*       fwd_name = nullptr;
+    char*       fwd_seq  = nullptr;
+    char*       rev_name = nullptr;
+    char*       rev_seq  = nullptr;
     PcrPrimers* next;
 };
 using PcrPrimersPtr = PcrPrimers*;
@@ -123,11 +123,11 @@ struct SourceFeatBlk {
 using SourceFeatBlkPtr = SourceFeatBlk*;
 
 struct MinMax {
-    const char* orgname; /* Do not free! It's just a pointer */
-    Int4        min;
-    Int4        max;
-    bool        skip;
-    MinMax*     next;
+    const char* orgname = nullptr; /* Do not free! It's just a pointer */
+    Int4        min     = 0;
+    Int4        max     = 0;
+    bool        skip    = false;
+    MinMax*     next    = nullptr;
 };
 using MinMaxPtr = MinMax*;
 
@@ -386,7 +386,6 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
     }
     tsfbp = sfbp->next;
     delete sfbp;
-    // MemFree(sfbp);
     return (tsfbp);
 }
 
@@ -903,7 +902,7 @@ static void MinMaxFree(MinMaxPtr mmp)
 
     for (; mmp != NULL; mmp = tmmp) {
         tmmp = mmp->next;
-        MemFree(mmp);
+        delete mmp;
     }
 }
 
@@ -999,7 +998,7 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxPtr mmp, size_t
                 for (tmmp = mmp;; tmmp = tmmp->next) {
                     if (min < tmmp->min) {
                         mmpnext             = tmmp->next;
-                        tmmp->next          = (MinMaxPtr)MemNew(sizeof(MinMax));
+                        tmmp->next          = new MinMax;
                         tmmp->next->orgname = tmmp->orgname;
                         tmmp->next->min     = tmmp->min;
                         tmmp->next->max     = tmmp->max;
@@ -1012,7 +1011,7 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxPtr mmp, size_t
                         break;
                     }
                     if (tmmp->next == NULL) {
-                        tmmp->next          = (MinMaxPtr)MemNew(sizeof(MinMax));
+                        tmmp->next          = new MinMax;
                         tmmp->next->orgname = tsfbp->name;
                         tmmp->next->min     = min;
                         tmmp->next->max     = max;
@@ -2546,7 +2545,7 @@ static void PcrPrimersFree(PcrPrimersPtr ppp)
             MemFree(ppp->rev_name);
         if (ppp->rev_seq != NULL)
             MemFree(ppp->rev_seq);
-        MemFree(ppp);
+        delete ppp;
     }
 }
 
@@ -2581,10 +2580,10 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
 
             count++;
             if (ppp == NULL) {
-                ppp  = (PcrPrimersPtr)MemNew(sizeof(PcrPrimers));
+                ppp  = new PcrPrimers;
                 tppp = ppp;
             } else {
-                tppp->next = (PcrPrimersPtr)MemNew(sizeof(PcrPrimers));
+                tppp->next = new PcrPrimers;
                 tppp       = tppp->next;
             }
 
@@ -3225,12 +3224,8 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
 
     PropogateSuppliedLineage(bioseq, sfbp, pp->taxserver);
 
-    mmp          = (MinMaxPtr)MemNew(sizeof(MinMax));
-    mmp->orgname = NULL;
-    mmp->min     = 0;
-    mmp->max     = 0;
-    mmp->skip    = false;
-    i            = CheckSourceFeatCoverage(sfbp, mmp, len);
+    mmp = new MinMax;
+    i   = CheckSourceFeatCoverage(sfbp, mmp, len);
     if (i != 0) {
         if (i == 1) {
             ErrPostEx(SEV_REJECT, ERR_SOURCE_IncompleteCoverage, "Supplied source features do not span every base of the sequence. Entry dropped.");

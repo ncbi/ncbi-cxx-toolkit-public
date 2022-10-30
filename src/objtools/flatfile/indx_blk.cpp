@@ -2174,7 +2174,7 @@ void MsgSkipTitleFail(const char* flatfile, FinfoBlkPtr finfo)
 {
     ErrPostEx(SEV_ERROR, ERR_ENTRY_Begin, "No valid beginning of entry found in %s file", flatfile);
 
-    MemFree(finfo);
+    delete finfo;
 }
 
 

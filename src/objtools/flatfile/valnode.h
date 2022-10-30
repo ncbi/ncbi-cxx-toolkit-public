@@ -53,11 +53,11 @@ typedef union dataval {
 } DataVal;
 
 struct ValNode {
-    unsigned char choice;   /* to pick a choice */
-    unsigned char extended; /* extra fields reserved to NCBI allocated in structure */
-    DataVal       data;     /* attached data */
-    bool          fatal;
-    ValNode*      next; /* next in linked list */
+    unsigned char choice   = 0; /* to pick a choice */
+    unsigned char extended = 0; /* extra fields reserved to NCBI allocated in structure */
+    DataVal       data;         /* attached data */
+    bool          fatal = false;
+    ValNode*      next  = nullptr; /* next in linked list */
 };
 using ValNodePtr = ValNode*;
 

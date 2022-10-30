@@ -432,10 +432,10 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
             break;
         }
 
-        tbp->next = (TokenBlkPtr)MemNew(sizeof(TokenBlk));
+        tbp->next = new TokenBlk;
         tbp       = tbp->next;
         tbp->str  = StringSave("-");
-        tbp->next = (TokenBlkPtr)MemNew(sizeof(TokenBlk));
+        tbp->next = new TokenBlk;
         tbp       = tbp->next;
         tbp->str  = StringSave(last);
         tsbp->num += 2;
@@ -453,7 +453,7 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
 /**********************************************************/
 static TokenBlkPtr TokenNodeNew(TokenBlkPtr tbp)
 {
-    TokenBlkPtr newnode = (TokenBlkPtr)MemNew(sizeof(TokenBlk));
+    TokenBlkPtr newnode = new TokenBlk;
 
     if (tbp != NULL) {
         while (tbp->next != NULL)
@@ -495,7 +495,7 @@ TokenStatBlkPtr TokenString(char* str, Char delimiter)
     TokenStatBlkPtr token;
     Char            ch;
 
-    token = (TokenStatBlkPtr)MemNew(sizeof(TokenStatBlk));
+    token = new TokenStatBlk;
 
     /* skip first several delimiters if any existed
      */
@@ -534,7 +534,7 @@ void FreeTokenblk(TokenBlkPtr tbp)
         temp = tbp;
         tbp  = tbp->next;
         MemFree(temp->str);
-        MemFree(temp);
+        delete temp;
     }
 }
 
@@ -542,7 +542,7 @@ void FreeTokenblk(TokenBlkPtr tbp)
 void FreeTokenstatblk(TokenStatBlkPtr tsbp)
 {
     FreeTokenblk(tsbp->list);
-    MemFree(tsbp);
+    delete tsbp;
 }
 
 /**********************************************************

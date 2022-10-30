@@ -54,7 +54,7 @@ ValNodePtr ValNodeNew(ValNodePtr vnp)
 {
     ValNodePtr newnode;
 
-    newnode = (ValNodePtr)MemNew(sizeof(ValNode));
+    newnode = new ValNode;
     if (vnp != NULL) {
         while (vnp->next != NULL)
             vnp = vnp->next;
@@ -77,7 +77,7 @@ ValNodePtr ValNodeFree(ValNodePtr vnp)
 
     while (vnp != NULL) {
         next = vnp->next;
-        MemFree(vnp);
+        delete vnp;
         vnp = next;
     }
     return NULL;
@@ -96,9 +96,9 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp)
     ValNodePtr next;
 
     while (vnp != NULL) {
-        MemFree(vnp->data.ptrvalue);
+        MemFree((char*)vnp->data.ptrvalue);
         next = vnp->next;
-        MemFree(vnp);
+        delete vnp;
         vnp = next;
     }
     return NULL;

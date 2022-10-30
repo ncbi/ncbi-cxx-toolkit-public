@@ -396,10 +396,10 @@ struct CharIntLen {
 };
 
 struct SPDEFields {
-    Int4        tag;
-    char*       start;
-    char*       end;
-    SPDEFields* next;
+    Int4        tag   = 0;
+    char*       start = nullptr;
+    char*       end   = nullptr;
+    SPDEFields* next  = nullptr;
 };
 using SPDEFieldsPtr = SPDEFields*;
 
@@ -414,39 +414,39 @@ struct SPFeatInput {
 using SPFeatInputPtr = SPFeatInput*;
 
 struct SPFeatBln {
-    bool initmet;
-    bool nonter;
-    bool noright;
-    bool noleft;
+    bool initmet = false;
+    bool nonter  = false;
+    bool noright = false;
+    bool noleft  = false;
 };
 using SPFeatBlnPtr = SPFeatBln*;
 
 /* segment location, data from NON_CONS
  */
 struct SPSegLoc {
-    Int4      from; /* the beginning point of the segment */
-    Int4      len;  /* total length of the segment */
-    SPSegLoc* next;
+    Int4      from = 0; /* the beginning point of the segment */
+    Int4      len  = 0; /* total length of the segment */
+    SPSegLoc* next = nullptr;
 };
 using SPSegLocPtr = SPSegLoc*;
 
 struct SetOfSyns {
-    char*      synname;
-    SetOfSyns* next;
+    char*      synname = nullptr;
+    SetOfSyns* next    = nullptr;
 };
 using SetOfSynsPtr = SetOfSyns*;
 
 struct SetOfSpecies {
-    char*        fullname;
-    char*        name;
-    SetOfSynsPtr syn;
+    char*      fullname = nullptr;
+    char*      name     = nullptr;
+    SetOfSyns* syn      = nullptr;
 };
 using SetOfSpeciesPtr = SetOfSpecies*;
 
 struct ViralHost {
-    TTaxId     taxid;
-    char*      name;
-    ViralHost* next;
+    TTaxId     taxid = ZERO_TAX_ID;
+    char*      name  = nullptr;
+    ViralHost* next  = nullptr;
 };
 using ViralHostPtr = ViralHost*;
 
@@ -1082,10 +1082,8 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
     if (*p == '\0')
         return (NULL);
 
-    res           = (SetOfSpeciesPtr)MemNew(sizeof(SetOfSpecies));
+    res           = new SetOfSpecies;
     res->fullname = StringSave(p);
-    res->name     = NULL;
-    res->syn      = NULL;
 
     temp = StringSave(res->fullname);
     p    = StringChr(temp, '(');
@@ -1101,12 +1099,10 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
                     break;
             }
         }
-        res->name    = StringSave(temp);
-        *p           = '(';
-        ssp          = (SetOfSynsPtr)MemNew(sizeof(SetOfSyns));
-        ssp->synname = NULL;
-        ssp->next    = NULL;
-        tssp         = ssp;
+        res->name = StringSave(temp);
+        *p        = '(';
+        ssp       = new SetOfSyns;
+        tssp      = ssp;
         for (;;) {
             for (p++; *p == ' ' || *p == '\t';)
                 p++;
@@ -1120,10 +1116,9 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
                     break;
             }
             if (*p == '\0') {
-                tssp->next    = (SetOfSynsPtr)MemNew(sizeof(SetOfSyns));
+                tssp->next    = new SetOfSyns;
                 tssp          = tssp->next;
                 tssp->synname = StringSave(q);
-                tssp->next    = NULL;
                 break;
             }
             *p = '\0';
@@ -1134,10 +1129,9 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
                         break;
                 }
             }
-            tssp->next    = (SetOfSynsPtr)MemNew(sizeof(SetOfSyns));
+            tssp->next    = new SetOfSyns;
             tssp          = tssp->next;
             tssp->synname = StringSave(q);
-            tssp->next    = NULL;
             *p            = ')';
             p             = StringChr(p, '(');
             if (p == NULL)
@@ -1145,7 +1139,7 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
         }
 
         res->syn = ssp->next;
-        MemFree(ssp);
+        delete ssp;
     }
 
     MemFree(temp);
@@ -1316,9 +1310,9 @@ static void SetOfSpeciesFree(SetOfSpeciesPtr sosp)
         tssp = ssp->next;
         if (ssp->synname != NULL)
             MemFree(ssp->synname);
-        MemFree(ssp);
+        delete ssp;
     }
-    MemFree(sosp);
+    delete sosp;
 }
 
 /**********************************************************/
@@ -1344,11 +1338,8 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     if (dbp == NULL)
         return (NULL);
 
-    vhp        = (ViralHostPtr)MemNew(sizeof(ViralHost));
-    vhp->name  = NULL;
-    vhp->taxid = ZERO_TAX_ID;
-    vhp->next  = NULL;
-    tvhp       = vhp;
+    vhp  = new ViralHost;
+    tvhp = vhp;
 
     line                       = (char*)MemNew(dbp->len + 2);
     ch                         = dbp->mOffset[dbp->len - 1];
@@ -1383,9 +1374,8 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
         r = StringChr(q, '\n');
         p = StringChr(q, ';');
         if ((r == NULL || r > p) && p != NULL) {
-            tvhp->next = (ViralHostPtr)MemNew(sizeof(ViralHost));
+            tvhp->next = new ViralHost;
             tvhp       = tvhp->next;
-            tvhp->next = NULL;
             for (p--; *p == ';' || *p == ' ';)
                 p--;
             p++;
@@ -1426,7 +1416,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     MemFree(line);
 
     tvhp = vhp->next;
-    MemFree(vhp);
+    delete vhp;
 
     if (tvhp == NULL)
         ErrPostEx(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxIDs found in OH line.");
@@ -2114,7 +2104,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             fta_check_embl_drxref_dups(embl_acc_list->next);
         ValNodeFreeData(embl_acc_list->next);
     }
-    MemFree(embl_acc_list);
+    delete embl_acc_list;
 
     if (acc_list != NULL)
         ValNodeFreeData(acc_list);
@@ -2196,7 +2186,7 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
     offset[len] = ch;
     tvnp        = vnp->next;
     vnp->next   = NULL;
-    MemFree(vnp);
+    delete vnp;
     vnp = tvnp;
 
     first  = 0;
@@ -2734,7 +2724,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                 orgname.SetMod().push_back(mod);
 
                 if (tvhp->taxid <= ZERO_TAX_ID) {
-                    MemFree(tvhp);
+                    delete tvhp;
                     continue;
                 }
 
@@ -2763,7 +2753,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                                   &org_taxname[0],
                                   TAX_ID_TO(int, tvhp->taxid));
                 }
-                MemFree(tvhp);
+                delete tvhp;
             }
         }
 
@@ -4240,7 +4230,7 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
             is_trembl = true;
     }
 
-    sfp       = (SPDEFieldsPtr)MemNew(sizeof(SPDEFields));
+    sfp       = new SPDEFields;
     sfp->tag  = 0;
     sfp->next = NULL;
 
@@ -4273,7 +4263,7 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
             break;
 
         count++;
-        tsfp->next = (SPDEFieldsPtr)MemNew(sizeof(SPDEFields));
+        tsfp->next = new SPDEFields;
         tsfp       = tsfp->next;
         tsfp->tag  = cilp->num;
         for (r = q + cilp->len; *r == ' ';)
@@ -4539,7 +4529,7 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
             continue;
 
         if (hspslp == NULL) {
-            spslp       = (SPSegLocPtr)MemNew(sizeof(SPSegLoc));
+            spslp       = new SPSegLoc;
             spslp->from = 0;
             p           = (char*)spfip->from.c_str();
             if (*p == '<' || *p == '>' || *p == '?')
@@ -4555,7 +4545,7 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
             curspslp->len = atoi(p) - curspslp->from;
         }
 
-        spslp = (SPSegLocPtr)MemNew(sizeof(SPSegLoc));
+        spslp = new SPSegLoc;
         p     = (char*)spfip->from.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
@@ -4794,12 +4784,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
     ebp                   = static_cast<EntryBlk*>(entry->mpData);
     CSeq_entry& seq_entry = *ebp->seq_entry;
 
-    spfbp          = (SPFeatBlnPtr)MemNew(sizeof(SPFeatBln));
-    spfbp->initmet = false;
-    spfbp->nonter  = false;
-    spfbp->noright = false;
-    spfbp->noleft  = false;
-
+    spfbp = new SPFeatBln;
     spfip = ParseSPFeat(entry, pp->entrylist[pp->curindx]->bases);
 
     CSeq_annot::C_Data::TFtable feats;
@@ -4827,11 +4812,11 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 
     for (; spslp != NULL; spslp = next) {
         next = spslp->next;
-        MemFree(spslp);
+        delete spslp;
     }
 
     FreeSPFeatInputSet(spfip);
-    MemFree(spfbp);
+    delete spfbp;
 }
 
 /**********************************************************/

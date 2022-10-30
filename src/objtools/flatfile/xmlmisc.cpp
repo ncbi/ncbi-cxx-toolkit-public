@@ -357,7 +357,7 @@ static XmlObjPtr ProcessAttribute(char* str)
     if (StringHasNoText(str) || StringHasNoText(eql))
         return NULL;
 
-    attr = (XmlObj*)MemNew(sizeof(XmlObj));
+    attr = new XmlObj;
     if (attr == NULL)
         return NULL;
 
@@ -381,7 +381,7 @@ static XmlObjPtr ProcessStartTag(ValNodePtr* curr, XmlObjPtr parent, const Char*
     if (curr == NULL)
         return NULL;
 
-    xop = (XmlObj*)MemNew(sizeof(XmlObj));
+    xop = new XmlObj;
     if (xop == NULL)
         return NULL;
 
@@ -510,7 +510,7 @@ XmlObjPtr FreeXmlObject(XmlObjPtr xop)
         curr = next;
     }
 
-    MemFree(xop);
+    delete xop;
 
     return NULL;
 }
