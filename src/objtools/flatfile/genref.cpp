@@ -104,25 +104,24 @@ using GeneLocsPtr = GeneLocs*;
 struct SeqlocInfoblk {
     Int4       from   = 0; /* the lowest value in the entry */
     Int4       to     = 0; /* the highest value in the entry */
-    Uint1      strand = 0;
-    Int4       length = 0; /* total length of the seq-data
-                                           of the entry */
+    Uint1      strand = eNa_strand_unknown;
+    Int4       length = 0; /* total length of the seq-data of the entry */
     TSeqIdList ids;        /* the entry's SeqId */
-    bool       noleft  = 0;
-    bool       noright = 0;
+    bool       noleft  = false;
+    bool       noright = false;
 };
 
 using SeqlocInfoblkPtr = SeqlocInfoblk*;
 
 struct MixLoc {
     CRef<CSeq_id> pId;
-    Int4          min;
-    Int4          max;
-    Uint1         strand;
-    bool          noleft;
-    bool          noright;
-    Int4          numint;
-    MixLoc*       next = nullptr;
+    Int4          min     = 0;
+    Int4          max     = 0;
+    Uint1         strand  = eNa_strand_unknown;
+    bool          noleft  = false;
+    bool          noright = false;
+    Int4          numint  = 0;
+    MixLoc*       next    = nullptr;
 };
 
 using MixLocPtr = MixLoc*;
@@ -850,7 +849,7 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
     if (first == NULL && second == NULL)
         return (NULL);
 
-    tres = (MixLocPtr)MemNew(sizeof(MixLoc));
+    tres = new MixLoc;
     res  = tres;
     mlp  = (first == NULL) ? second : first;
     for (; mlp != NULL; mlp = mlp->next) {
@@ -890,7 +889,7 @@ static MixLocPtr EasySeqLocMerge(MixLocPtr first, MixLocPtr second, bool join)
     }
 
     res = tres->next;
-    MemFree(tres);
+    delete tres;
     if (res == NULL)
         return (NULL);
 
@@ -960,7 +959,7 @@ static MixLocPtr CircularSeqLocCollect(MixLocPtr first, MixLocPtr second)
     if (first == NULL && second == NULL)
         return (NULL);
 
-    MixLocPtr tres = (MixLocPtr)MemNew(sizeof(MixLoc)),
+    MixLocPtr tres = new MixLoc,
               res  = tres;
     for (MixLocPtr mlp = first; mlp != NULL; mlp = mlp->next) {
         res->next = MixLocCopy(mlp);
@@ -972,7 +971,7 @@ static MixLocPtr CircularSeqLocCollect(MixLocPtr first, MixLocPtr second)
     }
 
     res = tres->next;
-    MemFree(tres);
+    delete tres;
     return (res);
 }
 

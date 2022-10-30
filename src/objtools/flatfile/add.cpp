@@ -85,41 +85,41 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 struct SeqLocIds {
-    CSeq_loc*   badslp;
-    const Char* wgsacc;
-    const Char* wgscont;
-    const Char* wgsscaf;
-    Int4        genbank;
-    Int4        embl;
-    Int4        pir;
-    Int4        swissprot;
-    Int4        other;
-    Int4        ddbj;
-    Int4        prf;
-    Int4        tpg;
-    Int4        tpe;
-    Int4        tpd;
-    Int4        total;
+    CSeq_loc*   badslp    = nullptr;
+    const Char* wgsacc    = nullptr;
+    const Char* wgscont   = nullptr;
+    const Char* wgsscaf   = nullptr;
+    Int4        genbank   = 0;
+    Int4        embl      = 0;
+    Int4        pir       = 0;
+    Int4        swissprot = 0;
+    Int4        other     = 0;
+    Int4        ddbj      = 0;
+    Int4        prf       = 0;
+    Int4        tpg       = 0;
+    Int4        tpe       = 0;
+    Int4        tpd       = 0;
+    Int4        total     = 0;
 };
 using SeqLocIdsPtr = SeqLocIds*;
 
 struct FTATpaBlock {
-    Int4              from1;
-    Int4              to1;
-    char*             accession;
-    Int4              version;
-    Int4              from2;
-    Int4              to2;
-    ENa_strand        strand;
-    CSeq_id::E_Choice sicho;
-    FTATpaBlock*      next;
+    Int4              from1     = 0;
+    Int4              to1       = 0;
+    char*             accession = nullptr;
+    Int4              version   = 0;
+    Int4              from2     = 0;
+    Int4              to2       = 0;
+    ENa_strand        strand    = eNa_strand_unknown;
+    CSeq_id::E_Choice sicho     = CSeq_id::e_not_set;
+    FTATpaBlock*      next      = nullptr;
 };
 using FTATpaBlockPtr = FTATpaBlock*;
 
 struct FTATpaSpan {
-    Int4        from;
-    Int4        to;
-    FTATpaSpan* next;
+    Int4        from = 0;
+    Int4        to   = 0;
+    FTATpaSpan* next = nullptr;
 };
 using FTATpaSpanPtr = FTATpaSpan*;
 
@@ -132,7 +132,7 @@ static void fta_tpa_block_free(FTATpaBlockPtr ftbp)
         next = ftbp->next;
         if (ftbp->accession != NULL)
             MemFree(ftbp->accession);
-        MemFree(ftbp);
+        delete ftbp;
     }
 }
 
@@ -964,7 +964,7 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
     if (ftbp == NULL || length < 1)
         return;
 
-    ftsp       = (FTATpaSpanPtr)MemNew(sizeof(FTATpaSpan));
+    ftsp       = new FTATpaSpan;
     ftsp->from = ftbp->from1;
     ftsp->to   = ftbp->to1;
     ftsp->next = NULL;
@@ -995,7 +995,7 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
             continue;
         }
 
-        tftsp->next = (FTATpaSpanPtr)MemNew(sizeof(FTATpaSpan));
+        tftsp->next = new FTATpaSpan;
         tftsp       = tftsp->next;
         tftsp->from = tftbp->from1;
         tftsp->to   = tftbp->to1;
@@ -1023,7 +1023,7 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
                 ErrPostEx(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"%d..%d\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, length);
         }
 
-        MemFree(ftsp);
+        delete ftsp;
     }
 }
 
@@ -1136,7 +1136,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         offset[len] = ch;
     }
 
-    ftbp = (FTATpaBlockPtr)MemNew(sizeof(FTATpaBlock));
+    ftbp = new FTATpaBlock;
 
     bad_line      = false;
     bad_interval  = false;
@@ -1177,7 +1177,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             if ((ft->next->from1 > from1) ||
                 (ft->next->from1 == from1 && ft->next->to1 > to1))
                 break;
-        tftbp       = (FTATpaBlockPtr)MemNew(sizeof(FTATpaBlock));
+        tftbp       = new FTATpaBlock;
         tftbp->next = ft->next;
         ft->next    = tftbp;
 
@@ -1300,7 +1300,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 
     tftbp      = ftbp->next;
     ftbp->next = NULL;
-    MemFree(ftbp);
+    delete ftbp;
     ftbp = tftbp;
 
     fta_check_tpa_tsa_coverage(ftbp, bioseq.GetLength(), tpa);
@@ -1572,7 +1572,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
     }
 
     tvnp = vnp->next;
-    MemFree(vnp);
+    delete vnp;
 
     if (tvnp == NULL)
         return (NULL);
@@ -1921,7 +1921,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
     }
 
     tvnp = vnp->next;
-    MemFree(vnp);
+    delete vnp;
 
     if (tvnp == NULL)
         return (NULL);
@@ -2320,7 +2320,6 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* n
 
     ibp = pp->entrylist[pp->curindx];
 
-    MemSet(&sli, 0, sizeof(SeqLocIds));
     fta_do_fix_seq_loc_id(locs, ibp, location, name, &sli, iscon, pp->source);
 
     tpa     = sli.tpg + sli.tpe + sli.tpd;

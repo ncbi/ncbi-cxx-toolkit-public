@@ -153,7 +153,7 @@ static XmlIndexPtr XMLIndexNew(void)
 {
     XmlIndexPtr xip;
 
-    xip             = (XmlIndexPtr)MemNew(sizeof(XmlIndex));
+    xip             = new XmlIndex;
     xip->tag        = -1;
     xip->order      = -1;
     xip->start      = 0;
@@ -856,7 +856,7 @@ static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Parser::ESource sourc
     vnp = ConstructValNode(NULL, objects::CSeq_id::e_not_set, buf);
     check_est_sts_gss_tpa_kwds(vnp, len, ibp, tpa_check, ibp->specialist_db, ibp->inferential, ibp->experimental, ibp->assembly);
     MemFree(buf);
-    MemFree(vnp);
+    delete vnp;
     return true;
 }
 

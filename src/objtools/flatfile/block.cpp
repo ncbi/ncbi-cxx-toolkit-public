@@ -49,11 +49,11 @@
 BEGIN_NCBI_SCOPE
 
 struct QSStruct {
-    char*     accession;
-    Int2      version;
-    size_t    offset;
-    size_t    length;
-    QSStruct* next;
+    char*     accession = nullptr;
+    Int2      version   = 0;
+    size_t    offset    = 0;
+    size_t    length    = 0;
+    QSStruct* next      = nullptr;
 };
 using QSStructPtr = QSStruct*;
 
@@ -135,7 +135,7 @@ void XMLIndexFree(XmlIndexPtr xip)
         xipnext = xip->next;
         if (xip->subtags != NULL)
             XMLIndexFree(xip->subtags);
-        MemFree(xip);
+        delete xip;
     }
 }
 
@@ -189,7 +189,7 @@ static void QSStructFree(QSStructPtr qssp)
         tqssp = qssp->next;
         if (qssp->accession != NULL)
             MemFree(qssp->accession);
-        MemFree(qssp);
+        delete qssp;
     }
 }
 
@@ -223,7 +223,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
     if (pp->qsfd == NULL)
         return true;
 
-    qssp      = (QSStructPtr)MemNew(sizeof(QSStruct));
+    qssp      = new QSStruct;
     tqssp     = qssp;
     tqsspprev = NULL;
     count     = 0;
@@ -243,7 +243,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
             *q++ = '\0';
 
         count++;
-        tqssp->next      = (QSStructPtr)MemNew(sizeof(QSStruct));
+        tqssp->next      = new QSStruct;
         tqssp            = tqssp->next;
         tqssp->accession = StringSave(buf + 1);
         tqssp->version   = (q == NULL) ? 0 : atoi(q);
@@ -258,7 +258,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
 
     tqssp = qssp;
     qssp  = tqssp->next;
-    MemFree(tqssp);
+    delete tqssp;
 
     if (qssp == NULL) {
         ErrPostEx(SEV_FATAL, ERR_QSCORE_NoScoreDataFound, "No correctly formatted records containing quality score data were found within file \"%s\".", pp->qsfile);
