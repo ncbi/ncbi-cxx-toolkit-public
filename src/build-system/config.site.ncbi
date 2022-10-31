@@ -186,10 +186,7 @@ esac
 
 : ${CURL_PATH=$NCBI/curl-7.85.0}
 
-case "$ncbi_platform" in
-    Linux64    ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.2} ;;
-    *          ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0} ;;
-esac
+: ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}
 
 : ${FASTCGIPP_PATH=$NCBI/fastcgi++-3.1~a1+20210601-ncbi2}
 
