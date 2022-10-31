@@ -168,15 +168,16 @@ namespace
         }
 #endif
     }
+}
 
-    static const set<TTypeInfo> supported_types =
-    {
+
+const set<TTypeInfo> CMultiReader::kSupportedTypes = {
         CBioseq_set::GetTypeInfo(),
         CBioseq::GetTypeInfo(),
         CSeq_entry::GetTypeInfo(),
         CSeq_submit::GetTypeInfo(),
-    };
-}
+};
+
 
 CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, const string& content_type) const
 {
@@ -432,7 +433,7 @@ CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr, CFileCon
         return FG.GuessFormat();
     }
 
-    FG.SetRecognizedGenbankTypes(supported_types);
+    FG.SetRecognizedGenbankTypes(kSupportedTypes);
     return FG.GuessFormatAndContent(*content_info);
 }
 
