@@ -726,6 +726,7 @@ macro(NCBI_internal_analyze_tree)
     endforeach()
 
     if( "${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "" AND
+        "${NCBI_PTBCFG_PROJECT_COMPONENTTARGETS}" STREQUAL "" AND
         "${NCBI_PTBCFG_PROJECT_TAGS}" STREQUAL "" AND
         "${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL ""
         AND NOT DEFINED NCBI_EXTERNAL_TREE_ROOT
@@ -1845,6 +1846,16 @@ function(NCBI_internal_process_project_filters _result)
             return()
         endif()
     endif()
+
+    if(NOT "${NCBI_PTBCFG_PROJECT_COMPONENTTARGETS}" STREQUAL "" AND NOT "${NCBI_PROJECT}" STREQUAL "")
+        if (${NCBI_PROJECT} IN_LIST NCBI_PTBCFG_PROJECT_COMPONENTTARGETS)
+            set(${_result} TRUE PARENT_SCOPE)
+        else()
+            set(${_result} FALSE PARENT_SCOPE)
+        endif()
+        return()
+    endif()
+
     set(${_result} TRUE PARENT_SCOPE)
 endfunction()
 
@@ -2533,6 +2544,17 @@ if(NOT "${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "")
     else()
         string(REPLACE "," ";" NCBI_PTBCFG_PROJECT_TARGETS "${NCBI_PTBCFG_PROJECT_TARGETS}")
         string(REPLACE " " ";" NCBI_PTBCFG_PROJECT_TARGETS "${NCBI_PTBCFG_PROJECT_TARGETS}")
+    endif()
+endif()
+
+if(NOT "${NCBI_PTBCFG_PROJECT_COMPONENTTARGETS}" STREQUAL "")
+    if(EXISTS "${NCBI_PTBCFG_PROJECT_COMPONENTTARGETS}")
+        if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_COMPONENTTARGETS}")
+            file(STRINGS "${NCBI_PTBCFG_PROJECT_COMPONENTTARGETS}" NCBI_PTBCFG_PROJECT_COMPONENTTARGETS)
+        endif()
+    else()
+        string(REPLACE "," ";" NCBI_PTBCFG_PROJECT_COMPONENTTARGETS "${NCBI_PTBCFG_PROJECT_COMPONENTTARGETS}")
+        string(REPLACE " " ";" NCBI_PTBCFG_PROJECT_COMPONENTTARGETS "${NCBI_PTBCFG_PROJECT_COMPONENTTARGETS}")
     endif()
 endif()
 
