@@ -4,6 +4,7 @@
 #include <util/format_guess.hpp>
 #include <corelib/ncbistre.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
 namespace objects
@@ -39,6 +40,8 @@ public:
     ~CMultiReader();
 
     using TAnnots = list<CRef<CSeq_annot>>;
+
+    static const set<TTypeInfo> kSupportedTypes;
 
     void LoadTemplate(const string& ifname);
     void LoadGFF3Fasta(istream& in, TAnnots& annots);
