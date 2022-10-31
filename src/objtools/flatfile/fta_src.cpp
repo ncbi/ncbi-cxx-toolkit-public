@@ -91,7 +91,7 @@ struct PcrPrimers {
     char*       fwd_seq  = nullptr;
     char*       rev_name = nullptr;
     char*       rev_seq  = nullptr;
-    PcrPrimers* next;
+    PcrPrimers* next     = nullptr;
 };
 using PcrPrimersPtr = PcrPrimers*;
 
