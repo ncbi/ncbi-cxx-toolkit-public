@@ -817,7 +817,6 @@ static MixLocPtr MixLocCopy(MixLocPtr mlp)
     res->noleft   = mlp->noleft;
     res->noright  = mlp->noright;
     res->numint   = mlp->numint;
-    res->next     = NULL;
     return res;
 }
 /**********************************************************/
@@ -2456,8 +2455,6 @@ static bool LocusTagCheck(GeneListPtr glp, bool& resort)
             NStr::EqualCase(glpstart->locus.c_str(), glpstart->locus_tag.c_str())) {
             for (glp = glpstart;; glp = glp->next) {
                 glp->locus.clear();
-                // MemFree(glp->locus);
-                // glp->locus = NULL;
                 resort = true;
                 if (glp == glpstop)
                     break;

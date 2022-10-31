@@ -691,7 +691,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
             else
                 ErrPostEx(SEV_WARNING, ERR_LOCATION_RefersToExternalRecord, "Feature location references an interval on another record : %s", pp->buf);
             MemFree(pp->buf);
-            pp->buf  = (char*)MemNew(1);
+            pp->buf  = MemNew(1);
             *pp->buf = '\0';
             return (-1);
         }
@@ -1190,7 +1190,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
             } else {
                 p = StringChr(location, ';');
                 if (p != NULL) {
-                    p = (char*)MemNew(StringLen(location) + 7);
+                    p = MemNew(StringLen(location) + 7);
                     StringCpy(p, "join(");
                     StringCat(p, location);
                     StringCat(p, ")");
@@ -1211,7 +1211,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 for (p = subdbp->mOffset; *p != '\0' && isdigit(*p) == 0;)
                     p++;
                 if (StringChr(p, ',') != NULL) {
-                    location = (char*)MemNew(StringLen(p) + 7);
+                    location = MemNew(StringLen(p) + 7);
                     sprintf(location, "join(%s)", p);
                 } else
                     location = StringSave(p);
@@ -1476,7 +1476,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         p = StringIStr(p, "ribosomalrna");
         if (p == NULL)
             break;
-        q    = (char*)MemNew(StringLen(qval) + 2);
+        q    = MemNew(StringLen(qval) + 2);
         p[9] = '\0';
         StringCpy(q, qval);
         StringCat(q, " RNA");
@@ -1489,7 +1489,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
     if (qval != NULL) {
         p = StringIStr(qval, " rrna");
         if (p != NULL) {
-            q  = (char*)MemNew(StringLen(qval) + 10);
+            q  = MemNew(StringLen(qval) + 10);
             *p = '\0';
             StringCpy(q, qval);
             StringCat(q, " ribosomal RNA");
@@ -1531,7 +1531,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
             continue;
         }
         len = p - qval + 14;
-        q   = (char*)MemNew(StringLen(qval) + 5);
+        q   = MemNew(StringLen(qval) + 5);
         p += 9;
         ch = *p;
         *p = '\0';
@@ -2266,7 +2266,7 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
         return;
     }
 
-    p = (char*)MemNew(len + count + 2);
+    p = MemNew(len + count + 2);
     StringCpy(p, "(");
     StringCat(p, (*first)->GetVal().c_str());
 
@@ -2426,7 +2426,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         DelCharBtwData(loc);
         if (pp->buf != NULL)
             MemFree(pp->buf);
-        pp->buf = (char*)MemNew(StringLen(fbp->key) + StringLen(loc) + 4);
+        pp->buf = MemNew(StringLen(fbp->key) + StringLen(loc) + 4);
         StringCpy(pp->buf, fbp->key);
         StringCat(pp->buf, " : ");
         StringCat(pp->buf, loc);
@@ -3696,7 +3696,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
     if (size == 0)
         return (fbp);
 
-    char* note = (char*)MemNew(size);
+    char* note = MemNew(size);
     p          = note;
 
     for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
@@ -4667,7 +4667,7 @@ static void fta_create_wgs_dbtag(CBioseq&      bioseq,
 {
     char* dbname;
 
-    dbname = (char*)MemNew(11);
+    dbname = MemNew(11);
     if (seqtype == 0 || seqtype == 1 || seqtype == 7)
         StringCpy(dbname, "WGS:");
     else if (seqtype == 4 || seqtype == 5 || seqtype == 8 || seqtype == 9)
