@@ -770,7 +770,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
     if (i <= 0)
         return false;
 
-    p = (char*)MemNew(i + 1);
+    p = MemNew(i + 1);
     StringNCpy(p, &dbp->mOffset[ParFlat_COL_DATA_EMBL], i);
     p[i - 1] = '\0';
     for (q = p; *q != '\0'; q++) {
@@ -1724,7 +1724,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 p = NULL;
 
             if (p != NULL) {
-                str1 = (char*)MemNew(StringLen(p) + StringLen(str));
+                str1 = MemNew(StringLen(p) + StringLen(str));
                 StringCpy(str1, p);
                 StringCat(str1, str + 4);
                 MemFree(str);

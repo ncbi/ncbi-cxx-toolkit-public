@@ -201,7 +201,7 @@ char* XMLGetTagValue(const char* entry, const XmlIndex* xip)
         return (NULL);
 
     size_t i   = xip->end - xip->start;
-    char*  buf = (char*)MemNew(i + 1);
+    char*  buf = MemNew(i + 1);
     StringNCpy(buf, entry + xip->start, i);
     buf[i] = '\0';
 
@@ -774,7 +774,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, char* entry)
             break;
 
     if (xip == NULL) {
-        buf = (char*)MemNew(len);
+        buf = MemNew(len);
         StringCpy(buf, XML_FAKE_ACC_TAG);
         StringCat(buf, ibp->acnum);
         ret = GetAccession(pp, buf, ibp, 2);
@@ -793,7 +793,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, char* entry)
     for (xipsec = xip->subtags; xipsec != NULL; xipsec = xipsec->next)
         len += (xipsec->end - xipsec->start + 1);
 
-    buf = (char*)MemNew(len);
+    buf = MemNew(len);
     StringCpy(buf, XML_FAKE_ACC_TAG);
     StringCat(buf, ibp->acnum);
     for (xipsec = xip->subtags; xipsec != NULL; xipsec = xipsec->next) {
@@ -841,7 +841,7 @@ static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Parser::ESource sourc
     for (xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next)
         len += (xipkwd->end - xipkwd->start + 2);
 
-    buf  = (char*)MemNew(len);
+    buf  = MemNew(len);
     *buf = '\0';
     for (xipkwd = xip->subtags; xipkwd != NULL; xipkwd = xipkwd->next) {
         p = XMLGetTagValue(entry, xipkwd);
@@ -985,7 +985,7 @@ char* XMLLoadEntry(ParserPtr pp, bool err)
     if (ibp == NULL || ibp->len == 0)
         return (NULL);
 
-    entry = (char*)MemNew(ibp->len + 1);
+    entry = MemNew(ibp->len + 1);
     s_SetPointer(*pp, ibp->offset);
 
 
@@ -1575,7 +1575,7 @@ char* XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char se
     for (i = 0, txip = xip->subtags; txip != NULL; txip = txip->next)
         i += (txip->end - txip->start + 2);
 
-    buf    = (char*)MemNew(i);
+    buf    = MemNew(i);
     buf[0] = '\0';
     for (q = buf, txip = xip->subtags; txip != NULL; txip = txip->next) {
         if (txip->end <= txip->start)

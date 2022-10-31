@@ -237,7 +237,7 @@ static char* ParseYear(const char* str)
     if (*str == '\0')
         return (NULL);
 
-    year = (char*)MemNew(5);
+    year = MemNew(5);
     for (i = 0; i < 4 && *str != '\0' && isdigit(*str) != 0; str++, i++)
         year[i] = *str;
 
@@ -739,7 +739,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
             break;
     }
 
-    tit    = (char*)MemNew(len);
+    tit    = MemNew(len);
     tit[0] = '\0';
     for (vnp = token; vnp != NULL; vnp = vnp->next) {
         if (vnp != token)
@@ -1031,7 +1031,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
     if (! prbp || prbp->journal.empty())
         return (false);
 
-    p = (char*)prbp->journal.c_str() + StringLen((char*)"PATENT NUMBER");
+    p = (char*)prbp->journal.c_str() + StringLen("PATENT NUMBER");
     while (*p == ' ')
         p++;
     for (q = p; *q != ' ' && *q != ',' && *q != '\0';)
@@ -1337,7 +1337,6 @@ CRef<CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
         prbp->title = StringSave("");
 
     CRef<CPubdesc> desc = GetPubRef(prbp, pp->source);
-    ;
     FreeParRefBlkPtr(prbp);
 
     return desc;

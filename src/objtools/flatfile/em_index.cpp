@@ -173,7 +173,7 @@ static char* EmblGetNewIDVersion(char* locus, char* str)
         return (NULL);
     *q = '\0';
 
-    res = (char*)MemNew(StringLen(locus) + StringLen(p) + 2);
+    res = MemNew(StringLen(locus) + StringLen(p) + 2);
     StringCpy(res, locus);
     StringCat(res, ".");
     StringCat(res, p);
@@ -322,7 +322,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                                     *q != '\n';)
                             q++;
                         i       = q - p;
-                        line_sv = (char*)MemNew(i + 1);
+                        line_sv = MemNew(i + 1);
                         StringNCpy(line_sv, p, i);
                         line_sv[i] = '\0';
                     }

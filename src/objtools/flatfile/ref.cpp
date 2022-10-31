@@ -1831,7 +1831,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
         if (pp->xml_comp) {
             q = StringRChr(p, '.');
             if (! q || q[1] != '\0') {
-                q = (char*)MemNew(StringLen(p) + 2);
+                q = MemNew(StringLen(p) + 2);
                 StringCpy(q, p);
                 StringCat(q, ".");
                 MemFree(p);
