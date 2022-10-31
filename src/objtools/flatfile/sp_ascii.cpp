@@ -1040,7 +1040,7 @@ static char* GetLineOSorOC(DataBlkPtr dbp, const char* pattern)
     for (size_t i = 0; i < dbp->len; i++)
         if (dbp->mOffset[i] == '\n')
             len -= 5;
-    res = (char*)MemNew(len);
+    res = MemNew(len);
     p   = res;
     for (q = dbp->mOffset; *q != '\0';) {
         if (StringNCmp(q, pattern, 5) != 0)
@@ -1341,7 +1341,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     vhp  = new ViralHost;
     tvhp = vhp;
 
-    line                       = (char*)MemNew(dbp->len + 2);
+    line                       = MemNew(dbp->len + 2);
     ch                         = dbp->mOffset[dbp->len - 1];
     dbp->mOffset[dbp->len - 1] = '\0';
     line[0]                    = '\n';
@@ -1898,7 +1898,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
 
     ch          = offset[len];
     offset[len] = '\0';
-    str         = (char*)MemNew(len + 2);
+    str         = MemNew(len + 2);
     StringCpy(str, "\n");
     StringCat(str, offset);
     offset[len]     = ch;
@@ -2386,7 +2386,7 @@ static void ParseSpComment(CSeq_descr::Tdata& descrs, char* line)
     for (p = line; *p == ' ';)
         p++;
 
-    com = (char*)MemNew(StringLen(p) + 2);
+    com = MemNew(StringLen(p) + 2);
     q   = com;
     i   = fta_StringMatch(ParFlat_SPComTopics, p);
     if (i >= 0)
@@ -3527,8 +3527,7 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
         *loc = '\0';
         if (pp->buf)
             MemFree(pp->buf);
-        pp->buf = (char*)MemNew(StringLen(fbp->key) +
-                                StringLen(fbp->location) + 4);
+        pp->buf = MemNew(StringLen(fbp->key) + StringLen(fbp->location) + 4);
         StringCpy(pp->buf, fbp->key);
         StringCpy(pp->buf, " : ");
         StringCpy(pp->buf, fbp->location);

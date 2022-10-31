@@ -999,7 +999,6 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
         tftsp       = tftsp->next;
         tftsp->from = tftbp->from1;
         tftsp->to   = tftbp->to1;
-        tftsp->next = NULL;
     }
 
     if (ftsp->from - 1 > 50) {
@@ -1121,7 +1120,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         p = StringChr(offset, '\n');
         if (p == NULL)
             return false;
-        buf = (char*)MemNew(StringLen(p) + 1);
+        buf = MemNew(StringLen(p) + 1);
         StringCpy(buf, p + 1);
         StringCat(buf, "\n");
     } else {

@@ -1115,7 +1115,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
     bool  within = false;
     char* bptr   = offset;
     char* eptr   = bptr + len;
-    char* com    = (char*)MemNew(len + 1);
+    char* com    = MemNew(len + 1);
 
     for (str = com; bptr < eptr; bptr = p + 1) {
         p = SrchTheChar(bptr, eptr, '\n');

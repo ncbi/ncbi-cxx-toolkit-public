@@ -40,17 +40,17 @@
 
 BEGIN_NCBI_SCOPE
 
-inline void* MemNew(size_t sz)
+inline char* MemNew(size_t sz)
 {
-    void* p = new char[sz];
+    char* p = new char[sz];
     std::memset(p, 0, sz);
     return p;
 }
 inline void MemSet(void* p, int n, size_t sz) { std::memset(p, n, sz); }
 inline void MemCpy(void* p, const void* q, size_t sz) { if (q) std::memcpy(p, q, sz); }
-inline void MemFree(void* p)
+inline void MemFree(char* p)
 {
-    delete[]((char*)p);
+    delete[] p;
 }
 
 inline size_t StringLen(const char* s) { return s ? std::strlen(s) : 0; }

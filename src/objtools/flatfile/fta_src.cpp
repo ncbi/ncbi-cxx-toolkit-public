@@ -499,7 +499,7 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
         i += (StringLen(variety) + StringLen("variety") + 5);
     if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype)
         i += (StringLen(ecotype) + StringLen("ecotype") + 5);
-    sfbp->namstr = (char*)MemNew(i);
+    sfbp->namstr = MemNew(i);
     StringCpy(sfbp->namstr, name);
     if (i == j)
         return;
@@ -1302,7 +1302,7 @@ static char* CheckSourceOverlap(MinMaxPtr mmp, size_t len)
     if (mmp == NULL)
         return (NULL);
 
-    res = (char*)MemNew(1024);
+    res = MemNew(1024);
     sprintf(res, "\"%s\" at %d..%d vs \"%s\" at %d..%d", mmp->orgname, mmp->min, mmp->max, tmmp->orgname, tmmp->min, tmmp->max);
     return (res);
 }
@@ -2471,10 +2471,10 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
         }
     }
 
-    str_fs = (char*)MemNew(len_fs);
-    str_rs = (char*)MemNew(len_rs);
-    str_fn = (len_fn == 0) ? NULL : (char*)MemNew(len_fn + count - num_fn + 2);
-    str_rn = (len_rn == 0) ? NULL : (char*)MemNew(len_rn + count - num_rn + 2);
+    str_fs = MemNew(len_fs);
+    str_rs = MemNew(len_rs);
+    str_fn = (len_fn == 0) ? NULL : MemNew(len_fn + count - num_fn + 2);
+    str_rn = (len_rn == 0) ? NULL : MemNew(len_rn + count - num_rn + 2);
 
     for (tppp = ppp; tppp != NULL; tppp = tppp->next) {
         StringCat(str_fs, ",");
@@ -2638,8 +2638,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         if (tppp->fwd_name == NULL)
                             tppp->fwd_name = StringSave(q);
                         else {
-                            s = (char*)MemNew(StringLen(tppp->fwd_name) +
-                                              StringLen(q) + 2);
+                            s = MemNew(StringLen(tppp->fwd_name) + StringLen(q) + 2);
                             StringCpy(s, tppp->fwd_name);
                             StringCat(s, ":");
                             StringCat(s, q);
@@ -2655,8 +2654,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         if (tppp->fwd_seq == NULL)
                             tppp->fwd_seq = StringSave(q);
                         else {
-                            s = (char*)MemNew(StringLen(tppp->fwd_seq) +
-                                              StringLen(q) + 2);
+                            s = MemNew(StringLen(tppp->fwd_seq) + StringLen(q) + 2);
                             StringCpy(s, tppp->fwd_seq);
                             StringCat(s, ":");
                             StringCat(s, q);
@@ -2666,7 +2664,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                                 if (tppp->fwd_name == NULL)
                                     tppp->fwd_name = StringSave(":");
                                 else {
-                                    s = (char*)MemNew(StringLen(tppp->fwd_name) + 2);
+                                    s = MemNew(StringLen(tppp->fwd_name) + 2);
                                     StringCpy(s, tppp->fwd_name);
                                     StringCat(s, ":");
                                     MemFree(tppp->fwd_name);
@@ -2683,8 +2681,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         if (tppp->rev_name == NULL)
                             tppp->rev_name = StringSave(q);
                         else {
-                            s = (char*)MemNew(StringLen(tppp->rev_name) +
-                                              StringLen(q) + 2);
+                            s = MemNew(StringLen(tppp->rev_name) + StringLen(q) + 2);
                             StringCpy(s, tppp->rev_name);
                             StringCat(s, ":");
                             StringCat(s, q);
@@ -2700,8 +2697,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         if (tppp->rev_seq == NULL)
                             tppp->rev_seq = StringSave(q);
                         else {
-                            s = (char*)MemNew(StringLen(tppp->rev_seq) +
-                                              StringLen(q) + 2);
+                            s = MemNew(StringLen(tppp->rev_seq) + StringLen(q) + 2);
                             StringCpy(s, tppp->rev_seq);
                             StringCat(s, ":");
                             StringCat(s, q);
@@ -2711,7 +2707,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                                 if (tppp->rev_name == NULL)
                                     tppp->rev_name = StringSave(":");
                                 else {
-                                    s = (char*)MemNew(StringLen(tppp->rev_name) + 2);
+                                    s = MemNew(StringLen(tppp->rev_name) + 2);
                                     StringCpy(s, tppp->rev_name);
                                     StringCat(s, ":");
                                     MemFree(tppp->rev_name);

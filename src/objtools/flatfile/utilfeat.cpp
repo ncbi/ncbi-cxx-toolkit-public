@@ -418,7 +418,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
 
         if (pper != NULL) {
             MemFree(pper);
-            pper = (char*)MemNew(StringLen(p) + 2);
+            pper = MemNew(StringLen(p) + 2);
             StringCpy(pper, p);
             StringCat(pper, ".");
         }

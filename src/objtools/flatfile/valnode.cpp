@@ -169,7 +169,7 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
         *tail = newnode;
     }
 
-    ptr = (char*)MemNew(sizeof(char) * (len + 2));
+    ptr = MemNew(len + 2);
     if (ptr == NULL)
         return NULL;
 
@@ -228,7 +228,7 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, c
         return NULL;
     len += pfx_len + sfx_len;
 
-    ptr = (char*)MemNew(sizeof(char) * (len + 2));
+    ptr = MemNew(len + 2);
     if (ptr == NULL)
         return NULL;
 

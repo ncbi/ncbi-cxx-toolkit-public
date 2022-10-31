@@ -766,7 +766,7 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
             continue;
         }
 
-        q = (char*)MemNew(StringLen(p) + val_str.size() + 3);
+        q = MemNew(StringLen(p) + val_str.size() + 3);
         StringCpy(q, p);
         StringCat(q, "; ");
         StringCat(q, val_str.c_str());
@@ -799,7 +799,7 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
     }
 
     if (StringLen(p) < 511 && ! organism.empty() && StringStr(p, organism.c_str()) == NULL) {
-        q = (char*)MemNew(StringLen(p) + organism.size() + 4);
+        q = MemNew(StringLen(p) + organism.size() + 4);
         StringCpy(q, p);
         StringCat(q, " [");
         StringCat(q, organism.c_str());

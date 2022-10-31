@@ -169,7 +169,7 @@ static const char* ParFlat_ENV_kw_array[] = {
     NULL
 };
 
-static const char *ParFlat_MAG_kw_array[] = {
+static const char* ParFlat_MAG_kw_array[] = {
     "Metagenome Assembled Genome",
     "MAG",
     NULL
@@ -748,7 +748,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
         return (NULL);
 
     size_t size   = eptr - bptr;
-    char*  retstr = (char*)MemNew(size + 1);
+    char*  retstr = MemNew(size + 1);
     char*  str    = retstr;
 
     while (bptr < eptr) {
@@ -1523,7 +1523,7 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, 
     if (kwds == NULL || kwds->data.ptrvalue == NULL || len < 1)
         return;
 
-    line    = (char*)MemNew(len + 1);
+    line    = MemNew(len + 1);
     line[0] = '\0';
     for (; kwds != NULL; kwds = kwds->next) {
         StringCat(line, (const char*)kwds->data.ptrvalue);
