@@ -137,8 +137,8 @@ struct TokenBlk {
 using TokenBlkPtr = TokenBlk*;
 
 struct TokenStatBlk {
-    TokenBlkPtr list = nullptr; /* a pointer points to the first token */
-    Int2        num  = 0;       /* total number of token in the chain list */
+    TokenBlk* list = nullptr; /* a pointer points to the first token */
+    Int2      num  = 0;       /* total number of token in the chain list */
 };
 using TokenStatBlkPtr = TokenStatBlk*;
 
@@ -152,10 +152,8 @@ public:
 struct XmlIndex : public CFlatFileData {
     Int4      tag        = 0;
     Int4      order      = 0;
-    size_t    start      = 0; /* Offset from the beginning of the
-                                           record, not file! */
-    size_t    end        = 0; /* Offset from the beginning of the
-                                           record, not file! */
+    size_t    start      = 0; /* Offset from the beginning of the record, not file! */
+    size_t    end        = 0; /* Offset from the beginning of the record, not file! */
     Int4      start_line = 0;
     Int4      end_line   = 0;
     Int2      type       = 0; /* Used for references */
