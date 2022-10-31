@@ -228,7 +228,7 @@ static bool s_CheckQuals_cdregion(const CMappedFeat& feat,
 
     // non-pseudo CDS must have /product
     bool pseudo = feat.IsSetPseudo()  &&  feat.GetPseudo() ;
-    if ( !pseudo ) {
+    if ( !pseudo && !ctx.IsEMBL() && !ctx.IsDDBJ() ) {
         const CGene_ref* grp = feat.GetGeneXref();
         if ( grp == NULL ) {
             CConstRef<CSeq_feat> gene = GetOverlappingGene(loc, scope);
@@ -2966,6 +2966,10 @@ void CFeatureItem::x_AddQualsCdregionIdx(
     CBioseq_Handle hdl = ctx.GetHandle();
     CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
     if (! bsx) return;
+
+    if ( ctx.IsEMBL() || ctx.IsDDBJ() ) {
+        pseudo = false;
+    }
 
     const CCdregion& cdr = cds.GetData().GetCdregion();
 
