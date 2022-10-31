@@ -22,6 +22,7 @@ libxml2/2.9.13
 libxslt/1.1.34
 libuv/1.44.1
 zlib/1.2.12
+zstd/1.5.2
 openssl/1.1.1o
 
 [options]
