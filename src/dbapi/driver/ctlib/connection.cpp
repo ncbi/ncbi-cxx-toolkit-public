@@ -1386,7 +1386,7 @@ bool CTL_Connection::x_IsLegacyBlobColumnType(const string& table_name,
 {
     string sp_name = "sp_columns";
     string table_owner;
-    CTempString base_name = table_name;
+    string base_name = table_name;
     if (table_name[0] == '#') {
         sp_name = "tempdb.." + sp_name;
     } else {
@@ -1403,9 +1403,11 @@ bool CTL_Connection::x_IsLegacyBlobColumnType(const string& table_name,
             base_name = base_name.substr(dot_pos + 1);
         }
     }
+    NStr::ReplaceInPlace(base_name, "_", "[_]");
+    string escaped_col = NStr::Replace(column_name, "_", "[_]");
     CDB_VarChar table_param(base_name);
     CDB_VarChar owner_param(table_owner);
-    CDB_VarChar column_param(column_name);
+    CDB_VarChar column_param(escaped_col);
     unique_ptr<CDB_RPCCmd> cmd(RPC(sp_name));
     cmd->SetParam("@table_name",  &table_param);
     cmd->SetParam("@column_name", &column_param);
