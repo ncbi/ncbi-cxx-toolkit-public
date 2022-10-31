@@ -10352,12 +10352,6 @@ Seq-annot ::= {
             }
           }
         }
-      },
-      dbxref {
-        {
-          db "CCDS",
-          tag str "CCDS86202.1"
-        }
       }
     }
   }
