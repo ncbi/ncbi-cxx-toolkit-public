@@ -1376,15 +1376,8 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
 
             m_validator->Clear();
 
-            static const set<TTypeInfo> supported_types =
-            {
-                CBioseq_set::GetTypeInfo(),
-                CBioseq::GetTypeInfo(),
-                CSeq_entry::GetTypeInfo(),
-                CSeq_submit::GetTypeInfo(),
-            };
             edit::CHugeFile hugeFile;
-            hugeFile.m_supported_types = &supported_types;
+            hugeFile.m_supported_types = &CMultiReader::kSupportedTypes;
             try {
                 hugeFile.Open(m_context.m_current_file);
             }
