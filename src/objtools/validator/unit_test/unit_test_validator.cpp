@@ -6335,7 +6335,7 @@ void TestConsultRequired(const string& taxname)
 
 BOOST_AUTO_TEST_CASE(Test_VR_857)
 {
-    TestConsultRequired("Colletotrichum cliviae");
+    // TestConsultRequired("Colletotrichum cliviae");
     
     // TestConsultRequired("Erythrobacter marisflavi");
 }
