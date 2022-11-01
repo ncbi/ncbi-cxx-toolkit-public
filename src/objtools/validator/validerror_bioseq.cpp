@@ -6368,12 +6368,15 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         if ( NumOfIntervals(feat.GetLocation()) > 1 ) {
                             bool excpet = feat.IsSetExcept()  &&  feat.GetExcept();
                             bool slippage_except = false;
+                            bool circular_rna = false;
                             if ( feat.IsSetExcept_text() ) {
                                 const string& text = feat.GetExcept_text();
                                 slippage_except =
                                     NStr::FindNoCase(text, "ribosomal slippage") != NPOS;
+                                circular_rna =
+                                    NStr::FindNoCase(text, "circular RNA") != NPOS;
                             }
-                            if ( !excpet  ||  !slippage_except ) {
+                            if (( !excpet  ||  !slippage_except ) && !circular_rna ) {
                                 EDiagSev sev = is_refseq ? eDiag_Warning : eDiag_Error;
                                 PostErr(sev, eErr_SEQ_FEAT_InvalidForType,
                                     "Multi-interval CDS feature is invalid on an mRNA "
