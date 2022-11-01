@@ -58,10 +58,11 @@ public:
         arg_desc->AddOptionalKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
         arg_desc->AddOptionalKey("ids", "pmids", "PubMed IDs", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("idfile", "pmids", "File containing PubMed IDs", CArgDescriptions::eInputFile);
-        arg_desc->AddDefaultKey("source", "source", "Source of data", CArgDescriptions::eString, "eutils");
-        arg_desc->SetConstraint("source", &(*new CArgAllow_Strings, "medarch", "eutils"));
+        arg_desc->AddDefaultKey("pubmed", "source", "Source of data", CArgDescriptions::eString, "eutils");
+        arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
         arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
+        arg_desc->AddFlag("stats", "Print execution statistics on stderr; suppress output");
         SetupArgDescriptions(arg_desc.release());
     }
 
@@ -115,8 +116,8 @@ public:
         }
 
         bool bTypeMLA = false;
-        if (args["source"]) {
-            string s = args["source"].AsString();
+        if (args["pubmed"]) {
+            string s = args["pubmed"].AsString();
             if (s == "medarch") {
                 bTypeMLA = true;
             } else if (s == "eutils") {
@@ -142,9 +143,9 @@ public:
             upd.reset(new CEUtilsUpdater());
         }
 
-        unsigned nruns = 0;
-        unsigned ngood = 0;
-        vector<string> results;
+        bool       bstats = args["stats"];
+        unsigned   nruns  = 0;
+        unsigned   ngood  = 0;
         CStopWatch sw;
 
         sw.Start();
@@ -152,9 +153,11 @@ public:
             ++nruns;
             try {
                 EPubmedError err;
-                CRef<CPub> pub(upd->GetPub(pmid, &err));
+                CRef<CPub>   pub(upd->GetPub(pmid, &err));
                 if (pub) {
-                    *output << MSerial_AsnText << *pub;
+                    if (! bstats) {
+                        *output << MSerial_AsnText << *pub;
+                    }
                     ++ngood;
                 } else {
                     cerr << "Error: " << err << endl;
@@ -169,9 +172,11 @@ public:
             args["o"].CloseFile();
         }
 
-        cerr << " * Number of runs: " << nruns << endl;
-        cerr << " *     successful: " << ngood << endl;
-        cerr << " * Elapsed time:   " << sw << endl;
+        if (bstats) {
+            cerr << " * Number of runs: " << nruns << endl;
+            cerr << " *     successful: " << ngood << endl;
+            cerr << " * Elapsed time:   " << sw << endl;
+        }
 
         return 0;
     }
