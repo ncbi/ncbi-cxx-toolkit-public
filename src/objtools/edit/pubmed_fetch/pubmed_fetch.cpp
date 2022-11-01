@@ -142,19 +142,36 @@ public:
             upd.reset(new CEUtilsUpdater());
         }
 
-        EPubmedError err;
+        unsigned nruns = 0;
+        unsigned ngood = 0;
+        vector<string> results;
+        CStopWatch sw;
+
+        sw.Start();
         for (TEntrezId pmid : pmids) {
-            CRef<CPub> pub(upd->GetPub(pmid, &err));
-            if (pub) {
-                *output << MSerial_AsnText << *pub;
-            } else {
-                cerr << "Error: " << err << endl;
+            ++nruns;
+            try {
+                EPubmedError err;
+                CRef<CPub> pub(upd->GetPub(pmid, &err));
+                if (pub) {
+                    *output << MSerial_AsnText << *pub;
+                    ++ngood;
+                } else {
+                    cerr << "Error: " << err << endl;
+                }
+            } catch (const CException& e) {
+                cerr << "CException: " << e.what() << endl;
             }
         }
+        sw.Stop();
 
         if (args["o"]) {
             args["o"].CloseFile();
         }
+
+        cerr << " * Number of runs: " << nruns << endl;
+        cerr << " *     successful: " << ngood << endl;
+        cerr << " * Elapsed time:   " << sw << endl;
 
         return 0;
     }

@@ -195,15 +195,41 @@ public:
             upd.reset(new CEUtilsUpdater());
         }
 
-        EPubmedError err;
+        unsigned nruns = 0;
+        unsigned ngood = 0;
+        vector<string> results;
+        results.reserve(cm_list.size());
+        CStopWatch sw;
+
+        sw.Start();
         for (const SCitMatch& cm : cm_list) {
-            TEntrezId pmid = upd->CitMatch(cm, &err);
-            *output << pmid << endl;
+            ++nruns;
+            try {
+                EPubmedError err;
+                TEntrezId pmid = upd->CitMatch(cm, &err);
+                if (pmid != ZERO_ENTREZ_ID) {
+                    results.push_back(to_string(pmid));
+                    ++ngood;
+                } else  {
+                    results.push_back("Error: " + to_string(err));
+                }
+            } catch (const CException& e) {
+                results.push_back(e.what());
+            }
         }
+        sw.Stop();
 
         if (args["o"]) {
             args["o"].CloseFile();
         }
+
+        for (const auto& r : results) {
+            *output << r << endl;
+        }
+
+        cerr << " * Number of runs: " << nruns << endl;
+        cerr << " *     successful: " << ngood << endl;
+        cerr << " * Elapsed time:   " << sw << endl;
 
         return 0;
     }
