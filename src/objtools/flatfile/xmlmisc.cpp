@@ -391,7 +391,7 @@ static XmlObjPtr ProcessStartTag(ValNodePtr* curr, XmlObjPtr parent, const Char*
     while (*curr != NULL) {
 
         vnp    = *curr;
-        str    = (char*)vnp->data.ptrvalue;
+        str    = vnp->data;
         choice = vnp->choice;
 
         /* advance to next token */
