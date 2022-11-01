@@ -318,7 +318,6 @@ eutils_client needs xmlwrapp
 eutilsapp includes eueid
 eutilsapp needs gi2acc_client
 eutilsapp needs ncqhst
-eutilsapp needs3party $(FASTCGI_LIBS)
 event_g needs generic_db_utils
 expat needs3party $(ORIG_LIBS)
 exslt needs3party $(GCRYPT_LIBS)
