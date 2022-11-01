@@ -151,6 +151,7 @@ public:
         arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
         arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
+        arg_desc->AddFlag("stats", "Print execution statistics on stderr");
         SetupArgDescriptions(arg_desc.release());
     }
 
@@ -195,8 +196,9 @@ public:
             upd.reset(new CEUtilsUpdater());
         }
 
-        unsigned nruns = 0;
-        unsigned ngood = 0;
+        bool           bstats = args["stats"];
+        unsigned       nruns  = 0;
+        unsigned       ngood  = 0;
         vector<string> results;
         results.reserve(cm_list.size());
         CStopWatch sw;
@@ -206,11 +208,11 @@ public:
             ++nruns;
             try {
                 EPubmedError err;
-                TEntrezId pmid = upd->CitMatch(cm, &err);
+                TEntrezId    pmid = upd->CitMatch(cm, &err);
                 if (pmid != ZERO_ENTREZ_ID) {
                     results.push_back(to_string(pmid));
                     ++ngood;
-                } else  {
+                } else {
                     results.push_back("Error: " + to_string(err));
                 }
             } catch (const CException& e) {
@@ -227,9 +229,11 @@ public:
             *output << r << endl;
         }
 
-        cerr << " * Number of runs: " << nruns << endl;
-        cerr << " *     successful: " << ngood << endl;
-        cerr << " * Elapsed time:   " << sw << endl;
+        if (bstats) {
+            cerr << " * Number of runs: " << nruns << endl;
+            cerr << " *     successful: " << ngood << endl;
+            cerr << " * Elapsed time:   " << sw << endl;
+        }
 
         return 0;
     }
