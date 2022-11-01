@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(psg_ipg_test)
+  NCBI_sources(
+    psg_ipg_test unit/fetch_report
+  )
+  NCBI_uses_toolkit_libraries(id2 psg_ipg psg_cassandra)
+  NCBI_requires(CASSANDRA GMOCK)
+  NCBI_project_watchers(saprykin)
+NCBI_end_app()

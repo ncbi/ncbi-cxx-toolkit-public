@@ -1,0 +1,11 @@
+# $Id$
+
+LIB_PROJ = psg_ipg
+SUB_PROJ = test
+REQUIRES = MT
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+WATCHERS = saprykin
+
