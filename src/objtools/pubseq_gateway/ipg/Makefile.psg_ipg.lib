@@ -1,0 +1,17 @@
+# $Id$
+
+SRC = fetch_ipg_report ipg_huge_report_helper
+
+LIB = psg_ipg
+LIBS = $(CASSANDRA_LIBS)
+
+DLL_LIB = psg_cassandra xconnect
+USES_LIBRARIES = psg_cassandra
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CASSANDRA_INCLUDE)
+
+LOCAL_CPPFLAGS+=$(COVERAGE_FLAGS)
+LOCAL_LDFLAGS+=$(COVERAGE_FLAGS)
+#COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
+
+REQUIRES = CASSANDRA MT Linux
+WATCHERS = satskyse saprykin
