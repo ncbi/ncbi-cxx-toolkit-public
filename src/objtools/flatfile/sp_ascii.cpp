@@ -1680,7 +1680,7 @@ static bool AddToList(ValNodePtr* head, char* str)
 
     dot = StringChr(str, '.');
     for (vnp = *head; vnp != NULL; vnp = vnp->next)
-        if (StringCmp((char*)vnp->data.ptrvalue, str) == 0)
+        if (StringCmp(vnp->data, str) == 0)
             break;
     if (vnp != NULL)
         return false;
@@ -1688,7 +1688,7 @@ static bool AddToList(ValNodePtr* head, char* str)
     if (dot != NULL) {
         *dot = '\0';
         for (vnp = *head; vnp != NULL; vnp = vnp->next) {
-            data = (char*)vnp->data.ptrvalue;
+            data = vnp->data;
             d    = StringChr(data, '.');
             if (d == NULL)
                 continue;
@@ -1768,23 +1768,23 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
         return;
 
     for (vnp = embl_acc_list; vnp != NULL; vnp = vnp->next->next) {
-        p = (char*)vnp->data.ptrvalue;
+        p = vnp->data;
         q = StringChr(p, '.');
         if (q != NULL) {
             for (p = q + 1; *p >= '0' && *p <= '9';)
                 p++;
             if (*p != '\0')
                 q = NULL;
-            p = (char*)vnp->data.ptrvalue;
+            p = vnp->data;
         }
-        n = (char*)vnp->next->data.ptrvalue;
+        n = vnp->next->data;
         for (vnpn = vnp->next->next; vnpn != NULL; vnpn = vnpn->next->next) {
             if (vnp->next->choice != vnpn->next->choice &&
-                StringCmp(p, (char*)vnpn->data.ptrvalue) == 0) {
+                StringCmp(p, vnpn->data) == 0) {
                 if (q != NULL)
                     *q = '\0';
                 if (GetProtAccOwner(p) > CSeq_id::e_not_set)
-                    ErrPostEx(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"%s\" associated with \"%s\" and \"%s\".", (char*)vnpn->data.ptrvalue, n, (char*)vnpn->next->data.ptrvalue);
+                    ErrPostEx(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"%s\" associated with \"%s\" and \"%s\".", vnpn->data, n, vnpn->next->data);
                 if (q != NULL)
                     *q = '.';
             }
@@ -2173,9 +2173,9 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
             break;
         if (p != NULL)
             *p = '\0';
-        tvnp->next          = ValNodeNew(NULL);
-        tvnp                = tvnp->next;
-        tvnp->data.ptrvalue = StringSave(q);
+        tvnp->next = ValNodeNew(NULL);
+        tvnp       = tvnp->next;
+        tvnp->data = StringSave(q);
         if (p == NULL)
             break;
         *p++ = '\n';
@@ -2192,10 +2192,10 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
     first  = 0;
     second = 0;
     third  = 0;
-    if (StringChr((char*)vnp->data.ptrvalue, '(') == NULL) {
+    if (! StringChr(vnp->data, '(')) {
         new_style = true;
         for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
-            offset = (char*)tvnp->data.ptrvalue;
+            offset = tvnp->data;
             offset += ParFlat_COL_DATA_SP;
             if (StringIStr(offset, "integrated into") != NULL) {
                 first++;
@@ -2225,7 +2225,7 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
     } else {
         new_style = false;
         for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
-            offset = (char*)tvnp->data.ptrvalue;
+            offset = tvnp->data;
             offset += ParFlat_COL_DATA_SP;
             if (StringIStr(offset, "Created") != NULL) {
                 first++;

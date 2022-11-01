@@ -84,10 +84,11 @@ ValNodePtr get_tokens(char* pt, const Char* delimeter)
         if (*pt == '\0')
             break;
 
-        vnp->next          = ValNodeNew(NULL);
-        vnp                = vnp->next;
-        vnp->data.ptrvalue = pt;
-        more               = false;
+        vnp->next = ValNodeNew(NULL);
+        vnp       = vnp->next;
+        vnp->data = pt;
+        more      = false;
+
         for (; *pt != '\0'; pt++) {
             if (StringNCmp(pt, delimeter, StringLen(delimeter)) != 0 &&
                 StringNCmp(pt, ",\n", 2) != 0 && StringNCmp(pt, ",~", 2) != 0 &&
@@ -133,7 +134,7 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
         return;
 
     for (vnp = token; vnp != NULL; vnp = vnp->next) {
-        p = (char*)vnp->data.ptrvalue;
+        p = vnp->data;
         if (StringNCmp(p, "and ", 4) == 0)
             p += 4;
 
