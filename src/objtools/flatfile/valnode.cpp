@@ -96,7 +96,7 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp)
     ValNodePtr next;
 
     while (vnp != NULL) {
-        MemFree((char*)vnp->data.ptrvalue);
+        MemFree(vnp->data);
         next = vnp->next;
         delete vnp;
         vnp = next;
@@ -186,9 +186,9 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
 
     StringCpy(ptr, tmp.c_str());
 
-    if (newnode != NULL) {
-        newnode->choice        = (unsigned char)choice;
-        newnode->data.ptrvalue = ptr;
+    if (newnode) {
+        newnode->choice = (unsigned char)choice;
+        newnode->data   = ptr;
     }
 
     return newnode;
@@ -199,13 +199,13 @@ ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, co
     return ValNodeCopyStrExEx(head, tail, choice, str, NULL, NULL);
 }
 
-static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, char* sfx)
+static char* ValNodeMergeStrsExEx(ValNodePtr list, const char* separator, const char* pfx, const char* sfx)
 {
     size_t     len;
     size_t     lens;
     size_t     pfx_len;
     char*      ptr;
-    char*      sep;
+    const char* sep;
     size_t     sfx_len;
     char*      str;
     string     tmp;
@@ -220,7 +220,7 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, c
     lens = StringLen(separator);
 
     for (vnp = list, len = 0; vnp != NULL; vnp = vnp->next) {
-        str = (char*)vnp->data.ptrvalue;
+        str = vnp->data;
         len += StringLen(str);
         len += lens;
     }
@@ -241,7 +241,7 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, char* separator, char* pfx, c
         if (sep) {
             tmp.append(sep);
         }
-        str = (char*)vnp->data.ptrvalue;
+        str = vnp->data;
         tmp.append(str);
         sep = separator;
     }

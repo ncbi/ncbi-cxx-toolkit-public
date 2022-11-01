@@ -1530,10 +1530,9 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
         return (NULL);
     }
 
-    vnp                = ValNodeNew(NULL);
-    vnp->data.ptrvalue = NULL;
-    vnp->next          = NULL;
-    tvnp               = vnp;
+    vnp       = ValNodeNew(NULL);
+    vnp->data = nullptr;
+    tvnp      = vnp;
 
     for (bad = false, p = str; *p != '\0';) {
         while (*p == ' ')
@@ -1562,10 +1561,9 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
             break;
         }
 
-        tvnp->next          = ValNodeNew(NULL);
-        tvnp                = tvnp->next;
-        tvnp->next          = NULL;
-        tvnp->data.ptrvalue = StringSave(q);
+        tvnp->next = ValNodeNew(NULL);
+        tvnp       = tvnp->next;
+        tvnp->data = StringSave(q);
 
         *p = ch;
     }
@@ -1672,7 +1670,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         user_field->SetNum(i);
 
         for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
-            user_field->SetData().SetStrs().push_back((char*)tvnp->data.ptrvalue);
+            user_field->SetData().SetStrs().push_back(tvnp->data);
 
         user_obj_ptr->SetData().push_back(user_field);
     } else {
@@ -1688,7 +1686,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 
             CRef<CUser_field> user_field(new CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
-            user_field->SetData().SetInt(atoi((char*)tvnp->data.ptrvalue));
+            user_field->SetData().SetInt(atoi(tvnp->data));
             user_obj_ptr->SetData().push_back(user_field);
 
 
@@ -1784,16 +1782,16 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
         if (*p == ';' || *p == '\t')
             *p = ' ';
 
-    vnp                = ValNodeNew(NULL);
-    vnp->data.ptrvalue = NULL;
-    tvnp               = vnp;
-    bad                = false;
-    got_nl             = true;
-    sra                = false;
-    assembly           = false;
-    biosample          = false;
-    bioproject         = false;
-    tagvnp             = NULL;
+    vnp        = ValNodeNew(NULL);
+    tvnp       = vnp;
+    bad        = false;
+    got_nl     = true;
+    sra        = false;
+    assembly   = false;
+    biosample  = false;
+    bioproject = false;
+    tagvnp     = NULL;
+
     for (p = str; *p != '\0'; got_nl = false) {
         while (*p == ' ' || *p == '\n' || *p == ':' || *p == ',') {
             if (*p == '\n')
@@ -1827,15 +1825,14 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     biosample  = (StringCmp(p, "BioSample:") == 0);
                     assembly   = (StringCmp(p, "Assembly:") == 0);
 
-                    if (tvnp->data.ptrvalue != NULL &&
-                        StringChr((char*)tvnp->data.ptrvalue, ':') != NULL) {
-                        ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"%s\". Entry dropped.", tvnp->data.ptrvalue);
+                    if (tvnp->data && StringChr(tvnp->data, ':')) {
+                        ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"%s\". Entry dropped.", tvnp->data);
                         bad = true;
                         break;
                     }
 
                     for (uvnp = vnp->next; uvnp != NULL; uvnp = uvnp->next)
-                        if (StringCmp((char*)uvnp->data.ptrvalue, p) == 0) {
+                        if (StringCmp(uvnp->data, p) == 0) {
                             ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"%s\". Entry dropped.", p);
                             bad = true;
                             break;
@@ -1843,13 +1840,12 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     if (bad)
                         break;
 
-                    tvnp->next          = ValNodeNew(NULL);
-                    tvnp                = tvnp->next;
-                    tvnp->next          = NULL;
-                    tvnp->data.ptrvalue = StringSave(p);
-                    tagvnp              = tvnp;
-                    *t                  = ch;
-                    p                   = t;
+                    tvnp->next = ValNodeNew(NULL);
+                    tvnp       = tvnp->next;
+                    tvnp->data = StringSave(p);
+                    tagvnp     = tvnp;
+                    *t         = ch;
+                    p          = t;
                     continue;
                 }
             }
@@ -1879,13 +1875,12 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
         ch = *p;
         *p = '\0';
 
-        if (tagvnp != NULL && tagvnp->data.ptrvalue != NULL) {
+        if (tagvnp && tagvnp->data) {
             for (uvnp = tagvnp->next; uvnp != NULL; uvnp = uvnp->next) {
-                if (uvnp->data.ptrvalue == NULL ||
-                    StringCmp((char*)uvnp->data.ptrvalue, q) != 0)
+                if (! uvnp->data || StringCmp(uvnp->data, q) != 0)
                     continue;
 
-                ErrPostEx(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, "Duplicate identifier \"%s\" from \"%s\" link removed.", q, (char*)tagvnp->data.ptrvalue);
+                ErrPostEx(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, "Duplicate identifier \"%s\" from \"%s\" link removed.", q, tagvnp->data);
                 break;
             }
 
@@ -1906,16 +1901,14 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
         if (assembly)
             fta_validate_assembly(q);
 
-        tvnp->next          = ValNodeNew(NULL);
-        tvnp                = tvnp->next;
-        tvnp->next          = NULL;
-        tvnp->data.ptrvalue = StringSave(q);
-        *p                  = ch;
+        tvnp->next = ValNodeNew(NULL);
+        tvnp       = tvnp->next;
+        tvnp->data = StringSave(q);
+        *p         = ch;
     }
 
-    if (! bad && tvnp->data.ptrvalue != NULL &&
-        StringChr((char*)tvnp->data.ptrvalue, ':') != NULL) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"%s\". Entry dropped.", tvnp->data.ptrvalue);
+    if (! bad && tvnp->data && StringChr(tvnp->data, ':')) {
+        ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"%s\". Entry dropped.", tvnp->data);
         bad = true;
     }
 
@@ -1959,11 +1952,11 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     CRef<CUser_field>  user_field;
 
     for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
-        if (StringChr((char*)tvnp->data.ptrvalue, ':') != NULL) {
+        if (StringChr(tvnp->data, ':')) {
             if (user_obj.NotEmpty())
                 break;
 
-            if (StringCmp((char*)tvnp->data.ptrvalue, "Project:") == 0) {
+            if (StringCmp(tvnp->data, "Project:") == 0) {
                 user_obj.Reset(new CUser_object);
                 CObject_id& id = user_obj->SetType();
 
@@ -1975,7 +1968,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
         if (user_obj.Empty())
             continue;
 
-        str = (char*)tvnp->data.ptrvalue;
+        str = tvnp->data;
         if (str == NULL || *str == '\0')
             continue;
 
@@ -1983,14 +1976,14 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             while (*str >= '0' && *str <= '9')
                 str++;
         if (*str != '\0') {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"%s\".", tvnp->data.ptrvalue);
+            ErrPostEx(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"%s\".", tvnp->data);
             continue;
         }
 
         user_field.Reset(new CUser_field);
 
         user_field->SetLabel().SetStr("ProjectID");
-        user_field->SetData().SetInt(atoi((char*)tvnp->data.ptrvalue));
+        user_field->SetData().SetInt(atoi(tvnp->data));
         user_obj->SetData().push_back(user_field);
 
         user_field.Reset(new CUser_field);
@@ -2015,8 +2008,8 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
 
     bool inpr = false;
     for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
-        if (StringChr((char*)tvnp->data.ptrvalue, ':') != NULL) {
-            if (StringCmp((char*)tvnp->data.ptrvalue, "Project:") == 0) {
+        if (StringChr(tvnp->data, ':')) {
+            if (StringCmp(tvnp->data, "Project:") == 0) {
                 inpr = true;
                 continue;
             }
@@ -2029,12 +2022,12 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             }
 
             for (i = 0, uvnp = tvnp->next; uvnp != NULL; uvnp = uvnp->next, i++)
-                if (StringChr((char*)uvnp->data.ptrvalue, ':') != NULL)
+                if (StringChr(uvnp->data, ':'))
                     break;
 
             user_field.Reset(new CUser_field);
 
-            string lstr((const char*)tvnp->data.ptrvalue);
+            string lstr(tvnp->data);
             lstr = lstr.substr(0, lstr.size() - 1);
             user_field->SetLabel().SetStr(lstr);
             user_field->SetNum(i);
@@ -2042,7 +2035,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
 
             user_obj->SetData().push_back(user_field);
         } else if (! inpr && user_obj.NotEmpty()) {
-            user_field->SetData().SetStrs().push_back((char*)tvnp->data.ptrvalue);
+            user_field->SetData().SetStrs().push_back(tvnp->data);
         }
     }
 
@@ -2461,13 +2454,13 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
 
         q = StringStr(p + 2, "::");
         if (q == NULL) {
-            vnp->next          = ValNodeNew(NULL);
-            vnp                = vnp->next;
-            vnp->data.ptrvalue = StringSave(start);
-            for (r = (char*)vnp->data.ptrvalue; *r != '\0'; r++)
+            vnp->next = ValNodeNew(NULL);
+            vnp       = vnp->next;
+            vnp->data = StringSave(start);
+            for (r = vnp->data; *r != '\0'; r++)
                 if (*r == '~')
                     *r = ' ';
-            ShrinkSpaces((char*)vnp->data.ptrvalue);
+            ShrinkSpaces(vnp->data);
             break;
         }
 
@@ -2479,15 +2472,15 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
             break;
         }
 
-        *r                 = '\0';
-        vnp->next          = ValNodeNew(NULL);
-        vnp                = vnp->next;
-        vnp->data.ptrvalue = StringSave(start);
-        *r                 = '~';
-        for (p = (char*)vnp->data.ptrvalue; *p != '\0'; p++)
+        *r        = '\0';
+        vnp->next = ValNodeNew(NULL);
+        vnp       = vnp->next;
+        vnp->data = StringSave(start);
+        *r        = '~';
+        for (p = vnp->data; *p != '\0'; p++)
             if (*p == '~')
                 *p = ' ';
-        ShrinkSpaces((char*)vnp->data.ptrvalue);
+        ShrinkSpaces(vnp->data);
 
         start = r;
     }
@@ -2535,7 +2528,7 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
     obj->SetData().push_back(field);
 
     for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
-        p = (char*)tvnp->data.ptrvalue;
+        p = tvnp->data;
         if (p == NULL || *p == '\0')
             continue;
 
@@ -2634,12 +2627,11 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
             break;
 
         if (tagvnp == NULL) {
-            tagvnp                = ValNodeNew(NULL);
-            tagvnp->data.ptrvalue = StringSave(tag);
-            tagvnp->next          = NULL;
+            tagvnp       = ValNodeNew(NULL);
+            tagvnp->data = StringSave(tag);
         } else {
             for (vnp = tagvnp; vnp != NULL; vnp = vnp->next) {
-                r = (char*)vnp->data.ptrvalue;
+                r = vnp->data;
                 if (StringCmp(r + 2, tag + 2) == 0) {
                     if (*r != ' ') {
                         ErrPostEx(SEV_ERROR, ERR_COMMENT_SameStructuredCommentTags, "More than one structured comment with the same tag \"%s\" found.", tag + 2);
@@ -2648,9 +2640,8 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
                     break;
                 }
                 if (vnp->next == NULL) {
-                    vnp->next                = ValNodeNew(NULL);
-                    vnp->next->data.ptrvalue = StringSave(tag);
-                    vnp->next->next          = NULL;
+                    vnp->next       = ValNodeNew(NULL);
+                    vnp->next->data = StringSave(tag);
                     break;
                 }
             }

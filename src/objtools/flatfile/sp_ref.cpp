@@ -151,7 +151,7 @@ static bool NotName(const char* name)
     if (i > 3)
         return true;
 
-    s = (char*)vnp->data.ptrvalue;
+    s = vnp->data;
     if (StringLen(s) > 8)
         return true;
 
@@ -728,13 +728,13 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     token = get_tokens(&buf[0], ", ");
 
     for (vnp = token, here = token; vnp != NULL; vnp = vnp->next) {
-        if (NotName((char*)vnp->data.ptrvalue))
+        if (NotName(vnp->data))
             here = vnp;
     }
 
     size_t len = 0;
     for (vnp = token; vnp != NULL; vnp = vnp->next) {
-        len += StringLen((char*)vnp->data.ptrvalue) + 2;
+        len += StringLen(vnp->data) + 2;
         if (vnp == here)
             break;
     }
@@ -744,7 +744,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     for (vnp = token; vnp != NULL; vnp = vnp->next) {
         if (vnp != token)
             StringCat(tit, ", ");
-        StringCat(tit, (char*)vnp->data.ptrvalue);
+        StringCat(tit, vnp->data);
         if (vnp == here)
             break;
     }

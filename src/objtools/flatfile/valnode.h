@@ -43,21 +43,12 @@
 
 BEGIN_NCBI_SCOPE
 
-typedef union dataval {
-    void*  ptrvalue;
-    int    intvalue;
-    double realvalue;
-    bool   boolvalue;
-    int (*funcvalue)();
-    Int8 bigintvalue;
-} DataVal;
-
 struct ValNode {
-    unsigned char choice   = 0; /* to pick a choice */
-    unsigned char extended = 0; /* extra fields reserved to NCBI allocated in structure */
-    DataVal       data;         /* attached data */
-    bool          fatal = false;
-    ValNode*      next  = nullptr; /* next in linked list */
+    unsigned char choice   = 0;       /* to pick a choice */
+    unsigned char extended = 0;       /* extra fields reserved to NCBI allocated in structure */
+    char*         data     = nullptr; /* attached data */
+    bool          fatal    = false;
+    ValNode*      next     = nullptr; /* next in linked list */
 };
 using ValNodePtr = ValNode*;
 

@@ -1520,13 +1520,13 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, 
     char* p;
     char* q;
 
-    if (kwds == NULL || kwds->data.ptrvalue == NULL || len < 1)
+    if (! kwds || ! kwds->data || len < 1)
         return;
 
     line    = MemNew(len + 1);
     line[0] = '\0';
-    for (; kwds != NULL; kwds = kwds->next) {
-        StringCat(line, (const char*)kwds->data.ptrvalue);
+    for (; kwds; kwds = kwds->next) {
+        StringCat(line, kwds->data);
     }
     for (p = line; *p != '\0'; p++)
         if (*p == '\n' || *p == '\t')
@@ -1580,26 +1580,13 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, 
 }
 
 /**********************************************************/
-ValNodePtr ConstructValNode(ValNodePtr head, CSeq_id::E_Choice choice, void* data)
+ValNodePtr ConstructValNode(ValNodePtr head, CSeq_id::E_Choice choice, char* data)
 {
     ValNodePtr res;
 
-    res                = ValNodeNew(head);
-    res->choice        = choice;
-    res->data.ptrvalue = data;
-    res->next          = NULL;
-    return (res);
-}
-
-/**********************************************************/
-ValNodePtr ConstructValNodeInt(ValNodePtr head, CSeq_id::E_Choice choice, Int4 data)
-{
-    ValNodePtr res;
-
-    res                = ValNodeNew(head);
-    res->choice        = choice;
-    res->data.intvalue = data;
-    res->next          = NULL;
+    res         = ValNodeNew(head);
+    res->choice = choice;
+    res->data   = data;
     return (res);
 }
 
