@@ -47,28 +47,15 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_entry_ci.hpp>
-#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#ifdef HAVE_NCBI_VDB
-#  include <sra/data_loaders/wgs/wgsloader.hpp>
-#endif
-#include <objtools/data_loaders/genbank/readers.hpp>
-#include <dbapi/driver/drivers.hpp>
-#include <misc/data_loaders_util/data_loaders_util.hpp>
 
-#include <objtools/format/flat_file_config.hpp>
-#include <objtools/format/flat_file_generator.hpp>
-#include <objtools/format/flat_expt.hpp>
-#include <objects/seqset/gb_release_file.hpp>
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/autodef_with_tax.hpp>
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
 #include <objtools/validator/dup_feats.hpp>
 
-#include <objtools/readers/format_guess_ex.hpp>
 #include <objtools/edit/huge_file.hpp>
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objtools/edit/huge_asn_loader.hpp>
@@ -206,7 +193,6 @@ private:
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CScope>                m_Scope;
-    CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
     unique_ptr<CObjectOStream>  m_Out;          // output
     bool                        m_IsMultiSeq = false;
 };
@@ -277,12 +263,6 @@ void CCleanupApp::Init()
         // name
         arg_desc->AddOptionalKey("o", "OutputFile",
             "Output file name", CArgDescriptions::eOutputFile);
-    }}
-
-    // report
-    {{
-        // html
-        arg_desc->AddFlag("html", "Produce HTML output");
     }}
 
     // normal cleanup options (will replace -nocleanup and -basic)
@@ -359,7 +339,7 @@ void CCleanupApp::x_FeatureOptionsValid(const string& opt)
         }
     }
     if (unrecognized.length() > 0) {
-        NCBI_THROW(CFlatException, eInternal, "Invalid -F arguments:" + unrecognized);
+        NCBI_THROW(CArgException, eInvalidArg, "Invalid -F arguments:" + unrecognized);
     }
 }
 
@@ -378,7 +358,7 @@ void CCleanupApp::x_KOptionsValid(const string& opt)
         }
     }
     if (unrecognized.length() > 0) {
-        NCBI_THROW(CFlatException, eInternal, "Invalid -K arguments:" + unrecognized);
+        NCBI_THROW(CArgException, eInvalidArg, "Invalid -K arguments:" + unrecognized);
     }
 }
 
@@ -398,7 +378,7 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
         }
     }
     if (unrecognized.length() > 0) {
-        NCBI_THROW(CFlatException, eInternal, "Invalid -X arguments:" + unrecognized);
+        NCBI_THROW(CArgException, eInvalidArg, "Invalid -X arguments:" + unrecognized);
     }
 }
 
@@ -614,7 +594,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 
     if (asn_type == nullptr) {
         string msg = "Unable to open input file " + filename + ". Content not recognized.";
-        NCBI_THROW(CFlatException, eInternal, msg);
+        NCBI_THROW(CArgException, eInvalidArg, msg);
     }
 
     // need to set output if -o not specified
@@ -681,7 +661,7 @@ void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process, bool f
     }
 
     //if (num_cleaned == 0 || (!first_only && (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF)) {
-    //    NCBI_THROW(CFlatException, eInternal, "Unable to construct Seq-entry object");
+    //    NCBI_THROW(CArgException, eInvalidArg, "Unable to construct Seq-entry object");
     //}
 }
 
@@ -809,7 +789,7 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_
             string loader_name = CDirEntry::ConvertToOSPath(process.GetFile().m_filename);
 
             auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
-                *m_Objmgr, loader_name, reader, CObjectManager::eDefault, 1); //CObjectManager::kPriority_Local);
+                *m_Objmgr, loader_name, reader, CObjectManager::eNonDefault, 1); //CObjectManager::kPriority_Local);
 
             CAutoRevoker autorevoker(info);
 
@@ -847,7 +827,7 @@ void CCleanupApp::x_ProcessOneDirectory(const string& dirname, const string& suf
         }
     }
     if (num_files == 0) {
-        NCBI_THROW(CFlatException, eInternal, "No files found!");
+        NCBI_THROW(CArgException, eInvalidArg, "No files found!");
     }
 }
 
@@ -870,16 +850,16 @@ int CCleanupApp::Run()
         x_XOptionsValid(args["X"].AsString());
     }
     if (args["batch"] && args["bigfile"]) {
-        NCBI_THROW(CFlatException, eInternal, "\"batch\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
+        NCBI_THROW(CArgException, eInvalidArg, "\"batch\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
     }
     if (args["X"] && args["bigfile"]) {
-        NCBI_THROW(CFlatException, eInternal, "\"X\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
+        NCBI_THROW(CArgException, eInvalidArg, "\"X\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
     }
 
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
     if ( !m_Objmgr ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
+        NCBI_THROW(CArgException, eInvalidArg, "Could not create object manager");
     }
 
     CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
@@ -1399,7 +1379,7 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
     auto entryHandle = m_Scope->AddTopLevelSeqEntry(*se);
     if (!entryHandle) {
-        NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
+        NCBI_THROW(CArgException, eInvalidArg, "Failed to insert entry to scope.");
     }
 
     if (HandleSeqEntry(entryHandle)) {
@@ -1521,6 +1501,47 @@ int main(int argc, const char** argv)
             cerr << "Warning: argument -gbload is deprecated. Please use -genbank instead." << endl;
         }
     }
+
+    #ifdef _DEBUG
+    // this code converts single argument into multiple, just to simplify testing
+    list<string> split_args;
+    vector<const char*> new_argv;
+
+    if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
+    {
+        NStr::Split(argv[1], " ", split_args);
+
+        auto it = split_args.begin();
+        while (it != split_args.end())
+        {
+            auto next = it; ++next;
+            if (next != split_args.end() &&
+                ((it->front() == '"' && it->back() != '"') ||
+                 (it->front() == '\'' && it->back() != '\'')))
+            {
+                it->append(" "); it->append(*next);
+                next = split_args.erase(next);
+            } else it = next;
+        }
+        for (auto& rec: split_args)
+        {
+            if (rec.front()=='\'' && rec.back()=='\'')
+                rec=rec.substr(1, rec.length()-2);
+        }
+        argc = 1 + split_args.size();
+        new_argv.reserve(argc);
+        new_argv.push_back(argv[0]);
+        for (const string& s : split_args)
+        {
+            new_argv.push_back(s.c_str());
+            std::cerr << s.c_str() << " ";
+        }
+        std::cerr << "\n";
+
+
+        argv = new_argv.data();
+    }
+    #endif
 
     return CCleanupApp().AppMain(argc, argv);
 }
