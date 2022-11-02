@@ -62,9 +62,18 @@
 #include <objtools/edit/huge_file_process.hpp>
 
 #include <objtools/writers/async_writers.hpp>
+#include <objtools/edit/remote_updater.hpp>
 
 #include "read_hooks.hpp"
 #include "bigfile_processing.hpp"
+
+#include <common/ncbi_revision.h>
+
+#ifndef NCBI_SC_VERSION
+#   define THIS_IS_TRUNK_BUILD
+#elif (NCBI_SC_VERSION == 0)
+#   define THIS_IS_TRUNK_BUILD
+#endif
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -195,6 +204,7 @@ private:
     CRef<CScope>                m_Scope;
     unique_ptr<CObjectOStream>  m_Out;          // output
     bool                        m_IsMultiSeq = false;
+    unique_ptr<edit::CRemoteUpdater> m_remote_updater;
 };
 
 
@@ -866,6 +876,8 @@ int CCleanupApp::Run()
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
+    m_remote_updater.reset(new edit::CRemoteUpdater(nullptr));
+
     // need to set output (-o) if specified, if not -o and not -outdir need to use standard output
     bool opened_output = false;
     if (args["o"]) {
@@ -908,6 +920,11 @@ int CCleanupApp::Run()
         // close output file if we opened one
         x_CloseOStream();
     }
+
+    #ifdef THIS_IS_TRUNK_BUILD
+        m_remote_updater->ReportStats(std::cerr);
+    #endif
+
     return 0;
 }
 
@@ -1302,9 +1319,9 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
         LOG_POST(Error << label + "\n");
     }
 
-    ESerialDataFormat outFormat = eSerial_AsnText;
-
     if (args["debug"]) {
+        ESerialDataFormat outFormat = eSerial_AsnText;
+
         unique_ptr<CObjectOStream> debug_out(CObjectOStream::Open(outFormat, "before.sqn",
             eSerial_StdWhenAny));
 
@@ -1314,7 +1331,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     bool any_changes = false;
 
     if (args["T"]) {
-        validator::CTaxValidationAndCleanup tval;
+        validator::CTaxValidationAndCleanup tval(m_remote_updater->GetUpdateFunc());
         any_changes |= tval.DoTaxonomyUpdate(entry, true);
     }
 
