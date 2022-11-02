@@ -925,6 +925,7 @@ psg_client needs xconnserv
 psg_client needs xxconnect2
 psg_client needs3party $(PSG_CLIENT_LIBS)
 psg_diag needs xncbi
+psg_ipg needs psg_cassandra
 psg_protobuf needs3party $(ORIG_LIBS)
 psloader includes psloader-internal
 psloader needs $(CONNEXT)
