@@ -2723,13 +2723,15 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
         {
             CSeq_loc::TPnt& pnt = loc.SetPnt();
 
-            // change both and both-rev to plus and minus, respectively
-            if (pnt.CanGetStrand()) {
-                ENa_strand strand = pnt.GetStrand();
-                if( strand == eNa_strand_unknown ) {
-                    pnt.ResetStrand();
+            if (pnt.IsSetStrand()) {
+                if (pnt.GetStrand() == eNa_strand_unknown) {
+                    pnt.SetStrand(eNa_strand_plus);
                     ChangeMade(CCleanupChange::eChangeStrand);
                 }
+            }
+            else {
+                pnt.SetStrand(eNa_strand_plus);
+                ChangeMade(CCleanupChange::eChangeStrand);
             }
 
             // normalize Seq-point fuzz tl to tr and decrement position
