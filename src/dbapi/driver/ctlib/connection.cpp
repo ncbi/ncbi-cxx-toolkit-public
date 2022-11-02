@@ -1384,36 +1384,35 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 bool CTL_Connection::x_IsLegacyBlobColumnType(const string& table_name,
                                               const string& column_name)
 {
-    string sp_name = "sp_columns";
-    string table_owner;
-    string base_name = table_name;
+    if (GetServerType() != CDBConnParams::eMSSqlServer) {
+        return true;
+    }
+    string qualified_table_name, sys_table_name;
     if (table_name[0] == '#') {
-        sp_name = "tempdb.." + sp_name;
+        qualified_table_name = "tempdb.." + table_name;
+        sys_table_name       = "tempdb.sys.columns";
     } else {
+        qualified_table_name = table_name;
         auto dot_pos = table_name.rfind('.');
         if (dot_pos > 0  &&  dot_pos != NPOS) {
             auto dot_pos2 = table_name.rfind('.', dot_pos - 1);
-            if (dot_pos2 == NPOS) {
-                table_owner = table_name.substr(0, dot_pos);
-            } else {
-                sp_name = table_name.substr(0, dot_pos2) + ".." + sp_name;
-                table_owner = table_name.substr(dot_pos2 + 1,
-                                                dot_pos - dot_pos2 - 1);
+            if (dot_pos2 != NPOS) {
+                sys_table_name
+                    = table_name.substr(0, dot_pos + 1) + "sys.columns";
             }
-            base_name = base_name.substr(dot_pos + 1);
+        }
+        if (sys_table_name.empty()) {
+            sys_table_name = "sys.columns";
         }
     }
-    NStr::ReplaceInPlace(base_name, "_", "[_]");
-    string escaped_col = NStr::Replace(column_name, "_", "[_]");
-    CDB_VarChar table_param(base_name);
-    CDB_VarChar owner_param(table_owner);
-    CDB_VarChar column_param(escaped_col);
-    unique_ptr<CDB_RPCCmd> cmd(RPC(sp_name));
+    CDB_VarChar table_param(qualified_table_name);
+    CDB_VarChar column_param(column_name);
+    string query
+        = "SELECT max_length FROM " + sys_table_name
+        + " WHERE object_id = OBJECT_ID(@table_name) AND name = @column_name";
+    unique_ptr<CDB_LangCmd> cmd(LangCmd(query));
     cmd->SetParam("@table_name",  &table_param);
     cmd->SetParam("@column_name", &column_param);
-    if ( !table_owner.empty() ) {
-        cmd->SetParam("@table_owner", &owner_param);
-    }
     auto rc = !cmd->Send();
     CHECK_DRIVER_ERROR(rc, "Cannot send the language command." + GetDbgInfo(),
                        110038);
@@ -1423,28 +1422,12 @@ bool CTL_Connection::x_IsLegacyBlobColumnType(const string& table_name,
             continue;
         }
         while (res->Fetch()) {
-            auto n = res->NofItems();
-            for (auto i = n;  i > 0;  --i) {
-                if ( !NStr::EqualNocase(res->ItemName(n-i), "SS_DATA_TYPE") ) {
-                    res->SkipItem();
-                    continue;
-                }
-                CDB_Int item;
-                res->GetItem(&item);
-                switch (item.Value()) {
-                case 34: // IMAGE
-                case 35: // TEXT
-                case 99: // NTEXT
-                    return true;
-                }
-                return false;
-            }
+            CDB_Int item;
+            res->GetItem(&item);
+            return item.Value() != -1  &&  item.Value() != 65535;
         }
     }
-    // Presumably Sybase, which doesn't support new blob types or
-    // corresponding syntax, or introspection of temporary tables even with
-    // an explicit "tempdb.." procedure name qualifier.
-    return true;
+    return false;
 }
 
 
