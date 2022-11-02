@@ -14,5 +14,3 @@ LIBS=$(NETWORK_LIBS) $(GMOCK_LIBS) $(CASSANDRA_STATIC_LIBS) $(ORIG_LIBS)
 LOCAL_CPPFLAGS+=-fno-delete-null-pointer-checks
 LOCAL_LDFLAGS+=$(COVERAGE_FLAGS)
 #COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
-
-#CHECK_CMD = psg_cassandra_test
