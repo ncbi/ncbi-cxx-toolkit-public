@@ -35,8 +35,6 @@ v*  Government do not and cannot warrant the performance or results that
 #include <tuple>
 #include <vector>
 
-#include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(ipg)
 USING_IDBLOB_SCOPE;
