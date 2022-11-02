@@ -35,10 +35,11 @@ v*  Government do not and cannot warrant the performance or results that
 #include <tuple>
 #include <vector>
 
-#include <objtools/pubseq_gateway/impl/ipg/ipg_exception.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(ipg)
+USING_IDBLOB_SCOPE;
 
 using TIpg = Int8;
 using TCdsValue = Int4;
@@ -89,7 +90,7 @@ struct SIpgSubgroupsConfig
         switch(status) {
         case EIpgSubgroupsStatus::eActive: return true;
         case EIpgSubgroupsStatus::eWriteProtected:
-            NCBI_THROW(CIpgStorageException, eIpgUpdateReportWriteProtected,
+            NCBI_THROW(CCassandraException, eInconsistentData,
                string("IPG report '") + to_string(ipg) + "' is write protected."
             );
         default: return false;

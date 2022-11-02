@@ -24,7 +24,7 @@
  *
  *  Please cite the author in any work or product based on this material.
  *
- *  IPG report entry
+ *  IPG report huge groups helper
  *
  *****************************************************************************/
 
