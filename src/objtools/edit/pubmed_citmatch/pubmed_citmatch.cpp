@@ -151,7 +151,7 @@ public:
         arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
         arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
-        arg_desc->AddFlag("stats", "Print execution statistics on stderr");
+        arg_desc->AddFlag("stats", "Also print execution statistics");
         SetupArgDescriptions(arg_desc.release());
     }
 
@@ -221,18 +221,18 @@ public:
         }
         sw.Stop();
 
-        if (args["o"]) {
-            args["o"].CloseFile();
-        }
-
         for (const auto& r : results) {
             *output << r << endl;
         }
 
         if (bstats) {
-            cerr << " * Number of runs: " << nruns << endl;
-            cerr << " *     successful: " << ngood << endl;
-            cerr << " * Elapsed time:   " << sw << endl;
+            *output << " * Number of runs: " << nruns << endl;
+            *output << " *     successful: " << ngood << endl;
+            *output << " * Elapsed time:   " << sw << endl;
+        }
+
+        if (args["o"]) {
+            args["o"].CloseFile();
         }
 
         return 0;
