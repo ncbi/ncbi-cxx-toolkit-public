@@ -617,11 +617,14 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 
     EProcessingMode mode = eModeRegular;
     m_IsMultiSeq = false;
+    bool is_Xi = args["X"] && (NStr::Find(args["X"].AsString(), "i") != string::npos);
+    // "-X i" is incompatible with -huge mode, until fixed, always use Regular
     if (asn_type == CBioseq::GetTypeInfo()) {
         // always regular mode
         mode = eModeRegular;
     } else if (args["huge"]) {
-        mode = eModeHugefile;
+        if (!is_Xi)
+            mode = eModeHugefile;
     } else if (args["batch"]) {
         mode = eModeBatch;
     } else if (args["bigfile"]) {
@@ -1236,7 +1239,7 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
         //options |= CCleanup::eScope_UseInPlace; // RW-1070 - CCleanup::eScope_UseInPlace is essential
     }
 
-    if (do_basic) {
+    if (do_basic && !do_extended) {
         // perform BasicCleanup
         try {
             CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(entry, options);
