@@ -90,44 +90,46 @@ public:
 
     void SetScope(CScope* scope);
 
+    using TChanges = CConstRef<CCleanupChange>;
+
     // BASIC CLEANUP
 
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
+    TChanges BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
     /// Cleanup a Seq-submit.
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_submit& ss,  Uint4 options = 0);
+    TChanges BasicCleanup(CSeq_submit& ss,  Uint4 options = 0);
     /// Cleanup a Bioseq.
-    CConstRef<CCleanupChange> BasicCleanup(CBioseq& bs,     Uint4 ooptions = 0);
+    TChanges BasicCleanup(CBioseq& bs,     Uint4 ooptions = 0);
     /// Cleanup a Bioseq_set.
-    CConstRef<CCleanupChange> BasicCleanup(CBioseq_set& bss, Uint4 options = 0);
+    TChanges BasicCleanup(CBioseq_set& bss, Uint4 options = 0);
     /// Cleanup a Seq-Annot.
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_annot& sa,  Uint4 options = 0);
+    TChanges BasicCleanup(CSeq_annot& sa,  Uint4 options = 0);
     /// Cleanup a Seq-feat.
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
+    TChanges BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
     /// Cleanup a BioSource.
-    CConstRef<CCleanupChange> BasicCleanup(CBioSource& src,   Uint4 options = 0);
+    TChanges BasicCleanup(CBioSource& src,   Uint4 options = 0);
     // Cleanup a Submit-block
-    CConstRef<CCleanupChange> BasicCleanup(CSubmit_block& block, Uint4 options = 0);
+    TChanges BasicCleanup(CSubmit_block& block, Uint4 options = 0);
     // Cleanup descriptors
-    CConstRef<CCleanupChange> BasicCleanup(CSeqdesc& desc, Uint4 options = 0);
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_descr & desc, Uint4 options = 0);
+    TChanges BasicCleanup(CSeqdesc& desc, Uint4 options = 0);
+    TChanges BasicCleanup(CSeq_descr & desc, Uint4 options = 0);
 
     // Handle versions.
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);
-    CConstRef<CCleanupChange> BasicCleanup(CBioseq_Handle& bsh,    Uint4 options = 0);
-    CConstRef<CCleanupChange> BasicCleanup(CBioseq_set_Handle& bssh, Uint4 options = 0);
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_annot_Handle& sak, Uint4 options = 0);
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 options = 0);
+    TChanges BasicCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);
+    TChanges BasicCleanup(CBioseq_Handle& bsh,    Uint4 options = 0);
+    TChanges BasicCleanup(CBioseq_set_Handle& bssh, Uint4 options = 0);
+    TChanges BasicCleanup(CSeq_annot_Handle& sak, Uint4 options = 0);
+    TChanges BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 options = 0);
 
     // Extended Cleanup
         /// Cleanup a Seq-entry.
-    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry& se,  Uint4 options = 0);
+    TChanges ExtendedCleanup(CSeq_entry& se,  Uint4 options = 0);
     /// Cleanup a Seq-submit.
-    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_submit& ss, Uint4 options = 0);
+    TChanges ExtendedCleanup(CSeq_submit& ss, Uint4 options = 0);
     /// Cleanup a Seq-Annot.
-    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_annot& sa,  Uint4 options = 0);
+    TChanges ExtendedCleanup(CSeq_annot& sa,  Uint4 options = 0);
 
     // Handle versions
-    static CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);
+    static TChanges ExtendedCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);
 
     // Useful cleanup functions
 
