@@ -73,7 +73,10 @@ ShowHideDialog::ShowHideDialog(
     SetSizeHints(MIN_SIZE);
 
 	wxButton *doneB;
+    /*
+    * wxLayoutConstraints is deprecated
     if (callbackObject) {
+
         doneB = new wxButton(this, B_DONE, "Done");
         wxLayoutConstraints *c1 = new wxLayoutConstraints();
         c1->bottom.SameAs       (this,      wxBottom,   MARGIN);
@@ -124,12 +127,44 @@ ShowHideDialog::ShowHideDialog(
     listBox = new wxListBox(this, LISTBOX, wxDefaultPosition, wxDefaultSize,
         itemsEnabled->size(), items,
         (useExtendedListStyle ? wxLB_EXTENDED : wxLB_MULTIPLE) | wxLB_HSCROLL | wxLB_NEEDED_SB);
+
     wxLayoutConstraints *c4 = new wxLayoutConstraints();
     c4->top.SameAs          (this,      wxTop,      MARGIN);
     c4->left.SameAs         (this,      wxLeft,     MARGIN);
     c4->right.SameAs        (this,      wxRight,    MARGIN);
     c4->bottom.Above        (doneB,                 -MARGIN);
     listBox->SetConstraints(c4);
+  */
+
+    /* use wxBoxSizer for panel layout */
+    listBox = new wxListBox(this, LISTBOX, wxDefaultPosition, wxDefaultSize,
+        itemsEnabled->size(), items,
+        (useExtendedListStyle ? wxLB_EXTENDED : wxLB_MULTIPLE) | wxLB_HSCROLL | wxLB_NEEDED_SB);
+
+    wxBoxSizer* topSizer = new wxBoxSizer(wxVERTICAL);
+    topSizer->Add(listBox, 1, wxEXPAND | wxALL, MARGIN);
+
+    wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
+
+    cancelB = new wxButton(this, B_CANCEL, wxT("Cancel"));
+    cancelB->Enable(false);
+    buttonSizer->Add(cancelB, wxSizerFlags(1).Expand().Border(wxLEFT, MARGIN/2));
+
+    // don't include Apply button if no callback object given
+    if (callbackObject) {
+        applyB = new wxButton(this, B_APPLY, wxT("Apply"));
+        applyB->Enable(false);
+        buttonSizer->Add(applyB);
+    }
+
+    doneB = new wxButton(this, B_DONE, wxT("Done"));
+    buttonSizer->Add(doneB, wxSizerFlags(1).Expand().Border(wxRIGHT, MARGIN/2));
+
+    topSizer->Add(buttonSizer, 0, wxALIGN_CENTER | wxBOTTOM, MARGIN);
+    this->SetSizer(topSizer);
+
+    SetSizerAndFit(topSizer);
+    /* end boxSizer */
 
     Layout();
 
