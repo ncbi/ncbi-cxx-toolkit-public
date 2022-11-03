@@ -359,10 +359,11 @@ Seq-entry ::= seq {\
               iupacna \"TTGCCCTAAAAATAAGAGTAAAACTAA\" } }\
 ";
 
-void s_ReportUnexpected(const vector<string>& observed, const vector<string>& expected)
+template<typename _Vec1, typename _Vec2>
+void s_ReportUnexpected(const _Vec1& observed, const _Vec2& expected)
 {
-    vector<string>::const_iterator oi = observed.begin();
-    vector<string>::const_iterator ei = expected.begin();
+    auto oi = observed.begin();
+    auto ei = expected.begin();
     while (oi != observed.end() && ei != expected.end()) {
         BOOST_CHECK_EQUAL(*oi, *ei);
         oi++;
@@ -397,7 +398,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     auto changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     // look for expected change flags
     auto changes_str = changes->GetAllDescriptions();
-    vector<string> expected;
+    decltype(changes_str) expected;
     expected.push_back("Change Publication");
     expected.push_back("Change Subsource");
     expected.push_back("Move Descriptor");
