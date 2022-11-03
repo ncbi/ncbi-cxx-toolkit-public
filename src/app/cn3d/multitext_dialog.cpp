@@ -68,6 +68,8 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& i
         SetSize(posX, posY, sizeW, sizeH);
     }
 
+    /*
+    * wxLayoutConstraints is deprecated. use wxBoxSizer instead
     textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
     bDone = new wxButton(this, -1, "Done");
     bRevert = new wxButton(this, -1, "Revert");
@@ -92,10 +94,30 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& i
     c->right.SameAs     (this, wxRight);
     c->bottom.SameAs    (bDone, wxTop, 10);
     textCtrl->SetConstraints(c);
+    */
 
+    // use wxBoxSizer for panel layout
+    //textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
+    textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxSize(500, 450), wxTE_MULTILINE | wxHSCROLL);
+    bDone = new wxButton(this, -1, "Done");
+    bRevert = new wxButton(this, -1, "Revert");
+
+    wxBoxSizer* textSizer = new wxBoxSizer(wxVERTICAL | wxHORIZONTAL);
+    textSizer->Add(textCtrl, 1, wxEXPAND | wxALL, 5);
+
+    wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
+    buttonSizer->Add(bRevert);
+    buttonSizer->Add(bDone);
+
+    wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+    mainSizer->Add(textSizer, wxSizerFlags(1).Expand().Border(wxALL, 5));
+    mainSizer->Add(buttonSizer, 0, wxALIGN_RIGHT | wxRIGHT | wxBOTTOM, 10);
+
+    this->SetSizer(mainSizer);
+    SetSizerAndFit(mainSizer);
     SetToInitialText();
 
-    SetSizeHints(200, 150); // min size
+    //SetSizeHints(200, 150);
     SetAutoLayout(true);
     Layout();
 }
