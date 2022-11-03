@@ -31,6 +31,8 @@ v*  Government do not and cannot warrant the performance or results that
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 
+#include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
+
 #include <functional>
 #include <tuple>
 #include <vector>
@@ -40,9 +42,10 @@ BEGIN_SCOPE(ipg)
 USING_IDBLOB_SCOPE;
 
 using TIpg = Int8;
+using TGbState = Int4;
 using TCdsValue = Int4;
 using TDigest = vector<unsigned char>;
-using TWeights = vector<double>;
+using TIpgWeights = vector<double>;
 using TPubMedIds = set<Int4>;
 
 enum class EIpgProteinFlags : Int4

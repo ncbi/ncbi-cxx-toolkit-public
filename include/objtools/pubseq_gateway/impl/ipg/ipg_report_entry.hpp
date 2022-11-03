@@ -49,6 +49,7 @@ BEGIN_SCOPE(ipg)
 struct CIpgStorageReportEntry
 {
  public:
+    using TWeights = TIpgWeights;
     CIpgStorageReportEntry() = default;
     CIpgStorageReportEntry(CIpgStorageReportEntry const &) = default;
     CIpgStorageReportEntry(CIpgStorageReportEntry &&) = default;
@@ -151,7 +152,7 @@ struct CIpgStorageReportEntry
         return *this;
     }
 
-    CIpgStorageReportEntry& SetGbState(Int4 value) {
+    CIpgStorageReportEntry& SetGbState(TGbState value) {
         m_GbState = value;
         return *this;
     }
@@ -176,12 +177,12 @@ struct CIpgStorageReportEntry
         return *this;
     }
 
-    CIpgStorageReportEntry& SetWeights(TWeights&& value) {
+    CIpgStorageReportEntry& SetWeights(TIpgWeights&& value) {
         m_Weights = move(value);
         return *this;
     }
 
-    CIpgStorageReportEntry& SetWeights(TWeights const& value) {
+    CIpgStorageReportEntry& SetWeights(TIpgWeights const& value) {
         m_Weights = value;
         return *this;
     }
@@ -315,11 +316,11 @@ struct CIpgStorageReportEntry
         return m_Strain;
     }
 
-    TWeights const& GetWeights() const {
+    TIpgWeights const& GetWeights() const {
         return m_Weights;
     }
 
-    Int4 GetGbState() const {
+    TGbState GetGbState() const {
         return m_GbState;
     }
 
@@ -433,7 +434,7 @@ struct CIpgStorageReportEntry
     Int4 m_Satkey{0};  // Needed for failure reporting
     Int4 m_SrcDb{0};
 
-    Int4 m_GbState{NCBI_gb_state_eWGSGenBankLive};
+    TGbState m_GbState{NCBI_gb_state_eWGSGenBankLive};
     objects::CBioSource::EGenome m_Genome{objects::CBioSource::eGenome_unknown};
 
     TIpgCds m_Cds;
