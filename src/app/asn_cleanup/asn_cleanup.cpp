@@ -1212,7 +1212,7 @@ bool CCleanupApp::x_GFF3Batch(CSeq_entry_Handle seh)
     CCleanup cleanup;
     cleanup.SetScope(&(seh.GetScope()));
     Uint4 options = CCleanup::eClean_NoNcbiUserObjects;
-    CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(seh, options);
+    auto changes = cleanup.BasicCleanup(seh, options);
     any_changes |= (!changes.Empty());
     changes = cleanup.ExtendedCleanup(seh, options);
     any_changes |= (!changes.Empty());
@@ -1242,7 +1242,7 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
     if (do_basic && !do_extended) {
         // perform BasicCleanup
         try {
-            CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(entry, options);
+            auto changes = cleanup.BasicCleanup(entry, options);
             vector<string> changes_str;
             if (changes)
                 changes_str = changes->GetAllDescriptions();
@@ -1265,7 +1265,7 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
     if (do_extended) {
         // perform ExtendedCleanup
         try {
-            CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(entry, options);
+            auto changes = cleanup.ExtendedCleanup(entry, options);
             vector<string> changes_str;
             if (changes)
                 changes_str = changes->GetAllDescriptions();
@@ -1293,7 +1293,7 @@ bool CCleanupApp::HandleSubmitBlock(CSubmit_block& block)
     CCleanup cleanup;
     bool any_changes = false;
     try {
-        CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(block);
+        auto changes = cleanup.BasicCleanup(block);
         vector<string> changes_str = changes->GetAllDescriptions();
         if (changes_str.empty()) {
             LOG_POST(Error << "No changes from BasicCleanup of SubmitBlock\n");
