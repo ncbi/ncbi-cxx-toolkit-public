@@ -2,7 +2,7 @@
 
 NCBI_begin_lib(psg_ipg)
   NCBI_sources(fetch_ipg_report ipg_huge_report_helper)
-  NCBI_uses_toolkit_libraries(psg_cassandra xconnect connect xncbi)
+  NCBI_uses_toolkit_libraries(seq psg_cassandra xconnect connect xncbi)
   NCBI_requires(CASSANDRA)
   NCBI_project_watchers(satskyse saprykin)
 NCBI_end_lib()
