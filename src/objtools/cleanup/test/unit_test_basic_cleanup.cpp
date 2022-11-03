@@ -104,12 +104,11 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
     entry.Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.BasicCleanup (entry);
+    auto changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-    vector<string> changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetAllDescriptions();
     if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
     } else {
@@ -277,12 +276,11 @@ BOOST_AUTO_TEST_CASE(Test_CleanAssemblyDate)
     entry.Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.BasicCleanup (entry);
+    auto changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-    vector<string> changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetAllDescriptions();
     if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "Clean User-Object Or -Field");
     } else {
@@ -347,12 +345,11 @@ BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher2)
     entry.Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.BasicCleanup (entry);
+    auto changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-    vector<string> changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetAllDescriptions();
     BOOST_CHECK_EQUAL(changes_str.size(), 0u);
 
     for (size_t i = 3; i < changes_str.size(); i++) {
@@ -415,12 +412,11 @@ BOOST_AUTO_TEST_CASE(Test_CleanPCRPrimerSeq)
     entry.Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.BasicCleanup (entry);
+    auto changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-    vector<string> changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetAllDescriptions();
     if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "eChangePCRPrimers");
     } else {
@@ -445,9 +441,8 @@ BOOST_AUTO_TEST_CASE(Test_CleanBioSource)
     src->SetOrg().SetTaxname("  Homo sapiens  ");
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.BasicCleanup (*src);
+    auto changes = cleanup.BasicCleanup (*src);
     BOOST_CHECK_EQUAL(src->GetOrg().GetTaxname(), "Homo sapiens");
 }
 
@@ -463,9 +458,8 @@ BOOST_AUTO_TEST_CASE(Test_SplitGBQual)
     feat->SetQual().push_back(q);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.BasicCleanup (*feat);
+    auto changes = cleanup.BasicCleanup (*feat);
     BOOST_CHECK_EQUAL(feat->GetQual().size(), 3u);
     BOOST_CHECK_EQUAL(feat->GetQual()[2]->GetVal(), "tttagc");
 }
@@ -483,9 +477,8 @@ BOOST_AUTO_TEST_CASE(Test_RptUnit)
     feat->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("rpt_unit", "(abc,def,hjusdf sdf)")));
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.BasicCleanup (*feat);
+    auto changes = cleanup.BasicCleanup (*feat);
     BOOST_CHECK_EQUAL(feat->GetQual().size(), 4u);
     BOOST_CHECK_EQUAL(feat->GetQual()[0]->GetVal(), "()(), 4235 . 236 ()");
     BOOST_CHECK_EQUAL(feat->GetQual()[1]->GetVal(), "abc");
@@ -501,9 +494,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2231)
     src->SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_country, "New Zealand: Natural CO2 spring , Hakanoa, Northland")));
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.BasicCleanup (*src);
+    auto changes = cleanup.BasicCleanup (*src);
     BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetName(), "New Zealand: Natural CO2 spring, Hakanoa, Northland");
 
 }
@@ -527,9 +519,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2209)
     feat->SetQual().push_back(q);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.BasicCleanup(*feat);
+    auto changes = cleanup.BasicCleanup(*feat);
     BOOST_CHECK_EQUAL(false, feat->IsSetQual());
     BOOST_CHECK_EQUAL(feat->GetData().GetCdregion().GetCode_break().size(), 1);
     const CCode_break& cbr = *(feat->GetData().GetCdregion().GetCode_break().front());
@@ -561,9 +552,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2212)
     feat->SetQual().push_back(q);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.BasicCleanup(*feat);
+    auto changes = cleanup.BasicCleanup(*feat);
     // should not convert transl_except qual to code break
     // because not in coding region location
     BOOST_CHECK_EQUAL(true, feat->IsSetQual());
@@ -616,9 +606,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2221)
     src->SetSubtype().push_back(q);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.BasicCleanup(*src);
+    auto changes = cleanup.BasicCleanup(*src);
     BOOST_CHECK_EQUAL(false, src->IsSetSubtype());
     BOOST_CHECK_EQUAL(true, src->IsSetPcr_primers());
     BOOST_CHECK_EQUAL(src->GetPcr_primers().Get().front()->GetForward().Get().front()->GetSeq(), "gattacagattaca<OTHER>");
@@ -643,10 +632,9 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2200)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.BasicCleanup (*entry);
+    auto changes = cleanup.BasicCleanup (*entry);
 
     const CAuth_list& result = entry->GetDescr().Get().back()->GetPub().GetPub().Get().back()->GetGen().GetAuthors();
 
@@ -712,10 +700,9 @@ void CompareOldAndNew(const CAuthor& orig)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.BasicCleanup (*entry);
+    auto changes = cleanup.BasicCleanup (*entry);
 
     const CPub& pub_c = *(entry->GetDescr().Get().back()->GetPub().GetPub().Get().back());
     const CAuthor& old_result = *(pub_c.GetGen().GetAuthors().GetNames().GetStd().front());
@@ -770,10 +757,9 @@ void CheckPubAuth(const string& first_in, const string& init_in, const string& l
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.BasicCleanup (*entry);
+    auto changes = cleanup.BasicCleanup (*entry);
 
     const CAuth_list& result = entry->GetDescr().Get().back()->GetPub().GetPub().Get().back()->GetGen().GetAuthors();
 
@@ -1003,7 +989,6 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3943)
 {
     // do not change order of product qualifiers
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     CRef<CSeq_feat> sf(new CSeq_feat());
     sf->SetData().SetImp().SetKey("misc_feature");
@@ -1111,10 +1096,9 @@ void TestMoveTrnaProductQualToNote(const string& qual, bool keep)
     trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", qual)));
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*trna);
+    auto changes = cleanup.BasicCleanup(*trna);
 
     BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetAa(), true);
     BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetCodon(), false);
@@ -1141,10 +1125,9 @@ BOOST_AUTO_TEST_CASE(Test_trna_product_qual_cleanup)
     trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "trna.Val")));
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*trna);
+    auto changes = cleanup.BasicCleanup(*trna);
 
     BOOST_CHECK_EQUAL(trna->IsSetQual(), true);
     BOOST_CHECK_EQUAL(trna->GetQual().front()->GetQual(), "product");
@@ -1160,10 +1143,9 @@ BOOST_AUTO_TEST_CASE(Test_double_comma)
     CRef<CSeq_feat> misc(new CSeq_feat());
     misc->SetComment("ORF30, len: 104 aa,, similar to cytochrome c-553 precursor(c553)");
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*misc);
+    auto changes = cleanup.BasicCleanup(*misc);
 
     BOOST_CHECK_EQUAL(misc->GetComment(), "ORF30, len: 104 aa, similar to cytochrome c-553 precursor(c553)");
 }
@@ -1273,10 +1255,9 @@ BOOST_AUTO_TEST_CASE(Test_RemoveEmptyStructuredCommentField)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(desc->GetUser().GetData().size(), 1);
     BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetLabel().GetStr(), "I have a value");
@@ -1292,10 +1273,9 @@ void TestFindThisNotStrain(COrgMod::ESubtype subtype, const string& prefix)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     ITERATE(CSeq_descr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
         if ((*it)->IsSource()) {
@@ -1349,10 +1329,9 @@ BOOST_AUTO_TEST_CASE(Test_FixPartialProteinTitle)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     ITERATE(CBioseq::TDescr::Tdata, it, prot->GetSeq().GetDescr().Get()) {
         if ((*it)->IsTitle()) {
@@ -1372,10 +1351,9 @@ BOOST_AUTO_TEST_CASE(Test_FixProteinName)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "abc [bar][Sebaea microphylla ]");
 }
@@ -1589,9 +1567,8 @@ BOOST_AUTO_TEST_CASE(Test_VR_746)
     gene->SetData().SetGene().SetLocus("a|b|c");
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.BasicCleanup(*gene);
+    auto changes = cleanup.BasicCleanup(*gene);
 
     BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetLocus(), "a");
     BOOST_CHECK_EQUAL(gene->GetData().GetGene().GetSyn().size(), 2);
@@ -1629,10 +1606,9 @@ BOOST_AUTO_TEST_CASE(Test_CleanDBLink)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(desc->GetUser().GetData().size(), 1);
     BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetData().IsStrs(), true);
@@ -1653,10 +1629,9 @@ void TestExceptionTextFix(const string& before, const string& after)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     CFeat_CI f(seh);
     BOOST_CHECK_EQUAL(f->GetExcept_text(), "trans-splicing");
@@ -1913,10 +1888,9 @@ void CheckTaxnameChange(const string& orig, const string& fixed)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
     bool found_taxname_change = false;
     for (auto it : changes->GetAllChanges()) {
         if (it == CCleanupChange::eChangeTaxname) {
@@ -1958,10 +1932,9 @@ BOOST_AUTO_TEST_CASE(Test_ReadLocFromText)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(trna->IsSetQual(), false);
     BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
@@ -2001,13 +1974,12 @@ void CheckCleanupAndCleanupOfUserObject(const CUser_object& obj)
     entry->SetSeq().SetDescr().Set().push_back(ud);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     entry->Parentize();
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     CRef<CUser_object> direct_obj(new CUser_object());
     direct_obj->Assign(obj);
@@ -2141,7 +2113,7 @@ BOOST_AUTO_TEST_CASE(Test_ibol)
     CheckStructuredCommentField(*(obj->GetData().front()), "StructuredCommentPrefix", "##International Barcode of Life (iBOL)Data-START##");
     // RW-1737: account for auto-added suffix
     CheckStructuredCommentField(**(obj->GetData().end()-2), "Tentative Name", "a");
-    BOOST_CHECK_EQUAL(obj->GetData().size(), 4); 
+    BOOST_CHECK_EQUAL(obj->GetData().size(), 4);
 
 }
 
@@ -2206,10 +2178,9 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4508)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "a b");
 
@@ -2226,10 +2197,9 @@ BOOST_AUTO_TEST_CASE(Test_SeqFeatCDSGBQualBC)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
     BOOST_CHECK_EQUAL(prot->GetComment(), "xyz");
@@ -2250,10 +2220,9 @@ BOOST_AUTO_TEST_CASE(Test_CommentRedundantWithEc)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(cds->IsSetComment(), false);
 }
@@ -2274,10 +2243,9 @@ BOOST_AUTO_TEST_CASE(Test_MoveXrefToProt)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(cds->IsSetXref(), false);
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "fake protein name");
@@ -2292,10 +2260,9 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4516)
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     CSeqdesc_CI src(seh, CSeqdesc::e_Source);
     BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().back()->GetName(), "USA:b,c");
@@ -2326,10 +2293,9 @@ void CheckAuthNameSingleInitialFix(const string& first, const string& initials, 
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.BasicCleanup (*entry);
+    auto changes = cleanup.BasicCleanup (*entry);
 
     const CAuth_list& result = entry->GetDescr().Get().back()->GetPub().GetPub().Get().back()->GetGen().GetAuthors();
 
@@ -2374,10 +2340,9 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4565)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(prot->SetData().SetProt().GetName().size(), 4);
 
@@ -2401,10 +2366,9 @@ void TestOneAsn2gnbkCompressSpaces(const string& input, const string& output)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(f->GetData().GetStr(), output);
 }
@@ -2438,10 +2402,9 @@ BOOST_AUTO_TEST_CASE(Test_GeneDbToFeatDb)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(gene->GetData().GetGene().IsSetDb(), false);
     BOOST_CHECK_EQUAL(gene->GetDbxref().size(), 1);
@@ -2479,10 +2442,9 @@ BOOST_AUTO_TEST_CASE(Test_MoveXrefGeneDbToFeatDb)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(gene->GetXref().size(), 2);
     BOOST_CHECK_EQUAL(gene->GetXref().front()->IsSetId(), true);
@@ -2509,10 +2471,9 @@ BOOST_AUTO_TEST_CASE(Test_BasicProtCleanup)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
 
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().IsSetDb(), false);
     BOOST_CHECK_EQUAL(prot->GetDbxref().size(), 1);
@@ -2543,10 +2504,9 @@ void TestOneDate(int hour, int minute, int second, bool expect_hour, bool expect
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(*entry);
     BOOST_CHECK_EQUAL(createdate.IsSetHour(), expect_hour);
     BOOST_CHECK_EQUAL(createdate.IsSetMinute(), expect_minute);
     BOOST_CHECK_EQUAL(createdate.IsSetSecond(), expect_second);
@@ -2583,10 +2543,9 @@ BOOST_AUTO_TEST_CASE(Test_StripSpaces)
 BOOST_AUTO_TEST_CASE(Test_SingleDesc)
 {
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
     CRef<CSeqdesc> desc(new CSeqdesc());
     desc->SetComment(" a b ");
-    changes = cleanup.BasicCleanup(*desc);
+    auto changes = cleanup.BasicCleanup(*desc);
     BOOST_CHECK_EQUAL(desc->GetComment(), "a b");
 
 }
@@ -2595,7 +2554,6 @@ BOOST_AUTO_TEST_CASE(Test_SingleDesc)
 BOOST_AUTO_TEST_CASE(Test_MultipleDesc)
 {
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
     CRef<CSeqdesc> comment(new CSeqdesc());
     comment->SetComment(" a b ");
     CRef<CSeqdesc> dated(new CSeqdesc());
@@ -2611,7 +2569,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleDesc)
     descr->Set().push_back(comment);
     descr->Set().push_back(dated);
 
-    changes = cleanup.BasicCleanup(*descr);
+    auto changes = cleanup.BasicCleanup(*descr);
     BOOST_CHECK_EQUAL(comment->GetComment(), "a b");
     BOOST_CHECK_EQUAL(createdate.IsSetMinute(), false);
     BOOST_CHECK_EQUAL(createdate.IsSetSecond(), false);
@@ -2621,13 +2579,12 @@ BOOST_AUTO_TEST_CASE(Test_MultipleDesc)
 BOOST_AUTO_TEST_CASE(Test_PGAP_1320)
 {
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
     CRef<CSeqdesc> src(new CSeqdesc());
     src->SetSource().SetOrg().SetTaxname("X");
     CRef<CSubSource> alt(new CSubSource(CSubSource::eSubtype_altitude, "634 m."));
     src->SetSource().SetSubtype().push_back(alt);
 
-    changes = cleanup.BasicCleanup(*src);
+    auto changes = cleanup.BasicCleanup(*src);
     BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().front()->GetName(), "634 m");
 
 }
@@ -2635,13 +2592,12 @@ BOOST_AUTO_TEST_CASE(Test_PGAP_1320)
 BOOST_AUTO_TEST_CASE(Test_RW_978)
 {
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
     CRef<CSeqdesc> src(new CSeqdesc());
     src->SetSource().SetOrg().SetTaxname("X");
     CRef<CSubSource> alt(new CSubSource(CSubSource::eSubtype_country, "USA:DE:Wilmington"));
     src->SetSource().SetSubtype().push_back(alt);
 
-    changes = cleanup.BasicCleanup(*src);
+    auto changes = cleanup.BasicCleanup(*src);
     BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().front()->GetName(), "USA:DE,Wilmington");
 
 }

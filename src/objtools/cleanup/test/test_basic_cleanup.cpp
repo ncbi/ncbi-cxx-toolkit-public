@@ -90,16 +90,15 @@ private:
     vector<CObjectIStream*> OpenIFiles(const CArgs& args);
     vector<CObjectOStream*> OpenOFiles(const CArgs& args);
 
-    CConstRef<CCleanupChange> ProcessSeqEntry(void);
-    CConstRef<CCleanupChange> ProcessSeqSubmit(void);
-    CConstRef<CCleanupChange> ProcessSeqAnnot(void);
-    CConstRef<CCleanupChange> ProcessSeqFeat(void);
-    CConstRef<CCleanupChange> ProcessBioseq(void);
-    CConstRef<CCleanupChange> ProcessBioseqSet(void);
+    CCleanup::TChanges ProcessSeqEntry(void);
+    CCleanup::TChanges ProcessSeqSubmit(void);
+    CCleanup::TChanges ProcessSeqAnnot(void);
+    CCleanup::TChanges ProcessSeqFeat(void);
+    CCleanup::TChanges ProcessBioseq(void);
+    CCleanup::TChanges ProcessBioseqSet(void);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
-    SIZE_TYPE PrintChanges(CConstRef<CCleanupChange> errors,
-        const CArgs& args);
+    SIZE_TYPE PrintChanges(CCleanup::TChanges errors, const CArgs& args);
 
     unique_ptr<CObjectIStream> m_In;
     unique_ptr<CObjectOStream> m_Out;
@@ -190,7 +189,7 @@ int CTest_cleanupApplication::Run(void)
         // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
         // Release file (batch processing) where we process each Seq-entry
         // at a time.
-        CConstRef<CCleanupChange> changes;
+        CCleanup::TChanges changes;
         if ( args["t"] ) {          // Release file
             ProcessReleaseFile(args);
             return 0;
@@ -244,7 +243,7 @@ void CTest_cleanupApplication::ReadClassMember
 
                 // BasicCleanup Seq-entry
                 CCleanup cleanup;
-                CConstRef<CCleanupChange> changes;
+                CCleanup::TChanges changes;
                 if ( ! m_NoCleanup) {
                     changes = ( m_DoExtendedCleanup ?
                         cleanup.ExtendedCleanup( *se, m_Options ) :
@@ -297,14 +296,14 @@ CRef<CSeq_entry> CTest_cleanupApplication::ReadSeqEntry(void)
 }
 
 
-CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
+CCleanup::TChanges CTest_cleanupApplication::ProcessSeqEntry(void)
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(ReadSeqEntry());
 
     // BasicCleanup Seq-entry
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
+    CCleanup::TChanges changes;
     if ( ! m_NoCleanup) {
         if( m_UseHandleVersion ) {
             CSeq_entry_Handle seh = m_Scope.AddTopLevelSeqEntry(*se);
@@ -321,7 +320,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqEntry(void)
 }
 
 
-CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
+CCleanup::TChanges CTest_cleanupApplication::ProcessSeqSubmit(void)
 {
     CRef<CSeq_submit> ss(new CSeq_submit);
 
@@ -330,7 +329,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
 
     // Validae Seq-submit
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
+    CCleanup::TChanges changes;
     if ( ! m_NoCleanup) {
         // There is no handle version for Seq-submit
         changes = ( m_DoExtendedCleanup ?
@@ -342,7 +341,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
 }
 
 
-CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
+CCleanup::TChanges CTest_cleanupApplication::ProcessSeqAnnot(void)
 {
     CRef<CSeq_annot> sa(new CSeq_annot);
 
@@ -351,7 +350,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
 
     // Validate Seq-feat
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
+    CCleanup::TChanges changes;
     if ( ! m_NoCleanup) {
         if( m_UseHandleVersion ) {
             CSeq_annot_Handle sah = m_Scope.AddSeq_annot(*sa);
@@ -367,7 +366,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
     return changes;
 }
 
-CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqFeat(void)
+CCleanup::TChanges CTest_cleanupApplication::ProcessSeqFeat(void)
 {
     CRef<CSeq_feat> sf(new CSeq_feat);
 
@@ -376,7 +375,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqFeat(void)
 
     // Validate Seq-feat
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
+    CCleanup::TChanges changes;
     if ( ! m_NoCleanup) {
         if( m_UseHandleVersion ) {
             // set up a minimal fake Seq-entry so that we can
@@ -399,7 +398,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqFeat(void)
     return changes;
 }
 
-CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessBioseq(void)
+CCleanup::TChanges CTest_cleanupApplication::ProcessBioseq(void)
 {
     CRef<CBioseq> bs(new CBioseq);
 
@@ -408,7 +407,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessBioseq(void)
 
     // Validae bioseq
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
+    CCleanup::TChanges changes;
     if ( ! m_NoCleanup) {
         if( m_UseHandleVersion ) {
             CBioseq_Handle bsh = m_Scope.AddBioseq(*bs);
@@ -423,7 +422,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessBioseq(void)
     return changes;
 }
 
-CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessBioseqSet(void)
+CCleanup::TChanges CTest_cleanupApplication::ProcessBioseqSet(void)
 {
     CRef<CBioseq_set> bss(new CBioseq_set);
 
@@ -432,7 +431,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessBioseqSet(void)
 
     // Validae bioseq-set
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
+    CCleanup::TChanges changes;
     if ( ! m_NoCleanup) {
         if( m_UseHandleVersion ) {
             // set up minimal fake Seq-entry so we can get
@@ -541,7 +540,7 @@ vector<CObjectOStream*> CTest_cleanupApplication::OpenOFiles
 
 
 SIZE_TYPE CTest_cleanupApplication::PrintChanges
-(CConstRef<CCleanupChange> changes,
+(CCleanup::TChanges changes,
  const CArgs& args)
 {
     if (args["x"]) {
