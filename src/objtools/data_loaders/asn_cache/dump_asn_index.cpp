@@ -38,6 +38,7 @@
 #include <string>
 #include <limits>
 
+#include <corelib/version.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/ncbifile.hpp>
@@ -224,8 +225,9 @@ void    CDumpASNIndex::x_WriteHeader()
         NASNCacheFileName::GetHeader() ).c_str(), std::ios::binary );
     header_stream.write( reinterpret_cast<const char *>( &kMajorVersion ), sizeof( kMajorVersion ) );
     header_stream.write( reinterpret_cast<const char *>( &kMinorVersion ), sizeof( kMinorVersion ) );
-    std::string build_id = "$Id$";
-    header_stream << build_id;
+    CComponentVersionInfo version("dump_asn_index", kMajorVersion, kMinorVersion);
+    std::string header(version.PrintJson());
+    header_stream << header << flush;
 }
 
 
