@@ -8392,7 +8392,7 @@ ZMG<DEU-Gottingen>	s	Zoologisches Museum der Universitat Gottingen
 ZMG<DEU-Gottingen>:Crustacea	s	Zoologisches Museum der Universitat Gottingen, Crustacea Collection		
 ZMG<DEU-Greifswald>	s	Zoologischen Museums Greifswald			
 ZMH	s	Zoologisches Museum Hamburg			
-ZMHB	s	Museum fur Naturkunde der Humboldt-Universitat	MNB		
+ZMHB	s	Museum fur Naturkunde der Humboldt-Universitat	MFNB,MNB		
 ZMHU	s	Zoologisches Museum der Humboldt Universitaet			
 ZMJU	s	Zoological Museum, Jagiellonian University			
 ZMK<DEU>	s	Zoologisches Museum der Universitat Kiel			
