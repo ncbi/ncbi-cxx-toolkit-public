@@ -1209,7 +1209,7 @@ void CMultiReaderApp::xProcessFasta(
     auto maxIdLength = args["max-id-length"].AsInteger();
     if (maxIdLength != 0) {
         reader.SetMaxIDLength(maxIdLength);
-    } 
+    }
 
     CRef<CSeq_entry> pSeqEntry = reader.ReadSeqEntry(line_reader, m_pErrors.get());
     xWriteObject(args, *pSeqEntry, ostr);
@@ -1252,10 +1252,10 @@ void CMultiReaderApp::xSetFormat(
     CNcbiIstream& istr )
 //  ----------------------------------------------------------------------------
 {
-    m_uFormat = CFormatGuess::eUnknown;    
+    m_uFormat = CFormatGuess::eUnknown;
     string format = args["format"].AsString();
     const string& strProgramName = GetProgramDisplayName();
-    
+
     if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
         format == "wiggle" || format == "bedgraph") {
         m_uFormat = CFormatGuess::eWiggle;
@@ -1291,7 +1291,7 @@ void CMultiReaderApp::xSetFormat(
         return;
     }
 
-    if (NStr::StartsWith(strProgramName, "newick") || 
+    if (NStr::StartsWith(strProgramName, "newick") ||
             format == "newick" || format == "tree" || format == "tre") {
         m_uFormat = CFormatGuess::eNewick;
         return;
@@ -1497,7 +1497,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     if (!args["genbank"].AsBoolean() && !args["genbank-no-locus-tags"].AsBoolean()) {
         if (args["cleanup"]) {
             CCleanup cleanup;
-            CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
+            cleanup.BasicCleanup(annot);
         }
         return;
     }
@@ -1551,7 +1551,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     startingFeatureId = fte.PendingFeatureId();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
+    cleanup.BasicCleanup(annot);
 }
 
 
@@ -1712,4 +1712,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CMultiReaderApp().AppMain(argc, argv);
 }
-
