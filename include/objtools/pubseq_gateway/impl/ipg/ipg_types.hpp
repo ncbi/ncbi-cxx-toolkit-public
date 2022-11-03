@@ -31,7 +31,7 @@ v*  Government do not and cannot warrant the performance or results that
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 
-#include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
+#include <objtools/pubseq_gateway/impl/ipg/ipg_exception.hpp>
 
 #include <functional>
 #include <tuple>
@@ -39,7 +39,6 @@ v*  Government do not and cannot warrant the performance or results that
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(ipg)
-USING_IDBLOB_SCOPE;
 
 using TIpg = Int8;
 using TGbState = Int4;
@@ -91,8 +90,8 @@ struct SIpgSubgroupsConfig
         switch(status) {
         case EIpgSubgroupsStatus::eActive: return true;
         case EIpgSubgroupsStatus::eWriteProtected:
-            NCBI_THROW(CCassandraException, eInconsistentData,
-               string("IPG report '") + to_string(ipg) + "' is write protected."
+            NCBI_THROW(CIpgStorageException, eIpgUpdateReportWriteProtected,
+                string("IPG report '") + to_string(ipg) + "' is write protected."
             );
         default: return false;
         }
