@@ -138,7 +138,7 @@ void PopulateEntry(shared_ptr<CCassQuery>& query, CIpgStorageReportEntry& entry)
     }
 
     if (!query->FieldIsNull(FieldIndex("weights"))) {
-        TWeights weights;
+        TIpgWeights weights;
         query->FieldGetContainerValue(FieldIndex("weights"), back_inserter(weights));
         entry.SetWeights(move(weights));
     }
