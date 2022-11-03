@@ -104,17 +104,16 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
     entry.Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.ExtendedCleanup (entry);
+    auto changes = cleanup.ExtendedCleanup (entry);
     // look for expected change flags
-    vector<string> changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetAllDescriptions();
     if (changes_str.size() == 0) {
         BOOST_CHECK_EQUAL("missing cleanup", "change orgmod");
     } else {
         BOOST_CHECK_EQUAL (changes_str[0], "Change Orgmod");
-        for (int i = 1; i < changes_str.size(); i++) {
+        for (size_t i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
     }
@@ -141,7 +140,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
     cleanup.SetScope (scope);
     changes = cleanup.ExtendedCleanup (entry);
     changes_str = changes->GetAllDescriptions();
-    for (int i = 1; i < changes_str.size(); i++) {
+    for (size_t i = 1; i < changes_str.size(); i++) {
         BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
     }
     // make sure change was not made
@@ -188,17 +187,16 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.ExtendedCleanup (*entry);
+    auto changes = cleanup.ExtendedCleanup (*entry);
     // look for expected change flags
-    vector<string> changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetAllDescriptions();
     if (changes_str.size() == 0) {
         BOOST_CHECK_EQUAL("missing cleanup", "remove qualifier");
     } else {
         BOOST_CHECK_EQUAL (changes_str[0], "Remove Qualifier");
-        for (int i = 1; i < changes_str.size(); i++) {
+        for (size_t i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
     }
@@ -226,7 +224,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
 
     changes = cleanup.ExtendedCleanup (*entry);
     if (changes_str.size() > 0) {
-        for (int i = 1; i < changes_str.size(); i++) {
+        for (size_t i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
     }
@@ -259,7 +257,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
 
     changes = cleanup.ExtendedCleanup (*entry);
     if (changes_str.size() > 0) {
-        for (int i = 1; i < changes_str.size(); i++) {
+        for (size_t i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
     }
@@ -289,7 +287,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
 
     changes = cleanup.ExtendedCleanup (*entry);
     if (changes_str.size() > 0) {
-        for (int i = 1; i < changes_str.size(); i++) {
+        for (size_t i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
     }
@@ -394,12 +392,11 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
+    auto changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     // look for expected change flags
-    vector<string> changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetAllDescriptions();
     vector<string> expected;
     expected.push_back("Change Publication");
     expected.push_back("Change Subsource");
@@ -491,11 +488,10 @@ BOOST_AUTO_TEST_CASE(Test_RemoveEmptyFeatures)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope (scope);
-    changes = cleanup.ExtendedCleanup (*entry);
-    vector<string> changes_str = changes->GetAllDescriptions();
+    auto changes = cleanup.ExtendedCleanup (*entry);
+    auto changes_str = changes->GetAllDescriptions();
     vector<string> expected;
     expected.push_back("Remove Feature");
     expected.push_back("Move Descriptor");
@@ -685,12 +681,11 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2375)
     BOOST_CHECK_EQUAL(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().back()->GetSeq().GetDescr().Get().size(), 1);
 
     CCleanup cleanup(scope);
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.ExtendedCleanup(seh, CCleanup::eClean_NoProteinTitles);
+    auto changes1 = cleanup.ExtendedCleanup(seh, CCleanup::eClean_NoProteinTitles);
     BOOST_CHECK_EQUAL(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().back()->GetSeq().GetDescr().Get().size(), 1);
 
-    changes = cleanup.ExtendedCleanup(seh);
+    auto changes2 = cleanup.ExtendedCleanup(seh);
     BOOST_CHECK_EQUAL(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().back()->GetSeq().GetDescr().Get().size(), 2);
 
 
@@ -825,7 +820,6 @@ BOOST_AUTO_TEST_CASE(Test_ClearInternalPartials)
 BOOST_AUTO_TEST_CASE(TEST_RemoveNestedSet)
 {
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     cleanup.SetScope(scope);
@@ -836,11 +830,11 @@ BOOST_AUTO_TEST_CASE(TEST_RemoveNestedSet)
     entry->SetSet().SetSeq_set().push_back(sub1);
     entry->Parentize();
 
-    changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects | CCleanup::eClean_KeepTopSet);
-    BOOST_CHECK_EQUAL(changes->IsChanged(CCleanupChange::eCollapseSet), false);
+    auto changes1 = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects | CCleanup::eClean_KeepTopSet);
+    BOOST_CHECK_EQUAL(changes1->IsChanged(CCleanupChange::eCollapseSet), false);
 
-    changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects);
-    BOOST_CHECK_EQUAL(changes->IsChanged(CCleanupChange::eCollapseSet), true);
+    auto changes2 = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects);
+    BOOST_CHECK_EQUAL(changes2->IsChanged(CCleanupChange::eCollapseSet), true);
 
 
 }
@@ -981,10 +975,9 @@ BOOST_AUTO_TEST_CASE(TEST_ConvertPopToPhy)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.ExtendedCleanup(*entry);
+    auto changes = cleanup.ExtendedCleanup(*entry);
     // originally an eco set, which should not change
     BOOST_CHECK_EQUAL(entry->GetSet().GetClass(), CBioseq_set::eClass_eco_set);
 
@@ -1099,10 +1092,9 @@ BOOST_AUTO_TEST_CASE(Test_LatLonTrimming)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.ExtendedCleanup(*entry);
+    auto changes = cleanup.ExtendedCleanup(*entry);
     ITERATE(CBioseq::TDescr::Tdata, d, entry->GetDescr().Get()) {
         if ((*d)->IsSource()) {
             BOOST_CHECK_EQUAL((*d)->GetSource().GetSubtype().back()->GetName(), "3.12516554 N 2.56659745 E");
@@ -1167,9 +1159,8 @@ BOOST_AUTO_TEST_CASE(Test_MatPeptidePartial)
 
 
     CCleanup cleanup(scope);
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.ExtendedCleanup(seh);
+    auto changes = cleanup.ExtendedCleanup(seh);
 
     CBioseq_CI p(seh, CSeq_inst::eMol_aa);
     CFeat_CI f(*p, CSeqFeatData::eSubtype_mat_peptide_aa);
@@ -1543,10 +1534,9 @@ BOOST_AUTO_TEST_CASE(Test_VR_782)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.ExtendedCleanup(*entry);
+    auto changes = cleanup.ExtendedCleanup(*entry);
     prot = GetProteinSequenceFromGoodNucProtSet(entry);
     pfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
     mfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
@@ -1643,10 +1633,9 @@ void TestWithNCodingRegions(size_t n, bool first_is_partial)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.ExtendedCleanup(*entry);
+    auto changes = cleanup.ExtendedCleanup(*entry);
     CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
     auto ftable = nuc->GetAnnot().front()->GetData().GetFtable();
 
@@ -1675,7 +1664,6 @@ BOOST_AUTO_TEST_CASE(Test_RW_525)
 BOOST_AUTO_TEST_CASE(Test_GB_7597)
 {
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     cleanup.SetScope(scope);
@@ -1686,7 +1674,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_7597)
     entry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
     entry->Parentize();
 
-    changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects);
+    auto changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects);
     BOOST_CHECK_EQUAL(changes->IsChanged(CCleanupChange::eCollapseSet), true);
 
     BOOST_CHECK_EQUAL(entry->GetSet().GetClass(), CBioseq_set::eClass_nuc_prot);
@@ -1804,7 +1792,7 @@ void TestParentPartial(bool cds_prime5, bool cds_prime3)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(seh);
+    auto changes = cleanup.ExtendedCleanup(seh);
 
     CFeat_CI g(seh, CSeqFeatData::e_Gene);
 
@@ -1865,9 +1853,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4592)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup(scope);
-    CConstRef<CCleanupChange> changes;
 
-    changes = cleanup.ExtendedCleanup(seh);
+    auto changes = cleanup.ExtendedCleanup(seh);
     prot = seh.GetCompleteSeq_entry()->GetSet().GetSeq_set().back()->GetAnnot().back()->GetData().GetFtable().back();
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetEc().back(), "1.14.14.87");
 
@@ -1887,10 +1874,9 @@ BOOST_AUTO_TEST_CASE(Test_ProtTitleRemoval)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.ExtendedCleanup(seh);
+    auto changes = cleanup.ExtendedCleanup(seh);
 
     CConstRef<CSeq_entry> prot_after = seh.GetCompleteSeq_entry()->GetSet().GetSeq_set().back();
 
@@ -1915,10 +1901,9 @@ BOOST_AUTO_TEST_CASE(Test_StrainRemoval)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.ExtendedCleanup(seh);
+    auto changes = cleanup.ExtendedCleanup(seh);
     for (auto it : entry->GetSeq().GetDescr().Get()) {
         BOOST_CHECK(it->Which() != CSeqdesc::e_Genbank);
     }
@@ -1959,10 +1944,9 @@ BOOST_AUTO_TEST_CASE(Test_MultipleDates)
     entry->Parentize();
 
     CCleanup cleanup;
-    CConstRef<CCleanupChange> changes;
 
     cleanup.SetScope(scope);
-    changes = cleanup.ExtendedCleanup(seh);
+    auto changes = cleanup.ExtendedCleanup(seh);
     size_t num_create = 0;
     size_t num_update = 0;
     for (auto it : entry->GetSeq().GetDescr().Get()) {
@@ -1979,4 +1963,3 @@ BOOST_AUTO_TEST_CASE(Test_MultipleDates)
     BOOST_CHECK_EQUAL(num_create, 1);
     BOOST_CHECK_EQUAL(num_update, 1);
 }
-
