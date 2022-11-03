@@ -402,7 +402,7 @@ void FinalCleanup(TEntryList& seq_entries)
 
         MoveSourceDescrToTop(*entry);
 
-        CConstRef<CCleanupChange> cleanup_change = cleanup.ExtendedCleanup(*entry);
+        cleanup.ExtendedCleanup(*entry);
 
         //+++++
         /*{
