@@ -299,64 +299,35 @@ CCleanup::TChanges CCleanup::ExtendedCleanup(CSeq_entry_Handle& seh,  Uint4 opti
 // *********************** CCleanupChange implementation **********************
 
 
-CCleanupChange::CCleanupChange()
+vector<CCleanupChangeCore::EChanges> CCleanupChangeCore::GetAllChanges() const
 {
+    return m_Changes;
 }
 
 
-size_t CCleanupChange::ChangeCount() const
-{
-    return m_Changes.count();
-}
-
-
-bool CCleanupChange::IsChanged(CCleanupChange::EChanges e) const
-{
-    return m_Changes.test(e);
-}
-
-
-void CCleanupChange::SetChanged(CCleanupChange::EChanges e)
-{
-    m_Changes.set(e);
-}
-
-
-vector<CCleanupChange::EChanges> CCleanupChange::GetAllChanges() const
-{
-    vector<EChanges>  result;
-    for (size_t i = eNoChange + 1; i < m_Changes.size(); ++i) {
-        if (m_Changes.test(i)) {
-            result.push_back( (EChanges) i);
-        }
-    }
-    return result;
-}
-
-
-vector<string> CCleanupChange::GetAllDescriptions() const
+vector<string> CCleanupChangeCore::GetAllDescriptions() const
 {
     vector<string>  result;
-    for (size_t i = eNoChange + 1; i < m_Changes.size(); ++i) {
-        if (m_Changes.test(i)) {
-            result.push_back( GetDescription((EChanges) i) );
-        }
+    result.reserve(m_Changes.size());
+    for (auto it: m_Changes) {
+        result.push_back( string( GetDescription(it) ) );
     }
     return result;
 }
 
-
-string CCleanupChange::GetDescription(EChanges e)
+vector<string_view> CCleanupChangeCore::GetDescriptions() const
 {
-    if (e <= eNoChange  ||  e >= eNumberofChangeTypes) {
-        return sm_ChangeDesc[eNoChange];
+    vector<string_view>  result;
+    result.reserve(m_Changes.size());
+    for (auto it: m_Changes) {
+        result.push_back( GetDescription(it) );
     }
-    return sm_ChangeDesc[e];
+    return result;
 }
 
 // corresponds to the values in CCleanupChange::EChanges.
 // They must be edited together.
-const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
+static constexpr std::array<string_view, CCleanupChangeCore::eNumberofChangeTypes> sm_ChangeDesc = {
     "Invalid Change Code",
     // set when strings are changed.
     "Trim Spaces",
@@ -472,9 +443,15 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
 
     // set when any other change is made.
     "Change Other",
-    "Invalid Change Code"
 };
 
+string_view CCleanupChangeCore::GetDescription(EChanges e)
+{
+    if (e <= eNoChange  ||  e >= eNumberofChangeTypes) {
+        return sm_ChangeDesc[eNoChange]; // this is "Invalid Change Code"
+    }
+    return sm_ChangeDesc[e];
+}
 
 CProt_ref::EProcessed s_ProcessedFromKey(const string& key)
 {
@@ -718,7 +695,7 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 
     CSeq_feat_EditHandle edh(fh);
     edh.Replace(*new_feat);
-    CRef<CCleanupChange> changes(makeCleanupChange(0));
+    auto changes= makeCleanupChange(0);
     CNewCleanup_imp clean_i(changes, 0);
     clean_i.SetScope(fh.GetScope());
     clean_i.BasicCleanupSeqFeat(*new_feat);
@@ -3541,7 +3518,7 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
                 } else {
                     d->SetPub().SetReftype(CPubdesc::eReftype_feats);
                 }
-                CRef<CCleanupChange> changes(makeCleanupChange(0));
+                auto changes = makeCleanupChange(0);
                 CNewCleanup_imp pubclean(changes, 0);
                 pubclean.BasicCleanup(d->SetPub(), ShouldStripPubSerial(*(b->GetCompleteBioseq())));
                 if (!IsMinPub(d->SetPub(), is_refseq_prot)) {
@@ -3811,7 +3788,7 @@ bool CCleanup::MergeDupBioSources(CSeq_descr & seq_descr)
                     AreBioSourcesMergeable((*src1)->GetSource(), (*src2)->GetSource())) {
                     MergeDupBioSources((*src1)->SetSource(), (*src2)->GetSource());
 
-                    CRef<CCleanupChange> changes(makeCleanupChange(0));
+                    auto changes = makeCleanupChange(0);
                     CNewCleanup_imp srcclean(changes, 0);
                     srcclean.ExtendedCleanup((*src1)->SetSource());
                     src2 = seq_descr.Set().erase(src2);
@@ -3882,7 +3859,7 @@ CRef<CBioSource> CCleanup::BioSrcFromFeat(const CSeq_feat& f)
             src->SetOrg().SetDb().push_back(a);
         }
     }
-    CRef<CCleanupChange> changes(makeCleanupChange(0));
+    auto changes = makeCleanupChange(0);
     CNewCleanup_imp srcclean(changes, 0);
     srcclean.ExtendedCleanup(*src);
 

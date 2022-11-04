@@ -4756,9 +4756,9 @@ void CNewCleanup_imp::x_SeqIntervalBC( CSeq_interval & seq_interval )
     }
     // change bad strand values.
     if (m_Scope && seq_interval.IsSetId()) {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq_interval.GetId());
-        if (bsh) {
-            if (bsh.IsProtein()) {
+        auto seq_type = m_Scope->GetSequenceType(seq_interval.GetId(), CScope::fDoNotRecalculate);
+        if (seq_type != CSeq_inst::eMol_not_set) {
+            if (CSeq_inst::IsAa(seq_type)) {
                 if (seq_interval.IsSetStrand()) {
                     seq_interval.ResetStrand();
                     ChangeMade(CCleanupChange::eChangeStrand);
