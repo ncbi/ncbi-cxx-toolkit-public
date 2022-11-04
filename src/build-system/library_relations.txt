@@ -584,7 +584,7 @@ ipg_assembly_index needs $(LMDB_LIB)
 ipg_assembly_index needs xncbi
 ipg_assembly_index needs3party $(LMDB_LIBS)
 ipg_storage needs $(SEQ_LIBS)
-ipg_storage needs psg_cassandra
+ipg_storage needs psg_ipg
 ipg_storage needs pub
 jaeger_tracer needs $(Z_LIB)
 jaeger_tracer needs xncbi
