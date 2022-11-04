@@ -36,7 +36,6 @@
 #include <objtools/readers/format_guess_ex.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objtools/readers/reader_exception.hpp>
-#include <objects/submit/Submit_block.hpp>
 
 #include <serial/objistr.hpp>
 

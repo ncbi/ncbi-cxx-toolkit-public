@@ -36,28 +36,30 @@
 #include <objects/submit/Submit_block.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/Bioseq.hpp>
-
 #include <objtools/edit/huge_file.hpp>
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objtools/edit/huge_file_process.hpp>
+
+#include <objects/submit/Submit_block.hpp>
+
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-namespace
+const set<TTypeInfo> CHugeFile::g_supported_types =
 {
-    static const set<TTypeInfo> s_supported_types =
-    {
-        CBioseq_set::GetTypeInfo(),
-        CBioseq::GetTypeInfo(),
-        CSeq_entry::GetTypeInfo(),
-        CSeq_submit::GetTypeInfo(),
-    };
-}
+    CBioseq_set::GetTypeInfo(),
+    CBioseq::GetTypeInfo(),
+    CSeq_entry::GetTypeInfo(),
+    CSeq_submit::GetTypeInfo(),
+};
+
 
 CHugeFileProcess::CHugeFileProcess():
     m_pHugeFile { new CHugeFile },
@@ -78,7 +80,7 @@ CHugeFileProcess::CHugeFileProcess(const string& file_name, const set<TTypeInfo>
 
 bool CHugeFileProcess::IsSupported(TTypeInfo info)
 {
-    return s_supported_types.find(info) != s_supported_types.end();
+    return CHugeFile::g_supported_types.find(info) != CHugeFile::g_supported_types.end();
 }
 
 void CHugeFileProcess::Open(const string& file_name, const set<TTypeInfo>* types)
@@ -89,7 +91,7 @@ void CHugeFileProcess::Open(const string& file_name, const set<TTypeInfo>* types
 
 void CHugeFileProcess::OpenFile(const string& file_name, const set<TTypeInfo>* types)
 {
-    m_pHugeFile->m_supported_types = types ? types : &s_supported_types;
+    m_pHugeFile->m_supported_types = types ? types : &CHugeFile::g_supported_types;
     m_pHugeFile->Open(file_name);
 }
 
