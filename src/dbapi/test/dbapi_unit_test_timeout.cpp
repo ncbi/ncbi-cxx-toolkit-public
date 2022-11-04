@@ -138,7 +138,7 @@ static void s_HugeTableSelect(IConnection& conn)
 
                 bi->AddRow();
 
-                if (i % 1000 == 0) {
+                if (i % 5000 == 0) {
                     bi->StoreBatch();
                     if (timer.Elapsed() > 4)
                         break;
