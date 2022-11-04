@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
     cleanup.SetScope (scope);
     auto changes = cleanup.ExtendedCleanup (entry);
     // look for expected change flags
-    auto changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetDescriptions();
     if (changes_str.size() == 0) {
         BOOST_CHECK_EQUAL("missing cleanup", "change orgmod");
     } else {
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
 
     cleanup.SetScope (scope);
     changes = cleanup.ExtendedCleanup (entry);
-    changes_str = changes->GetAllDescriptions();
+    changes_str = changes->GetDescriptions();
     for (size_t i = 1; i < changes_str.size(); i++) {
         BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
     }
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
     cleanup.SetScope (scope);
     auto changes = cleanup.ExtendedCleanup (*entry);
     // look for expected change flags
-    auto changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetDescriptions();
     if (changes_str.size() == 0) {
         BOOST_CHECK_EQUAL("missing cleanup", "remove qualifier");
     } else {
@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     cleanup.SetScope (scope);
     auto changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     // look for expected change flags
-    auto changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetDescriptions();
     decltype(changes_str) expected;
     expected.push_back("Change Publication");
     expected.push_back("Change Subsource");
@@ -418,7 +418,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     BOOST_CHECK_EQUAL(found_src, true);
     // no additional changes if cleanup again
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
-    changes_str = changes->GetAllDescriptions();
+    changes_str = changes->GetDescriptions();
     expected.clear();
     s_ReportUnexpected(changes_str, expected);
 
@@ -427,7 +427,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
-    changes_str = changes->GetAllDescriptions();
+    changes_str = changes->GetDescriptions();
     expected.push_back("Add BioSource SubSource");
     expected.push_back("Change BioSource Other");
     s_ReportUnexpected(changes_str, expected);
@@ -450,7 +450,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     unit_test_util::SetLineage(entry, "");
     unit_test_util::SetDiv(entry, "ENV");
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
-    changes_str = changes->GetAllDescriptions();
+    changes_str = changes->GetDescriptions();
     expected.clear();
     expected.push_back("Change Subsource");
     s_ReportUnexpected(changes_str, expected);
@@ -469,7 +469,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
 
     // no additional changes if cleanup again
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
-    changes_str = changes->GetAllDescriptions();
+    changes_str = changes->GetDescriptions();
     expected.clear();
     s_ReportUnexpected(changes_str, expected);
 }
@@ -492,7 +492,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveEmptyFeatures)
 
     cleanup.SetScope (scope);
     auto changes = cleanup.ExtendedCleanup (*entry);
-    auto changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetDescriptions();
     vector<string> expected;
     expected.push_back("Remove Feature");
     expected.push_back("Move Descriptor");

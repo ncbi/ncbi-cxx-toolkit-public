@@ -35,7 +35,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <bitset>
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -44,7 +44,7 @@ BEGIN_SCOPE(objects)
     All the changes made during cleanup.
     A container of CCleanupChangeItem's.
 */
-class NCBI_CLEANUP_EXPORT CCleanupChange : public CObject
+class NCBI_CLEANUP_EXPORT CCleanupChangeCore
 {
 public:
     // If you add to this, also edit sm_ChangeDesc's values in the cleanup.cpp file.
@@ -169,23 +169,33 @@ public:
         eNumberofChangeTypes
     };
 
-    // constructors
-    CCleanupChange();
+    // all constructors are default
 
-    bool    IsChanged(EChanges e) const;
-    void    SetChanged(EChanges e);
+    bool    IsChanged(EChanges e) const  { return m_Changes.test(e); }
+    void    SetChanged(EChanges e)       { m_Changes.set(e); }
+    size_t  ChangeCount() const          { return m_Changes.size(); }
+    bool    Empty() const                { return m_Changes.empty(); }
+    operator bool() const                { return !m_Changes.empty(); }
 
     vector<EChanges>    GetAllChanges() const;
-    vector<string>      GetAllDescriptions() const;
+    NCBI_DEPRECATED vector<string> GetAllDescriptions() const;
+    vector<string_view> GetDescriptions() const;
 
-    size_t  ChangeCount() const;
+    static string_view  GetDescription(EChanges e);
 
-    static string  GetDescription(EChanges e);
+    CCleanupChangeCore& operator |= (const CCleanupChangeCore& other) {
+        m_Changes += other.m_Changes;
+        return *this;
+    }
+    CCleanupChangeCore& operator += (const CCleanupChangeCore& other) { return operator|=(other); }
+
 private:
-    static const char* const sm_ChangeDesc[eNumberofChangeTypes+1];
-
-    typedef bitset<eNumberofChangeTypes> TChangeBits;
+    using TChangeBits = ct::const_bitset<eNumberofChangeTypes, EChanges>;
     TChangeBits     m_Changes;
+};
+
+class NCBI_CLEANUP_EXPORT CCleanupChange : public CObject, public CCleanupChangeCore
+{
 };
 
 
