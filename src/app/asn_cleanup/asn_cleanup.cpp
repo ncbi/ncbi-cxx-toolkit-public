@@ -114,8 +114,8 @@ namespace
             if (parent.IsTopLevelEntry())
                 break;
 
-            if (parent.IsSet())
-                break;
+            //if (parent.IsSet())
+            //    break;
 
             CSeq_entry_Handle temp = parent.GetParentEntry();
             if (temp) {
@@ -130,6 +130,13 @@ namespace
 
         return parent;
     }
+};
+
+struct TThreadState
+{
+    CRef<CScope>                m_Scope;
+    bool                        m_IsMultiSeq = false;
+    CCleanupChangeCore          m_basic_changes, m_ext_changes;
 };
 
 class CCleanupApp :
@@ -195,16 +202,19 @@ private:
 
     bool x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& missing_prot_name);
     bool x_BatchExtendCDS(CSeq_feat&, CBioseq_Handle);
-    bool x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, bool do_basic = true, bool do_extended = false, Uint4 options = 0);
+    bool x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, Uint4 options = 0);
+
+    bool x_ReportChanges(const string_view prefix, CCleanupChangeCore changes);
 
     //template<typename T> void x_WriteToFile(const T& s);
 
     // data
-    CRef<CObjectManager>        m_Objmgr;       // Object Manager
-    CRef<CScope>                m_Scope;
-    unique_ptr<CObjectOStream>  m_Out;          // output
-    bool                        m_IsMultiSeq = false;
     unique_ptr<edit::CRemoteUpdater> m_remote_updater;
+    unique_ptr<CObjectOStream>  m_Out;          // output
+    CRef<CObjectManager>        m_Objmgr;       // Object Manager
+    bool                        m_do_basic = false;
+    bool                        m_do_extended = false;
+    TThreadState                m_state;
 };
 
 
@@ -588,6 +598,11 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
 void CCleanupApp::x_ProcessOneFile(const string& filename)
 {
     const CArgs& args = GetArgs();
+
+    m_state = TThreadState();
+    m_state.m_Scope.Reset(new CScope(*m_Objmgr));
+    m_state.m_Scope->AddDefaults();
+
     _ASSERT(!NStr::IsBlank(filename));
 
     if (args["type"]) {
@@ -616,7 +631,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     }
 
     EProcessingMode mode = eModeRegular;
-    m_IsMultiSeq = false;
+    m_state.m_IsMultiSeq = false;
     bool is_Xi = args["X"] && (NStr::Find(args["X"].AsString(), "i") != string::npos);
     // "-X i" is incompatible with -huge mode, until fixed, always use Regular
     if (asn_type == CBioseq::GetTypeInfo()) {
@@ -740,7 +755,7 @@ void CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeAsnReader* reader, const std:
     CRef<CSeq_submit> submit;
     CRef<CSeq_entry>  topentry;
 
-    _ASSERT(m_IsMultiSeq);
+    _ASSERT(m_state.m_IsMultiSeq);
 
     topentry = Ref(new CSeq_entry);
     if (reader->GetTopEntry()) {
@@ -771,7 +786,8 @@ void CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeAsnReader* reader, const std:
             return false;
 
         {
-            auto beh = m_Scope->GetBioseqHandle(**id_it);
+            auto beh = m_state.m_Scope->GetBioseqHandle(**id_it);
+            //std::cerr << (**id_it).AsFastaString() << "\n";
             auto parent = x_GetParentEntry(beh);
 
             #ifdef _DEBUG
@@ -784,7 +800,7 @@ void CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeAsnReader* reader, const std:
             entry = parent.GetCompleteSeq_entry();
         }
 
-        m_Scope->ResetHistory();
+        m_state.m_Scope->ResetHistory();
 
         ++id_it;
         return true;
@@ -797,8 +813,8 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_
 {
     return process.Read([this, &process, first_only](edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist) -> bool
     {
-        m_IsMultiSeq = reader->IsMultiSequence();
-        if (m_IsMultiSeq) {
+        m_state.m_IsMultiSeq = reader->IsMultiSequence();
+        if (m_state.m_IsMultiSeq) {
             string loader_name = CDirEntry::ConvertToOSPath(process.GetFile().m_filename);
 
             auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
@@ -806,13 +822,11 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_
 
             CAutoRevoker autorevoker(info);
 
-            //m_Scope.Reset(new CScope(*m_Objmgr));
-            //m_Scope->AddDefaults();
-            m_Scope->AddDataLoader(loader_name);
+            m_state.m_Scope->AddDataLoader(loader_name);
 
             x_ProcessHugeFileBlob(reader, idlist);
 
-            m_Scope->ResetDataAndHistory(CScope::eRemoveDataLoaders);
+            m_state.m_Scope->ResetDataAndHistory(CScope::eRemoveDataLoaders);
 
         } else {
             auto topobject = x_ProcessTraditionally(*reader);
@@ -869,6 +883,32 @@ int CCleanupApp::Run()
         NCBI_THROW(CArgException, eInvalidArg, "\"X\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
     }
 
+    if (args["K"]) {
+        if (NStr::Find(args["K"].AsString(), "b") != string::npos) {
+            m_do_basic = true;
+        }
+        if (NStr::Find(args["K"].AsString(), "s") != string::npos) {
+            m_do_basic = true;
+            m_do_extended = true;
+        }
+    }
+    else if (args["X"]) {
+        m_do_basic = true;
+        if (NStr::Find(args["X"].AsString(), "w") != string::npos) {
+            //Extended Cleanup is part of -X w
+            m_do_extended = false;
+        }
+    } else if (args["F"]) {
+        m_do_basic = true;
+    } else {
+        if (args["basic"]) {
+            m_do_basic = true;
+        }
+        if (!args["nocleanup"]) {
+            m_do_extended = true;
+        }
+    }
+
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
     if ( !m_Objmgr ) {
@@ -876,8 +916,6 @@ int CCleanupApp::Run()
     }
 
     CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
-    m_Scope.Reset(new CScope(*m_Objmgr));
-    m_Scope->AddDefaults();
 
     m_remote_updater.reset(new edit::CRemoteUpdater(nullptr));
 
@@ -923,6 +961,11 @@ int CCleanupApp::Run()
         // close output file if we opened one
         x_CloseOStream();
     }
+
+    if (m_do_basic && !m_do_extended)
+        x_ReportChanges("BasicCleanup", m_state.m_basic_changes);
+    if (m_do_extended)
+        x_ReportChanges("ExtendedCleanup",  m_state.m_ext_changes);
 
     #ifdef THIS_IS_TRUNK_BUILD
         m_remote_updater->ReportStats(std::cerr);
@@ -1222,10 +1265,9 @@ bool CCleanupApp::x_GFF3Batch(CSeq_entry_Handle seh)
 }
 
 
-bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& label,
-                                     bool do_basic, bool do_extended, Uint4 options)
+bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, Uint4 options)
 {
-    if (!do_basic && !do_extended) {
+    if (!m_do_basic && !m_do_extended) {
         return false;
     }
 
@@ -1233,52 +1275,30 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
     CCleanup cleanup;
     cleanup.SetScope(&(entry.GetScope()));
 
-    if (m_IsMultiSeq) {
+    if (m_state.m_IsMultiSeq) {
         options |= ( CCleanup::eClean_KeepTopSet | CCleanup::eClean_KeepSingleSeqSet);
         //if (submit)
         //options |= CCleanup::eScope_UseInPlace; // RW-1070 - CCleanup::eScope_UseInPlace is essential
     }
 
-    if (do_basic && !do_extended) {
+    if (m_do_basic && !m_do_extended) {
         // perform BasicCleanup
         try {
-            auto changes = cleanup.BasicCleanup(entry, options);
-            vector<string> changes_str;
-            if (changes)
-                changes_str = changes->GetAllDescriptions();
-            if (changes_str.empty()) {
-                LOG_POST(Error << "No changes from BasicCleanup\n");
-            }
-            else {
-                LOG_POST(Error << "Changes from BasicCleanup:\n");
-                for (const string& it : changes_str) {
-                    LOG_POST(Error << it);
-                }
-                any_changes = true;
-            }
+            auto changes = *cleanup.BasicCleanup(entry, options);
+            m_state.m_basic_changes += changes;
+            any_changes = !changes.Empty();
         }
         catch (CException& e) {
             LOG_POST(Error << "error in basic cleanup: " << e.GetMsg() << label);
         }
     }
 
-    if (do_extended) {
+    if (m_do_extended) {
         // perform ExtendedCleanup
         try {
-            auto changes = cleanup.ExtendedCleanup(entry, options);
-            vector<string> changes_str;
-            if (changes)
-                changes_str = changes->GetAllDescriptions();
-            if (changes_str.empty()) {
-                LOG_POST(Error << "No changes from ExtendedCleanup\n");
-            }
-            else {
-                LOG_POST(Error << "Changes from ExtendedCleanup:\n");
-                for (const string& it : changes_str) {
-                    LOG_POST(Error << it);
-                }
-                any_changes = true;
-            }
+            auto changes = *cleanup.ExtendedCleanup(entry, options);
+            m_state.m_ext_changes += changes;
+            any_changes = !changes.Empty();
         }
         catch (CException& e) {
             LOG_POST(Error << "error in extended cleanup: " << e.GetMsg() << label);
@@ -1293,17 +1313,8 @@ bool CCleanupApp::HandleSubmitBlock(CSubmit_block& block)
     CCleanup cleanup;
     bool any_changes = false;
     try {
-        auto changes = cleanup.BasicCleanup(block);
-        vector<string> changes_str = changes->GetAllDescriptions();
-        if (changes_str.empty()) {
-            LOG_POST(Error << "No changes from BasicCleanup of SubmitBlock\n");
-        } else {
-            LOG_POST(Error << "Changes from BasicCleanup of SubmitBlock:\n");
-            for (const string& it : changes_str) {
-                LOG_POST(Error << it);
-            }
-            any_changes = true;
-        }
+        auto changes = *cleanup.BasicCleanup(block);
+        any_changes = x_ReportChanges("BasicCleanup of SubmitBlock", changes);
     } catch (CException& e) {
         LOG_POST(Error << "error in cleanup of SubmitBlock: " << e.GetMsg());
     }
@@ -1343,40 +1354,12 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
         any_changes |= CCleanup::RemoveNcbiCleanupObject(*se);
     }
 
-    bool do_basic = false;
-    bool do_extended = false;
-    if (args["K"]) {
-        if (NStr::Find(args["K"].AsString(), "b") != string::npos) {
-            do_basic = true;
-        }
-        if (NStr::Find(args["K"].AsString(), "s") != string::npos) {
-            do_basic = true;
-            do_extended = true;
-        }
-    }
-    else if (args["X"]) {
-        do_basic = true;
-        if (NStr::Find(args["X"].AsString(), "w") != string::npos) {
-            //Extended Cleanup is part of -X w
-            do_extended = false;
-        }
-    } else if (args["F"]) {
-        do_basic = true;
-    } else {
-        if (args["basic"]) {
-            do_basic = true;
-        }
-        if (!args["nocleanup"]) {
-            do_extended = true;
-        }
-    }
-
     Uint4 options = 0;
     if (args["noobj"]) {
         options = CCleanup::eClean_NoNcbiUserObjects;
     }
 
-    any_changes |= x_BasicAndExtended(entry, label, do_basic, do_extended, options);
+    any_changes |= x_BasicAndExtended(entry, label, options);
 
     if (args["F"]) {
         any_changes |= x_ProcessFeatureOptions(args["F"].AsString(), entry);
@@ -1384,7 +1367,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     if (args["X"]) {
         any_changes |= x_ProcessXOptions(args["X"].AsString(), entry, options);
     }
-    if (args["K"] && NStr::Find(args["K"].AsString(), "n") != string::npos && !do_extended) {
+    if (args["K"] && NStr::Find(args["K"].AsString(), "n") != string::npos && !m_do_extended) {
         any_changes |= CCleanup::NormalizeDescriptorOrder(entry);
     }
 
@@ -1397,7 +1380,7 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         return false;
     }
 
-    auto entryHandle = m_Scope->AddTopLevelSeqEntry(*se);
+    auto entryHandle = m_state.m_Scope->AddTopLevelSeqEntry(*se);
     if (!entryHandle) {
         NCBI_THROW(CArgException, eInvalidArg, "Failed to insert entry to scope.");
     }
@@ -1406,10 +1389,10 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         if (entryHandle.GetCompleteSeq_entry().GetPointer() != se.GetPointer()) {
             se->Assign(*entryHandle.GetCompleteSeq_entry());
         }
-        m_Scope->RemoveTopLevelSeqEntry(entryHandle);
+        m_state.m_Scope->RemoveTopLevelSeqEntry(entryHandle);
         return true;
     }
-    m_Scope->RemoveTopLevelSeqEntry(entryHandle);
+    m_state.m_Scope->RemoveTopLevelSeqEntry(entryHandle);
     return false;
 }
 
@@ -1476,6 +1459,22 @@ void CCleanupApp::Process(CRef<CSerialObject>& obj)
     }
 }
 
+bool CCleanupApp::x_ReportChanges(const string_view prefix, CCleanupChangeCore changes)
+{
+    bool any_changes = false;
+    auto changes_str = changes.GetDescriptions();
+    if (changes_str.empty()) {
+        LOG_POST(Error << "No changes from " << prefix << "\n");
+    }
+    else {
+        LOG_POST(Error << "Changes from " << prefix << ":\n");
+        for (auto it : changes_str) {
+            LOG_POST(Error << it);
+        }
+        any_changes = true;
+    }
+    return any_changes;
+}
 
 END_NCBI_SCOPE
 

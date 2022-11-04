@@ -86,6 +86,9 @@ public:
 
     // Construtor / Destructor
     CCleanup(CScope* scope = NULL, EScopeOptions scope_handling = eScope_Copy);
+    CCleanup(const CCleanup&) = delete;
+    CCleanup& operator= (const CCleanup&) = delete;
+
     ~CCleanup();
 
     void SetScope(CScope* scope);
@@ -603,10 +606,6 @@ public:
     static void AutodefId(CSeq_entry_Handle seh);
 
 private:
-    // Prohibit copy constructor & assignment operator
-    CCleanup(const CCleanup&);
-    CCleanup& operator= (const CCleanup&);
-
     CRef<CScope>            m_Scope;
 
     static bool x_CleanupUserField(CUser_field& field);

@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
     cleanup.SetScope (scope);
     auto changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-    auto changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetDescriptions();
     if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
     } else {
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanAssemblyDate)
     cleanup.SetScope (scope);
     auto changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-    auto changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetDescriptions();
     if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "Clean User-Object Or -Field");
     } else {
@@ -349,7 +349,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher2)
     cleanup.SetScope (scope);
     auto changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-    auto changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetDescriptions();
     BOOST_CHECK_EQUAL(changes_str.size(), 0u);
 
     for (size_t i = 3; i < changes_str.size(); i++) {
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanPCRPrimerSeq)
     cleanup.SetScope (scope);
     auto changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-    auto changes_str = changes->GetAllDescriptions();
+    auto changes_str = changes->GetDescriptions();
     if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "eChangePCRPrimers");
     } else {
