@@ -92,6 +92,13 @@ NCBI_PARAM_DEF_EX(bool, WGS, USE_AMBIGUITY_4NA, true,
                   eParam_NoThread, WGS_USE_AMBIGUITY_4NA);
 
 
+static bool s_UseAmbiguity4na(void)
+{
+    static bool v = NCBI_PARAM_TYPE(WGS, USE_AMBIGUITY_4NA)::GetDefault();
+    return v;
+}
+
+
 #ifdef USE_TEST_PATH
 NCBI_PARAM_DECL(string, WGS, TEST_PATH);
 NCBI_PARAM_DEF_EX(string, WGS, TEST_PATH, "",
@@ -512,7 +519,7 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
     // uncomment lines to test algorithm on data without these columns
     //m_AMBIGUITY_MASK = CVDBColumnBits<8>();
     //m_GAP_START = CVDBColumnBits<32>();
-    if ( m_GAP_START && m_GAP_LEN && m_AMBIGUITY_POS && m_AMBIGUITY_4NA ) {
+    if ( s_UseAmbiguity4na() && m_GAP_START && m_GAP_LEN && m_AMBIGUITY_POS && m_AMBIGUITY_4NA ) {
         // all fields to restore ambiguities are present
     }
     else {
@@ -2438,6 +2445,7 @@ CWGSDb_Impl::SSeqTableCursor::GetUnpacked4na(TVDBRowId row,
         }
     }
     {
+        //LOG_POST(Warning<<"reading unpacked 4na data of "<<*CVDBStringValue(ACCESSION(row))<<":"<<pos<<"-"<<(pos+len-1));
         PROFILE(sw____GetUnp4na);
         m_4naCacheRow = row;
         m_4naCacheRange = range;
@@ -4057,6 +4065,7 @@ void s_SetGaps(vector<char>& dst_4na_vec,
 CRef<CSeq_data> CWGSSeqIterator::Get4na(TSeqPos pos, TSeqPos len) const
 {
     if ( m_Cur->m_READ_4na ) {
+        //LOG_POST(Warning<<"reading 4na data of "<<GetAccession()<<":"<<pos<<"-"<<(pos+len-1));
         PROFILE(sw____GetRaw4na);
         CRef<CSeq_data> ret(new CSeq_data);
         vector<char>& data = ret->SetNcbi4na().Set();
