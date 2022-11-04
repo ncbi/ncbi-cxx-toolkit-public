@@ -37,6 +37,8 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
+#include <random>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -506,6 +508,252 @@ BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
         BOOST_CHECK(url.GetHost().empty());
         BOOST_CHECK(url.GetPort().empty());
         BOOST_CHECK_EQUAL(url.GetPath(), "76543");
+    }
+}
+
+struct SUrlTestAdjust
+{
+    enum EPartElement { eUrl, eOther, eFlags, eExpected };
+    using TPart = tuple<string, string, CUrl::TAdjustFlags, string>;
+
+    template <int element>
+    static CUrl CreateUrl(
+            const TPart& scheme,
+            const TPart& user,
+            const TPart& password,
+            const char*  host,
+            const char*  port,
+            const TPart& path,
+            const TPart& arg,
+            const TPart& fragment)
+    {
+        CUrl rv;
+        rv.SetIsGeneric(true);
+        rv.SetScheme(  get<element>(scheme));
+        rv.SetUser(    get<element>(user));
+        rv.SetPassword(get<element>(password));
+        rv.SetHost(host);
+        rv.SetPort(port);
+        rv.SetPath(    get<element>(path));
+        rv.GetArgs() = get<element>(arg);
+        rv.SetFragment(get<element>(fragment));
+        return rv;
+    }
+
+    static void Test(
+            const TPart& scheme,
+            const TPart& user,
+            const TPart& password,
+            const TPart& path,
+            const TPart& arg,
+            const TPart& fragment)
+    {
+        auto url      = CreateUrl<eUrl>     (scheme, user, password, "host1", "1", path, arg, fragment);
+        auto other    = CreateUrl<eOther>   (scheme, user, password, "host2", "2", path, arg, fragment);
+        auto expected = CreateUrl<eExpected>(scheme, user, password, "host1", "1", path, arg, fragment);
+
+        auto url_str      = url.     ComposeUrl(CUrlArgs::eAmp_Char);
+        auto other_str    = other.   ComposeUrl(CUrlArgs::eAmp_Char);
+        auto expected_str = expected.ComposeUrl(CUrlArgs::eAmp_Char);
+
+        auto flags = get<eFlags>(scheme) | get<eFlags>(user) | get<eFlags>(password) | get<eFlags>(path) | get<eFlags>(arg) | get<eFlags>(fragment);
+        url.Adjust(other, flags);
+
+        auto adjusted_str = url.ComposeUrl(CUrlArgs::eAmp_Char);
+
+        if (expected_str != adjusted_str) {
+            BOOST_ERROR("Adjusted URL does not match expected one." <<
+                    "\nurl:      " << url_str <<
+                    "\nother:    " << other_str <<
+                    "\nexpected: " << expected_str <<
+                    "\nadjusted: " << adjusted_str <<
+                    "\nflags:    " << flags << '\n');
+        }
+    }
+};
+
+BOOST_FIXTURE_TEST_CASE(s_UrlTestAdjust, SUrlTestAdjust)
+{
+    vector<TPart> schemes =
+    {
+        { "",        "scheme2", 0,                     ""        },
+        { "",        "scheme2", CUrl::fScheme_Replace, "scheme2" },
+        { "scheme1", "",        0,                     "scheme1" },
+        { "scheme1", "",        CUrl::fScheme_Replace, "scheme1" },
+        { "scheme1", "scheme2", 0,                     "scheme1" },
+        { "scheme1", "scheme2", CUrl::fScheme_Replace, "scheme2" },
+    };
+    vector<TPart> users =
+    {
+        { "",      "user2", 0,                          ""      },
+        { "",      "user2", CUrl::fUser_Replace,        "user2" },
+        { "",      "user2", CUrl::fUser_ReplaceIfEmpty, "user2" },
+        { "user1", "",      0,                          "user1" },
+        { "user1", "",      CUrl::fUser_Replace,        "user1" },
+        { "user1", "",      CUrl::fUser_ReplaceIfEmpty, "user1" },
+        { "user1", "user2", 0,                          "user1" },
+        { "user1", "user2", CUrl::fUser_Replace,        "user2" },
+        { "user1", "user2", CUrl::fUser_ReplaceIfEmpty, "user1" },
+    };
+    vector<TPart> passwords =
+    {
+        { "",          "password2", 0,                              ""          },
+        { "",          "password2", CUrl::fPassword_Replace,        "password2" },
+        { "",          "password2", CUrl::fPassword_ReplaceIfEmpty, "password2" },
+        { "password1", "",          0,                              "password1" },
+        { "password1", "",          CUrl::fPassword_Replace,        "password1" },
+        { "password1", "",          CUrl::fPassword_ReplaceIfEmpty, "password1" },
+        { "password1", "password2", 0,                              "password1" },
+        { "password1", "password2", CUrl::fPassword_Replace,        "password2" },
+        { "password1", "password2", CUrl::fPassword_ReplaceIfEmpty, "password1" },
+    };
+    vector<TPart> paths =
+    {
+        { "",       "/",      0,                   ""             },
+        { "",       "/",      CUrl::fPath_Replace, "/"            },
+        { "",       "/",      CUrl::fPath_Append,  "/"            },
+        { "",       "path2",  0,                   ""             },
+        { "",       "path2",  CUrl::fPath_Replace, "path2"        },
+        { "",       "path2",  CUrl::fPath_Append,  "path2"        },
+        { "",       "/path2", 0,                   ""             },
+        { "",       "/path2", CUrl::fPath_Replace, "/path2"       },
+        { "",       "/path2", CUrl::fPath_Append,  "/path2"       },
+        { "/",      "",       0,                   "/"            },
+        { "/",      "",       CUrl::fPath_Replace, ""             },
+        { "/",      "",       CUrl::fPath_Append,  "/"            },
+        { "/",      "path2",  0,                   "/"            },
+        { "/",      "path2",  CUrl::fPath_Replace, "path2"        },
+        { "/",      "path2",  CUrl::fPath_Append,  "/path2"       },
+        { "/",      "/path2", 0,                   "/"            },
+        { "/",      "/path2", CUrl::fPath_Replace, "/path2"       },
+        { "/",      "/path2", CUrl::fPath_Append,  "/path2"       },
+        { "path1",  "",       0,                   "path1"        },
+        { "path1",  "",       CUrl::fPath_Replace, ""             },
+        { "path1",  "",       CUrl::fPath_Append,  "path1"        },
+        { "path1",  "/",      0,                   "path1"        },
+        { "path1",  "/",      CUrl::fPath_Replace, "/"            },
+        { "path1",  "/",      CUrl::fPath_Append,  "path1/"       },
+        { "path1",  "path2",  0,                   "path1"        },
+        { "path1",  "path2",  CUrl::fPath_Replace, "path2"        },
+        { "path1",  "path2",  CUrl::fPath_Append,  "path1/path2"  },
+        { "path1",  "/path2", 0,                   "path1"        },
+        { "path1",  "/path2", CUrl::fPath_Replace, "/path2"       },
+        { "path1",  "/path2", CUrl::fPath_Append,  "path1/path2"  },
+        { "/path1", "",       0,                   "/path1"       },
+        { "/path1", "",       CUrl::fPath_Replace, ""             },
+        { "/path1", "",       CUrl::fPath_Append,  "/path1"       },
+        { "/path1", "/",      0,                   "/path1"       },
+        { "/path1", "/",      CUrl::fPath_Replace, "/"            },
+        { "/path1", "/",      CUrl::fPath_Append,  "/path1/"      },
+        { "/path1", "path2",  0,                   "/path1"       },
+        { "/path1", "path2",  CUrl::fPath_Replace, "path2"        },
+        { "/path1", "path2",  CUrl::fPath_Append,  "/path1/path2" },
+        { "/path1", "/path2", 0,                   "/path1"       },
+        { "/path1", "/path2", CUrl::fPath_Replace, "/path2"       },
+        { "/path1", "/path2", CUrl::fPath_Append,  "/path1/path2" },
+    };
+    vector<TPart> args =
+    {
+        { "",       "arg1=1", 0,                   ""              },
+        { "",       "arg1=1", CUrl::fArgs_Replace, "arg1=1"        },
+        { "",       "arg1=1", CUrl::fArgs_Append,  "arg1=1"        },
+        { "",       "arg1=1", CUrl::fArgs_Merge,   "arg1=1"        },
+        { "arg1=1", "",       0,                   "arg1=1"        },
+        { "arg1=1", "",       CUrl::fArgs_Replace, ""              },
+        { "arg1=1", "",       CUrl::fArgs_Append,  "arg1=1"        },
+        { "arg1=1", "",       CUrl::fArgs_Merge,   "arg1=1"        },
+        { "arg1=1", "arg1=1", 0,                   "arg1=1"        },
+        { "arg1=1", "arg1=1", CUrl::fArgs_Replace, "arg1=1"        },
+        { "arg1=1", "arg1=1", CUrl::fArgs_Append,  "arg1=1&arg1=1" },
+        { "arg1=1", "arg1=1", CUrl::fArgs_Merge,   "arg1=1"        },
+        { "arg1=1", "arg1=2", 0,                   "arg1=1"        },
+        { "arg1=1", "arg1=2", CUrl::fArgs_Replace, "arg1=2"        },
+        { "arg1=1", "arg1=2", CUrl::fArgs_Append,  "arg1=1&arg1=2" },
+        { "arg1=1", "arg1=2", CUrl::fArgs_Merge,   "arg1=2"        },
+        { "arg1=1", "arg2=2", 0,                   "arg1=1"        },
+        { "arg1=1", "arg2=2", CUrl::fArgs_Replace, "arg2=2"        },
+        { "arg1=1", "arg2=2", CUrl::fArgs_Append,  "arg1=1&arg2=2" },
+        { "arg1=1", "arg2=2", CUrl::fArgs_Merge,   "arg1=1&arg2=2" },
+    };
+    vector<TPart> fragments =
+    {
+        { "",          "fragment2", 0,                              ""          },
+        { "",          "fragment2", CUrl::fFragment_Replace,        "fragment2" },
+        { "",          "fragment2", CUrl::fFragment_ReplaceIfEmpty, "fragment2" },
+        { "fragment1", "",          0,                              "fragment1" },
+        { "fragment1", "",          CUrl::fFragment_Replace,        "fragment1" },
+        { "fragment1", "",          CUrl::fFragment_ReplaceIfEmpty, "fragment1" },
+        { "fragment1", "fragment2", 0,                              "fragment1" },
+        { "fragment1", "fragment2", CUrl::fFragment_Replace,        "fragment2" },
+        { "fragment1", "fragment2", CUrl::fFragment_ReplaceIfEmpty, "fragment1" },
+    };
+
+    auto eng = default_random_engine(random_device()());
+    uniform_int_distribution<size_t> schemes_dist  (0, schemes.size()   - 1);
+    uniform_int_distribution<size_t> users_dist    (0, users.size()     - 1);
+    uniform_int_distribution<size_t> passwords_dist(0, passwords.size() - 1);
+    uniform_int_distribution<size_t> paths_dist    (0, paths.size()     - 1);
+    uniform_int_distribution<size_t> args_dist     (0, args.size()      - 1);
+    uniform_int_distribution<size_t> fragments_dist(0, fragments.size() - 1);
+
+    for (const auto& scheme : schemes) {
+        Test(
+                scheme,
+                users    [users_dist    (eng)],
+                passwords[passwords_dist(eng)],
+                paths    [paths_dist    (eng)],
+                args     [args_dist     (eng)],
+                fragments[fragments_dist(eng)]);
+    }
+
+    for (const auto& user : users) {
+        Test(
+                schemes  [schemes_dist  (eng)],
+                user,
+                passwords[passwords_dist(eng)],
+                paths    [paths_dist    (eng)],
+                args     [args_dist     (eng)],
+                fragments[fragments_dist(eng)]);
+    }
+
+    for (const auto& password : passwords) {
+        Test(
+                schemes  [schemes_dist  (eng)],
+                users    [users_dist    (eng)],
+                password,
+                paths    [paths_dist    (eng)],
+                args     [args_dist     (eng)],
+                fragments[fragments_dist(eng)]);
+    }
+
+    for (const auto& path : paths) {
+        Test(
+                schemes  [schemes_dist  (eng)],
+                users    [users_dist    (eng)],
+                passwords[passwords_dist(eng)],
+                path,
+                args     [args_dist     (eng)],
+                fragments[fragments_dist(eng)]);
+    }
+
+    for (const auto& arg : args) {
+        Test(
+                schemes  [schemes_dist  (eng)],
+                users    [users_dist    (eng)],
+                passwords[passwords_dist(eng)],
+                paths    [paths_dist    (eng)],
+                arg,
+                fragments[fragments_dist(eng)]);
+    }
+
+    for (const auto& fragment : fragments) {
+        Test(
+                schemes  [schemes_dist  (eng)],
+                users    [users_dist    (eng)],
+                passwords[passwords_dist(eng)],
+                paths    [paths_dist    (eng)],
+                args     [args_dist     (eng)],
+                fragment);
     }
 }
 
