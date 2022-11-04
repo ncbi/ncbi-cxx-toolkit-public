@@ -722,6 +722,9 @@ void CUrl::Adjust(const CUrl& other, TAdjustFlags flags)
             if (m_Path.back() == '/'  &&  other.m_Path.front() == '/') {
                 other_p = 1;
             }
+            else if (m_Path.back() != '/'  &&  other.m_Path.front() != '/') {
+                m_Path.append(1, '/');
+            }
             m_Path.append(other.m_Path.substr(other_p));
         }
     }
