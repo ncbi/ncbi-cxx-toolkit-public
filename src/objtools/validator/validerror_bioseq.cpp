@@ -9457,7 +9457,8 @@ void CValidError_bioseq::ValidateMolInfoContext
                 PostErr(eDiag_Error, eErr_SEQ_INST_HTGS_STS_GSS_WGSshouldBeGenomic,
                     "HTGS/STS/GSS/WGS sequence should be genomic", seq);
             } else if (seq.GetInst().GetMol() != CSeq_inst::eMol_dna  &&
-                seq.GetInst().GetMol() != CSeq_inst::eMol_na) {
+                seq.GetInst().GetMol() != CSeq_inst::eMol_na &&
+                !seq.IsAa()) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_HTGS_STS_GSS_WGSshouldNotBeRNA,
                     "HTGS/STS/GSS/WGS sequence should not be RNA", seq);
             }
