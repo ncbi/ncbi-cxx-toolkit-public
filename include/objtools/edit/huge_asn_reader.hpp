@@ -124,7 +124,7 @@ public:
     CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;
 
     bool IsMultiSequence() const override;
-    bool HasGenbankSetAnnot() const;
+    bool HasGenbankSetAnnot() const { return m_HasGenbankSetAnnot; }
 
 
     void FlattenGenbankSet();
