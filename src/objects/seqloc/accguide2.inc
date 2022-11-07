@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Nov  2 08:37:44 EDT 2022; formally
+/* time_t value corresponding to Mon Nov  7 13:08:02 EST 2022; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1667392664UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1667844482UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -2221,7 +2221,21 @@ static const char* const kBuiltInGuide[] = {
     "special  CAMSEM000000000-CAMSLM999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAMSLO000000000-CAMSTW999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAMSTY000000000-CAMTCG999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CAMTDX000000000-CAMTGA999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMTDX000000000-CAMTSY999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMTZD000000000-CAMUPJ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMUPX000000000-CAMUSE999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMUSG000000000-CAMUSQ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMUSS000000000-CAMWBN999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMWBP000000000-CAMWCS999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMWCU000000000-CAMWEA999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMWEC000000000-CAMXAO999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMXAQ000000000-CAMXAQ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMXAS000000000-CAMXAV999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMXAX000000000-CAMXAZ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMXBB000000000-CAMXBF999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMXBH000000000-CAMXBH999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMXCV000000000-CAMXCZ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAMXHZ000000000-CAMXUF999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc # 4+8",
