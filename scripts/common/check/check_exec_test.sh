@@ -29,6 +29,9 @@
 #
 ###########################################################################
 
+# (Temporary tweak for CXX-12577)
+export NCBI_CONFIG__PSG__REQUEST_USER_ARGS
+NCBI_CONFIG__PSG__REQUEST_USER_ARGS='enable_processor=SNP&disable_processor=OSG-SNP'
 
 # Get parameters
 timeout="${CHECK_TIMEOUT:-200}"
