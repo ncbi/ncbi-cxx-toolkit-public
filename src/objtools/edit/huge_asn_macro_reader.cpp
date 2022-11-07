@@ -37,9 +37,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-void CMacroHugeAsnReader::FlattenGenbankSet()
+void CMacroHugeAsnReader::ResetTopEntry()
 {
-    CHugeAsnReader::FlattenGenbankSet();
     x_ResetTopEntry();
 }
 
