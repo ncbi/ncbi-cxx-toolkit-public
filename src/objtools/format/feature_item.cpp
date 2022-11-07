@@ -1831,7 +1831,10 @@ void CFeatureItem::x_AddQualsIdx(
 
     bool pseudo = x_GetPseudo(gene_ref, gene_feat );
     if ( ctx.IsEMBL() || ctx.IsDDBJ() ) {
-        if ( type != CSeqFeatData::e_Gene ) {
+        if ( type == CSeqFeatData::e_Cdregion && m_Feat.IsSetProduct() ) {
+            pseudo = false;
+        }
+        if ( type == CSeqFeatData::e_Prot ) {
             pseudo = false;
         }
     }
