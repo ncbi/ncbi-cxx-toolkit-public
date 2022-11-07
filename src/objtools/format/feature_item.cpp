@@ -1830,6 +1830,11 @@ void CFeatureItem::x_AddQualsIdx(
     }
 
     bool pseudo = x_GetPseudo(gene_ref, gene_feat );
+    if ( ctx.IsEMBL() || ctx.IsDDBJ() ) {
+        if ( type != CSeqFeatData::e_Gene ) {
+            pseudo = false;
+        }
+    }
 
     //
     //  Collect qualifiers that are specific to a single or just a few feature
