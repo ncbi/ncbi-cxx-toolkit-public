@@ -127,7 +127,7 @@ public:
     bool HasGenbankSetAnnot() const;
 
 
-    virtual void FlattenGenbankSet();
+    void FlattenGenbankSet();
     auto& GetTopEntry()       const { return m_top_entry; }
     auto& GetFlattenedIndex() const { return m_FlattenedIndex; }
     auto& GetTopIds()         const { return m_top_ids; }

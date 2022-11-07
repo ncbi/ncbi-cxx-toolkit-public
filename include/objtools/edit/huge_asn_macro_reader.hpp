@@ -44,7 +44,7 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT CMacroHugeAsnReader : public CHugeAsnReader
 {
 public:
-    void FlattenGenbankSet() override;
+    void ResetTopEntry();
 };
 
 
