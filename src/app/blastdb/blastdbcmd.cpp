@@ -956,7 +956,7 @@ void CBlastDBCmdApp::Init()
                                 string(exclusions[i]));
     }
 
-    arg_desc->AddFlag("metadata", "BLAST database metatdata", true);
+    arg_desc->AddFlag("metadata", "Generate BLAST database metadata", true);
     // All other options to this program should be here
     const char* exclusions_m[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
