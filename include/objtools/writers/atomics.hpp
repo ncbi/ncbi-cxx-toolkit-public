@@ -163,8 +163,8 @@ public:
     }
 
     // Specify how many resources should be left in the backyard
-    void SetReserved(size_t _N) { // atomic operation
-        m_reserved_size = _N;
+    void SetReserved(size_t num) { // atomic operation
+        m_reserved_size = num;
     }
 
     size_t size() const { return m_size; }
