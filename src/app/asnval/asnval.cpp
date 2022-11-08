@@ -63,6 +63,45 @@ USING_SCOPE(objects);
 USING_SCOPE(validator);
 USING_SCOPE(edit);
 
+template<class _T>
+class TThreadPoolLimited
+{
+public:
+    using token_type = _T;
+    TThreadPoolLimited(unsigned num_slots, unsigned queue_depth = 0):
+        m_tasks_semaphose{num_slots, num_slots},
+        m_product_queue{queue_depth == 0 ? num_slots : queue_depth}
+    {}
+
+    // acquire new slot to run on
+    void acquire() {
+        m_running++;
+        m_tasks_semaphose.Wait();
+    }
+
+    // release a slot and send a product down to the queue
+    void release(token_type&& token) {
+        m_tasks_semaphose.Post();
+        m_product_queue.push_back(std::move(token));
+
+        size_t current = m_running.fetch_sub(1);
+        if (current == 1)
+        { // the last task completed, singal main thread to finish
+            m_product_queue.push_back({});
+        }
+    }
+
+    auto GetNext() {
+        return m_product_queue.pop_front();
+    }
+
+private:
+    std::atomic<size_t>   m_running = 0;      // number of started threads
+    CSemaphore            m_tasks_semaphose;  //
+    CMessageQueue<token_type> m_product_queue{8}; // the queue of threads products
+    std::future<void>     m_consumer;
+};
+
 class CAsnvalApp : public CNcbiApplication
 {
 
@@ -81,11 +120,11 @@ private:
     void xValidateThread(const string& filename, bool save_output);
     CThreadExitData xCombinedWriterTask(std::ostream* ofile);
 
-    void ValidateOneDirectory(string dir_name, bool recurse);
-    CMessageQueue<std::future<CThreadExitData>> m_tasks_queue{8};
-    CSemaphore m_tasks_sema{8, 8};
+    using TPool = TThreadPoolLimited<std::future<CThreadExitData>>;
 
-    std::atomic<size_t> m_running = 0;
+    void ValidateOneDirectory(string dir_name, bool recurse);
+    TPool m_queue{8};
+
     unique_ptr<CAppConfig> mAppConfig;
     unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
     size_t m_NumFiles = 0;
@@ -111,14 +150,7 @@ void CAsnvalApp::xValidateThread(const string& filename, bool save_output)
     prom.set_value(std::move(result));
     auto fut = prom.get_future();
 
-    m_tasks_sema.Post();
-    m_tasks_queue.push_back(std::move(fut));
-
-    size_t current = m_running.fetch_sub(1);
-    if (current == 1)
-    { // the last task completed, singal main thread to finish
-        m_tasks_queue.push_back({});
-    }
+    m_queue.release(std::move(fut));
 }
 
 string s_GetSeverityLabel(EDiagSev sev, bool is_xml)
@@ -307,8 +339,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
 
             bool separate_outputs = !args["o"];
 
-            m_running++;
-            m_tasks_sema.Wait();
+            m_queue.acquire();
             // start thread detached, it will post results to the queue itself
             std::thread([this, fpath, separate_outputs]()
                 { xValidateThread(fpath, separate_outputs); })
@@ -340,7 +371,7 @@ CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* combined_file)
 
     while(true)
     {
-        auto fut = m_tasks_queue.pop_front();
+        auto fut = m_queue.GetNext();
         if (!fut.valid())
             break;
 
@@ -407,14 +438,7 @@ int CAsnvalApp::Run()
 
             auto writer_task = std::async([this, ValidErrorStream] { return xCombinedWriterTask(ValidErrorStream); });
 
-            m_running++;
             ValidateOneDirectory(args["indir"].AsString(), args["u"]);
-
-            size_t current = m_running.fetch_sub(1);
-            if (current == 1)
-            { // the last task completed, singal writer thread to finish
-                m_tasks_queue.push_back({});
-            }
 
             exit_data = writer_task.get(); // this will wait writer task completion
 
