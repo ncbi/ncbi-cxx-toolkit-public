@@ -46,11 +46,34 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objtools/edit/huge_asn_loader.hpp>
 
 BEGIN_NCBI_SCOPE
+
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
+
+namespace
+{
+
+    class CAutoRevoker
+    {
+    public:
+        template<class TLoader>
+        CAutoRevoker(struct SRegisterLoaderInfo<TLoader>& info)
+            : m_loader{ info.GetLoader() } {}
+        ~CAutoRevoker()
+        {
+            CObjectManager::GetInstance()->RevokeDataLoader(*m_loader);
+        }
+    private:
+        CDataLoader* m_loader = nullptr;
+    };
+
+};
+
 
 const set<TTypeInfo> CHugeFile::g_supported_types =
 {
@@ -157,6 +180,81 @@ bool CHugeFileProcess::Read(THandlerIds handler)
     }
 
     return true;
+}
+
+bool CHugeFileProcess::ForEachBlob(THandlerBlobs handler)
+{
+    while (m_pReader->GetNextBlob()) {
+        m_pReader->FlattenGenbankSet();
+        bool processed = handler(*this);
+        if (!processed)
+            return false;
+    }
+
+    return true;
+}
+
+bool CHugeFileProcess::ForEachEntry(CRef<CScope> scope, THandlerEntries handler)
+{
+    if (!handler)
+        return false;
+
+    string loader_name = CDirEntry::ConvertToOSPath(GetFile().m_filename);
+    auto info = CHugeAsnDataLoader::RegisterInObjectManager(
+        *CObjectManager::GetInstance(), loader_name, &GetReader(), CObjectManager::eNonDefault, 1); //CObjectManager::kPriority_Local);
+
+    CAutoRevoker autorevoker(info);
+
+    if (!scope)
+        scope = Ref(new CScope(*CObjectManager::GetInstance()));
+
+    scope->AddDataLoader(loader_name);
+
+    try
+    {
+        for (auto id: GetReader().GetTopIds())
+        {
+            {
+                auto beh = scope->GetBioseqHandle(*id);
+                auto parent = GetParentEntry(beh);
+                handler(parent);
+            }
+            scope->ResetHistory();
+        }
+    }
+    catch(const std::exception& e)
+    {
+        scope->RemoveDataLoader(loader_name);
+        throw;
+    }
+    scope->RemoveDataLoader(loader_name);
+
+    return true;
+}
+
+CSeq_entry_Handle CHugeFileProcess::GetParentEntry(CBioseq_Handle beh)
+{
+    CSeq_entry_Handle parent = beh.GetParentEntry();
+    while(parent)
+    {
+        if (parent.IsTopLevelEntry())
+            break;
+
+        //if (parent.IsSet())
+        //    break;
+
+        CSeq_entry_Handle temp = parent.GetParentEntry();
+        if (temp) {
+            if (temp.IsSet() && temp.GetSet().IsSetClass() && temp.GetSet().GetClass() == CBioseq_set::eClass_genbank)
+                break;
+
+            parent = temp;
+        }
+        else
+            break;
+    }
+
+    return parent;
 }
 
 END_SCOPE(edit)

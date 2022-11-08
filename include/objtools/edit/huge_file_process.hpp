@@ -40,6 +40,9 @@ BEGIN_NCBI_SCOPE
 class CObjectIStream;
 BEGIN_SCOPE(objects)
 
+class CScope;
+class CSeq_entry_Handle;
+class CBioseq_Handle;
 class CSubmit_block;
 class CSeq_entry;
 class CSeq_id;
@@ -64,9 +67,14 @@ public:
 
     using THandler    = std::function<void(CConstRef<CSubmit_block>, CRef<CSeq_entry>)>;
     using THandlerIds = std::function<bool(CHugeAsnReader*, const std::list<CConstRef<CSeq_id>>&)>;
+    using THandlerBlobs   = std::function<bool(CHugeFileProcess&)>;
+    using THandlerEntries = std::function<bool(CSeq_entry_Handle& seh)>;
 
     [[nodiscard]] bool Read(THandler handler, CRef<CSeq_id> seqid);
     [[nodiscard]] bool Read(THandlerIds handler);
+    [[nodiscard]] bool ForEachBlob(THandlerBlobs);
+    [[nodiscard]] bool ForEachEntry(CRef<CScope> scope, THandlerEntries handler);
+    static CSeq_entry_Handle GetParentEntry(CBioseq_Handle beh);
 
     CHugeAsnReader& GetReader()           { return *m_pReader; }
     CHugeFile& GetFile()                  { return *m_pHugeFile; }
