@@ -463,13 +463,12 @@ static void XMLPerformIndex(ParserPtr pp)
         }
     }
 
-    pp->entrylist.resize(pp->indx + 1, nullptr);
+    pp->entrylist.resize(pp->indx, nullptr);
     for (tibnp = ibnp, i = 0; tibnp != NULL; i++, tibnp = ibnp) {
         pp->entrylist[i] = tibnp->ibp;
         ibnp             = tibnp->next;
         delete tibnp;
     }
-    pp->entrylist[i] = NULL;
 }
 
 /**********************************************************/
@@ -1437,7 +1436,7 @@ bool XMLIndex(ParserPtr pp)
         return false;
 
     pp->curindx = 0;
-    for (auto ibpp = pp->entrylist.begin(); *ibpp; ++ibpp, pp->curindx++) {
+    for (auto ibpp = pp->entrylist.begin(); ibpp != pp->entrylist.end(); ++ibpp, pp->curindx++) {
         ibp = *ibpp;
         if (ibp->len == 0) {
             ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end tag of XML record, which starts at line %d. Entry dropped.", ibp->linenum);
@@ -1486,7 +1485,7 @@ bool XMLIndex(ParserPtr pp)
     }
 
     pp->num_drop = 0;
-    for (auto ibpp = pp->entrylist.begin(); *ibpp; ++ibpp)
+    for (auto ibpp = pp->entrylist.begin(); ibpp != pp->entrylist.end(); ++ibpp)
         if ((*ibpp)->drop != 0)
             pp->num_drop++;
 
