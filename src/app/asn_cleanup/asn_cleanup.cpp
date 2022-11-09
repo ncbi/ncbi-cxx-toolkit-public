@@ -91,52 +91,13 @@ enum EProcessingMode
 
 namespace
 {
-
-    class CAutoRevoker
-    {
-    public:
-        template<class TLoader>
-        CAutoRevoker(struct SRegisterLoaderInfo<TLoader>& info)
-            : m_loader{ info.GetLoader() } {}
-        ~CAutoRevoker()
-        {
-            CObjectManager::GetInstance()->RevokeDataLoader(*m_loader);
-        }
-    private:
-        CDataLoader* m_loader = nullptr;
-    };
-
-    CSeq_entry_Handle x_GetParentEntry(CBioseq_Handle beh)
-    {
-        CSeq_entry_Handle parent = beh.GetParentEntry();
-        while(parent)
-        {
-            if (parent.IsTopLevelEntry())
-                break;
-
-            //if (parent.IsSet())
-            //    break;
-
-            CSeq_entry_Handle temp = parent.GetParentEntry();
-            if (temp) {
-                if (temp.IsSet() && temp.GetSet().IsSetClass() && temp.GetSet().GetClass() == CBioseq_set::eClass_genbank)
-                    break;
-
-                parent = temp;
-            }
-            else
-                break;
-        }
-
-        return parent;
-    }
 };
 
 struct TThreadState
 {
     CRef<CScope>                m_Scope;
     bool                        m_IsMultiSeq = false;
-    CCleanupChangeCore          m_basic_changes, m_ext_changes;
+    CCleanupChangeCore          m_changes;
 };
 
 class CCleanupApp :
@@ -182,7 +143,7 @@ private:
     void x_ProcessOneDirectory(const string& dirname, const string& suffix);
 
     bool x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_only);
-    void x_ProcessHugeFileBlob(edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist);
+    bool x_ProcessHugeFileBlob(edit::CHugeFileProcess& process);
     CConstRef<CSerialObject> x_ProcessTraditionally(edit::CHugeAsnReader& reader);
     void x_ProcessTraditionally(edit::CHugeFileProcess& process, bool first_only);
 
@@ -747,7 +708,7 @@ CConstRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReade
     return topobject;
 }
 
-void CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist)
+bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
 {
     CGenBankAsyncWriterEx<CConstRef<CSeq_entry>> writer(m_Out.get());
 
@@ -758,17 +719,17 @@ void CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeAsnReader* reader, const std:
     _ASSERT(m_state.m_IsMultiSeq);
 
     topentry = Ref(new CSeq_entry);
-    if (reader->GetTopEntry()) {
-        topentry->Assign(*reader->GetTopEntry());
+    if (process.GetReader().GetTopEntry()) {
+        topentry->Assign(*process.GetReader().GetTopEntry());
     } else {
         topentry->SetSet().SetClass() = CBioseq_set::eClass_genbank;
         topentry->SetSet().SetSeq_set().clear();
     }
 
-    if (reader->GetSubmitBlock())
+    if (process.GetReader().GetSubmitBlock())
     {
         submit.Reset(new CSeq_submit);
-        submit->SetSub().Assign(*reader->GetSubmitBlock());
+        submit->SetSub().Assign(*process.GetReader().GetSubmitBlock());
 
         submit->SetData().SetEntrys().clear();
         submit->SetData().SetEntrys().push_back(topentry);
@@ -780,56 +741,42 @@ void CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeAsnReader* reader, const std:
     else
         topobject = topentry;
 
-    auto id_it = idlist.begin();
-    auto get_next = [this, reader, &id_it, &idlist](CConstRef<CSeq_entry>& entry) -> bool {
-        if (id_it == idlist.end())
-            return false;
+    writer.StartWriter(topobject);
+    try
+    {
 
-        {
-            auto beh = m_state.m_Scope->GetBioseqHandle(**id_it);
-            //std::cerr << (**id_it).AsFastaString() << "\n";
-            auto parent = x_GetParentEntry(beh);
+        bool proceed = process.ForEachEntry (m_state.m_Scope,
+            [this, &writer] (CSeq_entry_Handle seh) -> bool
+            {
+                HandleSeqEntry(seh.GetEditHandle());
+                writer.PushNextEntry(seh.GetCompleteSeq_entry());
+                return true;
+            });
+        writer.FinishWriter();
 
-            #ifdef _DEBUG
-            //cerr << MSerial_AsnText << parent.GetCompleteSeq_entry();
-            #endif
-            HandleSeqEntry(parent.GetEditHandle());
-            #ifdef _DEBUG
-            //cerr << MSerial_AsnText << parent.GetCompleteSeq_entry();
-            #endif
-            entry = parent.GetCompleteSeq_entry();
-        }
+        return proceed;
+    }
+    catch(...)
+    {
+        writer.CancelWriter();
+        throw;
+    }
 
-        m_state.m_Scope->ResetHistory();
 
-        ++id_it;
-        return true;
-    };
-
-    writer.WriteAsyncST(topobject, get_next);
 }
 
 bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_only)
 {
-    return process.Read([this, &process, first_only](edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist) -> bool
+    return process.ForEachBlob([this, first_only](edit::CHugeFileProcess& process) -> bool
     {
-        m_state.m_IsMultiSeq = reader->IsMultiSequence();
+        m_state.m_IsMultiSeq = process.GetReader().IsMultiSequence();
         if (m_state.m_IsMultiSeq) {
-            string loader_name = CDirEntry::ConvertToOSPath(process.GetFile().m_filename);
 
-            auto info = edit::CHugeAsnDataLoader::RegisterInObjectManager(
-                *m_Objmgr, loader_name, reader, CObjectManager::eNonDefault, 1); //CObjectManager::kPriority_Local);
-
-            CAutoRevoker autorevoker(info);
-
-            m_state.m_Scope->AddDataLoader(loader_name);
-
-            x_ProcessHugeFileBlob(reader, idlist);
-
-            m_state.m_Scope->ResetDataAndHistory(CScope::eRemoveDataLoaders);
-
+            bool proceed = x_ProcessHugeFileBlob(process);
+            if (!proceed)
+                return false;
         } else {
-            auto topobject = x_ProcessTraditionally(*reader);
+            auto topobject = x_ProcessTraditionally(process.GetReader());
             *m_Out << *topobject;
         }
 
@@ -963,9 +910,9 @@ int CCleanupApp::Run()
     }
 
     if (m_do_basic && !m_do_extended)
-        x_ReportChanges("BasicCleanup", m_state.m_basic_changes);
+        x_ReportChanges("BasicCleanup", m_state.m_changes);
     if (m_do_extended)
-        x_ReportChanges("ExtendedCleanup",  m_state.m_ext_changes);
+        x_ReportChanges("ExtendedCleanup",  m_state.m_changes);
 
     #ifdef THIS_IS_TRUNK_BUILD
         m_remote_updater->ReportStats(std::cerr);
@@ -1285,7 +1232,7 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
         // perform BasicCleanup
         try {
             auto changes = *cleanup.BasicCleanup(entry, options);
-            m_state.m_basic_changes += changes;
+            m_state.m_changes += changes;
             any_changes = !changes.Empty();
         }
         catch (CException& e) {
@@ -1297,7 +1244,7 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
         // perform ExtendedCleanup
         try {
             auto changes = *cleanup.ExtendedCleanup(entry, options);
-            m_state.m_ext_changes += changes;
+            m_state.m_changes += changes;
             any_changes = !changes.Empty();
         }
         catch (CException& e) {
@@ -1395,16 +1342,6 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     m_state.m_Scope->RemoveTopLevelSeqEntry(entryHandle);
     return false;
 }
-
-#if 0
-
-template<typename T>void CCleanupApp::x_WriteToFile(const T& obj)
-{
-    *m_Out << obj;
-
-    fflush(NULL);
-}
-#endif
 
 void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir)
 {
