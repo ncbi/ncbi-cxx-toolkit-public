@@ -45,8 +45,8 @@ BEGIN_NCBI_SCOPE
 
 CCompression::CCompression(ELevel level)
     : m_DecompressMode(eMode_Unknown),
-      m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr), m_Flags(0),
-      m_Dict(NULL), m_DictOwn(eNoOwnership)
+      m_Dict(NULL), m_DictOwn(eNoOwnership),
+      m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr), m_Flags(0)
 {
     return;
 }
@@ -375,8 +375,8 @@ size_t CCompressionDictionary::LoadFromStream(CNcbiIstream& is, size_t size)
 
 void CCompressionDictionary::Free(void)
 {
-    if (m_Own == eTakeOwnership) {
-        delete m_Data;
+    if (m_Data  &&  (m_Own == eTakeOwnership)) {
+        free((void*)m_Data);
     }
     m_Data = NULL;
     m_Size = 0;
