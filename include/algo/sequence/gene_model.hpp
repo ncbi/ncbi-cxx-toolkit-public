@@ -117,11 +117,19 @@ public:
                     fGenerateLocalIds | fPropagateNcrnaFeats
     };
     typedef int TFeatureGeneratorFlags;
+
+    enum EIntronStitchThresholdFlags {
+        fProduct = 1,
+        fGenomic = 2,
+        fBoth = 3
+    };
+
     static const TSeqPos kDefaultMinIntron = 200;
     static const TSeqPos kDefaultAllowedUnaligned = 10;
 
     void SetFlags(TFeatureGeneratorFlags);
     TFeatureGeneratorFlags GetFlags() const;
+    void SetIntronStitchThresholdFlags(EIntronStitchThresholdFlags);
     void SetMinIntron(TSeqPos);
     void SetAllowedUnaligned(TSeqPos);
 
