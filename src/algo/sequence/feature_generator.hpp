@@ -70,6 +70,7 @@ struct CFeatureGenerator::SImplementation {
 
     CRef<objects::CScope> m_scope;
     TFeatureGeneratorFlags m_flags;
+    EIntronStitchThresholdFlags m_intron_stitch_threshold_flags;
     TSeqPos m_min_intron;
     TSeqPos m_allowed_unaligned;
     bool m_is_gnomon;

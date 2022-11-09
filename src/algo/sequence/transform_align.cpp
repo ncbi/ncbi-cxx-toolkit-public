@@ -196,7 +196,10 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
         _ASSERT( exons[i].genomic_from > exons[i-1].genomic_to );
         int genomic_hole_len = exons[i].genomic_from - exons[i-1].genomic_to -1;
 
-        if (prod_hole_len >= (int)m_min_intron || genomic_hole_len >= (int)m_min_intron)
+        if (((m_intron_stitch_threshold_flags & fProduct) &&
+              prod_hole_len >= (int)m_min_intron) ||
+            ((m_intron_stitch_threshold_flags & fGenomic) &&
+              genomic_hole_len >= (int)m_min_intron))
             continue;
 
         if (!prev_exon->IsSetParts() || prev_exon->GetParts().empty()) {
