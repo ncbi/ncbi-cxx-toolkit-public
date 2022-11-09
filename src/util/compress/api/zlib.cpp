@@ -334,11 +334,24 @@ CVersionInfo CZipCompression::GetVersion(void) const
 }
 
 
+bool CZipCompression::HaveSupport(ESupportFeature feature)
+{
+    switch (feature) {
+    case eFeature_NoCompression:
+    case eFeature_Dictionary:
+    case eFeature_EstimateCompressionBufferSize:
+        return true;
+    }
+    return false;
+}
+
+
 bool CZipCompression::CompressBuffer(
                       const void* src_buf, size_t  src_len,
                       void*       dst_buf, size_t  dst_size,
                       /* out */   size_t* dst_len)
 {
+    const char* __method_name = "CZipCompression::CompressBuffer";
     *dst_len = 0;
 
     // Check parameters
@@ -347,7 +360,7 @@ bool CZipCompression::CompressBuffer(
     }
     if (!src_buf || !dst_buf || !dst_len) {
         SetError(Z_STREAM_ERROR, "bad argument");
-        ERR_COMPRESS(48, FormatErrorMessage("CZipCompression::CompressBuffer"));
+        ERR_COMPRESS(48, FormatErrorMessage(__method_name));
         return false;
     }
 
@@ -360,8 +373,8 @@ bool CZipCompression::CompressBuffer(
     if ( F_ISSET(fWriteGZipFormat) ) {
         header_len = s_WriteGZipHeader(dst_buf, dst_size);
         if (!header_len) {
-            SetError(Z_STREAM_ERROR, "Cannot write gzip header");
-            ERR_COMPRESS(50, FormatErrorMessage("CZipCompression::CompressBuffer"));
+            SetError(Z_STREAM_ERROR, "cannot write gzip header");
+            ERR_COMPRESS(50, FormatErrorMessage(__method_name));
             return false;
         }
         dst += header_len;
@@ -377,7 +390,16 @@ bool CZipCompression::CompressBuffer(
                             GetMemoryLevel(), GetStrategy(),
                             ZLIB_VERSION, (int)sizeof(z_stream));
     if (errcode == Z_OK) {
-    
+
+        // Set dictionary
+        if ( m_Dict ) {
+            errcode = deflateSetDictionary(STREAM, (const Bytef*) m_Dict->GetData(), (uInt) m_Dict->GetSize());
+            if (errcode != Z_OK) {
+                SetError(Z_STREAM_ERROR, "cannot set a dictionary");
+                ERR_COMPRESS(121, FormatErrorMessage(__method_name));
+            }
+        }
+        // Compress data
         STREAM->next_in   = (unsigned char*)src_buf;
         STREAM->avail_in  = 0;
         STREAM->next_out  = dst;
@@ -431,19 +453,19 @@ bool CZipCompression::DecompressBuffer(
                       void*       dst_buf, size_t  dst_size,
                       /* out */            size_t* dst_len)
 {
+    const char* __method_name = "CZipCompression::DecompressBuffer";
     *dst_len = 0;
 
     // Check parameters
     if ( !src_len ) {
         if ( F_ISSET(fAllowEmptyData) ) {
-            SetError(Z_OK);
             return true;
         }
         src_buf = NULL;
     }
     if (!src_buf || !dst_buf || !dst_len) {
         SetError(Z_STREAM_ERROR, "bad argument");
-        ERR_COMPRESS(55, FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        ERR_COMPRESS(55, FormatErrorMessage(__method_name));
         return false;
     }
 
@@ -475,7 +497,7 @@ bool CZipCompression::DecompressBuffer(
             gzip_chunk_count++;
         }
 
-        // "window bits" is passed < 0 to tell that there is no zlib header.
+        // "window bits" is passed < 0 to tell that there is a raw deflate data (no gzip header).
         // Note that in this case inflate *requires* an extra "dummy" byte
         // after the compressed stream in order to complete decompression and
         // return Z_STREAM_END. Here the gzip's CRC32 ensures that 4 bytes are
@@ -486,6 +508,19 @@ bool CZipCompression::DecompressBuffer(
         if (errcode != Z_OK) {
             break;
         }
+
+        // Setting dictionary for decompressing is inconsistent for zlib...
+        // For raw deflate we should set it immediately after inflateInit2(), or stream
+        // will produce a data error and never ask for a dictionary using Z_NEED_DICT.
+        // So, set it here forcely, and also later when decompressor ask for it directly.
+        if (header_len  &&  m_Dict) {
+            errcode = inflateSetDictionary(STREAM, (const Bytef*) m_Dict->GetData(), (uInt) m_Dict->GetSize());
+            if (errcode != Z_OK) {
+                break;
+            }
+        }
+
+        // Decompress 
 
         STREAM->next_in   = src;
         STREAM->avail_in  = 0;
@@ -503,9 +538,15 @@ bool CZipCompression::DecompressBuffer(
                 dst_size -= STREAM->avail_out;
             }
             errcode = inflate(STREAM, Z_NO_FLUSH);
+
+            // Set dictionary if asked, and continue.
+            if (errcode == Z_NEED_DICT  &&  m_Dict) {
+                errcode = inflateSetDictionary(STREAM, (const Bytef*) m_Dict->GetData(), (uInt) m_Dict->GetSize());
+                // errcode should be Z_OK to continue with a dictionary
+            }
         } while (errcode == Z_OK);
 
-        // Calculate length of output data.
+        // Calculate length of the output data.
         // Don't use STREAM->total_out for source buffers greater than 4GB,
         // it works if (SIZEOF_LONG > 4) only.
         *dst_len = STREAM->next_out - (unsigned char*)dst_buf;
@@ -544,8 +585,7 @@ bool CZipCompression::DecompressBuffer(
 
     SetError(errcode, zError(errcode));
     if ( errcode != Z_STREAM_END ) {
-        ERR_COMPRESS(59, FormatErrorMessage("CZipCompression::DecompressBuffer",
-                                            STREAM->next_in - (unsigned char*) src_buf));
+        ERR_COMPRESS(59, FormatErrorMessage(__method_name, STREAM->next_in - (unsigned char*) src_buf));
         return false;
     }
     return true;
@@ -605,6 +645,9 @@ bool CZipCompression::CompressFile(const string& src_file,
     cf.SetWindowBits(GetWindowBits());
     cf.SetMemoryLevel(GetMemoryLevel());
     cf.SetStrategy(GetStrategy());
+    if (m_Dict) {
+        cf.SetDictionary(*m_Dict, eNoOwnership);
+    }
 
     // Collect info about compressed file
     CZipCompression::SFileInfo info;
@@ -643,6 +686,9 @@ bool CZipCompression::DecompressFile(const string& src_file,
     cf.SetWindowBits(GetWindowBits());
     cf.SetMemoryLevel(GetMemoryLevel());
     cf.SetStrategy(GetStrategy());
+    if (m_Dict) {
+        cf.SetDictionary(*m_Dict, eNoOwnership);
+    }
 
     bool need_restore_attr = false;
     SFileInfo info;
@@ -695,6 +741,9 @@ bool CZipCompression::DecompressFileIntoDir(const string& src_file,
     cf.SetWindowBits(GetWindowBits());
     cf.SetMemoryLevel(GetMemoryLevel());
     cf.SetStrategy(GetStrategy());
+    if (m_Dict) {
+        cf.SetDictionary(*m_Dict, eNoOwnership);
+    }
 
     bool need_restore_attr = false;
     SFileInfo info;
@@ -742,6 +791,18 @@ bool CZipCompression::DecompressFileIntoDir(const string& src_file,
         CFile(dst_file).SetTimeT(&info.mtime);
     }
     return status;
+}
+
+
+bool CZipCompression::SetDictionary(CCompressionDictionary& dict, ENcbiOwnership own)
+{
+    if (m_Dict && (m_DictOwn == eTakeOwnership)) {
+        delete m_Dict;
+    }
+    m_Dict = &dict;
+    m_DictOwn = own;
+
+    return true;
 }
 
 
@@ -931,7 +992,9 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* i
         decompressor->SetWindowBits(GetWindowBits());
         decompressor->SetMemoryLevel(GetMemoryLevel());
         decompressor->SetStrategy(GetStrategy());
-
+        if (m_Dict) {
+            decompressor->SetDictionary(*m_Dict, eNoOwnership);
+        }
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
                 decompressor, CCompressionStreamProcessor::eDelete,
@@ -948,7 +1011,9 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode, SFileInfo* i
         compressor->SetWindowBits(GetWindowBits());
         compressor->SetMemoryLevel(GetMemoryLevel());
         compressor->SetStrategy(GetStrategy());
-
+        if (m_Dict) {
+            compressor->SetDictionary(*m_Dict, eNoOwnership);
+        }
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
                 compressor, CCompressionStreamProcessor::eDelete,
@@ -1099,7 +1164,17 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
                                 F_ISSET(fWriteGZipFormat) ? -GetWindowBits() : GetWindowBits(),
                                 GetMemoryLevel(), GetStrategy(),
                                 ZLIB_VERSION, (int)sizeof(z_stream));
-    SetError(errcode, zError(errcode));
+    if (errcode == Z_OK) {
+        // Set dictionary
+        if (m_Dict) {
+            errcode = deflateSetDictionary(STREAM, (const Bytef*) m_Dict->GetData(), (uInt) m_Dict->GetSize());
+            if (errcode != Z_OK) {
+                SetError(Z_STREAM_ERROR, "cannot set a dictionary");
+            }
+        }
+    } else {
+        SetError(errcode, zError(errcode));
+    }
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
@@ -1254,7 +1329,6 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
             IncreaseOutputSize(footer_len);
             *out_avail += footer_len;
         }
-
         return eStatus_EndOfData;
     }
     ERR_COMPRESS(66, FormatErrorMessage("CZipCompressor::Finish", GetProcessedSize()));
@@ -1436,6 +1510,21 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                                             m_IsGZ ? -GetWindowBits() : GetWindowBits(),
                                             ZLIB_VERSION,
                                             (int)sizeof(z_stream));
+                if ( errcode != Z_OK ) {
+                    SetError(errcode, zError(errcode));
+                    return eStatus_Error;
+                }
+                // Setting dictionary for decompressing is inconsistent for zlib...
+                // For raw deflate we should set it immediately after inflateInit2(), or stream
+                // will produce a data error and never ask for a dictionary using Z_NEED_DICT.
+                // So, set it here forcely, and also later when decompressor ask for it directly.
+                if (header_len  &&  m_Dict) {
+                    errcode = inflateSetDictionary(STREAM, (const Bytef*) m_Dict->GetData(), (uInt) m_Dict->GetSize());
+                    if ( errcode != Z_OK ) {
+                        SetError(errcode, zError(errcode));
+                        return eStatus_Error;
+                    }
+                }
                 SetError(errcode, zError(errcode));
                 if ( errcode != Z_OK ) {
                     return eStatus_Error;
@@ -1463,6 +1552,15 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
 
         // Try to decompress data
         int errcode = inflate(STREAM, Z_SYNC_FLUSH);
+
+        // Set dictionary if asked, and continue
+        if (errcode == Z_NEED_DICT  &&  m_Dict) {
+            errcode = inflateSetDictionary(STREAM, (const Bytef*) m_Dict->GetData(), (uInt) m_Dict->GetSize());
+            if (errcode == Z_OK) {
+                // Repeat decompression
+                errcode = inflate(STREAM, Z_SYNC_FLUSH);
+            }
+        }
 
         if ( m_DecompressMode == eMode_Unknown ) {
             // The flag fAllowTransparentRead is set

@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbifile.hpp>
 #include <util/compress/compress.hpp>
 
 
@@ -44,7 +45,8 @@ BEGIN_NCBI_SCOPE
 
 CCompression::CCompression(ELevel level)
     : m_DecompressMode(eMode_Unknown),
-      m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr), m_Flags(0)
+      m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr), m_Flags(0),
+      m_Dict(NULL), m_DictOwn(eNoOwnership)
 {
     return;
 }
@@ -52,6 +54,9 @@ CCompression::CCompression(ELevel level)
 
 CCompression::~CCompression(void)
 {
+    if (m_Dict  &&  (m_DictOwn == eTakeOwnership)) {
+        delete m_Dict;
+    }
     return;
 }
 
@@ -267,6 +272,116 @@ Uint2 CCompressionUtil::GetUI2(const void* buffer)
     const unsigned char* buf = (const unsigned char*)buffer;
     return Uint2(((Uint2)(buf[1]) << 8) + buf[0]);
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCompressionDictionary
+//
+
+CCompressionDictionary::CCompressionDictionary(const void* buf, size_t buf_size, ENcbiOwnership own)
+    : m_Data(buf), m_Size(buf_size), m_Own(own)
+{}
+
+
+CCompressionDictionary::CCompressionDictionary(const string& filename)
+    : m_Data(NULL), m_Size(0), m_Own(eNoOwnership)
+{
+
+    // If loading dictionary from the file, get its size first
+    try {
+        Int8 size = CFile(filename).GetLength();
+        if (size < 0) {
+            throw string("file is empty or doesn't exist");
+        }
+        if ((Uint8)size >= numeric_limits<unsigned int>::max()) {
+            throw string("dictionary file is too big");
+        }
+
+        // Set dictionary size to the file size
+        m_Size = (size_t)size;
+
+        // Open file
+        CNcbiIfstream ifs;
+        ifs.open(filename.c_str(), IOS_BASE::binary | IOS_BASE::in);
+        if (!ifs) {
+            throw string("error opening file");
+        }
+        // Read
+        size_t nread = LoadFromStream(ifs, m_Size);
+        if (nread != m_Size) {
+            throw string("error reading file");
+        }
+    }
+    catch (const string& s) {
+        NCBI_THROW(CCompressionException, eCompression,
+            "CCompressionDictionary:: unable to load dictionary from file '" + 
+            filename + "': " + s);
+    }
+}
+
+
+CCompressionDictionary::CCompressionDictionary(istream& stream, size_t size)
+    : m_Data(NULL), m_Size(0), m_Own(eNoOwnership)
+{
+    size_t m_Size = LoadFromStream(stream, size);
+    if (!m_Size) {
+        NCBI_THROW(CCompressionException, eCompression,
+            "CCompressionDictionary:: unable to load dictionary from stream");
+    }
+}
+
+
+CCompressionDictionary::~CCompressionDictionary(void)
+{
+    Free();
+};
+
+
+size_t CCompressionDictionary::LoadFromStream(CNcbiIstream& is, size_t size)
+{
+    // Regardless of size_t interface, and compatibiity woth Compression API,
+    // the size of the dictionary cannot exceed numeric_limits<unsigned int>::max()
+
+    if (size >= (Uint8)numeric_limits<std::streamsize>::max()  ||
+        size >= (Uint8)numeric_limits<unsigned int>::max() ) {
+        throw string("dictionary size is too big");
+    }
+    if (!is) {
+        throw string("stream is bad");
+    }
+    // Allocate memory
+    m_Data = new char[size];
+    m_Own = eTakeOwnership;
+
+    // Read up to 'size' bytes from stream
+    size_t left = size;
+    size_t nread = 0;
+    char* p = (char*)m_Data;
+
+    while (left && is) {
+        is.read(p, left);
+        size_t n = (size_t)is.gcount();
+        nread += n;
+        left -= n;
+        p += n;
+    }
+    if (!left) {
+        return nread;
+    }
+    return is.bad() ? 0 : nread;
+}
+
+
+void CCompressionDictionary::Free(void)
+{
+    if (m_Own == eTakeOwnership) {
+        delete m_Data;
+    }
+    m_Data = NULL;
+    m_Size = 0;
+}
+
 
 
 END_NCBI_SCOPE

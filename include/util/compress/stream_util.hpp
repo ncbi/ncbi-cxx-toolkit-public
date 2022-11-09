@@ -45,6 +45,13 @@
 ///     MCompress_GZipFile, MDecompress_GZipFile,
 ///                         MDecompress_ConcatenatedGZipFile
 ///     MCompress_Zstd,     MDecompress_Zstd
+///
+/// @note
+///     The stream wrappers and manipulators doesn't support setting 
+///     advanced compression parameters or using dictionaries. You neeed
+///     to create stream using algorithm-specific stream processor and
+///     tune up all necessary parameters there.
+///     See 'stream.hpp': CCompression[IO]Stream.
 
 
 #include <util/compress/stream.hpp>
@@ -315,10 +322,9 @@ string g_GetManipulatorError(T& stream)
 ///   parameters. Manipulators will try to decompress data until EOF or 
 ///   any error occurs. If the input stream contains something behind 
 ///   compressed data, that some portion of this data can be read into
-///   internal buffers and will cannot be returned back into 
-///   the input stream.
+///   internal buffers and cannot be returned back into the input stream.
 /// @note
-///   The diagnostict is very limited for manipulators. On error it can
+///   The diagnostics is very limited for manipulators. On error it can
 ///   throw exceptions of type CCompressionException only.
 /// @sa CManipulatorOProxy, TCompressIProxy, TDecompressIProxy
 

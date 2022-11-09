@@ -73,7 +73,8 @@ BEGIN_NCBI_SCOPE
 //
 
 CZstdCompression::CZstdCompression(ELevel level)
-    : CCompression(level), m_c_Strategy(0), m_cd_WindowLog(0)
+    : CCompression(level), 
+      m_c_Strategy(0), m_cd_WindowLog(0), m_c_DictLoaded(false), m_d_DictLoaded(false)
       
 {
     // Initialize compression contexts
@@ -139,11 +140,24 @@ int CZstdCompression::x_GetRealLevel(void)
 }
 
 
+bool CZstdCompression::HaveSupport(ESupportFeature feature)
+{
+    switch (feature) {
+    case eFeature_NoCompression:
+    case eFeature_Dictionary:
+    case eFeature_EstimateCompressionBufferSize:
+        return true;
+    }
+    return false;
+}
+
+
 bool CZstdCompression::CompressBuffer(
                        const void* src_buf, size_t  src_len,
                        void*       dst_buf, size_t  dst_size,
                        /* out */   size_t* dst_len)
 {
+    const char* __method_name = "CZstdCompression::CompressBuffer";
     *dst_len = 0;
 
     // Check parameters
@@ -152,16 +166,21 @@ bool CZstdCompression::CompressBuffer(
     }
     if (!src_buf || !dst_buf || !dst_len) {
         SetError(ZSTD_error_GENERIC, "bad argument");
-        ERR_COMPRESS(106, FormatErrorMessage("CZstdCompression::CompressBuffer"));
+        ERR_COMPRESS(106, FormatErrorMessage(__method_name));
+        return false;
+    }
+    // Set advanced compression parameters
+    if ( !SetCompressionParameters() ) {
+        ERR_COMPRESS(119, FormatErrorMessage(__method_name));
         return false;
     }
     // Compress buffer
-    size_t result = ZSTD_compressCCtx(CCTX, dst_buf, dst_size, src_buf, src_len, x_GetRealLevel());
+    size_t result = ZSTD_compress2(CCTX, dst_buf, dst_size, src_buf, src_len);
 
     // Check on error
     if (ZSTD_isError(result)) {
         SetErrorResult(result);
-        ERR_COMPRESS(107, FormatErrorMessage("CZstdCompression::CompressBuffer"));
+        ERR_COMPRESS(107, FormatErrorMessage(__method_name));
         return false;
     }
     *dst_len = result;
@@ -174,12 +193,12 @@ bool CZstdCompression::DecompressBuffer(
                        void*       dst_buf, size_t  dst_size,
                        /* out */            size_t* dst_len)
 {
+    const char* __method_name = "CZstdCompression::DecompressBuffer";
     *dst_len = 0;
 
     // Check parameters
     if ( !src_len ) {
         if ( F_ISSET(fAllowEmptyData) ) {
-            SetError(ZSTD_error_no_error);
             return true;
         }
         src_buf = NULL;
@@ -187,6 +206,11 @@ bool CZstdCompression::DecompressBuffer(
     if (!src_buf || !dst_buf || !dst_len) {
         SetError(ZSTD_error_GENERIC, "bad argument");
         ERR_COMPRESS(108, FormatErrorMessage("CZstdCompression::DecompressBuffer"));
+        return false;
+    }
+    // Set advanced compression parameters
+    if ( !SetDecompressionParameters() ) {
+        ERR_COMPRESS(120, FormatErrorMessage(__method_name));
         return false;
     }
     // Decompress buffer
@@ -208,7 +232,7 @@ bool CZstdCompression::DecompressBuffer(
         }
         // Standard error processing
         SetErrorResult(result);
-        ERR_COMPRESS(109, FormatErrorMessage("CZstdCompression::DecompressBuffer"));
+        ERR_COMPRESS(109, FormatErrorMessage(__method_name));
         return false;
     }
     *dst_len = result;
@@ -244,14 +268,12 @@ bool CZstdCompression::CompressFile(const string& src_file,
     CZstdCompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
 
-    // Set advanced parameters, if any
-    if (GetStrategy() != GetStrategyDefault()) {
-        cf.SetStrategy(GetStrategy());
+    // Pass advanced parameters from 
+    cf.SetStrategy(GetStrategy());
+    cf.SetWindowLog(GetWindowLog());
+    if (m_Dict) {
+        cf.SetDictionary(*m_Dict, eNoOwnership);
     }
-    if (GetWindowLog() != GetWindowLogDefault()) {
-        cf.SetWindowLog(GetWindowLog());
-    }
-
     // Open output file
     if ( !cf.Open(dst_file, CCompressionFile::eMode_Write,
                   compression_in_bufsize, compression_out_bufsize) ) {
@@ -282,11 +304,11 @@ bool CZstdCompression::DecompressFile(const string& src_file,
     CZstdCompressionFile cf(GetLevel());
     cf.SetFlags(cf.GetFlags() | GetFlags());
 
-    // Set advanced parameters, if any
-    if (GetWindowLog() != GetWindowLogDefault()) {
-        cf.SetWindowLog(GetWindowLog());
+    // Set advanced parameters
+    cf.SetWindowLog(GetWindowLog());
+    if (m_Dict) {
+        cf.SetDictionary(*m_Dict, eNoOwnership);
     }
-
     // Open output file
     if ( !cf.Open(src_file, CCompressionFile::eMode_Read,
                   decompression_in_bufsize, decompression_out_bufsize) ) {
@@ -308,6 +330,19 @@ bool CZstdCompression::DecompressFile(const string& src_file,
 }
 
 
+bool CZstdCompression::SetDictionary(CCompressionDictionary& dict, ENcbiOwnership own)
+{
+    if (m_Dict && (m_DictOwn == eTakeOwnership)) {
+        delete m_Dict;
+    }
+    m_Dict = &dict;
+    m_DictOwn = own;
+    m_c_DictLoaded = false;
+    m_d_DictLoaded = false;
+    return true;
+}
+
+
 string CZstdCompression::FormatErrorMessage(string where, size_t pos) const
 {
     string str = "[" + where + "]  " + GetErrorDescription();
@@ -322,6 +357,7 @@ void CZstdCompression::SetErrorResult(size_t result)
 {
     SetError(ZSTD_getErrorCode(result), ZSTD_getErrorName(result));
 }
+
 
 
 //----------------------------------------------------------------------------
@@ -389,6 +425,118 @@ int CZstdCompression::GetWindowLogMax(void)
         s_GetParamBounds(ZSTD_c_windowLog, NULL, &v);
     }
     return v;
+}
+
+
+bool CZstdCompression::SetCompressionParameters(void)
+{
+    size_t result = 0;
+    {
+        result = ZSTD_CCtx_setParameter(CCTX, ZSTD_c_compressionLevel, x_GetRealLevel());
+    }
+    if (!ZSTD_isError(result)) {
+        result = ZSTD_CCtx_setParameter(CCTX, ZSTD_c_checksumFlag, F_ISSET(fChecksum) ? 1 : 0);
+    }
+    if (!ZSTD_isError(result)) {
+        result = ZSTD_CCtx_setParameter(CCTX, ZSTD_c_strategy, GetStrategy());
+    }
+    if (!ZSTD_isError(result)) {
+        result = ZSTD_CCtx_setParameter(CCTX, ZSTD_c_windowLog, GetWindowLog());
+    }
+    // Dictionary, setup last, after all other parameters
+    if (!ZSTD_isError(result)) {
+        if ( m_Dict ) {
+            if (!m_c_DictLoaded) {
+                // Load dictionary
+                result = ZSTD_CCtx_loadDictionary(CCTX, m_Dict->GetData(), m_Dict->GetSize());
+                if (!ZSTD_isError(result)) {
+                    m_c_DictLoaded = true;
+                }
+            }
+            // If dictionary has already loaded to both contexts for 
+            // compression and decompression, we don't need it's raw 
+            // data anymore. Just keep a pointer to dictionary object itself.
+            if (m_c_DictLoaded  &&  m_d_DictLoaded) {
+                m_Dict->Free();
+            }
+        }
+        else {
+            if (m_c_DictLoaded) {
+                // Unload dictionary, return to non-dictionary mode
+                result = ZSTD_CCtx_loadDictionary(CCTX, NULL, 0);
+                if (!ZSTD_isError(result)) {
+                    m_c_DictLoaded = false;
+                }
+            }
+        }
+    }
+    // Report error
+    if ( ZSTD_isError(result) ) {
+        SetErrorResult(result);
+        return false;
+    }
+    return true;
+}
+
+
+bool CZstdCompression::SetDecompressionParameters(void)
+{
+    size_t result = 0;
+
+    // Windows Log
+    {
+        // Using a windowLog greater than ZSTD_WINDOWLOG_LIMIT_DEFAULT
+        // requires explicitly allowing such size at streaming decompression stage.
+#if defined(ZSTD_WINDOWLOG_LIMIT_DEFAULT)
+        int limit = ZSTD_WINDOWLOG_LIMIT_DEFAULT - 1 /* -1 to use '>=' below */;
+#else
+        // ZSTD_WINDOWLOG_LIMIT_DEFAULT definition can be under an experimental section,
+        // and unavalible, so limit to requested windowLog size.
+        int limit = GetWindowLog();
+#endif
+        if (GetWindowLog() >= limit) {
+            result = ZSTD_DCtx_setParameter(DCTX, ZSTD_d_windowLogMax, GetWindowLog());
+        }
+    }
+#if defined (ZSTD_d_forceIgnoreChecksum)  
+    // ZSTD_d_forceIgnoreChecksum ia an experimental parameter yet (current v1.5.2)
+    if (!ZSTD_isError(result)) {
+        result = ZSTD_DCtx_setParameter(DCTX, ZSTD_d_forceIgnoreChecksum, F_ISSET(fChecksum) ? 1 : 0);
+    }
+#endif
+    // Dictionary, setup last, after all other parameters
+    if (!ZSTD_isError(result)) {
+        if ( m_Dict ) {
+            if (!m_d_DictLoaded) {
+                // Load dictionary
+                result = ZSTD_DCtx_loadDictionary(DCTX, m_Dict->GetData(), m_Dict->GetSize());
+                if (!ZSTD_isError(result)) {
+                    m_d_DictLoaded = true;
+                }
+            }
+            // If dictionary has already loaded to both contexts for 
+            // compression and decompression, we don't need it's raw 
+            // data anymore. Just keep a pointer to dictionary object itself.
+            if (m_c_DictLoaded  &&  m_d_DictLoaded) {
+                m_Dict->Free();
+            }
+        }
+        else {
+            if (m_d_DictLoaded) {
+                // Unload dictionary, return to non-dictionary mode
+                result = ZSTD_DCtx_loadDictionary(DCTX, NULL, 0);
+                if (!ZSTD_isError(result)) {
+                    m_d_DictLoaded = false;
+                }
+            }
+        }
+    }
+    // Report error
+    if ( ZSTD_isError(result) ) {
+        SetErrorResult(result);
+        return false;
+    }
+    return true;
 }
 
 
@@ -466,8 +614,9 @@ bool CZstdCompressionFile::Open(const string& file_name, EMode mode,
 
     if ( mode == eMode_Read ) {
         CZstdDecompressor* decompressor = new CZstdDecompressor(GetFlags());
-        if ( GetWindowLog() ) {
-            decompressor->SetWindowLog(GetWindowLog());
+        decompressor->SetWindowLog(GetWindowLog());
+        if (m_Dict) {
+            decompressor->SetDictionary(*m_Dict, eNoOwnership);
         }
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
@@ -479,11 +628,10 @@ bool CZstdCompressionFile::Open(const string& file_name, EMode mode,
 
     } else {
         CZstdCompressor* compressor = new CZstdCompressor(GetLevel(), GetFlags());
-        if ( GetStrategy() ) {
-            compressor->SetStrategy(GetStrategy());
-        }
-        if ( GetWindowLog() ) {
-            compressor->SetWindowLog(GetWindowLog());
+        compressor->SetStrategy(GetStrategy());
+        compressor->SetWindowLog(GetWindowLog());
+        if (m_Dict) {
+            compressor->SetDictionary(*m_Dict, eNoOwnership);
         }
         CCompressionStreamProcessor* processor = 
             new CCompressionStreamProcessor(
@@ -607,39 +755,10 @@ CCompressionProcessor::EStatus CZstdCompressor::Init(void)
     // Reset previous session, if any
     ZSTD_CCtx_reset(CCTX, ZSTD_reset_session_and_parameters);
 
-    // Set compression parameters
-
-    bool err = false;
-    size_t result;
-
-    result = ZSTD_CCtx_setParameter(CCTX, ZSTD_c_compressionLevel, x_GetRealLevel());
-    if (ZSTD_isError(result)) {
-        err = true;
-    }
-    if (!err  &&  F_ISSET(fChecksum)) {
-        result = ZSTD_CCtx_setParameter(CCTX, ZSTD_c_checksumFlag, 1 /*true*/);
-        if (ZSTD_isError(result)) {
-            err = true;
-        }
-    }
-    if (!err  &&  GetStrategy()) {
-        result = ZSTD_CCtx_setParameter(CCTX, ZSTD_c_strategy, GetStrategy());
-        if (ZSTD_isError(result)) {
-            err = true;
-        }
-    }
-    if (!err  &&  GetWindowLog()) {
-        result = ZSTD_CCtx_setParameter(CCTX, ZSTD_c_windowLog, GetWindowLog());
-        if (ZSTD_isError(result)) {
-            err = true;
-        }
-    }
-    // Check on error
-    if ( !err ) {
-        SetError(ZSTD_error_no_error);
+    // Set parameters
+    if ( SetCompressionParameters() ) {
         return eStatus_Success;
     }
-    SetErrorResult(result);
     ERR_COMPRESS(110, FormatErrorMessage("CZstdCompressor::Init"));
     return eStatus_Error;
 }
@@ -785,43 +904,10 @@ CCompressionProcessor::EStatus CZstdDecompressor::Init(void)
     // Reset previous session, if any
     ZSTD_DCtx_reset(DCTX, ZSTD_reset_session_and_parameters);
 
-    // Set decompression parameters
-
-    bool err = false;
-    size_t result;
-
-    if ( GetWindowLog() ) {
-        // Using a windowLog greater than ZSTD_WINDOWLOG_LIMIT_DEFAULT
-        // requires explicitly allowing such size at streaming decompression stage.
-#if defined(ZSTD_WINDOWLOG_LIMIT_DEFAULT)
-        int limit = ZSTD_WINDOWLOG_LIMIT_DEFAULT - 1 /*to use '>=' below*/;
-#else
-        // ZSTD_WINDOWLOG_LIMIT_DEFAULT definition can be under an experimental section,
-        // and unavalible, so limit to requested windowLog size.
-        int limit = GetWindowLog();
-#endif
-        if (GetWindowLog() >= limit) {
-            result = ZSTD_DCtx_setParameter(DCTX, ZSTD_d_windowLogMax, GetWindowLog());
-            if (ZSTD_isError(result)) {
-                err = true;
-            }
-        }
-    }
-#if defined (ZSTD_d_forceIgnoreChecksum)
-    // experimental parameter yet (current v1.5.2)
-    if ( !err  &&  F_ISSET(fChecksum) ) {
-        size_t result = ZSTD_CDtx_setParameter(DCTX, ZSTD_d_forceIgnoreChecksum, 1);
-        if (ZSTD_isError(result)) {
-            err = true;
-        }
-    }
-#endif
-    // Check on error
-    if ( !err ) {
-        SetError(ZSTD_error_no_error);
+    // Set parameters
+    if ( SetDecompressionParameters() ) {
         return eStatus_Success;
     }
-    SetErrorResult(result);
     ERR_COMPRESS(117, FormatErrorMessage("CZstdDecompressor::Init"));
     return eStatus_Error;
 }
