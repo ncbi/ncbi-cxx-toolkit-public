@@ -436,9 +436,9 @@ void CSpliceProblems::ValidateSpliceExon(const CSeq_feat& feat, const CBioseq_Ha
                 }
             }
         }
-    } catch (CException ) {
+    } catch (const CException& ) {
         ;
-    } catch (std::exception ) {
+    } catch (const std::exception& ) {
         ;// could get errors from CSeqVector
     }
 }
