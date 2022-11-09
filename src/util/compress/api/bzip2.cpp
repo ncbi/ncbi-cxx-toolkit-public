@@ -131,6 +131,18 @@ CCompression::ELevel CBZip2Compression::GetLevel(void) const
 }
 
 
+bool CBZip2Compression::HaveSupport(ESupportFeature feature)
+{
+    switch (feature) {
+    case eFeature_NoCompression:
+    case eFeature_Dictionary:
+    case eFeature_EstimateCompressionBufferSize:
+        return false;
+    }
+    return false;
+}
+
+
 bool CBZip2Compression::CompressBuffer(
                         const void* src_buf, size_t  src_len,
                         void*       dst_buf, size_t  dst_size,
@@ -200,7 +212,6 @@ bool CBZip2Compression::DecompressBuffer(
     // Check parameters
     if ( !src_len ) {
         if ( F_ISSET(fAllowEmptyData) ) {
-            SetError(BZ_OK);
             return true;
         }
         src_buf = NULL;
@@ -339,6 +350,13 @@ bool CBZip2Compression::DecompressFile(const string& src_file,
 }
 
 
+bool CBZip2Compression::SetDictionary(CCompressionDictionary&, ENcbiOwnership)
+{
+    SetError(BZ_CONFIG_ERROR, "No dictionary support");
+    return false;
+}
+
+
 // Please, see a ftp://sources.redhat.com/pub/bzip2/docs/manual_3.html#SEC17
 // for detailed error descriptions.
 const char* CBZip2Compression::GetBZip2ErrorDescription(int errcode)
@@ -383,9 +401,9 @@ string CBZip2Compression::FormatErrorMessage(string where,
 // Advanced parameters
 //
 
-int  CBZip2Compression::GetWorkFactorDefault(void)  { return   0; };
-int  CBZip2Compression::GetWorkFactorMin(void)      { return   0; };
-int  CBZip2Compression::GetWorkFactorMax(void)      { return 250; };
+int CBZip2Compression::GetWorkFactorDefault(void)  { return   0; };
+int CBZip2Compression::GetWorkFactorMin(void)      { return   0; };
+int CBZip2Compression::GetWorkFactorMax(void)      { return 250; };
 
 bool CBZip2Compression::GetSmallDecompressDefault(void) { return false; };
 
@@ -493,7 +511,6 @@ bool CBZip2CompressionFile::Open(const string& file_name, EMode mode,
         ERR_COMPRESS(20, FormatErrorMessage("CBZip2CompressionFile::Open", false));
         return false;
     };
-    SetError(BZ_OK);
     return true;
 } 
 

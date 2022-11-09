@@ -152,6 +152,10 @@ public:
     virtual ELevel GetDefaultLevel(void) const
         { return ELevel(eLevel_Default); };
 
+    /// Check if compression have support for a specified feature
+    virtual bool HaveSupport(ESupportFeature feature);
+
+
     //=======================================================================
     // Utility functions 
     //=======================================================================
@@ -223,9 +227,11 @@ public:
     ///   Size of data in source buffer.
     /// @return
     ///   Estimated buffer size. 0 if unable to determine.
+    /// @note
+    ///   This method ignores used dictionary.
     /// @sa
     ///   CompressBuffer
-    size_t EstimateCompressionBufferSize(size_t src_len);
+    virtual size_t EstimateCompressionBufferSize(size_t src_len);
 
     /// Get recommended buffer sizes for stream/file I/O.
     ///
@@ -237,8 +243,8 @@ public:
     /// I/O buffer sizes, kCompressionDefaultBufSize will be used.
     /// @param round_up_by
     ///   If specified, round up a returned value by specified amount. 
-    ///   Sp all values will be divisible to this parameter.
-    ///   Usuful for better memory management. 
+    ///   Useful for better memory management. For example you can round up to virtual
+    ///   memory page size.
     /// @return
     ///   Structure with recommended buffer sizes.
     /// @note
@@ -364,6 +370,44 @@ public:
         SFileInfo(void) : mtime(0) {};
     };
 
+    /// Set a dictionary for all compression/decompression operations.
+    ///
+    /// Using dictionary can significantly reduce the size of the compressed data. 
+    /// Refer to the C++ documentation how to choose/prepare a dictionary.
+    /// 
+    /// @param dict
+    ///   Dictionary to use. New dictionary will be used for all subsequent 
+    ///   compression/decompression buffer and file operations. NULL value 
+    ///   invalidates previous dictionary, meaning "return to no-dictionary mode".
+    /// @param own
+    ///   If set to eTakeOwnership the dictionary will be owned by CCompression and 
+    ///   automatically deleted when necessary.
+    /// @return
+    ///   Return TRUE on success, FALSE on error. 
+    ///   FALSE usually mean that dictionaries are not supported for a current compression.
+    /// @note
+    ///   Each compression algorithm have its own dictionary format and cannot
+    ///   be reused by some other compression algorithm.
+    /// @note
+    ///   Same dictionary should be used to compress and decompress data.
+    /// @note
+    ///   .gz files don't store a dictionary inside, so you will be unable to decompress
+    ///   files created using CompressFile() or streams with an active dictionary using
+    ///   any external utilities like 'gunzip'. But they will be still decompressible 
+    ///   with DecompressFile() using the same dictionary.
+    /// @note
+    ///   If decompressed data have concatenated gzip files, and it is allowed to process
+    ///   them all, each gzip file should be compressed with the same dictionary.
+    ///   It is allowed to mix dictionary and non-dictionary compressed gzip files,
+    ///   the dictionary will be applied only when necessary.
+    /// @sa
+    ///   CompressBuffer, DecompressBuffer, CompressFile, DecompressFile
+    /// 
+    virtual bool SetDictionary(
+        CCompressionDictionary& dict, 
+        ENcbiOwnership          own = eNoOwnership
+    );
+
     //=======================================================================
     // Advanced compression-specific parameters
     //=======================================================================
@@ -482,6 +526,13 @@ public:
     // JIRA: CXX-12640
 
     /// Constructor.
+    ///
+    /// Automatically calls Open() with given file name, mode and compression level.
+    /// @note
+    ///   This constructor don't allow to use any advanced compression parameters
+    ///   or a dictionary. If you need to set any of them, please use simplified
+    ///   conventional constructor, set advanced parameters and use Open().
+    /// 
     CZipCompressionFile(
         const string& file_name,
         EMode         mode,
@@ -530,6 +581,10 @@ public:
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CZipCompression, Read, Write, Close
+    /// @note
+    ///   All advanced compression parameters or a dictionary should be set before
+    ///   Open() method, otherwise they will not have any effect.
+    /// 
     virtual bool Open(
         const string& file_name, 
         EMode         mode,
@@ -556,6 +611,7 @@ public:
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CZipCompression, Read, Write, Close
+    ///
     virtual bool Open(
         const string& file_name, 
         EMode         mode,
@@ -577,6 +633,7 @@ public:
     ///   The number of really read bytes can be less than requested.
     /// @sa
     ///   Open, Write, Close
+    ///
     virtual long Read(void* buf, size_t len);
 
     /// Write data to compressed file.
@@ -592,6 +649,7 @@ public:
     ///   Returned value can be less than "len".
     /// @sa
     ///   Open, Read, Close
+    ///
     virtual long Write(const void* buf, size_t len);
 
     /// Close compressed file.
@@ -601,6 +659,7 @@ public:
     ///   TRUE on success, FALSE on error.
     /// @sa
     ///   Open, Read, Write
+    ///
     virtual bool Close(void);
 
 protected:
@@ -865,9 +924,12 @@ public:
 /// @param is
 ///   Opened input stream to scan (should be opened in binary mode).
 /// @param handler
-///   Call handler's IChunkHandler::OnChunk() method with positions 
+///   Call handler's IChunkHandler::OnChunk() method and pass position 
 ///   of each new gzip file inside a stream and size of uncompressed data
 ///   on that moment.
+/// @note
+///   This method don't support concatenated .gz files compressed with a dictionary.
+///
 NCBI_XUTIL_EXPORT
 void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler);
 

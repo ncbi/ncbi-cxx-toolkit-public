@@ -137,9 +137,9 @@ public:
 
     /// Get compression level.
     ///
-    /// NOTE: zstd do not support zero level compression.
-    ///       So the "eLevel_NoCompression" will be translated to
-    ///       "eLevel_Lowest".
+    /// @note
+    ///   zstd doesn't support zero level compression, so eLevel_NoCompression
+    ///   will be translated to eLevel_Lowest.
     virtual ELevel GetLevel(void) const;
 
     /// Returns default compression level for a compression algorithm.
@@ -148,6 +148,10 @@ public:
     /// library versions. Real default level will be calculated on a compression stage.
     virtual ELevel GetDefaultLevel(void) const
         { return ELevel(eLevel_Default); };
+
+    /// Check if compression have support for a specified feature
+    virtual bool HaveSupport(ESupportFeature feature);
+
 
     //=======================================================================
     // Utility functions 
@@ -173,9 +177,6 @@ public:
     /// @return
     ///   Return TRUE if operation was successfully or FALSE otherwise.
     ///   On success, 'dst_buf' contains compressed data of 'dst_len' size.
-    /// @note
-    ///   CompressBuffer() and DecompressBuffer() ignore any advanced parameters,
-    ///   that could be set, and use only a compression level to process.
     /// @sa
     ///   EstimateCompressionBufferSize, DecompressBuffer
     virtual bool CompressBuffer(
@@ -228,7 +229,7 @@ public:
     ///   Not applicable for streaming/file operations.
     /// @sa
     ///   CompressBuffer
-    size_t EstimateCompressionBufferSize(size_t src_len);
+    virtual size_t EstimateCompressionBufferSize(size_t src_len);
 
     /// Get recommended buffer sizes for stream/file I/O.
     ///
@@ -240,8 +241,8 @@ public:
     /// I/O buffer sizes, kCompressionDefaultBufSize will be used.
     /// @param round_up_by
     ///   If specified, round up a returned value by specified amount. 
-    ///   Sp all values will be divisible to this parameter.
-    ///   Usuful for better memory management. 
+    ///   Useful for better memory management. For example you can round up to virtual
+    ///   memory page size.
     /// @return
     ///   Structure with recommended buffer sizes.
     /// @note
@@ -309,6 +310,38 @@ public:
         size_t        decompression_out_bufsize = kCompressionDefaultBufSize
     );
 
+    /// Set a dictionary for all compression/decompression operations.
+    ///
+    /// Using dictionary can significantly reduce the size of the compressed data. 
+    /// Refer to the C++ documentation how to choose/prepare a dictionary.
+    /// 
+    /// @param dict
+    ///   Dictionary to use. New dictionary will be used for all subsequent 
+    ///   compression/decompression buffer and file operations. NULL value 
+    ///   invalidates previous dictionary, meaning "return to no-dictionary mode".
+    /// @param own
+    ///   If set to eTakeOwnership the dictionary will be owned by CCompression and 
+    ///   automatically deleted when necessary.
+    /// @return
+    ///   Return TRUE on success, FALSE on error. 
+    ///   FALSE usually mean that dictionaries are not supported for a current compression.
+    /// @note
+    ///   Each compression algorithm have its own dictionary format and cannot
+    ///   be reused by some other compression algorithm.
+    /// @note
+    ///   Same dictionary should be used to compress and decompress data.
+    /// @warning
+    ///   Loading a dictionary involves building tables. Tables depends on a compression
+    ///   level and advanced compression parameters. For this reason, compression level or
+    ///   advanced compression parameters cannot be longer changed after loading a dictionary.
+    /// @sa
+    ///   CompressBuffer, DecompressBuffer, CompressFile, DecompressFile
+    /// 
+    virtual bool SetDictionary(
+        CCompressionDictionary& dict, 
+        ENcbiOwnership          own = eNoOwnership
+    );
+
     //=======================================================================
     // Advanced compression-specific parameters
     //=======================================================================
@@ -356,6 +389,10 @@ protected:
     /// Set zstd error code for result of some operation
     void SetErrorResult(size_t result);
 
+    /// Set advanced compression/decompression parameters for context
+    bool SetCompressionParameters(void);
+    bool SetDecompressionParameters(void);
+
 protected:
     void* m_CCtx;          ///< zstd compress context
     void* m_DCtx;          ///< zstd decompress context
@@ -363,6 +400,10 @@ protected:
     // Advanced parametes
     int   m_c_Strategy;    ///< used for compression
     int   m_cd_WindowLog;  ///< used for compression & decompression
+
+    // Dictionary
+    bool  m_c_DictLoaded;  ///< TRUE if compression dictionary has loaded
+    bool  m_d_DictLoaded;  ///< TRUE if decompression dictionary has loaded
 
     // Convert current meta-level to real zstd compression level.
     int  x_GetRealLevel(void);
@@ -388,7 +429,12 @@ class NCBI_XUTIL_EXPORT CZstdCompressionFile : public CZstdCompression,
 public:
     /// Constructor.
     ///
-    /// @param
+    /// Automatically calls Open() with given file name, mode and compression level.
+    /// @note
+    ///   This constructor don't allow to use any advanced compression parameters
+    ///   or a dictionary. If you need to set any of them, please use simplified
+    ///   conventional constructor, set advanced parameters and use Open().
+    /// 
     CZstdCompressionFile(
         const string& file_name,
         EMode         mode,
@@ -417,6 +463,10 @@ public:
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CZstdCompression, Read, Write, Close
+    /// @note
+    ///   All advanced compression parameters or a dictionary should be set before
+    ///   Open() method, otherwise they will not have any effect.
+    /// 
     virtual bool Open(
         const string& file_name, 
         EMode         mode,
@@ -437,6 +487,7 @@ public:
     ///   The number of really read bytes can be less than requested.
     /// @sa
     ///   Open, Write, Close
+    ///
     virtual long Read(void* buf, size_t len);
 
     /// Write data to compressed file.
@@ -452,6 +503,7 @@ public:
     ///   Returned value can be less than "len".
     /// @sa
     ///   Open, Read, Close
+    ///
     virtual long Write(const void* buf, size_t len);
 
     /// Close compressed file.
@@ -461,6 +513,7 @@ public:
     ///   TRUE on success, FALSE on error.
     /// @sa
     ///   Open, Read, Write
+    ///
     virtual bool Close(void);
 
 protected:
