@@ -199,7 +199,7 @@ bool CHugeFileProcess::ForEachEntry(CRef<CScope> scope, THandlerEntries handler)
     if (!handler)
         return false;
 
-    string loader_name = CDirEntry::ConvertToOSPath(GetFile().m_filename);
+    string loader_name = CDirEntry::CreateAbsolutePath(GetFile().m_filename);
     auto info = CHugeAsnDataLoader::RegisterInObjectManager(
         *CObjectManager::GetInstance(), loader_name, &GetReader(), CObjectManager::eNonDefault, 1); //CObjectManager::kPriority_Local);
 
