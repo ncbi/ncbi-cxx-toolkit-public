@@ -85,12 +85,6 @@ BOOST_AUTO_TEST_CASE(TestExample1)
 }
 
 
-BOOST_AUTO_TEST_CASE(TestExample2)
-{
-    sx_RunTest("example2");
-}
-
-
 BOOST_AUTO_TEST_CASE(TestExample3)
 {
     sx_RunTest("example3");
