@@ -182,19 +182,24 @@ public:
 
     /// Get compression level.
     ///
-    /// NOTE: This API use only two compression levels for LZO method.
-    ///       So, all compression levels will be translated only into 2
-    ///       real values. We use LZO1X-999 for "eLevel_Best", and 
-    ///       LZO1X-1 for all other levels of compression.
+    /// @note
+    ///   This API use only two compression levels for LZO method.
+    ///   All compression levels will be translated only into 2 real values. 
+    ///   We use LZO1X-999 compression for eLevel_Best, and LZO1X-1 for all
+    ///   other levels of compression.
     virtual ELevel GetLevel(void) const;
 
     /// Returns default compression level for a compression algorithm.
     virtual ELevel GetDefaultLevel(void) const
         { return eLevel_Lowest; };
 
-    //
+    /// Check if compression have support for a specified feature
+    virtual bool HaveSupport(ESupportFeature feature);
+
+
+    //=======================================================================
     // Utility functions 
-    //
+    //=======================================================================
 
     /// Compress data in the buffer.
     ///
@@ -255,29 +260,28 @@ public:
     /// Estimate buffer size for data compression.
     ///
     /// Simplified method for estimation of the size of buffer required
-    /// to compress specified number of bytes of data. Uses current flags.
+    /// to compress specified number of bytes of data, uses current block size and flags.
     /// @sa
     ///   EstimateCompressionBufferSize, CompressBuffer
-    size_t EstimateCompressionBufferSize(size_t src_len, 
-                                         size_t blocksize = 0);
+    virtual size_t EstimateCompressionBufferSize(size_t src_len);
 
-    /// Estimate buffer size for data compression.
+    /// Estimate buffer size for data compression (advanced version).
     ///
     /// The function shall estimate the size of buffer required to compress
     /// specified number of bytes of data. This function return a conservative
     /// value that larger than 'src_len'. 
     /// @param src_len
-    ///   Size of data in source buffer.
+    ///   Size of data in the source buffer.
     /// @blocksize
-    ///   Size of blocks used by compressor to compress source data.
-    ///   Value 0 means that will be used block size specified for compression (or default).
+    ///   Size of blocks that will be used for compression.
+    ///   Value 0 means default block size, same as GetBlockSizeDefault().
     /// @flags
     ///   Flags that will be used for compression.
     /// @return
     ///   Estimated buffer size.
     /// @sa
-    ///   CompressBuffer
-    size_t EstimateCompressionBufferSize(size_t src_len, size_t blocksize, TLZOFlags flags);
+    ///   CompressBuffer, GetBlockSizeDefault
+    static size_t EstimateCompressionBufferSize(size_t src_len, size_t blocksize, TLZOFlags flags);
 
     /// Get recommended buffer sizes for stream/file I/O.
     ///
@@ -289,8 +293,8 @@ public:
     /// I/O buffer sizes, kCompressionDefaultBufSize will be used.
     /// @param round_up_by
     ///   If specified, round up a returned value by specified amount. 
-    ///   Sp all values will be divisible to this parameter.
-    ///   Usuful for better memory management. 
+    ///   Useful for better memory management. For example you can round up to virtual
+    ///   memory page size.
     /// @return
     ///   Structure with recommended buffer sizes.
     /// @note
@@ -365,6 +369,13 @@ public:
         time_t  mtime;
         SFileInfo(void) : mtime(0) {};
     };
+
+    /// @warning No dictionary support for LZO. Always return FALSE.
+    /// @sa HaveSupport
+    virtual bool SetDictionary(
+        CCompressionDictionary& dict, 
+        ENcbiOwnership          own = eNoOwnership
+    );
 
     //=======================================================================
     // Advanced compression-specific parameters
@@ -474,6 +485,13 @@ public:
     // JIRA: CXX-12640
 
     /// Constructor.
+    ///
+    /// Automatically calls Open() with given file name, mode and compression level.
+    /// @note
+    ///   This constructor don't allow to use any advanced compression parameters
+    ///   or a dictionary. If you need to set any of them, please use simplified
+    ///   conventional constructor, set advanced parameters and use Open().
+    /// 
     CLZOCompressionFile(
         const string& file_name,
         EMode         mode,
@@ -513,6 +531,10 @@ public:
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CLZOCompression, Read, Write, Close
+    /// @note
+    ///   All advanced compression parameters or a dictionary should be set before
+    ///   Open() method, otherwise they will not have any effect.
+    /// 
     virtual bool Open(
         const string& file_name, 
         EMode         mode,
@@ -539,6 +561,7 @@ public:
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CLZOCompression, Read, Write, Close
+    ///
     virtual bool Open(
         const string& file_name, 
         EMode         mode, 
@@ -560,6 +583,7 @@ public:
     ///   The number of really read bytes can be less than requested.
     /// @sa
     ///   Open, Write, Close
+    ///
     virtual long Read(void* buf, size_t len);
 
     /// Write data to compressed file.
@@ -575,6 +599,7 @@ public:
     ///   Returned value can be less than "len".
     /// @sa
     ///   Open, Read, Close
+    ///
     virtual long Write(const void* buf, size_t len);
 
     /// Close compressed file.
@@ -584,6 +609,7 @@ public:
     ///   TRUE on success, FALSE on error.
     /// @sa
     ///   Open, Read, Write
+    ///
     virtual bool Close(void);
 
 protected:

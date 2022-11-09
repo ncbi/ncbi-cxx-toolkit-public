@@ -90,8 +90,11 @@ private:
     void x_CreateFile(const string& filename, const char* buf, size_t len);
 
 private:
-    // MT test doesn't use "big data" test, so we have next members to 
-    // compatibility with ST test
+    // Available tests
+    bool bz2, lzo, z, zstd;
+
+    // MT test doesn't use "big data" test, so we have next members
+    // for compatibility with ST test only
     bool   m_AllowIstrstream;   // allow using CNcbiIstrstream
     bool   m_AllowOstrstream;   // allow using CNcbiOstrstream
     bool   m_AllowStrstream;    // allow using CNcbiStrstream
@@ -108,6 +111,50 @@ bool CTest::TestApp_Init()
     SetDiagPostLevel(eDiag_Error);
     // To see all output, uncomment next line:
     //SetDiagPostLevel(eDiag_Trace);
+
+    // Define available tests
+
+    // Get arguments
+    const CArgs& args = GetArgs();
+    string test = args["lib"].AsString();
+
+    bz2  = (test == "all" || test == "bz2");
+    lzo  = (test == "all" || test == "lzo");
+    z    = (test == "all" || test == "z");
+    zstd = (test == "all" || test == "zstd");
+
+    if (bz2) {
+        #if !defined(HAVE_LIBBZ2)
+            ERR_POST(Warning << "BZ2 is not available on this platform, ignored.");
+            bz2 = false;
+        #else
+            CBZip2Compression::Initialize();
+        #endif
+    }
+    if (lzo) {
+        #if !defined(HAVE_LIBLZO)
+            ERR_POST(Warning << "LZO is not available on this platform, ignored.");
+            lzo = false;
+        #else
+            CLZOCompression::Initialize();
+        #endif
+    }
+    if (z) {
+        #if !defined(HAVE_LIBZ)
+            ERR_POST(Warning << "Z is not available on this platform, ignored.");
+            z = false;
+        #else
+            CZipCompression::Initialize();
+        #endif
+    }
+    if (zstd) {
+        #if !defined(HAVE_LIBZSTD)
+            ERR_POST(Warning << "ZSTD is not available on this platform, ignored.");
+            zstd = false;
+        #else
+            CZstdCompression::Initialize();
+        #endif
+    }
 
     m_AllowIstrstream = true;
     m_AllowOstrstream = true;
@@ -131,29 +178,6 @@ bool CTest::TestApp_Args(CArgDescriptions& args)
 
 bool CTest::Thread_Run(int idx)
 {
-    // Get arguments
-    const CArgs& args = GetArgs();
-    string test = args["lib"].AsString();
-
-    // Define available tests
-
-    bool bz2  = (test == "all" || test == "bz2");
-    bool z    = (test == "all" || test == "z");
-    bool lzo  = (test == "all" || test == "lzo");
-    bool zstd = (test == "all" || test == "zstd");
-#if !defined(HAVE_LIBLZO)
-    if (lzo) {
-        ERR_POST(Warning << "LZO is not available on this platform, ignored.");
-        lzo = false;
-    }
-#endif
-#if !defined(HAVE_LIBZSTD)
-    if (zstd) {
-        ERR_POST(Warning << "Zstd is not available on this platform, ignored.");
-        zstd = false;
-    }
-#endif
-
     // Set a random starting point
     unsigned int seed = (unsigned int)time(0);
     ERR_POST(Info << "Random seed = " << seed);

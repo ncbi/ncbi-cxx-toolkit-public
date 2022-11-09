@@ -94,14 +94,18 @@ public:
 
     /// Get compression level.
     ///
-    /// NOTE: BZip2 algorithm do not support zero level compression.
-    ///       So the "eLevel_NoCompression" will be translated to
-    ///       "eLevel_Lowest".
+    /// @note
+    ///   bzip2 doesn't support zero level compression, so eLevel_NoCompression
+    ///   will be translated to eLevel_Lowest.
     virtual ELevel GetLevel(void) const;
 
     /// Return default compression level for a compression algorithm
     virtual ELevel GetDefaultLevel(void) const
         { return eLevel_VeryHigh; };
+
+    /// Check if compression have support for a specified feature
+    virtual bool HaveSupport(ESupportFeature feature);
+
 
     //=======================================================================
     // Utility functions 
@@ -156,6 +160,10 @@ public:
         /* out */            size_t* dst_len
     );
 
+    /// @warning No support for BZip2. Always return 0.
+    /// @sa HaveSupport
+    virtual size_t EstimateCompressionBufferSize(size_t src_len) { return 0; };
+
     /// Get recommended buffer sizes for stream/file I/O.
     ///
     /// These buffer sizes are softly recommended. They are not required, (de)compression
@@ -166,8 +174,8 @@ public:
     /// I/O buffer sizes, kCompressionDefaultBufSize will be used.
     /// @param round_up
     ///   If specified, round up a returned value by specified amount. 
-    ///   Sp all values will be divisible to this parameter.
-    ///   Usuful for better memory management. 
+    ///   Useful for better memory management. For example you can round up to virtual
+    ///   memory page size.
     /// @return
     ///   Structure with recommended buffer sizes.
     /// @note
@@ -233,6 +241,13 @@ public:
         size_t        file_io_bufsize           = kCompressionDefaultBufSize,
         size_t        decompression_in_bufsize  = kCompressionDefaultBufSize,
         size_t        decompression_out_bufsize = kCompressionDefaultBufSize
+    );
+
+    /// @warning No dictionary support for bzip2. Always return FALSE.
+    /// @sa HaveSupport
+    virtual bool SetDictionary(
+        CCompressionDictionary& dict, 
+        ENcbiOwnership          own = eNoOwnership
     );
 
     //=======================================================================
@@ -319,6 +334,13 @@ public:
     // JIRA: CXX-12640
 
     /// Constructor.
+    ///
+    /// Automatically calls Open() with given file name, mode and compression level.
+    /// @note
+    ///   This constructor don't allow to use any advanced compression parameters
+    ///   or a dictionary. If you need to set any of them, please use simplified
+    ///   conventional constructor, set advanced parameters and use Open().
+    /// 
     CBZip2CompressionFile(
         const string& file_name,
         EMode         mode,
@@ -364,6 +386,10 @@ public:
     ///   TRUE if file was opened successfully or FALSE otherwise.
     /// @sa
     ///   CBZip2Compression, Read, Write, Close
+    /// @note
+    ///   All advanced compression parameters or a dictionary should be set before
+    ///   Open() method, otherwise they will not have any effect.
+    /// 
     virtual bool Open(
         const string& file_name, 
         EMode         mode,
@@ -384,6 +410,7 @@ public:
     ///   The number of really read bytes can be less than requested.
     /// @sa
     ///   Open, Write, Close
+    ///
     virtual long Read(void* buf, size_t len);
 
     /// Write data to compressed file.
@@ -398,6 +425,7 @@ public:
     ///   Number of bytes actually written or -1 for error.
     /// @sa
     ///   Open, Read, Close
+    ///
     virtual long Write(const void* buf, size_t len);
 
     /// Close compressed file.
@@ -407,6 +435,7 @@ public:
     ///   TRUE on success, FALSE on error.
     /// @sa
     ///   Open, Read, Write
+    ///
     virtual bool Close(void);
 
 protected:

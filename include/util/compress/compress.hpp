@@ -114,6 +114,7 @@ const streamsize kCompressionDefaultBufSize = 16*1024;
 // Forward declaration
 class CCompressionFile;
 class CCompressionStreambuf;
+class CCompressionDictionary;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -181,28 +182,45 @@ public:
     virtual TFlags GetFlags(void) const = 0;
     virtual void   SetFlags(TFlags flags) = 0;
 
-#if 0
-    /// Algorithm implememntation feature
-    /// Please don't change values  
-    enum EFeature {
-        f_NoCompressionLevel = 1,   ///< No compression method (copy "as is")
-        f_Dictionary         = 2,   ///< Dictionaries
-        f_EstimateCompressionBufferSize
+
+    //=======================================================================
+    // Supported features
+    //=======================================================================
+
+    /// Supported features
+    enum ESupportFeature {
+        /// Check if current compression method have a real support for 
+        /// eLevel_NoCompression, so it can store data without compression.
+        /// If this method of compression is not supported, the lowest
+        /// supported level will be used instead, automatically.
+        /// @sa GetLevel, ELevel
+        eFeature_NoCompression,
+
+        /// Check if current compression have support for dictionaries.
+        /// Without support SetDictionary() always return FALSE.
+        /// @sa SetDictionary
+        eFeature_Dictionary,
+
+        /// Check if current compression have implementation for
+        /// the EstimateCompressionBufferSize() method. 
+        /// Without support it always return 0.
+        /// @sa EstimateCompressionBufferSize, CompressBuffer
+        eFeature_EstimateCompressionBufferSize,
     };
-    /// Check if specified feature have support by a current compression
-    /// algorithm implememntation.
-    virtual bool HaveSupport(EFeature feature) = 0;
-#endif
 
-    //
+    /// Check if compression have support for a specified feature
+    virtual bool HaveSupport(ESupportFeature feature) = 0;
+
+
+    //=======================================================================
     // Utility functions 
-    //
+    //=======================================================================
 
-    // (De)compress the source buffer into the destination buffer.
-    // Return TRUE on success, FALSE on error.
-    // The compressor error code can be acquired via GetErrorCode() call.
-    // Notice that altogether the total size of the destination buffer must
-    // be little more then size of the source buffer. 
+    /// (De)compress the source buffer into the destination buffer.
+    /// Return TRUE on success, FALSE on error.
+    /// The compressor error code can be acquired via GetErrorCode() call.
+    /// Notice that altogether the total size of the destination buffer must
+    /// be little more then size of the source buffer. 
     virtual bool CompressBuffer(
         const void* src_buf, size_t  src_len,
         void*       dst_buf, size_t  dst_size,
@@ -215,8 +233,11 @@ public:
         /* out */            size_t* dst_len
     ) = 0;
 
-    // (De)compress file "src_file" and put result to file "dst_file".
-    // Return TRUE on success, FALSE on error.
+    /// Estimate buffer size for data compression (if supported).
+    virtual size_t EstimateCompressionBufferSize(size_t src_len) = 0;
+
+    /// (De)compress file "src_file" and put result to file "dst_file".
+    /// Return TRUE on success, FALSE on error.
     virtual bool CompressFile(
         const string& src_file,
         const string& dst_file,
@@ -230,6 +251,12 @@ public:
         size_t        file_io_bufsize         = kCompressionDefaultBufSize,
         size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
         size_t        compression_out_bufsize = kCompressionDefaultBufSize
+    ) = 0;
+
+    /// Set a dictionary for all compression/decompression operations (if supported).
+    virtual bool SetDictionary(
+        CCompressionDictionary& dict, 
+        ENcbiOwnership          own = eNoOwnership
     ) = 0;
 };
 
@@ -249,54 +276,55 @@ public:
     /// Return name and version of the compression library.
     virtual CVersionInfo GetVersion(void) const = 0;
 
-    // Get/set compression level.
-    // NOTE 1:  Changing compression level after compression has begun will
-    //          be ignored.
-    // NOTE 2:  If the level is not supported by the underlying algorithm,
-    //          then it will be translated to the nearest supported value.
+    /// Get/set compression level.
+    /// NOTE 1:  Changing compression level after compression has begun will
+    ///          be ignored.
+    /// NOTE 2:  If the level is not supported by the underlying algorithm,
+    ///          then it will be translated to the nearest supported value.
     virtual void   SetLevel(ELevel level);
     virtual ELevel GetLevel(void) const;
 
-    // Get compressor's internal status/error code and description
-    // for the last operation.
+    /// Get compressor's internal status/error code and description
+    /// for the last operation.
     virtual int    GetErrorCode(void) const;
     virtual string GetErrorDescription(void) const;
 
-    /// Get flags.
+    /// Get/set flags.
     virtual TFlags GetFlags(void) const;
-    /// Set flags.
     virtual void   SetFlags(TFlags flags);
 
-    /// Structure to get information about recommended buffer sizes for file/stream I/O
-    /// to tune up a (de)compression performance.
+    /// Structure to get information about recommended buffer sizes for 
+    /// file/stream I/O to tune up a (de)compression performance.
     /// @sa GetRecommendedBufferSizes
     struct SRecommendedBufferSizes {
-        size_t  compression_in;     ///< compression: recommended size for input buffer
-        size_t  compression_out;    ///< compression: recommended size for output buffer
-        size_t  decompression_in;   ///< decompression: recommended size for input buffer
-        size_t  decompression_out;  ///< decompression: recommended size for output buffer
+        size_t compression_in;     ///< compression: recommended size for input buffer
+        size_t compression_out;    ///< compression: recommended size for output buffer
+        size_t decompression_in;   ///< decompression: recommended size for input buffer
+        size_t decompression_out;  ///< decompression: recommended size for output buffer
 
         // Round up buffer size to a value divisible by 'precision'
         size_t RoundUp(size_t value, size_t precision);
     };
 
 protected:
-    // Universal file compression/decompression functions.
-    // Return TRUE on success, FALSE on error.
+    /// Set last action error/status code and description
+    void SetError(int status, const char* description = 0);
+    void SetError(int status, const string& description);
+
+    /// Universal file compression function.
+    /// Return TRUE on success, FALSE on error.
     virtual bool x_CompressFile(
         const string&     src_file,
         CCompressionFile& dst_file,
         size_t            file_io_bufsize = kCompressionDefaultBufSize
     );
+    /// Universal file decompression function.
+    /// Return TRUE on success, FALSE on error.
     virtual bool x_DecompressFile(
         CCompressionFile& src_file,
         const string&     dst_file,
         size_t            file_io_bufsize = kCompressionDefaultBufSize
     );
-
-    // Set last action error/status code and description
-    void SetError(int status, const char* description = 0);
-    void SetError(int status, const string& description);
 
 protected:
     /// Decompression mode (see fAllowTransparentRead flag).
@@ -305,14 +333,17 @@ protected:
         eMode_Decompress,      ///< Generic decompression
         eMode_TransparentRead  ///< Transparent read, the data is uncompressed
     };
-    /// Decompress mode (Decompress/TransparentRead/Unknown).
-    EDecompressMode m_DecompressMode;
+    EDecompressMode m_DecompressMode;  ///< Decompress mode (Decompress/TransparentRead/Unknown)
+
+    // Dictionary
+    CCompressionDictionary* m_Dict;    ///< Dictionary for compression/decompression
+    ENcbiOwnership          m_DictOwn; ///< Dictionary ownership
 
 private:
-    ELevel  m_Level;      // Compression level
-    int     m_ErrorCode;  // Last compressor action error/status
-    string  m_ErrorMsg;   // Last compressor action error message
-    TFlags  m_Flags;      // Bitwise OR of flags
+    ELevel  m_Level;      ///< Compression level
+    int     m_ErrorCode;  ///< Last compressor action error/status
+    string  m_ErrorMsg;   ///< Last compressor action error message
+    TFlags  m_Flags;      ///< Bitwise OR of flags
 
     // Friend classes
     friend class CCompressionStreambuf;
@@ -373,6 +404,51 @@ public:
 protected:
     TFile  m_File;   ///< File handler.
     EMode  m_Mode;   ///< File open mode.
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCompressionDictionary -- class to load/keep/manage compression dictionary data
+//
+
+class NCBI_XUTIL_EXPORT CCompressionDictionary
+{
+public:
+    /// Use dictionary data from a memory buffer.
+    /// CCompressionDictionary can take an ownership of allocated memory,
+    /// so it can be automatically deallocated when not needed anymore.
+    CCompressionDictionary(const void* buf, size_t size, ENcbiOwnership own = eNoOwnership);
+
+    /// Load a dictionary from file. 
+    /// Throw an CCompressionException on file opening error.
+    CCompressionDictionary(const string& filename);
+
+    /// Load a dictionary up to 'size' bytes from a stream 'is'.
+    /// Ideally, 'size' should be a real dictionary data size. 
+    /// You can use bigger sizes, but it will be less memory efficient.
+    CCompressionDictionary(istream& is, size_t size);
+
+    /// Destructor.
+    virtual ~CCompressionDictionary(void);
+
+    /// Return pointer to the dictionary data.
+    const void* GetData(void) { return m_Data; };
+
+    /// Return dictionary data size.
+    size_t GetSize(void) { return m_Size; };
+
+    /// Free used memory
+    void Free(void);
+
+protected:
+    size_t LoadFromStream(istream& is, size_t size);
+
+private:
+    const void*    m_Data;   ///< Pointer to the dictionary data
+    size_t         m_Size;   ///< Size of the data
+    ENcbiOwnership m_Own;    ///< Data ownership
 };
 
 

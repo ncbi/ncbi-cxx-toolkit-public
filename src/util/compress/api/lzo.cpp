@@ -207,6 +207,20 @@ void CLZOCompression::InitCompression(ELevel level)
 }
 
 
+bool CLZOCompression::HaveSupport(ESupportFeature feature)
+{
+    switch (feature) {
+    case eFeature_NoCompression:
+    case eFeature_Dictionary:
+        return false;
+    case eFeature_EstimateCompressionBufferSize:
+        return true;
+    }
+    return false;
+}
+
+
+
 // Header flag byte
 #define F_CRC       0x01  // bit 0 set: CRC present
 #define F_MTIME     0x02  // bit 1 set: file modification time present
@@ -522,7 +536,7 @@ bool CLZOCompression::CompressBuffer(
     }
     // LZO doesn't have "safe" algorithm for compression, so we should
     // check output buffer size to avoid memory overrun.
-    if ( dst_size < EstimateCompressionBufferSize(src_len, block_size) ) {
+    if ( dst_size < EstimateCompressionBufferSize(src_len, block_size, GetFlags()) ) {
         SetError(LZO_E_OUTPUT_OVERRUN, GetLZOErrorDescription(LZO_E_OUTPUT_OVERRUN));
     }
 
@@ -673,9 +687,9 @@ bool CLZOCompression::DecompressBuffer(
 // Applicable for next algorithms:
 //     LZO1, LZO1A, LZO1B, LZO1C, LZO1F, LZO1X, LZO1Y, LZO1Z.
 
-size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len, size_t block_size)
+size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len)
 {
-    return EstimateCompressionBufferSize(src_len, block_size, GetFlags());
+    return EstimateCompressionBufferSize(src_len, m_BlockSize, GetFlags());
 }
 
 
@@ -688,7 +702,7 @@ size_t CLZOCompression::EstimateCompressionBufferSize(size_t src_len,
     size_t n = 0;
     size_t n_blocks = 0;
     if ( !block_size) {
-        block_size = m_BlockSize;
+        block_size = GetBlockSizeDefault();
     }
     // All full blocks
     n_blocks = src_len / block_size;
@@ -787,6 +801,13 @@ bool CLZOCompression::DecompressFile(const string& src_file,
     bool status = cf.Close();
     SetError(cf.GetErrorCode(), cf.GetErrorDescription());
     return status;
+}
+
+
+bool CLZOCompression::SetDictionary(CCompressionDictionary&, ENcbiOwnership)
+{
+    SetError(LZO_E_ERROR, "No dictionary support");
+    return false;
 }
 
 

@@ -96,10 +96,13 @@ private:
     void x_CreateFile(const string& filename, const char* buf, size_t len);
   
 private:
+    // Available tests
+    bool bz2, lzo, z, zstd;
+
     // Path to store working files,see -path command line argument;
     // current directory by default.
     string m_Dir;
-    
+
     // Auxiliary members for "big data" tests support
     bool   m_AllowIstrstream;   // allow using CNcbiIstrstream
     bool   m_AllowOstrstream;   // allow using CNcbiOstrstream
@@ -172,22 +175,43 @@ int CTest::Run(void)
 
     // Define available tests
 
-    bool bz2  = (test == "all" || test == "bz2");
-    bool lzo  = (test == "all" || test == "lzo");
-    bool z    = (test == "all" || test == "z");
-    bool zstd = (test == "all" || test == "zstd");
-#if !defined(HAVE_LIBLZO)
+    bz2  = (test == "all" || test == "bz2");
+    lzo  = (test == "all" || test == "lzo");
+    z    = (test == "all" || test == "z");
+    zstd = (test == "all" || test == "zstd");
+
+    if (bz2) {
+        #if !defined(HAVE_LIBBZ2)
+            ERR_POST(Warning << "BZ2 is not available on this platform, ignored.");
+            bz2 = false;
+        #else
+            CBZip2Compression::Initialize();
+        #endif
+    }
     if (lzo) {
-        ERR_POST(Warning << "LZO is not available on this platform, ignored.");
-        lzo = false;
+        #if !defined(HAVE_LIBLZO)
+            ERR_POST(Warning << "LZO is not available on this platform, ignored.");
+            lzo = false;
+        #else
+            CLZOCompression::Initialize();
+        #endif
     }
-#endif
-#if !defined(HAVE_LIBZSTD)
+    if (z) {
+        #if !defined(HAVE_LIBZ)
+            ERR_POST(Warning << "Z is not available on this platform, ignored.");
+            z = false;
+        #else
+            CZipCompression::Initialize();
+        #endif
+    }
     if (zstd) {
-        ERR_POST(Warning << "Zstd is not available on this platform, ignored.");
-        zstd = false;
+        #if !defined(HAVE_LIBZSTD)
+            ERR_POST(Warning << "ZSTD is not available on this platform, ignored.");
+            zstd = false;
+        #else
+            CZstdCompression::Initialize();
+        #endif
     }
-#endif
 
     // Set a random starting point
     unsigned int seed = (unsigned int)time(0);
@@ -337,10 +361,10 @@ template<class TCompression,
 {
     const string kFileName_str = CFile::ConcatPath(m_Dir, "test_compress.compressed.file");
     const char* kFileName = kFileName_str.c_str();
-#if defined(HAVE_LIBLZO)
-    // Initialize LZO compression
-    assert(CLZOCompression::Initialize());
-#endif
+
+    // Initialize compression
+    assert(TCompression::Initialize());
+
 #   include "test_compress_run.inl"
 }
 
@@ -397,7 +421,7 @@ static const SEmptyInputDataTest s_EmptyInputDataTests[] =
     { CCompressStream::eZstd,  0 /* default flags */,              false,  0,  0 },
     { CCompressStream::eZstd,  CZstdCompression::fAllowEmptyData,  true,   9,  9 },
     { CCompressStream::eZstd,  CZstdCompression::fAllowEmptyData |
-                               CZstdCompression::fChecksum,        true,   9, 13 },
+                               CZstdCompression::fChecksum,        true,  13, 13 },
 #endif
     { CCompressStream::eZip,   0 /* default flags */,              false,  0,  0 },
     { CCompressStream::eZip,   CZipCompression::fGZip,             false,  0,  0 },
