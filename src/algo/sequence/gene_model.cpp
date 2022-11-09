@@ -165,6 +165,7 @@ static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
 CFeatureGenerator::SImplementation::SImplementation(CScope& scope)
     : m_scope(&scope)
     , m_flags(fDefaults)
+    , m_intron_stitch_threshold_flags(fBoth)
     , m_min_intron(kDefaultMinIntron)
     , m_allowed_unaligned(kDefaultAllowedUnaligned)
     , m_is_gnomon(false)
@@ -198,6 +199,11 @@ void CFeatureGenerator::SetFlags(TFeatureGeneratorFlags flags)
 CFeatureGenerator::TFeatureGeneratorFlags CFeatureGenerator::GetFlags() const
 {
     return m_impl->m_flags;
+}
+
+void CFeatureGenerator::SetIntronStitchThresholdFlags(EIntronStitchThresholdFlags flags)
+{
+    m_impl->m_intron_stitch_threshold_flags = flags;
 }
 
 void CFeatureGenerator::SetMinIntron(TSeqPos value)
