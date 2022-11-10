@@ -630,8 +630,8 @@ public:
 
 private:
     friend class CHttpSession_Base;
-    friend class CHttpSessionImpl1x;
-    friend class CHttpSessionImpl2;
+    friend class CHttpSession;
+    friend class CHttp2Session;
 
     CHttpRequest(CHttpSession_Base& session, const CUrl& url, EReqMethod method, const CHttpParam& param = {});
 
@@ -810,49 +810,24 @@ private:
 };
 
 
-template <class TImpl>
-class CHttpSessionTmpl : public CHttpSession_Base
+/// @sa CHttpSession_Base
+class NCBI_XCONNECT_EXPORT CHttpSession : public CHttpSession_Base
 {
 public:
-    CHttpSessionTmpl() : CHttpSession_Base(TImpl::GetDefaultProtocol()) {}
+    CHttpSession() : CHttpSession_Base(CHttpSession_Base::eHTTP_10) {}
 
 private:
-    void x_StartRequest(EProtocol protocol, CHttpRequest& req, bool use_form_data) override
-    {
-        TImpl::StartRequest(protocol, req, use_form_data);
-    }
-
-    bool x_Downgrade(CHttpResponse& resp, EProtocol& protocol) const override
-    {
-        return TImpl::Downgrade(resp, protocol);
-    }
-};
-
-
-class CHttpSessionImpl1x
-{
-    friend class CHttpSessionTmpl<CHttpSessionImpl1x>;
-
-    static auto GetDefaultProtocol()
-    {
-        return CHttpSession_Base::eHTTP_10;
-    }
-
-    static void StartRequest(CHttpSession_Base::EProtocol _DEBUG_ARG(protocol), CHttpRequest& req, bool use_form_data)
+    void x_StartRequest(EProtocol _DEBUG_ARG(protocol), CHttpRequest& req, bool use_form_data) override
     {
         _ASSERT(protocol <= CHttpSession_Base::eHTTP_11);
         req.x_InitConnection(use_form_data);
     }
 
-    static bool Downgrade(CHttpResponse&, CHttpSession_Base::EProtocol&)
+    bool x_Downgrade(CHttpResponse&, EProtocol&) const override
     {
         return false;
     }
 };
-
-
-/// @sa CHttpSession_Base
-using CHttpSession = CHttpSessionTmpl<CHttpSessionImpl1x>;
 
 
 /////////////////////////////////////////////////////////////////////////////
