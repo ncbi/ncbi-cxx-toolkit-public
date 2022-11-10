@@ -625,7 +625,12 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const SH2S_Request::SStart& request
     return &it->second;
 }
 
-void CHttpSessionImpl2::UpdateResponse(CHttpRequest& req, CHttpHeaders::THeaders headers)
+CHttp2Session::CHttp2Session() :
+    CHttpSession_Base(CHttpSession_Base::eHTTP_2)
+{
+}
+
+void CHttp2Session::UpdateResponse(CHttpRequest& req, CHttpHeaders::THeaders headers)
 {
     int status_code = 0;
     auto status = headers.find(":status");
@@ -638,7 +643,7 @@ void CHttpSessionImpl2::UpdateResponse(CHttpRequest& req, CHttpHeaders::THeaders
     req.x_UpdateResponse(move(headers), status_code, {});
 }
 
-void CHttpSessionImpl2::StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data)
+void CHttp2Session::x_StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data)
 {
     if (protocol <= CHttpSession_Base::eHTTP_11) {
         req.x_InitConnection(use_form_data);
@@ -662,7 +667,7 @@ void CHttpSessionImpl2::StartRequest(CHttpSession_Base::EProtocol protocol, CHtt
     req.x_InitConnection2(move(stream));
 }
 
-bool CHttpSessionImpl2::Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol)
+bool CHttp2Session::x_Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol) const
 {
     if (resp.GetStatusCode() || (protocol <= CHttpSession_Base::eHTTP_11)) {
         return false;
