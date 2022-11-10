@@ -74,6 +74,7 @@ public:
     [[nodiscard]] bool Read(THandlerIds handler);
     [[nodiscard]] bool ForEachBlob(THandlerBlobs);
     [[nodiscard]] bool ForEachEntry(CRef<CScope> scope, THandlerEntries handler);
+    [[nodiscard]] bool ReadNextBlob();
     static CSeq_entry_Handle GetParentEntry(CBioseq_Handle beh);
 
     CHugeAsnReader& GetReader()           { return *m_pReader; }
