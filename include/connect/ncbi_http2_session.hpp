@@ -36,19 +36,20 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XXCONNECT2_EXPORT CHttpSessionImpl2
+/// @sa CHttpSession_Base
+class NCBI_XXCONNECT2_EXPORT CHttp2Session : public CHttpSession_Base
 {
-    friend class CHttpSessionTmpl<CHttpSessionImpl2>;
+public:
+    CHttp2Session();
 
-    static auto GetDefaultProtocol() { return CHttpSession_Base::eHTTP_2; }
-    static void StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data);
+private:
+    void x_StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data) override;
+    bool x_Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol) const override;
+
     static void UpdateResponse(CHttpRequest& req, CHttpHeaders::THeaders headers);
-    static bool Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol);
 };
 
 
-/// @sa CHttpSession_Base
-using CHttp2Session = CHttpSessionTmpl<CHttpSessionImpl2>;
 
 
 END_NCBI_SCOPE
