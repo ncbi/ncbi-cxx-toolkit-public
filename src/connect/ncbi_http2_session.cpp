@@ -85,6 +85,7 @@ const char* SH2S_Event<TBase>::GetTypeName() const
 }
 
 SH2S_ReaderWriter::SH2S_ReaderWriter(TUpdateResponse update_response, shared_ptr<TH2S_ResponseQueue> response_queue, TH2S_RequestEvent request) :
+    m_Io(SH2S_Io::GetInstance()),
     m_UpdateResponse(update_response),
     m_ResponseQueue(move(response_queue))
 {
@@ -509,11 +510,11 @@ SH2S_IoCoordinator::~SH2S_IoCoordinator()
     m_Sessions.clear();
 }
 
-void SH2S_IoCoordinator::Process()
+void SH2S_IoCoordinator::Process(TH2S_RequestQueue& request_queue)
 {
     // Retrieve all events from the queue
     for (;;) {
-        auto queue_locked = SH2S_Io::GetInstance().request_queue.GetLock();
+        auto queue_locked = request_queue.GetLock();
 
         if (queue_locked->empty()) {
             break;
@@ -626,8 +627,14 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const SH2S_Request::SStart& request
 }
 
 CHttp2Session::CHttp2Session() :
-    CHttpSession_Base(CHttpSession_Base::eHTTP_2)
+    CHttpSession_Base(CHttpSession_Base::eHTTP_2),
+    m_ApiLock(GetApiLock())
 {
+}
+
+CHttp2Session::TApiLock CHttp2Session::GetApiLock()
+{
+    return SH2S_Io::GetInstance();
 }
 
 void CHttp2Session::UpdateResponse(CHttpRequest& req, CHttpHeaders::THeaders headers)
