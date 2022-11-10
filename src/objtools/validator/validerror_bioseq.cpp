@@ -35,105 +35,22 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimisc.hpp>
-#include <corelib/ncbi_autoinit.hpp>
 
-#include <objtools/validator/validerror_desc.hpp>
-#include <objtools/validator/validerror_descr.hpp>
-#include <objtools/validator/validerror_annot.hpp>
 #include <objtools/validator/validerror_bioseq.hpp>
 #include <objtools/validator/validator_context.hpp>
-#include <objtools/validator/utilities.hpp>
 #include <objtools/validator/dup_feats.hpp>
+#include <objtools/error_codes.hpp>
 
-#include <serial/enumvalues.hpp>
-#include <serial/iterator.hpp>
-
-#include <objects/general/Date.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
-#include <objects/pub/Pub.hpp>
-#include <objects/pub/Pub_equiv.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-#include <objects/biblio/PubMedId.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seq/Annot_descr.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/MolInfo.hpp>
-#include <objects/seq/Delta_ext.hpp>
-#include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Seg_ext.hpp>
-#include <objects/seq/Seq_hist.hpp>
-#include <objects/seq/Seq_hist_rec.hpp>
-#include <objects/seq/seq_id_handle.hpp>
-#include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/seqport_util.hpp>
-#include <objects/seq/IUPACaa.hpp>
-#include <objects/seq/IUPACna.hpp>
-#include <objects/seq/NCBI2na.hpp>
-#include <objects/seq/NCBI4na.hpp>
-#include <objects/seq/NCBI8aa.hpp>
-#include <objects/seq/NCBI8na.hpp>
-#include <objects/seq/NCBIeaa.hpp>
-#include <objects/seq/NCBIpaa.hpp>
-#include <objects/seq/NCBIpna.hpp>
-#include <objects/seq/NCBIstdaa.hpp>
-#include <objects/seq/GIBB_mol.hpp>
-#include <objects/seq/Pubdesc.hpp>
 
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-
-#include <objects/seqblock/GB_block.hpp>
-#include <objects/seqblock/EMBL_block.hpp>
-
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-
-#include <objects/seqres/Seq_graph.hpp>
-#include <objects/seqres/Real_graph.hpp>
-#include <objects/seqres/Int_graph.hpp>
-#include <objects/seqres/Byte_graph.hpp>
-
-#include <objects/misc/sequence_macros.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objects/taxon1/taxon1.hpp>
 
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/seq_descr_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/graph_ci.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seq_vector_ci.hpp>
-#include <objmgr/util/create_defline.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/util/feature.hpp>
-#include <objmgr/util/indexer.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/seq_entry_ci.hpp>
-#include <objmgr/annot_selector.hpp>
-#include <objmgr/seq_feat_handle.hpp>
-#include <objmgr/seq_annot_handle.hpp>
-#include <objtools/error_codes.hpp>
-#include <objtools/edit/struc_comm_field.hpp>
-#include <algorithm>
-#include <objmgr/seq_loc_mapper.hpp>
 #include <optional>
+
 
 #define NCBI_USE_ERRCODE_X   Objtools_Validator
 
@@ -9837,8 +9754,8 @@ void CValidError_bioseq::x_CheckSingleStrandedRNAViruses(
 }
 
 
-typedef map<string, string> TViralMap;
-static const TViralMap kViralStrandMap {
+MAKE_CONST_MAP(kViralStrandMap, string, string,
+{
     {"root",                                        "dsDNA"},
     {"Alphasatellitidae",                           "ssDNA"},
     {"Anelloviridae",                               "ssDNA(-)"},
@@ -9954,44 +9871,40 @@ static const TViralMap kViralStrandMap {
     {"unclassified dsDNA viruses",                  "dsDNA"},
     {"unclassified ssDNA bacterial viruses",        "ssDNA"},
     {"unclassified ssDNA viruses",                  "ssDNA"},
-    {"environmental samples",                       "unknown"}
-};
+    {"environmental samples",                       "unknown"},
+});
 
+typedef map<string, string> TViralMap;
 
-static TViralMap s_ViralTaxonMap;
-static const TViralMap* s_ViralMap = &kViralStrandMap;
-static volatile bool s_ViralMapInitialized;
-DEFINE_STATIC_FAST_MUTEX(s_ViralMapMutex);
+static TViralMap s_InitializeViralMap()
+{
+    //auto tax_update = m_Imp.SetContext().m_taxon_update;
+    try {
+        CTaxon1 tax;
+        CTaxon1::TInfoList moltypes;
+        TViralMap viral_map;
+        if ( tax.GetInheritedPropertyDefines( "genomic_moltype", moltypes ) ) {
+            string sName;
+            for (auto it: moltypes) {
+                if ( tax.GetScientificName(TAX_ID_FROM(TIntId, it->GetIval1()), sName ) ) {
+                    if ( it->GetIval2() == 1 ) {
+                        viral_map [sName] = it->GetSval();
+                    }
+                }
+            }
+        }
+        return viral_map;
+    } catch (const CException& e) {
+        // report if desired (at severity info or warning, probably)
+        LOG_POST_XX(Corelib_App, 1, e.GetMsg());
+    }
+
+    return {};
+}
 
 
 string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& lineage)
 {
-    if ( !s_ViralMapInitialized ) {
-        CFastMutexGuard GUARD(s_ViralMapMutex);
-        if ( !s_ViralMapInitialized ) {
-            try {
-                CTaxon1 tax;
-                CTaxon1::TInfoList moltypes;
-                if ( tax.GetInheritedPropertyDefines( "genomic_moltype", moltypes ) ) {
-                  for (auto it: moltypes) {
-                      string sName;
-                      if ( tax.GetScientificName(TAX_ID_FROM(TIntId, it->GetIval1()), sName ) ) {
-                          if ( it->GetIval2() == 1 ) {
-                              s_ViralTaxonMap [sName] = it->GetSval();
-                          }
-                      }
-                   }
-                }
-                if ( !s_ViralTaxonMap.empty() ) {
-                    s_ViralMap = &s_ViralTaxonMap;
-                }
-            } catch (CException&) {
-                // report if desired (at severity info or warning, probably)
-            }
-            s_ViralMapInitialized = true;
-        }
-    }
-
     // Retroviridae no longer in list
     if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS) {
         return "ssRNA-RT";
@@ -10025,8 +9938,16 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         return "ssRNA(+)";
     }
 
-    if (s_ViralMap) {
-        for (const auto & x : *s_ViralMap) {
+    static const auto s_ViralMap = s_InitializeViralMap();
+
+    if (s_ViralMap.empty()) {
+        for (const auto & x : kViralStrandMap) {
+            if (NStr::FindNoCase(lineage, x.first) != NPOS) {
+                return x.second;
+            }
+        }
+    } else {
+        for (const auto & x : s_ViralMap) {
             if (NStr::FindNoCase(lineage, x.first) != NPOS) {
                 return x.second;
             }
