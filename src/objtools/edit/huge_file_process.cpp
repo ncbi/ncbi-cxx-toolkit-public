@@ -182,6 +182,17 @@ bool CHugeFileProcess::Read(THandlerIds handler)
     return true;
 }
 
+bool CHugeFileProcess::ReadNextBlob()
+{
+    if (m_pReader->GetNextBlob()) {
+        m_pReader->FlattenGenbankSet();
+        return true;
+    }
+
+    return false;
+}
+
+
 bool CHugeFileProcess::ForEachBlob(THandlerBlobs handler)
 {
     while (m_pReader->GetNextBlob()) {
