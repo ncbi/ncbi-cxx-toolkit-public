@@ -233,7 +233,7 @@ struct SH2S_IoCoordinator
 {
     ~SH2S_IoCoordinator();
 
-    void Process();
+    void Process(TH2S_RequestQueue& request_queue);
 
 private:
     SH2S_Session* NewSession(const SH2S_Request::SStart& request);
@@ -248,7 +248,20 @@ struct SH2S_Io
     TH2S_RequestQueue request_queue;
     SThreadSafe<SH2S_IoCoordinator> coordinator;
 
-    static SH2S_Io& GetInstance() { static SH2S_Io io; return io; }
+    static shared_ptr<SH2S_Io> GetInstance()
+    {
+        static pair<mutex, weak_ptr<SH2S_Io>> io;
+
+        unique_lock<mutex> lock(io.first);
+        auto rv = io.second.lock();
+
+        if (!rv) {
+            rv = make_shared<SH2S_Io>();
+            io.second = rv;
+        }
+
+        return rv;
+    }
 };
 
 struct SH2S_ReaderWriter : IReaderWriter
@@ -284,11 +297,12 @@ private:
     void Push(TH2S_RequestEvent event)
     {
         H2S_RW_TRACE(m_ResponseQueue.get() << " push " << event);
-        SH2S_Io::GetInstance().request_queue.GetLock()->emplace(move(event));
+        m_Io->request_queue.GetLock()->emplace(move(event));
     }
 
-    void Process() { SH2S_Io::GetInstance().coordinator.GetLock()->Process(); }
+    void Process() { m_Io->coordinator.GetLock()->Process(m_Io->request_queue); }
 
+    shared_ptr<SH2S_Io> m_Io;
     TUpdateResponse m_UpdateResponse;
     shared_ptr<TH2S_ResponseQueue> m_ResponseQueue;
     TH2S_Data m_OutgoingData;

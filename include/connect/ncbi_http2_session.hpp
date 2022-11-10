@@ -42,11 +42,21 @@ class NCBI_XXCONNECT2_EXPORT CHttp2Session : public CHttpSession_Base
 public:
     CHttp2Session();
 
+    /// Get an API lock.
+    /// Holding this API lock is essential if numerous short-lived session instances are used.
+    /// It prevents an internal I/O implementation (TCP connections, HTTP sessions, etc)
+    /// from being destroyed (on destroying last remaining session instance)
+    /// and then re-created (with new session instance).
+    using TApiLock = shared_ptr<void>;
+    static TApiLock GetApiLock();
+
 private:
     void x_StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data) override;
     bool x_Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol) const override;
 
     static void UpdateResponse(CHttpRequest& req, CHttpHeaders::THeaders headers);
+
+    TApiLock m_ApiLock;
 };
 
 
