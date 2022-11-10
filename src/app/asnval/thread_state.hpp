@@ -99,46 +99,48 @@ protected:
 
     void ReadClassMember(CObjectIStream& in, const CObjectInfo::CMemberIterator& member);
 
-    CRef<CScope> BuildScope();
-    unique_ptr<CObjectIStream> OpenFile(TTypeInfo& asn_info);
+    CRef<CScope> BuildScope() const;
+    unique_ptr<CObjectIStream> OpenFile(TTypeInfo& asn_info, const string& filename) const;
 
     void PrintValidError(CConstRef<CValidError> errors);
     void PrintValidErrItem(const CValidErrItem& item);
-    CRef<CValidError> ReportReadFailure(const CException* p_exception);
+    CRef<CValidError> ReportReadFailure(const CException* p_exception) const;
 
-    CConstRef<CValidError> ReadAny(CRef<CBioseq>& obj);
-    CConstRef<CValidError> ReadAny(CRef<CSeq_entry>& obj);
-    CConstRef<CValidError> ReadAny(CRef<CBioseq_set>& obj);
-    CConstRef<CValidError> ReadAny(CRef<CSeq_feat>& obj);
-    CConstRef<CValidError> ReadAny(CRef<CBioSource>& obj);
-    CConstRef<CValidError> ReadAny(CRef<CPubdesc>& obj);
-    CConstRef<CValidError> ReadAny(CRef<CSeq_submit>& obj);
-
+    // batch mode processing
     void ProcessSSMReleaseFile();
     void ProcessBSSReleaseFile();
 
+    // traditional way of processing
     CConstRef<CValidError> ValidateInput(TTypeInfo asninfo);
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
-    CConstRef<CValidError> ProcessSeqDesc();
-    CConstRef<CValidError> ProcessBioseqset();
-    CConstRef<CValidError> ProcessBioseq();
-    CConstRef<CValidError> ProcessPubdesc();
-    CConstRef<CValidError> ProcessSeqEntry();
-    CConstRef<CValidError> ProcessSeqSubmit();
-    CConstRef<CValidError> ProcessSeqAnnot();
-    CConstRef<CValidError> ProcessSeqFeat();
-    CConstRef<CValidError> ProcessBioSource();
+    CConstRef<CValidError> ProcessSeqDesc(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessBioseqset(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessBioseq(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessPubdesc(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessSeqEntry(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessSeqSubmit(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessSeqAnnot(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessSeqFeat(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessBioSource(CRef<CSerialObject> serial);
 
     CConstRef<CValidError> ValidateAsync(
-        const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid, CRef<CSeq_entry> pEntry);
-    void ValidateOneHugeFile(const string& loader_name, bool use_mt);
+        const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid) const;
+
+    static CThreadExitData ValidateWorker(CAsnvalThreadState* _this,
+        const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid);
+
+    bool ValidateTraditionally(TTypeInfo asninfo);
+    bool ValidateBatchMode(TTypeInfo asninfo);
+    void ValidateOneHugeFile(edit::CHugeFileProcess& process);
+    void ValidateOneHugeBlob(edit::CHugeFileProcess& process);
+    void ValidateBlobAsync(const string& loader_name, edit::CHugeFileProcess& process);
+    void ValidateBlobSequential(const string& loader_name, edit::CHugeFileProcess& process);
 
     const CAppConfig& mAppConfig;
 
-    string mFilename;
     unique_ptr<CObjectIStream> mpIstr;
-    unique_ptr<edit::CHugeFileProcess> mpHugeFileProcess;
     ///
+    mutable
     CRef<CObjectManager> m_ObjMgr;
     unsigned int m_Options = 0;
     double m_Longest = 0;
