@@ -162,7 +162,7 @@ public:
 
     /// @warning No support for BZip2. Always return 0.
     /// @sa HaveSupport
-    virtual size_t EstimateCompressionBufferSize(size_t src_len) { return 0; };
+    virtual size_t EstimateCompressionBufferSize(size_t) { return 0; };
 
     /// Get recommended buffer sizes for stream/file I/O.
     ///
