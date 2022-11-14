@@ -88,6 +88,11 @@ class CPubseqGatewayFetchIpgReportRequest
         return {};
     }
 
+    bool HasIpg() const
+    {
+        return m_Ipg > 0;
+    }
+
     bool HasProtein() const
     {
         return m_ProteinAccession.has_value();
@@ -143,6 +148,16 @@ public:
 
     void SetConsistency(CassConsistency value);
     void SetPageSize(unsigned int value);
+
+    unsigned int GetPageSize() const
+    {
+        return m_PageSize;
+    }
+
+    CPubseqGatewayFetchIpgReportRequest GetRequest() const
+    {
+        return m_Request;
+    }
 
     // For testing only
     SIpgSubgroupsConfig GetSubgroupsConfig() const

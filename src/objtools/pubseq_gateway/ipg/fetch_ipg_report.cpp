@@ -217,7 +217,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                 m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                 // If accession is provided instead of IPG, resolve IPG, then return
                 // to the 'new task' state.
-                if (m_Request.GetIpg() == 0 && m_Request.HasProtein()) {
+                if (!m_Request.HasIpg() && m_Request.HasProtein()) {
                     m_QueryArr[0].query->SetSQL("SELECT ipg FROM " + GetKeySpace() + ".accession_to_ipg WHERE accession = ?", 1);
                     m_QueryArr[0].query->BindStr(0, m_Request.GetProtein());
                     SetupQueryCB3(m_QueryArr[0].query);
@@ -240,7 +240,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                     if (!m_QueryArr[0].query->IsEOF()) {
                         m_Request.SetIpg(m_QueryArr[0].query->FieldGetInt64Value(0));
                     }
-                    if (m_Request.GetIpg() > 0) {
+                    if (m_Request.HasIpg()) {
                         restarted = true;
                         m_State = eInit;
                     }
