@@ -239,12 +239,17 @@ static CRef<CCit_art> s_GetCitation(const CPubmedBookArticle& pubmed_article)
 static CRef<CMedline_entry> s_GetMedlineEntry(const CPubmedBookArticle& pubmed_article)
 {
     CRef<CMedline_entry> medline_entry(new CMedline_entry());
-    const auto& dates = pubmed_article.GetPubmedBookData().GetHistory().GetPubMedPubDate();
-    auto created_date_element = find_if(dates.begin(), dates.end(),
-            [](const CRef<CPubMedPubDate>& date_element) -> bool {
-            return date_element->GetAttlist().GetPubStatus() == CPubMedPubDate::C_Attlist::eAttlist_PubStatus_entrez; });
-    if (created_date_element != dates.end())
-        medline_entry->SetEm(*s_GetDateFromPubMedPubDate(**created_date_element));
+    if (pubmed_article.GetPubmedBookData().IsSetHistory()) {
+        const auto& dates = pubmed_article.GetPubmedBookData().GetHistory().GetPubMedPubDate();
+        auto created_date_element = find_if(dates.begin(), dates.end(),
+                [](const CRef<CPubMedPubDate>& date_element) -> bool {
+                return date_element->GetAttlist().GetPubStatus() == CPubMedPubDate::C_Attlist::eAttlist_PubStatus_entrez; });
+        if (created_date_element != dates.end())
+            medline_entry->SetEm(*s_GetDateFromPubMedPubDate(**created_date_element));
+    }
+    else {
+        medline_entry->SetEm(*s_GetDateFromPubDate(pubmed_article.GetBookDocument().GetBook().GetPubDate()));
+    }
     medline_entry->SetCit(*s_GetCitation(pubmed_article));
     if (pubmed_article.GetBookDocument().IsSetAbstract()) {
         string abstract_text = s_CleanupText(s_GetAbstractText(pubmed_article.GetBookDocument().GetAbstract()));
