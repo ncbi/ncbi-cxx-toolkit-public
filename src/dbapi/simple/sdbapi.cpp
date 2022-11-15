@@ -1745,7 +1745,7 @@ bool CSDB_UserHandler::HandleMessage(int severity, int msgnum,
                                      const string& message)
 {
     if (severity < 10  ||  (severity == 10  &&  msgnum == 0)) {
-        if (severity == 0) {
+        if (severity == 0  ||  (severity == 10  &&  msgnum == 0)) {
             m_Conn.m_PrintOutput.push_back(message);
             return !m_Conn.m_LogMinorMessages;
         } else if (m_Conn.m_LogMinorMessages) {
