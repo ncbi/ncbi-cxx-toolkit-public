@@ -1645,8 +1645,13 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
     } else if ( NStr::Equal (label_str, "Source Identifier") && NStr::Equal (source, "EMBL-EBI") ) {
-        result << "<a href=\"http://pfam.xfam.org/family/"
-               << data_str
+        string accn = data_str;
+        size_t pos = NStr::Find(accn, ".");
+        if (pos > 0) {
+            accn.erase(pos);
+        }
+        result << "<a href=\"https://www.ebi.ac.uk/interpro/entry/pfam/"
+               << accn
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
     } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (source, "NCBI SPARCLE") ) {
