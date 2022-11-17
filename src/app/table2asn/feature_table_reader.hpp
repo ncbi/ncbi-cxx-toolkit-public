@@ -65,7 +65,8 @@ private:
     void _MergeCDSFeatures_impl(objects::CSeq_entry& entry);
     CRef<objects::CSeq_entry> _TranslateProtein(
        const objects::CBioseq& bioseq,
-       objects::CSeq_feat& cd_feature);
+       objects::CSeq_feat& cd_feature,
+       list<CRef<CSeq_feat>>& seq_ftable);
 
     typedef map<string, CRef<objects::CSeq_feat>> TFeatMap;
     CRef<objects::feature::CFeatTree> m_Feat_Tree;
