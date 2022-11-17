@@ -145,3 +145,8 @@ ssl_cert_file={ssl_cert}
 ssl_key_file={ssl_key}
 ssl_ciphers=""
 
+[IPG]
+keyspace=psg_test_ipg_storage
+page_size=2
+enable_huge_ipg=true
+
