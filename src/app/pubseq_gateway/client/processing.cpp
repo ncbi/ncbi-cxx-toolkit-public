@@ -1505,6 +1505,7 @@ CJson_Document CProcessing::RequestSchema()
                         "bio_id" : { "$ref": "#/definitions/bio_id" },
                         "include_info": { "$ref": "#/definitions/include_info" },
                         "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
+                        "bio_id_resolution": { "type": "boolean" },
                         "context": { "$ref": "#/definitions/context" },
                         "user_args": { "$ref": "#/definitions/user_args" }
                     },

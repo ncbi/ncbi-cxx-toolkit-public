@@ -110,6 +110,9 @@
           "acc-substitution": "ACC substitution",
           "type": "Type of bio ID(s)"
         },
+        "flags": {
+          "no-bio-id-resolution": "Do not try to resolve provided bio ID(s) before use"
+        },
         "info flags": {
           "canonical-id": "Return canonical ID info",
           "name": "Use name for canonical ID info, if returned",
