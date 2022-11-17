@@ -804,6 +804,8 @@ void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
     } else if (!m_ResendTimeout.IsDefault()) {
         os << "&resend_timeout=" << m_ResendTimeout.GetAsDouble();
     }
+
+    os << s_GetBioIdResolution(m_BioIdResolution);
 }
 
 void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
