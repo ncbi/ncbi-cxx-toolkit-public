@@ -13,7 +13,9 @@
           "type": "Type part of bio ID"
         },
         "flags": {
-          "blob-only": "Output blob data only",
+          "blob-only": "Output blob data only"
+        },
+        "TSE flags": {
           "no-tse": "Return only the info, (excludes: slim-tse,smart-tse,whole-tse,orig-tse)",
           "slim-tse": "Return split info blob if available, or nothing, (excludes: no-tse,smart-tse,whole-tse,orig-tse)",
           "smart-tse": "Return split info blob if available, or original blob, (excludes: no-tse,slim-tse,whole-tse,orig-tse)",
@@ -33,7 +35,9 @@
           "output-fmt": "Format for blob data to return in (instead of raw data), (accepts: asn|asnb|json|xml), (requires: blob-only)"
         },
         "flags": {
-          "blob-only": "Output blob data only",
+          "blob-only": "Output blob data only"
+        },
+        "TSE flags": {
           "no-tse": "Return only the info, (excludes: slim-tse,smart-tse,whole-tse,orig-tse)",
           "slim-tse": "Return split info blob if available, or nothing, (excludes: no-tse,smart-tse,whole-tse,orig-tse)",
           "smart-tse": "Return split info blob if available, or original blob, (excludes: no-tse,slim-tse,whole-tse,orig-tse)",
@@ -70,7 +74,9 @@
           "type": "Type of the first bio ID"
         },
         "flags": {
-          "annot-only": "Output annot info only",
+          "annot-only": "Output annot info only"
+        },
+        "TSE flags": {
           "no-tse": "Return only the info, (excludes: slim-tse,smart-tse,whole-tse,orig-tse)",
           "slim-tse": "Return split info blob if available, or nothing, (excludes: no-tse,smart-tse,whole-tse,orig-tse)",
           "smart-tse": "Return split info blob if available, or original blob, (excludes: no-tse,slim-tse,whole-tse,orig-tse)",
@@ -103,20 +109,20 @@
           "acc-substitution": "ACC substitution",
           "type": "Type of bio ID(s)"
         },
-        "flags": {
-          "all-info-except": "Return all info except explicitly specified by other flags",
-          "blob-id": "Return blob ID info",
+        "info flags": {
           "canonical-id": "Return canonical ID info",
-          "chain-state": "Return chain state info (in seq_state pair)",
-          "date-changed": "Return date changed info",
-          "gi": "Return GI",
-          "hash": "Return hash info",
-          "length": "Return length info",
-          "molecule-type": "Return molecule type info",
           "name": "Use name for canonical ID info, if returned",
           "other-ids": "Return other IDs info",
+          "molecule-type": "Return molecule type info",
+          "length": "Return length info",
+          "chain-state": "Return chain state info (in seq_state pair)",
           "state": "Return state info",
-          "tax-id": "Return tax ID info"
+          "blob-id": "Return blob ID info",
+          "tax-id": "Return tax ID info",
+          "hash": "Return hash info",
+          "date-changed": "Return date changed info",
+          "gi": "Return GI",
+          "all-info-except": "Return all info except explicitly specified by other flags"
         }
       }
     }
