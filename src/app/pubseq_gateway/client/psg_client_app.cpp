@@ -202,6 +202,7 @@ void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
+    arg_desc.AddFlag("no-bio-id-resolution", "Do not try to resolve provided bio ID(s) before use");
     s_InitDataOnly(arg_desc);
     s_InitDataFlags(arg_desc);
 }

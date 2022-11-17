@@ -458,7 +458,8 @@ template <class TReader>
 shared_ptr<CPSG_Request_Biodata> SRequestBuilder::SImpl<CPSG_Request_Biodata>::Build(const TReader& reader)
 {
     auto bio_id = reader.GetBioId();
-    auto request = Create(move(bio_id));
+    auto bio_id_resolution = reader.GetBioIdResolution();
+    auto request = Create(move(bio_id), bio_id_resolution);
     auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     auto exclude = [&](string blob_id) { request->ExcludeTSE(blob_id); };
