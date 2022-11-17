@@ -527,7 +527,7 @@ void CPSGS_OSGProcessorBase::AddRequest(const CRef<CID2_Request>& req0)
     CRef<CID2_Request> req = req0;
     if ( 1 ) {
         // set hops
-        auto hops = GetRequest()->GetRequest<SPSGS_RequestBase>().m_Hops + 1;
+        auto hops = GetRequest()->GetHops() + 1;
         CRef<CID2_Param> param(new CID2_Param);
         param->SetName("hops");
         param->SetValue().push_back(to_string(hops));

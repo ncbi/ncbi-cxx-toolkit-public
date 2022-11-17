@@ -835,6 +835,117 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
 }
 
 
+int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
+                                    shared_ptr<CPSGS_Reply>  reply)
+{
+    auto                    now = psg_clock_t::now();
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    if (x_IsShuttingDown(reply, now)) {
+        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
+    try {
+        vector<string>                  enabled_processors;
+        vector<string>                  disabled_processors;
+        bool                            processor_events = false;
+
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
+                                               disabled_processors)) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        processor_events = false;   // default
+        if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        CTempString                     protein;
+        if (!x_GetProtein(req, reply, now, protein)) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        CTempString                     nucleotide;
+        if (!x_GetNucleotide(req, reply, now, nucleotide)) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        int64_t                         ipg = -1;
+        if (!x_GetIPG(req, reply, now, ipg)) {
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        // Check that at least one of the mandatory parameters are provided
+        if (ipg == -1 && protein.empty()) {
+            x_InsufficientArguments(reply, now,
+                                    "At least one of the 'protein' and 'ipg' "
+                                    "parameters must be provided");
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
+        if (!x_GetTraceParameter(req, reply, now, trace)) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        // Parameters processing has finished
+        unique_ptr<SPSGS_RequestBase>
+            req(new SPSGS_IPGResolveRequest(
+                        string(protein.data(), protein.size()),
+                        ipg,
+                        string(nucleotide.data(), nucleotide.size()),
+                        trace, processor_events,
+                        enabled_processors, disabled_processors,
+                        now));
+        shared_ptr<CPSGS_Request>
+            request(new CPSGS_Request(move(req), context));
+
+        bool    have_proc = x_DispatchRequest(context, request, reply);
+        if (!have_proc) {
+            x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+                               reply->GetBytesSent());
+            m_Counters.Increment(CPSGSCounters::ePSGS_NoProcessorInstantiated);
+        }
+    } catch (const exception &  exc) {
+        x_Finish500(reply, now, ePSGS_UnknownError,
+                    "Exception when handling an IPG resolve request: " +
+                    string(exc.what()));
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+                           reply->GetBytesSent());
+    } catch (...) {
+        x_Finish500(reply, now, ePSGS_UnknownError,
+                    "Unknown exception when handling an IPG resolve request");
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+                           reply->GetBytesSent());
+    }
+
+    return 0;
+}
+
+
 int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {

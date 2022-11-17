@@ -269,6 +269,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
     }
+
     if (IPSGS_Processor::m_Reply->IsFinished()) {
         CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
                                         CPSGSCounters::ePSGS_UnknownError);

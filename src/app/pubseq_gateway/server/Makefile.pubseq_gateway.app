@@ -19,16 +19,18 @@ SRC = pubseq_gateway  \
       bioseq_info_record_selector split_info_utils split_info_cache \
       wgs_client wgs_processor cass_processor_dispatch snp_client snp_processor \
       psgs_seq_id_utils http_request http_connection http_reply http_proto \
-      tcp_daemon http_daemon url_param_utils dummy_processor
+      tcp_daemon http_daemon url_param_utils dummy_processor time_series_stat \
+      ipg_resolve
 
 LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) \
        $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) \
        $(NETWORK_LIBS) $(CMPRS_LIBS) $(SRA_SDK_SYSLIBS) $(GRPC_LIBS) $(ORIG_LIBS)
+
 CPPFLAGS = $(OPENSSL_INCLUDE) $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) \
            $(PROTOBUF_INCLUDE) $(CMPRS_INCLUDE) $(SRA_INCLUDE) $(ORIG_CPPFLAGS)
 LIB = $(SRAREAD_LIBS) dbsnp_ptis grpc_integration sraread \
       cdd_access id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) $(CMPRS_LIB) \
-      pub medline biblio general xser psg_cassandra psg_protobuf psg_cache \
+      pub medline biblio general xser psg_ipg psg_cassandra psg_protobuf psg_cache \
       xconnext connext xconnserv xconnect xcompress xutil xncbi
 
 REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV PROTOBUF -ICC $(GRPC_OPT)

@@ -81,6 +81,22 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
 }
 
 
+bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
+                                              const CTempString &  param_value,
+                                              int64_t &  converted,
+                                              string &  err_msg) const
+{
+    try {
+        converted = NStr::StringToLong(param_value);
+    } catch (...) {
+        err_msg = "Error converting '" + param_name + "' parameter "
+                  "to integer (received value: '" + string(param_value) + "')";
+        return false;
+    }
+    return true;
+}
+
+
 bool CPubseqGatewayApp::x_ConvertDoubleParameter(const string &  param_name,
                                                  const CTempString &  param_value,
                                                  double &  converted,
@@ -841,6 +857,75 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
         seq_id_type = -1;
     }
 
+    return true;
+}
+
+
+bool
+CPubseqGatewayApp::x_GetProtein(CHttpRequest &  req,
+                                shared_ptr<CPSGS_Reply>  reply,
+                                const psg_time_point_t &  now,
+                                CTempString &  protein)
+{
+    static string       kProteinParam = "protein";
+
+    SRequestParameter   protein_param = x_GetParam(req, kProteinParam);
+    if (protein_param.m_Found) {
+        if (!protein_param.m_Value.empty()) {
+            protein = protein_param.m_Value;
+        }
+    }
+    return true;
+}
+
+
+bool
+CPubseqGatewayApp::x_GetIPG(CHttpRequest &  req,
+                            shared_ptr<CPSGS_Reply>  reply,
+                            const psg_time_point_t &  now,
+                            int64_t &  ipg)
+{
+    static string       kIPGParam = "ipg";
+
+    SRequestParameter   ipg_param = x_GetParam(req, kIPGParam);
+    if (ipg_param.m_Found) {
+        string              err_msg;
+        if (!x_ConvertIntParameter(kIPGParam, ipg_param.m_Value,
+                                   ipg, err_msg)) {
+            x_MalformedArguments(reply, now, err_msg);
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            return false;
+        }
+
+        if (ipg <= 0) {
+            err_msg = "The '" + kIPGParam +
+                      "' value must be > 0";
+            x_MalformedArguments(reply, now, err_msg);
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            return false;
+        }
+    } else {
+        ipg = -1;
+    }
+
+    return true;
+}
+
+
+bool
+CPubseqGatewayApp::x_GetNucleotide(CHttpRequest &  req,
+                                   shared_ptr<CPSGS_Reply>  reply,
+                                   const psg_time_point_t &  now,
+                                   CTempString &  nucleotide)
+{
+    static string       kNucleotideParam = "nucleotide";
+
+    SRequestParameter   nucleotide_param = x_GetParam(req, kNucleotideParam);
+    if (nucleotide_param.m_Found) {
+        if (!nucleotide_param.m_Value.empty()) {
+            nucleotide = nucleotide_param.m_Value;
+        }
+    }
     return true;
 }
 

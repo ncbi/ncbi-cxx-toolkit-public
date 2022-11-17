@@ -152,6 +152,7 @@ static string   s_ExecTime = "exec_time=";
 static string   s_BioseqInfo = "bioseq_info";
 static string   s_BlobProp = "blob_prop";
 static string   s_Data = "data";
+static string   s_DataAndMeta = "data_and_meta";
 static string   s_Reply = "reply";
 static string   s_Blob = "blob";
 static string   s_Meta = "meta";
@@ -160,6 +161,7 @@ static string   s_Protobuf = "protobuf";
 static string   s_Json = "json";
 static string   s_BioseqNA = "bioseq_na";
 static string   s_AccVerHistory = "acc_ver_history";
+static string   s_IPGInfo = "ipg_info";
 static string   s_Excluded = "excluded";
 static string   s_InProgress = "inprogress";
 static string   s_Sent = "sent";
@@ -186,7 +188,9 @@ static string   s_AndBlobPropItem = "&" + s_BlobPropItem;
 static string   s_BioseqNAItem = s_ItemType + s_BioseqNA;
 static string   s_AndBioseqNAItem = "&" + s_BioseqNAItem;
 static string   s_AccVerHistoryItem = s_ItemType + s_AccVerHistory;
+static string   s_IPGInfoItem = s_ItemType + s_IPGInfo;
 static string   s_AndAccVerHistoryItem = "&" + s_AccVerHistoryItem;
+static string   s_AndIPGInfoItem = "&" + s_IPGInfoItem;
 static string   s_BlobItem = s_ItemType + s_Blob;
 static string   s_AndBlobItem = "&" + s_BlobItem;
 static string   s_ReplyItem = s_ItemType + s_Reply;
@@ -202,7 +206,9 @@ static string   s_AndLastModified = "&" + s_LastModified;
 static string   s_AndProgress = "&" + s_Progress;
 
 static string   s_DataChunk = s_ChunkType + s_Data;
+static string   s_DataAndMetaChunk = s_ChunkType + s_DataAndMeta;
 static string   s_AndDataChunk = "&" + s_DataChunk;
+static string   s_AndDataAndMetaChunk = "&" + s_DataAndMetaChunk;
 static string   s_MetaChunk = s_ChunkType + s_Meta;
 static string   s_AndMetaChunk = "&" + s_MetaChunk;
 static string   s_MessageChunk = s_ChunkType + s_Message;
@@ -1145,6 +1151,31 @@ string GetAccVerHistoryHeader(size_t  item_id,
 
     len = PSGToString(msg_size, buf);
     reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
+}
+
+
+string GetIPGResolveHeader(size_t  item_id,
+                           const string &  processor_id,
+                           size_t  msg_size)
+{
+    char        buf[64];
+    long        len;
+    string      reply(s_ReplyBegin);
+
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndIPGInfoItem)
+         .append(s_AndDataAndMetaChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndNChunks)
+         .append(1, '1')
          .append(1, '\n');
     return reply;
 }

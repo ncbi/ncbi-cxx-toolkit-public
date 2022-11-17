@@ -45,9 +45,10 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
+#include <objtools/pubseq_gateway/impl/ipg/fetch_ipg_report.hpp>
 
 USING_IDBLOB_SCOPE;
-
+using namespace ipg;
 
 class CPendingOperation;
 class CPSGS_Reply;
@@ -557,6 +558,37 @@ private:
     // ePSGS_ById2
     int64_t                 m_Id2Chunk;
     string                  m_Id2Info;
+};
+
+
+class CCassIPGFetch : public CCassFetch
+{
+public:
+    CCassIPGFetch(const SPSGS_IPGResolveRequest &  ipg_resolve_request)
+    {
+        m_FetchType = ePSGS_IPGResolveFetch;
+    }
+
+    CCassIPGFetch()
+    {}
+
+    virtual ~CCassIPGFetch()
+    {}
+
+    virtual string Serialize(void) const
+    {
+        return "CCassIPGFetch";
+    }
+
+public:
+    void SetLoader(CPubseqGatewayFetchIpgReport *  fetch)
+    { m_Loader.reset(fetch); }
+
+    CPubseqGatewayFetchIpgReport * GetLoader(void)
+    { return static_cast<CPubseqGatewayFetchIpgReport *>(m_Loader.get()); }
+
+public:
+    virtual void ResetCallbacks(void);
 };
 
 

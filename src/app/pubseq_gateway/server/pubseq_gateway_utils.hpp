@@ -332,6 +332,11 @@ string GetAccVerHistCompletionHeader(size_t  item_id,
                                      const string &  processor_id,
                                      size_t  chunk_count);
 
+// IPG resolve
+string GetIPGResolveHeader(size_t  item_id,
+                           const string &  processor_id,
+                           size_t  msg_size);
+
 // Reset the request context if necessary
 class CRequestContextResetter
 {

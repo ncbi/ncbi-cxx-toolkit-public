@@ -260,6 +260,33 @@ bool CPSGS_Request::NeedProcessorEvents(void)
 }
 
 
+int CPSGS_Request::GetHops(void)
+{
+    if (m_Request) {
+        switch (m_Request->GetRequestType()) {
+            case ePSGS_ResolveRequest:
+                return GetRequest<SPSGS_ResolveRequest>().m_Hops;
+            case ePSGS_BlobBySeqIdRequest:
+            case ePSGS_BlobBySatSatKeyRequest:
+            case ePSGS_AnnotationRequest:
+                return GetRequest<SPSGS_BlobRequestBase>().m_Hops;
+            case ePSGS_TSEChunkRequest:
+                return GetRequest<SPSGS_TSEChunkRequest>().m_Hops;
+            case ePSGS_AccessionVersionHistoryRequest:
+                return GetRequest<SPSGS_AccessionVersionHistoryRequest>().m_Hops;
+            case ePSGS_IPGResolveRequest:
+                break;
+            default:
+                break;
+        }
+
+        return 0;
+    }
+    NCBI_THROW(CPubseqGatewayException, eLogic,
+               "User request is not initialized");
+}
+
+
 string CPSGS_Request::GetName(void) const
 {
     if (m_Request)
@@ -295,7 +322,6 @@ string CPSGS_Request::GetLimitedProcessorsMessage(void)
 
 void SPSGS_RequestBase::AppendCommonParameters(CJsonNode &  json) const
 {
-    json.SetInteger("hops", m_Hops);
     json.SetString("trace", TraceToString(m_Trace));
     json.SetBoolean("processor events", m_ProcessorEvents);
 
@@ -329,6 +355,7 @@ CJsonNode SPSGS_ResolveRequest::Serialize(void) const
     json.SetString("output format", OutputFormatToString(m_OutputFormat));
     json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
     json.SetString("subst option", AccSubstitutioOptionToString(m_AccSubstOption));
+    json.SetInteger("hops", m_Hops);
     SPSGS_RequestBase::AppendCommonParameters(json);
     return json;
 }
@@ -340,6 +367,7 @@ void SPSGS_BlobRequestBase::AppendCommonParameters(CJsonNode &  json) const
     json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
     json.SetString("client id", m_ClientId);
     json.SetInteger("send blob if small", m_SendBlobIfSmall);
+    json.SetInteger("hops", m_Hops);
 }
 
 
@@ -418,6 +446,21 @@ CJsonNode SPSGS_AccessionVersionHistoryRequest::Serialize(void) const
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
     json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
+    json.SetInteger("hops", m_Hops);
+
+    SPSGS_RequestBase::AppendCommonParameters(json);
+    return json;
+}
+
+
+CJsonNode SPSGS_IPGResolveRequest::Serialize(void) const
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString("name", GetName());
+    json.SetString("protein", m_Protein);
+    json.SetInteger("ipg", m_IPG);
+    json.SetString("nucleotide", m_Nucleotide);
 
     SPSGS_RequestBase::AppendCommonParameters(json);
     return json;

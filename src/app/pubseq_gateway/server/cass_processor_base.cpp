@@ -374,6 +374,9 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
             case ePSGS_AccVerHistoryFetch:
                 app->GetCounters().Increment(CPSGSCounters::ePSGS_AccVerHistoryNotFound);
                 break;
+            case ePSGS_IPGResolveFetch:
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_IPGResolveNotFound);
+                break;
             case ePSGS_UnknownFetch:
                 break;
         }

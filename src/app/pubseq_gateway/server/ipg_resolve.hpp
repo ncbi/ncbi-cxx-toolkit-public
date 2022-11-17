@@ -1,5 +1,5 @@
-#ifndef PSGS_CASSPROCESSORDISPATCH__HPP
-#define PSGS_CASSPROCESSORDISPATCH__HPP
+#ifndef PSGS_IPGRESOLVE__HPP
+#define PSGS_IPGRESOLVE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,55 +28,58 @@
  *
  * Authors: Sergey Satskiy
  *
- * File Description: cassandra processor create dispatcher
+ * File Description: ipg resolve processor
  *
  */
 
-#include <corelib/request_status.hpp>
-#include <corelib/ncbidiag.hpp>
-
-#include "psgs_request.hpp"
-#include "psgs_reply.hpp"
-#include "ipsgs_processor.hpp"
-#include "resolve_processor.hpp"
-#include "annot_processor.hpp"
-#include "get_processor.hpp"
-#include "getblob_processor.hpp"
-#include "tse_chunk_processor.hpp"
-#include "accession_version_history_processor.hpp"
-#include "ipg_resolve.hpp"
-
+#include "cass_processor_base.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
+// Forward declaration
+class CCassFetch;
+class CCassIPGResolveFetch;
 
-class CPSGS_CassProcessorDispatcher : public IPSGS_Processor
+class CPSGS_IPGResolveProcessor : public CPSGS_CassProcessorBase
 {
 public:
-    CPSGS_CassProcessorDispatcher();
-    virtual ~CPSGS_CassProcessorDispatcher();
-
     virtual bool CanProcess(shared_ptr<CPSGS_Request> request,
-                            shared_ptr<CPSGS_Reply> reply) const override;
+                            shared_ptr<CPSGS_Reply> reply) const;
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                              shared_ptr<CPSGS_Reply> reply,
-                                             TProcessorPriority priority) const;
+                                             TProcessorPriority  priority) const;
     virtual void Process(void);
-    virtual void Cancel(void);
     virtual EPSGS_Status GetStatus(void);
     virtual string GetName(void) const;
     virtual string GetGroupName(void) const;
+    virtual void ProcessEvent(void);
+
+public:
+    CPSGS_IPGResolveProcessor();
+    CPSGS_IPGResolveProcessor(shared_ptr<CPSGS_Request> request,
+                              shared_ptr<CPSGS_Reply> reply,
+                              TProcessorPriority  priority);
+    virtual ~CPSGS_IPGResolveProcessor();
 
 private:
-    unique_ptr<CPSGS_ResolveProcessor>                  m_ResolveProcessor;
-    unique_ptr<CPSGS_GetProcessor>                      m_GetProcessor;
-    unique_ptr<CPSGS_GetBlobProcessor>                  m_GetBlobProcessor;
-    unique_ptr<CPSGS_AnnotProcessor>                    m_AnnotProcessor;
-    unique_ptr<CPSGS_TSEChunkProcessor>                 m_TSEChunkProcessor;
-    unique_ptr<CPSGS_AccessionVersionHistoryProcessor>  m_AccVerProcessor;
-    unique_ptr<CPSGS_IPGResolveProcessor>               m_IPGProcessor;
+    bool x_OnIPGResolveData(vector<CIpgStorageReportEntry> &&  page,
+                            bool  is_last,
+                            CCassIPGFetch *  fetch_details);
+    void x_OnIPGResolveError(CCassIPGFetch *  fetch_details,
+                             CRequestStatus::ECode  status,
+                             int  code,
+                             EDiagSev  severity,
+                             const string &  message);
+private:
+    void x_Peek(bool  need_wait);
+    bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
+                bool  need_wait);
+
+private:
+    SPSGS_IPGResolveRequest *   m_IPGResolveRequest;
+    size_t                      m_RecordCount;
 };
 
-#endif  // PSGS_CASSPROCESSORDISPATCH__HPP
+#endif  // PSGS_IPGRESOLVE__HPP
 

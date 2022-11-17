@@ -746,6 +746,9 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
         case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
             counters.Increment(CPSGSCounters::ePSGS_AccessionVersionHistory);
             break;
+        case CPSGS_Request::ePSGS_IPGResolveRequest:
+            counters.Increment(CPSGSCounters::ePSGS_IPGResolve);
+            break;
         default:
             break;
     }

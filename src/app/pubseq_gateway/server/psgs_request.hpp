@@ -110,6 +110,7 @@ public:
         ePSGS_AnnotationRequest,
         ePSGS_TSEChunkRequest,
         ePSGS_AccessionVersionHistoryRequest,
+        ePSGS_IPGResolveRequest,
 
         ePSGS_UnknownRequest
     };
@@ -123,6 +124,7 @@ public:
             case ePSGS_AnnotationRequest:               return "AnnotationRequest";
             case ePSGS_TSEChunkRequest:                 return "TSEChunkRequest";
             case ePSGS_AccessionVersionHistoryRequest:  return "AccessionVersionHistoryRequest";
+            case ePSGS_IPGResolveRequest:               return "IPGResolveRequest";
             case ePSGS_UnknownRequest:                  return "UnknownRequest";
             default: break;
         }
@@ -178,6 +180,7 @@ public:
     psg_time_point_t GetStartTimestamp(void) const;
     bool NeedTrace(void);
     bool NeedProcessorEvents(void);
+    int GetHops(void);
     virtual string GetName(void) const;
     virtual CJsonNode Serialize(void) const;
 
@@ -295,7 +298,6 @@ struct SPSGS_RequestBase
         return "UnknownTraceOptionValue";
     }
 
-    int                             m_Hops;
     EPSGS_Trace                     m_Trace;
     bool                            m_ProcessorEvents;
     psg_time_point_t                m_StartTimestamp;
@@ -303,19 +305,17 @@ struct SPSGS_RequestBase
     vector<string>                  m_DisabledProcessors;
 
     SPSGS_RequestBase() :
-        m_Hops(0),
         m_Trace(ePSGS_NoTracing),
         m_ProcessorEvents(false),
         m_StartTimestamp(psg_clock_t::now())
     {}
 
-    SPSGS_RequestBase(int  hops,
-                      EPSGS_Trace  trace,
+    SPSGS_RequestBase(EPSGS_Trace  trace,
                       bool  processor_events,
                       const vector<string> &  enabled_processors,
                       const vector<string> &  disabled_processors,
                       const psg_time_point_t &  start) :
-        m_Hops(hops), m_Trace(trace), m_ProcessorEvents(processor_events),
+        m_Trace(trace), m_ProcessorEvents(processor_events),
         m_StartTimestamp(start),
         m_EnabledProcessors(enabled_processors),
         m_DisabledProcessors(disabled_processors)
@@ -413,6 +413,7 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
     EPSGS_CacheAndDbUse         m_UseCache;
     EPSGS_AccSubstitutioOption  m_AccSubstOption;
     bool                        m_SeqIdResolve;
+    int                         m_Hops;
 
     SPSGS_ResolveRequest(const string &  seq_id,
                          int  seq_id_type,
@@ -427,7 +428,7 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
                          const vector<string> &  enabled_processors,
                          const vector<string> &  disabled_processors,
                          const psg_time_point_t &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace, processor_events,
+        SPSGS_RequestBase(trace, processor_events,
                           enabled_processors, disabled_processors,
                           start_timestamp),
         m_SeqId(seq_id), m_SeqIdType(seq_id_type),
@@ -435,7 +436,8 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
         m_OutputFormat(output_format),
         m_UseCache(use_cache),
         m_AccSubstOption(subst_option),
-        m_SeqIdResolve(seq_id_resolve)
+        m_SeqIdResolve(seq_id_resolve),
+        m_Hops(hops)
     {}
 
     SPSGS_ResolveRequest() :
@@ -444,7 +446,8 @@ struct SPSGS_ResolveRequest : public SPSGS_RequestBase
         m_OutputFormat(ePSGS_UnknownFormat),
         m_UseCache(ePSGS_UnknownUseCache),
         m_AccSubstOption(ePSGS_UnknownAccSubstitution),
-        m_SeqIdResolve(true)    // default
+        m_SeqIdResolve(true),   // default
+        m_Hops(0)
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
@@ -506,6 +509,8 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
     // is populated
     SPSGS_BlobId            m_BlobId;
 
+    int                     m_Hops;
+
     SPSGS_BlobRequestBase(EPSGS_TSEOption  tse_option,
                           EPSGS_CacheAndDbUse  use_cache,
                           const string &  client_id,
@@ -516,19 +521,21 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
                           const vector<string> &  enabled_processors,
                           const vector<string> &  disabled_processors,
                           const psg_time_point_t &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace, processor_events,
+        SPSGS_RequestBase(trace, processor_events,
                           enabled_processors, disabled_processors,
                           start_timestamp),
         m_TSEOption(tse_option),
         m_UseCache(use_cache),
         m_ClientId(client_id),
-        m_SendBlobIfSmall(send_blob_if_small)
+        m_SendBlobIfSmall(send_blob_if_small),
+        m_Hops(hops)
     {}
 
     SPSGS_BlobRequestBase() :
         m_TSEOption(ePSGS_UnknownTSE),
         m_UseCache(ePSGS_UnknownUseCache),
-        m_SendBlobIfSmall(0)
+        m_SendBlobIfSmall(0),
+        m_Hops(0)
     {}
 
     void AppendCommonParameters(CJsonNode &  json) const;
@@ -760,6 +767,7 @@ struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
     int64_t                             m_Id2Chunk;
     string                              m_Id2Info;
     EPSGS_CacheAndDbUse                 m_UseCache;
+    int                                 m_Hops;
 
     SPSGS_TSEChunkRequest(int64_t  id2_chunk,
                           const string &  id2_info,
@@ -770,17 +778,19 @@ struct SPSGS_TSEChunkRequest : public SPSGS_RequestBase
                           const vector<string> &  enabled_processors,
                           const vector<string> &  disabled_processors,
                           const psg_time_point_t &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace, processor_events,
+        SPSGS_RequestBase(trace, processor_events,
                           enabled_processors, disabled_processors,
                           start_timestamp),
         m_Id2Chunk(id2_chunk),
         m_Id2Info(id2_info),
-        m_UseCache(use_cache)
+        m_UseCache(use_cache),
+        m_Hops(hops)
     {}
 
     SPSGS_TSEChunkRequest() :
         m_Id2Chunk(INT64_MIN),
-        m_UseCache(ePSGS_UnknownUseCache)
+        m_UseCache(ePSGS_UnknownUseCache),
+        m_Hops(0)
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
@@ -807,6 +817,7 @@ struct SPSGS_AccessionVersionHistoryRequest : public SPSGS_RequestBase
     string                      m_SeqId;
     int                         m_SeqIdType;
     EPSGS_CacheAndDbUse         m_UseCache;
+    int                         m_Hops;
 
     SPSGS_AccessionVersionHistoryRequest(
                          const string &  seq_id,
@@ -818,16 +829,18 @@ struct SPSGS_AccessionVersionHistoryRequest : public SPSGS_RequestBase
                          const vector<string> &  enabled_processors,
                          const vector<string> &  disabled_processors,
                          const psg_time_point_t &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace, processor_events,
+        SPSGS_RequestBase(trace, processor_events,
                           enabled_processors, disabled_processors,
                           start_timestamp),
         m_SeqId(seq_id), m_SeqIdType(seq_id_type),
-        m_UseCache(use_cache)
+        m_UseCache(use_cache),
+        m_Hops(hops)
     {}
 
     SPSGS_AccessionVersionHistoryRequest() :
         m_SeqIdType(-1),
-        m_UseCache(ePSGS_UnknownUseCache)
+        m_UseCache(ePSGS_UnknownUseCache),
+        m_Hops(0)
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
@@ -846,6 +859,49 @@ struct SPSGS_AccessionVersionHistoryRequest : public SPSGS_RequestBase
     SPSGS_AccessionVersionHistoryRequest(SPSGS_AccessionVersionHistoryRequest &&) = default;
     SPSGS_AccessionVersionHistoryRequest &  operator=(const SPSGS_AccessionVersionHistoryRequest &) = default;
     SPSGS_AccessionVersionHistoryRequest &  operator=(SPSGS_AccessionVersionHistoryRequest &&) = default;
+};
+
+
+struct SPSGS_IPGResolveRequest : public SPSGS_RequestBase
+{
+    string      m_Protein;
+    int64_t     m_IPG;
+    string      m_Nucleotide;
+
+    SPSGS_IPGResolveRequest(const string &  protein,
+                            int64_t  ipg,
+                            const string &  nucleotide,
+                            EPSGS_Trace  trace,
+                            bool  processor_events,
+                            const vector<string> &  enabled_processors,
+                            const vector<string> &  disabled_processors,
+                            const psg_time_point_t &  start_timestamp) :
+        SPSGS_RequestBase(trace, processor_events,
+                          enabled_processors, disabled_processors,
+                          start_timestamp),
+        m_Protein(protein), m_IPG(ipg), m_Nucleotide(nucleotide)
+    {}
+
+    SPSGS_IPGResolveRequest() :
+        m_IPG(-1)
+    {}
+
+    virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
+    {
+        return CPSGS_Request::ePSGS_IPGResolveRequest;
+    }
+
+    virtual string GetName(void) const
+    {
+        return "IPG/resolve";
+    }
+
+    virtual CJsonNode Serialize(void) const;
+
+    SPSGS_IPGResolveRequest(const SPSGS_IPGResolveRequest &) = default;
+    SPSGS_IPGResolveRequest(SPSGS_IPGResolveRequest &&) = default;
+    SPSGS_IPGResolveRequest &  operator=(const SPSGS_IPGResolveRequest &) = default;
+    SPSGS_IPGResolveRequest &  operator=(SPSGS_IPGResolveRequest &&) = default;
 };
 
 #endif  // PSGS_REQUEST__HPP

@@ -319,6 +319,8 @@ public:
                                     const string &  content);
     void PrepareAccVerHistoryData(const string &  processor_id,
                                   const string &  content);
+    void PrepareIPGResolveData(const string &  processor_id,
+                               const string &  content);
     void PrepareRequestTimeoutMessage(const string &  msg);
     void PrepareProcessorProgressMessage(const string &  processor_id,
                                          const string &  progress_status);

@@ -62,6 +62,7 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_NewCassandraSatNamesMapping,      "NewCassandraSatNamesMapping" },
     { ePSGS_OpenCache,                        "OpenCache" },
     { ePSGS_NoCassandraPublicCommentsMapping, "NoCassandraPublicCommentsMapping" },
+    { ePSGS_NoIPGKeyspace,                    "NoIPGKeyspace" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

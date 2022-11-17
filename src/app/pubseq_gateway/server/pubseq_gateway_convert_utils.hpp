@@ -45,6 +45,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
+#include <objtools/pubseq_gateway/impl/ipg/fetch_ipg_report.hpp>
 
 #include "pubseq_gateway_types.hpp"
 #include "pubseq_gateway_utils.hpp"
@@ -52,6 +53,7 @@
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
+using namespace ipg;
 
 #include <string>
 using namespace std;
@@ -77,5 +79,7 @@ string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request);
 string ToJsonString(const CCassNAnnotTaskFetch &  request);
 string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request);
 string ToJsonString(const CCassAccVerHistoryTaskFetch &  request);
+string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request);
+string ToJsonString(const CIpgStorageReportEntry &  ipg_entry);
 
 #endif
