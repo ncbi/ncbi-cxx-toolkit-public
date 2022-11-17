@@ -556,6 +556,50 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(PSG)
 
+void s_CompilationTest()
+{
+    string seq_id;
+    CPSG_BioId bio_id(seq_id);
+    CPSG_BioIds bio_ids{bio_id};
+    CPSG_Request_NamedAnnotInfo::TAnnotNames annot_names;
+
+    auto user_context = make_shared<string>();
+    auto request_context = CRef<CRequestContext>();
+
+    CPSG_Request_Biodata biodata[] =
+    {
+        { seq_id },
+        { seq_id, user_context },
+        { seq_id, user_context, request_context },
+        { bio_id },
+        { bio_id, user_context },
+        { bio_id, user_context, request_context },
+    };
+
+    CPSG_Request_Resolve resolve[] =
+    {
+        { seq_id },
+        { seq_id, user_context },
+        { seq_id, user_context, request_context },
+        { bio_id },
+        { bio_id, user_context },
+        { bio_id, user_context, request_context },
+    };
+
+    CPSG_Request_NamedAnnotInfo named_annot[] =
+    {
+        { seq_id,  annot_names },
+        { seq_id,  annot_names, user_context },
+        { seq_id,  annot_names, user_context, request_context },
+        { bio_id,  annot_names },
+        { bio_id,  annot_names, user_context },
+        { bio_id,  annot_names, user_context, request_context },
+        { bio_ids, annot_names },
+        { bio_ids, annot_names, user_context },
+        { bio_ids, annot_names, user_context, request_context },
+    };
+}
+
 SPSG_UserArgs s_Build(SPSG_UserArgsBuilder& builder, const SPSG_UserArgs& request_args)
 {
     ostringstream os;
@@ -565,6 +609,8 @@ SPSG_UserArgs s_Build(SPSG_UserArgsBuilder& builder, const SPSG_UserArgs& reques
 
 BOOST_AUTO_TEST_CASE(UserArgsBuilder)
 {
+    s_CompilationTest();
+
     TPSG_RequestUserArgs::SetDefault("enable_processor=cdd&enable_processor=osg&hops=3");
     SPSG_UserArgsBuilder builder;
     SPSG_UserArgs request_user_args("enable_processor=snp&disable_processor=cdd&hops=2&use_cache=no");
