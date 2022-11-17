@@ -239,6 +239,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&
     arg_desc.AddExtra(1, kMax_UInt, "Bio ID(s)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type of the first bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
+    arg_desc.AddFlag("no-bio-id-resolution", "Do not try to resolve provided bio ID(s) before use");
     s_InitDataOnly(arg_desc, false);
     s_InitDataFlags(arg_desc);
 }
@@ -453,6 +454,7 @@ struct SRequestBuilder::SReader<CArgs>
     CPSG_ChunkId GetChunkId() const;
     vector<string> GetNamedAnnots() const { return input["na"].GetStringList(); }
     string GetAccSubstitution() const { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
+    EPSG_BioIdResolution GetBioIdResolution() const { return input["no-bio-id-resolution"].HasValue() ? EPSG_BioIdResolution::NoResolve : EPSG_BioIdResolution::Resolve; }
     CTimeout GetResendTimeout() const { return CTimeout::eDefault; }
     void ForEachTSE(TExclude exclude) const;
     SPSG_UserArgs GetUserArgs() const { return input["user-args"].HasValue() ? input["user-args"].AsString() : SPSG_UserArgs(); }

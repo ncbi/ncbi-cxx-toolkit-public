@@ -74,7 +74,8 @@
           "type": "Type of the first bio ID"
         },
         "flags": {
-          "annot-only": "Output annot info only"
+          "annot-only": "Output annot info only",
+          "no-bio-id-resolution": "Do not try to resolve provided bio ID(s) before use"
         },
         "TSE flags": {
           "no-tse": "Return only the info, (excludes: slim-tse,smart-tse,whole-tse,orig-tse)",
