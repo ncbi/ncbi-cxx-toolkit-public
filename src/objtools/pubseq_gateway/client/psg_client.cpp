@@ -834,6 +834,7 @@ void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
     if (include_info & CPSG_Request_Resolve::fGi)           os << "&gi=" << value;
 
     os << s_GetAccSubstitution(m_AccSubstitution);
+    os << s_GetBioIdResolution(m_BioIdResolution);
 }
 
 void CPSG_Request_Blob::x_GetAbsPathRef(ostream& os) const

@@ -584,6 +584,12 @@ void s_CompilationTest()
         { bio_id },
         { bio_id, user_context },
         { bio_id, user_context, request_context },
+        { seq_id, EPSG_BioIdResolution::NoResolve },
+        { seq_id, EPSG_BioIdResolution::NoResolve, user_context },
+        { seq_id, EPSG_BioIdResolution::NoResolve, user_context, request_context },
+        { bio_id, EPSG_BioIdResolution::NoResolve },
+        { bio_id, EPSG_BioIdResolution::NoResolve, user_context },
+        { bio_id, EPSG_BioIdResolution::NoResolve, user_context, request_context },
     };
 
     CPSG_Request_NamedAnnotInfo named_annot[] =
