@@ -327,6 +327,7 @@ def cgi_help_cmd(args):
     hide_keys = ['conffile', 'debug-printout', 'id-file', 'io-threads', 'logfile', 'max-streams', 'requests-per-io', 'worker-threads']
     hide_flags = ['dryrun', 'latency', 'all-latency', 'first-latency', 'last-latency', 'server-mode']
     tse_flags = ['no-tse', 'slim-tse', 'smart-tse', 'whole-tse', 'orig-tse']
+    info_flags = ['canonical-id', 'name', 'other-ids', 'molecule-type', 'length', 'chain-state', 'state', 'blob-id', 'tax-id', 'hash', 'date-changed', 'gi', 'all-info-except']
 
     check_binary(args)
     result = subprocess.run([args.binary, '-xmlhelp'], text=True, capture_output=True)
@@ -398,15 +399,28 @@ def cgi_help_cmd(args):
                 params.add(key_name, key_type, key_desc, req_name)
                 requests.param(req_name, key_name, key_desc)
 
+            req_flags = {}
+
             for flag in arg.iterfind('ns:flag', ns):
                 flag_name = flag.get('name')
 
                 if flag_name in hide_flags:
                     continue
+                elif flag_name in tse_flags:
+                    flag_type = 'TSE flags'
+                elif flag_name in info_flags:
+                    flag_type = 'info flags'
+                else:
+                    flag_type = 'flags'
 
                 flag_desc = flag.find('ns:description', ns).text
-                params.add(flag_name, 'flags', flag_desc, req_name)
-                requests.param(req_name, flag_name, flag_desc)
+                params.add(flag_name, flag_type, flag_desc, req_name)
+                req_flags.setdefault(flag_type, []).append([flag_name, flag_desc])
+
+            # Add flag groups in particular order
+            for flags in ['flags', 'info flags', 'TSE flags']:
+                for req_flag in req_flags.get(flags, []):
+                    requests.param(req_name, *req_flag)
 
     result_reqs = {}
     common_params = {}
@@ -426,10 +440,11 @@ def cgi_help_cmd(args):
             else:
                 data = result_req_data.setdefault('Request-specific Parameters', {}).setdefault(param_type, {})
 
-                # Add TSE flags together, in particular order
-                if param_name in tse_flags:
-                    if data.get(param_name) is None:
-                        data.update({name: '' for name in tse_flags})
+                # Add specific flags together, in particular order
+                for specific_flags in [info_flags, tse_flags]:
+                    if param_name in specific_flags:
+                        if data.get(param_name) is None:
+                            data.update({name: '' for name in specific_flags})
 
                 require = req_data['require'].get(param_name)
                 if require:
