@@ -825,6 +825,8 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(const CBioseq& bioseq, C
 
     for (auto prot_id: protein->GetId()) {
         prot_feat = MoveParentProt(seq_ftable, *prot_id);
+        if (prot_feat)
+            break;
     }
 
     CreateOrSetFTable(*protein, prot_feat);
