@@ -497,6 +497,29 @@ CAccVerHistoryRetrieveTiming::CAccVerHistoryRetrieveTiming(unsigned long  min_st
 }
 
 
+CIPGResolveRetrieveTiming::CIPGResolveRetrieveTiming(unsigned long  min_stat_value,
+                                                     unsigned long  max_stat_value,
+                                                     unsigned long  n_bins,
+                                                     TOnePSGTiming::EScaleType  stat_type,
+                                                     bool &  reset_to_default)
+{
+    reset_to_default = false;
+
+    try {
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+    } catch (...) {
+        reset_to_default = true;
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+    }
+}
+
+
 CResolutionTiming::CResolutionTiming(unsigned long  min_stat_value,
                                      unsigned long  max_stat_value,
                                      unsigned long  n_bins,
@@ -587,6 +610,11 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             unique_ptr<CAccVerHistoryRetrieveTiming>(
                 new CAccVerHistoryRetrieveTiming(min_stat_value, max_stat_value,
                                                  n_bins, scale_type, reset_to_default)));
+
+        m_IPGResolveRetrieveTiming.push_back(
+            unique_ptr<CIPGResolveRetrieveTiming>(
+                new CIPGResolveRetrieveTiming(min_stat_value, max_stat_value,
+                                              n_bins, scale_type, reset_to_default)));
     }
 
     m_HugeBlobRetrievalTiming.reset(
@@ -789,6 +817,19 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
           SInfo(m_AccVerHistoryRetrieveTiming[1].get(),
                 "Accession version history not found",
                 "The timing of an accession version history retrieval "
+                "when nothing was found"
+               )
+        },
+        { "IPGResolveRetrieseFound",
+          SInfo(m_IPGResolveRetrieveTiming[0].get(),
+                "IPG resolve found",
+                "The timing of an ipg successful retrieval"
+               )
+        },
+        { "IPGResolveRetrieveNotFound",
+          SInfo(m_IPGResolveRetrieveTiming[1].get(),
+                "IPG resolve not found",
+                "The timing of an ipg resolve retrieval "
                 "when nothing was found"
                )
         },
@@ -1041,6 +1082,9 @@ void COperationTiming::Register(EPSGOperation  operation,
         case eAccVerHistRetrieve:
             m_AccVerHistoryRetrieveTiming[index]->Add(mks);
             break;
+        case eIPGResolveRetrieve:
+            m_IPGResolveRetrieveTiming[index]->Add(mks);
+            break;
         case eResolutionError:
             m_ResolutionErrorTiming->Add(mks);
             break;
@@ -1078,6 +1122,7 @@ void COperationTiming::Rotate(void)
         m_SplitHistoryRetrieveTiming[k]->Rotate();
         m_PublicCommentRetrieveTiming[k]->Rotate();
         m_AccVerHistoryRetrieveTiming[k]->Rotate();
+        m_IPGResolveRetrieveTiming[k]->Rotate();
     }
 
     m_HugeBlobRetrievalTiming->Rotate();
@@ -1091,6 +1136,19 @@ void COperationTiming::Rotate(void)
 
     for (auto &  item : m_BlobRetrieveTiming)
         item->Rotate();
+}
+
+
+void COperationTiming::RotateRequestStat(void)
+{
+    lock_guard<mutex>   guard(m_RequestTimeSeriesLock);
+
+    m_IdGetStat.Rotate();
+    m_IdGetblobStat.Rotate();
+    m_IdResolveStat.Rotate();
+    m_IdAccVerHistStat.Rotate();
+    m_IdGetTSEChunkStat.Rotate();
+    m_IdGetNAStat.Rotate();
 }
 
 
@@ -1111,6 +1169,7 @@ void COperationTiming::Reset(void)
         m_SplitHistoryRetrieveTiming[k]->Reset();
         m_PublicCommentRetrieveTiming[k]->Reset();
         m_AccVerHistoryRetrieveTiming[k]->Reset();
+        m_IPGResolveRetrieveTiming[k]->Reset();
     }
 
     m_HugeBlobRetrievalTiming->Reset();

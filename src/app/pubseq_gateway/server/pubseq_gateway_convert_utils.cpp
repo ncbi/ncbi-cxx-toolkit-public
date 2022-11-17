@@ -83,6 +83,15 @@ static const string     kSplitVersionItem = "\"split_version\": ";
 static const string     kAnnotNamesItem = "\"annotation_names\": ";
 static const string     kDateItem = "\"date\": ";
 static const string     kChainItem = "\"chain\": ";
+static const string     kIPGItem = "\"ipg\": ";
+static const string     kProteinItem = "\"protein\": ";
+static const string     kNucleotideItem = "\"nucleotide\": ";
+static const string     kProductNameItem = "\"product_name\": ";
+static const string     kDivisionItem = "\"division\": ";
+static const string     kAssemblyItem = "\"assembly\": ";
+static const string     kStrainItem = "\"strain\": ";
+static const string     kBioProjectItem = "\"bio_project\": ";
+static const string     kGBStateItem = "\"gb_state\": ";
 
 
 
@@ -865,6 +874,38 @@ string ToJsonString(const CCassAccVerHistoryTaskFetch &  request)
 }
 
 
+string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
+{
+    string              json;
+    char                buf[64];
+    long                len;
+
+    json.append(1, '{')
+        .append(kRequestItem)
+        .append("\"IPG resolve request\"")
+
+        .append(kSep)
+        .append(kProteinItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(request.GetProtein()))
+        .append(1, '"')
+
+        .append(kSep)
+        .append(kNucleotideItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(request.GetNucleotide()))
+        .append(1, '"');
+
+    len = PSGToString(request.GetIpg(), buf);
+    json.append(kSep)
+        .append(kIPGItem)
+        .append(buf, len)
+
+        .append(1, '}');
+    return json;
+}
+
+
 string ToJsonString(const SAccVerHistRec &  history_record)
 {
     string              json;
@@ -911,6 +952,81 @@ string ToJsonString(const SAccVerHistRec &  history_record)
     len = PSGToString(history_record.chain, buf);
     json.append(kSep)
         .append(kChainItem)
+        .append(buf, len)
+
+        .append(1, '}');
+    return json;
+}
+
+
+string ToJsonString(const CIpgStorageReportEntry &  ipg_entry)
+{
+    string              json;
+    char                buf[64];
+    long                len;
+
+    // The incoming parameter is 'protein' so it is returned accordingly
+    json.append(1, '{')
+        .append(kProteinItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(ipg_entry.GetAccession()))
+        .append(1, '"');
+
+    len = PSGToString(ipg_entry.GetIpg(), buf);
+    json.append(kSep)
+        .append(kIPGItem)
+        .append(buf, len)
+
+    // The incoming parameter is 'nucleotide' so it is returned accordingly
+        .append(kSep)
+        .append(kNucleotideItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(ipg_entry.GetNucAccession()))
+        .append(1, '"')
+
+        .append(kSep)
+        .append(kProductNameItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(ipg_entry.GetProductName()))
+        .append(1, '"')
+
+        .append(kSep)
+        .append(kDivisionItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(ipg_entry.GetDiv()))
+        .append(1, '"')
+
+        .append(kSep)
+        .append(kAssemblyItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(ipg_entry.GetAssembly()))
+        .append(1, '"');
+
+    len = PSGToString(ipg_entry.GetTaxid(), buf);
+    json.append(kSep)
+        .append(kTaxIdItem)
+        .append(buf, len)
+
+        .append(kSep)
+        .append(kStrainItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(ipg_entry.GetStrain()))
+        .append(1, '"')
+
+        .append(kSep)
+        .append(kBioProjectItem)
+        .append(1, '"')
+        .append(NStr::JsonEncode(ipg_entry.GetBioProject()))
+        .append(1, '"');
+
+    len = PSGToString(ipg_entry.GetLength(), buf);
+    json.append(kSep)
+        .append(kLengthItem)
+        .append(buf, len);
+
+    len = PSGToString(ipg_entry.GetGbState(), buf);
+    json.append(kSep)
+        .append(kGBStateItem)
         .append(buf, len)
 
         .append(1, '}');

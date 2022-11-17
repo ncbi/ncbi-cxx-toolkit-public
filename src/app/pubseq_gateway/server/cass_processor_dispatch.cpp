@@ -48,6 +48,7 @@ CPSGS_CassProcessorDispatcher::CPSGS_CassProcessorDispatcher()
     m_AnnotProcessor.reset(new CPSGS_AnnotProcessor());
     m_TSEChunkProcessor.reset(new CPSGS_TSEChunkProcessor());
     m_AccVerProcessor.reset(new CPSGS_AccessionVersionHistoryProcessor());
+    m_IPGProcessor.reset(new CPSGS_IPGResolveProcessor());
 }
 
 
@@ -77,6 +78,9 @@ CPSGS_CassProcessorDispatcher::CanProcess(shared_ptr<CPSGS_Request> request,
 
     case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
         return m_AccVerProcessor->CanProcess(request, reply);
+
+    case CPSGS_Request::ePSGS_IPGResolveRequest:
+        return m_IPGProcessor->CanProcess(request, reply);
 
     default:
         break;
@@ -108,6 +112,9 @@ CPSGS_CassProcessorDispatcher::CreateProcessor(shared_ptr<CPSGS_Request> request
 
     case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
         return m_AccVerProcessor->CreateProcessor(request, reply, priority);
+
+    case CPSGS_Request::ePSGS_IPGResolveRequest:
+        return m_IPGProcessor->CreateProcessor(request, reply, priority);
 
     default:
         break;

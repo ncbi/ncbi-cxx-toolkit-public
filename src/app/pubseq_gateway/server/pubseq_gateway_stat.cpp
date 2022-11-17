@@ -127,6 +127,10 @@ CPSGSCounters::CPSGSCounters()
         new SCounterInfo(
             "AccessionVersionHistoryNotFoundCount", "Accession version history not found counter",
             "Number of times an accession version history was not found");
+    m_Counters[ePSGS_IPGResolveNotFound] =
+        new SCounterInfo(
+            "IPGResolveNotFoundCount", "IPG resolution not found counter",
+            "Number of times an IPG resolution was not found");
     m_Counters[ePSGS_MaxHopsExceededError] =
         new SCounterInfo(
             "MaxHopsExceededErrorCount", "Max hops exceeded error count",
@@ -171,6 +175,10 @@ CPSGSCounters::CPSGSCounters()
         new SCounterInfo(
             "AccessionVersionHistoryCount", "Accession version history requests counter",
             "Number of times a client requested accession version history");
+    m_Counters[ePSGS_IPGResolve] =
+        new SCounterInfo(
+            "IPGResolve", "IPG resolve request counter",
+            "Number of times a client requested IPG resolution");
     m_Counters[ePSGS_TestIORequest] =
         new SCounterInfo(
             "TestIORequestCount", "Test input/output requests counter",

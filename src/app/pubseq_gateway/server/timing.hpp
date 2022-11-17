@@ -35,6 +35,7 @@
 
 #include "pubseq_gateway_types.hpp"
 #include "psgs_request.hpp"
+#include "time_series_stat.hpp"
 
 #include <vector>
 #include <mutex>
@@ -79,7 +80,8 @@ enum EPSGOperation {
 
     eSplitHistoryRetrieve,
     ePublicCommentRetrieve,
-    eAccVerHistRetrieve
+    eAccVerHistRetrieve,
+    eIPGResolveRetrieve
 };
 
 
@@ -316,6 +318,18 @@ class CAccVerHistoryRetrieveTiming : public CPSGTimingBase
 };
 
 
+// IPG resolve resolution
+class CIPGResolveRetrieveTiming : public CPSGTimingBase
+{
+    public:
+        CIPGResolveRetrieveTiming(unsigned long  min_stat_value,
+                                  unsigned long  max_stat_value,
+                                  unsigned long  n_bins,
+                                  TOnePSGTiming::EScaleType  stat_type,
+                                  bool &  reset_to_default);
+};
+
+
 // Resolution
 class CResolutionTiming : public CPSGTimingBase
 {
@@ -348,6 +362,7 @@ class COperationTiming
 
     public:
         void Rotate(void);
+        void RotateRequestStat(void);
         void Reset(void);
         CJsonNode Serialize(int  most_ancient_time,
                             int  most_recent_time,
@@ -378,6 +393,7 @@ class COperationTiming
         vector<unique_ptr<CSplitHistoryRetrieveTiming>>     m_SplitHistoryRetrieveTiming;
         vector<unique_ptr<CPublicCommentRetrieveTiming>>    m_PublicCommentRetrieveTiming;
         vector<unique_ptr<CAccVerHistoryRetrieveTiming>>    m_AccVerHistoryRetrieveTiming;
+        vector<unique_ptr<CIPGResolveRetrieveTiming>>       m_IPGResolveRetrieveTiming;
 
         // The index is calculated basing on the blob size
         vector<unique_ptr<CBlobRetrieveTiming>>             m_BlobRetrieveTiming;
@@ -439,6 +455,14 @@ class COperationTiming
         map<string, SInfo>                                  m_NamesMap;
 
         mutable mutex                                       m_Lock; // reset-rotate-serialize lock
+
+        CRequestTimeSeries          m_IdGetStat;
+        CRequestTimeSeries          m_IdGetblobStat;
+        CRequestTimeSeries          m_IdResolveStat;
+        CRequestTimeSeries          m_IdAccVerHistStat;
+        CRequestTimeSeries          m_IdGetTSEChunkStat;
+        CRequestTimeSeries          m_IdGetNAStat;
+        mutable mutex               m_RequestTimeSeriesLock;    // Reset-rotate-serialize lock
 };
 
 #endif /* PUBSEQ_GATEWAY_TIMING__HPP */

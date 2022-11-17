@@ -165,6 +165,7 @@ public:
     int OnGetTSEChunk(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetNA(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnAccessionVersionHistory(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnIPGResolve(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnHealth(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnConfig(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnInfo(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
@@ -286,6 +287,16 @@ public:
         return m_ShutdownIfTooManyOpenFD;
     }
 
+    int GetPageSize(void) const
+    {
+        return m_IPGPageSize;
+    }
+
+    string GetIPGKeyspace(void) const
+    {
+        return m_IPGKeyspace;
+    }
+
     CPSGAlerts &  GetAlerts(void)
     {
         return m_Alerts;
@@ -394,6 +405,10 @@ private:
                                const CTempString &  param_value,
                                int &  converted,
                                string &  err_msg) const;
+    bool x_ConvertIntParameter(const string &  param_name,
+                               const CTempString &  param_value,
+                               int64_t &  converted,
+                               string &  err_msg) const;
     bool x_ConvertDoubleParameter(const string &  param_name,
                                   const CTempString &  param_value,
                                   double &  converted,
@@ -468,6 +483,18 @@ private:
                     shared_ptr<CPSGS_Reply>  reply,
                     const psg_time_point_t &  now,
                     vector<string> &  names);
+    bool x_GetProtein(CHttpRequest &  req,
+                      shared_ptr<CPSGS_Reply>  reply,
+                      const psg_time_point_t &  now,
+                      CTempString &  protein);
+    bool x_GetIPG(CHttpRequest &  req,
+                  shared_ptr<CPSGS_Reply>  reply,
+                  const psg_time_point_t &  now,
+                  int64_t &  ipg);
+    bool x_GetNucleotide(CHttpRequest &  req,
+                         shared_ptr<CPSGS_Reply>  reply,
+                         const psg_time_point_t &  now,
+                         CTempString &  nucleotide);
 
 private:
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
@@ -580,6 +607,11 @@ private:
     string                              m_SSLCiphers;
 
     size_t                              m_ShutdownIfTooManyOpenFD;
+
+    // IPG settings
+    string                              m_IPGKeyspace;
+    int                                 m_IPGPageSize;
+    bool                                m_EnableHugeIPG;
 
     // Mapping between the libuv thread id and the binder associated with the
     // libuv worker thread loop

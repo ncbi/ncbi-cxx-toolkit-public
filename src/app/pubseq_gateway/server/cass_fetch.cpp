@@ -196,3 +196,15 @@ void CCassPublicCommentFetch::ResetCallbacks(void)
     }
 }
 
+
+void CCassIPGFetch::ResetCallbacks(void)
+{
+    if (m_Loader) {
+        CPubseqGatewayFetchIpgReport *  loader =
+            static_cast<CPubseqGatewayFetchIpgReport *>(m_Loader.get());
+        loader->SetDataReadyCB(nullptr);
+        loader->SetConsumeCallback(nullptr);
+        loader->SetErrorCB(nullptr);
+    }
+}
+

@@ -1185,6 +1185,26 @@ void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
 }
 
 
+void CPSGS_Reply::PrepareIPGResolveData(const string &  processor_id,
+                                        const string &  content)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    size_t      item_id = GetItemId();
+    string      data_and_meta = GetIPGResolveHeader(item_id, processor_id,
+                                                    content.size());
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(data_and_meta.data()), data_and_meta.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(content.data()), content.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
 void CPSGS_Reply::PrepareRequestTimeoutMessage(const string &  msg)
 {
     // NOTE: no need to update the last activity

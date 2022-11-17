@@ -45,6 +45,7 @@
 #include <google/protobuf/stubs/common.h>
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
+#include <objtools/pubseq_gateway/impl/ipg/ipg_huge_report_helper.hpp>
 
 #include "http_request.hpp"
 #include "pubseq_gateway.hpp"
@@ -111,6 +112,9 @@ const size_t            kDefaultShutdownIfTooManyOpenFDforHTTPS = 8000;
 const size_t            kDefaultProcessorMaxConcurrency = 800;
 const size_t            kDefaultSplitInfoBlobCacheSize = 1000;
 const float             kSplitInfoBlobCacheSizeMultiplier = 0.8;    // Used to calculate low mark
+const string            kDefaultIPGKeyspace = "ipg_storage";
+const size_t            kDefaultIPGPageSize = 1024;
+const bool              kDefaultEnableHugeIPG = true;
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -340,6 +344,10 @@ void CPubseqGatewayApp::ParseArgs(void)
                                                     kDefaultShutdownIfTooManyOpenFDforHTTP);
     }
 
+    m_IPGKeyspace = registry.GetString("IPG", "keyspace", kDefaultIPGKeyspace);
+    m_IPGPageSize = registry.GetInt("IPG", "page_size", kDefaultIPGPageSize);
+    m_EnableHugeIPG = registry.GetBool("IPG", "enable_huge_ipg", kDefaultEnableHugeIPG);
+
     // It throws an exception in case of inability to start
     x_ValidateArgs();
 }
@@ -519,6 +527,9 @@ int CPubseqGatewayApp::Run(void)
                                         m_StatScaleType,
                                         m_SmallBlobSize));
 
+    // Setup IPG huge report
+    ipg::CPubseqGatewayHugeIpgReportHelper::SetHugeIpgDisabled(!m_EnableHugeIPG);
+
     vector<CHttpHandler>        http_handler;
     CHttpGetParser              get_parser;
 
@@ -557,6 +568,12 @@ int CPubseqGatewayApp::Run(void)
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
                 return OnAccessionVersionHistory(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/IPG/resolve",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnIPGResolve(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/health",
@@ -678,6 +695,12 @@ int CPubseqGatewayApp::Run(void)
                     if (++tick_no % m_TickSpan == 0) {
                         tick_no = 0;
                         this->m_Timing->Rotate();
+                    }
+
+                    static unsigned long    tick_no_for_1_min = 0;
+                    if (++tick_no_for_1_min % 60 == 0) {
+                        tick_no_for_1_min = 0;
+                        this->m_Timing->RotateRequestStat();
                     }
                 });
     } catch (const CException &  exc) {
@@ -958,6 +981,19 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
         if (m_SSLCiphers.empty()) {
             m_SSLCiphers = kDefaultSSLCiphers;
         }
+    }
+
+    if (m_IPGKeyspace.empty()) {
+        string  msg = "The [IPG]/keyspace is empty which effectively "
+                      "switches off the IPG resolve processor";
+        m_Alerts.Register(ePSGS_NoIPGKeyspace, msg);
+        PSG_WARNING(msg);
+    }
+    if (m_IPGPageSize <= 0) {
+        PSG_WARNING("The [IPG]/page_size value must be > 0. "
+                    "The [IPG]/page_size is switched to the default value: " +
+                    to_string(kDefaultIPGPageSize));
+        m_IPGPageSize = kDefaultIPGPageSize;
     }
 }
 
