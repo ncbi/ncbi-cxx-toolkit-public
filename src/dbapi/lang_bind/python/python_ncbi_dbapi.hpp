@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#if defined(NCBI_OS_MSWIN)
-#include <corecrt.h>
-#endif
-
 #include "pythonpp/pythonpp_ext.hpp"
 #include "pythonpp/pythonpp_dict.hpp"
 
