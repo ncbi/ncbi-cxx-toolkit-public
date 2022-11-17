@@ -359,6 +359,7 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     CPSG_ChunkId GetChunkId() const;
     vector<string> GetNamedAnnots() const;
     string GetAccSubstitution() const { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
+    EPSG_BioIdResolution GetBioIdResolution() const { return input.has("bio_id_resolution") && !input["bio_id_resolution"].GetValue().GetBool() ? EPSG_BioIdResolution::NoResolve : EPSG_BioIdResolution::Resolve; }
     CTimeout GetResendTimeout() const { return !input.has("resend_timeout") ? CTimeout::eDefault : CTimeout(input["resend_timeout"].GetValue().GetDouble()); }
     void ForEachTSE(TExclude exclude) const;
     SPSG_UserArgs GetUserArgs() const { return input.has("user_args") ? input["user_args"].GetValue().GetString() : SPSG_UserArgs(); }
@@ -502,7 +503,8 @@ shared_ptr<CPSG_Request_NamedAnnotInfo> SRequestBuilder::SImpl<CPSG_Request_Name
 {
     auto bio_ids = reader.GetBioIds();
     auto named_annots = reader.GetNamedAnnots();
-    auto request = Create(move(bio_ids), move(named_annots));
+    auto bio_id_resolution = reader.GetBioIdResolution();
+    auto request = Create(move(bio_ids), move(named_annots), bio_id_resolution);
     auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     SetAccSubstitution(request, reader.GetAccSubstitution());
