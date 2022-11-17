@@ -377,15 +377,27 @@ private:
 class CPSG_Request_Resolve : public CPSG_Request
 {
 public:
-    /// 
-    CPSG_Request_Resolve(CPSG_BioId       bio_id,
-                         shared_ptr<void> user_context = {},
-                         CRef<CRequestContext> request_context = {})
-        : CPSG_Request(user_context, request_context),
-          m_BioId(bio_id)
+    /// @param bio_id
+    ///  ID of the bioseq
+    /// @param bio_id_resolution
+    ///  Whether to try to resolve using provided ID (or use it as-is)
+    CPSG_Request_Resolve(CPSG_BioId             bio_id,
+                         EPSG_BioIdResolution   bio_id_resolution,
+                         shared_ptr<void>       user_context = {},
+                         CRef<CRequestContext>  request_context = {})
+        : CPSG_Request(move(user_context), move(request_context)),
+          m_BioId(move(bio_id)),
+          m_BioIdResolution(bio_id_resolution)
+    {}
+
+    CPSG_Request_Resolve(CPSG_BioId             bio_id,
+                         shared_ptr<void>       user_context = {},
+                         CRef<CRequestContext>  request_context = {})
+        : CPSG_Request_Resolve(move(bio_id), EPSG_BioIdResolution::Resolve, move(user_context), move(request_context))
     {}
 
     const CPSG_BioId& GetBioId() const { return m_BioId; }
+    EPSG_BioIdResolution GetBioIdResolution() const { return m_BioIdResolution; }
 
     /// Specify which info and data is needed
     enum EIncludeInfo : unsigned {
@@ -418,6 +430,7 @@ private:
     void x_GetAbsPathRef(ostream&) const override;
 
     CPSG_BioId    m_BioId;
+    EPSG_BioIdResolution m_BioIdResolution;
     TIncludeInfo  m_IncludeInfo = TIncludeInfo(0);
     EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
 };
