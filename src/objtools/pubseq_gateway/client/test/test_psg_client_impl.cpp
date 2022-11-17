@@ -597,6 +597,15 @@ void s_CompilationTest()
         { bio_ids, annot_names },
         { bio_ids, annot_names, user_context },
         { bio_ids, annot_names, user_context, request_context },
+        { seq_id,  annot_names, EPSG_BioIdResolution::NoResolve },
+        { seq_id,  annot_names, EPSG_BioIdResolution::NoResolve, user_context },
+        { seq_id,  annot_names, EPSG_BioIdResolution::NoResolve, user_context, request_context },
+        { bio_id,  annot_names, EPSG_BioIdResolution::NoResolve },
+        { bio_id,  annot_names, EPSG_BioIdResolution::NoResolve, user_context },
+        { bio_id,  annot_names, EPSG_BioIdResolution::NoResolve, user_context, request_context },
+        { bio_ids, annot_names, EPSG_BioIdResolution::NoResolve },
+        { bio_ids, annot_names, EPSG_BioIdResolution::NoResolve, user_context },
+        { bio_ids, annot_names, EPSG_BioIdResolution::NoResolve, user_context, request_context },
     };
 }
 
