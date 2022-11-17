@@ -820,7 +820,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "when nothing was found"
                )
         },
-        { "IPGResolveRetrieseFound",
+        { "IPGResolveRetrieveFound",
           SInfo(m_IPGResolveRetrieveTiming[0].get(),
                 "IPG resolve found",
                 "The timing of an ipg successful retrieval"
