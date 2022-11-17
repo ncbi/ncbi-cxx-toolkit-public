@@ -294,6 +294,14 @@ enum class EPSG_AccSubstitution {
 
 
 
+/// Whether to try to resolve provided seq-ids before use
+enum class EPSG_BioIdResolution {
+    Resolve,    ///< Try to resolve provided seq-ids
+    NoResolve,  ///< Use provided seq-ids as is
+};
+
+
+
 /// Request to the PSG server (by bio-id, for a biodata specific info and data)
 ///
 
@@ -463,18 +471,29 @@ public:
     ///  IDs (aliases) of the bioseq
     /// @param annot_names
     ///  List of NAs for which to request the metainfo
+    /// @param bio_id_resolution
+    ///  Whether to try to resolve using provided IDs (or use them as-is)
     CPSG_Request_NamedAnnotInfo(CPSG_BioIds             bio_ids,
                                 TAnnotNames             annot_names,
+                                EPSG_BioIdResolution    bio_id_resolution,
                                 shared_ptr<void>        user_context = {},
                                 CRef<CRequestContext>   request_context = {})
         : CPSG_Request(move(user_context), move(request_context)),
           m_BioIds(move(bio_ids)),
-          m_AnnotNames(move(annot_names))
+          m_AnnotNames(move(annot_names)),
+          m_BioIdResolution(bio_id_resolution)
     {
         if (m_BioIds.empty()) {
             NCBI_THROW(CPSG_Exception, eParameterMissing, "bio_ids cannot be empty");
         }
     }
+
+    CPSG_Request_NamedAnnotInfo(CPSG_BioIds             bio_ids,
+                                TAnnotNames             annot_names,
+                                shared_ptr<void>        user_context = {},
+                                CRef<CRequestContext>   request_context = {})
+        : CPSG_Request_NamedAnnotInfo(move(bio_ids), move(annot_names), EPSG_BioIdResolution::Resolve, move(user_context), move(request_context))
+    {}
 
     /// @param bio_id
     ///  ID of the bioseq
@@ -486,6 +505,7 @@ public:
     const CPSG_BioId&  GetBioId()      const { return m_BioIds.front(); }
     const CPSG_BioIds& GetBioIds()     const { return m_BioIds;     }
     const TAnnotNames& GetAnnotNames() const { return m_AnnotNames; }
+    EPSG_BioIdResolution GetBioIdResolution() const { return m_BioIdResolution; }
 
     /// Set substitution policy for version-less primary seq-ids
     void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
@@ -503,6 +523,7 @@ private:
 
     CPSG_BioIds m_BioIds;
     TAnnotNames m_AnnotNames;
+    EPSG_BioIdResolution m_BioIdResolution;
     EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
     EIncludeData m_IncludeData = EIncludeData::eDefault;
 };

@@ -761,6 +761,17 @@ const char* s_GetAutoBlobSkipping(ESwitch value)
 }
 
 
+const char* s_GetBioIdResolution(EPSG_BioIdResolution value)
+{
+    switch (value) {
+        case EPSG_BioIdResolution::Resolve:   break;
+        case EPSG_BioIdResolution::NoResolve: return "&seq_id_resolve=no";
+    }
+
+    return "";
+}
+
+
 template <typename TIterator, class TGet>
 void s_DelimitedOutput(TIterator from, TIterator to, ostream& os, const char* prefix, char delimiter, TGet get)
 {
@@ -859,6 +870,7 @@ void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
     os << s_GetAccSubstitution(m_AccSubstitution);
+    os << s_GetBioIdResolution(m_BioIdResolution);
 }
 
 void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
