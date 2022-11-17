@@ -382,17 +382,32 @@ namespace
         return best;
     }
 
+    CRef<CSeq_feat> MoveParentProt(list<CRef<CSeq_feat>>& seq_ftable, const CSeq_id& cds_prot_id)
+    {
+        for (auto it = seq_ftable.begin(); it != seq_ftable.end(); ++it) {
+            auto prot_feat = *it;
+            if (!prot_feat->IsSetData() || !prot_feat->GetData().IsProt())
+                continue;
 
-    CSeq_feat& CreateOrSetFTable(CBioseq& bioseq)
+            auto prot_id = prot_feat->GetLocation().GetId();
+            if (cds_prot_id.Compare(*prot_id) == CSeq_id::e_YES) {
+                seq_ftable.erase(it);
+                return prot_feat;
+            }
+        }
+        return {};
+    }
+
+    void CreateOrSetFTable(CBioseq& bioseq, CRef<CSeq_feat>& prot_feat)
     {
         CSeq_annot::C_Data::TFtable* ftable = nullptr;
         if (bioseq.IsSetAnnot())
         {
-            NON_CONST_ITERATE(CBioseq::TAnnot, it, bioseq.SetAnnot())
+            for (auto it: bioseq.SetAnnot())
             {
-                if ((**it).IsFtable())
+                if ( it->IsFtable())
                 {
-                    ftable = &(**it).SetData().SetFtable();
+                    ftable = &it->SetData().SetFtable();
                     break;
                 }
             }
@@ -406,14 +421,11 @@ namespace
 
         if (ftable->empty())
         {
-            CRef<CSeq_feat> feat;
-            feat.Reset(new CSeq_feat);
-            ftable->push_back(feat);
-            return *feat;
-        }
-        else
-        {
-            return *ftable->front();
+            if (prot_feat.Empty())
+                prot_feat.Reset(new CSeq_feat);
+            ftable->push_back(prot_feat);
+        } else {
+            prot_feat = ftable->front();
         }
     }
 
@@ -727,10 +739,11 @@ static void s_SetProtRef(const CSeq_feat& cds,
 
 
 
-CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(const CBioseq& bioseq, CSeq_feat& cd_feature)
+CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(const CBioseq& bioseq, CSeq_feat& cd_feature, list<CRef<CSeq_feat>>& seq_ftable)
 {
     CRef<CSeq_feat> mrna = x_GetParentMrna(cd_feature);
     CRef<CSeq_feat> gene = x_GetParentGene(cd_feature);
+    CRef<CSeq_feat> prot_feat;
 
     bool was_extended = false;
 
@@ -810,8 +823,13 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(const CBioseq& bioseq, C
         protein->SetId().push_back(GetNewProteinId(*m_scope, base_name));
     }
 
-    CSeq_feat& prot_feat = CreateOrSetFTable(*protein);
-    CProt_ref& prot_ref = prot_feat.SetData().SetProt();
+    for (auto prot_id: protein->GetId()) {
+        prot_feat = MoveParentProt(seq_ftable, *prot_id);
+    }
+
+    CreateOrSetFTable(*protein, prot_feat);
+
+    CProt_ref& prot_ref = prot_feat->SetData().SetProt();
 
     s_SetProtRef(cd_feature, mrna, prot_ref);
     if ((!prot_ref.IsSetName() ||
@@ -820,10 +838,10 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(const CBioseq& bioseq, C
         prot_ref.SetName().push_back("hypothetical protein");
     }
 
-    prot_feat.SetLocation().SetInt().SetFrom(0);
-    prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
-    prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
-    feature::CopyFeaturePartials(prot_feat, cd_feature);
+    prot_feat->SetLocation().SetInt().SetFrom(0);
+    prot_feat->SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
+    prot_feat->SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
+    feature::CopyFeaturePartials(*prot_feat, cd_feature);
 
     if (!cd_feature.IsSetProduct())
         cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
@@ -1055,10 +1073,9 @@ void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h,
                     }
                 }
 
-                CRef<CSeq_entry> protein = _TranslateProtein(bioseq, *feature); // Also updates gene and mrna
+                CRef<CSeq_entry> protein = _TranslateProtein(bioseq, *feature, seq_ftable); // Also updates gene and mrna
                 if (protein.NotEmpty())
                 {
-                    //std::cerr << MSerial_AsnText << *protein;
                     entry_h.GetEditHandle().SetSet().GetEditHandle().AttachEntry(*protein);
                     // move the cdregion into protein and step iterator to next
                     set_ftable.push_back(feature);
