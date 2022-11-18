@@ -66,12 +66,14 @@ class CAccVerHistCallback
         {
             if (last) {
                 auto    app = CPubseqGatewayApp::GetInstance();
-                if (m_Count == 0)
+                if (m_Count == 0) {
                     app->GetTiming().Register(eAccVerHistRetrieve, eOpStatusNotFound,
                                               m_RetrieveTiming);
-                else
+                    app->GetCounters().Increment(CPSGSCounters::ePSGS_AccVerHistoryNotFound);
+                } else {
                     app->GetTiming().Register(eAccVerHistRetrieve, eOpStatusFound,
                                               m_RetrieveTiming);
+                }
             }
 
             ++m_Count;

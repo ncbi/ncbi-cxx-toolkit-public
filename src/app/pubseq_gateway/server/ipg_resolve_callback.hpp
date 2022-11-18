@@ -66,12 +66,14 @@ class CIPGResolveCallback
         {
             if (is_last) {
                 auto    app = CPubseqGatewayApp::GetInstance();
-                if (m_Count == 0)
+                if (m_Count == 0) {
                     app->GetTiming().Register(eIPGResolveRetrieve, eOpStatusNotFound,
                                               m_RetrieveTiming);
-                else
+                    app->GetCounters().Increment(CPSGSCounters::ePSGS_IPGResolveNotFound);
+                } else {
                     app->GetTiming().Register(eIPGResolveRetrieve, eOpStatusFound,
                                               m_RetrieveTiming);
+                }
             }
 
             ++m_Count;
