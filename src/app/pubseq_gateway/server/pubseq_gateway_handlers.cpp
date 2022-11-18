@@ -609,7 +609,6 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                                                 seq_id_type, use_cache, true)) {
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
-            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
         }
 
