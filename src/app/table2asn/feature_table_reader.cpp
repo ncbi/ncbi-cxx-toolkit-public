@@ -348,9 +348,8 @@ namespace
     {
         if (id && seq.IsSetId())
         {
-            ITERATE(CBioseq::TId, it, seq.GetId())
-            {
-                if (id->Compare(**it) == CSeq_id::e_YES)
+            for (auto it: seq.GetId()) {
+                if (id->Compare(*it) == CSeq_id::e_YES)
                 {
                     return true;
                 }
@@ -359,13 +358,12 @@ namespace
         return false;
     }
 
-    void MergeSeqIds(CBioseq& bioseq, CBioseq::TId& seq_ids)
+    void MergeSeqIds(CBioseq& bioseq, const CBioseq::TId& seq_ids)
     {
-        ITERATE(CBioseq::TId, it, seq_ids)
-        {
-            if (!BioseqHasId(bioseq, *it))
+        for (auto it: seq_ids) {
+            if (!BioseqHasId(bioseq, it))
             {
-                bioseq.SetId().push_back(*it);
+                bioseq.SetId().push_back(it);
             }
         }
     }
@@ -373,11 +371,9 @@ namespace
     CConstRef<CSeq_id> GetAccessionId(const CBioseq::TId& ids)
     {
         CConstRef<CSeq_id> best;
-        ITERATE(CBioseq::TId, it, ids)
-        {
-            if ((**it).IsGenbank() ||
-                 best.Empty())
-              best = *it;
+        for (auto it: ids) {
+            if (it->IsGenbank() || best.Empty())
+              best = it;
         }
         return best;
     }
@@ -800,8 +796,16 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(const CBioseq& bioseq, C
             protein_ids = &cd_feature.GetNamedQual("product_id");
         }
 
-        if (!protein_ids->empty())
-        {
+        // try to use 'product' from CDS if it's already specified
+        if (protein_ids->empty()) {
+            if (cd_feature.IsSetProduct() && cd_feature.GetProduct().IsWhole())
+            {
+                auto whole = Ref(new CSeq_id);
+                whole->Assign(cd_feature.GetProduct().GetWhole());
+                MergeSeqIds(*protein, {whole});
+            }
+        } else {
+            // construct protein seqid from qualifiers
             CBioseq::TId new_ids;
             CSeq_id::ParseIDs(new_ids, *protein_ids, CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK);
 
