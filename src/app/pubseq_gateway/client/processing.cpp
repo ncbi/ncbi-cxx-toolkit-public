@@ -1182,7 +1182,7 @@ int CProcessing::JsonCheck(istream* schema_is)
     return rv;
 }
 
-CPSG_BioId::TType SRequestBuilder::GetBioIdType(string type)
+CPSG_BioId::TType SRequestBuilder::GetBioIdType(const string& type)
 {
     CObjectTypeInfo info(objects::CSeq_id::GetTypeInfo());
 

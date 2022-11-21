@@ -160,7 +160,8 @@ struct SRequestBuilder::SReader<SPsgCgiEntries>
     SReader(const SPsgCgiEntries& i) : input(i) {}
 
     TSpecified GetSpecified() const;
-    CPSG_BioId GetBioId() const;
+    auto GetBioIdType() const { return input.Get("type", SRequestBuilder::GetBioIdType, CPSG_BioId::TType()); }
+    CPSG_BioId GetBioId() const { return { input.GetString("id"), GetBioIdType() }; }
     CPSG_BioIds GetBioIds() const;
     CPSG_BlobId GetBlobId() const;
     CPSG_ChunkId GetChunkId() const;
@@ -179,12 +180,6 @@ SRequestBuilder::TSpecified SRequestBuilder::SReader<SPsgCgiEntries>::GetSpecifi
     };
 }
 
-CPSG_BioId SRequestBuilder::SReader<SPsgCgiEntries>::GetBioId() const
-{
-    const auto& id = input.GetString("id");
-    return input.Get("type", [&](const auto& v) { return CPSG_BioId(id, GetBioIdType(v)); }, id);
-}
-
 CPSG_BioIds SRequestBuilder::SReader<SPsgCgiEntries>::GetBioIds() const
 {
     CPSG_BioIds rv;
@@ -193,8 +188,7 @@ CPSG_BioIds SRequestBuilder::SReader<SPsgCgiEntries>::GetBioIds() const
 
     for (const auto& id : ids) {
         if (rv.empty()) {
-            auto type = input.Get("type", [&](const auto& v) { return GetBioIdType(v); }, objects::CSeq_id::e_not_set);
-            rv.emplace_back(id, type);
+            rv.emplace_back(id, GetBioIdType());
         } else {
             rv.emplace_back(id);
         }
