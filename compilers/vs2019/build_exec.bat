@@ -31,15 +31,28 @@ REM and configuration. Cygwin cannot run devenv directly inside shell-script.
 REM
 REM ===========================================================================
 
+
 call msvcvars.bat
 
+
 if _%1% == _  goto be_abort
-goto be_build
+goto be_prep
 
 :be_abort
 rem You should specify logfile or you will not see an output
 echo Usage: "%0 <solution> <command> <arch> <cfg> <target> <logfile>"
 exit 1
+
+
+:be_prep
+rem Additional safety to have a correct path for Windows full builds:
+rem devenv should be called from a build directory defined on the upper level, 
+rem abd include substed path. New Cygwin automatically "unfollow" that substitution,
+rem that makes a problem to find correct .pdb files after installation.
+rem BLD_DIR sets in pc_build.bat.
+if not exist "%BLD_DIR%" goto be_build
+cd %BLD_DIR%
+
 
 :be_build
 set arch=Win32
@@ -47,5 +60,4 @@ if _%5_ == __CONFIGURE__ set arch=x86
 if _%3_ == _64_ set arch=x64
 
 rem Next command should be executed last! No other code after it, please.
-
 %DEVENV% %1 /%2 "%4|%arch%" /project "%5" /out "%6"

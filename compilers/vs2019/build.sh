@@ -136,12 +136,7 @@ generate_simple_log()
 # Get build dir
 build_dir=`dirname $script`
 build_dir=`(cd "$build_dir"; pwd)`
-
-if [ ! -d $build_dir ] ; then
-    error "Build directory $build_dir not found"
-    exit 1
-fi
-cd $build_dir
+#cd $build_dir
 
 # Configuration to build configure
 cfg_configure='ReleaseDLL'
