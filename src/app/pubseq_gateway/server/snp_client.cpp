@@ -870,24 +870,24 @@ CRef<CSNPSeqInfo> CSNPFileInfo::GetSeqInfo(const CSNPBlobId& blob_id)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CSeq_id_Handle CSNPClient::GetRequestSeq_id(const SPSGS_AnnotRequest& request) const
+bool CSNPClient::HaveValidSeq_id(const SPSGS_AnnotRequest& request) const
 {
+    // If resolving is enabled, do not check ids now.
+    if (request.m_SeqIdResolve &&
+        (!request.m_SeqId.empty() || !request.m_SeqIds.empty())) return true;
     if (!request.m_SeqId.empty()) {
-        // If RefSeq only is on, look for RefSeq id. Otherwise return any valid one.
         try {
-            auto ret = CSeq_id_Handle::GetHandle(request.m_SeqId);
-            if (IsValidSeqId(ret)) return ret;
+            if (IsValidSeqId(CSeq_id_Handle::GetHandle(request.m_SeqId))) return true;
         }
         catch (exception& e) {}
     }
     for (auto& id : request.m_SeqIds) {
         try {
-            auto ret = CSeq_id_Handle::GetHandle(id);
-            if (IsValidSeqId(ret)) return ret;
+            if (IsValidSeqId(CSeq_id_Handle::GetHandle(id))) return true;
         }
         catch (exception& e) {}
     }
-    return CSeq_id_Handle();
+    return false;
 }
 
 
@@ -1011,8 +1011,7 @@ bool CSNPClient::CanProcessRequest(CPSGS_Request& request, TProcessorPriority pr
     switch (request.GetRequestType()) {
     case CPSGS_Request::ePSGS_AnnotationRequest: {
         SPSGS_AnnotRequest& annot_request = request.GetRequest<SPSGS_AnnotRequest>();
-        CSeq_id_Handle id = GetRequestSeq_id(annot_request);
-        if (!id) return false;
+        if (!HaveValidSeq_id(annot_request)) return false;
         vector<string> names = annot_request.GetNotProcessedName(priority);
         for (const auto& name : names) {
             if (m_Config.m_AddPTIS && name == "SNP") return true;
@@ -1054,7 +1053,7 @@ vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const vector
 {
     vector<SSNPData> ret;
     // RefSeq ids only
-    if (!IsValidSeqId(id)) return ret;
+    if (!m_Config.m_AllowNonRefSeq && !IsValidSeqId(id)) return ret;
     {
         CMutexGuard guard(m_Mutex);
         if (m_FixedFiles.empty()) {

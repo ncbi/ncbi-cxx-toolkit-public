@@ -310,7 +310,7 @@ public:
     CRef<CSNPFileInfo> GetFileInfo(const string& acc);
     CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
     
-    objects::CSeq_id_Handle GetRequestSeq_id(const SPSGS_AnnotRequest& request) const;
+    bool HaveValidSeq_id(const SPSGS_AnnotRequest& request) const;
 
     bool IsValidSeqId(const objects::CSeq_id_Handle& idh) const;
     bool IsValidSeqId(const string& id, int id_type) const;

@@ -362,32 +362,39 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
 {
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
     if (!annot_request.m_SeqId.empty()) {
-        if (annot_request.m_SeqIds.empty() &&
-            !m_Client->IsValidSeqId(annot_request.m_SeqId, annot_request.m_SeqIdType)) {
-            // Got a single non-RefSeq id, try to resolve it.
-            m_PreResolving = true;
-            ResolveInputSeqId();
-            return;
-        }
         try {
-            auto h = CSeq_id_Handle::GetHandle(annot_request.m_SeqId);
-            if (m_Client->IsValidSeqId(h)) {
-                m_SeqIds.push_back(h);
-            }
+            m_SeqIds.push_back(CSeq_id_Handle::GetHandle(annot_request.m_SeqId));
         }
         catch (exception& e) {}
     }
     for (auto& id : annot_request.m_SeqIds) {
         try {
-            auto h = CSeq_id_Handle::GetHandle(id);
-            if (m_Client->IsValidSeqId(h)) {
-                m_SeqIds.push_back(h);
-            }
+            m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
         catch (exception& e) {}
     }
     if (m_SeqIds.empty()) {
-        x_Finish(ePSGS_Error);
+        x_Finish(ePSGS_NotFound);
+    }
+    bool need_resolve = true;
+    for (size_t i = 0; i < m_SeqIds.size(); ++i) {
+        if (m_Client->IsValidSeqId(m_SeqIds[i])) {
+            swap(m_SeqIds[0], m_SeqIds[i]);
+            need_resolve = false;
+            break;
+        }
+    }
+    if (need_resolve) {
+        if (annot_request.m_SeqIdResolve) {
+            // No RefSeq id found in request, try to resolve it.
+            m_PreResolving = true;
+            ResolveInputSeqId();
+            return;
+        }
+        if (!m_Config->m_AllowNonRefSeq) {
+            x_Finish(ePSGS_NotFound);
+            return;
+        }
     }
     try {
         m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
@@ -407,6 +414,7 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
             SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
             vector<string> names = annot_request.GetNotProcessedName(m_Priority);
             for (auto& id : m_SeqIds) {
+                if (!m_Config->m_AllowNonRefSeq && !m_Client->IsValidSeqId(id)) continue;
                 m_SNPData = m_Client->GetAnnotInfo(id, names);
                 if (!m_SNPData.empty()) break;
             }
@@ -759,15 +767,14 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
 
     try {
         auto& info = bioseq_resolution.GetBioseqInfo();
-        if (m_Client->IsValidSeqId(info.GetAccession(), info.GetSeqIdType())) {
-            CSeq_id id(CSeq_id::E_Choice(info.GetSeqIdType()),
-                info.GetAccession(), info.GetName(), info.GetVersion());
+        if (m_Config->m_AllowNonRefSeq || m_Client->IsValidSeqId(info.GetAccession(), info.GetSeqIdType())) {
+            CSeq_id id(CSeq_id::E_Choice(info.GetSeqIdType()), info.GetAccession(), info.GetName(), info.GetVersion());
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
         CSeq_id id;
         for (auto& it : info.GetSeqIds()) {
             string err;
-            if (!m_Client->IsValidSeqId(get<1>(it), get<0>(it))) continue;
+            if (!m_Config->m_AllowNonRefSeq && !m_Client->IsValidSeqId(get<1>(it), get<0>(it))) continue;
             if (ParseInputSeqId(id, get<1>(it), get<0>(it), &err) != ePSGS_ParsedOK) {
                 PSG_ERROR("Error parsing seq-id: " << err);
                 continue;
