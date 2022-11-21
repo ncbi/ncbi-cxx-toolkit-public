@@ -1604,7 +1604,7 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 // returns the data_str, but wrapped in appropriate <a href...>...</a> if applicable
 static
 string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_str, const string &data_str,
-                                       const char* provider, const char* status, bool has_name,
+                                       const char* provider, const char* status, bool has_name, const char* organism,
                                        const char* source, const char* category, const char* accession )
 {
     if( ! is_html ) {
@@ -1631,9 +1631,16 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
             NStr::Replace( data_str, " Annotation Release ", "/", fst );
         }
         NStr::Replace( fst, " ", "_", snd );
-        result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
-               << snd
-               << "\">" << data_str << "</a>";
+        if (NStr::Equal (organism, "")) {
+            result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
+                   << snd
+                   << "\">" << data_str << "</a>";
+        } else {
+            result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
+                   << organism << "//"
+                   << snd
+                   << "\">" << data_str << "</a>";
+        }
         return CNcbiOstrstreamToString(result);
     } else if ( NStr::Equal (label_str, "Annotation Version") && ( NStr::Equal (provider, "NCBI") || NStr::Equal (provider, "NCBI RefSeq") ) && NStr::Equal (status, "Full annotation") && (! has_name) ) {
         string fst;
@@ -1712,6 +1719,7 @@ void s_GetStrForStructuredComment(
     const char* status = "";
     const char* source = "";
     const char* category = "";
+    const char* organism = "";
     string accession;
     bool has_name = false;
 
@@ -1736,6 +1744,8 @@ void s_GetStrForStructuredComment(
                     status = (*it_for_len)->GetData().GetStr().c_str();
                 } else if ( label == "Annotation Name" ) {
                     has_name = true;
+                } else if ( label == "URL Organism" ) {
+                    organism = (*it_for_len)->GetData().GetStr().c_str();
                 } else if (NStr::EqualNocase(prefix, "##Evidence-For-Name-Assignment-START##")) {
                     if ( label == "Evidence Source" ) {
                         source = (*it_for_len)->GetData().GetStr().c_str();
@@ -1784,7 +1794,8 @@ void s_GetStrForStructuredComment(
         // special fields are skipped
         if( (*it)->GetLabel().GetStr() == "StructuredCommentPrefix" ||
                 (*it)->GetLabel().GetStr() == "StructuredCommentSuffix" ||
-                (*it)->GetLabel().GetStr() == "Annotation Freeze" ) {
+                (*it)->GetLabel().GetStr() == "Annotation Freeze" ||
+                (*it)->GetLabel().GetStr() == "URL Organism" ) {
             continue;
         }
 
@@ -1801,7 +1812,7 @@ void s_GetStrForStructuredComment(
         }
         next_line.append( " :: " );
         next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(),
-                                                          provider, status, has_name, source, category, accession.c_str() ) );
+                                                          provider, status, has_name, organism, source, category, accession.c_str() ) );
         next_line.append( "\n" );
 
         ExpandTildes(next_line, eTilde_comment);
