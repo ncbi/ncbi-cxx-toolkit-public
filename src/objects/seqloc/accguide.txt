@@ -1435,7 +1435,7 @@ version  1 # of file format
 2+6  OP  gb_dirsub
 2+8  OP  gb_other_nuc
 2+10 OP  gb_other_nuc
-2+6  OQ  gb_other_nuc
+2+6  OQ  gb_dirsub
 2+8  OQ  gb_other_nuc
 2+10 OQ  gb_other_nuc
 2+6  OR  gb_other_nuc
