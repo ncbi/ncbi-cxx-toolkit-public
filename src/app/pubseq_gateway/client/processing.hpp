@@ -193,15 +193,17 @@ struct SParallelProcessingParams : SParams
     {}
 };
 
-struct SBatchResolveParams : SParallelProcessingParams
+struct SResolveParams
 {
     const CPSG_BioId::TType type;
     const CPSG_Request_Resolve::TIncludeInfo include_info;
+};
 
-    SBatchResolveParams(string s, SPSG_UserArgs ua, int wt, bool p, bool srv, CPSG_BioId::TType t, CPSG_Request_Resolve::TIncludeInfo ii) :
+struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
+{
+    SBatchResolveParams(string s, SPSG_UserArgs ua, int wt, bool p, bool srv, SResolveParams resolve_params) :
         SParallelProcessingParams(move(s), move(ua), wt, p, srv),
-        type(t),
-        include_info(ii)
+        SResolveParams(move(resolve_params))
     {}
 };
 
@@ -329,10 +331,8 @@ struct SRequestBuilder
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
 
-    static CPSG_BioId::TType GetBioIdType(const string& type);
-
     template <class TInput>
-    static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(const TInput& input);
+    static SResolveParams GetResolveParams(const TInput& input);
 
 private:
     using TSpecified = function<bool(const string&)>;
@@ -344,6 +344,7 @@ private:
     template <class TRequest>
     struct SImpl;
 
+    static CPSG_BioId::TType GetBioIdType(const string& type);
     static EPSG_AccSubstitution GetAccSubstitution(const string& acc_substitution);
 };
 
@@ -420,11 +421,11 @@ template <>
 CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::SImpl<CPSG_Request_Resolve>::GetIncludeInfo(TSpecified specified);
 
 template <class TInput>
-inline CPSG_Request_Resolve::TIncludeInfo SRequestBuilder::GetIncludeInfo(const TInput& input)
+SResolveParams SRequestBuilder::GetResolveParams(const TInput& input)
 {
     using TImpl = SImpl<CPSG_Request_Resolve>;
     SReader<TInput> reader(input);
-    return TImpl::GetIncludeInfo(TImpl::GetSpecified(reader));
+    return { reader.GetBioIdType(), TImpl::GetIncludeInfo(TImpl::GetSpecified(reader)) };
 }
 
 template <class TRequest, class TInput, class... TArgs>

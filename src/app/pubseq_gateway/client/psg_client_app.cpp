@@ -406,8 +406,7 @@ struct SBatchResolve : SParallelProcessing<SBatchResolveParams>
         SParallelProcessing<SBatchResolveParams>{
             args,
             "id-file",
-            args["type"].HasValue() ? SRequestBuilder::GetBioIdType(args["type"].AsString()) : CPSG_BioId::TType(),
-            SRequestBuilder::GetIncludeInfo(args)
+            SRequestBuilder::GetResolveParams(args)
         }
     {
     }

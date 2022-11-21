@@ -143,8 +143,7 @@ struct SBatchResolve : SParallelProcessing<SBatchResolveParams>
     SBatchResolve(const SPsgCgiEntries& entries) :
         SParallelProcessing<SBatchResolveParams>{
             entries,
-            entries.Get("type", SRequestBuilder::GetBioIdType, CPSG_BioId::TType()),
-            SRequestBuilder::GetIncludeInfo(entries)
+            SRequestBuilder::GetResolveParams(entries)
         }
     {
     }
