@@ -743,9 +743,10 @@ void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue
         _ASSERT(!id.empty()); // ReadLine makes sure it's not empty
         auto bio_id = CPSG_BioId(id, params.type);
         auto user_context = make_shared<string>(move(id));
-        auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), move(user_context));
+        auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), params.bio_id_resolution, move(user_context));
 
         request->IncludeInfo(params.include_info);
+        request->SetAccSubstitution(params.acc_substitution);
 
         _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
     }
