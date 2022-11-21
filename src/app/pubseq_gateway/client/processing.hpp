@@ -343,6 +343,8 @@ private:
 
     template <class TRequest>
     struct SImpl;
+
+    static EPSG_AccSubstitution GetAccSubstitution(const string& acc_substitution);
 };
 
 template <>
@@ -358,7 +360,7 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     CPSG_BlobId GetBlobId() const;
     CPSG_ChunkId GetChunkId() const;
     vector<string> GetNamedAnnots() const;
-    string GetAccSubstitution() const { return input.has("acc_substitution") ? input["acc_substitution"].GetValue().GetString() : ""; }
+    auto GetAccSubstitution() const { return input.has("acc_substitution") ? SRequestBuilder::GetAccSubstitution(input["acc_substitution"].GetValue().GetString()) : EPSG_AccSubstitution::Default; }
     EPSG_BioIdResolution GetBioIdResolution() const { return input.has("bio_id_resolution") && !input["bio_id_resolution"].GetValue().GetBool() ? EPSG_BioIdResolution::NoResolve : EPSG_BioIdResolution::Resolve; }
     CTimeout GetResendTimeout() const { return !input.has("resend_timeout") ? CTimeout::eDefault : CTimeout(input["resend_timeout"].GetValue().GetDouble()); }
     void ForEachTSE(TExclude exclude) const;
@@ -392,7 +394,6 @@ struct SRequestBuilder::SImpl
     static TSpecified GetSpecified(const TReader& reader) { return reader.GetSpecified(); }
     static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(TSpecified specified);
     static void IncludeData(shared_ptr<TRequest> request, TSpecified specified);
-    static void SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution);
 };
 
 inline SRequestBuilder::TSpecified SRequestBuilder::SReader<CJson_ConstObject>::GetSpecified() const
@@ -464,7 +465,7 @@ shared_ptr<CPSG_Request_Biodata> SRequestBuilder::SImpl<CPSG_Request_Biodata>::B
     IncludeData(request, specified);
     auto exclude = [&](string blob_id) { request->ExcludeTSE(blob_id); };
     reader.ForEachTSE(exclude);
-    SetAccSubstitution(request, reader.GetAccSubstitution());
+    request->SetAccSubstitution(reader.GetAccSubstitution());
     const auto resend_timeout = reader.GetResendTimeout();
 
     if (!resend_timeout.IsDefault()) {
@@ -484,7 +485,7 @@ shared_ptr<CPSG_Request_Resolve> SRequestBuilder::SImpl<CPSG_Request_Resolve>::B
     auto specified = GetSpecified(reader);
     const auto include_info = GetIncludeInfo(specified);
     request->IncludeInfo(include_info);
-    SetAccSubstitution(request, reader.GetAccSubstitution());
+    request->SetAccSubstitution(reader.GetAccSubstitution());
     return request;
 }
 
@@ -509,7 +510,7 @@ shared_ptr<CPSG_Request_NamedAnnotInfo> SRequestBuilder::SImpl<CPSG_Request_Name
     auto request = Create(move(bio_ids), move(named_annots), bio_id_resolution);
     auto specified = GetSpecified(reader);
     IncludeData(request, specified);
-    SetAccSubstitution(request, reader.GetAccSubstitution());
+    request->SetAccSubstitution(reader.GetAccSubstitution());
     return request;
 }
 
@@ -532,13 +533,14 @@ inline void SRequestBuilder::SImpl<TRequest>::IncludeData(shared_ptr<TRequest> r
     }
 }
 
-template <class TRequest>
-void SRequestBuilder::SImpl<TRequest>::SetAccSubstitution(shared_ptr<TRequest>& request, string acc_substitution)
+inline EPSG_AccSubstitution SRequestBuilder::GetAccSubstitution(const string& acc_substitution)
 {
     if (acc_substitution == "limited") {
-        request->SetAccSubstitution(EPSG_AccSubstitution::Limited);
+        return EPSG_AccSubstitution::Limited;
     } else if (acc_substitution == "never") {
-        request->SetAccSubstitution(EPSG_AccSubstitution::Never);
+        return EPSG_AccSubstitution::Never;
+    } else {
+        return EPSG_AccSubstitution::Default;
     }
 }
 
