@@ -197,6 +197,8 @@ struct SResolveParams
 {
     const CPSG_BioId::TType type;
     const CPSG_Request_Resolve::TIncludeInfo include_info;
+    const EPSG_AccSubstitution acc_substitution;
+    const EPSG_BioIdResolution bio_id_resolution;
 };
 
 struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
@@ -425,7 +427,7 @@ SResolveParams SRequestBuilder::GetResolveParams(const TInput& input)
 {
     using TImpl = SImpl<CPSG_Request_Resolve>;
     SReader<TInput> reader(input);
-    return { reader.GetBioIdType(), TImpl::GetIncludeInfo(TImpl::GetSpecified(reader)) };
+    return { reader.GetBioIdType(), TImpl::GetIncludeInfo(TImpl::GetSpecified(reader)), reader.GetAccSubstitution(), reader.GetBioIdResolution() };
 }
 
 template <class TRequest, class TInput, class... TArgs>
