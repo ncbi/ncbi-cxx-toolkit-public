@@ -456,7 +456,7 @@ struct SRequestBuilder::SReader<CArgs>
     CPSG_BlobId GetBlobId() const;
     CPSG_ChunkId GetChunkId() const;
     vector<string> GetNamedAnnots() const { return input["na"].GetStringList(); }
-    string GetAccSubstitution() const { return input["acc-substitution"].HasValue() ? input["acc-substitution"].AsString() : ""; }
+    auto GetAccSubstitution() const { return input["acc-substitution"].HasValue() ? SRequestBuilder::GetAccSubstitution(input["acc-substitution"].AsString()) : EPSG_AccSubstitution::Default; }
     EPSG_BioIdResolution GetBioIdResolution() const { return input["no-bio-id-resolution"].HasValue() ? EPSG_BioIdResolution::NoResolve : EPSG_BioIdResolution::Resolve; }
     CTimeout GetResendTimeout() const { return CTimeout::eDefault; }
     void ForEachTSE(TExclude exclude) const;
