@@ -450,7 +450,8 @@ struct SRequestBuilder::SReader<CArgs>
     SReader(const CArgs& i) : input(i) {}
 
     TSpecified GetSpecified() const;
-    CPSG_BioId GetBioId() const;
+    auto GetBioIdType() const { return input["type"].HasValue() ? SRequestBuilder::GetBioIdType(input["type"].AsString()) : CPSG_BioId::TType(); }
+    CPSG_BioId GetBioId() const { return { input["ID"].AsString(), GetBioIdType() }; }
     CPSG_BioIds GetBioIds() const;
     CPSG_BlobId GetBlobId() const;
     CPSG_ChunkId GetChunkId() const;
@@ -469,16 +470,6 @@ SRequestBuilder::TSpecified SRequestBuilder::SReader<CArgs>::GetSpecified() cons
     };
 }
 
-CPSG_BioId SRequestBuilder::SReader<CArgs>::GetBioId() const
-{
-    const auto& id = input["ID"].AsString();
-
-    if (!input["type"].HasValue()) return CPSG_BioId(id);
-
-    const auto type = GetBioIdType(input["type"].AsString());
-    return CPSG_BioId(id, type);
-}
-
 CPSG_BioIds SRequestBuilder::SReader<CArgs>::GetBioIds() const
 {
     const size_t n = input.GetNExtra();
@@ -486,8 +477,8 @@ CPSG_BioIds SRequestBuilder::SReader<CArgs>::GetBioIds() const
     CPSG_BioIds rv;
 
     for (size_t i = 1; i <= n; ++i) {
-        if ((i == 1) && input["type"].HasValue()) {
-            rv.emplace_back(input[i].AsString(), GetBioIdType(input["type"].AsString()));
+        if (i == 1) {
+            rv.emplace_back(input[i].AsString(), GetBioIdType());
         } else {
             rv.emplace_back(input[i].AsString());
         }

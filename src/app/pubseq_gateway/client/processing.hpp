@@ -329,7 +329,7 @@ struct SRequestBuilder
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
 
-    static CPSG_BioId::TType GetBioIdType(string type);
+    static CPSG_BioId::TType GetBioIdType(const string& type);
 
     template <class TInput>
     static CPSG_Request_Resolve::TIncludeInfo GetIncludeInfo(const TInput& input);
