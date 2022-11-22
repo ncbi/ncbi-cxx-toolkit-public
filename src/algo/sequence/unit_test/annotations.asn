@@ -8295,7 +8295,7 @@ Seq-annot ::= {
         fuzz-from lim lt,
         fuzz-to lim gt
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "low-quality sequence region"
     },
     {
       data cdregion {
@@ -8355,7 +8355,7 @@ Seq-annot ::= {
           fuzz-from lim lt
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "low-quality sequence region"
     },
     {
       data cdregion {
@@ -8696,7 +8696,7 @@ Seq-annot ::= {
         fuzz-from lim lt,
         fuzz-to lim gt
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "low-quality sequence region"
     },
     {
       data cdregion {
@@ -8754,7 +8754,7 @@ Seq-annot ::= {
         id gi 323511446,
         fuzz-from lim lt
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "low-quality sequence region"
     },
     {
       data cdregion {
@@ -8839,7 +8839,7 @@ Seq-annot ::= {
           id gi 395721652
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "low-quality sequence region"
     },
     {
       data cdregion {
@@ -8890,7 +8890,7 @@ Seq-annot ::= {
           id gi 395721652
         }
       },
-      except-text "unclassified translation discrepancy",
+      except-text "low-quality sequence region",
       ids {
         local str "cds.12708781"
       }
@@ -9860,7 +9860,7 @@ Seq-annot ::= {
         strand minus,
         id gi 157696887
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "low-quality sequence region"
     }
   }
 }
@@ -9986,7 +9986,7 @@ Seq-annot ::= {
           fuzz-to lim gt
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "low-quality sequence region"
     },
     {
       data cdregion {
@@ -10483,7 +10483,7 @@ Seq-annot ::= {
           id gi 523529002
         }
       },
-      except-text "unclassified transcription discrepancy"
+      except-text "low-quality sequence region"
     },
     {
       data cdregion {
@@ -10518,7 +10518,7 @@ Seq-annot ::= {
           }
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "low-quality sequence region"
     }
   }
 }
