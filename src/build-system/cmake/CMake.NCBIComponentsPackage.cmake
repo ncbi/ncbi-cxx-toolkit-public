@@ -515,7 +515,7 @@ endif()
 
 #############################################################################
 # VDB
-NCBI_define_Pkgcomponent(NAME VDB PACKAGE ncbi-vdb)
+NCBI_define_Pkgcomponent(NAME VDB PACKAGE ncbi-vdb FIND ncbi-vdb)
 if(NCBI_COMPONENT_VDB_FOUND)
     set(HAVE_NCBI_VDB 1)
 endif()
