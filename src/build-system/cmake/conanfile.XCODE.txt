@@ -24,6 +24,7 @@ libuv/1.44.1
 zlib/1.2.12
 zstd/1.5.2
 openssl/1.1.1o
+ncbi-vdb/3.0.1
 
 [options]
 libnghttp2:with_app = False
