@@ -42,6 +42,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <chrono>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -94,14 +95,64 @@ typedef enum {
     dtCustom
 } CCassDataType;
 
+using TCassConsistency = CassConsistency;
+class CCassConsistency final
+{
+ public:
+    CCassConsistency() = delete;
+
+    static constexpr TCassConsistency kUnknown = CASS_CONSISTENCY_UNKNOWN;
+    static constexpr TCassConsistency kAny = CASS_CONSISTENCY_ANY;
+    static constexpr TCassConsistency kOne = CASS_CONSISTENCY_ONE;
+    static constexpr TCassConsistency kTwo = CASS_CONSISTENCY_TWO;
+    static constexpr TCassConsistency kThree = CASS_CONSISTENCY_THREE;
+    static constexpr TCassConsistency kQuorum = CASS_CONSISTENCY_QUORUM;
+    static constexpr TCassConsistency kAll = CASS_CONSISTENCY_ALL;
+    static constexpr TCassConsistency kLocalQuorum = CASS_CONSISTENCY_LOCAL_QUORUM;
+    static constexpr TCassConsistency kEachQuorum = CASS_CONSISTENCY_EACH_QUORUM;
+    static constexpr TCassConsistency kSerial = CASS_CONSISTENCY_SERIAL;
+    static constexpr TCassConsistency kLocalSerial = CASS_CONSISTENCY_LOCAL_SERIAL;
+    static constexpr TCassConsistency kLocalOne = CASS_CONSISTENCY_LOCAL_ONE;
+};
+
+/**
+ * @see http://datastax.github.io/cpp-driver/api/struct.CassMetrics/
+ */
+struct SCassMetrics final
+{
+    struct {
+        chrono::microseconds min{0};
+        chrono::microseconds max{0};
+        chrono::microseconds mean{0};
+        chrono::microseconds stddev{0};
+        chrono::microseconds median{0};
+        chrono::microseconds percentile_75th{0};
+        chrono::microseconds percentile_95th{0};
+        chrono::microseconds percentile_98th{0};
+        chrono::microseconds percentile_99th{0};
+        chrono::microseconds percentile_999th{0};
+        double mean_rate{0};
+        double one_minute_rate{0};
+        double five_minute_rate{0};
+        double fifteen_minute_rate{0};
+    } requests;
+
+    struct {
+        uint64_t total_connections{0};
+    } stats;
+
+    struct {
+        uint64_t connection_timeouts{0};
+        uint64_t request_timeouts{0};
+    } errors;
+};
+
 class CCassQuery;
 class CCassQueryCbRef;
 class CCassConnection;
 class CCassDataCallbackReceiver;
 
-using TCassQueryOnDataCallback = void(*)(CCassQuery&, void *);
 using TCassQueryOnExecuteCallback = void(*)(CCassQuery&, void *);
-using TCassQueryOnData2Callback = void(*)(void *);
 
 struct SCassSizeEstimate {
     int64_t range_start{0};
@@ -123,7 +174,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     friend class CCassQuery;
     friend class CCassConnectionFactory;
 
-    void CloseSession(void);
+    void CloseSession();
 
  protected:
     CCassConnection();
@@ -136,15 +187,15 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     CCassConnection(const CCassConnection&) = delete;
     CCassConnection& operator=(const CCassConnection&) = delete;
 
-    static shared_ptr<CCassConnection> Create(void);
-    virtual ~CCassConnection(void);
-    void Connect(void);
-    void Reconnect(void);
-    void Close(void);
+    static shared_ptr<CCassConnection> Create();
+    virtual ~CCassConnection();
+    void Connect();
+    void Reconnect();
+    void Close();
 
-    bool IsConnected(void);
-    int64_t GetActiveStatements(void) const;
-    CassMetrics GetMetrics(void);
+    bool IsConnected();
+    int64_t GetActiveStatements() const;
+    SCassMetrics GetMetrics();
 
     /// Deprecated. Use SetConnectionPoint() + SetCredentials()
     NCBI_DEPRECATED void SetConnProp(const string & host, const string & user, const string & pwd, int16_t port = 0);
@@ -177,14 +228,14 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     void SetQueryTimeoutRetry(unsigned int timeout_ms);
 
     void SetFallBackRdConsistency(bool value);
-    bool GetFallBackRdConsistency(void) const;
+    bool GetFallBackRdConsistency() const;
 
     void SetFallBackWrConsistency(unsigned int  value);
-    unsigned int GetFallBackWrConsistency(void) const;
+    unsigned int GetFallBackWrConsistency() const;
 
     static void SetLogging(EDiagSev  severity);
-    static void DisableLogging(void);
-    static void UpdateLogging(void);
+    static void DisableLogging();
+    static void UpdateLogging();
 
     unsigned int QryTimeoutRetryMs() const;
     unsigned int QryTimeoutMs() const;
@@ -206,7 +257,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
     /// Warning! Not suitable for usage in multi-threaded environment in case of multiple keyspaces.
     void SetKeyspace(const string & keyspace);
-    string Keyspace(void) const;
+    string Keyspace() const;
 
     void SetBlackList(const string & blacklist);
 
@@ -708,7 +759,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     bool                            m_async;
     bool                            m_allow_prepare;
     bool                            m_is_prepared;
-    CassConsistency                 m_serial_consistency;
+    TCassConsistency                m_serial_consistency;
 
     shared_ptr<CCassQueryCbRef>     m_cb_ref;
 
@@ -800,20 +851,18 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     // Empty $hostname turns off filtering
     void SetHost(const string& hostname);
 
-    /* returns resultset */
-    void Query(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM,
+    void Query(TCassConsistency c = CCassConsistency::kLocalQuorum,
                bool run_async = false, bool allow_prepare = true,
                unsigned int page_size = DEFAULT_PAGE_SIZE);
 
-    void RestartQuery(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
+    void RestartQuery(TCassConsistency c = CCassConsistency::kLocalQuorum);
 
-    /* returns no resultset */
-    void Execute(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM,
+    void Execute(TCassConsistency c = CCassConsistency::kLocalQuorum,
                  bool run_async = false, bool allow_prepare = true);
-    void RestartExecute(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
-    void Restart(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
+    void RestartExecute(TCassConsistency c = CCassConsistency::kLocalQuorum);
+    void Restart(TCassConsistency c = CCassConsistency::kLocalQuorum);
 
-    void SetSerialConsistency(CassConsistency c);
+    void SetSerialConsistency(TCassConsistency c);
 
     bool IsActive(void) const
     {
@@ -1378,6 +1427,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         }
     }
 
+    NCBI_STD_DEPRECATED("SetOnExecute is deprecated, unsafe to use and will be deleted after 01/01/2023")
     void SetOnExecute(void (*Cb)(CCassQuery&, void*), void* Data)
     {
         m_onexecute = Cb;
