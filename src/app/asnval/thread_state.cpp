@@ -646,46 +646,49 @@ CConstRef<CValidError> CAsnvalThreadState::ValidateInput(TTypeInfo asninfo)
 CConstRef<CValidError> CAsnvalThreadState::ValidateAsync(
     const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid) const
 {
-    CRef<CSeq_entry> pEntry;
     CRef<CScope> scope = BuildScope();
     if (!loader_name.empty())
         scope->AddDataLoader(loader_name);
 
-    CConstRef<CValidError> eval;
 
-    CValidator validator(*m_ObjMgr, m_pContext);
-
-    CSeq_entry_Handle top_h;
+    CRef<CSeq_entry> pEntry;
+    bool hasTopLevelEntry{false};
     auto seq_id_h = CSeq_id_Handle::GetHandle(*seqid);
     if (scope->Exists(seq_id_h)) {
         if (auto bioseq_h = scope->GetBioseqHandle(seq_id_h); bioseq_h) {
-            top_h = bioseq_h.GetTopLevelEntry();
-            if (top_h) {
+            if (auto top_h = bioseq_h.GetTopLevelEntry(); top_h) {
                 pEntry = Ref(const_cast<CSeq_entry*>(top_h.GetCompleteSeq_entry().GetPointer()));
+                hasTopLevelEntry = true;
             }
         }
     }
 
-    if (top_h) {
-
-        if (mAppConfig.mDoCleanup) {
-            CCleanup cleanup;
-            cleanup.SetScope(scope);
-            cleanup.BasicCleanup(*pEntry);
-        }
-
-        if (pSubmitBlock) {
-            auto pSubmit = Ref(new CSeq_submit());
-            pSubmit->SetSub().Assign(*pSubmitBlock);
-            pSubmit->SetData().SetEntrys().push_back(pEntry);
-            eval = validator.Validate(*pSubmit, scope, m_Options);
-        }
-        else {
-            eval = validator.Validate(*pEntry, scope, m_Options);
-        }
+    if (!hasTopLevelEntry) {
+        return CConstRef<CValidError>();
     }
 
-    return eval;
+    // Removing the huge-file data loader restricts scope 
+    // to a single TSE object.
+    if (!loader_name.empty()) {
+        scope->RemoveDataLoader(loader_name);
+    }
+
+    if (mAppConfig.mDoCleanup) {
+        CCleanup cleanup;
+        cleanup.SetScope(scope);
+        cleanup.BasicCleanup(*pEntry);
+    }
+
+    CValidator validator(*m_ObjMgr, m_pContext);
+    if (pSubmitBlock) {
+        auto pSubmit = Ref(new CSeq_submit());
+        pSubmit->SetSub().Assign(*pSubmitBlock);
+        pSubmit->SetData().SetEntrys().push_back(pEntry);
+        scope->AddSeq_submit(*pSubmit);
+        return validator.Validate(*pSubmit, scope, m_Options);
+    }
+    // else 
+    return validator.Validate(*pEntry, scope, m_Options);
 }
 
 void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process)
