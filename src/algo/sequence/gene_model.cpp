@@ -2952,7 +2952,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         has_length_mismatch  ||
         has_incomplete_polya_tail ||
         partial_unaligned_section) {
-        except_text = "unclassified transcription discrepancy";
+        except_text = "low-quality sequence region";
     }
     else if (!mismatch_locs.empty()) {
         except_text = "mismatches in transcription";
@@ -3094,7 +3094,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             /// translation so we know it will fit the translation perfectly;
             /// only need exceptions if there are frameshifts
             if (has_indel) {
-                string except_text = "unclassified translation discrepancy";
+                string except_text = "low-quality sequence region";
                 x_SetExceptText(feat, except_text);
             }
             if (clean_match_count) {
@@ -3395,7 +3395,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     if (actual.size() != xlate.size()  ||
         !has_stop  ||  !has_start  ||
         has_gap || has_indel) {
-        except_text = "unclassified translation discrepancy";
+        except_text = "low-quality sequence region";
     }
     else if (mismatch_count) {
         except_text = "mismatches in translation";
@@ -3418,9 +3418,8 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
             NStr::TruncateSpacesInPlace(*it);
             if (it->empty()  ||
                 *it == "annotated by transcript or proteomic data" ||
-                *it == "unclassified transcription discrepancy"  ||
+                *it == "low-quality sequence region"  ||
                 *it == "mismatches in transcription" ||
-                *it == "unclassified translation discrepancy"  ||
                 *it == "mismatches in translation") {
                 except_toks.erase(it++);
             }
