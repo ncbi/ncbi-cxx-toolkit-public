@@ -155,7 +155,6 @@ atomic<CassUuidGen*> CCassConnection::m_CassUuidGen(nullptr);
 
 const unsigned int CCassQuery::DEFAULT_PAGE_SIZE = 4096;
 
-/** CCassConnection */
 CCassConnection::CCassConnection()
     : m_port(0)
     , m_cluster(nullptr)
@@ -192,7 +191,7 @@ void CCassConnection::SetLogging(EDiagSev  severity)
 }
 
 
-void CCassConnection::DisableLogging(void)
+void CCassConnection::DisableLogging()
 {
     cass_log_set_level(CASS_LOG_DISABLED);
     m_LoggingEnabled = false;
@@ -200,7 +199,7 @@ void CCassConnection::DisableLogging(void)
 }
 
 
-void CCassConnection::UpdateLogging(void)
+void CCassConnection::UpdateLogging()
 {
     if (m_LoggingInitialized) {
         if (m_LoggingEnabled) {
@@ -290,7 +289,7 @@ void CCassConnection::SetFallBackRdConsistency(bool value)
     m_fallback_readconsistency = value;
 }
 
-bool CCassConnection::GetFallBackRdConsistency(void) const
+bool CCassConnection::GetFallBackRdConsistency() const
 {
     return m_fallback_readconsistency;
 }
@@ -300,7 +299,7 @@ void CCassConnection::SetFallBackWrConsistency(unsigned int  value)
     m_FallbackWriteConsistency = value;
 }
 
-unsigned int CCassConnection::GetFallBackWrConsistency(void) const
+unsigned int CCassConnection::GetFallBackWrConsistency() const
 {
     return m_FallbackWriteConsistency;
 }
@@ -460,21 +459,40 @@ void CCassConnection::Close()
     }
 }
 
-bool CCassConnection::IsConnected(void)
+bool CCassConnection::IsConnected()
 {
     return (m_cluster || m_session);
 }
 
-int64_t CCassConnection::GetActiveStatements(void) const
+int64_t CCassConnection::GetActiveStatements() const
 {
     return m_active_statements;
 }
 
-CassMetrics CCassConnection::GetMetrics(void)
+SCassMetrics CCassConnection::GetMetrics()
 {
-    CassMetrics metrics;
-    if(m_session) {
-        cass_session_get_metrics(m_session, &metrics);
+    SCassMetrics metrics;
+    if (m_session) {
+        CassMetrics cass_metrics;
+        cass_session_get_metrics(m_session, &cass_metrics);
+        metrics.requests.min = chrono::microseconds(cass_metrics.requests.min);
+        metrics.requests.max = chrono::microseconds(cass_metrics.requests.max);
+        metrics.requests.stddev = chrono::microseconds(cass_metrics.requests.stddev);
+        metrics.requests.median = chrono::microseconds(cass_metrics.requests.median);
+        metrics.requests.percentile_75th = chrono::microseconds(cass_metrics.requests.percentile_75th);
+        metrics.requests.percentile_95th = chrono::microseconds(cass_metrics.requests.percentile_95th);
+        metrics.requests.percentile_98th = chrono::microseconds(cass_metrics.requests.percentile_98th);
+        metrics.requests.percentile_99th = chrono::microseconds(cass_metrics.requests.percentile_99th);
+        metrics.requests.percentile_999th = chrono::microseconds(cass_metrics.requests.percentile_999th);
+        metrics.requests.mean_rate = cass_metrics.requests.mean_rate;
+        metrics.requests.one_minute_rate = cass_metrics.requests.one_minute_rate;
+        metrics.requests.five_minute_rate = cass_metrics.requests.five_minute_rate;
+        metrics.requests.fifteen_minute_rate = cass_metrics.requests.fifteen_minute_rate;
+
+        metrics.stats.total_connections = cass_metrics.stats.total_connections;
+
+        metrics.errors.connection_timeouts = cass_metrics.errors.connection_timeouts;
+        metrics.errors.request_timeouts = cass_metrics.errors.request_timeouts;
     }
     return metrics;
 }
@@ -520,7 +538,7 @@ void CCassConnection::SetKeyspace(const string &  keyspace)
     }
 }
 
-string CCassConnection::Keyspace(void) const
+string CCassConnection::Keyspace() const
 {
     return m_keyspace;
 }
@@ -552,7 +570,7 @@ void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
         vector<string> tokens;
         auto query = NewQuery();
         query->SetSQL("SELECT data_center, schema_version, rpc_address, host_id, tokens FROM system.local", 0);
-        query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+        query->Query(CCassConsistency::kLocalOne, false, false);
         query->NextRow();
         query->FieldGetStrValue(0, datacenter);
         query->FieldGetStrValue(1, schema);
@@ -579,7 +597,7 @@ void CCassConnection::GetTokenRanges(TTokenRanges &ranges)
         // We have to query the same host to get complete tokens distribution
         query->SetHost(rpc_address);
         query->SetSQL("SELECT data_center, schema_version, host_id, tokens FROM system.peers", 0);
-        query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+        query->Query(CCassConsistency::kLocalOne, false, false);
         while (query->NextRow() == ar_dataready) {
             string peer_host_id, peer_dc, peer_schema;
             vector<string> tokens;
@@ -643,7 +661,7 @@ vector<SCassSizeEstimate> CCassConnection::GetSizeEstimates(string const& datace
         query->SetSQL(estimates_sql, 2);
         query->BindStr(0, keyspace);
         query->BindStr(1, table);
-        query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+        query->Query(CCassConsistency::kLocalOne, false, false);
         while (query->NextRow() == ar_dataready) {
             SCassSizeEstimate estimate;
             string value = query->FieldGetStrValue(0);
@@ -674,7 +692,7 @@ vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacent
     auto query = NewQuery();
     query->SetSQL(peers_sql, 1);
     query->BindStr(0, datacenter);
-    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+    query->Query(CCassConsistency::kLocalOne, false, false);
     while (query->NextRow() == ar_dataready) {
         hosts.insert(query->FieldGetStrValue(0));
     }
@@ -686,7 +704,7 @@ vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacent
     query->SetHost(*hosts.begin());
     query->SetSQL(peers_sql, 1);
     query->BindStr(0, datacenter);
-    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+    query->Query(CCassConsistency::kLocalOne, false, false);
     while (query->NextRow() == ar_dataready) {
         hosts.insert(query->FieldGetStrValue(0));
     }
@@ -699,7 +717,7 @@ string CCassConnection::GetDatacenterName()
 {
     auto query = NewQuery();
     query->SetSQL("SELECT data_center FROM system.local", 0);
-    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
+    query->Query(CCassConsistency::kLocalOne, false, false);
     if (query->NextRow() == ar_dataready) {
         return query->FieldGetStrValue(0);
     }
@@ -922,7 +940,7 @@ void CCassQuery::SetTimeout(unsigned int t)
     m_qtimeoutms = t;
 }
 
-unsigned int CCassQuery::Timeout(void) const
+unsigned int CCassQuery::Timeout() const
 {
     return m_qtimeoutms;
 }
@@ -932,7 +950,7 @@ void CCassQuery::UsePerRequestTimeout(bool value)
     m_use_per_request_timeout = value;
 }
 
-void CCassQuery::Close(void)
+void CCassQuery::Close()
 {
     InternalClose(true);
 }
@@ -1143,7 +1161,7 @@ void CCassQuery::SetHost(const string& hostname)
     m_execution_host = hostname;
 }
 
-void CCassQuery::Query(CassConsistency  c, bool  run_async,
+void CCassQuery::Query(TCassConsistency c, bool  run_async,
                        bool  allow_prepared, unsigned int  page_size)
 {
     if (!m_connection) {
@@ -1223,7 +1241,7 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
     }
 }
 
-void CCassQuery::RestartQuery(CassConsistency c)
+void CCassQuery::RestartQuery(TCassConsistency c)
 {
     if (!m_future) {
         RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
@@ -1241,7 +1259,7 @@ void CCassQuery::RestartQuery(CassConsistency c)
     Query(c, async, allow_prepared, page_size);
 }
 
-void CCassQuery::Execute(CassConsistency c, bool run_async, bool allow_prepared)
+void CCassQuery::Execute(TCassConsistency c, bool run_async, bool allow_prepared)
 {
     if (!m_connection) {
         RAISE_DB_ERROR(eSeqFailed, "invalid sequence of operations, DB connection closed");
@@ -1321,7 +1339,7 @@ void CCassQuery::Execute(CassConsistency c, bool run_async, bool allow_prepared)
     }
 }
 
-void CCassQuery::RestartExecute(CassConsistency c)
+void CCassQuery::RestartExecute(TCassConsistency c)
 {
     if (!m_future) {
         RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
@@ -1339,7 +1357,7 @@ void CCassQuery::RestartExecute(CassConsistency c)
     Execute(c, async, allow_prepared);
 }
 
-void CCassQuery::Restart(CassConsistency c)
+void CCassQuery::Restart(TCassConsistency c)
 {
     if (!m_future) {
         RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
@@ -1360,7 +1378,7 @@ void CCassQuery::Restart(CassConsistency c)
 }
 
 
-void CCassQuery::SetSerialConsistency(CassConsistency  c)
+void CCassQuery::SetSerialConsistency(TCassConsistency c)
 {
     m_serial_consistency = c;
 }
@@ -1713,12 +1731,12 @@ string CCassQuery::ToString() const
     return m_sql.empty() ? "<>" : m_sql + "\nparams: " + params;
 }
 
-bool CCassQuery::IsEOF(void) const
+bool CCassQuery::IsEOF() const
 {
     return m_EOF;
 }
 
-bool CCassQuery::IsAsync(void) const
+bool CCassQuery::IsAsync() const
 {
     return m_async;
 }
