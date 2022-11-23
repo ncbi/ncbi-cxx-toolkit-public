@@ -150,10 +150,6 @@ void CHugeFileDemoApp::x_ReadTwoScopes(TAppContext& context, const std::list<CCo
     auto scope1 = x_PopulateScope(context);
     auto scope2 = x_PopulateScope(context);
     
-    for (auto pId : idlist) {
-        cout << MSerial_AsnText << pId << endl;
-    }
-
     CBioseq_Handle bh1 = scope1->GetBioseqHandle(**idlist.begin());
     CBioseq_Handle bh2 = scope2->GetBioseqHandle(**(++idlist.begin()));
 
