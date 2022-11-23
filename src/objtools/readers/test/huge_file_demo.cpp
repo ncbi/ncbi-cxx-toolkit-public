@@ -149,12 +149,16 @@ void CHugeFileDemoApp::x_ReadTwoScopes(TAppContext& context, const std::list<CCo
 
     auto scope1 = x_PopulateScope(context);
     auto scope2 = x_PopulateScope(context);
+    
+    for (auto pId : idlist) {
+        cout << MSerial_AsnText << pId << endl;
+    }
 
     CBioseq_Handle bh1 = scope1->GetBioseqHandle(**idlist.begin());
     CBioseq_Handle bh2 = scope2->GetBioseqHandle(**(++idlist.begin()));
 
     auto top1 = edit::CHugeFileProcess::GetParentEntry(bh1);
-    auto top2 = edit::CHugeFileProcess::GetParentEntry(bh1);
+    auto top2 = edit::CHugeFileProcess::GetParentEntry(bh2);
     std::cerr << MSerial_AsnText << top1.GetCompleteSeq_entry();
     std::cerr << MSerial_AsnText << top2.GetCompleteSeq_entry();
 }
