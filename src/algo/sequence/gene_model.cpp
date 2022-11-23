@@ -3419,7 +3419,9 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
             if (it->empty()  ||
                 *it == "annotated by transcript or proteomic data" ||
                 *it == "low-quality sequence region"  ||
+                *it == "unclassified transcription discrepancy"  ||
                 *it == "mismatches in transcription" ||
+                *it == "unclassified translation discrepancy"  ||
                 *it == "mismatches in translation") {
                 except_toks.erase(it++);
             }
