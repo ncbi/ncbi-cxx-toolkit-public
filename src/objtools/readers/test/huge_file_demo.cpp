@@ -70,6 +70,8 @@ protected:
     bool x_ModifyBioSeq(CBioseq_EditHandle beh) const;
     void x_ReadAndWritePull(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const;
     void x_ReadAndWritePush(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const;
+    CRef<CScope> x_PopulateScope(TAppContext& context) const;
+    void x_ReadTwoScopes(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const;
 
     CConstRef<CSerialObject> x_PopulateTopObject() const;
 
@@ -84,6 +86,7 @@ void CHugeFileDemoApp::Init()
                               false);
     arg_desc->AddKey("i", "InputFile", "Input ASN.1 file to read", CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("o", "OutputFile", "Output modified ASN.1", CArgDescriptions::eOutputFile);
+    arg_desc->AddFlag("rw1848", "Testing RW-1848");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -131,10 +134,38 @@ int CHugeFileDemoApp::Run()
     return 0;
 }
 
+
+CRef<CScope> CHugeFileDemoApp::x_PopulateScope(TAppContext& context) const
+{
+    auto scope = Ref(new CScope(*context.m_ObjMgr));
+    scope->AddDataLoader(context.m_loader_name);
+    return scope;
+}
+
+void CHugeFileDemoApp::x_ReadTwoScopes(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const
+{
+    if (idlist.size() < 2)
+        throw std::runtime_error("Too little dataset");
+
+    auto scope1 = x_PopulateScope(context);
+    auto scope2 = x_PopulateScope(context);
+
+    CBioseq_Handle bh1 = scope1->GetBioseqHandle(**idlist.begin());
+    CBioseq_Handle bh2 = scope2->GetBioseqHandle(**(++idlist.begin()));
+
+    auto top1 = edit::CHugeFileProcess::GetParentEntry(bh1);
+    auto top2 = edit::CHugeFileProcess::GetParentEntry(bh1);
+    std::cerr << MSerial_AsnText << top1.GetCompleteSeq_entry();
+    std::cerr << MSerial_AsnText << top2.GetCompleteSeq_entry();
+}
+
 void CHugeFileDemoApp::x_RunDemo(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const
 {
     std::cout << "Reading " << idlist.size() << " records" << std::endl;
 
+    if (GetArgs()["rw1848"]) {
+        x_ReadTwoScopes(context, idlist);
+    } else
     if (GetArgs()["o"]) {
         //x_AddUserObjects(context, idlist, GetArgs()["o"].AsString());
         std::ofstream outfile;
@@ -166,8 +197,7 @@ void CHugeFileDemoApp::x_ShowSeqSizes(TAppContext& context, const std::list<CCon
     // this must be very fast and minimal memory consumption
     // Note, not CHugeAsnReader is used
 
-    auto scope = Ref(new CScope(*context.m_ObjMgr));
-    scope->AddDataLoader(context.m_loader_name);
+    auto scope = x_PopulateScope(context);
     size_t i=0;
     for (auto it: idlist)
     {
@@ -215,8 +245,7 @@ bool CHugeFileDemoApp::x_ModifyBioSeq(CBioseq_EditHandle beh) const
 
 void CHugeFileDemoApp::x_AddUserObjects(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, const string filename) const
 {
-    auto scope = Ref(new CScope(*context.m_ObjMgr));
-    scope->AddDataLoader(context.m_loader_name);
+    auto scope = x_PopulateScope(context);
 
     // these are to just keep handles, this helps Object Manager to understand they're still needed
     std::list<CBioseq_Handle> modified_records;
@@ -286,8 +315,7 @@ CConstRef<CSerialObject> CHugeFileDemoApp::x_PopulateTopObject() const
 
 void CHugeFileDemoApp::x_ReadAndWritePush(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const
 {
-    auto scope = Ref(new CScope(*context.m_ObjMgr));
-    scope->AddDataLoader(context.m_loader_name);
+    auto scope = x_PopulateScope(context);
 
     auto top_object = x_PopulateTopObject();
 
@@ -319,8 +347,7 @@ void CHugeFileDemoApp::x_ReadAndWritePush(TAppContext& context, const std::list<
 
 void CHugeFileDemoApp::x_ReadAndWritePull(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const
 {
-    auto scope = Ref(new CScope(*context.m_ObjMgr));
-    scope->AddDataLoader(context.m_loader_name);
+    auto scope = x_PopulateScope(context);
 
     auto top_object = x_PopulateTopObject();
 
