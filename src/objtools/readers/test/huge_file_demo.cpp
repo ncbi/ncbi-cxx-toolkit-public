@@ -48,6 +48,8 @@
 
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objects/seqset/seqset_macros.hpp>
+#include <objects/seq/seq_macros.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -72,6 +74,7 @@ protected:
     void x_ReadAndWritePush(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const;
     CRef<CScope> x_PopulateScope(TAppContext& context) const;
     void x_ReadTwoScopes(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const;
+    void x_TestRW1848(CBioseq_Handle bh) const;
 
     CConstRef<CSerialObject> x_PopulateTopObject() const;
 
@@ -142,6 +145,34 @@ CRef<CScope> CHugeFileDemoApp::x_PopulateScope(TAppContext& context) const
     return scope;
 }
 
+void CHugeFileDemoApp::x_TestRW1848(CBioseq_Handle bh) const
+{
+    std::cerr << "Parent seq id:" << bh.GetAccessSeq_id_Handle().AsString() << "\n";
+
+    auto top_seh = edit::CHugeFileProcess::GetParentEntry(bh);
+    auto entry = top_seh.GetCompleteSeq_entry();
+
+    FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, *entry) {
+        FOR_EACH_FEATURE_ON_ANNOT(feat, **annot_it) {
+            //std::cerr << MSerial_AsnText << *feat;
+            auto location_id = (**feat).GetLocation().GetId();
+            if (location_id) {
+                bool good_id = false;
+                for (auto seqid: bh.GetId()) {
+                    if (location_id->Compare(*seqid.GetSeqId()) == CSeq_id::e_YES) {
+                        good_id = true;
+                        break;
+                    }
+                }
+                if (!good_id)
+                    std::cerr << "  misplaced feature:" << location_id->AsFastaString() << "\n";
+            } else
+                std::cerr << "  mixed location\n";
+        }
+    }
+
+}
+
 void CHugeFileDemoApp::x_ReadTwoScopes(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const
 {
     if (idlist.size() < 2)
@@ -149,14 +180,12 @@ void CHugeFileDemoApp::x_ReadTwoScopes(TAppContext& context, const std::list<CCo
 
     auto scope1 = x_PopulateScope(context);
     auto scope2 = x_PopulateScope(context);
-    
-    CBioseq_Handle bh1 = scope1->GetBioseqHandle(**idlist.begin());
-    CBioseq_Handle bh2 = scope2->GetBioseqHandle(**(++idlist.begin()));
 
-    auto top1 = edit::CHugeFileProcess::GetParentEntry(bh1);
-    auto top2 = edit::CHugeFileProcess::GetParentEntry(bh2);
-    std::cerr << MSerial_AsnText << top1.GetCompleteSeq_entry();
-    std::cerr << MSerial_AsnText << top2.GetCompleteSeq_entry();
+    auto& id1 = **(idlist.begin());
+    auto& id2 = **(++idlist.begin());
+
+    x_TestRW1848(scope1->GetBioseqHandle(id1));
+    x_TestRW1848(scope2->GetBioseqHandle(id2));
 }
 
 void CHugeFileDemoApp::x_RunDemo(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const
