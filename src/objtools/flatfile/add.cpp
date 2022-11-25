@@ -1097,7 +1097,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     char* q;
     char* r;
     char* t;
-    char* bad_accession;
+    const char* bad_accession;
     bool  bad_line;
     bool  bad_interval;
     Char  ch;
@@ -2104,7 +2104,7 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
 }
 
 /**********************************************************/
-static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* location, char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
+static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
     Int4  i;
     Char  ch;
@@ -2261,7 +2261,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
 }
 
 /**********************************************************/
-static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, char* location, char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
+static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
     for (auto& loc : locs) {
         if (loc->IsEmpty()) {

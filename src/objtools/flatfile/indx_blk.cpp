@@ -230,7 +230,7 @@ bool XMLIndex(ParserPtr pp);
  *                                              3-25-93
  *
  **********************************************************/
-static char* GetResidue(TokenStatBlkPtr stoken)
+static const char* GetResidue(TokenStatBlkPtr stoken)
 {
     TokenBlkPtr  sptr;
     TokenBlkPtr  ptr;
@@ -463,10 +463,10 @@ static bool CkDateFormat(const char* date)
 /**********************************************************/
 int CheckSTRAND(const string& str)
 {
-    static vector<string> strandSpecs = {
+    static const vector<string> strandSpecs = {
         "   ", "ss-", "ds-", "ms-"
     };
-    static auto strandSpecCount = strandSpecs.size();
+    static const auto strandSpecCount = strandSpecs.size();
 
     string compare(str);
     NStr::ToLower(compare);
@@ -498,10 +498,10 @@ Int2 XMLCheckTPG(const char* str)
 /**********************************************************/
 int CheckTPG(const string& str)
 {
-    static vector<string> topologies = {
+    static const vector<string> topologies = {
         "         ", "linear   ", "circular ", "tandem   "
     };
-    static auto topologyCount = topologies.size();
+    static const auto topologyCount = topologies.size();
 
     string compare(str);
     NStr::ToLower(compare);
@@ -788,7 +788,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
     Int2            j;
     TokenStatBlkPtr stoken;
     TokenBlkPtr     ptr;
-    char*           bases;
+    const char*     bases;
     IndexblkPtr     entry;
     char*           p;
 
@@ -2109,9 +2109,9 @@ void ResetParserStruct(ParserPtr pp)
         return;
 
     if (! pp->entrylist.empty()) {
-        for (Int4 i = 0; i < pp->indx; i++)
-            if (pp->entrylist[i])
-                FreeIndexblk(pp->entrylist[i]);
+        for (auto* ibp : pp->entrylist)
+            if (ibp)
+                FreeIndexblk(ibp);
 
         pp->entrylist.clear();
     }

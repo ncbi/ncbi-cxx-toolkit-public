@@ -282,7 +282,7 @@ static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
         if (authors->IsSetAffil() && authors->CanGetAffil() &&
             authors->GetAffil().Which() == CAffil::e_Str) {
             CAffil& affil = authors->SetAffil();
-            char*   aff   = (char*)affil.GetStr().c_str();
+            char*   aff   = affil.SetStr().data();
             ShrinkSpaces(aff);
             affil.SetStr(aff);
         }
@@ -296,7 +296,7 @@ static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
                 if ((*it)->IsSetAffil() && (*it)->CanGetAffil() &&
                     (*it)->GetAffil().Which() == CAffil::e_Str) {
                     CAffil& affil = (*it)->SetAffil();
-                    char*   aff   = (char*)affil.GetStr().c_str();
+                    char*   aff   = affil.SetStr().data();
                     ShrinkSpaces(aff);
                     affil.SetStr(aff);
                 }
@@ -330,10 +330,10 @@ static void fta_fix_imprint_language(TPubList& pub_list)
         if (journal.IsSetImp() && journal.GetImp().IsSetLanguage()) {
             string language = journal.GetImp().GetLanguage();
             char*  p;
-            char*  lang = (char*)language.c_str();
+            char*  lang = language.data();
             for (p = lang; *p != '\0'; p++)
                 if (*p >= 'A' && *p <= 'Z')
-                    *p |= 040;
+                    *p |= 040; // tolower()
             journal.SetImp().SetLanguage(lang);
         }
     }

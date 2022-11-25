@@ -73,10 +73,10 @@ struct SeqLocInfo {
     Uint1          strand;
 };
 
-typedef std::list<SeqLocInfo> TSeqLocInfoList;
-typedef std::set<string>      TSynSet;
-typedef std::set<string>      TWormbaseSet;
-typedef std::set<string>      TLocusTagSet;
+typedef list<SeqLocInfo> TSeqLocInfoList;
+typedef std::set<string> TSynSet;
+typedef std::set<string> TWormbaseSet;
+typedef std::set<string> TLocusTagSet;
 
 struct AccMinMax {
     CRef<CSeq_id> pId;
@@ -271,7 +271,7 @@ static bool fta_seqid_same(const CSeq_id& sid, const Char* acnum, const CSeq_id*
 /**********************************************************/
 static void fta_seqloc_del_far(CSeq_loc& locs, const Char* acnum, const CSeq_id* id)
 {
-    std::vector<CConstRef<CSeq_loc>> to_remove;
+    vector<CConstRef<CSeq_loc>> to_remove;
 
     for (CSeq_loc_CI ci(locs, CSeq_loc_CI::eEmpty_Allow); ci != locs.end(); ++ci) {
         CConstRef<CSeq_loc> cur_loc = ci.GetRangeAsSeq_loc();
@@ -296,7 +296,7 @@ static void fta_seqloc_del_far(CSeq_loc& locs, const Char* acnum, const CSeq_id*
         to_remove.push_back(cur_loc);
     }
 
-    for (std::vector<CConstRef<CSeq_loc>>::const_iterator it = to_remove.begin(); it != to_remove.end(); ++it)
+    for (vector<CConstRef<CSeq_loc>>::const_iterator it = to_remove.begin(); it != to_remove.end(); ++it)
         locs.Assign(*locs.Subtract(*(*it), 0, nullptr, nullptr));
 
     for (CTypeIterator<CSeq_bond> bond(locs); bond; ++bond) {
@@ -2076,9 +2076,8 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
 }
 
 /**********************************************************/
-static void fta_append_feat_list(GeneNodePtr gnp, const CSeq_loc* location, const char* gene, char* locus_tag)
+static void fta_append_feat_list(GeneNodePtr gnp, const CSeq_loc* location, const char* gene, const char* locus_tag)
 {
-
     if (gnp == NULL || location == NULL)
         return;
 
