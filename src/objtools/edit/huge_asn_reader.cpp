@@ -239,8 +239,8 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     CObjectTypeInfo seqinst_info = CType<CSeq_inst>();
 
     auto bioseq_id_mi = bioseq_info.FindMember("id");
-    auto bioseqset_class_mi = bioseq_set_info.FindMember("class");
-    auto bioseqset_descr_mi = bioseq_set_info.FindMember("descr");
+    //auto bioseqset_class_mi = bioseq_set_info.FindMember("class");
+    //auto bioseqset_descr_mi = bioseq_set_info.FindMember("descr");
     auto bioseqset_seqset_mi = bioseq_set_info.FindMember("seq-set");
     auto bioseqset_annot_mi = bioseq_set_info.FindMember("annot");
     auto seqinst_len_mi = seqinst_info.FindMember("length");
@@ -250,13 +250,13 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
 
 
     SetLocalSkipHook(bioseq_id_mi, objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
+        [&context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         in.ReadObject(&context.bioseq_stack.back().m_ids, (*member).GetTypeInfo());
     });
 
     SetLocalSkipHook(bioseq_descr_mi, objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
+        [&context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         auto descr = Ref(new CSeq_descr);
         in.ReadObject(&descr, (*member).GetTypeInfo());
@@ -264,20 +264,20 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     });
 
     SetLocalSkipHook(seqinst_len_mi, objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
+        [&context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         in.ReadObject(&context.bioseq_stack.back().m_length, (*member).GetTypeInfo());
     });
 
     SetLocalSkipHook(seqinst_mol_mi, objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
+        [&context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         in.ReadObject(&context.bioseq_stack.back().m_mol, (*member).GetTypeInfo());
     });
 
 
     SetLocalSkipHook(seqinst_repr_mi, objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
+        [&context](CObjectIStream& in, const CObjectTypeInfoMI& member)
     {
         in.ReadObject(&context.bioseq_stack.back().m_repr, (*member).GetTypeInfo());
     });
@@ -297,7 +297,7 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     SetLocalReadHook(bioseqset_seqset_mi, objStream,
             [](CObjectIStream& in, const CObjectInfoMI& member)
             {
-                (*member).GetTypeInfo()->DefaultSkipData(in);         
+                (*member).GetTypeInfo()->DefaultSkipData(in);
             });
 
 
@@ -321,7 +321,7 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
                 context.bioseq_set_stack.push_back(last);
                 auto pBioseqSet = Ref(new CBioseq_set());
                 type.GetTypeInfo()->DefaultReadData(in, pBioseqSet);
-                
+
                 if (pBioseqSet->IsSetLevel()) {
                     last->m_Level = pBioseqSet->GetLevel();
                 }
@@ -330,7 +330,7 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
                 if (pBioseqSet->IsSetDescr()) {
                     last->m_descr.Reset(&(pBioseqSet->GetDescr()));
                 }
-                
+
                 if (last->m_class == CBioseq_set::eClass_genbank &&
                     last->m_HasAnnot) {
                     m_HasGenbankSetAnnot = true;
@@ -441,7 +441,7 @@ void CHugeAsnReader::x_ThrowDuplicateId(
 }
 
 
-CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const 
+CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const
 {
     CRef<CSeq_descr> pDescriptors;
     if (GetBiosets().size() < 2) {
@@ -466,7 +466,7 @@ CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const
             }
             else {
                 for (auto pDesc : it->m_descr->Get()) {
-                    pDescriptors->Set().push_back(pDesc);     
+                    pDescriptors->Set().push_back(pDesc);
                 }
             }
         }
@@ -477,7 +477,7 @@ CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const
 bool CHugeAsnReader::x_HasNestedGenbankSets() const
 {
     if (GetBiosets().size() <= 2) {
-        return false;       
+        return false;
     }
     auto it = next(GetBiosets().begin());
     return (it->m_class == CBioseq_set::eClass_genbank &&
@@ -544,7 +544,7 @@ void CHugeAsnReader::FlattenGenbankSet()
                     pTopEntry->SetSet().SetDescr().Assign(*pDescriptors);
                 }
                 m_top_entry = pTopEntry;
-            } 
+            }
             else if (GetSubmitBlock() ||
                     top->m_Level ||
                     top->m_descr ||
@@ -554,7 +554,7 @@ void CHugeAsnReader::FlattenGenbankSet()
                 for (auto& it : m_FlattenedIndex) {
                     it.second = m_FlattenedSets.begin();
                 }
-            } 
+            }
         }
         else { // m_FlattenedSets.size() > 1)
             auto pDescriptors = x_GetTopLevelDescriptors();
@@ -587,10 +587,10 @@ CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
         m_Current = m_FlattenedSets.end();
         return {};
     }
-   
-    const auto addTopEntry = 
+
+    const auto addTopEntry =
         (m_FlattenedSets.size() == 1 &&
-           x_HasNestedGenbankSets()) ? 
+           x_HasNestedGenbankSets()) ?
         eAddTopEntry::yes :
         eAddTopEntry::no;
 
