@@ -181,13 +181,17 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
     CSpliced_seg::TExons::iterator it = spliced_seg.SetExons().begin();
     CRef<CSpliced_exon> prev_exon = *it;
     size_t i = 1;
-    CRef<CSeq_id> transcript_id(new CSeq_id);
-    transcript_id->Assign(align.GetSeq_id(0));
     CRef<CSeq_loc_Mapper> mapper_to_cds;
-    CMappedFeat cds = GetCdsOnMrna(*transcript_id, *m_scope);
-    if (cds) {
-        mapper_to_cds.Reset(new CSeq_loc_Mapper(*cds.GetSeq_feat(),
-            CSeq_loc_Mapper::eLocationToProduct, m_scope.GetPointer()));
+    CRef<CSeq_id> transcript_id(new CSeq_id);
+    try {
+        transcript_id->Assign(align.GetSeq_id(0));
+        CMappedFeat cds = GetCdsOnMrna(*transcript_id, *m_scope);
+        if (cds) {
+            mapper_to_cds.Reset(new CSeq_loc_Mapper(*cds.GetSeq_feat(),
+                CSeq_loc_Mapper::eLocationToProduct, m_scope.GetPointer()));
+        }
+    } catch (CSeqalignException &) {
+        ERR_POST(Warning << "Can't create mapper to CDS");
     }
     for (++it; it != spliced_seg.SetExons().end();  ++i, prev_exon = *it++) {
         CSpliced_exon& exon = **it;
@@ -225,7 +229,7 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
         int min_hole_len = min(prod_hole_len, genomic_hole_len);
         int left_mismatch_len = 0;
         int right_mismatch_len = min_hole_len;
-        if (prod_hole_len != genomic_hole_len && cds) {
+        if (prod_hole_len != genomic_hole_len && mapper_to_cds) {
             CSeq_loc end_pos(*transcript_id, exons[i-1].prod_to);
             TSeqPos end_pos_on_cds = mapper_to_cds->Map(end_pos)
                                          ->GetStart(eExtreme_Positional);
