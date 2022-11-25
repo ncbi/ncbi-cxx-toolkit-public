@@ -81,7 +81,7 @@ void  EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp);
 void  AddNIDSeqId(objects::CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata, Parser::ESource source);
 void  DefVsHTGKeywords(int tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled);
 void  XMLDefVsHTGKeywords(int tech, const char* entry, XmlIndexPtr xip, bool cancelled);
-void  CheckHTGDivision(char* div, int tech);
+void  CheckHTGDivision(const char* div, int tech);
 void  fta_sort_biosource(objects::CBioSource& bio);
 bool  fta_EntryCheckGBBlock(TEntryList& seq_entries);
 void  ShrinkSpaces(char* line);

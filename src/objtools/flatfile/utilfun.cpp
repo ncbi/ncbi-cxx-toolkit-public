@@ -342,10 +342,10 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
     TokenBlkPtr tbp;
     TokenBlkPtr tbpnext;
     char*       dash;
-    char*       first;
+    const char* first;
     char*       last;
-    char*       p;
-    char*       q;
+    const char* p;
+    const char* q;
     bool        bad;
     Int4        num1;
     Int4        num2;
@@ -465,7 +465,7 @@ static TokenBlkPtr TokenNodeNew(TokenBlkPtr tbp)
 }
 
 /**********************************************************/
-static void InsertTokenVal(TokenBlkPtr* tbp, char* str)
+static void InsertTokenVal(TokenBlkPtr* tbp, const char* str)
 {
     TokenBlkPtr ltbp;
 

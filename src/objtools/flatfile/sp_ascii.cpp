@@ -407,8 +407,7 @@ struct SPFeatInput {
     string       key;            /* column 6-13 */
     string       from;           /* column 15-20 */
     string       to;             /* column 22-27 */
-    string       descrip;        /* column 35-75, continue
-                                                   line if a blank key */
+    string       descrip;        /* column 35-75, continue line if a blank key */
     SPFeatInput* next = nullptr; /* next FT */
 };
 using SPFeatInputPtr = SPFeatInput*;
@@ -1760,7 +1759,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
 {
     ValNodePtr vnp;
     ValNodePtr vnpn;
-    char*      n;
+    const char* n;
     char*      p;
     char*      q;
 
@@ -1872,7 +1871,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
     ValNodePtr   embl_acc_list = NULL;
     const char** b;
     char*        offset;
-    char*        token1;
+    const char*  token1;
     char*        token2;
     char*        token3;
     char*        token4;
@@ -2074,11 +2073,11 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
                 spb.SetSeqref().push_back(id);
         } else {
             if (NStr::CompareNocase(token1, "GK") == 0)
-                token1 = (char*)"Reactome";
+                token1 = "Reactome";
             else if (NStr::CompareNocase(token1, "GENEW") == 0)
-                token1 = (char*)"HGNC";
+                token1 = "HGNC";
             else if (NStr::CompareNocase(token1, "GeneDB_Spombe") == 0)
-                token1 = (char*)"PomBase";
+                token1 = "PomBase";
             else if (NStr::CompareNocase(token1, "PomBase") == 0 &&
                      StringNICmp(token2, "PomBase:", 8) == 0)
                 token2 += 8;
@@ -2737,7 +2736,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                     else
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"%d\" failed.", TAX_ID_TO(int, tvhp->taxid));
                 } else {
-                    std::vector<Char> org_taxname;
+                    vector<Char> org_taxname;
                     if (org_ref_cur->IsSetTaxname()) {
                         const string& cur_taxname = org_ref_cur->GetTaxname();
                         org_taxname.assign(cur_taxname.begin(), cur_taxname.end());
@@ -2988,7 +2987,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
     char*          offset;
     char*          endline;
     char*          str;
-    char*          delim;
+    const char*    delim;
     char*          quotes;
     char*          location;
     char*          p;
@@ -3118,7 +3117,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             bptr++;
 
         str   = endline;
-        delim = (char*)defdelim;
+        delim = defdelim;
         if (str > bptr)
             if (*--str == '-' && str > bptr)
                 if (*--str != ' ')
@@ -3177,7 +3176,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
                 if (p && p - 1 >= bptr && *(p - 1) == '.')
                     StringCombine(temp->descrip, string(quotes + 1, endline - 1), "");
                 else
-                    StringCombine(temp->descrip, std::string(quotes + 1, endline), "");
+                    StringCombine(temp->descrip, string(quotes + 1, endline), "");
             } else {
                 if (p && p - 1 >= bptr && *(p - 1) == '.')
                     StringCombine(temp->descrip, string(bptr, endline - 1), delim);
@@ -3189,7 +3188,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
                 *p = '\"';
 
             str   = endline;
-            delim = (char*)defdelim;
+            delim = defdelim;
             if (str > bptr)
                 if (*--str == '-' && str > bptr)
                     if (*--str != ' ')
@@ -4516,7 +4515,7 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
     SPSegLocPtr curspslp = NULL;
     SPSegLocPtr hspslp   = NULL;
     SPSegLocPtr spslp;
-    char*       p;
+    const char* p;
 
     if (spfip == NULL)
         return (NULL);
@@ -4530,7 +4529,7 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
         if (hspslp == NULL) {
             spslp       = new SPSegLoc;
             spslp->from = 0;
-            p           = (char*)spfip->from.c_str();
+            p           = spfip->from.c_str();
             if (*p == '<' || *p == '>' || *p == '?')
                 p++;
 
@@ -4538,14 +4537,14 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
             hspslp     = spslp;
             curspslp   = spslp;
         } else {
-            p = (char*)spfip->from.c_str();
+            p = spfip->from.c_str();
             if (*p == '<' || *p == '>' || *p == '?')
                 p++;
             curspslp->len = atoi(p) - curspslp->from;
         }
 
         spslp = new SPSegLoc;
-        p     = (char*)spfip->from.c_str();
+        p     = spfip->from.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
         spslp->from    = atoi(p);
@@ -4581,7 +4580,7 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
 static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
 {
     SPFeatInputPtr temp;
-    char*          p;
+    const char*    p;
     Int2           count;
     Int4           from = 0;
     Int4           to;
@@ -4594,11 +4593,11 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
             break;
 
         count++;
-        p = (char*)spfip->from.c_str();
+        p = spfip->from.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
         from = atoi(p);
-        p    = (char*)spfip->to.c_str();
+        p    = spfip->to.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
         to = atoi(p);
