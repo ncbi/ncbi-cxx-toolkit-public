@@ -68,9 +68,9 @@ void CGenBankAsyncWriter::StartWriter(CConstRef<CSerialObject> topobject)
         return m_write_queue.pop_front();
     };
 
-    m_writer_task = std::async(std::launch::async, [this, next_function](CConstRef<CSerialObject> topobject)
+    m_writer_task = std::async(std::launch::async, [this, next_function](CConstRef<CSerialObject> topobj)
     {
-        Write(topobject, next_function);
+        Write(topobj, next_function);
     }, std::move(topobject));
 }
 
@@ -115,7 +115,7 @@ void CGenBankAsyncWriter::Write(CConstRef<CSerialObject> topobject, TGetNextFunc
     size_t bioseq_level = 0;
     auto seq_set_member = CObjectTypeInfo(CBioseq_set::GetTypeInfo()).FindMember("seq-set");
     SetLocalWriteHook(seq_set_member.GetMemberType(), *m_ostream,
-        [this, &bioseq_level, get_next_entry]
+        [&bioseq_level, get_next_entry]
             (CObjectOStream& out, const CConstObjectInfo& object)
     {
         bioseq_level++;
