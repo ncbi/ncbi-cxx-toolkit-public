@@ -36,22 +36,12 @@ call msvcvars.bat
 
 
 if _%1% == _  goto be_abort
-goto be_prep
+goto be_build
 
 :be_abort
 rem You should specify logfile or you will not see an output
 echo Usage: "%0 <solution> <command> <arch> <cfg> <target> <logfile>"
 exit 1
-
-
-:be_prep
-rem Additional safety to have a correct path for Windows full builds:
-rem devenv should be called from a build directory defined on the upper level, 
-rem abd include substed path. New Cygwin automatically "unfollow" that substitution,
-rem that makes a problem to find correct .pdb files after installation.
-rem BLD_DIR sets in pc_build.bat.
-if not exist "%BLD_DIR%" goto be_build
-cd %BLD_DIR%
 
 
 :be_build
