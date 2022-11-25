@@ -221,7 +221,7 @@ char* XMLFindTagValue(const char* entry, const XmlIndex* xip, Int4 tag)
 }
 
 /**********************************************************/
-static bool XMLDelSegnum(IndexblkPtr ibp, char* segnum, size_t len2)
+static bool XMLDelSegnum(IndexblkPtr ibp, const char* segnum, size_t len2)
 {
     if (segnum == NULL)
         return false;
@@ -266,13 +266,13 @@ static bool XMLDelSegnum(IndexblkPtr ibp, char* segnum, size_t len2)
 }
 
 /**********************************************************/
-static void XMLGetSegment(char* entry, IndexblkPtr ibp)
+static void XMLGetSegment(const char* entry, IndexblkPtr ibp)
 {
     TokenStatBlkPtr stoken;
     XmlIndexPtr     xip;
     char*           buf;
-    char*           segnum;
-    char*           segtotal;
+    const char*     segnum;
+    const char*     segtotal;
 
     if (entry == NULL || ibp == NULL || ibp->xip == NULL)
         return;

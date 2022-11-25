@@ -2922,7 +2922,7 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
 }
 
 /**********************************************************/
-void CheckHTGDivision(char* div, CMolInfo::TTech tech)
+void CheckHTGDivision(const char* div, CMolInfo::TTech tech)
 {
     if (div != NULL && StringCmp(div, "HTG") == 0 && tech == CMolInfo::eTech_htgs_3) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_ShouldNotBeHTG, "This Phase 3 HTGS sequence is still in the HTG division. If truly complete, it should move to a non-HTG division.");

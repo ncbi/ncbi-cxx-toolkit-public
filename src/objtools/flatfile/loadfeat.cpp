@@ -123,7 +123,7 @@ struct StrNum {
     int         num;
 };
 
-TrnaAa taa[] = {
+const TrnaAa taa[] = {
     { "alanine", 'A' },
     { "arginine", 'R' },
     { "asparagine", 'N' },
@@ -157,7 +157,7 @@ struct AaCodons {
     Int4        vals[8];
 };
 
-AaCodons aacodons[] = {
+const AaCodons aacodons[] = {
     { "Ala", 'A', 0, { 52, 53, 54, 55, -1, -1, -1, -1 } },   /* GCT, GCC, GCA, GCG */
     { "Arg", 'R', 2, { 28, 29, 30, 31, -1, -1, -1, -1 } },   /* CGT, CGC, CGA, CGG */
     { "Arg", 'R', 5, { 28, 29, 30, 31, -1, -1, -1, -1 } },   /* CGT, CGC, CGA, CGG */
@@ -1572,7 +1572,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
 /**********************************************************/
 static Uint1 fta_get_aa_from_symbol(Char ch)
 {
-    AaCodons* acp;
+    const AaCodons* acp;
 
     for (acp = aacodons; acp->straa != NULL; acp++)
         if (acp->intaa == ch)
@@ -1586,8 +1586,8 @@ static Uint1 fta_get_aa_from_symbol(Char ch)
 /**********************************************************/
 static Uint1 fta_get_aa_from_string(char* str)
 {
-    AaCodons* acp;
-    TrnaAa*   tap;
+    const AaCodons* acp;
+    const TrnaAa*   tap;
 
     for (tap = taa; tap->name != NULL; tap++)
         if (NStr::CompareNocase(str, tap->name) == 0)
@@ -2611,7 +2611,7 @@ static bool fta_qual_a_in_b(const TQualVector& qual1, const TQualVector& qual2)
 }
 
 /**********************************************************/
-static bool fta_feats_same(FeatBlkPtr fbp1, FeatBlkPtr fbp2)
+static bool fta_feats_same(const FeatBlk* fbp1, const FeatBlk* fbp2)
 {
     if (fbp1 == NULL && fbp2 == NULL)
         return true;
@@ -2696,7 +2696,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
     DataBlkPtr tdbp;
     DataBlkPtr tdbpprev;
     DataBlkPtr tdbpnext;
-    FeatBlkPtr fbp1;
+    const FeatBlk* fbp1;
     FeatBlkPtr fbp2;
     Char       ch;
 
@@ -2707,7 +2707,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
         if (dbp->mpData == NULL)
             continue;
 
-        fbp1     = static_cast<FeatBlk*>(dbp->mpData);
+        fbp1     = static_cast<const FeatBlk*>(dbp->mpData);
         tdbpprev = dbp;
         for (tdbp = dbp->mpNext; tdbp != NULL; tdbp = tdbpnext) {
             tdbpnext = tdbp->mpNext;
@@ -3670,7 +3670,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
             continue;
 
         size += 2;
-        std::vector<Char> buf(cur_val.size() + 1);
+        vector<Char> buf(cur_val.size() + 1);
 
         const char* cp = cur_val.c_str();
         for (q = &buf[0]; *cp != '\0'; ++cp) {
@@ -3771,7 +3771,7 @@ static void fta_convert_to_lower_case(char* str)
 }
 
 /**********************************************************/
-static void fta_process_con_slice(std::vector<char>& val_buf)
+static void fta_process_con_slice(vector<char>& val_buf)
 {
     size_t i = 1;
     char*  p = &val_buf[0];
@@ -4072,7 +4072,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             const string& qual_str = cur->GetQual();
             const string& val_str  = cur->GetVal();
 
-            std::vector<Char> val_buf(val_str.begin(), val_str.end());
+            vector<Char> val_buf(val_str.begin(), val_str.end());
             val_buf.push_back(0);
 
             p = &val_buf[0];
@@ -4109,7 +4109,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
 
         if ((*cur)->IsSetVal()) {
             const string& val_str = (*cur)->GetVal();
-            std::vector<Char>  val_buf(val_str.begin(), val_str.end());
+            vector<Char>  val_buf(val_str.begin(), val_str.end());
             val_buf.push_back(0);
 
             if (qual_str == "translation") {
@@ -4288,7 +4288,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             const string& qual_str = cur->GetQual();
             const string& val_str  = cur->GetVal();
 
-            std::vector<Char> val_buf(val_str.begin(), val_str.end());
+            vector<Char> val_buf(val_str.begin(), val_str.end());
             val_buf.push_back(0);
 
             p = &val_buf[0];
