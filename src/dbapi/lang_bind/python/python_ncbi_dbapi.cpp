@@ -33,15 +33,6 @@
 
 #include <ncbi_pch.hpp>
 
-#define PYTHONPP_DEFINE_GLOBALS 1
-#include "python_ncbi_dbapi.hpp"
-#include "pythonpp/pythonpp_pdt.hpp"
-#if PY_VERSION_HEX >= 0x02040000
-#  include "pythonpp/pythonpp_date.hpp"
-#endif
-#include "pythonpp/pythonpp_extdt.hpp"
-#include <structmember.h>
-
 #include <common/ncbi_package_ver.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -62,6 +53,16 @@
 #include <dlfcn.h>
 #endif
 #include <cstdlib>
+
+#define PYTHONPP_DEFINE_GLOBALS 1
+#include "python_ncbi_dbapi.hpp"
+#include "pythonpp/pythonpp_pdt.hpp"
+#if PY_VERSION_HEX >= 0x02040000
+#  include "pythonpp/pythonpp_date.hpp"
+#endif
+#include "pythonpp/pythonpp_extdt.hpp"
+#include <structmember.h>
+
 
 //////////////////////////////////////////////////////////////////////////////
 // Compatibility macros
