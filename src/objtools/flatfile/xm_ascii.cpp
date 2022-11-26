@@ -523,12 +523,12 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, CMolInfo& mol_in
             p = str;
             if (*str == 'm' || *str == 'r')
                 p = str + 1;
-            else if (StringNCmp(str, "pre-", 4) == 0)
+            else if (StringEquN(str, "pre-", 4))
                 p = str + 4;
-            else if (StringNCmp(str, "transcribed ", 12) == 0)
+            else if (StringEquN(str, "transcribed ", 12))
                 p = str + 12;
 
-            if (StringNCmp(p, "RNA", 3) != 0) {
+            if (! StringEquN(p, "RNA", 3)) {
                 ErrPostEx(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
                 MemFree(str);
                 return ret;
@@ -625,13 +625,13 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* or
     molstr = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_MOLTYPE);
     div    = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DIVISION);
 
-    if (StringNCmp(div, "EST", 3) == 0)
+    if (StringEquN(div, "EST", 3))
         mol_info->SetTech(CMolInfo::eTech_est);
-    else if (StringNCmp(div, "STS", 3) == 0)
+    else if (StringEquN(div, "STS", 3))
         mol_info->SetTech(CMolInfo::eTech_sts);
-    else if (StringNCmp(div, "GSS", 3) == 0)
+    else if (StringEquN(div, "GSS", 3))
         mol_info->SetTech(CMolInfo::eTech_survey);
-    else if (StringNCmp(div, "HTG", 3) == 0)
+    else if (StringEquN(div, "HTG", 3))
         mol_info->SetTech(CMolInfo::eTech_htgs_1);
     else if (ibp->is_wgs) {
         if (ibp->is_tsa)
@@ -776,7 +776,7 @@ static void XMLGetDescrComment(char* offset)
         }
         if (*p != '\0') {
             p++;
-            if (StringNCmp(p, "...", 3) == 0)
+            if (StringEquN(p, "...", 3))
                 p[3] = '\0';
             else if (StringChr(p, '.') != NULL) {
                 *p   = '.';
@@ -853,19 +853,19 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
 
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
-            StringNCmp(title.c_str(), "TPA:", 4) == 0) {
+            StringEquN(title.c_str(), "TPA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
         }
 
-        if (ibp->is_tsa == false && StringNCmp(title.c_str(), "TSA:", 4) == 0) {
+        if (ibp->is_tsa == false && StringEquN(title.c_str(), "TSA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
         }
 
-        if (ibp->is_tls == false && StringNCmp(title.c_str(), "TLS:", 4) == 0) {
+        if (ibp->is_tls == false && StringEquN(title.c_str(), "TLS:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
@@ -873,21 +873,21 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     }
 
     if (ibp->is_tpa &&
-        (title.empty() || StringNCmp(title.c_str(), "TPA:", 4) != 0)) {
+        (title.empty() || ! StringEquN(title.c_str(), "TPA:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
         return;
     }
 
     if (ibp->is_tsa &&
-        (title.empty() || StringNCmp(title.c_str(), "TSA:", 4) != 0)) {
+        (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
         return;
     }
 
     if (ibp->is_tls &&
-        (title.empty() || StringNCmp(title.c_str(), "TLS:", 4) != 0)) {
+        (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
         return;
@@ -1316,7 +1316,7 @@ bool XMLAscii(ParserPtr pp)
             if (pp->source == Parser::ESource::Flybase) {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references for entry from FlyBase. Continue anyway.");
             } else if (pp->source == Parser::ESource::Refseq &&
-                       StringNCmp(ibp->acnum, "NW_", 3) == 0) {
+                       StringEquN(ibp->acnum, "NW_", 3)) {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references for RefSeq's NW_ entry. Continue anyway.");
             } else if (ibp->is_wgs) {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references for WGS entry. Continue anyway.");

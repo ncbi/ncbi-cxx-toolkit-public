@@ -2391,11 +2391,11 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource 
 /**********************************************************/
 static char* CheckPcrPrimersTag(char* str)
 {
-    if (StringNCmp(str, "fwd_name", 8) == 0 ||
-        StringNCmp(str, "rev_name", 8) == 0)
+    if (StringEquN(str, "fwd_name", 8) ||
+        StringEquN(str, "rev_name", 8))
         str += 8;
-    else if (StringNCmp(str, "fwd_seq", 7) == 0 ||
-             StringNCmp(str, "rev_seq", 7) == 0)
+    else if (StringEquN(str, "fwd_seq", 7) ||
+             StringEquN(str, "rev_seq", 7))
         str += 7;
     else
         return (NULL);
@@ -2629,7 +2629,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                 empty = false;
                 if (q == NULL || *q == '\0')
                     empty = true;
-                else if (StringNCmp(p, "fwd_name", 8) == 0) {
+                else if (StringEquN(p, "fwd_name", 8)) {
                     if (prev == 1)
                         prev = -2;
                     else if (prev > 2 && prev < 5)
@@ -2647,7 +2647,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         }
                         prev = 1;
                     }
-                } else if (StringNCmp(p, "fwd_seq", 7) == 0) {
+                } else if (StringEquN(p, "fwd_seq", 7)) {
                     if (prev > 2 && prev < 5)
                         prev = -1;
                     else {
@@ -2674,7 +2674,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         }
                         prev = 2;
                     }
-                } else if (StringNCmp(p, "rev_name", 8) == 0) {
+                } else if (StringEquN(p, "rev_name", 8)) {
                     if (prev == 3 || prev == 1)
                         prev = -2;
                     else {

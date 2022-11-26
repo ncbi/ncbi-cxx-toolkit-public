@@ -673,7 +673,7 @@ static bool GetCitSubmit(ParRefBlkPtr prbp, CCit_sub& sub)
 
 #ifdef DIFF
 
-    if (StringNCmp(s + 1, " TO ", 4) == 0)
+    if (StringEquN(s + 1, " TO ", 4))
         s += 4;
 
 #endif

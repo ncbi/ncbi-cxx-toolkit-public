@@ -264,7 +264,7 @@ bool XReadFile(FILE* fp, FinfoBlkPtr finfo)
     bool end_of_file = false;
 
     StringCpy(finfo->str, "\n");
-    while (! end_of_file && StringNCmp(finfo->str, "\n", 1) == 0) {
+    while (! end_of_file && StringEquN(finfo->str, "\n", 1)) {
         finfo->pos = (size_t)ftell(fp);
         if (fgets(finfo->str, sizeof(finfo->str) - 1, fp) == NULL)
             end_of_file = true;
@@ -315,7 +315,7 @@ bool XReadFileBuf(FileBuf& fbuf, FinfoBlkPtr finfo)
     bool end_of_file = false;
 
     StringCpy(finfo->str, "\n");
-    while (! end_of_file && StringNCmp(finfo->str, "\n", 1) == 0) {
+    while (! end_of_file && StringEquN(finfo->str, "\n", 1)) {
         finfo->pos = (size_t)(fbuf.current - fbuf.start);
         if (FileGetsBuf(finfo->str, sizeof(finfo->str) - 1, fbuf) == 0)
             end_of_file = true;
@@ -340,7 +340,7 @@ bool XReadFileBuf(FileBuf& fbuf, FinfoBlkPtr finfo)
 bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const char* str, size_t len)
 {
     bool end_of_file = XReadFile(fp, finfo);
-    while (! end_of_file && StringNCmp(finfo->str, str, len) != 0)
+    while (! end_of_file && ! StringEquN(finfo->str, str, len))
         end_of_file = XReadFile(fp, finfo);
 
     return (end_of_file);
@@ -359,7 +359,7 @@ bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
     const char* p           = keyword.data();
     size_t      len         = keyword.size();
     bool        end_of_file = XReadFileBuf(fbuf, finfo);
-    while (! end_of_file && StringNCmp(finfo->str, p, len) != 0)
+    while (! end_of_file && ! StringEquN(finfo->str, p, len))
         end_of_file = XReadFileBuf(fbuf, finfo);
 
     return (end_of_file);
@@ -377,7 +377,7 @@ bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
 static bool CheckLocus(const char* locus, Parser::ESource source)
 {
     const char* p = locus;
-    if (StringNCmp(locus, "SEG_", 4) == 0 &&
+    if (StringEquN(locus, "SEG_", 4) &&
         (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
         p += 4;
     for (; *p != '\0'; p++) {
@@ -543,9 +543,9 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
     if (p != NULL)
         *p = '\0';
 
-    if (is_mga == false && StringNCmp(offset + lcp->bp, "bp", 2) != 0 &&
-        StringNCmp(offset + lcp->bp, "rc", 2) != 0 &&
-        StringNCmp(offset + lcp->bp, "aa", 2) != 0) {
+    if (is_mga == false && ! StringEquN(offset + lcp->bp, "bp", 2) &&
+        ! StringEquN(offset + lcp->bp, "rc", 2) &&
+        ! StringEquN(offset + lcp->bp, "aa", 2)) {
         i = lcp->bp + 1;
         ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "bp/rc string unrecognized in column %d-%d: %s", i, i + 1, offset + lcp->bp);
         ret = false;
@@ -557,7 +557,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 
     p = offset + lcp->molecule;
     if (is_mga) {
-        if (! StringEquNI(p, "mRNA", 4) && StringNCmp(p, "RNA", 3) != 0) {
+        if (! StringEquNI(p, "mRNA", 4) && ! StringEquN(p, "RNA", 3)) {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_IllegalCAGEMoltype, "Illegal molecule type provided in CAGE record in LOCUS line: \"%s\". Must be \"mRNA\"or \"RNA\". Entry dropped.", p);
             ret = false;
         }
@@ -584,7 +584,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
     }
     MemCpy(date, offset + lcp->date, 11);
     date[11] = '\0';
-    if (StringNCmp(date, "NODATE", 6) == 0) {
+    if (StringEquN(date, "NODATE", 6)) {
         ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "NODATE in LOCUS line will be replaced by current system date");
     } else if (! CkDateFormat(date)) {
         i = lcp->date + 1;
@@ -609,7 +609,7 @@ CRef<CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source)
 {
     Char date[12];
 
-    if (StringNCmp(ptr, "NODATE", 6) == 0)
+    if (StringEquN(ptr, "NODATE", 6))
         return CRef<CDate_std>(new CDate_std(CTime(CTime::eCurrent)));
 
     if (ptr[11] != '\0' && ptr[11] != '\n' && ptr[11] != ' ' &&
@@ -1052,7 +1052,7 @@ static bool IsValidAccessPrefix(const char* acc, const char** accpref)
 
     const char** b = accpref;
     for (; *b; b++) {
-        if (StringNCmp(acc, *b, StringLen(*b)) == 0)
+        if (StringEquN(acc, *b, StringLen(*b)))
             return true;
     }
 
@@ -1211,7 +1211,7 @@ int fta_if_wgs_acc(const CTempString& accession)
     }
 
     const char* p = accession.data();
-    if (StringNCmp(p, "NZ_", 3) == 0) {
+    if (StringEquN(p, "NZ_", 3)) {
         p += 3;
     }
     size_t j = StringLen(p);
@@ -1266,7 +1266,7 @@ bool IsSPROTAccession(const char* acc)
         return false;
     if (len == 8) {
         for (b = sprot_accpref; *b != NULL; b++) {
-            if (StringNCmp(*b, acc, 2) == 0)
+            if (StringEquN(*b, acc, 2))
                 break;
         }
 
@@ -1621,35 +1621,35 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, const char* acc)
              StringCmp(acc, "MY") == 0 || StringCmp(acc, "OO") == 0) &&
             (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
             return true;
-        if ((StringNCmp(acc, "AX", 2) == 0 || StringNCmp(acc, "CQ", 2) == 0 ||
-             StringNCmp(acc, "CS", 2) == 0 || StringNCmp(acc, "FB", 2) == 0 ||
-             StringNCmp(acc, "HA", 2) == 0 || StringNCmp(acc, "HB", 2) == 0 ||
-             StringNCmp(acc, "HC", 2) == 0 || StringNCmp(acc, "HD", 2) == 0 ||
-             StringNCmp(acc, "HH", 2) == 0 || StringNCmp(acc, "GM", 2) == 0 ||
-             StringNCmp(acc, "GN", 2) == 0 || StringNCmp(acc, "JA", 2) == 0 ||
-             StringNCmp(acc, "JB", 2) == 0 || StringNCmp(acc, "JC", 2) == 0 ||
-             StringNCmp(acc, "JD", 2) == 0 || StringNCmp(acc, "JE", 2) == 0 ||
-             StringNCmp(acc, "HI", 2) == 0 || StringNCmp(acc, "LP", 2) == 0 ||
-             StringNCmp(acc, "LQ", 2) == 0 || StringNCmp(acc, "MP", 2) == 0 ||
-             StringNCmp(acc, "MQ", 2) == 0 || StringNCmp(acc, "MR", 2) == 0 ||
-             StringNCmp(acc, "MS", 2) == 0) &&
+        if ((StringEquN(acc, "AX", 2) || StringEquN(acc, "CQ", 2) ||
+             StringEquN(acc, "CS", 2) || StringEquN(acc, "FB", 2) ||
+             StringEquN(acc, "HA", 2) || StringEquN(acc, "HB", 2) ||
+             StringEquN(acc, "HC", 2) || StringEquN(acc, "HD", 2) ||
+             StringEquN(acc, "HH", 2) || StringEquN(acc, "GM", 2) ||
+             StringEquN(acc, "GN", 2) || StringEquN(acc, "JA", 2) ||
+             StringEquN(acc, "JB", 2) || StringEquN(acc, "JC", 2) ||
+             StringEquN(acc, "JD", 2) || StringEquN(acc, "JE", 2) ||
+             StringEquN(acc, "HI", 2) || StringEquN(acc, "LP", 2) ||
+             StringEquN(acc, "LQ", 2) || StringEquN(acc, "MP", 2) ||
+             StringEquN(acc, "MQ", 2) || StringEquN(acc, "MR", 2) ||
+             StringEquN(acc, "MS", 2)) &&
             (parseInfo.all == true || parseInfo.source == Parser::ESource::EMBL))
             return true;
-        if ((StringNCmp(acc, "BD", 2) == 0 || StringNCmp(acc, "DD", 2) == 0 ||
-             StringNCmp(acc, "DI", 2) == 0 || StringNCmp(acc, "DJ", 2) == 0 ||
-             StringNCmp(acc, "DL", 2) == 0 || StringNCmp(acc, "DM", 2) == 0 ||
-             StringNCmp(acc, "FU", 2) == 0 || StringNCmp(acc, "FV", 2) == 0 ||
-             StringNCmp(acc, "FW", 2) == 0 || StringNCmp(acc, "FZ", 2) == 0 ||
-             StringNCmp(acc, "GB", 2) == 0 || StringNCmp(acc, "HV", 2) == 0 ||
-             StringNCmp(acc, "HW", 2) == 0 || StringNCmp(acc, "HZ", 2) == 0 ||
-             StringNCmp(acc, "LF", 2) == 0 || StringNCmp(acc, "LG", 2) == 0 ||
-             StringNCmp(acc, "LV", 2) == 0 || StringNCmp(acc, "LX", 2) == 0 ||
-             StringNCmp(acc, "LY", 2) == 0 || StringNCmp(acc, "LZ", 2) == 0 ||
-             StringNCmp(acc, "MA", 2) == 0 || StringNCmp(acc, "MB", 2) == 0 ||
-             StringNCmp(acc, "MC", 2) == 0 || StringNCmp(acc, "MD", 2) == 0 ||
-             StringNCmp(acc, "ME", 2) == 0 || StringNCmp(acc, "OF", 2) == 0 ||
-             StringNCmp(acc, "OG", 2) == 0 || StringNCmp(acc, "OI", 2) == 0 ||
-             StringNCmp(acc, "OJ", 2) == 0 || StringNCmp(acc, "PA", 2) == 0) &&
+        if ((StringEquN(acc, "BD", 2) || StringEquN(acc, "DD", 2) ||
+             StringEquN(acc, "DI", 2) || StringEquN(acc, "DJ", 2) ||
+             StringEquN(acc, "DL", 2) || StringEquN(acc, "DM", 2) ||
+             StringEquN(acc, "FU", 2) || StringEquN(acc, "FV", 2) ||
+             StringEquN(acc, "FW", 2) || StringEquN(acc, "FZ", 2) ||
+             StringEquN(acc, "GB", 2) || StringEquN(acc, "HV", 2) ||
+             StringEquN(acc, "HW", 2) || StringEquN(acc, "HZ", 2) ||
+             StringEquN(acc, "LF", 2) || StringEquN(acc, "LG", 2) ||
+             StringEquN(acc, "LV", 2) || StringEquN(acc, "LX", 2) ||
+             StringEquN(acc, "LY", 2) || StringEquN(acc, "LZ", 2) ||
+             StringEquN(acc, "MA", 2) || StringEquN(acc, "MB", 2) ||
+             StringEquN(acc, "MC", 2) || StringEquN(acc, "MD", 2) ||
+             StringEquN(acc, "ME", 2) || StringEquN(acc, "OF", 2) ||
+             StringEquN(acc, "OG", 2) || StringEquN(acc, "OI", 2) ||
+             StringEquN(acc, "OJ", 2) || StringEquN(acc, "PA", 2)) &&
             (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
             return true;
 
@@ -1747,9 +1747,9 @@ static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
     }
 
     if (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ) {
-        if (StringNCmp(acc, "FX", 2) == 0 || StringNCmp(acc, "LA", 2) == 0 ||
-            StringNCmp(acc, "LE", 2) == 0 || StringNCmp(acc, "LH", 2) == 0 ||
-            StringNCmp(acc, "LI", 2) == 0 || StringNCmp(acc, "LJ", 2) == 0 ||
+        if (StringEquN(acc, "FX", 2) || StringEquN(acc, "LA", 2) ||
+            StringEquN(acc, "LE", 2) || StringEquN(acc, "LH", 2) ||
+            StringEquN(acc, "LI", 2) || StringEquN(acc, "LJ", 2) ||
             fta_if_wgs_acc(ibp->acnum) == 8) {
             ibp->is_tsa      = true;
             ibp->tsa_allowed = true;
@@ -2183,7 +2183,7 @@ bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlkPtr finfo, const 
     const char* p    = keyword.data();
     size_t      len  = keyword.size();
     bool        done = end_of_file;
-    while (! done && StringNCmp(finfo->str, p, len) != 0)
+    while (! done && ! StringEquN(finfo->str, p, len))
         done = XReadFileBuf(fbuf, finfo);
 
     return (done);

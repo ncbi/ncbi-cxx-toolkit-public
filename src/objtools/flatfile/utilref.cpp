@@ -90,14 +90,14 @@ ValNodePtr get_tokens(char* pt, const Char* delimeter)
         more      = false;
 
         for (; *pt != '\0'; pt++) {
-            if (StringNCmp(pt, delimeter, StringLen(delimeter)) != 0 &&
-                StringNCmp(pt, ",\n", 2) != 0 && StringNCmp(pt, ",~", 2) != 0 &&
-                StringNCmp(pt, " and ", 5) != 0)
+            if (! StringEquN(pt, delimeter, StringLen(delimeter)) &&
+                ! StringEquN(pt, ",\n", 2) && ! StringEquN(pt, ",~", 2) &&
+                ! StringEquN(pt, " and ", 5))
                 continue;
 
             *pt = '\0';
 
-            if (StringNCmp(pt + 1, "and ", 4) == 0)
+            if (StringEquN(pt + 1, "and ", 4))
                 pt += 4;
 
             more = true;
@@ -135,7 +135,7 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
 
     for (vnp = token; vnp != NULL; vnp = vnp->next) {
         p = vnp->data;
-        if (StringNCmp(p, "and ", 4) == 0)
+        if (StringEquN(p, "and ", 4))
             p += 4;
 
         CRef<CAuthor> author = get_std_auth(p, format);
@@ -264,7 +264,7 @@ void get_auth(char* pt, Uint1 format, char* jour, CRef<CAuth_list>& auths)
     for (eptr = pt + len - 1; isalnum(*eptr) == 0; eptr--)
         len--;
 
-    if (len > 4 && StringNCmp(eptr - 4, "et al", 5) == 0) {
+    if (len > 4 && StringEquN(eptr - 4, "et al", 5)) {
         if (jour == NULL)
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "%s", pt);
         else
@@ -551,7 +551,7 @@ CRef<CCit_gen> get_error(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C
 
     if (zero_year) {
         CRef<CTitle::C_E> journal_title(new CTitle::C_E);
-        if (StringNCmp(bptr, "(re)", 4) == 0)
+        if (StringEquN(bptr, "(re)", 4))
             journal_title->SetName(NStr::Sanitize(bptr));
         else
             journal_title->SetIso_jta(NStr::Sanitize(bptr));

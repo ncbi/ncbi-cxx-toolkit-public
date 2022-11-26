@@ -1414,7 +1414,7 @@ char* StringRStr(char* where, const char* what)
     size_t i   = StringLen(what);
     char*  res = nullptr;
     for (char* p = where; *p != '\0'; p++)
-        if (StringNCmp(p, what, i) == 0)
+        if (StringEquN(p, what, i))
             res = p;
 
     return (res);
@@ -1614,7 +1614,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
     if (p != NULL)
         *p = '\0';
 
-    if (StringNCmp(str, name, len) != 0) {
+    if (! StringEquN(str, name, len)) {
         if (format == Parser::EFormat::GenBank) {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "PROJECT line is missing \"GenomeProject:\" tag. Entry dropped.", str);
             MemFree(str);
@@ -2164,14 +2164,12 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
         if (i == 3) {
             if (slip->wgscont == NULL)
                 slip->wgscont = accession;
-            else if (slip->wgsacc == NULL &&
-                     StringNCmp(slip->wgscont, accession, 4) != 0)
+            else if (! slip->wgsacc && ! StringEquN(slip->wgscont, accession, 4))
                 slip->wgsacc = accession;
         } else if (i == 7) {
             if (slip->wgsscaf == NULL)
                 slip->wgsscaf = accession;
-            else if (slip->wgsacc == NULL &&
-                     StringNCmp(slip->wgsscaf, accession, 4) != 0)
+            else if (! slip->wgsacc && ! StringEquN(slip->wgsscaf, accession, 4))
                 slip->wgsacc = accession;
         }
     }
@@ -2318,8 +2316,8 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* n
     non_tpa = sli.genbank + sli.embl + sli.pir + sli.swissprot + sli.other +
               sli.ddbj + sli.prf;
 
-    if (iscon && sli.wgsacc == NULL && sli.wgscont != NULL &&
-        sli.wgsscaf != NULL && StringNCmp(sli.wgscont, sli.wgsscaf, 4) != 0)
+    if (iscon && ! sli.wgsacc && sli.wgscont &&
+        sli.wgsscaf && ! StringEquN(sli.wgscont, sli.wgsscaf, 4))
         sli.wgsacc = sli.wgsscaf;
 
     ch = '\0';
@@ -2363,11 +2361,9 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* n
             ErrPostEx(SEV_ERROR, ERR_LOCATION_ContigAndScaffold, "The CONTIG/CO line with location \"%s\" refers to intervals on both WGS contig and WGS scaffold records.", location);
 
         if (sli.wgsacc != NULL) {
-            if (sli.wgscont != NULL &&
-                StringNCmp(sli.wgscont, sli.wgsacc, 4) != 0)
+            if (sli.wgscont && ! StringEquN(sli.wgscont, sli.wgsacc, 4))
                 p = sli.wgscont;
-            else if (sli.wgsscaf != NULL &&
-                     StringNCmp(sli.wgsscaf, sli.wgsacc, 4) != 0)
+            else if (sli.wgsscaf && ! StringEquN(sli.wgsscaf, sli.wgsacc, 4))
                 p = sli.wgsscaf;
 
             if (p != NULL) {
@@ -2385,14 +2381,11 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* n
         i = IsNewAccessFormat(ibp->acnum);
         if (i == 3 || i == 7) {
             p = NULL;
-            if (sli.wgscont != NULL &&
-                StringNCmp(sli.wgscont, ibp->acnum, 4) != 0)
+            if (sli.wgscont && ! StringEquN(sli.wgscont, ibp->acnum, 4))
                 p = sli.wgscont;
-            else if (sli.wgsscaf != NULL &&
-                     StringNCmp(sli.wgsscaf, ibp->acnum, 4) != 0)
+            else if (sli.wgsscaf && ! StringEquN(sli.wgsscaf, ibp->acnum, 4))
                 p = sli.wgsscaf;
-            else if (sli.wgsacc != NULL &&
-                     StringNCmp(sli.wgsacc, ibp->acnum, 4) != 0)
+            else if (sli.wgsacc && ! StringEquN(sli.wgsacc, ibp->acnum, 4))
                 p = sli.wgsscaf;
 
             if (p != NULL) {
@@ -2611,7 +2604,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
                 break;
             }
             size_t i = StringLen(tag);
-            if (StringNCmp(q + i, "-END##", 6) != 0) {
+            if (! StringEquN(q + i, "-END##", 6)) {
                 q += (i + 6);
                 continue;
             }

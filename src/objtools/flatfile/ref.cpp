@@ -330,7 +330,7 @@ static char* check_book_tit(char* title)
 
     if (p[3] == '.')
         q = p + 4;
-    else if (StringNCmp(p + 3, "ume", 3) == 0)
+    else if (StringEquN(p + 3, "ume", 3))
         q = p + 6;
     else
         return nullptr;
@@ -722,7 +722,7 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     is_er = 0;
     if (er > 0)
         is_er |= 01; /* based on REMARKs */
-    if (StringNCmp(bptr, "(er)", 4) == 0)
+    if (StringEquN(bptr, "(er)", 4))
         is_er |= 02;
 
     CRef<CCit_art> cit_art;
@@ -820,7 +820,7 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     }
 
     if (*year == '0') {
-        if (pages && StringNCmp(pages, "0-0", 3) == 0 &&
+        if (pages && StringEquN(pages, "0-0", 3) &&
             pp->source == Parser::ESource::EMBL)
             *all_zeros = true;
         return cit_art;
@@ -840,7 +840,7 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
         imp.SetPrepub(pre);
 
     *end_pages = '\0';
-    if (pages && StringNCmp(pages, "0-0", 3) != 0) {
+    if (pages && ! StringEquN(pages, "0-0", 3)) {
         i = valid_pages_range(pages, tit, is_er, (pre == CImprint::ePrepub_in_press));
         if (i == 0)
             imp.SetPages(pages);
@@ -1023,7 +1023,7 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
     p = tbptr;
     CRef<CTitle::C_E> book_title(new CTitle::C_E);
 
-    if (StringNCmp("(in)", tbptr, 4) == 0) {
+    if (StringEquN("(in)", tbptr, 4)) {
         for (s = tbptr + 4; *s == ' ';)
             s++;
         for (bptr = s; *s != ';' && *s != '(' && *s != '\0';)
@@ -1084,7 +1084,7 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
             while (*pages == ' ')
                 pages++;
 
-            if (StringNCmp(pages, "0-0", 3) == 0)
+            if (StringEquN(pages, "0-0", 3))
                 cit_book.SetImp().SetPrepub(CImprint::ePrepub_in_press);
             else {
                 bool is_in_press = cit_book.GetImp().IsSetPrepub() && cit_book.GetImp().GetPrepub() == CImprint::ePrepub_in_press;
@@ -1318,7 +1318,7 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
         for (;;) {
             for (b = strip_sub_str; *b; b++) {
                 size_t l_str = StringLen(*b);
-                if (StringNCmp(s, *b, l_str) == 0) {
+                if (StringEquN(s, *b, l_str)) {
                     for (s += l_str; *s == ' ' || *s == '.';)
                         s++;
                     break;
@@ -1395,7 +1395,7 @@ static CRef<CCit_sub> get_sub_gsdb(char* bptr, CRef<CAuth_list>& auth_list, CRef
     if (title.NotEmpty()) {
         const Char* s     = title->GetName().c_str();
         size_t      l_str = StringLen("Published by");
-        if (StringNCmp(s, "Published by", l_str) == 0) {
+        if (StringEquN(s, "Published by", l_str)) {
             s += l_str;
             while (*s == ' ')
                 s++;
@@ -1509,18 +1509,18 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
 
     if (my_len >= 6 && *p == '(') {
         p += 6;
-        if (StringNCmp(" In press", p, 9) == 0) {
+        if (StringEquN(" In press", p, 9)) {
             retval = ParFlat_IN_PRESS;
             pre    = CImprint::ePrepub_in_press;
         }
     }
 
     p = bptr;
-    if (StringNCmp("Unpub", p, 5) == 0 || StringNCmp("Unknown", p, 7) == 0) {
+    if (StringEquN("Unpub", p, 5) || StringEquN("Unknown", p, 7)) {
         retval                = ParFlat_UNPUB_JOURNAL;
         const Char* title_str = title.Empty() ? nullptr : title->GetName().c_str();
         ret->SetGen(*get_unpub(bptr, eptr, auth_list, title_str));
-    } else if (StringNCmp("(in)", p, 4) == 0) {
+    } else if (StringEquN("(in)", p, 4)) {
         retval = ParFlat_MONOGRAPH_NOT_JOURNAL;
 
         CRef<CCit_art> article = get_book(bptr, auth_list, title, pre, pp->format, p);
@@ -1530,7 +1530,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         else
             ret->SetArticle(*article);
 
-    } else if (StringNCmp("Thesis", p, 6) == 0) {
+    } else if (StringEquN("Thesis", p, 6)) {
         retval = ParFlat_THESIS_CITATION;
 
         CRef<CCit_let> cit_let = get_thesis(bptr, auth_list, title, pre);
@@ -1539,7 +1539,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
             return ret;
         }
         ret->SetMan(*cit_let);
-    } else if (StringNCmp("Submi", p, 5) == 0) {
+    } else if (StringEquN("Submi", p, 5)) {
         retval = ParFlat_SUBMITTED;
 
         CRef<CCit_sub> cit_sub = get_sub(pp, bptr, auth_list);
@@ -1549,7 +1549,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         }
 
         ret->SetSub(*cit_sub);
-    } else if (StringNCmp("Published in GSDB", p, 17) == 0) {
+    } else if (StringEquN("Published in GSDB", p, 17)) {
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_GsdbRefDropped, "A published-in-gsdb reference was encountered and has been dropped [%s]", bptr);
         retval = ParFlat_SUBMITTED;
 
@@ -1560,7 +1560,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         }
 
         ret->SetSub(*cit_sub);
-    } else if (StringNCmp("Patent", p, 6) == 0 ||
+    } else if (StringEquN("Patent", p, 6) ||
                pp->source == Parser::ESource::USPTO) {
         retval = ParFlat_PATENT_CITATION;
 
@@ -1580,7 +1580,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
             ret.Reset();
             return ret;
         }
-    } else if (StringNCmp("Book:", p, 5) == 0) {
+    } else if (StringEquN("Book:", p, 5)) {
         retval = ParFlat_BOOK_CITATION;
 
         CRef<CCit_book> book = get_whole_book(bptr, auth_list, title, pre);
@@ -1619,8 +1619,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         else {
             CRef<CCit_art> new_art = get_art(pp, bptr, auth_list, title, pre, has_muid, &all_zeros, er);
             if (new_art.Empty()) {
-                if (! all_zeros &&
-                    StringNCmp(bptr, "(er)", 4) != 0 && er == 0)
+                if (! all_zeros && ! StringEquN(bptr, "(er)", 4) && er == 0)
                     ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference, "Journal format error (cit-gen created): %s", bptr);
 
                 ret->SetGen(*get_error(bptr, auth_list, title));
@@ -1867,7 +1866,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
 
     CRef<CTitle::C_E> title_art(new CTitle::C_E);
     if (p) {
-        if (StringNCmp(p, "Direct Submission", 17) != 0 &&
+        if (! StringEquN(p, "Direct Submission", 17) &&
             *p != '\0' && *p != ';') {
             title = clean_up(p);
             if (title) {
@@ -1909,7 +1908,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : nullptr);
 
     CRef<CCit_art> cit_art;
-    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringNCmp(p, "(er)", 4) == 0 || er > 0)) {
+    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringEquN(p, "(er)", 4) || er > 0)) {
         cit_art = FetchPubPmId(pmid);
         if (cit_art.Empty())
             pmid = ZERO_ENTREZ_ID;
@@ -2041,7 +2040,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
     CRef<CTitle::C_E> title_art;
     if (ind[ParFlat_TITLE]) {
         p = ind[ParFlat_TITLE]->mOffset;
-        if (StringNCmp(p, "Direct Submission", 17) != 0 &&
+        if (! StringEquN(p, "Direct Submission", 17) &&
             *p != '\0' && *p != ';') {
             q = clean_up(p);
             if (q) {
@@ -2081,7 +2080,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : nullptr);
 
     CRef<CCit_art> cit_art;
-    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringNCmp(p, "(er)", 4) == 0 || er > 0)) {
+    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringEquN(p, "(er)", 4) || er > 0)) {
         cit_art = FetchPubPmId(pmid);
         if (! cit_art)
             pmid = ZERO_ENTREZ_ID;
@@ -2238,7 +2237,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     }
 
     CRef<CCit_art> cit_art;
-    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringNCmp(p, "(er)", 4) == 0 || er > 0)) {
+    if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringEquN(p, "(er)", 4) || er > 0)) {
         cit_art = FetchPubPmId(pmid);
         if (! cit_art)
             pmid = ZERO_ENTREZ_ID;

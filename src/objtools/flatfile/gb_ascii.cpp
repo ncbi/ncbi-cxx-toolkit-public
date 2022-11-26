@@ -617,12 +617,12 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
         p    = bptr + lcp->molecule;
         if (*p == 'm' || *p == 'r')
             p++;
-        else if (StringNCmp(p, "pre-", 4) == 0)
+        else if (StringEquN(p, "pre-", 4))
             p += 4;
-        else if (StringNCmp(p, "transcribed ", 12) == 0)
+        else if (StringEquN(p, "transcribed ", 12))
             p += 12;
 
-        if (StringNCmp(p, "RNA", 3) != 0) {
+        if (! StringEquN(p, "RNA", 3)) {
             ErrPostEx(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
             return ret;
         }
@@ -750,13 +750,13 @@ static CRef<CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry, cons
 
     bptr = GBDivOffset(entry, ibp->lc.div);
 
-    if (StringNCmp(bptr, "EST", 3) == 0)
+    if (StringEquN(bptr, "EST", 3))
         mol_info->SetTech(CMolInfo::eTech_est);
-    else if (StringNCmp(bptr, "STS", 3) == 0)
+    else if (StringEquN(bptr, "STS", 3))
         mol_info->SetTech(CMolInfo::eTech_sts);
-    else if (StringNCmp(bptr, "GSS", 3) == 0)
+    else if (StringEquN(bptr, "GSS", 3))
         mol_info->SetTech(CMolInfo::eTech_survey);
-    else if (StringNCmp(bptr, "HTG", 3) == 0)
+    else if (StringEquN(bptr, "HTG", 3))
         mol_info->SetTech(CMolInfo::eTech_htgs_1);
     else if (ibp->is_wgs) {
         if (ibp->is_tsa)
@@ -827,7 +827,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
 
     for (;;) {
         bptr = ptr + 1;
-        if (StringNCmp(bptr, "               ", ParFlat_COL_DATA) != 0)
+        if (! StringEquN(bptr, "               ", ParFlat_COL_DATA))
             break;
 
         ptr = StringChr(bptr, '\n');
@@ -914,7 +914,7 @@ static void fta_get_user_field(char* line, const Char* tag, CUser_object& user_o
         CRef<CUser_field> field_set(new CUser_field);
         field_set->SetData().SetFields().push_back(cur_field);
 
-        if (StringNCmp(p, ";gi=", 4) == 0) {
+        if (StringEquN(p, ";gi=", 4)) {
             p += 4;
             for (q = p; *p >= '0' && *p <= '9';)
                 p++;
@@ -1019,11 +1019,11 @@ static void fta_get_user_object(CSeq_entry& seq_entry, const DataBlk& entry)
             p++;
         if (*p == '\0' || p == r)
             break;
-        if (StringNCmp(r, "Related", 7) == 0)
+        if (StringEquN(r, "Related", 7))
             fta_get_user_field(p, "Related", *user_obj);
-        else if (StringNCmp(r, "Assembly", 8) == 0)
+        else if (StringEquN(r, "Assembly", 8))
             fta_get_user_field(p, "Assembly", *user_obj);
-        else if (StringNCmp(r, "Comment", 7) == 0)
+        else if (StringEquN(r, "Comment", 7))
             fta_get_str_user_field(p, "Comment", *user_obj);
         else
             continue;
@@ -1150,17 +1150,17 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
 
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
-            StringNCmp(title.c_str(), "TPA:", 4) == 0) {
+            StringEquN(title.c_str(), "TPA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
         }
-        if (ibp->is_tsa == false && StringNCmp(title.c_str(), "TSA:", 4) == 0) {
+        if (ibp->is_tsa == false && StringEquN(title.c_str(), "TSA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
         }
-        if (ibp->is_tls == false && StringNCmp(title.c_str(), "TLS:", 4) == 0) {
+        if (ibp->is_tls == false && StringEquN(title.c_str(), "TLS:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
@@ -1182,22 +1182,22 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         fta_get_mga_user_object(bioseq.SetDescr().Set(), offset, ibp->bases);
     }
     if (ibp->is_tpa &&
-        (title.empty() || (StringNCmp(title.c_str(), "TPA:", 4) != 0 &&
-                           StringNCmp(title.c_str(), "TPA_exp:", 8) != 0 &&
-                           StringNCmp(title.c_str(), "TPA_inf:", 8) != 0 &&
-                           StringNCmp(title.c_str(), "TPA_asm:", 8) != 0 &&
-                           StringNCmp(title.c_str(), "TPA_reasm:", 10) != 0))) {
+        (title.empty() || (! StringEquN(title.c_str(), "TPA:", 4) &&
+                           ! StringEquN(title.c_str(), "TPA_exp:", 8) &&
+                           ! StringEquN(title.c_str(), "TPA_inf:", 8) &&
+                           ! StringEquN(title.c_str(), "TPA_asm:", 8) &&
+                           ! StringEquN(title.c_str(), "TPA_reasm:", 10)))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
         return;
     }
     if (ibp->is_tsa && ! ibp->is_tpa &&
-        (title.empty() || StringNCmp(title.c_str(), "TSA:", 4) != 0)) {
+        (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
         return;
     }
-    if (ibp->is_tls && (title.empty() || StringNCmp(title.c_str(), "TLS:", 4) != 0)) {
+    if (ibp->is_tls && (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
         return;
@@ -1491,7 +1491,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
 
         AddNIDSeqId(*bioseq, *pEntry, ParFlat_NCBI_GI, ParFlat_COL_DATA, pp->source);
 
-        if (StringNCmp(pEntry->mOffset + ibp->lc.bp, "aa", 2) == 0) {
+        if (StringEquN(pEntry->mOffset + ibp->lc.bp, "aa", 2)) {
             ibp->is_prot = true;
             conv         = protconv.get();
         } else {
@@ -1598,7 +1598,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
             if (pp->source == Parser::ESource::Flybase) {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references for entry from FlyBase. Continue anyway.");
             } else if (pp->source == Parser::ESource::Refseq &&
-                       StringNCmp(ibp->acnum, "NW_", 3) == 0) {
+                       StringEquN(ibp->acnum, "NW_", 3)) {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references for RefSeq's NW_ entry. Continue anyway.");
             } else if (ibp->is_wgs) {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references for WGS entry. Continue anyway.");
@@ -2025,7 +2025,7 @@ bool GenBankAscii(ParserPtr pp)
                            "No references for entry from FlyBase. Continue anyway.");
             }
             else if(pp->source == Parser::ESource::Refseq &&
-                    StringNCmp(ibp->acnum, "NW_", 3) == 0)
+                    StringEquN(ibp->acnum, "NW_", 3))
             {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
                            "No references for RefSeq's NW_ entry. Continue anyway.");
