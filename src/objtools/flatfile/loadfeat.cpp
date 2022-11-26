@@ -1526,7 +1526,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
             p += 9;
             continue;
         }
-        if (StringNCmp(p + 9, " RNA", 4) == 0) {
+        if (StringEquN(p + 9, " RNA", 4)) {
             p += 13;
             continue;
         }
@@ -1681,9 +1681,9 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
     for (p = end; *p == ' ' || *p == ')' || *p == '(';)
         p++;
     q = p;
-    if (StringNCmp(p, "F MET", 5) == 0)
+    if (StringEquN(p, "F MET", 5))
         p += 5;
-    else if (StringNCmp(p, "F MT", 4) == 0)
+    else if (StringEquN(p, "F MT", 4))
         p += 4;
     while (*p >= 'A' && *p <= 'Z')
         p++;
@@ -1805,7 +1805,7 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned c
     }
     ShrinkSpaces(comm);
 
-    if (StringNCmp(comm, "CODON RECOGNIZED ", 17) == 0) {
+    if (StringEquN(comm, "CODON RECOGNIZED ", 17)) {
         p = comm + 17;
         q = StringChr(p, ' ');
         if (q != NULL && StringCmp(q + 1, "PUTATIVE") == 0)
@@ -1817,8 +1817,8 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned c
         }
     }
 
-    if (StringNCmp(comm, "PUTATIVE ", 9) == 0 && comm[10] == ' ' &&
-        comm[14] == ' ' && StringNCmp(&comm[15], "TRNA", 4) == 0) {
+    if (StringEquN(comm, "PUTATIVE ", 9) && comm[10] == ' ' &&
+        comm[14] == ' ' && StringEquN(&comm[15], "TRNA", 4)) {
         ret->SetAa().SetNcbieaa(fta_get_aa_from_symbol(comm[9]));
         if (get_aa_from_trna(*ret) != 0) {
             MemFree(comm);
@@ -3940,7 +3940,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
         for (ptr2 = ptr1; *ptr2 != ' ' && *ptr2 != '\n';)
             ptr2++;
 
-        if (StringNCmp(ptr1, "- ", 2) == 0) {
+        if (StringEquN(ptr1, "- ", 2)) {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
             fbp->key = StringSave("misc_feature");
         } else
@@ -4727,7 +4727,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
             prefix = StringSave(tbp->str);
         else {
             i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
-            if (StringNCmp(prefix, tbp->str, i) != 0)
+            if (! StringEquN(prefix, tbp->str, i))
                 break;
         }
     }
@@ -4787,7 +4787,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
                     prefix = StringSave(p);
                 else {
                     i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
-                    if (StringNCmp(prefix, p, i) != 0)
+                    if (! StringEquN(prefix, p, i))
                         break;
                 }
             }
@@ -5569,7 +5569,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
     if (pp->source != Parser::ESource::EMBL || pp->format != Parser::EFormat::EMBL) {
         biomol = Seq_descr_GIBB_mol_genomic;
-        if (div == NULL || StringNCmp(div, "VRL", 3) != 0) {
+        if (! div || ! StringEquN(div, "VRL", 3)) {
             ErrPostEx(SEV_ERROR, ERR_LOCUS_NonViralRNAMoltype, "Genomic RNA implied by presence of RNA moltype, but sequence is non-viral.");
         }
         return;
@@ -5605,7 +5605,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
     /* Non-viral division
      */
-    if (div == NULL || StringNCmp(div, "VRL", 3) != 0) {
+    if (! div || ! StringEquN(div, "VRL", 3)) {
         biomol = Seq_descr_GIBB_mol_mRNA;
 
         if (count > 1) {
@@ -5617,7 +5617,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
                 p++;
             if (*p == '\n') {
                 p++;
-                if (StringNCmp(p, "DE   ", 5) == 0)
+                if (StringEquN(p, "DE   ", 5))
                     p += 5;
             }
             if (StringEquNI(p, "Synthetase", 10))
@@ -5645,7 +5645,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         if (dbp->mOffset == NULL)
             continue;
         offset = dbp->mOffset + ParFlat_COL_FEATKEY;
-        if (StringNCmp(offset, "CDS", 3) == 0)
+        if (StringEquN(offset, "CDS", 3))
             i++;
     }
     if (i > 1) {

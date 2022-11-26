@@ -262,7 +262,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     if (! gi)
         return;
 
-    if (StringNCmp(p, "GI:", 3) != 0) {
+    if (! StringEquN(p, "GI:", 3)) {
         ErrPostEx(SEV_FATAL, ERR_VERSION_IncorrectGIInVersion, "Incorrect GI entry in VERSION line: \"%s\".", line);
         entry->drop = 1;
         return;
@@ -302,8 +302,8 @@ static bool fta_check_mga_line(char* line, IndexblkPtr ibp)
     *p++ = '\0';
 
     if (StringLen(str) != 12 || StringLen(p) != 12 ||
-        StringNCmp(str, ibp->acnum, 5) != 0 ||
-        StringNCmp(p, ibp->acnum, 5) != 0) {
+        ! StringEquN(str, ibp->acnum, 5) ||
+        ! StringEquN(p, ibp->acnum, 5)) {
         MemFree(str);
         return false;
     }
@@ -682,7 +682,7 @@ bool GenBankIndex(ParserPtr pp)
                     if (after_REFER == false && pp->source != Parser::ESource::Flybase &&
                         entry->is_wgs == false &&
                         (pp->source != Parser::ESource::Refseq ||
-                         StringNCmp(entry->acnum, "NW_", 3) != 0)) {
+                         ! StringEquN(entry->acnum, "NW_", 3))) {
                         entry->drop = gb_err_field("REFERENCE");
                     }
 

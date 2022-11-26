@@ -157,8 +157,8 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             reviewed = StringEquNI(p, "reviewed", 8);
 
             while (! end_of_file &&
-                   StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_END].c_str(), swissProtKeywords[ParFlatSP_END].size()) != 0) {
-                if (StringNCmp(finfo.str, "RM", 2) == 0) {
+                   ! StringEquN(finfo.str, swissProtKeywords[ParFlatSP_END].c_str(), swissProtKeywords[ParFlatSP_END].size())) {
+                if (StringEquN(finfo.str, "RM", 2)) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "RM line type has been replaced by RX, skipped %s", finfo.str);
                 }
                 if (after_SQ && isalpha(finfo.str[0]) != 0) {
@@ -166,26 +166,26 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                     entry->drop = 1;
                     break;
                 }
-                if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_SQ].c_str(), swissProtKeywords[ParFlatSP_SQ].size()) == 0)
+                if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_SQ].c_str(), swissProtKeywords[ParFlatSP_SQ].size()))
                     after_SQ = true;
 
-                if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_OS].c_str(), swissProtKeywords[ParFlatSP_OS].size()) == 0)
+                if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_OS].c_str(), swissProtKeywords[ParFlatSP_OS].size()))
                     after_OS = true;
 
-                if (StringNCmp(finfo.str, "OC", 2) == 0)
+                if (StringEquN(finfo.str, "OC", 2))
                     after_OC = true;
 
-                if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_RN].c_str(), swissProtKeywords[ParFlatSP_RN].size()) == 0)
+                if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_RN].c_str(), swissProtKeywords[ParFlatSP_RN].size()))
                     after_RN = true;
 
-                if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_AC].c_str(), swissProtKeywords[ParFlatSP_AC].size()) == 0) {
+                if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_AC].c_str(), swissProtKeywords[ParFlatSP_AC].size())) {
                     if (after_AC == false) {
                         after_AC = true;
                         if (! GetAccession(pp, finfo.str, entry, 2))
                             pp->num_drop++;
                     } else if (entry->drop == 0 && ! GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
-                } else if (StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_DT].c_str(), swissProtKeywords[ParFlatSP_DT].size()) == 0) {
+                } else if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_DT].c_str(), swissProtKeywords[ParFlatSP_DT].size())) {
                     if (reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
                         SPGetVerNum(finfo.str, entry);
                     stoken = TokenString(finfo.str, ' ');

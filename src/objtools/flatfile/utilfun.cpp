@@ -398,7 +398,7 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
             break;
         }
         size_t preflen = p - first;
-        if (preflen != (size_t)(q - last) || StringNCmp(first, last, preflen) != 0) {
+        if (preflen != (size_t)(q - last) || ! StringEquN(first, last, preflen)) {
             *dash = '-';
             ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", tbp->str);
             break;
@@ -1068,7 +1068,7 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
     auto keywordCount = keywordList.size();
     for (i = 0; i < keywordCount; i++) {
         auto keyword = keywordList[i];
-        if (StringNCmp(ptr, keyword.c_str(), keyword.size()) == 0)
+        if (StringEquN(ptr, keyword.c_str(), keyword.size()))
             return true;
     }
 

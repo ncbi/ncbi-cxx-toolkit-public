@@ -183,7 +183,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
 
     if (pp->format == Parser::EFormat::GenBank) {
         char* q = entry->mOffset;
-        if (q != NULL && entry->len != 0 && StringNCmp(q, "LOCUS ", 6) == 0) {
+        if (q && entry->len != 0 && StringEquN(q, "LOCUS ", 6)) {
             char* p = StringChr(q, '\n');
             if (p != NULL)
                 *p = '\0';
@@ -250,7 +250,7 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
     } else
         eptr = offset + len - 1;
 
-    if (len > 5 && StringNCmp(eptr - 3, "BP.", 3) == 0)
+    if (len > 5 && StringEquN(eptr - 3, "BP.", 3))
         eptr -= 4;
 
     while (*eptr == ' ' && eptr > offset)

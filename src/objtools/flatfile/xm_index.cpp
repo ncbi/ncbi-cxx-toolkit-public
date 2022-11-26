@@ -172,19 +172,19 @@ static void XMLRestoreSpecialCharacters(char* buf)
     char* q;
 
     for (p = buf, q = buf; *p != '\0';) {
-        if (StringNCmp(p, "&lt;", 4) == 0) {
+        if (StringEquN(p, "&lt;", 4)) {
             *q++ = '<';
             p += 4;
-        } else if (StringNCmp(p, "&gt;", 4) == 0) {
+        } else if (StringEquN(p, "&gt;", 4)) {
             *q++ = '>';
             p += 4;
-        } else if (StringNCmp(p, "&amp;", 5) == 0) {
+        } else if (StringEquN(p, "&amp;", 5)) {
             *q++ = '&';
             p += 5;
-        } else if (StringNCmp(p, "&apos;", 6) == 0) {
+        } else if (StringEquN(p, "&apos;", 6)) {
             *q++ = '\'';
             p += 6;
-        } else if (StringNCmp(p, "&quot;", 6) == 0) {
+        } else if (StringEquN(p, "&quot;", 6)) {
             *q++ = '\"';
             p += 6;
         } else
@@ -950,7 +950,7 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
     if (got_reference == false && pp->source != Parser::ESource::Flybase &&
         ibp->is_wgs == false &&
         (pp->source != Parser::ESource::Refseq ||
-         StringNCmp(ibp->acnum, "NW_", 3) != 0))
+         ! StringEquN(ibp->acnum, "NW_", 3)))
         ret = XMLErrField(INSDSEQ_REFERENCES);
     if (got_primary && ibp->is_tpa == false && ibp->tsa_allowed == false) {
         ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type %s is allowed for TPA or TSA records only. Continue anyway.", XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));

@@ -390,12 +390,12 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
                 if (q == NULL)
                     break;
                 char* s = q + 1;
-                if (StringNCmp(s, "acronym:", 8) == 0 ||
-                    StringNCmp(s, "synonym:", 8) == 0)
+                if (StringEquN(s, "acronym:", 8) ||
+                    StringEquN(s, "synonym:", 8))
                     s += 8;
-                else if (StringNCmp(s, "anamorph:", 9) == 0)
+                else if (StringEquN(s, "anamorph:", 9))
                     s += 9;
-                else if (StringNCmp(s, "teleomorph:", 11) == 0)
+                else if (StringEquN(s, "teleomorph:", 11))
                     s += 11;
                 if (*s == ' ')
                     while (*s == ' ')

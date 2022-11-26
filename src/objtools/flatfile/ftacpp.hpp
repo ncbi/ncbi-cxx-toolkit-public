@@ -88,23 +88,17 @@ inline int StringCmp(const char* s1, const char* s2)
         }
     }
 }
-inline int StringNCmp(const char* s1, const char* s2, size_t n)
+inline bool StringEquN(const char* s1, const char* s2, size_t n)
 {
-    if (s1) {
-        if (s2) {
-            return std::strncmp(s1, s2, n);
-        } else {
-            return 1;
-        }
-    } else {
-        if (s2) {
-            return -1;
-        } else {
-            return 0;
-        }
-    }
+    if (s1 && s2)
+        return (std::strncmp(s1, s2, n) == 0);
+
+    if (! s1 && ! s2)
+        return true;
+
+    return false;
 }
-inline int StringEquNI(const char* s1, const char* s2, size_t n)
+inline bool StringEquNI(const char* s1, const char* s2, size_t n)
 {
     const string S1(s1), S2(s2);
     return (NStr::CompareNocase(S1.substr(0, n), S2.substr(0, n)) == 0);

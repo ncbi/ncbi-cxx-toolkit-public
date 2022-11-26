@@ -2148,7 +2148,7 @@ static void fta_collect_wormbases(GeneListPtr glp, CSeq_feat& feat)
     for (CSeq_feat::TDbxref::iterator dbxref = feat.SetDbxref().begin(); dbxref != feat.SetDbxref().end(); ++dbxref) {
         if (! (*dbxref)->IsSetTag() || ! (*dbxref)->IsSetDb() ||
             (*dbxref)->GetDb() != "WormBase" ||
-            StringNCmp((*dbxref)->GetTag().GetStr().c_str(), "WBGene", 6) != 0) {
+            ! StringEquN((*dbxref)->GetTag().GetStr().c_str(), "WBGene", 6)) {
             dbxrefs.push_back(*dbxref);
             continue;
         }
