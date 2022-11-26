@@ -1203,7 +1203,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             tftbp->version = atoi(r);
         }
 
-        if (StringNICmp(tftbp->accession, "ti", 2) == 0) {
+        if (StringEquNI(tftbp->accession, "ti", 2)) {
             for (r = tftbp->accession + 2; *r == '0';)
                 r++;
             if (*r == '\0') {
@@ -1229,7 +1229,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         while (*p == ' ')
             p++;
 
-        if (StringNICmp(p, "not_available", 13) == 0) {
+        if (StringEquNI(p, "not_available", 13)) {
             p += 13;
             tftbp->from2 = 1;
             tftbp->to2   = 1;
@@ -1368,7 +1368,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         SetTextId(choice, *id, *text_id);
         seg.SetIds().push_back(id);
 
-        if (StringNICmp(tftbp->accession, "ti", 2) == 0) {
+        if (StringEquNI(tftbp->accession, "ti", 2)) {
             CRef<CSeq_id> gen_id(new CSeq_id);
             CDbtag&       tag = gen_id->SetGeneral();
 

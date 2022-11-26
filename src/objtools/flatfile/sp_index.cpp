@@ -154,7 +154,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             after_SQ = false;
 
             p        = PointToNextToken(finfo.str + ParFlat_COL_DATA_SP);
-            reviewed = (StringNICmp(p, "reviewed", 8) == 0);
+            reviewed = StringEquNI(p, "reviewed", 8);
 
             while (! end_of_file &&
                    StringNCmp(finfo.str, swissProtKeywords[ParFlatSP_END].c_str(), swissProtKeywords[ParFlatSP_END].size()) != 0) {

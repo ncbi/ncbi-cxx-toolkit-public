@@ -137,9 +137,9 @@ static char* fta_strip_pub_comment(char* comment, const KwordBlk* kbp)
     p = (*comment == '\0') ? NULL : StringSave(comment);
     MemFree(comment);
 
-    if (p != NULL && (StringNICmp(p, "Publication Status", 18) == 0 ||
-                      StringNICmp(p, "Publication_Status", 18) == 0 ||
-                      StringNICmp(p, "Publication-Status", 18) == 0))
+    if (p && (StringEquNI(p, "Publication Status", 18) ||
+              StringEquNI(p, "Publication_Status", 18) ||
+              StringEquNI(p, "Publication-Status", 18)))
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus, "An unusual Publication Status comment exists for this record: \"%s\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.", p);
 
     return (p);

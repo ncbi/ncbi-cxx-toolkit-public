@@ -865,7 +865,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
 
     /* some entries have "circular" before molecule type in embl
      */
-    if (StringNICmp(p, "circular", 8) == 0) {
+    if (StringEquNI(p, "circular", 8)) {
         inst.SetTopology(CSeq_inst::eTopology_circular);
         p = PointToNextToken(p);
     } else if (ibp->embl_new_ID)
@@ -974,12 +974,12 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     bptr = PointToNextToken(entry.mOffset + ParFlat_COL_DATA_EMBL);
 
     if (ibp->embl_new_ID == false) {
-        if (StringNICmp(bptr, "standard", 8) == 0) {
+        if (StringEquNI(bptr, "standard", 8)) {
             // embl->SetClass(CEMBL_block::eClass_standard);
-        } else if (StringNICmp(bptr, "unannotated", 11) == 0) {
+        } else if (StringEquNI(bptr, "unannotated", 11)) {
             embl->SetClass(CEMBL_block::eClass_unannotated);
-        } else if (StringNICmp(bptr, "unreviewed", 10) == 0 ||
-                   StringNICmp(bptr, "preliminary", 11) == 0) {
+        } else if (StringEquNI(bptr, "unreviewed", 10) ||
+                   StringEquNI(bptr, "preliminary", 11)) {
             embl->SetClass(CEMBL_block::eClass_other);
         } else {
             embl->SetClass(CEMBL_block::eClass_not_set);
@@ -1253,7 +1253,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         if (ibp->embl_new_ID) {
             p = PointToNextToken(p);
             p = PointToNextToken(p);
-        } else if (StringNICmp(p, "circular", 8) == 0)
+        } else if (StringEquNI(p, "circular", 8))
             p = PointToNextToken(p); /* p points to 4th token */
 
         if (StringNCmp(p + 1, "s-", 2) == 0)
@@ -1433,7 +1433,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
     bptr = PointToNextToken(bptr);                /* bptr points to 2nd token */
     bptr = PointToNextToken(bptr);                /* bptr points to 3rd token */
 
-    if (StringNICmp(bptr, "circular", 8) == 0 || ibp->embl_new_ID)
+    if (StringEquNI(bptr, "circular", 8) || ibp->embl_new_ID)
         bptr = PointToNextToken(bptr); /* bptr points to 4th token */
     if (ibp->embl_new_ID)
         bptr = PointToNextToken(bptr); /* bptr points to 5th token */
@@ -1850,7 +1850,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         return;
     }
 
-    if (StringNICmp(ibp->division, "CON", 3) == 0)
+    if (StringEquNI(ibp->division, "CON", 3))
         fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, true, ibp->acnum);
     else
         fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, false, ibp->acnum);

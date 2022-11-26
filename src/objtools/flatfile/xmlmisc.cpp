@@ -83,7 +83,7 @@ static char* DecodeXml(char* str)
         if (ch == '&') {
             const XmlTable* xtp = nullptr;
             for (i = 0; xmlcodes[i].code; i++) {
-                if (StringNICmp(src, xmlcodes[i].code, xmlcodes[i].len) == 0) {
+                if (StringEquNI(src, xmlcodes[i].code, xmlcodes[i].len)) {
                     xtp = &(xmlcodes[i]);
                     break;
                 }
