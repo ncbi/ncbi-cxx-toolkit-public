@@ -733,7 +733,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
 
     string line = val;
 
-    if (StringNICmp(line.c_str(), "MGD:MGI:", 8) == 0)
+    if (StringEquNI(line.c_str(), "MGD:MGI:", 8))
         line = line.substr(4);
 
     size_t colon = line.find(':');
@@ -1449,12 +1449,12 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         len            = comment.size();
 
         if (len > 15 && len < 20) {
-            if (StringNICmp(comment.c_str() + len - 15, "S ribosomal RNA", 15) == 0) {
+            if (StringEquNI(comment.c_str() + len - 15, "S ribosomal RNA", 15)) {
                 qval_str = comment;
                 feat.ResetComment();
             }
         } else if (len > 6 && len < 20) {
-            if (StringNICmp(comment.c_str() + len - 6, "S rRNA", 6) == 0) {
+            if (StringEquNI(comment.c_str() + len - 6, "S rRNA", 6)) {
                 qval_str = comment;
                 feat.ResetComment();
             }
@@ -1549,7 +1549,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         if (p == NULL)
             break;
         p += 14;
-        if (StringNICmp(p, " ribosomal RNA", 14) == 0)
+        if (StringEquNI(p, " ribosomal RNA", 14))
             fta_StringCpy(p, p + 14);
     }
 
@@ -5189,7 +5189,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     r = NULL;
     c = '\0';
     if (! ibp->moltype.empty()) {
-        if (pp->source == Parser::ESource::DDBJ && StringNICmp(molstr, "PRT", 3) == 0)
+        if (pp->source == Parser::ESource::DDBJ && StringEquNI(molstr, "PRT", 3))
             return;
 
         biomol = Seq_descr_GIBB_mol_genomic;
@@ -5462,9 +5462,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     }
 
     if (genomic < 0 || genomic > 20) {
-        if (pp->source == Parser::ESource::EMBL && StringNICmp(molstr, "XXX", 3) == 0)
+        if (pp->source == Parser::ESource::EMBL && StringEquNI(molstr, "XXX", 3))
             return;
-        if (pp->source == Parser::ESource::DDBJ && StringNICmp(molstr, "PRT", 3) == 0)
+        if (pp->source == Parser::ESource::DDBJ && StringEquNI(molstr, "PRT", 3))
             return;
         ibp->drop = 1;
         q         = molstr;
@@ -5620,7 +5620,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
                 if (StringNCmp(p, "DE   ", 5) == 0)
                     p += 5;
             }
-            if (StringNICmp(p, "Synthetase", 10) == 0)
+            if (StringEquNI(p, "Synthetase", 10))
                 return;
         }
 

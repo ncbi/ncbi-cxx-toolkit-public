@@ -1446,7 +1446,7 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
 
         if (NStr::CompareNocase(key.c_str(), "TPA") == 0)
             key = "TPA";
-        else if (StringNICmp(key.c_str(), "TPA:", 4) == 0) {
+        else if (StringEquNI(key.c_str(), "TPA:", 4)) {
             string buf("TPA:");
 
             for (p = key.c_str() + 4; *p == ' ' || *p == '\t';)

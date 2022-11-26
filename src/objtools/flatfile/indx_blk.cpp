@@ -557,7 +557,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 
     p = offset + lcp->molecule;
     if (is_mga) {
-        if (StringNICmp(p, "mRNA", 4) != 0 && StringNCmp(p, "RNA", 3) != 0) {
+        if (! StringEquNI(p, "mRNA", 4) && StringNCmp(p, "RNA", 3) != 0) {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_IllegalCAGEMoltype, "Illegal molecule type provided in CAGE record in LOCUS line: \"%s\". Must be \"mRNA\"or \"RNA\". Entry dropped.", p);
             ret = false;
         }
@@ -861,8 +861,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
         if (pp->mode != Parser::EMode::Relaxed && ! badlocus) {
             if (pp->format == Parser::EFormat::SPROT) {
                 if (ptr->next == NULL || ptr->next->str == NULL ||
-                    (StringNICmp(ptr->next->str, "preliminary", 11) != 0 &&
-                     StringNICmp(ptr->next->str, "unreviewed", 10) != 0))
+                    (! StringEquNI(ptr->next->str, "preliminary", 11) &&
+                     ! StringEquNI(ptr->next->str, "unreviewed", 10)))
                     badlocus = CheckLocusSP(entry->locusname);
                 else
                     badlocus = false;
@@ -905,23 +905,23 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
             ptr = ptr->next;
 
         if (pp->format == Parser::EFormat::EMBL) {
-            if (StringNICmp(ptr->str, "TSA", 3) == 0)
+            if (StringEquNI(ptr->str, "TSA", 3))
                 entry->is_tsa = true;
-            else if (StringNICmp(ptr->str, "PAT", 3) == 0)
+            else if (StringEquNI(ptr->str, "PAT", 3))
                 entry->is_pat = true;
         }
 
         ptr = ptr->next;
 
-        if (StringNICmp(ptr->str, "EST", 3) == 0)
+        if (StringEquNI(ptr->str, "EST", 3))
             entry->EST = true;
-        else if (StringNICmp(ptr->str, "STS", 3) == 0)
+        else if (StringEquNI(ptr->str, "STS", 3))
             entry->STS = true;
-        else if (StringNICmp(ptr->str, "GSS", 3) == 0)
+        else if (StringEquNI(ptr->str, "GSS", 3))
             entry->GSS = true;
-        else if (StringNICmp(ptr->str, "HTC", 3) == 0)
+        else if (StringEquNI(ptr->str, "HTC", 3))
             entry->HTC = true;
-        else if (StringNICmp(ptr->str, "PAT", 3) == 0 &&
+        else if (StringEquNI(ptr->str, "PAT", 3) &&
                  pp->source == Parser::ESource::EMBL)
             entry->is_pat = true;
     }
