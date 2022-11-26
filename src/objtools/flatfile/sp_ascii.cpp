@@ -772,7 +772,7 @@ static CBioSource::EGenome GetSPGenome(const DataBlk* dbp)
             for (; subdbp != NULL; subdbp = subdbp->mpNext)
                 if (subdbp->mType == ParFlatSP_OG) {
                     p = subdbp->mOffset + ParFlat_COL_DATA_SP;
-                    if (StringNICmp(p, "Plastid;", 8) == 0)
+                    if (StringEquNI(p, "Plastid;", 8))
                         for (p += 8; *p == ' ';)
                             p++;
                     gmod = StringMatchIcase(SP_organelle, p);
@@ -901,9 +901,9 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
 
     /* Delete (EC ...)
      */
-    if (StringNICmp(str, "RecName: ", 9) == 0 ||
-        StringNICmp(str, "AltName: ", 9) == 0 ||
-        StringNICmp(str, "SubName: ", 9) == 0) {
+    if (StringEquNI(str, "RecName: ", 9) ||
+        StringEquNI(str, "AltName: ", 9) ||
+        StringEquNI(str, "SubName: ", 9)) {
         tag   = "; EC=";
         symb  = ';';
         shift = 5;
@@ -1217,7 +1217,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
             }
         }
 
-        if ((StringNICmp("PV.", p, 3) == 0 && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
+        if ((StringEquNI("PV.", p, 3) && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
             NStr::CompareNocase(p, "AD11A") == 0 || NStr::CompareNocase(p, "AD11P") == 0) {
             if (! org_ref->IsSetTaxname())
                 org_ref->SetTaxname(p);
@@ -1348,7 +1348,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     StringCat(line, dbp->mOffset);
     dbp->mOffset[dbp->len - 1] = ch;
 
-    if (StringNICmp(line, "\nOH   NCBI_TaxID=", 17) != 0) {
+    if (! StringEquNI(line, "\nOH   NCBI_TaxID=", 17)) {
         ch = '\0';
         p  = StringChr(line + 1, '\n');
         if (p != NULL)
@@ -1451,7 +1451,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
             p = StringChr(line, '\n');
             if (p != NULL)
                 *p = '\0';
-            if (StringNICmp(line, "OX   NCBI_TaxID=", 16) != 0) {
+            if (! StringEquNI(line, "OX   NCBI_TaxID=", 16)) {
                 if (StringLen(line) > 20)
                     line[20] = '\0';
                 ErrPostEx(SEV_ERROR, ERR_SOURCE_UnknownOXType, "Unknown beginning of OX line: \"%s\".", line);
@@ -2079,7 +2079,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             else if (NStr::CompareNocase(token1, "GeneDB_Spombe") == 0)
                 token1 = "PomBase";
             else if (NStr::CompareNocase(token1, "PomBase") == 0 &&
-                     StringNICmp(token2, "PomBase:", 8) == 0)
+                     StringEquNI(token2, "PomBase:", 8))
                 token2 += 8;
 
             CRef<CDbtag> tag = MakeStrDbtag(token1, token2);
@@ -2306,11 +2306,11 @@ GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     /* first ID line, 2nd token
      */
     bptr     = PointToNextToken(entry->mOffset + ParFlat_COL_DATA_SP);
-    reviewed = (StringNICmp(bptr, "reviewed", 8) == 0);
-    if (reviewed || StringNICmp(bptr, "standard", 8) == 0) {
+    reviewed = StringEquNI(bptr, "reviewed", 8);
+    if (reviewed || StringEquNI(bptr, "standard", 8)) {
         spb->SetClass(CSP_block::eClass_standard);
-    } else if (StringNICmp(bptr, "preliminary", 11) == 0 ||
-               StringNICmp(bptr, "unreviewed", 10) == 0) {
+    } else if (StringEquNI(bptr, "preliminary", 11) ||
+               StringEquNI(bptr, "unreviewed", 10)) {
         spb->SetClass(CSP_block::eClass_prelim);
     } else {
         spb->SetClass(CSP_block::eClass_not_set);
@@ -2472,8 +2472,8 @@ static void GetSPDescrComment(DataBlkPtr entry, CSeq_descr::Tdata& descrs, char*
             p++;
         if (*p == '\0')
             break;
-        if (StringNICmp(p, COPYRIGHT, StringLen(COPYRIGHT)) != 0 &&
-            StringNICmp(p, COPYRIGHT1, StringLen(COPYRIGHT1)) != 0)
+        if (! StringEquNI(p, COPYRIGHT, StringLen(COPYRIGHT)) &&
+            ! StringEquNI(p, COPYRIGHT1, StringLen(COPYRIGHT1)))
             break;
         p = StringStr(p, "----------");
         if (p == NULL)
@@ -3939,7 +3939,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
         }
         if (q != NULL)
             *q++ = '\0';
-        if (StringNICmp(p, "Name=", 5) == 0) {
+        if (StringEquNI(p, "Name=", 5)) {
             if (name != NULL) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Name=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = 1;
@@ -3948,7 +3948,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             p += 5;
             if (p != q)
                 name = StringSave(p);
-        } else if (StringNICmp(p, "Synonyms=", 9) == 0) {
+        } else if (StringEquNI(p, "Synonyms=", 9)) {
             if (syns != NULL) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Synonyms=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = 1;
@@ -3957,7 +3957,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             p += 9;
             if (p != q)
                 syns = StringSave(p);
-        } else if (StringNICmp(p, "OrderedLocusNames=", 18) == 0) {
+        } else if (StringEquNI(p, "OrderedLocusNames=", 18)) {
             if (ltags != NULL) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"OrderedLocusNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = 1;
@@ -3966,7 +3966,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             p += 18;
             if (p != q)
                 ltags = StringSave(p);
-        } else if (StringNICmp(p, "ORFNames=", 9) == 0) {
+        } else if (StringEquNI(p, "ORFNames=", 9)) {
             if (orfs != NULL) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"ORFNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = 1;
@@ -3975,7 +3975,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             p += 9;
             if (p != q)
                 orfs = StringSave(p);
-        } else if (StringNICmp(p, "and ", 4) == 0) {
+        } else if (StringEquNI(p, "and ", 4)) {
             if (q != NULL)
                 *--q = ';';
             q = p + 4;
@@ -4212,9 +4212,9 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
     Int4  count;
     Char  ch;
 
-    if (str == NULL || (StringNICmp(str, "RecName: ", 9) != 0 &&
-                        StringNICmp(str, "AltName: ", 9) != 0 &&
-                        StringNICmp(str, "SubName: ", 9) != 0))
+    if (! str || (! StringEquNI(str, "RecName: ", 9) &&
+                  ! StringEquNI(str, "AltName: ", 9) &&
+                  ! StringEquNI(str, "SubName: ", 9)))
         return;
 
     is_trembl = false;
@@ -4240,7 +4240,7 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
         ch = *p;
         *p = '\0';
         for (cilp = spde_tags; cilp->str != NULL; cilp++)
-            if (StringNICmp(cilp->str, q, cilp->len) == 0)
+            if (StringEquNI(cilp->str, q, cilp->len))
                 break;
 
         *p = ch;
@@ -4403,15 +4403,15 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
 
     ibp = pp->entrylist[pp->curindx];
 
-    if (StringNICmp(str, "Contains: ", 10) == 0 ||
-        StringNICmp(str, "Includes: ", 10) == 0) {
+    if (StringEquNI(str, "Contains: ", 10) ||
+        StringEquNI(str, "Includes: ", 10)) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_NoProteinNameCategory, "DE lines do not have a non-Includes/non-Contains RecName, AltName or SubName protein name category. Entry dropped.");
         ibp->drop = 1;
     }
 
-    if (StringNICmp(str, "RecName: ", 9) == 0 ||
-        StringNICmp(str, "AltName: ", 9) == 0 ||
-        StringNICmp(str, "SubName: ", 9) == 0) {
+    if (StringEquNI(str, "RecName: ", 9) ||
+        StringEquNI(str, "AltName: ", 9) ||
+        StringEquNI(str, "SubName: ", 9)) {
         tag   = "; EC=";
         symb  = ';';
         shift = 5;

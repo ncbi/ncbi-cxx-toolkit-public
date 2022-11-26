@@ -314,21 +314,21 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
     char* ptr2;
     char* token;
 
-    if (StringNICmp("UNPUBLISHED", str, 11) == 0) {
+    if (StringEquNI("UNPUBLISHED", str, 11)) {
         prbp->reftype = ParFlat_ReftypeUnpub;
         prbp->journal = str;
-    } else if (StringNICmp("(IN)", str, 4) == 0) {
+    } else if (StringEquNI("(IN)", str, 4)) {
         prbp->reftype = ParFlat_ReftypeBook;
         for (str += 4; *str == ' ';)
             str++;
         prbp->journal = str;
-    } else if (StringNICmp("SUBMITTED", str, 9) == 0) {
+    } else if (StringEquNI("SUBMITTED", str, 9)) {
         prbp->reftype = ParFlat_ReftypeSubmit;
         prbp->journal = str;
-    } else if (StringNICmp("PATENT NUMBER", str, 13) == 0) {
+    } else if (StringEquNI("PATENT NUMBER", str, 13)) {
         prbp->reftype = ParFlat_ReftypePatent;
         prbp->journal = str;
-    } else if (StringNICmp("THESIS", str, 6) == 0) {
+    } else if (StringEquNI("THESIS", str, 6)) {
         prbp->reftype = ParFlat_ReftypeThesis;
 
         ptr1       = str;
@@ -401,22 +401,22 @@ static void GetSprotIds(ParRefBlkPtr prbp, char* str)
         if (p != NULL)
             *p = '\0';
 
-        if (StringNICmp(q, "MEDLINE=", 8) == 0) {
+        if (StringEquNI(q, "MEDLINE=", 8)) {
             if (prbp->muid == 0)
                 prbp->muid = atoi(q + 8);
             else
                 muids = true;
-        } else if (StringNICmp(q, "PUBMED=", 7) == 0) {
+        } else if (StringEquNI(q, "PUBMED=", 7)) {
             if (prbp->pmid == 0)
                 prbp->pmid = atoi(q + 7);
             else
                 pmids = true;
-        } else if (StringNICmp(q, "DOI=", 4) == 0) {
+        } else if (StringEquNI(q, "DOI=", 4)) {
             if (prbp->doi == NULL)
                 prbp->doi = StringSave(q + 4);
             else
                 dois = true;
-        } else if (StringNICmp(q, "AGRICOLA=", 9) == 0) {
+        } else if (StringEquNI(q, "AGRICOLA=", 9)) {
             if (prbp->agricola == NULL)
                 prbp->agricola = StringSave(q + 9);
             else
@@ -494,7 +494,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
         case ParFlatSP_RM:
             break; /* old format for muid */
         case ParFlatSP_RX:
-            if (StringNICmp(str, "MEDLINE;", 8) == 0) {
+            if (StringEquNI(str, "MEDLINE;", 8)) {
                 for (s = str + 8; *s == ' ';)
                     s++;
                 prbp->muid = (Int4)atol(s);
@@ -561,7 +561,7 @@ static CRef<CDate> get_s_date(const Char* str, bool string)
         ret->SetStr(std::string(str, s));
     else {
         for (cal = 0; cal < 12; cal++) {
-            if (StringNICmp(str, months[cal], 3) == 0) {
+            if (StringEquNI(str, months[cal], 3)) {
                 month = cal + 1;
                 break;
             }

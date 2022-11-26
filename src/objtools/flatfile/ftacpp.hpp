@@ -104,10 +104,10 @@ inline int StringNCmp(const char* s1, const char* s2, size_t n)
         }
     }
 }
-inline int StringNICmp(const char* s1, const char* s2, size_t n)
+inline int StringEquNI(const char* s1, const char* s2, size_t n)
 {
     const string S1(s1), S2(s2);
-    return NStr::CompareNocase(S1.substr(0, n), S2.substr(0, n));
+    return (NStr::CompareNocase(S1.substr(0, n), S2.substr(0, n)) == 0);
 }
 
 inline bool StringHasNoText(const char* s)

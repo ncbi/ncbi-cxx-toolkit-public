@@ -163,7 +163,7 @@ static CRef<CDate> get_lanl_date(char* s)
 
     CRef<CDate> date(new CDate);
     for (cal = 0; cal < 12; cal++) {
-        if (StringNICmp(s + 1, months[cal], 3) == 0) {
+        if (StringEquNI(s + 1, months[cal], 3)) {
             month = cal + 1;
             break;
         }
@@ -417,7 +417,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     else {
         q          = (pp->format == Parser::EFormat::EMBL) ? (char*)"Patent number" : (char*)"Patent:";
         size_t len = StringLen(q);
-        if (StringNICmp(q, bptr, len) != 0) {
+        if (! StringEquNI(q, bptr, len)) {
             ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Illegal format: \"%s\"", temp);
             MemFree(temp);
             return cit_pat;
@@ -1028,10 +1028,10 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
             s++;
         for (bptr = s; *s != ';' && *s != '(' && *s != '\0';)
             s++;
-        if (StringNICmp(s, "(Eds.)", 6) == 0) {
+        if (StringEquNI(s, "(Eds.)", 6)) {
             tit     = s + 6;
             IS_AUTH = true;
-        } else if (StringNICmp(s, "(Ed.)", 5) == 0) {
+        } else if (StringEquNI(s, "(Ed.)", 5)) {
             tit     = s + 5;
             IS_AUTH = true;
         } else if (*s == ';')
@@ -1304,7 +1304,7 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     if (StringStr(s, "E-mail"))
         medium = CCit_sub::eMedium_email;
 
-    if (StringNICmp(" on tape", s, 8) == 0) {
+    if (StringEquNI(" on tape", s, 8)) {
         medium = CCit_sub::eMedium_tape;
         for (s += 8; *s != '\0' && *s != ':';)
             s++;
@@ -1489,18 +1489,18 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
 
         nearend -= 8;
         end = nearend + 2;
-        if (StringNICmp("In press", nearend + 1, 8) == 0) {
+        if (StringEquNI("In press", nearend + 1, 8)) {
             pre            = CImprint::ePrepub_in_press;
             *(nearend + 1) = '\0';
         }
-        if (StringNICmp("Submitted", nearend, 9) == 0) {
+        if (StringEquNI("Submitted", nearend, 9)) {
             pre      = CImprint::ePrepub_submitted;
             *nearend = '\0';
         }
         if (pre == 0 && *end == '(' && isdigit(*(end + 1)) != 0) {
             for (nearend = end - 1; nearend > bptr && *nearend != ' ';)
                 nearend--;
-            if (StringNICmp("In press", nearend + 1, 8) == 0) {
+            if (StringEquNI("In press", nearend + 1, 8)) {
                 pre            = CImprint::ePrepub_in_press;
                 *(nearend + 1) = '\0';
             }
@@ -1590,7 +1590,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         }
 
         ret->SetBook(*book);
-    } else if (StringNICmp("Published Only in Database", p, 26) == 0) {
+    } else if (StringEquNI("Published Only in Database", p, 26)) {
         retval                 = ParFlat_GEN_CITATION;
         CRef<CCit_gen> cit_gen = fta_get_citgen(bptr, auth_list, title);
 
@@ -1600,7 +1600,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         }
 
         ret->SetGen(*cit_gen);
-    } else if (StringNICmp("Online Publication", p, 18) == 0) {
+    } else if (StringEquNI("Online Publication", p, 18)) {
         retval = ParFlat_ONLINE_CITATION;
 
         CRef<CCit_gen> cit_gen = fta_get_citgen(bptr, auth_list, title);
@@ -2067,7 +2067,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
         return desc;
     }
 
-    is_online = (StringNICmp(p, "Online Publication", 18) == 0);
+    is_online = StringEquNI(p, "Online Publication", 18);
 
     if (ind[ParFlat_REMARK]) {
         r = ind[ParFlat_REMARK]->mOffset;

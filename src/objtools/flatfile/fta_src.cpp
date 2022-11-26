@@ -677,7 +677,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
                 str_to_find.assign(val_ptr);
 
             for (i = 0, b = source_genomes; *b != NULL; b++, i++)
-                if (StringNICmp(str_to_find.c_str(), *b, StringLen(*b)) == 0)
+                if (StringEquNI(str_to_find.c_str(), *b, StringLen(*b)))
                     break;
             if (*b != NULL && i != 8) {
                 if (genomename != NULL)

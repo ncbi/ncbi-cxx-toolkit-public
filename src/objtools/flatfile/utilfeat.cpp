@@ -400,7 +400,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
                 if (*s == ' ')
                     while (*s == ' ')
                         s++;
-                if (StringNICmp(s, name->c_str(), len) == 0 && s[len] == ')') {
+                if (StringEquNI(s, name->c_str(), len) && s[len] == ')') {
                     char* t = NULL;
                     for (t = s + len + 1; *t == ' ';)
                         t++;

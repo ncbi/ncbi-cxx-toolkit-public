@@ -957,7 +957,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     }
 
     if (pp->source == Parser::ESource::EMBL) {
-        if (StringNICmp(ibp->division, "CON", 3) == 0)
+        if (StringEquNI(ibp->division, "CON", 3))
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, false, ibp->acnum);
@@ -965,7 +965,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         if (embl->GetExtra_acc().empty())
             embl->ResetExtra_acc();
     } else {
-        if (StringNICmp(ibp->division, "CON", 3) == 0)
+        if (StringEquNI(ibp->division, "CON", 3))
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, false, ibp->acnum);
