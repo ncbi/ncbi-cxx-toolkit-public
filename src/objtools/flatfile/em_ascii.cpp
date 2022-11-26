@@ -286,7 +286,7 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
             break;
 
         offset++; /* newline */
-        if (StringNCmp(offset, "DT", 2) == 0) {
+        if (StringEquN(offset, "DT", 2)) {
             update = GetUpdateDate(offset + ParFlat_COL_DATA_EMBL,
                                    source);
             break;
@@ -583,7 +583,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
         /* skip "XX" line
          */
         while (ptr < eptr) {
-            if (StringNCmp(ptr, "DR", 2) == 0)
+            if (StringEquN(ptr, "DR", 2))
                 break;
 
             ptr = SrchTheChar(ptr, eptr, '\n');
@@ -1256,16 +1256,16 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         } else if (StringEquNI(p, "circular", 8))
             p = PointToNextToken(p); /* p points to 4th token */
 
-        if (StringNCmp(p + 1, "s-", 2) == 0)
+        if (StringEquN(p + 1, "s-", 2))
             p += 3;
         if (*p == 'm' || *p == 'r')
             p++;
-        else if (StringNCmp(p, "pre-", 4) == 0)
+        else if (StringEquN(p, "pre-", 4))
             p += 4;
-        else if (StringNCmp(p, "transcribed ", 12) == 0)
+        else if (StringEquN(p, "transcribed ", 12))
             p += 12;
 
-        if (StringNCmp(p, "RNA", 3) != 0) {
+        if (! StringEquN(p, "RNA", 3)) {
             ErrPostEx(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
             return ret;
         }
@@ -1343,8 +1343,8 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     if (StringCmp(dataclass, "ANN") == 0 || StringCmp(dataclass, "CON") == 0) {
         if (StringLen(ibp->acnum) == 8 &&
-            (StringNCmp(ibp->acnum, "CT", 2) == 0 ||
-             StringNCmp(ibp->acnum, "CU", 2) == 0)) {
+            (StringEquN(ibp->acnum, "CT", 2) ||
+             StringEquN(ibp->acnum, "CU", 2))) {
             bool found = false;
             for (const string& acc : embl->SetExtra_acc()) {
                 if (fta_if_wgs_acc(acc.c_str()) == 0 &&
@@ -1461,7 +1461,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
 
     CRef<CMolInfo> mol_info(new CMolInfo);
 
-    if (StringNCmp(p, "EST", 3) == 0)
+    if (StringEquN(p, "EST", 3))
         mol_info->SetTech(CMolInfo::eTech_est);
     else if (ibp->is_wgs) {
         if (ibp->is_tsa)
@@ -1578,7 +1578,7 @@ static void fta_create_imgt_misc_feat(CBioseq& bioseq, CEMBL_block& embl_block, 
     CSeq_feat::TDbxref xrefs;
     for (const auto& xref : embl_block.GetXref()) {
         if (! xref->IsSetDbname() || ! xref->GetDbname().IsName() ||
-            StringNCmp(xref->GetDbname().GetName().c_str(), "IMGT/", 5) != 0)
+            ! StringEquN(xref->GetDbname().GetName().c_str(), "IMGT/", 5))
             continue;
 
         bool empty = true;
@@ -1693,25 +1693,25 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
 
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
-            StringNCmp(str, "TPA:", 4) == 0) {
+            StringEquN(str, "TPA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
         }
 
-        if (ibp->is_tsa == false && StringNCmp(str, "TSA:", 4) == 0) {
+        if (ibp->is_tsa == false && StringEquN(str, "TSA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
         }
 
-        if (ibp->is_tls == false && StringNCmp(str, "TLS:", 4) == 0) {
+        if (ibp->is_tls == false && StringEquN(str, "TLS:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = 1;
             return;
         }
 
-        if (StringNCmp(str, "TPA:", 4) == 0) {
+        if (StringEquN(str, "TPA:", 4)) {
             if (ibp->assembly)
                 p = (char*)"TPA_asm:";
             else if (ibp->specialist_db)
@@ -1753,13 +1753,13 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (ibp->is_tsa && ! ibp->is_tpa &&
-        (title.empty() || StringNCmp(title.c_str(), "TSA:", 4) != 0)) {
+        (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
         return;
     }
 
-    if (ibp->is_tls && (title.empty() || StringNCmp(title.c_str(), "TLS:", 4) != 0)) {
+    if (ibp->is_tls && (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
         ibp->drop = 1;
         return;
@@ -2689,12 +2689,12 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
             p = r;
             if (*r == 'm' || *r == 'r')
                 p = r + 1;
-            else if (StringNCmp(r, "pre-", 4) == 0)
+            else if (StringEquN(r, "pre-", 4))
                 p = r + 4;
-            else if (StringNCmp(r, "transcribed ", 12) == 0)
+            else if (StringEquN(r, "transcribed ", 12))
                 p = r + 12;
 
-            if (StringNCmp(p, "RNA", 3) != 0) {
+            if (! StringEquN(p, "RNA", 3)) {
                 ErrPostEx(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
                 MemFree(r);
                 return ret;
@@ -2772,7 +2772,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     GetEmblBlockXref(DataBlk(), ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl);
 
     if (StringCmp(dataclass, "ANN") == 0 || StringCmp(dataclass, "CON") == 0) {
-        if (StringLen(ibp->acnum) == 8 && StringNCmp(ibp->acnum, "CT", 2) == 0) {
+        if (StringLen(ibp->acnum) == 8 && StringEquN(ibp->acnum, "CT", 2)) {
             bool found = false;
             for (const string& acc : embl->SetExtra_acc()) {
                 if (fta_if_wgs_acc(acc.c_str()) == 0 &&

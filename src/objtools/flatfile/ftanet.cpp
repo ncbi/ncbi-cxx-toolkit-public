@@ -570,7 +570,7 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
         }
         const CCit_gen& cit_gen = pPub->SetGen();
         if (cit_gen.IsSetCit() &&
-            (StringNCmp(cit_gen.GetCit().c_str(), "(er)", 4) == 0 || er)) {
+            (StringEquN(cit_gen.GetCit().c_str(), "(er)", 4) || er)) {
             cit_arts.push_back(pPub);
             break;
         }

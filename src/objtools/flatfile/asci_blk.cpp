@@ -253,7 +253,7 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw, char* eptr)
                                             treat as same line */
             nextkw = curkw;
 
-        if (StringNCmp(ptr, "REFERENCE", 9) == 0) /* treat as one block */
+        if (StringEquN(ptr, "REFERENCE", 9)) /* treat as one block */
             break;
     } while (nextkw == curkw);
 
@@ -345,7 +345,7 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
             bptr++;
 
             skip = false;
-            if (StringNCmp(bptr, "XX", 2) != 0)
+            if (! StringEquN(bptr, "XX", 2))
                 ptr = bptr + ParFlat_COL_FEATKEY;
             else
                 skip = true;
@@ -376,9 +376,9 @@ static void fta_check_mult_ids(DataBlkPtr dbp, const char* mtag, const char* pta
         p = StringChr(p, '\n');
         if (p == NULL)
             break;
-        if (mtag != NULL && StringNCmp(p + 1, mtag, mlen) == 0)
+        if (mtag && StringEquN(p + 1, mtag, mlen))
             muids++;
-        else if (ptag != NULL && StringNCmp(p + 1, ptag, plen) == 0)
+        else if (ptag && StringEquN(p + 1, ptag, plen))
             pmids++;
     }
     dbp->mOffset[dbp->len] = ch;
@@ -517,15 +517,15 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat f
         if (nextkw == ParFlat_UNKW) /* it can be "XX" line,
                                             treat as same line */
             nextkw = curkw;
-        if (StringNCmp(ptr, "RN", 2) == 0) /* treat each RN per block */
+        if (StringEquN(ptr, "RN", 2)) /* treat each RN per block */
             break;
-        if (StringNCmp(ptr, "ID", 2) == 0) /* treat each ID per block */
+        if (StringEquN(ptr, "ID", 2)) /* treat each ID per block */
             break;
 
-        if (StringNCmp(ptr, "OC", 2) == 0)
+        if (StringEquN(ptr, "OC", 2))
             seen_oc = true;
 
-        if (StringNCmp(ptr, "OS", 2) == 0 && seen_oc)
+        if (StringEquN(ptr, "OS", 2) && seen_oc)
             break; /* treat as next OS block */
 
     } while (nextkw == curkw);
@@ -601,7 +601,7 @@ static bool GetSubNodeType(const char* subkw, char** retbptr, char* eptr)
     size_t sublen = StringLen(subkw);
 
     while (bptr < eptr) {
-        if (StringNCmp(bptr, subkw, sublen) == 0) {
+        if (StringEquN(bptr, subkw, sublen)) {
             *retbptr = bptr;
             return true;
         }
@@ -1122,7 +1122,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
 
         /* skip HTG generated comments starting with '*' */
         if ((is_htg && bptr[col_data] == '*') ||
-            StringNCmp(bptr, "XX", 2) == 0)
+            StringEquN(bptr, "XX", 2))
             continue;
 
         if (! within) {
@@ -1159,7 +1159,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
         str += size;
         if (is_pat && size > 4 &&
             q[0] >= 'A' && q[0] <= 'Z' && q[1] >= 'A' && q[1] <= 'Z' &&
-            StringNCmp(q + 2, "   ", 3) == 0)
+            StringEquN(q + 2, "   ", 3))
             *str++ = '~';
         else if (size < 50 || within)
             *str++ = '~';
@@ -1202,7 +1202,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
         }
         if (*p != '\0') {
             p++;
-            if (StringNCmp(p, "...", 3) == 0)
+            if (StringEquN(p, "...", 3))
                 p[3] = '\0';
             else if (StringChr(p, '.') != NULL) {
                 *p   = '.';
@@ -1377,8 +1377,8 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) /* WGS/TSA/TLS
                                                                    contig */
         {
-            i = (StringNCmp(p, "NZ_", 3) == 0) ? 7 : 4;
-            if (StringNCmp(p, ibp->acnum, i) != 0) {
+            i = (StringEquN(p, "NZ_", 3)) ? 7 : 4;
+            if (! StringEquN(p, ibp->acnum, i)) {
                 if (! allow_uwsec) {
                     ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
                     ibp->drop = 1;
@@ -1418,7 +1418,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         }
 
         if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
-            if (StringNCmp(acc, p, i) == 0 && p[i] >= '0' && p[i] <= '9') {
+            if (StringEquN(acc, p, i) && p[i] >= '0' && p[i] <= '9') {
                 if (sec_acc == 1 || sec_acc == 5 || pri_acc == 11)
                     accessions.push_back(p);
             } else if (allow_uwsec) {
@@ -2522,7 +2522,7 @@ bool IsSegBioseq(const CSeq_id& id)
         return (false);
 
     if (! text_id->IsSetAccession() && text_id->IsSetName() &&
-        StringNCmp(text_id->GetName().c_str(), "SEG_", 4) == 0)
+        StringEquN(text_id->GetName().c_str(), "SEG_", 4))
         return (true);
     return (false);
 }
@@ -2813,7 +2813,7 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
         tmp = StringSave(dbp->mOffset);
         *q  = c;
         for (q = tmp; *q != '\0'; q++) {
-            if (*q == '\n' && StringNCmp(q + 1, "DE   ", 5) == 0)
+            if (*q == '\n' && StringEquN(q + 1, "DE   ", 5))
                 fta_StringCpy(q, q + 5);
             else if (*q == '\n' || *q == '\t')
                 *q = ' ';
@@ -3305,7 +3305,7 @@ bool XMLCheckCDS(const char* entry, XmlIndexPtr xip)
             continue;
         for (fxip = txip->subtags; fxip != NULL; fxip = fxip->next)
             if (fxip->tag == INSDFEATURE_KEY && fxip->end - fxip->start == 3 &&
-                StringNCmp(entry + fxip->start, "CDS", 3) == 0)
+                StringEquN(entry + fxip->start, "CDS", 3))
                 break;
         if (fxip != NULL)
             break;

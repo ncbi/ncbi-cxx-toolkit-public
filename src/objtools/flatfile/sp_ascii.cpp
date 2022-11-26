@@ -811,7 +811,7 @@ static void SpAddToIndexBlk(DataBlkPtr entry, IndexblkPtr pIndex)
         return;
 
     eptr = offset + len - 1;
-    if (len > 5 && StringNCmp(eptr - 3, "AA.", 3) == 0)
+    if (len > 5 && StringEquN(eptr - 3, "AA.", 3))
         eptr -= 4;
 
     while (*eptr == ' ' && eptr > offset)
@@ -1042,7 +1042,7 @@ static char* GetLineOSorOC(DataBlkPtr dbp, const char* pattern)
     res = MemNew(len);
     p   = res;
     for (q = dbp->mOffset; *q != '\0';) {
-        if (StringNCmp(q, pattern, 5) != 0)
+        if (! StringEquN(q, pattern, 5))
             break;
         if (p > res)
             *p++ = ' ';
@@ -1913,7 +1913,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
         if (ptr == NULL)
             break;
         ptr++;
-        if (StringNCmp(ptr, "DR   ", 5) != 0)
+        if (! StringEquN(ptr, "DR   ", 5))
             continue;
         ptr += ParFlat_COL_DATA_SP;
         token1 = GetDRToken(&ptr);
@@ -2401,7 +2401,7 @@ static void ParseSpComment(CSeq_descr::Tdata& descrs, char* line)
             *q++ = ' ';
         for (++p; *p == ' ';)
             p++;
-        if (StringNCmp(p, "CC ", 3) == 0)
+        if (StringEquN(p, "CC ", 3))
             for (p += 3; *p == ' ';)
                 p++;
     }
@@ -3135,12 +3135,12 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             while (*bptr == ' ')
                 bptr++;
 
-            if (! StringNCmp(bptr, "/note=\"", 7)) {
+            if (StringEquN(bptr, "/note=\"", 7)) {
                 bptr += 7;
                 quotes = NULL;
-            } else if (! StringNCmp(bptr, "/evidence=\"", 11)) {
+            } else if (StringEquN(bptr, "/evidence=\"", 11)) {
                 quotes = bptr + 10;
-                if (StringNCmp(quotes + 1, "ECO:", 4) != 0) {
+                if (! StringEquN(quotes + 1, "ECO:", 4)) {
                     p = StringChr(bptr, '\n');
                     if (p != NULL)
                         *p = '\0';
@@ -3148,7 +3148,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
                     if (p != NULL)
                         *p = '\n';
                 }
-            } else if (! StringNCmp(bptr, "/id=\"", 5))
+            } else if (StringEquN(bptr, "/id=\"", 5))
                 quotes = bptr + 4;
             else {
                 if (*bptr == '/') {

@@ -261,13 +261,13 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             auto   keywordKw  = emblKeywords[ParFlat_KW];
 
             while (! end_of_file &&
-                   StringNCmp(finfo.str, keywordEnd.c_str(), keywordEnd.size()) != 0) {
-                if (StringNCmp(finfo.str, keywordKw.c_str(), 2) == 0) {
+                   ! StringEquN(finfo.str, keywordEnd.c_str(), keywordEnd.size())) {
+                if (StringEquN(finfo.str, keywordKw.c_str(), 2)) {
                     if (pp->source == Parser::ESource::EMBL ||
                         pp->source == Parser::ESource::DDBJ) {
                         pp->KeywordParser().AddDataLine(finfo.str);
                     }
-                } else if (StringNCmp(finfo.str, keywordId.c_str(), keywordId.size()) == 0) {
+                } else if (StringEquN(finfo.str, keywordId.c_str(), keywordId.size())) {
                     if (after_ID) {
                         ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                         entry->drop = 1;
@@ -277,7 +277,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     if (entry->embl_new_ID)
                         line_sv = EmblGetNewIDVersion(entry->locusname,
                                                       finfo.str);
-                } else if (StringNCmp(finfo.str, keywordAh.c_str(), keywordAh.size()) == 0) {
+                } else if (StringEquN(finfo.str, keywordAh.c_str(), keywordAh.size())) {
                     if (entry->is_tpa == false && entry->tsa_allowed == false) {
                         ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"AH\" is allowed for TPA or TSA records only. Continue anyway.");
                     }
@@ -287,24 +287,24 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     entry->drop = 1;
                     break;
                 }
-                if (StringNCmp(finfo.str, keywordNi.c_str(), 2) == 0) {
+                if (StringEquN(finfo.str, keywordNi.c_str(), 2)) {
                     if (after_NI) {
                         ErrPostStr(SEV_ERROR, ERR_FORMAT_Multiple_NI, "Multiple NI lines in the entry, entry dropped");
                         entry->drop = 1;
                         break;
                     }
                     after_NI = true;
-                } else if (StringNCmp(finfo.str, keywordSq.c_str(), keywordSq.size()) == 0) {
+                } else if (StringEquN(finfo.str, keywordSq.c_str(), keywordSq.size())) {
                     after_SQ      = true;
                     entry->origin = true;
-                } else if (StringNCmp(finfo.str, keywordOs.c_str(), keywordOs.size()) == 0) {
+                } else if (StringEquN(finfo.str, keywordOs.c_str(), keywordOs.size())) {
                     if (after_OS && pp->source != Parser::ESource::EMBL) {
                         ErrPostStr(SEV_INFO, ERR_ORGANISM_Multiple, "Multiple OS lines in the entry");
                     }
                     after_OS = true;
                 }
                 if (pp->accver &&
-                    StringNCmp(finfo.str, keywordSv.c_str(), keywordSv.size()) == 0) {
+                    StringEquN(finfo.str, keywordSv.c_str(), keywordSv.size())) {
                     if (entry->embl_new_ID) {
                         ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"SV\" is not allowed in conjunction with the new format of \"ID\" line. Entry dropped.");
                         entry->drop = 1;
@@ -327,20 +327,20 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                         line_sv[i] = '\0';
                     }
                 }
-                if (StringNCmp(finfo.str, "OC", 2) == 0)
+                if (StringEquN(finfo.str, "OC", 2))
                     after_OC = true;
 
                 auto keywordRn = emblKeywords[ParFlat_RN];
-                if (StringNCmp(finfo.str, keywordRn.c_str(), keywordRn.size()) == 0)
+                if (StringEquN(finfo.str, keywordRn.c_str(), keywordRn.size()))
                     after_RN = true;
 
                 auto keywordCo = emblKeywords[ParFlat_CO];
-                if (StringNCmp(finfo.str, keywordCo.c_str(), keywordCo.size()) == 0)
+                if (StringEquN(finfo.str, keywordCo.c_str(), keywordCo.size()))
                     entry->is_contig = true;
 
                 auto keywordAc = emblKeywords[ParFlat_AC];
                 auto keywordDt = emblKeywords[ParFlat_DT];
-                if (StringNCmp(finfo.str, keywordAc.c_str(), keywordAc.size()) == 0) {
+                if (StringEquN(finfo.str, keywordAc.c_str(), keywordAc.size())) {
                     if (after_AC == false) {
                         after_AC = true;
                         if (GetAccession(pp, finfo.str, entry, 2) == false)
@@ -348,7 +348,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     } else if (entry->drop == 0 &&
                                GetAccession(pp, finfo.str, entry, 1) == false)
                         pp->num_drop++;
-                } else if (StringNCmp(finfo.str, keywordDt.c_str(), keywordDt.size()) == 0) {
+                } else if (StringEquN(finfo.str, keywordDt.c_str(), keywordDt.size())) {
                     stoken = TokenString(finfo.str, ' ');
                     if (stoken->num > 2) {
                         after_DT    = true;
