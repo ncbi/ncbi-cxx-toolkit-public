@@ -359,10 +359,9 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
         if (journal.IsSetImp() && journal.GetImp().IsSetPubstatus())
             status = journal.GetImp().GetPubstatus();
 
-        if (status == 3 || /* epublish */
-            status == 4 || /* ppublish */
-            status == 10)  /* aheadofprint */
-        {
+        if (status == ePubStatus_epublish ||
+            status == ePubStatus_ppublish ||
+            status == ePubStatus_aheadofprint) {
             char* comment = StringSave(pub_descr.GetComment().c_str());
             comment       = fta_strip_pub_comment(comment, PubStatus);
             if (comment != NULL && comment[0] != 0)
