@@ -70,7 +70,7 @@ USING_SCOPE(objects);
 
 struct SeqLocInfo {
     CRef<CSeq_loc> loc;
-    Uint1          strand;
+    ENa_strand     strand;
 };
 
 typedef list<SeqLocInfo> TSeqLocInfoList;
@@ -104,7 +104,7 @@ using GeneLocsPtr = GeneLocs*;
 struct SeqlocInfoblk {
     Int4       from   = 0; /* the lowest value in the entry */
     Int4       to     = 0; /* the highest value in the entry */
-    Uint1      strand = eNa_strand_unknown;
+    ENa_strand strand = eNa_strand_unknown;
     Int4       length = 0; /* total length of the seq-data of the entry */
     TSeqIdList ids;        /* the entry's SeqId */
     bool       noleft  = false;
@@ -117,7 +117,7 @@ struct MixLoc {
     CRef<CSeq_id> pId;
     Int4          min     = 0;
     Int4          max     = 0;
-    Uint1         strand  = eNa_strand_unknown;
+    ENa_strand    strand  = eNa_strand_unknown;
     bool          noleft  = false;
     bool          noright = false;
     Int4          numint  = 0;
@@ -605,7 +605,7 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const CSeq_loc* origslp, Int4 lengt
     Int4 from;
     Int4 to;
 
-    Uint1 strand;
+    ENa_strand strand;
 
     bool noleft;
     bool noright;
@@ -624,7 +624,7 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const CSeq_loc* origslp, Int4 lengt
 
                 from   = interval.GetFrom();
                 to     = interval.GetTo();
-                strand = interval.IsSetStrand() ? interval.GetStrand() : 0;
+                strand = interval.IsSetStrand() ? interval.GetStrand() : eNa_strand_unknown;
 
                 if (interval.IsSetFuzz_from() && interval.GetFuzz_from().IsLim() &&
                     interval.GetFuzz_from().GetLim() == CInt_fuzz::eLim_lt)
@@ -637,7 +637,7 @@ static SeqlocInfoblkPtr GetLowHighFromSeqLoc(const CSeq_loc* origslp, Int4 lengt
                 id                      = &point.GetId();
                 from                    = point.GetPoint();
                 to                      = from;
-                strand                  = point.IsSetStrand() ? point.GetStrand() : 0;
+                strand                  = point.IsSetStrand() ? point.GetStrand() : eNa_strand_unknown;
 
                 if (point.IsSetFuzz() && point.GetFuzz().IsLim()) {
                     if (point.GetFuzz().GetLim() == CInt_fuzz::eLim_gt)
@@ -1037,7 +1037,7 @@ static void MessWithSegGenes(GeneNodePtr gnp)
     MixLocPtr   tmlp;
     Int4        segnum;
     Int4        i;
-    Uint1       strand;
+    ENa_strand  strand;
 
     for (glp = gnp->glp; glp != NULL && glp->segnum == 1; glp = glp->next) {
         if (glp->loc != NULL || glp->mlp == NULL)
@@ -1162,7 +1162,7 @@ static bool ConfirmCircular(MixLocPtr mlp)
         return false;
 
     tmlp = mlp;
-    if (mlp->strand != 2) {
+    if (mlp->strand != eNa_strand_minus) {
         for (; tmlp->next != NULL; tmlp = tmlp->next)
             if (tmlp->min > tmlp->next->min)
                 break;
@@ -1184,11 +1184,11 @@ static bool ConfirmCircular(MixLocPtr mlp)
 /**********************************************************/
 static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
 {
-    Int4      from;
-    Int4      to;
-    MixLocPtr mlp;
-    MixLocPtr tmlp;
-    Uint1     strand;
+    Int4       from;
+    Int4       to;
+    MixLocPtr  mlp;
+    MixLocPtr  tmlp;
+    ENa_strand strand;
 
     bool noleft;
     bool noright;
@@ -1244,7 +1244,7 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
 
             from   = interval.IsSetFrom() ? interval.GetFrom() : 0;
             to     = interval.IsSetTo() ? interval.GetTo() : 0;
-            strand = cur_loc->IsSetStrand() ? cur_loc->GetStrand() : 0;
+            strand = cur_loc->IsSetStrand() ? cur_loc->GetStrand() : eNa_strand_unknown;
 
             if (interval.IsSetFuzz_from() && interval.GetFuzz_from().IsLim() && interval.GetFuzz_from().GetLim() == CInt_fuzz::eLim_lt)
                 noleft = true;
@@ -1260,7 +1260,7 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
 
             from   = point.IsSetPoint() ? point.GetPoint() : 0;
             to     = from;
-            strand = cur_loc->IsSetStrand() ? cur_loc->GetStrand() : 0;
+            strand = cur_loc->IsSetStrand() ? cur_loc->GetStrand() : eNa_strand_unknown;
 
             if (point.IsSetFuzz() && point.GetFuzz().IsLim()) {
                 if (point.GetFuzz().GetLim() == CInt_fuzz::eLim_gt)
@@ -1328,8 +1328,8 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
 /**********************************************************/
 static void fta_make_seq_int(MixLocPtr mlp, bool noleft, bool noright, CSeq_interval& interval)
 {
-    if (mlp->strand != 0)
-        interval.SetStrand(static_cast<CSeq_point::TStrand>(mlp->strand));
+    if (mlp->strand != eNa_strand_unknown)
+        interval.SetStrand(mlp->strand);
 
     interval.SetFrom(mlp->min);
     interval.SetTo(mlp->max);
@@ -1348,8 +1348,8 @@ static void fta_make_seq_int(MixLocPtr mlp, bool noleft, bool noright, CSeq_inte
 /**********************************************************/
 static void fta_make_seq_pnt(MixLocPtr mlp, bool noleft, bool noright, CSeq_point& point)
 {
-    if (mlp->strand != 0)
-        point.SetStrand(static_cast<CSeq_point::TStrand>(mlp->strand));
+    if (mlp->strand != eNa_strand_unknown)
+        point.SetStrand(mlp->strand);
     point.SetPoint(mlp->min);
 
     point.SetId(*(mlp->pId));
@@ -1548,7 +1548,7 @@ static void SortMixLoc(GeneListPtr c)
             if (! s_IdsMatch(mlp->pId, tmlp->pId) ||
                 mlp->strand != tmlp->strand)
                 break;
-            if (mlp->strand == 2) {
+            if (mlp->strand == eNa_strand_minus) {
                 if (tmlp->min < mlp->min)
                     continue;
                 if (tmlp->min == mlp->min) {
@@ -2017,7 +2017,7 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
                 from = interval.GetFrom();
                 to   = interval.GetTo();
 
-                Int4 strand = interval.IsSetStrand() ? interval.GetStrand() : 0;
+                ENa_strand strand = interval.IsSetStrand() ? interval.GetStrand() : eNa_strand_unknown;
                 if (gelop->strand == -2)
                     gelop->strand = strand;
                 else if (gelop->strand != strand)
@@ -2031,7 +2031,7 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
                 from = point.GetPoint();
                 to   = from;
 
-                Int4 strand = point.IsSetStrand() ? point.GetStrand() : 0;
+                ENa_strand strand = point.IsSetStrand() ? point.GetStrand() : eNa_strand_unknown;
                 if (gelop->strand == -2)
                     gelop->strand = strand;
                 else if (gelop->strand != strand)
@@ -2749,8 +2749,8 @@ bool GenelocContained(
     const CSeq_loc& loc2,
     CScope*         scope)
 {
-    const auto& strand1 = loc1.GetStrand() == eNa_strand_minus ? eNa_strand_minus : eNa_strand_plus;
-    const auto& strand2 = loc2.GetStrand() == eNa_strand_minus ? eNa_strand_minus : eNa_strand_plus;
+    const auto strand1 = loc1.GetStrand() == eNa_strand_minus ? eNa_strand_minus : eNa_strand_plus;
+    const auto strand2 = loc2.GetStrand() == eNa_strand_minus ? eNa_strand_minus : eNa_strand_plus;
     if (strand1 != strand2) {
         return false;
     }
