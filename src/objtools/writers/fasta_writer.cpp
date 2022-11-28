@@ -62,9 +62,8 @@ USING_SCOPE(objects);
 USING_SCOPE(sequence);
 
 
-CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out, EFormat format) :
+CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out) :
     CFastaOstream(out),
-    m_Format(format),
     m_TranslateCds(false),
     m_FeatCount(0),
     m_InternalScope(new CScope(*CObjectManager::GetInstance()))
@@ -316,37 +315,7 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
 
 string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
                                          CScope& scope,
-                                         const bool translateCDS)
-{
-    if (m_Format == EFormat::ePGAPx) {
-        return x_GetPGAPxIdString(cds, scope, translateCDS);
-    }
-    return x_GetDefaultCDSIdString(cds, scope, translateCDS); 
-}
-
-
-string CFastaOstreamEx::x_GetPGAPxIdString(const CSeq_feat& cds,
-        CScope& scope,
-        const bool translateCDS) const
-{   
-    string idString;
-    auto pGene = sequence::GetBestGeneForCds(cds, scope);
-    if (pGene && pGene->IsSetData() && pGene->GetData().IsGene() &&
-        pGene->GetData().GetGene().IsSetLocus_tag()) {
-        idString = pGene->GetData().GetGene().GetLocus_tag() + "_";
-    }
-    if (translateCDS) {
-        idString += "prot";
-    }
-    else {
-        idString += "cds";
-    }
-    return idString;
-}
-
-string CFastaOstreamEx::x_GetDefaultCDSIdString(const CSeq_feat& cds,
-        CScope& scope,
-        const bool translate_cds) 
+                                         const bool translate_cds)
 {
     const auto& src_loc = cds.GetLocation();
 
@@ -372,7 +341,6 @@ string CFastaOstreamEx::x_GetDefaultCDSIdString(const CSeq_feat& cds,
     id_string += to_string(++m_FeatCount);
     return id_string;
 }
-
 
 string CFastaOstreamEx::x_GetOtherIdString(const CSeq_feat& feat,
         CScope& scope)
