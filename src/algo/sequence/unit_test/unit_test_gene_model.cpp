@@ -929,9 +929,6 @@ BOOST_AUTO_TEST_CASE(TestCaseStitchProtein)
             product_pos += chunk.GetProduct_ins();
             break;
         case CSpliced_exon_chunk::e_Genomic_ins:
-            if (chunk.GetGenomic_ins() > 1) {
-                BOOST_CHECK_EQUAL(product_pos % 3, TSeqPos(0) );
-            }
             break;
         default:
             break;
