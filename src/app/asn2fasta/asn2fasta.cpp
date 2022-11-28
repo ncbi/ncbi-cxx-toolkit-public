@@ -248,11 +248,11 @@ void CAsn2FastaApp::Init()
                                 "prots-only");
     }}
 
+
     // output
     {{
 
         arg_desc->AddFlag("resolve-all", "Resolves all, e.g for contigs");
-
 
         arg_desc->AddFlag("show-mods", "Show FASTA header mods (e.g. [strain=abc])");
 
@@ -333,6 +333,8 @@ void CAsn2FastaApp::Init()
         arg_desc->AddFlag("ignore-origid", "Ignore OriginalID descriptor when constructing defline");
 
         arg_desc->AddFlag("gnlacc", "Display general id and genbank accession in defline");
+        
+        arg_desc->AddFlag("pgapx", "Generate PGAPX-specific defline");
     }}
 
     // misc
@@ -376,7 +378,11 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
         }
     }
 
-    unique_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os));
+    const auto flavor = args["pgapx"] ? 
+        CFastaOstreamEx::ePGAPx :
+        CFastaOstreamEx::eDefault;
+
+    unique_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os, flavor));
     fasta_os->SetAllFlags(
         CFastaOstreamEx::fInstantiateGaps |
         CFastaOstreamEx::fAssembleParts |
