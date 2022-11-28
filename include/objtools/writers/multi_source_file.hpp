@@ -37,7 +37,7 @@
 #include <memory>
 #include <ostream>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 // forward declarations
 
@@ -139,6 +139,6 @@ private:
     std::shared_ptr<CMultiSourceOStreamBuf> m_buf;
 };
 
-END_NCBI_NAMESPACE;
+END_NCBI_SCOPE
 
 #endif

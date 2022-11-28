@@ -47,7 +47,7 @@
 
 //#include <iostream>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 namespace
 {
@@ -448,4 +448,4 @@ void CMultiSourceWriter::x_ConstructImpl()
     }
 }
 
-END_NCBI_NAMESPACE;
+END_NCBI_SCOPE
