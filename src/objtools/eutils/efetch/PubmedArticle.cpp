@@ -1119,11 +1119,34 @@ static pubmed_date_t s_GetPubmedDate(const CPubDate& pub_date)
         if (pub_date.IsYM()) {
             auto& ym = pub_date.GetYM();
             pubmed_date._year = NStr::StringToNumeric<int>(ym.GetYear().Get());
-            if (ym.IsSetMS() && ym.GetMS().IsMD()) {
-                auto& md = ym.GetMS().GetMD();
-                pubmed_date._month = s_TranslateMonth(md.GetMonth());
-                if (pubmed_date._month >= 1 && pubmed_date._month <= 12 && md.IsSetDay()) {
-                    pubmed_date._day = NStr::StringToNumeric<int>(md.GetDay().Get());
+            if (ym.IsSetMS()) {
+                if (ym.GetMS().IsMD()) {
+                    auto& md = ym.GetMS().GetMD();
+                    pubmed_date._month = s_TranslateMonth(md.GetMonth());
+                    if (pubmed_date._month >= 1 && pubmed_date._month <= 12 && md.IsSetDay()) {
+                        pubmed_date._day = NStr::StringToNumeric<int>(md.GetDay().Get());
+                    }
+                }
+                else if (ym.GetMS().IsSeason()) {
+                    auto& season = ym.GetMS().GetSeason().Get();
+                    auto pos = season.find('-');
+                    if (pos != NPOS) {
+                        pubmed_date._month = s_TranslateMonth(season.substr(0, pos));
+                    }
+                    else {
+                        if (NStr::EqualNocase(season, "Winter")) {
+                            pubmed_date._month = 12; // Dec
+                        }
+                        else if (NStr::EqualNocase(season, "Spring")) {
+                            pubmed_date._month = 3; // Mar
+                        }
+                        else if (NStr::EqualNocase(season, "Summer")) {
+                            pubmed_date._month = 6; // Jun
+                        }
+                        else if (NStr::EqualNocase(season, "Autumn")) {
+                            pubmed_date._month = 9; // Jul
+                        }
+                    }
                 }
             }
         }
