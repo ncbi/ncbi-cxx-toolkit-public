@@ -211,6 +211,6 @@ protected:
     std::atomic<size_t> m_reserved_size{std::numeric_limits<size_t>::max()};
 };
 
-}; // namespace ncbi
+} // namespace ncbi
 
 #endif
