@@ -32,8 +32,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include "python_ncbi_dbapi_test.hpp"
-
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -43,6 +41,9 @@
 
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
+
+#include "python_ncbi_dbapi_test.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
