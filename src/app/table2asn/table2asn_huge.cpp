@@ -64,7 +64,7 @@ bool s_AddUpdateDescriptor(const CHugeAsnReader& asn_reader)
 {
     for (auto rec: asn_reader.GetBioseqs()) {
         if (rec.m_descr) {
-            if (auto parentClass = rec.m_parent_set->m_class; 
+            if (auto parentClass = rec.m_parent_set->m_class;
                     parentClass != CBioseq_set::eClass_genbank &&
                     parentClass != CBioseq_set::eClass_not_set) {
                 continue;
@@ -93,7 +93,7 @@ bool CheckDescriptors(const CHugeAsnReader& asn_reader, CSeqdesc::E_Choice which
             }
         }
     }
-    
+
     for (auto rec: asn_reader.GetBiosets())
     {
         if (rec.m_descr.NotEmpty())
@@ -182,9 +182,9 @@ public:
 
     using TFFFunction = std::function<void(TToken&, std::ostream&)>;
 
-    void Post(TAsyncToken& token, TFFFunction ff_func)
+    void Post(TAsyncToken& iotoken, TFFFunction ff_func)
     {
-        auto ostr = m_multi_writer.NewStream();
+        auto output = m_multi_writer.NewStream();
         std::thread(
             [ff_func](TAsyncToken token, CMultiSourceOStream ostr)
         {
@@ -199,7 +199,7 @@ public:
             {
                 std::cerr << "unknown exception\n";
             }
-        }, token, std::move(ostr)).detach();
+        }, iotoken, std::move(output)).detach();
     }
 
     auto Write(std::ostream& o_stream) {
