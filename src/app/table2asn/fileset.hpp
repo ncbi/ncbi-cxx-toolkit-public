@@ -37,7 +37,7 @@
 #include <objtools/writers/multi_source_file.hpp>
 #include <fstream>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 template<typename _T, class _ParentDeleter>
 class TDeleteWhenOwn
@@ -240,6 +240,6 @@ protected:
 };
 
 
-END_NCBI_NAMESPACE;
+END_NCBI_SCOPE
 
 #endif

@@ -170,7 +170,7 @@ void CFixSuspectProductName::FixSuspectProductNames(CSeq_entry_Handle seh) const
 
     VisitAllFeatures(*entry,
         [](const CBioseq& bioseq){return bioseq.IsAa(); },
-        [this, &scope, &feattree](CBioseq& bioseq, CSeq_feat& feature) {
+        [this, &scope, &feattree](CBioseq&, CSeq_feat& feature) {
             this->FixSuspectProductNames(feature, scope, feattree);
         });
 }
