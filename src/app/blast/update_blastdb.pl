@@ -55,8 +55,9 @@ use constant AWS_URL => "http://s3.amazonaws.com";
 use constant AMI_URL => "http://169.254.169.254/latest/meta-data/local-hostname";
 use constant AWS_BUCKET => "ncbi-blast-databases";
 
+use constant GCS_URL => "https://storage.googleapis.com";
 use constant GCP_URL => "http://metadata.google.internal/computeMetadata/v1/instance/id";
-use constant GCP_BUCKET => "gs://blast-db";
+use constant GCP_BUCKET => "blast-db";
 
 # TODO: deprecate this in the next release 2.14.x
 #use constant BLASTDB_MANIFEST => "blastdb-manifest.json";
@@ -79,6 +80,7 @@ my $opt_decompress = 0;
 my $opt_source;
 my $opt_legacy_exit_code = 0;
 my $opt_nt = &get_num_cores();
+my $opt_gcp_prj = undef;
 my $result = GetOptions("verbose+"          =>  \$opt_verbose,
                         "quiet"             =>  \$opt_quiet,
                         "force"             =>  \$opt_force_download,
@@ -89,6 +91,7 @@ my $result = GetOptions("verbose+"          =>  \$opt_verbose,
                         "blastdb_version:i" =>  \$opt_blastdb_ver,
                         "decompress"        =>  \$opt_decompress,
                         "source=s"          =>  \$opt_source,
+                        "gcp-project=s"     =>  \$opt_gcp_prj,
                         "num_threads=i"     =>  \$opt_nt,
                         "legacy_exit_code"  =>  \$opt_legacy_exit_code,
                         "help"              =>  \$opt_help);
@@ -168,15 +171,16 @@ if ($location =~ /aws/i and not defined $curl) {
     print "Error: $0 depends on curl to fetch data from cloud storage, please install this utility to access this data source.\n";
     exit(EXIT_FAILURE);
 }
-if ($location =~ /gcp/i and (not defined $gsutil or not defined $gcloud)) {
-    print "Error: $0 depends on gsutil and gcloud to fetch data from cloud storage, please install these utilities to access this data source.\n";
+if ($location =~ /gcp/i and defined($opt_gcp_prj) and (not defined $gsutil or not defined $gcloud)) {
+    print "Error: when providing a GCP project, $0 depends on gsutil and gcloud to fetch data from cloud storage, please install these utilities to access this data source.\n";
     exit(EXIT_FAILURE);
 }
-my $gcp_prj = ($location =~ /gcp/i) ? &get_gcp_project() : undef;
-if ($location =~ /gcp/i and not defined $gcp_prj) {
-    print "Error: $0 depends on gcloud being configured to fetch data from cloud storage, please configure it per the instructions in https://cloud.google.com/sdk/docs/initializing .\n";
-    exit(EXIT_FAILURE);
-}
+my $gcp_prj = $opt_gcp_prj;
+#my $gcp_prj = ($location =~ /gcp/i) ? &get_gcp_project() : undef;
+#if ($location =~ /gcp/i and not defined $gcp_prj) {
+#    print "Error: $0 depends on gcloud being configured to fetch data from cloud storage, please configure it per the instructions in https://cloud.google.com/sdk/docs/initializing .\n";
+#    exit(EXIT_FAILURE);
+#}
 
 my $ftp;
 
@@ -285,10 +289,11 @@ if ($location ne "NCBI") {
             }
         }
         if (@files2download) {
+            my $gsutil = &get_gsutil_path();
             my $awscli = &get_awscli_path();
             my $cmd;
             my $fh = File::Temp->new();
-            if ($location eq "GCP") {
+            if ($location eq "GCP" and defined($gcp_prj)) {
                 $cmd = "$gsutil -u $gcp_prj ";
                 if ($opt_nt > 1) {
                     $cmd .= "-m -q ";
@@ -298,29 +303,28 @@ if ($location ne "NCBI") {
                     $cmd .= "-q cp ";
                 }
                 $cmd .= join(" ", @files2download) . " .";
-            } else {
-                if (defined ($awscli)) {
-                    # https://registry.opendata.aws/ncbi-blast-databases/#usageexamples
-                    my $aws_cmd = "$awscli s3 cp --no-sign-request ";
-                    $aws_cmd .= "--only-show-errors " unless $opt_verbose >= 3;
+            } elsif ($location eq "AWS" and defined ($awscli)) {
+                # https://registry.opendata.aws/ncbi-blast-databases/#usageexamples
+                my $aws_cmd = "$awscli s3 cp --no-sign-request ";
+                $aws_cmd .= "--only-show-errors " unless $opt_verbose >= 3;
+                print $fh join("\n", @files2download);
+                $cmd = "/usr/bin/xargs -P $opt_nt -n 1 -I{}";
+                $cmd .= " -t" if $opt_verbose > 3;
+                $cmd .= " $aws_cmd {} .";
+                $cmd .= " <$fh " ;
+            } else { # fall back to curl
+                my $url = $location eq "AWS" ? AWS_URL : GCS_URL;
+                s,gs://,$url/, foreach (@files2download);
+                s,s3://,$url/, foreach (@files2download);
+                if ($opt_nt > 1 and -f "/usr/bin/xargs") {
                     print $fh join("\n", @files2download);
-                    $cmd = "/usr/bin/xargs -P $opt_nt -n 1 -I{}";
+                    $cmd = "/usr/bin/xargs -P $opt_nt -n 1";
                     $cmd .= " -t" if $opt_verbose > 3;
-                    $cmd .= " $aws_cmd {} .";
+                    $cmd .= " $curl -sSOR";
                     $cmd .= " <$fh " ;
-                } else { # fall back to  curl for AWS only
-                    my $url = AWS_URL;
-                    s,s3://,$url/, foreach (@files2download);
-                    if ($opt_nt > 1 and -f "/usr/bin/xargs") {
-                        print $fh join("\n", @files2download);
-                        $cmd = "/usr/bin/xargs -P $opt_nt -n 1";
-                        $cmd .= " -t" if $opt_verbose > 3;
-                        $cmd .= " $curl -sSOR";
-                        $cmd .= " <$fh " ;
-                    } else {
-                        $cmd = "$curl -sSR";
-                        $cmd .= " -O $_" foreach (@files2download);
-                    }
+                } else {
+                    $cmd = "$curl -sSR";
+                    $cmd .= " -O $_" foreach (@files2download);
                 }
             }
             print "$cmd\n" if $opt_verbose > 3;
@@ -670,8 +674,13 @@ sub get_latest_dir
         $url = AWS_URL . "/" . AWS_BUCKET . "/latest-dir";
         $cmd = "$curl -s $url";
     } else {
-        $url = GCP_BUCKET . "/latest-dir";
-        $cmd = "$gsutil -u $gcp_prj cat $url";
+        if (defined($gcp_prj)) {
+            $url = 'gs://' . GCP_BUCKET . "/latest-dir";
+            $cmd = "$gsutil -u $gcp_prj cat $url";
+        } else {
+            $url = GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
+            $cmd = "$curl -s $url";
+        }
     }
     print "$cmd\n" if DEBUG;
     chomp($retval = `$cmd`);
@@ -696,8 +705,13 @@ sub get_blastdb_metadata
         $url = AWS_URL . "/" . AWS_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
         $cmd = "curl -sf $url";
     } elsif ($source eq "GCP") {
-        $url = GCP_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
-        $cmd = "$gsutil -u $gcp_prj cat $url";
+        if (defined($gcp_prj)) {
+            $url = 'gs://' . GCP_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
+            $cmd = "$gsutil -u $gcp_prj cat $url";
+        } else {
+            $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
+            $cmd = "curl -sf $url";
+        }
     } else {
         $url = 'ftp://' . NCBI_FTP . "/blast/db/" . BLASTDB_METADATA;
         $cmd = "curl -sf $url";
