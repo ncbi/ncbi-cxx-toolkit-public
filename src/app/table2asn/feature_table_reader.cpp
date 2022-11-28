@@ -1555,9 +1555,9 @@ bool CFeatureTableReader::_AddProteinToSeqEntry(const CSeq_entry* protein, CSeq_
         }
     }
 
-    CRef<CSeq_id> seq_id(new CSeq_id());
-    seq_id->Assign(*(bsh_match.GetSeqId()));
-    CRef<CSeq_loc> match_loc(new CSeq_loc(*seq_id, 0, bsh_match.GetBioseqLength() - 1));
+    CRef<CSeq_id> bioseq_id(new CSeq_id());
+    bioseq_id->Assign(*(bsh_match.GetSeqId()));
+    CRef<CSeq_loc> match_loc(new CSeq_loc(*bioseq_id, 0, bsh_match.GetBioseqLength() - 1));
 
     CRef<CSeq_entry> protein_entry(new CSeq_entry());
     protein_entry->Assign(*protein);
