@@ -52,7 +52,13 @@ class NCBI_XOBJWRITE_EXPORT CFastaOstreamEx
 {
 public:
 
-    explicit CFastaOstreamEx(CNcbiOstream& out);
+    enum EFormat {
+        eDefault,
+        ePGAPx,
+    };
+
+
+    explicit CFastaOstreamEx(CNcbiOstream& out, EFormat format=eDefault);
     virtual ~CFastaOstreamEx() = default;
 
     bool WriteFeatures(CFeat_CI feat_it,
@@ -176,9 +182,18 @@ protected:
 
     virtual void x_WriteBuffer( const char* buf, unsigned int count) override;
 
-    bool m_TranslateCds;
-    TSeqPos m_FeatCount;
+    EFormat m_Format{eDefault};
+    bool m_TranslateCds{false};
+    TSeqPos m_FeatCount{0};
     CRef<CScope> m_InternalScope;
+private:
+    string x_GetDefaultCDSIdString(const CSeq_feat& cds,
+            CScope& scope,
+            bool translateCds);
+
+    string x_GetPGAPxIdString(const CSeq_feat& cds,
+            CScope& scope,
+            bool translateCds) const;
 };
 
 
