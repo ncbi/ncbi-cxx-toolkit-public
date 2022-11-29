@@ -1179,7 +1179,9 @@ void COligoSpecificityCheck::x_AnalyzeTwoPrimers(const TSortedHsp& sorted_hsp,
                                                  TSeqPos hit_index) 
 {
     //our primer input uses locations on the same strand notation so a valid pcr product
-    //can only have primers on the same strand
+    //can only have primers on the same strand for left and right primers
+    //because we are not using primers as is as query.  we use template or for primer only case
+    //we complement right primer and connect it with left primer (as is ) to generate an artificial query
     //  bool hsp_on_minus_strand = (hit_strand == eNa_strand_minus ? true : false);
   
     int HspOverlappingWithLeftPrimer_size;
@@ -1913,7 +1915,6 @@ void COligoSpecificityCheck::CheckSpecificity(const vector<SPrimerInfo>& primer_
 }
 
 
-
 ///Place alignment from the same id into one holder.  Split the alignment in each holder
 /// into plus or minus strand and sort them by alignment start in ascending order
 void COligoSpecificityTemplate::x_SortHit(CSeq_align_set& input_hits)
@@ -1965,7 +1966,7 @@ void COligoSpecificityTemplate::x_SortHit(CSeq_align_set& input_hits)
     int num_hits = m_SortHit.size();
     int num_hsp = input_hits.Get().size();
     int hsp_hit_ratio = 0;
-  
+
     if (num_hits > 0) {
         hsp_hit_ratio = num_hsp/num_hits;
         
