@@ -204,6 +204,7 @@ bool CFastaOstreamEx::xWriteFeatureTitle(const CSeq_feat& feat,
     if (id_string.empty()) {
         return false;
     }
+    id_string += to_string(++m_FeatCount);
 
     m_Out << ">lcl|" << id_string;
     x_WriteFeatureAttributes(feat, scope);
@@ -436,7 +437,7 @@ string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
         !NStr::IsBlank(productIdOrLocusTag)) {
         idString += productIdOrLocusTag + "_";
     }
-    return idString + to_string(++m_FeatCount);
+    return idString; 
 }
 
 string CFastaOstreamEx::x_GetOtherIdString(const CSeq_feat& feat,
@@ -470,7 +471,7 @@ string CFastaOstreamEx::x_GetOtherIdString(const CSeq_feat& feat,
     }
 
     id_string += feat_tag;
-    return id_string + to_string(++m_FeatCount);
+    return id_string;
 }
 
 
@@ -540,7 +541,7 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
         !NStr::IsBlank(productIdOrLocusTag)) {
         idString += productIdOrLocusTag + "_";
     }
-    return idString + to_string(++m_FeatCount);
+    return idString; 
 }
 
 
@@ -550,20 +551,18 @@ string CFastaOstreamEx::x_GetProtIdString(const CSeq_feat& prot,
     const auto& src_loc = prot.GetLocation();
 
     auto id_string = s_GetDeflineIdString(*(src_loc.GetId()), scope);
-    id_string += "_prot";
+    id_string += "_prot_";
 
     if (prot.IsSetProduct()) {
         const auto& product = prot.GetProduct();
         _ASSERT(product.IsWhole());
         try {
             auto prod_accver = s_GetDeflineIdString(product.GetWhole(), scope);
-            id_string += "_" + prod_accver;
+            id_string += prod_accver + "_";
         } catch (...) {
             // Move on...
         }
     }
-    id_string += "_" + to_string(++m_FeatCount);
-
     return id_string;
 }
 
@@ -574,7 +573,7 @@ string CFastaOstreamEx::x_GetGeneIdString(const CSeq_feat& gene,
     const auto& src_loc = gene.GetLocation();
 
     auto id_string = s_GetDeflineIdString(*(src_loc.GetId()), scope);
-    id_string += "_gene_" + to_string(++m_FeatCount);
+    id_string += "_gene_"; 
 
     return id_string;
 }
