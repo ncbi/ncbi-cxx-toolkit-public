@@ -413,13 +413,16 @@ void CSeqMap::x_LoadObject(const CSegment& seg) const
 {
     _ASSERT(seg.m_Position != kInvalidSeqPos);
     if ( seg.m_SegType != seg.m_ObjType ) {
-        const CObject* obj = seg.m_RefObject.GetPointer();
-        if ( obj && seg.m_ObjType == eSeqChunk ) {
-            const CTSE_Chunk_Info* chunk =
-                dynamic_cast<const CTSE_Chunk_Info*>(obj);
-            if ( chunk ) {
-                chunk->Load();
+        CConstRef<CTSE_Chunk_Info> chunk;
+        {{
+            CMutexGuard guard(m_SeqMap_Mtx);
+            const CObject* obj = seg.m_RefObject.GetPointer();
+            if ( obj && seg.m_ObjType == eSeqChunk ) {
+                chunk = dynamic_cast<const CTSE_Chunk_Info*>(obj);
             }
+        }}
+        if ( chunk ) {
+            chunk->Load();
         }
     }
 }
@@ -429,13 +432,16 @@ CRef<CTSE_Chunk_Info> CSeqMap::x_GetChunkToLoad(const CSegment& seg) const
 {
     _ASSERT(seg.m_Position != kInvalidSeqPos);
     if ( seg.m_SegType != seg.m_ObjType ) {
-        const CObject* obj = seg.m_RefObject.GetPointer();
-        if ( obj && seg.m_ObjType == eSeqChunk ) {
-            const CTSE_Chunk_Info* chunk =
-                dynamic_cast<const CTSE_Chunk_Info*>(obj);
-            if ( chunk->NotLoaded() ) {
-                return Ref(const_cast<CTSE_Chunk_Info*>(chunk));
+        CRef<CTSE_Chunk_Info> chunk;
+        {{
+            CMutexGuard guard(m_SeqMap_Mtx);
+            const CObject* obj = seg.m_RefObject.GetPointer();
+            if ( obj && seg.m_ObjType == eSeqChunk ) {
+                chunk = dynamic_cast<CTSE_Chunk_Info*>(const_cast<CObject*>(obj));
             }
+        }}
+        if ( chunk && chunk->NotLoaded() ) {
+            return chunk;
         }
     }
     return null;
