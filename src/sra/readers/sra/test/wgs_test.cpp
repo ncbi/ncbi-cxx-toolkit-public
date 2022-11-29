@@ -264,7 +264,7 @@ void sx_Analyze_4na(CTempString seq, const CWGSSeqIterator& it)
          << " of "<<ambig_block.size()<<endl;
     auto ambig_bytes = it.GetAmbiguityBytes();
     cout << acc_ver<< ": Ambiguous blocks bytes: "<<ambig_bytes.size()<<endl;
-    _ASSERT(ambig_bytes.size() == (ambig_block_count+63)/64*8);
+    _ASSERT(ambig_bytes.size() <= (ambig_block_count+7)/8);
     size_t correct_0 = 0, correct_1 = 0;
     size_t wrong_0 = 0, wrong_1 = 0;
     for ( size_t i = 0; i < ambig_block_count; ++i ) {
