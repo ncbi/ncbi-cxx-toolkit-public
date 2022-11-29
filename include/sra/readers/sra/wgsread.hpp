@@ -45,6 +45,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <sra/readers/sra/snpread.hpp> // for CSafeFlags
+#include <sra/readers/sra/limited_resource_map.hpp>
 #include <map>
 #include <list>
 
@@ -409,6 +410,8 @@ public:
         return m_CommonTaxId;
     }
     
+    struct SAmbiguityInfo;
+    
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
@@ -418,6 +421,8 @@ protected:
 
     // SSeq0TableCursor is helper accessor structure for SEQUENCE table, minimal columns
     struct SSeq0TableCursor;
+    // SSeq4naTableCursor is helper accessor structure for SEQUENCE table, 4na columns
+    struct SSeq4naTableCursor;
     // SSeqTableCursor is helper accessor structure for SEQUENCE table, remaining columns
     struct SSeqTableCursor;
     // SScfTableCursor is helper accessor structure for SCAFFOLD table
@@ -500,6 +505,7 @@ protected:
     // get table accessor object for exclusive access
     CRef<SSeq0TableCursor> Seq0(TVDBRowId row = 0);
     CRef<SSeqTableCursor> Seq(TVDBRowId row = 0);
+    CRef<SSeq4naTableCursor> Seq4na(TVDBRowId row = 0);
     CRef<SScfTableCursor> Scf(TVDBRowId row = 0);
     CRef<SProt0TableCursor> Prot0(TVDBRowId row = 0);
     CRef<SProtTableCursor> Prot(TVDBRowId row = 0);
@@ -509,12 +515,17 @@ protected:
     // return table accessor object for reuse
     void Put(CRef<SSeq0TableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SSeqTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SSeq4naTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SScfTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SProt0TableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SProtTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SFeatTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SGiIdxTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SProtIdxTableCursor>& curs, TVDBRowId row = 0);
+
+    // structure to hold and cache 4na data for ambiguous blocks of sequence
+    CRef<SAmbiguityInfo> GetAmbiguityInfo(TVDBRowId row);
+    void PutAmbiguityInfo(CRef<SAmbiguityInfo>& ambiguity);
 
     CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str,
                                            const SSeq0TableCursor& cur,
@@ -600,6 +611,10 @@ private:
     CVDBTableIndex m_ProteinNameIndex;
     CVDBTableIndex m_ProductNameIndex;
 
+    CFastMutex m_AmbiguityCacheMutex;
+    typedef limited_resource_map<TVDBRowId, CRef<SAmbiguityInfo>, size_t> TAmbiguityCache;
+    TAmbiguityCache m_AmbiguityCache;
+    
     CSeq_inst::TMol m_ContigMolType;
     bool m_IsSetMasterDescr;
     bool m_HasNoDefaultGnlId;
@@ -850,13 +865,7 @@ public:
 
     DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
-    CWGSSeqIterator& operator++(void)
-        {
-            x_CheckValid("CWGSSeqIterator::operator++");
-            ++m_CurrId;
-            x_Settle();
-            return *this;
-        }
+    CWGSSeqIterator& operator++(void);
 
     TVDBRowId GetCurrentRowId(void) const {
         return m_CurrId;
@@ -1055,6 +1064,15 @@ public:
                               vector< COpenRange<TSeqPos> >* split = 0) const;
     CRef<CSeq_data> Get2na(TSeqPos pos, TSeqPos len) const;
     CRef<CSeq_data> Get4na(TSeqPos pos, TSeqPos len) const;
+    
+    typedef CWGSDb_Impl::SSeq4naTableCursor SSeq4naTableCursor;
+    typedef CWGSDb_Impl::SAmbiguityInfo SAmbiguityInfo;
+    struct SAmbiguityAccess;
+    SAmbiguityAccess GetAmbiguity() const;
+    CRef<CSeq_data> Get2na(TSeqPos pos, TSeqPos len,
+                           SAmbiguityAccess& ambiguity) const;
+    CRef<CSeq_data> Get4na(TSeqPos pos, TSeqPos len,
+                           SAmbiguityAccess& ambiguity) const;
 
     CRef<CBioseq> GetBioseq(TFlags flags = fDefaultFlags) const;
     // GetSeq_entry may create nuc-prot set if the sequence has products
@@ -1141,19 +1159,26 @@ protected:
                            TSeqPos pos = 0,
                            TSeqPos len = kInvalidSeqPos) const;
 
-    const Uint1* x_GetUnpacked4na(TSeqPos pos, TSeqPos len) const;
+    const Uint1* x_GetUnpacked4na(TSeqPos pos, TSeqPos len,
+                                  SAmbiguityAccess& ambiguity) const;
 
     // methods to be used if no gap information exist
-    TSeqPos x_GetGapLengthExact(TSeqPos pos, TSeqPos len) const;
-    TSeqPos x_Get2naLengthExact(TSeqPos pos, TSeqPos len) const;
+    TSeqPos x_GetGapLengthExact(TSeqPos pos, TSeqPos len,
+                                SAmbiguityAccess& ambiguity) const;
+    TSeqPos x_Get2naLengthExact(TSeqPos pos, TSeqPos len,
+                                SAmbiguityAccess& ambiguity) const;
     TSeqPos x_Get4naLengthExact(TSeqPos pos, TSeqPos len,
                                 TSeqPos stop_2na_len,
-                                TSeqPos stop_gap_len) const;
+                                TSeqPos stop_gap_len,
+                                SAmbiguityAccess& ambiguity) const;
 
     // methods to be used with gap information
-    bool x_AmbiguousBlock(TSeqPos block_index) const;
-    TSeqPos x_Get2naLength(TSeqPos pos, TSeqPos len) const;
-    TSeqPos x_Get4naLength(TSeqPos pos, TSeqPos len) const;
+    bool x_AmbiguousBlock(TSeqPos block_index,
+                          SAmbiguityAccess& ambiguity) const;
+    TSeqPos x_Get2naLength(TSeqPos pos, TSeqPos len,
+                           SAmbiguityAccess& ambiguity) const;
+    TSeqPos x_Get4naLength(TSeqPos pos, TSeqPos len,
+                           SAmbiguityAccess& ambiguity) const;
 
     struct SSegment {
         COpenRange<TSeqPos> range;
@@ -1169,12 +1194,12 @@ protected:
     void x_SetDelta(CSeq_inst& inst, const TSegments& segments) const;
     void x_SetDeltaOrData(CSeq_inst& inst, const TSegments& segments) const;
 
-    void x_GetSegments(TSegments& data,
-                       COpenRange<TSeqPos> range,
-                       TWGSContigGapInfo gap_info,
-                       TInstSegmentFlags flags) const;
-    void x_GetSegments(TSegments& segments,
-                       COpenRange<TSeqPos> range) const;
+    void x_GetSegmentsWithExplicitGaps(TSegments& data,
+                                       COpenRange<TSeqPos> range,
+                                       TWGSContigGapInfo gap_info,
+                                       TInstSegmentFlags flags) const;
+    void x_GetSegmentsWithRecoveredGaps(TSegments& segments,
+                                        COpenRange<TSeqPos> range) const;
 
     CRef<CSeq_inst> x_GetSeq_inst(SWGSCreateInfo& info) const;
 
@@ -1182,6 +1207,7 @@ private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SSeq0TableCursor> m_Cur0; // VDB seq table accessor
     CRef<CWGSDb_Impl::SSeqTableCursor> m_Cur; // VDB seq table accessor
+    mutable CRef<CWGSDb_Impl::SAmbiguityInfo> m_AmbiguityInfo;
     TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
     SVersionSelector m_AccVersion;
     TIncludeFlags m_IncludeFlags;
