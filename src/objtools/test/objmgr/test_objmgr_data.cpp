@@ -56,6 +56,7 @@
 #include <serial/serial.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
+#include <util/checksum.hpp>
 //#include <internal/asn_cache/lib/asn_cache_loader.hpp>
 
 #include <algorithm>
@@ -118,6 +119,8 @@ protected:
 
     bool m_load_only;
     bool m_no_seq_map;
+    bool m_seq_data_4na;
+    bool m_seq_hash;
     bool m_no_snp;
     bool m_no_named;
     bool m_no_external;
@@ -247,6 +250,19 @@ void CTestOM::Exit(void)
 {
     if ( !TestApp_Exit() )
         THROW1_TRACE(runtime_error, "Cannot exit test application");
+}
+
+
+static int sx_CalcHash(const CBioseq_Handle& bh)
+{
+    CChecksum sum(CChecksum::eCRC32INSD);
+    CSeqVector sv(bh, bh.eCoding_Iupac);
+    for ( CSeqVector_CI it(sv); it; ) {
+        TSeqPos size = it.GetBufferSize();
+        sum.AddChars(it.GetBufferPtr(), size);
+        it += size;
+    }
+    return sum.GetChecksum();
 }
 
 
@@ -418,6 +434,10 @@ bool CTestOM::Thread_Run(int idx)
                 if ( prefetch ) {
                     token = prefetch->GetNextToken();
                 }
+                CScope::TSequenceHash loaded_hash = 0;
+                if ( m_seq_hash ) {
+                    loaded_hash = scope.GetSequenceHash(sih);
+                }
                 CBioseq_Handle handle;
                 if ( token ) {
                     handle = CStdPrefetch::GetBioseqHandle(token);
@@ -494,6 +514,29 @@ bool CTestOM::Thread_Run(int idx)
                         SSeqMapSelector sel(CSeqMap::fFindRef, kMax_UInt);
                         for ( CSeqMap_CI it(handle, sel); it; ++it ) {
                             _ASSERT(it.GetType() == CSeqMap::eSeqRef);
+                        }
+                    }
+                    if ( m_seq_data_4na ) {
+                        SSeqMapSelector sel(CSeqMap::fFindData, kMax_UInt);
+                        for ( CSeqMap_CI it(handle, sel); it; ++it ) {
+                            _ASSERT(it.GetType() == CSeqMap::eSeqData);
+                            auto& data = it.GetRefData();
+                            if ( data.IsNcbi4na() ) {
+                                if ( m_verbose ) {
+                                    NcbiCout << " with 4na";
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if ( m_seq_hash ) {
+                        auto calculated_hash = sx_CalcHash(handle);
+                        if ( loaded_hash != calculated_hash ) {
+                            NcbiCerr << sih.AsString()
+                                     << ": Hash discrepancy: loaded " << loaded_hash
+                                     << " vs actual "<< calculated_hash
+                                     << NcbiEndl;
+                            ++error_count;
                         }
                     }
 
@@ -758,6 +801,8 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
          CArgDescriptions::eInputFile);
     args.AddFlag("load_only", "Do not work with sequences - only load them");
     args.AddFlag("no_seq_map", "Do not scan CSeqMap on the sequence");
+    args.AddFlag("seq_data_4na", "Scan CSeqMap until first 4na Seq-data");
+    args.AddFlag("seq_hash", "Check sequence hash");
     args.AddFlag("no_snp", "Exclude SNP features from processing");
     args.AddFlag("no_named", "Exclude features from named Seq-annots");
     args.AddFlag("no_external", "Exclude all external annotations");
@@ -862,6 +907,8 @@ bool CTestOM::TestApp_Init(void)
     }
     m_load_only = args["load_only"];
     m_no_seq_map = args["no_seq_map"];
+    m_seq_data_4na = args["seq_data_4na"];
+    m_seq_hash = args["seq_hash"];
     m_no_snp = args["no_snp"];
     m_no_named = args["no_named"];
     m_no_external = args["no_external"];
