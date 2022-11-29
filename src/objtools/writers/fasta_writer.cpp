@@ -488,52 +488,25 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
     const auto& rna = feat.GetData().GetRna();
     const auto rna_type = rna.IsSetType() ? rna.GetType() : CRNA_ref::eType_unknown;
 
+    static const map<CRNA_ref::EType, string> kTypeToTag{
+        {CRNA_ref::eType_mRNA,   "_mrna_"},
+        {CRNA_ref::eType_snoRNA, "_ncrna_"},
+        {CRNA_ref::eType_scRNA,  "_ncrna_"},
+        {CRNA_ref::eType_snRNA,  "_ncrna_"},
+        {CRNA_ref::eType_ncRNA,  "_ncrna_"},
+        {CRNA_ref::eType_rRNA,   "_rrna_"},
+        {CRNA_ref::eType_tRNA,   "_trna_"},
+        {CRNA_ref::eType_premsg, "_precursorrna_"},
+        {CRNA_ref::eType_tmRNA,  "_tmrna_"}};   
+
+
     string rna_tag;
-    switch (rna_type) {
-    case CRNA_ref::eType_mRNA:
-    {
-        rna_tag = "_mrna_";
-        break;
+    if (auto it = kTypeToTag.find(rna_type);
+        it != kTypeToTag.end()) {
+        rna_tag = it->second;
     }
-
-    case CRNA_ref::eType_snoRNA:
-    case CRNA_ref::eType_scRNA:
-    case CRNA_ref::eType_snRNA:
-    case CRNA_ref::eType_ncRNA:
-    {
-        rna_tag = "_ncrna_";
-        break;
-    }
-
-    case CRNA_ref::eType_rRNA:
-    {
-        rna_tag = "_rrna_";
-        break;
-    }
-
-    case CRNA_ref::eType_tRNA:
-    {
-        rna_tag = "_trna_";
-        break;
-    }
-
-    case CRNA_ref::eType_premsg:
-    {
-        rna_tag = "_precursorrna_";
-        break;
-    }
-
-    case CRNA_ref::eType_tmRNA:
-    {
-        rna_tag = "_tmrna_";
-        break;
-    }
-
-    default:
-    {
+    else {
         rna_tag = "_miscrna_";
-        break;
-    }
     }
 
     idString += rna_tag;
