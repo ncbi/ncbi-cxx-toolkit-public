@@ -103,9 +103,11 @@ static const char* sc_SupportedRawDbtags[] = {
     "LANLCHGS",
     "LRG",
     "MIPS",
+    "NCBI_EXT_ACC",
     "NCBI_GENOMES",
     "NCBI_MITO",
     "PGEC",
+    "PID",
     "SGD",
     "SHGC",
     "SRA",
@@ -114,7 +116,9 @@ static const char* sc_SupportedRawDbtags[] = {
     "UWGC",
     "WASHU",
     "WIBR",
-    "WUGSC"
+    "WUGSC",
+    "dbGSS",
+    "dbSTS"
 };
 DEFINE_STATIC_ARRAY_MAP_WITH_COPY(CStaticArraySet<string>, kSupportedRawDbtags,
                                   sc_SupportedRawDbtags);
