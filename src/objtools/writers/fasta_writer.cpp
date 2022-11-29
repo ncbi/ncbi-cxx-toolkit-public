@@ -313,40 +313,137 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
 }
 
 
+static string s_GetDeflineIdString(const CSeq_id& id, CScope& scope)
+{
+    auto ids = scope.GetIds(id);
+    if (!ids.empty()) {
+        CConstRef<CSeq_id> pAccession;
+        CConstRef<CSeq_id> pGeneralId;
+        CConstRef<CSeq_id> pLocalId;
+
+        for (auto idh : ids) {
+            if (!idh) {
+                continue;
+            }
+            if (auto pId = idh.GetSeqId()) {
+                if (auto pTextId = pId->GetTextseq_Id()) {
+                    if (pTextId->IsSetAccession()) {
+                        if (pTextId->IsSetVersion()) {
+                            pAccession = pId;
+                            break;
+                        }
+                        else if (!pAccession) {
+                            pAccession = pId;
+                        }
+                    }
+                } 
+                else if (pId->IsGeneral()) {
+                    if (!pGeneralId) {
+                        pGeneralId = pId;
+                    }
+                }
+                else if (pId->IsLocal()) {
+                    if (!pLocalId) {
+                        pLocalId = pId;
+                    }
+                }
+            }
+        }
+        if (pAccession) {
+            return pAccession->GetSeqIdString(true);
+        }
+        
+        if (pGeneralId && pGeneralId->GetGeneral().IsSetTag()) {
+            const auto& tag = pGeneralId->GetGeneral().GetTag();
+            if (tag.IsId()) {
+                return NStr::IntToString(tag.GetId());
+            } 
+            return tag.GetStr();
+        }
+        
+        if (pLocalId) {
+            return pLocalId->GetSeqIdString();
+        }
+    }
+
+    return "";
+}
+
+CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
+                                           CScope& scope)
+{
+    CConstRef<CSeq_feat> no_gene;
+    if (!feat.IsSetData()) {
+        return no_gene;
+    }
+
+    if (feat.GetData().IsCdregion()) {
+        return sequence::GetBestGeneForCds(feat, scope);
+    }
+
+    if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        return sequence::GetBestGeneForMrna(feat, scope);
+    }
+
+    // Non-messenger RNA
+    if (feat.GetData().IsRna()) {
+        return GetBestOverlappingFeat(feat.GetLocation(),
+                                      CSeqFeatData::eSubtype_gene,
+                                      eOverlap_Simple,
+                                      scope);
+    }
+
+    return no_gene;
+}
+
+
+static string s_GetProductIdOrLocusTag(const CSeq_feat& feat, CScope& scope)
+{
+    if (feat.IsSetProduct()) {
+        const auto& product = feat.GetProduct();
+        if (product.IsWhole()) {
+            auto idString = s_GetDeflineIdString(product.GetWhole(), scope);
+            if (!NStr::IsBlank(idString)) {
+                return idString;
+            }
+        }
+    }
+
+    auto pGeneFeat = s_GetBestGeneForFeat(feat, scope);
+    if (pGeneFeat && pGeneFeat->IsSetData() && pGeneFeat->GetData().IsGene() &&
+        pGeneFeat->GetData().GetGene().IsSetLocus_tag()) {
+        return pGeneFeat->GetData().GetGene().GetLocus_tag();
+    }
+    
+    return "";
+}
+
+
 string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
                                          CScope& scope,
                                          const bool translate_cds)
 {
     const auto& src_loc = cds.GetLocation();
-
-    auto id_string  = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
+    auto idString = s_GetDeflineIdString(*(src_loc.GetId()), scope);
 
     if (translate_cds) {
-        id_string += "_prot_";
+        idString += "_prot_";
     } else {
-        id_string += "_cds_";
+        idString += "_cds_";
     }
 
-    if (cds.IsSetProduct()) {
-        const auto& product = cds.GetProduct();
-        _ASSERT(product.IsWhole());
-        try {
-            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), scope);
-            id_string +=  prod_accver + "_";
-        } catch (...) {
-            // Move on if there's a problem getting the product accession
-        }
+    if (auto productIdOrLocusTag = s_GetProductIdOrLocusTag(cds, scope);
+        !NStr::IsBlank(productIdOrLocusTag)) {
+        idString += productIdOrLocusTag + "_";
     }
-
-    id_string += to_string(++m_FeatCount);
-    return id_string;
+    return idString + to_string(++m_FeatCount);
 }
 
 string CFastaOstreamEx::x_GetOtherIdString(const CSeq_feat& feat,
         CScope& scope)
 {
     const auto& loc = feat.GetLocation();
-    auto id_string = sequence::GetAccessionForId(*(loc.GetId()), scope);
+    auto id_string = s_GetDeflineIdString(*(loc.GetId()), scope);
 
     const auto& feat_data = feat.GetData();
 
@@ -386,7 +483,7 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
     }
 
     const auto& src_loc = feat.GetLocation();
-    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
+    auto idString = s_GetDeflineIdString(*(src_loc.GetId()), scope);
     const auto& rna = feat.GetData().GetRna();
     const auto rna_type = rna.IsSetType() ? rna.GetType() : CRNA_ref::eType_unknown;
 
@@ -438,20 +535,12 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
     }
     }
 
-    id_string += rna_tag;
-
-    if (feat.IsSetProduct()) {
-        const auto& product = feat.GetProduct();
-        _ASSERT(product.IsWhole());
-        try {
-            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), scope);
-            id_string +=  prod_accver + "_";
-        } catch (...) {
-            // Move on if there's a problem getting the product accession
-        }
+    idString += rna_tag;
+    if (auto productIdOrLocusTag = s_GetProductIdOrLocusTag(feat, scope);
+        !NStr::IsBlank(productIdOrLocusTag)) {
+        idString += productIdOrLocusTag + "_";
     }
-
-    return id_string + to_string(++m_FeatCount);
+    return idString + to_string(++m_FeatCount);
 }
 
 
@@ -460,14 +549,14 @@ string CFastaOstreamEx::x_GetProtIdString(const CSeq_feat& prot,
 {
     const auto& src_loc = prot.GetLocation();
 
-    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
+    auto id_string = s_GetDeflineIdString(*(src_loc.GetId()), scope);
     id_string += "_prot";
 
     if (prot.IsSetProduct()) {
         const auto& product = prot.GetProduct();
         _ASSERT(product.IsWhole());
         try {
-            auto prod_accver = sequence::GetAccessionForId(product.GetWhole(), scope);
+            auto prod_accver = s_GetDeflineIdString(product.GetWhole(), scope);
             id_string += "_" + prod_accver;
         } catch (...) {
             // Move on...
@@ -484,39 +573,12 @@ string CFastaOstreamEx::x_GetGeneIdString(const CSeq_feat& gene,
 {
     const auto& src_loc = gene.GetLocation();
 
-    auto id_string = sequence::GetAccessionForId(*(src_loc.GetId()), scope);
+    auto id_string = s_GetDeflineIdString(*(src_loc.GetId()), scope);
     id_string += "_gene_" + to_string(++m_FeatCount);
 
     return id_string;
 }
 
-
-CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
-                                           CScope& scope)
-{
-    CConstRef<CSeq_feat> no_gene;
-    if (!feat.IsSetData()) {
-        return no_gene;
-    }
-
-    if (feat.GetData().IsCdregion()) {
-        return sequence::GetBestGeneForCds(feat, scope);
-    }
-
-    if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-        return sequence::GetBestGeneForMrna(feat, scope);
-    }
-
-    // Non-messenger RNA
-    if (feat.GetData().IsRna()) {
-        return GetBestOverlappingFeat(feat.GetLocation(),
-                                      CSeqFeatData::eSubtype_gene,
-                                      eOverlap_Simple,
-                                      scope);
-    }
-
-    return no_gene;
-}
 
 
 void CFastaOstreamEx::x_AddDeflineAttribute(const string& label,
@@ -903,7 +965,7 @@ void CFastaOstreamEx::x_AddProteinIdAttribute(const CSeq_feat& feat,
     if (feat.GetData().IsCdregion() &&
         feat.IsSetProduct() &&
         feat.GetProduct().GetId()) {
-        string protein_id = sequence::GetAccessionForId(*(feat.GetProduct().GetId()), scope);
+        string protein_id = s_GetDeflineIdString(*(feat.GetProduct().GetId()), scope);
 
         x_AddDeflineAttribute("protein_id", protein_id, defline);
     }
@@ -923,7 +985,7 @@ void CFastaOstreamEx::x_AddTranscriptIdAttribute(const CSeq_feat& feat,
     if (transcript_id.empty() &&
         feat.IsSetProduct() &&
         feat.GetProduct().GetId()) {
-        transcript_id = sequence::GetAccessionForId(*(feat.GetProduct().GetId()), scope);
+        transcript_id = s_GetDeflineIdString(*(feat.GetProduct().GetId()), scope);
     }
     x_AddDeflineAttribute("transcript_id", transcript_id, defline);
 }
