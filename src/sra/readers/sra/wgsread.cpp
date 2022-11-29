@@ -1795,15 +1795,15 @@ void CWGSDb_Impl::SAmbiguityInfo::x_CalculateAmbiguityMask(CWGSDb_Impl& db)
         }}
         
         PROFILE(sw____Get4na2Mask);
-        size_t read_length = read4na.size();
+        TSeqPos read_length = TSeqPos(read4na.size());
         size_t block_count = (read_length+kAmbiguityBlockSize-1) / kAmbiguityBlockSize;
         size_t mask_bit_count = 0;
         m_AmbiguityMask.resize((block_count+7)/8);
         TWGSContigGapInfo gap_info = GetGapInfo();
         for ( size_t block_index = 0; block_index < block_count; ++block_index ) {
-            size_t block_pos = block_index*kAmbiguityBlockSize;
+            TSeqPos block_pos = TSeqPos(block_index*kAmbiguityBlockSize);
             const Uint1* base_ptr = read4na.data() + block_pos;
-            size_t base_count = min(size_t(kAmbiguityBlockSize), read_length-block_pos);
+            TSeqPos base_count = min(kAmbiguityBlockSize, read_length-block_pos);
             bool ambiguous = false;
             if ( use_full_4na_blocks ) {
                 ambiguous = x_AddAmbiguousBlock(base_ptr, base_count, block_pos, gap_info);
@@ -1851,7 +1851,7 @@ void CWGSDb_Impl::SAmbiguityInfo::x_Calculate4na(CWGSDb_Impl& db) const
     
     CRef<SSeq4naTableCursor> cur4na;
     CVDBValueFor<INSDC_4na_bin> read4na;
-    size_t read_length = 0;
+    TSeqPos read_length = 0;
     size_t bit_count = 0;
     size_t wrong_bit_count = 0;
     TWGSContigGapInfo gap_info = GetGapInfo();
@@ -1861,15 +1861,15 @@ void CWGSDb_Impl::SAmbiguityInfo::x_Calculate4na(CWGSDb_Impl& db) const
                 PROFILE(sw____GetRaw4na);
                 cur4na = db.Seq4na(m_RowId);
                 read4na = cur4na->READ(m_RowId);
-                read_length = read4na.size();
+                read_length = TSeqPos(read4na.size());
             }
             for ( size_t block_bit = 0; block_bit < 8; ++block_bit ) {
                 if ( bits & (1<<block_bit) ) {
                     PROFILE(sw____Scan4na);
                     size_t block_index = block_byte*8+block_bit;
-                    size_t block_pos = block_index * kAmbiguityBlockSize;
+                    TSeqPos block_pos = TSeqPos(block_index * kAmbiguityBlockSize);
                     const Uint1* base_ptr = read4na.data() + block_pos;
-                    size_t base_count = min(size_t(kAmbiguityBlockSize), read_length-block_pos);
+                    TSeqPos base_count = min(kAmbiguityBlockSize, read_length-block_pos);
                     bool ambiguous = false;
                     gap_info.SetPos(block_pos);
                     if ( use_full_4na_blocks ) {
@@ -1947,7 +1947,7 @@ CWGSDb_Impl::SAmbiguityInfo::Get4naReader(TSeqPos pos,
     if ( m_HasAmbiguityPos ) {
         // use explicit ambiguities list
         reader.m_AmbiguityIndex =
-            lower_bound(m_AmbiguityPos.begin(), m_AmbiguityPos.end(), pos) - m_AmbiguityPos.begin();
+            lower_bound(m_AmbiguityPos.begin(), m_AmbiguityPos.end(), INSDC_coord_zero(pos)) - m_AmbiguityPos.begin();
     }
     else {
         // use 4na blocks
@@ -2037,7 +2037,7 @@ TSeqPos CWGSDb_Impl::SAmbiguityInfo::Get2naLengthExact(TSeqPos pos, TSeqPos len,
     PROFILE(sw____Get2naLen);
     TSeqPos end = pos+len;
     if ( m_HasAmbiguityPos ) {
-        auto iter = lower_bound(m_AmbiguityPos.begin(), m_AmbiguityPos.end(), pos);
+        auto iter = lower_bound(m_AmbiguityPos.begin(), m_AmbiguityPos.end(), INSDC_coord_zero(pos));
         if ( iter == m_AmbiguityPos.end() || TSeqPos(*iter) >= end ) {
             return len;
         }
@@ -2051,8 +2051,8 @@ TSeqPos CWGSDb_Impl::SAmbiguityInfo::Get2naLengthExact(TSeqPos pos, TSeqPos len,
               ++block_iter ) {
             size_t in_block_pos = pos <= block_iter->first? 0: pos-block_iter->first;
             size_t in_block_len = min(kAmbiguityBlockSize, end-block_iter->first);
-            size_t amb_pos = sx_Find_4na_Ambiguity(block_iter->second.m_Packed4na,
-                                                   in_block_pos, in_block_len);
+            TSeqPos amb_pos = TSeqPos(sx_Find_4na_Ambiguity(block_iter->second.m_Packed4na,
+                                                            in_block_pos, in_block_len));
             if ( amb_pos < in_block_pos+in_block_len ) {
                 return (block_iter->first+amb_pos) - pos;
             }
