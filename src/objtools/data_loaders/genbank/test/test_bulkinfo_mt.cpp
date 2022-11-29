@@ -290,8 +290,6 @@ bool CTestApplication::TestApp_Init(void)
 
 bool CTestApplication::TestApp_Exit(void)
 {
-    CObjectManager::GetInstance()->RevokeAllDataLoaders();
-
     if ( m_ErrorCount.Get() == 0 ) {
         LOG_POST("Passed");
         return true;
