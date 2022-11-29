@@ -246,12 +246,11 @@ bool SUv_Tcp::CloseReset(ECloseType close_type)
 
     if (rv < 0) {
         NCBI_UV_TCP_TRACE(this << " close reset failed: " << SUvNgHttp2_Error::LibuvStr(rv));
-        m_State = eClosed;
+        return false;
     } else {
         NCBI_UV_TCP_TRACE(this << " close resetting");
+        return true;
     }
-
-    return true;
 }
 #endif
 
