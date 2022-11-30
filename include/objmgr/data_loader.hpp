@@ -391,6 +391,10 @@ public:
     typedef vector<int> TSequenceStates;
     typedef vector<int> TSequenceHashes;
     typedef vector<bool> THashKnown;
+    typedef map<CSeq_id_Handle, TTSE_LockSet> TTSE_LockSets;
+    typedef vector<vector<CSeq_id_Handle>> TSeqIdSets;
+    typedef vector<CTSE_Lock> TCDD_Locks;
+
     /// Bulk request for accession.version Seq-ids of a set of sequences.
     virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     /// Bulk request for gis of a set of sequences.
@@ -411,11 +415,11 @@ public:
     /// Bulk request for hashes of a set of sequences.
     virtual void GetSequenceHashes(const TIds& ids, TLoaded& loaded,
                                    TSequenceHashes& ret, THashKnown& known);
+    virtual void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
 
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
     // with choise set to eBlob. The map should be initialized with
     // the id handles to be loaded.
-    typedef map<CSeq_id_Handle, TTSE_LockSet> TTSE_LockSets;
     virtual void GetBlobs(TTSE_LockSets& tse_sets);
 
     // blob operations

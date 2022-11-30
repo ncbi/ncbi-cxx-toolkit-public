@@ -1664,6 +1664,13 @@ void CDataSource::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
 }
 
 
+void CDataSource::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
+{
+    if (!m_Loader) return;
+    m_Loader->GetCDDAnnots(id_sets, loaded, ret);
+}
+
+
 void CDataSource::GetBlobs(TSeqMatchMap& match_map)
 {
     if ( match_map.empty() ) {
