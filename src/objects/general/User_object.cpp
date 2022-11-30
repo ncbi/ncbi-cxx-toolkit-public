@@ -41,6 +41,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+#include <util/static_map.hpp>
 
 // generated classes
 
@@ -629,7 +630,7 @@ CUser_object::EObjectType CUser_object::GetObjectType() const
     EObjectType rval = eObjectType_Unknown;
 
     const string& label = GetType().GetStr();
-    
+
     auto it = sc_ObjectTypeMap.find(label.c_str());
     if (it == sc_ObjectTypeMap.end()) {
         if (NStr::EqualNocase(label, kOrigIdAltSpell)) {
@@ -1169,7 +1170,7 @@ CRef<CUser_field> CUser_object::CRefGeneTrackingAccession::MakeAccessionField() 
 }
 
 
-CRef<CUser_object::CRefGeneTrackingAccession> 
+CRef<CUser_object::CRefGeneTrackingAccession>
 CUser_object::CRefGeneTrackingAccession::MakeAccessionFromUserField(const CUser_field& field)
 {
     // TODO: Throw exception if no good fields or if any bad fields found
