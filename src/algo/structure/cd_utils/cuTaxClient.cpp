@@ -168,6 +168,10 @@ bool TaxClient::GetOrgRef(TTaxId taxId, CRef< COrg_ref >& orgRef) {
     }
 }
 
+bool TaxClient::SetSynonyms(bool on_off){
+    return m_taxonomyClient->SetSynonyms(on_off);
+}
+
 //  Look through the bioseq for a COrg object, and use it to get taxid.
 //  Use tax server by default, unless server fails and lookInBioseq is true.
 TTaxId TaxClient::GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq) {

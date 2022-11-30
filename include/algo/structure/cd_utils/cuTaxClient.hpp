@@ -68,6 +68,11 @@ public:
     virtual bool GetOrgRef(TTaxId taxId, COrg_ref& orgRef);
     virtual bool GetOrgRef(TTaxId taxId, CRef< COrg_ref >& orgRef);
 
+    // Set mode for synonyms in OrgRef
+    // Returns: previous mode
+    // Default value: false (do not copy synonyms to the new OrgRef)
+    virtual bool SetSynonyms(bool on_off);
+
 	virtual short GetRankID(TTaxId taxId, string& rankName);
 
     //  Look through the bioseq for a COrg object, and use it to get taxid.
