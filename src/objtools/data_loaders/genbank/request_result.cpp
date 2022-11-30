@@ -1809,7 +1809,9 @@ bool CReaderRequestResult::SetLoadedBlobVersion(const CBlob_id& blob_id,
             if ( old_version < 0 ) {
                 blob.GetTSE_LoadLock()->SetBlobVersion(version);
             }
-            _ASSERT(blob.GetKnownBlobVersion() == version);
+            if ( blob.GetKnownBlobVersion() != version ) {
+                LOG_POST(Warning<<"GBLoader:"<<blob_id<<" set version "<<version<<", but GetKnownBlobVersion() returns "<<blob.GetKnownBlobVersion());
+            }
         }
     }
     return changed && exp_type == GBL::eExpire_normal;
