@@ -123,9 +123,9 @@ CRef<CPub> CMLAUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
 
     try {
         CRef<CPub> pub = m_mlac->AskGetpubpmid(CPubMedId(pmid), &reply);
+        Normalize(*pub);
         if (m_pub_interceptor)
             m_pub_interceptor(pub);
-        Normalize(*pub);
         return pub;
     } catch (CException&) {
     }
