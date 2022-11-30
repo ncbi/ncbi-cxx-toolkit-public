@@ -50,6 +50,8 @@
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
+#include <objects/biblio/ArticleId.hpp>
+#include <objects/biblio/ArticleIdSet.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Date.hpp>
@@ -378,6 +380,20 @@ TEntrezId CEUtilsUpdaterBase::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 }
 
 
+void IPubmedUpdater::Normalize(CPub& pub)
+{
+    if (pub.IsArticle()) {
+        CCit_art& A = pub.SetArticle();
+        if (A.IsSetIds()) {
+            auto& ids  = A.SetIds().Set();
+            auto  pred = [](const CRef<CArticleId>& l, const CRef<CArticleId>& r) -> bool {
+                return l->Which() < r->Which();
+            };
+            ids.sort(pred);
+        }
+    }
+}
+
 CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     unique_ptr<CEFetch_Request> req(
@@ -403,31 +419,25 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
     const auto& pp = pas.GetPP().GetPP();
     if (! pp.empty()) {
         const auto& ppf = *pp.front();
+
+        CRef<CPubmed_entry> pme;
         if (ppf.IsPubmedArticle()) {
             const eutils::CPubmedArticle& article = ppf.GetPubmedArticle();
-            CRef<CPubmed_entry> pme = article.ToPubmed_entry();
-            if (pme->IsSetMedent()) {
-                const CMedline_entry& mle = pme->GetMedent();
-                if (mle.IsSetCit()) {
-                    CRef<CPub> cit_art(new CPub);
-                    cit_art->SetArticle().Assign(mle.GetCit());
-                    if (m_pub_interceptor)
-                        m_pub_interceptor(cit_art);
-                    return cit_art;
-                }
-            }
+            pme.Reset(article.ToPubmed_entry());
         } else if (ppf.IsPubmedBookArticle()) {
             const eutils::CPubmedBookArticle& article = ppf.GetPubmedBookArticle();
-            CRef<CPubmed_entry> pme = article.ToPubmed_entry();
-            if (pme->IsSetMedent()) {
-                const CMedline_entry& mle = pme->GetMedent();
-                if (mle.IsSetCit()) {
-                    CRef<CPub> cit_art(new CPub);
-                    cit_art->SetArticle().Assign(mle.GetCit());
-                    if (m_pub_interceptor)
-                        m_pub_interceptor(cit_art);
-                    return cit_art;
-                }
+            pme.Reset(article.ToPubmed_entry());
+        }
+
+        if (pme && pme->IsSetMedent()) {
+            const CMedline_entry& mle = pme->GetMedent();
+            if (mle.IsSetCit()) {
+                CRef<CPub> pub(new CPub);
+                pub->SetArticle().Assign(mle.GetCit());
+                if (m_pub_interceptor)
+                    m_pub_interceptor(pub);
+                Normalize(*pub);
+                return pub;
             }
         }
     }

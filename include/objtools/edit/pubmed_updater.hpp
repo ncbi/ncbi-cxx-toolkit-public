@@ -75,6 +75,7 @@ public:
     {
         m_pub_interceptor = f;
     }
+    void Normalize(CPub&);
 
 protected:
     TPubInterceptor m_pub_interceptor = nullptr;
