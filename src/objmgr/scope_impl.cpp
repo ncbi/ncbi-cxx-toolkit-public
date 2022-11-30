@@ -3338,6 +3338,48 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 }
 
 
+CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TIds& ids)
+{
+    TBioseqHandles bhs = GetBioseqHandles(ids);
+    return GetCDDAnnots(bhs);
+}
+
+
+CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TBioseqHandles& bhs)
+{
+    size_t count = bhs.size(), remaining = count;
+    vector<bool> loaded(count);
+    CDataSource::TCDD_Locks cdd_locks(count);
+
+    CDataSource::TSeqIdSets id_sets;
+    for (const auto& bh : bhs) {
+        id_sets.push_back(bh.x_GetScopeInfo().GetIds());
+    }
+
+    TConfReadLockGuard rguard(m_ConfLock);
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( !remaining ) {
+            break;
+        }
+        CPrefetchManager::IsActive();
+        it->GetDataSource().GetCDDAnnots(id_sets, loaded, cdd_locks);
+        remaining = sx_CountFalse(loaded);
+    }
+    TCDD_Entries ret(count);
+    for (size_t i = 0; i < count; ++i) {
+        if (!loaded[i] || !cdd_locks[i]) continue;
+        CDataSource& ds = cdd_locks[i]->GetDataSource();
+        auto ds_info = x_GetDSInfo(ds);
+        TTSE_Lock tse_lock = x_GetTSE_Lock(cdd_locks[i], *ds_info);
+        if ( !tse_lock ) {
+            continue;
+        }
+        ret[i] = *tse_lock;
+    }
+    return ret;
+}
+
+
 void CScope_Impl::GetAccVers(TIds& ret,
                              const TIds& unsorted_ids,
                              TGetFlags flags)

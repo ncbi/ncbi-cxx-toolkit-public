@@ -158,6 +158,13 @@ public:
     void GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets);
     void GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& tse_sets);
 
+    typedef CDataLoader::TSeqIdSets TSeqIdSets;
+    typedef CDataLoader::TCDD_Locks TCDD_Locks;
+    void GetCDDAnnots(CDataSource* data_source,
+        const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+    void GetCDDAnnotsOnce(CDataSource* data_source,
+        const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+
     CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source,
                                                 const TIds& ids,
                                                 const SAnnotSelector* sel,

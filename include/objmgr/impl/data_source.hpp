@@ -265,6 +265,7 @@ public:
     typedef vector<int> TSequenceStates;
     typedef vector<int> TSequenceHashes;
     typedef vector<bool> THashKnown;
+
     void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
     void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);
@@ -277,6 +278,10 @@ public:
                            TSequenceStates& ret);
     void GetSequenceHashes(const TIds& ids, TLoaded& loaded,
                            TSequenceHashes& ret, THashKnown& known);
+
+    typedef vector<vector<CSeq_id_Handle>> TSeqIdSets;
+    typedef vector<CTSE_Lock> TCDD_Locks;
+    void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
 
     typedef map<CSeq_id_Handle, SSeqMatch_DS>       TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);

@@ -146,6 +146,11 @@ public:
     /// bioseq handles for all requested ids in the same order.
     TBioseqHandles GetBioseqHandles(const TIds& ids);
 
+    /// Get CDD annotations for all ids.
+    typedef vector<CTSE_Handle> TCDD_Entries;
+    TCDD_Entries GetCDDAnnots(const TIds& idhs);
+    TCDD_Entries GetCDDAnnots(const TBioseqHandles& bhs);
+
     /// GetXxxHandle control values.
     enum EMissing {
         eMissing_Throw,
@@ -395,7 +400,7 @@ public:
     void RemoveSeq_annot(const CSeq_annot_Handle& annot);
 
     /// EForceLoad flag instruct scope to ignore already loaded information
-    /// and alway request data loader for data.
+    /// and always request data loader for data.
     enum EForceLoad {
         eNoForceLoad,
         eForceLoad
