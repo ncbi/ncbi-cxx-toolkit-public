@@ -79,7 +79,9 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -91,19 +93,23 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             reply->SetContentLength(m_HelpMessage.size());
             // true => persistent
             reply->SendOk(m_HelpMessage.data(), m_HelpMessage.size(), true);
-            x_PrintRequestStop(context, CRequestStatus::e200_Ok,
+            x_PrintRequestStop(context,
+                               CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e200_Ok,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
         } catch (const exception &  exc) {
             x_Finish500(reply, now, ePSGS_BadURL,
                         "Exception when handling no path URL event: " +
                         string(exc.what()));
-            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
         } catch (...) {
             x_Finish500(reply, now, ePSGS_BadURL,
                         "Unknown exception when handling no path URL event");
-            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
         }
     } else {
@@ -122,7 +128,8 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             }
 
             PSG_WARNING(kBadUrlMessage + bad_url);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_BadUrlPath);
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -130,12 +137,14 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             x_Finish500(reply, now, ePSGS_BadURL,
                         "Exception when handling a bad URL event: " +
                         string(exc.what()));
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
         } catch (...) {
             x_Finish500(reply, now, ePSGS_BadURL,
                         "Unknown exception when handling a bad URL event");
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
         }
     }
@@ -151,7 +160,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -166,7 +176,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -177,14 +188,16 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
 
         SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option = SPSGS_BlobRequestBase::ePSGS_OrigTSE;
         if (!x_GetTSEOption(req, reply, now, tse_option)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -195,7 +208,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         SPSGS_RequestBase::EPSGS_AccSubstitutioOption
                                 subst_option = SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
         if (!x_GetAccessionSubstitutionOption(req, reply, now, subst_option)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -205,7 +219,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         bool                auto_blob_skipping = true;  // default
         if (!x_GetAutoBlobSkippingParameter(req, reply, now, auto_blob_skipping)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -213,7 +228,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         double  resend_timeout;
         if (!x_GetResendTimeout(req, reply, now, resend_timeout)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -221,7 +237,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         int     send_blob_if_small = 0;
         if (!x_GetSendBlobIfSmallParameter(req, reply, now, send_blob_if_small)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -229,7 +246,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         bool    seq_id_resolve = true;  // default
         if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -254,7 +272,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e404_NotFound,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NoProcessorInstantiated);
         }
@@ -262,12 +281,14 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Exception when handling a get request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Unknown exception when handling a get request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -282,7 +303,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -297,7 +319,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -305,7 +328,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         SPSGS_BlobRequestBase::EPSGS_TSEOption
                             tse_option = SPSGS_BlobRequestBase::ePSGS_OrigTSE;
         if (!x_GetTSEOption(req, reply, now, tse_option)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -313,7 +337,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
         int64_t             last_modified = INT64_MIN;
         if (!x_GetLastModified(req, reply, now, last_modified)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -321,7 +346,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
         if (!x_GetUseCacheParameter(req, reply, now, use_cache)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -329,7 +355,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
         int     send_blob_if_small = 0;
         if (!x_GetSendBlobIfSmallParameter(req, reply, now, send_blob_if_small)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -339,7 +366,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
         SPSGS_BlobId        blob_id;
         if (!x_GetBlobId(req, reply, now, blob_id)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -359,7 +387,8 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                               CRequestStatus::e404_NotFound,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NoProcessorInstantiated);
         }
@@ -367,12 +396,14 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Exception when handling a getblob request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Unknown exception when handling a getblob request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -387,7 +418,8 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -402,7 +434,8 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -413,7 +446,8 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -421,7 +455,8 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         SPSGS_ResolveRequest::EPSGS_OutputFormat
                             output_format = SPSGS_ResolveRequest::ePSGS_NativeFormat;
         if (!x_GetOutputFormat(req, reply, now, output_format)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -429,7 +464,8 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         SPSGS_ResolveRequest::TPSGS_BioseqIncludeData   include_data_flags = 0;
         if (!x_GetResolveFlags(req, reply, now, include_data_flags)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -438,7 +474,8 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         SPSGS_RequestBase::EPSGS_AccSubstitutioOption
                                 subst_option = SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
         if (!x_GetAccessionSubstitutionOption(req, reply, now, subst_option)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -446,7 +483,8 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         bool                seq_id_resolve = true;  // default
         if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -465,7 +503,8 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                               CRequestStatus::e404_NotFound,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NoProcessorInstantiated);
         }
@@ -473,12 +512,14 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Exception when handling a resolve request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Unknown exception when handling a resolve request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -493,7 +534,8 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -508,7 +550,8 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -516,7 +559,8 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         // Mandatory parameter id2_chunk
         int64_t             id2_chunk_value = INT64_MIN;
         if (!x_GetId2Chunk(req, reply, now, id2_chunk_value)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -527,7 +571,8 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         {
             x_InsufficientArguments(reply, now, "Mandatory parameter '" +
                                     kId2InfoParam + "' is not found.");
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -535,7 +580,8 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
 
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
         if (!x_GetUseCacheParameter(req, reply, now, use_cache)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -552,7 +598,8 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                               CRequestStatus::e404_NotFound,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NoProcessorInstantiated);
         }
@@ -560,12 +607,14 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Exception when handling a get_tse_chunk request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Unknown exception when handling a get_tse_chunk request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -580,7 +629,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -595,7 +645,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -607,7 +658,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         // true => seq_id is optional
         if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
                                                 seq_id_type, use_cache, true)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -615,7 +667,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         SPSGS_ResolveRequest::EPSGS_OutputFormat
                         output_format = SPSGS_ResolveRequest::ePSGS_JsonFormat;
         if (!x_GetOutputFormat(req, reply, now, output_format)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -629,7 +682,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                     reply, now,
                     "Invalid 'fmt' parameter value. The 'get_na' "
                     "request supports 'json' and 'native' values");
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -639,7 +693,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         // Get the annotation names
         vector<string>          names;
         if (!x_GetNames(req, reply, now, names)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -658,7 +713,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             x_MalformedArguments(reply, now,
                                  "Neither 'seq_id' nor '" + kSeqIdsParam +
                                  "' are found in the request");
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -683,7 +739,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         SPSGS_BlobRequestBase::EPSGS_TSEOption
                             tse_option = SPSGS_BlobRequestBase::ePSGS_NoneTSE;
         if (!x_GetTSEOption(req, reply, now, tse_option)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -693,7 +750,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         int     send_blob_if_small = 0;
         if (!x_GetSendBlobIfSmallParameter(req, reply, now, send_blob_if_small)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -701,7 +759,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         bool                auto_blob_skipping = true;  // default
         if (!x_GetAutoBlobSkippingParameter(req, reply, now, auto_blob_skipping)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -709,7 +768,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         double              resend_timeout;
         if (!x_GetResendTimeout(req, reply, now, resend_timeout)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -717,7 +777,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         bool                seq_id_resolve = true;  // default
         if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -742,7 +803,8 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e404_NotFound,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NoProcessorInstantiated);
         }
@@ -750,12 +812,14 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Exception when handling a get_na request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Unknown exception when handling a get_na request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -770,7 +834,9 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -785,7 +851,9 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context,
+                               CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -796,7 +864,9 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
 
         if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context,
+                               CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -813,7 +883,9 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+            x_PrintRequestStop(context,
+                               CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
+                               CRequestStatus::e404_NotFound,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NoProcessorInstantiated);
         }
@@ -821,12 +893,16 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Exception when handling an accession_version_history request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Unknown exception when handling an accession_version_history request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
 
@@ -842,7 +918,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -855,7 +932,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
                                                disabled_processors)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -863,7 +941,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         processor_events = false;   // default
         if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -871,7 +950,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         CTempString                     protein;
         if (!x_GetProtein(req, reply, now, protein)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -879,14 +959,16 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         CTempString                     nucleotide;
         if (!x_GetNucleotide(req, reply, now, nucleotide)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
 
         int64_t                         ipg = -1;
         if (!x_GetIPG(req, reply, now, ipg)) {
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -897,7 +979,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
                                     "At least one of the 'protein' and 'ipg' "
                                     "parameters must be provided");
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -905,7 +988,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         if (!x_GetTraceParameter(req, reply, now, trace)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
@@ -924,7 +1008,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
-            x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e404_NotFound,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NoProcessorInstantiated);
         }
@@ -932,12 +1017,14 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Exception when handling an IPG resolve request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_UnknownError,
                     "Unknown exception when handling an IPG resolve request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
 
@@ -975,7 +1062,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
         reply->SetContentType(ePSGS_PlainTextMime);
         reply->Send500(msg.c_str());
         PSG_WARNING("Cassandra is not available or is in non-working state");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
         return 0;
     }
@@ -986,7 +1074,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
         reply->SetContentLength(0);
         reply->SendOk(nullptr, 0, true);
         PSG_WARNING("Test seq_id resolution skipped (configured as an empty string)");
-        x_PrintRequestStop(context, CRequestStatus::e200_Ok, reply->GetBytesSent());
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok, reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
         return 0;
     }
@@ -997,7 +1086,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
         reply->SetContentLength(0);
         reply->SendOk(nullptr, 0, true);
         PSG_WARNING("Test seq_id resolution skipped (cache is not configured)");
-        x_PrintRequestStop(context, CRequestStatus::e200_Ok, reply->GetBytesSent());
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok, reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
         return 0;
     }
@@ -1038,7 +1128,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                 reply->SetContentType(ePSGS_PlainTextMime);
                 reply->Send500(msg.c_str());
                 PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
-                x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e500_InternalServerError,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
                 return 0;
@@ -1054,7 +1145,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->Send500(msg.c_str());
             PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
-            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
             return 0;
@@ -1069,7 +1161,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->Send500(msg.c_str());
             PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
-            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
             return 0;
@@ -1082,7 +1175,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
     reply->SetContentType(ePSGS_PlainTextMime);
     reply->SetContentLength(0);
     reply->SendOk(nullptr, 0, true);
-    x_PrintRequestStop(context, CRequestStatus::e200_Ok, reply->GetBytesSent());
+    x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                       CRequestStatus::e200_Ok, reply->GetBytesSent());
     m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
     return 0;
 }
@@ -1115,18 +1209,21 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
         reply->SetContentLength(content.size());
         reply->SendOk(content.data(), content.size(), false);
 
-        x_PrintRequestStop(context, CRequestStatus::e200_Ok, reply->GetBytesSent());
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok, reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
     } catch (const exception &  exc) {
         x_Finish500(reply, now, ePSGS_ConfigError,
                     "Exception when handling a config request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_ConfigError,
                     "Unknown exception when handling a config request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -1319,19 +1416,22 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
         reply->SetContentLength(content.size());
         reply->SendOk(content.data(), content.size(), false);
 
-        x_PrintRequestStop(context, CRequestStatus::e200_Ok,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok,
                            reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
     } catch (const exception &  exc) {
         x_Finish500(reply, now, ePSGS_InfoError,
                     "Exception when handling an info request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_InfoError,
                     "Unknown exception when handling an info request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -1392,18 +1492,21 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
         reply->SetContentLength(content.size());
         reply->SendOk(content.data(), content.size(), false);
 
-        x_PrintRequestStop(context, CRequestStatus::e200_Ok, reply->GetBytesSent());
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok, reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
     } catch (const exception &  exc) {
         x_Finish500(reply, now, ePSGS_StatusError,
                     "Exception when handling a status request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_StatusError,
                     "Unknown exception when handling a status request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -1452,7 +1555,8 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                         reply, now, "Invalid authorization token",
                         CRequestStatus::e401_Unauthorized,
                         ePSGS_Unauthorised, eDiag_Error);
-                x_PrintRequestStop(context, CRequestStatus::e401_Unauthorized,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e401_Unauthorized,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
                 return 0;
@@ -1477,7 +1581,8 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                         reply, now, "Invalid timeout (must be a positive integer)",
                         CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
-                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
                 return 0;
@@ -1495,7 +1600,8 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                         reply, now, "Invalid timeout (must be a positive integer)",
                         CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
-                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
                 return 0;
@@ -1522,7 +1628,8 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                        "than this one. Ignored.";
                 PSG_MESSAGE(msg);
                 reply->Send409(msg.c_str());
-                x_PrintRequestStop(context, CRequestStatus::e409_Conflict,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e409_Conflict,
                                    reply->GetBytesSent());
                 return 0;
             }
@@ -1532,7 +1639,8 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
         PSG_MESSAGE(msg);
 
         reply->Send202(s_Shutdown, s_ShutdownSize);
-        x_PrintRequestStop(context, CRequestStatus::e202_Accepted,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e202_Accepted,
                            reply->GetBytesSent());
 
         // The actual shutdown processing is in s_OnWatchDog() method
@@ -1542,12 +1650,14 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_ShutdownError,
                     "Exception when handling a shutdown request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_ShutdownError,
                     "Unknown exception when handling a shutdown request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -1570,18 +1680,21 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  req,
         reply->SetContentLength(content.size());
         reply->SendOk(content.data(), content.size(), false);
 
-        x_PrintRequestStop(context, CRequestStatus::e200_Ok, reply->GetBytesSent());
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok, reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
     } catch (const exception &  exc) {
         x_Finish500(reply, now, ePSGS_GetAlertsError,
                     "Exception when handling a get alerts request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_GetAlertsError,
                     "Unknown exception when handling a get alerts request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -1596,7 +1709,8 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -1611,7 +1725,8 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
                     reply, now, msg, CRequestStatus::e400_BadRequest,
                     ePSGS_InsufficientArguments, eDiag_Error);
             PSG_ERROR(msg);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -1624,7 +1739,8 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
                     reply, now, msg, CRequestStatus::e400_BadRequest,
                     ePSGS_InsufficientArguments, eDiag_Error);
             PSG_ERROR(msg);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
@@ -1641,7 +1757,8 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
                         CRequestStatus::e404_NotFound,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_ERROR(msg);
-                x_PrintRequestStop(context, CRequestStatus::e404_NotFound,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e404_NotFound,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
                 break;
@@ -1649,14 +1766,16 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
                 reply->SetContentType(ePSGS_PlainTextMime);
                 msg = "Alert " + alert + " has already been acknowledged";
                 reply->SendOk(msg.data(), msg.size(), false);
-                x_PrintRequestStop(context, CRequestStatus::e200_Ok,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e200_Ok,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
                 break;
             case ePSGS_AlertAcknowledged:
                 reply->SetContentType(ePSGS_PlainTextMime);
                 reply->SendOk(nullptr, 0, true);
-                x_PrintRequestStop(context, CRequestStatus::e200_Ok,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e200_Ok,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
                 break;
@@ -1665,12 +1784,14 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
         x_Finish500(reply, now, ePSGS_AckAlertError,
                     "Exception when handling an acknowledge alert request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_AckAlertError,
                     "Unknown exception when handling an acknowledge alert request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -1685,7 +1806,8 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -1704,7 +1826,8 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
                         reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_WARNING(err_msg);
-                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
                 return 0;
@@ -1716,7 +1839,8 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
             m_Timing->Reset();
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->SendOk(nullptr, 0, true);
-            x_PrintRequestStop(context, CRequestStatus::e200_Ok,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e200_Ok,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
             return 0;
@@ -1743,7 +1867,8 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
                         reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_ERROR(err_msg);
-                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
                 return 0;
@@ -1771,7 +1896,8 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
                         reply, now, err_msg, CRequestStatus::e400_BadRequest,
                         ePSGS_MalformedParameter, eDiag_Error);
                 PSG_ERROR(err_msg);
-                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
                 return 0;
@@ -1802,18 +1928,21 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
         reply->SetContentLength(content.size());
         reply->SendOk(content.data(), content.size(), false);
 
-        x_PrintRequestStop(context, CRequestStatus::e200_Ok, reply->GetBytesSent());
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok, reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
     } catch (const exception &  exc) {
         x_Finish500(reply, now, ePSGS_StatisticsError,
                     "Exception when handling a statistics request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_StatisticsError,
                     "Unknown exception when handling a statistics request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -1838,19 +1967,22 @@ int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  req,
         reply->SetContentLength(content.size());
         reply->SendOk(content.data(), content.size(), false);
 
-        x_PrintRequestStop(context, CRequestStatus::e200_Ok,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok,
                            reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
     } catch (const exception &  exc) {
         x_Finish500(reply, now, ePSGS_StatusError,
                     "Exception when handling a dispatcher_status request: " +
                     string(exc.what()));
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_StatusError,
                     "Unknown exception when handling a dispatcher_status request");
-        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     }
     return 0;
@@ -1867,7 +1999,8 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
     CRef<CRequestContext>   context;
 
     if (x_IsShuttingDown(reply, now)) {
-        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable,
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
     }
@@ -1906,6 +2039,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                 if (need_log) {
                     PSG_WARNING(err_msg);
                     x_PrintRequestStop(context,
+                                       CPSGS_Request::ePSGS_UnknownRequest,
                                        CRequestStatus::e400_BadRequest,
                                        reply->GetBytesSent());
                 }
@@ -1919,7 +2053,8 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                     ePSGS_InsufficientArguments, eDiag_Error);
             if (need_log) {
                 PSG_WARNING(err_msg);
-                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest,
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
             }
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -1933,7 +2068,8 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
         reply->SendOk(m_IOTestBuffer.get(), data_size, true);
 
         if (need_log)
-            x_PrintRequestStop(context, CRequestStatus::e200_Ok,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e200_Ok,
                                reply->GetBytesSent());
         m_Counters.Increment(CPSGSCounters::ePSGS_TestIORequest);
     } catch (const exception &  exc) {
@@ -1941,13 +2077,15 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                     "Exception when handling a test io request: " +
                     string(exc.what()));
         if (need_log)
-            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
     } catch (...) {
         x_Finish500(reply, now, ePSGS_TestIOError,
                     "Unknown exception when handling a test io request");
         if (need_log)
-            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError,
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
     }
     return 0;

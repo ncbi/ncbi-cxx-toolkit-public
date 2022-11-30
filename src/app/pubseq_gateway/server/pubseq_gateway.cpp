@@ -1095,9 +1095,13 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
 
 
 void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
-                                           int  status, size_t  bytes_sent)
+                                           CPSGS_Request::EPSGS_Type  request_type,
+                                           CRequestStatus::ECode  status, size_t  bytes_sent)
 {
     GetCounters().IncrementRequestStopCounter(status);
+
+    if (request_type != CPSGS_Request::ePSGS_UnknownRequest)
+        GetTiming().RegisterForTimeSeries(request_type, status);
 
     if (context.NotNull()) {
         CDiagContext::SetRequestContext(context);

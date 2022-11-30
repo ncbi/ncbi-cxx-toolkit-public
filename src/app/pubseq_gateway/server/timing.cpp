@@ -1105,6 +1105,44 @@ void COperationTiming::Register(EPSGOperation  operation,
 }
 
 
+void COperationTiming::RegisterForTimeSeries(
+                            CPSGS_Request::EPSGS_Type  request_type,
+                            CRequestStatus::ECode  status)
+{
+    if (request_type == CPSGS_Request::ePSGS_UnknownRequest)
+        return;
+
+    auto                counter = CRequestTimeSeries::RequestStatusToCounter(status);
+    lock_guard<mutex>   guard(m_RequestTimeSeriesLock);
+
+    switch (request_type) {
+        case CPSGS_Request::ePSGS_ResolveRequest:
+            m_IdResolveStat.Add(counter);
+            break;
+        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+            m_IdGetStat.Add(counter);
+            break;
+        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+            m_IdGetblobStat.Add(counter);
+            break;
+        case CPSGS_Request::ePSGS_AnnotationRequest:
+            m_IdGetNAStat.Add(counter);
+            break;
+        case CPSGS_Request::ePSGS_TSEChunkRequest:
+            m_IdGetTSEChunkStat.Add(counter);
+            break;
+        case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+            m_IdAccVerHistStat.Add(counter);
+            break;
+        case CPSGS_Request::ePSGS_IPGResolveRequest:
+            m_IpgResolveStat.Add(counter);
+            break;
+        default:
+            break;
+    }
+}
+
+
 void COperationTiming::Rotate(void)
 {
     lock_guard<mutex>   guard(m_Lock);
@@ -1149,44 +1187,57 @@ void COperationTiming::RotateRequestStat(void)
     m_IdAccVerHistStat.Rotate();
     m_IdGetTSEChunkStat.Rotate();
     m_IdGetNAStat.Rotate();
+    m_IpgResolveStat.Rotate();
 }
 
 
 void COperationTiming::Reset(void)
 {
-    lock_guard<mutex>   guard(m_Lock);
+    {
+        // The code is in the block to unlock a bit earlier
+        lock_guard<mutex>   guard(m_Lock);
 
-    for (size_t  k = 0; k <= 1; ++k) {
-        m_LookupLmdbSi2csiTiming[k]->Reset();
-        m_LookupLmdbBioseqInfoTiming[k]->Reset();
-        m_LookupLmdbBlobPropTiming[k]->Reset();
-        m_LookupCassSi2csiTiming[k]->Reset();
-        m_LookupCassBioseqInfoTiming[k]->Reset();
-        m_LookupCassBlobPropTiming[k]->Reset();
-        m_ResolutionLmdbTiming[k]->Reset();
-        m_ResolutionCassTiming[k]->Reset();
-        m_NARetrieveTiming[k]->Reset();
-        m_SplitHistoryRetrieveTiming[k]->Reset();
-        m_PublicCommentRetrieveTiming[k]->Reset();
-        m_AccVerHistoryRetrieveTiming[k]->Reset();
-        m_IPGResolveRetrieveTiming[k]->Reset();
+        for (size_t  k = 0; k <= 1; ++k) {
+            m_LookupLmdbSi2csiTiming[k]->Reset();
+            m_LookupLmdbBioseqInfoTiming[k]->Reset();
+            m_LookupLmdbBlobPropTiming[k]->Reset();
+            m_LookupCassSi2csiTiming[k]->Reset();
+            m_LookupCassBioseqInfoTiming[k]->Reset();
+            m_LookupCassBlobPropTiming[k]->Reset();
+            m_ResolutionLmdbTiming[k]->Reset();
+            m_ResolutionCassTiming[k]->Reset();
+            m_NARetrieveTiming[k]->Reset();
+            m_SplitHistoryRetrieveTiming[k]->Reset();
+            m_PublicCommentRetrieveTiming[k]->Reset();
+            m_AccVerHistoryRetrieveTiming[k]->Reset();
+            m_IPGResolveRetrieveTiming[k]->Reset();
+        }
+
+        m_HugeBlobRetrievalTiming->Reset();
+        m_NotFoundBlobRetrievalTiming->Reset();
+
+        m_ResolutionErrorTiming->Reset();
+        m_ResolutionNotFoundTiming->Reset();
+        m_ResolutionFoundTiming->Reset();
+        for (auto &  item : m_ResolutionFoundCassandraTiming)
+            item->Reset();
+
+        for (auto &  item : m_BlobRetrieveTiming)
+            item->Reset();
+
+        for (auto &  item : m_BlobByteCounters)
+            item = 0;
+        m_HugeBlobByteCounter = 0;
     }
 
-    m_HugeBlobRetrievalTiming->Reset();
-    m_NotFoundBlobRetrievalTiming->Reset();
-
-    m_ResolutionErrorTiming->Reset();
-    m_ResolutionNotFoundTiming->Reset();
-    m_ResolutionFoundTiming->Reset();
-    for (auto &  item : m_ResolutionFoundCassandraTiming)
-        item->Reset();
-
-    for (auto &  item : m_BlobRetrieveTiming)
-        item->Reset();
-
-    for (auto &  item : m_BlobByteCounters)
-        item = 0;
-    m_HugeBlobByteCounter = 0;
+    lock_guard<mutex>   series_guard(m_RequestTimeSeriesLock);
+    m_IdGetStat.Reset();
+    m_IdGetblobStat.Reset();
+    m_IdResolveStat.Reset();
+    m_IdAccVerHistStat.Reset();
+    m_IdGetTSEChunkStat.Reset();
+    m_IdGetNAStat.Reset();
+    m_IpgResolveStat.Reset();
 }
 
 
@@ -1198,8 +1249,6 @@ COperationTiming::Serialize(int  most_ancient_time,
 {
     static string   kSecondsCovered("SecondsCovered");
 
-    lock_guard<mutex>       guard(m_Lock);
-
     CJsonNode       ret(CJsonNode::NewObjectNode());
 
     // All the histograms have the same number of covered ticks
@@ -1207,27 +1256,46 @@ COperationTiming::Serialize(int  most_ancient_time,
                    tick_span * m_ResolutionFoundTiming->GetNumberOfCoveredTicks());
 
     if (histogram_names.empty()) {
-        for (const auto &  name_to_histogram : m_NamesMap) {
-            ret.SetByKey(name_to_histogram.first,
-                         name_to_histogram.second.m_Timing->SerializeCombined(
-                             most_ancient_time,
-                             most_recent_time,
-                             tick_span,
-                             name_to_histogram.second.m_Name,
-                             name_to_histogram.second.m_Description));
-            if (name_to_histogram.second.m_Counter != nullptr) {
-                CJsonNode       bytes_counter(CJsonNode::NewObjectNode());
-                bytes_counter.SetString("name",
-                                        name_to_histogram.second.m_CounterName);
-                bytes_counter.SetString("description",
-                                        name_to_histogram.second.m_CounterDescription);
-                bytes_counter.SetInteger("bytes",
-                                         *name_to_histogram.second.m_Counter);
-                ret.SetByKey(name_to_histogram.second.m_CounterId,
-                             bytes_counter);
+        {
+            // The code is in a block to unlock a bit earlier
+            lock_guard<mutex>       guard(m_Lock);
+
+            for (const auto &  name_to_histogram : m_NamesMap) {
+                ret.SetByKey(name_to_histogram.first,
+                             name_to_histogram.second.m_Timing->SerializeCombined(
+                                 most_ancient_time,
+                                 most_recent_time,
+                                 tick_span,
+                                 name_to_histogram.second.m_Name,
+                                 name_to_histogram.second.m_Description));
+                if (name_to_histogram.second.m_Counter != nullptr) {
+                    CJsonNode       bytes_counter(CJsonNode::NewObjectNode());
+                    bytes_counter.SetString("name",
+                                            name_to_histogram.second.m_CounterName);
+                    bytes_counter.SetString("description",
+                                            name_to_histogram.second.m_CounterDescription);
+                    bytes_counter.SetInteger("bytes",
+                                             *name_to_histogram.second.m_Counter);
+                    ret.SetByKey(name_to_histogram.second.m_CounterId,
+                                 bytes_counter);
+                }
             }
         }
+
+        {
+            lock_guard<mutex>   series_guard(m_RequestTimeSeriesLock);
+            ret.SetByKey("ID_get_time_series", m_IdGetStat.Serialize());
+            ret.SetByKey("ID_getblob_time_series", m_IdGetblobStat.Serialize());
+            ret.SetByKey("ID_resolve_time_series", m_IdResolveStat.Serialize());
+            ret.SetByKey("ID_acc_ver_hist_time_series", m_IdAccVerHistStat.Serialize());
+            ret.SetByKey("ID_get_tse_chunk_time_series", m_IdGetTSEChunkStat.Serialize());
+            ret.SetByKey("ID_get_na_time_series", m_IdGetNAStat.Serialize());
+            ret.SetByKey("IPG_resolve_time_series", m_IpgResolveStat.Serialize());
+        }
+
     } else {
+        lock_guard<mutex>       guard(m_Lock);
+
         for (const auto &  name : histogram_names) {
             string      histogram_name(name.data(), name.size());
             const auto  iter = m_NamesMap.find(histogram_name);
