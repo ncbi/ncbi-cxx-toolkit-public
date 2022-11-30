@@ -304,6 +304,12 @@ void CPSGDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
 }
 
 
+void CPSGDataLoader::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
+{
+    m_Impl->GetCDDAnnots(GetDataSource(), id_sets, loaded, ret);
+}
+
+
 CDataLoader::TTSE_Lock
 CPSGDataLoader::GetBlobById(const TBlobId& blob_id)
 {

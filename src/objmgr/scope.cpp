@@ -146,6 +146,18 @@ CScope::TBioseqHandles CScope::GetBioseqHandles(const TIds& ids)
 }
 
 
+CScope::TCDD_Entries CScope::GetCDDAnnots(const TIds& idhs)
+{
+    return m_Impl->GetCDDAnnots(idhs);
+}
+
+
+CScope::TCDD_Entries CScope::GetCDDAnnots(const TBioseqHandles& bhs)
+{
+    return m_Impl->GetCDDAnnots(bhs);
+}
+
+
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id,
                                        EGetBioseqFlag get_flag)
 {

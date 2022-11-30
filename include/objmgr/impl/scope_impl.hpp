@@ -346,6 +346,10 @@ public:
     typedef vector<CBioseq_Handle> TBioseqHandles;
     TBioseqHandles GetBioseqHandles(const TIds& ids);
 
+    typedef vector<CTSE_Handle> TCDD_Entries;
+    TCDD_Entries GetCDDAnnots(const TIds& idhs);
+    TCDD_Entries GetCDDAnnots(const TBioseqHandles& bhs);
+
     // Get a set of accession/version pairs
     void GetAccVers(TIds& ret, const TIds& idhs, TGetFlags flags);
 
@@ -395,7 +399,6 @@ public:
     typedef vector<int> TSequenceHashes;
     void GetSequenceHashes(TSequenceHashes& ret,
                            const TIds& idhs, TGetFlags flags);
-
 
 private:
     // constructor/destructor visible from CScope
