@@ -123,10 +123,6 @@ extern const char* sc_TestEntryCollidingLocusTags;
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-
-
-
 NCBITEST_INIT_TREE()
 {
     if ( !CNcbiApplication::Instance()->GetConfig().HasEntry("NCBI", "Data") ) {
@@ -375,9 +371,8 @@ void CheckAutoDefOptions
     }
 }
 
-
 static void CheckDeflineMatches(CSeq_entry_Handle seh,
-                                objects::CAutoDefWithTaxonomy& autodef,
+                                CAutoDefWithTaxonomy& autodef,
                                 CRef<CAutoDefModifierCombo> mod_combo)
 {
     // check defline for each nucleotide sequence
@@ -423,20 +418,31 @@ static void CheckDeflineMatches(CSeq_entry_Handle seh,
     }
 }
 
-
 static void CheckDeflineMatches(CRef<CSeq_entry> entry,
-                                vector<CSubSource::ESubtype> subsrcs,
-                                vector<COrgMod::ESubtype> orgmods)
+    vector<CSubSource::ESubtype> subsrcs,
+    vector<COrgMod::ESubtype> orgmods,
+    bool init_with_descrs = false)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
 
-    objects::CAutoDefWithTaxonomy autodef;
+    CAutoDefWithTaxonomy autodef;
 
-    // add to autodef
-    autodef.AddSources (seh);
+    if (init_with_descrs) {
+        CAutoDef::TSources sources;
+        for (CBioseq_CI b_iter(seh, CSeq_inst::eMol_na); b_iter; ++b_iter) {
+            for (CSeqdesc_CI desc_it(*b_iter, CSeqdesc::e_Source); desc_it; ++desc_it) {
+                sources.emplace_back(&desc_it->GetSource());
+            }
+        }
+        autodef.AddDescriptors(sources);
+    }
+    else {
+        // add to autodef
+        autodef.AddSources(seh);
+    }
 
     CRef<CAutoDefModifierCombo> mod_combo;
     mod_combo = new CAutoDefModifierCombo ();
@@ -454,20 +460,32 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry,
     CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
-
-static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
-                                CAutoDefOptions::EFeatureListType list_type = CAutoDefOptions::eListAllFeatures,
-                                CAutoDefOptions::EMiscFeatRule misc_feat_rule = CAutoDefOptions::eNoncodingProductFeat)
+static void CheckDeflineMatches(CRef<CSeq_entry> entry,
+    bool use_best = false,
+    CAutoDefOptions::EFeatureListType list_type = CAutoDefOptions::eListAllFeatures,
+    CAutoDefOptions::EMiscFeatRule misc_feat_rule = CAutoDefOptions::eNoncodingProductFeat,
+    bool init_with_descrs = false)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
 
-    objects::CAutoDefWithTaxonomy autodef;
+    CAutoDefWithTaxonomy autodef;
 
-    // add to autodef
-    autodef.AddSources (seh);
+    if (init_with_descrs) {
+        CAutoDef::TSources sources;
+        for (CBioseq_CI b_iter(seh, CSeq_inst::eMol_na); b_iter; ++b_iter) {
+            for (CSeqdesc_CI desc_it(*b_iter, CSeqdesc::e_Source); desc_it; ++desc_it) {
+                sources.emplace_back(&desc_it->GetSource());
+            }
+        }
+        autodef.AddDescriptors(sources);
+    }
+    else {
+        // add to autodef
+        autodef.AddSources(seh);
+    }
 
     CRef<CAutoDefModifierCombo> mod_combo;
     if (use_best) {
@@ -482,23 +500,56 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
     CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
+static void CheckDeflineMatchesWithDescr(CRef<CSeq_entry> entry,
+    bool use_best = false,
+    CAutoDefOptions::EFeatureListType list_type = CAutoDefOptions::eListAllFeatures,
+    CAutoDefOptions::EMiscFeatRule misc_feat_rule = CAutoDefOptions::eNoncodingProductFeat)
+{
+    bool init_with_descrs = true;
+    CheckDeflineMatches(entry, use_best, list_type, misc_feat_rule, init_with_descrs);
+}
 
-static void CheckDeflineMatches(CRef<CSeq_entry> entry, CSeqFeatData::ESubtype feat_to_suppress)
+static CAutoDef::TSources s_GatherSources(const CSeq_entry& entry)
+{
+    auto objmgr = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*objmgr));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
+
+    CAutoDef::TSources sources;
+    for (CBioseq_CI b_iter(seh, CSeq_inst::eMol_na); b_iter; ++b_iter) {
+        for (CSeqdesc_CI desc_it(*b_iter, CSeqdesc::e_Source); desc_it; ++desc_it) {
+            sources.emplace_back(&desc_it->GetSource());
+        }
+    }
+    return sources;
+}
+
+
+static void CheckDeflineMatches(CRef<CSeq_entry> entry, CSeqFeatData::ESubtype feat_to_suppress, bool init_with_descrs = false)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    objects::CAutoDefWithTaxonomy autodef;
+    CAutoDefWithTaxonomy autodef;
 
-    // add to autodef
-    autodef.AddSources(seh);
+    if (init_with_descrs) {
+        CAutoDef::TSources sources;
+        for (CBioseq_CI b_iter(seh, CSeq_inst::eMol_na); b_iter; ++b_iter) {
+            for (CSeqdesc_CI desc_it(*b_iter, CSeqdesc::e_Source); desc_it; ++desc_it) {
+                sources.emplace_back(&desc_it->GetSource());
+            }
+        }
+        autodef.AddDescriptors(sources);
+    }
+    else {
+        // add to autodef
+        autodef.AddSources(seh);
+    }
 
     CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
-
     autodef.SuppressFeature(feat_to_suppress);
-
     autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
     autodef.SetMiscFeatRule(CAutoDefOptions::eNoncodingProductFeat);
 
@@ -668,6 +719,7 @@ static CRef<CSeq_entry> BuildNucProtSet(const string& protein_name, const string
 
 // tests
 
+
 BOOST_AUTO_TEST_CASE(Test_SimpleAutodef)
 {
     // prepare entry
@@ -676,9 +728,9 @@ BOOST_AUTO_TEST_CASE(Test_SimpleAutodef)
     AddTitle(entry, "Homo sapiens sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
-
-
+    
 BOOST_AUTO_TEST_CASE(Test_UnnamedPlasmid)
 {
     // prepare entry
@@ -690,8 +742,8 @@ BOOST_AUTO_TEST_CASE(Test_UnnamedPlasmid)
     AddTitle(entry, "Alcanivorax sp. HA03 plasmid sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SQD_476)
 {
@@ -703,8 +755,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_476)
     AddTitle(entry, "Alcanivorax sp. HA03 plasmid chlorocatechol 1,2-dioxygenase gene, complete cds.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SQD_630)
 {
@@ -721,11 +773,12 @@ BOOST_AUTO_TEST_CASE(Test_SQD_630)
     AddTitle(entry, "Clathrina aurea microsatellite sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
     feat->SetComment("dinucleotide");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SQD_169)
 {
@@ -739,8 +792,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_169)
     AddTitle(entry, "Clathrina aurea 5S ribosomal RNA gene region.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SQD_374)
 {
@@ -756,8 +809,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_374)
     AddTitle(entry, "Clathrina aurea DNA lyase (Apn2) gene, partial sequence; Apn2-Mat1 intergenic spacer, complete sequence; and mating type protein (Mat1) gene, partial sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SQD_155)
 {
@@ -771,7 +824,9 @@ BOOST_AUTO_TEST_CASE(Test_SQD_155)
     AddTitle(entry, "Clathrina aurea sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
+
 
 BOOST_AUTO_TEST_CASE(Test_DocsumTitle_Popset)
 {
@@ -813,8 +868,8 @@ BOOST_AUTO_TEST_CASE(Test_DocsumTitle_Popset)
     defline = "Pinus cembra fake protein name gene, complete cds.";
     AddTitle(set, defline);
     CheckDeflineMatches(set, true);
+    CheckDeflineMatchesWithDescr(set, true);
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_DocsumTitle_Physet)
 {
@@ -842,13 +897,14 @@ BOOST_AUTO_TEST_CASE(Test_DocsumTitle_Physet)
     defline = "Chilioperyphus fake protein name gene, complete cds.";
     AddTitle(set, defline);
     CheckDeflineMatches(set, true);
+    CheckDeflineMatchesWithDescr(set, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_GB_3108)
 {
     CRef<CSeq_entry> entry = BuildSequence();
-    CRef<CSeqdesc> desc = AddSource (entry, "Fusarium incarnatum");
+    CRef<CSeqdesc> desc = AddSource(entry, "Fusarium incarnatum");
     CRef<CSeq_feat> feat1(new CSeq_feat());
     feat1->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     feat1->SetData().SetRna().SetExt().SetName("5.8S ribosomal RNA");
@@ -873,12 +929,13 @@ BOOST_AUTO_TEST_CASE(Test_GB_3108)
     AddTitle(entry, "Fusarium incarnatum 5.8S ribosomal RNA gene, partial sequence; internal transcribed spacer 2, complete sequence; and 28S ribosomal RNA gene, partial sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
     feat2->SetData().SetRna().SetType(CRNA_ref::eType_other);
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_GB_3099)
 {
@@ -893,6 +950,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3099)
     AddFeat(gene, nuc);
 
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 
@@ -910,7 +968,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3359)
     string defline = "Erwinia amylovora RmaA antisense RNA, complete sequence.";
     AddTitle(seq, defline);
     CheckDeflineMatches(seq, true);
-
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 
@@ -919,7 +977,8 @@ void TestOneOrganelleSequenceDefline(CBioSource::TGenome genome, const string& d
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
     unit_test_util::SetGenome(seq, genome);
     AddTitle(seq, defline);
-    CheckDeflineMatches(seq, true, objects::CAutoDefOptions::eSequence);
+    CheckDeflineMatches(seq, true, CAutoDefOptions::eSequence);
+    CheckDeflineMatchesWithDescr(seq, true, CAutoDefOptions::eSequence);
 }
 
 
@@ -933,7 +992,6 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1733)
     TestOneOrganelleSequenceDefline(CBioSource::eGenome_leucoplast, "Sebaea microphylla leucoplast sequence.");
 
 }
-
 
 void AddExon(CRef<CSeq_entry> seq, const string& number, TSeqPos start)
 {
@@ -961,47 +1019,54 @@ BOOST_AUTO_TEST_CASE(Test_GB_3386)
     string defline = "Sebaea microphylla fake protein name gene, exon 1 and partial cds.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
+    CheckDeflineMatchesWithDescr(nps, true);
 
     AddExon(nuc, "2", cds->GetLocation().GetStart(eExtreme_Positional) + 10);
     defline = "Sebaea microphylla fake protein name gene, exons 1 and 2 and partial cds.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
+    CheckDeflineMatchesWithDescr(nps, true);
 
     AddExon(nuc, "3", cds->GetLocation().GetStart(eExtreme_Positional) +20);
     defline = "Sebaea microphylla fake protein name gene, exons 1 through 3 and partial cds.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
+    CheckDeflineMatchesWithDescr(nps, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_GB_3410)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(seq);
     misc->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
     misc->SetComment("contains internal transcribed spacer 1, 5.8S ribosomal RNA, and internal transcribed spacer 2");
     AddTitle(seq, "Sebaea microphylla internal transcribed spacer 1, 5.8S ribosomal RNA gene, and internal transcribed spacer 2, complete sequence.");
 
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 
     misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
     AddTitle(seq, "Sebaea microphylla internal transcribed spacer 1, partial sequence; 5.8S ribosomal RNA gene, complete sequence; and internal transcribed spacer 2, partial sequence.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 
     misc->SetComment("contains 18S ribosomal RNA, internal transcribed spacer 1, 5.8S ribosomal RNA, and internal transcribed spacer 2");
     AddTitle(seq, "Sebaea microphylla 18S ribosomal RNA gene, partial sequence; internal transcribed spacer 1 and 5.8S ribosomal RNA gene, complete sequence; and internal transcribed spacer 2, partial sequence.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_GB_3395)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> dloop = unit_test_util::AddGoodImpFeat (seq, "D-loop");
+    CRef<CSeq_feat> dloop = unit_test_util::AddGoodImpFeat (seq, "D-loop");
     dloop->ResetComment();
     AddTitle(seq, "Sebaea microphylla D-loop, complete sequence.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 
@@ -1009,11 +1074,11 @@ BOOST_AUTO_TEST_CASE(Test_GB_3439)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
     unit_test_util::SetTaxname(seq, "uncultured archaeon");
-    CRef<objects::CSeq_feat> dloop = unit_test_util::AddGoodImpFeat (seq, "D-loop");
+    CRef<CSeq_feat> dloop = unit_test_util::AddGoodImpFeat (seq, "D-loop");
     dloop->ResetComment();
     AddTitle(seq, "Uncultured archaeon D-loop, complete sequence.");
     CheckDeflineMatches(seq, true);
-
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 
@@ -1021,29 +1086,31 @@ BOOST_AUTO_TEST_CASE(Test_GB_3488)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
     unit_test_util::SetTaxname(seq, "Cypripedium japonicum");
-    CRef<objects::CSeq_feat> rna = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(seq);
     rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     rna->ResetComment();
     AddTitle(seq, "Cypripedium japonicum gene, complete sequence.");
     CheckDeflineMatches(seq, true);
-
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 BOOST_AUTO_TEST_CASE(Test_GB_3486)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
     unit_test_util::SetTaxname(seq, "Burkholderia sp. FERM BP-3421");
-    CRef<objects::CSeq_feat> gene = unit_test_util::AddMiscFeature (seq);
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature (seq);
     gene->ResetComment();
     gene->SetData().SetGene().SetLocus("fr9A");
     AddTitle(seq, "Burkholderia sp. FERM BP-3421 fr9A gene, complete sequence.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 
-    CRef<objects::CSeq_feat> gene_cluster = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> gene_cluster = unit_test_util::AddMiscFeature(seq);
     gene_cluster->SetComment("spliceostatin/FR901464 biosynthetic gene cluster");
 
     AddTitle(seq, "Burkholderia sp. FERM BP-3421 spliceostatin/FR901464 biosynthetic gene cluster, complete sequence.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 
 }
 
@@ -1071,7 +1138,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3496)
 
     AddTitle(nuc, "Sebaea microphylla tRNA-Lys (trnK) gene, partial sequence; and maturase K (matK) gene, complete cds.");
     CheckDeflineMatches(entry, true);
-
+    CheckDeflineMatchesWithDescr(entry, true);
 }
 
 
@@ -1094,12 +1161,12 @@ BOOST_AUTO_TEST_CASE(Test_GB_3458)
     unit_test_util::AddFeat(gene2, nuc);
     // make protein for second coding region, with no protein feature
     CRef<CSeq_entry> pentry(new CSeq_entry());
-    pentry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_aa);
-    pentry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    pentry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
+    pentry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     pentry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIN");
     pentry->SetSeq().SetInst().SetLength(8);
 
-    CRef<objects::CSeq_id> pid(new objects::CSeq_id());
+    CRef<CSeq_id> pid(new CSeq_id());
     pid->SetLocal().SetStr ("prot2");
     pentry->SetSeq().SetId().push_back(pid);
     entry->SetSet().SetSeq_set().push_back(pentry);
@@ -1107,6 +1174,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3458)
 
     AddTitle(nuc, "Sebaea microphylla M2 and fake protein name (M1) genes, complete cds.");
     CheckDeflineMatches(entry, true);
+    CheckDeflineMatchesWithDescr(entry, true);
 }
 
 
@@ -1129,9 +1197,9 @@ BOOST_AUTO_TEST_CASE(Test_GB_3679)
     integron->SetLocation().SetInt().SetFrom(0);
     integron->SetLocation().SetInt().SetTo(nuc->GetSeq().GetLength() - 1);
 
-
     AddTitle(nuc, "Sebaea microphylla class I integron fake protein name (M1) gene, complete cds.");
     CheckDeflineMatches(entry, true);
+    CheckDeflineMatchesWithDescr(entry, true);
 }
 
 
@@ -1147,25 +1215,27 @@ BOOST_AUTO_TEST_CASE(Test_GB_3848)
 
     AddTitle(nuc, "Sebaea microphylla fake protein name (gltB) gene, gltB-16 allele, complete cds.");
     CheckDeflineMatches(entry, true);
+    CheckDeflineMatchesWithDescr(entry, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_SQD_2075)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(seq);
     misc->SetComment("contains tRNA-Pro and control region");
     misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
     AddTitle(seq, "Sebaea microphylla tRNA-Pro gene and control region, partial sequence.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_SQD_2115)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> promoter = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> promoter = unit_test_util::AddMiscFeature(seq);
     promoter->ResetComment();
     promoter->SetData().SetImp().SetKey("regulatory");
     CRef<CGb_qual> q(new CGb_qual());
@@ -1174,6 +1244,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2115)
     promoter->SetQual().push_back(q);
     AddTitle(seq, "Sebaea microphylla promoter region.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 
     CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature (promoter);
     gene->SetData().SetGene().SetLocus("chs");
@@ -1181,6 +1252,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2115)
 
     AddTitle(seq, "Sebaea microphylla chs gene, promoter region.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 
 }
 
@@ -1188,20 +1260,20 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2115)
 BOOST_AUTO_TEST_CASE(Test_GB_3866)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
     misc1->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
     misc1->SetComment("contains 18S ribosomal RNA and internal transcribed spacer 1");
     misc1->SetLocation().SetInt().SetFrom(0);
     misc1->SetLocation().SetInt().SetTo(15);
     misc1->SetLocation().SetPartialStart(true, eExtreme_Biological);
 
-    CRef<objects::CSeq_feat> rna = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(seq);
     rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     rna->SetData().SetRna().SetExt().SetName("5.8S ribosomal RNA");
     rna->SetLocation().SetInt().SetFrom(16);
     rna->SetLocation().SetInt().SetTo(19);
 
-    CRef<objects::CSeq_feat> misc2 = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> misc2 = unit_test_util::AddMiscFeature(seq);
     misc2->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
     misc2->SetComment("contains internal transcribed spacer 2 and 28S ribosomal RNA");
     misc2->SetLocation().SetInt().SetFrom(20);
@@ -1213,13 +1285,14 @@ sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and \
 internal transcribed spacer 2, complete sequence; and 28S ribosomal RNA \
 gene, partial sequence.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_SQD_2118)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
     misc1->SetComment("contains tRNA-Thr, tRNA-Pro, and control region");
     misc1->SetLocation().SetInt().SetFrom(0);
     misc1->SetLocation().SetInt().SetTo(15);
@@ -1229,6 +1302,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2118)
     AddTitle(seq, "Sebaea microphylla tRNA-Thr gene, partial sequence; \
 tRNA-Pro gene, complete sequence; and control region, partial sequence.");
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 
 }
 
@@ -1236,7 +1310,7 @@ tRNA-Pro gene, complete sequence; and control region, partial sequence.");
 BOOST_AUTO_TEST_CASE(Test_GB_1851)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
     misc1->SetComment("nonfunctional xyz due to argle");
     misc1->SetLocation().SetInt().SetFrom(0);
     misc1->SetLocation().SetInt().SetTo(15);
@@ -1246,15 +1320,21 @@ BOOST_AUTO_TEST_CASE(Test_GB_1851)
     // kept because the misc_feature is alone
     AddTitle(seq, "Sebaea microphylla nonfunctional xyz gene, partial sequence.");
     CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+    CheckDeflineMatchesWithDescr(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+
     AddTitle(seq, "Sebaea microphylla nonfunctional xyz gene, partial sequence.");
     CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eNoncodingProductFeat);
+    CheckDeflineMatchesWithDescr(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eNoncodingProductFeat);
+
     AddTitle(seq, "Sebaea microphylla nonfunctional xyz due to argle genomic sequence.");
     CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eCommentFeat);
+    CheckDeflineMatchesWithDescr(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eCommentFeat);
 
 
     misc1->SetComment("similar to xyz");
     AddTitle(seq, "Sebaea microphylla xyz-like gene, partial sequence.");
     CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eNoncodingProductFeat);
+    CheckDeflineMatchesWithDescr(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eNoncodingProductFeat);
 
 }
 
@@ -1312,6 +1392,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3942)
 
     AddTitle(nuc, "Sebaea microphylla RNA-dependent RNA polymerase gene, partial cds; and Coat protein and Movement protein genes, complete cds.");
     CheckDeflineMatches(entry, true);
+    CheckDeflineMatchesWithDescr(entry, true);
 
 
     // actual splicing
@@ -1322,6 +1403,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3942)
 
     AddTitle(nuc, "Sebaea microphylla protein gene, complete cds, alternatively spliced; and RNA-dependent RNA polymerase gene, partial cds.");
     CheckDeflineMatches(entry, true);
+    CheckDeflineMatchesWithDescr(entry, true);
 
 }
 
@@ -1352,13 +1434,14 @@ BOOST_AUTO_TEST_CASE(Test_GB_8927)
 
     AddTitle(nuc, "Sebaea microphylla Movement protein and Coat protein genes, complete cds; and RNA-dependent RNA polymerase gene, partial cds.");
     CheckDeflineMatches(entry, true);
+    CheckDeflineMatchesWithDescr(entry, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_GB_3926)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
     misc1->ResetComment();
     misc1->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     misc1->SetData().SetRna().SetExt().SetName("28S ribosomal RNA");
@@ -1375,15 +1458,15 @@ BOOST_AUTO_TEST_CASE(Test_GB_3926)
     orgmods.push_back(COrgMod::eSubtype_isolate);
 
     CheckDeflineMatches(seq, subsrcs, orgmods);
+    CheckDeflineMatches(seq, subsrcs, orgmods, true);
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_SQD_2181)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
     CRef<CSeq_feat> cds1 = unit_test_util::GetCDSFromGoodNucProtSet (entry);
-    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(nuc);
+    CRef<CSeq_feat> misc1 = unit_test_util::AddMiscFeature(nuc);
     misc1->ResetComment();
     misc1->SetData().SetImp().SetKey("regulatory");
     CRef<CGb_qual> q(new CGb_qual());
@@ -1393,24 +1476,44 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2181)
 
     AddTitle(nuc, "Sebaea microphylla fake protein name gene, promoter region and complete cds.");
 
+    auto sources = s_GatherSources(*entry);
+    {
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+        CAutoDefWithTaxonomy autodef;
 
-    objects::CAutoDefWithTaxonomy autodef;
+        // add to autodef
+        autodef.AddSources(seh);
 
-    // add to autodef
-    autodef.AddSources (seh);
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
 
-    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo ());
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+        autodef.SetUseFakePromoters(true);
 
-    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
-    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
-    autodef.SetUseFakePromoters(true);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        CAutoDefWithTaxonomy autodef;
 
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        // add to autodef
+        autodef.AddDescriptors(sources);
+
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+        autodef.SetUseFakePromoters(true);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 }
 
 
@@ -1427,6 +1530,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3949)
     orgmods.push_back(COrgMod::eSubtype_culture_collection);
 
     CheckDeflineMatches(entry, subsrcs, orgmods);
+    CheckDeflineMatches(entry, subsrcs, orgmods, true);
 }
 
 BOOST_AUTO_TEST_CASE(Test_GB_4043)
@@ -1436,14 +1540,14 @@ BOOST_AUTO_TEST_CASE(Test_GB_4043)
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
     cds->SetLocation().SetInt().SetFrom(20);
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
-    CRef<objects::CSeq_feat> intron = unit_test_util::AddMiscFeature(nuc);
+    CRef<CSeq_feat> intron = unit_test_util::AddMiscFeature(nuc);
     intron->SetData().SetImp().SetKey("intron");
     intron->SetLocation().SetInt().SetFrom(0);
     intron->SetLocation().SetInt().SetTo(19);
     intron->SetLocation().SetPartialStart(true, eExtreme_Biological);
     intron->ResetComment();
     intron->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("number", "2")));
-    CRef<objects::CSeq_feat> gene = unit_test_util::AddMiscFeature(nuc);
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(nuc);
     gene->SetData().SetGene().SetLocus("GAPDH");
     gene->SetLocation().SetInt().SetFrom(0);
     gene->SetLocation().SetInt().SetTo(cds->GetLocation().GetInt().GetTo());
@@ -1452,21 +1556,40 @@ BOOST_AUTO_TEST_CASE(Test_GB_4043)
 
     AddTitle(nuc, "Sebaea microphylla fake protein name (GAPDH) gene, intron 2 and partial cds.");
 
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    auto sources = s_GatherSources(*entry);
+    {
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry (*entry);
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    objects::CAutoDefWithTaxonomy autodef;
+        CAutoDefWithTaxonomy autodef;
 
-    // add to autodef
-    autodef.AddSources (seh);
-    autodef.SetKeepIntrons(true);
+        // add to autodef
+        autodef.AddSources(seh);
+        autodef.SetKeepIntrons(true);
 
-    CRef<CAutoDefModifierCombo> mod_combo;
-    mod_combo = autodef.FindBestModifierCombo();
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = autodef.FindBestModifierCombo();
 
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        CAutoDefWithTaxonomy autodef;
+
+        // add to autodef
+        autodef.AddDescriptors(sources);
+        autodef.SetKeepIntrons(true);
+
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = autodef.FindBestModifierCombo();
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 }
 
 
@@ -1476,12 +1599,12 @@ BOOST_AUTO_TEST_CASE(Test_GB_4078)
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
     cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
-    CRef<objects::CSeq_feat> spacer = unit_test_util::AddMiscFeature(nuc);
+    CRef<CSeq_feat> spacer = unit_test_util::AddMiscFeature(nuc);
     spacer->SetComment("G-L intergenic spacer");
     spacer->SetLocation().SetInt().SetFrom(cds->SetLocation().GetStart(eExtreme_Biological));
     spacer->SetLocation().SetInt().SetTo(cds->SetLocation().GetStart(eExtreme_Biological) + 2);
     spacer->SetLocation().SetPartialStop(true, eExtreme_Biological);
-    CRef<objects::CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
     gene->SetData().SetGene().SetLocus("G");
     unit_test_util::AddFeat(gene, nuc);
 
@@ -1489,25 +1612,28 @@ BOOST_AUTO_TEST_CASE(Test_GB_4078)
     AddTitle(nuc, "Sebaea microphylla fake protein name (G) gene, partial cds; and G-L intergenic spacer, partial sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
     unit_test_util::SetBiomol(nuc, CMolInfo::eBiomol_cRNA);
     nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
 
-
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
 }
 
 BOOST_AUTO_TEST_CASE(Test_SQD_2370)
 {
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    CRef<CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
     misc1->SetComment("atpB-rbcL intergenic spacer region");
 
     AddTitle(seq, "Sebaea microphylla atpB-rbcL intergenic spacer region, complete sequence.");
 
     CheckDeflineMatches(seq);
+    CheckDeflineMatchesWithDescr(seq);
 }
+
 
 BOOST_AUTO_TEST_CASE(Test_GB_4242)
 {
@@ -1521,35 +1647,67 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
     orgmods.push_back(COrgMod::eSubtype_isolate);
 
     CheckDeflineMatches(seq, subsrcs, orgmods);
+    CheckDeflineMatches(seq, subsrcs, orgmods, true);
 
     // Try again, but deliberately allow modifier that includes taxname to be included
     AddTitle(seq, "Trichoderma sp. FPZSP372 isolate FPZSP37 sequence.");
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    auto sources = s_GatherSources(*seq);
+    
+    {
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*seq);
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*seq);
 
-    objects::CAutoDefWithTaxonomy autodef;
+        CAutoDefWithTaxonomy autodef;
 
-    // add to autodef
-    autodef.AddSources(seh);
+        // add to autodef
+        autodef.AddSources(seh);
 
-    CRef<CAutoDefModifierCombo> mod_combo;
-    mod_combo = new CAutoDefModifierCombo();
-    mod_combo->SetUseModifierLabels(true);
-    mod_combo->SetAllowModAtEndOfTaxname(true);
-    mod_combo->SetExcludeSpOrgs(false);
-    ITERATE(vector<CSubSource::ESubtype>, it, subsrcs) {
-        mod_combo->AddSubsource(*it, true);
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = new CAutoDefModifierCombo();
+        mod_combo->SetUseModifierLabels(true);
+        mod_combo->SetAllowModAtEndOfTaxname(true);
+        mod_combo->SetExcludeSpOrgs(false);
+        ITERATE(vector<CSubSource::ESubtype>, it, subsrcs) {
+            mod_combo->AddSubsource(*it, true);
+        }
+        ITERATE(vector<COrgMod::ESubtype>, it, orgmods) {
+            mod_combo->AddOrgMod(*it, true);
+        }
+
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+
+        CheckDeflineMatches(seh, autodef, mod_combo);
     }
-    ITERATE(vector<COrgMod::ESubtype>, it, orgmods) {
-        mod_combo->AddOrgMod(*it, true);
+    {
+        CAutoDefWithTaxonomy autodef;
+
+        // add to autodef
+        autodef.AddDescriptors(sources);
+
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = new CAutoDefModifierCombo();
+        mod_combo->SetUseModifierLabels(true);
+        mod_combo->SetAllowModAtEndOfTaxname(true);
+        mod_combo->SetExcludeSpOrgs(false);
+        ITERATE(vector<CSubSource::ESubtype>, it, subsrcs) {
+            mod_combo->AddSubsource(*it, true);
+        }
+        ITERATE(vector<COrgMod::ESubtype>, it, orgmods) {
+            mod_combo->AddOrgMod(*it, true);
+        }
+
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*seq);
+
+        CheckDeflineMatches(seh, autodef, mod_combo);
     }
-
-    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
-    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
-
-    CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
 BOOST_AUTO_TEST_CASE(Test_SQD_3440)
@@ -1574,35 +1732,59 @@ BOOST_AUTO_TEST_CASE(Test_RemovableuORF)
     AddTitle(nuc, "Alcanivorax sp. HA03 uORF gene, complete cds.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
     // try again, with another feature present, so uORF isn't lonely
-    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(nuc);
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(nuc);
     misc->SetData().SetImp().SetKey("repeat_region");
     CRef<CGb_qual> q(new CGb_qual("satellite", "x"));
     misc->SetQual().push_back(q);
     AddTitle(nuc, "Alcanivorax sp. HA03 satellite x sequence.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
-    // try again, but set keepORFs flag
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    auto sources = s_GatherSources(*entry);
+    {
+        // try again, but set keepORFs flag
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    objects::CAutoDefWithTaxonomy autodef;
+        CAutoDefWithTaxonomy autodef;
 
-    // add to autodef
-    autodef.AddSources(seh);
+        // add to autodef
+        autodef.AddSources(seh);
 
-    CRef<CAutoDefModifierCombo> mod_combo;
-    mod_combo = new CAutoDefModifierCombo();
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = new CAutoDefModifierCombo();
 
-    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
-    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
-    autodef.SetKeepuORFs(true);
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+        autodef.SetKeepuORFs(true);
 
-    AddTitle(nuc, "Alcanivorax sp. HA03 uORF gene, complete cds; and satellite x sequence.");
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        AddTitle(nuc, "Alcanivorax sp. HA03 uORF gene, complete cds; and satellite x sequence.");
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        // try again, but set keepORFs flag
+        CAutoDefWithTaxonomy autodef;
+
+        // add to autodef
+        autodef.AddDescriptors(sources);
+
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = new CAutoDefModifierCombo();
+
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+        autodef.SetKeepuORFs(true);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 
 }
 
@@ -1610,16 +1792,17 @@ BOOST_AUTO_TEST_CASE(Test_RemovableMobileElement)
 {
     // first, try with lonely optional
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> mob_el = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> mob_el = unit_test_util::AddMiscFeature(entry);
     mob_el->SetData().SetImp().SetKey("mobile_element");
     CRef<CGb_qual> met(new CGb_qual("mobile_element_type", "SINE:x"));
     mob_el->SetQual().push_back(met);
     AddTitle(entry, "Sebaea microphylla SINE x, complete sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
     // try again, with another feature present, so element isn't lonely
-    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
     misc->SetData().SetImp().SetKey("repeat_region");
     CRef<CGb_qual> q(new CGb_qual("satellite", "y"));
     misc->SetQual().push_back(q);
@@ -1629,33 +1812,66 @@ BOOST_AUTO_TEST_CASE(Test_RemovableMobileElement)
     mob_el->SetLocation().SetInt().SetTo(20);
     AddTitle(entry, "Sebaea microphylla satellite y sequence.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
-    // try again, but set keepMobileElements flag
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    auto sources = s_GatherSources(*entry);
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    {
+        // try again, but set keepMobileElements flag
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-    objects::CAutoDefWithTaxonomy autodef;
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    // add to autodef
-    autodef.AddSources(seh);
+        CAutoDefWithTaxonomy autodef;
 
-    CRef<CAutoDefModifierCombo> mod_combo;
-    mod_combo = new CAutoDefModifierCombo();
+        // add to autodef
+        autodef.AddSources(seh);
 
-    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
-    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
-    autodef.SetKeepOptionalMobileElements(true);
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = new CAutoDefModifierCombo();
 
-    AddTitle(entry, "Sebaea microphylla satellite y sequence; and SINE x, complete sequence.");
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+        autodef.SetKeepOptionalMobileElements(true);
 
-    // keep non-optional mobile element when not lonely and flag not set
-    met->SetVal("transposon:z");
-    autodef.SetKeepOptionalMobileElements(false);
-    AddTitle(entry, "Sebaea microphylla satellite y sequence; and transposon z, complete sequence.");
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        AddTitle(entry, "Sebaea microphylla satellite y sequence; and SINE x, complete sequence.");
+        CheckDeflineMatches(seh, autodef, mod_combo);
+
+        // keep non-optional mobile element when not lonely and flag not set
+        met->SetVal("transposon:z");
+        autodef.SetKeepOptionalMobileElements(false);
+        AddTitle(entry, "Sebaea microphylla satellite y sequence; and transposon z, complete sequence.");
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        // try again, but set keepMobileElements flag
+        CAutoDefWithTaxonomy autodef;
+
+        // add to autodef
+        autodef.AddDescriptors(sources);
+
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = new CAutoDefModifierCombo();
+
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+        autodef.SetKeepOptionalMobileElements(true);
+
+        met->SetVal("SINE:x");
+        AddTitle(entry, "Sebaea microphylla satellite y sequence; and SINE x, complete sequence.");
+        
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+
+        // keep non-optional mobile element when not lonely and flag not set
+        met->SetVal("transposon:z");
+        autodef.SetKeepOptionalMobileElements(false);
+        AddTitle(entry, "Sebaea microphylla satellite y sequence; and transposon z, complete sequence.");
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 
 }
 
@@ -1672,6 +1888,7 @@ BOOST_AUTO_TEST_CASE(GB_5272)
     gene->SetLocation().SetPartialStart(true, eExtreme_Biological);
     AddTitle(nuc, "Coxiella burnetii rhodanese-related sulfurtransferase (CBU_0065) gene, partial cds.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 BOOST_AUTO_TEST_CASE(GB_5272a)
@@ -1698,25 +1915,47 @@ BOOST_AUTO_TEST_CASE(GB_5272a)
 
     AddTitle(nuc, "Coxiella burnetii hypothetical protein (CBU_0067) and hypothetical protein (CBU_0068) genes, complete cds.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
-    // try again, but suppress genes
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    auto sources = s_GatherSources(*entry);
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    {
+        // try again, but suppress genes
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-    objects::CAutoDefWithTaxonomy autodef;
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    // add to autodef
-    autodef.AddSources(seh);
+        CAutoDefWithTaxonomy autodef;
 
-    CRef<CAutoDefModifierCombo> mod_combo;
-    mod_combo = new CAutoDefModifierCombo();
+        // add to autodef
+        autodef.AddSources(seh);
 
-    autodef.SuppressFeature(CSeqFeatData::eSubtype_gene);
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = new CAutoDefModifierCombo();
 
-    AddTitle(nuc, "Coxiella burnetii hypothetical protein genes, complete cds.");
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        autodef.SuppressFeature(CSeqFeatData::eSubtype_gene);
+
+        AddTitle(nuc, "Coxiella burnetii hypothetical protein genes, complete cds.");
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        // try again, but suppress genes
+        CAutoDefWithTaxonomy autodef;
+
+        // add to autodef
+        autodef.AddDescriptors(sources);
+
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = new CAutoDefModifierCombo();
+
+        autodef.SuppressFeature(CSeqFeatData::eSubtype_gene);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 }
 
 
@@ -1735,6 +1974,7 @@ BOOST_AUTO_TEST_CASE(GB_5272b)
 
     AddTitle(nuc, "Coxiella burnetii hypothetical protein genes, complete cds.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
     // try again, but with intervening non-hypothetical protein gene
     CRef<CSeq_feat> cds2 = unit_test_util::MakeCDSForGoodNucProtSet("nuc", "prot2");
@@ -1746,6 +1986,7 @@ BOOST_AUTO_TEST_CASE(GB_5272b)
 
     AddTitle(nuc, "Coxiella burnetii hypothetical protein, fake protein, and hypothetical protein genes, complete cds.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
 }
 
@@ -1780,22 +2021,42 @@ BOOST_AUTO_TEST_CASE(SQD_3462)
     gene->SetData().SetGene().SetLocus("BRM");
     gene->SetLocation().SetInt().SetTo(nuc->GetSeq().GetLength() - 1);
 
-    objects::CAutoDefWithTaxonomy autodef;
-
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-    autodef.AddSources(seh);
-    autodef.SetKeepExons(true);
-    autodef.SetKeepIntrons(true);
-
-    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
-    mod_combo->AddOrgMod(COrgMod::eSubtype_isolate, true);
-    mod_combo->SetUseModifierLabels(true);
-
     AddTitle(nuc, "Anas castanea isolate DPIWECT127 brahma protein (BRM) gene, exon 15, intron 15, and partial cds.");
-    CheckDeflineMatches(seh, autodef, mod_combo);
+    auto sources = s_GatherSources(*entry);
+    {
+        CAutoDefWithTaxonomy autodef;
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        autodef.AddSources(seh);
+        autodef.SetKeepExons(true);
+        autodef.SetKeepIntrons(true);
+
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        mod_combo->AddOrgMod(COrgMod::eSubtype_isolate, true);
+        mod_combo->SetUseModifierLabels(true);
+
+
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        CAutoDefWithTaxonomy autodef;
+        
+        autodef.AddDescriptors(sources);
+        autodef.SetKeepExons(true);
+        autodef.SetKeepIntrons(true);
+
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        mod_combo->AddOrgMod(COrgMod::eSubtype_isolate, true);
+        mod_combo->SetUseModifierLabels(true);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 
 }
 
@@ -1829,7 +2090,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5493)
 {
     // first, try with lonely optional
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> miscrna = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> miscrna = unit_test_util::AddMiscFeature(entry);
     miscrna->SetData().SetRna().SetType(CRNA_ref::eType_other);
     string remainder;
     miscrna->SetData().SetRna().SetRnaProductName("trans-spliced leader sequence SL", remainder);
@@ -1837,6 +2098,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5493)
     AddTitle(entry, "Sebaea microphylla trans-spliced leader sequence SL gene, complete sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 
@@ -1861,14 +2123,14 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3602)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetGenome(entry, CBioSource::eGenome_mitochondrion);
-    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
     misc->SetComment("contains tRNA-Pro gene, control region, tRNA-Phe  gene, and 12S ribosomal RNA gene");
     misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
     AddTitle(entry, "Sebaea microphylla tRNA-Pro gene, partial sequence; control region and tRNA-Phe gene, complete sequence; and 12S ribosomal RNA gene, partial sequence; mitochondrial.");
 
     CheckDeflineMatches(entry);
-
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 
@@ -1876,13 +2138,14 @@ BOOST_AUTO_TEST_CASE(Test_SB_5494)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetGenome(entry, CBioSource::eGenome_mitochondrion);
-    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
     misc->SetComment("contains 12S ribosomal RNA gene, tRNA-Val (trnV) gene, and 16S ribosomal RNA gene");
     misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
     AddTitle(entry, "Sebaea microphylla 12S ribosomal RNA gene, partial sequence; tRNA-Val (trnV) gene, complete sequence; and 16S ribosomal RNA gene, partial sequence; mitochondrial.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 
@@ -1900,12 +2163,12 @@ BOOST_AUTO_TEST_CASE(Test_GB_5447)
     cds2->SetLocation().SetInt().SetTo(nuc->GetSeq().GetInst().GetLength() - 1);
 
     CRef<CSeq_entry> pentry(new CSeq_entry());
-    pentry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_aa);
-    pentry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    pentry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
+    pentry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     pentry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIN");
     pentry->SetSeq().SetInst().SetLength(8);
 
-    CRef<objects::CSeq_id> pid(new objects::CSeq_id());
+    CRef<CSeq_id> pid(new CSeq_id());
     pid->SetLocal().SetStr("prot2");
     pentry->SetSeq().SetId().push_back(pid);
     entry->SetSet().SetSeq_set().push_back(pentry);
@@ -1915,39 +2178,61 @@ BOOST_AUTO_TEST_CASE(Test_GB_5447)
 
     AddTitle(nuc, "Sebaea microphylla hypothetical protein genes, complete cds.");
     CheckDeflineMatches(entry, true);
+    CheckDeflineMatchesWithDescr(entry, true);
 
 }
 
 
 void MakeRegulatoryFeatureTest(const string& regulatory_class, const string& defline_interval, bool use_fake_promoters, bool keep_regulatory)
 {
-    objects::CAutoDefWithTaxonomy autodef;
-    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
-
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    CRef<CScope> scope(new CScope(*object_manager));
-
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
     if (!NStr::IsBlank(regulatory_class)) {
-        CRef<objects::CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
+        CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
         feat->SetData().SetImp().SetKey("regulatory");
         CRef<CGb_qual> q(new CGb_qual("regulatory_class", regulatory_class));
         feat->SetQual().push_back(q);
     }
     AddTitle(nuc, "Sebaea microphylla fake protein name gene, " + defline_interval);
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-    autodef.AddSources(seh);
-    if (use_fake_promoters) {
-        autodef.SetUseFakePromoters(true);
-    }
-    if (keep_regulatory) {
-        autodef.SetKeepRegulatoryFeatures(true);
-    }
 
-    CheckDeflineMatches(seh, autodef, mod_combo);
-    scope->RemoveTopLevelSeqEntry(seh);
+    {
+        CAutoDefWithTaxonomy autodef;
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
 
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+        autodef.AddSources(seh);
+        if (use_fake_promoters) {
+            autodef.SetUseFakePromoters(true);
+        }
+        if (keep_regulatory) {
+            autodef.SetKeepRegulatoryFeatures(true);
+        }
+
+        CheckDeflineMatches(seh, autodef, mod_combo);
+        scope->RemoveTopLevelSeqEntry(seh);
+    }
+    {
+        CAutoDefWithTaxonomy autodef;
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        
+        auto sources = s_GatherSources(*entry);
+        autodef.AddDescriptors(sources);
+        if (use_fake_promoters) {
+            autodef.SetUseFakePromoters(true);
+        }
+        if (keep_regulatory) {
+            autodef.SetKeepRegulatoryFeatures(true);
+        }
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+        scope->RemoveTopLevelSeqEntry(seh);
+    }
 }
 
 
@@ -1994,7 +2279,7 @@ BOOST_AUTO_TEST_CASE(Test_AutodefOptionsSpecifyNuclearCopyFlag)
 BOOST_AUTO_TEST_CASE(Test_GB_5560)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
     misc->ResetComment();
     misc->SetData().SetImp().SetKey("repeat_region");
     CRef<CGb_qual> q(new CGb_qual("rpt_type", "long_terminal_repeat"));
@@ -2002,6 +2287,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5560)
     AddTitle(entry, "Sebaea microphylla LTR repeat region.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 
@@ -2018,21 +2304,43 @@ BOOST_AUTO_TEST_CASE(Test_GB_5758)
     subsrcs.push_back(CSubSource::eSubtype_other);
     vector<COrgMod::ESubtype> orgmods;
     CheckDeflineMatches(entry, subsrcs, orgmods);
+    CheckDeflineMatches(entry, subsrcs, orgmods, true);
 }
 
 
 void TestForRecomb(CRef<CSeq_entry> entry, const string& expected)
 {
     AddTitle(entry, expected);
-    objects::CAutoDefWithTaxonomy autodef;
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-    autodef.AddSources(seh);
-    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
-    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
-    autodef.SetKeepMiscRecomb(true);
-    CheckDeflineMatches(seh, autodef, mod_combo);
+    
+    { 
+        CAutoDefWithTaxonomy autodef;
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+        autodef.AddSources(seh);
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetKeepMiscRecomb(true);
+
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        auto sources = s_GatherSources(*entry);
+        
+        CAutoDefWithTaxonomy autodef;
+        
+        autodef.AddDescriptors(sources);
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetKeepMiscRecomb(true);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 }
 
 
@@ -2046,6 +2354,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5793)
     // by default, misc_recomb not included
     AddTitle(entry, "Sebaea microphylla sequence.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
     // use option to show misc_recomb
     TestForRecomb(entry, "Sebaea microphylla GCC2-ALK translocation breakpoint junction genomic sequence.");
@@ -2061,15 +2370,32 @@ BOOST_AUTO_TEST_CASE(Test_GB_5765)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> m = unit_test_util::AddMiscFeature(entry);
     AddTitle(entry, "Sebaea microphylla special flower.");
-    objects::CAutoDefWithTaxonomy autodef;
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-    autodef.AddSources(seh);
-    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
-    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
-    autodef.SetCustomFeatureClause("special flower");
-    CheckDeflineMatches(seh, autodef, mod_combo);
+    auto sources = s_GatherSources(*entry);
+    {
+        CAutoDefWithTaxonomy autodef;
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+        autodef.AddSources(seh);
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetCustomFeatureClause("special flower");
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        CAutoDefWithTaxonomy autodef;
+        
+        autodef.AddDescriptors(sources);
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetCustomFeatureClause("special flower");
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 }
 
 
@@ -2081,6 +2407,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3914)
     m->SetComment("contains 16S-23S ribosomal RNA intergenic spacer, tRNA-Ile(trnI), and tRNA-Ala(trnA)");
     AddTitle(entry, "Sebaea microphylla 16S-23S ribosomal RNA intergenic spacer, tRNA-Ile (trnI) and tRNA-Ala (trnA) genes, complete sequence.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 
@@ -2131,24 +2458,43 @@ BOOST_AUTO_TEST_CASE(Test_GB_5618)
     string defline = "Sebaea microphylla gene locus gene, complete sequence.";
     AddTitle(entry, defline);
 
-    objects::CAutoDefWithTaxonomy autodef;
+    {
+        CAutoDefWithTaxonomy autodef;
 
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-    autodef.AddSources(seh);
-    autodef.SetKeep3UTRs(true);
-    autodef.SetKeep5UTRs(true);
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        autodef.AddSources(seh);
+        autodef.SetKeep3UTRs(true);
+        autodef.SetKeep5UTRs(true);
 
-    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
-    mod_combo->AddOrgMod(COrgMod::eSubtype_isolate, true);
-    mod_combo->SetUseModifierLabels(true);
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        mod_combo->AddOrgMod(COrgMod::eSubtype_isolate, true);
+        mod_combo->SetUseModifierLabels(true);
 
-    defline = "Sebaea microphylla gene locus gene, 5' UTR and 3' UTR.";
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        defline = "Sebaea microphylla gene locus gene, 5' UTR and 3' UTR.";
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        auto sources = s_GatherSources(*entry);
+
+        CAutoDefWithTaxonomy autodef;
+        
+        autodef.AddDescriptors(sources);
+        autodef.SetKeep3UTRs(true);
+        autodef.SetKeep5UTRs(true);
+
+        CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+        mod_combo->AddOrgMod(COrgMod::eSubtype_isolate, true);
+        mod_combo->SetUseModifierLabels(true);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 }
-
 
 BOOST_AUTO_TEST_CASE(Test_GB_6375)
 {
@@ -2161,6 +2507,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_6375)
     string defline = "Sebaea microphylla fake protein name gene, partial cds.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
+    CheckDeflineMatchesWithDescr(nps, true);
 
     // show if has number
     nps = unit_test_util::BuildGoodNucProtSet();
@@ -2171,13 +2518,14 @@ BOOST_AUTO_TEST_CASE(Test_GB_6375)
     defline = "Sebaea microphylla fake protein name gene, exon 1 and partial cds.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
+    CheckDeflineMatchesWithDescr(nps, true);
 
     // suppress if coding region complete
     cds->SetLocation().SetPartialStop(false, eExtreme_Biological);
     defline = "Sebaea microphylla fake protein name gene, complete cds.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
-
+    CheckDeflineMatchesWithDescr(nps, true);
 }
 
 
@@ -2192,12 +2540,14 @@ BOOST_AUTO_TEST_CASE(Test_GB_6557)
     string defline = "Sebaea microphylla LIA2 macronuclear isoform gene, complete cds.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
+    CheckDeflineMatchesWithDescr(nps, true);
 
     // apicoplast
     prot->SetData().SetProt().SetName().front() = "LIA2 apicoplast protein";
     defline = "Sebaea microphylla LIA2 apicoplast protein gene, complete cds; nuclear gene for apicoplast product.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
+    CheckDeflineMatchesWithDescr(nps, true);
 
 }
 
@@ -2216,6 +2566,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4185)
     AddFeat(gene, nuc);
 
     CheckDeflineMatches(seq, true);
+    CheckDeflineMatchesWithDescr(seq, true);
 }
 
 
@@ -2232,13 +2583,12 @@ BOOST_AUTO_TEST_CASE(Test_GB_6690)
     }
     entry->SetSet().ResetDescr();
     AddTitle(entry, "Sebaea microphylla sequence.");
-
+    
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-
-    objects::CAutoDef autodef;
+    
+    CAutoDef autodef;
     autodef.AddSources(seh);
 
     CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
@@ -2255,15 +2605,55 @@ BOOST_AUTO_TEST_CASE(Test_GB_6690)
         unit_test_util::SetOrgMod(*it, CSubSource::eSubtype_other, *nit);
         ++nit;
     }
-
     seh = scope->AddTopLevelSeqEntry(*entry);
-    objects::CAutoDef autodef2;
+    CAutoDef autodef2;
     autodef2.AddSources(seh);
     mod_combo = autodef.FindBestModifierCombo();
     BOOST_CHECK_EQUAL(mod_combo->HasOrgMod(COrgMod::eSubtype_other), false);
     BOOST_CHECK_EQUAL(mod_combo->HasSubSource(CSubSource::eSubtype_other), false);
 
     CheckDeflineMatches(entry, true);
+}
+
+BOOST_AUTO_TEST_CASE(Test_GB_6690_WithDescr)
+{
+    // do not include notes in deflines when calculating uniqueness
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+    vector<string> notes = { "a", "b", "c" };
+    vector<string>::iterator nit = notes.begin();
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry->SetSet().SetSeq_set()) {
+        AddTitle(*it, "Sebaea microphylla sequence.");
+        unit_test_util::SetOrgMod(*it, COrgMod::eSubtype_other, *nit);
+        ++nit;
+    }
+    entry->SetSet().ResetDescr();
+    AddTitle(entry, "Sebaea microphylla sequence.");
+
+    auto sources = s_GatherSources(*entry);
+    CAutoDef autodef;
+    autodef.AddDescriptors(sources);
+
+    CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
+    BOOST_CHECK_EQUAL(mod_combo->HasOrgMod(COrgMod::eSubtype_other), false);
+    BOOST_CHECK_EQUAL(mod_combo->HasSubSource(CSubSource::eSubtype_other), false);
+
+    CheckDeflineMatchesWithDescr(entry, true);
+
+    nit = notes.begin();
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry->SetSet().SetSeq_set()) {
+        unit_test_util::SetOrgMod(*it, COrgMod::eSubtype_other, "");
+        unit_test_util::SetOrgMod(*it, CSubSource::eSubtype_other, *nit);
+        ++nit;
+    }
+    
+    sources = s_GatherSources(*entry);
+    CAutoDef autodef2;
+    autodef2.AddDescriptors(sources);
+    mod_combo = autodef.FindBestModifierCombo();
+    BOOST_CHECK_EQUAL(mod_combo->HasOrgMod(COrgMod::eSubtype_other), false);
+    BOOST_CHECK_EQUAL(mod_combo->HasSubSource(CSubSource::eSubtype_other), false);
+
+    CheckDeflineMatchesWithDescr(entry, true);
 }
 
 
@@ -2300,6 +2690,7 @@ BOOST_AUTO_TEST_CASE(Test_HumanSTR)
     AddTitle(entry, defline);
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
 }
 
@@ -2316,6 +2707,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_7071)
     AddTitle(entry, defline);
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
 }
 
@@ -2339,6 +2731,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_7479)
     AddTitle(entry, defline);
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 
@@ -2362,6 +2755,7 @@ void CheckInfluenzaDefline(const string& taxname, const string& strain, const st
     AddTitle(entry, defline);
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
 }
 
@@ -2419,22 +2813,39 @@ BOOST_AUTO_TEST_CASE(Test_GB_7534)
 
     AddTitle(entry, "Amomum chryseum tRNA-Lys (trnK) gene, intron; and maturase K (matK) gene, complete cds; chloroplast.");
 
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    {
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CAutoDefWithTaxonomy autodef;
 
-    objects::CAutoDefWithTaxonomy autodef;
+        // add to autodef
+        autodef.AddSources(seh);
+        autodef.SetKeepIntrons(true);
 
-    // add to autodef
-    autodef.AddSources(seh);
-    autodef.SetKeepIntrons(true);
-
-    CRef<CAutoDefModifierCombo> mod_combo;
-    mod_combo = autodef.FindBestModifierCombo();
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = autodef.FindBestModifierCombo();
 
 
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        auto sources = s_GatherSources(*entry);
+        CAutoDefWithTaxonomy autodef;
+
+        // add to autodef
+        autodef.AddDescriptors(sources);
+        autodef.SetKeepIntrons(true);
+
+        CRef<CAutoDefModifierCombo> mod_combo;
+        mod_combo = autodef.FindBestModifierCombo();
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 
 }
 
@@ -2455,6 +2866,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4451)
     AddTitle(entry, "Fusarium incarnatum internal transcribed spacer region, partial sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 BOOST_AUTO_TEST_CASE(Test_SQD_4529)
@@ -2467,13 +2879,15 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4529)
     AddTitle(entry, "Fusarium incarnatum beta-tubulin-like gene, complete sequence.");
 
     CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
 
-    CRef<objects::CSeq_feat> rrna1 = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> rrna1 = unit_test_util::AddMiscFeature(entry);
     rrna1->ResetComment();
     rrna1->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     rrna1->SetData().SetRna().SetExt().SetName("foo");
     AddTitle(entry, "Fusarium incarnatum foo gene, complete sequence.");
     CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
 
 }
 
@@ -2519,6 +2933,7 @@ void TestMatPeptideListing(bool cds_is_partial, bool has_sig_peptide)
         AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein (ORF1) gene, complete cds.");
     }
     CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
 
 }
 
@@ -2540,7 +2955,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4607)
     AddTitle(entry, "Sebaea microphylla promoter region and 5' UTR, genomic sequence.");
 
     CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
-
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
 }
 
 
@@ -2562,24 +2977,43 @@ void CheckRegulatoryFeatures(const string& expected_title, bool keep_promoters, 
     gene->ResetComment();
 
     AddTitle(entry, expected_title);
+    {
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CAutoDefWithTaxonomy autodef;
 
-    objects::CAutoDefWithTaxonomy autodef;
+        // add to autodef
+        autodef.AddSources(seh);
 
-    // add to autodef
-    autodef.AddSources(seh);
+        CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
 
-    CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetKeepRegulatoryFeatures(keep_regulatory);
+        autodef.SetUseFakePromoters(keep_promoters);
 
-    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
-    autodef.SetKeepRegulatoryFeatures(keep_regulatory);
-    autodef.SetUseFakePromoters(keep_promoters);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
+    {
+        auto sources = s_GatherSources(*entry);
+        CAutoDefWithTaxonomy autodef;
 
-    CheckDeflineMatches(seh, autodef, mod_combo);
+        // add to autodef
+        autodef.AddDescriptors(sources);
+
+        CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
+
+        autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+        autodef.SetKeepRegulatoryFeatures(keep_regulatory);
+        autodef.SetUseFakePromoters(keep_promoters);
+
+        CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+        CRef<CScope> scope(new CScope(*object_manager));
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+        CheckDeflineMatches(seh, autodef, mod_combo);
+    }
 
 }
 
@@ -2602,6 +3036,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_8547)
     AddTitle(entry, "Influenza A virus (A/Florida/57/2019) segment 5 sequence.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 BOOST_AUTO_TEST_CASE(Test_GB_8604)
@@ -2624,6 +3059,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_8604)
     AddTitle(nuc, "Sebaea microphylla proannomuricatin G (PamG) gene, partial cds.");
 
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 
     // check with mat-peptide
     CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
@@ -2634,10 +3070,12 @@ BOOST_AUTO_TEST_CASE(Test_GB_8604)
 
     // if suppressing mat-peptide, no change
     CheckDeflineMatches(entry, CSeqFeatData::eSubtype_mat_peptide_aa);
+    CheckDeflineMatches(entry, CSeqFeatData::eSubtype_mat_peptide_aa, true);
 
     // show when not suppressing
     AddTitle(entry, "Sebaea microphylla proannomuricatin G, annomuricatin G region, (PamG) gene, partial cds.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
 }
 
 CRef<CSeq_feat> MakeRegulatoryFeature(const string& reg_class, const string& comment, TSeqPos start_pos, CRef<CSeq_entry> entry)
@@ -2663,20 +3101,30 @@ CRef<CSeq_feat> MakeRptRegion(const string& rpt_type, TSeqPos start_pos, CRef<CS
 }
 
 
-void TestRepeatRegion(CRef<CSeq_entry> entry)
+void TestRepeatRegion(CRef<CSeq_entry> entry, bool init_with_descrs = false)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
     CRef<CScope> scope(new CScope(*object_manager));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-    objects::CAutoDefWithTaxonomy autodef;
+    CAutoDefWithTaxonomy autodef;
 
-    // add to autodef
-    autodef.AddSources(seh);
+    if (init_with_descrs) {
+        CAutoDef::TSources sources;
+        for (CBioseq_CI b_iter(seh, CSeq_inst::eMol_na); b_iter; ++b_iter) {
+            for (CSeqdesc_CI desc_it(*b_iter, CSeqdesc::e_Source); desc_it; ++desc_it) {
+                sources.emplace_back(&desc_it->GetSource());
+            }
+        }
+        autodef.AddDescriptors(sources);
+    }
+    else {
+        // add to autodef
+        autodef.AddSources(seh);
+    }
 
     CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
-
     autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
     autodef.SetKeepRepeatRegion(true);
 
@@ -2691,13 +3139,17 @@ BOOST_AUTO_TEST_CASE(Test_GB_8854)
     CRef<CSeq_feat> rpt = MakeRptRegion("long_terminal_repeat", 15, entry);
     AddTitle(entry, "Sebaea microphylla LTR repeat region.");
     CheckDeflineMatches(entry);
+    CheckDeflineMatchesWithDescr(entry);
+
     TestRepeatRegion(entry);
+    TestRepeatRegion(entry, true);
 
     CRef<CSeq_feat> reg1 = MakeRegulatoryFeature("CAAT_signal", "U3 region", 0, entry);
     CRef<CSeq_feat> reg2 = MakeRegulatoryFeature("TATA_box", "U3 region", 5, entry);
     CRef<CSeq_feat> reg3 = MakeRegulatoryFeature("polyA_signal_sequence", "R-region", 10, entry);
 
     TestRepeatRegion(entry);
+    TestRepeatRegion(entry, true);
 }
 
 
@@ -2707,20 +3159,24 @@ BOOST_AUTO_TEST_CASE(Test_ClauseListOptions)
 
     AddTitle(entry, "Sebaea microphylla, complete sequence.");
     CheckDeflineMatches(entry, true, CAutoDefOptions::eCompleteSequence);
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::eCompleteSequence);
 
     AddTitle(entry, "Sebaea microphylla, complete genome.");
     CheckDeflineMatches(entry, true, CAutoDefOptions::eCompleteGenome);
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::eCompleteGenome);
 
     AddTitle(entry, "Sebaea microphylla, partial sequence.");
     CheckDeflineMatches(entry, true, CAutoDefOptions::ePartialSequence);
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::ePartialSequence);
 
     AddTitle(entry, "Sebaea microphylla, partial genome.");
     CheckDeflineMatches(entry, true, CAutoDefOptions::ePartialGenome);
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::ePartialGenome);
 
     AddTitle(entry, "Sebaea microphylla whole genome shotgun sequence.");
     CheckDeflineMatches(entry, true, CAutoDefOptions::eWholeGenomeShotgunSequence);
+    CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::eWholeGenomeShotgunSequence);
 }
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

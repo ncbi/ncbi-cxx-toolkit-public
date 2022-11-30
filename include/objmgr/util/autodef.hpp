@@ -59,7 +59,6 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJEDIT_EXPORT CAutoDef
 {
 public:
-    
     typedef set<CAutoDefAvailableModifier> TAvailableModifierSet;
 
     CAutoDef();
@@ -67,6 +66,9 @@ public:
  
     void AddSources(CSeq_entry_Handle se);
     void AddSources(CBioseq_Handle bh);
+    using TSources = vector<CConstRef<objects::CBioSource>>;
+    void AddDescriptors(const TSources& sources);
+
     CRef<CAutoDefModifierCombo> FindBestModifierCombo();
     CAutoDefModifierCombo* GetAllModifierCombo();
     CAutoDefModifierCombo* GetEmptyCombo();
