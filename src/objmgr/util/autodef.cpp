@@ -90,7 +90,6 @@ bool s_NeedFeatureClause(const CBioseq& b)
 
 void CAutoDef::AddSources (CSeq_entry_Handle se)
 {
-    
     // add sources to modifier combination groups
     CBioseq_CI seq_iter(se, CSeq_inst::eMol_na);
     for ( ; seq_iter; ++seq_iter ) {
@@ -106,6 +105,16 @@ void CAutoDef::AddSources (CSeq_entry_Handle se)
     m_OrigModCombo.SetExcludeSpOrgs (m_OrigModCombo.GetDefaultExcludeSp());
 }
 
+void CAutoDef::AddDescriptors(const TSources& sources)
+{
+    for (const auto& it : sources) {
+        // Feature clauses are not necessary at this point. They are formed later on anyway.
+        m_OrigModCombo.AddSource(*it);
+    }
+
+    // set default exclude_sp values
+    m_OrigModCombo.SetExcludeSpOrgs(m_OrigModCombo.GetDefaultExcludeSp());
+}
 
 void CAutoDef::x_SortModifierListByRank(TModifierIndexVector &index_list, CAutoDefSourceDescription::TAvailableModifierVector &modifier_list) 
 {
