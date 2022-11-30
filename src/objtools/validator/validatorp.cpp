@@ -2057,6 +2057,9 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
             case CSeq_loc::e_Int:
                 lc.int_cur = &loc.GetInt();
                 lc.chk = x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur, obj);
+                if (lc.strand_cur == eNa_strand_other) {
+                    lc.has_other = true;
+                }
                 if ((!lc.chk) && lowerSev) {
                     TSeqPos length = GetLength(loc.GetInt().GetId(), m_Scope);
                     TSeqPos fr = loc.GetInt().GetFrom();
@@ -2072,6 +2075,9 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
             case CSeq_loc::e_Pnt:
                 lc.strand_cur = loc.GetPnt().IsSetStrand() ?
                     loc.GetPnt().GetStrand() : eNa_strand_unknown;
+                if (lc.strand_cur == eNa_strand_other) {
+                    lc.has_other = true;
+                }
                 lc.id_cur = &loc.GetPnt().GetId();
                 lc.chk = IsValid(loc.GetPnt(), m_Scope);
                 lc.int_prv = nullptr;
@@ -2079,6 +2085,9 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
             case CSeq_loc::e_Packed_pnt:
                 lc.strand_cur = loc.GetPacked_pnt().IsSetStrand() ?
                     loc.GetPacked_pnt().GetStrand() : eNa_strand_unknown;
+                if (lc.strand_cur == eNa_strand_other) {
+                    lc.has_other = true;
+                }
                 lc.id_cur = &loc.GetPacked_pnt().GetId();
                 lc.chk = IsValid(loc.GetPacked_pnt(), m_Scope);
                 lc.int_prv = nullptr;
@@ -2146,7 +2155,11 @@ void CValidError_imp::ValidateSeqLoc
         string label = GetValidatorLocationLabel(loc, *m_Scope);
         PostErr(IsSmallGenomeSet() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
             prefix + ": Inconsistent use of other strand SeqLoc [" + label + "]", obj);
-    }
+    } else if (lc.has_other && NStr::Equal(prefix, "Location")) {
+         PostErr(eDiag_Warning,
+            eErr_SEQ_FEAT_StrandOther,
+            "Strand 'other' in location", obj);
+   }
 
     x_ReportInvalidFuzz(loc, obj);
 

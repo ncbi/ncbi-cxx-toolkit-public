@@ -11930,6 +11930,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     CRef<CSeq_feat> misc_feat = unit_test_util::AddMiscFeature (nuc_seq);
     misc_feat->SetLocation().SetWhole().SetLocal().SetStr("nuc");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "StrandOther",
+        "Strand 'other' in location"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "WholeLocation",
         "Feature may not have whole location"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "PartialProblem",
@@ -14063,6 +14065,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
                       "mRNA may not be on both (forward and reverse) strands"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "mRNAgeneRange",
                       "gene [gene locus:lcl|good:1-57] overlaps mRNA but does not completely contain it"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "StrandOther",
+                      "Strand 'other' in location"));
     //AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -16610,12 +16614,20 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ImproperBondLocation)
     SetFeatureLocationBond(f4, "good", 0, 5);
 
     STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "StrandOther",
+                                "Strand 'other' in location"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "ImproperBondLocation",
                                 "Bond location should only be on bond features"));
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "StrandOther",
+                                "Strand 'other' in location"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "ImproperBondLocation",
                                 "Bond location should only be on bond features"));
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "StrandOther",
+                                "Strand 'other' in location"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "ImproperBondLocation",
                                 "Bond location should only be on bond features"));
+    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "StrandOther",
+                                "Strand 'other' in location"));
     //AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -17354,10 +17366,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WholeLocation)
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "StrandOther",
+        "Strand 'other' in location"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "WholeLocation",
                                "Feature may not have whole location"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "StrandOther",
+        "Strand 'other' in location"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "WholeLocation",
                                "CDS may not have whole location"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "StrandOther",
+        "Strand 'other' in location"));
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "WholeLocation",
                                "mRNA may not have whole location"));
     //AddChromosomeNoLocation(expected_errors, entry);

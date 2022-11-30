@@ -2226,6 +2226,9 @@ same id type" } },
    { eErr_SEQ_FEAT_BadCDScomponentOverlapTRNA,
    { "BadCDScomponentOverlapTRNA",
      "CDS features should not overlap tRNA features" } },
+   { eErr_SEQ_FEAT_StrandOther,
+   { "StrandOther",
+     "Feature location uses strand other" } },
 
 /* SEQ_ALIGN */
 
