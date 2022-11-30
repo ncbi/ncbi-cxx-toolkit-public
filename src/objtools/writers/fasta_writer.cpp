@@ -46,6 +46,8 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqres/Byte_graph.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
 
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/context.hpp>
@@ -314,66 +316,38 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
 }
 
 
-static string s_GetDeflineIdString(const CSeq_id& id, CScope& scope)
+static string s_GetDeflineIdString(const CSeq_id& id, CScope& scope, const bool isNa=true)
 {
-    auto ids = scope.GetIds(id);
-    if (!ids.empty()) {
-        CConstRef<CSeq_id> pAccession;
-        CConstRef<CSeq_id> pGeneralId;
-        CConstRef<CSeq_id> pLocalId;
+    list<CRef<CSeq_id>> idList;
+    for (auto idh : scope.GetIds(id)) {
+        auto pId = Ref(new CSeq_id());
+        pId->Assign(*(idh.GetSeqId()));
+        idList.push_back(pId); 
+    }   
 
-        for (auto idh : ids) {
-            if (!idh) {
-                continue;
-            }
-            if (auto pId = idh.GetSeqId()) {
-                if (auto pTextId = pId->GetTextseq_Id()) {
-                    if (pTextId->IsSetAccession()) {
-                        if (pTextId->IsSetVersion()) {
-                            pAccession = pId;
-                            break;
-                        }
-                        else if (!pAccession) {
-                            pAccession = pId;
-                        }
-                    }
-                } 
-                else if (pId->IsGeneral()) {
-                    if (!pGeneralId) {
-                        pGeneralId = pId;
-                    }
-                }
-                else if (pId->IsLocal()) {
-                    if (!pLocalId) {
-                        pLocalId = pId;
-                    }
-                }
-            }
-        }
-        if (pAccession) {
-            return pAccession->GetSeqIdString(true);
-        }
-        
-        if (pGeneralId && pGeneralId->GetGeneral().IsSetTag()) {
-            const auto& tag = pGeneralId->GetGeneral().GetTag();
-            if (tag.IsId()) {
-                return NStr::IntToString(tag.GetId());
-            } 
-            return tag.GetStr();
-        }
-        
-        if (pLocalId) {
-            return pLocalId->GetSeqIdString();
-        }
+    auto FastaRank = isNa ? 
+        CSeq_id::FastaNARank :
+        CSeq_id::FastaAARank;
+    auto pBestId = FindBestChoice(idList, FastaRank);
+    if (!pBestId) {
+        return "";
+    }
+   
+    if (pBestId->IsGeneral() && pBestId->GetGeneral().IsSetTag()) {
+        const auto& tag = pBestId->GetGeneral().GetTag();
+        if (tag.IsId()) {
+            return NStr::IntToString(tag.GetId());
+        } 
+        return tag.GetStr();
     }
 
-    return "";
+    return pBestId->GetSeqIdString(true);
 }
 
-static string s_GetDeflineIdString(const CSeq_id* pId, CScope& scope) 
+static string s_GetDeflineIdString(const CSeq_id* pId, CScope& scope, const bool isNa=true) 
 {
     if (pId) {
-        return s_GetDeflineIdString(*pId, scope);
+        return s_GetDeflineIdString(*pId, scope, isNa);
     }
     return "";
 }
@@ -409,7 +383,7 @@ CConstRef<CSeq_feat> s_GetBestGeneForFeat(const CSeq_feat& feat,
 static string s_GetProductIdOrLocusTag(const CSeq_feat& feat, CScope& scope)
 {
     if (feat.IsSetProduct()) {
-        auto idString = s_GetDeflineIdString(feat.GetProduct().GetId(), scope);
+        auto idString = s_GetDeflineIdString(feat.GetProduct().GetId(), scope, false);
         if (!NStr::IsBlank(idString)) {
             return idString;
         }
@@ -448,8 +422,14 @@ string CFastaOstreamEx::x_GetCDSIdString(const CSeq_feat& cds,
 string CFastaOstreamEx::x_GetOtherIdString(const CSeq_feat& feat,
         CScope& scope)
 {
-    const auto& loc = feat.GetLocation();
-    auto id_string = s_GetDeflineIdString(loc.GetId(), scope);
+    const auto* pId = feat.GetLocation().GetId();
+    bool isNa = true;
+    if (pId && 
+        scope.GetSequenceType(*pId) == CSeq_inst::eMol_aa) {
+        isNa = false;
+    }
+    
+    auto id_string = s_GetDeflineIdString(pId, scope, isNa);
 
     const auto& feat_data = feat.GetData();
 
@@ -528,17 +508,13 @@ string CFastaOstreamEx::x_GetProtIdString(const CSeq_feat& prot,
 {
     const auto& src_loc = prot.GetLocation();
 
-    auto id_string = s_GetDeflineIdString(src_loc.GetId(), scope);
+    auto id_string = s_GetDeflineIdString(src_loc.GetId(), scope, false);
     id_string += "_prot_";
 
     if (prot.IsSetProduct()) {
-        try {
-            auto prod_accver = s_GetDeflineIdString(prot.GetProduct().GetId(), scope);
-            if (!prod_accver.empty()) {
-                id_string += prod_accver + "_";
-            }
-        } catch (...) {
-            // Move on...
+        auto prod_accver = s_GetDeflineIdString(prot.GetProduct().GetId(), scope, false);
+        if (!prod_accver.empty()) {
+            id_string += prod_accver + "_";
         }
     }
     return id_string;
