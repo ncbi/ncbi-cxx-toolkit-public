@@ -3667,8 +3667,25 @@ CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
     if ( m_FeatLocIdType == eFeatLocIdUninitialized ) {
         try {
             if ( CRef<SFeatTableCursor> cur = Feat() ) {
+                TVDBRowId feat_row_id = 1;
+                try {
+                    CRef<SSeqTableCursor> seq = Seq();
+                    auto row_range = seq->m_Cursor.GetRowIdRange(seq->m_FEAT_ROW_START.GetIndex());
+                    for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
+                        auto seq_row_id = row_range.first+i;
+                        auto row_start = seq->FEAT_ROW_START(seq_row_id);
+                        if ( !row_start.empty() ) {
+                            feat_row_id = *row_start;
+                            break;
+                        }
+                    }
+                    Put(seq);
+                }
+                catch ( exception& /*ignored*/ ) {
+                    // use first feature in the file
+                }
                 CRef<CSeq_feat> feat(new CSeq_feat);
-                CTempString bytes = *cur->SEQ_FEAT(1);
+                CTempString bytes = *cur->SEQ_FEAT(feat_row_id);
                 cur.GetNCObject().m_ObjStr.OpenFromBuffer(bytes.data(), bytes.size());
                 cur.GetNCObject().m_ObjStr >> *feat;
                 Put(cur);
