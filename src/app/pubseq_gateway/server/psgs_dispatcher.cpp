@@ -724,10 +724,14 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
                                           CRequestStatus::ECode  status,
                                           size_t  bytes_sent)
 {
+    auto    request_type = request->GetRequestType();
     auto &  counters = CPubseqGatewayApp::GetInstance()->GetCounters();
     counters.IncrementRequestStopCounter(status);
 
-    switch (request->GetRequestType()) {
+    auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
+    timing.RegisterForTimeSeries(request_type, status);
+
+    switch (request_type) {
         case CPSGS_Request::ePSGS_ResolveRequest:
             counters.Increment(CPSGSCounters::ePSGS_ResolveRequest);
             break;

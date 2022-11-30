@@ -34,6 +34,7 @@
  */
 
 #include <connect/services/json_over_uttp.hpp>
+#include <corelib/request_status.hpp>
 USING_NCBI_SCOPE;
 
 
@@ -60,7 +61,11 @@ class CRequestTimeSeries
         void Add(EPSGSCounter  counter);
         void Rotate(void);
         void Reset(void);
-        CJsonNode  Serialize(void);
+        CJsonNode  Serialize(void) const;
+        static EPSGSCounter RequestStatusToCounter(CRequestStatus::ECode  status);
+
+    private:
+        CJsonNode x_SerializeOneSeries(const uint64_t *  values) const;
 
     private:
         uint64_t    m_Requests[kSeriesIntervals];
@@ -71,6 +76,8 @@ class CRequestTimeSeries
         uint64_t    m_TotalWarnings;
         uint64_t    m_NotFound[kSeriesIntervals];
         uint64_t    m_TotalNotFound;
+
+        size_t      m_CurrentIndex;
 };
 
 
