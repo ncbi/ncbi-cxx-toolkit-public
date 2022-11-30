@@ -434,9 +434,9 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
             if (mle.IsSetCit()) {
                 CRef<CPub> pub(new CPub);
                 pub->SetArticle().Assign(mle.GetCit());
+                Normalize(*pub);
                 if (m_pub_interceptor)
                     m_pub_interceptor(pub);
-                Normalize(*pub);
                 return pub;
             }
         }
