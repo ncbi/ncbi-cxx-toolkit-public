@@ -2,7 +2,6 @@
 
 NCBI_begin_app(multipattern)
   NCBI_sources(multipattern)
-  NCBI_uses_toolkit_libraries(data_loaders_util)
-  NCBI_project_watchers(kachalos)
+  NCBI_uses_toolkit_libraries(xncbi xutil)
+  NCBI_project_watchers(gotvyans)
 NCBI_end_app()
-

@@ -1821,7 +1821,7 @@ static const string kNonFixable = "Non-fixable";
 
 static void FindFlatfileText(const char* str, bool *result)
 {
-#define _FSM_EMIT static bool emit[]
+#define _FSM_EMIT(size) static bool emit[]
 #define _FSM_HITS static map<size_t, vector<size_t>> hits
 #define _FSM_STATES static size_t states[]
 #include "FLATFILE_FIND.inc"

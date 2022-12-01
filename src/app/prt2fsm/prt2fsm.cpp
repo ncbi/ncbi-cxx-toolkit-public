@@ -36,9 +36,12 @@
 #include <objects/macro/Suspect_rule.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <util/multipattern_search.hpp>
+#include <serial/serial.hpp>
 
 USING_NCBI_SCOPE;
+using namespace ncbi::objects;
 
 
 class CPrt2FsmApp : public CNcbiApplication
@@ -86,30 +89,124 @@ string QuoteString(const string& s)
     return str;
 }
 
-
-int CPrt2FsmApp::Run()
+void QuoteBinary(std::ostream& ostr, const char* ptr, size_t size)
 {
-    const CArgs& args = GetArgs();
-    string fname;
-    string params;
-    if (!args["i"]) {
-        ERR_POST("No input file");
-        return 1;
-    }
-    fname = args["i"].AsString();
-    LOG_POST("Reading from " + fname);
+    bool needopen = false;
+    string temp;
+    ostr << "    \"";
 
-    objects::CSuspect_rule_set ProductRules;
-    unique_ptr<CObjectIStream> in;
-    in.reset(CObjectIStream::Open(fname, eSerial_AsnText));
-    string header = in->ReadFileHeader();
-    in->Read(ObjectInfo(ProductRules), CObjectIStream::eNoFileHeader);
-
-    ifstream file(fname);
-    if (!file) {
-        ERR_POST("Cannot open file");
-        return 1;
+    while(size) {
+        unsigned char ch = *ptr++; --size;
+        if (ch == '"' || ch < 32 || ch >= 128) {
+            ostr << "\\x";
+            NStr::NumericToString(temp, ch, 0, 16);
+            if (temp.size() < 2)
+               ostr << "0";
+            ostr << temp;
+            //ostr << "\"";
+            needopen = true;
+        } else {
+            if (needopen) {
+                ostr << "\" \"";
+                needopen = false;
+            }
+            ostr << ch;
+        }
     }
+
+    ostr << "\"\n";
+}
+
+string QuoteBinary(const char* ptr, size_t size)
+{
+    ostringstream str;
+    QuoteBinary(str, ptr, size);
+    return str.str();
+}
+
+void QuoteBinaryHex(std::ostream& ostr, const char* ptr, size_t size)
+{
+    string temp;
+    ostr << "    ";
+    while (size)
+    {
+        unsigned char ch = *ptr++; --size;
+        NStr::NumericToString(temp, ch, 0, 16);
+        ostr << "0x" << temp << ", ";
+    }
+    ostr << "\n";
+}
+
+class CBinaryToCPP: public std::basic_streambuf<char>
+{
+public:
+    using _MyBase = std::basic_streambuf<char>;
+    static constexpr size_t m_buffer_size = 64;
+    CBinaryToCPP(std::ostream& downstream) : m_ostr{&downstream}
+    {
+
+        m_buffer.reset(new char[m_buffer_size]);
+        _MyBase::setp(m_buffer.get(), m_buffer.get() + m_buffer_size);
+    }
+    ~CBinaryToCPP()
+    {
+        sync();
+    }
+protected:
+    int sync() override
+    {
+        xDump();
+        return 0;
+    }
+    int_type overflow( int_type ch) override
+    {
+        xDump();
+        if (ch != -1) {
+            *pbase() = ch;
+            _MyBase::pbump(1);
+        }
+        return ch;
+    }
+
+    void xDump() {
+        size_t size = pptr() - pbase();
+        if (size) {
+            QuoteBinaryHex(*m_ostr, pbase(), size);
+            _MyBase::setp(m_buffer.get(), m_buffer.get() + m_buffer_size);
+        }
+    }
+    std::unique_ptr<char> m_buffer;
+    std::ostream * m_ostr = nullptr;
+};
+
+static const pair<string, CMultipatternSearch::TFlags> FlagNames[] = {
+    { "#NO_CASE", CMultipatternSearch::fNoCase },
+    { "#BEGIN_STRING", CMultipatternSearch::fBeginString },
+    { "#END_STRING", CMultipatternSearch::fEndString },
+    { "#WHOLE_STRING", CMultipatternSearch::fWholeString },
+    { "#BEGIN_WORD", CMultipatternSearch::fBeginWord },
+    { "#END_WORD", CMultipatternSearch::fEndWord },
+    { "#WHOLE_WORD", CMultipatternSearch::fWholeWord }
+};
+
+bool xTryProductRules(const string& filename, std::istream& file)
+{
+    unique_ptr<CObjectIStream> istr (CObjectIStream::Open(eSerial_AsnText, file));
+
+    try
+    {
+        auto types = istr->GuessDataType({CSuspect_rule_set::GetTypeInfo()});
+        if (types.size() != 1 || *types.begin() != CSuspect_rule_set::GetTypeInfo())
+            return false;
+    }
+    catch(const CSerialException& e)
+    {
+        return false;
+    }
+
+    CSuspect_rule_set ProductRules;
+
+    *istr >> ProductRules;
 
     CMultipatternSearch FSM;
 
@@ -125,21 +222,109 @@ int CPrt2FsmApp::Run()
         "//\n"
         "// Command line:\n"
         "//   prt2fsm";
-    if (!fname.empty()) {
-        cout << " -i " << fname;
+    if (!filename.empty()) {
+        cout << " -i " << filename;
     }
     cout << "\n";
 
     cout << "//\n";
-    cout << "_FSM_RULES = { ";
+    cout << "// Binary ASN.1 of CSuspect_rule_set object\n";
+    cout << "_FSM_RULES = {\n";
     std::string line;
-    bool first_line = true;
-    while (std::getline(file, line)) {
-        cout << (first_line ? "\n" : ",\n") << QuoteString(line);
-        first_line = false;
+    {
+        CBinaryToCPP buf(cout);
+        std::ostream str(&buf);
+        std::unique_ptr<CObjectOStream> ostr(CObjectOStream::Open(eSerial_AsnBinary, str));
+        *ostr << ProductRules;
     }
     cout << "};\n";
+
     FSM.GenerateArrayMapData(cout);
+
+    return true;
+}
+
+bool xTryTextFile(const string& fname, std::istream& file)
+{
+	vector<pair<string, CMultipatternSearch::TFlags>> input;
+
+    std::string line;
+    size_t m;
+    while (std::getline(file, line)) {
+        // input line: <query> [<//comment>]
+        //   /regex/   // comment ignored
+        //   any text  // #NO_CASE #WHOLE_WORD etc...
+        string comment;
+        if ((m = line.find("//")) != string::npos) {
+            comment = line.substr(m);
+            line = line.substr(0, m);
+        }
+        if ((m = line.find_first_not_of(" \t")) != string::npos) {
+            line = line.substr(m);
+        }
+        if ((m = line.find_last_not_of(" \t")) != string::npos) {
+            line = line.substr(0, m + 1);
+        }
+        unsigned int flags = 0;
+        for (auto f: FlagNames) {
+            if (comment.find(f.first) != string::npos) {
+                flags |= f.second;
+            }
+        }
+        input.push_back(pair<string, unsigned int>(line, flags));
+    }
+
+    #if 0
+    if ((m = fname.find_last_of("\\/")) != string::npos) {
+        fname = fname.substr(m + 1);
+    }
+
+	for (size_t i = 1; i <= args.GetNExtra(); i++) {
+        string param = args["#" + to_string(i)].AsString();
+        params += " " + param;
+        input.push_back(pair<string, unsigned int>(param, 0));
+	}
+    #endif
+
+    CMultipatternSearch FSM;
+    try {
+        FSM.AddPatterns(input);
+    }
+    catch (string s) {
+        cerr << s << "\n";
+        return 1;
+    }
+    cout << "//\n// This code was generated by the multipattern application.\n//\n// Command line:\n//   multipattern -A";
+    if (!fname.empty()) {
+        cout << " -i " << fname;
+    }
+    cout << "\n//\n";
+    FSM.GenerateArrayMapData(cout);
+
+    return true;
+}
+
+int CPrt2FsmApp::Run()
+{
+    const CArgs& args = GetArgs();
+    string fname;
+    string params;
+    if (!args["i"]) {
+        ERR_POST("No input file");
+        return 1;
+    }
+    fname = args["i"].AsString();
+    //LOG_POST("Reading from " + fname);
+
+    ifstream file(fname);
+    if (!file) {
+        ERR_POST("Cannot open file");
+        return 1;
+    }
+
+    if (!xTryProductRules(fname, file))
+        xTryTextFile(fname, file);
+
     return 0;
 }
 
