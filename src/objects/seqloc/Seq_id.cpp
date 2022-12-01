@@ -3162,7 +3162,7 @@ int CSeq_id::BaseBlastScore(void) const
 }
 
 
-int CSeq_id::AdjustScore(int base_score) const
+int CSeq_id::AdjustScore(int base_score, TAdjustScoreFlags flags) const
 {
     int score = base_score * 10;
     if ( IsGeneral() ) {
@@ -3177,7 +3177,11 @@ int CSeq_id::AdjustScore(int base_score) const
             score += 4;
         }
         if ( !text_id->IsSetAccession() ) {
-            score += 3;
+            if ((flags & fRequireAccessions) == 0) {
+                score += 3; // still penalize somewhat
+            } else {
+                score = kMax_Int;
+            }
         }
         if ( !text_id->IsSetName() ) {
             score += 2;
