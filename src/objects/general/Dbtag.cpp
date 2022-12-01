@@ -43,7 +43,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbistd.hpp>
-#include <util/static_map.hpp>
 #include <util/compile_time.hpp>
 
 // generated classes
@@ -52,11 +51,12 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-// When adding to these lists, please take care to keep them in
-// case-sensitive sorted order (lowercase entries last).
+// All these maps are sorted at compile time case insensitive
+// No need to presort them
+// The access can be performed case sensitive too via xGetString, xFindString functions
 
-typedef SStaticPair<const char*, CDbtag::EDbtagType> TDbxrefPair;
-static const TDbxrefPair kApprovedDbXrefs[] = {
+MAKE_CONST_MAP(sc_ApprovedDb, ct::tagStrNocase, CDbtag::EDbtagType,
+{
     { "AFTOL", CDbtag::eDbtagType_AFTOL },
     { "APHIDBASE", CDbtag::eDbtagType_APHIDBASE },
     { "ASAP", CDbtag::eDbtagType_ASAP },
@@ -188,10 +188,11 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "dictyBase", CDbtag::eDbtagType_dictyBase },
     { "miRBase", CDbtag::eDbtagType_miRBase },
     { "niaEST", CDbtag::eDbtagType_niaEST },
-    { "taxon", CDbtag::eDbtagType_taxon }
-};
+    { "taxon", CDbtag::eDbtagType_taxon },
+})
 
-static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
+MAKE_CONST_MAP(sc_ApprovedRefSeqDb, ct::tagStrNocase, CDbtag::EDbtagType,
+{
     { "AllianceGenome", CDbtag::eDbtagType_AllianceGenome },
     { "BioProject", CDbtag::eDbtagType_BioProject },
     { "BioSample", CDbtag::eDbtagType_BioSample },
@@ -211,9 +212,10 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     { "SK-FST", CDbtag::eDbtagType_SK_FST },
     { "SRPDB", CDbtag::eDbtagType_SRPDB },
     { "VBRC", CDbtag::eDbtagType_VBRC }
-};
+})
 
-static const TDbxrefPair kApprovedSrcDbXrefs[] = {
+MAKE_CONST_MAP(sc_ApprovedSrcDb, ct::tagStrNocase, CDbtag::EDbtagType,
+{
     { "AFTOL", CDbtag::eDbtagType_AFTOL },
     { "ATCC", CDbtag::eDbtagType_ATCC },
     { "ATCC(dna)", CDbtag::eDbtagType_ATCC_dna },
@@ -245,9 +247,10 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     { "UNILIB", CDbtag::eDbtagType_UNILIB },
     { "UNITE", CDbtag::eDbtagType_UNITE },
     { "taxon", CDbtag::eDbtagType_taxon }
-};
+})
 
-static const TDbxrefPair kApprovedProbeDbXrefs[] = {
+MAKE_CONST_MAP(sc_ApprovedProbeDb, ct::tagStrNocase, CDbtag::EDbtagType,
+{
     { "Assembly", CDbtag::eDbtagType_Assembly },
     { "BB", CDbtag::eDbtagType_BB },
     { "CollecTF", CDbtag::eDbtagType_CollecTF },
@@ -260,34 +263,24 @@ static const TDbxrefPair kApprovedProbeDbXrefs[] = {
     { "RefSeq", CDbtag::eDbtagType_RefSeq },
     { "SRA", CDbtag::eDbtagType_SRA },
     { "Trace", CDbtag::eDbtagType_Trace }
-};
+})
 
 
-static const char* const kSkippableDbXrefs[] = {
+MAKE_CONST_SET(sc_SkippableDbXrefs, ct::tagStrNocase,
+{
     "BankIt",
     "NCBIFILE",
     "TMSMART"
-};
-
-// case sensetive
-typedef CStaticPairArrayMap<const char*, CDbtag::EDbtagType, PCase_CStr> TDbxrefTypeMap;
-// case insensitive, per the C Toolkit
-typedef CStaticArraySet<const char*, PNocase_CStr> TDbxrefSet;
-
-DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedDb,       kApprovedDbXrefs);
-DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedRefSeqDb, kApprovedRefSeqDbXrefs);
-DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedSrcDb,    kApprovedSrcDbXrefs);
-DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedProbeDb,  kApprovedProbeDbXrefs);
-DEFINE_STATIC_ARRAY_MAP(TDbxrefSet,     sc_SkippableDbXrefs, kSkippableDbXrefs);
+})
 
 struct STaxidTaxname {
     const char* m_genus;
     const char* m_species;
     const char* m_subspecies;
 };
-// Is hard-coding this here the best way to do this?
-typedef SStaticPair<int, STaxidTaxname> TTaxIdTaxnamePair;
-static const TTaxIdTaxnamePair sc_taxid_taxname_pair[] = {
+
+MAKE_CONST_MAP(sc_TaxIdTaxnameMap, TTaxId, STaxidTaxname,
+{
     { 7955, { "Danio", "rerio", "" }  },
     { 8022, { "Oncorhynchus", "mykiss", "" }  },
     { 9606, { "Homo", "sapiens", "" }  },
@@ -303,10 +296,34 @@ static const TTaxIdTaxnamePair sc_taxid_taxname_pair[] = {
     { 10105, { "Mus", "minutoides", "" }  },
     { 10116, { "Rattus", "norvegicus", "" }  },
     { 10117, { "Rattus", "rattus", "" }  }
-};
+})
 
-typedef CStaticPairArrayMap<int, STaxidTaxname> TTaxIdTaxnameMap;
-DEFINE_STATIC_ARRAY_MAP(TTaxIdTaxnameMap, sc_TaxIdTaxnameMap, sc_taxid_taxname_pair);
+namespace {
+
+template<typename _MapType>
+bool xFindStrict(string_view _key, const _MapType& _map)
+{
+    auto it = _map.find(_key);
+    if (it == _map.end())
+        return false;
+
+    return _key == it->first;
+}
+
+template<typename _MapType>
+bool xGetStrict(string_view _key, const _MapType& _map, typename _MapType::mapped_type& _retval)
+{
+    auto it = _map.find(_key);
+    if (it == _map.end())
+        return false;
+
+    if (_key != it->first)
+        return false;
+
+    _retval = it->second;
+    return true;
+}
+}
 
 // destructor
 CDbtag::~CDbtag(void)
@@ -377,20 +394,20 @@ bool CDbtag::IsApproved( EIsRefseq refseq, EIsSource is_source, EIsEstOrGss is_e
     }
     const string& db = GetDb();
 
-    if( refseq == eIsRefseq_Yes && sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end() ) {
+    if( refseq == eIsRefseq_Yes && xFindStrict(db, sc_ApprovedRefSeqDb) ) {
         return true;
     }
 
     if( is_source == eIsSource_Yes ) {
-        bool found = ( sc_ApprovedSrcDb.find(db.c_str()) != sc_ApprovedSrcDb.end() );
+        bool found = ( xFindStrict(db, sc_ApprovedSrcDb) );
         if ( ! found && (is_est_or_gss == eIsEstOrGss_Yes) ) {
             // special case: for EST or GSS, source features are allowed non-src dbxrefs
-            found = ( sc_ApprovedDb.find(db.c_str())       != sc_ApprovedDb.end() ||
-                      sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end() );
+            found = ( xFindStrict(db, sc_ApprovedDb) ||
+                      xFindStrict(db, sc_ApprovedRefSeqDb) );
         }
         return found;
     } else {
-        return sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end();
+        return xFindStrict(db, sc_ApprovedDb);
     }
 }
 
@@ -402,27 +419,17 @@ const char* CDbtag::IsApprovedNoCase(EIsRefseq refseq, EIsSource is_source ) con
     }
     const string& db = GetDb();
 
-    const char* retval = NULL;
-    // This is *slow*.  Someone needs to replace this with a binary search or something
-    // Since this function isn't even used right now, I'm postponing fixing this.
-    ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
-        if ( NStr::EqualNocase(db, it->first) ) {
-            retval = it->first;
-            break;
-        }
-    }
-    // This is *slow*.  Someone needs to replace this with a binary search or something
-    // Since this function isn't even used right now, I'm postponing fixing this.
-    if ( retval == NULL  &&  (refseq == eIsRefseq_Yes) ) {
-        ITERATE (TDbxrefTypeMap, it, sc_ApprovedRefSeqDb) {
-            if ( NStr::EqualNocase(db, it->first) ) {
-                retval = it->first;
-                break;
-            }
-        }
+    auto it1 = sc_ApprovedDb.find(db);
+    if (it1 != sc_ApprovedDb.end())
+        return it1->first.data();
+
+    if ( refseq == eIsRefseq_Yes ) {
+        auto it2 = sc_ApprovedRefSeqDb.find(db);
+        if (it2 != sc_ApprovedRefSeqDb.end())
+            return it2->first.data();
     }
 
-    return retval;
+    return nullptr;
 }
 
 
@@ -433,19 +440,19 @@ bool CDbtag::IsApproved(TDbtagGroup group) const
     }
     const string& db = GetDb();
 
-    if ( (group & fGenBank) != 0 && sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end()) {
+    if ( (group & fGenBank) != 0 && xFindStrict(db, sc_ApprovedDb)) {
         return true;
     }
 
-    if ( (group & fRefSeq) != 0 && sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end()) {
+    if ( (group & fRefSeq) != 0 && xFindStrict(db, sc_ApprovedRefSeqDb)) {
         return true;
     }
 
-    if ( (group & fSrc) != 0 && sc_ApprovedSrcDb.find(db.c_str()) != sc_ApprovedSrcDb.end()) {
+    if ( (group & fSrc) != 0 && xFindStrict(db, sc_ApprovedSrcDb)) {
         return true;
     }
 
-    if ( (group & fProbe) != 0 && sc_ApprovedProbeDb.find(db.c_str()) != sc_ApprovedProbeDb.end()) {
+    if ( (group & fProbe) != 0 && xFindStrict(db, sc_ApprovedProbeDb)) {
         return true;
     }
 
@@ -455,7 +462,7 @@ bool CDbtag::IsApproved(TDbtagGroup group) const
 
 bool CDbtag::IsSkippable(void) const
 {
-    return sc_SkippableDbXrefs.find(GetDb().c_str())
+    return sc_SkippableDbXrefs.find(GetDb())
         != sc_SkippableDbXrefs.end();
 }
 
@@ -470,31 +477,17 @@ CDbtag::EDbtagType CDbtag::GetType(void) const
 
         const string& db = GetDb();
 
-        TDbxrefTypeMap::const_iterator iter;
-
-        iter = sc_ApprovedDb.find(db.c_str());
-        if ( iter != sc_ApprovedDb.end() ) {
-            m_Type = iter->second;
+        if (xGetStrict(db, sc_ApprovedDb, m_Type))
             return m_Type;
-        }
 
-        iter = sc_ApprovedRefSeqDb.find(db.c_str());
-        if ( iter != sc_ApprovedRefSeqDb.end() ) {
-            m_Type = iter->second;
+        if (xGetStrict(db, sc_ApprovedRefSeqDb, m_Type))
             return m_Type;
-        }
 
-        iter = sc_ApprovedSrcDb.find(db.c_str());
-        if ( iter != sc_ApprovedSrcDb.end() ) {
-            m_Type = iter->second;
+        if (xGetStrict(db, sc_ApprovedSrcDb, m_Type))
             return m_Type;
-        }
 
-        iter = sc_ApprovedProbeDb.find(db.c_str());
-        if ( iter != sc_ApprovedProbeDb.end() ) {
-            m_Type = iter->second;
+        if (xGetStrict(db, sc_ApprovedProbeDb, m_Type))
             return m_Type;
-        }
     }
 
     return m_Type;
@@ -503,7 +496,7 @@ CDbtag::EDbtagType CDbtag::GetType(void) const
 
 CDbtag::TDbtagGroup CDbtag::GetDBFlags (string& correct_caps) const
 {
-    correct_caps = "";
+    correct_caps.clear();
     CDbtag::TDbtagGroup rsult = fNone;
 
     if ( !CanGetDb() ) {
@@ -511,40 +504,28 @@ CDbtag::TDbtagGroup CDbtag::GetDBFlags (string& correct_caps) const
     }
     const string& db = GetDb();
 
-    ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
-        if ( NStr::EqualNocase(db, it->first) ) {
-            if ( correct_caps.empty() || ! NStr::EqualCase(db, correct_caps) ) {
-                correct_caps = it->first;
-            }
-            rsult |= fGenBank;
-        }
+    auto it1 = sc_ApprovedDb.find(db);
+    if (it1 != sc_ApprovedDb.end()) {
+        correct_caps = it1->first;
+        rsult |= fGenBank;
     }
 
-    ITERATE (TDbxrefTypeMap, it, sc_ApprovedRefSeqDb) {
-        if ( NStr::EqualNocase(db, it->first) ) {
-            if ( correct_caps.empty() || ! NStr::EqualCase(db, correct_caps) ) {
-                correct_caps = it->first;
-            }
-            rsult |= fRefSeq;
-        }
+    auto it2 = sc_ApprovedRefSeqDb.find(db);
+    if (it2 != sc_ApprovedRefSeqDb.end()) {
+        correct_caps = it2->first;
+        rsult |= fRefSeq;
     }
 
-    ITERATE (TDbxrefTypeMap, it, sc_ApprovedSrcDb) {
-        if ( NStr::EqualNocase(db, it->first) ) {
-            if ( correct_caps.empty() || ! NStr::EqualCase(db, correct_caps) ) {
-                correct_caps = it->first;
-            }
-            rsult |= fSrc;
-        }
+    auto it3 = sc_ApprovedSrcDb.find(db);
+    if (it3 != sc_ApprovedSrcDb.end()) {
+        correct_caps = it3->first;
+        rsult |= fSrc;
     }
 
-    ITERATE (TDbxrefTypeMap, it, sc_ApprovedProbeDb) {
-        if ( NStr::EqualNocase(db, it->first) ) {
-            if ( correct_caps.empty() || ! NStr::EqualCase(db, correct_caps) ) {
-                correct_caps = it->first;
-            }
-            rsult |= fProbe;
-        }
+    auto it4 = sc_ApprovedProbeDb.find(db);
+    if (it4 != sc_ApprovedProbeDb.end()) {
+        correct_caps = it4->first;
+        rsult |= fProbe;
     }
 
     return rsult;
@@ -574,15 +555,15 @@ void CDbtag::InvalidateType(void)
 //=========================================================================//
 
 // special case URLs
-static const char kFBan[] = "http://www.fruitfly.org/cgi-bin/annot/fban?";  // url not found "Internal Server Error" tested 7/13/2016
-static const char kHInvDbHIT[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR="; // access forbidden 7/13/2016
-static const char kHInvDbHIX[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR="; // "Internal Server Error" tested 7/13/2016
-static const char kDictyPrim[] = "http://dictybase.org/db/cgi-bin/gene_page.pl?primary_id=";  // url not found tested 7/13/2016
-static const char kMiRBaseMat[] = "http://www.mirbase.org/cgi-bin/mature.pl?mature_acc="; // https not available tested 7/13/2016
-static const char kMaizeGDBInt[] = "https://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id=";
-static const char kMaizeGDBStr[] = "https://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?term=";
-static const char kHomdTax[] = "http://www.homd.org/taxon="; // https not available tested 7/13/2016
-static const char kHomdSeq[] = "http://www.homd.org/seq="; // https not available tested 7/13/2016
+static constexpr string_view kFBan = "http://www.fruitfly.org/cgi-bin/annot/fban?";  // url not found "Internal Server Error" tested 7/13/2016
+static constexpr string_view kHInvDbHIT = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR="; // access forbidden 7/13/2016
+static constexpr string_view kHInvDbHIX = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR="; // "Internal Server Error" tested 7/13/2016
+static constexpr string_view kDictyPrim = "http://dictybase.org/db/cgi-bin/gene_page.pl?primary_id=";  // url not found tested 7/13/2016
+static constexpr string_view kMiRBaseMat = "http://www.mirbase.org/cgi-bin/mature.pl?mature_acc="; // https not available tested 7/13/2016
+static constexpr string_view kMaizeGDBInt = "https://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id=";
+static constexpr string_view kMaizeGDBStr = "https://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?term=";
+static constexpr string_view kHomdTax = "http://www.homd.org/taxon="; // https not available tested 7/13/2016
+static constexpr string_view kHomdSeq = "http://www.homd.org/seq="; // https not available tested 7/13/2016
 
 
 // mapping of DB to its URL; sorting is not needed
@@ -739,7 +720,7 @@ string CDbtag::GetUrl(void) const
 
 string CDbtag::GetUrl(TTaxId taxid) const
 {
-    TTaxIdTaxnameMap::const_iterator find_iter = sc_TaxIdTaxnameMap.find(TAX_ID_TO(int, taxid));
+    auto find_iter = sc_TaxIdTaxnameMap.find(taxid);
     if( find_iter == sc_TaxIdTaxnameMap.end() ) {
         return GetUrl();
     } else {
