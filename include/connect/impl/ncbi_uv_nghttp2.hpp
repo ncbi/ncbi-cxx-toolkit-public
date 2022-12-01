@@ -290,13 +290,17 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Barrier
             ERR_POST(Fatal << "uv_barrier_init failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
+    ~SUv_Barrier()
+    {
+        uv_barrier_destroy(&m_Barrier);
+    }
 
     void Wait()
     {
         auto rc = uv_barrier_wait(&m_Barrier);
 
         if (rc > 0) {
-            uv_barrier_destroy(&m_Barrier);
+            //uv_barrier_destroy(&m_Barrier);
         } else if (rc < 0) {
             ERR_POST(Fatal << "uv_barrier_wait failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
