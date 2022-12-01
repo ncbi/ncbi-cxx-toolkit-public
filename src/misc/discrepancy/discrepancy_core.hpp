@@ -194,7 +194,7 @@ public:
     CReportNode& NoRec(bool b = true) { m_NoRec = b; return *this; }
     CReportNode& Incr() { m_Count++; return *this; }
 
-    static bool Exist(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
+    static bool Exist(TReportObjectList& /*list*/, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
     bool Exist(const string& name) const { return m_Map.find(name) != m_Map.end(); }
     bool Exist(CReportObj& obj) { return Exist(m_Objs, m_Hash, obj); }
     static void Add(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj, bool unique = true);
@@ -231,10 +231,10 @@ class CDiscrepancyCore : public CDiscrepancyCase
 {
 public:
     CDiscrepancyCore() : m_Count(0) {}
-    virtual void Summarize(CDiscrepancyContext& context){}
+    virtual void Summarize(CDiscrepancyContext& /*context*/){}
     TReportItemList GetReport() const override { return m_ReportItems; }
     TReportObjectList GetObjects() const override;
-    virtual CRef<CAutofixReport> Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const { return CRef<CAutofixReport>(); }
+    virtual CRef<CAutofixReport> Autofix(CDiscrepancyObject* /*obj*/, CDiscrepancyContext& /*context*/) const { return CRef<CAutofixReport>(); }
 protected:
     CReportNode m_Objs;
     TReportItemList m_ReportItems;
@@ -963,11 +963,11 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
         CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name); }       \
     };                                                                                                              \
     static CDiscrepancyConstructor_##name DiscrepancyConstructor_##name;                                            \
-    void CDiscrepancyCase_##name::Visit(const type& obj, CDiscrepancyContext& context)
+    void CDiscrepancyCase_##name::Visit(NCBI_UNUSED const type& obj, NCBI_UNUSED CDiscrepancyContext& context)
 
 
 #define DISCREPANCY_SUMMARIZE(name) \
-    void CDiscrepancyCase_##name::Summarize(CDiscrepancyContext& context)
+    void CDiscrepancyCase_##name::Summarize(NCBI_UNUSED CDiscrepancyContext& context)
 
 
 #define DISCREPANCY_AUTOFIX(name) \

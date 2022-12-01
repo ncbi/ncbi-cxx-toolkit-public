@@ -1691,7 +1691,7 @@ void CRegExFSA::GenerateSourceCode(ostream& out) const
 
 void CRegExFSA::GenerateArrayMapData(ostream& out) const
 {
-    out << "_FSM_EMIT = {\n";   // #define _FSM_EMIT static bool emit[]
+    out << "_FSM_EMIT(" << m_States.size() << ") = {\n";   // #define _FSM_EMIT static bool emit[]
     for (size_t n = 0; n < m_States.size() - 1; n++) {
         cout << (n ? n % 32 ? ", " : ",\n" : "") << (m_States[n + 1]->m_Emit.size() ? "1" : "0");
     }
