@@ -3992,6 +3992,14 @@ void* InitDiagHandler(void)
     static bool s_DiagInitialized = false;
     if (!s_DiagInitialized) {
         CDiagContext::SetupDiag(eDS_Default, 0, eDCM_Init);
+#ifdef NCBI_OS_MSWIN
+        // Check environment variable for silent exit, suppress popup messages if enabled. 
+        // _ASSERT uses NCBI Diag API, and this allow it to work properly.
+        const TXChar* value = NcbiSys_getenv(_TX("DIAG_SILENT_ABORT"));
+        if (value && (*value == _TX('Y') || *value == _TX('y') || *value == _TX('1'))) {
+            SuppressSystemMessageBox(fSuppress_All);
+        }
+#endif
         s_DiagInitialized = true;
     }
     return 0;
@@ -6579,7 +6587,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
                 continue;
             }
             string str = ComposeMessage(*it, 0);
-            if (NcbiSys_write(new_handle->GetHandle(), str.data(), str.size()))
+            if (NcbiSys_write(new_handle->GetHandle(), str.data(), (unsigned)str.size()))
                 {/*dummy*/}
         }
         m_Messages.reset();
@@ -6631,7 +6639,7 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
 
     if (handle) {
         string str = ComposeMessage(mess, 0);
-        if (NcbiSys_write(handle->GetHandle(), str.data(), str.size()))
+        if (NcbiSys_write(handle->GetHandle(), str.data(), (unsigned)str.size()))
             {/*dummy*/}
  
         handle->RemoveReference();
@@ -6670,7 +6678,7 @@ void CFileHandleDiagHandler::WriteMessage(const char*   buf,
         s_ReopenEntered->Add(-1);
     }
 
-    if (NcbiSys_write(m_Handle->GetHandle(), buf, len))
+    if (NcbiSys_write(m_Handle->GetHandle(), buf, (unsigned)len))
         {/*dummy*/}
 
     // Skip collecting m_Messages - we don't have the original SDiagMessage
