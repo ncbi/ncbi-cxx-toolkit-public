@@ -36,6 +36,7 @@
 #include <mutex>
 #include <serial/serial.hpp>
 #include <util/compile_time.hpp>
+#include <misc/discrepancy/discrepancy.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
