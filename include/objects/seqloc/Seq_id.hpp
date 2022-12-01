@@ -701,7 +701,16 @@ public:
         kMaxScore = 99999
     };
 
-    int AdjustScore       (int base_score) const;
+    enum EAdjustScoreFlags {
+        fRequireAccessions = 1 << 0
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EAdjustScoreFlags, TAdjustScoreFlags);
+
+    int AdjustScore       (int base_score,
+                           TAdjustScoreFlags flags = TAdjustScoreFlags())
+        const;
+    int StrictAdjustScore (int base_score) const
+        { return AdjustScore(base_score, fRequireAccessions); }
     int BaseTextScore     (void)           const;
     int BaseBestRankScore (void)           const;
     int BaseWorstRankScore(void)           const { return BaseTextScore(); }
@@ -716,6 +725,17 @@ public:
     int FastaNAScore  (void) const { return AdjustScore(BaseFastaNAScore()); }
     int BlastScore    (void) const { return AdjustScore(BaseBlastScore()); }
 
+    int StrictTextScore     (void) const
+        { return StrictAdjustScore(BaseTextScore()); }
+    int StrictBestRankScore (void) const
+        { return StrictAdjustScore(BaseBestRankScore()); }
+    int StrictFastaAAScore  (void) const
+        { return StrictAdjustScore(BaseFastaAAScore()); }
+    int StrictFastaNAScore  (void) const
+        { return StrictAdjustScore(BaseFastaNAScore()); }
+    int StrictBlastScore    (void) const
+        { return StrictAdjustScore(BaseBlastScore()); }
+
     /// Wrappers for use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id)
         { return id ? id->TextScore() : kMax_Int; }
@@ -729,6 +749,17 @@ public:
         { return id ? id->FastaNAScore() : kMax_Int; }
     static int BlastRank(const CRef<CSeq_id>& id)
         { return id ? id->BlastScore() : kMax_Int; }
+
+    static int StrictScore(const CRef<CSeq_id>& id)
+        { return id ? id->StrictTextScore() : kMax_Int; }
+    static int StrictBestRank(const CRef<CSeq_id>& id)
+        { return id ? id->StrictBestRankScore() : kMax_Int; }
+    static int StrictFastaAARank(const CRef<CSeq_id>& id)
+        { return id ? id->StrictFastaAAScore() : kMax_Int; }
+    static int StrictFastaNARank(const CRef<CSeq_id>& id)
+        { return id ? id->StrictFastaNAScore() : kMax_Int; }
+    static int StrictBlastRank(const CRef<CSeq_id>& id)
+        { return id ? id->StrictBlastScore() : kMax_Int; }
 
     /// Optimized implementation of CSerialObject::Assign, which is
     /// not so efficient.
