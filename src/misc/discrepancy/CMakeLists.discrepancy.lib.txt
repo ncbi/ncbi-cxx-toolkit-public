@@ -1,12 +1,98 @@
 # $Id$
 
+set(_discrepancy_modules
+    biosource_tests
+    discrepancy_case
+    division_code_conflicts
+    feature_per_bioseq
+    feature_tests
+    gene_names
+    overlapping_features
+    pub_tests
+    rna_names
+    seqdesc_per_bioseq
+    sequence_tests
+    sesame_street
+    #spell_check #disabled till better times...
+    suspect_product_names
+    transl_note
+    transl_too_long
+)
+
 NCBI_begin_lib(xdiscrepancy)
-  NCBI_sources(
-    discrepancy_core report_object discrepancy_context utils text_output
-    discrepancy_case overlapping_features suspect_product_names division_code_conflicts feature_per_bioseq seqdesc_per_bioseq
-    gene_names rna_names transl_too_long sesame_street transl_note feature_tests
-    sequence_tests pub_tests biosource_tests discrepancy_stream
-  )
-  NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
-  NCBI_project_watchers(kachalos)
+    NCBI_sources(
+        # core modules
+        discrepancy_core discrepancy_context discrepancy_stream report_object utils text_output
+        fsm_statics
+        #individual tests
+        ${_discrepancy_modules}
+    )
+    NCBI_uses_toolkit_libraries(macro xcleanup)
+    NCBI_project_watchers(gotvyans)
+
 NCBI_end_lib()
+
+if(OFF) # disable until CXX-12758
+# update .inc files only on Unix
+if (UNIX AND NOT CMAKE_CROSSCOMPILING)
+
+    get_property(_allowedprojects GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS)
+    list(APPEND _allowedprojects prt2fsm multipattern)
+    list(REMOVE_DUPLICATES _allowedprojects)
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS ${_allowedprojects})
+    unset(_allowedprojects)
+
+    if (TARGET xdiscrepancy)
+
+        set(_prt_modules
+            product_rules.prt
+            organelle_products.prt
+            FLATFILE_FIND.txt
+        )
+
+        set(_target_dir ${CMAKE_CURRENT_SOURCE_DIR})
+        set(_source_dir ${CMAKE_CURRENT_SOURCE_DIR})
+        set(_prt2fsm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/prt2fsm${CMAKE_EXECUTABLE_SUFFIX})
+
+        add_custom_target(discrepancy_fsm_files
+            COMMENT "Generate FSM files for discrepancy generator"
+            SOURCES make_fsm_file.py
+            )
+
+        foreach(_module ${_prt_modules})
+
+            # remove suffix
+            string(REGEX REPLACE "\\..*" "" _tmp_module_name "${_module}")
+
+            set(_prt_file ${_module})
+            set(_inc_file ${_tmp_module_name}.inc)
+            set(_target disrepancy_${_tmp_module_name}_inc)
+
+            add_custom_command(
+                OUTPUT ${_target_dir}/${_inc_file}
+                COMMAND python3 make_fsm_file.py ${_prt2fsm} ${_prt_file} ${_inc_file}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                COMMENT "Running make_fsm_file.py for ${_prt_file}"
+                DEPENDS ${_source_dir}/${_prt_file} ${_source_dir}/make_fsm_file.py ${_prt2fsm}
+                )
+            add_custom_target(
+                ${_target}
+                DEPENDS ${_target_dir}/${_inc_file}
+            )
+            add_dependencies(discrepancy_fsm_files ${_target})
+        endforeach()
+
+        # uncomment next line to allow generating .inc files automatically
+        add_dependencies(xdiscrepancy discrepancy_fsm_files)
+
+        unset(_inc_file)
+        unset(_prt_file)
+        unset(_target)
+        unset(_target_dir)
+        unset(_source_dir)
+        unset(_prt2fsm)
+
+    endif() # if TARGET discrepancy
+
+endif() # if UNIX
+endif()
