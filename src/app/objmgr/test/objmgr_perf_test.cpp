@@ -195,7 +195,7 @@ void CPerfTestApp::Init(void)
 
     arg_desc->AddOptionalKey("bulk", "what", "test bulk retrieval", CArgDescriptions::eString);
     arg_desc->SetConstraint("bulk", &(*new CArgAllow_Strings,
-        "gi", "acc", "data", "bioseq"));
+        "gi", "acc", "data", "bioseq", "cdd"));
 
     arg_desc->AddOptionalKey("stat", "StatFile",
         "File with performace test outputs",
@@ -367,6 +367,11 @@ int CPerfTestApp::Run(void)
         bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
         m_Scope->GetBioseqHandles(bulk_ids);
     }
+    else if (m_Bulk == "cdd") {
+        CScope::TIds cdd_ids;
+        cdd_ids.insert(cdd_ids.end(), m_Ids.begin(), m_Ids.end());
+        m_Scope->GetCDDAnnots(cdd_ids);
+    }
     else {
         if (thread_count == 0) {
             TestIds();
@@ -434,6 +439,18 @@ double ParseDouble(const string& s, size_t& pos)
 }
 
 
+string ParsePath(const string& s, size_t& pos)
+{
+    pos = s.find('\'', pos);
+    if (pos == NPOS) return kEmptyStr;
+    size_t pos2 = s.find('\'', pos + 1);
+    if (pos2 == NPOS || s.size() < pos2 + 1 || s[pos2 + 1] != ';') return kEmptyStr;
+    string ret = s.substr(pos + 1, pos2 - pos - 1);
+    pos = pos2 + 2;
+    return ret;
+}
+
+
 void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
 {
     struct SPerfKey {
@@ -446,15 +463,17 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
 
         SPerfKey(const string& key)
         {
-            // Done: r=96.1019; u=52.2656; s=3.01563; 'perf_ids1_gi'; gb/pubseqos/split; 7967 ids; bulk none; 0 thr;
+            // Done: r=96.1019; u=52.2656; s=3.01563; 'data/perf_ids1_gi'; gb/pubseqos/split; 7967 ids; bulk none; 0 thr;
+            size_t pos = 0;
+            data = ParsePath(key, pos);
+            string args = key.substr(pos);
             vector<string> parts;
-            NStr::Split(key, " ;/'", parts, NStr::fSplit_Tokenize);
-            if (parts.size() < 9) {
-                data = key;
+            NStr::Split(args, " ;/'", parts, NStr::fSplit_Tokenize);
+            if (parts.size() < 8) {
+                data += key;
                 return;
             }
             size_t idx = 0;
-            data = parts[idx++];
             loader = parts[idx++];
             if (loader == "gb") {
                 loader += "/" + parts[idx++];
