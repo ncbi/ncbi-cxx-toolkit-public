@@ -998,7 +998,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     const TIntId kGi = 568815597;
     const TSeqPos kStart = 0;
     const TSeqPos kStop(248956421);
-    SDataLoaderConfig dlconfig("GPIPE/9606/current/GCF_000005045.24_top_level", is_protein);
+    SDataLoaderConfig dlconfig("GPIPE/9606/current/GCF_000005045.26_top_level", is_protein);
     dlconfig.OptimizeForWholeLargeSequenceRetrieval(true);
 
     CBlastInputSourceConfig iconfig(dlconfig);
