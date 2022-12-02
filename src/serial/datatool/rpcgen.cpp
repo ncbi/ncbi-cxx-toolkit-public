@@ -387,6 +387,12 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
     }
     if (has_fini) {
         code.ClassProtected()
+            << "\n"
+            << "    /// Disconnect as cleanly as possible.\n"
+            << "    ///\n"
+            << "    /// @note Derived classes that override this method\n"
+            << "    /// should copy the destructor logic that calls it (via\n"
+            << "    /// Disconnect, which avoids duplicate calls).\n"
             << "    void x_Disconnect(void);\n";
         code.MethodStart(false)
             << "void " << class_base << "::x_Disconnect(void)\n"
@@ -399,6 +405,14 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "    }\n"
             << "    Tparent::x_Disconnect();\n"
             << "}\n\n";
+        code.AddDestructionCode(
+            "// Copied from ~CRPCClient_Base, whose implicit actions should\n"
+            "// wait, but whose explicit actions should run now so as to\n"
+            "// pick up the correct x_Disconnect implementation.\n"
+            "try {\n"
+            "    Disconnect();\n"
+            "} STD_CATCH_ALL_XX(Serial_RPCClient, 2,"
+            " \"CRPCClient_Base::Disconnect()\");\n");
     }
 
     // Make sure the reply's choice is correct -- rolled into Ask for
