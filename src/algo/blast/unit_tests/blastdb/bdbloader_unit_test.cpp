@@ -240,13 +240,13 @@ BOOST_AUTO_TEST_CASE(RetrieveLargeNuclSequence_Remote)
 
 void RetrievePartsOfLargeChromosome(bool is_remote)
 {
-    const string kAccession("NC_000001");
+    const string kAccession("NC_060943");
     CRef<CSeq_id> id(new CSeq_id(kAccession));
     // retrieves this range in the sequence
     const TSeqRange kRange(15100, 15500); 
     CRef<CSeq_loc> sl(new CSeq_loc(*id, kRange.GetFrom(), kRange.GetTo()));
 
-    const string db("refseq_genomic");
+    const string db("9606_genomic");
     const bool is_protein = false;
     const bool use_fixed_slice_size = true;
     CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
@@ -254,7 +254,7 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
 
-    const TSeqPos kLength(248956422);
+    const TSeqPos kLength(61707364);
     TSeqPos len = sequence::GetLength(*id, scope);
     BOOST_REQUIRE_EQUAL(kLength, len);
     BOOST_REQUIRE_EQUAL(kLength, scope->GetSequenceLength(*id));
@@ -284,10 +284,7 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     sv.GetSeqData(kTestRange.GetFrom(), kTestRange.GetTo(), buffer);
     BOOST_REQUIRE_EQUAL(kTestRange.GetLength() - 1 , buffer.size());
 
-    // Obtained with the following command:
-    // blastdbcmd -db nucl_dbs -entry NC_000001 -range 100-500 -outfmt %s
-    char seq_data[] = 
-        "GTCCCCACCCCCATGACACTCCCCAGCCCTCCAAGGCCACTGTGTTTCCCAGTTAGCTCAGAGCCTCAGTCGATCCCTGACCCAGCACCGGGCACTGATGAGACAGCGGCTGTTTGAGGAGCCACCTCCCAGCCACCTCGGGGCCAGGGCCAGGGTGTGCAGCACCACTGTACAATGGGGAAACTGGCCCAGAGAGGTGAGGCAGCTTGCCTGGGGTCACAGAGCAAGGCAAAAGCAGCGCTGGGTACAAGCTCAAAACCATAGTGCCCAGGGCACTGCCGCTGCAGGCGCAGGCATCGCATCACACCAGTGTCTGCGTTCACAGCAGGCATCATCAGTAGCCTCCAGAGGCCTCAGGTCCAGTCTCTAAAAATATCTCAGGAGGCTGCAGTGGCTGACC";
+    char seq_data[] = "ATTCCAGCCTCTAGGACACAGTGGCAGCCACATAATTGGTATCTCTTAAGGTCCAGCACGAGGTGGAGCACATGGTGGAGAGACAGATGCAGTGACCTGGAACCCAGGAGTGAGGGAGCCAGGACTCAGGCCCAAGGCTCCTGAGAGGCATCTGGCCCTCCCTGCACTGTGCCAGCAGCTTGGAGAACCCACACTCAATGAACGCAGCACTCCACTACCCAGGAAATGCCTTCCTGCCCTCTCCTCATCCCATCCCTGGGCAGGGGACATGCAACTGTCTACAAGGTGCCAAGTACCAGGACAGGAAAGGAAAGACGCCAAAAATCCAGCGCTGCCCTCAGAGAAGGGCAACCACGCAGTCCCCATCTTGGCAAGGAAACACAATTTCCGAGGGAATGGT";
     BOOST_REQUIRE_EQUAL(sizeof(seq_data)/sizeof(seq_data[0]),
                         buffer.size()+1);
     for (size_t i = 0; i < buffer.size(); i++) {
@@ -314,9 +311,9 @@ BOOST_AUTO_TEST_CASE(RetrievePartsOfLargeChromosome_Remote)
 /* Only execute this in release mode as debug might be too slow */
 void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
 {
-    const string kAccession("NC_000001");
+    const string kAccession("NC_060943");
 
-    const string db("refseq_genomic");
+    const string db("9606_genomic");
     const bool is_protein = false;
     const bool use_fixed_slice_size = false;
     CAutoRegistrar reg(db, is_protein, use_fixed_slice_size, is_remote);
@@ -325,7 +322,7 @@ void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
     scope->AddDefaults();
     CRef<CSeq_id> id(new CSeq_id(kAccession));
     TSeqPos len = sequence::GetLength(*id, scope);
-    const TSeqPos kLength(248956422);
+    const TSeqPos kLength(61707364);
     BOOST_REQUIRE_EQUAL(kLength, len);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*id);
