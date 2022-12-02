@@ -109,6 +109,12 @@ protected:
 
     /// These run with m_Mutex already acquired.
     virtual void x_Connect(void) = 0;
+
+    /// Disconnect as cleanly as possible.
+    ///
+    /// @note Derived classes that override this function should copy
+    /// the destructor logic that calls it (via Disconnect, which
+    /// avoids duplicate calls).
     virtual void x_Disconnect(void);
             void x_SetStream(CNcbiIostream* stream);
 
