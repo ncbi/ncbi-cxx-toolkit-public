@@ -38,6 +38,7 @@
 #include <objtools/eutils/efetch/PubmedArticleSet.hpp>
 #include <objtools/eutils/efetch/PubmedBookArticle.hpp>
 #include <objtools/eutils/efetch/PubmedBookArticleSet.hpp>
+
 #include <objtools/eutils/api/efetch.hpp>
 #include <objtools/eutils/api/esearch.hpp>
 #include <objtools/eutils/esearch/IdList.hpp>
@@ -56,6 +57,7 @@
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <array>
 
@@ -387,7 +389,16 @@ void IPubmedUpdater::Normalize(CPub& pub)
         if (A.IsSetIds()) {
             auto& ids  = A.SetIds().Set();
             auto  pred = [](const CRef<CArticleId>& l, const CRef<CArticleId>& r) -> bool {
-                return l->Which() < r->Which();
+                CArticleId::E_Choice chl = l->Which();
+                CArticleId::E_Choice chr = r->Which();
+                if (chl == CArticleId::e_Other && chr == CArticleId::e_Other) {
+                    const CDbtag& dbtl = l->GetOther();
+                    const CDbtag& dbtr = r->GetOther();
+                    if (dbtl.CanGetDb() && dbtr.CanGetDb()) {
+                        return dbtl.GetDb() < dbtr.GetDb();
+                    }
+                }
+                return chl < chr;
             };
             ids.sort(pred);
         }
