@@ -1009,9 +1009,9 @@ string CSuspect_rule::SummarizeFieldConstraint(const CField_constraint& field) c
 }
 
 
-string CSuspect_rule::SummarizeSourceConstraint(const CSource_constraint& cons) const
+string CSuspect_rule::SummarizeSourceConstraint(const CSource_constraint& /*cons*/) const
 {
-        return kEmptyStr;
+    return kEmptyStr;
 }
 
 

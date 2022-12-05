@@ -42,13 +42,21 @@
 
 // generated includes
 #include <objects/macro/Suspect_rule_set_.hpp>
-#include <util/multipattern_search.hpp>
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
+class CMultipatternSearch;
+
+namespace FSM
+{
+    class CCompiledFSM;
+}
+
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 class CSuspect_rule_set : public CSuspect_rule_set_Base
@@ -57,41 +65,23 @@ class CSuspect_rule_set : public CSuspect_rule_set_Base
 public:
     // constructor
     CSuspect_rule_set(void);
+    // Prohibit copy constructor and assignment operator
+    CSuspect_rule_set(const CSuspect_rule_set&) = delete;
     // destructor
     ~CSuspect_rule_set(void);
 
-    void SetPrecompiledData(const bool* emit, const map<size_t, vector<size_t>>* hits, const size_t* states)
+    void SetPrecompiledData(const FSM::CCompiledFSM* fsm)
     {
-        m_Precompiled_emit = emit;
-        m_Precompiled_hits = hits;
-        m_Precompiled_states = states;
+        m_Precompiled_FSM = fsm;
     }
 
     void Screen(const char* input, char* output) const;
     void Screen(const string& input, char* output) const { Screen(input.c_str(), output); }
 
 private:
-    // Prohibit copy constructor and assignment operator
-    CSuspect_rule_set(const CSuspect_rule_set& value);
-    CSuspect_rule_set& operator=(const CSuspect_rule_set& value);
-
     mutable unique_ptr<CMultipatternSearch> m_FSM;
-    const bool* m_Precompiled_emit;
-    const map<size_t, vector<size_t>>* m_Precompiled_hits;
-    const size_t* m_Precompiled_states;
+    const FSM::CCompiledFSM* m_Precompiled_FSM = nullptr;
 };
-
-/////////////////// CSuspect_rule_set inline methods
-
-// constructor
-inline
-CSuspect_rule_set::CSuspect_rule_set(void) : m_Precompiled_emit(0), m_Precompiled_hits(0), m_Precompiled_states(0)
-{
-}
-
-
-/////////////////// end of CSuspect_rule_set inline methods
-
 
 END_objects_SCOPE // namespace ncbi::objects::
 

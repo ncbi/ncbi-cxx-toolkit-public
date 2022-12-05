@@ -37,116 +37,93 @@
 #include <serial/serial.hpp>
 #include <util/compile_time.hpp>
 #include <misc/discrepancy/discrepancy.hpp>
+#include <util/multipattern_search.hpp>
+#include <util/compiled_fsm.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(NDiscrepancy)
+
 USING_SCOPE(objects);
+USING_SCOPE(FSM);
 
 //////////////////////////////////////////////////////////////////////////
 
-#define _FSM_RULES static const unsigned char s_Defaultorganelleproducts[]
-#define _FSM_EMIT(size) static constexpr bool s_Defaultorganelleproducts_emit[]
-#define _FSM_HITS static map<size_t, vector<size_t>> s_Defaultorganelleproducts_hits
-#define _FSM_STATES static size_t s_Defaultorganelleproducts_states[]
+namespace {
+
+class CStaticRules
+{
+protected:
+    string_view m_suffix;
+    std::function<const CCompiledFSM*(void)> m_fsm_getter;
+    bool s_Initialized = false;
+    string  s_FileName;
+    CRef<CSuspect_rule_set> s_Rules;
+    std::mutex mutex;
+public:
+    CStaticRules(string_view suffix, decltype(m_fsm_getter) fsm_getter)
+    : m_suffix{suffix}, m_fsm_getter(fsm_getter) {}
+
+    CConstRef<CSuspect_rule_set> InitializeRules(const string& name)
+    {
+        std::lock_guard<std::mutex> g{mutex};
+
+        if (s_Initialized && name == s_FileName) {
+            return s_Rules;
+        }
+        s_Rules.Reset(new CSuspect_rule_set());
+        s_FileName = name;
+
+        if (!name.empty()) {
+            LOG_POST("Reading from " + name + " for " + m_suffix);
+
+            unique_ptr<CObjectIStream> istr (CObjectIStream::Open(eSerial_AsnText, name));
+            *istr >> *s_Rules;
+            s_Rules->SetPrecompiledData(nullptr);
+        }
+        if (!s_Rules->IsSet()) {
+            //LOG_POST("Falling back on built-in data for " + m_suffix);
+            auto p_fsm = m_fsm_getter();
+            unique_ptr<CObjectIStream> istr (CObjectIStream::CreateFromBuffer(eSerial_AsnBinary, (const char*)p_fsm->m_rules_asn1.data(), p_fsm->m_rules_asn1.size()));
+            //auto types = istr->GuessDataType({CSuspect_rule_set::GetTypeInfo()});
+            //_ASSERT(types.size() == 1 && *types.begin() == CSuspect_rule_set::GetTypeInfo());
+            *istr >> *s_Rules;
+            s_Rules->SetPrecompiledData(p_fsm);
+        }
+
+        s_Initialized = true;
+        return s_Rules;
+    }
+};
+
+const CCompiledFSM* xGetOrganellesFSM()
+{
 #include "organelle_products.inc"
-#undef _FSM_EMIT
-#undef _FSM_HITS
-#undef _FSM_STATES
-#undef _FSM_RULES
 
-static CConstRef<CSuspect_rule_set> s_InitializeOrganelleProductRules(const string& name)
-{
-    static bool s_OrganelleProductRulesInitialized = false;
-    static CRef<CSuspect_rule_set> s_OrganelleProductRules;
-    static std::mutex mutex;
-
-    std::lock_guard<std::mutex> g{mutex};
-
-    if (s_OrganelleProductRulesInitialized) {
-        return s_OrganelleProductRules;
-    }
-    s_OrganelleProductRules.Reset(new CSuspect_rule_set());
-    //string file = name.empty() ? g_FindDataFile("organelle_products.prt") : name;
-
-    if (!name.empty()) {
-        LOG_POST("Reading from " + name + " for organelle products");
-
-        unique_ptr<CObjectIStream> istr (CObjectIStream::Open(eSerial_AsnText, name));
-        *istr >> *s_OrganelleProductRules;
-        s_OrganelleProductRules->SetPrecompiledData(nullptr, nullptr, nullptr);
-    }
-    if (!s_OrganelleProductRules->IsSet()) {
-        //LOG_POST("Falling back on built-in data for organelle products");
-        unique_ptr<CObjectIStream> istr (CObjectIStream::CreateFromBuffer(eSerial_AsnBinary, (const char*)s_Defaultorganelleproducts, sizeof(s_Defaultorganelleproducts)));
-        auto types = istr->GuessDataType({CSuspect_rule_set::GetTypeInfo()});
-        _ASSERT(types.size() == 1 && *types.begin() == CSuspect_rule_set::GetTypeInfo());
-        *istr >> *s_OrganelleProductRules;
-
-        s_OrganelleProductRules->SetPrecompiledData(s_Defaultorganelleproducts_emit, &s_Defaultorganelleproducts_hits, s_Defaultorganelleproducts_states);
-    }
-
-    s_OrganelleProductRulesInitialized = true;
-
-    return s_OrganelleProductRules;
+    static constexpr TLocalFSM s_FSM(s_compact, s_hits_init, s_states, s_rules);
+    return &s_FSM;
 }
 
-
-#define _FSM_RULES static const unsigned char s_Defaultproductrules[]
-#define _FSM_EMIT(size) static constexpr bool s_Defaultproductrules_emit[]
-#define _FSM_HITS static map<size_t, vector<size_t>> s_Defaultproductrules_hits
-#define _FSM_STATES static size_t s_Defaultproductrules_states[]
+const CCompiledFSM* xGetProductRulesFSM()
+{
 #include "product_rules.inc"
-#undef _FSM_EMIT
-#undef _FSM_HITS
-#undef _FSM_STATES
-#undef _FSM_RULES
-
-static CConstRef<CSuspect_rule_set> s_InitializeProductRules(const string& name)
-{
-    static bool s_ProductRulesInitialized = false;
-    static string  s_ProductRulesFileName;
-    static CRef<CSuspect_rule_set> s_ProductRules;
-    static std::mutex mutex;
-
-    std::lock_guard<std::mutex> g{mutex};
-
-    if (s_ProductRulesInitialized && name == s_ProductRulesFileName) {
-        return s_ProductRules;
-    }
-    s_ProductRules.Reset(new CSuspect_rule_set());
-    s_ProductRulesFileName = name;
-    //string file = name.empty() ? g_FindDataFile("product_rules.prt") : name;
-
-    if (!name.empty()) {
-        LOG_POST("Reading from " + name + " for suspect product rules");
-
-        unique_ptr<CObjectIStream> istr (CObjectIStream::Open(eSerial_AsnText, name));
-        *istr >> *s_ProductRules;
-        s_ProductRules->SetPrecompiledData(nullptr, nullptr, nullptr);
-    }
-    if (!s_ProductRules->IsSet()) {
-        //LOG_POST("Falling back on built-in data for suspect product rules");
-        unique_ptr<CObjectIStream> istr (CObjectIStream::CreateFromBuffer(eSerial_AsnBinary, (const char*)s_Defaultproductrules, sizeof(s_Defaultproductrules)));
-        auto types = istr->GuessDataType({CSuspect_rule_set::GetTypeInfo()});
-        _ASSERT(types.size() == 1 && *types.begin() == CSuspect_rule_set::GetTypeInfo());
-        *istr >> *s_ProductRules;
-        s_ProductRules->SetPrecompiledData(s_Defaultproductrules_emit, &s_Defaultproductrules_hits, s_Defaultproductrules_states);
-    }
-
-    s_ProductRulesInitialized = true;
-    return s_ProductRules;
+    static constexpr TLocalFSM s_FSM(s_compact, s_hits_init, s_states, s_rules);
+    return &s_FSM;
 }
 
+}
+
+BEGIN_SCOPE(NDiscrepancy)
 
 CConstRef<CSuspect_rule_set> GetOrganelleProductRules(const string& name)
 {
-    return s_InitializeOrganelleProductRules(name);
+    static CStaticRules rules("organelle products", xGetOrganellesFSM);
+    return rules.InitializeRules(name);
 }
 
 
 CConstRef<CSuspect_rule_set> GetProductRules(const string& name)
 {
-    return s_InitializeProductRules(name);
+    static CStaticRules rules("1suspect product rules", xGetProductRulesFSM);
+    return rules.InitializeRules(name);
 }
 
 

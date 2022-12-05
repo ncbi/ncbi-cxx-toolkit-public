@@ -32,6 +32,8 @@
 *
 */
 
+#include <util/multipattern_search.hpp>
+
 #include <iostream>
 #include <array>
 #include <sstream>
@@ -162,9 +164,12 @@ protected:
     struct CRegXBackRef : public CRegX  // /\1/
     {
         CRegXBackRef(unsigned int n) : m_Num(n) {}
-        bool IsCaseInsensitive() const { return false; }
-        void Print(ostream& out, size_t off) const { PrintOffset(out, off); out << "<bkref>\t" << m_Num << "\n"; }
-        void Render(CRegExFSA& fsa, size_t from, size_t to) const { throw string("back reference"); }
+        bool IsCaseInsensitive() const override
+            { return false; }
+        void Print(ostream& out, size_t off) const override
+            { PrintOffset(out, off); out << "<bkref>\t" << m_Num << "\n"; }
+        void Render(CRegExFSA& /*fsa*/, size_t /*from*/, size_t /*to*/) const override
+            { throw string("back reference"); }
         unsigned int m_Num;
     };
 
@@ -199,6 +204,7 @@ protected:
 
 class CRegExFSA
 {
+public:
     struct CRegExState
     {
         int m_Type;
@@ -280,8 +286,6 @@ class CRegExFSA
     }
     TStates m_States;
     vector<string> m_Str;
-    friend class CRegEx;
-    friend class CMultipatternSearch;
 };
 
 
