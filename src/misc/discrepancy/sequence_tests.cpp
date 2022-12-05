@@ -54,9 +54,12 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Person_id.hpp>
 #include <util/xregexp/regexp.hpp>
+#include <util/multipattern_search.hpp>
 
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
+#include <util/compiled_fsm.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -1818,17 +1821,12 @@ static const string kNonFixable = "Non-fixable";
 //#undef _FSM_REPORT
 //}
 
-
 static void FindFlatfileText(const char* str, bool *result)
 {
-#define _FSM_EMIT(size) static bool emit[]
-#define _FSM_HITS static map<size_t, vector<size_t>> hits
-#define _FSM_STATES static size_t states[]
 #include "FLATFILE_FIND.inc"
-#undef _FSM_EMIT
-#undef _FSM_HITS
-#undef _FSM_STATES
-    CMultipatternSearch::Search(str, states, emit, hits, [result](size_t n){ result[n] = true; });
+    static constexpr TLocalFSM s_FSM(s_compact, s_hits_init, s_states, nullptr);
+
+    CMultipatternSearch::Search(str, s_FSM, [result](size_t n){ result[n] = true; });
 }
 
 

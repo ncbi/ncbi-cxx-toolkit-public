@@ -40,6 +40,10 @@ BEGIN_NCBI_SCOPE
 
 class CRegExFSA;
 
+namespace FSM
+{
+    class CCompiledFSM;
+}
 
 ///////////////////////////////////////////////////////////////////////
 ///
@@ -74,7 +78,7 @@ public:
     };
     DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
 
-    
+
     ///@{
     /// Add search pattern to the FSM
     ///
@@ -191,14 +195,14 @@ public:
     ///     CMultipatternSearch::Search(str, states, emit, hits, [result](size_t n) { result[n] = true; });
     /// }
 
-    static void Search(const char*   input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall1 found_callback);
-    static void Search(const string& input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall1 found_callback) { Search(input.c_str(), states, emit, hits, found_callback); }
-    static void Search(const char*   input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall2 found_callback);
-    static void Search(const string& input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall2 found_callback) { Search(input.c_str(), states, emit, hits, found_callback); }
-    static void Search(const char*   input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall1 found_callback);
-    static void Search(const string& input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall1 found_callback) { Search(input.c_str(), states, emit, hits, found_callback); }
-    static void Search(const char*   input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall2 found_callback);
-    static void Search(const string& input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall2 found_callback) { Search(input.c_str(), states, emit, hits, found_callback); }
+    static void Search(const char*   input, const FSM::CCompiledFSM& fsm, VoidCall1 found_callback);
+    static void Search(const string& input, const FSM::CCompiledFSM& fsm, VoidCall1 found_callback) { Search(input.c_str(), fsm, found_callback); }
+    static void Search(const char*   input, const FSM::CCompiledFSM& fsm, VoidCall2 found_callback);
+    static void Search(const string& input, const FSM::CCompiledFSM& fsm, VoidCall2 found_callback) { Search(input.c_str(), fsm, found_callback); }
+    static void Search(const char*   input, const FSM::CCompiledFSM& fsm, BoolCall1 found_callback);
+    static void Search(const string& input, const FSM::CCompiledFSM& fsm, BoolCall1 found_callback) { Search(input.c_str(), fsm, found_callback); }
+    static void Search(const char*   input, const FSM::CCompiledFSM& fsm, BoolCall2 found_callback);
+    static void Search(const string& input, const FSM::CCompiledFSM& fsm, BoolCall2 found_callback) { Search(input.c_str(), fsm, found_callback); }
     /// @endcode
 
 private:

@@ -229,7 +229,7 @@ bool xTryProductRules(const string& filename, std::istream& file)
 
     cout << "//\n";
     cout << "// Binary ASN.1 of CSuspect_rule_set object\n";
-    cout << "_FSM_RULES = {\n";
+    cout << "NCBI_FSM_RULES = {\n";
     std::string line;
     {
         CBinaryToCPP buf(cout);

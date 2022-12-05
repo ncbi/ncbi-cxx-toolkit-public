@@ -40,10 +40,8 @@
 // generated includes
 #include <objects/macro/Suspect_rule_set.hpp>
 
-//#include <util/util_misc.hpp>
-#include <util/line_reader.hpp>
-#include <serial/enumvalues.hpp>
-#include <serial/serialimpl.hpp>
+
+#include <util/multipattern_search.hpp>
 
 // generated classes
 
@@ -51,6 +49,10 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// constructor
+CSuspect_rule_set::CSuspect_rule_set(void)
+{
+}
 // destructor
 CSuspect_rule_set::~CSuspect_rule_set(void)
 {
@@ -60,8 +62,8 @@ CSuspect_rule_set::~CSuspect_rule_set(void)
 void CSuspect_rule_set::Screen(const char* input, char* output) const
 {
     const auto& callback = [&](size_t n) { output[n] = 1; };
-    if (m_Precompiled_states) {
-        CMultipatternSearch::Search(input, m_Precompiled_states, m_Precompiled_emit, *m_Precompiled_hits, callback);
+    if (m_Precompiled_FSM) {
+        CMultipatternSearch::Search(input, *m_Precompiled_FSM, callback);
         return;
     }
 

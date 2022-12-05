@@ -30,10 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <util/multipattern_search.hpp>
 #include "multipattern_search_impl.hpp"
+#include <util/compiled_fsm.hpp>
 
 BEGIN_NCBI_SCOPE
+
+USING_SCOPE(FSM);
 
 CMultipatternSearch::CMultipatternSearch() : m_FSM(new CRegExFSA) {}
 CMultipatternSearch::~CMultipatternSearch() {}
@@ -86,7 +88,8 @@ string CMultipatternSearch::QuoteString(const string& str)
             case '.':
             case '|':
                 out += '\\';
-                // there is no break here!
+                out += c;
+                break;
             default:
                 out += c;
         }
@@ -94,95 +97,23 @@ string CMultipatternSearch::QuoteString(const string& str)
     return out;
 }
 
+////////////////////////////////////////////////////////////////
 
-void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
+static void xMultiPatternSearch(const char* input, const CRegExFSA& fsa, CMultipatternSearch::BoolCall2 report)
 {
     const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 1;
 
-    set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-    for (auto e : emit) {
-        report(e);
-    }
-    while (true) {
-        state = m_FSM->m_States[state]->m_Trans[*p];
-        set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-        for (auto e : emit) {
-            report(e);
-        }
-        if (!*p) {
-            return;
-        }
-        ++p;
-    }
-}
-
-
-void CMultipatternSearch::Search(const char* input, VoidCall2 report) const
-{
-    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
-    size_t state = 1;
-
-    set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-    for (auto e : emit) {
-        report(e, p - (const unsigned char*)input);
-    }
-    while (true) {
-        state = m_FSM->m_States[state]->m_Trans[*p];
-        set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-        for (auto e : emit) {
-            report(e, p - (const unsigned char*)input);
-        }
-        if (!*p) {
-            return;
-        }
-        ++p;
-    }
-}
-
-
-void CMultipatternSearch::Search(const char* input, BoolCall1 report) const
-{
-    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
-    size_t state = 1;
-
-    set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-    for (auto e : emit) {
-        if (report(e)) {
-            return;
-        }
-    }
-    while (true) {
-        state = m_FSM->m_States[state]->m_Trans[*p];
-        set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-        for (auto e : emit) {
-            if (report(e)) {
-                return;
-            }
-        }
-        if (!*p) {
-            return;
-        }
-        ++p;
-    }
-}
-
-
-void CMultipatternSearch::Search(const char* input, BoolCall2 report) const
-{
-    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
-    size_t state = 1;
-
-    set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-    for (auto e : emit) {
+    const auto& emit1 = fsa.m_States[state]->m_Emit;
+    for (auto e : emit1) {
         if (report(e, p - (const unsigned char*)input)) {
             return;
         }
     }
     while (true) {
-        state = m_FSM->m_States[state]->m_Trans[*p];
-        set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-        for (auto e : emit) {
+        state = fsa.m_States[state]->m_Trans[*p];
+        const auto& emit2 = fsa.m_States[state]->m_Emit;
+        for (auto e : emit2) {
             if (report(e, p - (const unsigned char*)input)) {
                 return;
             }
@@ -194,11 +125,8 @@ void CMultipatternSearch::Search(const char* input, BoolCall2 report) const
     }
 }
 
-
-////////////////////////////////////////////////////////////////
-
-void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall1 report)
-{
+#if 0
+    // original code, left here for reference
     const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 0;
 
@@ -219,53 +147,25 @@ void CMultipatternSearch::Search(const char* input, const size_t* states, const 
         }
         ++p;
     }
-}
+#endif
 
-
-void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall2 report)
+static void xMultiPatternSearch(const char* input, const CCompiledFSM& fsm, CMultipatternSearch::BoolCall2 report)
 {
     const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
-    size_t state = 0;
+    CCompiledFSM::index_type state = 0;
 
-    if (emit[state]) {
-        for (auto e : hits.at(state)) {
-            report(e, p - (const unsigned char*)input);
-        }
-    }
-    while (true) {
-        state = states[state * 256 + *p];
-        if (emit[state]) {
-            for (auto e : hits.at(state)) {
-                report(e, p - (const unsigned char*)input);
-            }
-        }
-        if (!*p) {
-            return;
-        }
-        ++p;
-    }
-}
-
-
-void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall1 report)
-{
-    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
-    size_t state = 0;
-
-    if (emit[state]) {
-        for (auto e : hits.at(state)) {
-            if (report(e)) {
+    if (fsm.m_emit.test(state)) {
+        for (auto e : fsm.m_hits.at(state)) {
+            if (report(e, p - (const unsigned char*)input))
                 return;
-            }
         }
     }
     while (true) {
-        state = states[state * 256 + *p];
-        if (emit[state]) {
-            for (auto e : hits.at(state)) {
-                if (report(e)) {
+        state = fsm.m_states.at(uintptr_t(state) * 256 + *p);
+        if (fsm.m_emit.test(state)) {
+            for (auto e : fsm.m_hits.at(state)) {
+                if (report(e, p - (const unsigned char*)input))
                     return;
-                }
             }
         }
         if (!*p) {
@@ -275,33 +175,59 @@ void CMultipatternSearch::Search(const char* input, const size_t* states, const 
     }
 }
 
-
-void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall2 report)
+void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
 {
-    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
-    size_t state = 0;
+    BoolCall2 call = [report](size_t p1, size_t /*p2*/) { report(p1); return false; };
+    xMultiPatternSearch(input, *m_FSM, call);
+}
 
-    if (emit[state]) {
-        for (auto e : hits.at(state)) {
-            if (report(e, p - (const unsigned char*)input)) {
-                return;
-            }
-        }
-    }
-    while (true) {
-        state = states[state * 256 + *p];
-        if (emit[state]) {
-            for (auto e : hits.at(state)) {
-                if (report(e, p - (const unsigned char*)input)) {
-                    return;
-                }
-            }
-        }
-        if (!*p) {
-            return;
-        }
-        ++p;
-    }
+
+void CMultipatternSearch::Search(const char* input, VoidCall2 report) const
+{
+    BoolCall2 call = [report](size_t p1, size_t p2) { report(p1, p2); return false; };
+    xMultiPatternSearch(input, *m_FSM, call);
+}
+
+
+void CMultipatternSearch::Search(const char* input, BoolCall1 report) const
+{
+    BoolCall2 call = [report](size_t p1, size_t /*p2*/) { return report(p1); };
+    xMultiPatternSearch(input, *m_FSM, call);
+}
+
+
+void CMultipatternSearch::Search(const char* input, BoolCall2 report) const
+{
+    BoolCall2 call = [report](size_t p1, size_t p2) { return report(p1, p2); };
+    xMultiPatternSearch(input, *m_FSM, call);
+}
+
+
+void CMultipatternSearch::Search(const char* input, const CCompiledFSM& fsm, VoidCall1 report)
+{
+    BoolCall2 call = [report](size_t p1, size_t /*p2*/) { report(p1); return false; };
+    xMultiPatternSearch(input, fsm, call);
+}
+
+
+void CMultipatternSearch::Search(const char* input, const CCompiledFSM& fsm, VoidCall2 report)
+{
+    BoolCall2 call = [report](size_t p1, size_t p2) { report(p1, p2); return false; };
+    xMultiPatternSearch(input, fsm, call);
+}
+
+
+void CMultipatternSearch::Search(const char* input, const CCompiledFSM& fsm, BoolCall1 report)
+{
+    BoolCall2 call = [report](size_t p1, size_t /*p2*/) { return report(p1); };
+    xMultiPatternSearch(input, fsm, call);
+}
+
+
+void CMultipatternSearch::Search(const char* input, const CCompiledFSM& fsm, BoolCall2 report)
+{
+    BoolCall2 call = [report](size_t p1, size_t p2) { return report(p1, p2); };
+    xMultiPatternSearch(input, fsm, call);
 }
 
 
@@ -525,9 +451,9 @@ static inline void InsertDigit(set<unsigned char>& t)
 
 static inline void InsertNoDigit(set<unsigned char>& t)
 {
-    for (unsigned char c = 1; c <= 255; c++) {
+    for (unsigned c = 1; c <= 255; c++) {
         if (c < '0' || c > '9') {
-            t.insert(c);
+            t.insert((unsigned char)c);
         }
     }
 }
@@ -550,11 +476,11 @@ static inline void InsertAlpha(set<unsigned char>& t)
 
 static inline void InsertNoAlpha(set<unsigned  char>& t)
 {
-    for (unsigned char c = 1; c <= 255; c++) {
+    for (unsigned c = 1; c <= 255; c++) {
         if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_') {
             continue;
         }
-        t.insert(c);
+        t.insert((unsigned char)c);
     }
 }
 
@@ -572,9 +498,9 @@ static inline void InsertSpace(set<unsigned char>& t)
 
 static inline void InsertNoSpace(set<unsigned char>& t)
 {
-    for (unsigned char c = 1; c <= 255; c++) {
+    for (unsigned c = 1; c <= 255; c++) {
         if (c != ' ' && c != '\f' && c != '\n' && c != '\r' && c != '\t' && c != '\v') {
-            t.insert(c);
+            t.insert((unsigned char)c);
         }
     }
 }
@@ -1688,16 +1614,87 @@ void CRegExFSA::GenerateSourceCode(ostream& out) const
     }
 }
 
+struct C64MaskOut
+{
+    uint64_t m_current = 0;
+    size_t   m_index   = 0;
+
+    void Out1(std::ostream& out, bool bit)
+    {
+        out << (bit ? "1" : "0") << ",";
+        m_index++;
+        if (m_index == 32) {
+            m_index = 0;
+            out << "\n";
+        } else {
+            out << " ";
+        }
+    }
+    void Out64(std::ostream& out, bool bit)
+    {
+        if (bit) {
+            m_current |= (1ULL << m_index);
+        }
+        m_index++;
+        if (m_index == 64) {
+            out << "  0x" << NStr::NumericToString(m_current, 0, 16) << "ULL,\n";
+            m_index = 0;
+            m_current = 0;
+        }
+    }
+    void Final64(std::ostream& out) {
+        if (m_index)
+            out << "  0x" << NStr::NumericToString(m_current, 0, 16) << "ULL";
+    }
+};
 
 void CRegExFSA::GenerateArrayMapData(ostream& out) const
 {
-    out << "_FSM_EMIT(" << m_States.size() << ") = {\n";   // #define _FSM_EMIT static bool emit[]
+    size_t max_vec_size = 0;
+    size_t num_hits = 0;
+    for (size_t n = 1; n < m_States.size(); n++) {
+        if (m_States[n]->m_Emit.size())
+            num_hits++;
+        max_vec_size = std::max(max_vec_size, m_States[n]->m_Emit.size());
+    }
+
+    out << "NCBI_FSM_PREPARE(\n"
+        << "  " << m_States.size() - 1 << ", // states size \n"
+        << "  " << max_vec_size        << ", // max vector size\n"
+        << "  " << num_hits            << ", // num hits\n"
+        << "  " << (m_States.size() - 1 + 63)/64 << " // emit compacted size\n"
+        << ")\n";
+
+    out << "/*\n";
+    #if 0
+    out << "NCBI_FSM_EMIT = {\n";   // #define _FSM_EMIT static bool emit[]
     for (size_t n = 0; n < m_States.size() - 1; n++) {
         cout << (n ? n % 32 ? ", " : ",\n" : "") << (m_States[n + 1]->m_Emit.size() ? "1" : "0");
     }
     out << "\n};\n";
+    #endif
 
-    out << "_FSM_HITS = {\n";   // #define _FSM_HITS static map<size_t, vector<size_t>> hits
+    out << "NCBI_FSM_EMIT = {\n";   // #define _FSM_EMIT static bool emit[]
+    {
+        C64MaskOut mask64;
+        for (size_t n = 1; n < m_States.size(); n++) {
+            mask64.Out1(out, (m_States[n]->m_Emit.size()));
+        }
+    }
+    out << "\n};\n";
+    out << "*/\n";
+
+    out << "NCBI_FSM_EMIT_COMPACT = {\n";
+    {
+        C64MaskOut mask64;
+        for (size_t n = 1; n < m_States.size(); n++) {
+            mask64.Out64(out, (m_States[n]->m_Emit.size()));
+        }
+        mask64.Final64(out);
+    }
+    out << "\n};\n";
+
+    out << "NCBI_FSM_HITS = {\n";   // #define _FSM_HITS static map<size_t, vector<size_t>> hits
     size_t count = 0;
     for (size_t n = 0; n < m_States.size(); n++) {
         if (m_States[n]->m_Emit.size()) {
@@ -1723,14 +1720,17 @@ void CRegExFSA::GenerateArrayMapData(ostream& out) const
     }
     out << "};\n";
 
-    out << "_FSM_STATES = {";   // #define _FSM_STATE static size_t[] states
+    // #define _FSM_STATE(size) static size_t states[size]
+    out << "NCBI_FSM_STATES = {\n";
     for (size_t n = 1; n < m_States.size(); n++) {
-        out << "\n// " << (n - 1);
+        out << "// " << (n - 1) << "\n";
         for (size_t i = 0; i < 256; i++) {
-            cout << (i % 32 ? ", " : "\n") << (m_States[n]->m_Trans[i] ? m_States[n]->m_Trans[i] - 1 : 0) << (i % 32 == 31 && (i != 255 || n < m_States.size() - 1) ? "," : "");
+            out
+                << (m_States[n]->m_Trans[i] ? m_States[n]->m_Trans[i] - 1 : 0)
+                << (i % 32 == 31 ? ",\n" : ", ");
         }
     }
-    out << "\n};\n";
+    out << "};\n";
 }
 
 END_NCBI_SCOPE
