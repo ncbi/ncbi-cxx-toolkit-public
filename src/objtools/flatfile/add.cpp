@@ -615,8 +615,8 @@ static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
     ppacc1 = *it;
     ++it;
     ppacc2 = *it;
-    acc1   = (char*)ppacc1.c_str();
-    acc2   = (char*)ppacc2.c_str();
+    acc1   = ppacc1.data();
+    acc2   = ppacc2.data();
 
 
     if (acc1 == NULL && acc2 == NULL)
@@ -1932,16 +1932,16 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     ValNodePtr tvnp;
     ValNodePtr uvnp;
 
-    char* str;
-    Int4  i;
+    const char* str;
+    Int4        i;
 
     if (offset == NULL)
         return;
 
-    str                         = StringSave(offset + ParFlat_COL_DATA);
-    str[len - ParFlat_COL_DATA] = '\0';
-    vnp                         = fta_tokenize_dblink(str, source);
-    MemFree(str);
+    char* str1                   = StringSave(offset + ParFlat_COL_DATA);
+    str1[len - ParFlat_COL_DATA] = '\0';
+    vnp                          = fta_tokenize_dblink(str1, source);
+    MemFree(str1);
 
     if (vnp == NULL) {
         *drop = 1;
@@ -2297,7 +2297,7 @@ static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, char* loca
 }
 
 /**********************************************************/
-Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* name, bool iscon)
+Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const char* name, bool iscon)
 {
     SeqLocIds   sli;
     const Char* p = NULL;
@@ -2340,11 +2340,11 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, char* n
     if (tpa > 1 || non_tpa > 1) {
         if (! pp->allow_crossdb_featloc) {
             sev       = SEV_REJECT;
-            p         = (char*)"Entry skipped.";
+            p         = "Entry skipped.";
             ibp->drop = 1;
         } else {
             sev = SEV_WARNING;
-            p   = (char*)"";
+            p   = "";
         }
         if (name == NULL) {
             string label;

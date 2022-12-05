@@ -237,7 +237,7 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& b
 }
 
 /**********************************************************/
-static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, char* entry, CMolInfo& mol_info, CBioSource* bio_src)
+static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& mol_info, CBioSource* bio_src)
 {
     CRef<CGB_block> gbb(new CGB_block),
         ret;
@@ -657,7 +657,7 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* or
 }
 
 /**********************************************************/
-static void XMLFakeBioSources(XmlIndexPtr xip, char* entry, CBioseq& bioseq, Parser::ESource source)
+static void XMLFakeBioSources(XmlIndexPtr xip, const char* entry, CBioseq& bioseq, Parser::ESource source)
 {
     char* organism = NULL;
     char* taxonomy = NULL;
@@ -1116,7 +1116,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 }
 
 /**********************************************************/
-static void XMLGetDivision(char* entry, IndexblkPtr ibp)
+static void XMLGetDivision(const char* entry, IndexblkPtr ibp)
 {
     char* div;
 

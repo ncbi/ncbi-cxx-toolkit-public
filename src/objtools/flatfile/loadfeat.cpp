@@ -907,7 +907,7 @@ static void FilterDb_xref(CSeq_feat& feat, Parser::ESource source)
         feat.ResetDbxref();
 }
 
-bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, char* name)
+bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const char* name)
 {
     bool locmap = true;
     int  num_errs;
@@ -1233,7 +1233,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
             MemFree(pp->buf);
         pp->buf = NULL;
 
-        GetSeqLocation(*feat, location, seqids, &err, pp, (char*)"pub");
+        GetSeqLocation(*feat, location, seqids, &err, pp, "pub");
 
         if (err) {
             ErrPostEx(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "Unparsable reference location. Entry dropped.");
