@@ -299,8 +299,8 @@ namespace ct
         constexpr const_reference at(size_t index) const         { return m_data[index]; }
         constexpr const_pointer   data() const noexcept          { return m_data; }
 
-        constexpr const_reference front() const                  { return *data; }
-        constexpr const_reference back() const                   { return data[m_size-1]; }
+        constexpr const_reference front() const                  { return m_data[0]; }
+        constexpr const_reference back() const                   { return m_data[m_size-1]; }
 
         constexpr size_type      size()      const noexcept { return m_size; }
         constexpr size_type      max_size()  const noexcept { return size(); }
