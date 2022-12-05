@@ -90,7 +90,7 @@ namespace ct
         }
 
         static constexpr size_t capacity() { return _Bits; }
-        constexpr size_t size() const 
+        constexpr size_t size() const
         { // See Hamming Weight: https://en.wikipedia.org/wiki/Hamming_weight
             size_t retval{0};
             for (auto value: _Array)
@@ -102,8 +102,8 @@ namespace ct
             }
             return retval;
         }
-        constexpr bool empty() const 
-        { 
+        constexpr bool empty() const
+        {
             for (auto value: _Array)
             {
                 if (value != 0)
@@ -265,6 +265,62 @@ namespace ct
 
     };
 
+    // non-containing constexpr vector
+    template<typename _Type>
+    class const_vector
+    {
+    public:
+        using value_type       = _Type;
+        using size_type	       = std::size_t;
+        using difference_type  = std::ptrdiff_t;
+        using reference        = const value_type&;
+        using const_reference  = const value_type&;
+        using pointer          = const value_type*;
+        using const_pointer    = const value_type*;
+        using iterator         = pointer;
+        using const_iterator   = const_pointer;
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        constexpr const_vector() = default;
+        constexpr const_vector(const_pointer data, size_t size )
+            : m_size{size}, m_data{data} {}
+
+        constexpr const_vector(std::nullptr_t) {}
+
+        template<size_t N>
+        constexpr const_vector(const std::array<value_type, N>& data )
+            : m_size{data.size()}, m_data{data.data()} {}
+
+        template<size_t N>
+        constexpr const_vector(value_type const (&init)[N]) : m_size{N}, m_data{init} {}
+
+        constexpr const_reference operator[](size_t index) const { return m_data[index]; }
+        constexpr const_reference at(size_t index) const         { return m_data[index]; }
+        constexpr const_pointer   data() const noexcept          { return m_data; }
+
+        constexpr const_reference front() const                  { return *data; }
+        constexpr const_reference back() const                   { return data[m_size-1]; }
+
+        constexpr size_type      size()      const noexcept { return m_size; }
+        constexpr size_type      max_size()  const noexcept { return size(); }
+        constexpr size_type      capacity()  const noexcept { return size(); }
+        [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
+
+        constexpr const_iterator begin()     const noexcept { return m_data; }
+        constexpr const_iterator cbegin()    const noexcept { return begin(); }
+        constexpr const_iterator end()       const noexcept { return begin() + size(); }
+        constexpr const_iterator cend()      const noexcept { return end(); }
+        constexpr const_reverse_iterator rbegin()  const noexcept { return const_reverse_iterator{ end() }; }
+        constexpr const_reverse_iterator rcbegin() const noexcept { return rbegin(); }
+        constexpr const_reverse_iterator rend()    const noexcept { return const_reverse_iterator{ begin() }; }
+        constexpr const_reverse_iterator rcend()   const noexcept { return rend(); }
+
+    protected:
+        size_t m_size = 0;
+        const_pointer m_data = 0;
+    };
+
     template<typename _Key, typename _Ty, typename _Traits = straight_map_traits<_Key, _Ty>, typename _Backend=void>
     class const_map: public const_set_map_base<_Traits, _Backend>
     { // ordered or unordered compile time map
@@ -300,15 +356,25 @@ namespace ct
         {
             return construct(make_array(init));
         }
-        template<size_t N>       
+        template<size_t N>
         static constexpr auto construct(const const_array<init_type, N>& init)
         {
             auto backend=_MyBase::make_backend(init);
             return const_map<_Key, _Ty, _Traits, decltype(backend)>{backend};
         }
+        static constexpr auto presorted(const const_vector<init_type>& init)
+        {
+            auto backend=_MyBase::presorted(init);
+            return const_map<_Key, _Ty, _Traits, decltype(backend)>{backend};
+        }
 
     protected:
     };
+
+    template<typename _Key, typename _Ty,
+        typename _Traits = straight_map_traits<_Key, _Ty>,
+        typename _Backend = presorted_backend<const_vector<typename _Traits::value_type>>>
+    using const_map_presorted = const_map<_Key, _Ty, _Traits, _Backend>;
 
     template<typename _Ty, typename _Backend=void>
     class const_set: public const_set_map_base<simple_sort_traits<_Ty>, _Backend>
@@ -383,7 +449,7 @@ namespace ct
 
 }
 
-#ifdef const_array 
+#ifdef const_array
 #   undef const_array
 #endif
 #ifdef const_tuple

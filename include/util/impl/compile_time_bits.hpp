@@ -146,7 +146,7 @@ namespace compile_time_bits
     }
 
     template <
-        typename...TArgs, 
+        typename...TArgs,
         size_t N=sizeof...(TArgs),
         typename _Tuple=typename std::enable_if<(N>1),
              std::tuple<TArgs...>>::type,
@@ -224,8 +224,8 @@ namespace compile_time_bits
 
     template<typename _BaseType>
     struct DeduceType<_BaseType, std::enable_if_t<
-            std::is_enum<_BaseType>::value || 
-            std::numeric_limits<_BaseType>::is_integer, 
+            std::is_enum<_BaseType>::value ||
+            std::numeric_limits<_BaseType>::is_integer,
             _BaseType>>
     {
         using value_type = _BaseType;
@@ -505,6 +505,26 @@ namespace compile_time_bits
         const index_type* m_index {nullptr};
     };
 
+    template<typename _ArrayType>
+    class presorted_backend
+    {
+    public:
+        using value_type = typename _ArrayType::value_type;
+        using index_type = typename _ArrayType::value_type;
+
+        constexpr presorted_backend() = default;
+        constexpr presorted_backend(const _ArrayType& _Other)
+            : m_vec{_Other}
+        {}
+
+        constexpr const value_type* get_values() const noexcept { return m_vec.data(); }
+        constexpr const value_type* get_index() const noexcept  { return m_vec.data(); }
+        constexpr size_t realsize() const noexcept { return m_vec.size(); }
+    private:
+        _ArrayType m_vec;
+    };
+
+
     template<typename _Traits, typename _Backend>
     class const_set_map_base
     {
@@ -559,7 +579,7 @@ namespace compile_time_bits
 
         struct value_compare
         {
-            bool operator()( const value_type& l, const value_type& r ) const         
+            bool operator()( const value_type& l, const value_type& r ) const
             {
                 return key_compare{}(_Traits::get_key(l), _Traits::get_key(r));
             }
@@ -572,7 +592,7 @@ namespace compile_time_bits
             {
                 return typename _Traits::hashed_key_type::hash_compare{}(_Traits::get_key(l), _Traits::get_key(r));
             }
-        };   
+        };
 
         const_iterator lower_bound(intermediate _key) const
         {
@@ -633,7 +653,7 @@ namespace compile_time_bits
         {}
 
     protected:
-    
+
         template<size_t N>
         static constexpr auto make_backend(init_type const (&init)[N])
         {
@@ -645,7 +665,14 @@ namespace compile_time_bits
             auto proxy = TInsertSorter<_Traits, true>::sort(init);
             using backend_type = simple_backend<decltype(proxy)>;
             return backend_type{proxy};
-        }     
+        }
+
+        template<typename _ArrayType>
+        static constexpr auto presorted(const _ArrayType& init)
+        {
+            using backend_type = presorted_backend<_ArrayType>;
+            return backend_type{init};
+        }
 
         backend_type m_backend;
     };
@@ -707,8 +734,12 @@ namespace compile_time_bits
             }
             return ret;
         }
-        template <size_t I, size_t N>
-        static constexpr _Ty assemble_mask(const const_array<char, N>& _init)
+
+        static constexpr bool IsYes(char c) { return c == '1'; }
+        static constexpr bool IsYes(bool c) { return c; }
+
+        template <size_t I, size_t N, typename _Base>
+        static constexpr _Ty assemble_mask(const const_array<_Base, N>& _init)
         {
             _Ty ret = 0;
             _Ty mask = 1;
@@ -716,10 +747,10 @@ namespace compile_time_bits
             constexpr auto _max = I * width + width;
             for (size_t pos = _min; pos < _max && pos < N; ++pos)
             {
-                if (_init[pos] == '1') ret |= mask;
+                if (IsYes(_init[pos])) ret |= mask;
                 mask = mask << 1;
             }
-            return ret;        
+            return ret;
         }
         template <typename _Input, std::size_t... I>
         static constexpr array_t assemble_bitset(const _Input& _init, std::index_sequence<I...>)
@@ -742,6 +773,11 @@ namespace compile_time_bits
         {
             return assemble_bitset(in, std::make_index_sequence<_Size>{});
         }
+        template<size_t N>
+        static constexpr array_t set_bits(const const_array<bool, N>& in)
+        {
+            return assemble_bitset(in, std::make_index_sequence<_Size>{});
+        }
     };
 }
 
@@ -757,4 +793,3 @@ namespace std
 #include "ctsort_cxx14.hpp"
 
 #endif
-
