@@ -50,6 +50,7 @@ NCBI_FSM_EMIT_COMPACT = {
   0xC10100200200ULL,
   0x4000046000000ULL
 };
+/*
 NCBI_FSM_HITS = {
 { 26, { 14 }},   // 14: /matK/i
 { 30, { 6 }},   // 6: /PsbA/i
@@ -66,6 +67,41 @@ NCBI_FSM_HITS = {
 { 154, { 2 }},   // 2: /NADH\s+dehydrogenase\s+subunit/i
 { 158, { 1 }},   // 1: /cytochrome\s+c\s+oxidase\s+subunit/i
 { 178, { 10 }}   // 10: /ribulose-1,5-bisphosphate\s+carboxylase\/oxygenase/i
+};
+*/
+NCBI_FSM_HITS_1(15) = {
+26, //  14: /matK/i
+30, //  6: /PsbA/i
+31, //  7: /PsbB/i
+32, //  9: /PsbH/i
+33, //  8: /PsbT/i
+73, //  11: /maturase\s+K/i
+85, //  3: /cytochrome\s+b/i
+96, //  5: /photosystem\s+I/i
+104, //  4: /ATP\s+synthase\s+F0/i
+110, //  12: /ATPase\s+subunit\s+6/i
+111, //  13: /ATPase\s+subunit\s+8/i
+153, //  0: /cytochrome\s+oxidase\s+subunit/i
+154, //  2: /NADH\s+dehydrogenase\s+subunit/i
+158, //  1: /cytochrome\s+c\s+oxidase\s+subunit/i
+178, //  10: /ribulose-1,5-bisphosphate\s+carboxylase\/oxygenase/i
+};
+NCBI_FSM_HITS_2(15) = {
+{ 14, }, // 14: /matK/i
+{ 6, }, // 6: /PsbA/i
+{ 7, }, // 7: /PsbB/i
+{ 9, }, // 9: /PsbH/i
+{ 8, }, // 8: /PsbT/i
+{ 11, }, // 11: /maturase\s+K/i
+{ 3, }, // 3: /cytochrome\s+b/i
+{ 5, }, // 5: /photosystem\s+I/i
+{ 4, }, // 4: /ATP\s+synthase\s+F0/i
+{ 12, }, // 12: /ATPase\s+subunit\s+6/i
+{ 13, }, // 13: /ATPase\s+subunit\s+8/i
+{ 0, }, // 0: /cytochrome\s+oxidase\s+subunit/i
+{ 2, }, // 2: /NADH\s+dehydrogenase\s+subunit/i
+{ 1, }, // 1: /cytochrome\s+c\s+oxidase\s+subunit/i
+{ 10, }, // 10: /ribulose-1,5-bisphosphate\s+carboxylase\/oxygenase/i
 };
 NCBI_FSM_STATES = {
 // 0
