@@ -38,6 +38,7 @@
 #include <objects/macro/String_constraint.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <util/compiled_fsm.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -163,16 +164,6 @@ namespace
 };
 
 
-// Including state machine
-#define _FSM_EMIT static bool s_Weasel_emit[]
-#define _FSM_HITS static map<size_t, vector<size_t>> s_Weasel_hits
-#define _FSM_STATES static size_t s_Weasel_states[]
-#include "weasel.inc"
-#undef _FSM_EMIT
-#undef _FSM_HITS
-#undef _FSM_STATES
-
-
 void CMatchString::x_PopWeasel() const
 {
     m_noweasel_start = 0;
@@ -189,7 +180,13 @@ void CMatchString::x_PopWeasel() const
             }
         }
     };
-    CMultipatternSearch::Search(this->m_original, s_Weasel_states, s_Weasel_emit, s_Weasel_hits, callback);
+
+// Including state machine
+#include "weasel.inc"
+
+    static constexpr TLocalFSM s_FSM(s_compact, s_hits_init, s_states, nullptr);
+
+    CMultipatternSearch::Search(this->m_original, s_FSM, callback);
 }
 
 
