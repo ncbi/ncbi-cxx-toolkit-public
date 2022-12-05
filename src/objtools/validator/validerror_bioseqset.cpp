@@ -362,6 +362,8 @@ void CValidError_bioseqset::ValidateNucProtSet
                             generated.erase (0, 12);
                          } else if (NStr::StartsWith (generated, "PUTATIVE PSEUDOGENE: ", NStr::eNocase)) {
                             generated.erase (0, 21);
+                         } else if (NStr::StartsWith (generated, "LOW QUALITY PROTEIN: ", NStr::eNocase)) {
+                            generated.erase (0, 21);
                        }
                         //okay if instantiated title has single trailing period
                         if (instantiated.length() == generated.length() + 1 && NStr::EndsWith(instantiated, ".")
