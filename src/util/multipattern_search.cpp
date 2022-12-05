@@ -149,13 +149,26 @@ static void xMultiPatternSearch(const char* input, const CRegExFSA& fsa, CMultip
     }
 #endif
 
+namespace FSM
+{
+    const CCompiledFSM::THits2::value_type& CCompiledFSM::get_hits(index_type state) const
+    {
+        auto it = std::lower_bound(m_hits1.begin(), m_hits1.end(), state);
+#ifdef _DEBUG
+        _ASSERT(it != m_hits1.end());
+#endif
+        auto dist = std::distance(m_hits1.begin(), it);
+        return m_hits2[dist];
+    }
+}
+
 static void xMultiPatternSearch(const char* input, const CCompiledFSM& fsm, CMultipatternSearch::BoolCall2 report)
 {
     const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     CCompiledFSM::index_type state = 0;
 
     if (fsm.m_emit.test(state)) {
-        for (auto e : fsm.m_hits.at(state)) {
+        for (auto e : fsm.get_hits(state)) {
             if (report(e, p - (const unsigned char*)input))
                 return;
         }
@@ -163,7 +176,7 @@ static void xMultiPatternSearch(const char* input, const CCompiledFSM& fsm, CMul
     while (true) {
         state = fsm.m_states.at(uintptr_t(state) * 256 + *p);
         if (fsm.m_emit.test(state)) {
-            for (auto e : fsm.m_hits.at(state)) {
+            for (auto e : fsm.get_hits(state)) {
                 if (report(e, p - (const unsigned char*)input))
                     return;
             }
@@ -1694,6 +1707,7 @@ void CRegExFSA::GenerateArrayMapData(ostream& out) const
     }
     out << "\n};\n";
 
+    out << "/*\n";
     out << "NCBI_FSM_HITS = {\n";   // #define _FSM_HITS static map<size_t, vector<size_t>> hits
     size_t count = 0;
     for (size_t n = 0; n < m_States.size(); n++) {
@@ -1714,6 +1728,35 @@ void CRegExFSA::GenerateArrayMapData(ostream& out) const
             for (auto e : m_States[n]->m_Emit) {
                 out << " // " << e << ": " << m_Str[e];
                 i++;
+            }
+            out << "\n";
+        }
+    }
+    out << "};\n";
+    out << "*/\n";
+
+    out << "NCBI_FSM_HITS_1(" << num_hits << ") = {\n";   // #define _FSM_HITS static map<size_t, vector<size_t>> hits
+    for (size_t n = 0; n < m_States.size(); n++) {
+        if (m_States[n]->m_Emit.size()) {
+            out << (n - 1) << ", // ";
+            for (auto e : m_States[n]->m_Emit) {
+                out << " " << e << ": " << m_Str[e];
+            }
+            out << "\n";
+        }
+    }
+    out << "};\n";
+
+    out << "NCBI_FSM_HITS_2(" << num_hits << ") = {\n";   // #define _FSM_HITS static map<size_t, vector<size_t>> hits
+    for (size_t n = 0; n < m_States.size(); n++) {
+        if (m_States[n]->m_Emit.size()) {
+            out << "{ ";
+            for (auto e : m_States[n]->m_Emit) {
+                out << e << ", ";
+            }
+            out << "}, //";
+            for (auto e : m_States[n]->m_Emit) {
+                out << " " << e << ": " << m_Str[e];
             }
             out << "\n";
         }
