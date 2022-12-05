@@ -52,8 +52,10 @@ BEGIN_SCOPE(objects)
 ///
 ///  CSeq_id_Handle::
 ///
-///    Handle to be used instead of CSeq_id. Supports different
-///    methods of comparison: exact equality or match of seq-ids.
+///    Handle to be used instead of CSeq_id to optimize indexing and sorting.
+///    Comparing seq-id handles is not guaranteed to produce the same results
+///    as comparing seq-ids, to be stable or to remain the same between application
+///    runs. For stable sorting use CSeq_id_Handle::PLessOrdered functor.
 ///
 
 // forward declaration
