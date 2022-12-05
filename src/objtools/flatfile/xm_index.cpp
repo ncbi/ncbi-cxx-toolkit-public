@@ -521,7 +521,7 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
 }
 
 /**********************************************************/
-static void XMLInitialEntry(IndexblkPtr ibp, char* entry, bool accver, Parser::ESource source)
+static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Parser::ESource source)
 {
     XmlIndexPtr xip;
     char*       buf;
@@ -676,12 +676,12 @@ static bool XMLSameTagsCheck(XmlIndexPtr xip, char* name)
 }
 
 /**********************************************************/
-static XmlIndexPtr XMLIndexSameSubTags(char* entry, XmlIndexPtr xip, Int4 tag)
+static XmlIndexPtr XMLIndexSameSubTags(const char* entry, XmlIndexPtr xip, Int4 tag)
 {
     XmlIndexPtr xipsub;
     XmlIndexPtr txipsub;
     char*       name;
-    char*       c;
+    const char* c;
     char*       p;
     size_t      count;
     Char        s[60];
@@ -758,7 +758,7 @@ static XmlIndexPtr XMLIndexSameSubTags(char* entry, XmlIndexPtr xip, Int4 tag)
 }
 
 /**********************************************************/
-static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, char* entry)
+static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
 {
     XmlIndexPtr xip;
     XmlIndexPtr xipsec;
@@ -809,7 +809,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, char* entry)
 }
 
 /**********************************************************/
-static bool XMLKeywordsCheck(char* entry, IndexblkPtr ibp, Parser::ESource source)
+static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource source)
 {
     XmlIndexPtr xip;
     XmlIndexPtr xipkwd;
@@ -1013,11 +1013,11 @@ char* XMLLoadEntry(ParserPtr pp, bool err)
 
 
 /**********************************************************/
-static bool XMLIndexSubTags(char* entry, XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
+static bool XMLIndexSubTags(const char* entry, XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
 {
     XmlKwordBlkPtr txkbp;
     XmlIndexPtr    xipsub;
-    char*          c;
+    const char*    c;
     char*          p;
     Char           s[60];
     size_t         count;
@@ -1191,7 +1191,7 @@ static bool XMLCheckRequiredQualTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static bool XMLIndexFeatures(char* entry, XmlIndexPtr xip)
+static bool XMLIndexFeatures(const char* entry, XmlIndexPtr xip)
 {
     XmlIndexPtr xipfeat;
     XmlIndexPtr xipsub;
@@ -1345,7 +1345,7 @@ static bool XMLCheckRequiredXrefTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static bool XMLIndexReferences(char* entry, XmlIndexPtr xip, size_t bases)
+static bool XMLIndexReferences(const char* entry, XmlIndexPtr xip, size_t bases)
 {
     XmlIndexPtr xipref;
     XmlIndexPtr txip;
