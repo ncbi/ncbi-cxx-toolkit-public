@@ -395,7 +395,19 @@ void IPubmedUpdater::Normalize(CPub& pub)
                     const CDbtag& dbtl = l->GetOther();
                     const CDbtag& dbtr = r->GetOther();
                     if (dbtl.CanGetDb() && dbtr.CanGetDb()) {
-                        return dbtl.GetDb() < dbtr.GetDb();
+                        const string& dbnl = dbtl.GetDb();
+                        const string& dbnr = dbtr.GetDb();
+                        // pmc comes first
+                        if (NStr::CompareNocase("pmc", dbnr) == 0)
+                            return false;
+                        if (NStr::CompareNocase(dbnl, "pmc") == 0)
+                            return true;
+                        // mid comes second
+                        if (NStr::CompareNocase("mid", dbnr) == 0)
+                            return false;
+                        if (NStr::CompareNocase(dbnl, "mid") == 0)
+                            return true;
+                        return dbnl < dbnr;
                     }
                 }
                 return chl < chr;
