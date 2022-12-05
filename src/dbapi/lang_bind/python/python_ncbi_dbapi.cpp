@@ -2891,7 +2891,7 @@ CNullable<short> x_GetUTCOffset(const pythonpp::CDateTime& dt)
 {
     pythonpp::CObject tzinfo;
 #if PY_VERSION_HEX >= 0x030a0000
-    tzinfo = PyDateTime_DATE_GET_TZINFO(obj.Get());
+    tzinfo = PyDateTime_DATE_GET_TZINFO(dt.Get());
 #else
     tzinfo = dt.GetAttr("tzinfo");
 #endif
