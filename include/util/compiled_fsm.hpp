@@ -45,76 +45,34 @@ public:
     using value_type = uint64_t;
     static constexpr size_t numbits = sizeof(value_type)*8;
     constexpr CConstEmits() = default;
-    constexpr CConstEmits(const value_type* ptr, size_t size): m_size{size}, m_data{ptr} {}
+    //constexpr CConstEmits(const value_type* ptr, size_t size): m_size{size}, m_data{ptr} {}
+    constexpr CConstEmits(const value_type* ptr): m_data{ptr} {}
     constexpr bool test(size_t index) const {
         size_t left = index / numbits;
         size_t right = index % numbits;
         return m_data[left] & (value_type(1) << right);
     }
 protected:
-    size_t m_size = 0;
+    //size_t m_size = 0;
     const value_type* m_data = nullptr;
-};
-
-// temporal class until generator is improved
-template<size_t N>
-class CConstEmitsImpl: public CConstEmits
-{
-public:
-    using TEmitsSet = ct::const_bitset<N, size_t>;
-    constexpr CConstEmitsImpl(bool const (&init)[N]):
-        m_bits{TEmitsSet::traits::set_bits(ct::make_array(init))}
-    {
-        CConstEmits::m_size = N;
-        CConstEmits::m_data = m_bits.data();
-    }
-    constexpr CConstEmitsImpl(const std::initializer_list<bool>& init):
-        m_bits{TEmitsSet::traits::set_bits(init)}
-    {
-        CConstEmits::m_size = N;
-        CConstEmits::m_data = m_bits.data();
-    }
-
-    template<size_t other>
-    static constexpr auto MakeEmits(bool const (&init)[other])
-    {
-        return CConstEmitsImpl<other>(init);
-    }
-
-protected:
-    typename TEmitsSet::_Array_t m_bits;
 };
 
 class CCompiledFSM
 {
 public:
-    using index_type = uint32_t;
+    using index_type = uint16_t;
     using TEmits  = CConstEmits;
     using TStates = ct::const_vector<index_type>;
-    using THits = ct::const_map_presorted<index_type, std::initializer_list<index_type>>;
+    using THits1  = ct::const_vector<index_type>;
+    using THits2  = ct::const_vector<std::initializer_list<index_type>>;
 
     TEmits  m_emit;
-    THits   m_hits;
+    THits1  m_hits1;
+    THits2  m_hits2;
     TStates m_states;
     ct::const_vector<unsigned char> m_rules_asn1;
-};
 
-template<size_t _states_size, size_t _max_vec, size_t _num_hits, size_t _compacted_size>
-class CCompiledFSM_Impl: public CCompiledFSM
-{
-public:
-
-    template<typename _emit_init, typename _hits_init, typename _states_init, typename _rules_init>
-    constexpr
-    CCompiledFSM_Impl(_emit_init&& _emit, _hits_init&& hits_init, _states_init&& states_init, _rules_init&& rules)
-        : CCompiledFSM{
-            CConstEmits(_emit, _num_hits),
-            THits::presorted(hits_init),
-            states_init,
-            rules}
-    {
-    }
-    using THitsInit = THits::init_type;
+    const THits2::value_type& get_hits(index_type state) const;
 };
 
 } // namespace FSM
@@ -122,12 +80,13 @@ public:
 END_NCBI_SCOPE
 
 #define NCBI_FSM_PREPARE(states, max_vec, hits, compact_size) \
-    using TLocalFSM = ::ncbi::FSM::CCompiledFSM_Impl<states, max_vec, hits, compact_size>;
+    using TLocalFSM = ::ncbi::FSM::CCompiledFSM;
 
 #define NCBI_FSM_RULES        static constexpr unsigned char s_rules[]
-#define NCBI_FSM_EMIT_COMPACT static constexpr TLocalFSM::TEmits::value_type s_compact []
-#define NCBI_FSM_HITS         static constexpr TLocalFSM::THitsInit s_hits_init[]
-#define NCBI_FSM_STATES       static constexpr TLocalFSM::TStates::value_type s_states []
+#define NCBI_FSM_EMIT_COMPACT static constexpr ::ncbi::FSM::CCompiledFSM::TEmits::value_type  s_compact []
+#define NCBI_FSM_STATES       static constexpr ::ncbi::FSM::CCompiledFSM::TStates::value_type s_states []
+#define NCBI_FSM_HITS_1(size) static constexpr ::ncbi::FSM::CCompiledFSM::THits1::value_type  s_hits_init_1[size]
+#define NCBI_FSM_HITS_2(size) static constexpr ::ncbi::FSM::CCompiledFSM::THits2::value_type  s_hits_init_2[size]
 
 
 #endif /* UTIL___COMPILED_FSM__HPP */

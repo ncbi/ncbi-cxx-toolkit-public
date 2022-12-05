@@ -184,7 +184,7 @@ void CMatchString::x_PopWeasel() const
 // Including state machine
 #include "weasel.inc"
 
-    static constexpr TLocalFSM s_FSM(s_compact, s_hits_init, s_states, nullptr);
+    static const TLocalFSM s_FSM{s_compact, s_hits_init_1, s_hits_init_2, s_states, nullptr};
 
     CMultipatternSearch::Search(this->m_original, s_FSM, callback);
 }

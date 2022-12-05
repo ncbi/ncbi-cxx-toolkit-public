@@ -1814,17 +1814,10 @@ static const string kFixable = "Fixable";
 static const string kNonFixable = "Non-fixable";
 
 
-//static void FindFlatfileText(const unsigned char* p, bool *result)
-//{
-//#define _FSM_REPORT(x, y) result[x] = true, false
-//#include "FLATFILE_FIND.inc"
-//#undef _FSM_REPORT
-//}
-
 static void FindFlatfileText(const char* str, bool *result)
 {
 #include "FLATFILE_FIND.inc"
-    static constexpr TLocalFSM s_FSM(s_compact, s_hits_init, s_states, nullptr);
+    static constexpr TLocalFSM s_FSM{s_compact, s_hits_init_1, s_hits_init_2, s_states, nullptr};
 
     CMultipatternSearch::Search(str, s_FSM, [result](size_t n){ result[n] = true; });
 }

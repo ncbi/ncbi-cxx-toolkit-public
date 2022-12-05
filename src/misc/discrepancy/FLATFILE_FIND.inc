@@ -48,6 +48,7 @@ NCBI_FSM_EMIT_COMPACT = {
   0x1C0739D9B12087B1ULL,
   0xEULL
 };
+/*
 NCBI_FSM_HITS = {
 { 183, { 78 }},   // 78: haem
 { 184, { 80 }},   // 80: heam
@@ -143,6 +144,199 @@ NCBI_FSM_HITS = {
 { 641, { 79 }},   // 79: haemagglutination
 { 642, { 39 }},   // 39: nuclear shutting
 { 643, { 39 }}   // 39: nuclear shutting
+};
+*/
+NCBI_FSM_HITS_1(94) = {
+183, //  78: haem
+184, //  80: heam
+341, //  61: sulfer
+361, //  7: PRChian
+362, //  8: Scieces
+366, //  77: anaemia
+379, //  26: genone
+380, //  26: genone
+390, //  36: instute
+392, //  37: muesum
+393, //  37: muesum
+394, //  38: musuem
+395, //  38: musuem
+398, //  41: protien
+401, //  44: putaive
+408, //  51: reseach
+410, //  53: reserch
+414, //  57: scinece
+443, //  15: caputre
+444, //  15: caputre
+445, //  16: casette
+446, //  16: casette
+447, //  17: catalize
+449, //  19: clonging
+464, //  34: insitute
+465, //  35: institue
+466, //  81: mithocon
+470, //  43: putaitve
+473, //  47: putatuve
+474, //  48: putatvie
+475, //  49: pylogeny
+476, //  50: resaerch
+478, //  54: ribosoml
+480, //  56: scencies
+481, //  58: simmilar
+497, //  1: Bacilllus
+500, //  3: Insitiute
+501, //  4: Instutite
+502, //  5: Instutute
+503, //  6: P.R.Chian
+504, //  64: Technlogy
+505, //  65: Veterinry
+513, //  21: cotaining
+528, //  42: puatative
+529, //  45: putataive
+530, //  46: putatitve
+531, //  52: reserach
+532, //  52: reserach
+534, //  59: structual
+535, //  60: subitilus
+536, //  62: technlogy
+537, //  63: technolgy
+545, //  74: univesity
+558, //  20: consevered
+559, //  22: cytochome
+560, //  22: cytochome
+561, //  23: diveristy
+562, //  23: diveristy
+564, //  25: enviroment
+566, //  27: homologue
+567, //  27: homologue
+572, //  32: indepedent
+573, //  33: insititute
+576, //  55: ribossomal
+580, //  70: uinversity
+581, //  71: univercity
+583, //  73: univeristy
+584, //  75: unversity
+585, //  75: unversity
+586, //  76: uviversity
+591, //  9: agricultral
+597, //  24: enivronment
+600, //  29: hypotetical
+604, //  40: phylogentic
+605, //  67: transcirbed
+607, //  69: uiniversity
+608, //  72: univerisity
+611, //  12: Biotechnlogy 62: technlogy
+612, //  2: Enviromental
+614, //  11: biotechnlogy 62: technlogy
+615, //  13: biotechnolgy 63: technolgy
+616, //  14: biotechology
+619, //  28: hypotethical
+620, //  30: hypothetcial
+621, //  31: hypothteical
+624, //  0: Agricultutral
+625, //  66: Argricultural
+626, //  10: agriculturral
+634, //  68: transcirption
+635, //  68: transcirption
+636, //  18: charaterization
+641, //  79: haemagglutination
+642, //  39: nuclear shutting
+643, //  39: nuclear shutting
+};
+NCBI_FSM_HITS_2(94) = {
+{ 78, }, // 78: haem
+{ 80, }, // 80: heam
+{ 61, }, // 61: sulfer
+{ 7, }, // 7: PRChian
+{ 8, }, // 8: Scieces
+{ 77, }, // 77: anaemia
+{ 26, }, // 26: genone
+{ 26, }, // 26: genone
+{ 36, }, // 36: instute
+{ 37, }, // 37: muesum
+{ 37, }, // 37: muesum
+{ 38, }, // 38: musuem
+{ 38, }, // 38: musuem
+{ 41, }, // 41: protien
+{ 44, }, // 44: putaive
+{ 51, }, // 51: reseach
+{ 53, }, // 53: reserch
+{ 57, }, // 57: scinece
+{ 15, }, // 15: caputre
+{ 15, }, // 15: caputre
+{ 16, }, // 16: casette
+{ 16, }, // 16: casette
+{ 17, }, // 17: catalize
+{ 19, }, // 19: clonging
+{ 34, }, // 34: insitute
+{ 35, }, // 35: institue
+{ 81, }, // 81: mithocon
+{ 43, }, // 43: putaitve
+{ 47, }, // 47: putatuve
+{ 48, }, // 48: putatvie
+{ 49, }, // 49: pylogeny
+{ 50, }, // 50: resaerch
+{ 54, }, // 54: ribosoml
+{ 56, }, // 56: scencies
+{ 58, }, // 58: simmilar
+{ 1, }, // 1: Bacilllus
+{ 3, }, // 3: Insitiute
+{ 4, }, // 4: Instutite
+{ 5, }, // 5: Instutute
+{ 6, }, // 6: P.R.Chian
+{ 64, }, // 64: Technlogy
+{ 65, }, // 65: Veterinry
+{ 21, }, // 21: cotaining
+{ 42, }, // 42: puatative
+{ 45, }, // 45: putataive
+{ 46, }, // 46: putatitve
+{ 52, }, // 52: reserach
+{ 52, }, // 52: reserach
+{ 59, }, // 59: structual
+{ 60, }, // 60: subitilus
+{ 62, }, // 62: technlogy
+{ 63, }, // 63: technolgy
+{ 74, }, // 74: univesity
+{ 20, }, // 20: consevered
+{ 22, }, // 22: cytochome
+{ 22, }, // 22: cytochome
+{ 23, }, // 23: diveristy
+{ 23, }, // 23: diveristy
+{ 25, }, // 25: enviroment
+{ 27, }, // 27: homologue
+{ 27, }, // 27: homologue
+{ 32, }, // 32: indepedent
+{ 33, }, // 33: insititute
+{ 55, }, // 55: ribossomal
+{ 70, }, // 70: uinversity
+{ 71, }, // 71: univercity
+{ 73, }, // 73: univeristy
+{ 75, }, // 75: unversity
+{ 75, }, // 75: unversity
+{ 76, }, // 76: uviversity
+{ 9, }, // 9: agricultral
+{ 24, }, // 24: enivronment
+{ 29, }, // 29: hypotetical
+{ 40, }, // 40: phylogentic
+{ 67, }, // 67: transcirbed
+{ 69, }, // 69: uiniversity
+{ 72, }, // 72: univerisity
+{ 12, 62, }, // 12: Biotechnlogy 62: technlogy
+{ 2, }, // 2: Enviromental
+{ 11, 62, }, // 11: biotechnlogy 62: technlogy
+{ 13, 63, }, // 13: biotechnolgy 63: technolgy
+{ 14, }, // 14: biotechology
+{ 28, }, // 28: hypotethical
+{ 30, }, // 30: hypothetcial
+{ 31, }, // 31: hypothteical
+{ 0, }, // 0: Agricultutral
+{ 66, }, // 66: Argricultural
+{ 10, }, // 10: agriculturral
+{ 68, }, // 68: transcirption
+{ 68, }, // 68: transcirption
+{ 18, }, // 18: charaterization
+{ 79, }, // 79: haemagglutination
+{ 39, }, // 39: nuclear shutting
+{ 39, }, // 39: nuclear shutting
 };
 NCBI_FSM_STATES = {
 // 0

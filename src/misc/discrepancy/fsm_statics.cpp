@@ -98,14 +98,14 @@ const CCompiledFSM* xGetOrganellesFSM()
 {
 #include "organelle_products.inc"
 
-    static constexpr TLocalFSM s_FSM(s_compact, s_hits_init, s_states, s_rules);
+    static constexpr TLocalFSM s_FSM{s_compact, s_hits_init_1, s_hits_init_2, s_states, s_rules};
     return &s_FSM;
 }
 
 const CCompiledFSM* xGetProductRulesFSM()
 {
 #include "product_rules.inc"
-    static constexpr TLocalFSM s_FSM(s_compact, s_hits_init, s_states, s_rules);
+    static constexpr TLocalFSM s_FSM{s_compact, s_hits_init_1, s_hits_init_2, s_states, s_rules};
     return &s_FSM;
 }
 
