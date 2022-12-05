@@ -122,7 +122,7 @@ public:
 
     virtual void GetBlobs(TTSE_LockSets& tse_sets) override;
 
-    virtual void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+    virtual void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret) override;
 
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids) override;
     virtual SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh) override;
