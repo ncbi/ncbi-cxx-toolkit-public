@@ -44,6 +44,7 @@ USING_SCOPE(edit);
 
 namespace
 {
+    NCBI_UNUSED
     void dump_cm_list(CNcbiOstream& os, const vector<SCitMatch>& cm_list)
     {
         for (const auto& cm : cm_list) {
