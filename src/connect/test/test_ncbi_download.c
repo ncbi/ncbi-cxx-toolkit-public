@@ -106,13 +106,14 @@ int main(int argc, const char* argv[])
 
     if (status == eIO_Closed)
         sprintf(buf, "%.2f KiB/s", elapsed ? total / (1024.0 * elapsed) : 0.0);
+    else
+        strncpy0(buf, IO_StatusStr(status), sizeof(buf) - 1);
 
     CORE_LOGF(status != eIO_Closed ? eLOG_Fatal :
               total ? eLOG_Note : eLOG_Error,
               ("%lu byte%s read in %lus: %s",
                (unsigned long) total, &"s"[total == 1],
-               (unsigned long) elapsed,
-               status == eIO_Closed ? buf : IO_StatusStr(status)));
+               (unsigned long) elapsed, buf));
 
     if (description)
         free((void*) description);
