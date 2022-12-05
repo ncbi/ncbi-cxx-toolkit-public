@@ -40,6 +40,25 @@
 
 #include <corelib/ncbi_safe_static.hpp>
 
+// Per https://docs.python.org/3/whatsnew/3.11.html#porting-to-python-3-11
+#if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_TYPE)
+static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+{ ob->ob_type = type; }
+#define Py_SET_TYPE(ob, type) _Py_SET_TYPE((PyObject*)(ob), type)
+#endif
+
+#if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_SIZE)
+static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
+{ ob->ob_size = size; }
+#define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
+#endif
+
+#if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_REFCNT)
+static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt)
+{ ob->ob_refcnt = refcnt; }
+#define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT((PyObject*)(ob), refcnt)
+#endif
+
 BEGIN_NCBI_SCOPE
 
 namespace pythonpp
@@ -129,11 +148,7 @@ public:
     {
         BasicInit();
 
-#ifdef Py_TYPE
-        Py_TYPE(this) = &PyType_Type;
-#else
-        ob_type = &PyType_Type;
-#endif
+        Py_SET_TYPE(this, &PyType_Type);
         tp_basicsize = basic_size;
         tp_dealloc = dr;
         // Py_TPFLAGS_BASETYPE - means that the type is subtypable ...
@@ -181,15 +196,9 @@ private:
         _ob_next = NULL;
         _ob_prev = NULL;
 #endif
-#ifdef Py_TYPE
-        Py_REFCNT(this) = 1;
-        Py_TYPE(this) = NULL;
-        Py_SIZE(this) = 0;
-#else
-        ob_refcnt = 1;
-        ob_type = NULL;
-        ob_size = 0;
-#endif
+        Py_SET_REFCNT(this, 1);
+        Py_SET_TYPE(this, NULL);
+        Py_SET_SIZE(this, 0);
 
         tp_name = NULL;
 
