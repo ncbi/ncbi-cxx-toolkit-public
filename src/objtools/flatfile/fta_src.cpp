@@ -262,7 +262,7 @@ static const char* SourceSubSources[] = {
 };
 
 // clang-format off
-static CharUInt1 SourceOrgMods[] = {
+static const CharUInt1 SourceOrgMods[] = {
     { "strain",             COrgMod::eSubtype_strain },
     { "sub_strain",         COrgMod::eSubtype_substrain },
     { "variety",            COrgMod::eSubtype_variety },
@@ -2039,8 +2039,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                     if (i == 4)
                         ibp->got_plastid = true;
                     if (newgen < 0)
-                        newgen = StringMatchIcase(GenomicSourceFeatQual,
-                                                  val_ptr);
+                        newgen = StringMatchIcase(GenomicSourceFeatQual, val_ptr);
                 }
                 continue;
             }
@@ -3358,7 +3357,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
             MemFree(pp->buf);
         pp->buf = NULL;
 
-        GetSeqLocation(*feat, tsfbp->location, seqids, &err, pp, (char*)"source");
+        GetSeqLocation(*feat, tsfbp->location, seqids, &err, pp, "source");
 
         if (err) {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "/source|%s| range check detects problems. Entry dropped.", tsfbp->location);
