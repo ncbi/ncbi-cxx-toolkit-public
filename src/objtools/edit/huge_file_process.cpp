@@ -227,7 +227,7 @@ bool CHugeFileProcess::ForEachEntry(CRef<CScope> scope, THandlerEntries handler)
         {
             {
                 auto beh = scope->GetBioseqHandle(*id);
-                auto parent = GetParentEntry(beh);
+                auto parent = GetTopLevelEntry(beh);
                 handler(parent);
             }
             scope->ResetHistory();
@@ -243,7 +243,8 @@ bool CHugeFileProcess::ForEachEntry(CRef<CScope> scope, THandlerEntries handler)
     return true;
 }
 
-CSeq_entry_Handle CHugeFileProcess::GetParentEntry(CBioseq_Handle beh)
+
+CSeq_entry_Handle CHugeFileProcess::GetTopLevelEntry(CBioseq_Handle beh)
 {
     CSeq_entry_Handle parent = beh.GetParentEntry();
     while(parent)
@@ -251,13 +252,11 @@ CSeq_entry_Handle CHugeFileProcess::GetParentEntry(CBioseq_Handle beh)
         if (parent.IsTopLevelEntry())
             break;
 
-        //if (parent.IsSet())
-        //    break;
-
-        CSeq_entry_Handle temp = parent.GetParentEntry();
-        if (temp) {
-            if (temp.IsSet() && temp.GetSet().IsSetClass() && temp.GetSet().GetClass() == CBioseq_set::eClass_genbank)
+        if (auto temp = parent.GetParentEntry(); temp) {
+            if (temp.IsSet() && temp.GetSet().IsSetClass() && 
+                CHugeAsnReader::IsHugeSet(temp.GetSet().GetClass())) {
                 break;
+            }
 
             parent = temp;
         }

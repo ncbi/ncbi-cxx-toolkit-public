@@ -1135,6 +1135,17 @@ CBioseq_Handle CSingleFeatValidator::x_GetFeatureProduct(bool look_far, bool& is
         return prot_handle;
     }
 
+    if (m_Imp.IsHugeFileMode()) {
+        if (look_far && m_Imp.IsFarSequence(*protid)) {
+            prot_handle = m_Scope.GetBioseqHandle(*protid);
+            if (prot_handle) {
+                is_far = true;
+            }
+            return prot_handle;
+        }
+        return m_Imp.GetLocalBioseqHandle(*protid);
+    }
+
     // try "local" scope
     prot_handle = m_Scope.GetBioseqHandleFromTSE(*protid, m_LocationBioseq.GetTSE_Handle());
     if (!prot_handle) {
@@ -3973,7 +3984,8 @@ void CMRNAValidator::x_ValidateCommonMRNAProduct()
         }
     } else {
 
-        CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(m_ProductBioseq.GetCompleteBioseq()));
+        //CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(m_ProductBioseq.GetCompleteBioseq()));
+        CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct(m_ProductBioseq);
         if (mrna && mrna.GetPointer() != &m_Feat) {
             PostErr(eDiag_Critical, eErr_SEQ_FEAT_IdenticalMRNAtranscriptIDs,
                     "Identical transcript IDs found on multiple mRNAs");

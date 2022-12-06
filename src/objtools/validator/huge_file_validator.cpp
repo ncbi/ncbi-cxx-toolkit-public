@@ -53,6 +53,7 @@ BEGIN_SCOPE(validator)
 
 using TBioseqInfo = CHugeAsnReader::TBioseqInfo;
 
+
 static bool s_IsTSAContig(const TBioseqInfo& info, const CHugeAsnReader& reader) {
     auto pSeqdesc = reader.GetClosestDescriptor(info, CSeqdesc::e_Molinfo);
     if (pSeqdesc) {
@@ -162,13 +163,13 @@ static bool s_x_ReportMissingCitSub(const TBioseqInfo& info, const CHugeAsnReade
 }
 
 
+
 static bool s_x_ReportMissingPubs(const TBioseqInfo& info, const CHugeAsnReader& reader)
 {
-    if (reader.GetBiosets().size() > 1 &&
-        next(reader.GetBiosets().begin())->m_class == CBioseq_set::eClass_gen_prod_set) {
+    if (const auto pSetClass = reader.GetTopLevelClass();
+        pSetClass && *pSetClass == CBioseq_set::eClass_gen_prod_set) {
         return false;
     }
-
 
     if (s_IsNoncuratedRefSeq(info.m_ids) ||
         s_IsGpipe(info) ||
@@ -213,7 +214,7 @@ static string s_GetIdString(const list<CConstRef<CSeq_id>>& ids, int* version)
 void s_PostErr(EDiagSev severity,
                EErrType errorType,
                const string& message,
-               const string& idString,
+               const string& desc,
                CRef<CValidError>& pErrors)
 {
 
@@ -221,13 +222,8 @@ void s_PostErr(EDiagSev severity,
         pErrors = Ref(new CValidError());
     }
 
-    const bool suppressContext = false; // Revisit this
-    const auto setClass = CBioseq_set::eClass_genbank; // Revisit this
     int version = 0;
-    string desc = CValidErrorFormat::GetBioseqSetLabel(idString,
-            setClass, suppressContext);
-
-    pErrors->AddValidErrItem(severity, errorType, message, desc, idString, version);
+    pErrors->AddValidErrItem(severity, errorType, message, desc, "", version);
 }
 
 
@@ -253,9 +249,33 @@ string CHugeFileValidator::x_GetIdString() const
     }
 
     m_pIdString.reset(new string());
-    *m_pIdString = g_GetGenbankIdString(m_Reader);
+    *m_pIdString = g_GetHugeSetIdString(m_Reader);
 
     return *m_pIdString;
+}
+
+
+string CHugeFileValidator::x_GetHugeSetLabel() const
+{
+    const auto& biosets = m_Reader.GetBiosets();
+    if (biosets.size() < 2) {
+        return "";
+    }
+
+    auto it = next(biosets.begin());
+    if (!CHugeAsnReader::IsHugeSet(it->m_class)) {
+        return "";
+    }
+
+    const bool suppressContext = false;
+    return CValidErrorFormat::GetBioseqSetLabel(x_GetIdString(), it->m_class, suppressContext);
+}
+
+
+bool CHugeFileValidator::IsInBlob(const CSeq_id& id) const
+{
+    CConstRef<CSeq_id> pId(&id);
+    return (m_Reader.FindBioseq(pId) != nullptr);
 }
 
 
@@ -265,7 +285,7 @@ void CHugeFileValidator::x_ReportCollidingSerialNumbers(const set<int>& collidin
     for (auto val : collidingNumbers) {
         s_PostErr(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers,
                 "Multiple publications have serial number " + NStr::IntToString(val),
-                x_GetIdString(), pErrors);
+                x_GetHugeSetLabel(), pErrors);
     }
 }
 
@@ -277,7 +297,7 @@ void CHugeFileValidator::x_ReportMissingPubs(CRef<CValidError>& pErrors) const
             auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
             s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound,
                     "No publications anywhere on this entire record.",
-                    x_GetIdString(), pErrors);
+                    x_GetHugeSetLabel(), pErrors);
         }
     }
 }
@@ -294,7 +314,7 @@ void CHugeFileValidator::x_ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CV
                 eDiag_Error : eDiag_Info;
             s_PostErr(severity, eErr_GENERIC_MissingPubRequirement,
                     "No submission citation anywhere on this entire record.",
-                    x_GetIdString(), pErrors);
+                    x_GetHugeSetLabel(), pErrors);
         }
     }
 }
@@ -304,9 +324,18 @@ void CHugeFileValidator::x_ReportMissingBioSources(CRef<CValidError>& pErrors) c
 {
     s_PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
             "No source information included on this record.",
-            x_GetIdString(), pErrors);
+             x_GetHugeSetLabel(), pErrors);
 }
 
+
+void CHugeFileValidator::x_ReportConflictingBiomols(CRef<CValidError>& pErrors) const
+{   
+    auto severity = (m_Options & CValidator::eVal_genome_submission) ?
+        eDiag_Error : eDiag_Warning;
+    s_PostErr(severity, eErr_SEQ_PKG_InconsistentMoltypeSet,
+            "Pop/phy/mut/eco set contains inconsistent moltype",
+            x_GetHugeSetLabel(), pErrors);
+}
 
 
 void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors) const
@@ -328,6 +357,15 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<
     {
         x_ReportMissingBioSources(pErrors);
     }
+
+
+    if (globalInfo.biomols.size()>1) {
+        if (auto pSetClass = m_Reader.GetTopLevelClass();
+            pSetClass &&
+            *pSetClass == CBioseq_set::eClass_wgs_set) {
+            x_ReportConflictingBiomols(pErrors);
+        }
+    }
 }
 
 
@@ -338,12 +376,12 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     }
 
     if (auto it = next(m_Reader.GetBiosets().begin()); 
-            it->m_class != CBioseq_set::eClass_genbank) {
+            !CHugeAsnReader::IsHugeSet(it->m_class)) {
         return;
     }
 
     context.PreprocessHugeFile = true;
-    context.GenbankSetId = g_GetGenbankIdString(m_Reader);
+    context.HugeSetId = g_GetHugeSetIdString(m_Reader);
 
     context.IsPatent        = globalInfo.IsPatent;
     context.IsPDB           = globalInfo.IsPDB;
@@ -351,6 +389,12 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     context.NoBioSource     = globalInfo.NoBioSource;
     context.NoPubsFound     = globalInfo.NoPubsFound;
     context.NoCitSubsFound  = globalInfo.NoCitSubsFound;
+
+    if (!context.IsIdInBlob) {
+        context.IsIdInBlob = [this](const CSeq_id& id) {
+                                return this->IsInBlob(id);
+                             };
+    }
 }
 
 
@@ -392,9 +436,36 @@ static void s_UpdateGlobalInfo(const CSeq_id& id, CHugeFileValidator::TGlobalInf
 }
 
 
+static void s_UpdateGlobalInfo(const CMolInfo& molInfo, CHugeFileValidator::TGlobalInfo& globalInfo)
+{
+    if (!molInfo.IsSetBiomol() || 
+        molInfo.GetBiomol() == CMolInfo::eBiomol_peptide) {
+        return;
+    }
+    globalInfo.biomols.insert(molInfo.GetBiomol());
+}
+
 void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHugeAsnReader::TContext& context)
 {
     TParent::x_SetHooks(objStream, context);
+    // Set MolInfo skip and read hooks
+    SetLocalSkipHook(CType<CMolInfo>(), objStream,
+            [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+            {
+                auto pMolInfo = Ref(new CMolInfo());
+                type.GetTypeInfo()->DefaultReadData(in, pMolInfo);
+                s_UpdateGlobalInfo(*pMolInfo, m_GlobalInfo);
+            });
+
+    SetLocalReadHook(CType<CMolInfo>(), objStream,
+            [this](CObjectIStream& in, const CObjectInfo& object)
+            {
+                auto* pObject = object.GetObjectPtr();
+                object.GetTypeInfo()->DefaultReadData(in, pObject);
+                auto* pMolInfo = CTypeConverter<CMolInfo>::SafeCast(pObject);
+                s_UpdateGlobalInfo(*pMolInfo, m_GlobalInfo);
+            });
+
     // Set Pubdesc skip and read hooks
     SetLocalSkipHook(CType<CPubdesc>(), objStream,
             [this] (CObjectIStream& in, const CObjectTypeInfo& type)
@@ -441,7 +512,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
 
 
 static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
-        const string& genbankSetId,
+        const string& hugeSetId,
         const CValidErrItem& item)
 {
     const auto& errCode = item.GetErrIndex();
@@ -449,7 +520,7 @@ static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
     if (errCode == eErr_SEQ_DESCR_NoPubFound) {
         const auto& msg = item.GetMsg();
         if (NStr::StartsWith(msg, "No publications anywhere on this entire record.")) {
-            return !globalInfo.NoPubsFound || (item.GetAccession() != genbankSetId);
+            return !globalInfo.NoPubsFound || (item.GetAccession() != hugeSetId);
         }
         return globalInfo.NoPubsFound && 
             NStr::StartsWith(msg, "No publications refer to this Bioseq.");
@@ -457,12 +528,12 @@ static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
 
     if (errCode == eErr_GENERIC_MissingPubRequirement &&
         NStr::StartsWith(item.GetMsg(), "No submission citation anywhere on this entire record.")) {
-        return !globalInfo.NoCitSubsFound || (item.GetAccession() != genbankSetId);
+        return !globalInfo.NoCitSubsFound || (item.GetAccession() != hugeSetId);
     }
     
     if (globalInfo.NoBioSource) {
         return ((errCode == eErr_SEQ_DESCR_NoSourceDescriptor && 
-                    (item.GetAccession() != genbankSetId)) ||
+                    (item.GetAccession() != hugeSetId)) ||
             errCode == eErr_SEQ_DESCR_TransgenicProblem ||
             errCode == eErr_SEQ_DESCR_InconsistentBioSources_ConLocation ||
             errCode == eErr_SEQ_INST_MitoMetazoanTooLong ||
@@ -473,7 +544,7 @@ static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
 }
 
 
-string g_GetGenbankIdString(const CHugeAsnReader& reader)
+string g_GetHugeSetIdString(const CHugeAsnReader& reader)
 {
     const auto& biosets = reader.GetBiosets();
     if (biosets.size() < 2) {
@@ -481,7 +552,7 @@ string g_GetGenbankIdString(const CHugeAsnReader& reader)
     }
 
     if (auto it = next(biosets.begin());
-        it->m_class != CBioseq_set::eClass_genbank){
+        !CHugeAsnReader::IsHugeSet(it->m_class)) {
         return "";
     }
 
@@ -503,12 +574,12 @@ string g_GetGenbankIdString(const CHugeAsnReader& reader)
 
 
 void g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
-        const string& genbankSetId,
+        const string& hugeSetId,
         CRef<CValidError>& pErrors) 
 {
     auto pPrunedErrors = Ref(new CValidError());
     for (auto pErrorItem : pErrors->GetErrs()) {
-        if (!s_DropErrorItem(globalInfo, genbankSetId, *pErrorItem)) {
+        if (!s_DropErrorItem(globalInfo, hugeSetId, *pErrorItem)) {
             pPrunedErrors->AddValidErrItem(pErrorItem);
         }
     }

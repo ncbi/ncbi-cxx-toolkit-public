@@ -81,6 +81,15 @@ void CHugeAsnReader::x_ResetIndex()
 
 }
 
+
+bool CHugeAsnReader::IsHugeSet(CBioseq_set::TClass setClass)
+{
+    return (setClass == CBioseq_set::eClass_genbank ||
+        //    setClass == CBioseq_set::eClass_wgs_set ||
+            setClass == CBioseq_set::eClass_not_set);   
+}
+
+
 void CHugeAsnReader::Open(CHugeFile* file, ILineErrorListener * pMessageListener)
 {
     x_ResetIndex();
@@ -331,9 +340,9 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
                     last->m_descr.Reset(&(pBioseqSet->GetDescr()));
                 }
 
-                if (last->m_class == CBioseq_set::eClass_genbank &&
+                if (IsHugeSet(last->m_class) &&
                     last->m_HasAnnot) {
-                    m_HasGenbankSetAnnot = true;
+                    m_HasHugeSetAnnot = true;
                 }
 
                 context.bioseq_set_stack.pop_back();
@@ -381,7 +390,7 @@ void CHugeAsnReader::x_IndexNextAsn1()
     TContext context;
     x_SetHooks(*obj_stream, context);
 
-    m_HasGenbankSetAnnot = false;
+    m_HasHugeSetAnnot = false;
     // Ensure there is at least one bioseq_set_info object exists
     obj_stream->SkipFileHeader(object_type);
     m_bioseq_set_list.push_back({ 0, m_bioseq_set_list.end() });
@@ -412,10 +421,6 @@ CRef<CSerialObject> CHugeAsnReader::ReadAny()
     return serial;
 }
 
-static bool s_ShouldSplitSet(CBioseq_set::EClass setClass) {
-    return setClass == CBioseq_set::eClass_not_set ||
-           setClass == CBioseq_set::eClass_genbank;
-}
 
 void CHugeAsnReader::x_ThrowDuplicateId(
     const TBioseqSetInfo& existingInfo,
@@ -440,6 +445,10 @@ void CHugeAsnReader::x_ThrowDuplicateId(
     NCBI_THROW(CHugeFileException, eDuplicateSeqIds, msg);
 }
 
+const CBioseq_set::TClass* CHugeAsnReader::GetTopLevelClass() const
+{
+    return m_pTopLevelClass;
+}
 
 CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const
 {
@@ -455,7 +464,7 @@ CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const
     }
 
     for (auto it = next(top); it != end(GetBiosets()); ++it) {
-        if (!s_ShouldSplitSet(it->m_class)) {
+        if (!IsHugeSet(it->m_class)) {
             break;
         }
 
@@ -486,6 +495,7 @@ bool CHugeAsnReader::x_HasNestedGenbankSets() const
 
 void CHugeAsnReader::FlattenGenbankSet()
 {
+    m_pTopLevelClass = nullptr;
     m_FlattenedSets.clear();
     m_top_ids.clear();
     m_FlattenedIndex.clear();
@@ -501,14 +511,14 @@ void CHugeAsnReader::FlattenGenbankSet()
         auto rec = *it;
         auto parent = rec.m_parent_set;
 
-        if (auto _class = parent->m_class; s_ShouldSplitSet(_class))
+        if (auto _class = parent->m_class; IsHugeSet(_class))
         { // create fake bioseq_set
             m_FlattenedSets.push_back({rec.m_pos, m_bioseq_set_list.cend(), objects::CBioseq_set::eClass_not_set});
             m_top_ids.push_back(rec.m_ids.front());
         } else {
 
             auto grandParent = parent->m_parent_set;
-            while (!s_ShouldSplitSet(grandParent->m_class)) {
+            while (!IsHugeSet(grandParent->m_class)) {
                 parent = grandParent;
                 grandParent = grandParent->m_parent_set;
             }
@@ -548,7 +558,7 @@ void CHugeAsnReader::FlattenGenbankSet()
             else if (GetSubmitBlock() ||
                     top->m_Level ||
                     top->m_descr ||
-                    !s_ShouldSplitSet(top->m_class)) {
+                    !IsHugeSet(top->m_class)) {
                 m_FlattenedSets.clear();
                 m_FlattenedSets.push_back(*top);
                 for (auto& it : m_FlattenedIndex) {
@@ -570,6 +580,8 @@ void CHugeAsnReader::FlattenGenbankSet()
                 m_top_entry = top_entry;
             }
         }
+
+        m_pTopLevelClass = &(next(GetBiosets().begin())->m_class);
     }
 
     m_Current = m_FlattenedSets.begin();
