@@ -1,3 +1,7 @@
+Version 1.25.0 (2022-12-06):
+* Advance to version 27.0 of the stable C++ Toolkit components.
+* Support (and build for) Python 3.11 in addition to 3.8 and 3.9.
+
 Version 1.24.0 (2022-07-07):
 * Advance to version 26.0 of the stable C++ Toolkit components,
   thereby dropping the long-deprecated ftds95 driver.
