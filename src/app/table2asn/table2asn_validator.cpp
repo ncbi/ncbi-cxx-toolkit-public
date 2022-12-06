@@ -126,9 +126,9 @@ void CTable2AsnValidator::ValCollect(CRef<CSeq_submit> submit, CRef<CSeq_entry> 
     if (m_context->m_huge_files_mode) {
         std::lock_guard<std::mutex> g{m_mutex};
         m_val_context->PostprocessHugeFile = true;
-        if (m_val_context->GenbankSetId.empty()) {
+        if (m_val_context->HugeSetId.empty()) {
             int unneded_version;
-            m_val_context->GenbankSetId = validator::GetAccessionFromObjects(nullptr, entry, scope, &unneded_version);
+            m_val_context->HugeSetId = validator::GetAccessionFromObjects(nullptr, entry, scope, &unneded_version);
         }
     }
 
@@ -183,7 +183,7 @@ void CTable2AsnValidator::ValReportErrors()
     for (auto& errors: m_val_errors)
     {
         if (m_context->m_huge_files_mode)
-            g_PostprocessErrors(m_val_globalInfo, m_val_context->GenbankSetId, errors);
+            g_PostprocessErrors(m_val_globalInfo, m_val_context->HugeSetId, errors);
         for (auto& it: errors->GetErrs())
         {
             const CValidErrItem& item = *it;
