@@ -5516,7 +5516,8 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
         return false;
     }
 
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandleFromTSE(*(temp.GetRangeAsSeq_loc()->GetId()), m_Imp.GetTSE_Handle() );
+    //CBioseq_Handle bsh = m_Scope->GetBioseqHandleFromTSE(*(temp.GetRangeAsSeq_loc()->GetId()), m_Imp.GetTSE_Handle() );
+    CBioseq_Handle bsh = m_Imp.GetLocalBioseqHandle(*(temp.GetRangeAsSeq_loc()->GetId()));
     if (!bsh) {
         return false;
     }

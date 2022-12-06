@@ -177,6 +177,10 @@ public:
     SValidatorContext& SetContext();
     const SValidatorContext& GetContext() const;
 
+    bool IsHugeFileMode() const;
+    bool IsHugeSet(const CBioseq_set& bioseqSet) const;
+    bool IsHugeSet(CBioseq_set::TClass setClass) const;
+
 public:
     // interface to be used by the various validation classes
 
@@ -383,10 +387,16 @@ public:
     // set flag for farfetchfailure
     inline void SetFarFetchFailure() { m_FarFetchFailure = true; }
 
+    bool IsFarSequence(const CSeq_id& id); // const;
+
     const CSeq_entry& GetTSE() const { return *m_TSE; };
     const CSeq_entry_Handle& GetTSEH() { return m_TSEH; }
     const CTSE_Handle& GetTSE_Handle() { return
             (m_TSEH ? m_TSEH.GetTSE_Handle() : CCacheImpl::kEmptyTSEHandle); }
+
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id);
+    CBioseq_Handle GetLocalBioseqHandle(const CSeq_id& id); // Local here means not far
+
     const CConstRef<CSeq_annot>& GetSeqAnnot() { return m_SeqAnnot; }
 
     void AddBioseqWithNoPub(const CBioseq& seq);
@@ -398,7 +408,8 @@ public:
     void ReportMissingBiosource(const CSeq_entry& se);
 
     CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
-    CConstRef<CSeq_feat> GetmRNAGivenProduct(const CBioseq& seq);
+    NCBI_DEPRECATED CConstRef<CSeq_feat> GetmRNAGivenProduct(const CBioseq& seq);
+    CConstRef<CSeq_feat> GetmRNAGivenProduct(const CBioseq_Handle& seq);
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
     bool IsSerialNumberInComment(const string& comment);
 

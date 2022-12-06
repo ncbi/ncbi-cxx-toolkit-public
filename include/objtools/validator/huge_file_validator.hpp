@@ -34,6 +34,7 @@
 
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
+#include <objects/seq/MolInfo.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -50,7 +51,6 @@ string NCBI_VALIDATOR_EXPORT g_GetIdString(const edit::CHugeAsnReader& reader);
 class NCBI_VALIDATOR_EXPORT CHugeFileValidator {
 public:
     struct SGlobalInfo {
-
         bool IsPatent = false;
         bool IsPDB    = false;
         bool IsRefSeq = false;
@@ -60,6 +60,8 @@ public:
         bool NoCitSubsFound = true;
         set<int> pubSerialNumbers;
         set<int> conflictingSerialNumbers;
+        set<CMolInfo::TBiomol> biomols;
+        unsigned int numMisplacedFeats {0}; 
 
         void Clear() {
             IsPatent = false;
@@ -71,6 +73,8 @@ public:
             NoCitSubsFound = true;
             pubSerialNumbers.clear();
             conflictingSerialNumbers.clear();
+            biomols.clear();
+            numMisplacedFeats = 0;
         }
     };
 
@@ -82,6 +86,9 @@ public:
     CHugeFileValidator(const TReader& reader,
             TOptions options);
     ~CHugeFileValidator(){}
+
+
+    bool IsInBlob(const CSeq_id& id) const;
 
     void UpdateValidatorContext(const TGlobalInfo& globalInfo, 
             SValidatorContext& context) const;
@@ -103,7 +110,11 @@ private:
 
     void x_ReportMissingBioSources(CRef<CValidError>& pErrors) const;
 
+    void x_ReportConflictingBiomols(CRef<CValidError>& pErrors) const;
+
     string x_GetIdString() const;
+
+    string x_GetHugeSetLabel() const;
 
     mutable unique_ptr<string> m_pIdString;
 
@@ -111,7 +122,7 @@ private:
     TOptions m_Options;
 };
 
-string NCBI_VALIDATOR_EXPORT g_GetGenbankIdString(const edit::CHugeAsnReader& reader);
+string NCBI_VALIDATOR_EXPORT g_GetHugeSetIdString(const edit::CHugeAsnReader& reader);
 
 void NCBI_VALIDATOR_EXPORT g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
         const string& genbankSetId,

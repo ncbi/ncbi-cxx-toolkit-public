@@ -1123,17 +1123,7 @@ void CCdregionValidator::x_ValidateBadMRNAOverlap()
 
 bool CCdregionValidator::x_HasGoodParent()
 {
-    static const CSeqFeatData::ESubtype parent_types[] = {
-        CSeqFeatData::eSubtype_C_region,
-        CSeqFeatData::eSubtype_D_segment,
-        CSeqFeatData::eSubtype_J_segment,
-        CSeqFeatData::eSubtype_V_segment
-    };
-    size_t num_parent_types = sizeof(parent_types) / sizeof(CSeqFeatData::ESubtype);
-    CRef<feature::CFeatTree> feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(m_Feat, m_Scope);
-    if (!feat_tree) {
-        return false;
-    }
+
     CSeq_feat_Handle fh;
     try {
         // will fail if location is bad
@@ -1142,8 +1132,28 @@ bool CCdregionValidator::x_HasGoodParent()
         return false;
     }
 
-    for (size_t i = 0; i < num_parent_types; i++) {
-        CMappedFeat parent = feat_tree->GetParent(fh, parent_types[i]);
+    static const list<CSeqFeatData::ESubtype> parent_types = {
+        CSeqFeatData::eSubtype_C_region,
+        CSeqFeatData::eSubtype_D_segment,
+        CSeqFeatData::eSubtype_J_segment,
+        CSeqFeatData::eSubtype_V_segment
+    };
+
+    CRef<feature::CFeatTree> feat_tree;
+    if (m_Imp.IsHugeFileMode()) {
+        feat_tree = Ref(new feature::CFeatTree());
+        CMappedFeat mappedFeat(fh);
+        for (auto parent_type : parent_types) {
+            feat_tree->AddFeaturesFor(mappedFeat, parent_type);
+        }
+    }
+    else feat_tree = m_Imp.GetGeneCache().GetFeatTreeFromCache(m_Feat, m_Scope);
+    if (!feat_tree) {
+        return false;
+    }
+
+    for (auto parent_type : parent_types) {
+        CMappedFeat parent = feat_tree->GetParent(fh, parent_type);
         if (parent) {
             sequence::ECompare cmp = sequence::Compare(m_Feat.GetLocation(),
                                                        parent.GetLocation(),
@@ -1200,12 +1210,12 @@ void CCdregionValidator::x_ValidateFarProducts()
     if (!mrna_sid) {
         return;
     }
-    CBioseq_Handle mrna_prod = m_Scope.GetBioseqHandleFromTSE(*mrna_sid, m_LocationBioseq.GetTSE_Handle());
-    if (mrna_prod) {
+
+    if (!m_Imp.IsFarSequence(*mrna_sid)) {
         // mRNA product is not far
         return;
     }
-    mrna_prod = m_Scope.GetBioseqHandle(*mrna_sid);
+    auto mrna_prod = m_Scope.GetBioseqHandle(*mrna_sid);
     if (!mrna_prod) {
         // can't be fetched, will be reported elsewhere
         return;
