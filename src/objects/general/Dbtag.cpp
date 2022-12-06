@@ -55,7 +55,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // No need to presort them
 // The access can be performed case sensitive too via xGetString, xFindString functions
 
-MAKE_CONST_MAP(sc_ApprovedDb, ct::tagStrNocase, CDbtag::EDbtagType,
+MAKE_CONST_MAP(sc_ApprovedDb, ct::tagStrCase, CDbtag::EDbtagType,
 {
     { "AFTOL", CDbtag::eDbtagType_AFTOL },
     { "APHIDBASE", CDbtag::eDbtagType_APHIDBASE },
@@ -191,7 +191,7 @@ MAKE_CONST_MAP(sc_ApprovedDb, ct::tagStrNocase, CDbtag::EDbtagType,
     { "taxon", CDbtag::eDbtagType_taxon },
 })
 
-MAKE_CONST_MAP(sc_ApprovedRefSeqDb, ct::tagStrNocase, CDbtag::EDbtagType,
+MAKE_CONST_MAP(sc_ApprovedRefSeqDb, ct::tagStrCase, CDbtag::EDbtagType,
 {
     { "AllianceGenome", CDbtag::eDbtagType_AllianceGenome },
     { "BioProject", CDbtag::eDbtagType_BioProject },
@@ -214,7 +214,7 @@ MAKE_CONST_MAP(sc_ApprovedRefSeqDb, ct::tagStrNocase, CDbtag::EDbtagType,
     { "VBRC", CDbtag::eDbtagType_VBRC }
 })
 
-MAKE_CONST_MAP(sc_ApprovedSrcDb, ct::tagStrNocase, CDbtag::EDbtagType,
+MAKE_CONST_MAP(sc_ApprovedSrcDb, ct::tagStrCase, CDbtag::EDbtagType,
 {
     { "AFTOL", CDbtag::eDbtagType_AFTOL },
     { "ATCC", CDbtag::eDbtagType_ATCC },
@@ -249,7 +249,7 @@ MAKE_CONST_MAP(sc_ApprovedSrcDb, ct::tagStrNocase, CDbtag::EDbtagType,
     { "taxon", CDbtag::eDbtagType_taxon }
 })
 
-MAKE_CONST_MAP(sc_ApprovedProbeDb, ct::tagStrNocase, CDbtag::EDbtagType,
+MAKE_CONST_MAP(sc_ApprovedProbeDb, ct::tagStrCase, CDbtag::EDbtagType,
 {
     { "Assembly", CDbtag::eDbtagType_Assembly },
     { "BB", CDbtag::eDbtagType_BB },
@@ -323,6 +323,27 @@ bool xGetStrict(string_view _key, const _MapType& _map, typename _MapType::mappe
     _retval = it->second;
     return true;
 }
+
+template<typename _Container>
+bool xFindCorrectCaps(const _Container _cont, const string& v, string_view& correct_caps)
+{
+    if (auto it = _cont.find(v); it != _cont.end()) {
+        correct_caps = it->first;
+        return true;
+    }
+
+    for (auto& it: _cont) {
+        if (NStr::CompareNocase(it.first, v)==0)
+        {
+            if (correct_caps.empty())
+                correct_caps = it.first;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 }
 
 // destructor
@@ -419,14 +440,22 @@ const char* CDbtag::IsApprovedNoCase(EIsRefseq refseq, EIsSource is_source ) con
     }
     const string& db = GetDb();
 
-    auto it1 = sc_ApprovedDb.find(db);
-    if (it1 != sc_ApprovedDb.end())
-        return it1->first.data();
+    string_view caps;
+
+    if (xFindCorrectCaps(sc_ApprovedDb, db, caps)) {
+        return caps.data();
+    }
 
     if ( refseq == eIsRefseq_Yes ) {
-        auto it2 = sc_ApprovedRefSeqDb.find(db);
-        if (it2 != sc_ApprovedRefSeqDb.end())
-            return it2->first.data();
+        if (xFindCorrectCaps(sc_ApprovedRefSeqDb, db, caps)) {
+            return caps.data();
+        }
+    }
+
+    if ( is_source == eIsSource_Yes ) {
+        if (xFindCorrectCaps(sc_ApprovedSrcDb, db, caps)) {
+            return caps.data();
+        }
     }
 
     return nullptr;
@@ -493,7 +522,6 @@ CDbtag::EDbtagType CDbtag::GetType(void) const
     return m_Type;
 }
 
-
 CDbtag::TDbtagGroup CDbtag::GetDBFlags (string& correct_caps) const
 {
     correct_caps.clear();
@@ -504,27 +532,24 @@ CDbtag::TDbtagGroup CDbtag::GetDBFlags (string& correct_caps) const
     }
     const string& db = GetDb();
 
-    auto it1 = sc_ApprovedDb.find(db);
-    if (it1 != sc_ApprovedDb.end()) {
-        correct_caps = it1->first;
+    string_view caps;
+    if (xFindCorrectCaps(sc_ApprovedDb, db, caps)) {
+        correct_caps = caps;
         rsult |= fGenBank;
     }
 
-    auto it2 = sc_ApprovedRefSeqDb.find(db);
-    if (it2 != sc_ApprovedRefSeqDb.end()) {
-        correct_caps = it2->first;
+    if (xFindCorrectCaps(sc_ApprovedRefSeqDb, db, caps)) {
+        correct_caps = caps;
         rsult |= fRefSeq;
     }
 
-    auto it3 = sc_ApprovedSrcDb.find(db);
-    if (it3 != sc_ApprovedSrcDb.end()) {
-        correct_caps = it3->first;
+    if (xFindCorrectCaps(sc_ApprovedSrcDb, db, caps)) {
+        correct_caps = caps;
         rsult |= fSrc;
     }
 
-    auto it4 = sc_ApprovedProbeDb.find(db);
-    if (it4 != sc_ApprovedProbeDb.end()) {
-        correct_caps = it4->first;
+    if (xFindCorrectCaps(sc_ApprovedProbeDb, db, caps)) {
+        correct_caps = caps;
         rsult |= fProbe;
     }
 
