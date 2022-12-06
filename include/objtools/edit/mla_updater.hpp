@@ -45,6 +45,8 @@ private:
 class NCBI_XOBJEDIT_EXPORT CMLAUpdater : public CMLAUpdaterWithCache
 {
 public:
+    CMLAUpdater(bool bNorm = false) :
+        CMLAUpdaterWithCache(bNorm) {}
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 };
 

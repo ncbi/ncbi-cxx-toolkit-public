@@ -138,9 +138,9 @@ public:
 
         unique_ptr<IPubmedUpdater> upd;
         if (bTypeMLA) {
-            upd.reset(new CMLAUpdater());
+            upd.reset(new CMLAUpdater(true));
         } else {
-            upd.reset(new CEUtilsUpdater());
+            upd.reset(new CEUtilsUpdater(true));
         }
 
         bool       bstats = args["stats"];
