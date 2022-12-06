@@ -106,8 +106,16 @@ void CValidError_bioseqset::ValidateBioseqSet(
 
     switch ( seqset.GetClass() ) {
     case CBioseq_set::eClass_not_set:
-        PostErr(eDiag_Warning, eErr_SEQ_PKG_BioseqSetClassNotSet,
-                "Bioseq_set class not set", seqset);
+        if (m_Imp.IsHugeFileMode()) {
+            call_once(m_Imp.SetContext().ClassNotSetOnceFlag,
+                    [this, &seqset](){ 
+                        PostErr(eDiag_Warning, eErr_SEQ_PKG_BioseqSetClassNotSet,
+                            "Bioseq_set class not set", seqset);
+                    });
+        } else {
+            PostErr(eDiag_Warning, eErr_SEQ_PKG_BioseqSetClassNotSet,
+                    "Bioseq_set class not set", seqset);
+        }
         break;
     case CBioseq_set::eClass_nuc_prot:
         ValidateNucProtSet(seqset, nuccnt, protcnt, segcnt);
@@ -174,8 +182,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
         m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
     }
 
-    if ((m_Imp.GetContext().PreprocessHugeFile  || m_Imp.GetContext().PostprocessHugeFile) &&
-        seqset.IsSetClass() && seqset.GetClass() == CBioseq_set::eClass_genbank) { // what about eClass_not_set?
+    if ((m_Imp.IsHugeFileMode()) && m_Imp.IsHugeSet(seqset)) {
         call_once(m_Imp.SetContext().DescriptorsOnceFlag,
                 [this, &seqset](){ x_ValidateSetDescriptors(seqset); });
         return;
@@ -457,6 +464,10 @@ void CValidError_bioseqset::ValidateNucProtSet
 void CValidError_bioseqset::CheckForInconsistentBiomols (const CBioseq_set& seqset)
 {
     if (!seqset.IsSetClass()) {
+        return;
+    }
+
+    if (m_Imp.IsHugeFileMode() && m_Imp.IsHugeSet(seqset.GetClass())) {
         return;
     }
 

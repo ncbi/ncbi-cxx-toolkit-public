@@ -127,6 +127,7 @@
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validator_context.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
+#include <objtools/edit/huge_asn_reader.hpp>
 #include <util/sgml_entity.hpp>
 #include <util/line_reader.hpp>
 #include <util/util_misc.hpp>
@@ -204,6 +205,65 @@ const SValidatorContext& CValidError_imp::GetContext() const
 {
     _ASSERT(m_pContext);
     return *m_pContext;
+}
+
+
+bool CValidError_imp::IsHugeFileMode() const
+{
+    const auto& context = GetContext();
+    return context.PreprocessHugeFile || 
+           context.PostprocessHugeFile;
+}
+
+
+bool CValidError_imp::IsHugeSet(const CBioseq_set& bioseqSet) const
+{
+    if (bioseqSet.IsSetClass()) {
+        return IsHugeSet(bioseqSet.GetClass());
+    }
+    return false;
+}
+
+
+bool CValidError_imp::IsHugeSet(CBioseq_set::TClass setClass) const
+{
+    return edit::CHugeAsnReader::IsHugeSet(setClass);
+}
+
+
+bool CValidError_imp::IsFarSequence(const CSeq_id& id) // const
+{
+    if (IsHugeFileMode() && GetContext().IsIdInBlob) {
+        return !GetContext().IsIdInBlob(id);
+    }
+
+    _ASSERT(m_Scope);
+    if (GetBioseqHandleFromTSE(id)) {
+        return false;
+    }
+    return true;
+}
+
+
+CBioseq_Handle CValidError_imp::GetBioseqHandleFromTSE(const CSeq_id& id)
+{
+    if (m_Scope) {
+        return m_Scope->GetBioseqHandleFromTSE(id, GetTSE_Handle());
+    }
+    return CBioseq_Handle();
+}
+
+
+CBioseq_Handle CValidError_imp::GetLocalBioseqHandle(const CSeq_id& id) 
+{
+    if (!IsHugeFileMode()) {
+        return GetBioseqHandleFromTSE(id);
+    }
+    // Huge-file mode
+    if (!IsFarSequence(id)) {
+        return m_Scope->GetBioseqHandle(id);
+    }
+    return CBioseq_Handle();
 }
 
 
@@ -696,12 +756,20 @@ void CValidError_imp::PostErr
     }
 
     // Append Bioseq_set label
-    int version = 0;
-    const string& accession = GetAccessionFromBioseqSet(st, &version);
-        //GetAccessionFromObjects(&st, nullptr, *m_Scope, &version);
 
     const auto isSetClass = st.IsSetClass();
 
+    if (isSetClass && IsHugeFileMode()) {
+        if (auto setClass = st.GetClass(); IsHugeSet(setClass)) {
+            string desc = 
+            CValidErrorFormat::GetBioseqSetLabel(GetContext().HugeSetId, setClass, m_SuppressContext);
+            x_AddValidErrItem(sv, et, msg, desc, st, GetContext().HugeSetId, 0);
+            return;
+        }
+    }
+
+    int version = 0;
+    const string& accession = GetAccessionFromBioseqSet(st, &version);
     //string desc = CValidErrorFormat::GetBioseqSetLabel(st, m_SuppressContext);
     string desc = CValidErrorFormat::GetBioseqSetLabel(accession,
             isSetClass ? st.GetClass() : CBioseq_set::eClass_not_set,
@@ -727,20 +795,25 @@ void CValidError_imp::PostErr
         return;
     }
 
-    if ((GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) && 
-        ctx.IsSet() &&
-        ctx.GetSet().IsSetClass() &&
-        ctx.GetSet().GetClass() == CBioseq_set::eClass_genbank) {
-        string desc{"DESCRIPTOR: "};
-        desc += CValidErrorFormat::GetDescriptorContent(ds) + " ";
-        desc += "BIOSEQ-SET: ";
-        if (!m_SuppressContext) {
-            desc += "genbank: ";
-        }
-        desc += GetContext().GenbankSetId;
 
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, GetContext().GenbankSetId, 0);
-        return;
+    if (IsHugeFileMode() && 
+        ctx.IsSet() && ctx.GetSet().IsSetClass()) {
+        if (auto setClass = ctx.GetSet().GetClass(); IsHugeSet(setClass)) { 
+            string desc{"DESCRIPTOR: "};
+            desc += CValidErrorFormat::GetDescriptorContent(ds) + " ";
+            desc += "BIOSEQ-SET: ";
+            if (!m_SuppressContext) {
+                if (setClass == CBioseq_set::eClass_genbank) {
+                    desc += "genbank: ";
+                }
+                else {
+                    desc += "wgs-set: ";
+                }
+            }
+            desc += GetContext().HugeSetId;
+            m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, GetContext().HugeSetId, 0);
+            return;
+        }
     }
 
     // Append Descriptor label
@@ -1048,7 +1121,7 @@ void CValidError_imp::x_AddValidErrItem(
         const string& accession,
         const int version)
 {
-    if (GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) {
+    if (IsHugeFileMode()) {
         m_ErrRepository->AddValidErrItem(sev, type, msg, desc, accession, version);
         return;
     }
@@ -1533,7 +1606,7 @@ void CValidError_imp::Validate(
 
     x_SetEntryInfo().SetSeqSubmit();
     if (ss.IsSetSub()) {
-        if (GetContext().PreprocessHugeFile || GetContext().PostprocessHugeFile) {
+        if (IsHugeFileMode()) {
             call_once(SetContext().SubmitBlockOnceFlag,
                 [this, &ss](){ ValidateSubmitBlock(ss.GetSub(), ss); });
         }
@@ -1558,12 +1631,24 @@ void CValidError_imp::Validate(
             if(set.IsSetClass() &&
                set.GetClass() == CBioseq_set::eClass_wgs_set)
             {
-                CSeq_entry_Handle seh;
-                seh = scope->GetSeq_entryHandle(se);
-                Setup(seh);
-                PostErr(eDiag_Warning, eErr_SEQ_PKG_SeqSubmitWithWgsSet,
-                        "File was created as a wgs-set, but should be a batch submission instead.",
-                        seh.GetCompleteSeq_entry()->GetSet());
+                if (IsHugeFileMode() && IsHugeSet(CBioseq_set::eClass_wgs_set)) {
+                    CSeq_entry_Handle seh;
+                    seh = scope->GetSeq_entryHandle(se);
+                    Setup(seh);
+                    call_once(SetContext().WgsSetInSeqSubmitOnceFlag,
+                            [this, seh]() {
+                                PostErr(eDiag_Warning, eErr_SEQ_PKG_SeqSubmitWithWgsSet,
+                                "File was created as a wgs-set, but should be a batch submission instead.",
+                                seh.GetCompleteSeq_entry()->GetSet());
+                            });
+                } else {
+                    CSeq_entry_Handle seh;
+                    seh = scope->GetSeq_entryHandle(se);
+                    Setup(seh);
+                    PostErr(eDiag_Warning, eErr_SEQ_PKG_SeqSubmitWithWgsSet,
+                            "File was created as a wgs-set, but should be a batch submission instead.",
+                            seh.GetCompleteSeq_entry()->GetSet());
+                }
             }
         }
         Validate (se, cs, scope);
@@ -2462,9 +2547,14 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 
 CConstRef<CSeq_feat> CValidError_imp::GetmRNAGivenProduct(const CBioseq& seq)
 {
-    CConstRef<CSeq_feat> feat;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    return GetmRNAGivenProduct(bsh);
+}
 
+
+CConstRef<CSeq_feat> CValidError_imp::GetmRNAGivenProduct(const CBioseq_Handle& bsh)
+{
+    CConstRef<CSeq_feat> feat;
     if ( bsh ) {
         // In case of a NT bioseq limit the search to features packaged on the
         // NT (we assume features have been pulled from the segments to the NT).

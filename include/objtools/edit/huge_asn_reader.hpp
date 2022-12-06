@@ -124,7 +124,8 @@ public:
     CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;
 
     bool IsMultiSequence() const override;
-    bool HasGenbankSetAnnot() const { return m_HasGenbankSetAnnot; }
+    bool HasHugeSetAnnot() const { return m_HasHugeSetAnnot; }
+    static bool IsHugeSet(CBioseq_set::TClass setClass);
 
 
     void FlattenGenbankSet();
@@ -132,6 +133,8 @@ public:
     auto& GetFlattenedIndex() const { return m_FlattenedIndex; }
     auto& GetTopIds()         const { return m_top_ids; }
     unique_ptr<CObjectIStream> MakeObjStream(TFileSize pos) const;
+
+    const CBioseq_set::TClass* GetTopLevelClass() const;
 protected:
     // temporary structure for indexing
     struct TBioseqInfoRec
@@ -180,8 +183,8 @@ private:
     TBioseqSetList            m_FlattenedSets;
     TBioseqSetList::const_iterator  m_Current;
     std::list<CConstRef<CSeq_id>> m_top_ids;
-    bool m_HasGenbankSetAnnot{ false };
-
+    bool m_HasHugeSetAnnot{ false };
+    const CBioseq_set::TClass* m_pTopLevelClass { nullptr };
 };
 
 END_SCOPE(edit)

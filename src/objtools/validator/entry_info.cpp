@@ -62,6 +62,14 @@ void CValidatorEntryInfo::SetGeneHasLocusTag(bool val) { m_GeneHasLocusTag = val
 void CValidatorEntryInfo::SetProteinHasGeneralID(bool val) { m_ProteinHasGeneralID = val; }
 void CValidatorEntryInfo::SetINSDInSep(bool val) { m_IsINSDInSep = val; }
 void CValidatorEntryInfo::SetGeneious(bool val) { m_IsGeneious = val; }
+
+void CValidatorEntryInfo::SetNumMisplacedFeats(unsigned int num) {
+    m_NumMisplacedFeats = num;
+}
+
+void CValidatorEntryInfo::SetNumMisplacedSmallGenomeSetFeats(unsigned int num) {
+    m_NumMisplacedSmallGenomeSetFeats = num;
+}
     
 bool CValidatorEntryInfo::IsNoPubs() const { return m_NoPubs; }
 bool CValidatorEntryInfo::IsNoCitSubPubs() const { return m_NoCitSubPubs; }
@@ -88,6 +96,16 @@ bool CValidatorEntryInfo::DoesAnyGeneHaveLocusTag() const { return m_GeneHasLocu
 bool CValidatorEntryInfo::DoesAnyProteinHaveGeneralID() const { return m_ProteinHasGeneralID; }
 bool CValidatorEntryInfo::IsINSDInSep() const { return m_IsINSDInSep; }
 bool CValidatorEntryInfo::IsGeneious() const { return m_IsGeneious; }
+
+optional<unsigned int> CValidatorEntryInfo::NumMisplacedFeats() const
+{
+    return m_NumMisplacedFeats;
+}
+
+optional<unsigned int> CValidatorEntryInfo::NumMisplacedSmallGenomeSetFeats() const
+{
+    return m_NumMisplacedFeats;
+}
 
 END_SCOPE(validator)
 END_SCOPE(objects)

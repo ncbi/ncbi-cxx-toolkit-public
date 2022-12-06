@@ -44,21 +44,28 @@ class COrg_ref;
 
 BEGIN_SCOPE(validator)
 
+
 struct NCBI_VALIDATOR_EXPORT SValidatorContext
 {
+    using TSeqIdSet = set<CConstRef<CSeq_id>, PPtrLess<CConstRef<CSeq_id>>>;
+
     bool        PreprocessHugeFile{false};
     bool        PostprocessHugeFile{false};
     bool        IsPatent{false};
     bool        IsPDB{false};
     bool        IsRefSeq{false};
-    string      GenbankSetId;
+    string      HugeSetId;
     atomic_bool CheckECNumFileStatus{true};
     bool        NoBioSource{false};
     bool        NoPubsFound{false};
     bool        NoCitSubsFound{false};
     once_flag   DescriptorsOnceFlag;
     once_flag   SubmitBlockOnceFlag;
+    once_flag   WgsSetInSeqSubmitOnceFlag;
+    once_flag   ClassNotSetOnceFlag;
 
+    using FIdInBlob = function<bool(const CSeq_id& id)>;
+    FIdInBlob IsIdInBlob{nullptr};
     using taxupdate_func_t = function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>& list)>;
     taxupdate_func_t m_taxon_update;
 };
