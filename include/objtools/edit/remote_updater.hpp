@@ -151,6 +151,7 @@ private:
     EPubmedSource              m_pm_source = EPubmedSource::eNone;
     unique_ptr<IPubmedUpdater> m_pubmed;
     bool                       m_pm_use_cache = true;
+    bool                       m_pm_normalize = true;
     TPubInterceptor            m_pm_interceptor = nullptr;
 
     unique_ptr<CCachedTaxon3_impl> m_taxClient;
