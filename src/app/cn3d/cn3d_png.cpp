@@ -114,7 +114,8 @@ static ProgressMeter *progressMeter = NULL;
 static const int PROGRESS_RESOLUTION = 100, MAX_BUFFER_PIXELS = 1000000;
 static int nRows;
 
-class PNGOptionsDialog : private wxDialog
+//class PNGOptionsDialog : private wxDialog
+class PNGOptionsDialog : public wxDialog
 {
 public:
     PNGOptionsDialog(wxWindow *parent);
@@ -154,6 +155,8 @@ private:
 // strings as octal or hexadecimal...
 #define GET_AND_IS_VALID_SIZE(textctrl, var) \
     (textctrl->GetValue().ToDouble(&var) && var >= 1 && fmod(var, 1.0) == 0.0 && var <= kMax_Int)
+
+const wxWindowID ButtonID = wxID_HIGHEST + 1;
 
 BEGIN_EVENT_TABLE(PNGOptionsDialog, wxDialog)
     EVT_BUTTON      (-1,    PNGOptionsDialog::OnButton)

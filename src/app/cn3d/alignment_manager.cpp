@@ -63,8 +63,8 @@
 #include "cn3d_pssm.hpp"
 #include "progress_meter.hpp"
 
-#include <algo/structure/bma_refine/Interface.hpp>
-#include <algo/structure/bma_refine/InterfaceGUI.hpp>
+//#include <algo/structure/bma_refine/Interface.hpp>
+//#include <algo/structure/bma_refine/InterfaceGUI.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1182,6 +1182,7 @@ void RefinementProgress(double progress)
 
 void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
 {
+#if 0
     // TODO:  selection dialog for realigning specific rows
     // <can add this afterwards; refiner supports this sort of thing but need to improve api>
 
@@ -1238,6 +1239,7 @@ void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
     }
 
     // set up refiner
+
     align_refine::BMARefinerInterface interface;
     static unique_ptr < align_refine::BMARefinerOptions > options;
     if ((options.get() && !interface.SetOptions(*options)) ||   // set these first since some are overridden by alignment inputs
@@ -1257,6 +1259,7 @@ void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
         }
         options.reset(interface.GetOptions());
     }
+
     if (setUpOptionsOnly)
         return;
 
@@ -1308,6 +1311,7 @@ void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
     } else {
         ERRORMSG("AlignmentManager::RefineAlignment() - refinement failed. Alignment unchanged.");
     }
+#endif
 }
 
 END_SCOPE(Cn3D)

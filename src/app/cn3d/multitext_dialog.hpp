@@ -66,7 +66,8 @@ public:
 // this is really intended to be used as a non-modal dialog; it calls its owner's DialogTextChanged()
 // method every time the user types something. But it should function modally as well.
 
-class MultiTextDialog : private wxDialog
+//class MultiTextDialog : private wxDialog
+class MultiTextDialog : public wxDialog
 {
 public:
     typedef std::vector < std::string > TextLines;
