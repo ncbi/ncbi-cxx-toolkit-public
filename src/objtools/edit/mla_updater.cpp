@@ -20,8 +20,8 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
-CMLAUpdaterBase::CMLAUpdaterBase()
-  : m_mlac(new CMLAClient())
+CMLAUpdaterBase::CMLAUpdaterBase(bool bNorm) :
+    m_mlac(new CMLAClient()), m_bNorm(bNorm)
 {
 }
 
@@ -123,7 +123,8 @@ CRef<CPub> CMLAUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
 
     try {
         CRef<CPub> pub = m_mlac->AskGetpubpmid(CPubMedId(pmid), &reply);
-        Normalize(*pub);
+        if (m_bNorm)
+            Normalize(*pub);
         if (m_pub_interceptor)
             m_pub_interceptor(pub);
         return pub;
