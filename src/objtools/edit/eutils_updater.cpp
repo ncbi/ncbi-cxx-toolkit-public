@@ -75,7 +75,7 @@ enum eCitMatchFlags {
     e_T = 1 << 6, // Title
 };
 
-eCitMatchFlags constexpr operator|(eCitMatchFlags a, eCitMatchFlags b)
+inline eCitMatchFlags constexpr operator|(eCitMatchFlags a, eCitMatchFlags b)
 {
     return static_cast<eCitMatchFlags>(static_cast<int>(a) | static_cast<int>(b));
 }
@@ -315,11 +315,10 @@ public:
 };
 
 
-CEUtilsUpdaterBase::CEUtilsUpdaterBase()
+CEUtilsUpdaterBase::CEUtilsUpdaterBase(bool bNorm) :
+    m_Ctx(new CEUtils_ConnContext), m_bNorm(bNorm)
 {
-    m_Ctx.Reset(new CEUtils_ConnContext);
 }
-
 
 TEntrezId CEUtilsUpdaterBase::CitMatch(const CPub& pub, EPubmedError* perr)
 {
@@ -457,7 +456,8 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
             if (mle.IsSetCit()) {
                 CRef<CPub> pub(new CPub);
                 pub->SetArticle().Assign(mle.GetCit());
-                Normalize(*pub);
+                if (m_bNorm)
+                    Normalize(*pub);
                 if (m_pub_interceptor)
                     m_pub_interceptor(pub);
                 return pub;

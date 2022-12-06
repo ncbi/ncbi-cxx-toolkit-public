@@ -11,7 +11,7 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT CMLAUpdaterBase : public IPubmedUpdater
 {
 public:
-    CMLAUpdaterBase();
+    CMLAUpdaterBase(bool bNorm);
     bool       Init() override;
     void       Fini() override;
     TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
@@ -23,6 +23,7 @@ public:
 
 private:
     CRef<CMLAClient> m_mlac;
+    bool             m_bNorm;
 };
 
 class NCBI_XOBJEDIT_EXPORT CMLAUpdaterWithCache : public CMLAUpdaterBase
@@ -30,6 +31,8 @@ class NCBI_XOBJEDIT_EXPORT CMLAUpdaterWithCache : public CMLAUpdaterBase
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 
 public:
+    CMLAUpdaterWithCache(bool bNorm = false) :
+        CMLAUpdaterBase(bNorm) {}
     void ReportStats(std::ostream&);
     void ClearCache();
 

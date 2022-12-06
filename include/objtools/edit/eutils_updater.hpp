@@ -11,7 +11,7 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterBase : public IPubmedUpdater
 {
 public:
-    CEUtilsUpdaterBase();
+    CEUtilsUpdaterBase(bool bNorm);
     TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
     TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) override;
     CRef<CPub> x_GetPub(TEntrezId pmid, EPubmedError*);
@@ -19,6 +19,7 @@ public:
 
 private:
     CRef<CEUtils_ConnContext> m_Ctx;
+    bool                      m_bNorm;
 };
 
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdaterBase
@@ -26,6 +27,8 @@ class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdaterBase
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 
 public:
+    CEUtilsUpdaterWithCache(bool bNorm = false) :
+        CEUtilsUpdaterBase(bNorm) {}
     void ReportStats(std::ostream&);
     void ClearCache();
 
@@ -38,6 +41,8 @@ private:
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public CEUtilsUpdaterWithCache
 {
 public:
+    CEUtilsUpdater(bool bNorm = false) :
+        CEUtilsUpdaterWithCache(bNorm) {}
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 };
 
