@@ -79,9 +79,9 @@ void InitPubmedClient(bool use_eutils)
 {
     if (! s_updater) {
         if (use_eutils) {
-            s_updater.reset(new edit::CEUtilsUpdater);
+            s_updater.reset(new edit::CEUtilsUpdater(true));
         } else {
-            s_updater.reset(new edit::CMLAUpdater);
+            s_updater.reset(new edit::CMLAUpdater(true));
         }
     }
 }

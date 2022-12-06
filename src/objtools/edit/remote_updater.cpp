@@ -469,9 +469,9 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                 break;
             case EPubmedSource::eEUtils:
                 if (m_pm_use_cache) {
-                    m_pubmed.reset(new CEUtilsUpdaterWithCache());
+                    m_pubmed.reset(new CEUtilsUpdaterWithCache(m_pm_normalize));
                 } else {
-                    m_pubmed.reset(new CEUtilsUpdater());
+                    m_pubmed.reset(new CEUtilsUpdater(m_pm_normalize));
                 }
                 if (m_pm_interceptor)
                     m_pubmed->SetPubInterceptor(m_pm_interceptor);
@@ -479,9 +479,9 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
             default:
             case EPubmedSource::eMLA:
                 if (m_pm_use_cache) {
-                    m_pubmed.reset(new CMLAUpdaterWithCache());
+                    m_pubmed.reset(new CMLAUpdaterWithCache(m_pm_normalize));
                 } else {
-                    m_pubmed.reset(new CMLAUpdater());
+                    m_pubmed.reset(new CMLAUpdater(m_pm_normalize));
                 }
                 if (m_pm_interceptor)
                     m_pubmed->SetPubInterceptor(m_pm_interceptor);
@@ -678,7 +678,7 @@ void CRemoteUpdater::SetPubmedClient(IPubmedUpdater* pubmedUpdater)
 
 void CRemoteUpdater::SetMLAClient(CMLAClient& mlaClient)
 {
-    CMLAUpdater* mlau = new CMLAUpdater();
+    CMLAUpdater* mlau = new CMLAUpdater(m_pm_normalize);
     mlau->SetClient(&mlaClient);
     m_pubmed.reset(mlau);
 }
