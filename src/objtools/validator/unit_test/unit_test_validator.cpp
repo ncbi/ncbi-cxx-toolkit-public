@@ -3432,7 +3432,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     // no more TerminalNs warnings if circular
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
-    expected_errors.push_back(new CExpectedError("pat|USA|1|1", eDiag_Error, "ContigsTooShort", 
+    expected_errors.push_back(new CExpectedError("pat|USA|1|1", eDiag_Error, "ContigsTooShort",
                 "Maximum contig length is 2 bases"));
     expected_errors.push_back(new CExpectedError("pat|USA|1|1", eDiag_Warning, "UnwantedCompleteFlag",
                 "Suspicious use of complete"));
@@ -6336,7 +6336,7 @@ void TestConsultRequired(const string& taxname)
 BOOST_AUTO_TEST_CASE(Test_VR_857)
 {
     // TestConsultRequired("Colletotrichum cliviae");
-    
+
     // TestConsultRequired("Erythrobacter marisflavi");
 }
 
@@ -9209,8 +9209,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid; the field value and/or name are incorrect"));
     //AddChromosomeNoLocation(expected_errors, entry);
     CheckErrors (*eval, expected_errors);
-    
-    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
+
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);
 
     CLEAR_ERRORS
 
@@ -9239,7 +9239,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);
 
     CLEAR_ERRORS
 
@@ -9270,8 +9270,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
-    
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);
+
     CLEAR_ERRORS
 
     prefix_field->SetData().SetStr("##MIGS-Data-START##");
@@ -9298,8 +9298,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
-    
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);
+
     CLEAR_ERRORS
 
     prefix_field->SetData().SetStr("##MIGS:4.0-Data-START##");
@@ -9327,8 +9327,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
-    
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);
+
     CLEAR_ERRORS
 
     // should complain about missing required field for specific values of sequencing technology
@@ -9349,7 +9349,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);
 
     CLEAR_ERRORS
 
@@ -9362,8 +9362,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);   
-    
+    BOOST_CHECK_EQUAL(validator.IsValidStructuredComment(*desc), false);
+
     CLEAR_ERRORS
 
     prefix_field->SetData().SetStr("##HumanSTR-START##");
@@ -13487,8 +13487,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     legal_strings.push_back ("DDBJ");
     legal_strings.push_back ("EcoGene");
     legal_strings.push_back ("EMBL");
-    // legal_strings.push_back ("ENSEMBL");
-    legal_strings.push_back ("Ensembl");
+    legal_strings.push_back ("ENSEMBL");
+    // legal_strings.push_back ("Ensembl");
     legal_strings.push_back ("ESTLIB");
     legal_strings.push_back ("FANTOM_DB");
     legal_strings.push_back ("FLYBASE");
@@ -13534,7 +13534,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     legal_strings.push_back ("PGN");
     legal_strings.push_back ("PIR");
     legal_strings.push_back ("PSEUDO");
-    legal_strings.push_back ("PseudoCap");
+    //legal_strings.push_back ("PseudoCap");
+    legal_strings.push_back ("PseudoCAP");
     legal_strings.push_back ("RAP-DB");
     legal_strings.push_back ("RATMAP");
     legal_strings.push_back ("RFAM");
@@ -25143,7 +25144,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_RW_1753)
     auto pErrors = Ref(new CValidError());
     CValidator(*pObjMgr).Validate(sah, options, *pErrors);
     CheckErrors(*pErrors, expected_errors);
-    
+
     CLEAR_ERRORS
 }
 
