@@ -82,7 +82,7 @@ static const int kDefaultMaxConnectionCount = 64;
 static const EDebugLevel kDefaultDebugLevel = eDebug_error;
 static const double kMinExpirationTimeout = 1;
 static const double kDefaultExpirationTimeout = 60;
-static const double kMinReadTimeout = .1;
+//static const double kMinReadTimeout = .1;
 static const double kDefaultReadTimeout = 30;
 static const double kMinCDDRetryTimeout = .1;
 static const double kDefaultCDDRetryTimeout = 0.9;
@@ -374,7 +374,7 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
         registry.GetDouble(section,
                            kParamReadTimeout,
                            kDefaultReadTimeout);
-    CHECK_PARAM_MIN(m_ReadTimeout, kParamReadTimeout, kMinReadTimeout);
+    //CHECK_PARAM_MIN(m_ReadTimeout, kParamReadTimeout, kMinReadTimeout);
     
     m_CDDRetryTimeout =
         registry.GetDouble(section,
@@ -574,6 +574,14 @@ void COSGConnectionPool::x_OpenConnection(COSGConnection& conn)
             NCBI_THROW(CIOException, eRead, "bad init reply");
         }
         conn.AcceptFeedback(+1);
+    }
+    if ( m_ReadTimeout > 0 ) {
+        const int kMksScale = 1000000;
+        Int8 timeout_mks = Int8(round(m_ReadTimeout*kMksScale));
+        STimeout tmout;
+        tmout.sec = timeout_mks/kMksScale;
+        tmout.usec = timeout_mks%kMksScale;
+        conn.m_Stream->SetTimeout(eIO_ReadWrite, &tmout);
     }
 }
 
