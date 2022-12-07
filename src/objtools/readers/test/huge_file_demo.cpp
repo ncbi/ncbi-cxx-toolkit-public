@@ -149,7 +149,7 @@ void CHugeFileDemoApp::x_TestRW1848(CBioseq_Handle bh) const
 {
     std::cerr << "Parent seq id:" << bh.GetAccessSeq_id_Handle().AsString() << "\n";
 
-    auto top_seh = edit::CHugeFileProcess::GetParentEntry(bh);
+    auto top_seh = edit::CHugeFileProcess::GetTopLevelEntry(bh);
     auto entry = top_seh.GetCompleteSeq_entry();
 
     FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, *entry) {
