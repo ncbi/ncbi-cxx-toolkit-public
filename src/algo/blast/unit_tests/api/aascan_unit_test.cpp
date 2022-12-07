@@ -524,4 +524,316 @@ BOOST_AUTO_TEST_CASE(ScanCheckScores)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+struct CompressedAascanTestFixture {
+
+    BLAST_SequenceBlk *query_blk;
+    BLAST_SequenceBlk *subject_blk;
+    LookupTableWrap* lookup_wrap_ptr;
+    LookupTableOptions* lookup_options;
+    BlastScoringOptions* score_options;
+    BlastScoreBlk *sbp;
+    BlastOffsetPair *offset_pairs;
+
+    CompressedAascanTestFixture()
+    {
+        Int4 status;
+
+        //------------------------------------------ QUERY SETUP -----------
+        // load the query
+        CSeq_id id("gi|18652417");
+
+        unique_ptr<SSeqLoc> ssl
+            (CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_unknown));
+
+        SBlastSequence query_sequence =
+                    GetSequence(*ssl->seqloc,
+                                eBlastEncodingProtein,
+                                ssl->scope,
+                                eNa_strand_unknown, // strand not applicable
+                                eNoSentinels);      // nucl sentinel not applicable
+
+        // create the sequence block
+
+        query_blk = NULL;
+        status = BlastSeqBlkNew(&query_blk);
+        BOOST_REQUIRE_EQUAL(0, status);
+        status = BlastSeqBlkSetSequence(query_blk, query_sequence.data.release(),
+                                query_sequence.length - 2);
+        BOOST_REQUIRE_EQUAL(0, status);
+
+        // indicate which regions of the query to index
+
+        BlastSeqLoc* lookup_segments = NULL;
+        BlastSeqLocNew(&lookup_segments, 0, query_sequence.length - 3);
+
+        //------------------------------------------ SUBJECT SETUP -----------
+        // load the subject
+        CSeq_id subject_id("APX54983.1");
+
+        unique_ptr<SSeqLoc> subject_ssl
+            (CTestObjMgr::Instance().CreateSSeqLoc(subject_id,
+                                                   eNa_strand_unknown));
+
+        SBlastSequence subj_sequence =
+                    GetSequence(*subject_ssl->seqloc,
+                                eBlastEncodingProtein,
+                                subject_ssl->scope,
+                                eNa_strand_unknown, // strand not applicable
+                                eNoSentinels);      // nucl sentinel not applicable
+
+        // create the subject sequence block
+
+        subject_blk = NULL;
+        status = BlastSeqBlkNew(&subject_blk);
+        BOOST_REQUIRE_EQUAL(0, status);
+        status = BlastSeqBlkSetSequence(subject_blk,
+                                        subj_sequence.data.release(),
+                                        subj_sequence.length - 2);
+        BOOST_REQUIRE_EQUAL(0, status);
+
+        SSeqRange full_range;
+        full_range.left = 0;
+        full_range.right = subject_blk->length;
+        status = BlastSeqBlkSetSeqRanges(subject_blk, &full_range, 1, true, eNoSubjMasking);
+        BOOST_REQUIRE_EQUAL(0, status);
+
+        //----------------------------------- LOOKUP TABLE SETUP -----------
+        // set lookup table options
+
+        status = LookupTableOptionsNew(eBlastTypeBlastp, &lookup_options);
+        BOOST_REQUIRE_EQUAL(0, status);
+        status = BLAST_FillLookupTableOptions(lookup_options,
+                                     eBlastTypeBlastp,
+                                     FALSE,  // megablast
+                                     21, // threshold
+                                     6);     // word size
+        BOOST_REQUIRE_EQUAL(0, status);
+
+        // get ready to fill in the scoring matrix
+
+        status = BlastScoringOptionsNew(eBlastTypeBlastp, &score_options);
+        BOOST_REQUIRE_EQUAL(0, status);
+        status = BLAST_FillScoringOptions(score_options,
+                                 eBlastTypeBlastp,
+                                 FALSE,                     // greedy
+                                 0,                         // match value
+                                 0,                         // mismatch value
+                                 NULL,                      // score matrix
+                                 BLAST_GAP_OPEN_PROT,       // gap open
+                                 BLAST_GAP_EXTN_PROT        // gap extend
+                                 );
+        BOOST_REQUIRE_EQUAL(0, status);
+
+        // fill in the scoring matrix
+
+        sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
+        BOOST_REQUIRE(sbp != NULL);
+        status = Blast_ScoreBlkMatrixInit(eBlastTypeBlastp, score_options, sbp,
+              &BlastFindMatrixPath);
+        BOOST_REQUIRE_EQUAL(0, status);
+
+        // create the lookup table
+
+        status = LookupTableWrapInit(query_blk,
+                            lookup_options,
+                            NULL,
+                            lookup_segments,
+                            sbp,
+                            &lookup_wrap_ptr,
+                            NULL /* RPS Info */,
+                            NULL,
+                            NULL);
+        BOOST_REQUIRE_EQUAL(0, status);
+
+        lookup_segments = BlastSeqLocFree(lookup_segments);
+
+        // create the hit collection array
+
+        offset_pairs = (BlastOffsetPair *)
+            malloc(GetOffsetArraySize(lookup_wrap_ptr) *
+                   sizeof(BlastOffsetPair));
+        BOOST_REQUIRE(offset_pairs != NULL);
+
+        // pick the ScanSubject routine
+        BlastChooseProteinScanSubject(lookup_wrap_ptr);
+
+    }
+
+    ~CompressedAascanTestFixture()
+    {
+        query_blk = BlastSequenceBlkFree(query_blk);
+        subject_blk = BlastSequenceBlkFree(subject_blk);
+        lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        lookup_options = LookupTableOptionsFree(lookup_options);
+        score_options = BlastScoringOptionsFree(score_options);
+        sbp = BlastScoreBlkFree(sbp);
+        sfree(offset_pairs);
+    }
+};
+
+BOOST_FIXTURE_TEST_SUITE( CompressedAascan, CompressedAascanTestFixture )
+
+BOOST_AUTO_TEST_CASE(CompressedScanOffsetTest)
+{
+    Int4 query_length = query_blk->length;
+    Int4 subject_length = subject_blk->length;
+    Int4 hits;
+    Uint4 s_off;
+    Int4 scan_range[3];
+
+    s_off = 0;
+
+    BOOST_REQUIRE_EQUAL(lookup_wrap_ptr->lut_type, eCompressedAaLookupTable);
+    BlastCompressedAaLookupTable *lut = (BlastCompressedAaLookupTable *)(lookup_wrap_ptr->lut);
+    TAaScanSubjectFunction scansub =
+                    (TAaScanSubjectFunction)(lut->scansub_callback);
+    BOOST_REQUIRE(scansub != NULL);
+
+    scan_range[0] = 0;
+    scan_range[1] = 0;
+    scan_range[2] = subject_blk->length - lut->word_length;
+
+    while (scan_range[1] < scan_range[2])
+    {
+        hits = scansub(lookup_wrap_ptr,
+                subject_blk,
+                offset_pairs,
+                GetOffsetArraySize(lookup_wrap_ptr),
+                scan_range);
+
+        // check number of reported hits
+        BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
+
+        if (!hits)
+            continue;
+
+        // sort the subject offsets into ascending order,
+        // using the query offsets as tiebreakers
+
+        qsort(offset_pairs, hits, sizeof(BlastOffsetPair), compare_offsets);
+
+        // verify that the first offsets in each
+        // list pick up where the last ScanSubject
+        // call left off, without repetition.
+        //
+        // The following assumes that all query offsets
+        // for a given subject offset will be collected
+        // in a single call to AaScanSubject.
+
+        if (s_off)
+            BOOST_REQUIRE(offset_pairs[0].qs_offsets.s_off > s_off);
+
+        // verify that
+        //   - all offsets are inside their respective sequences
+        //   - the subject and query offsets increase monotonically
+        //          (i.e. no query-subject pair is repeated)
+
+        for (int i = 1; i < hits; i++)
+        {
+            BOOST_REQUIRE(offset_pairs[i].qs_offsets.q_off <
+                           (Uint4)(query_length-2));
+            BOOST_REQUIRE(offset_pairs[i].qs_offsets.s_off <
+                           (Uint4)(subject_length-2));
+
+            if (offset_pairs[i].qs_offsets.s_off ==
+                offset_pairs[i-1].qs_offsets.s_off)
+            {
+                BOOST_REQUIRE(offset_pairs[i].qs_offsets.q_off >
+                               offset_pairs[i-1].qs_offsets.q_off);
+            }
+            else
+            {
+                BOOST_REQUIRE(offset_pairs[i].qs_offsets.s_off >
+                               offset_pairs[i-1].qs_offsets.s_off);
+            }
+        }
+
+        s_off = offset_pairs[hits-1].qs_offsets.s_off;
+        BOOST_REQUIRE((Int4)s_off < scan_range[1]);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(CompressedScanHitsFound)
+{
+    Int4 query_length = query_blk->length;
+    Int4 subject_length = subject_blk->length;
+    Int4 hits;
+    Int4 found_hits = 0;
+    Int4 scan_range[3];
+
+
+    BOOST_REQUIRE_EQUAL(lookup_wrap_ptr->lut_type, eCompressedAaLookupTable);
+    BlastCompressedAaLookupTable *lut = (BlastCompressedAaLookupTable *)(lookup_wrap_ptr->lut);
+    TAaScanSubjectFunction scansub = (TAaScanSubjectFunction)(lut->scansub_callback);
+    BOOST_REQUIRE(scansub != NULL);
+
+    // verify the list does not contain any query-subject
+    // pairs which do not belong there.
+
+    scan_range[0] = 0;
+    scan_range[1] = 0;
+    scan_range[2] = subject_blk->length - lut->word_length;
+
+    while (scan_range[1] < scan_range[2])
+    {
+        hits = scansub(lookup_wrap_ptr, subject_blk, offset_pairs, GetOffsetArraySize(lookup_wrap_ptr), scan_range);
+
+        BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
+        found_hits += hits;
+    }
+
+    BOOST_REQUIRE_EQUAL(found_hits, 2098);
+}
+
+BOOST_AUTO_TEST_CASE(CompressedSkipMaskedRanges)
+{
+    Int4 subject_length = subject_blk->length;
+    Int4 hits;
+    Int4 found_hits, expected_hits;
+    Int4 scan_range[3];
+
+    found_hits = expected_hits = 0;
+
+    BlastCompressedAaLookupTable *lut = (BlastCompressedAaLookupTable *)(lookup_wrap_ptr->lut);
+    TAaScanSubjectFunction scansub =
+                    (TAaScanSubjectFunction)(lut->scansub_callback);
+    BOOST_REQUIRE(scansub != NULL);
+
+    SSeqRange ranges2scan[] = { {0, 501}, {700, 1001}, {subject_length, subject_length} };
+    const size_t kNumRanges = (sizeof(ranges2scan)/sizeof(*ranges2scan));
+    BlastSeqBlkSetSeqRanges(subject_blk, ranges2scan, kNumRanges, FALSE, eSoftSubjMasking);
+
+    scan_range[0] = 0;
+    scan_range[1] = 0;
+    scan_range[2] = ranges2scan[0].right - lut->word_length;
+
+    while (scan_range[1] < scan_range[2])
+    {
+        hits = scansub(lookup_wrap_ptr,
+                subject_blk,
+                offset_pairs,
+                GetOffsetArraySize(lookup_wrap_ptr),
+                scan_range);
+
+        BOOST_REQUIRE(hits <= GetOffsetArraySize(lookup_wrap_ptr));
+        found_hits += hits;
+
+        // Ensure that hits fall in the subject's "approved" ranges
+        for (int i = 0; i < hits; i++) {
+            const Uint4 s_off = offset_pairs[i].qs_offsets.s_off;
+            bool hit_found = FALSE;
+            for (size_t j = 0; j < kNumRanges; j++) {
+                if ( s_off >= (Uint4)ranges2scan[j].left &&
+                     s_off <  (Uint4)ranges2scan[j].right ) {
+                    hit_found = TRUE;
+                    break;
+                }
+            }
+            BOOST_REQUIRE( hit_found );
+        }
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 #endif
