@@ -212,7 +212,8 @@ private:
     void x_SetTitleFromMap (void);
 
     void x_SetPrefix (
-        string& prefix
+        string& prefix,
+        const CBioseq_Handle& bsh
     );
     void x_SetSuffix (
         string& suffix,
