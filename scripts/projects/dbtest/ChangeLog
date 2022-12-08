@@ -1,4 +1,6 @@
-next release  
+
+1.5.13
+   - Improve truncating big outputs on loading to DB. Show as much errors/warnings as possible, count truncated errors/warnings. CXX-12741
     - Add timeouts for DB connections to prevent hanging on MacOS. CXX-12636
 
 1.5.12 (08/09/2021)
