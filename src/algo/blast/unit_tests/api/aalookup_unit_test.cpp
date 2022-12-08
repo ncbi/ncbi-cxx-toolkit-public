@@ -439,3 +439,146 @@ BOOST_AUTO_TEST_CASE(testDebruijnPSSM)
 // Register this test suite with the default test factory registry
 
 BOOST_AUTO_TEST_SUITE_END()
+
+struct CompressedAalookupTestFixture {
+
+  BLAST_SequenceBlk  *query_blk;
+  BlastSeqLoc        *lookup_segments;
+  LookupTableOptions *lookup_options;
+  BlastScoreBlk      *sbp;
+  LookupTableWrap    *lookup_wrap_ptr;
+  BlastCompressedAaLookupTable *lookup;
+
+  // constructor
+  // this constructor actually does nothing.
+  // use GetSeqBlk() and FillLookupTable() to instantiate a
+  // testing lookuptable instead.
+  CompressedAalookupTestFixture(){
+    query_blk=NULL;
+    lookup_segments=NULL;
+    lookup_options=NULL;
+    sbp=NULL;
+    lookup_wrap_ptr=NULL;
+    lookup=NULL;
+  }
+
+  // destructor
+  ~CompressedAalookupTestFixture() {
+    LookupTableWrapFree(lookup_wrap_ptr);
+    LookupTableOptionsFree(lookup_options);
+    BlastSequenceBlkFree(query_blk);
+    BlastSeqLocFree(lookup_segments);
+    BlastScoreBlkFree(sbp);
+  }
+
+  // to create a sequence with given gid
+  void GetSeqBlk(const string & id){
+    CSeq_id seq_id(id);
+    unique_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(seq_id, eNa_strand_unknown));
+    SBlastSequence sequence =
+              GetSequence(*ssl->seqloc,
+			    eBlastEncodingProtein,
+			    ssl->scope,
+			    eNa_strand_unknown, // strand not applicable
+			    eNoSentinels);      // nucl sentinel not applicable
+    // Create the sequence block.
+    // Note that GetSequence always includes sentinel bytes for
+    //     protein sequences.
+    BlastSeqBlkNew(&query_blk);
+    BlastSeqBlkSetSequence(query_blk, sequence.data.release(),
+                         sequence.length - 2);
+
+    const Uint1 kNullByte = GetSentinelByte(eBlastEncodingProtein);
+    BOOST_REQUIRE(query_blk != NULL);
+    BOOST_REQUIRE(query_blk->sequence[0] != kNullByte);
+    BOOST_REQUIRE(query_blk->sequence[query_blk->length - 1] != kNullByte);
+    BOOST_REQUIRE(query_blk->sequence_start[0] == kNullByte);
+    BOOST_REQUIRE(query_blk->sequence_start[query_blk->length + 1] ==
+                 kNullByte);
+    // Indicate which regions of the query to index
+    // The interval is [0...length-1] but must ignore the two
+    //       sentinel bytes. This makes the interval [0...length-3]
+    BlastSeqLocNew(&lookup_segments, 0, sequence.length - 3);
+  }
+
+  // to fill up a lookup table
+  // hasNeighbor specfies if neighboring words will be considered.
+  void FillLookupTable(){
+    // create lookup options
+    LookupTableOptionsNew(eBlastTypeBlastp, &lookup_options);
+    BLAST_FillLookupTableOptions(lookup_options,
+				 eBlastTypeBlastp,
+				 FALSE,  // megablast
+				 21,     // threshold
+				 6);     // word size
+    // create score blocks
+    sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
+    // generate score options
+    BlastScoringOptions *score_options;
+    BlastScoringOptionsNew(eBlastTypeBlastp, &score_options);
+    BLAST_FillScoringOptions(score_options,
+			     eBlastTypeBlastp,
+			     FALSE,
+			     0,
+			     0,
+			     NULL,
+			     BLAST_GAP_OPEN_PROT,
+			     BLAST_GAP_EXTN_PROT);
+    Blast_ScoreBlkMatrixInit(eBlastTypeBlastp, score_options, sbp,
+         &BlastFindMatrixPath);
+    BlastScoringOptionsFree(score_options);
+    // create lookup table
+    LookupTableWrapInit(query_blk,
+			lookup_options,
+                      NULL,
+			lookup_segments,
+			sbp,
+			&lookup_wrap_ptr,
+                      NULL /* RPS info */,
+                      NULL,
+                      NULL);
+    BOOST_REQUIRE_EQUAL(lookup_wrap_ptr->lut_type, eCompressedAaLookupTable);
+    lookup = (BlastCompressedAaLookupTable*) lookup_wrap_ptr->lut;
+  }
+};
+
+BOOST_FIXTURE_TEST_SUITE(CompressedAalookup, CompressedAalookupTestFixture)
+
+BOOST_AUTO_TEST_CASE(CompressedLookupNeighboringWordsTest) {
+  // create a deruijn sequence for neibhoring words test
+  GetSeqBlk("WP_130744894.1");
+  FillLookupTable();
+  BOOST_REQUIRE_EQUAL(lookup->threshold, 2100);
+  BOOST_REQUIRE_EQUAL(lookup->word_length, 6);
+  BOOST_REQUIRE_EQUAL(lookup->compressed_alphabet_size, 15);
+
+  CompressedLookupBackboneCell *backbone_cell;
+  backbone_cell = lookup->backbone + 6189626;
+  BOOST_REQUIRE_EQUAL(backbone_cell->num_used, 2);
+  Int4 index[8] ={6189626,3308318, 6298163, 9877654, 4975326, 3450036, 6447263, 500762};
+  Int4 num_used[8] ={2, 1, 1, 0, 1, 2, 2, 0};
+  for(int i=0; i < 8; i++) {
+	  backbone_cell = lookup->backbone + index[i];
+	  BOOST_REQUIRE_EQUAL(backbone_cell->num_used, num_used[i]);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(CompressedLookupNeighboringWordsTest2) {
+  // create a deruijn sequence for neibhoring words test
+  GetSeqBlk("CAA50632.1");
+  FillLookupTable();
+  BOOST_REQUIRE_EQUAL(lookup->threshold, 2100);
+  BOOST_REQUIRE_EQUAL(lookup->word_length, 6);
+  BOOST_REQUIRE_EQUAL(lookup->compressed_alphabet_size, 15);
+
+  CompressedLookupBackboneCell *backbone_cell;
+  Int4 index[8] ={9958159, 8870278 , 44768, 3870741, 1960395 , 6981008 , 5035027, 166507 };
+  Int4 num_used[8] ={9, 8, 7, 5, 3, 2, 1 , 0};
+  for(int i=0; i < 8; i++) {
+	  backbone_cell = lookup->backbone + index[i];
+	  BOOST_REQUIRE_EQUAL(backbone_cell->num_used, num_used[i]);
+  }
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
