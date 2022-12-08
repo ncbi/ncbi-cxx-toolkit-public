@@ -2799,7 +2799,8 @@ void CDeflineGenerator::x_SetTitleFromMap (void)
 
 // generate TPA or TSA prefix
 void CDeflineGenerator::x_SetPrefix (
-    string& prefix
+        string& prefix,
+        const CBioseq_Handle& bsh
 )
 
 {
@@ -2832,6 +2833,20 @@ void CDeflineGenerator::x_SetPrefix (
     } else if (m_IsPseudogene) {
         if (m_MainTitle.find ("PUTATIVE PSEUDOGENE") == NPOS) {
             prefix = "PUTATIVE PSEUDOGENE: ";
+        }
+    } else if (m_Idx && m_IsAA) {
+        CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+        if (bsx) {
+            CRef<CFeatureIndex> sfxp = bsx->GetFeatureForProduct();
+            if (sfxp) {
+                const CMappedFeat mf = sfxp->GetMappedFeat();
+                const CSeq_feat& cds = mf.GetOriginalFeature();
+                if (x_CDShasLowQualityException (cds)) {
+                    if (m_MainTitle.find ("LOW QUALITY PROTEIN") == NPOS) {
+                        prefix = "LOW QUALITY PROTEIN: ";
+                    }
+                }
+            }
         }
     }
 }
@@ -4129,7 +4144,7 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     // calculate prefix
-    x_SetPrefix(prefix);
+    x_SetPrefix(prefix, bsh);
 
     // calculate suffix
     x_SetSuffix (suffix, bsh, appendComplete, preferredSuffix);
