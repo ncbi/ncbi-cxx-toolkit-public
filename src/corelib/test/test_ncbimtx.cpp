@@ -33,9 +33,11 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
+#include <atomic>
 #include <future>
 #include <numeric>
 #include <random>
+#include <thread>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -51,9 +53,16 @@ BOOST_AUTO_TEST_CASE(SemaphorePostRace)
     default_random_engine e(rd());
     uniform_int_distribution<> d(3, 10);
 
-    for (auto i = 0; i < 1000; ++i) {
+    for (auto i = 0; i < 100; ++i) {
         CSemaphore sem(0, 10);
+        auto n = d(e);
+        atomic<int> latch(n);
         auto post = [&]() {
+            xncbi_SetValidateAction(eValidate_Throw);
+
+            // Wait for other threads
+            for (latch--; latch; this_thread::yield());
+
             try {
                 sem.Post(4);
                 return 1;
@@ -63,14 +72,21 @@ BOOST_AUTO_TEST_CASE(SemaphorePostRace)
             }
         };
 
-        const auto n = d(e);
         vector<future<int>> fs;
+        vector<thread> ts;
 
         for (auto j = n; j > 0; --j) {
-            fs.emplace_back(async(launch::async, post));
+            packaged_task<int()> t(post);
+            fs.emplace_back(t.get_future());
+            ts.emplace_back(move(t));
         }
 
         auto r = accumulate(fs.begin(), fs.end(), 0, [](int i, future<int>& f) { return i + f.get(); });
+
+        for (auto& t : ts) {
+            t.join();
+        }
+
         BOOST_REQUIRE_MESSAGE(r <= 2, "CSemaphore::Post() race occured at iteration " << i << " for " << n << " threads");
     }
 }
