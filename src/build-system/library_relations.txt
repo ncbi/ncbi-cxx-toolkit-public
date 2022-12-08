@@ -978,6 +978,7 @@ seqdb needs $(LMDB_LIB)
 seqdb needs $(SOBJMGR_LIBS)
 seqdb needs blastdb
 seqdb needs3party $(LMDB_LIBS)
+seqdb_maintenance_cassandra needs psg_cassandra
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan_utils needs $(SDBAPI_LIB)
