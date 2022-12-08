@@ -675,60 +675,83 @@ void CNewCleanup_imp::x_TrimInternalSemicolonsMarkChanged( std::string & str )
     }
 }
 
-void CNewCleanup_imp::SeqsetBC (
-    CBioseq_set& bss
-)
 
+
+static void s_IncrementSeqCount(const CBioseq& bioseq, 
+        int& num_nucs, int& num_prots)
 {
-    if( ! FIELD_IS_SET(bss, Class) ||
-        GET_FIELD(bss, Class) == CBioseq_set::eClass_not_set ||
-        GET_FIELD(bss, Class) == CBioseq_set::eClass_other )
-    {
-        int num_nucs = 0;
-        int num_prots = 0;
-        bool make_genbank = false;
-        CBioseq_set_Handle handle = m_Scope->GetBioseq_setHandle( bss );
-        if( handle ) {
-            CBioseq_CI bioseq_it( handle, CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_Mains );
-            for( ; bioseq_it ; ++bioseq_it ) {
-                if( bioseq_it->IsAa() ) {
-                    ++num_prots;
-                } else if( bioseq_it->IsNa() ) {
-                    ++num_nucs;
-                }
-            }
+    if (!bioseq.IsSetInst()) {
+        return;
+    }
 
-            // Iterate descendent Bioseq_set's.
-            // Since there seems to be no such thing as CBioseq_set_CI,
-            // we iterate over the Seq-entry's since every Bioseq-set should
-            // be guaranteed to be in a Seq-entry.
-            CSeq_entry_CI seq_entry_ci( handle );
-            for( ; seq_entry_ci; ++seq_entry_ci ) {
-                if( seq_entry_ci->IsSet() ) {
-                    CBioseq_set_Handle bioseq_set = seq_entry_ci->GetSet();
-                    if( ! FIELD_EQUALS(bioseq_set, Class, NCBI_BIOSEQSETCLASS(segset)) &&
-                        ! FIELD_EQUALS(bioseq_set, Class, NCBI_BIOSEQSETCLASS(parts)) )
-                    {
-                        make_genbank = true;
+    const auto& inst = bioseq.GetInst();
+    if (inst.IsNa()) {
+        ++num_nucs;
+    } else if (inst.IsAa()) {
+        ++num_prots;
+    }
+}
+
+
+static bool s_IsValidNPSubset(const CBioseq_set& bioseqSet)
+{
+    return (bioseqSet.IsSetClass() && 
+            (bioseqSet.GetClass() == CBioseq_set::eClass_parts ||
+            bioseqSet.GetClass() == CBioseq_set::eClass_segset));
+
+}
+
+
+static void s_ScanWhilePossibleNPSet(const CBioseq_set& bioseqSet,
+        int& num_nucs, int& num_prots, bool& hasInvalidSubset)
+{
+    if (bioseqSet.IsSetSeq_set()) {
+        for (const auto& pSubEntry : bioseqSet.GetSeq_set()) {
+            if (pSubEntry) {
+                if (pSubEntry->IsSeq()) {
+                    s_IncrementSeqCount(pSubEntry->GetSeq(), num_nucs, num_prots);
+                } else {
+                    const auto& bioseqSet = pSubEntry->GetSet();
+                    if (!s_IsValidNPSubset(bioseqSet)) {
+                        hasInvalidSubset = true;
+                        return;
                     }
-                }
-            }
-            // separate check needed for top level due to the somewhat kludgy way
-            // we iterate over CBioseq-sets
-            if( ! FIELD_EQUALS(handle, Class, NCBI_BIOSEQSETCLASS(segset)) &&
-                ! FIELD_EQUALS(handle, Class, NCBI_BIOSEQSETCLASS(parts)) )
-            {
-                make_genbank = true;
+                    s_ScanWhilePossibleNPSet(bioseqSet, num_nucs, num_prots, hasInvalidSubset);     
+                }  
+                if (num_nucs > 1) {
+                    return;
+                } 
             }
         }
+    }
+}
 
-        if( (num_nucs == 1) && (num_prots > 0) && ! make_genbank ) {
-            bss.SetClass( CBioseq_set::eClass_nuc_prot );
-            ChangeMade(CCleanupChange::eChangeBioseqSetClass);
-        } else {
-            bss.SetClass( CBioseq_set::eClass_genbank );
-            ChangeMade(CCleanupChange::eChangeBioseqSetClass);
-        }
+
+static bool s_LooksLikeNucProtSet(const CBioseq_set& bioseqSet)
+{
+    int numNucs{0};
+    int numProts{0};
+    bool hasInvalidSubset{false};
+    s_ScanWhilePossibleNPSet(bioseqSet, numNucs, numProts, hasInvalidSubset);
+
+    return (!hasInvalidSubset && numNucs == 1 && numProts > 0);
+}
+
+
+void CNewCleanup_imp::SeqsetBC(CBioseq_set& bss)
+{
+    if (bss.IsSetClass() &&
+        (bss.GetClass() != CBioseq_set::eClass_not_set &&
+         bss.GetClass() != CBioseq_set::eClass_other)) {
+        return;
+    }
+
+    if( s_LooksLikeNucProtSet(bss) ) {
+        bss.SetClass( CBioseq_set::eClass_nuc_prot );
+        ChangeMade(CCleanupChange::eChangeBioseqSetClass);
+    } else {
+        bss.SetClass( CBioseq_set::eClass_genbank );
+        ChangeMade(CCleanupChange::eChangeBioseqSetClass);
     }
 }
 
