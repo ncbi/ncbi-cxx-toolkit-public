@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(SemaphorePostRace)
     default_random_engine e(rd());
     uniform_int_distribution<> d(3, 10);
 
-    for (auto i = 0; i < 100; ++i) {
+    for (auto i = 0; i < 1000; ++i) {
         CSemaphore sem(0, 10);
         auto n = d(e);
         atomic<int> latch(n);
