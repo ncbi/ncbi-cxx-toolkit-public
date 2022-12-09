@@ -1130,7 +1130,7 @@ static void s_FormatPatent
         const bool do_us_patent_html =
             is_html && pat.IsSetCountry() && pat.GetCountry() == "US";
         if( do_us_patent_html ) {
-            jour << "<a href=\"" << strLinkBaseUSPTO << pat.GetNumber() << "\">";
+            jour << "<a href=\"" << strLinkBaseUSPTO << "(" << pat.GetNumber() << ").pn" << "\">";
         }
         jour << pat.GetNumber();
         if( do_us_patent_html ) {
