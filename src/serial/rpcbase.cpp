@@ -36,6 +36,24 @@
 
 BEGIN_NCBI_SCOPE
 
+class CCounterGuard
+{
+public:
+    CCounterGuard(int* counter)
+        : m_Counter(*counter)
+    {
+        m_Counter++;
+    }
+
+    ~CCounterGuard(void)
+    {
+        m_Counter--;
+    }
+
+private:
+    int& m_Counter;
+};
+
 
 static string s_GetConfigString(const string& service,
                                 const string& variable)
@@ -151,7 +169,11 @@ void CRPCClient_Base::Disconnect(void)
         // temporarily reconnect to send a fini!
         return;
     }
-    x_Disconnect();
+    CCounterGuard recursion_guard(&m_RecursionCount);
+    try {
+        x_Disconnect();
+    } catch (CInvalidChoiceSelection&) {
+    }
 }
 
 
@@ -195,24 +217,6 @@ void CRPCClient_Base::x_SetStream(CNcbiIostream* stream)
     m_Out.reset(CObjectOStream::Open(m_Format, *stream));
 }
 
-
-class CCounterGuard
-{
-public:
-    CCounterGuard(int* counter)
-        : m_Counter(*counter)
-    {
-        m_Counter++;
-    }
-
-    ~CCounterGuard(void)
-    {
-        m_Counter--;
-    }
-
-private:
-    int& m_Counter;
-};
 
 void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 {
