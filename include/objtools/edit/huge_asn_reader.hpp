@@ -128,7 +128,7 @@ public:
     static bool IsHugeSet(CBioseq_set::TClass setClass);
 
 
-    void FlattenGenbankSet();
+    virtual void FlattenGenbankSet();
     auto& GetTopEntry()       const { return m_top_entry; }
     auto& GetFlattenedIndex() const { return m_FlattenedIndex; }
     auto& GetTopIds()         const { return m_top_ids; }
@@ -173,7 +173,9 @@ private:
 
 // global lists, readonly after indexing
     TBioseqList               m_bioseq_list;
+protected:
     TBioseqSetList            m_bioseq_set_list;
+private:
     CConstRef<CSubmit_block>  m_submit_block;
 
 // flattenization structures, readonly after flattenization, accept m_Current
