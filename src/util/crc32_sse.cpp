@@ -141,7 +141,7 @@ struct tabled_crc32
     {
         size_t len = 4;
         while (len--) {
-            uint8_t b = d32;
+            uint8_t b = static_cast<uint8_t>(d32);
             d32 = d32 >> 8;
             crc = update(crc, b);
         }

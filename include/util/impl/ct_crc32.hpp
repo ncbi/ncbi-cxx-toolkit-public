@@ -65,7 +65,7 @@ namespace compile_time_bits
         {
             size_t len = 4;
             while (len--) {
-                uint8_t b = d32;
+                uint8_t b = static_cast<uint8_t>(d32);
                 d32 = d32 >> 8;
                 crc = update(crc, b);
             }
@@ -115,7 +115,7 @@ namespace ct
         static type constexpr ct(const char(&s)[N]) noexcept
         {
             auto hash = compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<case_sensitive==ncbi::NStr::eNocase, N>(s);
-#if 0 
+#if 0
 //def NCBI_COMPILER_ICC
 // Intel compiler ignores uint32_to int32_t conversion at compile time
             if (hash >= 0x8000'0000)
@@ -144,5 +144,3 @@ namespace ct
 }
 
 #endif
-
-
