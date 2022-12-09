@@ -33,6 +33,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <serial/serialdef.hpp>
 
 BEGIN_NCBI_SCOPE
 
