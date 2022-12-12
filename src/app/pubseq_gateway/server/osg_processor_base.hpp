@@ -133,6 +133,7 @@ public:
             return m_NeedTrace;
         }
     void SendTrace(const string& str);
+    virtual void SendError(const string& msg);
     
     bool IsCanceled() const
         {

@@ -172,6 +172,15 @@ void CPSGS_OSGProcessorBase::SendTrace(const string& str)
 }
 
 
+void CPSGS_OSGProcessorBase::SendError(const string& msg)
+{
+    m_Reply->PrepareProcessorMessage(m_Reply->GetItemId(), GetName(), msg,
+                                     CRequestStatus::e500_InternalServerError,
+                                     ePSGS_UnknownError,
+                                     eDiag_Error);
+}
+
+
 void CPSGS_OSGProcessorBase::StopAsyncThread()
 {
     /*
@@ -402,6 +411,7 @@ void CPSGS_OSGProcessorBase::DoProcess(TBGProcToken token)
     }
     catch ( exception& exc ) {
         PSG_ERROR("OSG: DoProcess() failed: "<<exc.what());
+        SendError("Exception when handling a get request: " + string(exc.what()));
         FinalizeResult(IPSGS_Processor::ePSGS_Error);
     }
 }
