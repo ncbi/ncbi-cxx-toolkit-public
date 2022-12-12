@@ -91,5 +91,6 @@ bool CCleanupHugeAsnReader::x_LooksLikeNucProtSet() const
     return true;
 }
 
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

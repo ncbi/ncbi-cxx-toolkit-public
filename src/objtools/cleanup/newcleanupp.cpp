@@ -10681,7 +10681,6 @@ void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
             break;
         case CBioseq_set::eClass_genbank:
             x_BioseqSetGenBankEC(bioseq_set);
-            x_RemovePopPhyBioSource(bioseq_set);
             x_RemovePopPhyMolInfo(bioseq_set);
             break;
         case CBioseq_set::eClass_mut_set:
@@ -10989,16 +10988,20 @@ void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq_set& set)
         return;
     }
     auto& dset = set.SetDescr().Set();
-    CBioseq_set::TDescr::Tdata::iterator d = dset.begin();
+    auto d = dset.begin();
+    bool firstMolInfo{true};
     while (d != dset.end()) {
         if ((*d)->IsMolinfo()) {
-            //propagate down
-            NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, set.SetSeq_set()) {
-                if ((*s)->IsSet()) {
-                    x_RemovePopPhyMolInfo((*s)->SetSet(), (*d)->GetMolinfo());
-                } else if ((*s)->IsSeq()) {
-                    x_RemovePopPhyMolInfo((*s)->SetSeq(), (*d)->GetMolinfo());
+            // propagate the first molinfo descriptor down
+            if (firstMolInfo) {
+                for (auto& pSubEntry : set.SetSeq_set()) {
+                    if (pSubEntry->IsSet()) {
+                        AddMolInfo(pSubEntry->SetSet(), (*d)->GetMolinfo());
+                    } else if (pSubEntry->IsSeq()) {
+                        AddMolInfo(pSubEntry->SetSeq(), (*d)->GetMolinfo());
+                    }
                 }
+                firstMolInfo = false;
             }
             d = dset.erase(d);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
@@ -11006,11 +11009,10 @@ void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq_set& set)
             ++d;
         }
     }
-
 }
 
 
-void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq_set& set, const CMolInfo& mol)
+void CNewCleanup_imp::AddMolInfo(CBioseq_set& set, const CMolInfo& mol)
 {
     // bail if already have molinfo descriptor
     if (s_HasDescriptorOfType(set, CSeqdesc::e_Molinfo)) {
@@ -11024,7 +11026,7 @@ void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq_set& set, const CMolInfo& mo
 }
 
 
-void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq& seq, const CMolInfo& mol)
+void CNewCleanup_imp::AddMolInfo(CBioseq& seq, const CMolInfo& mol)
 {
     // bail if already have MolInfo descriptor
     if (s_HasDescriptorOfType(seq, CSeqdesc::e_Molinfo)) {
@@ -11140,10 +11142,37 @@ void CNewCleanup_imp::x_BioseqSetGenBankEC(CBioseq_set & bioseq_set)
 {
     // clean up nested GenBank sets
     x_RemoveNestedGenBankSet(bioseq_set);
+
     //propagate source descriptors to set components
     if (bioseq_set.IsSetDescr() && bioseq_set.IsSetSeq_set() && !bioseq_set.GetSeq_set().empty()) {
         auto& dset = bioseq_set.SetDescr().Set();
-        CBioseq_set::TDescr::Tdata::iterator it = dset.begin();
+        list<CRef<CSeqdesc>> biosources;
+        auto it = dset.begin();
+        while (it != dset.end()) {
+            if ((*it)->IsSource()) {
+                biosources.push_back(*it);
+                it = dset.erase(it);
+                ChangeMade(CCleanupChange::eAddDescriptor);
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
+            } else {
+                ++it;
+            }
+        }
+        if (dset.empty()) {
+            bioseq_set.ResetDescr();
+        }
+        
+        if (!biosources.empty()) {
+            for (auto pSubEntry : bioseq_set.SetSeq_set()) {
+                auto& descrs = pSubEntry->IsSeq() ?
+                               pSubEntry->SetSeq().SetDescr().Set() :
+                               pSubEntry->SetSet().SetDescr().Set();
+
+                descrs.insert(descrs.end(), biosources.begin(), biosources.end());
+            }
+        }
+
+/*
         while (it != dset.end()) {
             if ((*it)->IsSource()) {
                 NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, bioseq_set.SetSeq_set()) {
@@ -11165,6 +11194,7 @@ void CNewCleanup_imp::x_BioseqSetGenBankEC(CBioseq_set & bioseq_set)
         if (dset.empty()) {
             bioseq_set.ResetDescr();
         }
+        */
     }
 }
 
