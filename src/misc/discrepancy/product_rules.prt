@@ -29323,5 +29323,77 @@ Suspect-rule-set ::= {
     },
     rule-type inappropriate-symbol,
     fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "likeprotein",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "like protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "bindingprotein",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "binding protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
+  },
+  {
+    find string-constraint {
+      match-text "containingprotein",
+      match-location contains,
+      case-sensitive FALSE,
+      ignore-space FALSE,
+      ignore-punct FALSE,
+      whole-word TRUE,
+      is-all-caps FALSE,
+      is-all-lower FALSE,
+      is-all-punct FALSE,
+      ignore-weasel FALSE
+    },
+    rule-type typo,
+    replace {
+      replace-func simple-replace {
+        replace "containing protein",
+        whole-string FALSE,
+        weasel-to-putative FALSE
+      },
+      move-to-note FALSE
+    },
+    fatal FALSE
   }
 }
