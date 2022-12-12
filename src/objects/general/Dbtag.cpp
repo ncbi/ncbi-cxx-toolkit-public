@@ -53,218 +53,24 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // All these maps are sorted at compile time case insensitive
 // No need to presort them
-// The access can be performed case sensitive too via xGetString, xFindString functions
 
-MAKE_CONST_MAP(sc_ApprovedDb, ct::tagStrCase, CDbtag::EDbtagType,
+struct TApprovedDbTags
 {
-    { "AFTOL", CDbtag::eDbtagType_AFTOL },
-    { "APHIDBASE", CDbtag::eDbtagType_APHIDBASE },
-    { "ASAP", CDbtag::eDbtagType_ASAP },
-    { "ATCC", CDbtag::eDbtagType_ATCC },
-    { "ATCC(dna)", CDbtag::eDbtagType_ATCC_dna },
-    { "ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host },
-    { "AceView/WormGenes", CDbtag::eDbtagType_AceView_WormGenes },
-    { "AntWeb", CDbtag::eDbtagType_AntWeb },
-    { "ApiDB", CDbtag::eDbtagType_ApiDB },
-    { "ApiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB },
-    { "ApiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB },
-    { "ApiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB },
-    { "Araport", CDbtag::eDbtagType_Araport },
-    { "Axeldb", CDbtag::eDbtagType_axeldb },
-    { "BDGP_EST", CDbtag::eDbtagType_BDGP_EST },
-    { "BDGP_INS", CDbtag::eDbtagType_BDGP_INS },
-    { "BEEBASE", CDbtag::eDbtagType_BEEBASE },
-    { "BEETLEBASE", CDbtag::eDbtagType_BEETLEBASE },
-    { "BEI", CDbtag::eDbtagType_BEI },
-    { "BGD", CDbtag::eDbtagType_BGD },
-    { "BOLD", CDbtag::eDbtagType_BoLD },
-    { "CDD", CDbtag::eDbtagType_CDD },
-    { "CGD", CDbtag::eDbtagType_CGD },
-    { "CK", CDbtag::eDbtagType_CK },
-    { "COG", CDbtag::eDbtagType_COG },
-    { "ECOCYC", CDbtag::eDbtagType_ECOCYC },
-    { "ENSEMBL", CDbtag::eDbtagType_ENSEMBL },
-    { "ERIC", CDbtag::eDbtagType_ERIC },
-    { "ESTLIB", CDbtag::eDbtagType_ESTLIB },
-    { "EcoGene", CDbtag::eDbtagType_EcoGene },
-    { "Ensembl", CDbtag::eDbtagType_Ensembl },
-    { "EnsemblGenomes", CDbtag::eDbtagType_EnsemblGenomes },
-    { "EnsemblGenomes-Gn", CDbtag::eDbtagType_EnsemblGenomes_Gn },
-    { "EnsemblGenomes-Tr", CDbtag::eDbtagType_EnsemblGenomes_Tr },
-    { "EnsemblRapid", CDbtag::eDbtagType_EnsemblRapid },
-    { "FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB },
-    { "FBOL", CDbtag::eDbtagType_FBOL },
-    { "FLYBASE", CDbtag::eDbtagType_FLYBASE },
-    { "GABI", CDbtag::eDbtagType_GABI },
-    { "GDB", CDbtag::eDbtagType_GDB },
-    { "GO", CDbtag::eDbtagType_GO },
-    { "GOA", CDbtag::eDbtagType_GOA },
-    { "GRIN", CDbtag::eDbtagType_GRIN },
-    { "GeneDB", CDbtag::eDbtagType_GeneDB },
-    { "GeneID", CDbtag::eDbtagType_GeneID },
-    { "Greengenes", CDbtag::eDbtagType_Greengenes },
-    { "H-InvDB", CDbtag::eDbtagType_H_InvDB },
-    { "HGNC", CDbtag::eDbtagType_HGNC },
-    { "HMP", CDbtag::eDbtagType_HMP },
-    { "HOMD", CDbtag::eDbtagType_HOMD },
-    { "HSSP", CDbtag::eDbtagType_HSSP },
-    { "I5KNAL", CDbtag::eDbtagType_I5KNAL },
-    { "IKMC", CDbtag::eDbtagType_IKMC },
-    { "IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB },
-    { "IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA },
-    { "IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM },
-    { "IRD", CDbtag::eDbtagType_IRD },
-    { "ISD", CDbtag::eDbtagType_ISD },
-    { "ISFinder", CDbtag::eDbtagType_ISFinder },
-    { "ISHAM-ITS", CDbtag::eDbtagType_ISHAM_ITS },
-    { "InterPro", CDbtag::eDbtagType_Interpro },
-    { "InterimID", CDbtag::eDbtagType_InterimID },
-    { "IntrepidBio", CDbtag::eDbtagType_IntrepidBio },
-    { "JCM", CDbtag::eDbtagType_JCM },
-    { "JGIDB", CDbtag::eDbtagType_JGIDB },
-    { "LocusID", CDbtag::eDbtagType_LocusID },
-    { "MGI", CDbtag::eDbtagType_MGI },
-    { "MIM", CDbtag::eDbtagType_MIM },
-    { "MaizeGDB", CDbtag::eDbtagType_MaizeGDB },
-    { "MarpolBase", CDbtag::eDbtagType_MarpolBase },
-    { "MedGen", CDbtag::eDbtagType_MedGen },
-    { "MycoBank", CDbtag::eDbtagType_MycoBank },
-    { "NBRC", CDbtag::eDbtagType_IFO },
-    { "NMPDR", CDbtag::eDbtagType_NMPDR },
-    { "NRESTdb", CDbtag::eDbtagType_NRESTdb },
-    { "NextDB", CDbtag::eDbtagType_NextDB },
-    { "OrthoMCL", CDbtag::eDbtagType_OrthoMCL },
-    { "Osa1", CDbtag::eDbtagType_Osa1 },
-    { "PBmice", CDbtag::eDbtagType_PBmice },
-    { "PDB", CDbtag::eDbtagType_PDB },
-    { "PFAM", CDbtag::eDbtagType_PFAM },
-    { "PGN", CDbtag::eDbtagType_PGN },
-    { "PIR", CDbtag::eDbtagType_PIR },
-    { "PSEUDO", CDbtag::eDbtagType_PSEUDO },
-    { "Pathema", CDbtag::eDbtagType_Pathema },
-    { "PeptideAtlas", CDbtag::eDbtagType_PeptideAtlas },
-    { "Phytozome", CDbtag::eDbtagType_Phytozome },
-    { "PomBase", CDbtag::eDbtagType_PomBase },
-    { "PseudoCAP", CDbtag::eDbtagType_PseudoCAP },
-    { "PseudoCap", CDbtag::eDbtagType_PseudoCap },
-    { "RAP-DB", CDbtag::eDbtagType_RAP_DB },
-    { "RATMAP", CDbtag::eDbtagType_RATMAP },
-    { "RFAM", CDbtag::eDbtagType_RFAM },
-    { "RGD", CDbtag::eDbtagType_RGD },
-    { "RNAcentral", CDbtag::eDbtagType_RNAcentral },
-    { "RZPD", CDbtag::eDbtagType_RZPD },
-    { "RiceGenes", CDbtag::eDbtagType_RiceGenes },
-    { "SEED", CDbtag::eDbtagType_SEED },
-    { "SGD", CDbtag::eDbtagType_SGD },
-    { "SGN", CDbtag::eDbtagType_SGN },
-    { "SoyBase", CDbtag::eDbtagType_SoyBase },
-    { "SubtiList", CDbtag::eDbtagType_SubtiList },
-    { "TAIR", CDbtag::eDbtagType_TAIR },
-    { "TIGRFAM", CDbtag::eDbtagType_TIGRFAM },
-    { "TubercuList", CDbtag::eDbtagType_TubercuList },
-    { "UNILIB", CDbtag::eDbtagType_UNILIB },
-    { "UNITE", CDbtag::eDbtagType_UNITE },
-    { "UniGene", CDbtag::eDbtagType_UniGene },
-    { "UniProtKB/Swiss-Prot", CDbtag::eDbtagType_UniProt_SwissProt },
-    { "UniProtKB/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL },
-    { "UniSTS", CDbtag::eDbtagType_UniSTS },
-    { "VBASE2", CDbtag::eDbtagType_VBASE2 },
-    { "VGNC", CDbtag::eDbtagType_VGNC },
-    { "VISTA", CDbtag::eDbtagType_VISTA },
-    { "VectorBase", CDbtag::eDbtagType_VectorBase },
-    { "Vega", CDbtag::eDbtagType_Vega },
-    { "ViPR", CDbtag::eDbtagType_ViPR },
-    { "WorfDB", CDbtag::eDbtagType_WorfDB },
-    { "WormBase", CDbtag::eDbtagType_WormBase },
-    { "Xenbase", CDbtag::eDbtagType_Xenbase },
-    { "ZFIN", CDbtag::eDbtagType_ZFIN },
-    { "dbClone", CDbtag::eDbtagType_dbClone },
-    { "dbCloneLib", CDbtag::eDbtagType_dbCloneLib },
-    { "dbEST", CDbtag::eDbtagType_dbEST },
-    { "dbProbe", CDbtag::eDbtagType_dbProbe },
-    { "dbSNP", CDbtag::eDbtagType_dbSNP },
-    { "dbSTS", CDbtag::eDbtagType_dbSTS },
-    { "dbVar", CDbtag::eDbtagType_dbVar },
-    { "dictyBase", CDbtag::eDbtagType_dictyBase },
-    { "miRBase", CDbtag::eDbtagType_miRBase },
-    { "niaEST", CDbtag::eDbtagType_niaEST },
-    { "taxon", CDbtag::eDbtagType_taxon },
-})
+    CDbtag::TDbtagGroup m_groups = CDbtag::fNone;
+    CDbtag::EDbtagType  m_tag    = CDbtag::eDbtagType_bad;
+    std::string_view    m_alias;
 
-MAKE_CONST_MAP(sc_ApprovedRefSeqDb, ct::tagStrCase, CDbtag::EDbtagType,
+    constexpr TApprovedDbTags() = default;
+    constexpr TApprovedDbTags(const CDbtag::TDbtagGroup& _group, CDbtag::EDbtagType _tag) :
+        m_groups{_group}, m_tag{_tag} {}
+    constexpr TApprovedDbTags(const CDbtag::TDbtagGroup& _group, CDbtag::EDbtagType _tag, string_view _alias) :
+        m_groups{_group}, m_tag{_tag}, m_alias{_alias} {}
+};
+
+static constexpr auto sc_ApprovedTags = ct::const_map<ct::tagStrNocase, TApprovedDbTags>::construct(
 {
-    { "AllianceGenome", CDbtag::eDbtagType_AllianceGenome },
-    { "BioProject", CDbtag::eDbtagType_BioProject },
-    { "BioSample", CDbtag::eDbtagType_BioSample },
-    { "CCDS", CDbtag::eDbtagType_CCDS },
-    { "CGNC", CDbtag::eDbtagType_CGNC },
-    { "CloneID", CDbtag::eDbtagType_CloneID },
-    { "EPDnew", CDbtag::eDbtagType_EPDnew },
-    { "EnsemblRapid", CDbtag::eDbtagType_EnsemblRapid },
-    { "HPM", CDbtag::eDbtagType_HPM },
-    { "HPRD", CDbtag::eDbtagType_HPRD },
-    { "LRG", CDbtag::eDbtagType_LRG },
-    { "NASONIABASE", CDbtag::eDbtagType_NASONIABASE },
-    { "PBR", CDbtag::eDbtagType_PBR },
-    { "PeptideAtlas", CDbtag::eDbtagType_PeptideAtlas },
-    { "REBASE", CDbtag::eDbtagType_REBASE },
-    { "RefSeq", CDbtag::eDbtagType_RefSeq },
-    { "SK-FST", CDbtag::eDbtagType_SK_FST },
-    { "SRPDB", CDbtag::eDbtagType_SRPDB },
-    { "VBRC", CDbtag::eDbtagType_VBRC }
-})
-
-MAKE_CONST_MAP(sc_ApprovedSrcDb, ct::tagStrCase, CDbtag::EDbtagType,
-{
-    { "AFTOL", CDbtag::eDbtagType_AFTOL },
-    { "ATCC", CDbtag::eDbtagType_ATCC },
-    { "ATCC(dna)", CDbtag::eDbtagType_ATCC_dna },
-    { "ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host },
-    { "AntWeb", CDbtag::eDbtagType_AntWeb },
-    { "BEI", CDbtag::eDbtagType_BEI },
-    { "BOLD", CDbtag::eDbtagType_BoLD },
-    { "FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB },
-    { "FBOL", CDbtag::eDbtagType_FBOL },
-    { "FLYBASE", CDbtag::eDbtagType_FLYBASE },
-    { "Fungorum", CDbtag::eDbtagType_Fungorum },
-    { "GRIN", CDbtag::eDbtagType_GRIN },
-    { "GenBank", CDbtag::eDbtagType_GenBank },
-    { "Greengenes", CDbtag::eDbtagType_Greengenes },
-    { "HMP", CDbtag::eDbtagType_HMP },
-    { "HOMD", CDbtag::eDbtagType_HOMD },
-    { "IKMC", CDbtag::eDbtagType_IKMC },
-    { "IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA },
-    { "IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM },
-    { "ISHAM-ITS", CDbtag::eDbtagType_ISHAM_ITS },
-    { "JCM", CDbtag::eDbtagType_JCM },
-    { "MGI", CDbtag::eDbtagType_MGI },
-    { "MycoBank", CDbtag::eDbtagType_MycoBank },
-    { "NBRC", CDbtag::eDbtagType_IFO },
-    { "RBGE_garden", CDbtag::eDbtagType_RBGE_garden },
-    { "RBGE_herbarium", CDbtag::eDbtagType_RBGE_herbarium },
-    { "RZPD", CDbtag::eDbtagType_RZPD },
-    { "TubercuList", CDbtag::eDbtagType_TubercuList },
-    { "UNILIB", CDbtag::eDbtagType_UNILIB },
-    { "UNITE", CDbtag::eDbtagType_UNITE },
-    { "taxon", CDbtag::eDbtagType_taxon }
-})
-
-MAKE_CONST_MAP(sc_ApprovedProbeDb, ct::tagStrCase, CDbtag::EDbtagType,
-{
-    { "Assembly", CDbtag::eDbtagType_Assembly },
-    { "BB", CDbtag::eDbtagType_BB },
-    { "CollecTF", CDbtag::eDbtagType_CollecTF },
-    { "DDBJ", CDbtag::eDbtagType_DDBJ },
-    { "EMBL", CDbtag::eDbtagType_EMBL },
-    { "GEO", CDbtag::eDbtagType_GEO },
-    { "GenBank", CDbtag::eDbtagType_GenBank },
-    { "GrainGenes", CDbtag::eDbtagType_GrainGenes },
-    { "PubChem", CDbtag::eDbtagType_PubChem },
-    { "RefSeq", CDbtag::eDbtagType_RefSeq },
-    { "SRA", CDbtag::eDbtagType_SRA },
-    { "Trace", CDbtag::eDbtagType_Trace }
-})
-
+#include "Dbtag.inc"
+});
 
 MAKE_CONST_SET(sc_SkippableDbXrefs, ct::tagStrNocase,
 {
@@ -300,48 +106,46 @@ MAKE_CONST_MAP(sc_TaxIdTaxnameMap, TTaxId, STaxidTaxname,
 
 namespace {
 
-template<typename _MapType>
-bool xFindStrict(string_view _key, const _MapType& _map)
+CDbtag::TDbtagGroup xFindStrict(string_view _key)
 {
-    auto it = _map.find(_key);
-    if (it == _map.end())
-        return false;
+    const auto& _cont = sc_ApprovedTags;
+    auto it = _cont.find(_key);
+    if (it == _cont.end())
+        return 0;
 
-    return _key == it->first;
+    if (_key != it->first && _key != it->second.m_alias)
+        return 0;
+
+    return it->second.m_groups;
 }
 
-template<typename _MapType>
-bool xGetStrict(string_view _key, const _MapType& _map, typename _MapType::mapped_type& _retval)
+bool xGetStrict(string_view _key, CDbtag::EDbtagType& _retval)
 {
-    auto it = _map.find(_key);
-    if (it == _map.end())
+    const auto& _cont = sc_ApprovedTags;
+    auto it = _cont.find(_key);
+    if (it == _cont.end())
         return false;
 
-    if (_key != it->first)
+    if (_key != it->first && _key != it->second.m_alias)
         return false;
 
-    _retval = it->second;
+    _retval = it->second.m_tag;
     return true;
 }
 
-template<typename _Container>
-bool xFindCorrectCaps(const _Container _cont, const string& v, string_view& correct_caps)
+CDbtag::TDbtagGroup xFindCorrectCaps(const string& v, string_view& correct_caps)
 {
+    const auto& _cont = sc_ApprovedTags;
+
     if (auto it = _cont.find(v); it != _cont.end()) {
-        correct_caps = it->first;
-        return true;
+        if (it->second.m_alias == v)
+            correct_caps = it->second.m_alias;
+        else
+            correct_caps = it->first;
+        return it->second.m_groups;
     }
 
-    for (auto& it: _cont) {
-        if (NStr::CompareNocase(it.first, v)==0)
-        {
-            if (correct_caps.empty())
-                correct_caps = it.first;
-            return true;
-        }
-    }
-
-    return false;
+    return CDbtag::fNone;
 }
 
 }
@@ -415,20 +219,25 @@ bool CDbtag::IsApproved( EIsRefseq refseq, EIsSource is_source, EIsEstOrGss is_e
     }
     const string& db = GetDb();
 
-    if( refseq == eIsRefseq_Yes && xFindStrict(db, sc_ApprovedRefSeqDb) ) {
+    CDbtag::TDbtagGroup group = xFindStrict(db);
+    if (group == 0)
+        return false;
+
+
+    if( (refseq == eIsRefseq_Yes) && (group & fRefSeq) ) {
         return true;
     }
 
     if( is_source == eIsSource_Yes ) {
-        bool found = ( xFindStrict(db, sc_ApprovedSrcDb) );
+        bool found = (group & fSrc);
         if ( ! found && (is_est_or_gss == eIsEstOrGss_Yes) ) {
             // special case: for EST or GSS, source features are allowed non-src dbxrefs
-            found = ( xFindStrict(db, sc_ApprovedDb) ||
-                      xFindStrict(db, sc_ApprovedRefSeqDb) );
+            found = ( (group & fGenBank) ||
+                      (group & fRefSeq) );
         }
         return found;
     } else {
-        return xFindStrict(db, sc_ApprovedDb);
+        return (group & fGenBank);
     }
 }
 
@@ -442,21 +251,16 @@ const char* CDbtag::IsApprovedNoCase(EIsRefseq refseq, EIsSource is_source ) con
 
     string_view caps;
 
-    if (xFindCorrectCaps(sc_ApprovedDb, db, caps)) {
+    TDbtagGroup group = xFindCorrectCaps(db, caps);
+
+    if ( (refseq == eIsRefseq_Yes) && (group & fRefSeq)) {
         return caps.data();
     }
-
-    if ( refseq == eIsRefseq_Yes ) {
-        if (xFindCorrectCaps(sc_ApprovedRefSeqDb, db, caps)) {
-            return caps.data();
-        }
+    if ( (is_source == eIsSource_Yes ) && (group & fSrc)) {
+        return caps.data();
     }
-
-    if ( is_source == eIsSource_Yes ) {
-        if (xFindCorrectCaps(sc_ApprovedSrcDb, db, caps)) {
-            return caps.data();
-        }
-    }
+    if (!caps.empty())
+        return caps.data();
 
     return nullptr;
 }
@@ -469,23 +273,8 @@ bool CDbtag::IsApproved(TDbtagGroup group) const
     }
     const string& db = GetDb();
 
-    if ( (group & fGenBank) != 0 && xFindStrict(db, sc_ApprovedDb)) {
-        return true;
-    }
-
-    if ( (group & fRefSeq) != 0 && xFindStrict(db, sc_ApprovedRefSeqDb)) {
-        return true;
-    }
-
-    if ( (group & fSrc) != 0 && xFindStrict(db, sc_ApprovedSrcDb)) {
-        return true;
-    }
-
-    if ( (group & fProbe) != 0 && xFindStrict(db, sc_ApprovedProbeDb)) {
-        return true;
-    }
-
-    return false;
+    auto allowed = xFindStrict(db);
+    return (allowed & group);
 }
 
 
@@ -506,16 +295,7 @@ CDbtag::EDbtagType CDbtag::GetType(void) const
 
         const string& db = GetDb();
 
-        if (xGetStrict(db, sc_ApprovedDb, m_Type))
-            return m_Type;
-
-        if (xGetStrict(db, sc_ApprovedRefSeqDb, m_Type))
-            return m_Type;
-
-        if (xGetStrict(db, sc_ApprovedSrcDb, m_Type))
-            return m_Type;
-
-        if (xGetStrict(db, sc_ApprovedProbeDb, m_Type))
+        if (xGetStrict(db, m_Type))
             return m_Type;
     }
 
@@ -533,24 +313,11 @@ CDbtag::TDbtagGroup CDbtag::GetDBFlags (string& correct_caps) const
     const string& db = GetDb();
 
     string_view caps;
-    if (xFindCorrectCaps(sc_ApprovedDb, db, caps)) {
-        correct_caps = caps;
-        rsult |= fGenBank;
-    }
 
-    if (xFindCorrectCaps(sc_ApprovedRefSeqDb, db, caps)) {
+    auto groups = xFindCorrectCaps(db, caps);
+    if (groups) {
         correct_caps = caps;
-        rsult |= fRefSeq;
-    }
-
-    if (xFindCorrectCaps(sc_ApprovedSrcDb, db, caps)) {
-        correct_caps = caps;
-        rsult |= fSrc;
-    }
-
-    if (xFindCorrectCaps(sc_ApprovedProbeDb, db, caps)) {
-        correct_caps = caps;
-        rsult |= fProbe;
+        return groups;
     }
 
     return rsult;
@@ -616,7 +383,6 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_COG, "https://www.ncbi.nlm.nih.gov/research/cog/cog/" },
     { CDbtag::eDbtagType_CollecTF, "https://collectf.umbc.edu/" },
     { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" }, // https does not result in security cert warning, but "page can't be displayed", tested 7/13/2016
-    { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
     { CDbtag::eDbtagType_FANTOM_DB, "https://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
     { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_FLYBASE, "http://flybase.org/reports/" }, // https not available, http site "experiencing problems" tested 7/13/2016
@@ -666,7 +432,6 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier=" }, // http page states info no longer avail at this website, includes links to look for a new location tested 7/13/2016
     { CDbtag::eDbtagType_Phytozome, "https://phytozome.jgi.doe.gov/pz/portal.html#!results?search=0&crown=1&star=1&method=0&searchText=" },
     { CDbtag::eDbtagType_PomBase, "http://www.pombase.org/spombe/result/" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_RAP_DB, "http://rapdb.dna.affrc.go.jp/cgi-bin/gbrowse_details/latest?name=" }, // https appears available, domain appears to exist but http "page not found" with note about release of a major update tested 7/13/2016
     { CDbtag::eDbtagType_RATMAP, "https://ratmap.gen.gu.se/ShowSingleLocus.htm?accno=" },
     { CDbtag::eDbtagType_RBGE_garden, "https://data.rbge.org.uk/living/" },
@@ -731,11 +496,14 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_RNAcentral, "http://rnacentral.org/rna/" },
     { CDbtag::eDbtagType_PeptideAtlas, "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" },
     { CDbtag::eDbtagType_EPDnew, "http://epd.vital-it.ch/cgi-bin/get_doc?format=genome&entry=" },
-    { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
-    { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_dbVar, "https://www.ncbi.nlm.nih.gov/dbvar/variants/" },
     { CDbtag::eDbtagType_EnsemblRapid, "https://rapid.ensembl.org/id/" },
     { CDbtag::eDbtagType_AllianceGenome, "https://www.alliancegenome.org/gene/" },
+
+    { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
+    { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
+    { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
+    { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
 })
 
 string CDbtag::GetUrl(void) const

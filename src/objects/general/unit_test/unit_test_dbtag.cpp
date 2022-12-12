@@ -50,6 +50,8 @@ USING_SCOPE(objects);
 BOOST_AUTO_TEST_CASE(s_TestDBTag1)
 {
     CDbtag::EDbtagType tag;
+    string str;
+    CDbtag::TDbtagGroup group;
 
     CDbtag dbtag1;
     dbtag1.SetDb("AAA");
@@ -71,9 +73,6 @@ BOOST_AUTO_TEST_CASE(s_TestDBTag1)
     BOOST_CHECK(!dbtag3.IsApproved());
     BOOST_CHECK(dbtag3.IsApprovedNoCase(CDbtag::eIsRefseq_Yes));
 
-    string str;
-    CDbtag::TDbtagGroup group;
-
     group = dbtag2.GetDBFlags(str);
     BOOST_CHECK_EQUAL(str, "BioSample");
     BOOST_CHECK_EQUAL(group, CDbtag::fRefSeq);
@@ -81,4 +80,61 @@ BOOST_AUTO_TEST_CASE(s_TestDBTag1)
     group = dbtag3.GetDBFlags(str);
     BOOST_CHECK_EQUAL(str, "BioSample");
     BOOST_CHECK_EQUAL(group, CDbtag::fRefSeq);
+}
+
+BOOST_AUTO_TEST_CASE(s_TestDBTag2)
+{
+    CDbtag::EDbtagType tag;
+    string str;
+    CDbtag::TDbtagGroup group;
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("Ensembl");
+    tag = dbtag.GetType();
+    BOOST_CHECK_EQUAL(tag, CDbtag::eDbtagType_Ensembl);
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("ENSEMBL");
+    tag = dbtag.GetType();
+    BOOST_CHECK_EQUAL(tag, CDbtag::eDbtagType_Ensembl);
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("EnsembL");
+    tag = dbtag.GetType();
+    BOOST_CHECK_EQUAL(tag, CDbtag::eDbtagType_bad);
+    BOOST_CHECK(!dbtag.IsApproved());
+    BOOST_CHECK(dbtag.IsApprovedNoCase());
+
+    group = dbtag.GetDBFlags(str);
+    BOOST_CHECK_EQUAL(str, "Ensembl");
+    BOOST_CHECK_EQUAL(group, CDbtag::fGenBank);
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("ENSEMBL");
+    tag = dbtag.GetType();
+    BOOST_CHECK_EQUAL(tag, CDbtag::eDbtagType_Ensembl);
+    BOOST_CHECK(dbtag.IsApproved());
+    BOOST_CHECK(dbtag.IsApprovedNoCase());
+
+    group = dbtag.GetDBFlags(str);
+    BOOST_CHECK_EQUAL(str, "ENSEMBL");
+    BOOST_CHECK_EQUAL(group, CDbtag::fGenBank);
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("ENSEMBL");
+    tag = dbtag.GetType();
+    BOOST_CHECK( dbtag.IsApproved(CDbtag::eIsRefseq_No));
+    BOOST_CHECK(!dbtag.IsApproved(CDbtag::eIsRefseq_No, CDbtag::eIsSource_Yes));
+    BOOST_CHECK(!dbtag.IsApproved(CDbtag::eIsRefseq_No, CDbtag::eIsSource_Yes, CDbtag::eIsEstOrGss_No));
+    BOOST_CHECK( dbtag.IsApproved(CDbtag::eIsRefseq_No, CDbtag::eIsSource_Yes, CDbtag::eIsEstOrGss_Yes));
+    }
 }
