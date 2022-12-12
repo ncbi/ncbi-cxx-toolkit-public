@@ -3303,6 +3303,10 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
                        "CPSGDataLoader::GetRecords("+req_idh.AsString()+") failed");
         }
     }
+    else if ( task->GetStatus() == CThreadPool_Task::eFailed ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "CPSGDataLoader::GetRecords("+req_idh.AsString()+") failed");
+    }
     else if ( task->GotNotFound() ) {
         NCBI_THROW_FMT(CLoaderException, eNoData,
                        "CPSGDataLoader: No blob for seq_id="<<req_idh<<" blob_id="<<task->m_ReplyResult.blob_id);
