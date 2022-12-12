@@ -563,10 +563,12 @@ void CMakeClusterDBApp::x_BuildDatabase()
     m_DB->AddSequences(*raw);
 
     bool success = m_DB->EndBuild();
+   	string new_db = m_DB->GetOutputDbName();
+
+#ifdef METADATA_CLUSTERDB  
     if(success) {
     	string new_db = m_DB->GetOutputDbName();
     	CSeqDB::ESeqType t = is_protein? CSeqDB::eProtein: CSeqDB::eNucleotide;
-    	cerr << new_db << endl;
     	CSeqDB sdb(new_db, t);
         string output_prefix = args["metadata_output_prefix"]
                 ? args["metadata_output_prefix"].AsString() : kEmptyStr;
@@ -588,6 +590,7 @@ void CMakeClusterDBApp::x_BuildDatabase()
         out.flush();
         out << NcbiEndl;
     }
+#endif
 }
 
 int CMakeClusterDBApp::Run(void)
