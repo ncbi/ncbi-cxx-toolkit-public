@@ -475,7 +475,8 @@ private:
         else
             start_timestamp = m_PendingReqs.front()->GetStartTimestamp();
 
-        high_level_reply.PrepareReplyCompletion(start_timestamp);
+        high_level_reply.PrepareReplyCompletion(CRequestStatus::e503_ServiceUnavailable,
+                                                start_timestamp);
         high_level_reply.Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         high_level_reply.SetCompleted();
     }

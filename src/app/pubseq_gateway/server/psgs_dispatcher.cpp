@@ -131,7 +131,8 @@ CPSGS_Dispatcher::PreliminaryDispatchRequest(shared_ptr<CPSGS_Request> request,
 
         reply->PrepareReplyMessage(msg, CRequestStatus::e404_NotFound,
                                    ePSGS_NoProcessor, eDiag_Error);
-        reply->PrepareReplyCompletion(request->GetStartTimestamp());
+        reply->PrepareReplyCompletion(CRequestStatus::e404_NotFound,
+                                      request->GetStartTimestamp());
 
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
@@ -246,7 +247,8 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
 
         reply->PrepareReplyMessage(msg, status_code,
                                    ePSGS_NoProcessor, eDiag_Error);
-        reply->PrepareReplyCompletion(request->GetStartTimestamp());
+        reply->PrepareReplyCompletion(status_code,
+                                      request->GetStartTimestamp());
 
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
@@ -650,7 +652,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                     request, reply);
             }
 
-            reply->PrepareReplyCompletion(request->GetStartTimestamp());
+            reply->PrepareReplyCompletion(request_status,
+                                          request->GetStartTimestamp());
             procs->second->m_FinallyFlushed = true;
 
             // To avoid flushing and stopping request under a lock

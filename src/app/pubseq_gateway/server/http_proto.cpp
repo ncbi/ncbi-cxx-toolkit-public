@@ -225,7 +225,8 @@ static void FinishReply503(shared_ptr<CPSGS_Reply>     reply,
     reply->PrepareReplyMessage(msg,
                                CRequestStatus::e503_ServiceUnavailable,
                                ePSGS_UnknownError, eDiag_Error);
-    reply->PrepareReplyCompletion(psg_clock_t::now());
+    reply->PrepareReplyCompletion(CRequestStatus::e503_ServiceUnavailable,
+                                  psg_clock_t::now());
     reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
     reply->SetCompleted();
 }

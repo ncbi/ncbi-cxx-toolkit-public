@@ -325,7 +325,8 @@ public:
     void PrepareProcessorProgressMessage(const string &  processor_id,
                                          const string &  progress_status);
 
-    void PrepareReplyCompletion(const psg_time_point_t &  create_timestamp);
+    void PrepareReplyCompletion(CRequestStatus::ECode  status,
+                                const psg_time_point_t &  create_timestamp);
 
     // The last activity timestamp needs to be updated if it was a processor
     // initiated activity with the reply. If it was a trace from the processor
