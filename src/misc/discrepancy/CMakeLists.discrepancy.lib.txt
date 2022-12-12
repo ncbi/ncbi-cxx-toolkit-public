@@ -31,7 +31,7 @@ NCBI_begin_lib(xdiscrepancy)
     NCBI_project_watchers(gotvyans)
 NCBI_end_lib()
 
-if(ON) # disable until CXX-12758
+if(OFF) # disable until CXX-12758
 
 if (TARGET xdiscrepancy)
     set(_target_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../include/misc/discrepancy)
