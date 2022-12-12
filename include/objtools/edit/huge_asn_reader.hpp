@@ -175,13 +175,13 @@ private:
     TBioseqList               m_bioseq_list;
 protected:
     TBioseqSetList            m_bioseq_set_list;
+    CRef<CSeq_entry>          m_top_entry;
 private:
     CConstRef<CSubmit_block>  m_submit_block;
 
 // flattenization structures, readonly after flattenization, accept m_Current
     TBioseqIndex              m_bioseq_index;
     TBioseqSetIndex           m_FlattenedIndex;
-    CConstRef<CSeq_entry>     m_top_entry;
     TBioseqSetList            m_FlattenedSets;
     TBioseqSetList::const_iterator  m_Current;
     std::list<CConstRef<CSeq_id>> m_top_ids;
