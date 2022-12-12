@@ -65,6 +65,7 @@ public:
 
     void FlattenGenbankSet() override;
 private:
+    void x_CleanupTopLevelDescriptors();
     bool x_LooksLikeNucProtSet() const;
     list<CRef<CSeqdesc>> m_TopLevelBiosources;
     CRef<CSeqdesc> m_pTopLevelMolInfo;

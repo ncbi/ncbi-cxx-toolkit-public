@@ -56,6 +56,7 @@ void CCleanupHugeAsnReader::FlattenGenbankSet()
     }
 
     TParent::FlattenGenbankSet();
+    x_CleanupTopLevelDescriptors();
 }
 
 
@@ -89,6 +90,43 @@ bool CCleanupHugeAsnReader::x_LooksLikeNucProtSet() const
         ++it;
     }
     return true;
+}
+
+void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors() 
+{
+
+    m_TopLevelBiosources.clear();
+    m_pTopLevelMolInfo.Reset();
+
+    if (!m_top_entry || 
+        !m_top_entry->IsSetDescr() ||
+        !m_top_entry->GetDescr().IsSet()) {
+        return;
+    }
+
+    auto& descriptors = m_top_entry->SetDescr().Set();
+    auto it = descriptors.begin();
+    while (it != descriptors.end()) {
+        if (it->Empty()) {
+            it = descriptors.erase(it);
+        }
+        else if ((*it)->IsSource()) {
+            m_TopLevelBiosources.push_back(*it);
+            it = descriptors.erase(it);
+        }
+        else if ((*it)->IsMolinfo()) {
+            if (!m_pTopLevelMolInfo) {
+                m_pTopLevelMolInfo.Reset(&(**it));
+            }
+            it = descriptors.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    if (descriptors.empty()) {
+        m_top_entry->SetSet().ResetDescr();
+    }
 }
 
 
