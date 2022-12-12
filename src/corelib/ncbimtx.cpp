@@ -1976,9 +1976,12 @@ void CSemaphore::Post(unsigned int count)
 
 #if NCBI_SEMAPHORE_USE_NEW
     unsigned int cnt_now = m_Count;
-    xncbi_Validate(cnt_now <= kMax_UInt - count && cnt_now + count <= m_Max,
-                   "CSemaphore::Post() - attempt to exceed max_count");
-    m_Count += count;
+    do {
+        xncbi_Validate(cnt_now <= kMax_UInt - count && cnt_now + count <= m_Max,
+                       "CSemaphore::Post() - attempt to exceed max_count");
+    }
+    while (!m_Count.compare_exchange_weak(cnt_now, cnt_now + count));
+
     unique_lock<mutex> lck( m_Mtx);
     m_Cv.notify_all();
 #else
