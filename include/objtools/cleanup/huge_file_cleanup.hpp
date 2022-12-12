@@ -37,6 +37,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CSeqdesc;
+
 
 /*
 namespace edit {
@@ -64,6 +66,8 @@ public:
     void FlattenGenbankSet() override;
 private:
     bool x_LooksLikeNucProtSet() const;
+    list<CRef<CSeqdesc>> m_TopLevelBiosources;
+    CRef<CSeqdesc> m_pTopLevelMolInfo;
 };
 
 END_SCOPE(object);

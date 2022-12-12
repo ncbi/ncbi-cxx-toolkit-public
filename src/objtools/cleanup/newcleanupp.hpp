@@ -503,6 +503,8 @@ private:
     void x_RememberSeqFeatCitPubs( CPub &pub );
 
     void x_DecodeXMLMarkChanged( std::string & str );
+    void AddMolInfo(CBioseq_set& set, const CMolInfo& mol);
+    void AddMolInfo(CBioseq& seq, const CMolInfo& mol);
 
 private:
     void x_SortSeqDescs( CSeq_entry & seq_entry );
@@ -561,8 +563,6 @@ private:
     void x_RemovePopPhyBioSource(CBioseq_set& set, const COrg_ref& org);
     void x_RemovePopPhyBioSource(CBioseq& seq, const COrg_ref& org);
     void x_RemovePopPhyMolInfo(CBioseq_set& set);
-    void x_RemovePopPhyMolInfo(CBioseq_set& set, const CMolInfo& mol);
-    void x_RemovePopPhyMolInfo(CBioseq& seq, const CMolInfo& mol);
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
     void x_BioseqSetGenBankEC(CBioseq_set & bioseq_set);
     void x_RemoveNestedGenBankSet(CBioseq_set & bioseq_set);
