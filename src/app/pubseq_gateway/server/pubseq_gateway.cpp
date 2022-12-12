@@ -1343,7 +1343,7 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
 
     reply->SetContentType(ePSGS_PSGMime);
     reply->PrepareReplyMessage(message, status, code, severity);
-    reply->PrepareReplyCompletion(create_timestamp);
+    reply->PrepareReplyCompletion(status, create_timestamp);
     reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
     reply->SetCompleted();
 }

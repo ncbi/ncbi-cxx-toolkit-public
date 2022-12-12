@@ -132,7 +132,8 @@ void CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
         reply->PrepareReplyMessage("Too many pending requests",
                                    CRequestStatus::e503_ServiceUnavailable,
                                    ePSGS_TooManyRequests, eDiag_Error);
-        reply->PrepareReplyCompletion(psg_clock_t::now());
+        reply->PrepareReplyCompletion(CRequestStatus::e503_ServiceUnavailable,
+                                      psg_clock_t::now());
         reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
         reply->SetCompleted();
     }

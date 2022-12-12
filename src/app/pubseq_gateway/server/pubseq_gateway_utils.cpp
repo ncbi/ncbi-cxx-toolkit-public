@@ -944,9 +944,10 @@ string  GetTSEBlobMessageHeader(size_t  item_id,
 
 
 string  GetReplyCompletionHeader(size_t  chunk_count,
+                                 CRequestStatus::ECode  status,
                                  const psg_time_point_t &  create_timestamp)
 {
-    // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=meta&n_chunks=153
+    // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=meta&n_chunks=153&status=200&exec_time=231
     char        buf[64];
     long        len;
     string      reply(s_ReplyCompletionFixedPart);
@@ -955,7 +956,11 @@ string  GetReplyCompletionHeader(size_t  chunk_count,
                                         (now - create_timestamp).count();
 
     len = PSGToString(chunk_count, buf);
-    reply.append(buf, len)
+    reply.append(buf, len);
+
+    len = PSGToString(status, buf);
+    reply.append(s_AndStatus)
+         .append(buf, len)
          .append(s_AndExecTime);
 
     len = PSGToString(mks, buf);
