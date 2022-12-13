@@ -192,7 +192,7 @@ set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
 #############################################################################
 # Z
 set(NCBI_COMPONENT_LocalZ_FOUND NO)
-list(REMOVE_ITEM NCBI_ALL_REQUIRES LocalZ)
+list(REMOVE_ITEM NCBI_ALL_COMPONENTS LocalZ)
 
 NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z)
 NCBIcomponent_report(Z)
@@ -206,7 +206,7 @@ set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 #############################################################################
 #BZ2
 set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
-list(REMOVE_ITEM NCBI_ALL_REQUIRES LocalBZ2)
+list(REMOVE_ITEM NCBI_ALL_COMPONENTS LocalBZ2)
 
 NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2)
 NCBIcomponent_report(BZ2)
