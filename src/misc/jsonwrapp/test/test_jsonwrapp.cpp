@@ -788,6 +788,17 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         BOOST_CHECK(docs.GetArray().at(1).GetValue().IsBool());
         BOOST_CHECK(!docs.GetArray().at(1).GetValue().GetBool());
 
+        char buf[128];
+        strcpy(buf, "[\"utf8 string expected\", false, null ]");
+        docs.ParseMutableString(buf);
+        cout << docs;
+        BOOST_CHECK(docs.ReadSucceeded());
+        BOOST_CHECK(docs.IsArray());
+        BOOST_CHECK(docs.GetArray().size() == 3);
+        BOOST_CHECK(docs.GetArray().at(1).IsValue());
+        BOOST_CHECK(docs.GetArray().at(1).GetValue().IsBool());
+        BOOST_CHECK(!docs.GetArray().at(1).GetValue().GetBool());
+
 // --------------------------------------------------------------------------
 // new document from array
         CJson_Document doc0(arr);
