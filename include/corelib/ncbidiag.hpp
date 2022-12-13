@@ -1298,23 +1298,26 @@ class NCBI_XNCBI_EXPORT CDiagCollectGuard
 public:
     /// Action to perform in guard's destructor
     enum EAction {
-        ePrint,   ///< Print all collected messages
-        eDiscard  ///< Discard collected messages, default
+        ePrint,      ///< Print all collected messages as is
+        eDiscard,    ///< Discard collected messages, default
+        ePrintCapped ///< Print collected messages at reduced severity
     };
 
-    /// Set collectable severity to the current post level,
-    /// print severity is set to critical.
+    /// Set collectable severity and optionally applied print-severity cap
+    /// to the current post level,  Print severity is set to critical.
     /// The default action is eDiscard.
     CDiagCollectGuard(void);
 
-    /// Set collectable severity to the current post level,
-    /// print severity is set to the specified value but can be ignored
-    /// if it's lower than the currently set post level (or print severity
-    /// set by a higher level guard).
-    /// The default action is eDiscard.
+    /// Set collectable severity and optionally applied print-severity cap
+    /// to the current post level,  Print severity is set to the specified
+    /// value but can be ignored if it's lower than the currently set post
+    /// level (or print severity set by a higher level guard).  The
+    /// default action is eDiscard.
     CDiagCollectGuard(EDiagSev print_severity);
 
     /// Create diag collect guard with the given severities and action.
+    /// As with the other constructor variants, the optionally applied
+    /// print-severity cap defaults to the collectable severity.
     /// The guard will not set print severity below the current diag
     /// post level (or print severity of a higher level guard).
     /// Collect severity should be equal or lower than the current
@@ -1345,10 +1348,18 @@ public:
     /// higher than the current one.
     void SetCollectSeverity(EDiagSev sev);
 
+    /// Get current severity cap for use in ePrintCapped mode.
+    EDiagSev GetSeverityCap(void) const { return m_SeverityCap; }
+    /// Set new severity cap for use in PrintCapped mode.
+    void SetSeverityCap(EDiagSev sev) { m_SeverityCap = sev; }
+
     /// Get selected on-destroy action
     EAction GetAction(void) const { return m_Action; }
     /// Specify on-destroy action.
     void SetAction(EAction action) { m_Action = action; }
+
+    /// Get the lowest thread-local post number in this guard's scope.
+    Uint8 GetStartingPoint(void) const { return m_StartingPoint; }
 
     /// Release the guard. Perform the currently set action, stop collecting
     /// messages, reset severities set by this guard.
@@ -1363,8 +1374,10 @@ private:
                 EDiagSev collect_severity,
                 EAction  action);
 
+    Uint8              m_StartingPoint;
     EDiagSev           m_PrintSev;
     EDiagSev           m_CollectSev;
+    EDiagSev           m_SeverityCap;
     EAction            m_Action;
 };
 
