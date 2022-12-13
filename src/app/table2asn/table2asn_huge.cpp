@@ -46,6 +46,7 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <util/message_queue.hpp>
 #include <future>
@@ -56,6 +57,7 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 USING_SCOPE(objects::edit);
+
 
 namespace
 {
