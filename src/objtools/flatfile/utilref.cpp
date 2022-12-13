@@ -70,21 +70,21 @@ ValNodePtr get_tokens(char* pt, const Char* delimeter)
 
     bool more;
 
-    if (pt == NULL || *pt == '\0')
-        return (NULL);
+    if (! pt || *pt == '\0')
+        return nullptr;
 
-    token = ValNodeNew(NULL);
+    token = ValNodeNew(nullptr);
     vnp   = token;
     for (; *pt != '\0'; pt++) {
         for (; *pt != '\0'; pt++) {
-            if (StringChr(" \n\t\f~,", *pt) == NULL)
+            if (! StringChr(" \n\t\f~,", *pt))
                 break;
             *pt = '\0';
         }
         if (*pt == '\0')
             break;
 
-        vnp->next = ValNodeNew(NULL);
+        vnp->next = ValNodeNew(nullptr);
         vnp       = vnp->next;
         vnp->data = pt;
         more      = false;
@@ -130,10 +130,10 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
     ValNodePtr vnp;
     char*      p;
 
-    if (token == NULL)
+    if (! token)
         return;
 
-    for (vnp = token; vnp != NULL; vnp = vnp->next) {
+    for (vnp = token; vnp; vnp = vnp->next) {
         p = vnp->data;
         if (StringEquN(p, "and ", 4))
             p += 4;
@@ -169,7 +169,7 @@ CRef<CAuthor> get_std_auth(const Char* token, Uint1 format)
 
     CRef<CAuthor> author;
 
-    if (token == NULL || *token == '\0')
+    if (! token || *token == '\0')
         return author;
 
     author                = new CAuthor;
@@ -257,7 +257,7 @@ void get_auth(char* pt, Uint1 format, char* jour, CRef<CAuth_list>& auths)
     default:
         break;
     }
-    if (pt == NULL || *pt == '\0' || *pt == ';')
+    if (! pt || *pt == '\0' || *pt == ';')
         return;
 
     size_t len = StringLen(pt);
@@ -265,7 +265,7 @@ void get_auth(char* pt, Uint1 format, char* jour, CRef<CAuth_list>& auths)
         len--;
 
     if (len > 4 && StringEquN(eptr - 4, "et al", 5)) {
-        if (jour == NULL)
+        if (! jour)
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "%s", pt);
         else
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "%s : %s", pt, jour);
@@ -282,12 +282,12 @@ void get_auth_consortium(char* cons, CRef<CAuth_list>& auths)
     char* p;
     char* q;
 
-    if (cons == NULL || *cons == '\0')
+    if (! cons || *cons == '\0')
         return;
 
     for (q = cons;; q = p) {
         p = StringChr(q, ';');
-        if (p != NULL)
+        if (p)
             *p = '\0';
 
         CRef<CAuthor> author(new CAuthor);
@@ -297,7 +297,7 @@ void get_auth_consortium(char* cons, CRef<CAuth_list>& auths)
             auths.Reset(new CAuth_list);
         auths->SetNames().SetStd().push_front(author);
 
-        if (p == NULL)
+        if (! p)
             break;
 
         for (*p++ = ';'; *p == ';' || *p == ' ';)
@@ -323,7 +323,7 @@ static Int4 check_mix_pages_range(char* pages)
     Int4  i;
 
     dash = StringChr(pages, '-');
-    if (dash == NULL)
+    if (! dash)
         return (0);
 
     *dash = '\0';
@@ -411,10 +411,10 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
     Int4  lps;
     Int4  i;
 
-    if (pages == NULL || *pages == '\0')
+    if (! pages || *pages == '\0')
         return (-1);
 
-    if (title == NULL)
+    if (! title)
         title = (char*)"";
     while (*pages == ' ' || *pages == ';' || *pages == '\t' || *pages == ',')
         pages++;
@@ -428,7 +428,7 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
     *++s = '\0';
 
     p = StringChr(pages, '-');
-    if (p == NULL) {
+    if (! p) {
         for (q = pages; (*q >= 'a' && *q <= 'z') || (*q >= 'A' && *q <= 'Z') ||
                         (*q >= '0' && *q <= '9');)
             q++;
@@ -490,7 +490,7 @@ CRef<CDate> get_date(const Char* year)
 {
     CRef<CDate> ret;
 
-    if (year == NULL || *year == '\0') {
+    if (! year || *year == '\0') {
         ErrPostEx(SEV_ERROR, ERR_REFERENCE_IllegalDate, "No year in reference.");
         return ret;
     }
@@ -558,7 +558,7 @@ CRef<CCit_gen> get_error(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C
 
         cit_gen->SetJournal().Set().push_back(journal_title);
         cit_gen->SetCit("In press");
-    } else if (bptr != NULL) {
+    } else if (bptr) {
         cit_gen->SetCit(NStr::Sanitize(bptr));
     }
 
