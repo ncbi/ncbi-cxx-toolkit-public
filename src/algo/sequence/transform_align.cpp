@@ -1103,8 +1103,14 @@ CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id, CScope& scope)
     CMappedFeat cdregion_feat;
     CBioseq_Handle handle = scope.GetBioseqHandle(rna_id);
     if (handle) {
-        CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
-        if (feat_iter  &&  feat_iter.GetSize()) {
+        for (CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
+             feat_iter; ++feat_iter)
+        {
+            if (!feat_iter.GetSize() ||
+                (feat_iter->IsSetPseudo() && feat_iter->GetPseudo()))
+            {
+                continue;
+            }
             cdregion_feat = *feat_iter;
             const CSeq_loc& cds_loc = cdregion_feat.GetLocation();
             const CSeq_id* cds_loc_seq_id  = cds_loc.GetId();
