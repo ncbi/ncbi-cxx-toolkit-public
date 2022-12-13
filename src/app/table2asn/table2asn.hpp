@@ -55,6 +55,10 @@ namespace objects::edit {
     class CHugeFile;
 }
 
+namespace objects::feature {
+    class CFeatTree;
+}
+
 struct TAsyncToken
 {
     CRef<CSeq_entry>  entry;
@@ -62,6 +66,8 @@ struct TAsyncToken
     CRef<CSeq_entry>  top_entry;
     CRef<CScope>      scope;
     CSeq_entry_Handle seh;
+    CRef<objects::CBioseq> bioseq;
+    CRef<objects::feature::CFeatTree> featTree;
 
     operator CConstRef<CSeq_entry>() const
     {
@@ -107,7 +113,10 @@ private:
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessAlignmentFile(CNcbiOstream* output);
     void ReportUnusedSourceQuals();
-    void ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result);
+
+    void xProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result);
+    void ProcessSecretFiles1Phase(bool readModsFromTitle, TAsyncToken&);
+
     void ProcessSecretFiles2Phase(CSeq_entry& result) const;
     void ProcessCMTFiles(CSeq_entry& result) const;
     void LoadPEPFile(const string& pathname);
