@@ -66,7 +66,7 @@ USING_SCOPE(objects);
 static bool XISAGappedSeqLoc(const CSeq_loc& loc)
 {
     const CSeq_id* id = loc.GetId();
-    if (id == nullptr || ! id->IsGeneral() || ! id->GetGeneral().IsSetDb() || ! id->GetGeneral().IsSetTag())
+    if (! id || ! id->IsGeneral() || ! id->GetGeneral().IsSetDb() || ! id->GetGeneral().IsSetTag())
         return false;
 
 
@@ -97,7 +97,7 @@ void XGappedSeqLocsToDeltaSeqs(const TSeqLocList& locs, TDeltaList& deltas)
             delta->SetLiteral().SetLength(interval.GetTo() - interval.GetFrom() + 1);
 
             const CSeq_id* id = loc->GetId();
-            if (id != nullptr) {
+            if (id) {
                 const CDbtag& tag = id->GetGeneral();
                 if (tag.GetDb() == unkseqlitdbtag)
                     delta->SetLiteral().SetFuzz().SetLim();
