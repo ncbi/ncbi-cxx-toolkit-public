@@ -31,6 +31,8 @@
 
 #include <objtools/edit/huge_file_process.hpp>
 #include <objtools/cleanup/huge_file_cleanup.hpp>
+#include <objtools/cleanup/cleanup.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -38,7 +40,9 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(edit);
 
 
-CCleanupHugeAsnReader::CCleanupHugeAsnReader() {}
+CCleanupHugeAsnReader::CCleanupHugeAsnReader(bool doExtendedCleanup) 
+: m_ExtendedCleanup(doExtendedCleanup) {}
+
 
 void CCleanupHugeAsnReader::FlattenGenbankSet() 
 {
@@ -54,7 +58,6 @@ void CCleanupHugeAsnReader::FlattenGenbankSet()
             }
         }
     }
-
     TParent::FlattenGenbankSet();
     x_CleanupTopLevelDescriptors();
 }
@@ -98,9 +101,17 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
     m_TopLevelBiosources.clear();
     m_pTopLevelMolInfo.Reset();
 
+
     if (!m_top_entry || 
         !m_top_entry->IsSetDescr() ||
         !m_top_entry->GetDescr().IsSet()) {
+        return;
+    }
+
+    CCleanup cleanup;
+    cleanup.BasicCleanup(m_top_entry->SetDescr());
+    
+    if (!m_ExtendedCleanup) {
         return;
     }
 
@@ -128,6 +139,40 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
         m_top_entry->SetSet().ResetDescr();
     }
 }
+
+
+void CCleanupHugeAsnReader::AddTopLevelDescriptors(CSeq_entry_Handle seh) 
+{
+    if (!m_ExtendedCleanup ||
+        (m_TopLevelBiosources.empty() && m_pTopLevelMolInfo.Empty())) {
+        return;
+    }
+
+    bool addMolInfo = false;
+    if (m_pTopLevelMolInfo &&
+        seh.IsSetDescr() &&
+        seh.GetDescr().IsSet()) {
+        const auto& descriptors = seh.GetDescr().Get();
+        auto it = find_if(descriptors.begin(), descriptors.end(),
+                [](const CRef<CSeqdesc>& pDesc) {
+                    return (pDesc && pDesc->IsMolinfo());
+                });
+        if (it == descriptors.end()) {
+            addMolInfo = true;
+        }
+    }
+
+    auto editHandle = seh.GetEditHandle();
+    for (auto pSource : m_TopLevelBiosources) {
+        editHandle.AddSeqdesc(*pSource);
+    }
+
+    if (addMolInfo) {
+        editHandle.AddSeqdesc(*m_pTopLevelMolInfo);
+    }
+}
+
+// CHugeFileCleanup::CHugeFileCleanup() {}
 
 
 END_SCOPE(objects)
