@@ -102,8 +102,8 @@ static void do_xgbparse_error(const char* msg, const char* details)
 }
 
 static X_gbparse_errfunc   Err_func            = do_xgbparse_error;
-static X_gbparse_rangefunc Range_func          = NULL;
-static void*               xgbparse_range_data = NULL;
+static X_gbparse_rangefunc Range_func          = nullptr;
+static void*               xgbparse_range_data = nullptr;
 
 /*----------- xinstall_gbparse_error_handler ()-------------*/
 

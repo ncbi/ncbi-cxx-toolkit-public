@@ -115,7 +115,7 @@ static Int2 GBQualSplit(const Char* qual)
 {
     Int2 i;
 
-    for (i = 0; i < ParFlat_SPLIT_IGNORE && qual != NULL; i++) {
+    for (i = 0; i < ParFlat_SPLIT_IGNORE && qual; i++) {
         if (NStr::CompareNocase(qual, GBQual_names_split_ignore[i]) == 0)
             return (i);
     }
@@ -519,7 +519,7 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
                 }
                 break;
             case eClass_text:
-                ret = CkQualText(*(*cur), NULL, false, error_msgs, perform_corrections);
+                ret = CkQualText(*(*cur), nullptr, false, error_msgs, perform_corrections);
                 if (ret > retval) {
                     retval = ret;
                 }
@@ -700,7 +700,7 @@ static int CkQualPosaa(CGb_qual& cur, bool error_msgs)
 
         /*---I expect that we maight need to allow blanks here,
                     but not now... -Karl 1/28/94 */
-        if ((eptr = StringChr(str, ',')) != NULL) {
+        if (eptr = StringChr(str, ',')) {
             while (str != eptr && (isdigit(*str) || *str == '.'))
                 str++;
 
@@ -714,7 +714,7 @@ static int CkQualPosaa(CGb_qual& cur, bool error_msgs)
                     while (*str == ' ')
                         ++str;
 
-                    if ((eptr = StringChr(str, ')')) != NULL) {
+                    if (eptr = StringChr(str, ')')) {
                         string aa(str, eptr);
                         retval = CkQualPosSeqaa(cur, error_msgs, aa, eptr);
                     }
@@ -798,7 +798,7 @@ static bool ScanEmbedQual(const Char* value)
     const Char* bptr;
     const Char* ptr;
 
-    if (value != NULL) {
+    if (value) {
         for (bptr = value; *bptr != '\0';) {
             for (; *bptr != '/' && *bptr != '\0'; bptr++)
                 continue;
@@ -838,7 +838,7 @@ static int CkQualText(CGb_qual& cur,
 
     int retval = GB_FEAT_ERR_NONE;
 
-    if (has_embedded != NULL) {
+    if (has_embedded) {
         *has_embedded = false;
     }
     if (! cur.IsSetVal()) {
@@ -908,7 +908,7 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
     int retval = GB_FEAT_ERR_NONE;
 
     const Char* str  = cur.GetVal().c_str();
-    const Char* eptr = NULL;
+    const Char* eptr = nullptr;
 
     if (StringEquNI(str, "(seq:", 5)) {
         str += 5;
@@ -916,7 +916,7 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
         while (*str == ' ')
             ++str;
 
-        if ((eptr = StringChr(str, ',')) != NULL) {
+        if (eptr = StringChr(str, ',')) {
             while (str != eptr)
                 str++;
 
@@ -929,7 +929,7 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
                 while (*str == ' ')
                     ++str;
 
-                if ((eptr = StringChr(str, ')')) != NULL) {
+                if (eptr = StringChr(str, ')')) {
                     string aa(str, eptr);
                     retval = CkQualPosSeqaa(cur, error_msgs, aa, eptr);
                 }
@@ -1028,7 +1028,7 @@ static int CkQualEcnum(CGb_qual& cur, bool error_msgs, bool perform_corrections)
     int         retval = GB_FEAT_ERR_NONE;
 
 
-    retval = CkQualText(cur, NULL, false, error_msgs, perform_corrections);
+    retval = CkQualText(cur, nullptr, false, error_msgs, perform_corrections);
     if (retval == GB_FEAT_ERR_NONE) {
 
         str = cur.GetVal().c_str();
@@ -1163,9 +1163,9 @@ static int CkQualTokenType(CGb_qual& cur, bool error_msgs, Uint1 type)
     bool token_there = false;
     int  retval      = GB_FEAT_ERR_NONE;
 
-    str = cur.IsSetVal() ? cur.GetVal().c_str() : NULL;
+    str = cur.IsSetVal() ? cur.GetVal().c_str() : nullptr;
 
-    if (str != NULL)
+    if (str)
         if (*str != '\0') {
             token_there = true;
         }
@@ -1196,7 +1196,7 @@ static int CkQualTokenType(CGb_qual& cur, bool error_msgs, Uint1 type)
                 for (str = token.c_str(); *str != '\0' && isdigit(*str); str++)
                     continue;
                 if (*str == '\0') {
-                    str = NULL;
+                    str = nullptr;
                 }
                 break;
             case ParFlat_Stoken_type:
@@ -1206,11 +1206,11 @@ static int CkQualTokenType(CGb_qual& cur, bool error_msgs, Uint1 type)
                 str = CkNumberType(token.c_str());
                 break;
             default:
-                str = NULL;
+                str = nullptr;
                 break;
             }
 
-            if (str != NULL) {
+            if (str) {
 #if 0
                 switch (type) {
                 case ParFlat_BracketInt_type:
@@ -1257,7 +1257,7 @@ static int CkQualTokenType(CGb_qual& cur, bool error_msgs, Uint1 type)
  ******************************************************************************/
 static const Char* CkBracketType(const Char* str)
 {
-    if (str == NULL)
+    if (! str)
         return "NULL value";
     if (*str == '[') {
         str++;
@@ -1274,7 +1274,7 @@ static const Char* CkBracketType(const Char* str)
             if (*str != '\0') {
                 return str;
             }
-            return NULL;
+            return nullptr;
         }
     } else {
         return str;
@@ -1293,7 +1293,7 @@ static const Char* CkNumberType(const Char* str)
     for (; *str != '\0' && ! isalnum(*str); str++)
         continue;
     if (*str != '\0') {
-        return NULL;
+        return nullptr;
     }
     return str;
 }
@@ -1343,7 +1343,7 @@ static const Char* CkLabelType(const Char* str)
         }
     }
     if (range || label) {
-        return NULL;
+        return nullptr;
     } else {
         return str;
     }
