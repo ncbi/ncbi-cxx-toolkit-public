@@ -1028,7 +1028,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     }
 
     m_secret_files->m_feature_table_reader->m_replacement_protein = m_secret_files->m_replacement_proteins;
-    m_secret_files->m_feature_table_reader->xMergeCDSFeatures(*entry);
+    m_secret_files->m_feature_table_reader->MergeCDSFeatures(*entry);
 
     entry->Parentize();
     m_secret_files->m_feature_table_reader->MoveProteinSpecificFeats(*entry);
