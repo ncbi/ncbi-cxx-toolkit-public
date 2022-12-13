@@ -1046,6 +1046,10 @@ public:
     /// Read JSON data from a UTF8 string
     bool ParseString(const TStringType& v);
 
+    /// Read JSON data from a mutable char buffer
+    /// NOTE: as a result, the buffer may change
+    bool ParseMutableString(TCharType* v);
+
     /// Read JSON data from a stream
     bool Read(std::istream& in);
 
@@ -2343,6 +2347,11 @@ inline CJson_Document& CJson_Document::operator=(const CJson_ConstNode& v) {
 
 inline bool CJson_Document::ParseString(const CJson_ConstNode::TStringType& v) {
     m_DocImpl.Parse<rapidjson::kParseStopWhenDoneFlag, rapidjson::UTF8<> >(v.c_str());
+    return  !m_DocImpl.HasParseError();
+}
+
+inline bool CJson_Document::ParseMutableString(CJson_ConstNode::TCharType* v) {
+    m_DocImpl.ParseInsitu<rapidjson::kParseStopWhenDoneFlag >(v);
     return  !m_DocImpl.HasParseError();
 }
 
