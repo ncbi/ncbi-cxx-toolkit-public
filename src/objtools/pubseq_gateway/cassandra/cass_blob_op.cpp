@@ -34,13 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include "id2_split_task/insert.hpp"
-#include <objtools/pubseq_gateway/impl/cassandra/blob_task/insert_extended.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/insert.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/delete.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
@@ -102,17 +96,6 @@ void CCassBlobOp::GetBigBlobSizeLimit(unsigned int timeout_ms, const string & ke
     if (!GetSetting(timeout_ms, keyspace, kSettingBigBlobSize, s) || !NStr::StringToNumeric(s, value)) {
         *value = -1;
     }
-}
-
-void CCassBlobOp::InsertID2Split(
-    unsigned int /*op_timeout_ms*/,
-    unsigned int /*max_retries*/,
-    CBlobRecord * blob, CID2SplitRecord* id2_split,
-    TDataErrorCallback error_cb,
-    unique_ptr<CCassBlobWaiter> & waiter
-)
-{
-    waiter = make_unique<CCassID2SplitTaskInsert>(m_Conn, m_Keyspace, blob, id2_split, move(error_cb));
 }
 
 void CCassBlobOp::UpdateBlobFlagsExtended(

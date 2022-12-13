@@ -46,33 +46,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 //::::::::
-class CCassAccVerHistoryTaskInsert
-    : public CCassBlobWaiter
-{
-    enum EAccVerHistoryInserterState
-    {
-        eInit = 0,
-        eWaitingRecordInserted,
-        eDone = CCassBlobWaiter::eDone,
-        eError = CCassBlobWaiter::eError
-    };
-
- public:
-    CCassAccVerHistoryTaskInsert(
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        SAccVerHistRec * record,
-        TDataErrorCallback data_error_cb
-    );
-
- protected:
-    void Wait1() override;
-
- private:
-    SAccVerHistRec * m_Record{nullptr};
-};
-
-//::::::::
 class CCassAccVerHistoryTaskFetch
     : public CCassBlobWaiter
 {

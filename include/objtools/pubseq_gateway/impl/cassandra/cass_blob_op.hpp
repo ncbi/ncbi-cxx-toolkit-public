@@ -56,16 +56,9 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-class CCassBlobTaskLoadBlob;
-
 using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
 using TPropsCallback     = function<void(const SBlobStat& stat, bool isFound)>;
-using TDataErrorCallback = function<void(
-    CRequestStatus::ECode status,
-    int code,
-    EDiagSev severity,
-    const string & message
-)>;
+using TDataErrorCallback = function<void(CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)>;
 using TDataReadyCallback = void(*)(void*);
 
 class CCassBlobWaiter
@@ -378,13 +371,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         EBlobFlags flag,
         bool set_flag
     );
-
-    void InsertID2Split(
-        unsigned int op_timeout_ms,
-        unsigned int max_retries,
-        CBlobRecord * blob, CID2SplitRecord* id2_split,
-        TDataErrorCallback error_cb,
-        unique_ptr<CCassBlobWaiter> & waiter);
 
     bool GetSetting(unsigned int op_timeout_ms, const string & domain, const string & name, string & value);
     void UpdateSetting(unsigned int op_timeout_ms, const string & domain, const string & name, const string & value);
