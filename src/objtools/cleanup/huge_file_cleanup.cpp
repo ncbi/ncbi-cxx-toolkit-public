@@ -31,6 +31,7 @@
 
 #include <objtools/edit/huge_file_process.hpp>
 #include <objtools/cleanup/huge_file_cleanup.hpp>
+#include <objtools/cleanup/cleanup_change.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 
@@ -40,8 +41,8 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(edit);
 
 
-CCleanupHugeAsnReader::CCleanupHugeAsnReader(bool doExtendedCleanup) 
-: m_ExtendedCleanup(doExtendedCleanup) {}
+CCleanupHugeAsnReader::CCleanupHugeAsnReader(bool doExtendedCleanup, CCleanupChangeCore& changes) 
+: m_ExtendedCleanup(doExtendedCleanup), m_Changes(changes) {}
 
 
 void CCleanupHugeAsnReader::FlattenGenbankSet() 
@@ -56,6 +57,7 @@ void CCleanupHugeAsnReader::FlattenGenbankSet()
             else {
                 firstTrueBioset->m_class = CBioseq_set::eClass_genbank;
             }
+            m_Changes.SetChanged(CCleanupChange::eChangeBioseqSetClass);
         }
     }
     TParent::FlattenGenbankSet();
@@ -109,7 +111,7 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
     }
 
     CCleanup cleanup;
-    cleanup.BasicCleanup(m_top_entry->SetDescr());
+    m_Changes += *cleanup.BasicCleanup(m_top_entry->SetDescr());
     
     if (!m_ExtendedCleanup) {
         return;
@@ -124,12 +126,15 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
         else if ((*it)->IsSource()) {
             m_TopLevelBiosources.push_back(*it);
             it = descriptors.erase(it);
+            m_Changes.SetChanged(CCleanupChange::eAddDescriptor);
+            m_Changes.SetChanged(CCleanupChange::eRemoveDescriptor);
         }
         else if ((*it)->IsMolinfo()) {
             if (!m_pTopLevelMolInfo) {
                 m_pTopLevelMolInfo.Reset(&(**it));
             }
             it = descriptors.erase(it);
+            m_Changes.SetChanged(CCleanupChange::eRemoveDescriptor);
         } else {
             ++it;
         }
@@ -169,6 +174,7 @@ void CCleanupHugeAsnReader::AddTopLevelDescriptors(CSeq_entry_Handle seh)
 
     if (addMolInfo) {
         editHandle.AddSeqdesc(*m_pTopLevelMolInfo);
+        m_Changes.SetChanged(CCleanupChange::eAddDescriptor);
     }
 }
 

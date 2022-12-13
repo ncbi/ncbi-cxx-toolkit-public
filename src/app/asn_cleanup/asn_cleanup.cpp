@@ -574,7 +574,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         cerr << "Warning: -serial argument should not be used; Input file format is now autodetected." << endl;
     }
 
-    edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(m_do_extended));
+    edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(m_do_extended, m_state.m_changes));
     huge_process.OpenFile(filename);
 
     TTypeInfo asn_type = huge_process.GetFile().m_content;
