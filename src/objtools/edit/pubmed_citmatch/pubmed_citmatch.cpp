@@ -211,7 +211,7 @@ public:
                 EPubmedError err;
                 TEntrezId    pmid = upd->CitMatch(cm, &err);
                 if (pmid != ZERO_ENTREZ_ID) {
-                    results.push_back(to_string(pmid));
+                    results.push_back(to_string(ENTREZ_ID_TO(TIntId, pmid)));
                     ++ngood;
                 } else {
                     results.push_back("Error: " + to_string(err));
