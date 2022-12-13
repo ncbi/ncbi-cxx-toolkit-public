@@ -112,7 +112,6 @@ public:
     void Init() override;
     int Run() override;
 
-    bool HandleSeqDescr(CSeq_descr& descr);
     bool HandleSubmitBlock(CSubmit_block& block) override;
     bool HandleSeqEntry(CRef<CSeq_entry>& se) override;
     bool HandleSeqEntry(CSeq_entry_Handle entry);
@@ -575,7 +574,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         cerr << "Warning: -serial argument should not be used; Input file format is now autodetected." << endl;
     }
 
-    edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader());
+    edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(m_do_extended));
     huge_process.OpenFile(filename);
 
     TTypeInfo asn_type = huge_process.GetFile().m_content;
@@ -721,20 +720,19 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
     _ASSERT(m_state.m_IsMultiSeq);
 
     topentry = Ref(new CSeq_entry);
-    if (process.GetReader().GetTopEntry()) {
-        topentry->Assign(*process.GetReader().GetTopEntry());
-        if (topentry->IsSetDescr()) {
-            HandleSeqDescr(topentry->SetDescr());
-        }
+    auto& reader = dynamic_cast<CCleanupHugeAsnReader&>(process.GetReader());
+
+    if (reader.GetTopEntry()) {
+        topentry->Assign(*reader.GetTopEntry());
     } else {
         topentry->SetSet().SetClass() = CBioseq_set::eClass_genbank;
         topentry->SetSet().SetSeq_set().clear();
     }
 
-    if (process.GetReader().GetSubmitBlock())
+    if (reader.GetSubmitBlock())
     {
         submit.Reset(new CSeq_submit);
-        submit->SetSub().Assign(*process.GetReader().GetSubmitBlock());
+        submit->SetSub().Assign(*reader.GetSubmitBlock());
 
         submit->SetData().SetEntrys().clear();
         submit->SetData().SetEntrys().push_back(topentry);
@@ -751,8 +749,9 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
     {
 
         bool proceed = process.ForEachEntry (m_state.m_Scope,
-            [this, &writer] (CSeq_entry_Handle seh) -> bool
+            [this, &reader, &writer] (CSeq_entry_Handle seh) -> bool
             {
+                reader.AddTopLevelDescriptors(seh);
                 HandleSeqEntry(seh.GetEditHandle());
                 writer.PushNextEntry(seh.GetCompleteSeq_entry());
                 return true;
@@ -1259,19 +1258,6 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
     return any_changes;
 }
 
-
-bool CCleanupApp::HandleSeqDescr(CSeq_descr& descr) 
-{
-    CCleanup cleanup;
-    bool any_changes = false;
-    try {
-        auto pChanges = cleanup.BasicCleanup(descr);
-       // any_changes = x_ReportChanges("BasicCleanup of Seq-descr", *pChanges);
-    } catch (CException& e) {
-        LOG_POST(Error << "error in cleanup of Seq-descr: " << e.GetMsg());
-    }
-    return any_changes;
-}
 
 
 bool CCleanupApp::HandleSubmitBlock(CSubmit_block& block)
