@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeqdesc;
-
+class CCleanupChangeCore;
 
 /*
 class NCBI_CLEANUP_EXPORT CHugeFileCleanup :
@@ -57,7 +57,7 @@ class NCBI_CLEANUP_EXPORT CCleanupHugeAsnReader :
     public edit::CHugeAsnReader
 {   
 public:
-    CCleanupHugeAsnReader(bool doExtendedCleanup);
+    CCleanupHugeAsnReader(bool doExtendedCleanup, CCleanupChangeCore& changes);
     virtual ~CCleanupHugeAsnReader() = default;
     using TParent = edit::CHugeAsnReader;
 
@@ -69,6 +69,7 @@ private:
     list<CRef<CSeqdesc>> m_TopLevelBiosources;
     CRef<CSeqdesc> m_pTopLevelMolInfo;
     const bool m_ExtendedCleanup;
+    CCleanupChangeCore& m_Changes;
 };
 
 END_SCOPE(object);
