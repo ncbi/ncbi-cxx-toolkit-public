@@ -429,7 +429,7 @@ int CTbl2AsnApp::Run()
                      << " is more than 1 year old. Please download the current version if it is newer." << endl;
         }
     }
-    
+
     m_context.m_disable_huge_files = args["disable-huge"]; 
     if  (!m_context.m_disable_huge_files) {
         m_context.m_can_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false) || args["huge"];
@@ -1016,7 +1016,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     const bool readModsFromTitle =
         inputFormat == CFormatGuess::eFasta ||
         inputFormat == CFormatGuess::eAlignment;
-    ProcessSecretFiles1Phase(readModsFromTitle, *entry);
+    xProcessSecretFiles1Phase(readModsFromTitle, *entry);
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
@@ -1028,7 +1028,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     }
 
     m_secret_files->m_feature_table_reader->m_replacement_protein = m_secret_files->m_replacement_proteins;
-    m_secret_files->m_feature_table_reader->MergeCDSFeatures(*entry);
+    m_secret_files->m_feature_table_reader->xMergeCDSFeatures(*entry);
 
     entry->Parentize();
     m_secret_files->m_feature_table_reader->MoveProteinSpecificFeats(*entry);
@@ -1183,14 +1183,10 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
 
     m_context.ApplyFileTracks(*entry);
 
-    { // this is still not thread-safe
-    std::lock_guard<std::mutex> g{m_context.m_mutex};
-
     const bool readModsFromTitle =
         inputFormat == CFormatGuess::eFasta ||
         inputFormat == CFormatGuess::eAlignment;
-    ProcessSecretFiles1Phase(readModsFromTitle, *entry);
-    }
+    ProcessSecretFiles1Phase(readModsFromTitle, token);
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
@@ -1201,19 +1197,14 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
 
-    { // this is still not thread-safe
-    std::lock_guard<std::mutex> g{m_context.m_mutex};
-
     m_secret_files->m_feature_table_reader->m_replacement_protein = m_secret_files->m_replacement_proteins;
-    m_secret_files->m_feature_table_reader->MergeCDSFeatures(*entry);
+    m_secret_files->m_feature_table_reader->MergeCDSFeatures(*entry, token);
     entry->Parentize();
 
     m_secret_files->m_feature_table_reader->MoveProteinSpecificFeats(*entry);
 
     if (m_secret_files->m_possible_proteins.NotEmpty())
         m_secret_files->m_feature_table_reader->AddProteins(*m_secret_files->m_possible_proteins, *entry);
-
-    }
 
     m_context.CorrectCollectionDates(*entry);
 
@@ -1604,7 +1595,7 @@ void CTbl2AsnApp::Setup(const CArgs& args)
 .rna   Replacement mRNA sequences for RNA editing
 .prt   Proteins for suggest intervals
 */
-void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result)
+void CTbl2AsnApp::xProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result)
 {
     auto modMergePolicy =
         m_context.m_accumulate_mods ?
@@ -1634,6 +1625,41 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     {
         CScope scope(*m_context.m_ObjMgr);
         scope.AddTopLevelSeqEntry(result);
+
+        AddAnnots(scope);
+    }
+}
+
+void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, TAsyncToken& token)
+{
+    auto modMergePolicy =
+        m_context.m_accumulate_mods ?
+        CModHandler::eAppendPreserve :
+        CModHandler::ePreserve;
+
+    g_ApplyMods(
+        m_global_files.mp_src_qual_map.get(),
+        m_secret_files->mp_src_qual_map.get(),
+        m_context.mCommandLineMods,
+        readModsFromTitle,
+        m_context.m_verbose,
+        modMergePolicy,
+        m_logger,
+        *token.top_entry);
+
+    if (!m_context.m_huge_files_mode)
+    {
+        if (m_global_files.m_descriptors)
+            m_reader->ApplyDescriptors(*token.top_entry, *m_global_files.m_descriptors);
+
+        if (m_secret_files->m_descriptors)
+            m_reader->ApplyDescriptors(*token.top_entry, *m_secret_files->m_descriptors);
+    }
+
+    if (!m_global_files.m_Annots.empty() || !m_secret_files->m_Annots.empty())
+    {
+        CScope scope(*m_context.m_ObjMgr);
+        scope.AddTopLevelSeqEntry(*token.top_entry);
 
         AddAnnots(scope);
     }
