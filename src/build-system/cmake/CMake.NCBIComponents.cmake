@@ -177,7 +177,7 @@ NCBIcomponent_report(local_lbsm)
 
 #############################################################################
 # LocalPCRE
-if (NOT NCBI_COMPONENT_LocalPCRE_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/regexp)
+if (NOT NCBI_COMPONENT_LocalPCRE_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/regexp AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
     set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${NCBITK_INC_ROOT}/util/regexp)
     set(NCBI_COMPONENT_LocalPCRE_NCBILIB regexp)
@@ -186,7 +186,7 @@ NCBIcomponent_report(LocalPCRE)
 
 #############################################################################
 # LocalZ
-if (NOT NCBI_COMPONENT_LocalZ_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib)
+if (NOT NCBI_COMPONENT_LocalZ_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_COMPONENT_LocalZ_FOUND YES)
     set(NCBI_COMPONENT_LocalZ_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib)
     set(NCBI_COMPONENT_LocalZ_NCBILIB z)
@@ -195,7 +195,7 @@ NCBIcomponent_report(LocalZ)
 
 #############################################################################
 # LocalBZ2
-if (NOT NCBI_COMPONENT_LocalBZ2_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2)
+if (NOT NCBI_COMPONENT_LocalBZ2_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2 AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
     set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${NCBITK_INC_ROOT}/util/compress/bzip2)
     set(NCBI_COMPONENT_LocalBZ2_NCBILIB bz2)
@@ -204,7 +204,7 @@ NCBIcomponent_report(LocalBZ2)
 
 #############################################################################
 # LocalLMDB
-if (NOT NCBI_COMPONENT_LocalLMDB_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN)
+if (NOT NCBI_COMPONENT_LocalLMDB_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
     set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)
     set(NCBI_COMPONENT_LocalLMDB_NCBILIB lmdb)
