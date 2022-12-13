@@ -565,8 +565,11 @@ void CDiagCollectGuard::x_Init(EDiagSev print_severity,
     csev = CompareDiagPostLevel(csev, collect_severity) < 0
         ? csev : collect_severity;
 
+    m_StartingPoint
+        = CDiagContext::GetThreadPostNumber(ePostNumber_NoIncrement);
     m_PrintSev = psev;
     m_CollectSev = csev;
+    m_SeverityCap = csev;
     m_Action = action;
     thr_data.AddCollectGuard(this);
 }
@@ -1121,31 +1124,47 @@ void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
         return; // The guard has been already released
     }
     m_CollectGuards.erase(itg);
+    auto action = guard->GetAction();
+    unique_ptr<CDiagLock> lock;
+    if (action == CDiagCollectGuard::ePrintCapped) {
+        lock.reset(new CDiagLock(CDiagLock::eRead));
+        EDiagSev cap = guard->GetSeverityCap();
+        auto start = guard->GetStartingPoint();
+        NON_CONST_ITERATE(TDiagCollection, itc, m_DiagCollection) {
+            if (itc->m_ThrPost >= start
+                &&  CompareDiagPostLevel(itc->m_Severity, cap) > 0) {
+                itc->m_Severity = cap;
+            }
+        }
+        action = CDiagCollectGuard::ePrint;
+    }
     if ( !m_CollectGuards.empty() ) {
         return;
         // Previously printing was done for each guard, discarding - only for
         // the last guard.
     }
     // If this is the last guard, perform its action
-    CDiagLock lock(CDiagLock::eRead);
-    if (guard->GetAction() == CDiagCollectGuard::ePrint) {
+    if (lock.get() == nullptr) {
+        lock.reset(new CDiagLock(CDiagLock::eRead));
+    }
+    if (action == CDiagCollectGuard::ePrint) {
         CDiagHandler* handler = GetDiagHandler();
         if ( handler ) {
             ITERATE(TDiagCollection, itc, m_DiagCollection) {
                 if ((itc->m_Flags & eDPF_IsConsole) != 0) {
                     // Print all messages to console
                     handler->PostToConsole(*itc);
-                    // Make sure only messages with the severity above allowed
-                    // are printed to normal log.
-                    EDiagSev post_sev = AdjustApplogPrintableSeverity(
-                                            guard->GetCollectSeverity());
-                    bool allow_trace = post_sev == eDiag_Trace;
-                    if (itc->m_Severity == eDiag_Trace  &&  !allow_trace) {
-                        continue; // trace is disabled
-                    }
-                    if (itc->m_Severity < post_sev) {
-                        continue;
-                    }
+                }
+                // Make sure only messages with the severity above allowed
+                // are printed to normal log.
+                EDiagSev post_sev = AdjustApplogPrintableSeverity(
+                    guard->GetCollectSeverity());
+                bool allow_trace = post_sev == eDiag_Trace;
+                if (itc->m_Severity == eDiag_Trace  &&  !allow_trace) {
+                    continue; // trace is disabled
+                }
+                if (itc->m_Severity < post_sev) {
+                    continue;
                 }
                 handler->Post(*itc);
             }
