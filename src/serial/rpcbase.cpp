@@ -243,6 +243,9 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             NCBI_THROW(CRPCClientException, eFailed,
                        "Request canceled " + request_name);
         }
+        CDiagCollectGuard diag_guard(eDiag_Critical, GetDiagPostLevel(),
+                                     CDiagCollectGuard::ePrintCapped);
+        diag_guard.SetSeverityCap(eDiag_Info);
         try {
             SetAffinity(x_GetAffinity(request));
             Connect(); // No-op if already connected
@@ -274,6 +277,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             }
             // If reading reply succeeded and no retry was requested by the server, break.
             if ( !m_RetryCtx.GetNeedRetry() ) {
+                diag_guard.Release(CDiagCollectGuard::ePrint);
                 break;
             }
         } catch (CException& e) {
@@ -296,7 +300,10 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
         // No retries for recursive requests (e.g. AskInit called by Connect).
         // Exit immediately, do not reset retry context - it may be used by
         // the main request's retry loop.
-        if (m_RecursionCount > 1) return;
+        if (m_RecursionCount > 1) {
+            diag_guard.Release(CDiagCollectGuard::ePrint);
+            return;
+        }
 
         // Retry request on exception or on explicit retry request from the server.
 
@@ -304,6 +311,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
         // if the server has set shorter delay.
         if ((!limit_by_time  &&  ++m_TryCount >= m_TryLimit)  ||
             !x_ShouldRetry(m_TryCount)) {
+            diag_guard.Release(CDiagCollectGuard::ePrint);
             NCBI_THROW(CRPCClientException, eFailed,
                        "Failed to receive reply after "
                        + NStr::NumericToString(m_TryCount)
@@ -311,6 +319,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
                        + request_name );
         }
         if ( m_RetryCtx.IsSetStop() ) {
+            diag_guard.Release(CDiagCollectGuard::ePrint);
             NCBI_THROW(CRPCClientException, eFailed,
                        "Retrying request stopped by the server: "
                        + m_RetryCtx.GetStopReason() + ' ' + request_name);
@@ -321,6 +330,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             SleepMicroSec(delay.GetNanoSecondsAfterSecond() / 1000);
             span -= delay.GetAsDouble();
             if (limit_by_time  &&  span <= 0) {
+                diag_guard.Release(CDiagCollectGuard::ePrint);
                 NCBI_THROW(CRPCClientException, eFailed,
                            "Failed to receive reply in "
                            + CTimeSpan(max_span).AsSmartString()
