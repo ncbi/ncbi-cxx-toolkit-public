@@ -82,7 +82,7 @@ const char* ParFlat_GImod[] = {
     "Plasmid",
     "Leucoplast",
     "Apicoplast",
-    NULL
+    nullptr
 };
 
 const char* valid_organelle[] = {
@@ -98,7 +98,7 @@ const char* valid_organelle[] = {
     "nucleomorph",
     "plastid",
     "proplastid",
-    NULL
+    nullptr
 };
 
 /**********************************************************/
@@ -142,7 +142,7 @@ char* CpTheQualValue(const TQualVector& qlist, const Char* qual)
         break;
     }
 
-    char* ret = NULL;
+    char* ret = nullptr;
     if (! qvalue.empty())
         ret = StringSave(qvalue.c_str());
     return ret;
@@ -159,7 +159,7 @@ char* CpTheQualValue(const TQualVector& qlist, const Char* qual)
  **********************************************************/
 char* GetTheQualValue(TQualVector& qlist, const Char* qual)
 {
-    char* qvalue = NULL;
+    char* qvalue = nullptr;
 
     for (TQualVector::iterator cur = qlist.begin(); cur != qlist.end(); ++cur) {
         if ((*cur)->GetQual() != qual)
@@ -222,7 +222,7 @@ Uint1 GetQualValueAa(char* qval, bool checkseq)
     Char  ch;
 
     str = StringStr(qval, "aa:");
-    if (str == NULL)
+    if (! str)
         return (255);
 
     for (str += 3; *str == ' ';)
@@ -230,7 +230,7 @@ Uint1 GetQualValueAa(char* qval, bool checkseq)
     for (p = str; (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z');)
         p++;
 
-    if (checkseq && StringStr(p, "seq:") == NULL)
+    if (checkseq && ! StringStr(p, "seq:"))
         ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AntiCodonLacksSequence, "Anticodon qualifier \"%s\" lacks a 'seq' field for the sequence of the anticodon.", qval);
     ch = *p;
     *p = '\0';
@@ -309,7 +309,7 @@ static void GetTaxnameNameFromDescrs(const TSeqdescList& descrs, vector<string>&
                     continue;
 
                 const Char* p = StringIStr(subtype->GetName().c_str(), "common:");
-                if (p == NULL)
+                if (! p)
                     continue;
 
                 for (p += 7; *p == ' ';)
@@ -367,16 +367,16 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
         }
 
         char* q = StringChr(p, ' ');
-        if (q != NULL)
+        if (q)
             *q = '\0';
 
         if (StringMatchIcase(valid_organelle, p) > -1) {
-            if (q != NULL) {
+            if (q) {
                 for (q++; *q == ' ';)
                     q++;
                 fta_StringCpy(p, q);
             }
-        } else if (q != NULL)
+        } else if (q)
             *q = ' ';
 
         vector<string>::const_iterator name = names.begin();
@@ -387,7 +387,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
             len = name->size();
             for (q = p;; q++) {
                 q = StringChr(q, '(');
-                if (q == NULL)
+                if (! q)
                     break;
                 char* s = q + 1;
                 if (StringEquN(s, "acronym:", 8) ||
@@ -401,7 +401,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
                     while (*s == ' ')
                         s++;
                 if (StringEquNI(s, name->c_str(), len) && s[len] == ')') {
-                    char* t = NULL;
+                    char* t = nullptr;
                     for (t = s + len + 1; *t == ' ';)
                         t++;
                     if (*t != '\0')
@@ -416,7 +416,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
             }
         }
 
-        if (pper != NULL) {
+        if (pper) {
             MemFree(pper);
             pper = MemNew(StringLen(p) + 2);
             StringCpy(pper, p);
@@ -426,14 +426,14 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
         const string& first_name  = names[0];
         const string& second_name = names[1];
 
-        if (NStr::CompareNocase(p, first_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, first_name.c_str()) == 0)) {
+        if (NStr::CompareNocase(p, first_name.c_str()) == 0 || (pper && NStr::CompareNocase(pper, first_name.c_str()) == 0)) {
             gb_block.ResetSource();
-        } else if (NStr::CompareNocase(p, second_name.c_str()) == 0 || (pper != NULL && NStr::CompareNocase(pper, second_name.c_str()) == 0)) {
+        } else if (NStr::CompareNocase(p, second_name.c_str()) == 0 || (pper && NStr::CompareNocase(pper, second_name.c_str()) == 0)) {
             gb_block.ResetSource();
         }
 
         MemFree(p);
-        if (pper != NULL)
+        if (pper)
             MemFree(pper);
         break;
     }

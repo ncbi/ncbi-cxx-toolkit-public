@@ -74,14 +74,14 @@ static const char* ParFlat_EST_kw_array[] = {
     "EST (expressed sequence tags)",
     "EST(expressed sequence tag)",
     "transcribed sequence fragment",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_GSS_kw_array[] = {
     "GSS",
     "GSS (genome survey sequence)",
     "trapped exon",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_STS_kw_array[] = {
@@ -90,29 +90,29 @@ static const char* ParFlat_STS_kw_array[] = {
     "STS (sequence tagged site)",
     "STS sequence",
     "sequence tagged site",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_HTC_kw_array[] = {
     "HTC",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_FLI_kw_array[] = {
     "FLI_CDNA",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_WGS_kw_array[] = {
     "WGS",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_MGA_kw_array[] = {
     "MGA",
     "CAGE (Cap Analysis Gene Expression)",
     "5'-SAGE",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_MGA_more_kw_array[] = {
@@ -121,7 +121,7 @@ static const char* ParFlat_MGA_more_kw_array[] = {
     "5'-end tag",
     "unspecified tag",
     "small RNA",
-    NULL
+    nullptr
 };
 
 /* Any change of contents of next array below requires proper
@@ -130,7 +130,7 @@ static const char* ParFlat_MGA_more_kw_array[] = {
 static const char* ParFlat_TSA_kw_array[] = {
     "TSA",
     "Transcriptome Shotgun Assembly",
-    NULL
+    nullptr
 };
 
 /* Any change of contents of next array below requires proper
@@ -139,7 +139,7 @@ static const char* ParFlat_TSA_kw_array[] = {
 static const char* ParFlat_TLS_kw_array[] = {
     "TLS",
     "Targeted Locus Study",
-    NULL
+    nullptr
 };
 
 /* Any change of contents of next 2 arrays below requires proper
@@ -154,25 +154,25 @@ static const char* ParFlat_TPA_kw_array[] = {
     "TPA:REASSEMBLY",
     "TPA:ASSEMBLY",
     "TPA:SPECIALIST_DB",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_TPA_kw_array_to_remove[] = {
     "TPA",
     "THIRD PARTY ANNOTATION",
     "THIRD PARTY DATA",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_ENV_kw_array[] = {
     "ENV",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_MAG_kw_array[] = {
     "Metagenome Assembled Genome",
     "MAG",
-    NULL
+    nullptr
 };
 
 /**********************************************************/
@@ -350,28 +350,28 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
     Int4        num1;
     Int4        num2;
 
-    if (tsbp->list == NULL)
+    if (! tsbp->list)
         return true;
 
-    tbp = NULL;
+    tbp = nullptr;
     if (skip == 0)
         tbp = tsbp->list;
     else if (skip == 1) {
-        if (tsbp->list != NULL)
+        if (tsbp->list)
             tbp = tsbp->list->next;
     } else {
-        if (tsbp->list != NULL && tsbp->list->next != NULL)
+        if (tsbp->list && tsbp->list->next)
             tbp = tsbp->list->next->next;
     }
-    if (tbp == NULL)
+    if (! tbp)
         return true;
 
-    for (bad = false; tbp != NULL; tbp = tbpnext) {
+    for (bad = false; tbp; tbp = tbpnext) {
         tbpnext = tbp->next;
-        if (tbp->str == NULL)
+        if (! tbp->str)
             continue;
         dash = StringChr(tbp->str, '-');
-        if (dash == NULL)
+        if (! dash)
             continue;
         *dash = '\0';
         first = tbp->str;
@@ -442,7 +442,7 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
 
         tbp->next = tbpnext;
     }
-    if (tbp == NULL)
+    if (! tbp)
         return true;
     if (bad) {
         ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Incorrect secondary accession range provided: \"%s\".", tbp->str);
@@ -455,8 +455,8 @@ static TokenBlkPtr TokenNodeNew(TokenBlkPtr tbp)
 {
     TokenBlkPtr newnode = new TokenBlk;
 
-    if (tbp != NULL) {
-        while (tbp->next != NULL)
+    if (tbp) {
+        while (tbp->next)
             tbp = tbp->next;
         tbp->next = newnode;
     }
@@ -473,7 +473,7 @@ static void InsertTokenVal(TokenBlkPtr* tbp, const char* str)
     ltbp      = TokenNodeNew(ltbp);
     ltbp->str = StringSave(str);
 
-    if (*tbp == NULL)
+    if (! *tbp)
         *tbp = ltbp;
 }
 
@@ -530,7 +530,7 @@ void FreeTokenblk(TokenBlkPtr tbp)
 {
     TokenBlkPtr temp;
 
-    while (tbp != NULL) {
+    while (tbp) {
         temp = tbp;
         tbp  = tbp->next;
         MemFree(temp->str);
@@ -558,15 +558,15 @@ Int2 fta_StringMatch(const Char** array, const Char* text)
 {
     Int2 i;
 
-    if (text == NULL)
+    if (! text)
         return (-1);
 
-    for (i = 0; *array != NULL; i++, array++) {
+    for (i = 0; *array; i++, array++) {
         if (NStr::EqualCase(text, 0, StringLen(*array), *array))
             break;
     }
 
-    if (*array == NULL)
+    if (! *array)
         return (-1);
 
     return (i);
@@ -585,10 +585,10 @@ Int2 StringMatchIcase(const Char** array, const Char* text)
 {
     Int2 i;
 
-    if (text == NULL)
+    if (! text)
         return (-1);
 
-    for (i = 0; *array != NULL; i++, array++) {
+    for (i = 0; *array; i++, array++) {
         // If string from an array is empty its length == 0 and would be equval to any other string
         // The next 'if' statement will avoid that behavior
         if (text[0] != 0 && *array[0] == 0)
@@ -598,7 +598,7 @@ Int2 StringMatchIcase(const Char** array, const Char* text)
             break;
     }
 
-    if (*array == NULL)
+    if (! *array)
         return (-1);
     return (i);
 }
@@ -616,15 +616,15 @@ Int2 MatchArrayString(const char** array, const char* text)
 {
     Int2 i;
 
-    if (text == NULL)
+    if (! text)
         return (-1);
 
-    for (i = 0; *array != NULL; i++, array++) {
+    for (i = 0; *array; i++, array++) {
         if (NStr::Equal(*array, text))
             break;
     }
 
-    if (*array == NULL)
+    if (! *array)
         return (-1);
     return (i);
 }
@@ -634,10 +634,10 @@ Int2 MatchArrayIString(const Char** array, const Char* text)
 {
     Int2 i;
 
-    if (text == NULL)
+    if (! text)
         return (-1);
 
-    for (i = 0; *array != NULL; i++, array++) {
+    for (i = 0; *array; i++, array++) {
         // If string from an array is empty its length == 0 and would be equval to any other string
         // The next 'if' statement will avoid that behavior
         if (text[0] != 0 && *array[0] == 0)
@@ -647,7 +647,7 @@ Int2 MatchArrayIString(const Char** array, const Char* text)
             break;
     }
 
-    if (*array == NULL)
+    if (! *array)
         return (-1);
     return (i);
 }
@@ -665,15 +665,15 @@ Int2 MatchArraySubString(const Char** array, const Char* text)
 {
     Int2 i;
 
-    if (text == NULL)
+    if (! text)
         return (-1);
 
-    for (i = 0; *array != NULL; i++, array++) {
+    for (i = 0; *array; i++, array++) {
         if (NStr::Find(text, *array) != NPOS)
             break;
     }
 
-    if (*array == NULL)
+    if (! *array)
         return (-1);
     return (i);
 }
@@ -684,10 +684,10 @@ Char* StringIStr(const Char* where, const Char* what)
     const Char* p;
     const Char* q;
 
-    if (where == NULL || *where == '\0' || what == NULL || *what == '\0')
-        return (NULL);
+    if (! where || *where == '\0' || ! what || *what == '\0')
+        return nullptr;
 
-    q = NULL;
+    q = nullptr;
     for (; *where != '\0'; where++) {
         for (q = what, p = where; *q != '\0' && *p != '\0'; q++, p++) {
             if (*q == *p)
@@ -705,9 +705,9 @@ Char* StringIStr(const Char* where, const Char* what)
         if (*p == '\0' || *q == '\0')
             break;
     }
-    if (q != NULL && *q == '\0')
+    if (q && *q == '\0')
         return const_cast<char*>(where);
-    return (NULL);
+    return nullptr;
 }
 
 /**********************************************************/
@@ -715,15 +715,15 @@ Int2 MatchArrayISubString(const Char** array, const Char* text)
 {
     Int2 i;
 
-    if (text == NULL)
+    if (! text)
         return (-1);
 
-    for (i = 0; *array != NULL; i++, array++) {
+    for (i = 0; *array; i++, array++) {
         if (NStr::FindNoCase(text, *array) != NPOS)
             break;
     }
 
-    if (*array == NULL)
+    if (! *array)
         return (-1);
     return (i);
 }
@@ -745,7 +745,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
     char* ptr;
 
     if (bptr + start_col_data >= eptr)
-        return (NULL);
+        return nullptr;
 
     size_t size   = eptr - bptr;
     char*  retstr = MemNew(size + 1);
@@ -762,7 +762,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
         bptr += start_col_data;
         ptr = SrchTheChar(bptr, eptr, '\n');
 
-        if (ptr != NULL) {
+        if (ptr) {
             size = ptr - bptr;
             MemCpy(str, bptr, size);
             str += size;
@@ -806,7 +806,7 @@ void xGetBlkDataReplaceNewLine(string& instr, int indent)
 /**********************************************************/
 static size_t SeekLastAlphaChar(const Char* str, size_t len)
 {
-    if (str != NULL && len != 0) {
+    if (str && len != 0) {
         for (size_t ret = len; ret > 0;) {
             char c = str[--ret];
             if (c != ' ' && c != '\n' && c != '\\' && c != ',' &&
@@ -836,7 +836,7 @@ void CleanTailNoneAlphaCharInString(string& str)
  **********************************************************/
 void CleanTailNoneAlphaChar(char* str)
 {
-    if (str == NULL || *str == '\0')
+    if (! str || *str == '\0')
         return;
 
     size_t last = SeekLastAlphaChar(str, strlen(str));
@@ -846,7 +846,7 @@ void CleanTailNoneAlphaChar(char* str)
 /**********************************************************/
 char* PointToNextToken(char* ptr)
 {
-    if (ptr != NULL) {
+    if (ptr) {
         while (*ptr != ' ')
             ptr++;
         while (*ptr == ' ')
@@ -872,8 +872,8 @@ char* GetTheCurrentToken(char** ptr)
     Char  ch;
 
     bptr = retptr = *ptr;
-    if (retptr == NULL || *retptr == '\0')
-        return (NULL);
+    if (! retptr || *retptr == '\0')
+        return nullptr;
 
     while (*retptr != '\0' && *retptr != ' ')
         retptr++;
@@ -908,7 +908,7 @@ char* SrchTheChar(char* bptr, char* eptr, Char letter)
     if (bptr < eptr)
         return (bptr);
 
-    return (NULL);
+    return nullptr;
 }
 
 /**********************************************************
@@ -973,7 +973,7 @@ CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source
 {
     CRef<CDate_std> date;
 
-    if (s == NULL || *s == '\0')
+    if (! s || *s == '\0')
         return date;
 
     int parse_day = 0;
@@ -1075,10 +1075,10 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
     StringNCpy(msg, ptr, 50);
     msg[50] = '\0';
     p       = StringChr(msg, '\n');
-    if (p != NULL)
+    if (p)
         *p = '\0';
     ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Unknown linetype \"%s\". Line number %d.", msg, line);
-    if (p != NULL)
+    if (p)
         *p = '\n';
 
     return false;
@@ -1097,13 +1097,13 @@ char* SrchNodeType(DataBlkPtr entry, Int4 type, size_t* len)
     DataBlkPtr temp;
 
     temp = TrackNodeType(*entry, (Int2)type);
-    if (temp != NULL) {
+    if (temp) {
         *len = temp->len;
         return (temp->mOffset);
     }
 
     *len = 0;
-    return (NULL);
+    return nullptr;
 }
 
 char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
@@ -1111,13 +1111,13 @@ char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
     DataBlkPtr temp;
 
     temp = TrackNodeType(entry, (Int2)type);
-    if (temp != NULL) {
+    if (temp) {
         *len = temp->len;
         return (temp->mOffset);
     }
 
     *len = 0;
-    return (NULL);
+    return nullptr;
 }
 
 string xGetNodeData(const DataBlk& entry, int nodeType)
@@ -1144,7 +1144,7 @@ DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
 
     ebp  = static_cast<EntryBlk*>(entry.mpData);
     temp = ebp->chain;
-    while (temp != NULL && temp->mType != type)
+    while (temp && temp->mType != type)
         temp = temp->mpNext;
 
     return (temp);
@@ -1315,7 +1315,7 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source)
 /**********************************************************/
 bool fta_is_tpa_keyword(const char* str)
 {
-    if (str == NULL || *str == '\0' || MatchArrayIString(ParFlat_TPA_kw_array, str) < 0)
+    if (! str || *str == '\0' || MatchArrayIString(ParFlat_TPA_kw_array, str) < 0)
         return false;
 
     return true;
@@ -1324,7 +1324,7 @@ bool fta_is_tpa_keyword(const char* str)
 /**********************************************************/
 bool fta_is_tsa_keyword(const char* str)
 {
-    if (str == NULL || *str == '\0' || MatchArrayIString(ParFlat_TSA_kw_array, str) < 0)
+    if (! str || *str == '\0' || MatchArrayIString(ParFlat_TSA_kw_array, str) < 0)
         return false;
     return true;
 }
@@ -1332,7 +1332,7 @@ bool fta_is_tsa_keyword(const char* str)
 /**********************************************************/
 bool fta_is_tls_keyword(const char* str)
 {
-    if (str == NULL || *str == '\0' || MatchArrayIString(ParFlat_TLS_kw_array, str) < 0)
+    if (! str || *str == '\0' || MatchArrayIString(ParFlat_TLS_kw_array, str) < 0)
         return false;
     return true;
 }
@@ -1340,37 +1340,37 @@ bool fta_is_tls_keyword(const char* str)
 /**********************************************************/
 void fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk, bool* htck, bool* flik, bool* wgsk, bool* tpak, bool* envk, bool* mgak, bool* tsak, bool* tlsk)
 {
-    if (estk != NULL && MatchArrayString(ParFlat_EST_kw_array, str) != -1)
+    if (estk && MatchArrayString(ParFlat_EST_kw_array, str) != -1)
         *estk = true;
 
-    if (stsk != NULL && MatchArrayString(ParFlat_STS_kw_array, str) != -1)
+    if (stsk && MatchArrayString(ParFlat_STS_kw_array, str) != -1)
         *stsk = true;
 
-    if (gssk != NULL && MatchArrayString(ParFlat_GSS_kw_array, str) != -1)
+    if (gssk && MatchArrayString(ParFlat_GSS_kw_array, str) != -1)
         *gssk = true;
 
-    if (htck != NULL && MatchArrayString(ParFlat_HTC_kw_array, str) != -1)
+    if (htck && MatchArrayString(ParFlat_HTC_kw_array, str) != -1)
         *htck = true;
 
-    if (flik != NULL && MatchArrayString(ParFlat_FLI_kw_array, str) != -1)
+    if (flik && MatchArrayString(ParFlat_FLI_kw_array, str) != -1)
         *flik = true;
 
-    if (wgsk != NULL && MatchArrayString(ParFlat_WGS_kw_array, str) != -1)
+    if (wgsk && MatchArrayString(ParFlat_WGS_kw_array, str) != -1)
         *wgsk = true;
 
-    if (tpak != NULL && MatchArrayString(ParFlat_TPA_kw_array, str) != -1)
+    if (tpak && MatchArrayString(ParFlat_TPA_kw_array, str) != -1)
         *tpak = true;
 
-    if (envk != NULL && MatchArrayString(ParFlat_ENV_kw_array, str) != -1)
+    if (envk && MatchArrayString(ParFlat_ENV_kw_array, str) != -1)
         *envk = true;
 
-    if (mgak != NULL && MatchArrayString(ParFlat_MGA_kw_array, str) != -1)
+    if (mgak && MatchArrayString(ParFlat_MGA_kw_array, str) != -1)
         *mgak = true;
 
-    if (tsak != NULL && MatchArrayString(ParFlat_TSA_kw_array, str) != -1)
+    if (tsak && MatchArrayString(ParFlat_TSA_kw_array, str) != -1)
         *tsak = true;
 
-    if (tlsk != NULL && MatchArrayString(ParFlat_TLS_kw_array, str) != -1)
+    if (tlsk && MatchArrayString(ParFlat_TLS_kw_array, str) != -1)
         *tlsk = true;
 }
 
@@ -1562,10 +1562,10 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, 
     *p   = '\0';
     for (p = line;; p = q + 1) {
         q = StringChr(p, ';');
-        if (q == NULL)
+        if (! q)
             break;
         *q = '\0';
-        fta_keywords_check(p, &entry->EST, &entry->STS, &entry->GSS, &entry->HTC, NULL, NULL, (tpa_check ? &entry->is_tpa : NULL), NULL, NULL, NULL, NULL);
+        fta_keywords_check(p, &entry->EST, &entry->STS, &entry->GSS, &entry->HTC, nullptr, nullptr, (tpa_check ? &entry->is_tpa : nullptr), nullptr, nullptr, nullptr, nullptr);
         if (NStr::EqualNocase(p, "TPA:specialist_db") ||
             NStr::EqualNocase(p, "TPA:assembly")) {
             specialist_db = true;

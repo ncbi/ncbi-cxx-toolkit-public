@@ -55,8 +55,8 @@ ValNodePtr ValNodeNew(ValNodePtr vnp)
     ValNodePtr newnode;
 
     newnode = new ValNode;
-    if (vnp != NULL) {
-        while (vnp->next != NULL)
+    if (vnp) {
+        while (vnp->next)
             vnp = vnp->next;
         vnp->next = newnode;
     }
@@ -75,12 +75,12 @@ ValNodePtr ValNodeFree(ValNodePtr vnp)
 {
     ValNodePtr next;
 
-    while (vnp != NULL) {
+    while (vnp) {
         next = vnp->next;
         delete vnp;
         vnp = next;
     }
-    return NULL;
+    return nullptr;
 }
 
 /*****************************************************************************
@@ -95,13 +95,13 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp)
 {
     ValNodePtr next;
 
-    while (vnp != NULL) {
+    while (vnp) {
         MemFree(vnp->data);
         next = vnp->next;
         delete vnp;
         vnp = next;
     }
-    return NULL;
+    return nullptr;
 }
 
 /*****************************************************************************
@@ -116,13 +116,13 @@ ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode)
 {
     ValNodePtr vnp;
 
-    if (head == NULL)
+    if (! head)
         return newnode;
 
     vnp = *head;
 
-    if (vnp != NULL) {
-        while (vnp->next != NULL)
+    if (vnp) {
+        while (vnp->next)
             vnp = vnp->next;
         vnp->next = newnode;
     } else
@@ -135,16 +135,16 @@ ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode)
 static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str, const char* pfx, const char* sfx)
 {
     size_t     len, pfx_len, sfx_len, str_len;
-    ValNodePtr newnode = NULL, vnp;
+    ValNodePtr newnode = nullptr, vnp;
     char*      ptr;
     string     tmp;
 
-    if (str == NULL)
-        return NULL;
+    if (! str)
+        return nullptr;
 
-    newnode = ValNodeNew(NULL);
-    if (newnode == NULL)
-        return NULL;
+    newnode = ValNodeNew(nullptr);
+    if (! newnode)
+        return nullptr;
 
     str_len = StringLen(str);
     pfx_len = StringLen(pfx);
@@ -152,16 +152,16 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
 
     len = str_len + pfx_len + sfx_len;
 
-    if (head != NULL) {
-        if (*head == NULL) {
+    if (head) {
+        if (! *head) {
             *head = newnode;
         }
     }
 
-    if (tail != NULL) {
-        if (*tail != NULL) {
+    if (tail) {
+        if (*tail) {
             vnp = *tail;
-            while (vnp->next != NULL) {
+            while (vnp->next) {
                 vnp = vnp->next;
             }
             vnp->next = newnode;
@@ -170,8 +170,8 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
     }
 
     ptr = MemNew(len + 2);
-    if (ptr == NULL)
-        return NULL;
+    if (! ptr)
+        return nullptr;
 
     tmp.reserve(len);
     if (pfx_len > 0) {
@@ -196,7 +196,7 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
 
 ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str)
 {
-    return ValNodeCopyStrExEx(head, tail, choice, str, NULL, NULL);
+    return ValNodeCopyStrExEx(head, tail, choice, str, nullptr, nullptr);
 }
 
 static char* ValNodeMergeStrsExEx(ValNodePtr list, const char* separator, const char* pfx, const char* sfx)
@@ -211,33 +211,33 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, const char* separator, const 
     string     tmp;
     ValNodePtr vnp;
 
-    if (list == NULL)
-        return NULL;
+    if (! list)
+        return nullptr;
 
     pfx_len = StringLen(pfx);
     sfx_len = StringLen(sfx);
 
     lens = StringLen(separator);
 
-    for (vnp = list, len = 0; vnp != NULL; vnp = vnp->next) {
+    for (vnp = list, len = 0; vnp; vnp = vnp->next) {
         str = vnp->data;
         len += StringLen(str);
         len += lens;
     }
     if (len == 0)
-        return NULL;
+        return nullptr;
     len += pfx_len + sfx_len;
 
     ptr = MemNew(len + 2);
-    if (ptr == NULL)
-        return NULL;
+    if (! ptr)
+        return nullptr;
 
     tmp.reserve(len);
     if (pfx_len > 0) {
         tmp.append(pfx);
     }
-    sep = NULL;
-    for (vnp = list; vnp != NULL; vnp = vnp->next) {
+    sep = nullptr;
+    for (vnp = list; vnp; vnp = vnp->next) {
         if (sep) {
             tmp.append(sep);
         }
@@ -257,7 +257,7 @@ static char* ValNodeMergeStrsExEx(ValNodePtr list, const char* separator, const 
 
 char* ValNodeMergeStrsEx(ValNodePtr list, char* separator)
 {
-    return ValNodeMergeStrsExEx(list, separator, NULL, NULL);
+    return ValNodeMergeStrsExEx(list, separator, nullptr, nullptr);
 }
 
 END_NCBI_SCOPE
