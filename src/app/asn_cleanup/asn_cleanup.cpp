@@ -177,6 +177,7 @@ private:
     bool                        m_do_basic = false;
     bool                        m_do_extended = false;
     TThreadState                m_state;
+    bool                        m_IsHugeSet = false;
 };
 
 
@@ -574,7 +575,14 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         cerr << "Warning: -serial argument should not be used; Input file format is now autodetected." << endl;
     }
 
-    edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(m_do_extended));
+    CCleanupHugeAsnReader::TOptions options{0};
+    if (m_do_extended) {
+        options |= CCleanupHugeAsnReader::eExtendedCleanup;
+    }
+    if (args["noobj"]) {
+        options |= CCleanupHugeAsnReader::eNoNcbiUserObjects;
+    }
+    edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(options));
     huge_process.OpenFile(filename);
 
     TTypeInfo asn_type = huge_process.GetFile().m_content;
@@ -730,6 +738,7 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
         topentry->SetSet().SetClass() = CBioseq_set::eClass_genbank;
         topentry->SetSet().SetSeq_set().clear();
     }
+    m_IsHugeSet = (topentry->GetSet().GetClass() == CBioseq_set::eClass_genbank);
 
     if (reader.GetSubmitBlock())
     {
@@ -740,6 +749,7 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
         submit->SetData().SetEntrys().push_back(topentry);
         HandleSubmitBlock(submit->SetSub());
     }
+
 
     if (submit)
         topobject = submit;
@@ -1311,6 +1321,9 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     Uint4 options = 0;
     if (args["noobj"]) {
         options = CCleanup::eClean_NoNcbiUserObjects;
+    }
+    if (m_IsHugeSet) {
+        options |= CCleanup::eClean_InHugeSeqSet;
     }
 
     any_changes |= x_BasicAndExtended(entry, label, options);

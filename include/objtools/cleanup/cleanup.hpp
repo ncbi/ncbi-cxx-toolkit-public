@@ -77,6 +77,7 @@ public:
         eClean_NoProteinTitles   = 0x10,
         eClean_KeepTopSet        = 0x20,
         eClean_KeepSingleSeqSet  = 0x40,
+        eClean_InHugeSeqSet      = 0x80,
     };
 
     enum EScopeOptions {
