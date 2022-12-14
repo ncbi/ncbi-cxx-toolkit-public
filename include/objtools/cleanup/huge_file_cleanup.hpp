@@ -57,7 +57,13 @@ class NCBI_CLEANUP_EXPORT CCleanupHugeAsnReader :
     public edit::CHugeAsnReader
 {   
 public:
-    CCleanupHugeAsnReader(bool doExtendedCleanup);
+    enum EOptions {
+        eExtendedCleanup    = 1,
+        eNoNcbiUserObjects  = 1<<1,  
+    };
+    using TOptions = int;
+
+    CCleanupHugeAsnReader(TOptions options);
     virtual ~CCleanupHugeAsnReader() = default;
     using TParent = edit::CHugeAsnReader;
 
@@ -69,7 +75,7 @@ private:
     bool x_LooksLikeNucProtSet() const;
     list<CRef<CSeqdesc>> m_TopLevelBiosources;
     CRef<CSeqdesc> m_pTopLevelMolInfo;
-    const bool m_ExtendedCleanup;
+    const TOptions m_CleanupOptions;
     CCleanupChangeCore m_Changes;
 };
 
