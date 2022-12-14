@@ -81,7 +81,7 @@ static const char* ref_tag_gb[] = {
     "  MEDLINE",  /* 30 */
     "  REMARK",   /* 31 */
     "   PUBMED",  /* 32 */
-    NULL
+    nullptr
 };
 
 static const char* ref_tag_embl[] = {
@@ -115,7 +115,7 @@ static const char* ref_tag_embl[] = {
     "  RT", /* 27 = reference title */
     "  RL", /* 28 = reference journal */
     "  FT", /* 29 = feature table data */
-    NULL
+    nullptr
 };
 
 /**********************************************************/
@@ -138,11 +138,11 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat ban
         return;
 
     for (j = 20; j < maxkw; j++)
-        ind[j] = NULL;
+        ind[j] = nullptr;
 
     n_rest = 0;
-    for (subdbp = static_cast<DataBlk*>(dbp->mpData); subdbp != NULL; subdbp = subdbp->mpNext) {
-        if (ind[subdbp->mType] != NULL) {
+    for (subdbp = static_cast<DataBlk*>(dbp->mpData); subdbp; subdbp = subdbp->mpNext) {
+        if (ind[subdbp->mType]) {
             if (n_rest >= 21) {
                 fprintf(stderr, "Too many rest\n");
                 exit(1);
@@ -157,27 +157,27 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat ban
             i++;
         subdbp->mOffset += i;
         subdbp->len -= (i + 1);
-        sx = NULL;
+        sx = nullptr;
         for (s = subdbp->mOffset; *s != '\0'; s++) {
             if (*s != '\n')
                 continue;
 
             if (s[1] == 'X' && s[2] == 'X') {
-                if (sx == NULL)
+                if (! sx)
                     sx = s;
                 continue;
             }
 
             for (ss = s + i; isspace((int)*ss) != 0;)
                 ss++;
-            if (sx != NULL)
+            if (sx)
                 s = sx;
-            sx = NULL;
+            sx = nullptr;
             *s = ' ';
             fta_StringCpy(s + 1, ss);
             subdbp->len -= (ss - s - 1);
         }
-        if (sx != NULL) {
+        if (sx) {
             *sx         = '\0';
             subdbp->len = sx - subdbp->mOffset;
         }

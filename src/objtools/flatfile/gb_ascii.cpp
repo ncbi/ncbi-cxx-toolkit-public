@@ -147,7 +147,7 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
     int  numerr;
 
     dbp = TrackNodeType(entry, ParFlat_CONTIG);
-    if (dbp == NULL || dbp->mOffset == NULL)
+    if (! dbp || ! dbp->mOffset)
         return true;
 
     i = static_cast<Int4>(dbp->len) - ParFlat_COL_DATA;
@@ -172,9 +172,9 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
         return false;
     }
 
-    if (pp->buf != NULL)
+    if (pp->buf)
         MemFree(pp->buf);
-    pp->buf = NULL;
+    pp->buf = nullptr;
 
     CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, numerr, bsp.GetId(), pp->accver);
     if (loc.Empty()) {
@@ -187,7 +187,7 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
 
     TSeqLocList locs;
     locs.push_back(loc);
-    i = fta_fix_seq_loc_id(locs, pp, p, NULL, true);
+    i = fta_fix_seq_loc_id(locs, pp, p, nullptr, true);
 
     if (i > 999)
         fta_create_far_fetch_policy_user_object(bsp, i);
@@ -259,17 +259,17 @@ static char* GetGenBankLineage(char* start, char* end)
     char* str;
 
     if (start >= end)
-        return (NULL);
+        return nullptr;
 
     str = GetBlkDataReplaceNewLine(start, end, ParFlat_COL_DATA);
-    if (str == NULL)
-        return (NULL);
+    if (! str)
+        return nullptr;
 
     for (p = str; *p != '\0';)
         p++;
     if (p == str) {
         MemFree(str);
-        return (NULL);
+        return nullptr;
     }
     for (p--;; p--) {
         if (*p != ' ' && *p != '\t' && *p != '\n' && *p != '.' && *p != ';') {
@@ -281,7 +281,7 @@ static char* GetGenBankLineage(char* start, char* end)
     }
     if (p == str) {
         MemFree(str);
-        return (NULL);
+        return nullptr;
     }
     *p = '\0';
     return (str);
@@ -338,9 +338,9 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
 
     bptr = xSrchNodeType(entry, ParFlat_SOURCE, &len);
     str  = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA);
-    if (str != NULL) {
+    if (str) {
         p = StringRChr(str, '.');
-        if (p != NULL && p > str && p[1] == '\0' && *(p - 1) == '.')
+        if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
             *p = '\0';
 
         gbb->SetSource(str);
@@ -381,7 +381,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     bptr = xSrchNodeType(entry, ParFlat_ORIGIN, &len);
     eptr = bptr + len;
     ptr  = SrchTheChar(bptr, eptr, '\n');
-    if (ptr != NULL) {
+    if (ptr) {
         eptr = ptr;
         bptr += 6;
 
@@ -446,7 +446,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
             DefVsHTGKeywords(mol_info.GetTech(), entry, ParFlat_DEFINITION, ParFlat_ORIGIN, cancelled);
 
             CheckHTGDivision(tempdiv, mol_info.GetTech());
-            if (tempdiv != NULL)
+            if (tempdiv)
                 MemFree(tempdiv);
 
             i = 0;
@@ -515,13 +515,10 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                 } else if (i != 2 || env_kwd == false ||
                            (est_kwd == false && gss_kwd == false && wgs_kwd == false)) {
                     if (i != 2 || pp->source != Parser::ESource::DDBJ ||
-                        ibp->is_tsa == false || env_kwd == false)
-                    {
-                        if(pp->source != Parser::ESource::DDBJ || ibp->is_wgs == false ||
-                           (env_kwd == false && tpa_kwd == false))
-                        {
-                            ErrPostEx(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords,
-                                      "This record contains more than one of the special keywords used to indicate that a sequence is an HTG, EST, GSS, STS, HTC, WGS, ENV, FLI_CDNA, TPA, CAGE, TSA or TLS sequence.");
+                        ibp->is_tsa == false || env_kwd == false) {
+                        if (pp->source != Parser::ESource::DDBJ || ibp->is_wgs == false ||
+                            (env_kwd == false && tpa_kwd == false)) {
+                            ErrPostEx(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords, "This record contains more than one of the special keywords used to indicate that a sequence is an HTG, EST, GSS, STS, HTC, WGS, ENV, FLI_CDNA, TPA, CAGE, TSA or TLS sequence.");
                             return ret;
                         }
                     }
@@ -544,15 +541,15 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
             }
 
             bptr = xSrchNodeType(entry, ParFlat_KEYWORDS, &len);
-            if (bptr != NULL) {
+            if (bptr) {
                 kw = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA);
 
                 kwp = StringStr(kw, "EST");
-                if (kwp != NULL && est_kwd == false) {
+                if (kwp && est_kwd == false) {
                     ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
                 }
                 kwp = StringStr(kw, "STS");
-                if (kwp != NULL && sts_kwd == false) {
+                if (kwp && sts_kwd == false) {
                     ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
                 }
                 MemFree(kw);
@@ -654,7 +651,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
             mol_info.SetTech(CMolInfo::eTech_htc);
 
             gbb->ResetDiv();
-        } else if (gbb->GetDiv() == "SYN" && bio_src != NULL && bio_src->IsSetOrigin() &&
+        } else if (gbb->GetDiv() == "SYN" && bio_src && bio_src->IsSetOrigin() &&
                    bio_src->GetOrigin() == 5) /* synthetic */
         {
             gbb->ResetDiv();
@@ -682,7 +679,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     if (ibp->is_tls)
         fta_remove_tls_keywords(gbb->SetKeywords(), pp->source);
 
-    if (bio_src != NULL) {
+    if (bio_src) {
         if (bio_src->IsSetSubtype()) {
             for (const auto& subtype : bio_src->GetSubtype()) {
                 if (subtype->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
@@ -708,7 +705,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
         }
     }
 
-    if (pp->source == Parser::ESource::DDBJ && gbb->IsSetDiv() && bio_src != NULL &&
+    if (pp->source == Parser::ESource::DDBJ && gbb->IsSetDiv() && bio_src &&
         bio_src->IsSetOrg() && bio_src->GetOrg().IsSetOrgname() &&
         bio_src->GetOrg().GetOrgname().IsSetDiv()) {
         gbb->ResetDiv();
@@ -739,7 +736,7 @@ static CRef<CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry, cons
 {
     IndexblkPtr ibp;
     char*       bptr;
-    char*       molstr = NULL;
+    char*       molstr = nullptr;
 
     CRef<CMolInfo> mol_info(new CMolInfo);
 
@@ -793,7 +790,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
     size_t len = 0;
     bptr       = SrchNodeSubType(entry, ParFlat_SOURCE, ParFlat_ORGANISM, &len);
 
-    if (bptr == NULL) {
+    if (! bptr) {
         ErrPostStr(SEV_WARNING, ERR_ORGANISM_NoOrganism, "No Organism data in genbank format file");
         return;
     }
@@ -814,7 +811,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
     }
 
     ptr = StringChr(bptr, '\n');
-    if (ptr == NULL) {
+    if (! ptr) {
         *end = ch;
         return;
     }
@@ -831,11 +828,11 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
             break;
 
         ptr = StringChr(bptr, '\n');
-        if (ptr == NULL)
+        if (! ptr)
             break;
 
         *ptr = '\0';
-        if (StringChr(bptr, ';') != NULL || StringChr(ptr + 1, '\n') == NULL) {
+        if (StringChr(bptr, ';') || ! StringChr(ptr + 1, '\n')) {
             *ptr = '\n';
             break;
         }
@@ -856,7 +853,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
     }
 
     ptr = GetGenBankLineage(bptr, end);
-    if (ptr != NULL) {
+    if (ptr) {
         org_ref.SetOrgname().SetLineage(ptr);
         MemFree(ptr);
     }
@@ -875,7 +872,7 @@ static void fta_get_user_field(char* line, const Char* tag, CUser_object& user_o
     Char  ch;
 
     p = StringStr(line, "USER        ");
-    if (p == NULL)
+    if (! p)
         ch = '\0';
     else {
         ch = 'U';
@@ -896,7 +893,7 @@ static void fta_get_user_field(char* line, const Char* tag, CUser_object& user_o
 
     for (q = res;;) {
         q = StringStr(q, "\nACCESSION=");
-        if (q == NULL)
+        if (! q)
             break;
 
         q += 11;
@@ -950,7 +947,7 @@ static void fta_get_str_user_field(char* line, const Char* tag, CUser_object& us
     Char  ch;
 
     p = StringStr(line, "USER        ");
-    if (p == NULL)
+    if (! p)
         ch = '\0';
     else {
         ch = 'U';
@@ -1011,7 +1008,7 @@ static void fta_get_user_object(CSeq_entry& seq_entry, const DataBlk& entry)
 
     for (p = q;;) {
         p = StringStr(p, "USER        ");
-        if (p == NULL)
+        if (! p)
             break;
         for (p += 12; *p == ' ';)
             p++;
@@ -1049,15 +1046,15 @@ static void fta_get_mga_user_object(TSeqdescList& descrs, char* offset, size_t l
     char* str;
     char* p;
 
-    if (offset == NULL)
+    if (! offset)
         return;
 
     str = StringSave(offset + ParFlat_COL_DATA);
     p   = StringChr(str, '\n');
-    if (p != NULL)
+    if (p)
         *p = '\0';
     p = StringChr(str, '-');
-    if (p != NULL)
+    if (p)
         *p++ = '\0';
 
     CRef<CUser_object> user_obj(new CUser_object);
@@ -1128,12 +1125,12 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* DEFINITION data ==> descr_title
      */
-    str        = NULL;
+    str        = nullptr;
     size_t len = 0;
     offset     = xSrchNodeType(entry, ParFlat_DEFINITION, &len);
 
     string title;
-    if (offset != NULL) {
+    if (offset) {
         str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA);
 
         for (p = str; *p == ' ';)
@@ -1143,7 +1140,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
         title = str;
         MemFree(str);
-        str = NULL;
+        str = nullptr;
 
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetTitle(title);
@@ -1169,11 +1166,11 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     CRef<CUser_object> dbuop;
     offset = xSrchNodeType(entry, ParFlat_DBLINK, &len);
-    if (offset != NULL)
+    if (offset)
         fta_get_dblink_user_object(bioseq.SetDescr().Set(), offset, len, pp->source, &ibp->drop, dbuop);
     else {
         offset = xSrchNodeType(entry, ParFlat_PROJECT, &len);
-        if (offset != NULL)
+        if (offset)
             fta_get_project_user_object(bioseq.SetDescr().Set(), offset, Parser::EFormat::GenBank, &ibp->drop, pp->source);
     }
 
@@ -1208,7 +1205,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* pub should be before GBblock because we need patent ref
      */
     dbp = TrackNodeType(entry, ParFlat_REF_END);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REF_END)
             continue;
 
@@ -1221,7 +1218,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REF_NO_TARGET)
             continue;
 
@@ -1272,7 +1269,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     offset = xSrchNodeType(entry, ParFlat_PRIMARY, &len);
-    if (offset == NULL && ibp->is_tpa && ibp->is_wgs == false) {
+    if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
                 ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:%s record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
@@ -1286,7 +1283,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    if (offset != NULL && len > 0 &&
+    if (offset && len > 0 &&
         fta_parse_tpa_tsa_block(bioseq, offset, ibp->acnum, ibp->vernum, len, ParFlat_COL_DATA, ibp->is_tpa) == false) {
         ibp->drop = 1;
         return;
@@ -1303,9 +1300,9 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* COMMENT data
      */
     offset = xSrchNodeType(entry, ParFlat_COMMENT, &len);
-    if (offset != NULL && len > 0) {
+    if (offset && len > 0) {
         str = GetDescrComment(offset, len, ParFlat_COL_DATA, (pp->xml_comp ? false : is_htg), ibp->is_pat);
-        if (str != NULL) {
+        if (str) {
             bool           bad = false;
             TUserObjVector user_objs;
 
@@ -1536,12 +1533,12 @@ bool GenBankAsciiOrig(ParserPtr pp)
 
         if (bioseq->GetInst().IsNa()) {
             if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
-                if (ibp->gaps != NULL)
+                if (ibp->gaps)
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
                 else if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
                          (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
                     SeqToDelta(*bioseq, ibp->htg);
-            } else if (ibp->gaps != NULL)
+            } else if (ibp->gaps)
                 AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
         }
 
@@ -1558,11 +1555,11 @@ bool GenBankAsciiOrig(ParserPtr pp)
         }
 
         if (pEntry->mpQscore.empty() && pp->accver) {
-            if (pp->ff_get_qscore != NULL)
+            if (pp->ff_get_qscore)
                 pEntry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
-            else if (pp->ff_get_qscore_pp != NULL)
+            else if (pp->ff_get_qscore_pp)
                 pEntry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
-            if (pp->qsfd != NULL && ibp->qslength > 0)
+            if (pp->qsfd && ibp->qslength > 0)
                 pEntry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
         }
 
@@ -1938,13 +1935,13 @@ bool GenBankAscii(ParserPtr pp)
         {
             if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw)
             {
-                if(ibp->gaps != NULL)
+                if (ibp->gaps)
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
                 else if(ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
                         (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
                         SeqToDelta(*bioseq, ibp->htg);
             }
-            else if(ibp->gaps != NULL)
+            else if (ibp->gaps)
                 AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
         }
 
@@ -1965,13 +1962,13 @@ bool GenBankAscii(ParserPtr pp)
             }
         }
 
-        if (pEntry->mpQscore == NULL && pp->accver)
+        if (! pEntry->mpQscore && pp->accver)
         {
-            if (pp->ff_get_qscore != NULL)
+            if (pp->ff_get_qscore)
                 pEntry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
-            else if (pp->ff_get_qscore_pp != NULL)
+            else if (pp->ff_get_qscore_pp)
                 pEntry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
-            if (pp->qsfd != NULL && ibp->qslength > 0)
+            if (pp->qsfd && ibp->qslength > 0)
                 pEntry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
         }
 
@@ -1998,10 +1995,10 @@ bool GenBankAscii(ParserPtr pp)
             }
         }
 
-        if(pEntry->mpQscore != NULL)
+        if (pEntry->mpQscore)
         {
             MemFree(pEntry->mpQscore);
-            pEntry->mpQscore = NULL;
+            pEntry->mpQscore = nullptr;
         }
 
         if (ibp->psip.NotEmpty())
@@ -2330,7 +2327,7 @@ bool GenBankAscii(ParserPtr pp)
 static void SrchFeatSeqLoc(TSeqFeatList& feats, CSeq_annot::C_Data::TFtable& feat_table)
 {
     for (CSeq_annot::C_Data::TFtable::iterator feat = feat_table.begin(); feat != feat_table.end();) {
-        if ((*feat)->IsSetLocation() && (*feat)->GetLocation().GetId() != nullptr) {
+        if ((*feat)->IsSetLocation() && (*feat)->GetLocation().GetId()) {
             ++feat;
             continue;
         }
@@ -2413,7 +2410,7 @@ void CheckFeatSeqLoc(TEntryList& seq_entries)
 
     CBioseq_set* parts = GetParts(seq_entries);
 
-    if (! feats_no_id.empty() && parts != nullptr) /* may need to delete duplicate
+    if (! feats_no_id.empty() && parts) /* may need to delete duplicate
                                                            one   9-14-93 */
     {
         for (auto& annot : parts->SetAnnot()) {
