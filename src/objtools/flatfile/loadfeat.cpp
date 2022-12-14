@@ -147,7 +147,7 @@ const TrnaAa taa[] = {
     { "tryptophan", 'W' },
     { "tyrosine", 'Y' },
     { "valine", 'V' },
-    { NULL, '\0' }
+    { nullptr, '\0' }
 };
 
 struct AaCodons {
@@ -234,7 +234,7 @@ const AaCodons aacodons[] = {
     { "TERM", '*', 15, { 10, 14, -1, -1, -1, -1, -1, -1 } }, /* TAA, TGA */
     { "TERM", '*', 0, { 10, 11, -1, -1, -1, -1, -1, -1 } },  /* TAA, TAG */
     { "OTHER", 'X', 0, { -1, -1, -1, -1, -1, -1, -1, -1 } },
-    { NULL, '\0', 0, { -1, -1, -1, -1, -1, -1, -1, -1 } }
+    { nullptr, '\0', 0, { -1, -1, -1, -1, -1, -1, -1, -1 } }
 };
 
 static const char* trna_tags[] = {
@@ -248,7 +248,7 @@ static const char* trna_tags[] = {
     "TRANFER RNA",
     "T RNA",
     "TRNA",
-    NULL
+    nullptr
 };
 
 const char* ParFlat_ESTmod[] = {
@@ -260,7 +260,7 @@ const char* ParFlat_ESTmod[] = {
     "putatively transcribed partial sequence",
     "UK putts",
     "Plastid",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_RNA_array[] = {
@@ -274,7 +274,7 @@ static const char* ParFlat_RNA_array[] = {
     "ncRNA",
     "tmRNA",
     "misc_RNA",
-    NULL
+    nullptr
 };
 
 static const char* DbxrefTagAny[] = {
@@ -285,7 +285,7 @@ static const char* DbxrefTagAny[] = {
     "GDB",
     "HMP",
     "MAIZEGDB",
-    NULL
+    nullptr
 };
 
 static const char* DbxrefObsolete[] = {
@@ -296,7 +296,7 @@ static const char* DbxrefObsolete[] = {
     "SWISS-PROT",
     "SPTREMBL",
     "TREMBL",
-    NULL
+    nullptr
 };
 
 static const char* EMBLDbxrefTagStr[] = {
@@ -310,7 +310,7 @@ static const char* EMBLDbxrefTagStr[] = {
     "PROTEOMES",
     "UNITE",
     "WBPARASITE",
-    NULL
+    nullptr
 };
 
 static const char* DbxrefTagStr[] = {
@@ -398,7 +398,7 @@ static const char* DbxrefTagStr[] = {
     "WORMBASE",
     "XENBASE",
     "ZFIN",
-    NULL
+    nullptr
 };
 
 static const char* DbxrefTagInt[] = {
@@ -423,7 +423,7 @@ static const char* DbxrefTagInt[] = {
     "RGD",
     "UNILIB",
     "UNISTS",
-    NULL
+    nullptr
 };
 
 static const char* EmptyQuals[] = {
@@ -449,7 +449,7 @@ static const char* EmptyQuals[] = {
     "trans_splicing",
     "transgenic",
     "virion",
-    NULL
+    nullptr
 };
 
 const char* TransSplicingFeats[] = {
@@ -461,7 +461,7 @@ const char* TransSplicingFeats[] = {
     "misc_RNA",
     "precursor_RNA",
     "tRNA",
-    NULL
+    nullptr
 };
 
 const char* ncRNA_class_values[] = {
@@ -486,14 +486,14 @@ const char* ncRNA_class_values[] = {
     "vault_RNA",
     "Y_RNA",
     "other",
-    NULL
+    nullptr
 };
 
 const char* SatelliteValues[] = {
     "satellite",
     "minisatellite",
     "microsatellite",
-    NULL
+    nullptr
 };
 
 const char* PseudoGeneValues[] = {
@@ -502,7 +502,7 @@ const char* PseudoGeneValues[] = {
     "unitary",
     "unknown",
     "unprocessed",
-    NULL
+    nullptr
 };
 
 const char* RegulatoryClassValues[] = {
@@ -530,7 +530,7 @@ const char* RegulatoryClassValues[] = {
     "terminator",
     "transcriptional_cis_regulatory_region",
     "other",
-    NULL
+    nullptr
 };
 
 // clang-format off
@@ -544,7 +544,7 @@ StrNum GapTypeValues[] = {
     { "repeat within scaffold",   CSeq_gap::eType_repeat },
     { "repeat between scaffolds", CSeq_gap::eType_repeat },
     { "unknown",                  CSeq_gap::eType_unknown },
-    { NULL, -1 }
+    { nullptr, -1 }
 };
 
 StrNum LinkageEvidenceValues[] = {
@@ -559,7 +559,7 @@ StrNum LinkageEvidenceValues[] = {
     { "unspecified",        CLinkage_evidence::eType_unspecified },
     { "pcr",                CLinkage_evidence::eType_pcr },
     { "proximity ligation", CLinkage_evidence::eType_proximity_ligation },
-    { NULL, -1 }
+    { nullptr, -1 }
 };
 // clang-format on
 
@@ -584,12 +584,12 @@ static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
     DataBlkPtr dbpnext;
     FeatBlkPtr fbp;
 
-    for (; dbp != NULL; dbp = dbpnext) {
+    for (; dbp; dbp = dbpnext) {
         dbpnext = dbp->mpNext;
         fbp     = static_cast<FeatBlk*>(dbp->mpData);
-        if (fbp != NULL) {
+        if (fbp) {
             delete fbp;
-            dbp->mpData = NULL;
+            dbp->mpData = nullptr;
         }
         if (format == Parser::EFormat::XML)
             dbp->SimpleDelete();
@@ -636,7 +636,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
 #ifdef BIOSEQ_FIND_METHOD
 
     bsp = BioseqFind(sip);
-    if (bsp != NULL)
+    if (bsp)
         return (bsp->length);
 
     // could try ID0 server
@@ -650,7 +650,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
         id.IsTpe() || id.IsTpd())
         text_id = id.GetTextseq_Id();
 
-    if (text_id != nullptr) {
+    if (text_id) {
         Int2          text_id_ver = text_id->IsSetVersion() ? text_id->GetVersion() : numeric_limits<short>::min();
         const string& text_id_acc = text_id->GetAccession();
         for (use_indx = 0; use_indx < pp->indx; use_indx++) {
@@ -669,7 +669,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
             if (len != static_cast<size_t>(-1))
                 return static_cast<Int4>(len);
 
-            if (pp->buf == NULL) {
+            if (! pp->buf) {
                 if (pp->farseq)
                     return -1;
 
@@ -773,7 +773,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         line = buf;
     }
 
-    const Char* strid = NULL;
+    const Char* strid = nullptr;
     Int4        intid = 0;
 
     const Char* p = tail.c_str();
@@ -782,7 +782,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
             p++;
         if (*p == '\0' && *strid != '0') {
             intid = atoi(strid);
-            strid = NULL;
+            strid = nullptr;
         }
     } else if (MatchArrayIString(DbxrefTagStr, line.c_str()) > -1 ||
                (source == Parser::ESource::EMBL &&
@@ -793,7 +793,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
             ErrPostEx(SEV_WARNING, ERR_QUALIFIER_DbxrefWrongType, "/db_xref qualifier \"%s\" is supposed to be a string, but its value consists of digits only.", val.c_str());
             if (*strid != '0') {
                 intid = atoi(strid);
-                strid = NULL;
+                strid = nullptr;
             }
         }
     } else if (MatchArrayIString(DbxrefTagInt, line.c_str()) > -1) {
@@ -846,7 +846,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
 
     tag->SetDb(line);
 
-    if (strid != NULL)
+    if (strid)
         tag->SetTag().SetStr(strid);
     else
         tag->SetTag().SetId(intid);
@@ -965,7 +965,7 @@ static char* CheckLocStr(const Char* str)
     char*       location;
 
     ptr = StringChr(str, ';');
-    if (ptr != NULL)
+    if (ptr)
         return StringSave(str);
 
     for (ptr = str; *ptr != ' ' && *ptr != '\0';)
@@ -974,8 +974,8 @@ static char* CheckLocStr(const Char* str)
         ptr++;
 
     eptr = StringChr(str, ')');
-    if (eptr == NULL)
-        return (NULL);
+    if (! eptr)
+        return nullptr;
 
     while (*eptr == ' ' || *eptr == ')')
         --eptr;
@@ -1094,7 +1094,7 @@ static Uint1 FTASeqLocCheck(const CSeq_loc& locs, char* accession)
         if (! good)
             break;
 
-        if (accession == nullptr || cur_id == nullptr)
+        if (! accession || ! cur_id)
             continue;
 
         if (! cur_id->IsGenbank() && ! cur_id->IsEmbl() && ! cur_id->IsPir() &&
@@ -1105,7 +1105,7 @@ static Uint1 FTASeqLocCheck(const CSeq_loc& locs, char* accession)
 
         const CTextseq_id* text_id = cur_id->GetTextseq_Id();
 
-        if (text_id == nullptr || ! text_id->CanGetAccession())
+        if (! text_id || ! text_id->CanGetAccession())
             continue;
 
         if (text_id->GetAccession() == accession) {
@@ -1125,12 +1125,12 @@ static Uint1 FTASeqLocCheck(const CSeq_loc& locs, char* accession)
 /**********************************************************/
 static void fta_strip_aa(char* str)
 {
-    if (str == NULL || *str == '\0')
+    if (! str || *str == '\0')
         return;
 
-    while (str != NULL) {
+    while (str) {
         str = StringStr(str, "aa");
-        if (str != NULL)
+        if (str)
             fta_StringCpy(str, str + 2);
     }
 }
@@ -1149,7 +1149,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
     DataBlkPtr subdbp;
     char*      p;
     char*      q;
-    char*      location = NULL;
+    char*      location = nullptr;
 
     bool  err = false;
     Uint1 i;
@@ -1160,11 +1160,11 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         dbp = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_BTW);
     else
         dbp = TrackNodeType(entry, ParFlat_REF_BTW);
-    if (dbp == NULL)
+    if (! dbp)
         return;
 
 
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REF_BTW)
             continue;
 
@@ -1175,12 +1175,12 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         CRef<CSeq_feat> feat(new CSeq_feat);
         feat->SetData().SetPub(*pubdesc);
 
-        location = NULL;
+        location = nullptr;
         if (pp->format == Parser::EFormat::XML) {
             location = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_POSITION);
-            if (location == NULL) {
+            if (! location) {
                 q = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REFERENCE);
-                if (q != NULL) {
+                if (q) {
                     for (p = q; *p != '\0' && *p != '(';)
                         p++;
                     if (*p != '\0')
@@ -1189,7 +1189,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 }
             } else {
                 p = StringChr(location, ';');
-                if (p != NULL) {
+                if (p) {
                     p = MemNew(StringLen(location) + 7);
                     StringCpy(p, "join(");
                     StringCat(p, location);
@@ -1204,13 +1204,13 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
             location = CheckLocStr(string(p, dbp->mOffset + dbp->len - p).c_str());
         } else if (pp->format == Parser::EFormat::EMBL) {
             subdbp = static_cast<DataBlk*>(dbp->mpData);
-            for (; subdbp != NULL; subdbp = subdbp->mpNext) {
+            for (; subdbp; subdbp = subdbp->mpNext) {
                 if (subdbp->mType != ParFlat_RP)
                     continue;
 
                 for (p = subdbp->mOffset; *p != '\0' && isdigit(*p) == 0;)
                     p++;
-                if (StringChr(p, ',') != NULL) {
+                if (StringChr(p, ',')) {
                     location = MemNew(StringLen(p) + 7);
                     sprintf(location, "join(%s)", p);
                 } else
@@ -1218,10 +1218,10 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 break;
             }
         }
-        if (location == NULL || *location == '\0') {
+        if (! location || *location == '\0') {
             ErrPostEx(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "NULL or empty reference location. Entry dropped.");
             err = true;
-            if (location != NULL)
+            if (location)
                 MemFree(location);
             break;
         }
@@ -1229,9 +1229,9 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         if (ibp->is_prot)
             fta_strip_aa(location);
 
-        if (pp->buf != NULL)
+        if (pp->buf)
             MemFree(pp->buf);
-        pp->buf = NULL;
+        pp->buf = nullptr;
 
         GetSeqLocation(*feat, location, seqids, &err, pp, "pub");
 
@@ -1254,7 +1254,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
             }
             feats.push_back(feat);
         }
-        if (location != NULL)
+        if (location)
             MemFree(location);
     }
 
@@ -1285,11 +1285,11 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         dbp = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_SITES);
     else
         dbp = TrackNodeType(entry, ParFlat_REF_SITES);
-    if (dbp == NULL)
+    if (! dbp)
         return;
 
     CRef<CSeq_feat> feat;
-    for (first = true; dbp != NULL; dbp = dbp->mpNext) {
+    for (first = true; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REF_SITES)
             continue;
 
@@ -1352,11 +1352,11 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
 
     CRef<CSeq_loc> ret;
 
-    if (qval == NULL)
+    if (! qval)
         return ret;
 
     p = StringStr(qval, "pos:");
-    if (p == NULL)
+    if (! p)
         return ret;
 
     for (q = p + 4; *q == ' ';)
@@ -1383,7 +1383,7 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
 
     xinstall_gbparse_error_handler(fta_fake_gbparse_err_handler);
     ret = xgbparseint_ver(loc_str, fake1, fake3, seqids, accver);
-    xinstall_gbparse_error_handler(NULL);
+    xinstall_gbparse_error_handler(nullptr);
 
     if (ret.Empty()) {
         string loc = location_to_string_or_unknown(feat.GetLocation());
@@ -1440,7 +1440,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
     if (qval) {
         qval_str = qval;
         MemFree(qval);
-        qval = NULL;
+        qval = nullptr;
     }
 
     size_t len = 0;
@@ -1465,16 +1465,16 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         return;
 
     qval = StringSave(qval_str.c_str());
-    for (p = qval; p != NULL; p += 13) {
+    for (p = qval; p; p += 13) {
         p = StringIStr(p, "ribosomal rrna");
-        if (p == NULL)
+        if (! p)
             break;
         fta_StringCpy(p + 10, p + 11);
     }
 
-    for (p = qval; p != NULL; p = qval + len) {
+    for (p = qval; p; p = qval + len) {
         p = StringIStr(p, "ribosomalrna");
-        if (p == NULL)
+        if (! p)
             break;
         q    = MemNew(StringLen(qval) + 2);
         p[9] = '\0';
@@ -1486,9 +1486,9 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         qval = q;
     }
 
-    if (qval != NULL) {
+    if (qval) {
         p = StringIStr(qval, " rrna");
-        if (p != NULL) {
+        if (p) {
             q  = MemNew(StringLen(qval) + 10);
             *p = '\0';
             StringCpy(q, qval);
@@ -1499,11 +1499,11 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         }
     }
 
-    for (p = qval, q = p; q != NULL; q = p + 13) {
+    for (p = qval, q = p; q; q = p + 13) {
         p = StringIStr(q, "ribosomal DNA");
-        if (p == NULL) {
+        if (! p) {
             p = StringIStr(q, "ribosomal RNA");
-            if (p == NULL)
+            if (! p)
                 break;
         }
         p[10] = 'R';
@@ -1512,7 +1512,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
     }
 
     p = StringIStr(qval, "s ribosomal RNA");
-    if (p != NULL && p > qval && p[15] == '\0') {
+    if (p && p > qval && p[15] == '\0') {
         p--;
         if (*p >= '0' && *p <= '9')
             *++p = 'S';
@@ -1520,7 +1520,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
 
     for (p = qval;;) {
         p = StringIStr(p, "ribosomal");
-        if (p == NULL)
+        if (! p)
             break;
         if (p == qval || (p[9] != ' ' && p[9] != '\0')) {
             p += 9;
@@ -1546,7 +1546,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
 
     for (p = qval;;) {
         p = StringIStr(p, " ribosomal RNA");
-        if (p == NULL)
+        if (! p)
             break;
         p += 14;
         if (StringEquNI(p, " ribosomal RNA", 14))
@@ -1574,10 +1574,10 @@ static Uint1 fta_get_aa_from_symbol(Char ch)
 {
     const AaCodons* acp;
 
-    for (acp = aacodons; acp->straa != NULL; acp++)
+    for (acp = aacodons; acp->straa; acp++)
         if (acp->intaa == ch)
             break;
-    if (acp->straa != NULL)
+    if (acp->straa)
         return (acp->intaa);
 
     return (0);
@@ -1589,16 +1589,16 @@ static Uint1 fta_get_aa_from_string(char* str)
     const AaCodons* acp;
     const TrnaAa*   tap;
 
-    for (tap = taa; tap->name != NULL; tap++)
+    for (tap = taa; tap->name; tap++)
         if (NStr::CompareNocase(str, tap->name) == 0)
             break;
-    if (tap->name != NULL)
+    if (tap->name)
         return (tap->aa);
 
-    for (acp = aacodons; acp->straa != NULL; acp++)
+    for (acp = aacodons; acp->straa; acp++)
         if (NStr::CompareNocase(acp->straa, str) == 0)
             break;
-    if (acp->straa != NULL)
+    if (acp->straa)
         return (acp->intaa);
 
     return (0);
@@ -1630,12 +1630,12 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
     bool  fmet;
     char* prod;
 
-    if (remove != NULL)
+    if (remove)
         *remove = 0;
 
     CRef<CTrna_ext> ret(new CTrna_ext);
 
-    if (product == NULL || StringLen(product) < 7)
+    if (! product || StringLen(product) < 7)
         return ret;
 
     bool digits = false;
@@ -1651,12 +1651,12 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
     }
     ShrinkSpaces(prod);
 
-    for (b = trna_tags; *b != NULL; b++) {
+    for (b = trna_tags; *b; b++) {
         start = StringStr(prod, *b);
-        if (start != NULL)
+        if (start)
             break;
     }
-    if (*b == NULL) {
+    if (! *b) {
         MemFree(prod);
         return ret;
     }
@@ -1668,16 +1668,16 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
     ShrinkSpaces(prod);
 
     if (start == prod && *end == '\0') {
-        if (remove != NULL && ! digits)
+        if (remove && ! digits)
             *remove = 1;
         MemFree(prod);
         return ret;
     }
 
-    first  = NULL;
-    second = NULL;
-    third  = NULL;
-    fourth = NULL;
+    first  = nullptr;
+    second = nullptr;
+    third  = nullptr;
+    fourth = nullptr;
     for (p = end; *p == ' ' || *p == ')' || *p == '(';)
         p++;
     q = p;
@@ -1746,7 +1746,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
     }
 
     fmet = false;
-    if (second != NULL) {
+    if (second) {
         if (StringCmp(second, "F MET") == 0 ||
             StringCmp(second, "FMET") == 0 ||
             StringCmp(second, "F MT") == 0) {
@@ -1756,17 +1756,16 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
 
         ret->SetAa().SetNcbieaa(fta_get_aa_from_string(second));
         if (get_aa_from_trna(*ret) != 0)
-            second = NULL;
+            second = nullptr;
     }
 
-    if (get_aa_from_trna(*ret) == 0 && first != NULL) {
+    if (get_aa_from_trna(*ret) == 0 && first) {
         ret->SetAa().SetNcbieaa(fta_get_aa_from_string(first));
         if (get_aa_from_trna(*ret) != 0 && first == prod)
-            first = NULL;
+            first = nullptr;
     }
 
-    if (first == NULL && second == NULL && third == NULL && fourth == NULL &&
-        remove != NULL && ! digits)
+    if (! first && ! second && ! third && ! fourth && remove && ! digits)
         *remove = 1;
     MemFree(prod);
 
@@ -1775,7 +1774,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
 
     if (! feat.IsSetComment())
         feat.SetComment("fMet");
-    else if (StringIStr(feat.GetComment().c_str(), "fmet") == NULL) {
+    else if (! StringIStr(feat.GetComment().c_str(), "fmet")) {
         string& comment = feat.SetComment();
         comment += "; fMet";
     }
@@ -1793,7 +1792,7 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned c
     CRef<CTrna_ext> ret(new CTrna_ext);
 
     *remove = 0;
-    if (comment == NULL)
+    if (! comment)
         return ret;
 
     comm = StringSave(comment);
@@ -1808,11 +1807,11 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned c
     if (StringEquN(comm, "CODON RECOGNIZED ", 17)) {
         p = comm + 17;
         q = StringChr(p, ' ');
-        if (q != NULL && StringCmp(q + 1, "PUTATIVE") == 0)
+        if (q && StringCmp(q + 1, "PUTATIVE") == 0)
             *q = '\0';
-        if (StringChr(p, ' ') == NULL && StringLen(p) == 3) {
+        if (! StringChr(p, ' ') && StringLen(p) == 3) {
             MemFree(comm);
-            *remove = (q == NULL) ? 1 : 2;
+            *remove = q ? 2 : 1;
             return ret;
         }
     }
@@ -1826,9 +1825,9 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned c
         }
     }
 
-    for (q = comm, p = q; p != NULL;) {
+    for (q = comm, p = q; p;) {
         p = StringChr(p, ' ');
-        if (p != NULL)
+        if (p)
             *p++ = '\0';
 
         ret->SetAa().SetNcbieaa(fta_get_aa_from_string(q));
@@ -1888,13 +1887,13 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
 
     if (type == CRNA_ref::eType_ncRNA) {
         p = GetTheQualValue(feat.SetQual(), "ncRNA_class");
-        if (p != NULL) {
+        if (p) {
             rna_gen.Reset(new CRNA_gen);
             rna_gen->SetClass(p);
         }
     } else if (type == CRNA_ref::eType_tmRNA) {
         p = GetTheQualValue(feat.SetQual(), "tag_peptide");
-        if (p != NULL) {
+        if (p) {
             CRef<CRNA_qual> rna_qual(new CRNA_qual);
             rna_qual->SetQual("tag_peptide");
             rna_qual->SetVal(p);
@@ -1910,9 +1909,9 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
     if (type != CRNA_ref::eType_premsg && type != CRNA_ref::eType_tRNA) /* mRNA, snRNA, scRNA or other */
     {
         qval = GetTheQualValue(feat.SetQual(), "product"); // may return newly allocated memory!!!
-        if (qval != NULL) {
+        if (qval) {
             p = GetTheQualValue(feat.SetQual(), "product");
-            if (p != NULL && p[0] != 0) {
+            if (p && p[0] != 0) {
                 if (! feat.IsSetComment())
                     feat.SetComment(p);
                 else {
@@ -1924,34 +1923,34 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
             MemFree(p);
         }
 
-        if (qval == NULL && type == CRNA_ref::eType_mRNA &&
+        if (! qval && type == CRNA_ref::eType_mRNA &&
             source != Parser::ESource::EMBL && source != Parser::ESource::DDBJ)
             qval = GetTheQualValue(feat.SetQual(), "standard_name");
 
-        if (qval == NULL && feat.IsSetComment() && type == CRNA_ref::eType_mRNA) {
+        if (! qval && feat.IsSetComment() && type == CRNA_ref::eType_mRNA) {
             const Char* c_p = feat.GetComment().c_str();
-            const Char* c_q = NULL;
+            const Char* c_q = nullptr;
             for (;; c_p += 5, c_q = c_p) {
                 c_p = StringIStr(c_p, " mRNA");
-                if (c_p == NULL)
+                if (! c_p)
                     break;
             }
 
-            const Char* c_r = NULL;
+            const Char* c_r = nullptr;
             for (c_p = feat.GetComment().c_str();; c_p += 4, c_r = c_p) {
                 c_p = StringIStr(c_p, " RNA");
-                if (c_p == NULL)
+                if (! c_p)
                     break;
             }
 
-            if (c_q != NULL && c_r != NULL) {
+            if (c_q && c_r) {
                 c_p = (c_q > c_r) ? c_q : c_r;
-            } else if (c_q != NULL)
+            } else if (c_q)
                 c_p = c_q;
             else
                 c_p = c_r;
 
-            if (c_p != NULL) {
+            if (c_p) {
                 while (*c_p == ' ' || *c_p == '\t' || *c_p == ',' || *c_p == ';')
                     ++c_p;
 
@@ -1962,7 +1961,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
             }
         }
 
-        if (qval != NULL) {
+        if (qval) {
             if (StringLen(qval) > 511) {
                 qval[510] = '>';
                 qval[511] = '\0';
@@ -1998,7 +1997,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
     }
     qval = GetTheQualValue(feat.SetQual(), "anticodon");
     CRef<CTrna_ext> trnaa;
-    if (qval != NULL) {
+    if (qval) {
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
 
         CRef<CSeq_loc> anticodon = GetTrnaAnticodon(feat, qval, bioseq.GetId(), accver);
@@ -2019,8 +2018,8 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
     qval = CpTheQualValue(feat.SetQual(), "product");
 
     CRef<CTrna_ext> trnap;
-    if (qval != NULL) {
-        trnap = fta_get_trna_from_product(feat, qval, NULL);
+    if (qval) {
+        trnap = fta_get_trna_from_product(feat, qval, nullptr);
         MemFree(qval);
         qval = nullptr;
     }
@@ -2219,7 +2218,7 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
 {
     char* p;
 
-    if (fbp == NULL || fbp->quals.empty())
+    if (! fbp || fbp->quals.empty())
         return;
 
     TQualVector::iterator first = fbp->quals.end();
@@ -2231,7 +2230,7 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
             continue;
         }
 
-        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_ObsoleteRptUnit, "Obsolete /rpt_unit qualifier found on feature \"%s\" at location \"%s\".", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown" : fbp->location);
+        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_ObsoleteRptUnit, "Obsolete /rpt_unit qualifier found on feature \"%s\" at location \"%s\".", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown");
 
         if ((*qual)->GetVal().empty()) {
             qual = fbp->quals.erase(qual);
@@ -2295,7 +2294,7 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
     Int4 inf_bad;
     Char ch;
 
-    if (fbp == NULL || fbp->quals.empty())
+    if (! fbp || fbp->quals.empty())
         return true;
 
     evi_exp  = 0;
@@ -2340,12 +2339,12 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
         else if (NStr::CompareNocase(val_str.c_str(), "experimental") == 0)
             evi_exp++;
         else {
-            if (fbp->location != NULL && StringLen(fbp->location) > 50) {
+            if (fbp->location && StringLen(fbp->location) > 50) {
                 ch                = fbp->location[50];
                 fbp->location[50] = '\0';
             } else
                 ch = '\0';
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidEvidence, "Illegal value \"%s\" for /evidence qualifier on the \"%s\" feature at \"%s\". Qualifier dropped.", (val_str.empty()) ? "Unknown" : val_str.c_str(), (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location);
+            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidEvidence, "Illegal value \"%s\" for /evidence qualifier on the \"%s\" feature at \"%s\". Qualifier dropped.", val_str.empty() ? "Unknown" : val_str.c_str(), fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
             if (ch != '\0')
                 fbp->location[50] = ch;
         }
@@ -2354,36 +2353,36 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
     }
 
     if (evi_exp + evi_not > 0 && exp_good + exp_bad + inf_good + inf_bad > 0) {
-        if (fbp->location != NULL && StringLen(fbp->location) > 50) {
+        if (fbp->location  && StringLen(fbp->location) > 50) {
             ch                = fbp->location[50];
             fbp->location[50] = '\0';
         } else
             ch = '\0';
-        ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "Old /evidence and new /experiment or /inference qualifiers both exist on the \"%s\" feature at \"%s\". This is currently unsupported.", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location);
+        ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "Old /evidence and new /experiment or /inference qualifiers both exist on the \"%s\" feature at \"%s\". This is currently unsupported.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
         if (ch != '\0')
             fbp->location[50] = ch;
         return false;
     }
 
     if (evi_exp + exp_good > 0 && evi_not + inf_good > 0) {
-        if (fbp->location != NULL && StringLen(fbp->location) > 50) {
+        if (fbp->location && StringLen(fbp->location) > 50) {
             ch                = fbp->location[50];
             fbp->location[50] = '\0';
         } else
             ch = '\0';
-        ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "The special \"no additional details recorded\" values for both /experiment and /inference exist on the \"%s\" feature at \"%s\". This is currently unsupported.", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location);
+        ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "The special \"no additional details recorded\" values for both /experiment and /inference exist on the \"%s\" feature at \"%s\". This is currently unsupported.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
         if (ch != '\0')
             fbp->location[50] = ch;
         return false;
     }
 
     if ((exp_good > 0 && exp_bad > 0) || (inf_good > 0 && inf_bad > 0)) {
-        if (fbp->location != NULL && StringLen(fbp->location) > 50) {
+        if (fbp->location && StringLen(fbp->location) > 50) {
             ch                = fbp->location[50];
             fbp->location[50] = '\0';
         } else
             ch = '\0';
-        ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "The special \"no additional details recorded\" value for /experiment or /inference exists in conjunction with other /experiment or /inference qualifiers on the \"%s\" feature at \"%s\". This is currently unsupported.", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location);
+        ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "The special \"no additional details recorded\" value for /experiment or /inference exists in conjunction with other /experiment or /inference qualifiers on the \"%s\" feature at \"%s\". This is currently unsupported.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
         if (ch != '\0')
             fbp->location[50] = ch;
         return false;
@@ -2414,17 +2413,17 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
 {
     const char** b;
 
-    char* loc = NULL;
+    char* loc = nullptr;
 
     bool locmap = false;
     bool err    = false;
 
     CRef<CSeq_feat> feat;
 
-    if (fbp->location != NULL) {
+    if (fbp->location) {
         loc = fbp->location;
         DelCharBtwData(loc);
-        if (pp->buf != NULL)
+        if (pp->buf)
             MemFree(pp->buf);
         pp->buf = MemNew(StringLen(fbp->key) + StringLen(loc) + 4);
         StringCpy(pp->buf, fbp->key);
@@ -2434,9 +2433,9 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         feat.Reset(new CSeq_feat);
         locmap = GetSeqLocation(*feat, loc, seqids, &err, pp, fbp->key);
 
-        if (pp->buf != NULL)
+        if (pp->buf)
             MemFree(pp->buf);
-        pp->buf = NULL;
+        pp->buf = nullptr;
     }
     if (err) {
         if (pp->debug == false) {
@@ -2452,7 +2451,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
             feat->SetPartial(true);
     }
 
-    if (StringStr(loc, "order") != NULL)
+    if (StringStr(loc, "order"))
         feat->SetPartial(true);
 
     if (! fbp->quals.empty()) {
@@ -2467,10 +2466,10 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         fta_parse_rpt_units(fbp);
 
     if (! fbp->quals.empty()) {
-        for (b = TransSplicingFeats; *b != NULL; b++)
+        for (b = TransSplicingFeats; *b; b++)
             if (StringCmp(fbp->key, *b) == 0)
                 break;
-        if (*b != NULL && DeleteQual(fbp->quals, "trans_splicing")) {
+        if (*b && DeleteQual(fbp->quals, "trans_splicing")) {
             feat->SetExcept(true);
             if (! feat->IsSetExcept_text())
                 feat->SetExcept_text("trans-splicing");
@@ -2504,7 +2503,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
 
     /* assume all imp for now
      */
-    if (StringStr(fbp->key, "source") == NULL)
+    if (! StringStr(fbp->key, "source"))
         GetImpFeat(*feat, fbp, locmap);
 
     for (const auto& cur : fbp->quals) {
@@ -2536,7 +2535,7 @@ static void fta_get_gcode_from_biosource(const CBioSource& bio_src, IndexblkPtr 
 /**********************************************************/
 static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
 {
-    if (fbp == NULL)
+    if (! fbp)
         return;
 
     for (TQualVector::iterator q = fbp->quals.begin(); q != fbp->quals.end(); ++q) {
@@ -2589,11 +2588,11 @@ static bool fta_qual_a_in_b(const TQualVector& qual1, const TQualVector& qual2)
     for (const auto& gbqp1 : qual1) {
         found = false;
         for (const auto& gbqp2 : qual2) {
-            const Char* qual_a = gbqp1->IsSetQual() ? gbqp1->GetQual().c_str() : NULL;
-            const Char* qual_b = gbqp2->IsSetQual() ? gbqp2->GetQual().c_str() : NULL;
+            const Char* qual_a = gbqp1->IsSetQual() ? gbqp1->GetQual().c_str() : nullptr;
+            const Char* qual_b = gbqp2->IsSetQual() ? gbqp2->GetQual().c_str() : nullptr;
 
-            const Char* val_a = gbqp1->IsSetVal() ? gbqp1->GetVal().c_str() : NULL;
-            const Char* val_b = gbqp2->IsSetVal() ? gbqp2->GetVal().c_str() : NULL;
+            const Char* val_a = gbqp1->IsSetVal() ? gbqp1->GetVal().c_str() : nullptr;
+            const Char* val_b = gbqp2->IsSetVal() ? gbqp2->GetVal().c_str() : nullptr;
 
             if (fta_strings_same(qual_a, qual_b) && fta_strings_same(val_a, val_b)) {
                 found = true;
@@ -2613,9 +2612,9 @@ static bool fta_qual_a_in_b(const TQualVector& qual1, const TQualVector& qual2)
 /**********************************************************/
 static bool fta_feats_same(const FeatBlk* fbp1, const FeatBlk* fbp2)
 {
-    if (fbp1 == NULL && fbp2 == NULL)
+    if (! fbp1 && ! fbp2)
         return true;
-    if (fbp1 == NULL || fbp2 == NULL ||
+    if (! fbp1 || ! fbp2 ||
         fta_strings_same(fbp1->key, fbp2->key) == false ||
         fta_strings_same(fbp1->location, fbp2->location) == false)
         return false;
@@ -2634,7 +2633,7 @@ static bool fta_check_rpt_unit_span(const char* val, size_t length)
     Int4        i1;
     Int4        i2;
 
-    if (val == NULL || *val == '\0')
+    if (! val || *val == '\0')
         return false;
 
     for (p = val; *p >= '0' && *p <= '9';)
@@ -2660,7 +2659,7 @@ static void fta_check_rpt_unit_range(FeatBlkPtr fbp, size_t length)
 {
     Char ch;
 
-    if (fbp == NULL || fbp->quals.empty())
+    if (! fbp || fbp->quals.empty())
         return;
 
     for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
@@ -2677,12 +2676,12 @@ static void fta_check_rpt_unit_range(FeatBlkPtr fbp, size_t length)
             continue;
         }
 
-        if (fbp->location != NULL && StringLen(fbp->location) > 20) {
+        if (fbp->location && StringLen(fbp->location) > 20) {
             ch                = fbp->location[20];
             fbp->location[20] = '\0';
         } else
             ch = '\0';
-        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidRptUnitRange, "/rpt_unit_range qualifier \"%s\" on feature \"%s\" at location \"%s%s\" is not a valid basepair range. Qualifier dropped.", val_str.empty() ? "(EMPTY)" : val_str.c_str(), (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown" : fbp->location, (ch == '\0') ? "" : "...");
+        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidRptUnitRange, "/rpt_unit_range qualifier \"%s\" on feature \"%s\" at location \"%s%s\" is not a valid basepair range. Qualifier dropped.", val_str.empty() ? "(EMPTY)" : val_str.c_str(), fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown", (ch == '\0') ? "" : "...");
         if (ch != '\0')
             fbp->location[20] = ch;
 
@@ -2700,18 +2699,18 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
     FeatBlkPtr fbp2;
     Char       ch;
 
-    if (dbp == NULL || dbp->mpNext == NULL)
+    if (! dbp || ! dbp->mpNext)
         return;
 
-    for (; dbp != NULL; dbp = dbp->mpNext) {
-        if (dbp->mpData == NULL)
+    for (; dbp; dbp = dbp->mpNext) {
+        if (! dbp->mpData)
             continue;
 
         fbp1     = static_cast<const FeatBlk*>(dbp->mpData);
         tdbpprev = dbp;
-        for (tdbp = dbp->mpNext; tdbp != NULL; tdbp = tdbpnext) {
+        for (tdbp = dbp->mpNext; tdbp; tdbp = tdbpnext) {
             tdbpnext = tdbp->mpNext;
-            if (tdbp->mpData == NULL) {
+            if (! tdbp->mpData) {
                 tdbpprev->mpNext = tdbpnext;
                 tdbp->SimpleDelete();
                 continue;
@@ -2719,7 +2718,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
 
             fbp2 = static_cast<FeatBlk*>(tdbp->mpData);
 
-            if (fbp1->location != NULL && fbp2->location != NULL &&
+            if (fbp1->location && fbp2->location &&
                 StringCmp(fbp1->location, fbp2->location) < 0)
                 break;
 
@@ -2728,12 +2727,12 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
                 continue;
             }
 
-            if (fbp2->location != NULL && StringLen(fbp2->location) > 20) {
+            if (fbp2->location && StringLen(fbp2->location) > 20) {
                 ch                 = fbp2->location[20];
                 fbp2->location[20] = '\0';
             } else
                 ch = '\0';
-            ErrPostEx(SEV_WARNING, ERR_FEATURE_DuplicateRemoved, "Duplicated feature \"%s\" at location \"%s%s\" removed.", (fbp2->key == NULL) ? "???" : fbp2->key, (fbp2->location == NULL) ? "???" : fbp2->location, (ch == '\0') ? "" : "...");
+            ErrPostEx(SEV_WARNING, ERR_FEATURE_DuplicateRemoved, "Duplicated feature \"%s\" at location \"%s%s\" removed.", fbp2->key ? fbp2->key : "???", fbp2->location ? fbp2->location : "???", (ch == '\0') ? "" : "...");
 
             delete fbp2;
             tdbpprev->mpNext = tdbpnext;
@@ -2763,21 +2762,21 @@ static void fta_check_multiple_locus_tag(DataBlkPtr dbp, unsigned char* drop)
     FeatBlkPtr fbp;
     Char       ch;
 
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         fbp = static_cast<FeatBlk*>(dbp->mpData);
-        if (fbp == NULL)
+        if (! fbp)
             continue;
 
         size_t i = std::count_if(fbp->quals.begin(), fbp->quals.end(), PredIsGivenQual("locus_tag"));
         if (i < 2)
             continue;
 
-        if (fbp->location != NULL && StringLen(fbp->location) > 50) {
+        if (fbp->location && StringLen(fbp->location) > 50) {
             ch                = fbp->location[50];
             fbp->location[50] = '\0';
         } else
             ch = '\0';
-        ErrPostEx(SEV_REJECT, ERR_FEATURE_MultipleLocusTags, "Multiple /locus_tag values for \"%s\" feature at \"%s\".", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location);
+        ErrPostEx(SEV_REJECT, ERR_FEATURE_MultipleLocusTags, "Multiple /locus_tag values for \"%s\" feature at \"%s\".", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
         if (ch != '\0')
             fbp->location[50] = ch;
         *drop = 1;
@@ -2793,9 +2792,9 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
     PredIsGivenQual isOldLocusTag("old_locus_tag"),
         isLocusTag("locus_tag");
 
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         FeatBlkPtr fbp = static_cast<FeatBlk*>(dbp->mpData);
-        if (fbp == NULL)
+        if (! fbp)
             continue;
         size_t olt = std::count_if(fbp->quals.begin(), fbp->quals.end(), isOldLocusTag);
         size_t lt  = std::count_if(fbp->quals.begin(), fbp->quals.end(), isLocusTag);
@@ -2804,7 +2803,7 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
             continue;
 
         if (lt == 0) {
-            ErrPostEx(SEV_REJECT, ERR_FEATURE_OldLocusTagWithoutNew, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier but lacks a /locus_tag qualifier. Entry dropped.", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location);
+            ErrPostEx(SEV_REJECT, ERR_FEATURE_OldLocusTagWithoutNew, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier but lacks a /locus_tag qualifier. Entry dropped.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
             *drop = 1;
         } else {
             i = 0;
@@ -2827,7 +2826,7 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
                     if (! isOldLocusTag(gbqp2) || ! NStr::EqualNocase(gbqp1_val, gbqp2_val))
                         continue;
 
-                    ErrPostEx(SEV_REJECT, ERR_FEATURE_MatchingOldNewLocusTag, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier with a value that is identical to that of a /locus_tag qualifier: \"%s\". Entry dropped.", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location, gbqp1_val.c_str());
+                    ErrPostEx(SEV_REJECT, ERR_FEATURE_MatchingOldNewLocusTag, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier with a value that is identical to that of a /locus_tag qualifier: \"%s\". Entry dropped.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location", gbqp1_val.c_str());
                     *drop = 1;
                 }
             }
@@ -2848,7 +2847,7 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
                     continue;
 
                 if (NStr::CompareNocase(gbqp1_val.c_str(), gbqp2_val.c_str()) == 0) {
-                    ErrPostEx(SEV_ERROR, ERR_FEATURE_RedundantOldLocusTag, "Feature \"%s\" at \"%s\" has redundant /old_locus_tag qualifiers. Dropping all but the first.", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "unknown location" : fbp->location);
+                    ErrPostEx(SEV_ERROR, ERR_FEATURE_RedundantOldLocusTag, "Feature \"%s\" at \"%s\" has redundant /old_locus_tag qualifiers. Dropping all but the first.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
                     break;
                 }
             }
@@ -2866,9 +2865,9 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
     bool       got_pseudogene;
     bool       got_pseudo;
 
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         fbp = static_cast<FeatBlk*>(dbp->mpData);
-        if (fbp == NULL)
+        if (! fbp)
             continue;
 
         got_pseudo     = false;
@@ -2930,9 +2929,9 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
     Int4       com_count;
     Int4       cit_count;
 
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         fbp = static_cast<FeatBlk*>(dbp->mpData);
-        if (fbp == NULL)
+        if (! fbp)
             continue;
 
         com_count = 0;
@@ -2947,7 +2946,7 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
                 badcom = true;
                 if (! val_str.empty()) {
                     q = StringChr(val_str.data(), '.');
-                    if (q != NULL && q[1] != '\0') {
+                    if (q && q[1] != '\0') {
                         for (p = q + 1; *p >= '0' && *p <= '9';)
                             p++;
                         if (*p == '\0') {
@@ -3000,10 +2999,10 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
     char*      r;
     Uint1      i;
 
-    location = NULL;
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    location = nullptr;
+    for (; dbp; dbp = dbp->mpNext) {
         fbp = static_cast<FeatBlk*>(dbp->mpData);
-        if (fbp == NULL || fbp->location == NULL)
+        if (! fbp || ! fbp->location)
             continue;
         location = StringSave(fbp->location);
         for (p = location, q = p; *p != '\0'; p++)
@@ -3012,14 +3011,14 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
         *q = '\0';
         if (q == location) {
             MemFree(location);
-            location = NULL;
+            location = nullptr;
             continue;
         }
 
         for (p = location + 1; *p != '\0'; p++) {
             if (*p != ':')
                 continue;
-            for (r = NULL, q = p - 1;; q--) {
+            for (r = nullptr, q = p - 1;; q--) {
                 if (q == location) {
                     if (*q != '_' && (*q < '0' || *q > '9') &&
                         (*q < 'a' || *q > 'z') && (*q < 'A' || *q > 'Z'))
@@ -3027,7 +3026,7 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
                     break;
                 }
                 if (*q == '.') {
-                    if (r == NULL) {
+                    if (! r) {
                         r = q;
                         continue;
                     }
@@ -3042,12 +3041,12 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
             }
             if (q == p)
                 continue;
-            if (r != NULL)
+            if (r)
                 *r = '\0';
             else
                 *p = '\0';
             i = GetNucAccOwner(q);
-            if (r != NULL)
+            if (r)
                 *r = '.';
             else
                 *p = ':';
@@ -3063,26 +3062,26 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
         }
         if (*p != '\0')
             break;
-        if (location != NULL) {
+        if (location) {
             MemFree(location);
-            location = NULL;
+            location = nullptr;
         }
     }
-    if (dbp == NULL)
+    if (! dbp)
         return;
 
     ibp->drop = 1;
-    if (location != NULL && StringLen(location) > 45) {
+    if (location && StringLen(location) > 45) {
         location[40] = '\0';
         StringCat(location, "...");
     }
     if (ibp->is_tsa)
-        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTSA, "Feature \"%s\" at \"%s\" on a TSA record cannot point to a non-TSA record.", fbp->key, (location == NULL) ? "empty_location" : location);
+        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTSA, "Feature \"%s\" at \"%s\" on a TSA record cannot point to a non-TSA record.", fbp->key, location ? location : "empty_location");
     else if (ibp->is_tls)
-        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTLS, "Feature \"%s\" at \"%s\" on a TLS record cannot point to a non-TLS record.", fbp->key, (location == NULL) ? "empty_location" : location);
+        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTLS, "Feature \"%s\" at \"%s\" on a TLS record cannot point to a non-TLS record.", fbp->key, location ? location : "empty_location");
     else
-        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTPA, "Feature \"%s\" at \"%s\" on a TPA record cannot point to a non-TPA record.", fbp->key, (location == NULL) ? "empty_location" : location);
-    if (location != NULL)
+        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTPA, "Feature \"%s\" at \"%s\" on a TPA record cannot point to a non-TPA record.", fbp->key, location ? location : "empty_location");
+    if (location)
         MemFree(location);
 }
 
@@ -3181,30 +3180,30 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
 {
     Char ch;
 
-    if (fbp == NULL || fbp->quals.empty())
+    if (! fbp || fbp->quals.empty())
         return;
 
     for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end(); ++cur) {
-        const char* cur_qual = (*cur)->IsSetQual() ? (*cur)->GetQual().c_str() : NULL;
-        const char* cur_val  = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : NULL;
+        const char* cur_qual = (*cur)->IsSetQual() ? (*cur)->GetQual().c_str() : nullptr;
+        const char* cur_val  = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : nullptr;
 
         TQualVector::iterator next = cur;
         for (++next; next != fbp->quals.end();) {
-            const char* next_qual = (*next)->IsSetQual() ? (*next)->GetQual().c_str() : NULL;
-            const char* next_val  = (*next)->IsSetVal() ? (*next)->GetVal().c_str() : NULL;
+            const char* next_qual = (*next)->IsSetQual() ? (*next)->GetQual().c_str() : nullptr;
+            const char* next_val  = (*next)->IsSetVal() ? (*next)->GetVal().c_str() : nullptr;
 
             if (! fta_strings_same(cur_qual, next_qual) || ! fta_strings_same(cur_val, next_val)) {
                 ++next;
                 continue;
             }
 
-            if (fbp->location != NULL && StringLen(fbp->location) > 20) {
+            if (fbp->location && StringLen(fbp->location) > 20) {
                 ch                = fbp->location[20];
                 fbp->location[20] = '\0';
             } else
                 ch = '\0';
 
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_DuplicateRemoved, "Duplicated qualifier \"%s\" in feature \"%s\" at location \"%s%s\" removed.", (cur_qual == NULL) ? "???" : cur_qual, (fbp->key == NULL) ? "???" : fbp->key, (fbp->location == NULL) ? "???" : fbp->location, (ch == '\0') ? "" : "...");
+            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_DuplicateRemoved, "Duplicated qualifier \"%s\" in feature \"%s\" at location \"%s%s\" removed.", cur_qual ? cur_qual : "???", fbp->key ? fbp->key : "???", fbp->location ? fbp->location : "???", (ch == '\0') ? "" : "...");
 
             if (ch != '\0')
                 fbp->location[20] = ch;
@@ -3218,7 +3217,7 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
 static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, Int2 type)
 {
     IndexblkPtr ibp;
-    GapFeatsPtr gfp = NULL;
+    GapFeatsPtr gfp = nullptr;
     GapFeatsPtr tgfp;
     DataBlkPtr  tdbp;
     FeatBlkPtr  fbp;
@@ -3272,7 +3271,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
     // prev_gap     = 0;
     curr_gap     = 0;
     finished_gap = false;
-    for (ibp->gaps = NULL; dbp != NULL; dbp = dbp->mpNext) {
+    for (ibp->gaps = nullptr; dbp; dbp = dbp->mpNext) {
         if (ibp->drop != 0)
             break;
         if (dbp->mType != type)
@@ -3281,11 +3280,11 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
         linkage_evidence_names.clear();
         asn_linkage_evidence.clear();
 
-        for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp != NULL; tdbp = tdbp->mpNext) {
+        for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp; tdbp = tdbp->mpNext) {
             if (ibp->drop != 0)
                 break;
             fbp = static_cast<FeatBlk*>(tdbp->mpData);
-            if (fbp == NULL || fbp->key == NULL)
+            if (! fbp || ! fbp->key)
                 continue;
             if (StringCmp(fbp->key, "gap") == 0) {
                 prev_gap = curr_gap;
@@ -3298,7 +3297,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
 
             from     = 0;
             to       = 0;
-            gap_type = NULL;
+            gap_type = nullptr;
             linkage_evidence_names.clear();
             asn_gap_type = -1;
             asn_linkage_evidence.clear();
@@ -3331,7 +3330,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 }
             }
 
-            if (fbp->location != NULL) {
+            if (fbp->location) {
                 p = fbp->location;
                 if (*p == '<')
                     p++;
@@ -3361,16 +3360,16 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
 
             if (from == 0 || to == 0 || from > to) {
                 if (curr_gap == 1)
-                    ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidGapLocation, "Invalid gap feature location : \"%s\" : all gap features must have a simple X..Y location on the plus strand.", (fbp->location == NULL) ? "unknown" : fbp->location);
+                    ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidGapLocation, "Invalid gap feature location : \"%s\" : all gap features must have a simple X..Y location on the plus strand.", fbp->location ? fbp->location : "unknown");
                 else
-                    ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidAssemblyGapLocation, "Invalid assembly_gap location : \"%s\".", (fbp->location == NULL) ? "unknown" : fbp->location);
+                    ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidAssemblyGapLocation, "Invalid assembly_gap location : \"%s\".", fbp->location ? fbp->location : "unknown");
                 ibp->drop = 1;
                 break;
             }
 
             if (curr_gap == 2) /* "assembly_gap" feature */
             {
-                if (gap_type != NULL && is_htg > -1 &&
+                if (gap_type && is_htg > -1 &&
                     StringCmp(gap_type, "within scaffold") != 0 &&
                     StringCmp(gap_type, "repeat within scaffold") != 0)
                     ErrPostEx(SEV_ERROR, ERR_QUALIFIER_UnexpectedGapTypeForHTG, "assembly_gap has /gap_type of \"%s\", but clone-based HTG records are only expected to have \"within scaffold\" or \"repeat within scaffold\" gaps. assembly_gap feature located at \"%d..%d\".", gap_type, from, to);
@@ -3395,16 +3394,16 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                     finished_gap = true;
                 }
 
-                if (gap_type == NULL) {
+                if (! gap_type) {
                     ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MissingGapType, "assembly_gap feature at \"%d..%d\" lacks the required /gap_type qualifier.", from, to);
                     ibp->drop = 1;
                     break;
                 }
 
-                for (snp = GapTypeValues; snp->str != NULL; snp++)
+                for (snp = GapTypeValues; snp->str; snp++)
                     if (StringCmp(snp->str, gap_type) == 0)
                         break;
-                if (snp->str == NULL) {
+                if (! snp->str) {
                     ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidGapType, "assembly_gap feature at \"%d..%d\" has an invalid gap type : \"%s\".", from, to, gap_type);
                     ibp->drop = 1;
                     break;
@@ -3433,10 +3432,10 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                     }
 
                     for (const string& evidence : linkage_evidence_names) {
-                        for (snp = LinkageEvidenceValues; snp->str != NULL; snp++)
+                        for (snp = LinkageEvidenceValues; snp->str; snp++)
                             if (evidence == snp->str)
                                 break;
-                        if (snp->str == NULL) {
+                        if (! snp->str) {
                             ErrPostEx(SEV_REJECT,
                                       ERR_QUALIFIER_InvalidLinkageEvidence,
                                       "assembly_gap feature at \"%d..%d\" has an invalid linkage evidence : \"%s\".",
@@ -3489,7 +3488,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 ErrPostEx(sev, ERR_FEATURE_GapSizeEstLengthMissMatch, "Gap feature at \"%d..%d\" has a size that does not match the /estimated_length : %d.", from, to, estimated_length);
             }
 
-            for (gfp = ibp->gaps; gfp != NULL; gfp = gfp->next) {
+            for (gfp = ibp->gaps; gfp; gfp = gfp->next) {
                 if ((gfp->from >= from && gfp->from <= to) ||
                     (gfp->to >= from && gfp->to <= to) ||
                     (gfp->from <= from && gfp->to >= to)) {
@@ -3523,9 +3522,9 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 gfp->asn_linkage_evidence.swap(asn_linkage_evidence);
                 asn_linkage_evidence.clear();
             }
-            gfp->next = NULL;
+            gfp->next = nullptr;
 
-            if (ibp->gaps == NULL) {
+            if (! ibp->gaps) {
                 ibp->gaps = gfp;
                 continue;
             }
@@ -3536,13 +3535,13 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 continue;
             }
 
-            if (ibp->gaps->next == NULL) {
+            if (! ibp->gaps->next) {
                 ibp->gaps->next = gfp;
                 continue;
             }
 
-            for (tgfp = ibp->gaps; tgfp != NULL; tgfp = tgfp->next) {
-                if (tgfp->next != NULL && tgfp->next->from < from)
+            for (tgfp = ibp->gaps; tgfp; tgfp = tgfp->next) {
+                if (tgfp->next && tgfp->next->from < from)
                     continue;
                 gfp->next  = tgfp->next;
                 tgfp->next = gfp;
@@ -3555,12 +3554,12 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
         }
     }
 
-    if (ibp->gaps == NULL)
+    if (! ibp->gaps)
         return;
 
     if (ibp->drop != 0) {
         GapFeatsFree(ibp->gaps);
-        ibp->gaps = NULL;
+        ibp->gaps = nullptr;
     }
 }
 
@@ -3569,15 +3568,15 @@ static void XMLGetQuals(char* entry, XmlIndexPtr xip, TQualVector& quals)
 {
     XmlIndexPtr xipqual;
 
-    if (entry == NULL || xip == NULL)
+    if (! entry || ! xip)
         return;
 
-    for (; xip != NULL; xip = xip->next) {
-        if (xip->subtags == NULL)
+    for (; xip; xip = xip->next) {
+        if (! xip->subtags)
             continue;
 
         CRef<CGb_qual> qual(new CGb_qual);
-        for (xipqual = xip->subtags; xipqual != NULL; xipqual = xipqual->next) {
+        for (xipqual = xip->subtags; xipqual; xipqual = xipqual->next) {
             if (xipqual->tag == INSDQUALIFIER_NAME)
                 qual->SetQual(XMLGetTagValue(entry, xipqual));
             else if (xipqual->tag == INSDQUALIFIER_VALUE)
@@ -3602,23 +3601,23 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
     DataBlkPtr  ret;
     FeatBlkPtr  fbp;
 
-    if (entry == NULL || xip == NULL)
-        return (NULL);
+    if (! entry || ! xip)
+        return nullptr;
 
-    for (; xip != NULL; xip = xip->next)
+    for (; xip; xip = xip->next)
         if (xip->tag == INSDSEQ_FEATURE_TABLE)
             break;
 
-    if (xip == NULL || xip->subtags == NULL)
-        return (NULL);
+    if (! xip || ! xip->subtags)
+        return nullptr;
 
-    headdbp = NULL;
-    for (xip = xip->subtags; xip != NULL; xip = xip->next) {
-        if (xip->subtags == NULL)
+    headdbp = nullptr;
+    for (xip = xip->subtags; xip; xip = xip->next) {
+        if (! xip->subtags)
             continue;
         fbp          = new FeatBlk;
         fbp->spindex = -1;
-        for (xipfeat = xip->subtags; xipfeat != NULL; xipfeat = xipfeat->next) {
+        for (xipfeat = xip->subtags; xipfeat; xipfeat = xipfeat->next) {
             if (xipfeat->tag == INSDFEATURE_KEY)
                 fbp->key = XMLGetTagValue(entry, xipfeat);
             else if (xipfeat->tag == INSDFEATURE_LOCATION)
@@ -3626,7 +3625,7 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
             else if (xipfeat->tag == INSDFEATURE_QUALS)
                 XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
         }
-        if (headdbp == NULL) {
+        if (! headdbp) {
             headdbp = new DataBlk;
             dbp     = headdbp;
         } else {
@@ -3638,7 +3637,7 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
     ret         = new DataBlk;
     ret->mType  = XML_FEATURES;
     ret->mpData = headdbp;
-    ret->mpNext = NULL;
+    ret->mpNext = nullptr;
     return (ret);
 }
 
@@ -3751,7 +3750,7 @@ static bool CheckLegalQual(const Char* val, Char ch, string* qual)
     if (type == CSeqFeatData::eQual_bad)
         return false;
 
-    if (qual != nullptr)
+    if (qual)
         *qual = qual_name;
 
     return true;
@@ -3762,7 +3761,7 @@ static void fta_convert_to_lower_case(char* str)
 {
     char* p;
 
-    if (str == NULL || *str == '\0')
+    if (! str || *str == '\0')
         return;
 
     for (p = str; *p != '\0'; p++)
@@ -3852,20 +3851,20 @@ static void fta_check_satellite(char* str, unsigned char* drop)
     char* p;
     Int2  i;
 
-    if (str == NULL || *str == '\0')
+    if (! str || *str == '\0')
         return;
 
     p = StringChr(str, ':');
-    if (p != NULL)
+    if (p)
         *p = '\0';
 
     i = MatchArrayString(SatelliteValues, str);
-    if (p != NULL)
+    if (p)
         *p = ':';
     if (i < 0) {
         ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidSatelliteType, "/satellite qualifier \"%s\" does not begin with a valid satellite type.", str);
         *drop = 1;
-    } else if (p != NULL && p[1] == '\0') {
+    } else if (p && p[1] == '\0') {
         ErrPostEx(SEV_REJECT, ERR_FEATURE_NoSatelliteClassOrIdentifier, "/satellite qualifier \"%s\" does not include a class or identifier after the satellite type.", str);
         *drop = 1;
     }
@@ -3916,7 +3915,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
 
     if (ibp->is_mga)
         sprintf(loc, "1..%ld", (long)ibp->bases);
-    for (num = 0; dbp != NULL; dbp = dbp->mpNext, num++) {
+    for (num = 0; dbp; dbp = dbp->mpNext, num++) {
         fbp          = new FeatBlk;
         fbp->spindex = -1;
         fbp->num     = num;
@@ -4007,7 +4006,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                     const string& cur_qual = cur->GetQual();
                     if (cur_qual == "gap_type" ||
                         cur_qual == "assembly_evidence") {
-                        ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key, (fbp->location == NULL) ? "Unknown" : fbp->location);
+                        ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key, fbp->location ? fbp->location : "Unknown");
                         ibp->drop = 1;
                     }
                 }
@@ -4017,7 +4016,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                 for (const auto& cur : fbp->quals) {
                     const string& cur_qual = cur->GetQual();
                     if (cur_qual == "submitter_seqid") {
-                        ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key, (fbp->location == NULL) ? "Unknown" : fbp->location);
+                        ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key, fbp->location ? fbp->location : "Unknown");
                         ibp->drop = 1;
                     }
                 }
@@ -4101,7 +4100,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
     char*        p;
     Char         ch;
 
-    if (fbp == NULL || fbp->quals.empty())
+    if (! fbp || fbp->quals.empty())
         return;
 
     for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
@@ -4121,7 +4120,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
             } else if (qual_str == "note") {
                 for (p = &val_buf[0];;) {
                     p = StringChr(p, '/');
-                    if (p == NULL)
+                    if (! p)
                         break;
                     p++;
                     if (! CheckLegalQual(p, ' ', nullptr))
@@ -4150,22 +4149,22 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
                 (*cur)->SetVal(&val_buf[0]);
         }
 
-        for (b = EmptyQuals; *b != NULL; b++)
+        for (b = EmptyQuals; *b; b++)
             if (qual_str == *b)
                 break;
 
-        if (*b == NULL) {
+        if (! *b) {
             if (! (*cur)->IsSetVal()) {
                 if (qual_str == "old_locus_tag")
-                    ErrPostEx(SEV_ERROR, ERR_FEATURE_EmptyOldLocusTag, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier with no value. Qualifier has been dropped.", (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "Empty" : fbp->location);
+                    ErrPostEx(SEV_ERROR, ERR_FEATURE_EmptyOldLocusTag, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier with no value. Qualifier has been dropped.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "Empty");
                 else
-                    ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmptyQual, "Qualifier /%s ignored because it lacks a data value. Feature \"%s\", location \"%s\".", qual_str.c_str(), (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "Empty" : fbp->location);
+                    ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmptyQual, "Qualifier /%s ignored because it lacks a data value. Feature \"%s\", location \"%s\".", qual_str.c_str(), fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "Empty");
 
                 cur = fbp->quals.erase(cur);
                 continue;
             }
         } else if ((*cur)->IsSetVal()) {
-            ErrPostEx(SEV_WARNING, ERR_QUALIFIER_ShouldNotHaveValue, "Qualifier /%s should not have data value. Qualifier value has been ignored. Feature \"%s\", location \"%s\".", qual_str.c_str(), (fbp->key == NULL) ? "Unknown" : fbp->key, (fbp->location == NULL) ? "Empty" : fbp->location);
+            ErrPostEx(SEV_WARNING, ERR_QUALIFIER_ShouldNotHaveValue, "Qualifier /%s should not have data value. Qualifier value has been ignored. Feature \"%s\", location \"%s\".", qual_str.c_str(), fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "Empty");
 
             (*cur)->ResetVal();
         }
@@ -4190,8 +4189,8 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
     int        retval = GB_FEAT_ERR_NONE;
     int        ret    = 0;
 
-    for (num = 0; dbp != NULL; dbp = dbp->mpNext, num++) {
-        if (dbp->mpData == NULL)
+    for (num = 0; dbp; dbp = dbp->mpNext, num++) {
+        if (! dbp->mpData)
             continue;
         fbp      = static_cast<FeatBlk*>(dbp->mpData);
         fbp->num = num;
@@ -4383,9 +4382,9 @@ static void fta_check_artificial_location(CSeq_feat& feat, char* key)
             auto loc_str = location_to_string_or_unknown(feat.GetLocation());
 
             if (val.empty())
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc, "Encountered empty /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.", (key == NULL || *key == '\0') ? "unknown" : key, loc_str.empty() ? "unknown" : loc_str.c_str());
+                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc, "Encountered empty /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.", (! key || *key == '\0') ? "unknown" : key, loc_str.empty() ? "unknown" : loc_str.c_str());
             else
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc, "Value \"%s\" is not legal for the /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.", val.c_str(), (key == NULL || *key == '\0') ? "unknown" : key, loc_str.empty() ? "unknown" : loc_str.c_str());
+                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc, "Value \"%s\" is not legal for the /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.", val.c_str(), (! key || *key == '\0') ? "unknown" : key, loc_str.empty() ? "unknown" : loc_str.c_str());
         }
 
         feat.SetQual().erase(qual);
@@ -4430,22 +4429,22 @@ static bool SortFeaturesByLoc(const DataBlkPtr& sp1, const DataBlkPtr& sp2)
     fbp1 = static_cast<FeatBlk*>(sp1->mpData);
     fbp2 = static_cast<FeatBlk*>(sp2->mpData);
 
-    if (fbp1->location == NULL && fbp2->location != NULL)
+    if (! fbp1->location && fbp2->location)
         return false;
-    if (fbp1->location != NULL && fbp2->location == NULL)
+    if (fbp1->location && ! fbp2->location)
         return false;
 
-    if (fbp1->location != NULL && fbp2->location != NULL) {
+    if (fbp1->location && fbp2->location) {
         status = StringCmp(fbp1->location, fbp2->location);
         if (status != 0)
             return status < 0;
     }
 
-    if (fbp1->key == NULL && fbp2->key != NULL)
+    if (! fbp1->key && fbp2->key)
         return false;
-    if (fbp1->key != NULL && fbp2->key == NULL)
+    if (fbp1->key && ! fbp2->key)
         return false;
-    if (fbp1->key != NULL && fbp2->key != NULL) {
+    if (fbp1->key && fbp2->key) {
         status = StringCmp(fbp1->key, fbp2->key);
         if (status != 0)
             return status < 0;
@@ -4470,12 +4469,12 @@ static bool SortFeaturesByOrder(const DataBlkPtr& sp1, const DataBlkPtr& sp2)
 static DataBlkPtr fta_sort_features(DataBlkPtr dbp, bool order)
 {
     size_t total = 0;
-    for (DataBlkPtr tdbp = dbp; tdbp != NULL; tdbp = tdbp->mpNext)
+    for (DataBlkPtr tdbp = dbp; tdbp; tdbp = tdbp->mpNext)
         total++;
 
     vector<DataBlk*> temp;
     temp.reserve(total);
-    for (DataBlkPtr tdbp = dbp; tdbp != NULL; tdbp = tdbp->mpNext)
+    for (DataBlkPtr tdbp = dbp; tdbp; tdbp = tdbp->mpNext)
         temp.push_back(tdbp);
 
     std::sort(temp.begin(), temp.end(), (order ? SortFeaturesByOrder : SortFeaturesByLoc));
@@ -4491,10 +4490,10 @@ static DataBlkPtr fta_sort_features(DataBlkPtr dbp, bool order)
 /**********************************************************/
 static void fta_convert_to_regulatory(FeatBlkPtr fbp, const char* rclass)
 {
-    if (fbp == NULL || fbp->key == NULL || rclass == NULL)
+    if (! fbp || ! fbp->key || ! rclass)
         return;
 
-    if (fbp->key != NULL)
+    if (fbp->key)
         MemFree(fbp->key);
     fbp->key = StringSave("regulatory");
 
@@ -4515,9 +4514,9 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
     Int4         count;
     Char         ch;
 
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         fbp = static_cast<FeatBlk*>(dbp->mpData);
-        if (fbp == NULL || fbp->key == NULL)
+        if (! fbp || ! fbp->key)
             continue;
 
         if (StringCmp(fbp->key, "attenuator") == 0)
@@ -4564,7 +4563,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
             count++;
             if (! cur->IsSetVal() || cur->GetVal().empty()) {
                 ch = '\0';
-                if (fbp->location == NULL || *fbp->location == '\0')
+                if (! fbp->location || *fbp->location == '\0')
                     p = (char*)"(empty)";
                 else {
                     p = fbp->location;
@@ -4582,18 +4581,18 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
 
             const string& val_str = cur->GetVal();
 
-            for (b = RegulatoryClassValues; *b != NULL; b++)
+            for (b = RegulatoryClassValues; *b; b++)
                 if (val_str == *b)
                     break;
 
-            if (*b != NULL) {
+            if (*b) {
                 if (val_str == "other")
                     other_class = true;
                 continue;
             }
 
             ch = '\0';
-            if (fbp->location == NULL || *fbp->location == '\0')
+            if (! fbp->location || *fbp->location == '\0')
                 p = (char*)"(empty)";
             else {
                 p = fbp->location;
@@ -4610,7 +4609,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
 
         if (count == 0) {
             ch = '\0';
-            if (fbp->location == NULL || *fbp->location == '\0')
+            if (! fbp->location || *fbp->location == '\0')
                 p = (char*)"(empty)";
             else {
                 p = fbp->location;
@@ -4625,7 +4624,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
             *drop = 1;
         } else if (count > 1) {
             ch = '\0';
-            if (fbp->location == NULL || *fbp->location == '\0')
+            if (! fbp->location || *fbp->location == '\0')
                 p = (char*)"(empty)";
             else {
                 p = fbp->location;
@@ -4642,7 +4641,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
 
         if (other_class && ! got_note) {
             ch = '\0';
-            if (fbp->location == NULL || *fbp->location == '\0')
+            if (! fbp->location || *fbp->location == '\0')
                 p = (char*)"(empty)";
             else {
                 p = fbp->location;
@@ -4697,7 +4696,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
     if (! ibp || ibp->submitter_seqid.empty())
         return;
 
-    prefix = NULL;
+    prefix = nullptr;
 
     seqtype = fta_if_wgs_acc(ibp->acnum);
     if (seqtype == 0 || seqtype == 3 || seqtype == 4 || seqtype == 6 ||
@@ -4719,11 +4718,11 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
         return;
     }
 
-    for (tbp = ibp->secaccs; tbp != NULL; tbp = tbp->next) {
+    for (tbp = ibp->secaccs; tbp; tbp = tbp->next) {
         if (tbp->str[0] == '-')
             continue;
 
-        if (prefix == NULL)
+        if (! prefix)
             prefix = StringSave(tbp->str);
         else {
             i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
@@ -4732,7 +4731,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
         }
     }
 
-    if (tbp == NULL && prefix != NULL) {
+    if (! tbp && prefix) {
         seqtype = fta_if_wgs_acc(prefix);
         if (seqtype == 0 || seqtype == 1 || seqtype == 4 || seqtype == 5 ||
             seqtype == 7 || seqtype == 8 || seqtype == 9 || seqtype == 10 ||
@@ -4747,9 +4746,9 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
         }
     }
 
-    if (prefix != NULL) {
+    if (prefix) {
         MemFree(prefix);
-        prefix = NULL;
+        prefix = nullptr;
     }
 
     if (bioseq.GetInst().IsSetExt() && bioseq.GetInst().GetExt().IsDelta()) {
@@ -4778,12 +4777,12 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
                     break;
 
                 const CTextseq_id* text_id = id->GetTextseq_Id();
-                if (text_id == nullptr || ! text_id->IsSetAccession() ||
+                if (! text_id || ! text_id->IsSetAccession() ||
                     text_id->GetAccession().empty())
                     break;
 
                 p = (char*)text_id->GetAccession().c_str();
-                if (prefix == NULL)
+                if (! prefix)
                     prefix = StringSave(p);
                 else {
                     i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
@@ -4795,7 +4794,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
                 break;
         }
 
-        if (delta == deltas.end() && prefix != NULL) {
+        if (delta == deltas.end() && prefix) {
             seqtype = fta_if_wgs_acc(prefix);
             if (seqtype == 0 || seqtype == 1 || seqtype == 4 || seqtype == 5 ||
                 seqtype == 7 || seqtype == 8 || seqtype == 9 || seqtype == 10 ||
@@ -4810,9 +4809,9 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
             }
         }
 
-        if (prefix != NULL) {
+        if (prefix) {
             MemFree(prefix);
-            prefix = NULL;
+            prefix = nullptr;
         }
 
         ErrPostEx(SEV_ERROR, ERR_SOURCE_SubmitterSeqidDropped, "Could not determine project code for what appears to be a WGS/TLS/TSA scaffold record. /submitter_seqid dropped.");
@@ -4893,7 +4892,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         dab = XMLLoadFeatBlk(entry.mOffset, ibp->xip);
     else
         dab = TrackNodeType(entry, type);
-    for (dbp = dab; dbp != NULL; dbp = dbp->mpNext) {
+    for (dbp = dab; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != type)
             continue;
 
@@ -4910,10 +4909,10 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         fta_check_old_locus_tags(static_cast<DataBlk*>(dbp->mpData), &ibp->drop);
         fta_check_compare_qual(static_cast<DataBlk*>(dbp->mpData), ibp->is_tpa);
         tdbp = static_cast<DataBlk*>(dbp->mpData);
-        for (i = 0; tdbp != NULL; i++, tdbp = tdbp->mpNext)
+        for (i = 0; tdbp; i++, tdbp = tdbp->mpNext)
             fta_remove_dup_quals(static_cast<FeatBlk*>(tdbp->mpData));
         fta_remove_dup_feats(static_cast<DataBlk*>(dbp->mpData));
-        for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp != NULL; tdbp = tdbp->mpNext)
+        for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp; tdbp = tdbp->mpNext)
             fta_check_rpt_unit_range(static_cast<FeatBlk*>(tdbp->mpData), ibp->bases);
         fta_check_multiple_locus_tag(static_cast<DataBlk*>(dbp->mpData), &ibp->drop);
         if (ibp->is_tpa || ibp->is_tsa || ibp->is_tls)
@@ -4936,13 +4935,13 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     if (seq_feats.empty()) {
         ibp->drop = 1;
-        for (; dab != NULL; dab = dabnext) {
+        for (; dab; dab = dabnext) {
             dabnext = dab->mpNext;
             FreeFeatBlk(static_cast<DataBlk*>(dab->mpData), pp->format);
             if (pp->format == Parser::EFormat::XML)
                 dab->SimpleDelete();
         }
-        xinstall_gbparse_range_func(NULL, NULL);
+        xinstall_gbparse_range_func(nullptr, nullptr);
         return;
     }
 
@@ -4967,7 +4966,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
 
-    for (; dab != NULL; dab = dabnext) {
+    for (; dab; dab = dabnext) {
         dabnext = dab->mpNext;
         if (dab->mType != type) {
             if (pp->format == Parser::EFormat::XML)
@@ -4975,7 +4974,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             continue;
         }
 
-        for (dbp = static_cast<DataBlk*>(dab->mpData); dbp != NULL; dbp = dbp->mpNext) {
+        for (dbp = static_cast<DataBlk*>(dab->mpData); dbp; dbp = dbp->mpNext) {
             if (dbp->mDrop == true)
                 continue;
 
@@ -5058,7 +5057,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (! fta_perform_operon_checks(seq_feats, ibp)) {
         ibp->drop = 1;
         seq_feats.clear();
-        xinstall_gbparse_range_func(NULL, NULL);
+        xinstall_gbparse_range_func(nullptr, nullptr);
         return;
     }
 
@@ -5070,7 +5069,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         const CImp_feat& imp_feat = feat->GetData().GetImp();
 
         if (imp_feat.IsSetKey() &&
-            StringStr(imp_feat.GetKey().c_str(), "RNA") != NULL) {
+            StringStr(imp_feat.GetKey().c_str(), "RNA")) {
             if (imp_feat.GetKey() == "ncRNA" && ! fta_check_ncrna(*feat)) {
                 stop = true;
                 break;
@@ -5083,13 +5082,13 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (stop) {
         ibp->drop = 1;
         seq_feats.clear();
-        xinstall_gbparse_range_func(NULL, NULL);
+        xinstall_gbparse_range_func(nullptr, nullptr);
         return;
     }
 
     SeqFeatPub(pp, entry, seq_feats, ids, col_data, ibp);
     if (seq_feats.empty() && ibp->drop != 0) {
-        xinstall_gbparse_range_func(NULL, NULL);
+        xinstall_gbparse_range_func(nullptr, nullptr);
         return;
     }
 
@@ -5097,7 +5096,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     ImpFeatPub(pp, entry, seq_feats, *seq_id, col_data, ibp);
 
-    xinstall_gbparse_range_func(NULL, NULL);
+    xinstall_gbparse_range_func(nullptr, nullptr);
     if (seq_feats.empty())
         return;
 
@@ -5110,21 +5109,21 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 /**********************************************************/
 static CMolInfo::EBiomol GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA, char* snRNA, char* scRNA, char* uRNA, char* snoRNA)
 {
-    char* p = NULL;
+    char* p = nullptr;
 
-    if (mRNA != NULL)
+    if (mRNA)
         p = mRNA;
-    if (p == NULL || (tRNA != NULL && tRNA < p))
+    if (! p || (tRNA && tRNA < p))
         p = tRNA;
-    if (p == NULL || (rRNA != NULL && rRNA < p))
+    if (! p || (rRNA && rRNA < p))
         p = rRNA;
-    if (p == NULL || (snRNA != NULL && snRNA < p))
+    if (! p || (snRNA && snRNA < p))
         p = snRNA;
-    if (p == NULL || (scRNA != NULL && scRNA < p))
+    if (! p || (scRNA && scRNA < p))
         p = scRNA;
-    if (p == NULL || (uRNA != NULL && uRNA < p))
+    if (! p || (uRNA && uRNA < p))
         p = uRNA;
-    if (p == NULL || (snoRNA != NULL && snoRNA < p))
+    if (! p || (snoRNA && snoRNA < p))
         p = snoRNA;
 
     if (p == mRNA)
@@ -5156,13 +5155,13 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
     char* q;
     char* r;
-    char* mRNA   = NULL;
-    char* tRNA   = NULL;
-    char* rRNA   = NULL;
-    char* snRNA  = NULL;
-    char* scRNA  = NULL;
-    char* uRNA   = NULL;
-    char* snoRNA = NULL;
+    char* mRNA   = nullptr;
+    char* tRNA   = nullptr;
+    char* rRNA   = nullptr;
+    char* snRNA  = nullptr;
+    char* scRNA  = nullptr;
+    char* uRNA   = nullptr;
+    char* snoRNA = nullptr;
     bool  stage;
     bool  techok;
     bool  same;
@@ -5180,13 +5179,13 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     }
 
     if (StringCmp(ibp->division, "SYN") == 0 ||
-        (org_ref != NULL && org_ref->IsSetOrgname() && org_ref->GetOrgname().IsSetDiv() &&
+        (org_ref && org_ref->IsSetOrgname() && org_ref->GetOrgname().IsSetDiv() &&
          org_ref->GetOrgname().GetDiv() == "SYN"))
         is_syn = true;
     else
         is_syn = false;
 
-    r = NULL;
+    r = nullptr;
     c = '\0';
     if (! ibp->moltype.empty()) {
         if (pp->source == Parser::ESource::DDBJ && StringEquNI(molstr, "PRT", 3))
@@ -5195,7 +5194,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         biomol = Seq_descr_GIBB_mol_genomic;
         bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
-        if (molstr != NULL) {
+        if (molstr) {
             q = molstr;
             r = molstr;
             if (pp->format == Parser::EFormat::EMBL || pp->format == Parser::EFormat::XML)
@@ -5382,7 +5381,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         } else {
             ErrPostEx(SEV_REJECT, ERR_SOURCE_InvalidMolType, "Invalid /mol_type value \"%s\" provided in source features. Entry dropped.", ibp->moltype.c_str());
             ibp->drop = 1;
-            if (molstr != NULL)
+            if (molstr)
                 *r = c;
             return;
         }
@@ -5391,7 +5390,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             if (ibp->embl_new_ID) {
                 ErrPostEx(SEV_REJECT, ERR_SOURCE_MolTypesDisagree, "Molecule type \"%s\" from the ID line disagrees with \"%s\" from the /mol_type qualifier.", q, ibp->moltype.c_str());
                 ibp->drop = 1;
-                if (molstr != NULL)
+                if (molstr)
                     *r = c;
                 return;
             }
@@ -5433,7 +5432,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             ErrPostEx(SEV_ERROR, ERR_SOURCE_MolTypeSeqTypeConflict, "Molecule type \"%s\" from the /mol_type qualifier disagrees with this record's sequence type: \"%s\".", ibp->moltype.c_str(), p);
         }
 
-        if (molstr != NULL)
+        if (molstr)
             *r = c;
         return;
     }
@@ -5453,7 +5452,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
     }
 
-    if (molstr == NULL)
+    if (! molstr)
         genomic = -1;
     else {
         genomic = CheckNA(molstr);
@@ -5469,7 +5468,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         ibp->drop = 1;
         q         = molstr;
         c         = '\0';
-        if (q != NULL) {
+        if (q) {
             if (pp->format == Parser::EFormat::EMBL)
                 while (*q != ';' && *q != '\n' && *q != '\0')
                     q++;
@@ -5493,8 +5492,8 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         else
             p = "NCBI";
 
-        ErrPostEx(SEV_FATAL, ERR_FORMAT_InvalidMolType, "Molecule type \"%s\" from LOCUS/ID line is not legal value for records from source \"%s\". Sequence rejected.", (molstr == NULL) ? "???" : molstr, p);
-        if (q != NULL)
+        ErrPostEx(SEV_FATAL, ERR_FORMAT_InvalidMolType, "Molecule type \"%s\" from LOCUS/ID line is not legal value for records from source \"%s\". Sequence rejected.", molstr ? molstr : "???", p);
+        if (q)
             *q = c;
         return;
     }
@@ -5563,8 +5562,8 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
     /* Here goes most complicated case with just RNA
      */
-    const Char* div = NULL;
-    if (org_ref != NULL && org_ref->IsSetOrgname() && org_ref->GetOrgname().IsSetDiv())
+    const Char* div = nullptr;
+    if (org_ref && org_ref->IsSetOrgname() && org_ref->GetOrgname().IsSetDiv())
         div = org_ref->GetOrgname().GetDiv().c_str();
 
     if (pp->source != Parser::ESource::EMBL || pp->format != Parser::EFormat::EMBL) {
@@ -5578,7 +5577,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     count      = 0;
     size_t len = 0;
     offset     = xSrchNodeType(entry, ParFlat_DE, &len);
-    if (offset != NULL) {
+    if (offset) {
         c           = offset[len];
         offset[len] = '\0';
         mRNA        = StringStr(offset, "mRNA");
@@ -5588,17 +5587,17 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         scRNA       = StringStr(offset, "scRNA");
         uRNA        = StringStr(offset, "uRNA");
         snoRNA      = StringStr(offset, "snoRNA");
-        if (mRNA != NULL)
+        if (mRNA)
             count++;
-        if (tRNA != NULL)
+        if (tRNA)
             count++;
-        if (rRNA != NULL)
+        if (rRNA)
             count++;
-        if (snRNA != NULL || uRNA != NULL)
+        if (snRNA || uRNA)
             count++;
-        if (scRNA != NULL)
+        if (scRNA)
             count++;
-        if (snoRNA != NULL)
+        if (snoRNA)
             count++;
         offset[len] = c;
     }
@@ -5612,7 +5611,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             ErrPostEx(SEV_WARNING, ERR_DEFINITION_DifferingRnaTokens, "More than one of mRNA, tRNA, rRNA, snRNA (uRNA), scRNA, snoRNA present in defline.");
         }
 
-        if (tRNA != NULL) {
+        if (tRNA) {
             for (p = tRNA + 4; *p == ' ' || *p == '\t';)
                 p++;
             if (*p == '\n') {
@@ -5631,18 +5630,18 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
     /* Viral division
      */
-    if (org_ref != NULL && org_ref->IsSetOrgname() && org_ref->GetOrgname().IsSetLineage() &&
-        StringIStr(org_ref->GetOrgname().GetLineage().c_str(), "no DNA stage") != NULL)
+    if (org_ref && org_ref->IsSetOrgname() && org_ref->GetOrgname().IsSetLineage() &&
+        StringIStr(org_ref->GetOrgname().GetLineage().c_str(), "no DNA stage"))
         stage = true;
     else
         stage = false;
 
     dbp = TrackNodeType(entry, ParFlat_FH);
-    if (dbp == NULL)
+    if (! dbp)
         return;
     dbp = static_cast<DataBlk*>(dbp->mpData);
-    for (i = 0; dbp != NULL && i < 2; dbp = dbp->mpNext) {
-        if (dbp->mOffset == NULL)
+    for (i = 0; dbp && i < 2; dbp = dbp->mpNext) {
+        if (! dbp->mOffset)
             continue;
         offset = dbp->mOffset + ParFlat_COL_FEATKEY;
         if (StringEquN(offset, "CDS", 3))
