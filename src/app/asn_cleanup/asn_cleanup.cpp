@@ -574,7 +574,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         cerr << "Warning: -serial argument should not be used; Input file format is now autodetected." << endl;
     }
 
-    edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(m_do_extended, m_state.m_changes));
+    edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(m_do_extended));
     huge_process.OpenFile(filename);
 
     TTypeInfo asn_type = huge_process.GetFile().m_content;
@@ -619,6 +619,8 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         unique_ptr<CObjectIStream> is = huge_process.GetFile().MakeObjStream(0);
         x_ProcessOneFile(is, mode, asn_type, args["firstonly"]);
     }
+
+    m_state.m_changes += dynamic_cast<CCleanupHugeAsnReader&>(huge_process.GetReader()).GetChanges();
 
     if (opened_output) {
         // close output file if we opened one
