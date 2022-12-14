@@ -7566,25 +7566,9 @@ void CNewCleanup_imp::x_AddNcbiCleanupObject( CSeq_entry &seq_entry )
         }
     }
 
-    // update existing
-    if (seq_entry.IsSetDescr()) {
-        auto& dset = seq_entry.SetDescr().Set();
-        for (auto it : dset) {
-            if (it->IsUser() && it->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup) {
-                it->SetUser().UpdateNcbiCleanup(NCBI_CLEANUP_VERSION);
-                ChangeMade(CCleanupChange::eAddNcbiCleanupObject);
-                return;
-            }
-        }
-    }
-    // create new
-    CRef<CSeqdesc> ncbi_cleanup_object( new CSeqdesc );
-    CSeqdesc_Base::TUser& user = ncbi_cleanup_object->SetUser();
-    user.UpdateNcbiCleanup(NCBI_CLEANUP_VERSION);
-    seq_entry.SetDescr().Set().push_back( ncbi_cleanup_object );
-
-    ChangeMade(CCleanupChange::eAddNcbiCleanupObject);
+    CCleanup::AddNcbiCleanupObject(NCBI_CLEANUP_VERSION, seq_entry.SetDescr());
 }
+
 
 static
 string
