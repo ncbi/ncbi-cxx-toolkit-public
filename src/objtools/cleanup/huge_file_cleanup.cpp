@@ -41,8 +41,14 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(edit);
 
 
-CCleanupHugeAsnReader::CCleanupHugeAsnReader(bool doExtendedCleanup, CCleanupChangeCore& changes) 
-: m_ExtendedCleanup(doExtendedCleanup), m_Changes(changes) {}
+CCleanupHugeAsnReader::CCleanupHugeAsnReader(bool doExtendedCleanup) 
+: m_ExtendedCleanup(doExtendedCleanup) {}
+
+
+const CCleanupChangeCore& CCleanupHugeAsnReader::GetChanges() const
+{
+    return m_Changes;
+}
 
 
 void CCleanupHugeAsnReader::FlattenGenbankSet() 
