@@ -74,10 +74,6 @@ private:
     void xMergeCDSFeatures_impl(objects::CSeq_entry&, TAsyncToken&);
 
     CRef<objects::CSeq_entry> xTranslateProtein(
-       const objects::CBioseq& bioseq,
-       objects::CSeq_feat& cd_feature,
-       list<CRef<CSeq_feat>>& seq_ftable);
-    CRef<objects::CSeq_entry> xTranslateProtein(
         const objects::CBioseq& bioseq,
         objects::CSeq_feat& cd_feature,
         list<CRef<CSeq_feat>>& seq_ftable,
@@ -85,13 +81,10 @@ private:
 
     bool xAddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
 
-    void xMoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
     void xMoveCdRegions(objects::CSeq_entry_Handle entry_h, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable, TAsyncToken&);
 
-    CRef<objects::CSeq_feat> xGetParentGene(const objects::CSeq_feat& cds);
     CRef<objects::CSeq_feat> xGetParentGene(const objects::CSeq_feat& cds, TAsyncToken&);
 
-    CRef<objects::CSeq_feat> xGetParentMrna(const objects::CSeq_feat& cds);
     CRef<objects::CSeq_feat> xGetParentMrna(const objects::CSeq_feat& cds, TAsyncToken&);
 
     CRef<objects::CSeq_feat> xFindGeneByLocusTag(const objects::CSeq_feat& cds) const;
@@ -99,12 +92,10 @@ private:
     CRef<objects::CSeq_feat> xGetFeatFromMap(const string& key, const TFeatMap& featMap) const;
     CRef<objects::CSeq_feat> xFindFeature(const objects::CFeat_id& id);
 
-    void xAddFeatures();
     void xAddFeatures(TAsyncToken&);
 
     void xClearTrees();
 
-    CRef<objects::feature::CFeatTree> xGetFeatTree();
     CRef<objects::feature::CFeatTree> xGetFeatTree(TAsyncToken&);
 
     CRef<objects::feature::CFeatTree> m_Feat_Tree;
