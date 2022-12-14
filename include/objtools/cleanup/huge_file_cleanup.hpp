@@ -34,12 +34,12 @@
 #include <corelib/ncbiobj.hpp>
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objtools/edit/huge_file_process.hpp>
+#include <objtools/cleanup/cleanup_change.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeqdesc;
-class CCleanupChangeCore;
 
 /*
 class NCBI_CLEANUP_EXPORT CHugeFileCleanup :
@@ -57,19 +57,20 @@ class NCBI_CLEANUP_EXPORT CCleanupHugeAsnReader :
     public edit::CHugeAsnReader
 {   
 public:
-    CCleanupHugeAsnReader(bool doExtendedCleanup, CCleanupChangeCore& changes);
+    CCleanupHugeAsnReader(bool doExtendedCleanup);
     virtual ~CCleanupHugeAsnReader() = default;
     using TParent = edit::CHugeAsnReader;
 
     void FlattenGenbankSet() override;
     void AddTopLevelDescriptors(CSeq_entry_Handle); 
+    const CCleanupChangeCore& GetChanges() const;
 private:
     void x_CleanupTopLevelDescriptors();
     bool x_LooksLikeNucProtSet() const;
     list<CRef<CSeqdesc>> m_TopLevelBiosources;
     CRef<CSeqdesc> m_pTopLevelMolInfo;
     const bool m_ExtendedCleanup;
-    CCleanupChangeCore& m_Changes;
+    CCleanupChangeCore m_Changes;
 };
 
 END_SCOPE(object);
