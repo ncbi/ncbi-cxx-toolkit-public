@@ -56,32 +56,32 @@ USING_SCOPE(objects);
 
 // clang-format off
 static const char* XML_STRAND_array[] = {
-    "   ", "single", "double", "mixed", NULL
+    "   ", "single", "double", "mixed", nullptr
 };
 
 static const char* XML_TPG_array[] = {
-    "   ", "Linear", "Circular", "Tandem", NULL
+    "   ", "Linear", "Circular", "Tandem", nullptr
 };
 
 static const char* ParFlat_NA_array_DDBJ[] = {
-    "cDNA", NULL
+    "cDNA", nullptr
 };
 
 static const char* ParFlat_AA_array_DDBJ[] = {
-    "PRT", NULL
+    "PRT", nullptr
 };
 
 static const char* ParFlat_NA_array[] = {
     "    ", "NA", "DNA", "genomic DNA", "other DNA", "unassigned DNA", "RNA",
     "mRNA", "rRNA", "tRNA", "uRNA", "scRNA", "snRNA", "snoRNA", "pre-RNA",
     "pre-mRNA", "genomic RNA", "other RNA", "unassigned RNA", "cRNA",
-    "viral cRNA", NULL
+    "viral cRNA", nullptr
 };
 
 static const char* ParFlat_DIV_array[] = {
     "   ", "PRI", "ROD", "MAM", "VRT", "INV", "PLN", "BCT", "RNA",
     "VRL", "PHG", "SYN", "UNA", "EST", "PAT", "STS", "ORG", "GSS",
-    "HUM", "HTG", "CON", "HTC", "ENV", "TSA", NULL
+    "HUM", "HTG", "CON", "HTC", "ENV", "TSA", nullptr
 };
 
 static const char* embl_accpref[] = {
@@ -90,15 +90,15 @@ static const char* embl_accpref[] = {
     "HD", "HE", "HF", "HG", "HH", "HI", "JA", "JB", "JC", "JD", "JE", "LK",
     "LL", "LM", "LN", "LO", "LP", "LQ", "LR", "LS", "LT", "MP", "MQ", "MR",
     "MS", "OA", "OB", "OC", "OD", "OE", "OU", "OV", "OW", "OX", "OY", "OZ",
-    NULL
+    nullptr
 };
 
 static const char* lanl_accpref[] = {
-    "AD", NULL
+    "AD", nullptr
 };
 
 static const char* sprot_accpref[] = {
-    "DD", NULL
+    "DD", nullptr
 };
 
 static const char* ddbj_accpref[] = {
@@ -108,7 +108,7 @@ static const char* ddbj_accpref[] = {
     "FX", "FY", "FZ", "GA", "GB", "HT", "HU", "HV", "HW", "HX", "HY", "HZ",
     "LA", "LB", "LC", "LD", "LE", "LF", "LG", "LH", "LI", "LJ", "LU", "LV",
     "LX", "LY", "LZ", "MA", "MB", "MC", "MD", "ME", "OF", "OG", "OH", "OI",
-    "OJ", "PA", NULL
+    "OJ", "PA", nullptr
 };
 
 static const char* ncbi_accpref[] = {
@@ -128,40 +128,40 @@ static const char* ncbi_accpref[] = {
     "KK", "KL", "KM", "KN", "KO", "KP", "KQ", "KR", "KS", "KT", "KU", "KV",
     "KX", "KY", "KZ", "MF", "MG", "MH", "MI", "MJ", "MK", "ML", "MM", "MN",
     "MO", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "OK", "OL", "OM", "ON",
-    "OO", "OP", "OT", NULL
+    "OO", "OP", "OT", nullptr
 };
 
 static const char* refseq_accpref[] = {
     "NC_", "NG_", "NM_", "NP_", "NR_", "NT_", "NW_", "XM_", "XP_", "XR_",
-    "NZ_", NULL
+    "NZ_", nullptr
 };
 
 /*
 static const char* refseq_prot_accpref[] = {
-    "AP_", "NP_", "WP_", "XP_", "YP_", "ZP_", NULL
+    "AP_", "NP_", "WP_", "XP_", "YP_", "ZP_", nullptr
 };
 */
 
 static const char* acc_tsa_allowed[] = {
     "AF", "AY", "DQ", "EF", "EU", "FJ", "GQ", "HQ", "JF", "JN", "JQ", "JX",
     "KC", "KF", "KJ", "KM", "KP", "KR", "KT", "KU", "KX", "KY", "MF", "MG",
-    "MH", "MK", "MN", "MT", NULL
+    "MH", "MK", "MN", "MT", nullptr
 };
 
 static const char* ncbi_tpa_accpref[] = {
-    "BK", "BL", "GJ", "GK", NULL
+    "BK", "BL", "GJ", "GK", nullptr
 };
 
 static const char* ddbj_tpa_accpref[] = {
-    "BR", "HT", "HU", NULL
+    "BR", "HT", "HU", nullptr
 };
 
 static const char* ncbi_wgs_accpref[] = {
-    "GJ", "GK", NULL
+    "GJ", "GK", nullptr
 };
 
 static const char* ddbj_wgs_accpref[] = {
-    "HT", "HU", NULL
+    "HT", "HU", nullptr
 };
 
 static const set<string> k_WgsScaffoldPrefix = {
@@ -184,11 +184,11 @@ static const map<Parser::ESource, string> sourceNames = {
 };
 
 static const char* month_name[] = {
-    "Ill", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", NULL
+    "Ill", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", nullptr
 };
 
 static const char* ParFlat_RESIDUE_STR[] = {
-    "bp", "bp.", "bp,", "AA", "AA.", "AA,", NULL
+    "bp", "bp.", "bp,", "AA", "AA.", "AA,", nullptr
 };
 
 static const char* ValidMolTypes[] = {
@@ -208,7 +208,7 @@ static const char* ValidMolTypes[] = {
     "unassigned RNA",
     "unassigned DNA",
     "viral cRNA",
-    NULL
+    nullptr
 };
 // clang-format on
 
@@ -240,12 +240,12 @@ static const char* GetResidue(TokenStatBlkPtr stoken)
     ptr  = stoken->list;
     sptr = stoken->list->next;
     for (i = 1; i < stoken->num; i++, ptr = ptr->next, sptr = sptr->next) {
-        for (b = ParFlat_RESIDUE_STR; *b != NULL; b++)
+        for (b = ParFlat_RESIDUE_STR; *b; b++)
             if (NStr::CompareNocase(*b, sptr->str) == 0)
                 return (ptr->str);
     }
 
-    return (NULL);
+    return nullptr;
 }
 
 /**********************************************************
@@ -540,7 +540,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
     Int4  i;
 
     p = StringChr(offset, '\n');
-    if (p != NULL)
+    if (p)
         *p = '\0';
 
     if (is_mga == false && ! StringEquN(offset + lcp->bp, "bp", 2) &&
@@ -592,7 +592,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
         ret = false;
     }
 
-    if (p != NULL)
+    if (p)
         *p = '\n';
     return (ret);
 }
@@ -643,11 +643,11 @@ static bool fta_check_embl_moltype(char* str)
     q  = StringChr(p, ';');
     *q = '\0';
 
-    for (b = ValidMolTypes; *b != NULL; b++)
+    for (b = ValidMolTypes; *b; b++)
         if (StringCmp(p, *b) == 0)
             break;
 
-    if (*b != NULL) {
+    if (*b) {
         *q = ';';
         return true;
     }
@@ -829,15 +829,15 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
         }
 
         ptr = stoken->list->next;
-        if (pp->format == Parser::EFormat::EMBL && ptr->next != NULL &&
-            ptr->next->str != NULL && StringCmp(ptr->next->str, "SV") == 0) {
+        if (pp->format == Parser::EFormat::EMBL && ptr->next &&
+            ptr->next->str && StringCmp(ptr->next->str, "SV") == 0) {
             for (i = 0, p = finfo->str; *p != '\0'; p++)
                 if (*p == ';' && p[1] == ' ')
                     i++;
 
             entry->embl_new_ID = true;
             p                  = StringRChr(ptr->str, ';');
-            if (p != NULL && p[1] == '\0')
+            if (p && p[1] == '\0')
                 *p = '\0';
 
             FtaInstallPrefix(PREFIX_LOCUS, ptr->str);
@@ -860,7 +860,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
 
         if (pp->mode != Parser::EMode::Relaxed && ! badlocus) {
             if (pp->format == Parser::EFormat::SPROT) {
-                if (ptr->next == NULL || ptr->next->str == NULL ||
+                if (! ptr->next || ! ptr->next->str ||
                     (! StringEquNI(ptr->next->str, "preliminary", 11) &&
                      ! StringEquNI(ptr->next->str, "unreviewed", 10)))
                     badlocus = CheckLocusSP(entry->locusname);
@@ -876,18 +876,18 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
 
     if (badlocus) {
         p = StringChr(finfo->str, '\n');
-        if (p != NULL)
+        if (p)
             *p = '\0';
         ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped. LOCUS line = \"%s\".", finfo->str);
-        if (p != NULL)
+        if (p)
             *p = '\n';
         delete entry;
         FreeTokenstatblk(stoken);
-        return (NULL);
+        return nullptr;
     }
 
     bases = GetResidue(stoken);
-    if (bases != NULL)
+    if (bases)
         entry->bases = (size_t)atoi(bases);
 
     if (pp->format == Parser::EFormat::GenBank &&
@@ -944,7 +944,7 @@ void DelNoneDigitTail(char* str)
 {
     char* p;
 
-    if (str == NULL || *str == '\0')
+    if (! str || *str == '\0')
         return;
 
     for (p = str; *str != '\0'; str++)
@@ -1259,18 +1259,18 @@ bool IsSPROTAccession(const char* acc)
 {
     const char** b;
 
-    if (acc == NULL || acc[0] == '\0')
+    if (! acc || acc[0] == '\0')
         return false;
     size_t len = StringLen(acc);
     if (len != 6 && len != 8 && len != 10)
         return false;
     if (len == 8) {
-        for (b = sprot_accpref; *b != NULL; b++) {
+        for (b = sprot_accpref; *b; b++) {
             if (StringEquN(*b, acc, 2))
                 break;
         }
 
-        return (*b != NULL);
+        return (*b);
     }
 
     if (acc[0] < 'A' || acc[0] > 'Z' || acc[1] < '0' || acc[1] > '9' ||
@@ -1315,7 +1315,7 @@ static bool sCheckAccession(const list<string>& tokens,
     Int4        count;
     size_t        i;
 
-    if(priacc == NULL || mode == Parser::EMode::Relaxed)
+    if (! priacc || mode == Parser::EMode::Relaxed)
         return true;
 
     auto it = tokens.begin();
@@ -1523,7 +1523,7 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
     Int4        priformat;
     Int4        count;
 
-    if (priacc == NULL || mode == Parser::EMode::Relaxed)
+    if (! priacc || mode == Parser::EMode::Relaxed)
         return true;
 
     tbp       = (skip == 0) ? stoken->list : stoken->list->next;
@@ -1535,7 +1535,7 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
         iswgs = false;
 
     count = 0;
-    for (; tbp != NULL; tbp = tbp->next) {
+    for (; tbp; tbp = tbp->next) {
         StringCpy(acnum, tbp->str);
         if (acnum[0] == '-' && acnum[1] == '\0')
             continue;
@@ -1669,7 +1669,7 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, const char* acc)
 /**********************************************************/
 static bool IsTPAAccPrefix(const Parser& parseInfo, const char* acc)
 {
-    if (acc == NULL)
+    if (! acc)
         return (false);
 
     size_t i = StringLen(acc);
@@ -1698,7 +1698,7 @@ static bool IsTPAAccPrefix(const Parser& parseInfo, const char* acc)
 /**********************************************************/
 static bool IsWGSAccPrefix(const Parser& parseInfo, const char* acc)
 {
-    if (acc == NULL || StringLen(acc) != 2)
+    if (! acc || StringLen(acc) != 2)
         return (false);
 
     if (fta_StringMatch(ncbi_wgs_accpref, acc) > -1 &&
@@ -1713,7 +1713,7 @@ static bool IsWGSAccPrefix(const Parser& parseInfo, const char* acc)
 /**********************************************************/
 static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr ibp)
 {
-    if (acc == NULL || *acc == '\0')
+    if (! acc || *acc == '\0')
         return;
 
     if (parseInfo.source == Parser::ESource::EMBL) {
@@ -1767,7 +1767,7 @@ static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
 /**********************************************************/
 static void IsTLSAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr ibp)
 {
-    if (acc == NULL || *acc == '\0' || StringLen(acc) != 4)
+    if (! acc || *acc == '\0' || StringLen(acc) != 4)
         return;
 
     if (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI ||
@@ -1961,17 +1961,17 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
 
         if (skip == 0) {
             tbp          = stoken->list;
-            stoken->list = NULL;
-        } else if (skip == 1 && stoken->list != NULL) {
+            stoken->list = nullptr;
+        } else if (skip == 1 && stoken->list) {
             tbp                = stoken->list->next;
-            stoken->list->next = NULL;
+            stoken->list->next = nullptr;
         } else
-            tbp = NULL;
-        if (tbp != NULL) {
-            if (entry->secaccs == NULL)
+            tbp = nullptr;
+        if (tbp) {
+            if (! entry->secaccs)
                 entry->secaccs = tbp;
             else {
-                for (ttbp = entry->secaccs; ttbp->next != NULL;)
+                for (ttbp = entry->secaccs; ttbp->next;)
                     ttbp = ttbp->next;
                 ttbp->next = tbp;
             }
@@ -2050,7 +2050,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
         } else {
             /* Processing of accession numbers in old format */
             /* check valid prefix accession number */
-            if (pp->acprefix != NULL && StringChr(pp->acprefix, *acc) == NULL)
+            if (pp->acprefix && ! StringChr(pp->acprefix, *acc))
                 get = false;
             acc[1] = '\0';
         }
@@ -2068,7 +2068,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
     }
 
     entry->secaccs           = stoken->list->next->next;
-    stoken->list->next->next = NULL;
+    stoken->list->next->next = nullptr;
 
     FreeTokenstatblk(stoken);
 
@@ -2105,7 +2105,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
 /**********************************************************/
 void ResetParserStruct(ParserPtr pp)
 {
-    if (pp == NULL)
+    if (! pp)
         return;
 
     if (! pp->entrylist.empty()) {
@@ -2119,11 +2119,11 @@ void ResetParserStruct(ParserPtr pp)
     pp->indx    = 0;
     pp->curindx = 0;
 
-    if (pp->pbp != NULL) {
-        if (pp->pbp->ibp != NULL)
+    if (pp->pbp) {
+        if (pp->pbp->ibp)
             delete pp->pbp->ibp;
         delete pp->pbp;
-        pp->pbp = NULL;
+        pp->pbp = nullptr;
     }
 }
 
@@ -2137,12 +2137,12 @@ void ResetParserStruct(ParserPtr pp)
 /*
 void FreeParser(ParserPtr pp)
 {
-    if(pp == NULL)
+    if (! pp)
         return;
 
     ResetParserStruct(pp);
 
-    if(pp->fpo != NULL)
+    if (pp->fpo)
         MemFree(pp->fpo);
     delete pp;
 }
@@ -2157,9 +2157,9 @@ void FreeParser(ParserPtr pp)
  **********************************************************/
 void CloseFiles(ParserPtr pp)
 {
-    if (pp->qsfd != NULL) {
+    if (pp->qsfd) {
         fclose(pp->qsfd);
-        pp->qsfd = NULL;
+        pp->qsfd = nullptr;
     }
 }
 
@@ -2237,7 +2237,7 @@ const char** GetAccArray(Parser::ESource source)
         return (ncbi_accpref);
     if (source == Parser::ESource::Refseq)
         return (refseq_accpref);
-    return (NULL);
+    return nullptr;
 }
 
 bool isSupportedAccession(CSeq_id::E_Choice type)

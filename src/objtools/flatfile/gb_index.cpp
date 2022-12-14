@@ -109,7 +109,7 @@ static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
     const char* p;
     char* q;
 
-    if (segnum == NULL)
+    if (! segnum)
         return false;
     size_t len1 = StringLen(segnum);
     if (len2 < len1)
@@ -198,7 +198,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     Char  ch;
     Char  ch1;
 
-    if (line == NULL)
+    if (! line)
         return;
 
     for (p = line; *p != '\0' && *p != ' ' && *p != '\t';)
@@ -208,7 +208,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     ch1 = *p;
     *p  = '\0';
     q   = StringRChr(line, '.');
-    if (q == NULL) {
+    if (! q) {
         if (mode != Parser::EMode::Relaxed) {
             *p = ch1;
             ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in VERSION line: \"%s\".", line);
@@ -285,17 +285,17 @@ static bool fta_check_mga_line(char* line, IndexblkPtr ibp)
     Int4  from;
     Int4  to;
 
-    if (line == NULL || ibp == NULL)
+    if (! line || ! ibp)
         return false;
 
     for (p = line; *p == ' ' || *p == '\t';)
         p++;
     str = StringSave(p);
     p   = StringChr(str, '\n');
-    if (p != NULL)
+    if (p)
         *p = '\0';
     p = StringChr(str, '-');
-    if (p == NULL) {
+    if (! p) {
         MemFree(str);
         return false;
     }
@@ -385,8 +385,8 @@ bool GenBankIndex(ParserPtr pp)
     tibnp = ibnp;
 
     pp->num_drop = 0;
-    kwds         = NULL;
-    dbl          = NULL;
+    kwds         = nullptr;
+    dbl          = nullptr;
     while (! end_of_file) {
         entry = InitialEntry(pp, &finfo);
         if (entry) {
@@ -411,16 +411,16 @@ bool GenBankIndex(ParserPtr pp)
             after_MGA        = false;
 
             currentKeyword = ParFlat_LOCUS;
-            line_ver       = NULL;
-            line_nid       = NULL;
-            line_locus     = NULL;
-            if (kwds != NULL)
+            line_ver       = nullptr;
+            line_nid       = nullptr;
+            line_locus     = nullptr;
+            if (kwds)
                 kwds = ValNodeFreeData(kwds);
-            tkwds           = NULL;
+            tkwds           = nullptr;
             size_t kwds_len = 0;
-            if (dbl != NULL)
+            if (dbl)
                 dbl = ValNodeFreeData(dbl);
-            tdbl           = NULL;
+            tdbl           = nullptr;
             size_t dbl_len = 0;
             while (currentKeyword != ParFlat_END && ! end_of_file) {
                 switch (currentKeyword) {
@@ -443,7 +443,7 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_VERSION:
                     p = StringStr(finfo.str + ParFlat_COL_DATA, "GI:");
-                    if (p != NULL && atol(p + 3) > 0)
+                    if (p && atol(p + 3) > 0)
                         entry->wgs_and_gi |= 01;
                     if (pp->accver == false)
                         break;
@@ -472,7 +472,7 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_NCBI_GI:
                     if (pp->source == Parser::ESource::DDBJ || pp->accver == false ||
-                        line_nid != NULL)
+                        line_nid)
                         break;
                     p = finfo.str + ParFlat_COL_DATA;
                     while (*p == ' ' || *p == '\t')
@@ -593,16 +593,16 @@ bool GenBankIndex(ParserPtr pp)
                     if (pp->source != Parser::ESource::DDBJ &&
                         pp->source != Parser::ESource::EMBL)
                         break;
-                    if (kwds != NULL)
+                    if (kwds)
                         ValNodeFreeData(kwds);
-                    kwds     = ConstructValNode(NULL, objects::CSeq_id::e_not_set, StringSave(finfo.str + 8));
+                    kwds     = ConstructValNode(nullptr, objects::CSeq_id::e_not_set, StringSave(finfo.str + 8));
                     tkwds    = kwds;
                     kwds_len = StringLen(finfo.str) - 8;
                     break;
                 case ParFlat_DBLINK:
-                    if (dbl != NULL)
+                    if (dbl)
                         ValNodeFreeData(dbl);
-                    dbl     = ConstructValNode(NULL, objects::CSeq_id::e_not_set, StringSave(finfo.str + 8));
+                    dbl     = ConstructValNode(nullptr, objects::CSeq_id::e_not_set, StringSave(finfo.str + 8));
                     tdbl    = dbl;
                     dbl_len = StringLen(finfo.str) - 8;
                     break;
@@ -613,15 +613,15 @@ bool GenBankIndex(ParserPtr pp)
                 end_of_file = XReadFileBuf(pp->ffbuf, &finfo);
 
                 while (! end_of_file && (finfo.str[0] == ' ' || finfo.str[0] == '\t')) {
-                    if (currentKeyword == ParFlat_KEYWORDS && tkwds != NULL) {
-                        tkwds->next = ValNodeNew(NULL);
+                    if (currentKeyword == ParFlat_KEYWORDS && tkwds) {
+                        tkwds->next = ValNodeNew(nullptr);
                         tkwds       = tkwds->next;
                         tkwds->data = StringSave(finfo.str);
                         kwds_len += StringLen(finfo.str);
                     }
 
-                    if (currentKeyword == ParFlat_DBLINK && tdbl != NULL) {
-                        tdbl->next = ValNodeNew(NULL);
+                    if (currentKeyword == ParFlat_DBLINK && tdbl) {
+                        tdbl->next = ValNodeNew(nullptr);
                         tdbl       = tdbl->next;
                         tdbl->data = StringSave(finfo.str);
                         dbl_len += StringLen(finfo.str);
@@ -635,7 +635,7 @@ bool GenBankIndex(ParserPtr pp)
                 }
 
 
-                if (kwds != NULL) {
+                if (kwds) {
                     check_est_sts_gss_tpa_kwds(kwds, kwds_len, entry, tpa_check, entry->specialist_db, entry->inferential, entry->experimental, entry->assembly);
                     kwds     = ValNodeFreeData(kwds);
                     kwds_len = 0;
@@ -660,7 +660,7 @@ bool GenBankIndex(ParserPtr pp)
             if (entry->drop != 1) {
 
                 if (pp->mode != Parser::EMode::Relaxed) {
-                    if (line_locus != NULL &&
+                    if (line_locus &&
                         CkLocusLinePos(line_locus, pp->source, &entry->lc, entry->is_mga) == false)
                         entry->drop = 1;
 
@@ -708,17 +708,17 @@ bool GenBankIndex(ParserPtr pp)
                         pp->mode,
                         pp->ign_toks);
             }
-            if (line_locus != NULL) {
+            if (line_locus) {
                 MemFree(line_locus);
-                line_locus = NULL;
+                line_locus = nullptr;
             }
-            if (line_ver != NULL) {
+            if (line_ver) {
                 MemFree(line_ver);
-                line_ver = NULL;
+                line_ver = nullptr;
             }
-            if (line_nid != NULL) {
+            if (line_nid) {
                 MemFree(line_nid);
-                line_nid = NULL;
+                line_nid = nullptr;
             }
             entry->len = (size_t)(pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
@@ -727,7 +727,7 @@ bool GenBankIndex(ParserPtr pp)
                 ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
             }
 
-            if (dbl != NULL) {
+            if (dbl) {
                 dbl = ValNodeFreeData(dbl);
                 // dbl_len = 0;
             }
@@ -744,13 +744,13 @@ bool GenBankIndex(ParserPtr pp)
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (pp->qsfd != NULL && QSIndex(pp, ibnp->next) == false)
+    if (pp->qsfd && QSIndex(pp, ibnp->next) == false)
         return false;
 
     pp->entrylist.resize(indx);
     tibnp = ibnp->next;
     delete ibnp;
-    for (int j = 0; j < indx && tibnp != NULL; j++, tibnp = ibnp) {
+    for (int j = 0; j < indx && tibnp; j++, tibnp = ibnp) {
         pp->entrylist[j] = tibnp->ibp;
         ibnp             = tibnp->next;
         delete tibnp;
