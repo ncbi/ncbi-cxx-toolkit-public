@@ -349,6 +349,9 @@ public:
 /// @return Boolean return value indicates whether object was removed
     static bool RemoveNcbiCleanupObject(CSeq_entry &seq_entry);
 
+/// Adds NcbiCleanup User Object to Seq-descr
+    static void AddNcbiCleanupObject(int ncbi_cleanup_version, CSeq_descr& descr);
+
 /// Looks up Org-refs in the Seq-entry
 /// @param seh Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated

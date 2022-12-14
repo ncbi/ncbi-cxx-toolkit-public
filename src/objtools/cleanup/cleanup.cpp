@@ -1960,6 +1960,25 @@ bool CCleanup::RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
     return rval;
 }
 
+void CCleanup::AddNcbiCleanupObject(int ncbi_cleanup_version, CSeq_descr& descr)
+{
+    // update existing
+    if (descr.IsSet()) {
+        for (auto pDesc : descr.Set()) {
+            if (pDesc->IsUser() && pDesc->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup) {
+                pDesc->SetUser().UpdateNcbiCleanup(ncbi_cleanup_version);
+                return;
+            }
+        }
+    }
+
+    // create new
+    auto pCleanupObject = Ref(new CSeqdesc());
+    auto& user = pCleanupObject->SetUser();
+    user.UpdateNcbiCleanup(ncbi_cleanup_version);
+    descr.Set().push_back(pCleanupObject);
+}
+
 
 //LCOV_EXCL_START
 //not used by asn_cleanup but used by functions used by other applications
