@@ -81,11 +81,11 @@ static void SPGetVerNum(char* str, IndexblkPtr ibp)
     char* p;
     char* q;
 
-    if (str == NULL || ibp == NULL)
+    if (! str || ! ibp)
         return;
 
     p = StringIStr(str, "sequence version");
-    if (p == NULL)
+    if (! p)
         return;
 
     for (p += 16; *p == ' ';)
@@ -221,7 +221,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
             entry->len = (size_t)(pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
-            if (fun != NULL) {
+            if (fun) {
                 data = LoadEntry(pp, entry->offset, entry->len);
                 (*fun)(entry, data->mOffset, static_cast<Int4>(data->len));
                 delete data;
@@ -241,7 +241,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
     pp->entrylist.resize(indx);
     tibnp = ibnp->next;
     delete ibnp;
-    for (i = 0; i < indx && tibnp != NULL; i++, tibnp = ibnp) {
+    for (i = 0; i < indx && tibnp; i++, tibnp = ibnp) {
         pp->entrylist[i] = tibnp->ibp;
         ibnp             = tibnp->next;
         delete tibnp;

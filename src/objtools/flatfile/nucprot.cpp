@@ -112,7 +112,7 @@ const char* GBExceptionQualVals[] = {
     "reasons given in citation",
     "rearrangement required for product",
     "annotated by transcript or proteomic data",
-    NULL
+    nullptr
 };
 
 const char* RSExceptionQualVals[] = {
@@ -130,7 +130,7 @@ const char* RSExceptionQualVals[] = {
     "unclassified translation discrepancy",
     "mismatches in transcription",
     "mismatches in translation",
-    NULL
+    nullptr
 };
 
 /**********************************************************
@@ -175,7 +175,7 @@ static char* CpTheQualValueNext(TQualVector::iterator& cur_qual, const TQualVect
         break;
     }
 
-    char* ret = NULL;
+    char* ret = nullptr;
     if (! qvalue.empty())
         ret = StringSave(qvalue.c_str());
 
@@ -246,7 +246,7 @@ static void GuessGeneticCode(ParserPtr pp, const CSeq_descr& descrs)
 /**********************************************************/
 static void GetGcode(const TEntryList& seq_entries, ParserPtr pp)
 {
-    if (pp != NULL && pp->pbp != NULL && ! pp->pbp->gcode.IsId()) {
+    if (pp && pp->pbp && ! pp->pbp->gcode.IsId()) {
         for (const auto& entry : seq_entries) {
             GuessGeneticCode(pp, GetDescrPointer(*entry));
 
@@ -345,7 +345,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
 
     if (pp->mode == Parser::EMode::Relaxed) {
         protacc = CpTheQualValue(cds.SetQual(), "protein_id");
-        if (protacc == NULL || *protacc == '\0') {
+        if (! protacc || *protacc == '\0') {
             if (protacc)
                 MemFree(protacc);
             int    protein_id_counter = 0;
@@ -378,7 +378,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
         }
     }
 
-    if (text_id == nullptr)
+    if (! text_id)
         return;
 
     if (pp->accver == false || (pp->source != Parser::ESource::EMBL &&
@@ -396,10 +396,10 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     }
 
     protacc = CpTheQualValue(cds.SetQual(), "protein_id");
-    if (protacc == NULL || *protacc == '\0') {
+    if (! protacc || *protacc == '\0') {
         string loc = location_to_string(cds.GetLocation());
         ErrPostEx(SEV_FATAL, ERR_CDREGION_MissingProteinId, "/protein_id qualifier is missing for CDS feature: \"%s\".", loc.c_str());
-        if (protacc != NULL)
+        if (protacc)
             MemFree(protacc);
         return;
     }
@@ -419,7 +419,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     }
 
     p = StringChr(protacc, '.');
-    if (p == NULL || *(p + 1) == '\0') {
+    if (! p || *(p + 1) == '\0') {
         string loc = location_to_string(cds.GetLocation());
         ErrPostEx(SEV_FATAL, ERR_CDREGION_MissingProteinVersion, "/protein_id qualifier has missing version for CDS feature: \"%s\".", loc.c_str());
         MemFree(protacc);
@@ -444,7 +444,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
         return;
     }
 
-    r    = NULL;
+    r    = nullptr;
     ncho = cho;
     if (pp->source == Parser::ESource::EMBL && cho != CSeq_id::e_Embl && cho != CSeq_id::e_Tpe)
         r = "EMBL";
@@ -460,13 +460,13 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
             cho = ncho;
     }
 
-    if (r != NULL || ncho != cho) {
+    if (r || ncho != cho) {
         string loc = location_to_string(cds.GetLocation());
         if (pp->ign_prot_src == false)
             sev = SEV_FATAL;
         else
             sev = SEV_WARNING;
-        if (r != NULL)
+        if (r)
             ErrPostEx(sev, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession prefix \"%s\" for source %s for CDS feature: \"%s\".", protacc, r, loc.c_str());
         else
             ErrPostEx(sev, ERR_CDREGION_IncorrectProteinAccession, "Found mismatching TPA and non-TPA nucleotides's and protein's accessions in one nuc-prot set. Nuc = \"%s\", prot = \"%s\".", text_id->GetAccession().c_str(), protacc);
@@ -511,10 +511,10 @@ static char* stripStr(char* base, const char* str)
     char* bptr;
     char* eptr;
 
-    if (base == NULL || str == NULL)
-        return (NULL);
+    if (! base || ! str)
+        return nullptr;
     bptr = StringStr(base, str);
-    if (bptr != NULL) {
+    if (bptr) {
         eptr = bptr + StringLen(str);
         fta_StringCpy(bptr, eptr);
     }
@@ -532,7 +532,7 @@ static void StripCDSComment(CSeq_feat& feat)
         "Method: sequenced peptide, ordered by overlap.",
         "Method: sequenced peptide, ordered by homology.",
         "Method: conceptual translation supplied by author.",
-        NULL
+        nullptr
     };
     const char** b;
     char*        pchComment;
@@ -543,22 +543,22 @@ static void StripCDSComment(CSeq_feat& feat)
 
     comment    = StringSave(feat.GetComment().c_str());
     pchComment = tata_save(comment);
-    if (comment != NULL && comment[0] != 0)
+    if (comment && *comment != '\0')
         feat.SetComment(comment);
     else
         feat.ResetComment();
 
     MemFree(comment);
 
-    for (b = strA; *b != NULL; b++) {
+    for (b = strA; *b; b++) {
         pchComment = stripStr(pchComment, (char*)*b);
     }
     comment = tata_save(pchComment);
-    if (comment != NULL && *comment != '\0')
+    if (comment && *comment != '\0')
         ShrinkSpaces(comment);
     MemFree(pchComment);
 
-    if (comment != NULL && comment[0] != 0)
+    if (comment && *comment != '\0')
         feat.SetComment(comment);
     else
         feat.ResetComment();
@@ -577,12 +577,12 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
 
     for (;;) {
         qval = GetTheQualValue(feat.SetQual(), "product");
-        if (qval == NULL)
+        if (! qval)
             break;
 
         string qval_str = qval;
         MemFree(qval);
-        qval = NULL;
+        qval = nullptr;
 
         if (qval_str[0] == '\'')
             qval_str = qval_str.substr(1, qval_str.size() - 2);
@@ -592,18 +592,18 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
 
     if (names.empty()) {
         qval = CpTheQualValue(feat.GetQual(), "gene");
-        if (qval == NULL)
+        if (! qval)
             qval = CpTheQualValue(feat.GetQual(), "standard_name");
-        if (qval == NULL)
+        if (! qval)
             qval = CpTheQualValue(feat.GetQual(), "label");
     }
 
     CRef<CProt_ref> prot_ref(new CProt_ref);
 
-    if (names.empty() && qval == NULL) {
+    if (names.empty() && ! qval) {
         prid       = CpTheQualValue(feat.GetQual(), "protein_id");
         string loc = location_to_string(feat.GetLocation());
-        if (prid != NULL) {
+        if (prid) {
             ErrPostEx(SEV_WARNING, ERR_PROTREF_NoNameForProtein, "No product, gene, or standard_name qualifier found for protein \"%s\" on CDS:%s", prid, loc.c_str());
             MemFree(prid);
         } else
@@ -618,13 +618,13 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
             prot_ref->SetDesc(qval);
     }
 
-    while ((qval = GetTheQualValue(feat.SetQual(), "EC_number")) != nullptr) {
+    while (qval = GetTheQualValue(feat.SetQual(), "EC_number")) {
         // qval may hold newly allocated memory!!!
         prot_ref->SetEc().push_back(qval);
         MemFree(qval);
     }
 
-    while ((qval = GetTheQualValue(feat.SetQual(), "function")) != NULL) {
+    while (qval = GetTheQualValue(feat.SetQual(), "function")) {
         prot_ref->SetActivity().push_back(qval);
     }
 
@@ -755,13 +755,13 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
     descr->SetMolinfo(*mol_info);
     descrs.push_back(descr);
 
-    p = NULL;
+    p = nullptr;
     for (const auto& qual : feat.GetQual()) {
         if (qual->GetQual() != "product")
             continue;
 
         const string& val_str = qual->GetVal();
-        if (p == NULL) {
+        if (! p) {
             p = StringSave(val_str.c_str());
             continue;
         }
@@ -774,16 +774,13 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
         p = q;
     }
 
-    if (p == NULL)
+    if (! p)
         p = CpTheQualValue(feat.GetQual(), "gene");
-
-    if (p == NULL)
+    if (! p)
         p = CpTheQualValue(feat.GetQual(), "label");
-
-    if (p == NULL)
+    if (! p)
         p = CpTheQualValue(feat.GetQual(), "standard_name");
-
-    if (p == NULL)
+    if (! p)
         p = StringSave("unnamed protein product");
     else {
         for (q = p; *q != '\0';)
@@ -798,7 +795,7 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
         }
     }
 
-    if (StringLen(p) < 511 && ! organism.empty() && StringStr(p, organism.c_str()) == NULL) {
+    if (StringLen(p) < 511 && ! organism.empty() && ! StringStr(p, organism.c_str())) {
         q = MemNew(StringLen(p) + organism.size() + 4);
         StringCpy(q, p);
         StringCat(q, " [");
@@ -862,7 +859,7 @@ static void QualsToSeqID(CSeq_feat& feat, Parser::ESource source, TSeqIdList& id
 
         CRef<CSeq_id> seq_id;
         p = StringIStr((*qual)->GetVal().c_str(), "pid:");
-        if (p != NULL)
+        if (p)
             seq_id = StrToSeqId(p + 4, true);
 
         if (seq_id.Empty()) {
@@ -963,7 +960,7 @@ static void DbxrefToSeqID(CSeq_feat& feat, Parser::ESource source, TSeqIdList& i
             case 'g':
                 if (source != Parser::ESource::DDBJ && source != Parser::ESource::EMBL) {
                     id.Reset(new CSeq_id);
-                    id->SetGi(GI_FROM(long long, strtoll(tag_str + 1, NULL, 10)));
+                    id->SetGi(GI_FROM(long long, strtoll(tag_str + 1, nullptr, 10)));
                 }
                 break;
 
@@ -1077,8 +1074,8 @@ static char* SimpleValuePos(const char* qval)
     const char* eptr;
 
     bptr = StringStr(qval, "(pos:");
-    if (bptr == NULL)
-        return (NULL);
+    if (! bptr)
+        return nullptr;
 
     bptr += 5;
     while (*bptr == ' ')
@@ -1119,8 +1116,8 @@ static void GetCdRegionCB(InfoBioseqPtr ibp, CSeq_feat& feat, TCodeBreakList& co
         TQualVector::iterator cur_qual = feat.SetQual().begin(),
                               end_qual = feat.SetQual().end();
 
-        char* qval = NULL;
-        while ((qval = CpTheQualValueNext(cur_qual, end_qual, "transl_except")) != NULL) {
+        char* qval = nullptr;
+        while (qval = CpTheQualValueNext(cur_qual, end_qual, "transl_except")) {
             CRef<CCode_break> code_break(new CCode_break);
 
             int ncbieaa_val = GetQualValueAa(qval, false);
@@ -1241,7 +1238,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
     char* qval;
 
     qval = CpTheQualValue(feat.GetQual(), "translation");
-    if (qval == NULL)
+    if (! qval)
         qval = StringSave("no translation qualifier");
 
     if (! feat.IsSetExcept() || feat.GetExcept() == false) {
@@ -1534,7 +1531,7 @@ static Int2 EndAdded(CSeq_feat& feat, GeneRefFeats& gene_refs)
         last_interval = &(*loc);
     }
 
-    if (last_interval == nullptr)
+    if (! last_interval)
         return (0);
 
     const CBioseq_Handle& bioseq_h = GetScope().GetBioseqHandle(last_interval->GetId());
@@ -1577,7 +1574,7 @@ static Int2 EndAdded(CSeq_feat& feat, GeneRefFeats& gene_refs)
     }
 
     transl = CpTheQualValue(feat.GetQual(), "translation");
-    if (transl == NULL) {
+    if (! transl) {
         last_interval->SetFrom(oldfrom);
         last_interval->SetTo(oldto);
         return (0);
@@ -1602,7 +1599,7 @@ static Int2 EndAdded(CSeq_feat& feat, GeneRefFeats& gene_refs)
         return (remainder);
 
     name = CpTheQualValue(feat.GetQual(), "gene");
-    if (name == NULL)
+    if (! name)
         return (remainder);
 
     for (TSeqFeatList::iterator gene = gene_refs.first; gene != gene_refs.last; ++gene) {
@@ -1717,7 +1714,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
         }
     }
 
-    if (cur_code == nullptr)
+    if (! cur_code)
         return;
 
     if (pp->no_code) {
@@ -1742,7 +1739,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 
             if (! intercodon) {
                 qval = CpTheQualValue(feat.GetQual(), "translation");
-                if (qval != NULL) /* compare protein sequence */
+                if (qval) /* compare protein sequence */
                 {
                     if (check_translation(prot, qval)) {
                         sev = (pp->taxserver == 0) ? SEV_INFO : SEV_WARNING;
@@ -1766,7 +1763,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
     if (! Translate(feat, prot))
         pp->entrylist[pp->curindx]->drop = 1;
 
-    if (cur_code != NULL)
+    if (cur_code)
         sprintf(gcode_str, "%d", (int)cur_code->GetId());
     else
         StringCpy(gcode_str, "unknown");
@@ -1815,7 +1812,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
                 if (! feat.IsSetExcept() || feat.GetExcept() == false) {
                     ErrPostEx(SEV_WARNING, ERR_CDREGION_IllegalStart, "unrecognized initiation codon from CDS: %s", loc.c_str());
                 }
-                if (qval == NULL) /* no /translation */
+                if (! qval) /* no /translation */
                 {
                     return;
                 }
@@ -1849,7 +1846,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
         ErrPostEx(SEV_WARNING, ERR_CDREGION_NoProteinSeq, "No protein sequence found:%s", loc.c_str());
     }
 
-    if (qval != NULL) /* compare protein sequence */
+    if (qval) /* compare protein sequence */
     {
         CkProteinTransl(pp, ibp, prot, feat, qval, intercodon, gcode_str, &m);
         *method = m;
@@ -1884,7 +1881,7 @@ static void check_gen_code(const char* qval, ProtBlkPtr pbp, Uint1 taxserver)
     Uint1  genome;
     Uint1  value;
 
-    if (pbp == NULL || ! pbp->gcode.IsId())
+    if (! pbp || ! pbp->gcode.IsId())
         return;
 
     gcpvalue = pbp->gcode.GetId();
@@ -1963,7 +1960,7 @@ static Int4 IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool t
 /**********************************************************/
 static void fta_concat_except_text(CSeq_feat& feat, const Char* text)
 {
-    if (text == NULL)
+    if (! text)
         return;
 
     if (feat.IsSetExcept_text()) {
@@ -1995,9 +1992,9 @@ static bool fta_check_exception(CSeq_feat& feat, Parser::ESource source)
         else if ((*qual)->GetQual() == "trans_splicing")
             p = (char*)"trans-splicing";
         else
-            p = NULL;
+            p = nullptr;
 
-        if (p != NULL) {
+        if (p) {
             feat.SetExcept(true);
 
             qual = feat.SetQual().erase(qual);
@@ -2016,12 +2013,12 @@ static bool fta_check_exception(CSeq_feat& feat, Parser::ESource source)
             b = GBExceptionQualVals;
 
         const Char* cur_val = (*qual)->GetVal().c_str();
-        for (; *b != NULL; b++) {
+        for (; *b; b++) {
             if (NStr::CompareNocase(*b, cur_val) == 0)
                 break;
         }
 
-        if (*b == NULL) {
+        if (! *b) {
             sev = (source == Parser::ESource::Refseq) ? SEV_ERROR : SEV_REJECT;
 
             string loc = location_to_string(feat.GetLocation());
@@ -2067,7 +2064,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     ProtBlkPtr  pbp;
     const char* r;
 
-    char* qval = NULL;
+    char* qval = nullptr;
     bool  is_pseudo;
     bool  is_stop;
     bool  is_transl;
@@ -2081,9 +2078,9 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     Int2  i;
 
     pbp = pp->pbp;
-    if (pp->buf != NULL)
+    if (pp->buf)
         MemFree(pp->buf);
-    pp->buf = NULL;
+    pp->buf = nullptr;
 
     TCodeBreakList code_breaks;
     GetCdRegionCB(pbp->ibp, cds, code_breaks, &dif, pp->accver);
@@ -2095,7 +2092,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     if (! code_breaks.empty())
         first_code_break = *code_breaks.begin();
 
-    if (first_code_break != nullptr && first_code_break->GetAa().GetNcbieaa() == 42)
+    if (first_code_break && first_code_break->GetAa().GetNcbieaa() == 42)
         is_stop = true;
     else if (is_pseudo)
         is_stop = false;
@@ -2185,7 +2182,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     codon_start = 1;
     qval        = GetTheQualValue(cds.SetQual(), "codon_start");
 
-    if (qval == NULL) {
+    if (! qval) {
         if (pp->source == Parser::ESource::EMBL)
             frame = 1;
         else {
@@ -2213,11 +2210,11 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
 
     qval = GetTheQualValue(cds.SetQual(), "transl_table");
 
-    if (qval != NULL) {
+    if (qval) {
         check_gen_code(qval, pbp, pp->taxserver);
         pp->no_code = false;
         MemFree(qval);
-    } else if (pbp != NULL && pbp->gcode.IsId())
+    } else if (pbp && pbp->gcode.IsId())
         pbp->gcode.SetId(pbp->orig_gcode);
 
     if (! code_breaks.empty())
@@ -2449,7 +2446,7 @@ static bool check_GIBB(TSeqdescList& descrs)
             break;
         }
     }
-    if (descr_modif == nullptr)
+    if (! descr_modif)
         return true;
 
     if (! descr_modif->GetModif().empty()) {
@@ -2500,7 +2497,7 @@ static void GetBioseqSetDescr(ProtBlkPtr pbp, TSeqdescList& descrs)
             descrs_from = &pbp->biosep->SetSeq().SetDescr().Set();
     }
 
-    if (descrs_from == nullptr)
+    if (! descrs_from)
         return;
 
     ExtractDescrs(*descrs_from, descrs, CSeqdesc::e_Org);
@@ -2630,13 +2627,13 @@ static void FixDupDates(CBioseq_set& bio_set, CSeqdesc::E_Choice what)
             else if (what == CSeqdesc::e_Update_date)
                 seq_date = &(*cur_descr)->GetUpdate_date();
 
-            if (seq_date == nullptr)
+            if (! seq_date)
                 continue;
 
             if (set_date && seq_date->Compare(*set_date) == CDate::eCompare_same)
                 cur_descrs.erase(cur_descr);
 
-            if (set_date == nullptr) {
+            if (! set_date) {
                 bio_set.SetDescr().Set().push_back(*cur_descr);
                 cur_descrs.erase(cur_descr);
             }
@@ -2678,16 +2675,16 @@ static void FixEmblUpdateDates(CBioseq_set& bio_set)
             }
 
             const CDate* seq_date = nullptr;
-            if (embl_block != nullptr && embl_block->IsSetUpdate_date())
+            if (embl_block && embl_block->IsSetUpdate_date())
                 seq_date = &embl_block->GetUpdate_date();
 
-            if (seq_date == nullptr)
+            if (! seq_date)
                 continue;
 
             if (set_date && seq_date->Compare(*set_date) == CDate::eCompare_same)
                 continue;
 
-            if (set_date == nullptr) {
+            if (! set_date) {
                 CRef<CSeqdesc> new_descr(new CSeqdesc);
                 new_descr->SetUpdate_date().Assign(*seq_date);
                 bio_set.SetDescr().Set().push_back(new_descr);

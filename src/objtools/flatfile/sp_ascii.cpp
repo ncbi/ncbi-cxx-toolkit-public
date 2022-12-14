@@ -118,7 +118,7 @@ const char* ParFlat_SPComTopics[] = {
     "TISSUE SPECIFICITY:",
     "TOXIC DOSE:",
     "WEB RESOURCE:",
-    NULL
+    nullptr
 };
 
 /* bsv : 03/04/2020 : no Seq-feat.exp-ev setting anymore
@@ -132,7 +132,7 @@ const char* ParFlat_SPFeatNoExp[] = {
     "(BY SIMILARITY).",
     "(BY SIMILARITY)",
     "BY SIMILARITY.",
-    NULL
+    nullptr
 };
 
 const char* ParFlat_SPFeatNoExpW[] = {
@@ -151,21 +151,21 @@ const char* ParFlat_SPFeatNoExpW[] = {
     "(BY HOMOLOGY).",
     "(BY HOMOLOGY)",
     "BY HOMOLOGY.",
-    NULL
+    nullptr
 };
 */
 
 SPFeatType ParFlat_SPFeat[] = {
-    { "ACT_SITE", ParFlatSPSites, 1, NULL },
-    { "BINDING", ParFlatSPSites, 2, NULL },
-    { "CARBOHYD", ParFlatSPSites, 6, NULL },
-    { "MUTAGEN", ParFlatSPSites, 8, NULL },
-    { "METAL", ParFlatSPSites, 9, NULL },
-    { "LIPID", ParFlatSPSites, 20, NULL },
-    { "NP_BIND", ParFlatSPSites, 21, NULL },
-    { "DNA_BIND", ParFlatSPSites, 22, NULL },
-    { "SITE", ParFlatSPSites, 255, NULL },
-    { "MOD_RES", ParFlatSPSites, 5, NULL }, /* 9 */
+    { "ACT_SITE", ParFlatSPSites, 1, nullptr },
+    { "BINDING", ParFlatSPSites, 2, nullptr },
+    { "CARBOHYD", ParFlatSPSites, 6, nullptr },
+    { "MUTAGEN", ParFlatSPSites, 8, nullptr },
+    { "METAL", ParFlatSPSites, 9, nullptr },
+    { "LIPID", ParFlatSPSites, 20, nullptr },
+    { "NP_BIND", ParFlatSPSites, 21, nullptr },
+    { "DNA_BIND", ParFlatSPSites, 22, nullptr },
+    { "SITE", ParFlatSPSites, 255, nullptr },
+    { "MOD_RES", ParFlatSPSites, 5, nullptr }, /* 9 */
     { "MOD_RES", ParFlatSPSites, 10, "4-aspartylphosphate" },
     { "MOD_RES", ParFlatSPSites, 10, "5-glutamyl glycerylphosphorylethanolamine" },
     { "MOD_RES", ParFlatSPSites, 10, "Phosphoarginine" },
@@ -331,10 +331,10 @@ SPFeatType ParFlat_SPFeat[] = {
     { "MOD_RES", ParFlatSPSites, 19, "Blocked amino end (Xaa)" },
     { "MOD_RES", ParFlatSPSites, 19, "Blocked carboxyl end (Arg)" },
     { "MOD_RES", ParFlatSPSites, 19, "Blocked carboxyl end (His)" }, /* 174 */
-    { "DISULFID", ParFlatSPBonds, 1, NULL },
-    { "THIOLEST", ParFlatSPBonds, 2, NULL },
-    { "CROSSLNK", ParFlatSPBonds, 3, NULL },
-    { "THIOETH", ParFlatSPBonds, 4, NULL },
+    { "DISULFID", ParFlatSPBonds, 1, nullptr },
+    { "THIOLEST", ParFlatSPBonds, 2, nullptr },
+    { "CROSSLNK", ParFlatSPBonds, 3, nullptr },
+    { "THIOETH", ParFlatSPBonds, 4, nullptr },
     { "SIGNAL", ParFlatSPRegions, -1, "Signal" },
     { "PROPEP", ParFlatSPRegions, -1, "Propeptide" },
     { "CHAIN", ParFlatSPRegions, -1, "Mature chain" },
@@ -364,7 +364,7 @@ SPFeatType ParFlat_SPFeat[] = {
     { "INIT_MET", ParFlatSPInitMet, -1, "INIT_MET" },
     { "NON_TER", ParFlatSPNonTer, -1, "NON_TER" },
     { "NON_CONS", ParFlatSPNonCons, -1, "NON_CONS" },
-    { NULL, 0, 0, NULL }
+    { nullptr, 0, 0, nullptr }
 };
 
 /* for array index, MOD_RES in the "ParFlat_SPFeat"
@@ -464,14 +464,14 @@ CharIntLen spde_tags[] = {
     {"Biotech=",    SPDE_BIOTECH,     8},
     {"CD_antigen=", SPDE_CD_ANTIGEN, 11},
     {"INN=",        SPDE_INN,         4},
-    {NULL,          0,                0},
+    {nullptr,       0,                0},
 };
 
 const char* org_mods[] = {
     "STRAIN",    "SUBSTRAIN", "TYPE",     "SUBTYPE",  "VAR.",     "SEROTYPE",
     "SEROGROUP", "SEROVAR",   "CULTIVAR", "PATHOVAR", "CHEMOVAR", "BIOVAR",
     "BIOTYPE",   "GROUP",     "SUBGROUP", "ISOLATE",  "ACRONYM",  "DOSAGE",
-    "NAT_HOST",  "SUBSP.",    NULL
+    "NAT_HOST",  "SUBSP.",    nullptr
 };
 
 const char* obsolete_dbs[] = {
@@ -490,7 +490,7 @@ const char* obsolete_dbs[] = {
     "SAGALIST",               "SIENA-2DPAGE",           "STYGENE",
     "SUBTILIST",              "TIGR",                   "TRANSFAC",
     "WORMPEP",                "YEPD",                   "YPD",
-    NULL
+    nullptr
 };
 
 const char* valid_dbs[] = {
@@ -552,13 +552,13 @@ const char* valid_dbs[] = {
     "UNITE",                  "VBASE2",                 "VECTORBASE",
     "VEGA-TR",                "VEGA-GN",                "VGNC",
     "WBPARASITE",             "WORLD-2DPAGE",           "WORMBASE",
-    "XENBASE",                "ZFIN",                   NULL
+    "XENBASE",                "ZFIN",                   nullptr
 };
 
 const char* SP_organelle[] = {
     "CHLOROPLAST", "CYANELLE", "MITOCHONDRION", "PLASMID", "NUCLEOMORPH",
     "HYDROGENOSOME", "APICOPLAST", "CHROMATOPHORE",
-    "ORGANELLAR CHROMATOPHORE", NULL
+    "ORGANELLAR CHROMATOPHORE", nullptr
 };
 
 const char* PE_values[] = {
@@ -567,7 +567,7 @@ const char* PE_values[] = {
     "Inferred from homology",
     "Predicted",
     "Uncertain",
-    NULL
+    nullptr
 };
 // clang-format on
 
@@ -585,7 +585,7 @@ static void StringCombine(string& dest, const string& to_add, const Char* delim)
     if (to_add.empty())
         return;
 
-    if (delim != NULL && *delim != '\0' && ! dest.empty())
+    if (delim && *delim != '\0' && ! dest.empty())
         dest += delim[0];
 
     dest += to_add;
@@ -602,7 +602,7 @@ static CRef<CDbtag> MakeStrDbtag(const char* dbname, const char* str)
 {
     CRef<CDbtag> tag;
 
-    if (dbname != NULL && str != NULL) {
+    if (dbname && str) {
         tag.Reset(new CDbtag);
         tag->SetDb(dbname);
         tag->SetTag().SetStr(str);
@@ -626,10 +626,10 @@ static CRef<CDate> MakeDatePtr(const char* str, Parser::ESource source)
 
     CRef<CDate> res(new CDate);
 
-    if (str == NULL)
+    if (! str)
         return res;
 
-    if (StringChr(str, '-') != NULL && (isdigit(*str) != 0 || *str == ' ')) {
+    if (StringChr(str, '-') && (isdigit(*str) != 0 || *str == ' ')) {
         CRef<CDate_std> std_date = get_full_date(str, true, source);
         res->SetStd(*std_date);
         if (XDateCheck(*std_date) != 0) {
@@ -649,7 +649,7 @@ static CRef<CDate> MakeDatePtr(const char* str, Parser::ESource source)
 /**********************************************************/
 static void fta_create_pdb_seq_id(CSP_block_Base::TSeqref& refs, const char* mol, Uint1 chain)
 {
-    if (mol == NULL)
+    if (! mol)
         return;
 
     CRef<CPDB_seq_id> pdb_seq_id(new CPDB_seq_id);
@@ -675,7 +675,7 @@ static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, ch
     bool bad;
     bool got;
 
-    if (mol == NULL || chain == NULL)
+    if (! mol || ! chain)
         return;
 
     fourth = StringSave(chain);
@@ -687,7 +687,7 @@ static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, ch
         if (*p != '\0')
             *p++ = '\0';
         r = StringRChr(q, '=');
-        if (r == NULL && ! got) {
+        if (! r && ! got) {
             fta_create_pdb_seq_id(refs, mol, 0);
             continue;
         }
@@ -725,14 +725,14 @@ static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, ch
  **********************************************************/
 static void MakePDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, const char* rel, char* chain, unsigned char* drop, Parser::ESource source)
 {
-    if (mol == NULL)
+    if (! mol)
         return;
 
-    if (chain == NULL) {
+    if (! chain) {
         CRef<CPDB_seq_id> pdb_seq_id(new CPDB_seq_id);
         pdb_seq_id->SetMol(CPDB_mol_id(mol));
 
-        if (rel != NULL) {
+        if (rel) {
             CRef<CDate> date = MakeDatePtr(rel, source);
             pdb_seq_id->SetRel(*date);
         }
@@ -766,10 +766,10 @@ static CBioSource::EGenome GetSPGenome(const DataBlk* dbp)
     char*      p;
     Int4       gmod;
 
-    for (gmod = -1; dbp != NULL; dbp = dbp->mpNext)
+    for (gmod = -1; dbp; dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OS) {
             subdbp = static_cast<DataBlk*>(dbp->mpData);
-            for (; subdbp != NULL; subdbp = subdbp->mpNext)
+            for (; subdbp; subdbp = subdbp->mpNext)
                 if (subdbp->mType == ParFlatSP_OG) {
                     p = subdbp->mOffset + ParFlat_COL_DATA_SP;
                     if (StringEquNI(p, "Plastid;", 8))
@@ -807,7 +807,7 @@ static void SpAddToIndexBlk(DataBlkPtr entry, IndexblkPtr pIndex)
     size_t len = 0;
 
     offset = SrchNodeType(entry, ParFlatSP_ID, &len);
-    if (offset == NULL || len == 0)
+    if (! offset || len == 0)
         return;
 
     eptr = offset + len - 1;
@@ -842,7 +842,7 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk* entry)
     DataBlkPtr dbp;
 
     dbp = TrackNodeType(*entry, ParFlatSP_OS);
-    if (dbp != NULL) {
+    if (dbp) {
         BuildSubBlock(dbp, ParFlatSP_OG, "OG");
         BuildSubBlock(dbp, ParFlatSP_OC, "OC");
         BuildSubBlock(dbp, ParFlatSP_OX, "OX");
@@ -851,7 +851,7 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk* entry)
     }
 
     dbp = TrackNodeType(*entry, ParFlatSP_RN);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_RN)
             continue;
 
@@ -893,7 +893,7 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
     StripECO(str);
 
     ptr = StringStr(str, "(GENE NAME");
-    if (ptr != NULL) {
+    if (ptr) {
         ErrPostStr(SEV_WARNING, ERR_GENENAME_DELineGeneName, "Old format, found gene_name in the DE data line");
     }
 
@@ -915,7 +915,7 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
 
     for (ptr = str;;) {
         ptr = StringStr(ptr, tag);
-        if (ptr == NULL)
+        if (! ptr)
             break;
 
         for (p = ptr + shift; *p == ' ';)
@@ -938,7 +938,7 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
     if (symb == ';') {
         for (ptr = str;;) {
             ptr = StringIStr(ptr, "; Flags:");
-            if (ptr == NULL)
+            if (! ptr)
                 break;
             if (ptr[8] == '\0') {
                 *ptr = '\0';
@@ -952,7 +952,7 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
             for (q = ptr + 8;;) {
                 p = StringChr(q, ':');
                 q = StringIStr(q, " Fragment");
-                if (q == NULL || (p != NULL && q > p))
+                if (! q || (p && q > p))
                     break;
 
                 ret = true;
@@ -982,13 +982,13 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
             }
             q = StringChr(ptr + 8, ';');
             p = StringChr(ptr + 8, ':');
-            if (q == NULL) {
-                if (p == NULL)
+            if (! q) {
+                if (! p)
                     break;
                 else
                     fta_StringCpy(ptr + 2, ptr + 9);
             } else {
-                if (p == NULL)
+                if (! p)
                     ptr += 9;
                 else {
                     if (p < q)
@@ -1000,7 +1000,7 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
         }
     } else {
         ptr = StringIStr(str, "(FRAGMENT");
-        if (ptr != NULL) {
+        if (ptr) {
             /* delete (FRAGMENTS) or (FRAGMENT)
              */
             *fragment = true;
@@ -1035,7 +1035,7 @@ static char* GetLineOSorOC(DataBlkPtr dbp, const char* pattern)
 
     size_t len = dbp->len;
     if (len == 0)
-        return (NULL);
+        return nullptr;
     for (size_t i = 0; i < dbp->len; i++)
         if (dbp->mOffset[i] == '\n')
             len -= 5;
@@ -1074,19 +1074,19 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
     char*           temp;
     Int2            i;
 
-    if (line == NULL || line[0] == '\0')
-        return (NULL);
+    if (! line || line[0] == '\0')
+        return nullptr;
     for (p = line; *p == ' ' || *p == '\t' || *p == '.' || *p == ',';)
         p++;
     if (*p == '\0')
-        return (NULL);
+        return nullptr;
 
     res           = new SetOfSpecies;
     res->fullname = StringSave(p);
 
     temp = StringSave(res->fullname);
     p    = StringChr(temp, '(');
-    if (p == NULL)
+    if (! p)
         res->name = StringSave(temp);
     else {
         *p = '\0';
@@ -1133,7 +1133,7 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
             tssp->synname = StringSave(q);
             *p            = ')';
             p             = StringChr(p, '(');
-            if (p == NULL)
+            if (! p)
                 break;
         }
 
@@ -1181,23 +1181,23 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
 
     CRef<COrg_ref> org_ref;
 
-    if (sosp == NULL)
+    if (! sosp)
         return org_ref;
 
     org_ref.Reset(new COrg_ref);
 
-    if (sosp->name != NULL && sosp->name[0] != '\0')
+    if (sosp->name && sosp->name[0] != '\0')
         org_ref->SetTaxname(sosp->name);
 
-    for (synsp = sosp->syn; synsp != NULL; synsp = synsp->next) {
+    for (synsp = sosp->syn; synsp; synsp = synsp->next) {
         p = synsp->synname;
-        if (p == NULL || *p == '\0')
+        if (! p || *p == '\0')
             continue;
 
         q = StringIStr(p, "PLASMID");
-        if (q == NULL)
+        if (! q)
             q = StringIStr(p, "CLONE");
-        if (q != NULL) {
+        if (q) {
             i = (*q == 'C' || *q == 'c') ? 5 : 7;
             if (q > p) {
                 q--;
@@ -1249,18 +1249,18 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
             continue;
         }
 
-        for (b = org_mods, num = 2; *b != NULL; b++, num++)
+        for (b = org_mods, num = 2; *b; b++, num++)
             if (NStr::CompareNocase(synsp->synname, *b) == 0)
                 break;
         *p = ' ';
 
-        if (*b == NULL) {
-            for (b = org_mods, num = 2; *b != NULL; b++, num++) {
+        if (! *b) {
+            for (b = org_mods, num = 2; *b; b++, num++) {
                 if (NStr::CompareNocase(*b, "ISOLATE") != 0 &&
                     NStr::CompareNocase(*b, "STRAIN") != 0)
                     continue;
                 p = StringIStr(synsp->synname, *b);
-                if (p == NULL)
+                if (! p)
                     continue;
 
                 p--;
@@ -1274,7 +1274,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
                 }
             }
 
-            if (*b == NULL)
+            if (! *b)
                 org_ref->SetSyn().push_back(synsp->synname);
             continue;
         }
@@ -1301,13 +1301,13 @@ static void SetOfSpeciesFree(SetOfSpeciesPtr sosp)
     SetOfSynsPtr ssp;
     SetOfSynsPtr tssp;
 
-    if (sosp->fullname != NULL)
+    if (sosp->fullname)
         MemFree(sosp->fullname);
-    if (sosp->name != NULL)
+    if (sosp->name)
         MemFree(sosp->name);
-    for (ssp = sosp->syn; ssp != NULL; ssp = tssp) {
+    for (ssp = sosp->syn; ssp; ssp = tssp) {
         tssp = ssp->next;
-        if (ssp->synname != NULL)
+        if (ssp->synname)
             MemFree(ssp->synname);
         delete ssp;
     }
@@ -1325,17 +1325,17 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     char*        r;
     Char         ch;
 
-    for (; dbp != NULL; dbp = dbp->mpNext)
+    for (; dbp; dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OS)
             break;
-    if (dbp == NULL)
-        return (NULL);
+    if (! dbp)
+        return nullptr;
 
-    for (dbp = static_cast<DataBlk*>(dbp->mpData); dbp != NULL; dbp = dbp->mpNext)
+    for (dbp = static_cast<DataBlk*>(dbp->mpData); dbp; dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OH)
             break;
-    if (dbp == NULL)
-        return (NULL);
+    if (! dbp)
+        return nullptr;
 
     vhp  = new ViralHost;
     tvhp = vhp;
@@ -1351,7 +1351,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     if (! StringEquNI(line, "\nOH   NCBI_TaxID=", 17)) {
         ch = '\0';
         p  = StringChr(line + 1, '\n');
-        if (p != NULL)
+        if (p)
             *p = '\0';
         if (StringLen(line + 1) > 20) {
             ch       = line[21];
@@ -1360,19 +1360,19 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
         ErrPostEx(SEV_ERROR, ERR_SOURCE_UnknownOHType, "Unknown beginning of OH block: \"%s[...]\".", line + 1);
         if (ch != '\0')
             line[21] = ch;
-        if (p != NULL)
+        if (p)
             *p = '\n';
     }
 
     for (p = line;;) {
         p = StringIStr(p, "\nOH   NCBI_TaxID=");
-        if (p == NULL)
+        if (! p)
             break;
         for (p += 17, q = p; *q == ' ';)
             q++;
         r = StringChr(q, '\n');
         p = StringChr(q, ';');
-        if ((r == NULL || r > p) && p != NULL) {
+        if ((! r || r > p) && p) {
             tvhp->next = new ViralHost;
             tvhp       = tvhp->next;
             for (p--; *p == ';' || *p == ' ';)
@@ -1389,7 +1389,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
             for (p++; *p == ' ' || *p == ';';)
                 p++;
             r = StringChr(p, '\n');
-            if (r == NULL)
+            if (! r)
                 r = p + StringLen(p);
             else
                 r--;
@@ -1404,10 +1404,10 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
             *r = ch;
             p  = r;
         } else {
-            if (r != NULL)
+            if (r)
                 *r = '\0';
             ErrPostEx(SEV_ERROR, ERR_SOURCE_IncorrectOHLine, "Incorrect OH line content skipped: \"%s\".", q);
-            if (r != NULL)
+            if (r)
                 *r = '\n';
             p = q;
         }
@@ -1417,7 +1417,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     tvhp = vhp->next;
     delete vhp;
 
-    if (tvhp == NULL)
+    if (! tvhp)
         ErrPostEx(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxIDs found in OH line.");
 
     return (tvhp);
@@ -1434,12 +1434,12 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
     Char       ch;
     TTaxId     taxid;
 
-    for (got = false, taxid = ZERO_TAX_ID; dbp != NULL; dbp = dbp->mpNext) {
+    for (got = false, taxid = ZERO_TAX_ID; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
         subdbp = static_cast<DataBlk*>(dbp->mpData);
-        for (; subdbp != NULL; subdbp = subdbp->mpNext) {
+        for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OX)
                 continue;
             got                              = true;
@@ -1449,7 +1449,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
             subdbp->mOffset[subdbp->len - 1] = ch;
 
             p = StringChr(line, '\n');
-            if (p != NULL)
+            if (p)
                 *p = '\0';
             if (! StringEquNI(line, "OX   NCBI_TaxID=", 16)) {
                 if (StringLen(line) > 20)
@@ -1459,7 +1459,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
                 break;
             }
             p = StringChr(line + 16, ';');
-            if (p != NULL) {
+            if (p) {
                 *p++ = '\0';
                 for (q = p; *q == ' ';)
                     q++;
@@ -1502,14 +1502,14 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
 
     CRef<COrg_ref> org_ref;
 
-    line_OS = NULL;
-    line_OC = NULL;
+    line_OS = nullptr;
+    line_OC = nullptr;
 
-    for (dbp = entry; dbp != NULL; dbp = dbp->mpNext) {
+    for (dbp = entry; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
         line_OS = GetLineOSorOC(dbp, "OS   ");
-        for (dbp = static_cast<DataBlk*>(dbp->mpData); dbp != NULL; dbp = dbp->mpNext) {
+        for (dbp = static_cast<DataBlk*>(dbp->mpData); dbp; dbp = dbp->mpNext) {
             if (dbp->mType != ParFlatSP_OC)
                 continue;
             line_OC = GetLineOSorOC(dbp, "OC   ");
@@ -1518,9 +1518,9 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
         break;
     }
 
-    if (line_OS != NULL && line_OS[0] != '\0') {
+    if (line_OS && line_OS[0] != '\0') {
         sosp = GetSetOfSpecies(line_OS);
-        if (sosp != NULL && sosp->name != NULL && sosp->name[0] != '\0') {
+        if (sosp && sosp->name && sosp->name[0] != '\0') {
             org_ref = fill_orgref(sosp);
         }
 
@@ -1528,7 +1528,7 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
         MemFree(line_OS);
     }
 
-    if (org_ref.NotEmpty() && line_OC != NULL && line_OC[0] != '\0') {
+    if (org_ref.NotEmpty() && line_OC && line_OC[0] != '\0') {
         org_ref->SetOrgname().SetLineage(line_OC);
         MemFree(line_OC);
     }
@@ -1541,19 +1541,19 @@ static void get_plasmid(DataBlkPtr entry, CSP_block::TPlasnm& plasms)
 {
     DataBlkPtr dbp;
     DataBlkPtr subdbp;
-    char*      offset = NULL;
-    char*      eptr   = NULL;
+    char*      offset = nullptr;
+    char*      eptr   = nullptr;
     char*      str;
     char*      ptr;
     Int4       gmod = -1;
 
     dbp = TrackNodeType(*entry, ParFlatSP_OS);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
         subdbp = static_cast<DataBlk*>(dbp->mpData);
-        for (; subdbp != NULL; subdbp = subdbp->mpNext) {
+        for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OG)
                 continue;
 
@@ -1565,7 +1565,7 @@ static void get_plasmid(DataBlkPtr entry, CSP_block::TPlasnm& plasms)
     if (gmod != Seq_descr_GIBB_mod_plasmid)
         return;
 
-    while ((str = StringIStr(offset, "PLASMID")) != NULL) {
+    while (str = StringIStr(offset, "PLASMID")) {
         if (str > eptr)
             break;
 
@@ -1597,8 +1597,8 @@ static char* GetDRToken(char** ptr)
     char* p;
 
     p = *ptr;
-    if (p == NULL || *p == '\0')
-        return (NULL);
+    if (! p || *p == '\0')
+        return nullptr;
 
     for (;; p++) {
         if (*p == '\0' || *p == '\n')
@@ -1608,7 +1608,7 @@ static char* GetDRToken(char** ptr)
     }
 
     if (*p == '\0' || *p == '\n')
-        return (NULL);
+        return nullptr;
 
     *p++ = '\0';
 
@@ -1619,7 +1619,7 @@ static char* GetDRToken(char** ptr)
     *ptr = p;
 
     if (*ret == '\0')
-        return (NULL);
+        return nullptr;
     return (ret);
 }
 
@@ -1627,11 +1627,11 @@ static char* GetDRToken(char** ptr)
 static CRef<CSeq_id> AddPIDToSeqId(char* str, char* acc)
 {
     long long lID;
-    char*     end = NULL;
+    char*     end = nullptr;
 
     CRef<CSeq_id> sid;
 
-    if (str == NULL || *str == '\0')
+    if (! str || *str == '\0')
         return sid;
 
     if (str[0] == '-') {
@@ -1671,25 +1671,25 @@ static bool AddToList(ValNodePtr* head, char* str)
     char*      dot;
     char*      d;
 
-    if (str == NULL)
+    if (! str)
         return false;
 
     if (str[0] == '-' && str[1] == '\0')
         return true;
 
     dot = StringChr(str, '.');
-    for (vnp = *head; vnp != NULL; vnp = vnp->next)
+    for (vnp = *head; vnp; vnp = vnp->next)
         if (StringCmp(vnp->data, str) == 0)
             break;
-    if (vnp != NULL)
+    if (vnp)
         return false;
 
-    if (dot != NULL) {
+    if (dot) {
         *dot = '\0';
-        for (vnp = *head; vnp != NULL; vnp = vnp->next) {
+        for (vnp = *head; vnp; vnp = vnp->next) {
             data = vnp->data;
             d    = StringChr(data, '.');
-            if (d == NULL)
+            if (! d)
                 continue;
             *d = '\0';
             if (StringCmp(data, str) == 0) {
@@ -1699,7 +1699,7 @@ static bool AddToList(ValNodePtr* head, char* str)
         }
         *dot = '.';
     }
-    vnp = ConstructValNode(NULL, CSeq_id::e_not_set, StringSave(str));
+    vnp = ConstructValNode(nullptr, CSeq_id::e_not_set, StringSave(str));
     ValNodeLink(head, vnp);
 
     return true;
@@ -1763,32 +1763,32 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
     char*      p;
     char*      q;
 
-    if (embl_acc_list == NULL || embl_acc_list->next->next == NULL)
+    if (! embl_acc_list || ! embl_acc_list->next->next)
         return;
 
-    for (vnp = embl_acc_list; vnp != NULL; vnp = vnp->next->next) {
+    for (vnp = embl_acc_list; vnp; vnp = vnp->next->next) {
         p = vnp->data;
         q = StringChr(p, '.');
-        if (q != NULL) {
+        if (q) {
             for (p = q + 1; *p >= '0' && *p <= '9';)
                 p++;
             if (*p != '\0')
-                q = NULL;
+                q = nullptr;
             p = vnp->data;
         }
         n = vnp->next->data;
-        for (vnpn = vnp->next->next; vnpn != NULL; vnpn = vnpn->next->next) {
+        for (vnpn = vnp->next->next; vnpn; vnpn = vnpn->next->next) {
             if (vnp->next->choice != vnpn->next->choice &&
                 StringCmp(p, vnpn->data) == 0) {
-                if (q != NULL)
+                if (q)
                     *q = '\0';
                 if (GetProtAccOwner(p) > CSeq_id::e_not_set)
                     ErrPostEx(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"%s\" associated with \"%s\" and \"%s\".", vnpn->data, n, vnpn->next->data);
-                if (q != NULL)
+                if (q)
                     *q = '.';
             }
         }
-        if (q != NULL)
+        if (q)
             *q = '.';
     }
 }
@@ -1863,12 +1863,12 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
 static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* drop, Parser::ESource source)
 {
     ValNodePtr   embl_vnp;
-    ValNodePtr   acc_list      = NULL;
-    ValNodePtr   pid_list      = NULL;
-    ValNodePtr   ens_tran_list = NULL;
-    ValNodePtr   ens_prot_list = NULL;
-    ValNodePtr   ens_gene_list = NULL;
-    ValNodePtr   embl_acc_list = NULL;
+    ValNodePtr   acc_list      = nullptr;
+    ValNodePtr   pid_list      = nullptr;
+    ValNodePtr   ens_tran_list = nullptr;
+    ValNodePtr   ens_prot_list = nullptr;
+    ValNodePtr   ens_gene_list = nullptr;
+    ValNodePtr   embl_acc_list = nullptr;
     const char** b;
     char*        offset;
     const char*  token1;
@@ -1892,7 +1892,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
     spb.ResetDbref();
 
     offset = SrchNodeType(entry, ParFlatSP_DR, &len);
-    if (offset == NULL)
+    if (! offset)
         return;
 
     ch          = offset[len];
@@ -1903,14 +1903,14 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
     offset[len]     = ch;
     pdbold          = false;
     pdbnew          = false;
-    embl_acc_list   = ValNodeNew(NULL);
+    embl_acc_list   = ValNodeNew(nullptr);
     embl_vnp        = embl_acc_list;
     check_embl_prot = false;
     for (ptr = str;;) {
         if (*drop != 0)
             break;
         ptr = StringChr(ptr, '\n');
-        if (ptr == NULL)
+        if (! ptr)
             break;
         ptr++;
         if (! StringEquN(ptr, "DR   ", 5))
@@ -1921,7 +1921,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
         token3 = GetDRToken(&ptr);
         token4 = GetDRToken(&ptr);
         token5 = GetDRToken(&ptr);
-        if (token1 == NULL || token2 == NULL || token3 == NULL ||
+        if (! token1 || ! token2 || ! token3 ||
             (StringCmp(token2, "-") == 0 && StringCmp(token3, "-") == 0)) {
             ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Badly formatted DR line. Skipped.");
             continue;
@@ -1930,37 +1930,37 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
         if (NStr::CompareNocase(token1, "MD5") == 0)
             continue;
 
-        for (b = valid_dbs; *b != NULL; b++)
+        for (b = valid_dbs; *b; b++)
             if (NStr::CompareNocase(*b, token1) == 0)
                 break;
-        if (*b == NULL) {
-            for (b = obsolete_dbs; *b != NULL; b++)
+        if (! *b) {
+            for (b = obsolete_dbs; *b; b++)
                 if (NStr::CompareNocase(*b, token1) == 0)
                     break;
-            if (*b == NULL)
+            if (! *b)
                 ErrPostEx(SEV_WARNING, ERR_DRXREF_UnknownDBname, "Encountered a new/unknown database name in DR line: \"%s\".", token1);
             else
                 ErrPostEx(SEV_WARNING, ERR_SPROT_DRLine, "Obsolete database name found in DR line: \"%s\".", token1);
         }
 
         if (NStr::CompareNocase(token1, "PDB") == 0) {
-            if (token4 == NULL)
+            if (! token4)
                 pdbold = true;
             else
                 pdbnew = true;
 
-            MakePDBSeqId(spb.SetSeqref(), token2, token3, (token5 == NULL) ? token4 : token5, drop, source);
+            MakePDBSeqId(spb.SetSeqref(), token2, token3, token5 ? token5 : token4, drop, source);
         } else if (NStr::CompareNocase(token1, "PIR") == 0) {
             CRef<CSeq_id> id(MakeLocusSeqId(token3, CSeq_id::e_Pir));
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         } else if (NStr::CompareNocase(token1, "EMBL") == 0) {
             p = StringChr(token2, '.');
-            if(p != NULL)
+            if (p)
                 *p = '\0';
             ntype = GetNucAccOwner(token2);
             if (ntype == CSeq_id::e_not_set) {
-                if(p != NULL)
+                if (p)
                     *p = '.';
                 ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"%s\". Skipped...", token2);
             } else if (AddToList(&acc_list, token2)) {
@@ -1969,33 +1969,33 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
                 if (id.NotEmpty())
                     spb.SetSeqref().push_back(id);
             }
-            if(p != NULL)
+            if (p)
                 *p = '\0';
 
             ptype = CSeq_id::e_not_set;
             if (token3[0] >= 'A' && token3[0] <= 'Z' &&
                 token3[1] >= 'A' && token3[1] <= 'Z') {
                 p = StringChr(token3, '.');
-                if (p != NULL) {
+                if (p) {
                     *p    = '\0';
                     ptype = GetProtAccOwner(token3);
                     *p    = '.';
                     for (q = p + 1; *q >= '0' && *q <= '9';)
                         q++;
                     if (q == p + 1 || *q != '\0')
-                        p = NULL;
+                        p = nullptr;
                 }
-                if (p == NULL || ptype == CSeq_id::e_not_set) {
+                if (! p || ptype == CSeq_id::e_not_set) {
                     ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect protein accession is used in DR line [ACC:%s; PID:%s]. Skipped...", token2, token3);
                     continue;
                 }
             } else
-                p = NULL;
+                p = nullptr;
 
             if (ntype > CSeq_id::e_not_set) {
-                embl_vnp->next = ConstructValNode(NULL, ptype, StringSave(token3));
+                embl_vnp->next = ConstructValNode(nullptr, ptype, StringSave(token3));
                 embl_vnp       = embl_vnp->next;
-                embl_vnp->next = ConstructValNode(NULL, ntype, StringSave(token2));
+                embl_vnp->next = ConstructValNode(nullptr, ntype, StringSave(token2));
                 embl_vnp       = embl_vnp->next;
             }
 
@@ -2005,7 +2005,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             }
 
             CRef<CSeq_id> id;
-            if (p == NULL)
+            if (! p)
                 id = AddPIDToSeqId(token3, token2);
             else {
                 *p++ = '\0';
@@ -2035,7 +2035,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
                     spb.SetDbref().push_back(tag);
             }
 
-            if (token4 != NULL && AddToList(&ens_gene_list, token4)) {
+            if (token4 && AddToList(&ens_gene_list, token4)) {
                 CRef<CDbtag> tag = MakeStrDbtag(token1, token4);
                 if (tag.NotEmpty())
                     spb.SetDbref().push_back(tag);
@@ -2045,21 +2045,21 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
             if (token2[0] >= 'A' && token2[0] <= 'Z' &&
                 token2[1] >= 'A' && token2[1] <= 'Z') {
                 p = StringChr(token2, '.');
-                if (p != NULL) {
+                if (p) {
                     *p    = '\0';
                     ptype = GetProtAccOwner(token2);
                     *p    = '.';
                     for (q = p + 1; *q >= '0' && *q <= '9';)
                         q++;
                     if (q == p + 1 || *q != '\0')
-                        p = NULL;
+                        p = nullptr;
                 }
                 if (ptype != CSeq_id::e_Other)
-                    p = NULL;
+                    p = nullptr;
             } else
-                p = NULL;
+                p = nullptr;
 
-            if (p == NULL) {
+            if (! p) {
                 ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect protein accession.version is used in RefSeq DR line: \"%s\". Skipped...", token2);
                 continue;
             }
@@ -2098,22 +2098,22 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
         }
     }
 
-    if (embl_acc_list->next != NULL) {
+    if (embl_acc_list->next) {
         if (check_embl_prot)
             fta_check_embl_drxref_dups(embl_acc_list->next);
         ValNodeFreeData(embl_acc_list->next);
     }
     delete embl_acc_list;
 
-    if (acc_list != NULL)
+    if (acc_list)
         ValNodeFreeData(acc_list);
-    if (pid_list != NULL)
+    if (pid_list)
         ValNodeFreeData(pid_list);
-    if (ens_tran_list != NULL)
+    if (ens_tran_list)
         ValNodeFreeData(ens_tran_list);
-    if (ens_prot_list != NULL)
+    if (ens_prot_list)
         ValNodeFreeData(ens_prot_list);
-    if (ens_gene_list != NULL)
+    if (ens_gene_list)
         ValNodeFreeData(ens_gene_list);
     MemFree(str);
 
@@ -2156,26 +2156,26 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
         std_sequpd,
         std_annotupd;
 
-    if (ver_num != NULL)
+    if (ver_num)
         *ver_num = 0;
 
     offset = SrchNodeType(entry, ParFlatSP_DT, &len);
-    if (offset == NULL)
+    if (! offset)
         return true;
 
     ch          = offset[len];
     offset[len] = '\0';
-    vnp         = ValNodeNew(NULL);
+    vnp         = ValNodeNew(nullptr);
     for (q = offset, tvnp = vnp;;) {
         p = StringChr(q, '\n');
         if (p == q)
             break;
-        if (p != NULL)
+        if (p)
             *p = '\0';
-        tvnp->next = ValNodeNew(NULL);
+        tvnp->next = ValNodeNew(nullptr);
         tvnp       = tvnp->next;
         tvnp->data = StringSave(q);
-        if (p == NULL)
+        if (! p)
             break;
         *p++ = '\n';
         q    = p;
@@ -2184,7 +2184,7 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
     }
     offset[len] = ch;
     tvnp        = vnp->next;
-    vnp->next   = NULL;
+    vnp->next   = nullptr;
     delete vnp;
     vnp = tvnp;
 
@@ -2193,21 +2193,21 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
     third  = 0;
     if (! StringChr(vnp->data, '(')) {
         new_style = true;
-        for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
+        for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
             offset = tvnp->data;
             offset += ParFlat_COL_DATA_SP;
-            if (StringIStr(offset, "integrated into") != NULL) {
+            if (StringIStr(offset, "integrated into")) {
                 first++;
                 std_crdate = GetUpdateDate(offset, pp->source);
-            } else if (StringIStr(offset, "entry version") != NULL) {
+            } else if (StringIStr(offset, "entry version")) {
                 third++;
                 std_annotupd = GetUpdateDate(offset, pp->source);
             } else {
                 p = StringIStr(offset, "sequence version");
-                if (p != NULL) {
+                if (p) {
                     second++;
                     std_sequpd = GetUpdateDate(offset, pp->source);
-                    if (ver_num != NULL) {
+                    if (ver_num) {
                         for (p += 16; *p == ' ';)
                             p++;
                         for (q = p; *p >= '0' && *p <= '9';)
@@ -2223,16 +2223,16 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
         }
     } else {
         new_style = false;
-        for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
+        for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
             offset = tvnp->data;
             offset += ParFlat_COL_DATA_SP;
-            if (StringIStr(offset, "Created") != NULL) {
+            if (StringIStr(offset, "Created")) {
                 first++;
                 std_crdate = GetUpdateDate(offset, pp->source);
-            } else if (StringIStr(offset, "Last annotation update") != NULL) {
+            } else if (StringIStr(offset, "Last annotation update")) {
                 third++;
                 std_annotupd = GetUpdateDate(offset, pp->source);
-            } else if (StringIStr(offset, "Last sequence update") != NULL) {
+            } else if (StringIStr(offset, "Last sequence update")) {
                 second++;
                 std_sequpd = GetUpdateDate(offset, pp->source);
             }
@@ -2269,7 +2269,7 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
     } else if (std_annotupd.Empty()) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Missing or incorrect update date in \"%s\" DT line.", (new_style ? "entry version" : "Last annotation update"));
         ret = false;
-    } else if (ver_num != NULL && *ver_num < 1) {
+    } else if (ver_num && *ver_num < 1) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Invalidly formatted sequence version DT line is present.");
         ret = false;
     }
@@ -2332,7 +2332,7 @@ GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     if (reviewed && pp->sp_dt_seq_ver)
         i = GetSPDate(pp, entry, spb->SetCreated(), spb->SetSequpd(), spb->SetAnnotupd(), &ver_num);
     else
-        i = GetSPDate(pp, entry, spb->SetCreated(), spb->SetSequpd(), spb->SetAnnotupd(), NULL);
+        i = GetSPDate(pp, entry, spb->SetCreated(), spb->SetSequpd(), spb->SetAnnotupd(), nullptr);
 
     get_plasmid(entry, spb->SetPlasnm());
     if (spb->SetPlasnm().empty())
@@ -2450,7 +2450,7 @@ static void GetSPDescrComment(DataBlkPtr entry, CSeq_descr::Tdata& descrs, char*
 
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_CC, &len);
-    if (offset == NULL)
+    if (! offset)
         return;
 
     eptr  = offset + len;
@@ -2458,7 +2458,7 @@ static void GetSPDescrComment(DataBlkPtr entry, CSeq_descr::Tdata& descrs, char*
     *eptr = '\0';
     for (count = 0, p = offset;;) {
         p = StringStr(p, "----------");
-        if (p == NULL)
+        if (! p)
             break;
         for (q = p; q > offset && *q != '\n';)
             q--;
@@ -2466,7 +2466,7 @@ static void GetSPDescrComment(DataBlkPtr entry, CSeq_descr::Tdata& descrs, char*
             q++;
 
         p = StringChr(p, '\n');
-        if (p == NULL)
+        if (! p)
             break;
         for (i = 0; *p != '\0' && i < ParFlat_COL_DATA_SP + 1; i++)
             p++;
@@ -2476,10 +2476,10 @@ static void GetSPDescrComment(DataBlkPtr entry, CSeq_descr::Tdata& descrs, char*
             ! StringEquNI(p, COPYRIGHT1, StringLen(COPYRIGHT1)))
             break;
         p = StringStr(p, "----------");
-        if (p == NULL)
+        if (! p)
             break;
         p = StringChr(p, '\n');
-        if (p == NULL)
+        if (! p)
             break;
         p++;
         len -= (p - q);
@@ -2498,7 +2498,7 @@ static void GetSPDescrComment(DataBlkPtr entry, CSeq_descr::Tdata& descrs, char*
 
     bptr = offset + ParFlat_COL_DATA_SP + 4;
 
-    for (; (tmp = StringStr(bptr, "-!-")) != NULL; bptr = tmp + 4) {
+    for (; (tmp = StringStr(bptr, "-!-")); bptr = tmp + 4) {
         /* found a new comment
          */
         for (p = tmp; p > bptr && *p != '\n';)
@@ -2550,9 +2550,9 @@ static bool IfOHTaxIdMatchOHName(const char* orpname, const char* ohname)
     Char  chp;
     Char  chq;
 
-    if (orpname == NULL && ohname == NULL)
+    if (! orpname && ! ohname)
         return true;
-    if (orpname == NULL || ohname == NULL)
+    if (! orpname || ! ohname)
         return false;
 
     for (p = orpname, q = ohname; *p != '\0' && *q != '\0'; p++, q++) {
@@ -2596,9 +2596,9 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
     ibp        = pp->entrylist[pp->curindx];
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_DE, &len);
-    if (offset != NULL) {
+    if (offset) {
         char* title = GetSPDescrTitle(offset, offset + len, &fragment);
-        if (title != NULL) {
+        if (title) {
             CRef<CSeqdesc> desc_new(new CSeqdesc);
             desc_new->SetTitle(title);
             descr.Set().push_back(desc_new);
@@ -2671,7 +2671,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
 
     /* Org-ref from ID lines
      */
-    for (dbp = TrackNodeType(*entry, ParFlatSP_ID); dbp != NULL; dbp = dbp->mpNext) {
+    for (dbp = TrackNodeType(*entry, ParFlatSP_ID); dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_ID)
             continue;
 
@@ -2698,7 +2698,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
 
                 if (gmod != CBioSource::eGenome_unknown)
                     bio_src->SetGenome(gmod);
-                fta_fix_orgref(pp, *org_ref, &ibp->drop, NULL);
+                fta_fix_orgref(pp, *org_ref, &ibp->drop, nullptr);
                 bio_src->SetOrg(*org_ref);
             } else if (org_ref->IsSetTaxname()) {
                 if (! bio_src->IsSetOrg() || ! bio_src->GetOrg().IsSetTaxname() ||
@@ -2711,10 +2711,10 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
             break;
 
         vhp = GetViralHostsFrom_OH(dbp);
-        if (vhp != NULL) {
+        if (vhp) {
             COrgName& orgname = bio_src->SetOrg().SetOrgname();
 
-            for (tvhp = vhp; tvhp != NULL; tvhp = vhp) {
+            for (tvhp = vhp; tvhp; tvhp = vhp) {
                 vhp = tvhp->next;
 
                 CRef<COrgMod> mod(new COrgMod);
@@ -2777,7 +2777,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
     /* RN data ==> pub
      */
     dbp = TrackNodeType(*entry, ParFlat_REF_END);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REF_END)
             continue;
 
@@ -2832,7 +2832,7 @@ static void FreeSPFeatInputSet(SPFeatInputPtr spfip)
 {
     SPFeatInputPtr next;
 
-    for (; spfip != NULL; spfip = next) {
+    for (; spfip; spfip = next) {
         next = spfip->next;
         FreeSPFeatInput(spfip);
     }
@@ -2841,10 +2841,10 @@ static void FreeSPFeatInputSet(SPFeatInputPtr spfip)
 /**********************************************************/
 static bool fta_spfeats_same(SPFeatInputPtr fip1, SPFeatInputPtr fip2)
 {
-    if (fip1 == NULL && fip2 == NULL)
+    if (! fip1 && ! fip2)
         return true;
 
-    if (fip1 == NULL || fip2 == NULL ||
+    if (! fip1 || ! fip2 ||
         fip1->key != fip2->key ||
         fip1->from != fip2->from ||
         fip1->to != fip2->to ||
@@ -2861,12 +2861,12 @@ static void fta_remove_dup_spfeats(SPFeatInputPtr spfip)
     SPFeatInputPtr fipnext;
     SPFeatInputPtr fipprev;
 
-    if (spfip == NULL || spfip->next == NULL)
+    if (! spfip || ! spfip->next)
         return;
 
-    for (; spfip != NULL && spfip->next != NULL; spfip = spfip->next) {
+    for (; spfip && spfip->next; spfip = spfip->next) {
         fipprev = spfip;
-        for (fip = spfip->next; fip != NULL; fip = fipnext) {
+        for (fip = spfip->next; fip; fip = fipnext) {
             fipnext = fip->next;
             if (! fta_spfeats_same(spfip, fip)) {
                 fipprev = fip;
@@ -2892,7 +2892,7 @@ static void SPPostProcVarSeq(string& varseq)
 
     temp = StringSave(varseq.c_str());
     p    = StringStr(temp, "->");
-    if (p == NULL || p == temp ||
+    if (! p || p == temp ||
         (*(p - 1) != ' ' && *(p - 1) != '\n') || (p[2] != ' ' && p[2] != '\n')) {
         NStr::ReplaceInPlace(varseq, "\n", " ");
         MemFree(temp);
@@ -3000,16 +3000,16 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
 
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_FT, &len);
-    if (offset == NULL)
-        return (NULL);
+    if (! offset)
+        return nullptr;
 
     bptr = offset + ParFlat_COL_DATA_SP;
     eptr = offset + len;
 
-    spfip   = NULL;
-    current = NULL;
+    spfip   = nullptr;
+    current = nullptr;
 
-    while (bptr < eptr && (endline = SrchTheChar(bptr, eptr, '\n')) != NULL) {
+    while (bptr < eptr && (endline = SrchTheChar(bptr, eptr, '\n'))) {
         temp = new SPFeatInput;
 
         for (p = bptr, i = 0; *p != ' ' && *p != '\n' && i < 8; i++)
@@ -3047,9 +3047,9 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             ch = '\0';
             p  = StringChr(location, ' ');
             q  = StringChr(location, '\n');
-            if (p == NULL || (q != NULL && q < p))
+            if (! p || (q && q < p))
                 p = q;
-            if (p != NULL) {
+            if (p) {
                 ch = *p;
                 *p = '\0';
             }
@@ -3057,11 +3057,11 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
                 ErrPostEx(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"%s\" at feature \"%s\". Feature dropped.", location, temp->key.c_str());
             else
                 ErrPostEx(SEV_ERROR, ERR_FEATURE_BadLocation, "Empty location at feature \"%s\". Feature dropped.", temp->key.c_str());
-            if (p != NULL)
+            if (p)
                 *p = ch;
             temp->from.assign("-1");
-            fromstart = NULL;
-            fromend   = NULL;
+            fromstart = nullptr;
+            fromend   = nullptr;
         }
 
         new_format = false;
@@ -3099,16 +3099,16 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             q++;
         if (extra_text || (*p != '?' && *q != '?' && (atoi(p) > atoi(q)))) {
             ch = '\0';
-            p  = extra_text ? NULL : StringChr(location, ' ');
+            p  = extra_text ? nullptr : StringChr(location, ' ');
             q  = StringChr(location, '\n');
-            if (p == NULL || (q != NULL && q < p))
+            if (! p || (q && q < p))
                 p = q;
-            if (p != NULL) {
+            if (p) {
                 ch = *p;
                 *p = '\0';
             }
             ErrPostEx(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"%s\" at feature \"%s\". Feature dropped.", location, temp->key.c_str());
-            if (p != NULL)
+            if (p)
                 *p = ch;
             temp->from.assign("-1");
         }
@@ -3121,7 +3121,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
         if (str > bptr)
             if (*--str == '-' && str > bptr)
                 if (*--str != ' ')
-                    delim = NULL;
+                    delim = nullptr;
         if (bptr <= endline)
             temp->descrip.assign(bptr, endline);
 
@@ -3137,15 +3137,15 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
 
             if (StringEquN(bptr, "/note=\"", 7)) {
                 bptr += 7;
-                quotes = NULL;
+                quotes = nullptr;
             } else if (StringEquN(bptr, "/evidence=\"", 11)) {
                 quotes = bptr + 10;
                 if (! StringEquN(quotes + 1, "ECO:", 4)) {
                     p = StringChr(bptr, '\n');
-                    if (p != NULL)
+                    if (p)
                         *p = '\0';
                     ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidEvidence, "/evidence qualifier does not have expected \"ECO:\" prefix : \"%s\".", bptr);
-                    if (p != NULL)
+                    if (p)
                         *p = '\n';
                 }
             } else if (StringEquN(bptr, "/id=\"", 5))
@@ -3161,7 +3161,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
                         *p = '=';
                     }
                 }
-                quotes = NULL;
+                quotes = nullptr;
             }
 
             endline = SrchTheChar(bptr, eptr, '\n');
@@ -3169,7 +3169,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             if (p >= bptr && *p == '\"')
                 *p = '.';
             else
-                p = NULL;
+                p = nullptr;
 
             if (quotes) {
                 StringCombine(temp->descrip, string(bptr, quotes), delim);
@@ -3192,7 +3192,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             if (str > bptr)
                 if (*--str == '-' && str > bptr)
                     if (*--str != ' ')
-                        delim = NULL;
+                        delim = nullptr;
             for (bptr = endline; *bptr == ' ' || *bptr == '\n';)
                 bptr++;
 
@@ -3226,7 +3226,7 @@ static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
             continue;
         }
 
-        if (spfip == NULL)
+        if (! spfip)
             spfip = temp;
         else
             current->next = temp;
@@ -3275,13 +3275,13 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
     loc.Reset(new CSeq_loc);
 
     ptr = spfip->from.c_str();
-    if (StringChr(ptr, '<') != NULL) {
+    if (StringChr(ptr, '<')) {
         fuzzfrom = true;
 
         while (*ptr != '\0' && isdigit(*ptr) == 0)
             ptr++;
         from = (Int4)atoi(ptr);
-    } else if (StringChr(ptr, '?') != NULL) {
+    } else if (StringChr(ptr, '?')) {
         from   = 0;
         nofrom = true;
     } else {
@@ -3292,12 +3292,12 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
         from--;
 
     ptr = spfip->to.c_str();
-    if (StringChr(ptr, '>') != NULL) {
+    if (StringChr(ptr, '>')) {
         fuzzto = true;
         while (*ptr != '\0' && isdigit(*ptr) == 0)
             ptr++;
         to = (Int4)atoi(ptr);
-    } else if (StringChr(ptr, '?') != NULL) {
+    } else if (StringChr(ptr, '?')) {
         to   = static_cast<Int4>(ibp->bases);
         noto = true;
     } else
@@ -3391,7 +3391,7 @@ static bool SPFeatNoExp(ParserPtr pp, SPFeatInputPtr spfip)
     Int2    indx;
     Int4    len = 0;
 
-    if(spfip == NULL)
+    if (!spfip)
         return false;
 
     if(MatchArrayISubString(ParFlat_SPFeatNoExp, spfip->descrip.c_str()) != -1)
@@ -3404,7 +3404,7 @@ static bool SPFeatNoExp(ParserPtr pp, SPFeatInputPtr spfip)
     DelTheStr(spfip->descrip, ParFlat_SPFeatNoExpW[indx]);
     if (len > 0 && spfip->descrip[len-1] != '.')
     {
-        StringCombine(spfip->descrip, ".", NULL);
+        StringCombine(spfip->descrip, ".", nullptr);
     }
 
     ErrPostEx(SEV_WARNING, ERR_FEATURE_OldNonExp,
@@ -3460,11 +3460,11 @@ Int2 SpFeatKeyNameValid(const Char* keystr)
 {
     Int2 i;
 
-    for (i = 0; ParFlat_SPFeat[i].inkey != NULL; i++)
+    for (i = 0; ParFlat_SPFeat[i].inkey; i++)
         if (NStr::CompareNocase(ParFlat_SPFeat[i].inkey, keystr) == 0)
             break;
 
-    if (ParFlat_SPFeat[i].inkey == NULL)
+    if (! ParFlat_SPFeat[i].inkey)
         return (-1);
     return (i);
 }
@@ -3533,7 +3533,7 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
         GetSeqLocation(*feat, fbp->location, seqids, &err, pp, fbp->key);
         if (pp->buf)
             MemFree(pp->buf);
-        pp->buf = NULL;
+        pp->buf = nullptr;
     }
     if (err) {
         if (! pp->debug) {
@@ -3574,7 +3574,7 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
 */
     Uint1 type;
 
-    for (temp = spfip; temp != NULL; temp = temp->next) {
+    for (temp = spfip; temp; temp = temp->next) {
         FtaInstallPrefix(PREFIX_FEATURE, temp->key.c_str(), temp->from.c_str());
 
         if (NStr::EqualNocase("VARSPLIC", temp->key)) {
@@ -3748,7 +3748,7 @@ static void ParseGeneNameSP(char* str, CSeq_feat& feat)
     Int2 count;
 
     count = 0;
-    gname = NULL;
+    gname = nullptr;
 
     CGene_ref& gene = feat.SetData().SetGene();
 
@@ -3813,11 +3813,11 @@ static void GetOneGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, char
     char* str;
     char* ptr;
 
-    if (pp == NULL || pp->entrylist.empty())
+    if (! pp || pp->entrylist.empty())
         return;
 
     ibp = pp->entrylist[pp->curindx];
-    if (ibp == NULL)
+    if (! ibp)
         return;
 
     str = StringSave(bptr);
@@ -3837,13 +3837,13 @@ static void GetOneGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, char
 /**********************************************************/
 static void SPFreeGenRefTokens(char* name, char* syns, char* ltags, char* orfs)
 {
-    if (name != NULL)
+    if (name)
         MemFree(name);
-    if (syns != NULL)
+    if (syns)
         MemFree(syns);
-    if (ltags != NULL)
+    if (ltags)
         MemFree(ltags);
-    if (orfs != NULL)
+    if (orfs)
         MemFree(orfs);
 }
 
@@ -3853,14 +3853,14 @@ static void SPParseGeneRefTag(char* str, CGene_ref& gene, bool set_locus_tag)
     char* p;
     char* q;
 
-    if (str == NULL)
+    if (! str)
         return;
 
-    for (p = str; p != NULL && *p != '\0'; p = q) {
+    for (p = str; p && *p != '\0'; p = q) {
         while (*p == ' ' || *p == ',')
             p++;
         q = StringChr(p, ',');
-        if (q != NULL)
+        if (q)
             *q++ = '\0';
         if (q == p)
             continue;
@@ -3878,18 +3878,18 @@ static void SPGetOneGeneRefNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats,
 {
     IndexblkPtr ibp;
 
-    if (pp == NULL || pp->entrylist.empty() ||
-        (name == NULL && syns == NULL && ltags == NULL && orfs == NULL))
+    if (! pp || pp->entrylist.empty() ||
+        (! name && ! syns && ! ltags && ! orfs))
         return;
 
     ibp = pp->entrylist[pp->curindx];
-    if (ibp == NULL)
+    if (! ibp)
         return;
 
     CRef<CSeq_feat> feat(new CSeq_feat);
     CGene_ref&      gene = feat->SetData().SetGene();
 
-    if (name != NULL)
+    if (name)
         gene.SetLocus(name);
 
 
@@ -3916,31 +3916,31 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
     char* q;
     char* r;
 
-    if (pp == NULL || pp->entrylist.empty() || bptr == NULL)
+    if (! pp || pp->entrylist.empty() || ! bptr)
         return;
 
     ibp = pp->entrylist[pp->curindx];
-    if (ibp == NULL)
+    if (! ibp)
         return;
 
     str = StringSave(bptr);
 
-    name  = NULL;
-    syns  = NULL;
-    ltags = NULL;
-    orfs  = NULL;
-    for (p = str; p != NULL && *p != '\0'; p = q) {
+    name  = nullptr;
+    syns  = nullptr;
+    ltags = nullptr;
+    orfs  = nullptr;
+    for (p = str; p && *p != '\0'; p = q) {
         while (*p == ' ' || *p == ';')
             p++;
         for (r = p;; r = q + 1) {
             q = StringChr(r, ';');
-            if (q == NULL || q[1] == ' ' || q[1] == '\n' || q[1] == '\0')
+            if (! q || q[1] == ' ' || q[1] == '\n' || q[1] == '\0')
                 break;
         }
-        if (q != NULL)
+        if (q)
             *q++ = '\0';
         if (StringEquNI(p, "Name=", 5)) {
-            if (name != NULL) {
+            if (name) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Name=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = 1;
                 break;
@@ -3949,7 +3949,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             if (p != q)
                 name = StringSave(p);
         } else if (StringEquNI(p, "Synonyms=", 9)) {
-            if (syns != NULL) {
+            if (syns) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Synonyms=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = 1;
                 break;
@@ -3958,7 +3958,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             if (p != q)
                 syns = StringSave(p);
         } else if (StringEquNI(p, "OrderedLocusNames=", 18)) {
-            if (ltags != NULL) {
+            if (ltags) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"OrderedLocusNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = 1;
                 break;
@@ -3967,7 +3967,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             if (p != q)
                 ltags = StringSave(p);
         } else if (StringEquNI(p, "ORFNames=", 9)) {
-            if (orfs != NULL) {
+            if (orfs) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"ORFNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = 1;
                 break;
@@ -3976,23 +3976,23 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             if (p != q)
                 orfs = StringSave(p);
         } else if (StringEquNI(p, "and ", 4)) {
-            if (q != NULL)
+            if (q)
                 *--q = ';';
             q = p + 4;
 
-            if (name == NULL && syns == NULL && ltags == NULL && orfs == NULL)
+            if (! name && ! syns && ! ltags && ! orfs)
                 continue;
 
-            if (name == NULL && syns != NULL) {
+            if (! name && syns) {
                 ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingGeneName, "Encountered a gene with synonyms \"%s\" that lacks a gene symbol.", syns);
             }
 
             SPGetOneGeneRefNew(pp, feats, seqlen, name, syns, ltags, orfs);
             SPFreeGenRefTokens(name, syns, ltags, orfs);
-            name  = NULL;
-            syns  = NULL;
-            ltags = NULL;
-            orfs  = NULL;
+            name  = nullptr;
+            syns  = nullptr;
+            ltags = nullptr;
+            orfs  = nullptr;
         } else {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_UnknownGeneField, "Field \"%s\" is not a legal field for the GN linetype. Entry dropped.", p);
             ibp->drop = 1;
@@ -4002,7 +4002,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
 
     MemFree(str);
 
-    if (name == NULL && syns == NULL && ltags == NULL && orfs == NULL)
+    if (! name && ! syns && ! ltags && ! orfs)
         return;
 
     if (ibp->drop == 1) {
@@ -4062,19 +4062,19 @@ static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
 
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_GN, &len);
-    if (offset == NULL)
+    if (! offset)
         return;
 
     str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_SP);
     StripECO(str);
-    if (str == NULL)
+    if (! str)
         return;
 
     len = GetSeqLen(entry);
-    if (StringIStr(str, "Name=") == NULL &&
-        StringIStr(str, "Synonyms=") == NULL &&
-        StringIStr(str, "OrderedLocusNames=") == NULL &&
-        StringIStr(str, "ORFNames=") == NULL)
+    if (! StringIStr(str, "Name=") &&
+        ! StringIStr(str, "Synonyms=") &&
+        ! StringIStr(str, "OrderedLocusNames=") &&
+        ! StringIStr(str, "ORFNames="))
         GetOneGeneRef(pp, feats, str, len);
     else
         SPGetGeneRefsNew(pp, feats, str, len);
@@ -4135,7 +4135,7 @@ static void SPCollectProtNames(SPDEFieldsPtr sfp, CProt_ref& prot, Int4 tag)
 {
     Char ch;
 
-    for (; sfp != NULL; sfp = sfp->next) {
+    for (; sfp; sfp = sfp->next) {
         if (sfp->tag == SPDE_RECNAME || sfp->tag == SPDE_ALTNAME ||
             sfp->tag == SPDE_SUBNAME || sfp->tag == SPDE_FLAGS)
             break;
@@ -4158,24 +4158,24 @@ static void SPValidateDefinition(SPDEFieldsPtr sfp, Uint1* drop, bool is_trembl)
     Int4          scount;
     Int4          fcount;
 
-    for (rcount = 0, scount = 0, tsfp = sfp; tsfp != NULL; tsfp = tsfp->next) {
+    for (rcount = 0, scount = 0, tsfp = sfp; tsfp; tsfp = tsfp->next) {
         if (tsfp->tag == SPDE_RECNAME)
             rcount++;
         else if (tsfp->tag == SPDE_SUBNAME)
             scount++;
     }
 
-    for (fcount = 0, tsfp = sfp; tsfp != NULL; tsfp = tsfp->next) {
+    for (fcount = 0, tsfp = sfp; tsfp; tsfp = tsfp->next) {
         if (tsfp->tag != SPDE_RECNAME)
             continue;
-        for (tsfp = tsfp->next; tsfp != NULL; tsfp = tsfp->next) {
+        for (tsfp = tsfp->next; tsfp; tsfp = tsfp->next) {
             if (tsfp->tag == SPDE_RECNAME || tsfp->tag == SPDE_ALTNAME ||
                 tsfp->tag == SPDE_SUBNAME || tsfp->tag == SPDE_FLAGS)
                 break;
             if (tsfp->tag == SPDE_FULL)
                 fcount++;
         }
-        if (tsfp == NULL)
+        if (! tsfp)
             break;
     }
 
@@ -4230,7 +4230,7 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
 
     sfp       = new SPDEFields;
     sfp->tag  = 0;
-    sfp->next = NULL;
+    sfp->next = nullptr;
 
     for (tsfp = sfp, p = str, count = 0; *p != '\0';) {
         while (*p == ' ')
@@ -4239,12 +4239,12 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
             p++;
         ch = *p;
         *p = '\0';
-        for (cilp = spde_tags; cilp->str != NULL; cilp++)
+        for (cilp = spde_tags; cilp->str; cilp++)
             if (StringEquNI(cilp->str, q, cilp->len))
                 break;
 
         *p = ch;
-        if (cilp->str == NULL)
+        if (! cilp->str)
             continue;
 
         if (tsfp->tag != 0) {
@@ -4267,7 +4267,7 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
         for (r = q + cilp->len; *r == ' ';)
             r++;
         tsfp->start = r;
-        tsfp->next  = NULL;
+        tsfp->next  = nullptr;
     }
 
     if (*p == '\0')
@@ -4275,24 +4275,24 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
 
     SPValidateDefinition(sfp->next, &ibp->drop, is_trembl);
 
-    for (tsfp = sfp->next; tsfp != NULL; tsfp = tsfp->next)
+    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
         if (tsfp->tag == SPDE_RECNAME)
             SPCollectProtNames(tsfp->next, prot, SPDE_FULL);
-    for (tsfp = sfp->next; tsfp != NULL; tsfp = tsfp->next)
+    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
         if (tsfp->tag == SPDE_RECNAME)
             SPCollectProtNames(tsfp->next, prot, SPDE_SHORT);
 
-    for (tsfp = sfp->next; tsfp != NULL; tsfp = tsfp->next)
+    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
         if (tsfp->tag == SPDE_ALTNAME)
             SPCollectProtNames(tsfp->next, prot, SPDE_FULL);
-    for (tsfp = sfp->next; tsfp != NULL; tsfp = tsfp->next)
+    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
         if (tsfp->tag == SPDE_ALTNAME)
             SPCollectProtNames(tsfp->next, prot, SPDE_SHORT);
 
-    for (tsfp = sfp->next; tsfp != NULL; tsfp = tsfp->next)
+    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
         if (tsfp->tag == SPDE_SUBNAME)
             SPCollectProtNames(tsfp->next, prot, SPDE_FULL);
-    for (tsfp = sfp->next; tsfp != NULL; tsfp = tsfp->next)
+    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
         if (tsfp->tag == SPDE_SUBNAME)
             SPCollectProtNames(tsfp->next, prot, SPDE_SHORT);
 }
@@ -4308,7 +4308,7 @@ static void SPGetPEValue(DataBlkPtr entry, CSeq_feat& feat)
 
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_PE, &len);
-    if (offset == NULL || len < 1)
+    if (! offset || len < 1)
         return;
 
     ch              = offset[len - 1];
@@ -4319,16 +4319,16 @@ static void SPGetPEValue(DataBlkPtr entry, CSeq_feat& feat)
     for (q = buf + 2; *q == ' ';)
         q++;
     p = StringChr(q, ':');
-    if (p != NULL)
+    if (p)
         for (p++; *p == ' ';)
             p++;
     else
         p = q;
 
     q = StringRChr(p, ';');
-    if (q == NULL)
+    if (! q)
         q = StringChr(p, '\n');
-    if (q != NULL)
+    if (q)
         *q = '\0';
 
     if (MatchArrayIString(PE_values, p) < 0)
@@ -4384,7 +4384,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
 
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_DE, &len);
-    if (offset == NULL)
+    if (! offset)
         return;
 
     CRef<CSeq_feat> feat(new CSeq_feat);
@@ -4422,7 +4422,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
         shift = 3;
     }
 
-    while ((ptr = StringStr(str, tag)) != NULL) {
+    while (ptr = StringStr(str, tag)) {
         len = StringLen(str);
         str1.assign(str, ptr);
 
@@ -4456,8 +4456,8 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     }
 
     if (symb == ')') {
-        while ((ptr = StringStr(str, " (")) != NULL ||
-               (ptr = StringStr(str, " /")) != NULL) {
+        while ((ptr = StringStr(str, " (")) ||
+               (ptr = StringStr(str, " /"))) {
             str1.assign(str, ptr);
             NStr::TruncateSpacesInPlace(str1, NStr::eTrunc_End);
 
@@ -4512,24 +4512,23 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
  **********************************************************/
 static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeatBlnPtr spfbp)
 {
-    SPSegLocPtr curspslp = NULL;
-    SPSegLocPtr hspslp   = NULL;
+    SPSegLocPtr curspslp = nullptr;
+    SPSegLocPtr hspslp   = nullptr;
     SPSegLocPtr spslp;
     const char* p;
 
-    if (spfip == NULL)
-        return (NULL);
+    if (! spfip)
+        return nullptr;
 
     /* get location range
      */
-    for (; spfip != NULL; spfip = spfip->next) {
+    for (; spfip; spfip = spfip->next) {
         if (spfip->key != "NON_CONS")
             continue;
 
-        if (hspslp == NULL) {
-            spslp       = new SPSegLoc;
-            spslp->from = 0;
-            p           = spfip->from.c_str();
+        if (! hspslp) {
+            spslp = new SPSegLoc;
+            p     = spfip->from.c_str();
             if (*p == '<' || *p == '>' || *p == '?')
                 p++;
 
@@ -4564,7 +4563,7 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
             descr->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
     }
 
-    if (hspslp != NULL)
+    if (hspslp)
         curspslp->len = bioseq.GetLength() - curspslp->from;
 
     return (hspslp);
@@ -4585,7 +4584,7 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
     Int4           from = 0;
     Int4           to;
 
-    for (count = 0; spfip != NULL; spfip = spfip->next) {
+    for (count = 0; spfip; spfip = spfip->next) {
         if (spfip->key != "INIT_MET")
             continue;
 
@@ -4610,7 +4609,7 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
     if (count == 0)
         return;
 
-    if (spfip != NULL) {
+    if (spfip) {
         ErrPostEx(SEV_ERROR, ERR_FEATURE_Invalid_INIT_MET, "Either incorrect or more than one INIT_MET feature provided.");
         return;
     }
@@ -4670,7 +4669,7 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
     }
 
     segm = false;
-    for (temp = spfip; temp != NULL; temp = temp->next) {
+    for (temp = spfip; temp; temp = temp->next) {
         if (temp->key == "NON_CONS") {
             segm = true;
             continue;
@@ -4696,7 +4695,7 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
         }
     }
 
-    if (mol_info == nullptr)
+    if (! mol_info)
         return;
 
     if (segm && mol_info->GetCompleteness() != 2) {
@@ -4731,13 +4730,13 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
 /**********************************************************/
 static void SeqToDeltaSP(CBioseq& bioseq, SPSegLocPtr spslp)
 {
-    if (spslp == NULL || ! bioseq.GetInst().IsSetSeq_data())
+    if (! spslp || ! bioseq.GetInst().IsSetSeq_data())
         return;
 
     CSeq_ext::TDelta& deltas      = bioseq.SetInst().SetExt().SetDelta();
     const string&     bioseq_data = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
 
-    for (; spslp != NULL; spslp = spslp->next) {
+    for (; spslp; spslp = spslp->next) {
         CRef<CDelta_seq> delta(new CDelta_seq);
         if (! deltas.Set().empty()) {
             delta->SetLiteral().SetLength(0);
@@ -4787,7 +4786,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 
     CSeq_annot::C_Data::TFtable feats;
 
-    if (spfip != NULL) {
+    if (spfip) {
         CkNonTerSP(pp, spfip, seq_entry, spfbp);
         CkInitMetSP(pp, spfip, seq_entry, spfbp);
         SPFeatGeneral(pp, spfip, spfbp->initmet, feats);
@@ -4799,7 +4798,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
     CBioseq& bioseq = seq_entry.SetSeq();
 
     spslp = GetSPSegLocInfo(bioseq, spfip, spfbp); /* checking NON_CONS key */
-    if (spslp != NULL)
+    if (spslp)
         SeqToDeltaSP(bioseq, spslp);
 
     if (! feats.empty()) {
@@ -4808,7 +4807,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
         bioseq.SetAnnot().push_back(annot);
     }
 
-    for (; spslp != NULL; spslp = next) {
+    for (; spslp; spslp = next) {
         next = spslp->next;
         delete spslp;
     }
@@ -4884,7 +4883,7 @@ bool SprotAscii(ParserPtr pp)
 
         if (ibp->drop != 1) {
             entry = LoadEntry(pp, ibp->offset, ibp->len);
-            if (entry == NULL) {
+            if (! entry) {
                 FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
                 return false;
             }
