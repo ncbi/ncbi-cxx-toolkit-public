@@ -121,7 +121,7 @@ class CNewCleanup_imp
 {
 public:
 
-    static const int NCBI_CLEANUP_VERSION;
+    static const int NCBI_CLEANUP_VERSION = 1;
 
     // some cleanup functions will return a value telling you whether
     // to erase the cleaned value ( or whatever action may be
@@ -220,6 +220,8 @@ public:
     void ExtendedCleanup(CBioSource& biosrc);
 
     static bool ShouldRemoveAnnot(const CSeq_annot& annot);
+
+    static void AddNcbiCleanupObject(CSeq_descr& descr);
 
 private:
 

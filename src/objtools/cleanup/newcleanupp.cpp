@@ -80,7 +80,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-const int CNewCleanup_imp::NCBI_CLEANUP_VERSION = 1;
+//const int CNewCleanup_imp::NCBI_CLEANUP_VERSION = 1;
 
 // We don't want to use CompressSpaces inside the likes of COMPRESS_STRING_MEMBER
 // we prefer our own version
@@ -7561,6 +7561,11 @@ void CNewCleanup_imp::x_ConvertDoubleQuotesMarkChanged( std::string &str )
 
 void CNewCleanup_imp::x_AddNcbiCleanupObject( CSeq_entry &seq_entry )
 {
+    if (m_Options & CCleanup::eClean_InHugeSeqSet) {
+        CCleanup::RemoveNcbiCleanupObject(seq_entry);
+        return;
+    }
+
     // remove from lower levels
     if (seq_entry.IsSet() && seq_entry.GetSet().IsSetSeq_set()) {
         for (auto it : seq_entry.GetSet().GetSeq_set()) {
@@ -7568,8 +7573,16 @@ void CNewCleanup_imp::x_AddNcbiCleanupObject( CSeq_entry &seq_entry )
         }
     }
 
-    CCleanup::AddNcbiCleanupObject(NCBI_CLEANUP_VERSION, seq_entry.SetDescr());
+    AddNcbiCleanupObject(seq_entry.SetDescr());
+    ChangeMade(CCleanupChange::eAddNcbiCleanupObject);
 }
+
+
+void CNewCleanup_imp::AddNcbiCleanupObject(CSeq_descr& descr)
+{
+    CCleanup::AddNcbiCleanupObject(NCBI_CLEANUP_VERSION, descr);
+}
+
 
 
 static

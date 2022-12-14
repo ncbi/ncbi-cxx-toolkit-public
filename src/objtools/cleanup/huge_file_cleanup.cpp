@@ -34,6 +34,7 @@
 #include <objtools/cleanup/cleanup_change.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include "newcleanupp.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -41,8 +42,8 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(edit);
 
 
-CCleanupHugeAsnReader::CCleanupHugeAsnReader(bool doExtendedCleanup) 
-: m_ExtendedCleanup(doExtendedCleanup) {}
+CCleanupHugeAsnReader::CCleanupHugeAsnReader(TOptions options) 
+: m_CleanupOptions(options) {}
 
 
 const CCleanupChangeCore& CCleanupHugeAsnReader::GetChanges() const
@@ -119,7 +120,7 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
     CCleanup cleanup;
     m_Changes += *cleanup.BasicCleanup(m_top_entry->SetDescr());
     
-    if (!m_ExtendedCleanup) {
+    if (!(m_CleanupOptions & eExtendedCleanup)) {
         return;
     }
 
@@ -146,6 +147,11 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
         }
     }
 
+    if (!(m_CleanupOptions & eNoNcbiUserObjects)) {
+        CNewCleanup_imp::AddNcbiCleanupObject(m_top_entry->SetDescr());
+        m_Changes.SetChanged(CCleanupChange::eAddNcbiCleanupObject);
+    }
+
     if (descriptors.empty()) {
         m_top_entry->SetSet().ResetDescr();
     }
@@ -154,7 +160,7 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
 
 void CCleanupHugeAsnReader::AddTopLevelDescriptors(CSeq_entry_Handle seh) 
 {
-    if (!m_ExtendedCleanup ||
+    if (!(m_CleanupOptions & eExtendedCleanup) ||
         (m_TopLevelBiosources.empty() && m_pTopLevelMolInfo.Empty())) {
         return;
     }
