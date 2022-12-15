@@ -3446,7 +3446,7 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
     }
 
     // Add aliases for non-positional arguments
-    list<string> negatives;
+    map<string, list<string>> comments_to_negatives;
     if ( !s_IsPositional(arg) ) {
         ITERATE(CArgDescriptions::TArgs, it, m_Args) {
             const CArgDesc_Alias* alias =
@@ -3455,7 +3455,7 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
                 continue;
             }
             if ( alias->GetNegativeFlag() ) {
-                negatives.push_back(alias->GetName());
+                comments_to_negatives[alias->GetComment()].emplace_back(alias->GetName());
             }
             else {
                 intro += ", -" + alias->GetName();
@@ -3515,7 +3515,8 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
     if ( !exclude.empty() ) {
         s_PrintCommentBody(arr, " * Incompatible with:  " + exclude, width);
     }
-    if ( !negatives.empty() ) {
+    for (const auto& c2n : comments_to_negatives) {
+        const auto& negatives = c2n.second;
         string neg_info;
         ITERATE(list<string>, neg, negatives) {
             if ( !neg_info.empty() ) {
@@ -3532,7 +3533,7 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
                 string(indent + 2, ' '), kEmptyStr);
 
         // Print description
-        string neg_comment = arg.GetComment();
+        string neg_comment = c2n.first;
         if ( neg_comment.empty() ) {
             neg_comment = "Negative for " + arg.GetName();
         }
