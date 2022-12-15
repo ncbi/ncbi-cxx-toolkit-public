@@ -86,7 +86,7 @@ struct FtaMsgPost {
     FtaMsgModFiles* bmmf = nullptr;
 
     FtaMsgPost() :
-        lfd(NULL),
+        lfd(nullptr),
         logfile(),
         prefix_accession(),
         prefix_locus(),
@@ -203,7 +203,7 @@ void FtaErrGetMsgCodes(
         bmmfp->next = bmp->bmmf;
     bmp->bmmf = bmmfp;
 
-    bmmtp = NULL;
+    bmmtp = nullptr;
     while (fgets(s, 2047, fd)) {
         if (s[0] != '$' || (s[1] != '^' && s[1] != '$'))
             continue;
@@ -299,8 +299,8 @@ void FtaErrInit()
     bmp.reset(new FtaMsgPost());
     bmp->appname = CNcbiApplication::GetAppName();
 
-    fec.module     = NULL;
-    fec.fname      = NULL;
+    fec.module     = nullptr;
+    fec.fname      = nullptr;
     bmp->hook_only = false;
     fec.line       = -1;
 }
@@ -317,7 +317,7 @@ void FtaErrFini(void)
 /**********************************************************/
 void FtaInstallPrefix(int prefix, const char* name, const char* location)
 {
-    if (name == NULL || *name == '\0')
+    if (! name || *name == '\0')
         return;
 
     if ((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION) {
@@ -420,7 +420,7 @@ void ErrClear(void)
 /**********************************************************/
 void ErrLogPrintStr(const char* str)
 {
-    if (str == NULL || str[0] == '\0')
+    if (! str || str[0] == '\0')
         return;
 
     if (! bmp)
@@ -501,9 +501,9 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
     if (! bmp)
         FtaErrInit();
 
-    if (fec.fname == NULL || fec.line < 0) {
-        fec.module = NULL;
-        fec.fname  = NULL;
+    if (! fec.fname || fec.line < 0) {
+        fec.module = nullptr;
+        fec.fname  = nullptr;
         fec.line   = -1;
         return;
     }
@@ -525,14 +525,14 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
     const char* fpiFname  = fec.fname;
     const char* fpiModule = fec.module;
 
-    fec.module = NULL;
-    fec.fname  = NULL;
+    fec.module = nullptr;
+    fec.fname  = nullptr;
     fec.line   = -1;
 
     if (fpiModule && *fpiModule)
         FtaErrGetMsgCodes(fpiModule, fpiIntcode, fpiIntsubcode, fpiStrcode, fpiStrsubcode, fpiSevcode);
     else
-        fpiModule = NULL;
+        fpiModule = nullptr;
 
     if (fpiSevcode < 0)
         fpiSevcode = (int)sev;

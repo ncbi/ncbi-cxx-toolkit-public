@@ -112,7 +112,7 @@ static const KwordBlk PubStatus[] = {
     { "Publication_Status : Available-Online", 37 },
     { "Publication-Status: Available-Online", 36 },
     { "Publication-Status : Available-Online", 37 },
-    { NULL, 0 }
+    { nullptr, 0 }
 };
 
 /**********************************************************/
@@ -122,10 +122,10 @@ static char* fta_strip_pub_comment(char* comment, const KwordBlk* kbp)
     char* q;
 
     ShrinkSpaces(comment);
-    for (; kbp->str != NULL; kbp++) {
+    for (; kbp->str; kbp++) {
         for (;;) {
             p = StringIStr(comment, kbp->str);
-            if (p == NULL)
+            if (! p)
                 break;
             for (q = p + kbp->len; *q == ' ' || *q == ';';)
                 q++;
@@ -134,7 +134,7 @@ static char* fta_strip_pub_comment(char* comment, const KwordBlk* kbp)
     }
 
     ShrinkSpaces(comment);
-    p = (*comment == '\0') ? NULL : StringSave(comment);
+    p = (*comment == '\0') ? nullptr : StringSave(comment);
     MemFree(comment);
 
     if (p && (StringEquNI(p, "Publication Status", 18) ||
@@ -364,7 +364,7 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
             status == ePubStatus_aheadofprint) {
             char* comment = StringSave(pub_descr.GetComment().c_str());
             comment       = fta_strip_pub_comment(comment, PubStatus);
-            if (comment != NULL && comment[0] != 0)
+            if (comment && *comment != 0)
                 pub_descr.SetComment(comment);
             else
                 pub_descr.ResetComment();
@@ -451,7 +451,7 @@ static Uint1 fta_init_pubseq(void)
         idusername.empty() ? "anyone" : idusername.c_str(),
         idpassword.empty() ? "allowed" : idpassword.c_str()));
 
-    if (s_pubseq == nullptr || !s_pubseq->CheckConnection())
+    if (! s_pubseq || ! s_pubseq->CheckConnection())
         return(2);
     return(1);
 }
@@ -968,7 +968,7 @@ void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop, char* 
         pp->taxserver = fta_init_tax_server();
 
     string old_taxname;
-    if (organelle != NULL) {
+    if (organelle) {
         string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "",
                organelle_str(organelle),
                space(taxname.size() ? " " : "");

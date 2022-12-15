@@ -185,7 +185,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
         char* q = entry->mOffset;
         if (q && entry->len != 0 && StringEquN(q, "LOCUS ", 6)) {
             char* p = StringChr(q, '\n');
-            if (p != NULL)
+            if (p)
                 *p = '\0';
             if (StringLen(q) > 78 && q[28] == ' ' && q[63] == ' ' &&
                 q[67] == ' ') {
@@ -205,7 +205,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
                 cur_block->lc.div      = ParFlat_COL_DIV;
                 cur_block->lc.date     = ParFlat_COL_DATE;
             }
-            if (p != NULL)
+            if (p)
                 *p = '\n';
         }
     }
@@ -227,7 +227,7 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
     offset     = entry->mOffset;
     size_t len = entry->len;
 
-    if (offset == NULL || len == 0)
+    if (! offset || len == 0)
         return;
 
     if (format == Parser::EFormat::GenBank) {
@@ -244,7 +244,7 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
     }
 
     div = StringChr(offset, '\n');
-    if (div != NULL) {
+    if (div) {
         eptr = div;
         len  = eptr - offset + 1;
     } else
@@ -354,8 +354,8 @@ static DataBlkPtr make_entry(char* entry_str)
 {
     DataBlkPtr entry = new DataBlk(nullptr, ParFlat_ENTRYNODE);
 
-    if (entry != NULL) {
-        entry->mpNext  = NULL; /* assume no segment at this time */
+    if (entry) {
+        entry->mpNext  = nullptr; /* assume no segment at this time */
         entry->mOffset = entry_str;
         entry->len     = StringLen(entry->mOffset);
         entry->mpData  = new EntryBlk;
@@ -369,7 +369,7 @@ static CRef<CBioseq> parse_entry(ParserPtr pp, char* entry_str, const string& ac
     CRef<CBioseq> ret;
     DataBlkPtr    entry = make_entry(entry_str);
 
-    if (entry == NULL)
+    if (! entry)
         return ret;
 
     int ix       = add_entry(pp, accession.c_str(), ver, entry),
@@ -436,11 +436,11 @@ END_SCOPE(objects)
 size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
 {
     char* entry_str = objects::get_sequence_text(pp, acc, vernum);
-    if (entry_str == NULL)
+    if (! entry_str)
         return -1;
 
     DataBlkPtr entry = objects::make_entry(entry_str);
-    if (entry == NULL)
+    if (! entry)
         return -1;
 
     int ix       = objects::add_entry(pp, acc, vernum, entry),

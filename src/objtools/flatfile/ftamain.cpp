@@ -448,7 +448,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
 
     FtaInstallPrefix(PREFIX_LOCUS, "INDEXING");
 
-    bool good = FlatFileIndex(pp, NULL);
+    bool good = FlatFileIndex(pp, nullptr);
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
@@ -559,7 +559,7 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
     } else if (NStr::EqualNocase(source, "FLYBASE")) {
         pp.source   = Parser::ESource::Flybase;
         pp.seqtype  = CSeq_id::e_Genbank;
-        pp.acprefix = NULL;
+        pp.acprefix = nullptr;
         if (pp.format != Parser::EFormat::GenBank) {
             ErrPostEx(SEV_FATAL, 0, 0, "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
             return false;
@@ -567,15 +567,15 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
     } else if (NStr::EqualNocase(source, "REFSEQ")) {
         pp.source   = Parser::ESource::Refseq;
         pp.seqtype  = CSeq_id::e_Other;
-        pp.acprefix = NULL;
+        pp.acprefix = nullptr;
         if (pp.format != Parser::EFormat::GenBank) {
             ErrPostEx(SEV_FATAL, 0, 0, "Source \"REFSEQ\" requires format \"GENBANK\" only. Cannot parse.");
             return false;
         }
     } else if (NStr::EqualNocase(source, "NCBI")) {
         if (pp.mode == Parser::EMode::Relaxed) {
-            pp.acprefix = NULL;
-            pp.accpref  = NULL;
+            pp.acprefix = nullptr;
+            pp.accpref  = nullptr;
             pp.source   = Parser::ESource::NCBI;
         } else {
             /* for NCBI, the legal formats are embl and genbank, and
@@ -612,9 +612,9 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
     /* parse regardless of source, overwrite prefix
      */
     if (all) {
-        pp.acprefix = NULL;
+        pp.acprefix = nullptr;
         pp.all      = true;
-        pp.accpref  = NULL;
+        pp.accpref  = nullptr;
     } else
         pp.accpref = GetAccArray(pp.source);
 
@@ -667,8 +667,8 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format, bool accver, Parse
     pp->cleanup               = 1;
     pp->allow_crossdb_featloc = false;
     pp->genenull              = true;
-    pp->qsfile                = NULL;
-    pp->qsfd                  = NULL;
+    pp->qsfile                = nullptr;
+    pp->qsfd                  = nullptr;
     pp->qamode                = false;
 
     pp->ffbuf.start   = ffentry;
@@ -798,7 +798,7 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr
 
 TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 {
-    if (buf == NULL || *buf == '\0') {
+    if (! buf || *buf == '\0') {
         return pp.entries;
     }
     pp.entrez_fetch = pp.taxserver = pp.medserver = 1;
@@ -813,7 +813,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     FtaInstallPrefix(PREFIX_LOCUS, "INDEXING");
 
-    bool good = FlatFileIndex(&pp, NULL);
+    bool good = FlatFileIndex(&pp, nullptr);
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
@@ -860,9 +860,9 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
         ObjMgrUnlock();
     }
     else
-        ompp = NULL;
+        ompp = nullptr;
 
-    if (ompp != NULL)
+    if (ompp)
         ompp->procdata = (Pointer)pp;
     else {
         pp->procid = ObjMgrProcLoad(OMPROC_FETCH, fetchname, "fetch",
@@ -921,8 +921,8 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
         omp = ObjMgrWriteLock();
         ompp = ObjMgrProcFind(omp, pp->procid, fetchname, OMPROC_FETCH);
         ObjMgrUnlock();
-        if (ompp != NULL)
-            ompp->procdata = NULL;
+        if (ompp)
+            ompp->procdata = nullptr;
     }
 
     TransTableFreeAll();*/
