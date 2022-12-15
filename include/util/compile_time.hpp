@@ -170,6 +170,20 @@ namespace ct
             return previous;
         }
 
+        constexpr bool ct_set(T _v)
+        { // compile time version of set, doesn't throw an exception
+            size_t _Pos = static_cast<size_t>(_v);
+            if (_Bits <= _Pos)
+                return false;    // _Pos off end
+            auto& val = _Array[_Pos / _Bitsperword];
+            _Ty mask = (_Ty)1 << _Pos % _Bitsperword;
+            bool previous = (val & mask) != 0;
+            if (!previous) {
+                val |= mask;
+            }
+            return previous;
+        }
+
         class const_iterator
         {
         public:
@@ -179,18 +193,18 @@ namespace ct
             using reference = const T&;
             using iterator_category = std::forward_iterator_tag;
 
-            const_iterator() = default;
+            constexpr const_iterator() = default;
             friend class const_bitset;
 
-            bool operator==(const const_iterator& o) const
+            constexpr bool operator==(const const_iterator& o) const
             {
                 return m_bitset == o.m_bitset && m_index == o.m_index;
             }
-            bool operator!=(const const_iterator& o) const
+            constexpr bool operator!=(const const_iterator& o) const
             {
                 return m_bitset != o.m_bitset || m_index != o.m_index;
             }
-            const_iterator& operator++()
+            constexpr const_iterator& operator++()
             {
                 while (m_index < m_bitset->capacity())
                 {
@@ -200,23 +214,23 @@ namespace ct
                 }
                 return *this;
             }
-            const_iterator operator++(int)
+            constexpr const_iterator operator++(int)
             {
                 const_iterator _this(*this);
                 operator++();
                 return _this;
             }
-            T operator*() const
+            constexpr T operator*() const
             {
                 return static_cast<T>(m_index);
             }
-            T operator->() const
+            constexpr T operator->() const
             {
                 return static_cast<T>(m_index);
             }
 
         private:
-            const_iterator(const const_bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
+            constexpr const_iterator(const const_bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
             {
                 while (m_index < m_bitset->capacity() && !m_bitset->x_test(m_index))
                 {
@@ -229,10 +243,10 @@ namespace ct
 
         using iterator = const_iterator;
 
-        const_iterator begin() const  { return const_iterator(this, 0); }
-        const_iterator end() const    { return const_iterator(this, capacity()); }
-        const_iterator cbegin() const { return const_iterator(this, 0); }
-        const_iterator cend() const   { return const_iterator(this, capacity()); }
+        constexpr const_iterator begin() const  { return const_iterator(this, 0); }
+        constexpr const_iterator end() const    { return const_iterator(this, capacity()); }
+        constexpr const_iterator cbegin() const { return const_iterator(this, 0); }
+        constexpr const_iterator cend() const   { return const_iterator(this, capacity()); }
 
         template<class _Ty, class _Alloc>
         operator std::vector<_Ty, _Alloc>() const
@@ -265,68 +279,12 @@ namespace ct
 
     };
 
-    // non-containing constexpr vector
-    template<typename _Type>
-    class const_vector
-    {
-    public:
-        using value_type       = _Type;
-        using size_type	       = std::size_t;
-        using difference_type  = std::ptrdiff_t;
-        using reference        = const value_type&;
-        using const_reference  = const value_type&;
-        using pointer          = const value_type*;
-        using const_pointer    = const value_type*;
-        using iterator         = pointer;
-        using const_iterator   = const_pointer;
-        using reverse_iterator = std::reverse_iterator<iterator>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
-        constexpr const_vector() = default;
-        constexpr const_vector(const_pointer data, size_t size )
-            : m_size{size}, m_data{data} {}
-
-        constexpr const_vector(std::nullptr_t) {}
-
-        template<size_t N>
-        constexpr const_vector(const std::array<value_type, N>& data )
-            : m_size{data.size()}, m_data{data.data()} {}
-
-        template<size_t N>
-        constexpr const_vector(value_type const (&init)[N]) : m_size{N}, m_data{init} {}
-
-        constexpr const_reference operator[](size_t index) const { return m_data[index]; }
-        constexpr const_reference at(size_t index) const         { return m_data[index]; }
-        constexpr const_pointer   data() const noexcept          { return m_data; }
-
-        constexpr const_reference front() const                  { return m_data[0]; }
-        constexpr const_reference back() const                   { return m_data[m_size-1]; }
-
-        constexpr size_type      size()      const noexcept { return m_size; }
-        constexpr size_type      max_size()  const noexcept { return size(); }
-        constexpr size_type      capacity()  const noexcept { return size(); }
-        [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
-
-        constexpr const_iterator begin()     const noexcept { return m_data; }
-        constexpr const_iterator cbegin()    const noexcept { return begin(); }
-        constexpr const_iterator end()       const noexcept { return begin() + size(); }
-        constexpr const_iterator cend()      const noexcept { return end(); }
-        constexpr const_reverse_iterator rbegin()  const noexcept { return const_reverse_iterator{ end() }; }
-        constexpr const_reverse_iterator rcbegin() const noexcept { return rbegin(); }
-        constexpr const_reverse_iterator rend()    const noexcept { return const_reverse_iterator{ begin() }; }
-        constexpr const_reverse_iterator rcend()   const noexcept { return rend(); }
-
-    protected:
-        size_t m_size = 0;
-        const_pointer m_data = 0;
-    };
-
-    template<typename _Key, typename _Ty, typename _Traits = straight_map_traits<_Key, _Ty>, typename _Backend=void>
-    class const_map: public const_set_map_base<_Traits, _Backend>
+    template<typename _Key, typename _Ty, typename _Traits, typename _Multi=tag_DuplicatesNo, typename _Backend = void>
+    class const_map_impl: public const_set_map_base<_Traits, _Backend, _Multi>
     { // ordered or unordered compile time map
     public:
-        using _MyBase = const_set_map_base<_Traits, _Backend>;
-        using _MyType = const_map<_Key, _Ty, _Traits, _Backend>;
+        using _MyBase = const_set_map_base<_Traits, _Backend, _Multi>;
+        using _MyType = const_map_impl<_Key, _Ty, _Traits, _Multi, _Backend>;
 
         using init_type       = typename _Traits::init_type;
         using intermediate    = typename _MyBase::intermediate;
@@ -351,30 +309,37 @@ namespace ct
             return at(_key);
         }
 
-        template<size_t N>
-        static constexpr auto construct(init_type const (&init)[N])
+        template<size_t N, typename _Enabled = std::enable_if<!_MyBase::is_presorted, init_type>>
+        static constexpr auto construct(typename _Enabled::type const (&init)[N])
         {
             return construct(make_array(init));
         }
-        template<size_t N>
-        static constexpr auto construct(const const_array<init_type, N>& init)
+        template<size_t N, typename _Enabled = std::enable_if<!_MyBase::is_presorted, init_type>>
+        static constexpr auto construct(const const_array<typename _Enabled::type, N>& init)
         {
             auto backend=_MyBase::make_backend(init);
-            return const_map<_Key, _Ty, _Traits, decltype(backend)>{backend};
+            return const_map_impl<_Key, _Ty, _Traits, _Multi, decltype(backend)>{backend};
         }
-        static constexpr auto presorted(const const_vector<init_type>& init)
+        template<typename _Enabled = std::enable_if<_MyBase::is_presorted, _MyType>>
+        static constexpr typename _Enabled::type construct(const const_vector<init_type>& init)
         {
             auto backend=_MyBase::presorted(init);
-            return const_map<_Key, _Ty, _Traits, decltype(backend)>{backend};
+            return const_map_impl<_Key, _Ty, _Traits, _Multi, decltype(backend)>{backend};
         }
-
     protected:
     };
 
-    template<typename _Key, typename _Ty,
-        typename _Traits = straight_map_traits<_Key, _Ty>,
-        typename _Backend = presorted_backend<const_vector<typename _Traits::value_type>>>
-    using const_map_presorted = const_map<_Key, _Ty, _Traits, _Backend>;
+    template<typename _Key, typename _Ty>
+    using const_map = const_map_impl<_Key, _Ty, straight_map_traits<_Key, _Ty>, tag_DuplicatesNo, void>;
+
+    template<typename _Key, typename _Ty>
+    using const_multi_map = const_map_impl<_Key, _Ty, straight_map_traits<_Key, _Ty>, tag_DuplicatesYes, void>;
+
+    template<typename _Key, typename _Ty>
+    using const_map_presorted = const_map_impl<_Key, _Ty,
+        straight_map_traits<_Key, _Ty>,
+        tag_DuplicatesNo,
+        presorted_backend<const_vector<typename straight_map_traits<_Key, _Ty>::value_type>>>;
 
     template<typename _Ty, typename _Backend=void>
     class const_set: public const_set_map_base<simple_sort_traits<_Ty>, _Backend>
@@ -413,8 +378,8 @@ namespace ct
         using reverse_traits  = reverse_map_traits<type1, type2>;
         using init_type = typename straight_traits::init_type;
 
-        using map_type1 = const_map<T1, T2, straight_traits>;
-        using map_type2 = const_map<T2, T1, reverse_traits>;
+        using map_type1 = const_map_impl<T1, T2, straight_traits, tag_DuplicatesNo>;
+        using map_type2 = const_map_impl<T2, T1, reverse_traits,  tag_DuplicatesNo>;
 
         template<size_t N>
         static constexpr auto construct(init_type const (&init)[N])
@@ -443,7 +408,7 @@ namespace ct
     template<typename _Init, typename _Elem=array_elem_t<_Init>>
     constexpr auto sort(_Init&& init)
     {
-        using sorter=TInsertSorter<simple_sort_traits<_Elem>, false>;
+        using sorter=TInsertSorter<simple_sort_traits<_Elem>, tag_DuplicatesYes>;
         return std::get<1>(sorter::sort(tag_SortByValues{}, std::forward<_Init>(init)));
     }
 
