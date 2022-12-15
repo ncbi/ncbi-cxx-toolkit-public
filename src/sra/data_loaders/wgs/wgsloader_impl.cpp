@@ -183,12 +183,22 @@ static bool GetSplitFeaturesParam(void)
 
 NCBI_PARAM_DECL(bool, WGS_LOADER, KEEP_REPLACED);
 NCBI_PARAM_DEF(bool, WGS_LOADER, KEEP_REPLACED, false);
+NCBI_PARAM_DECL(bool, WGS_LOADER, KEEP_MIGRATED);
+NCBI_PARAM_DEF(bool, WGS_LOADER, KEEP_MIGRATED, false);
 
 
 static bool GetKeepReplacedParam(void)
 {
     static bool value =
         NCBI_PARAM_TYPE(WGS_LOADER, KEEP_REPLACED)::GetDefault();
+    return value;
+}
+
+
+static bool GetKeepMigratedParam(void)
+{
+    static bool value =
+        NCBI_PARAM_TYPE(WGS_LOADER, KEEP_MIGRATED)::GetDefault();
     return value;
 }
 
@@ -526,7 +536,7 @@ CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
     if ( info->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
         // replaced
         if ( GetDebugLevel() >= 2 ) {
-            ERR_POST_X(11, "CWGSDataLoader: WGS Project "<<prefix<<" is replaced");
+            ERR_POST_X(11, "CWGSDataLoader: WGS Project "<<prefix<<" is replaced with GenBank entry");
         }
         return null;
     }
@@ -557,24 +567,6 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
                        "Failed to resolve gi "<<gi);
         }
         return ret;
-    }
-    if ( 0 ) {
-        CMutexGuard guard(m_Mutex);
-        for ( auto& slot : m_FoundFiles ) {
-            slot.second->Open(*this, slot.first);
-            if ( slot.second->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
-                // replaced
-                continue;
-            }
-            if ( slot.second->FindGi(ret, gi) ) {
-                if ( GetDebugLevel() >= 2 ) {
-                    LOG_POST_X(5, Info<<"CWGSDataLoader: "
-                               "Resolved gi "<<gi<<
-                               " -> "<<ret.file->GetWGSPrefix());
-                }
-                return ret;
-            }
-        }
     }
     CWGSResolver& resolver = GetResolver();
     CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(gi);
@@ -619,24 +611,6 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const CTextseq_id& text_id)
                        "Failed to resolve prot acc "<<acc);
         }
         return ret;
-    }
-    if ( 0 ) {
-        CMutexGuard guard(m_Mutex);
-        for ( auto& slot : m_FoundFiles ) {
-            slot.second->Open(*this, slot.first);
-            if ( slot.second->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
-                // replaced
-                continue;
-            }
-            if ( slot.second->FindProtAcc(ret, text_id) ) {
-                if ( GetDebugLevel() >= 2 ) {
-                    LOG_POST_X(9, Info<<"CWGSDataLoader: "
-                               "Resolved prot acc "<<acc<<
-                               " -> "<<ret.file->GetWGSPrefix());
-                }
-                return ret;
-            }
-        }
     }
     CWGSResolver& resolver = GetResolver();
     CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(acc);
@@ -1333,6 +1307,19 @@ static bool s_ValidateAcc(const CConstRef<CSeq_id>& real_seq_id, const CTextseq_
 }
 
 
+bool CWGSFileInfo::SAccFileInfo::IsMigrated(const CWGSProteinIterator& iter) const
+{
+    if ( GetKeepMigratedParam() ) {
+        return false;
+    }
+    if ( file->GetDb()->GetProjectGBState() == NCBI_gb_state_eWGSGenBankMigrated ||
+         iter.GetGBState() == NCBI_gb_state_eWGSGenBankMigrated ) {
+        return true;
+    }
+    return false;
+}
+
+
 bool CWGSFileInfo::SAccFileInfo::ValidateAcc(const CTextseq_id& text_id)
 {
     _ASSERT(version == -1);
@@ -1346,11 +1333,10 @@ bool CWGSFileInfo::SAccFileInfo::ValidateAcc(const CTextseq_id& text_id)
     }
     else if ( IsProtein() ) {
         if ( auto iter = GetProteinIterator() ) {
-            if ( !GetKeepReplacedParam() &&
-                 iter.GetGBState() == NCBI_gb_state_eWGSGenBankMigrated ) {
-                // replaced individual protein
+            if ( IsMigrated(iter) ) {
+                // individual protein migrated to GenBank
                 if ( GetDebugLevel() >= 2 ) {
-                    ERR_POST_X(11, "CWGSDataLoader: WGS protein "<<text_id.GetAccession()<<" is replaced");
+                    ERR_POST_X(11, "CWGSDataLoader: WGS protein "<<text_id.GetAccession()<<" migrated to GenBank");
                 }
                 return false;
             }
@@ -1390,11 +1376,10 @@ bool CWGSFileInfo::SAccFileInfo::ValidateGi(TGi gi)
     }
     else if ( IsProtein() ) {
         if ( auto iter = GetProteinIterator() ) {
-            if ( !GetKeepReplacedParam() &&
-                 iter.GetGBState() == NCBI_gb_state_eWGSGenBankMigrated ) {
-                // replaced individual protein
+            if ( IsMigrated(iter) ) {
+                // individual protein migrated to GenBank
                 if ( GetDebugLevel() >= 2 ) {
-                    ERR_POST_X(11, "CWGSDataLoader: WGS protein "<<gi<<" is replaced");
+                    ERR_POST_X(11, "CWGSDataLoader: WGS protein "<<gi<<" migrated to GenBank");
                 }
                 return false;
             }
@@ -1524,11 +1509,17 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                 LOG_POST_X(13, Info<<"CWGSDataLoader: blob "<<blob_id.ToString()<<
                            " "<<MSerial_AsnText<<*entry);
             }
+            else if ( GetDebugLevel() >= 7 ) {
+                LOG_POST_X(13, Info<<"CWGSDataLoader: blob "<<blob_id.ToString());
+            }
         }
         if ( split ) {
             if ( GetDebugLevel() >=8 ) {
-                LOG_POST_X(14, Info<<"CWGSDataLoader: blob "<<blob_id.ToString()<<
+                LOG_POST_X(14, Info<<"CWGSDataLoader: split blob "<<blob_id.ToString()<<
                            " "<<MSerial_AsnText<<*split);
+            }
+            else if ( GetDebugLevel() >= 7 ) {
+                LOG_POST_X(14, Info<<"CWGSDataLoader: split blob "<<blob_id.ToString());
             }
         }
         if ( state ) {
@@ -1555,6 +1546,10 @@ void CWGSFileInfo::LoadChunk(const CWGSBlobId& blob_id,
             LOG_POST_X(15, Info<<"CWGSDataLoader: chunk "<<blob_id.ToString()<<
                        "."<<chunk_info.GetChunkId()<<
                        " "<<MSerial_AsnText<<*chunk);
+        }
+        else if ( GetDebugLevel() >= 7 ) {
+            LOG_POST_X(15, Info<<"CWGSDataLoader: chunk "<<blob_id.ToString()<<
+                       "."<<chunk_info.GetChunkId());
         }
         CSplitParser::Load(chunk_info, *chunk);
         chunk_info.SetLoaded();

@@ -96,6 +96,8 @@ public:
         bool ValidateAcc(const CTextseq_id& text_id);
         bool ValidateGi(TGi gi);
 
+        bool IsMigrated(const CWGSProteinIterator& iter) const;
+    
         CRef<CWGSFileInfo> file;
         TVDBRowId row_id;
         char seq_type; // '\0' - regular nuc, 'S' - scaffold, 'P' - protein
