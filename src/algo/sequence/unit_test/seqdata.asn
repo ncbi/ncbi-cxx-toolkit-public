@@ -18698,7 +18698,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol mRNA,
+          biomol transcribed-RNA,
           completeness unknown
         }
       },
@@ -18769,125 +18769,6 @@ Bioseq-set ::= {
             }
           }
         }
-      },
-      annot {
-        {
-          data ftable {
-            {
-              data cdregion {
-                frame one,
-                code-break {
-                  {
-                    loc int {
-                      from 643,
-                      to 645,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  },
-                  {
-                    loc int {
-                      from 676,
-                      to 678,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  },
-                  {
-                    loc int {
-                      from 814,
-                      to 816,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  },
-                  {
-                    loc int {
-                      from 826,
-                      to 828,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  },
-                  {
-                    loc int {
-                      from 838,
-                      to 840,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  },
-                  {
-                    loc int {
-                      from 901,
-                      to 903,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  },
-                  {
-                    loc int {
-                      from 934,
-                      to 936,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  },
-                  {
-                    loc int {
-                      from 1003,
-                      to 1005,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  },
-                  {
-                    loc int {
-                      from 1219,
-                      to 1221,
-                      id gi 178405
-                    },
-                    aa ncbieaa 88
-                  }
-                }
-              },
-              product whole local str "PROT_48",
-              location int {
-                from 250,
-                to 1323,
-                id gi 178405
-              },
-              dbxref {
-                {
-                  db "GDB",
-                  tag str "G00-118-995"
-                }
-              },
-              pseudo TRUE
-            }
-          }
-        }
-      }
-    },
-    seq {
-      id {
-        local str "PROT_48"
-      },
-      descr {
-        molinfo {
-          biomol peptide,
-          completeness complete
-        }
-      },
-      inst {
-        repr raw,
-        mol aa,
-        length 357,
-        seq-data iupacaa "MPYRYPALTLEQKKELSDIAHRIVALGKGILAADESTGSIAKRLQSLNAENT
-KENWRFYCQLLLTADDCVNPCIGDVILFHQTLYQKKDDGRPFPQVVMSKGGVGGSKVDKGVVSCRDKWRDHHPRVVWA
-VXVLCPVQEGWSXLHQVALCSEDWGTHPLSPCRHGKYQRPGLSCQHLLAEWHCAHCGAXDPPXWGPXLEALPVCDQEG
-ADCCLQGSEXSTHLSWRASCXTPAWSPQAIPASRSFLTRRLPWXLSQRCTAQCPPLSLGSHSCLEARMRRRHPSTSTP
-LTSAPCDLLLWPSPAGLCPEGLGQEEGEPEGCPGGVKXAVANSLACQGKYTPSSETGAAARESLFISNHTY"
       }
     }
   }
