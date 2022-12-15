@@ -54,7 +54,6 @@
 
 
 #include <corelib/test_boost.hpp>
-
 //#include <cassert>
 
 
@@ -220,12 +219,55 @@ namespace std
 
 enum class ENumbers
 {
-    one, two, three, many, more, much_more,
+    zero, one, two, three, many, more, much_more,
 };
 
 using bitset = ct::const_bitset<64 * 3, int>;
 using bitset_pair = std::pair<int, bitset>;
 using ebitset = ct::const_bitset<64, ENumbers>;
+
+template<typename _Iterator>
+static constexpr bool check_linear(_Iterator it, _Iterator end)
+{
+    if (ct::to_real_underlying(it->first) != 0) return false;
+
+    _Iterator next = it;
+    next++;
+    while( next != end ) {
+        if (ct::to_real_underlying(it->first) + 1 != ct::to_real_underlying(next->first)) {
+            return false;
+        }
+        it = next++;
+    }
+    return true;
+}
+
+template<typename...TArgs>
+constexpr bool check_linear(const ct::const_set_map_base<TArgs...>& cont)
+{
+    return check_linear(cont.begin(), cont.end());
+}
+
+template<typename _Iterator, typename _Op>
+constexpr bool check_order(_Iterator it, _Iterator end, _Op op)
+{
+    _Iterator next = it;
+    next++;
+    while( next != end ) {
+        if (!op(it->first, next->first)) {
+            return false;
+        }
+        it = next++;
+    }
+    return true;
+}
+
+template<typename _Container>
+constexpr bool check_order(const _Container& cont)
+{
+    return check_order(cont.begin(), cont.end(), typename _Container::key_compare{});
+}
+
 
 BOOST_AUTO_TEST_CASE(TestConstBitset)
 {
@@ -412,7 +454,7 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
 
     for (it_type it =  test_two_way1.first.begin(); it != test_two_way1.first.end(); ++it)
     {
-        
+
     }
 }
 
@@ -472,7 +514,7 @@ BOOST_AUTO_TEST_CASE(TestConstSet)
     BOOST_CHECK(ts4.find( ENumbers::one) != ts4.end());
     BOOST_CHECK(ts4.find( ENumbers::much_more) != ts4.end());
     BOOST_CHECK(ts4.find( ENumbers::many) == ts4.end());
-    
+
 }
 
 BOOST_AUTO_TEST_CASE(TestCRC32)
@@ -545,7 +587,7 @@ BOOST_AUTO_TEST_CASE(TestConstMap2)
 {
     MAKE_CONST_MAP(cm1, ct::tagStrNocase, ct::tagStrNocase, SO_MAP_DATA);
     MAKE_TWOWAY_CONST_MAP(cm2, ct::tagStrNocase, ct::tagStrNocase, SO_MAP_DATA);
-    MAKE_CONST_MAP(cm3, ENumbers, ct::tagStrNocase, 
+    MAKE_CONST_MAP(cm3, ENumbers, ct::tagStrNocase,
     {
         { ENumbers::one, "One" },
         { ENumbers::much_more, "Much More" },
@@ -639,8 +681,8 @@ BOOST_AUTO_TEST_CASE(TestConstSorter)
 
     using deduce1 = ct::DeduceType<int>;
     using traits = ct::simple_sort_traits<deduce1>;
-    using sorter_unique = ct::TInsertSorter<traits, true>;
-    using sorter_non_unique = ct::TInsertSorter<traits, false>;
+    using sorter_unique = ct::TInsertSorter<traits, ct::tag_DuplicatesYes>;
+    using sorter_non_unique = ct::TInsertSorter<traits, ct::tag_DuplicatesNo>;
 
     constexpr auto sorted_u = sorter_unique::sort(data);
     constexpr auto sorted_nu = sorter_non_unique::sort(data);
@@ -653,13 +695,13 @@ BOOST_AUTO_TEST_CASE(TestSorting)
 {
     constexpr int init1[] = { 3, 5, 1 };
     constexpr auto res1 = ct::sort(init1);
-    
+
     constexpr auto init2 = ct::make_array({ 1, 2, 3});
     constexpr auto res2 = ct::sort(init2);
 
     static constexpr int init3[] = { 1, 2, 3};
     constexpr auto res3 = ct::sort(init3);
-    
+
     static constexpr auto init4 = ct::make_array({ 1, 2, 3});
     constexpr auto res4 = ct::sort(init4);
 
@@ -759,10 +801,10 @@ BOOST_AUTO_TEST_CASE(TestOrderedMap)
     BOOST_CHECK( temp2 == "a1");
     const ncbi::CTempStringEx& temp3 = c_map["a"];
     BOOST_CHECK( temp3 == "a1");
-#ifdef __cpp_lib_string_view    
+#ifdef __cpp_lib_string_view
     const std::string_view& temp4 = c_map["a"];
-    BOOST_CHECK( temp4 == "a1");   
-#endif    
+    BOOST_CHECK( temp4 == "a1");
+#endif
 
     std::string temp5;
     temp5 = c_map["a"];
@@ -805,6 +847,18 @@ static void ReportMapKeys(const _Map& m)
     std::cout << std::endl;
 }
 
+template<typename _Iterator>
+static void ReportValues(_Iterator it, _Iterator end)
+{
+    std::cout << "size: " << std::distance(it, end) << std::endl;
+    while(it != end)
+    {
+        std::cout << it->second << " ";
+        it++;
+    }
+    std::cout << std::endl;
+}
+
 BOOST_AUTO_TEST_CASE(TestNonUniqueTwoWay)
 {
     // similar to std::set and std::map, const_set/map uses the last element of duplicate items
@@ -833,6 +887,182 @@ BOOST_AUTO_TEST_CASE(TestNonUniqueTwoWay)
     BOOST_CHECK( c_map.first.find(201)->second == "x1");
 
     BOOST_CHECK( c_map.second.find("x1")->second == 201);
+}
+
+BOOST_AUTO_TEST_CASE(TestMultiMap)
+{
+    // similar to std::set and std::map, const_set/map uses the last element of duplicate items
+    // in this example, record "20:d1" must override "20:b1" because the latter appeared earlier
+    // similarly, record "x1:201" must override "x1:200" for the same reason
+
+    using TMMap1 = ct::const_map<int, ct::tagStrNocase>;
+    using TMMap2 = ct::const_multi_map<int, ct::tagStrNocase>;
+    auto c_map1 = TMMap1::construct(
+    {
+        {3,  "three"},
+        {2,  "two 2"},
+        {1,  "one"},
+        {2,  "two 1"},
+    });
+
+    auto c_map2 = TMMap2::construct(
+    {
+        {3,  "three"},
+        {2,  "two first"},
+        {1,  "one"},
+        {2,  "two second"},
+    });
+    ReportMapKeys(c_map1);
+    ReportMapKeys(c_map2);
+
+    BOOST_CHECK_EQUAL(c_map1.size(), 3);
+    BOOST_CHECK_EQUAL(c_map2.size(), 4);
+
+    BOOST_CHECK_EQUAL(c_map1.find(2)->second, "two 2");
+    BOOST_CHECK_EQUAL(c_map2.find(2)->second, "two first");
+    auto range1 = c_map1.equal_range(2);
+    auto range2 = c_map2.equal_range(2);
+    auto dist1 = std::distance(range1.first, range1.second);
+    auto dist2 = std::distance(range2.first, range2.second);
+    BOOST_CHECK_EQUAL(dist1, 1);
+    BOOST_CHECK_EQUAL(dist2, 2);
+}
+
+BOOST_AUTO_TEST_CASE(TestPresortedMap)
+{
+    using TMMap1 = ct::const_map_presorted<int, ct::tagStrNocase>;
+    static constexpr TMMap1::init_type s_presorted [] =
+    {
+        {0,  "zero"},
+        {1,  "one"},
+        {2,  "two"},
+        {3,  "three"},
+    };
+    static constexpr TMMap1::init_type s_presorted_bad [] =
+    {
+        {0,  "zero"},
+        {2,  "two"},
+        {1,  "one"},
+        {3,  "three"},
+    };
+    constexpr auto c_map1 = TMMap1::construct(s_presorted);
+    constexpr auto c_map2 = TMMap1::construct(s_presorted_bad);
+    static_assert(TMMap1::is_presorted);
+    static_assert( check_order(c_map1));
+    static_assert(!check_order(c_map2));
+
+    //ReportMapKeys(c_map1);
+
+    BOOST_CHECK_EQUAL(c_map1.size(), 4);
+    BOOST_CHECK_EQUAL(c_map1.at(2), "two");
+    BOOST_CHECK_EQUAL(c_map1.find(-1), c_map1.end());
+    BOOST_CHECK_EQUAL(c_map1.upper_bound(2)->second, "three");
+    auto range1 = c_map1.equal_range(2);
+    BOOST_CHECK_EQUAL(std::distance(range1.first, range1.second), 1);
+    auto range2 = c_map1.equal_range(3);
+    BOOST_CHECK_EQUAL(std::distance(range2.first, range2.second), 1);
+    auto range3 = c_map1.equal_range(5);
+    BOOST_CHECK_EQUAL(std::distance(range3.first, range3.second), 0);
+}
+
+BOOST_AUTO_TEST_CASE(TestLinearMap1)
+{
+    using TMMap1 = ct::const_map<int, ct::tagStrNocase>;
+    static constexpr auto c_map1 = TMMap1::construct(
+    {
+        {0,  "zero"},
+        {1,  "one"},
+        {2,  "two"},
+        {3,  "three"},
+    });
+    static constexpr TMMap1 c_map2 = c_map1;
+
+    ReportMapKeys(c_map2);
+    static_assert(!TMMap1::is_presorted);
+    static_assert(check_linear(c_map1));
+    static_assert(check_linear(c_map2));
+
+    BOOST_CHECK_EQUAL(c_map1.size(), 4);
+    BOOST_CHECK_EQUAL(c_map1.at(2), "two");
+    BOOST_CHECK_EQUAL(c_map1.find(-1), c_map1.end());
+    BOOST_CHECK_EQUAL(c_map1.upper_bound(2)->second, "three");
+    auto range1 = c_map1.equal_range(2);
+    BOOST_CHECK_EQUAL(std::distance(range1.first, range1.second), 1);
+    auto range2 = c_map1.equal_range(3);
+    BOOST_CHECK_EQUAL(std::distance(range2.first, range2.second), 1);
+    auto range3 = c_map1.equal_range(5);
+    BOOST_CHECK_EQUAL(std::distance(range3.first, range3.second), 0);
+}
+
+BOOST_AUTO_TEST_CASE(TestLinearMap2)
+{
+    using TMMap1 = ct::const_map<ENumbers, ct::tagStrNocase>;
+    static constexpr auto c_map1 = TMMap1::construct(
+    {
+        {ENumbers::zero,  "zero"},
+        {ENumbers::one,   "one"},
+        {ENumbers::two,   "two"},
+        {ENumbers::three, "three"},
+    });
+    static constexpr auto c_map2 = TMMap1::construct(
+    {
+        // zero element is missing hence making it non-linear
+        {ENumbers::one,   "one"},
+        {ENumbers::two,   "two"},
+        {ENumbers::three, "three"},
+    });
+    static constexpr auto c_map3 = TMMap1::construct(
+    {
+        {ENumbers::zero,  "zero"},
+        // second element is missing
+        {ENumbers::two,   "two"},
+        {ENumbers::three, "three"},
+    });
+
+    static_assert(!TMMap1::is_presorted);
+    static_assert( check_linear(c_map1));
+    static_assert(!check_linear(c_map2));
+    static_assert(!check_linear(c_map3));
+
+    BOOST_CHECK_EQUAL(c_map1.size(), 4);
+    BOOST_CHECK_EQUAL(c_map1.at(ENumbers::two), "two");
+    BOOST_CHECK_EQUAL(c_map1.find(ENumbers::many), c_map1.end());
+    BOOST_CHECK_EQUAL(c_map1.upper_bound(ENumbers::two)->second, "three");
+    auto range1 = c_map1.equal_range(ENumbers::two);
+    BOOST_CHECK_EQUAL(std::distance(range1.first, range1.second), 1);
+    auto range2 = c_map1.equal_range(ENumbers::three);
+    BOOST_CHECK_EQUAL(std::distance(range2.first, range2.second), 1);
+    auto range3 = c_map1.equal_range(ENumbers::many);
+    BOOST_CHECK_EQUAL(std::distance(range3.first, range3.second), 0);
+}
+
+BOOST_AUTO_TEST_CASE(TestLinearMultiMap)
+{
+    using TMMap1 = ct::const_multi_map<int, ct::tagStrNocase>;
+    static constexpr auto c_map1 = TMMap1::construct(
+    {
+        {0,  "zero"},
+        {2,  "two 1"},
+        {1,  "one"},
+        {2,  "two 2"},
+        {3,  "three"},
+    });
+    static_assert(!check_linear(c_map1));
+
+    ReportMapKeys(c_map1);
+
+    BOOST_CHECK_EQUAL(c_map1.size(), 5);
+    BOOST_CHECK_EQUAL(c_map1.at(2), "two 2");
+    BOOST_CHECK_EQUAL(c_map1.find(-1), c_map1.end());
+    BOOST_CHECK_EQUAL(c_map1.upper_bound(2)->second, "three");
+    auto range1 = c_map1.equal_range(2);
+    BOOST_CHECK_EQUAL(std::distance(range1.first, range1.second), 2);
+    auto range2 = c_map1.equal_range(3);
+    BOOST_CHECK_EQUAL(std::distance(range2.first, range2.second), 1);
+    auto range3 = c_map1.equal_range(5);
+    BOOST_CHECK_EQUAL(std::distance(range3.first, range3.second), 0);
+    ReportValues(range1.first, range1.second);
+    ReportValues(range2.first, range2.second);
 }
 
 BOOST_AUTO_TEST_CASE(TestConstructors)
@@ -904,4 +1134,3 @@ BOOST_AUTO_TEST_CASE(TestMSVCTupleBug)
     A1 a2 = experimental::to_array(a1);
 }
 #endif
-

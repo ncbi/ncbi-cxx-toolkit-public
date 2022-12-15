@@ -48,7 +48,7 @@ namespace compile_time_bits
 
     // compile time sort algorithm
     // uses insertion sort https://en.wikipedia.org/wiki/Insertion_sort
-    template<typename _Traits, bool remove_duplicates>
+    template<typename _Traits, typename _AllowDuplicates>
     class TInsertSorter
     {
     public:
@@ -56,12 +56,19 @@ namespace compile_time_bits
         using sort_traits = _Traits;
         using value_type  = typename sort_traits::value_type;
         using hash_type   = typename sort_traits::hash_type;
-        static constexpr bool can_index = std::numeric_limits<hash_type>::is_integer;
+        using init_type   = typename sort_traits::init_type;
+
+        static constexpr bool remove_duplicates = !_AllowDuplicates::value;
+        static constexpr bool can_index =
+            std::numeric_limits<hash_type>::is_integer ||
+            std::is_enum<hash_type>::value;
+
+        using tag_can_index = std::integral_constant<bool, can_index>;
 
         template<typename _Init>
         static constexpr auto sort(_Init&& init) noexcept
         {
-            return x_sort(std::integral_constant<bool, can_index>{}, init);
+            return x_sort(tag_can_index{}, init);
         }
 
         template<bool _SortByValues, typename _Init>
