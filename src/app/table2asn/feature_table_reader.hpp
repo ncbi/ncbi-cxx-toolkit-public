@@ -39,7 +39,6 @@ public:
     // MergeCDSFeatures looks for cdregion features in the feature tables
     //    in sequence annotations and creates protein sequences based on them
     //    as well as converting the sequence or a seq-set into nuc-prot-set
-    void MergeCDSFeatures(objects::CSeq_entry&);
     void MergeCDSFeatures(objects::CSeq_entry&, TAsyncToken&);
 
     // This method reads 5 column table and attaches these features
@@ -67,10 +66,8 @@ private:
     bool xCheckIfNeedConversion(const objects::CSeq_entry& entry) const;
     void xConvertSeqIntoSeqSet(objects::CSeq_entry& entry, bool nuc_prod_set) const;
 
-    void xParseCdregions(objects::CSeq_entry& entry);
     void xParseCdregions(objects::CSeq_entry& entry, TAsyncToken&);
 
-    void xMergeCDSFeatures_impl(objects::CSeq_entry& entry);
     void xMergeCDSFeatures_impl(objects::CSeq_entry&, TAsyncToken&);
 
     CRef<objects::CSeq_entry> xTranslateProtein(
@@ -90,17 +87,13 @@ private:
     CRef<objects::CSeq_feat> xFindGeneByLocusTag(const objects::CSeq_feat& cds) const;
     CRef<objects::CSeq_feat> xFindMrnaByQual(const objects::CSeq_feat& cds) const;
     CRef<objects::CSeq_feat> xGetFeatFromMap(const string& key, const TFeatMap& featMap) const;
-    CRef<objects::CSeq_feat> xFindFeature(const objects::CFeat_id& id);
+    CRef<objects::CSeq_feat> xFindFeature(const objects::CFeat_id& id, TAsyncToken&);
 
     void xAddFeatures(TAsyncToken&);
 
-    void xClearTrees();
+    void xClearTrees(TAsyncToken&);
 
     CRef<objects::feature::CFeatTree> xGetFeatTree(TAsyncToken&);
-
-    CRef<objects::feature::CFeatTree> m_Feat_Tree;
-    CRef<objects::CBioseq> m_bioseq;
-    CRef<objects::CScope> m_pScope;
 
     TFeatMap m_transcript_to_mrna;
     TFeatMap m_protein_to_mrna;
