@@ -131,9 +131,9 @@ void XMLIndexFree(XmlIndexPtr xip)
 {
     XmlIndexPtr xipnext;
 
-    for (; xip != NULL; xip = xipnext) {
+    for (; xip; xip = xipnext) {
         xipnext = xip->next;
-        if (xip->subtags != NULL)
+        if (xip->subtags)
             XMLIndexFree(xip->subtags);
         delete xip;
     }
@@ -142,16 +142,16 @@ void XMLIndexFree(XmlIndexPtr xip)
 /**********************************************************/
 void FreeIndexblk(IndexblkPtr ibp)
 {
-    if (ibp == NULL)
+    if (! ibp)
         return;
 
-    if (ibp->gaps != NULL)
+    if (ibp->gaps)
         GapFeatsFree(ibp->gaps);
 
-    if (ibp->secaccs != NULL)
+    if (ibp->secaccs)
         FreeTokenblk(ibp->secaccs);
 
-    if (ibp->xip != NULL)
+    if (ibp->xip)
         XMLIndexFree(ibp->xip);
 
     delete ibp;
@@ -185,9 +185,9 @@ static void QSStructFree(QSStructPtr qssp)
 {
     QSStructPtr tqssp;
 
-    for (; qssp != NULL; qssp = tqssp) {
+    for (; qssp; qssp = tqssp) {
         tqssp = qssp->next;
-        if (qssp->accession != NULL)
+        if (qssp->accession)
             MemFree(qssp->accession);
         delete qssp;
     }
@@ -220,37 +220,37 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
     Int2         m;
     Char         buf[1024];
 
-    if (pp->qsfd == NULL)
+    if (! pp->qsfd)
         return true;
 
     qssp      = new QSStruct;
     tqssp     = qssp;
-    tqsspprev = NULL;
+    tqsspprev = nullptr;
     count     = 0;
-    while (fgets(buf, 1023, pp->qsfd) != NULL) {
+    while (fgets(buf, 1023, pp->qsfd)) {
         if (buf[0] != '>')
             continue;
 
         p = StringChr(buf, ' ');
-        if (p == NULL)
+        if (! p)
             continue;
 
         i  = (size_t)StringLen(buf);
         *p = '\0';
 
         q = StringChr(buf, '.');
-        if (q != NULL)
+        if (q)
             *q++ = '\0';
 
         count++;
         tqssp->next      = new QSStruct;
         tqssp            = tqssp->next;
         tqssp->accession = StringSave(buf + 1);
-        tqssp->version   = (q == NULL) ? 0 : atoi(q);
+        tqssp->version   = q ? atoi(q) : 0;
         tqssp->offset    = (size_t)ftell(pp->qsfd) - i;
-        if (tqsspprev != NULL)
+        if (tqsspprev)
             tqsspprev->length = tqssp->offset - tqsspprev->offset;
-        tqssp->next = NULL;
+        tqssp->next = nullptr;
 
         tqsspprev = tqssp;
     }
@@ -260,7 +260,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
     qssp  = tqssp->next;
     delete tqssp;
 
-    if (qssp == NULL) {
+    if (! qssp) {
         ErrPostEx(SEV_FATAL, ERR_QSCORE_NoScoreDataFound, "No correctly formatted records containing quality score data were found within file \"%s\".", pp->qsfile);
         return false;
     }

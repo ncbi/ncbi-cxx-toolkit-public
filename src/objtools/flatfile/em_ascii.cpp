@@ -103,7 +103,8 @@ USING_SCOPE(objects);
  * field first to figure out division code
  */
 static const char* ParFlat_Embl_dataclass_array[] = {
-    "ANN", "CON", "PAT", "EST", "GSS", "HTC", "HTG", "STS", "TSA", NULL
+    "ANN", "CON", "PAT", "EST", "GSS", "HTC", "HTG", "STS", "TSA",
+    nullptr
 };
 
 /* order by EMBL-block in asn.all
@@ -111,7 +112,8 @@ static const char* ParFlat_Embl_dataclass_array[] = {
 static const char* ParFlat_Embl_DIV_array[] = {
     "FUN", "INV", "MAM", "ORG", "PHG", "PLN", "PRI", "PRO", "ROD",
     "SYN", "UNA", "VRL", "VRT", "PAT", "EST", "STS", "UNC", "GSS",
-    "HUM", "HTG", "HTC", "CON", "ENV", "MUS", "TGN", "TSA", NULL
+    "HUM", "HTG", "HTC", "CON", "ENV", "MUS", "TGN", "TSA",
+    nullptr
 };
 
 /* correspond "DIV" genbank string. Must have the same number
@@ -120,7 +122,8 @@ static const char* ParFlat_Embl_DIV_array[] = {
 static const char* ParFlat_GBDIV_array[] = {
     "PLN", "INV", "MAM", "UNA", "PHG", "PLN", "PRI", "BCT", "ROD",
     "SYN", "UNA", "VRL", "VRT", "PAT", "EST", "STS", "UNA", "GSS",
-    "PRI", "HTG", "HTC", "CON", "ENV", "ROD", "SYN", "TSA", NULL
+    "PRI", "HTG", "HTC", "CON", "ENV", "ROD", "SYN", "TSA",
+    nullptr
 };
 
 // clang-format on
@@ -143,7 +146,7 @@ static const char* ParFlat_DBname_array[] = {
     "MIM",
     "ECOSEQ",
     "HIV",
-    NULL
+    nullptr
 };
 
 static const char* ParFlat_DRname_array[] = {
@@ -246,7 +249,7 @@ static const char* ParFlat_DRname_array[] = {
     "WBPARASITE",
     "WORMBASE",
     "ZFIN",
-    NULL
+    nullptr
 };
 
 
@@ -275,14 +278,14 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
     crdate.Reset();
     update.Reset();
     offset = xSrchNodeType(entry, ParFlat_DT, &len);
-    if (offset == NULL)
+    if (! offset)
         return;
 
     eptr   = offset + len;
     crdate = GetUpdateDate(offset + ParFlat_COL_DATA_EMBL, source);
     while (offset < eptr) {
         offset = SrchTheChar(offset, eptr, '\n');
-        if (offset == NULL)
+        if (! offset)
             break;
 
         offset++; /* newline */
@@ -419,19 +422,19 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
 
     CEMBL_block::TXref new_xrefs;
 
-    if (xip == NULL) {
+    if (! xip) {
         bptr     = xSrchNodeType(entry, ParFlat_DR, &len);
         col_data = ParFlat_COL_DATA_EMBL;
-        xref     = NULL;
+        xref     = nullptr;
     } else {
         bptr = XMLFindTagValue(chentry, xip, INSDSEQ_DATABASE_REFERENCE);
-        if (bptr != NULL)
+        if (bptr)
             len = StringLen(bptr);
         col_data = 0;
         xref     = bptr;
     }
 
-    if (bptr == NULL)
+    if (! bptr)
         return;
 
     for (eptr = bptr + len; bptr < eptr; bptr = ptr) {
@@ -456,12 +459,12 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
                 continue;
             }
 
-            for (b = ParFlat_DRname_array; *b != NULL; b++) {
+            for (b = ParFlat_DRname_array; *b; b++) {
                 if (NStr::EqualNocase(name, *b))
                     break;
             }
 
-            if (*b == NULL)
+            if (! *b)
                 ErrPostEx(SEV_WARNING, ERR_DRXREF_UnknownDBname, "Encountered a new/unknown database name in DR line: \"%s\".", name.c_str());
             else if (NStr::EqualNocase(*b, "UNIPROT/SWISS-PROT")) {
                 name = "UniProtKB/Swiss-Prot";
@@ -476,14 +479,14 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
 
         string id, id1;
 
-        if (ptr != NULL && ptr < p) {
+        if (ptr && ptr < p) {
             id.assign(bptr, ptr);
             CleanTailNoneAlphaCharInString(id);
 
             bptr = PointToNextToken(ptr); /* points to
                                                    secondary_identifier */
         }
-        if (p != NULL) {
+        if (p) {
             id1.assign(bptr, p);
             CleanTailNoneAlphaCharInString(id1);
         }
@@ -499,12 +502,12 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
             if (! id1.empty() && fta_if_valid_biosample(id1.c_str(), false) == false)
                 valid_biosample = false;
             if (many_biosample || ! valid_biosample) {
-                q = NULL;
-                if (drline == NULL)
+                q = nullptr;
+                if (! drline)
                     drline = "[Empty]";
                 else {
                     q = StringChr(drline, '\n');
-                    if (q != NULL)
+                    if (q)
                         *q = '\0';
                 }
                 if (many_biosample)
@@ -512,7 +515,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
                 if (! valid_biosample)
                     ErrPostEx(SEV_REJECT, ERR_DRXREF_InvalidBioSample, "Invalid BioSample id(s) provided in DR line: \"%s\".", drline);
                 *drop = 1;
-                if (q != NULL)
+                if (q)
                     *q = '\n';
             } else {
                 bool found = false;
@@ -531,17 +534,17 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
             }
         } else if (name == "ENA" && ! id.empty() && fta_if_valid_sra(id.c_str(), false)) {
             if (! id.empty() && ! id1.empty()) {
-                q = NULL;
-                if (drline == NULL)
+                q = nullptr;
+                if (! drline)
                     drline = "[Empty]";
                 else {
                     q = StringChr(drline, '\n');
-                    if (q != NULL)
+                    if (q)
                         *q = '\0';
                 }
                 ErrPostEx(SEV_REJECT, ERR_DRXREF_InvalidSRA, "Multiple possible SRA ids provided in the same DR line: \"%s\".", drline);
                 *drop = 1;
-                if (q != NULL)
+                if (q)
                     *q = '\n';
             } else {
                 bool found = false;
@@ -577,7 +580,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
 
         ptr = p + 1;
 
-        if (xip != NULL)
+        if (xip)
             continue;
 
         /* skip "XX" line
@@ -592,7 +595,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
         }
     }
 
-    if (xref != NULL)
+    if (xref)
         MemFree(xref);
 
     if (! new_xrefs.empty())
@@ -650,16 +653,16 @@ static void GetReleaseInfo(const DataBlk& entry)
     CTextseq_id& id     = SetTextIdRef(*(*(bioseq.SetId().begin())));
 
     offset = xSrchNodeType(entry, ParFlat_DT, &len);
-    if (offset == NULL)
+    if (! offset)
         return;
 
     eptr   = offset + len;
     offset = SrchTheChar(offset, eptr, '\n');
-    if (offset == NULL)
+    if (! offset)
         return;
 
     bptr = SrchTheStr(offset, eptr, "Version");
-    if (bptr == NULL)
+    if (! bptr)
         return;
 
     bptr = PointToNextToken(bptr); /* bptr points to next token */
@@ -763,7 +766,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
     int  numerr;
 
     dbp = TrackNodeType(entry, ParFlat_CO);
-    if (dbp == NULL || dbp->mOffset == NULL)
+    if (! dbp || ! dbp->mOffset)
         return true;
 
     Int4 i = static_cast<Int4>(dbp->len) - ParFlat_COL_DATA_EMBL;
@@ -799,9 +802,9 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
         return false;
     }
 
-    if (pp->buf != NULL)
+    if (pp->buf)
         MemFree(pp->buf);
-    pp->buf = NULL;
+    pp->buf = nullptr;
 
     CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, numerr, bioseq.GetId(), pp->accver);
 
@@ -812,7 +815,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
         TSeqLocList locs;
         locs.push_back(loc);
 
-        i = fta_fix_seq_loc_id(locs, pp, p, NULL, true);
+        i = fta_fix_seq_loc_id(locs, pp, p, nullptr, true);
         if (i > 999)
             fta_create_far_fetch_policy_user_object(bioseq, i);
         pp->allow_crossdb_featloc = allow_crossdb_featloc;
@@ -872,7 +875,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
         p = PointToNextToken(p);
 
     r = StringChr(p, ';');
-    if (r != NULL)
+    if (r)
         *r = '\0';
 
     for (i = 0, q = p; *q != '\0'; q++) {
@@ -887,9 +890,9 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
     }
 
     if (ibp->embl_new_ID == false && inst.GetTopology() != CSeq_inst::eTopology_circular &&
-        StringStr(p, "DNA") == NULL && StringStr(p, "RNA") == NULL &&
-        (pp->source != Parser::ESource::EMBL || (StringStr(p, "xxx") == NULL &&
-                                                 StringStr(p, "XXX") == NULL))) {
+        ! StringStr(p, "DNA") && ! StringStr(p, "RNA") &&
+        (pp->source != Parser::ESource::EMBL || (! StringStr(p, "xxx") &&
+                                                 ! StringStr(p, "XXX")))) {
         ErrPostEx(SEV_WARNING, ERR_LOCUS_WrongTopology, "Other than circular topology found in EMBL, \"%s\", assign default topology", p);
     }
 
@@ -903,7 +906,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
             inst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
     }
 
-    if (r != NULL)
+    if (r)
         *r = ';';
 
     if (! GetSeqData(pp, entry, bioseq, ParFlat_SQ, dnaconv, eSeq_code_type_iupacna))
@@ -986,15 +989,15 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         }
 
         bptr = StringChr(bptr, ';');
-        if (bptr != NULL)
+        if (bptr)
             bptr = StringChr(bptr + 1, ';');
     } else {
         bptr = StringChr(bptr, ';');
-        if (bptr != NULL)
+        if (bptr)
             bptr = StringChr(bptr + 1, ';');
-        if (bptr != NULL)
+        if (bptr)
             bptr = StringChr(bptr + 1, ';');
-        if (bptr != NULL) {
+        if (bptr) {
             while (*bptr == ' ' || *bptr == ';')
                 bptr++;
             i = fta_StringMatch(ParFlat_Embl_dataclass_array, bptr);
@@ -1005,7 +1008,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         }
     }
 
-    if (bptr != NULL) {
+    if (bptr) {
         while (*bptr == ' ' || *bptr == ';')
             bptr++;
         StringNCpy(dataclass, bptr, 3);
@@ -1097,7 +1100,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         }
         tempdiv = StringSave("HTG");
     } else
-        tempdiv = NULL;
+        tempdiv = nullptr;
 
     fta_check_htg_kwds(embl->SetKeywords(), pp->entrylist[pp->curindx], mol_info);
 
@@ -1109,7 +1112,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     }
 
     CheckHTGDivision(tempdiv, mol_info.GetTech());
-    if (tempdiv != NULL)
+    if (tempdiv)
         MemFree(tempdiv);
 
     i = 0;
@@ -1198,19 +1201,19 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     size_t len = 0;
     bptr       = xSrchNodeType(entry, ParFlat_KW, &len);
-    if (bptr != NULL) {
+    if (bptr) {
         kw = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA_EMBL);
 
         kwp = StringStr(kw, "EST");
-        if (kwp != NULL && ! est_kwd) {
+        if (kwp && ! est_kwd) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
         }
         kwp = StringStr(kw, "STS");
-        if (kwp != NULL && ! sts_kwd) {
+        if (kwp && ! sts_kwd) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
         }
         kwp = StringStr(kw, "GSS");
-        if (kwp != NULL && ! gss_kwd) {
+        if (kwp && ! gss_kwd) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw);
         }
         MemFree(kw);
@@ -1290,7 +1293,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
             ibp->HTC = true;
             mol_info.SetTech(CMolInfo::eTech_htc);
             gbdiv.clear();
-        } else if (StringCmp(gbdiv.c_str(), "SYN") == 0 && bio_src != NULL &&
+        } else if (StringCmp(gbdiv.c_str(), "SYN") == 0 && bio_src &&
                    bio_src->IsSetOrigin() && bio_src->GetOrigin() == 5) /* synthetic */
         {
             gbdiv.clear();
@@ -1318,7 +1321,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     if (ibp->is_tls)
         fta_remove_tls_keywords(embl->SetKeywords(), pp->source);
 
-    if (bio_src != NULL && bio_src->IsSetSubtype()) {
+    if (bio_src && bio_src->IsSetSubtype()) {
         for (const auto& subtype : bio_src->GetSubtype()) {
             if (subtype->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                 fta_remove_env_keywords(embl->SetKeywords());
@@ -1339,7 +1342,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     ibp->wgssec[0] = '\0';
     GetExtraAccession(ibp, pp->allow_uwsec, pp->source, embl->SetExtra_acc());
 
-    GetEmblBlockXref(entry, NULL, NULL, dr_ena, dr_biosample, &ibp->drop, *embl);
+    GetEmblBlockXref(entry, nullptr, nullptr, dr_ena, dr_biosample, &ibp->drop, *embl);
 
     if (StringCmp(dataclass, "ANN") == 0 || StringCmp(dataclass, "CON") == 0) {
         if (StringLen(ibp->acnum) == 8 &&
@@ -1439,7 +1442,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
         bptr = PointToNextToken(bptr); /* bptr points to 5th token */
 
     r = StringChr(bptr, ';');
-    if (r != NULL)
+    if (r)
         *r = '\0';
 
     for (i = 0, q = bptr; *q != '\0'; q++) {
@@ -1453,7 +1456,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
         q--;
     }
 
-    if (r != NULL)
+    if (r)
         for (p = r + 1; *p == ' ' || *p == ';';)
             p++;
     else
@@ -1482,7 +1485,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
     if (mol_info->GetBiomol() == CMolInfo::eBiomol_unknown) // not set
         mol_info->ResetBiomol();
 
-    if (r != NULL)
+    if (r)
         *r = ';';
 
     return mol_info;
@@ -1492,7 +1495,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
 static CRef<CUser_field> fta_create_user_field(const char* tag, TStringList& lst)
 {
     CRef<CUser_field> field;
-    if (tag == NULL || lst.empty())
+    if (! tag || lst.empty())
         return field;
 
     field.Reset(new CUser_field);
@@ -1667,12 +1670,12 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* DE data ==> descr_title
      */
-    str    = NULL;
+    str    = nullptr;
     offset = xSrchNodeType(entry, ParFlat_DE, &len);
 
     string title;
 
-    if (offset != NULL) {
+    if (offset) {
         str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_EMBL);
 
         for (p = str, q = p; *q != '\0';) {
@@ -1721,9 +1724,9 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             else if (ibp->experimental)
                 p = (char*)"TPA_exp:";
             else
-                p = NULL;
+                p = nullptr;
 
-            if (p != NULL) {
+            if (p) {
                 str1 = MemNew(StringLen(p) + StringLen(str));
                 StringCpy(str1, p);
                 StringCat(str1, str + 4);
@@ -1738,11 +1741,11 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
         title = str;
         MemFree(str);
-        str = NULL;
+        str = nullptr;
     }
 
     offset = xSrchNodeType(entry, ParFlat_PR, &len);
-    if (offset != NULL)
+    if (offset)
         fta_get_project_user_object(bioseq.SetDescr().Set(), offset, Parser::EFormat::EMBL, &ibp->drop, pp->source);
 
     if (ibp->is_tpa &&
@@ -1768,7 +1771,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* RN data ==> pub  should be before GBblock because we need patent ref
      */
     dbp = TrackNodeType(entry, ParFlat_REF_END);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REF_END)
             continue;
 
@@ -1781,7 +1784,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REF_NO_TARGET)
             continue;
 
@@ -1875,7 +1878,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     offset = xSrchNodeType(entry, ParFlat_AH, &len);
-    if (offset == NULL && ibp->is_tpa && ibp->is_wgs == false) {
+    if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
                 ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:%s record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
@@ -1889,7 +1892,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    if (offset != NULL && len > 0 &&
+    if (offset && len > 0 &&
         fta_parse_tpa_tsa_block(bioseq, offset, ibp->acnum, ibp->vernum, len, ParFlat_COL_DATA_EMBL, ibp->is_tpa) == false) {
         ibp->drop = 1;
         return;
@@ -1934,9 +1937,9 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* all CC data ==> comment
      */
     offset = xSrchNodeType(entry, ParFlat_CC, &len);
-    if (offset != NULL && len > 0) {
+    if (offset && len > 0) {
         str = GetDescrComment(offset, len, ParFlat_COL_DATA_EMBL, (pp->xml_comp ? false : is_htg), ibp->is_pat);
-        if (str != NULL) {
+        if (str) {
             bool           bad = false;
             TUserObjVector user_objs;
 
@@ -2016,12 +2019,12 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
     Char  ch;
 
     dbp = TrackNodeType(entry, ParFlat_OS);
-    if (dbp == NULL) {
+    if (! dbp) {
         ErrPostStr(SEV_WARNING, ERR_ORGANISM_NoOrganism, "No Organism data in Embl format file");
         return;
     }
 
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_OS)
             continue;
 
@@ -2048,12 +2051,12 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
         }
 
         subdbp = static_cast<DataBlk*>(dbp->mpData);
-        for (; subdbp != NULL; subdbp = subdbp->mpNext) {
+        for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType == ParFlat_OG) {
                 GetGenomeInfo(*bio_src, subdbp->mOffset + ParFlat_COL_DATA_EMBL);
                 continue;
             }
-            if (subdbp->mType != ParFlat_OC || subdbp->mOffset == NULL ||
+            if (subdbp->mType != ParFlat_OC || ! subdbp->mOffset ||
                 subdbp->len < ParFlat_COL_DATA_EMBL)
                 continue;
 
@@ -2061,9 +2064,9 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
             subdbp->mOffset[subdbp->len] = '\0';
             q                            = StringSave(subdbp->mOffset + ParFlat_COL_DATA_EMBL);
             subdbp->mOffset[subdbp->len] = ch;
-            for (p = q; p != NULL;) {
+            for (p = q; p;) {
                 p = StringStr(p, "\nOC   ");
-                if (p != NULL)
+                if (p)
                     fta_StringCpy(p, p + 5);
             }
             for (p = q; *p != '\0';)
@@ -2106,11 +2109,11 @@ static void EmblGetDivision(IndexblkPtr ibp, const DataBlk& entry)
     char* q;
 
     p = StringChr(entry.mOffset, ';');
-    if (p == NULL)
+    if (! p)
         p = entry.mOffset;
     else {
         q = StringChr(p + 1, ';');
-        if (q != NULL)
+        if (q)
             p = q;
     }
     while (*p == ' ' || *p == ';')
@@ -2136,13 +2139,13 @@ static void EmblGetDivisionNewID(IndexblkPtr ibp, const DataBlk& entry)
     i = fta_StringMatch(ParFlat_Embl_dataclass_array, p);
     if (i < 0) {
         p = StringChr(p, ';');
-        if (p != NULL)
+        if (p)
             for (p++; *p == ' ';)
                 p++;
     } else if (i == 0)
         p = (char*)"CON";
 
-    if (p == NULL)
+    if (! p)
         p = (char*)"   ";
 
     StringNCpy(ibp->division, p, 3);
@@ -2281,21 +2284,21 @@ bool EmblAscii(ParserPtr pp)
 
             if (bioseq->GetInst().IsNa()) {
                 if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
-                    if (ibp->gaps != NULL)
+                    if (ibp->gaps)
                         GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
                     else if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
                              (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
                         SeqToDelta(*bioseq, ibp->htg);
-                } else if (ibp->gaps != NULL)
+                } else if (ibp->gaps)
                     AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
             }
 
             if (pEntry->mpQscore.empty() && pp->accver) {
-                if (pp->ff_get_qscore != NULL)
+                if (pp->ff_get_qscore)
                     pEntry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
-                else if (pp->ff_get_qscore_pp != NULL)
+                else if (pp->ff_get_qscore_pp)
                     pEntry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
-                if (pp->qsfd != NULL && ibp->qslength > 0)
+                if (pp->qsfd && ibp->qslength > 0)
                     pEntry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
             }
 
@@ -2424,8 +2427,8 @@ bool EmblAscii(ParserPtr pp)
 const char* GetEmblDiv(Uint1 num)
 {
     if (num > 15)
-        return (NULL);
-    return ((char*)ParFlat_Embl_DIV_array[num]);
+        return nullptr;
+    return ParFlat_Embl_DIV_array[num];
 }
 
 /**********************************************************/
@@ -2484,18 +2487,18 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     bptr         = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION);
     div          = static_cast<CEMBL_block::TDiv>(fta_StringMatch(ParFlat_Embl_DIV_array, bptr));
     dataclass[0] = '\0';
-    if (bptr != NULL) {
+    if (bptr) {
         bptr[3] = '\0';
         StringCpy(dataclass, bptr);
     }
     if (div < 0) {
         ErrPostEx(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"%s\" found in Embl flatfile. Record rejected.", bptr);
-        if (bptr != NULL)
+        if (bptr)
             MemFree(bptr);
         return ret;
     }
 
-    if (bptr != NULL)
+    if (bptr)
         MemFree(bptr);
 
     /* Embl has recently (7-19-93, email) decided to change the name of
@@ -2539,7 +2542,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         }
         tempdiv = StringSave("HTG");
     } else
-        tempdiv = NULL;
+        tempdiv = nullptr;
 
     fta_check_htg_kwds(embl->SetKeywords(), ibp, mol_info);
 
@@ -2551,7 +2554,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     }
 
     CheckHTGDivision(tempdiv, mol_info.GetTech());
-    if (tempdiv != NULL)
+    if (tempdiv)
         MemFree(tempdiv);
 
     i = 0;
@@ -2640,17 +2643,17 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     }
 
     kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';');
-    if (kw != NULL) {
+    if (kw) {
         kwp = StringStr(kw, "EST");
-        if (kwp != NULL && est_kwd == false) {
+        if (kwp && est_kwd == false) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
         }
         kwp = StringStr(kw, "STS");
-        if (kwp != NULL && sts_kwd == false) {
+        if (kwp && sts_kwd == false) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
         }
         kwp = StringStr(kw, "GSS");
-        if (kwp != NULL && gss_kwd == false) {
+        if (kwp && gss_kwd == false) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw);
         }
         MemFree(kw);
@@ -2685,7 +2688,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
     if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0) {
         r = XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE);
-        if (r != NULL) {
+        if (r) {
             p = r;
             if (*r == 'm' || *r == 'r')
                 p = r + 1;
