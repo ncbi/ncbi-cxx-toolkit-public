@@ -47,13 +47,26 @@
 #include "ct_crc32.hpp"
 
 namespace std
-{ // backported C++20 defs
+{ // backported C++20,23 defs
+
+#ifndef __cpp_lib_remove_cvref
     template< class T >
     struct remove_cvref {
         typedef std::remove_cv_t<std::remove_reference_t<T>> type;
     };
     template< class T >
     using remove_cvref_t = typename remove_cvref<T>::type;
+#endif
+
+// backported C++23
+#ifndef __cpp_lib_to_underlying
+    template< class Enum >
+    constexpr std::underlying_type_t<Enum> to_underlying( Enum e ) noexcept
+    {
+        return static_cast<std::underlying_type_t<Enum>>(e);
+    }
+#endif
+
 }
 
 // on some compilers tuple are undeveloped for constexpr
@@ -213,6 +226,13 @@ namespace compile_time_bits
     template<typename T>
     using real_underlying_type_t = typename real_underlying_type<T>::type;
 
+    template< class Enum>
+    constexpr real_underlying_type_t<Enum> to_real_underlying( Enum e ) noexcept
+    {
+        return static_cast<real_underlying_type_t<Enum>>(e);
+    }
+
+
     // write your own DeduceType specialization if required
     template<typename _BaseType, typename _BackType=_BaseType>
     struct DeduceType
@@ -240,6 +260,7 @@ namespace compile_time_bits
     struct StringType
     {
         using view = ct_basic_string<_CharType>;
+        using case_tag = tag;
 
         using value_type = view;
         using init_type  = view;
@@ -336,7 +357,69 @@ namespace compile_time_bits
 
 namespace compile_time_bits
 {
-    template<typename _Traits, bool remove_duplicates>
+    // non-containing constexpr vector
+    template<typename _Type>
+    class const_vector
+    {
+    public:
+        using value_type       = _Type;
+        using size_type	       = std::size_t;
+        using difference_type  = std::ptrdiff_t;
+        using reference        = const value_type&;
+        using const_reference  = const value_type&;
+        using pointer          = const value_type*;
+        using const_pointer    = const value_type*;
+        using iterator         = pointer;
+        using const_iterator   = const_pointer;
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        constexpr const_vector() = default;
+        constexpr const_vector(const_pointer data, size_t size )
+            : m_size{size}, m_data{data} {}
+
+        constexpr const_vector(std::nullptr_t) {}
+
+        template<size_t N>
+        constexpr const_vector(const std::array<value_type, N>& data )
+            : m_size{data.size()}, m_data{data.data()} {}
+
+        template<size_t N>
+        constexpr const_vector(value_type const (&init)[N]) : m_size{N}, m_data{init} {}
+
+        constexpr const_reference operator[](size_t index) const { return m_data[index]; }
+        constexpr const_reference at(size_t index) const         { return m_data[index]; }
+        constexpr const_pointer   data() const noexcept          { return m_data; }
+
+        constexpr const_reference front() const                  { return m_data[0]; }
+        constexpr const_reference back() const                   { return m_data[m_size-1]; }
+
+        constexpr size_type      size()      const noexcept { return m_size; }
+        constexpr size_type      max_size()  const noexcept { return size(); }
+        constexpr size_type      capacity()  const noexcept { return size(); }
+        [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
+
+        constexpr const_iterator begin()     const noexcept { return m_data; }
+        constexpr const_iterator cbegin()    const noexcept { return begin(); }
+        constexpr const_iterator end()       const noexcept { return begin() + size(); }
+        constexpr const_iterator cend()      const noexcept { return end(); }
+        constexpr const_reverse_iterator rbegin()  const noexcept { return const_reverse_iterator{ end() }; }
+        constexpr const_reverse_iterator rcbegin() const noexcept { return rbegin(); }
+        constexpr const_reverse_iterator rend()    const noexcept { return const_reverse_iterator{ begin() }; }
+        constexpr const_reverse_iterator rcend()   const noexcept { return rend(); }
+
+    protected:
+        size_t m_size = 0;
+        const_pointer m_data = nullptr;
+    };
+}
+
+namespace compile_time_bits
+{
+    using tag_DuplicatesYes = std::integral_constant<bool, true>;
+    using tag_DuplicatesNo  = std::integral_constant<bool, false>;
+
+    template<typename _Traits, typename _AllowDuplicates>
     class TInsertSorter;
 
     template<typename _Ty>
@@ -439,11 +522,14 @@ namespace compile_time_bits
     public:
         constexpr simple_backend() = default;
 
+        using index_type = typename _ArrayType::value_type;
+
         constexpr simple_backend(const std::pair<_SizeType, _ArrayType>& init)
             : m_array { std::get<1>(init) },
               m_realsize { std::get<0>(init) }
         {}
 
+        static constexpr auto capacity = array_size<_ArrayType>::value;
         constexpr auto realsize()   const noexcept { return m_realsize; }
         constexpr auto indexsize()  const noexcept { return m_realsize; }
         constexpr auto get_values() const noexcept { return m_array.data(); }
@@ -458,9 +544,10 @@ namespace compile_time_bits
     {
     public:
         using value_type = typename _ArrayType::value_type;
-        using hash_type = typename _IndexType::value_type;
+        using index_type = typename _IndexType::value_type;
+        using tuple_type = std::tuple<_SizeType, _ArrayType, _IndexType>;
 
-        static constexpr size_t m_size = array_size<_IndexType>::value;
+        static constexpr auto capacity = array_size<_ArrayType>::value;
 
         constexpr simple_backend() = default;
 
@@ -480,31 +567,6 @@ namespace compile_time_bits
         _SizeType  m_realsize{0};
     };
 
-    // This is 'referring' backend of fixed size, it points to a external data
-    template<typename index_type, typename value_type>
-    class portable_backend
-    {
-    public:
-        constexpr portable_backend() = default;
-
-        template<typename _ArrayType>
-        constexpr portable_backend(const simple_backend<_ArrayType>& _Other)
-            : m_realsize   { _Other.realsize() },
-              m_values     { _Other.get_values() },
-              m_index_size { _Other.realsize() },
-              m_index      { _Other.get_index() }
-        {}
-
-        constexpr const value_type* get_values() const noexcept { return m_values; }
-        constexpr const index_type* get_index() const noexcept { return m_index; }
-        constexpr size_t realsize() const noexcept { return m_realsize; }
-    private:
-        size_t m_realsize {0};
-        const value_type* m_values {nullptr};
-        size_t m_index_size {0};
-        const index_type* m_index {nullptr};
-    };
-
     template<typename _ArrayType>
     class presorted_backend
     {
@@ -517,15 +579,40 @@ namespace compile_time_bits
             : m_vec{_Other}
         {}
 
-        constexpr const value_type* get_values() const noexcept { return m_vec.data(); }
-        constexpr const value_type* get_index() const noexcept  { return m_vec.data(); }
+        constexpr auto get_values() const noexcept { return m_vec.data(); }
+        constexpr auto get_index()  const noexcept { return m_vec.data(); }
         constexpr size_t realsize() const noexcept { return m_vec.size(); }
+
     private:
         _ArrayType m_vec;
     };
 
+    // This is 'referring' backend of fixed size, it points to a external data
+    template<typename _IndexType, typename _ValueType>
+    class portable_backend
+    {
+    public:
+        constexpr portable_backend() = default;
 
-    template<typename _Traits, typename _Backend>
+        using index_type = _IndexType;
+        using value_type = _ValueType;
+
+        template<typename _ArrayType>
+        constexpr portable_backend(const simple_backend<_ArrayType>& _Other)
+            : m_values { _Other.get_values(), _Other.realsize() },
+              m_index  { _Other.get_index(),  _Other.realsize() }
+        {}
+
+        constexpr auto get_values() const noexcept { return m_values.data(); }
+        constexpr auto get_index()  const noexcept { return m_index.data(); }
+        constexpr size_t realsize() const noexcept { return m_values.size(); }
+    private:
+        const_vector<value_type> m_values;
+        const_vector<index_type> m_index;
+    };
+
+
+    template<typename _Traits, typename _Backend, typename _Duplicates = tag_DuplicatesNo>
     class const_set_map_base
     {
     public:
@@ -543,14 +630,17 @@ namespace compile_time_bits
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         // non-standard definitions
-        friend class const_set_map_base<_Traits, void>;
+        using traits_type     = _Traits;
+        friend class const_set_map_base<_Traits, void, _Duplicates>;
 
         using hash_type       = typename _Traits::hash_type;
         using intermediate    = typename _Traits::key_type;
         using init_key_type   = typename _Traits::init_key_type;
         using init_type       = typename _Traits::init_type;
+        using sorter_type     = TInsertSorter<_Traits, _Duplicates>;
 
-        static constexpr bool can_index = std::numeric_limits<hash_type>::is_integer;
+        static constexpr bool can_index = sorter_type::can_index;
+
         using index_type      = std::conditional_t<
                                     can_index,
                                     hash_type,
@@ -564,7 +654,7 @@ namespace compile_time_bits
 
         constexpr size_type      size()     const noexcept { return m_backend.realsize(); }
         constexpr size_type      max_size() const noexcept { return size(); }
-        constexpr size_type      capacity() const noexcept { return size(); }
+        constexpr size_type      capacity() const noexcept { return m_backend.capacity(); }
         constexpr bool           empty()    const noexcept { return size() == 0; }
         constexpr const_iterator begin()    const noexcept { return m_backend.get_values(); }
         constexpr const_iterator cbegin()   const noexcept { return begin(); }
@@ -579,7 +669,7 @@ namespace compile_time_bits
 
         struct value_compare
         {
-            bool operator()( const value_type& l, const value_type& r ) const
+            constexpr bool operator()( const value_type& l, const value_type& r ) const
             {
                 return key_compare{}(_Traits::get_key(l), _Traits::get_key(r));
             }
@@ -588,7 +678,7 @@ namespace compile_time_bits
         struct hash_compare
         {
             template<typename _TL, typename _TR>
-            bool operator()(const _TL & l, const _TR & r ) const
+            constexpr bool operator()(const _TL & l, const _TR & r ) const
             {
                 return typename _Traits::hashed_key_type::hash_compare{}(_Traits::get_key(l), _Traits::get_key(r));
             }
@@ -635,6 +725,8 @@ namespace compile_time_bits
             return std::uintptr_t(m_backend.get_index()) % std::hardware_constructive_interference_size;
         }
 
+        static constexpr bool is_presorted = std::is_same_v<presorted_backend<const_vector<typename _Traits::value_type>>, backend_type>;
+
         constexpr const_set_map_base() = default;
 
         constexpr const_set_map_base(const backend_type& backend)
@@ -655,14 +747,9 @@ namespace compile_time_bits
     protected:
 
         template<size_t N>
-        static constexpr auto make_backend(init_type const (&init)[N])
-        {
-            return make_backend(make_array(init));
-        }
-        template<size_t N>
         static constexpr auto make_backend(const const_array<init_type, N>& init)
         {
-            auto proxy = TInsertSorter<_Traits, true>::sort(init);
+            auto proxy = sorter_type::sort(init);
             using backend_type = simple_backend<decltype(proxy)>;
             return backend_type{proxy};
         }
@@ -676,6 +763,7 @@ namespace compile_time_bits
 
         backend_type m_backend;
     };
+
 }
 
 namespace compile_time_bits
