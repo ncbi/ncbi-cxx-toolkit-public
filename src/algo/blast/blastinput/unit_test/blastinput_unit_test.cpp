@@ -2824,7 +2824,7 @@ BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput)
         CAutoNcbiConfigFile acf(config->first);
         blast::SDataLoaderConfig dlconfig(false);
         if(config->second == "BLASTDB") {
-            dlconfig.m_BlastDbName = "refseq_genomic";
+            dlconfig.m_BlastDbName = "9606_genomic";
         }
         dlconfig.OptimizeForWholeLargeSequenceRetrieval();
         blast::CBlastInputSourceConfig input_config(dlconfig);
