@@ -120,7 +120,7 @@ public:
     CConstRef<CSeqdesc> GetClosestDescriptor(const CSeq_id& id, CSeqdesc::E_Choice choice) const;
 
     // Direct loading methods
-    CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> seqid) const;
+    virtual CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> seqid) const;
     CRef<CBioseq> LoadBioseq(CConstRef<CSeq_id> seqid) const;
 
     bool IsMultiSequence() const override;
