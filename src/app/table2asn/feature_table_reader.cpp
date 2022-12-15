@@ -447,12 +447,12 @@ CFeatureTableReader::~CFeatureTableReader()
 {
 }
 
-void CFeatureTableReader::xClearTrees()
+void CFeatureTableReader::xClearTrees(TAsyncToken& token)
 {
     m_locus_to_gene.clear();
     m_protein_to_mrna.clear();
     m_transcript_to_mrna.clear();
-    m_Feat_Tree.ReleaseOrNull();
+    token.featTree.ReleaseOrNull();
 }
 
 CRef<feature::CFeatTree> CFeatureTableReader::xGetFeatTree(TAsyncToken& token)
@@ -565,9 +565,10 @@ CRef<CSeq_feat> CFeatureTableReader::xGetFeatFromMap(const string& key, const TF
 }
 
 
-CRef<CSeq_feat> CFeatureTableReader::xFindFeature(const CFeat_id& id)
+CRef<CSeq_feat> CFeatureTableReader::xFindFeature(const CFeat_id& id, TAsyncToken& token)
 {
-    for(auto annot: m_bioseq->GetAnnot())
+    auto& bioseq = *token.bioseq;
+    for (auto annot : bioseq.GetAnnot())
     {
         if (!annot->IsFtable()) continue;
 
@@ -594,7 +595,7 @@ CRef<CSeq_feat> CFeatureTableReader::xGetParentGene(const CSeq_feat& cds, TAsync
 {
     for (auto pXref : cds.GetXref()) {
         if (pXref->IsSetId()) {
-            auto pLinkedFeat = xFindFeature(pXref->GetId());
+            auto pLinkedFeat = xFindFeature(pXref->GetId(), token);
             if (pLinkedFeat &&
                 pLinkedFeat->IsSetData() &&
                 pLinkedFeat->GetData().IsGene()) {
@@ -627,7 +628,7 @@ CRef<CSeq_feat> CFeatureTableReader::xGetParentMrna(const CSeq_feat& cds, TAsync
 {
     for (auto pXref : cds.GetXref()) {
         if (pXref->IsSetId()) {
-            auto pLinkedFeat = xFindFeature(pXref->GetId());
+            auto pLinkedFeat = xFindFeature(pXref->GetId(), token);
             if (pLinkedFeat &&
                 pLinkedFeat->IsSetData() &&
                 pLinkedFeat->GetData().IsRna() &&
@@ -893,13 +894,6 @@ CRef<CSeq_entry> CFeatureTableReader::xTranslateProtein(const CBioseq& bioseq, C
     return protein_entry;
 }
 
-void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
-{
-    if (m_local_id_counter == 0)
-        FindMaximumId(entry, ++m_local_id_counter);
-    xMergeCDSFeatures_impl(entry);
-}
-
 
 void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry, TAsyncToken& token)
 {
@@ -974,46 +968,6 @@ static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
 }
 
 
-void CFeatureTableReader::xMergeCDSFeatures_impl(CSeq_entry& entry)
-{
-    if (entry.IsSeq() && !entry.GetSeq().IsSetInst() )
-        return;
-
-    switch (entry.Which())
-    {
-    case CSeq_entry::e_Seq:
-        if (xCheckIfNeedConversion(entry))
-        {
-            xConvertSeqIntoSeqSet(entry, true);
-            xParseCdregions(entry);
-        }
-        break;
-    case CSeq_entry::e_Set:
-        if (entry.GetSet().IsSetClass())
-        {
-            switch (entry.GetSet().GetClass())
-            {
-                case CBioseq_set::eClass_nuc_prot:
-                    if (s_HasUnprocessedCdregions(entry)) {
-                        xParseCdregions(entry);
-                    }
-                    return;
-                case CBioseq_set::eClass_gen_prod_set:
-                    return;
-                default:
-                    break;
-            }
-        }
-        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
-        {
-            xMergeCDSFeatures_impl(**it);
-        }
-        break;
-    default:
-        break;
-    }
-}
-
 void CFeatureTableReader::xMergeCDSFeatures_impl(CSeq_entry& entry, TAsyncToken& token)
 {
     if (entry.IsSeq() && !entry.GetSeq().IsSetInst())
@@ -1044,7 +998,7 @@ void CFeatureTableReader::xMergeCDSFeatures_impl(CSeq_entry& entry, TAsyncToken&
                 break;
             }
         }
-        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, (*token.top_entry).SetSet().SetSeq_set())
+        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
             xMergeCDSFeatures_impl(**it, token);
         }
@@ -1145,104 +1099,6 @@ void CFeatureTableReader::xMoveCdRegions(CSeq_entry_Handle entry_h,
     }
 }
 
-
-void CFeatureTableReader::xParseCdregions(CSeq_entry& entry)
-{
-
-    if (!entry.IsSet() ||
-        entry.GetSet().GetClass() != CBioseq_set::eClass_nuc_prot)
-        return;
-
-    auto& seq_set = entry.SetSet().SetSeq_set();
-    auto entry_it = find_if(seq_set.begin(), seq_set.end(),
-            [](CRef<CSeq_entry> pEntry) {
-                return
-                (pEntry &&
-                 pEntry->IsSeq() &&
-                 pEntry->GetSeq().IsSetInst() &&
-                 pEntry->GetSeq().IsNa() &&
-                 pEntry->GetSeq().IsSetAnnot());
-            });
-
-    if (entry_it == seq_set.end()) {
-        return;
-    }
-
-    m_bioseq.Reset(&((*entry_it)->SetSeq()));
-    auto& annots = m_bioseq->SetAnnot();
-
-    // Find first feature table
-    auto annot_it =
-        find_if(annots.begin(), annots.end(),
-                [](CRef<CSeq_annot> pAnnot) { return pAnnot && pAnnot->IsFtable(); });
-
-    if (annot_it == annots.end()) {
-        return;
-    }
-
-    auto main_ftable = *annot_it;
-    // Merge any remaining feature tables into main_ftable
-    ++annot_it;
-    while(annot_it != annots.end()) {
-        auto pAnnot = *annot_it;
-        if (pAnnot->IsFtable()) {
-            main_ftable->SetData().SetFtable().splice(
-                    end(main_ftable->SetData().SetFtable()),
-                    pAnnot->SetData().SetFtable());
-            annot_it = annots.erase(annot_it);
-            continue;
-        }
-        ++annot_it;
-    }
-
-    //copy sequence feature table to edit it
-    auto seq_ftable = main_ftable->SetData().SetFtable();
-
-    // Create empty annotation holding cdregion features
-    CRef<CSeq_annot> set_annot(new CSeq_annot);
-    CSeq_annot::TData::TFtable& set_ftable = set_annot->SetData().SetFtable();
-    //entry.SetSet().SetAnnot().push_back(set_annot);
-
-    m_pScope.Reset(new CScope(*CObjectManager::GetInstance()));
-    m_pScope->AddDefaults();
-    CSeq_entry_Handle entry_h = m_pScope->AddTopLevelSeqEntry(entry);
-
-    TAsyncToken token;
-    token.bioseq = m_bioseq;
-    token.scope = m_pScope;
-    token.featTree = m_Feat_Tree;
-
-    xAddFeatures(token);
-    xMoveCdRegions(entry_h, seq_ftable, set_ftable, token);
-    xClearTrees();
-
-    m_pScope->RemoveTopLevelSeqEntry(entry_h);
-
-    if (seq_ftable.empty()) {
-        m_bioseq->SetAnnot().remove(main_ftable);
-    } else {
-        main_ftable->SetData().SetFtable() = move(seq_ftable);
-    }
-
-    if (m_bioseq->GetAnnot().empty())
-    {
-            m_bioseq->ResetAnnot();
-    }
-
-    if (!set_ftable.empty()) {
-        entry.SetSet().SetAnnot().push_back(set_annot);
-    }
-
-    if (false)
-    {
-        CNcbiOfstream debug_annot("annot.sqn");
-        debug_annot << MSerial_AsnText
-            << MSerial_VerifyNo
-            << entry;
-    }
-}
-
-
 void CFeatureTableReader::xParseCdregions(CSeq_entry& entry, TAsyncToken& token)
 {
 
@@ -1309,7 +1165,7 @@ void CFeatureTableReader::xParseCdregions(CSeq_entry& entry, TAsyncToken& token)
 
     xMoveCdRegions(entry_h, seq_ftable, set_ftable, token);
 
-    xClearTrees();
+    xClearTrees(token);
 
     token.scope->RemoveTopLevelSeqEntry(entry_h);
 
