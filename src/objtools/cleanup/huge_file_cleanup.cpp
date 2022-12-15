@@ -226,16 +226,6 @@ void CCleanupHugeAsnReader::x_AddTopLevelDescriptors(CSeq_entry& entry)
 }
 
 
-CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(CConstRef<CSeq_id> pId) const
-{
-    auto pEntry = TParent::LoadSeqEntry(pId);
-//    if (pEntry) {
-//        x_AddTopLevelDescriptors(*pEntry);
-//    }
-    return pEntry;
-}
-
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
