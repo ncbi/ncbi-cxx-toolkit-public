@@ -125,7 +125,7 @@ static void ParseEmblVersion(IndexblkPtr entry, char* line)
     char* q;
 
     p = StringRChr(line, '.');
-    if (p == NULL) {
+    if (! p) {
         ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in SV line.");
         entry->drop = 1;
         return;
@@ -157,20 +157,20 @@ static char* EmblGetNewIDVersion(char* locus, char* str)
     char* p;
     char* q;
 
-    if (locus == NULL || str == NULL)
-        return (NULL);
+    if (! locus || ! str)
+        return nullptr;
     p = StringChr(str, ';');
-    if (p == NULL)
-        return (NULL);
+    if (! p)
+        return nullptr;
     for (p++; *p == ' ';)
         p++;
     if (p[0] != 'S' || p[1] != 'V')
-        return (NULL);
+        return nullptr;
     for (p += 2; *p == ' ';)
         p++;
     q = StringChr(p, ';');
-    if (q == NULL)
-        return (NULL);
+    if (! q)
+        return nullptr;
     *q = '\0';
 
     res = MemNew(StringLen(locus) + StringLen(p) + 2);
@@ -250,7 +250,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             after_SV         = false;
             after_DT         = false;
 
-            line_sv = NULL;
+            line_sv = nullptr;
             auto   keywordEnd = emblKeywords[ParFlatEM_END];
             auto   keywordId  = emblKeywords[ParFlat_ID];
             auto   keywordNi  = emblKeywords[ParFlat_NI];
@@ -405,14 +405,14 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             if (entry->drop != 1 && pp->accver) {
                 ParseEmblVersion(entry, line_sv);
             }
-            if (line_sv != NULL) {
+            if (line_sv) {
                 MemFree(line_sv);
-                line_sv = NULL;
+                line_sv = nullptr;
             }
 
             entry->len = (size_t)(pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
 
-            if (fun != NULL) {
+            if (fun) {
                 data = LoadEntry(pp, entry->offset, entry->len);
                 (*fun)(entry, data->mOffset, static_cast<Int4>(data->len));
                 delete data;
@@ -432,13 +432,13 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (pp->qsfd != NULL && QSIndex(pp, ibnp->next) == false)
+    if (pp->qsfd && QSIndex(pp, ibnp->next) == false)
         return false;
 
     pp->entrylist.resize(indx);
     tibnp = ibnp->next;
     delete ibnp;
-    for (j = 0; j < indx && tibnp != NULL; j++, tibnp = ibnp) {
+    for (j = 0; j < indx && tibnp; j++, tibnp = ibnp) {
         pp->entrylist[j] = tibnp->ibp;
         ibnp             = tibnp->next;
         delete tibnp;

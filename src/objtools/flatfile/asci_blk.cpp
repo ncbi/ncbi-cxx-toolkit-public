@@ -107,7 +107,7 @@ const char* magic_phrases[] = {
     "WORKING DRAFT SEQUENCE",
     "LOW-PASS SEQUENCE SAMPLING",
     "*** IN PROGRESS ***",
-    NULL
+    nullptr
 };
 
 extern vector<string> genbankKeywords;
@@ -121,7 +121,7 @@ void ShrinkSpaces(char* line)
     char* q;
     bool  got_nl;
 
-    if (line == NULL || *line == '\0')
+    if (! line || *line == '\0')
         return;
 
     for (p = line; *p != '\0'; p++) {
@@ -332,7 +332,7 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
     eptr = bptr + dbp->len;
     ptr  = SrchTheChar(bptr, eptr, '\n');
 
-    if (ptr == NULL)
+    if (! ptr)
         return;
 
     bptr = ptr + 1;
@@ -361,20 +361,20 @@ static void fta_check_mult_ids(DataBlkPtr dbp, const char* mtag, const char* pta
     Int4  muids;
     Int4  pmids;
 
-    if (dbp == NULL || dbp->mOffset == NULL || (mtag == NULL && ptag == NULL))
+    if (! dbp || ! dbp->mOffset || (! mtag && ! ptag))
         return;
 
     ch                     = dbp->mOffset[dbp->len];
     dbp->mOffset[dbp->len] = '\0';
 
-    size_t mlen = (mtag == NULL) ? 0 : StringLen(mtag);
-    size_t plen = (ptag == NULL) ? 0 : StringLen(ptag);
+    size_t mlen = mtag ? StringLen(mtag) : 0;
+    size_t plen = ptag ? StringLen(ptag) : 0;
 
     muids = 0;
     pmids = 0;
     for (p = dbp->mOffset;; p++) {
         p = StringChr(p, '\n');
-        if (p == NULL)
+        if (! p)
             break;
         if (mtag && StringEquN(p + 1, mtag, mlen))
             muids++;
@@ -403,13 +403,13 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
     DataBlkPtr dbp;
 
     dbp = TrackNodeType(entry, ParFlat_SOURCE);
-    if (dbp != NULL) {
+    if (dbp) {
         BuildSubBlock(dbp, ParFlat_ORGANISM, "  ORGANISM");
         GetLenSubNode(dbp);
     }
 
     dbp = TrackNodeType(entry, ParFlat_REFERENCE);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REFERENCE)
             continue;
 
@@ -427,7 +427,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
     }
 
     dbp = TrackNodeType(entry, ParFlat_FEATURES);
-    for (; dbp != NULL; dbp = dbp->mpNext) {
+    for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_FEATURES)
             continue;
 
@@ -559,7 +559,7 @@ static bool TrimEmblFeatBlk(DataBlkPtr dbp)
     eptr = bptr + dbp->len;
     ptr  = SrchTheChar(bptr, eptr, '\n');
 
-    while (ptr != NULL && ptr + 1 < eptr) {
+    while (ptr && ptr + 1 < eptr) {
         if (ptr[2] == 'H') {
             dbp->len     = dbp->len - (ptr - dbp->mOffset + 1);
             dbp->mOffset = ptr + 1;
@@ -607,7 +607,7 @@ static bool GetSubNodeType(const char* subkw, char** retbptr, char* eptr)
         }
 
         ptr = SrchTheChar(bptr, eptr, '\n');
-        if (ptr != NULL)
+        if (ptr)
             bptr = ptr;
         bptr++;
     }
@@ -650,14 +650,14 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
     sprintf(str, " 1-%d", (int)bases);
 
     ptr = SrchTheStr(bptr, eptr, str);
-    if (ptr != NULL) {
+    if (ptr) {
         dbp->mType = ParFlat_REF_END;
         return;
     }
 
     if (source == Parser::ESource::EMBL) {
         ptr = SrchTheStr(bptr, eptr, " 0-0");
-        if (ptr != NULL) {
+        if (ptr) {
             dbp->mType = ParFlat_REF_NO_TARGET;
             return;
         }
@@ -667,7 +667,7 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
     if (source == Parser::ESource::NCBI) {
         for (sptr = bptr + 1; sptr < eptr && *sptr != 'R';)
             sptr++;
-        if (SrchTheStr(bptr, sptr, "sites") != NULL)
+        if (SrchTheStr(bptr, sptr, "sites"))
             dbp->mType = ParFlat_REF_SITES;
     }
 }
@@ -694,7 +694,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
     EntryBlkPtr ebp;
 
     temp = TrackNodeType(entry, ParFlat_OS);
-    for (; temp != NULL; temp = temp->mpNext) {
+    for (; temp; temp = temp->mpNext) {
         if (temp->mType != ParFlat_OS)
             continue;
 
@@ -704,7 +704,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
     }
 
     temp = TrackNodeType(entry, ParFlat_RN);
-    for (; temp != NULL; temp = temp->mpNext) {
+    for (; temp; temp = temp->mpNext) {
         if (temp->mType != ParFlat_RN)
             continue;
 
@@ -724,7 +724,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
     temp   = ebp->chain;
     predbp = temp;
     curdbp = temp->mpNext;
-    while (curdbp != NULL) {
+    while (curdbp) {
         if (curdbp->mType != ParFlat_FH) {
             predbp = curdbp;
             curdbp = curdbp->mpNext;
@@ -742,7 +742,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
             ErrPostStr(SEV_WARNING, ERR_FEATURE_NoFeatData, "No feature data in the FH block (Embl)");
 
             predbp->mpNext = curdbp->mpNext;
-            curdbp->mpNext = NULL;
+            curdbp->mpNext = nullptr;
             delete curdbp;
             curdbp = predbp->mpNext;
         }
@@ -791,15 +791,15 @@ void GetLenSubNode(DataBlkPtr dbp)
     Int2       n;
     bool       done = false;
 
-    if (dbp->mpData == NULL) /* no sublocks in this block */
+    if (! dbp->mpData) /* no sublocks in this block */
         return;
 
     offset = dbp->mOffset;
     for (s = offset; *s != '\0' && isdigit(*s) == 0;)
         s++;
     n    = atoi(s);
-    ldbp = NULL;
-    for (ndbp = static_cast<DataBlk*>(dbp->mpData); ndbp != NULL; ndbp = ndbp->mpNext) {
+    ldbp = nullptr;
+    for (ndbp = static_cast<DataBlk*>(dbp->mpData); ndbp; ndbp = ndbp->mpNext) {
         size_t l = ndbp->mOffset - offset;
         if (l > 0 && l < dbp->len) {
             dbp->len = l;
@@ -807,23 +807,23 @@ void GetLenSubNode(DataBlkPtr dbp)
         }
     }
 
-    if (ldbp != dbp->mpData && ldbp != NULL) {
+    if (ldbp != dbp->mpData && ldbp) {
         ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         done = true;
     }
 
     curdbp = static_cast<DataBlk*>(dbp->mpData);
-    for (; curdbp->mpNext != NULL; curdbp = curdbp->mpNext) {
+    for (; curdbp->mpNext; curdbp = curdbp->mpNext) {
         offset = curdbp->mOffset;
-        ldbp   = NULL;
-        for (ndbp = static_cast<DataBlk*>(dbp->mpData); ndbp != NULL; ndbp = ndbp->mpNext) {
+        ldbp   = nullptr;
+        for (ndbp = static_cast<DataBlk*>(dbp->mpData); ndbp; ndbp = ndbp->mpNext) {
             size_t l = ndbp->mOffset - offset;
             if (l > 0 && l < curdbp->len) {
                 curdbp->len = l;
                 ldbp        = ndbp;
             }
         }
-        if (ldbp != curdbp->mpNext && ldbp != NULL && ! done) {
+        if (ldbp != curdbp->mpNext && ldbp && ! done) {
             ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         }
     }
@@ -836,7 +836,7 @@ CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
     const char*          p;
     const char*          q;
 
-    if (acc == NULL || *acc == '\0')
+    if (! acc || *acc == '\0')
         return (pat_id);
 
     pat_id = new CPatent_seq_id;
@@ -876,7 +876,7 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type)
         type != CSeq_id::e_Tpg && type != CSeq_id::e_Tpe && type != CSeq_id::e_Tpd)
         return (CSeq_id::e_not_set);
 
-    if (accession == NULL)
+    if (! accession)
         return (type);
 
     const auto cho = CSeq_id::GetAccType(CSeq_id::IdentifyAccession(accession));
@@ -910,7 +910,7 @@ CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 ver
 {
     CRef<CSeq_id> id;
 
-    if (acc == NULL || *acc == '\0')
+    if (! acc || *acc == '\0')
         return id;
 
     seqtype = ValidSeqType(acc, seqtype);
@@ -939,7 +939,7 @@ CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 ver
 CRef<CSeq_id> MakeLocusSeqId(const char* locus, CSeq_id::E_Choice seqtype)
 {
     CRef<CSeq_id> res;
-    if (locus == NULL || *locus == '\0')
+    if (! locus || *locus == '\0')
         return res;
 
     CRef<CTextseq_id> text_id(new CTextseq_id);
@@ -957,7 +957,7 @@ CRef<CSeq_id> MakeLocusSeqId(const char* locus, CSeq_id::E_Choice seqtype)
 static CRef<CSeq_id> MakeSegSetSeqId(const char* accession, const char* locus, Uint1 seqtype, bool is_tpa)
 {
     CRef<CSeq_id> res;
-    if (locus == NULL || *locus == '\0')
+    if (! locus || *locus == '\0')
         return res;
 
     seqtype = ValidSeqType(accession, seqtype);
@@ -992,16 +992,16 @@ char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len
 
     *len = 0;
     mdbp = TrackNodeType(entry, type);
-    if (mdbp == NULL)
-        return (NULL);
+    if (! mdbp)
+        return nullptr;
 
     sdbp = static_cast<DataBlk*>(mdbp->mpData);
 
-    while (sdbp != NULL && sdbp->mType != subtype)
+    while (sdbp && sdbp->mType != subtype)
         sdbp = sdbp->mpNext;
 
-    if (sdbp == NULL)
-        return (NULL);
+    if (! sdbp)
+        return nullptr;
 
     *len = sdbp->len;
     return (sdbp->mOffset);
@@ -1058,16 +1058,16 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
         } else {
             SetEmptyId(*res);
         }
-    } else if ((locus == NULL || *locus == '\0') && (acc == NULL || *acc == '\0')) {
+    } else if ((! locus || *locus == '\0') && (! acc || *acc == '\0')) {
         SetEmptyId(*res);
     } else {
         CRef<CTextseq_id> textId(new CTextseq_id);
 
-        if (ibp->embl_new_ID == false && locus != NULL && *locus != '\0' &&
-            (acc == NULL || StringCmp(acc, locus) != 0))
+        if (ibp->embl_new_ID == false && locus && *locus != '\0' &&
+            (! acc || StringCmp(acc, locus) != 0))
             textId->SetName(locus);
 
-        if (acc != NULL && *acc != '\0')
+        if (acc && *acc != '\0')
             textId->SetAccession(acc);
 
         if (pp->accver && ibp->vernum > 0)
@@ -1129,7 +1129,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
             *p = '\0';
             r  = StringStr(bptr, "-START##");
             *p = '\n';
-            if (r != NULL)
+            if (r)
                 within = true;
         }
 
@@ -1170,14 +1170,14 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
             *p = '\0';
             r  = StringStr(bptr, "-END##");
             *p = '\n';
-            if (r != NULL)
+            if (r)
                 within = false;
         }
     }
 
     for (p = com;;) {
         p = StringStr(p, "; ");
-        if (p == NULL)
+        if (! p)
             break;
         for (p += 2, eptr = p; *eptr == ' ';)
             eptr++;
@@ -1204,7 +1204,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
             p++;
             if (StringEquN(p, "...", 3))
                 p[3] = '\0';
-            else if (StringChr(p, '.') != NULL) {
+            else if (StringChr(p, '.')) {
                 *p   = '.';
                 p[1] = '\0';
             } else
@@ -1214,7 +1214,7 @@ char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool
     if (*com != '\0')
         return (com);
     MemFree(com);
-    return (NULL);
+    return nullptr;
 }
 
 /**********************************************************/
@@ -1223,8 +1223,8 @@ static void fta_fix_secondaries(TokenBlkPtr secs)
     TokenBlkPtr tbp;
     char*       p;
 
-    if (secs == NULL || secs->next == NULL || secs->str == NULL ||
-        secs->next->str == NULL || fta_if_wgs_acc(secs->str) != 0 ||
+    if (! secs || ! secs->next || ! secs->str ||
+        ! secs->next->str || fta_if_wgs_acc(secs->str) != 0 ||
         StringCmp(secs->next->str, "-") != 0)
         return;
 
@@ -1291,7 +1291,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     CSeq_id::E_Choice pri_owner;
     CSeq_id::E_Choice sec_owner;
 
-    if (ibp->secaccs == NULL) {
+    if (! ibp->secaccs) {
         return;
     }
 
@@ -1311,11 +1311,11 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     }
 
     unusual_wgs = false;
-    for (tbp = ibp->secaccs; tbp != NULL; tbp = tbp->next) {
+    for (tbp = ibp->secaccs; tbp; tbp = tbp->next) {
         p = tbp->str;
         if (p[0] == '-' && p[1] == '\0') {
             tbp = tbp->next;
-            if (tbp == NULL)
+            if (! tbp)
                 break;
             if (! accessions.empty()) {
                 accessions.back() += '-';
@@ -1590,7 +1590,7 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned cha
 
     bu = buf;
     while (*ptr != '\n' && *ptr != '\0' && blank < 6 && count < 100) {
-        if (numns != NULL && (*ptr == 'n' || *ptr == 'N'))
+        if (numns && (*ptr == 'n' || *ptr == 'N'))
             (*numns)++;
 
         residue = conv[(int)*ptr];
@@ -1653,7 +1653,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
     if (pp->format == Parser::EFormat::XML) {
         str    = XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE);
         seqptr = str;
-        if (seqptr != NULL)
+        if (seqptr)
             len = StringLen(seqptr);
         if (pp->source != Parser::ESource::USPTO || ibp->is_prot == false)
             for (; *seqptr != '\0'; seqptr++)
@@ -1661,11 +1661,11 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
                     *seqptr |= 040;
         seqptr = str;
     } else {
-        str    = NULL;
+        str    = nullptr;
         seqptr = xSrchNodeType(entry, nodetype, &len);
     }
 
-    if (seqptr == NULL)
+    if (! seqptr)
         return false;
 
     endptr = seqptr + len;
@@ -1692,7 +1692,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
     for (numns = 0; seqptr < endptr;) {
         len = ScanSequence(true, &seqptr, buf, seqconv, replacechar, &numns);
         if (len == 0) {
-            if (str != NULL)
+            if (str)
                 MemFree(str);
             return false;
         }
@@ -1706,7 +1706,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
         ErrPostEx(SEV_WARNING, ERR_SEQUENCE_SeqLenNotEq, "Measured seqlen [%ld] != given [%ld]", (long int)seqlen, (long int)bioseq.GetLength());
     }
 
-    if (str != NULL)
+    if (str)
         MemFree(str);
 
     if (seq_data_type == CSeq_data::e_Iupacaa) {
@@ -2111,16 +2111,16 @@ static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
     }
 
     if (cur_descr == descr_list.end())
-        return NULL;
+        return nullptr;
 
     title = (*cur_descr)->GetTitle().c_str();
 
     ptr = StringStr(title, "complete cds");
-    if (ptr == NULL) {
+    if (! ptr) {
         ptr = StringStr(title, "exon");
     }
 
-    if (ptr != NULL) {
+    if (ptr) {
         str = StringSave(string(title, ptr).c_str());
         CleanTailNoneAlphaChar(str);
     } else {
@@ -2152,7 +2152,7 @@ static void SrchSegDescr(TEntryList& entries, CSeq_descr& descr)
     CBioseq&          bioseq = entry->SetSeq();
 
     char* title = GetBioseqSetDescrTitle(bioseq.GetDescr());
-    if (title != NULL) {
+    if (title) {
         CRef<CSeqdesc> desc_new(new CSeqdesc);
         desc_new->SetTitle(title);
         descr.Set().push_back(desc_new);
@@ -2402,7 +2402,7 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
 
     char* title = GetBioseqSetDescrTitle(original.GetDescr());
 
-    if (title != NULL) {
+    if (title) {
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetTitle(title);
 
@@ -2703,7 +2703,7 @@ void AddNIDSeqId(CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata,
     char*      offset;
 
     dbp = TrackNodeType(entry, type);
-    if (dbp == NULL)
+    if (! dbp)
         return;
 
     offset            = dbp->mOffset + coldata;
@@ -2771,7 +2771,7 @@ static const CBioSource* GetTopBiosource(const CSeq_entry& entry)
 static bool SeqEntryCheckTaxonDiv(const CSeq_entry& entry)
 {
     const CBioSource* bio_src = GetTopBiosource(entry);
-    if (bio_src == NULL)
+    if (! bio_src)
         return false;
 
     if (! bio_src->IsSetOrg() || ! bio_src->GetOrg().IsSetOrgname() || ! bio_src->GetOrg().GetOrgname().IsSetDiv())
@@ -2804,8 +2804,8 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
     Int2         count;
 
     dbp = TrackNodeType(entry, what);
-    if (dbp == NULL || dbp->mOffset == NULL || dbp->len < 1)
-        p = NULL;
+    if (! dbp || ! dbp->mOffset || dbp->len < 1)
+        p = nullptr;
     else {
         q   = dbp->mOffset + dbp->len - 1;
         c   = *q;
@@ -2824,16 +2824,16 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
             *q++ = *p;
         }
         *q = '\0';
-        for (b = magic_phrases, p = NULL; *b != NULL && p == NULL; b++)
+        for (b = magic_phrases, p = nullptr; *b && ! p; b++)
             p = StringStr(tmp, *b);
         MemFree(tmp);
     }
 
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
          tech == CMolInfo::eTech_htgs_2) &&
-        p == NULL && ! cancelled) {
+        ! p && ! cancelled) {
         ErrPostEx(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
-    } else if (tech == CMolInfo::eTech_htgs_3 && p != NULL) {
+    } else if (tech == CMolInfo::eTech_htgs_3 && p) {
         ErrPostEx(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
     }
 
@@ -2841,10 +2841,10 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
         return;
 
     dbp = TrackNodeType(entry, ori);
-    if (dbp == NULL || dbp->mOffset == NULL || dbp->len < 1)
+    if (! dbp || ! dbp->mOffset || dbp->len < 1)
         return;
     r = new char[dbp->len + 1];
-    if (r == NULL)
+    if (! r)
         return;
     StringNCpy(r, dbp->mOffset, dbp->len);
     r[dbp->len] = '\0';
@@ -2874,12 +2874,12 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
     char*        r;
     Int2         count;
 
-    if (entry == NULL || xip == NULL)
+    if (! entry || ! xip)
         return;
 
     tmp = XMLFindTagValue(entry, xip, INSDSEQ_DEFINITION);
-    if (tmp == NULL)
-        p = NULL;
+    if (! tmp)
+        p = nullptr;
     else {
         for (q = tmp; *q != '\0'; q++)
             if (*q == '\n' || *q == '\t')
@@ -2890,16 +2890,16 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
             *q++ = *p;
         }
         *q = '\0';
-        for (b = magic_phrases, p = NULL; *b != NULL && p == NULL; b++)
+        for (b = magic_phrases, p = nullptr; *b && ! p; b++)
             p = StringStr(tmp, *b);
         MemFree(tmp);
     }
 
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
          tech == CMolInfo::eTech_htgs_2) &&
-        p == NULL && ! cancelled) {
+        ! p && ! cancelled) {
         ErrPostEx(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
-    } else if (tech == CMolInfo::eTech_htgs_3 && p != NULL) {
+    } else if (tech == CMolInfo::eTech_htgs_3 && p) {
         ErrPostEx(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
     }
 
@@ -2907,7 +2907,7 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
         return;
 
     r = XMLFindTagValue(entry, xip, INSDSEQ_SEQUENCE);
-    if (r == NULL)
+    if (! r)
         return;
 
     for (count = 0, p = r; *p != '\0'; p++) {
@@ -2924,9 +2924,9 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
 /**********************************************************/
 void CheckHTGDivision(const char* div, CMolInfo::TTech tech)
 {
-    if (div != NULL && StringCmp(div, "HTG") == 0 && tech == CMolInfo::eTech_htgs_3) {
+    if (div && StringCmp(div, "HTG") == 0 && tech == CMolInfo::eTech_htgs_3) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_ShouldNotBeHTG, "This Phase 3 HTGS sequence is still in the HTG division. If truly complete, it should move to a non-HTG division.");
-    } else if ((div == NULL || StringCmp(div, "HTG") != 0) &&
+    } else if ((! div || StringCmp(div, "HTG") != 0) &&
                (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
                 tech == CMolInfo::eTech_htgs_2)) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_ShouldBeHTG, "Phase 0, 1 or 2 HTGS sequences should have division code HTG.");
@@ -3006,7 +3006,7 @@ static void CleanVisStringList(list<string>& str_list)
 /**********************************************************/
 static void CheckGBBlock(TSeqdescList& descrs, bool& got)
 {
-    const Char* div = NULL;
+    const Char* div = nullptr;
 
     for (const auto& descr : descrs) {
         if (! descr->IsEmbl())
@@ -3026,7 +3026,7 @@ static void CheckGBBlock(TSeqdescList& descrs, bool& got)
         }
 
         CGB_block& gb_block = (*descr)->SetGenbank();
-        if (div != NULL && gb_block.IsSetDiv() && NStr::CompareNocase(div, gb_block.GetDiv().c_str()) == 0)
+        if (div && gb_block.IsSetDiv() && NStr::CompareNocase(div, gb_block.GetDiv().c_str()) == 0)
             gb_block.ResetDiv();
 
         if (gb_block.IsSetSource()) {
@@ -3291,27 +3291,27 @@ bool XMLCheckCDS(const char* entry, XmlIndexPtr xip)
     XmlIndexPtr txip;
     XmlIndexPtr fxip;
 
-    if (entry == NULL || xip == NULL)
+    if (! entry || ! xip)
         return (false);
 
-    for (; xip != NULL; xip = xip->next)
-        if (xip->tag == INSDSEQ_FEATURE_TABLE && xip->subtags != NULL)
+    for (; xip; xip = xip->next)
+        if (xip->tag == INSDSEQ_FEATURE_TABLE && xip->subtags)
             break;
-    if (xip == NULL)
+    if (! xip)
         return (false);
 
-    for (txip = xip->subtags; txip != NULL; txip = txip->next) {
-        if (txip->subtags == NULL)
+    for (txip = xip->subtags; txip; txip = txip->next) {
+        if (! txip->subtags)
             continue;
-        for (fxip = txip->subtags; fxip != NULL; fxip = fxip->next)
+        for (fxip = txip->subtags; fxip; fxip = fxip->next)
             if (fxip->tag == INSDFEATURE_KEY && fxip->end - fxip->start == 3 &&
                 StringEquN(entry + fxip->start, "CDS", 3))
                 break;
-        if (fxip != NULL)
+        if (fxip)
             break;
     }
 
-    if (txip == NULL)
+    if (! txip)
         return (false);
     return (true);
 }
@@ -3447,9 +3447,9 @@ static void PackSeqData(CSeq_data::E_Choice code, CSeq_data& seq_data)
 
     std::vector<Char> new_seq(old_size);
     size_t            new_size = 0;
-    if (seq_str != nullptr)
+    if (seq_str)
         new_size = CSeqConvert::Convert(seq_str->c_str(), old_coding, 0, static_cast<TSeqPos>(old_size), &new_seq[0], CSeqUtil::e_Ncbieaa);
-    else if (seq_vec != nullptr)
+    else if (seq_vec)
         new_size = CSeqConvert::Convert(&(*seq_vec)[0], old_coding, 0, static_cast<TSeqPos>(old_size), &new_seq[0], CSeqUtil::e_Ncbieaa);
 
     if (! new_seq.empty()) {

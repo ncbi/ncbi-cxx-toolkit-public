@@ -128,9 +128,9 @@ static void fta_tpa_block_free(FTATpaBlockPtr ftbp)
 {
     FTATpaBlockPtr next;
 
-    for (; ftbp != NULL; ftbp = next) {
+    for (; ftbp; ftbp = next) {
         next = ftbp->next;
-        if (ftbp->accession != NULL)
+        if (ftbp->accession)
             MemFree(ftbp->accession);
         delete ftbp;
     }
@@ -149,8 +149,8 @@ char* tata_save(char* str)
     char* s;
     char* ss;
 
-    if (str == NULL)
-        return (NULL);
+    if (! str)
+        return nullptr;
 
     while (isspace((int)*str) != 0 || *str == ',')
         str++;
@@ -169,7 +169,7 @@ char* tata_save(char* str)
         *s-- = '\0';
 
     if (*str == '\0')
-        return (NULL);
+        return nullptr;
 
     return (StringSave(str));
 }
@@ -261,12 +261,12 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
     } else
         return false;
 
-    for (temp = TrackNodeType(entry, type); temp != NULL; temp = temp->mpNext) {
+    for (temp = TrackNodeType(entry, type); temp; temp = temp->mpNext) {
         if (temp->mType != type)
             continue;
 
         size_t len = 0;
-        for (dbp = static_cast<DataBlk*>(temp->mpData); dbp != NULL; dbp = dbp->mpNext)
+        for (dbp = static_cast<DataBlk*>(temp->mpData); dbp; dbp = dbp->mpNext)
             len += dbp->len;
         if (len == 0)
             continue;
@@ -277,11 +277,11 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
         p                 = StringStr(dbp->mOffset, str);
         dbp->mOffset[len] = ch;
 
-        if (p != NULL)
+        if (p)
             break;
     }
 
-    if (temp == NULL)
+    if (! temp)
         return false;
     return true;
 }
@@ -304,7 +304,7 @@ void err_install(const Indexblk* ibp, bool accver)
 /**********************************************************/
 static void CreateSeqGap(CSeq_literal& seq_lit, GapFeatsPtr gfp)
 {
-    if (gfp == nullptr)
+    if (! gfp)
         return;
 
     CSeq_gap& sgap = seq_lit.SetSeq_data().SetGap();
@@ -326,13 +326,13 @@ static void CreateSeqGap(CSeq_literal& seq_lit, GapFeatsPtr gfp)
 void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
 {
     if (! bioseq.GetInst().IsSetExt() || ! bioseq.GetInst().GetExt().IsDelta() ||
-        gfp == NULL)
+        ! gfp)
         return;
 
     CDelta_ext::Tdata&          deltas = bioseq.SetInst().SetExt().SetDelta();
     CDelta_ext::Tdata::iterator delta  = deltas.begin();
     for (; delta != deltas.end(); ++delta) {
-        if (gfp == NULL)
+        if (! gfp)
             break;
 
         if (! (*delta)->IsLiteral()) /* not Seq-lit */
@@ -350,13 +350,13 @@ void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
         gfp = gfp->next;
     }
 
-    if (*drop != 0 || (delta == deltas.end() && gfp == NULL))
+    if (*drop != 0 || (delta == deltas.end() && ! gfp))
         return;
 
-    if (delta == deltas.end() && gfp != NULL) {
+    if (delta == deltas.end() && gfp) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The number of the assembly_gap features exceeds the number of CONTIG/CO line gaps. First extra assembly_gap is at \"%d..%d\".", gfp->from, gfp->to);
         *drop = 1;
-    } else if (delta != deltas.end() && gfp == NULL) {
+    } else if (delta != deltas.end() && ! gfp) {
         for (; delta != deltas.end(); ++delta) {
             if ((*delta)->IsLiteral()) /* Seq-lit */
                 break;
@@ -380,7 +380,7 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
     Int4        nextfrom;
     Int4        i;
 
-    if (gfp == NULL || ! bioseq.GetInst().IsSetSeq_data())
+    if (! gfp || ! bioseq.GetInst().IsSetSeq_data())
         return;
 
     const string& sequence = bioseq.GetInst().GetSeq_data().GetIupacna();
@@ -388,8 +388,8 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
     if (sequence.empty() || sequence.size() != bioseq.GetLength())
         return;
 
-    for (prevto = 0, tgfp = gfp; tgfp != NULL; tgfp = tgfp->next) {
-        if (tgfp->next != NULL) {
+    for (prevto = 0, tgfp = gfp; tgfp; tgfp = tgfp->next) {
+        if (tgfp->next) {
             p = sequence.c_str() + tgfp->to;
             for (i = tgfp->to + 1; i < tgfp->next->from; p++, i++)
                 if (*p != 'N')
@@ -467,7 +467,7 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
 
         prevto = tgfp->to;
 
-        if (tgfp->next == NULL) {
+        if (! tgfp->next) {
             if (bioseq.GetLength() - prevto > 0) {
                 delta.Reset(new CDelta_seq);
 
@@ -619,40 +619,40 @@ static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
     acc2   = ppacc2.data();
 
 
-    if (acc1 == NULL && acc2 == NULL)
+    if (! acc1 && ! acc2)
         return false;
-    if (acc1 == NULL || acc2 == NULL)
+    if (! acc1 || ! acc2)
         return true;
 
     p = StringChr(acc1, '-');
     q = StringChr(acc2, '-');
 
-    if (p != NULL && q != NULL)
+    if (p && q)
         return true;
 
-    if (p == NULL) {
+    if (! p) {
         master = acc1;
         range  = acc2;
-        if (q != NULL)
+        if (q)
             *q = '\0';
     } else {
         master = acc2;
         range  = acc1;
-        if (p != NULL)
+        if (p)
             *p = '\0';
     }
 
     if (fta_if_wgs_acc(master) != 0 || fta_if_wgs_acc(range) != 1) {
-        if (p != NULL)
+        if (p)
             *p = '-';
-        if (q != NULL)
+        if (q)
             *q = '-';
         return true;
     }
 
-    if (p != NULL)
+    if (p)
         *p = '-';
-    if (q != NULL)
+    if (q)
         *q = '-';
 
     for (p = master; *p != '\0' && (*p < '0' || *p > '9');)
@@ -873,9 +873,9 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
 /**********************************************************/
 bool fta_strings_same(const char* s1, const char* s2)
 {
-    if (s1 == NULL && s2 == NULL)
+    if (! s1 && ! s2)
         return true;
-    if (s1 == NULL || s2 == NULL || StringCmp(s1, s2) != 0)
+    if (! s1 || ! s2 || StringCmp(s1, s2) != 0)
         return false;
     return true;
 }
@@ -961,15 +961,15 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
     Int4           i2;
     Int4           j;
 
-    if (ftbp == NULL || length < 1)
+    if (! ftbp || length < 1)
         return;
 
     ftsp       = new FTATpaSpan;
     ftsp->from = ftbp->from1;
     ftsp->to   = ftbp->to1;
-    ftsp->next = NULL;
+    ftsp->next = nullptr;
     tftsp      = ftsp;
-    for (tftbp = ftbp; tftbp != NULL; tftbp = tftbp->next) {
+    for (tftbp = ftbp; tftbp; tftbp = tftbp->next) {
         i1 = tftbp->to1 - tftbp->from1;
         i2 = tftbp->to2 - tftbp->from2;
         j  = (i2 > i1) ? (i2 - i1) : (i1 - i2);
@@ -1008,14 +1008,14 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
             ErrPostEx(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"1..%d\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->from - 1);
     }
 
-    for (; ftsp != NULL; ftsp = tftsp) {
+    for (; ftsp; ftsp = tftsp) {
         tftsp = ftsp->next;
-        if (tftsp != NULL && tftsp->from - ftsp->to - 1 > 50) {
+        if (tftsp && tftsp->from - ftsp->to - 1 > 50) {
             if (tpa)
                 ErrPostEx(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"%d..%d\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, tftsp->from - 1);
             else
                 ErrPostEx(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"%d..%d\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, tftsp->from - 1);
-        } else if (tftsp == NULL && length - ftsp->to > 50) {
+        } else if (! tftsp && length - ftsp->to > 50) {
             if (tpa)
                 ErrPostEx(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"%d..%d\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, length);
             else
@@ -1107,7 +1107,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     Int4  len2;
     CSeq_id::E_Choice choice;
 
-    if (offset == NULL || acnum == NULL || len < 2)
+    if (! offset || ! acnum || len < 2)
         return false;
 
     choice = GetNucAccOwner(acnum);
@@ -1118,7 +1118,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             if (*p == '~')
                 *p = '\n';
         p = StringChr(offset, '\n');
-        if (p == NULL)
+        if (! p)
             return false;
         buf = MemNew(StringLen(p) + 1);
         StringCpy(buf, p + 1);
@@ -1127,7 +1127,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         ch          = offset[len];
         offset[len] = '\0';
         p           = StringChr(offset, '\n');
-        if (p == NULL) {
+        if (! p) {
             offset[len] = ch;
             return false;
         }
@@ -1139,9 +1139,9 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 
     bad_line      = false;
     bad_interval  = false;
-    bad_accession = NULL;
+    bad_accession = nullptr;
     p             = buf;
-    for (q = StringChr(p, '\n'); q != NULL; p = q + 1, q = StringChr(p, '\n')) {
+    for (q = StringChr(p, '\n'); q; p = q + 1, q = StringChr(p, '\n')) {
         *q = '\0';
         if ((Int2)StringLen(p) < col_data)
             break;
@@ -1172,7 +1172,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             break;
         }
 
-        for (ft = ftbp; ft->next != NULL; ft = ft->next)
+        for (ft = ftbp; ft->next; ft = ft->next)
             if ((ft->next->from1 > from1) ||
                 (ft->next->from1 == from1 && ft->next->to1 > to1))
                 break;
@@ -1191,7 +1191,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             *p++ = '\0';
         tftbp->accession = StringSave(r);
         r                = StringChr(tftbp->accession, '.');
-        if (r != NULL) {
+        if (r) {
             *r++ = '\0';
             for (t = r; *t >= '0' && *t <= '9';)
                 t++;
@@ -1274,13 +1274,13 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     }
 
     MemFree(buf);
-    if (bad_line || bad_interval || bad_accession != NULL) {
+    if (bad_line || bad_interval || bad_accession) {
         if (bad_interval) {
             if (tpa)
                 ErrPostEx(SEV_REJECT, ERR_TPA_InvalidPrimarySpan, "Intervals from primary records on which a TPA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
             else
                 ErrPostEx(SEV_REJECT, ERR_TSA_InvalidPrimarySpan, "Intervals from primary records on which a TSA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
-        } else if (bad_accession != NULL) {
+        } else if (bad_accession) {
             if (tpa)
                 ErrPostEx(SEV_REJECT, ERR_TPA_InvalidPrimarySeqId, "\"%s\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession);
             else
@@ -1292,13 +1292,13 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 ErrPostEx(SEV_REJECT, ERR_TSA_InvalidPrimaryBlock, "Supplied PRIMARY block for TSA record is incorrect. Cannot parse. Entry dropped.");
         }
 
-        if (ftbp != NULL)
+        if (ftbp)
             fta_tpa_block_free(ftbp);
         return false;
     }
 
     tftbp      = ftbp->next;
-    ftbp->next = NULL;
+    ftbp->next = nullptr;
     delete ftbp;
     ftbp = tftbp;
 
@@ -1313,7 +1313,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     root_align->SetType(CSeq_align::eType_not_set);
     CSeq_align_set& align_set = root_align->SetSegs().SetDisc();
 
-    for (; tftbp != NULL; tftbp = tftbp->next) {
+    for (; tftbp; tftbp = tftbp->next) {
         len1 = tftbp->to1 - tftbp->from1 + 1;
         len2 = tftbp->to2 - tftbp->from2 + 1;
 
@@ -1400,7 +1400,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 
     assembly.push_back(root_align);
 
-    if (ftbp != NULL)
+    if (ftbp)
         fta_tpa_block_free(ftbp);
     return true;
 }
@@ -1408,8 +1408,8 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 /**********************************************************/
 char* StringRStr(char* where, const char* what)
 {
-    if (where == NULL || what == NULL || *where == '\0' || *what == '\0')
-        return (NULL);
+    if (! where || ! what || *where == '\0' || *what == '\0')
+        return nullptr;
 
     size_t i   = StringLen(what);
     char*  res = nullptr;
@@ -1444,7 +1444,7 @@ static void fta_validate_assembly(char* name)
     bool bad_format = false;
 
     char* p = name;
-    if (p == NULL || *p == '\0' || StringLen(p) < 7)
+    if (! p || *p == '\0' || StringLen(p) < 7)
         bad_format = true;
     else if (p[0] != 'G' || p[1] != 'C' || (p[2] != 'F' && p[2] != 'A') ||
              p[3] != '_' || p[4] < '0' || p[4] > '9')
@@ -1514,9 +1514,9 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
     bool       bad;
     Char       ch;
 
-    if (str == NULL || *str == '\0') {
+    if (! str || *str == '\0') {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
-        return (NULL);
+        return nullptr;
     }
 
     for (p = str; *p != '\0'; p++)
@@ -1527,10 +1527,10 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
         p++;
     if (*p == '\0') {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
-        return (NULL);
+        return nullptr;
     }
 
-    vnp       = ValNodeNew(NULL);
+    vnp       = ValNodeNew(nullptr);
     vnp->data = nullptr;
     tvnp      = vnp;
 
@@ -1561,7 +1561,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
             break;
         }
 
-        tvnp->next = ValNodeNew(NULL);
+        tvnp->next = ValNodeNew(nullptr);
         tvnp       = tvnp->next;
         tvnp->data = StringSave(q);
 
@@ -1571,14 +1571,14 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
     tvnp = vnp->next;
     delete vnp;
 
-    if (tvnp == NULL)
-        return (NULL);
+    if (! tvnp)
+        return nullptr;
 
     if (! bad)
         return (tvnp);
 
     ValNodeFreeData(tvnp);
-    return (NULL);
+    return nullptr;
 }
 
 /**********************************************************/
@@ -1594,7 +1594,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
     Char  ch;
     Int4  i;
 
-    if (offset == NULL)
+    if (! offset)
         return;
 
     bool newstyle = false;
@@ -1611,7 +1611,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
     size_t len = StringLen(name);
     str        = StringSave(offset + i);
     p          = StringChr(str, ch);
-    if (p != NULL)
+    if (p)
         *p = '\0';
 
     if (! StringEquN(str, name, len)) {
@@ -1627,7 +1627,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         newstyle = true;
 
     vnp = fta_tokenize_project(str + len, source, newstyle);
-    if (vnp == NULL) {
+    if (! vnp) {
         *drop = 1;
         MemFree(str);
         return;
@@ -1646,7 +1646,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         if (user_obj_ptr->IsSetType())
             obj_id = &(user_obj_ptr->SetType());
 
-        if (obj_id != NULL && obj_id->IsStr() && obj_id->GetStr() == "DBLink") {
+        if (obj_id && obj_id->IsStr() && obj_id->GetStr() == "DBLink") {
             got = true;
             break;
         }
@@ -1654,7 +1654,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 
     CRef<CUser_object> user_obj;
     if (newstyle) {
-        for (i = 0, tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
+        for (i = 0, tvnp = vnp; tvnp; tvnp = tvnp->next)
             i++;
 
         if (! got) {
@@ -1669,7 +1669,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         user_field->SetLabel().SetStr("BioProject");
         user_field->SetNum(i);
 
-        for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next)
+        for (tvnp = vnp; tvnp; tvnp = tvnp->next)
             user_field->SetData().SetStrs().push_back(tvnp->data);
 
         user_obj_ptr->SetData().push_back(user_field);
@@ -1682,7 +1682,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         CObject_id& id = user_obj_ptr->SetType();
         id.SetStr("GenomeProjectsDB");
 
-        for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
+        for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
 
             CRef<CUser_field> user_field(new CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
@@ -1712,7 +1712,7 @@ bool fta_if_valid_sra(const Char* id, bool dblink)
 {
     const Char* p = id;
 
-    if (p != NULL && StringLen(p) > 3 &&
+    if (p && StringLen(p) > 3 &&
         (p[0] == 'E' || p[0] == 'S' || p[0] == 'D') && p[1] == 'R' &&
         (p[2] == 'A' || p[2] == 'P' || p[2] == 'R' || p[2] == 'S' ||
          p[2] == 'X' || p[2] == 'Z')) {
@@ -1733,7 +1733,7 @@ bool fta_if_valid_biosample(const Char* id, bool dblink)
 {
     const Char* p = id;
 
-    if (p != NULL && StringLen(p) > 5 && p[0] == 'S' && p[1] == 'A' &&
+    if (p && StringLen(p) > 5 && p[0] == 'S' && p[1] == 'A' &&
         p[2] == 'M' && (p[3] == 'N' || p[3] == 'E' || p[3] == 'D')) {
         if (p[4] == 'A' || p[4] == 'G')
             p += 5;
@@ -1768,21 +1768,21 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
 
     char* p;
     char* q;
-    char* r = NULL;
+    char* r = nullptr;
     char* t;
     char* u;
     Char  ch;
 
-    if (str == NULL || *str == '\0') {
+    if (! str || *str == '\0') {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
-        return (NULL);
+        return nullptr;
     }
 
     for (p = str; *p != '\0'; p++)
         if (*p == ';' || *p == '\t')
             *p = ' ';
 
-    vnp        = ValNodeNew(NULL);
+    vnp        = ValNodeNew(nullptr);
     tvnp       = vnp;
     bad        = false;
     got_nl     = true;
@@ -1790,7 +1790,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
     assembly   = false;
     biosample  = false;
     bioproject = false;
-    tagvnp     = NULL;
+    tagvnp     = nullptr;
 
     for (p = str; *p != '\0'; got_nl = false) {
         while (*p == ' ' || *p == '\n' || *p == ':' || *p == ',') {
@@ -1801,11 +1801,11 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
 
         if (got_nl) {
             t = StringChr(p, ':');
-            if (t != NULL) {
+            if (t) {
                 r = StringChr(p, '\n');
                 u = StringChr(p, ',');
 
-                if ((u == NULL || u > t) && (r == NULL || r > t)) {
+                if ((! u || u > t) && (! r || r > t)) {
                     ch = *++t;
                     *t = '\0';
 
@@ -1831,7 +1831,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                         break;
                     }
 
-                    for (uvnp = vnp->next; uvnp != NULL; uvnp = uvnp->next)
+                    for (uvnp = vnp->next; uvnp; uvnp = uvnp->next)
                         if (StringCmp(uvnp->data, p) == 0) {
                             ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"%s\". Entry dropped.", p);
                             bad = true;
@@ -1840,7 +1840,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     if (bad)
                         break;
 
-                    tvnp->next = ValNodeNew(NULL);
+                    tvnp->next = ValNodeNew(nullptr);
                     tvnp       = tvnp->next;
                     tvnp->data = StringSave(p);
                     tagvnp     = tvnp;
@@ -1876,7 +1876,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
         *p = '\0';
 
         if (tagvnp && tagvnp->data) {
-            for (uvnp = tagvnp->next; uvnp != NULL; uvnp = uvnp->next) {
+            for (uvnp = tagvnp->next; uvnp; uvnp = uvnp->next) {
                 if (! uvnp->data || StringCmp(uvnp->data, q) != 0)
                     continue;
 
@@ -1884,7 +1884,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                 break;
             }
 
-            if (uvnp != NULL) {
+            if (uvnp) {
                 *p = ch;
                 continue;
             }
@@ -1901,7 +1901,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
         if (assembly)
             fta_validate_assembly(q);
 
-        tvnp->next = ValNodeNew(NULL);
+        tvnp->next = ValNodeNew(nullptr);
         tvnp       = tvnp->next;
         tvnp->data = StringSave(q);
         *p         = ch;
@@ -1915,14 +1915,14 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
     tvnp = vnp->next;
     delete vnp;
 
-    if (tvnp == NULL)
-        return (NULL);
+    if (! tvnp)
+        return nullptr;
 
     if (! bad)
         return (tvnp);
 
     ValNodeFreeData(tvnp);
-    return (NULL);
+    return nullptr;
 }
 
 /**********************************************************/
@@ -1935,7 +1935,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     const char* str;
     Int4        i;
 
-    if (offset == NULL)
+    if (! offset)
         return;
 
     char* str1                   = StringSave(offset + ParFlat_COL_DATA);
@@ -1943,7 +1943,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     vnp                          = fta_tokenize_dblink(str1, source);
     MemFree(str1);
 
-    if (vnp == NULL) {
+    if (! vnp) {
         *drop = 1;
         return;
     }
@@ -1951,7 +1951,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     CRef<CUser_object> user_obj;
     CRef<CUser_field>  user_field;
 
-    for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
+    for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
         if (StringChr(tvnp->data, ':')) {
             if (user_obj.NotEmpty())
                 break;
@@ -1969,7 +1969,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             continue;
 
         str = tvnp->data;
-        if (str == NULL || *str == '\0')
+        if (! str || *str == '\0')
             continue;
 
         if (*str != '0')
@@ -2007,7 +2007,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     user_field.Reset();
 
     bool inpr = false;
-    for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
+    for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
         if (StringChr(tvnp->data, ':')) {
             if (StringCmp(tvnp->data, "Project:") == 0) {
                 inpr = true;
@@ -2021,7 +2021,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
                 user_obj->SetType().SetStr("DBLink");
             }
 
-            for (i = 0, uvnp = tvnp->next; uvnp != NULL; uvnp = uvnp->next, i++)
+            for (i = 0, uvnp = tvnp->next; uvnp; uvnp = uvnp->next, i++)
                 if (StringChr(uvnp->data, ':'))
                     break;
 
@@ -2075,7 +2075,7 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
             else
                 continue;
 
-            if (id == nullptr)
+            if (! id)
                 break;
 
             if (! id->IsGenbank() && ! id->IsEmbl() &&
@@ -2084,7 +2084,7 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
                 break;
 
             const CTextseq_id* text_id = id->GetTextseq_Id();
-            if (text_id == nullptr || ! text_id->IsSetAccession() ||
+            if (! text_id || ! text_id->IsSetAccession() ||
                 text_id->GetAccession().empty() ||
                 fta_if_wgs_acc(text_id->GetAccession().c_str()) != 1)
                 break;
@@ -2109,14 +2109,14 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
     Int4  i;
     Char  ch;
 
-    if (ibp == NULL)
+    if (! ibp)
         return;
 
     if (id.IsLocal()) {
         return;
     }
 
-    if (name == NULL && id.IsGeneral()) {
+    if (! name && id.IsGeneral()) {
         const CDbtag& tag = id.GetGeneral();
         if (tag.GetDb() == "SeqLit" || tag.GetDb() == "UnkSeqLit")
             return;
@@ -2131,7 +2131,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
         } else
             ch = '\0';
 
-        if (name == NULL)
+        if (! name)
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty or unsupported Seq-id found in CONTIG/CO line at location: \"%s\". Entry skipped.", location);
         else
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty or unsupported Seq-id found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
@@ -2142,13 +2142,13 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
     }
 
     const CTextseq_id* text_id = id.GetTextseq_Id();
-    if (text_id == NULL || ! text_id->IsSetAccession()) {
+    if (! text_id || ! text_id->IsSetAccession()) {
         if (StringLen(location) > 50) {
             ch           = location[50];
             location[50] = '\0';
         } else
             ch = '\0';
-        if (name == NULL)
+        if (! name)
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty Seq-id found in CONTIG/CO line at location: \"%s\". Entry skipped.", location);
         else
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty Seq-id found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
@@ -2162,12 +2162,12 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
     if (iscon) {
         i = IsNewAccessFormat(accession);
         if (i == 3) {
-            if (slip->wgscont == NULL)
+            if (! slip->wgscont)
                 slip->wgscont = accession;
             else if (! slip->wgsacc && ! StringEquN(slip->wgscont, accession, 4))
                 slip->wgsacc = accession;
         } else if (i == 7) {
-            if (slip->wgsscaf == NULL)
+            if (! slip->wgsscaf)
                 slip->wgsscaf = accession;
             else if (! slip->wgsacc && ! StringEquN(slip->wgsscaf, accession, 4))
                 slip->wgsacc = accession;
@@ -2193,7 +2193,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
             location[50] = '\0';
         } else
             ch = '\0';
-        if (name == NULL)
+        if (! name)
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Invalid accession found in CONTIG/CO line at location: \"%s\". Entry skipped.", location);
         else
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Invalid accession found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
@@ -2207,52 +2207,52 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
 
     if (id.IsGenbank()) {
         if (source != Parser::ESource::NCBI && source != Parser::ESource::All &&
-            source != Parser::ESource::LANL && slip->badslp == nullptr)
+            source != Parser::ESource::LANL && ! slip->badslp)
             slip->badslp = &loc;
         slip->genbank = 1;
     } else if (id.IsEmbl()) {
         if (source != Parser::ESource::EMBL && source != Parser::ESource::All &&
-            slip->badslp == nullptr)
+            ! slip->badslp)
             slip->badslp = &loc;
         slip->embl = 1;
     } else if (id.IsPir()) {
         if (source != Parser::ESource::All &&
-            slip->badslp == nullptr)
+            ! slip->badslp)
             slip->badslp = &loc;
         slip->pir = 1;
     } else if (id.IsSwissprot()) {
         if (source != Parser::ESource::SPROT && source != Parser::ESource::All &&
-            slip->badslp == nullptr)
+            ! slip->badslp)
             slip->badslp = &loc;
         slip->swissprot = 1;
     } else if (id.IsOther()) {
         if (source != Parser::ESource::Refseq && source != Parser::ESource::All &&
-            slip->badslp == nullptr)
+            ! slip->badslp)
             slip->badslp = &loc;
         slip->other = 1;
     } else if (id.IsDdbj()) {
         if (source != Parser::ESource::DDBJ && source != Parser::ESource::All &&
-            slip->badslp == nullptr)
+            ! slip->badslp)
             slip->badslp = &loc;
         slip->ddbj = 1;
     } else if (id.IsPrf()) {
         if (source != Parser::ESource::All &&
-            slip->badslp == nullptr)
+            ! slip->badslp)
             slip->badslp = &loc;
         slip->prf = 1;
     } else if (id.IsTpg()) {
         if (source != Parser::ESource::NCBI && source != Parser::ESource::All &&
-            source != Parser::ESource::LANL && slip->badslp == nullptr)
+            source != Parser::ESource::LANL && ! slip->badslp)
             slip->badslp = &loc;
         slip->tpg = 1;
     } else if (id.IsTpe()) {
         if (source != Parser::ESource::EMBL && source != Parser::ESource::All &&
-            slip->badslp == nullptr)
+            ! slip->badslp)
             slip->badslp = &loc;
         slip->tpe = 1;
     } else if (id.IsTpd()) {
         if (source != Parser::ESource::DDBJ && source != Parser::ESource::All &&
-            slip->badslp == nullptr)
+            ! slip->badslp)
             slip->badslp = &loc;
         slip->tpd = 1;
     }
@@ -2300,7 +2300,7 @@ static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, char* loca
 Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const char* name, bool iscon)
 {
     SeqLocIds   sli;
-    const Char* p = NULL;
+    const Char* p = nullptr;
     ErrSev      sev;
     IndexblkPtr ibp;
     Char        ch;
@@ -2322,7 +2322,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
 
     ch = '\0';
     if ((tpa > 0 && non_tpa > 0) || tpa > 1 || non_tpa > 1 ||
-        (iscon && sli.wgscont != NULL && sli.wgsscaf != NULL)) {
+        (iscon && sli.wgscont && sli.wgsscaf)) {
         if (StringLen(location) > 50) {
             ch           = location[50];
             location[50] = '\0';
@@ -2330,7 +2330,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
     }
 
     if (tpa > 0 && non_tpa > 0) {
-        if (name == NULL)
+        if (! name)
             ErrPostEx(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, "The CONTIG/CO line with location \"%s\" refers to intervals on both primary and third-party sequence records. Entry skipped.", location);
         else
             ErrPostEx(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, "The \"%s\" feature at \"%s\" refers to intervals on both primary and third-party sequence records. Entry skipped.", name, location);
@@ -2346,9 +2346,9 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
             sev = SEV_WARNING;
             p   = "";
         }
-        if (name == NULL) {
+        if (! name) {
             string label;
-            if (sli.badslp != nullptr)
+            if (sli.badslp)
                 sli.badslp->GetLabel(&label);
 
             ErrPostEx(sev, ERR_LOCATION_CrossDatabaseFeatLoc, "The CONTIG/CO line refers to intervals on records from two or more INSDC databases. This is not allowed without review and approval : \"%s\".%s", label.empty() ? location : label.c_str(), p);
@@ -2357,16 +2357,16 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
     }
 
     if (iscon) {
-        if (sli.wgscont != NULL && sli.wgsscaf != NULL)
+        if (sli.wgscont && sli.wgsscaf)
             ErrPostEx(SEV_ERROR, ERR_LOCATION_ContigAndScaffold, "The CONTIG/CO line with location \"%s\" refers to intervals on both WGS contig and WGS scaffold records.", location);
 
-        if (sli.wgsacc != NULL) {
+        if (sli.wgsacc) {
             if (sli.wgscont && ! StringEquN(sli.wgscont, sli.wgsacc, 4))
                 p = sli.wgscont;
             else if (sli.wgsscaf && ! StringEquN(sli.wgsscaf, sli.wgsacc, 4))
                 p = sli.wgsscaf;
 
-            if (p != NULL) {
+            if (p) {
                 Char msga[5],
                     msgb[5];
 
@@ -2380,7 +2380,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
 
         i = IsNewAccessFormat(ibp->acnum);
         if (i == 3 || i == 7) {
-            p = NULL;
+            p = nullptr;
             if (sli.wgscont && ! StringEquN(sli.wgscont, ibp->acnum, 4))
                 p = sli.wgscont;
             else if (sli.wgsscaf && ! StringEquN(sli.wgsscaf, ibp->acnum, 4))
@@ -2388,7 +2388,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
             else if (sli.wgsacc && ! StringEquN(sli.wgsacc, ibp->acnum, 4))
                 p = sli.wgsscaf;
 
-            if (p != NULL) {
+            if (p) {
                 Char msg[5];
                 StringNCpy(msg, p, 4);
                 msg[4] = 0;
@@ -2401,12 +2401,12 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
     if (ch != '\0')
         location[50] = ch;
 
-    if (sli.wgscont != NULL)
-        sli.wgscont = NULL;
-    if (sli.wgsscaf != NULL)
-        sli.wgsscaf = NULL;
-    if (sli.wgsacc != NULL)
-        sli.wgsacc = NULL;
+    if (sli.wgscont)
+        sli.wgscont = nullptr;
+    if (sli.wgsscaf)
+        sli.wgsscaf = nullptr;
+    if (sli.wgsacc)
+        sli.wgsacc = nullptr;
 
     return (sli.total);
 }
@@ -2422,8 +2422,8 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
     char*      r;
     bool       bad;
 
-    if (buf == NULL || *buf == '\0')
-        return (NULL);
+    if (! buf || *buf == '\0')
+        return nullptr;
 
     for (p = buf; *p != '\0'; p++) {
         if (*p != '~')
@@ -2435,19 +2435,19 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
     }
 
     bad = false;
-    res = ValNodeNew(NULL);
+    res = ValNodeNew(nullptr);
     vnp = res;
     for (start = buf;;) {
         p = StringStr(start, "::");
-        if (p == NULL) {
+        if (! p) {
             if (start == buf)
                 bad = true;
             break;
         }
 
         q = StringStr(p + 2, "::");
-        if (q == NULL) {
-            vnp->next = ValNodeNew(NULL);
+        if (! q) {
+            vnp->next = ValNodeNew(nullptr);
             vnp       = vnp->next;
             vnp->data = StringSave(start);
             for (r = vnp->data; *r != '\0'; r++)
@@ -2460,13 +2460,13 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
         *q = '\0';
         r  = StringRChr(p + 2, '~');
         *q = ':';
-        if (r == NULL) {
+        if (! r) {
             bad = true;
             break;
         }
 
         *r        = '\0';
-        vnp->next = ValNodeNew(NULL);
+        vnp->next = ValNodeNew(nullptr);
         vnp       = vnp->next;
         vnp->data = StringSave(start);
         *r        = '~';
@@ -2479,14 +2479,14 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
     }
 
     vnp       = res->next;
-    res->next = NULL;
+    res->next = nullptr;
     ValNodeFree(res);
 
     if (! bad)
         return (vnp);
 
     ValNodeFreeData(vnp);
-    return (NULL);
+    return nullptr;
 }
 
 /**********************************************************/
@@ -2500,11 +2500,11 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 
     CRef<CUser_object> obj;
 
-    if (tag == NULL || *tag == '\0' || buf == NULL || *buf == '\0')
+    if (! tag || *tag == '\0' || ! buf || *buf == '\0')
         return obj;
 
     vnp = fta_vnp_structured_comment(buf);
-    if (vnp == NULL)
+    if (! vnp)
         return obj;
 
     obj.Reset(new CUser_object);
@@ -2520,13 +2520,13 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 
     obj->SetData().push_back(field);
 
-    for (tvnp = vnp; tvnp != NULL; tvnp = tvnp->next) {
+    for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
         p = tvnp->data;
-        if (p == NULL || *p == '\0')
+        if (! p || *p == '\0')
             continue;
 
         q = StringStr(p, "::");
-        if (q == NULL)
+        if (! q)
             continue;
 
         if (q > p && *(q - 1) == ' ')
@@ -2569,19 +2569,19 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
     ValNodePtr vnp;
 
     char* start;
-    char* tag = NULL;
+    char* tag = nullptr;
     char* buf;
     char* p;
     char* q;
     char* r;
 
-    if (str == NULL || *str == '\0')
+    if (! str || *str == '\0')
         return;
 
-    tagvnp = NULL;
+    tagvnp = nullptr;
     for (p = str;;) {
         p = StringStr(p, "-START##");
-        if (p == NULL)
+        if (! p)
             break;
         for (q = p;; q--)
             if (*q == '~' || (*q == '#' && q > str && *--q == '#') || q == str)
@@ -2599,7 +2599,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 
         for (q = p;;) {
             q = StringStr(q, tag);
-            if (q == NULL) {
+            if (! q) {
                 bad = true;
                 break;
             }
@@ -2609,7 +2609,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
                 continue;
             }
             r = StringStr(p + 8, "-START##");
-            if (r != NULL && r < q) {
+            if (r && r < q) {
                 bad = true;
                 break;
             }
@@ -2619,11 +2619,11 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         if (bad)
             break;
 
-        if (tagvnp == NULL) {
-            tagvnp       = ValNodeNew(NULL);
+        if (! tagvnp) {
+            tagvnp       = ValNodeNew(nullptr);
             tagvnp->data = StringSave(tag);
         } else {
-            for (vnp = tagvnp; vnp != NULL; vnp = vnp->next) {
+            for (vnp = tagvnp; vnp; vnp = vnp->next) {
                 r = vnp->data;
                 if (StringCmp(r + 2, tag + 2) == 0) {
                     if (*r != ' ') {
@@ -2632,8 +2632,8 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
                     }
                     break;
                 }
-                if (vnp->next == NULL) {
-                    vnp->next       = ValNodeNew(NULL);
+                if (! vnp->next) {
+                    vnp->next       = ValNodeNew(nullptr);
                     vnp->next->data = StringSave(tag);
                     break;
                 }
@@ -2647,7 +2647,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         }
 
         *q = '\0';
-        if (StringStr(p + 8, "::") == NULL) {
+        if (! StringStr(p + 8, "::")) {
             ErrPostEx(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
             MemFree(tag);
             p += 8;
@@ -2678,7 +2678,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         MemFree(tag);
     }
 
-    if (tagvnp != NULL)
+    if (tagvnp)
         ValNodeFreeData(tagvnp);
 }
 
@@ -2688,12 +2688,12 @@ string GetQSFromFile(FILE* fd, const Indexblk* ibp)
     string ret;
     Char   buf[1024];
 
-    if (fd == NULL || ibp->qslength < 1)
+    if (! fd || ibp->qslength < 1)
         return ret;
 
     ret.reserve(ibp->qslength + 10);
     fseek(fd, static_cast<long>(ibp->qsoffset), 0);
-    while (fgets(buf, 1023, fd) != NULL) {
+    while (fgets(buf, 1023, fd)) {
         if (buf[0] == '>' && ret[0] != '\0')
             break;
         ret.append(buf);
@@ -2713,7 +2713,7 @@ void fta_remove_cleanup_user_object(CSeq_entry& seq_entry)
             descrs = &seq_entry.SetSet().SetDescr().Set();
     }
 
-    if (descrs == nullptr)
+    if (! descrs)
         return;
 
     for (TSeqdescList::iterator descr = descrs->begin(); descr != descrs->end();) {
@@ -2782,7 +2782,7 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
 /**********************************************************/
 void fta_set_molinfo_completeness(CBioseq& bioseq, const Indexblk* ibp)
 {
-    if (bioseq.GetInst().GetTopology() != CSeq_inst::eTopology_circular || (ibp != NULL && ibp->gaps != NULL))
+    if (bioseq.GetInst().GetTopology() != CSeq_inst::eTopology_circular || (ibp && ibp->gaps))
         return;
 
     CMolInfo* mol_info = nullptr;
@@ -2793,7 +2793,7 @@ void fta_set_molinfo_completeness(CBioseq& bioseq, const Indexblk* ibp)
         }
     }
 
-    if (mol_info != nullptr) {
+    if (mol_info) {
         mol_info->SetCompleteness(CMolInfo::eCompleteness_complete);
     } else {
         CRef<CSeqdesc> descr(new CSeqdesc);
@@ -2849,16 +2849,16 @@ void StripECO(char* str)
     char* p;
     char* q;
 
-    if (str == NULL || *str == '\0')
+    if (! str || *str == '\0')
         return;
 
     p = StringStr(str, "{ECO:");
-    if (p == NULL)
+    if (! p)
         return;
 
     for (;;) {
         q = StringChr(p + 1, '}');
-        if (q == NULL)
+        if (! q)
             break;
         if (p > str && *(p - 1) == ' ')
             p--;
@@ -2868,7 +2868,7 @@ void StripECO(char* str)
                 p--;
         fta_StringCpy(p, q + 1);
         p = StringStr(p, "{ECO:");
-        if (p == NULL)
+        if (! p)
             break;
     }
 }

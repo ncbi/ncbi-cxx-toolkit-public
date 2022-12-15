@@ -109,7 +109,7 @@ static bool QSbuf_ReadLine(const char* qs_buf, char* dest_buf, Int2 max_len, int
 {
     Int4 i;
 
-    if (qs_buf == NULL || dest_buf == NULL)
+    if (! qs_buf || ! dest_buf)
         return false;
 
     for (i = 1; i <= max_len; i++, dest_buf++, qs_buf++) {
@@ -202,11 +202,11 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc, char* def_ver, ch
                                            through a data error, hence the
                                            temp var */
 
-    if (def_acc == NULL || def_ver == NULL || def_title == NULL ||
-        def_len == NULL || def_max == NULL || def_min == NULL)
+    if (! def_acc || ! def_ver || ! def_title ||
+        ! def_len || ! def_max || ! def_min)
         return (0);
 
-    if (qs_defline == NULL || *qs_defline == '\0')
+    if (! qs_defline || *qs_defline == '\0')
         return (-1);
 
     /* init the numeric values that will be parsed from the defline
@@ -482,12 +482,12 @@ static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores, Int4 max_t
 
     /* empty buffer, nothing to parse */
 
-    if (score_buf == NULL || *score_buf == '\0')
+    if (! score_buf || *score_buf == '\0')
         return 0;
 
     /* bad arguments */
 
-    if (scores == NULL || max_toks < 1)
+    if (! scores || max_toks < 1)
         return -1;
 
     /* Loop through score_buf a character (ch) at a time, until you reach a NULL.
@@ -872,7 +872,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
                                             CSeq_annot::C_Data::TGraph& graphs)
 {
     Int4  qs_line = 0;             /* current line number within qs_buf */
-    char* my_buf  = NULL;          /* copy of a line of data from
+    char* my_buf  = nullptr;       /* copy of a line of data from
                                            qs_buf */
     int   def_stat;                /* return status from parsing of the
                                            'defline' in the quality score
@@ -900,8 +900,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
                                            qs_buf data; used to free the
                                            Seq-graph and return NULL */
 
-    if (qs_buf == NULL || *qs_buf == '\0' || def_acc == NULL ||
-        def_ver == NULL) {
+    if (! qs_buf || *qs_buf == '\0' || ! def_acc || ! def_ver) {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_InvalidArgs, "Missing arguments for QSbuf_To_Single_SeqGraph call.");
         return;
     }
@@ -920,7 +919,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
      */
     vector<char> mybuf(QSBUF_MAXLINE);
     my_buf = mybuf.data();
-    if (my_buf == NULL) {
+    if (! my_buf) {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for my_buf buffer");
         return;
     }
@@ -929,7 +928,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
      */
     vector<char> deftitle(QSBUF_MAXTITLE);
     def_title = deftitle.data();
-    if (def_title == NULL) {
+    if (! def_title) {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for def_title buffer");
         return;
     }
@@ -972,15 +971,15 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
                 return;
             }
 
-            if (def_acc != NULL && *def_acc == '\0') {
+            if (def_acc && *def_acc == '\0') {
                 ErrPostEx(SEV_ERROR, ERR_QSCORE_NoAccession, "Could not parse accession from qscore defline : defline is >%s<\n", my_buf);
                 return;
             }
-            if (def_ver != NULL && *def_ver == '\0') {
+            if (def_ver && *def_ver == '\0') {
                 ErrPostEx(SEV_ERROR, ERR_QSCORE_NoSeqVer, "Could not parse sequence version number from qscore defline : defline is >%s<\n", my_buf);
                 return;
             }
-            if (def_title != NULL && *def_title == '\0') {
+            if (def_title && *def_title == '\0') {
                 ErrPostEx(SEV_ERROR, ERR_QSCORE_NoTitle, "Could not parse title from qscore defline : defline is >%s<\n", my_buf);
                 return;
             }
