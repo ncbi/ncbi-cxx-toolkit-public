@@ -70,9 +70,11 @@ public:
     void FlattenGenbankSet() override;
     void AddTopLevelDescriptors(CSeq_entry_Handle); 
     const CCleanupChangeCore& GetChanges() const;
+    CRef<CSeq_entry> LoadSeqEntry(CConstRef<CSeq_id> pId) const override;
 private:
     void x_CleanupTopLevelDescriptors();
     bool x_LooksLikeNucProtSet() const;
+    void x_AddTopLevelDescriptors(CSeq_entry& entry);
     list<CRef<CSeqdesc>> m_TopLevelBiosources;
     CRef<CSeqdesc> m_pTopLevelMolInfo;
     const TOptions m_CleanupOptions;

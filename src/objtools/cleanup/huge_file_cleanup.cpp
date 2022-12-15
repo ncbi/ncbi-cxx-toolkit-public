@@ -152,8 +152,12 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
         m_Changes.SetChanged(CCleanupChange::eAddNcbiCleanupObject);
     }
 
+
     if (descriptors.empty()) {
         m_top_entry->SetSet().ResetDescr();
+    } 
+    else if (CCleanup::NormalizeDescriptorOrder(m_top_entry->SetDescr())) { 
+        m_Changes.SetChanged(CCleanupChange::eMoveDescriptor);       
     }
 }
 
@@ -190,7 +194,47 @@ void CCleanupHugeAsnReader::AddTopLevelDescriptors(CSeq_entry_Handle seh)
     }
 }
 
-// CHugeFileCleanup::CHugeFileCleanup() {}
+void CCleanupHugeAsnReader::x_AddTopLevelDescriptors(CSeq_entry& entry) 
+{
+    if (!(m_CleanupOptions & eExtendedCleanup) ||
+        (m_TopLevelBiosources.empty() && m_pTopLevelMolInfo.Empty())) {
+        return;
+    }
+
+    bool addMolInfo = false;
+    if (m_pTopLevelMolInfo &&
+        entry.IsSetDescr() &&
+        entry.GetDescr().IsSet()) {
+        const auto& descriptors = entry.GetDescr().Get();
+        auto it = find_if(descriptors.begin(), descriptors.end(),
+                [](const CRef<CSeqdesc>& pDesc) {
+                    return (pDesc && pDesc->IsMolinfo());
+                });
+        if (it == descriptors.end()) {
+            addMolInfo = true;
+        }
+    }
+
+    for (auto pSource : m_TopLevelBiosources) {
+        entry.SetDescr().Set().push_back(pSource);
+    }
+
+    if (addMolInfo) {
+        entry.SetDescr().Set().push_back(m_pTopLevelMolInfo);
+        m_Changes.SetChanged(CCleanupChange::eAddDescriptor);
+    }
+}
+
+
+CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(CConstRef<CSeq_id> pId) const
+{
+    auto pEntry = TParent::LoadSeqEntry(pId);
+//    if (pEntry) {
+//        x_AddTopLevelDescriptors(*pEntry);
+//    }
+    return pEntry;
+}
+
 
 
 END_SCOPE(objects)
