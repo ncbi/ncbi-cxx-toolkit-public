@@ -763,7 +763,6 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
         bool proceed = process.ForEachEntry (m_state.m_Scope,
             [this, &reader, &writer] (CSeq_entry_Handle seh) -> bool
             {
-                reader.AddTopLevelDescriptors(seh);
                 HandleSeqEntry(seh.GetEditHandle());
                 writer.PushNextEntry(seh.GetCompleteSeq_entry());
                 return true;

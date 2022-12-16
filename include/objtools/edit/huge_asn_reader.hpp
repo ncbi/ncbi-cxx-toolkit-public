@@ -113,7 +113,7 @@ public:
     const TBioseqSetInfo* FindTopObject(CConstRef<CSeq_id> seqid) const;
 
     enum class eAddTopEntry{ yes, no };
-    CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info, eAddTopEntry add_top_entry = eAddTopEntry::yes) const;
+    virtual CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info, eAddTopEntry add_top_entry = eAddTopEntry::yes) const;
 
     const TBioseqInfo* FindBioseq(CConstRef<CSeq_id> seqid) const;
     CConstRef<CSeqdesc> GetClosestDescriptor(const TBioseqInfo& info, CSeqdesc::E_Choice choice) const;
