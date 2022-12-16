@@ -68,6 +68,7 @@
 
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbidbg.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <iterator>
 
 #define RAPIDJSON_NOMEMBERITERATORCLASS
