@@ -27,13 +27,12 @@ CMLAUpdaterBase::CMLAUpdaterBase(bool bNorm) :
 
 bool CMLAUpdaterBase::Init()
 {
-    CMla_back reply;
     try {
-        m_mlac->AskInit(&reply);
+        m_mlac->Connect();
+        return true;
     } catch (...) {
-        return false;
     }
-    return reply.IsInit();
+    return false;
 }
 
 void CMLAUpdaterBase::Fini()
