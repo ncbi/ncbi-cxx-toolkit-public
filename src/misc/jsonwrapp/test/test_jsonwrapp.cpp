@@ -901,8 +901,13 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
     }
     {
         CJson_Document doc2;
-        doc2.ReadBuffered(filename);
-        cout << doc;
+        BOOST_CHECK(doc2.Read(filename));
+        cout << doc2;
+    }
+    {
+        CJson_Document doc2;
+        BOOST_CHECK(doc2.ReadBuffered(filename));
+        cout << doc2;
     }
 
 // --------------------------------------------------------------------------
