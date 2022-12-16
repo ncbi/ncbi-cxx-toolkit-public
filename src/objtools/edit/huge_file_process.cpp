@@ -227,7 +227,7 @@ bool CHugeFileProcess::ForEachEntry(CRef<CScope> scope, THandlerEntries handler)
         {
             {
                 auto beh = scope->GetBioseqHandle(*id);
-                auto parent = GetTopLevelEntry(beh);
+                auto parent = beh.GetTopLevelEntry();
                 handler(parent);
             }
             scope->ResetHistory();
