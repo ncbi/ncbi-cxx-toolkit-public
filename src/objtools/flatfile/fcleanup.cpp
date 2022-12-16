@@ -84,7 +84,7 @@ static void MoveSourceDescrToTop(CSeq_entry& entry)
             TSeqdescList& descrs = bioseq->SetDescr().Set();
             for (TSeqdescList::iterator desc = descrs.begin(); desc != descrs.end(); ++desc) {
                 if ((*desc)->IsSource()) {
-                    if (source == nullptr) {
+                    if (! source) {
                         source = *desc;
                         seq_set.SetDescr().Set().push_back(*desc);
                         descrs.erase(desc);
@@ -117,7 +117,7 @@ static void MoveAnnotToTop(CSeq_entry& seq_entry)
         }
     }
 
-    if (parts != nullptr && parts->IsSetAnnot()) {
+    if (parts && parts->IsSetAnnot()) {
 
         CBioseq::TAnnot& annot = bio_set.SetSeq_set().front()->SetAnnot();
         annot.splice(annot.end(), parts->SetAnnot());
@@ -147,7 +147,7 @@ static void MoveBiomolToTop(CSeq_entry& seq_entry)
         }
     }
 
-    if (parts != nullptr) {
+    if (parts) {
         CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
         for (const auto& entry : parts->GetSeq_set()) {
             if (! entry->IsSeq())
@@ -284,13 +284,13 @@ static void ConvertMixToInterval(CSeq_loc& loc)
             const CSeq_interval& interval = cur_loc->GetInt();
             ranges.push_back(make_pair(interval.GetFrom(), interval.GetTo()));
 
-            if (first_interval == nullptr) {
+            if (! first_interval) {
                 first_interval = &interval;
             } else if (first_interval->GetStart(eExtreme_Biological) > interval.GetStart(eExtreme_Biological)) {
                 first_interval = &interval;
             }
 
-            if (last_interval == nullptr) {
+            if (! last_interval) {
                 last_interval = &interval;
             } else if (last_interval->GetStop(eExtreme_Biological) < interval.GetStop(eExtreme_Biological)) {
                 last_interval = &interval;
@@ -304,14 +304,13 @@ static void ConvertMixToInterval(CSeq_loc& loc)
         }
     }
 
-    if (first_interval == nullptr) {
+    if (! first_interval) {
         return;
     }
 
     sort(ranges.begin(), ranges.end());
 
     if (IsConversionPossible(ranges)) {
-
         SetNewInterval(first_interval, last_interval, ranges.front().first, ranges.back().second, loc);
     }
 }
@@ -328,7 +327,6 @@ static void ConvertPackedIntToInterval(CSeq_loc& loc)
     sort(ranges.begin(), ranges.end());
 
     if (IsConversionPossible(ranges)) {
-
         SetNewInterval(loc.GetPacked_int().GetStartInt(eExtreme_Biological), loc.GetPacked_int().GetStopInt(eExtreme_Biological), ranges.front().first, ranges.back().second, loc);
     }
 }
@@ -396,7 +394,7 @@ void FinalCleanup(TEntryList& seq_entries)
         //+++++
         /*{
             CNcbiOfstream ostr("ttt.txt");
-            ostr << MSerial_AsnText << **entry;
+            ostr << MSerial_AsnText << *entry;
         }*/
         //+++++
 
@@ -413,7 +411,6 @@ void FinalCleanup(TEntryList& seq_entries)
 
         // TODO the functionality below probably should be moved to Cleanup
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
-
             CSeq_feat* gene     = nullptr;
             bool       gene_set = false;
 
@@ -431,7 +428,6 @@ void FinalCleanup(TEntryList& seq_entries)
                 }
 
                 if (feat->IsSetLocation()) {
-
                     // modification of packed_int location (chenge it to a single interval if possible)
                     CSeq_loc& loc = feat->SetLocation();
                     if (loc.IsPacked_int()) {
@@ -445,12 +441,12 @@ void FinalCleanup(TEntryList& seq_entries)
                 }
             }
 
-            if (gene != nullptr && gene->IsSetLocation()) {
+            if (gene && gene->IsSetLocation()) {
 
                 CSeq_loc& loc = gene->SetLocation();
 
                 // changes in gene
-                if (loc.GetId() == nullptr) {
+                if (! loc.GetId()) {
                     continue;
                 }
 
@@ -481,13 +477,11 @@ void FinalCleanup(TEntryList& seq_entries)
 
             // TODO the functionality below probably should be moved to Cleanup
             if (feat->IsSetLocation()) {
-
                 CSeq_loc& loc = feat->SetLocation();
 
                 // changes in gene
                 if (feat->IsSetData() && feat->GetData().IsGene()) {
-
-                    if (loc.GetId() == nullptr) {
+                    if (! loc.GetId()) {
                         continue;
                     }
 
@@ -500,10 +494,8 @@ void FinalCleanup(TEntryList& seq_entries)
                     CSeqdesc_CI        mol_info(bioseq_h, CSeqdesc::E_Choice::e_Molinfo);
 
                     if (mol_info && mol_info->GetMolinfo().IsSetBiomol() && mol_info->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA && bioseq->IsSetId()) {
-
                         const CBioseq::TId& ids = bioseq->GetId();
                         if (! ids.empty()) {
-
                             const CSeq_id& id = *ids.front();
                             if (id.Which() == loc.GetId()->Which()) {
                                 loc.SetId(id);

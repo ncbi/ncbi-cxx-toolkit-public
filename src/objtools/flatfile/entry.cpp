@@ -146,7 +146,7 @@ bool Entry::IsAA() const
 //  -----------------------------------------------------------------------------
 {
     IndexblkPtr ibp = mPp->entrylist[mPp->curindx];
-    auto        mol = mBaseData.substr(ibp->lc.bp, 2);
+    string      mol = mBaseData.substr(ibp->lc.bp, 2);
     return (mol == "aa");
 }
 
@@ -224,7 +224,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
     pp->ffbuf.current = pp->ffbuf.start + offset;
 
     entry          = new DataBlk(nullptr, ParFlat_ENTRYNODE);
-    entry->mpNext  = NULL;            /* assume no segment at this time */
+    entry->mpNext  = nullptr;         /* assume no segment at this time */
     entry->mOffset = MemNew(len + 1); /* plus 1 for null byte */
     entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
 
@@ -233,7 +233,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
         ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
         delete entry;
-        return (NULL);
+        return nullptr;
     }
 
     eptr     = entry->mOffset + entry->len;
@@ -291,7 +291,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
             was = true;
     }
 
-    Entry* pEntry = new Entry(pp, entry->mOffset);
+    Entry* pEntry  = new Entry(pp, entry->mOffset);
     entry->mOffset = nullptr;
     delete entry;
     return pEntry;
@@ -318,17 +318,17 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
         ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
         delete entry;
-        return (NULL);
+        return nullptr;
     }
 
     eptr       = entry->mOffset + entry->len;
     bool  was  = false;
-    char* wasx = NULL;
+    char* wasx = nullptr;
     for (q = entry->mOffset; q < eptr; q++) {
         if (*q != '\n')
             continue;
 
-        if (wasx != NULL) {
+        if (wasx) {
             fta_StringCpy(wasx, q); /* remove XX lines */
             eptr -= q - wasx;
             entry->len -= q - wasx;
@@ -337,7 +337,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
         if (q + 3 < eptr && q[1] == 'X' && q[2] == 'X')
             wasx = q;
         else
-            wasx = NULL;
+            wasx = nullptr;
     }
 
     for (q = entry->mOffset; q < eptr; q++) {
