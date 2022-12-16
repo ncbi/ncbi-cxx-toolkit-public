@@ -339,9 +339,11 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     char*  p;
     char*  q;
     ErrSev sev;
+
     CSeq_id::E_Choice cho;
     CSeq_id::E_Choice ncho;
-    Char   str[100];
+
+    Char str[100];
 
     if (pp->mode == Parser::EMode::Relaxed) {
         protacc = CpTheQualValue(cds.SetQual(), "protein_id");
@@ -547,11 +549,10 @@ static void StripCDSComment(CSeq_feat& feat)
         feat.SetComment(comment);
     else
         feat.ResetComment();
-
     MemFree(comment);
 
     for (b = strA; *b; b++) {
-        pchComment = stripStr(pchComment, (char*)*b);
+        pchComment = stripStr(pchComment, *b);
     }
     comment = tata_save(pchComment);
     if (comment && *comment != '\0')
@@ -562,7 +563,6 @@ static void StripCDSComment(CSeq_feat& feat)
         feat.SetComment(comment);
     else
         feat.ResetComment();
-
     MemFree(comment);
 }
 
@@ -618,13 +618,13 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
             prot_ref->SetDesc(qval);
     }
 
-    while (qval = GetTheQualValue(feat.SetQual(), "EC_number")) {
+    while ((qval = GetTheQualValue(feat.SetQual(), "EC_number"))) {
         // qval may hold newly allocated memory!!!
         prot_ref->SetEc().push_back(qval);
         MemFree(qval);
     }
 
-    while (qval = GetTheQualValue(feat.SetQual(), "function")) {
+    while ((qval = GetTheQualValue(feat.SetQual(), "function"))) {
         prot_ref->SetActivity().push_back(qval);
     }
 
@@ -1117,7 +1117,7 @@ static void GetCdRegionCB(InfoBioseqPtr ibp, CSeq_feat& feat, TCodeBreakList& co
                               end_qual = feat.SetQual().end();
 
         char* qval = nullptr;
-        while (qval = CpTheQualValueNext(cur_qual, end_qual, "transl_except")) {
+        while ((qval = CpTheQualValueNext(cur_qual, end_qual, "transl_except"))) {
             CRef<CCode_break> code_break(new CCode_break);
 
             int ncbieaa_val = GetQualValueAa(qval, false);
