@@ -39,7 +39,7 @@ bool CMLAUpdaterBase::Init()
 void CMLAUpdaterBase::Fini()
 {
     try {
-        m_mlac->AskFini();
+        m_mlac->Disconnect();
     } catch (...) {
     }
 }
