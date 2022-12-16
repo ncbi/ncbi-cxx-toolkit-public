@@ -936,7 +936,7 @@ char* SrchTheStr(char* bptr, char* eptr, const char* leadstr)
 void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
 {
     const CTextseq_id* text_id = id.GetTextseq_Id();
-    if (text_id != nullptr) {
+    if (text_id) {
         if (text_id->IsSetName())
             ibp->mLocus = text_id->GetName();
 
