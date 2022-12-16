@@ -899,6 +899,11 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         ofstream ofs(filename.c_str());
         ofs << doc;
     }
+    {
+        CJson_Document doc2;
+        doc2.ReadBuffered(filename);
+        cout << doc;
+    }
 
 // --------------------------------------------------------------------------
 // SAX parsing
