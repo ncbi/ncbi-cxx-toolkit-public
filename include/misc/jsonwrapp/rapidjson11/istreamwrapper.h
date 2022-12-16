@@ -50,6 +50,25 @@ template <typename StreamType>
 class BasicIStreamWrapper {
 public:
     typedef typename StreamType::char_type Ch;
+#if 1
+// NCBI: modified
+    BasicIStreamWrapper(StreamType& stream) : stream_(stream), count_(), peekBuffer_(),
+        bufferSize_(16*1024), buffer(new Ch[bufferSize_])
+    {
+        bufferLast_ = current_ = buffer.get();
+        eof_ = false;
+        Read();
+    }
+    Ch Peek() const { 
+        return *current_;
+    }
+
+    Ch Take() { 
+        Ch c = *current_;
+        Read();
+        return c;
+    }
+#else
     BasicIStreamWrapper(StreamType& stream) : stream_(stream), count_(), peekBuffer_() {}
 
     Ch Peek() const { 
@@ -66,6 +85,7 @@ public:
         else
             return '\0';
     }
+#endif
 
     // tellg() may return -1 when failed. So we count by ourself.
     size_t Tell() const { return count_; }
@@ -101,6 +121,30 @@ private:
     StreamType& stream_;
     size_t count_;  //!< Number of characters read. Note:
     mutable Ch peekBuffer_[4];
+#if 1
+// NCBI: modified
+    size_t bufferSize_;
+    std::unique_ptr<Ch[]> buffer;
+    Ch *current_;
+    Ch *bufferLast_;
+    bool eof_;
+
+    void Read() {
+        if (current_ < bufferLast_) {
+            ++current_;
+            ++count_;
+        }
+        if (!eof_ && current_ == bufferLast_) {
+            current_ = buffer.get();
+            stream_.read(current_, bufferSize_);
+            bufferLast_ = current_ + stream_.gcount();
+            if (current_ == bufferLast_) {
+                eof_ = true;
+                *current_ = Ch(0);
+            }
+        }
+    }
+#endif
 };
 
 typedef BasicIStreamWrapper<std::istream> IStreamWrapper;

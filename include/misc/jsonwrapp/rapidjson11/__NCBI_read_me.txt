@@ -17,4 +17,5 @@ document.h
 prettywriter.h
 schema.h
 pointer.h
+istreamwrapper.h
 
