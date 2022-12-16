@@ -39,20 +39,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeqdesc;
-
-/*
-class NCBI_CLEANUP_EXPORT CHugeFileCleanup :
-    public edit::CHugeFileProcess
-{
-public: 
-    CHugeFileCleanup();
-    virtual ~CHugeFileCleanup() = default;
-private:
-};
-*/
-
-
 class NCBI_CLEANUP_EXPORT CCleanupHugeAsnReader :
     public edit::CHugeAsnReader
 {   
@@ -68,16 +54,17 @@ public:
     using TParent = edit::CHugeAsnReader;
 
     void FlattenGenbankSet() override;
-    void AddTopLevelDescriptors(CSeq_entry_Handle); 
+    CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info, 
+            eAddTopEntry add_top_entry = eAddTopEntry::yes) const override;
     const CCleanupChangeCore& GetChanges() const;
 private:
     void x_CleanupTopLevelDescriptors();
     bool x_LooksLikeNucProtSet() const;
-    void x_AddTopLevelDescriptors(CSeq_entry& entry);
+    void x_AddTopLevelDescriptors(CSeq_entry& entry) const;
     list<CRef<CSeqdesc>> m_TopLevelBiosources;
     CRef<CSeqdesc> m_pTopLevelMolInfo;
     const TOptions m_CleanupOptions;
-    CCleanupChangeCore m_Changes;
+    mutable CCleanupChangeCore m_Changes;
 };
 
 END_SCOPE(object);

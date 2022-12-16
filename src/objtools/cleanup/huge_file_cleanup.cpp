@@ -104,6 +104,7 @@ bool CCleanupHugeAsnReader::x_LooksLikeNucProtSet() const
     return true;
 }
 
+
 void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors() 
 {
 
@@ -162,39 +163,7 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
 }
 
 
-void CCleanupHugeAsnReader::AddTopLevelDescriptors(CSeq_entry_Handle seh) 
-{
-    if (!(m_CleanupOptions & eExtendedCleanup) ||
-        (m_TopLevelBiosources.empty() && m_pTopLevelMolInfo.Empty())) {
-        return;
-    }
-
-    bool addMolInfo = false;
-    if (m_pTopLevelMolInfo &&
-        seh.IsSetDescr() &&
-        seh.GetDescr().IsSet()) {
-        const auto& descriptors = seh.GetDescr().Get();
-        auto it = find_if(descriptors.begin(), descriptors.end(),
-                [](const CRef<CSeqdesc>& pDesc) {
-                    return (pDesc && pDesc->IsMolinfo());
-                });
-        if (it == descriptors.end()) {
-            addMolInfo = true;
-        }
-    }
-
-    auto editHandle = seh.GetEditHandle();
-    for (auto pSource : m_TopLevelBiosources) {
-        editHandle.AddSeqdesc(*pSource);
-    }
-
-    if (addMolInfo) {
-        editHandle.AddSeqdesc(*m_pTopLevelMolInfo);
-        m_Changes.SetChanged(CCleanupChange::eAddDescriptor);
-    }
-}
-
-void CCleanupHugeAsnReader::x_AddTopLevelDescriptors(CSeq_entry& entry) 
+void CCleanupHugeAsnReader::x_AddTopLevelDescriptors(CSeq_entry& entry) const
 {
     if (!(m_CleanupOptions & eExtendedCleanup) ||
         (m_TopLevelBiosources.empty() && m_pTopLevelMolInfo.Empty())) {
@@ -224,6 +193,20 @@ void CCleanupHugeAsnReader::x_AddTopLevelDescriptors(CSeq_entry& entry)
         m_Changes.SetChanged(CCleanupChange::eAddDescriptor);
     }
 }
+
+
+CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
+        const TBioseqSetInfo& info,
+        eAddTopEntry add_top_entry) const
+{
+    auto pEntry = TParent::LoadSeqEntry(info, eAddTopEntry::no);
+
+    if (add_top_entry == eAddTopEntry::yes) {
+        x_AddTopLevelDescriptors(*pEntry);
+    }
+    return pEntry;
+}
+
 
 
 
