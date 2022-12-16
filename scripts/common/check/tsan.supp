@@ -3,8 +3,6 @@ race:^ncbi::ncbi_namespace_mutex_mt::SSystemMutex::Lock(
 race:^ncbi::CSafeStatic<ncbi::CParam
 
 
-
-
 ################################################################
 # grichenk
 
@@ -36,7 +34,7 @@ race:^ncbi::objects::CSeq_id_Which_Tree::DropInfo
 
 #  write protected, read without any protection. CXX-11270
 race:^ncbi::CHookData<ncbi::CWriteClassMemberHook
-
+race:^ncbi::CHookData<ncbi::CWriteObjectHook
 
 
 
@@ -51,6 +49,8 @@ signal:corelib/test/test_ncbi_system.cpp
 
 # False positive deadlock detection in util/test/test_histogram_mt. CXX-12217
 deadlock:^CTest::ThreadHandler(int)
+
+
 
 ################################################################
 # vasilche CXX-10546
@@ -161,6 +161,7 @@ race:^ncbi::CTestServer::ShutdownRequested()
 
 # This is for statistics purposes only. /connect/ncbi_socket.c
 race:^s_Create$
+race:^s_CreateListening$
 
 # Debugging aid. For lock check consistency /connect/ncbi_socket.c
 race:^g_NCBI_CoreCheckLock$
@@ -175,6 +176,8 @@ race:^MT_LOCK_AddRef$
 # test_ncbi_conn_stream_mt -- confirmet false positive (lavr)
 race:^MT_LOCK_DoInternal
 
+# false positive (static value initialization)
+race:^s_getlocalhostaddress
 
 
 
@@ -239,6 +242,7 @@ race:^ncbi::CThreadPool_Impl::DestroyReference()$
 race:^CThreadPoolTester::Thread_Run(int)$
 
 
+
 ################################################################
 # satskyse CXX-11623
 
@@ -263,5 +267,4 @@ race:^std::__cxx11::basic_string<char, std::char_traits<char>, datastax::interna
 
 # False positive
 race:^ncbi::CServer_Request::~CServer_Request()
-
 
