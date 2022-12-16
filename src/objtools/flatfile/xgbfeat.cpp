@@ -700,7 +700,7 @@ static int CkQualPosaa(CGb_qual& cur, bool error_msgs)
 
         /*---I expect that we maight need to allow blanks here,
                     but not now... -Karl 1/28/94 */
-        if (eptr = StringChr(str, ',')) {
+        if ((eptr = StringChr(str, ','))) {
             while (str != eptr && (isdigit(*str) || *str == '.'))
                 str++;
 
@@ -714,7 +714,7 @@ static int CkQualPosaa(CGb_qual& cur, bool error_msgs)
                     while (*str == ' ')
                         ++str;
 
-                    if (eptr = StringChr(str, ')')) {
+                    if ((eptr = StringChr(str, ')'))) {
                         string aa(str, eptr);
                         retval = CkQualPosSeqaa(cur, error_msgs, aa, eptr);
                     }
@@ -916,7 +916,7 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
         while (*str == ' ')
             ++str;
 
-        if (eptr = StringChr(str, ',')) {
+        if ((eptr = StringChr(str, ','))) {
             while (str != eptr)
                 str++;
 
@@ -929,7 +929,7 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
                 while (*str == ' ')
                     ++str;
 
-                if (eptr = StringChr(str, ')')) {
+                if ((eptr = StringChr(str, ')'))) {
                     string aa(str, eptr);
                     retval = CkQualPosSeqaa(cur, error_msgs, aa, eptr);
                 }

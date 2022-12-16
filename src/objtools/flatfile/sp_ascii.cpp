@@ -1217,7 +1217,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
             }
         }
 
-        if ((StringEquNI("PV.", p, 3) && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
+        if ((StringEquNI(p, "PV.", 3) && (p[3] == ' ' || p[3] == '\t' || p[3] == '\0')) ||
             NStr::CompareNocase(p, "AD11A") == 0 || NStr::CompareNocase(p, "AD11P") == 0) {
             if (! org_ref->IsSetTaxname())
                 org_ref->SetTaxname(p);
@@ -1565,7 +1565,7 @@ static void get_plasmid(DataBlkPtr entry, CSP_block::TPlasnm& plasms)
     if (gmod != Seq_descr_GIBB_mod_plasmid)
         return;
 
-    while (str = StringIStr(offset, "PLASMID")) {
+    while ((str = StringIStr(offset, "PLASMID"))) {
         if (str > eptr)
             break;
 
@@ -1884,9 +1884,10 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
     bool         pdbnew;
     bool         check_embl_prot;
     size_t       len = 0;
+    Char         ch;
+
     CSeq_id::E_Choice ptype;
     CSeq_id::E_Choice ntype;
-    Char         ch;
 
     spb.ResetSeqref();
     spb.ResetDbref();
@@ -4422,7 +4423,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
         shift = 3;
     }
 
-    while (ptr = StringStr(str, tag)) {
+    while ((ptr = StringStr(str, tag))) {
         len = StringLen(str);
         str1.assign(str, ptr);
 
