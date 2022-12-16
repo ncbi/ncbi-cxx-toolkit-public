@@ -1065,8 +1065,12 @@ public:
     /// Read JSON data from a file, validating against schema
     bool Read(const std::string& filename, CJson_Schema& schema) {
         std::ifstream in(filename.c_str());
-	return Read(in, schema);
+        return Read(in, schema);
     }
+
+    /// Read JSON data from a file using character buffer
+    /// This appears to be faster than ifstream
+    bool ReadBuffered(const std::string& filename);
 
     /// Test if the most recent read was successful
     bool ReadSucceeded(void);
@@ -2374,6 +2378,16 @@ inline bool CJson_Document::Read(std::istream& in, CJson_Schema& schema) {
         m_DocImpl.SetNull();
     }
     return !m_DocImpl.HasParseError();
+}
+
+inline bool CJson_Document::ReadBuffered(const std::string& filename) {
+    FILE *fp = fopen(filename.c_str(), "rt");
+    unsigned long s = CSystemInfo::GetVirtualMemoryAllocationGranularity();
+    std::unique_ptr<char[]> buf(new char[s]);
+    rapidjson::FileReadStream fs(fp, buf.get(), s);
+    m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(fs);
+    fclose(fp);
+    return  !m_DocImpl.HasParseError();
 }
 
 inline bool CJson_Document::ReadSucceeded(void) {
