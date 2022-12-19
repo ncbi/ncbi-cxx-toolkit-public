@@ -767,6 +767,10 @@ public:
                 num_failures += x_CheckNumber(name, tokens, maxoid);
             } else if (tokens[0] == "MAXLEN") {
                 num_failures += x_CheckNumber(name, tokens, maxlen);
+            } else if (tokens[0] == "STATS_TOTLEN") {
+            	// STATS_TOTLEN is often not exact, skip check
+            } else if (tokens[0] == "STATS_NSEQ") {
+            	// STATS_NSEQ is often not exact, skip check
             } else {
                 Log(name, e_Brief) << "  [ERROR] unknown keyword encountered: " 
                                    << tokens[0] << endl;
