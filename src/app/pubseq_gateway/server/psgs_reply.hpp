@@ -317,6 +317,7 @@ public:
     void PrepareNamedAnnotationData(const string &  annot_name,
                                     const string &  processor_id,
                                     const string &  content);
+    void SendPerNamedAnnotationResults(const string &  content);
     void PrepareAccVerHistoryData(const string &  processor_id,
                                   const string &  content);
     void PrepareIPGResolveData(const string &  processor_id,

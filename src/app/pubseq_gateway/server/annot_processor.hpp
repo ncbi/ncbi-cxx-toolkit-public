@@ -49,6 +49,8 @@ class CPSGS_AnnotProcessor : public CPSGS_ResolveBase,
 public:
     virtual bool CanProcess(shared_ptr<CPSGS_Request> request,
                             shared_ptr<CPSGS_Reply> reply) const;
+    virtual vector<string> WhatCanProcess(shared_ptr<CPSGS_Request> request,
+                                          shared_ptr<CPSGS_Reply> reply) const;
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                              shared_ptr<CPSGS_Reply> reply,
                                              TProcessorPriority  priority) const;
@@ -126,6 +128,10 @@ private:
     // Later migration NANnotG => NAnnotG2 will cause duplicates between NAnnotG2 and NAnnotG
     // This component should be removed when migration is finished
     unique_ptr<CNAnnotFilter>   m_AnnotFilter;
+
+    // The list of names which have been received and (possibly) sent.
+    // It is used to calculate not found and error/timeout annotations
+    set<string>                 m_Success;
 };
 
 #endif  // PSGS_RESOLVEPROCESSOR__HPP

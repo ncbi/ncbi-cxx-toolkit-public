@@ -115,6 +115,23 @@ public:
         return true;
     }
 
+    /// Needs to be implemented only for the ID/get_na requests.
+    /// It returns a list of named annotations which a processor recognizes as
+    /// suitable for processing.
+    /// @param request
+    ///  PSG request to retrieve the data for. It is guaranteed to be not null.
+    /// @param reply
+    ///  The way to send reply chunks to the client. It is guaranteed to
+    ///  be not null.
+    /// @return
+    ///  a list of annotations which can be processed
+    virtual vector<string> WhatCanProcess(shared_ptr<CPSGS_Request> request,
+                                          shared_ptr<CPSGS_Reply> reply) const
+    {
+        return vector<string>();
+    }
+
+
     /// Create processor to fulfil PSG request using the data source
     /// @param request
     ///  PSG request to retrieve the data for. It is guaranteed to be not null.

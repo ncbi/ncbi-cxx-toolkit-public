@@ -89,6 +89,18 @@ CPSGS_CassProcessorDispatcher::CanProcess(shared_ptr<CPSGS_Request> request,
 }
 
 
+vector<string>
+CPSGS_CassProcessorDispatcher::WhatCanProcess(shared_ptr<CPSGS_Request> request,
+                                              shared_ptr<CPSGS_Reply> reply) const
+{
+    // This call is valid only for ID/get_na requests
+    if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest)
+        return m_AnnotProcessor->WhatCanProcess(request, reply);
+
+    return vector<string>();
+}
+
+
 IPSGS_Processor*
 CPSGS_CassProcessorDispatcher::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                                shared_ptr<CPSGS_Reply> reply,

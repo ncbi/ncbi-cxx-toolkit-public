@@ -34,6 +34,7 @@
 #include "pubseq_gateway_logging.hpp"
 #include "http_daemon.hpp"
 #include "pubseq_gateway.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -187,6 +188,18 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
                                  request->GetStartTimestamp(), false);
             }
             --priority;
+
+            // Special action for the ID/get_na requests - memorize the
+            // annotations which potentially could have been processed by the
+            // processors which were not instantiated due to a limit
+            if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
+                auto &   annot_request = request->GetRequest<SPSGS_AnnotRequest>();
+                for (const auto &  name : proc->WhatCanProcess(request, reply)) {
+                    annot_request.ReportResultStatus(name,
+                                                     SPSGS_AnnotRequest::ePSGS_RS_Unavailable);
+                }
+            }
+
             continue;
         }
 
@@ -611,39 +624,10 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         }
 
         if (!reply->IsFinished() && reply->IsOutputReady() && started_processor_finished) {
-            // Map the processor finish to the request status
-            CRequestStatus::ECode   request_status = x_MapProcessorFinishToStatus(best_status);
-            if (request->GetLimitedProcessorCount() > 0 &&
-                request_status == CRequestStatus::e404_NotFound) {
-                // The working processors found nothing but there were
-                // processors which have not been tried to instantiate because
-                // they reached the concurrency limit. So the status should be
-                // calculated in a different way as worst among those
-                // processors which worked and 503 as a substitute for the one
-                // which was not instantiated
-                request_status = max(x_MapProcessorFinishToStatus(worst_status),
-                                     CRequestStatus::e503_ServiceUnavailable);
-                if (need_trace) {
-                    x_SendTrace(
-                        "Dispatcher: request status has been calculated as "
-                        "the worst because the working processors found nothing "
-                        "and there were " + to_string(request->GetLimitedProcessorCount()) +
-                        " processor(s) which have not been tried to be instantiated "
-                        "due to their concurrency limit has been exceeded (" +
-                        request->GetLimitedProcessorsMessage() + ")",
-                        request, reply);
-                }
-
-                string  msg = "Instantiated processors found nothing and there were " +
-                              to_string(request->GetLimitedProcessorCount()) +
-                              " processor(s) which have not been tried to be instantiated "
-                              "due to their concurrency limit has been exceeded (" +
-                              request->GetLimitedProcessorsMessage() + ")";
-                reply->PrepareReplyMessage(msg, request_status,
-                                           ePSGS_NotFoundAndNotInstantiated, eDiag_Error);
-                PSG_ERROR(msg);
-            }
-
+            CRequestStatus::ECode   request_status =
+                                        x_ConcludeRequestStatus(request, reply,
+                                                                best_status,
+                                                                worst_status);
             if (need_trace) {
                 x_SendTrace(
                     "Dispatcher: request processing finished; "
@@ -789,6 +773,119 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
     }
     // Should not happened
     return CRequestStatus::e500_InternalServerError;
+}
+
+
+CRequestStatus::ECode
+CPSGS_Dispatcher::x_ConcludeRequestStatus(
+                            shared_ptr<CPSGS_Request> request,
+                            shared_ptr<CPSGS_Reply> reply,
+                            IPSGS_Processor::EPSGS_Status  best_status,
+                            IPSGS_Processor::EPSGS_Status  worst_status)
+{
+    CPSGS_Request::EPSGS_Type   request_type = request->GetRequestType();
+    bool                        need_trace = request->NeedTrace();
+
+    // The procedure of the concluding the request status differs depending on
+    // the request type. The ID/get_na request has a unique way
+    if (request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
+        // The request status is based on per-NA results
+        SPSGS_AnnotRequest *    annot_request = & request->GetRequest<SPSGS_AnnotRequest>();
+
+        auto                    processed_names = annot_request->GetProcessedNames();
+        if (processed_names.size() == annot_request->m_Names.size()) {
+            // All the annotations have been sent by at least one processor
+            map<string, int>        result_per_na;
+            for (const auto &  name : annot_request->m_Names) {
+                result_per_na[name] = 200;
+            }
+            reply->SendPerNamedAnnotationResults(ToJsonString(result_per_na));
+            return CRequestStatus::e200_Ok;
+        }
+
+        // Filter out good names from all the other sets. It may be because a
+        // sent happened by one porocessor but an error condition was met by
+        // the other processor
+
+        set<string>         not_found_names = annot_request->GetNotFoundNames();
+        map<string, int>    error_names = annot_request->GetErrorNames();
+        for (const auto &  item : processed_names) {
+            not_found_names.erase(item.second);  // 404
+            error_names.erase(item.second);      // 500, 503, 504
+        }
+
+
+        int     overall_status = 200;
+        // Now for each requested NA form a code
+        map<string, int>        result_per_na;
+        for (const auto &  name : annot_request->m_Names) {
+            if (annot_request->WasSent(name)) {
+                result_per_na[name] = 200;
+                continue;
+            }
+
+            auto it = error_names.find(name);
+            if (not_found_names.find(name) != not_found_names.end() &&
+                it == error_names.end()) {
+                // All of the processors reported the anotation as not found
+                result_per_na[name] = 404;
+                continue;
+            }
+
+            if (it != error_names.end()) {
+                // Explicitly reported as limited or error or timeout
+                result_per_na[name] = it->second;
+                overall_status = max(overall_status, it->second);
+                continue;
+            }
+
+            // Here: should not really happened; the annotation is not reported
+            // in any way. Most probably a processor forgot to report it as not
+            // found.
+            result_per_na[name] = 404;
+        }
+
+        // Send the per NA information to the client
+        reply->SendPerNamedAnnotationResults(ToJsonString(result_per_na));
+
+        return static_cast<CRequestStatus::ECode>(overall_status);
+    }
+
+    // This is for all the other requests
+    CRequestStatus::ECode       request_status =
+                                    x_MapProcessorFinishToStatus(best_status);
+    if (request->GetLimitedProcessorCount() > 0 &&
+        request_status == CRequestStatus::e404_NotFound) {
+        // The working processors found nothing but there were
+        // processors which have not been tried to instantiate because
+        // they reached the concurrency limit. So the status should be
+        // calculated in a different way as worst among those
+        // processors which worked and 503 as a substitute for the one
+        // which was not instantiated
+        request_status = max(x_MapProcessorFinishToStatus(worst_status),
+                             CRequestStatus::e503_ServiceUnavailable);
+        if (need_trace) {
+            x_SendTrace(
+                "Dispatcher: request status has been calculated as "
+                "the worst because the working processors found nothing "
+                "and there were " + to_string(request->GetLimitedProcessorCount()) +
+                " processor(s) which have not been tried to be instantiated "
+                "due to their concurrency limit has been exceeded (" +
+                request->GetLimitedProcessorsMessage() + ")",
+                request, reply);
+        }
+
+        string  msg = "Instantiated processors found nothing and there were " +
+                      to_string(request->GetLimitedProcessorCount()) +
+                      " processor(s) which have not been tried to be instantiated "
+                      "due to their concurrency limit has been exceeded (" +
+                      request->GetLimitedProcessorsMessage() + ")";
+        reply->PrepareReplyMessage(msg, request_status,
+                                   ePSGS_NotFoundAndNotInstantiated, eDiag_Error);
+        PSG_ERROR(msg);
+    }
+
+    return request_status;
 }
 
 

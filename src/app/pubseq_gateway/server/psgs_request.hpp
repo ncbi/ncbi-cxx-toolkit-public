@@ -738,9 +738,9 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
     // of the processor which has registered it before is returned
     // If the given name is not in the list then kUnknownPriority constant is
     // returned.
-    // The highest priority will be stored together with the name.
     TProcessorPriority RegisterProcessedName(TProcessorPriority  priority,
                                              const string &  name);
+
 
     // If bioseq info has already been sent then the priority of the processor
     // which sent it will be returned. Otherwise kUnknownPriority constant is
@@ -754,11 +754,55 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
 
     vector<pair<TProcessorPriority, string>>  GetProcessedNames(void) const;
 
+    // Used to track a status of each individual annotation
+    enum EPSGS_ResultStatus {
+        // ePSGS_RS_Success     = 200,      implicitly memorized when a
+        //                                  processor checks priority before
+        //                                  sending
+        ePSGS_RS_NotFound       = 404,      // Used by a processor
+        ePSGS_RS_Error          = 500,      // Used by a processor
+        ePSGS_RS_Unavailable    = 503,      // This is for the case when a
+                                            // processor was not instantiated.
+                                            // Used by the framework
+        ePSGS_RS_Timeout        = 504       // Used by a processor
+    };
+
+    void  ReportResultStatus(const string &  annot_name, EPSGS_ResultStatus  rs);
+
+    // In case of exactly one annotation requested it is possible that blob
+    // props and blob chunks are need to be sent to the client. Thus it is
+    // possible that there is an error during the blob prop or blob chunks
+    // stage. This method should be called by the corresponding processor if
+    // such an error encountered.
+    // The rs is expected to be here a timeout or an error
+    void  ReportBlobError(TProcessorPriority  priority,
+                          EPSGS_ResultStatus  rs);
+
+    set<string>  GetNotFoundNames(void) const
+    {
+        return m_NotFound;
+    }
+
+    map<string, int>  GetErrorNames(void) const
+    {
+        return m_ErrorAnnotations;
+    }
+
+    bool WasSent(const string &  annot_name) const;
+
 private:
     // A list of names which have been already processed by some processors
     mutable atomic<bool>                        m_Lock;
     TProcessorPriority                          m_ProcessedBioseqInfo;
     vector<pair<TProcessorPriority, string>>    m_Processed;
+
+    // Processor reported not found annotations
+    set<string>                                 m_NotFound;
+
+    // This map includes limited, error and timeout annotations and stores only
+    // the highest reported code. This is because the highest error will be
+    // reported to the client.
+    map<string, int>                            m_ErrorAnnotations;
 };
 
 

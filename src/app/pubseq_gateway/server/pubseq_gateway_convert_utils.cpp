@@ -55,6 +55,7 @@ static const string     kSeqStateItem = "\"seq_state\": ";
 static const string     kStateItem = "\"state\": ";
 static const string     kTaxIdItem = "\"tax_id\": ";
 static const string     kSep = ", ";
+static const string     kDictValueSep = ": ";
 static const string     kKeyItem = "\"key\": ";
 static const string     kLastModifiedItem = "\"last_modified\": ";
 static const string     kFlagsItem = "\"flags\": ";
@@ -478,6 +479,34 @@ string ToJsonString(const CNAnnotRecord &  annot_record,
         .append(1, '}');
     return json;
 }
+
+
+string ToJsonString(const map<string, int> &  per_na_results)
+{
+    string              json;
+    char                buf[64];
+    long                len;
+
+    json.append(1, '{');
+
+    bool    need_sep = false;
+    for (const auto &  item : per_na_results) {
+        if (need_sep)
+            json.append(kSep);
+        need_sep = true;
+
+        len = PSGToString(item.second, buf);
+        json.append(1, '"')
+            .append(NStr::JsonEncode(item.first))
+            .append(1, '"')
+            .append(kDictValueSep)
+            .append(buf, len);
+    }
+
+    json.append(1, '}');
+    return json;
+}
+
 
 string ToJsonString(const CBioseqInfoFetchRequest &  request)
 {

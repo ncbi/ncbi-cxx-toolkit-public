@@ -286,6 +286,7 @@ string GetNamedAnnotationMessageCompletionHeader(size_t  item_id,
 string GetNamedAnnotationCompletionHeader(size_t  item_id,
                                           const string &  processor_id,
                                           size_t  chunk_count);
+string GetPerNamedAnnotationResultsHeader(size_t  per_annot_result_size);
 
 
 // Reply messages
