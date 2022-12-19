@@ -43,9 +43,6 @@
 namespace compile_time_bits
 {
 
-    using tag_SortByHashes = std::integral_constant<bool, true>;
-    using tag_SortByValues = std::integral_constant<bool, false>;
-
     // compile time sort algorithm
     // uses insertion sort https://en.wikipedia.org/wiki/Insertion_sort
     template<typename _Traits, typename _AllowDuplicates>

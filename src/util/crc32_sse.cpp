@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <util/compile_time.hpp>
 #include <util/impl/ct_crc32.hpp>
 
 #if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
@@ -187,15 +188,15 @@ struct sse42_crc32
     }
 };
 
-template<ncbi::NStr::ECase case_sensitive>
-uint32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noexcept
+template<typename _CaseTag>
+uint32_t ct::SaltedCRC32<_CaseTag>::sse42(const char* s, size_t size) noexcept
 {
     uint32_t len = (uint32_t)size;
     uint32_t hash = sse42_crc32::update(0, len);
     while (len--)
     {
         int c = static_cast<uint8_t>(*s++);
-        if (case_sensitive == ncbi::NStr::eNocase)
+        if constexpr (std::is_same<_CaseTag, tagStrNocase>::value)
             c = convert_lower_case(c);
         hash = sse42_crc32::update(hash, static_cast<uint8_t>(c));
     }
@@ -204,26 +205,26 @@ uint32_t ct::SaltedCRC32<case_sensitive>::sse42(const char* s, size_t size) noex
 
 #endif
 
-template<ncbi::NStr::ECase case_sensitive>
-uint32_t ct::SaltedCRC32<case_sensitive>::general(const char* s, size_t size) noexcept
+template<typename _CaseTag>
+uint32_t ct::SaltedCRC32<_CaseTag>::general(const char* s, size_t size) noexcept
 {
     uint32_t len = (uint32_t)size;
     uint32_t hash = tabled_crc32::update(0, len);
     while (len--)
     {
         int c = static_cast<uint8_t>(*s++);
-        if (case_sensitive == ncbi::NStr::eNocase)
+        if constexpr (std::is_same<_CaseTag, tagStrNocase>::value)
             c = convert_lower_case(c);
         hash = tabled_crc32::update(hash, static_cast<uint8_t>(c));
     }
     return hash;
 }
 
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::rt(const char* s, size_t size) noexcept;
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::rt(const char* s, size_t size) noexcept;
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::general(const char* s, size_t size) noexcept;
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::general(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ct::tagStrNocase>::rt(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ct::tagStrCase>::rt(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ct::tagStrNocase>::general(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ct::tagStrCase>::general(const char* s, size_t size) noexcept;
 #if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eNocase>::sse42(const char* s, size_t size) noexcept;
-template uint32_t ct::SaltedCRC32<ncbi::NStr::eCase>::sse42(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ct::tagStrNocase>::sse42(const char* s, size_t size) noexcept;
+template uint32_t ct::SaltedCRC32<ct::tagStrCase>::sse42(const char* s, size_t size) noexcept;
 #endif

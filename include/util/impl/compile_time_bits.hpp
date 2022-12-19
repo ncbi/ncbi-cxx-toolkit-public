@@ -35,16 +35,22 @@
  *
  */
 
-#include <cstddef>
-#include <utility>
-#include <cstdint>
-#include <array>
-#include <tuple>
 #include <type_traits>
+#include <limits>
+#include <stdexcept>
 
-#include <corelib/tempstr.hpp>
-#include <corelib/ncbistr.hpp>
-#include "ct_crc32.hpp"
+// forward declarations to avoid unnecessary includes
+namespace std
+{
+    template<class _Ty, class _Alloc>
+    class vector;
+}
+
+namespace ncbi
+{
+    class CTempString;
+    class CTempStringEx;
+}
 
 namespace std
 { // backported C++20,23 defs
@@ -78,14 +84,11 @@ namespace std
 #   define const_tuple std::tuple
 #endif
 
-#ifdef NCBI_HAVE_CXX17
-#   define ct_const_array std::array
-#   define const_array std::array
-#   include "ct_string_cxx17.hpp"
-#else
-#   define ct_const_array compile_time_bits::const_array
-#   include "ct_string_cxx14.hpp"
-#endif
+#define ct_const_array std::array
+#define const_array std::array
+
+#include "ct_string_cxx17.hpp"
+
 
 #ifndef __cpp_lib_hardware_interference_size
 namespace std
@@ -171,43 +174,6 @@ namespace compile_time_bits
         return make_array(_array);
     }
 
-    template<ncbi::NStr::ECase case_sensitive, class _Hash = ct::SaltedCRC32<case_sensitive>>
-    class CHashString
-    {
-    public:
-        using hash_func = _Hash;
-        using hash_type = typename _Hash::type;
-        using sv = ct_string;
-
-        constexpr CHashString() noexcept = default;
-
-        template<size_t N>
-        constexpr CHashString(char const (&s)[N]) noexcept
-            : m_view{s, N-1},  m_hash{hash_func::ct(s)}
-        {}
-
-        CHashString(const sv& s) noexcept
-            : m_view{s}, m_hash(hash_func::rt(s.data(), s.size()))
-        {}
-
-        constexpr operator hash_type() const noexcept { return m_hash; }
-        constexpr operator const sv&() const noexcept { return m_view; }
-        constexpr hash_type get_hash() const noexcept { return m_hash; }
-        constexpr const sv& get_view() const noexcept { return m_view; }
-
-    private:
-        sv        m_view;
-        hash_type m_hash{ 0 };
-    };
-}
-
-namespace std
-{
-    template<class _Traits, ncbi::NStr::ECase cs> inline
-        basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const compile_time_bits::CHashString<cs>& v)
-    {
-        return operator<<(_Ostr, v.get_view());
-    }
 }
 
 namespace compile_time_bits
@@ -270,10 +236,19 @@ namespace compile_time_bits
         using value_compare = std::less<tag>;
     };
 
-    template<ncbi::NStr::ECase case_sensitive>
-    struct DeduceType<std::integral_constant<ncbi::NStr::ECase, case_sensitive>>
-        : StringType<char, std::integral_constant<ncbi::NStr::ECase, case_sensitive>>
-    {};
+    template<typename, typename = void>
+    struct is_string_type : std::false_type {};
+
+    template<typename _T>
+    struct is_string_type<_T, std::void_t<typename _T::case_tag>> : std::true_type {};
+
+
+    template<>
+    struct DeduceType<tagStrCase>: StringType<char, tagStrCase> {};
+
+    template<>
+    struct DeduceType<tagStrNocase>: StringType<char, tagStrNocase> {};
+
 
     template<class _CharType>
     struct DeduceType<
@@ -307,12 +282,10 @@ namespace compile_time_bits
         : StringType<_CharType>
     {};
 
-#ifdef __cpp_lib_string_view
     template<class _CharType, class Traits>
     struct DeduceType<std::basic_string_view<_CharType, Traits>>
         : StringType<_CharType>
     {};
-#endif
 
     template<typename..._Types>
     struct DeduceType<std::pair<_Types...>>
@@ -342,17 +315,6 @@ namespace compile_time_bits
     template<typename T>
     struct DeduceHashedType: DeduceType<T> {};
 
-    // this crc32 hashed string, probably nobody will use it
-    template<ncbi::NStr::ECase case_sensitive>
-    struct DeduceHashedType<std::integral_constant<ncbi::NStr::ECase, case_sensitive>>
-    {
-        using init_type  = CHashString<case_sensitive>;
-        using value_type = typename init_type::sv;
-        using hash_type  = typename init_type::hash_type;
-        using tag        = std::integral_constant<ncbi::NStr::ECase, case_sensitive>;
-        using hash_compare   = std::less<hash_type>;
-        using value_compare  = std::less<tag>;
-    };
 }
 
 namespace compile_time_bits
@@ -416,8 +378,11 @@ namespace compile_time_bits
 
 namespace compile_time_bits
 {
-    using tag_DuplicatesYes = std::integral_constant<bool, true>;
-    using tag_DuplicatesNo  = std::integral_constant<bool, false>;
+    using tag_DuplicatesYes = std::true_type;
+    using tag_DuplicatesNo  = std::false_type;
+
+    using tag_SortByHashes  = std::true_type;
+    using tag_SortByValues  = std::false_type;
 
     template<typename _Traits, typename _AllowDuplicates>
     class TInsertSorter;
@@ -551,7 +516,7 @@ namespace compile_time_bits
 
         constexpr simple_backend() = default;
 
-        constexpr simple_backend(const std::tuple<_SizeType, _ArrayType, _IndexType>& init)
+        constexpr simple_backend(const tuple_type& init)
             : m_index { std::get<2>(init) },
               m_array { std::get<1>(init) },
               m_realsize { std::get<0>(init) }
@@ -725,6 +690,9 @@ namespace compile_time_bits
             return std::uintptr_t(m_backend.get_index()) % std::hardware_constructive_interference_size;
         }
 
+        // debug method for unit tests
+        const auto& get_backend() const noexcept { return m_backend; }
+
         static constexpr bool is_presorted = std::is_same_v<presorted_backend<const_vector<typename _Traits::value_type>>, backend_type>;
 
         constexpr const_set_map_base() = default;
@@ -746,8 +714,8 @@ namespace compile_time_bits
 
     protected:
 
-        template<size_t N>
-        static constexpr auto make_backend(const const_array<init_type, N>& init)
+        template<typename _ArrayType>
+        static constexpr auto make_backend(const _ArrayType& init)
         {
             auto proxy = sorter_type::sort(init);
             using backend_type = simple_backend<decltype(proxy)>;
@@ -769,12 +737,16 @@ namespace compile_time_bits
 namespace std
 {
     template<typename...TArgs>
-    size_t size(const compile_time_bits::const_set_map_base<TArgs...>& _container)
+    constexpr size_t size(const compile_time_bits::const_set_map_base<TArgs...>& _container)
     {
         return _container.size();
     }
 }
 
 #include "ctsort_cxx14.hpp"
+
+#include "ct_crc32.hpp"
+
+
 
 #endif
