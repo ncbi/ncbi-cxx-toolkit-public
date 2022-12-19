@@ -130,6 +130,11 @@ private:
                             size_t  bytes_sent);
     CRequestStatus::ECode
     x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const;
+    CRequestStatus::ECode
+    x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
+                            shared_ptr<CPSGS_Reply> reply,
+                            IPSGS_Processor::EPSGS_Status  best_status,
+                            IPSGS_Processor::EPSGS_Status  worst_status);
     void x_SendTrace(const string &  msg,
                      shared_ptr<CPSGS_Request> request,
                      shared_ptr<CPSGS_Reply> reply);

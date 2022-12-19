@@ -66,6 +66,7 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
 string ToJsonString(const CBlobRecord &  blob);
 string ToJsonString(const CNAnnotRecord &  annot_record, int32_t  sat,
                     const string &  custom_blob_id = "");
+string ToJsonString(const map<string, int> &  per_na_results);
 string ToJsonString(const SAccVerHistRec &  history_record);
 
 string ToJsonString(const CBioseqInfoFetchRequest &  request);

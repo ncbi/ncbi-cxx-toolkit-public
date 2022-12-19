@@ -160,6 +160,7 @@ static string   s_Message = "message";
 static string   s_Protobuf = "protobuf";
 static string   s_Json = "json";
 static string   s_BioseqNA = "bioseq_na";
+static string   s_NAStatus = "na_status";
 static string   s_AccVerHistory = "acc_ver_history";
 static string   s_IPGInfo = "ipg_info";
 static string   s_Excluded = "excluded";
@@ -187,6 +188,8 @@ static string   s_BlobPropItem = s_ItemType + s_BlobProp;
 static string   s_AndBlobPropItem = "&" + s_BlobPropItem;
 static string   s_BioseqNAItem = s_ItemType + s_BioseqNA;
 static string   s_AndBioseqNAItem = "&" + s_BioseqNAItem;
+static string   s_NAStatusItem = s_ItemType + s_NAStatus;
+static string   s_AndNAStatusItem = "&" + s_NAStatusItem;
 static string   s_AccVerHistoryItem = s_ItemType + s_AccVerHistory;
 static string   s_IPGInfoItem = s_ItemType + s_IPGInfo;
 static string   s_AndAccVerHistoryItem = "&" + s_AccVerHistoryItem;
@@ -1132,6 +1135,23 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id,
 
     len = PSGToString(chunk_count, buf);
     reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
+}
+
+
+string GetPerNamedAnnotationResultsHeader(size_t  per_annot_result_size)
+{
+    char        buf[64];
+    long        len;
+    string      reply(s_ReplyBegin);
+
+    len = PSGToString(per_annot_result_size, buf);
+    reply.append(1, '0')
+         .append(s_AndNAStatusItem)
+         .append(s_AndDataChunk)
+         .append(s_AndSize)
+         .append(buf, len)
          .append(1, '\n');
     return reply;
 }

@@ -470,7 +470,6 @@ CJsonNode SPSGS_IPGResolveRequest::Serialize(void) const
 // If the name has already been processed then it returns a priority of
 // the processor which did it.
 // If the name is new to the list then returns kUnknownPriority
-// The highest priority will be stored together with the name.
 TProcessorPriority
 SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
                                           const string &  name)
@@ -481,16 +480,12 @@ SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
 
     for (auto &  item : m_Processed) {
         if (item.second == name) {
-            ret = item.first;
-            item.first = max(item.first, priority);
-            break;
+            ret = max(ret, item.first);
         }
     }
 
-    if (ret == kUnknownPriority) {
-        // Not found => add
-        m_Processed.push_back(make_pair(priority, name));
-    }
+    // Add to the list regardless if it was in the list or not
+    m_Processed.push_back(make_pair(priority, name));
 
     m_Lock = false;                         // release lock
     return ret;
@@ -529,6 +524,16 @@ SPSGS_AnnotRequest::GetNotProcessedName(TProcessorPriority  priority)
 }
 
 
+bool SPSGS_AnnotRequest::WasSent(const string &  annot_name) const
+{
+    for (const auto &  item : m_Processed) {
+        if (item.second == annot_name)
+            return true;
+    }
+    return false;
+}
+
+
 vector<pair<TProcessorPriority, string>>
 SPSGS_AnnotRequest::GetProcessedNames(void) const
 {
@@ -536,6 +541,90 @@ SPSGS_AnnotRequest::GetProcessedNames(void) const
     auto    ret = m_Processed;
     m_Lock = false;                         // release lock
     return ret;
+}
+
+
+void
+SPSGS_AnnotRequest::ReportResultStatus(const string &  annot_name,
+                                       EPSGS_ResultStatus  rs)
+{
+    switch (rs) {
+        case ePSGS_RS_NotFound:
+            while (m_Lock.exchange(true)) {}        // acquire lock
+            m_NotFound.insert(annot_name);
+            m_Lock = false;                         // release lock
+            break;
+        case ePSGS_RS_Error:
+        case ePSGS_RS_Timeout:
+        case ePSGS_RS_Unavailable:
+            while (m_Lock.exchange(true)) {}        // acquire lock
+
+            {
+                auto it = m_ErrorAnnotations.find(annot_name);
+                if (it == m_ErrorAnnotations.end()) {
+                    m_ErrorAnnotations[annot_name] = int(rs);
+                } else {
+                    if (it->second < int(rs)) {
+                        it->second = int(rs);
+                    }
+                }
+            }
+
+            m_Lock = false;                         // release lock
+            break;
+    }
+}
+
+
+void  SPSGS_AnnotRequest::ReportBlobError(TProcessorPriority  priority,
+                                          EPSGS_ResultStatus  rs)
+{
+    if (m_Names.size() != 0) {
+        // This kind of error report may happened only in the case when exactly
+        // one annotation was requested
+        return;
+    }
+
+    while (m_Lock.exchange(true)) {}        // acquire lock
+
+    // Mark specifically this processor annotation as the one with an error
+    // i.e. move it from 'ok' to the corresponding list
+    for (auto  it = m_Processed.begin(); it != m_Processed.end(); ++it) {
+        if (it->first == priority && it->second == m_Names[0]) {
+            m_Processed.erase(it);
+
+            while (m_Lock.exchange(true)) {}        // acquire lock
+            switch (rs) {
+                case ePSGS_RS_NotFound:
+                    // Strictly speaking this must not happened.
+                    // The blob error reporting is for errors.
+                    m_NotFound.insert(m_Names[0]);
+                    break;
+                case ePSGS_RS_Error:
+                case ePSGS_RS_Timeout:
+                case ePSGS_RS_Unavailable:
+                    // The ePSGS_RS_Unavailable should not really happened
+                    // because it is for the infrastructure to report the
+                    // status of a named annotation while this method is for
+                    // the processors.
+                    {
+                        auto it = m_ErrorAnnotations.find(m_Names[0]);
+                        if (it == m_ErrorAnnotations.end()) {
+                            m_ErrorAnnotations[m_Names[0]] = int(rs);
+                        } else {
+                            if (it->second < int(rs)) {
+                                it->second = int(rs);
+                            }
+                        }
+                    }
+                    break;
+            }
+            m_Lock = false;                         // release lock
+            break;
+        }
+    }
+
+    m_Lock = false;                         // release lock
 }
 
 

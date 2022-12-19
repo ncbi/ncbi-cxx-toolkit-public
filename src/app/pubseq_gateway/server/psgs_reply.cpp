@@ -1154,6 +1154,23 @@ void CPSGS_Reply::PrepareNamedAnnotationData(const string &  annot_name,
 }
 
 
+void CPSGS_Reply::SendPerNamedAnnotationResults(const string &  content)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    string      header = GetPerNamedAnnotationResultsHeader(content.size());
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(content.data()), content.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
 void CPSGS_Reply::PrepareAccVerHistoryData(const string &  processor_id,
                                            const string &  content)
 {

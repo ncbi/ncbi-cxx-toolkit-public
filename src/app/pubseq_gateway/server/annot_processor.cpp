@@ -113,6 +113,14 @@ CPSGS_AnnotProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
 }
 
 
+vector<string>
+CPSGS_AnnotProcessor::WhatCanProcess(shared_ptr<CPSGS_Request> request,
+                                     shared_ptr<CPSGS_Reply> reply) const
+{
+    return x_FilterNames(request->GetRequest<SPSGS_AnnotRequest>().m_Names);
+}
+
+
 IPSGS_Processor*
 CPSGS_AnnotProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                       shared_ptr<CPSGS_Reply> reply,
@@ -188,8 +196,25 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
         logging_flag = ePSGS_SkipLogging;
     CountError(ePSGS_UnknownFetch, status, code, severity, message, logging_flag);
 
-    size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
+    // Report all the 'accepted' annotations with the corresponding result code
+    SPSGS_AnnotRequest::EPSGS_ResultStatus  rs = SPSGS_AnnotRequest::ePSGS_RS_NotFound;
+    switch (m_Status) {
+        case CRequestStatus::e504_GatewayTimeout:
+            rs = SPSGS_AnnotRequest::ePSGS_RS_Timeout;
+            break;
+        case CRequestStatus::e404_NotFound:
+            rs = SPSGS_AnnotRequest::ePSGS_RS_NotFound;
+            break;
+        default:
+            rs = SPSGS_AnnotRequest::ePSGS_RS_Error;
+            break;
+    }
+    for (const auto &  name : m_ValidNames) {
+        m_AnnotRequest->ReportResultStatus(name, rs);
+    }
 
+    // Send a chunk to the client
+    size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, kAnnotProcessorName,
                                                    message, status, code,
                                                    severity);
@@ -366,6 +391,14 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         // set to true. Otherwise the process of waiting for the other callback
         // should continue.
         if (AreAllFinishedRead()) {
+            // Detect not found annotations
+            for (const auto &  name: m_ValidNames) {
+                if (m_Success.find(name) == m_Success.end()) {
+                    m_AnnotRequest->ReportResultStatus(
+                            name, SPSGS_AnnotRequest::ePSGS_RS_NotFound);
+                }
+            }
+
             if (m_AnnotFilter) {
                 m_AnnotFilter->Consume(
                     [this]
@@ -384,6 +417,9 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         x_Peek(false);
         return true;
     }
+
+    // Memorize a good annotation
+    m_Success.insert(annot_record.GetAnnotName());
 
     if (m_AnnotFilter) {
         m_AnnotFilter->Store(sat, move(annot_record));
@@ -468,6 +504,16 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
     fetch_details->GetLoader()->ClearError();
 
     if (is_error) {
+        // Report error/timeout to the request
+        SPSGS_AnnotRequest::EPSGS_ResultStatus  result_status = SPSGS_AnnotRequest::ePSGS_RS_Error;
+        if (m_Status == CRequestStatus::e504_GatewayTimeout)
+            result_status = SPSGS_AnnotRequest::ePSGS_RS_Timeout;
+        for (const auto &  name: m_ValidNames) {
+            if (m_Success.find(name) == m_Success.end()) {
+                m_AnnotRequest->ReportResultStatus(name, result_status);
+            }
+        }
+
         // There will be no more activity
         fetch_details->SetReadFinished();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
@@ -516,6 +562,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
 
     auto    app = CPubseqGatewayApp::GetInstance();
     if (!blob_id.MapSatToKeyspace()) {
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
 
         string  err_msg = kAnnotProcessorName + " processor failed to map sat " +
@@ -523,9 +570,14 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                           " to a Cassandra keyspace while requesting the blob props";
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
                 IPSGS_Processor::m_Reply->GetItemId(), kAnnotProcessorName,
-                err_msg, CRequestStatus::e404_NotFound,
+                err_msg, CRequestStatus::e500_InternalServerError,
                 ePSGS_UnknownResolvedSatellite, eDiag_Error);
         PSG_WARNING(err_msg);
+
+        // Annotation is considered as an errored because the promised data are
+        // not supplied
+        m_AnnotRequest->ReportBlobError(m_Priority,
+                                        SPSGS_AnnotRequest::ePSGS_RS_Error);
 
         // It could be only one annotation and the blob prop retrieval happens
         // after sending the annotation so it is safe to say that the processor
@@ -754,6 +806,15 @@ void CPSGS_AnnotProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
 
     CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
                                        severity, message);
+
+    // Move the annotation to the error list because the promised data are not
+    // provided (OnGetBlobError(...) called CountError(...) so the m_Status is
+    // set correctly
+    SPSGS_AnnotRequest::EPSGS_ResultStatus  result_status = SPSGS_AnnotRequest::ePSGS_RS_Error;
+    if (m_Status == CRequestStatus::e504_GatewayTimeout)
+        result_status = SPSGS_AnnotRequest::ePSGS_RS_Timeout;
+    m_AnnotRequest->ReportBlobError(m_Priority, result_status);
+
 
     if (IPSGS_Processor::m_Reply->IsOutputReady())
         x_Peek(false);
