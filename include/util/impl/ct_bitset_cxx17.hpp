@@ -29,15 +29,74 @@
  * Authors:  Sergiy Gotvyanskyy
  *
  * File Description:
- *      partially backported std::bitset using c++14 constexpr
+ *      partially backported std::bitset using c++17 constexpr
  *
  *
  */
 
+
 namespace compile_time_bits
 {
+    template<typename _Ty, typename u_type = uint64_t> //typename real_underlying_type<_Ty>::type >
+    class range: private std::pair<u_type, u_type>
+    {
+    public:
+        using _MyBase = std::pair<u_type, u_type>;
+        class const_iterator
+        {
+        public:
+            friend class range;
+            constexpr const_iterator() = default;
+
+            constexpr _Ty operator*()  noexcept { return static_cast<_Ty>(m_value); }
+            constexpr _Ty operator->() noexcept { return static_cast<_Ty>(m_value); }
+
+            constexpr bool operator==(const const_iterator& o) const
+            {
+                return m_value == o.m_value;
+            }
+            constexpr bool operator!=(const const_iterator& o) const
+            {
+                return m_value != o.m_value;
+            }
+            constexpr const_iterator& operator++()
+            {
+                ++m_value;
+                return *this;
+            }
+            constexpr const_iterator operator++(int)
+            {
+                const_iterator _this(*this);
+                operator++();
+                return _this;
+            }
+        private:
+            constexpr const_iterator(u_type v) : m_value{v} {}
+
+        private:
+            u_type m_value{};
+        };
+
+        constexpr range() = default;
+        constexpr range(_Ty _first, _Ty _last) : _MyBase{static_cast<u_type>(_first), static_cast<u_type>(_last)}
+        {
+
+        }
+
+        using iterator = const_iterator;
+
+        constexpr const_iterator cbegin() const noexcept { return const_iterator(_MyBase::first); }
+        constexpr const_iterator cend()   const noexcept { return const_iterator(_MyBase::second + 1); }
+        constexpr const_iterator begin()  const noexcept { return cbegin(); }
+        constexpr const_iterator end()    const noexcept { return cend(); }
+    };
+
+    // template deduction rules by constructor
+    template<typename _Ty>
+    range(_Ty, _Ty) -> range<_Ty>;
+
     // this helper packs set of bits into an array usefull for initialisation of bitset
-    // using C++14
+    // using C++17
 
     template<class _Ty, size_t _Size, class u_type>
     struct bitset_traits
@@ -45,97 +104,93 @@ namespace compile_time_bits
         using array_t = const_array<_Ty, _Size>;
 
         static constexpr size_t width = 8 * sizeof(_Ty);
-
-        struct range_t
-        {
-            size_t m_from;
-            size_t m_to;
-        };
-
-        static constexpr bool check_range(const range_t& range, size_t i)
-        {
-            return (range.m_from <= i && i <= range.m_to);
-        };
-
-        template <size_t I>
-        static constexpr _Ty assemble_mask(const range_t& _init)
-        {
-            constexpr auto _min = I * width;
-            constexpr auto _max = I * width + width - 1;
-            if (check_range(_init, _min) && check_range(_init, _max))
-                return std::numeric_limits<_Ty>::max();
-
-            _Ty ret = 0;
-            for (size_t j = 0; j < width; ++j)
-            {
-                bool is_set = check_range(_init, j + _min);
-                if (is_set)
-                    ret |= (_Ty(1) << j);
-            }
-            return ret;
-        }
-        template <size_t I, typename _Other>
-        static constexpr _Ty assemble_mask(const std::initializer_list<_Other>& _init)
-        {
-            _Ty ret = 0;
-            constexpr auto _min = I * width;
-            constexpr auto _max = I * width + width - 1;
-            for (_Other _rec : _init)
-            {
-                size_t rec = static_cast<size_t>(static_cast<u_type>(_rec));
-                if (_min <= rec && rec <= _max)
-                {
-                    ret |= _Ty(1) << (rec % width);
-                }
-            }
-            return ret;
-        }
+        static constexpr size_t max_width = 8 * sizeof(_Ty) * _Size;
 
         static constexpr bool IsYes(char c) { return c == '1'; }
         static constexpr bool IsYes(bool c) { return c; }
 
-        template <size_t I, size_t N, typename _Base>
-        static constexpr _Ty assemble_mask(const const_array<_Base, N>& _init)
-        {
-            _Ty ret = 0;
-            _Ty mask = 1;
-            constexpr auto _min = I * width;
-            constexpr auto _max = I * width + width;
-            for (size_t pos = _min; pos < _max && pos < N; ++pos)
-            {
-                if (IsYes(_init[pos])) ret |= mask;
-                mask = mask << 1;
+        template<typename _Other>
+        static constexpr void ct_set(array_t& arr, _Other _v)
+        { // compile time version of set, doesn't throw an exception
+            size_t _Pos = static_cast<size_t>(_v);
+            if (_Pos < max_width) {
+                // _Pos off end
+                auto& val = arr[_Pos / width];
+                _Ty mask = _Ty(1) << (_Pos % width);
+                val |= mask;
             }
-            return ret;
-        }
-        template <typename _Input, std::size_t... I>
-        static constexpr array_t assemble_bitset(const _Input& _init, std::index_sequence<I...>)
-        {
-            return {assemble_mask<I>(_init)...};
         }
 
         template<typename _Other>
         static constexpr array_t set_bits(std::initializer_list<_Other> args)
         {
-            return assemble_bitset(args, std::make_index_sequence<_Size>{});
+            array_t arr{};
+            for (auto value: args) {
+                ct_set(arr, value);
+            }
+            return arr;
         }
-        template<typename T>
-        static constexpr array_t set_range(T from, T to)
+
+        template<typename _Iterator>
+        static constexpr array_t set_bits(_Iterator begin, _Iterator end)
         {
-            return assemble_bitset(range_t{ static_cast<size_t>(from), static_cast<size_t>(to) }, std::make_index_sequence<_Size>{});
+            array_t arr{};
+            for (auto it = begin; it != end; ++it) {
+                if (IsYes(*it)) {
+                    auto offset = std::distance(begin, it);
+                    ct_set(arr, offset);
+                }
+            }
+            return arr;
         }
+
         template<size_t N>
         static constexpr array_t set_bits(const const_array<char, N>& in)
         {
-            return assemble_bitset(in, std::make_index_sequence<_Size>{});
+            return set_bits(in.begin(), in.end());
         }
+
         template<size_t N>
         static constexpr array_t set_bits(const const_array<bool, N>& in)
         {
-            return assemble_bitset(in, std::make_index_sequence<_Size>{});
+            return set_bits(in.begin(), in.end());
         }
+
+        template<typename T>
+        static constexpr array_t set_range(T from, T to)
+        {
+            array_t arr{};
+
+            for (auto it: range(from, to))
+            {
+                ct_set(arr, it);
+            }
+            return arr;
+        }
+
     };
 
+    template<typename _Ty=uint64_t>
+    constexpr size_t find_first_bit(_Ty current)
+    {
+        if (current == 0)
+            return 0;
+
+        auto new_current = current & (current - 1);
+        auto single_bit = current ^ new_current;
+        size_t delta = 0;
+        do {
+            delta++;
+            single_bit /= 2;
+        }
+        while (single_bit);
+        return delta;
+    }
+
+}
+
+namespace compile_time_bits
+{
     // partially backported std::bitset until it's constexpr version becomes available
     template<size_t _Bits, class T>
     class const_bitset
@@ -279,6 +334,11 @@ namespace compile_time_bits
             return previous;
         }
 
+        constexpr bool ct_test(T _Pos) const
+        {
+            return _Subscript(static_cast<size_t>(_Pos));
+        }
+
         class const_iterator
         {
         public:
@@ -301,11 +361,8 @@ namespace compile_time_bits
             }
             constexpr const_iterator& operator++()
             {
-                while (m_index < m_bitset->capacity())
-                {
-                    ++m_index;
-                    if (m_index == m_bitset->capacity() || m_bitset->x_test(m_index))
-                        break;
+                if (m_index < _Bits) {
+                    x_find_next_bit();
                 }
                 return *this;
             }
@@ -325,23 +382,65 @@ namespace compile_time_bits
             }
 
         private:
-            constexpr const_iterator(const const_bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
+            constexpr void x_find_next_bit()
             {
-                while (m_index < m_bitset->capacity() && !m_bitset->x_test(m_index))
-                {
-                    ++m_index;
+                // See Hamming Weight: https://en.wikipedia.org/wiki/Hamming_weight
+
+                _Ty current = m_current;
+
+                if (current & _Ty(1)) {
+                    m_current = current >> 1;
+                    m_index++;
+                    return;
+                }
+
+                size_t index = m_index;
+                if constexpr (_Words > 1) {
+                    if (current == 0) {
+                        size_t offset = (index / _Bitsperword) + 1;
+                        while (offset<_Words && (current = m_bitset->_Array[offset]) == 0)
+                            ++offset;
+
+                        index = offset*_Bitsperword - 1;
+                    }
+                }
+                if (current == 0) {
+                    m_index = _Bits;
+                    return;
+                }
+
+                auto delta = find_first_bit(current);
+                m_index = index + delta;
+                m_current = current >> (delta);
+            }
+
+            // begin operator
+            constexpr const_iterator(const const_bitset* _this, std::true_type) : m_bitset{ _this }
+            {
+                _Ty current = _this->_Array[0];
+                m_current = current >> 1;
+
+                if (current & _Ty(1)) {
+                } else {
+                    x_find_next_bit();
                 }
             }
+
+            // end operator
+            constexpr const_iterator(const const_bitset* _this, std::false_type) : m_index{ _Bits }, m_bitset{ _this }
+            {}
+
             size_t m_index{0};
             const const_bitset* m_bitset{nullptr};
+            _Ty m_current{0};
         };
 
         using iterator = const_iterator;
 
-        constexpr const_iterator begin() const  { return const_iterator(this, 0); }
-        constexpr const_iterator end() const    { return const_iterator(this, capacity()); }
-        constexpr const_iterator cbegin() const { return const_iterator(this, 0); }
-        constexpr const_iterator cend() const   { return const_iterator(this, capacity()); }
+        constexpr const_iterator cbegin() const noexcept { return const_iterator(this, std::true_type{}); }
+        constexpr const_iterator cend()   const noexcept { return const_iterator(this, std::false_type{}); }
+        constexpr const_iterator begin()  const noexcept { return cbegin(); }
+        constexpr const_iterator end()    const noexcept { return cend(); }
 
         template<class _Ty, class _Alloc>
         operator std::vector<_Ty, _Alloc>() const
@@ -359,7 +458,7 @@ namespace compile_time_bits
 
         constexpr bool x_test(size_t _Pos) const
         {
-            return _Subscript(_Pos);
+            return _Pos<_Bits ? _Subscript(_Pos) : false;
         }
 
         constexpr bool _Subscript(size_t _Pos) const

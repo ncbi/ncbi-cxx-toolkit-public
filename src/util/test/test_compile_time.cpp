@@ -54,12 +54,44 @@
 
 
 #include <corelib/test_boost.hpp>
-//#include <cassert>
-
-
-//static_assert(name ## _proxy.in_order(), "ct::const_unordered_map " #name "is not in order");
+#include <cassert>
 
 #include <common/test_assert.h>  /* This header must go last */
+
+class prefixer: public std::streambuf {
+public:
+    prefixer(std::string_view prefix, std::streambuf* s): m_prefix{prefix}, sbuf(s)  {}
+    prefixer(std::streambuf* s):
+        m_prefix{"[" + ::boost::unit_test::framework::current_test_case().full_name() + "] "},
+        sbuf(s)  {}
+    ~prefixer() { overflow('\n'); }
+private:
+    typedef std::basic_string<char_type> string;
+
+    int_type overflow(int_type c) {
+
+        if (traits_type::eq_int_type(traits_type::eof(), c))
+            return traits_type::not_eof(c);
+        switch (c) {
+        case '\n':
+        case '\r':  {
+            buffer += (char)c;
+            if (buffer.size() > 1)
+                sbuf->sputn(m_prefix.c_str(), m_prefix.size());
+            int_type rc = (int_type)sbuf->sputn(buffer.c_str(), buffer.size());
+            buffer.clear();
+            return rc;
+        }
+        default:
+            buffer += (char)c;
+            return c;
+        }
+    }
+
+    std::string m_prefix;
+    std::streambuf* sbuf;
+    string buffer;
+};
 
 #define SO_MAP_DATA {\
         { "SO:0000001", "region"},\
@@ -268,6 +300,83 @@ constexpr bool check_order(const _Container& cont)
     return check_order(cont.begin(), cont.end(), typename _Container::key_compare{});
 }
 
+BOOST_AUTO_TEST_CASE(TestCountZeroes_ct)
+{
+    BOOST_CHECK_EQUAL(ct::find_first_bit(0), 0);
+    BOOST_CHECK_EQUAL(ct::find_first_bit(0b001), 1);
+    BOOST_CHECK_EQUAL(ct::find_first_bit(0b0010), 2);
+    BOOST_CHECK_EQUAL(ct::find_first_bit(0b00100), 3);
+    BOOST_CHECK_EQUAL(ct::find_first_bit(0b001000), 4);
+    BOOST_CHECK_EQUAL(ct::find_first_bit(0b0010000), 5);
+
+    constexpr bitset t1{ 1, 10, 20, 30, 63, 64, 129};
+
+    auto it = t1.begin();
+    BOOST_CHECK_EQUAL(*it, 1);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 10);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 20);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 30);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 63);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 64);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 129);
+
+    constexpr bitset t2{ 10, 20 };
+    it = t2.begin();
+    BOOST_CHECK_EQUAL(*it, 10);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 20);
+    ++it;
+    BOOST_CHECK(it == t2.end());
+
+    constexpr bitset t3{ 1, 64 };
+    it = t3.begin();
+    BOOST_CHECK_EQUAL(*it, 1);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 64);
+    ++it;
+    BOOST_CHECK(it == t3.end());
+
+    constexpr bitset t4{ 0, 128 };
+    it = t4.begin();
+    BOOST_CHECK_EQUAL(*it, 0);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 128);
+    ++it;
+    BOOST_CHECK(it == t4.end());
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_ct_range)
+{
+    ct::range r1(1, 5);
+    auto it = r1.begin();
+    BOOST_CHECK_EQUAL(*it, 1);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 2);
+    auto expected = { 1, 2, 3, 4, 5};
+    auto it_exp = expected.begin();
+
+    for (auto rec: r1)
+    {
+        BOOST_CHECK_EQUAL(rec, *it_exp);
+        ++it_exp;
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Test_char_set)
+{
+    ct::const_bitset<256, uint8_t> cs { 'o', 't'};
+    BOOST_CHECK_EQUAL(cs.size(), 2);
+    for (auto it: cs) {
+        std::cout << it << "\n";
+    }
+}
 
 BOOST_AUTO_TEST_CASE(TestConstBitset)
 {

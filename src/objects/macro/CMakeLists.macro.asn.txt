@@ -6,3 +6,68 @@ NCBI_begin_lib(macro)
   NCBI_project_watchers(stakhovv kans)
 NCBI_end_lib()
 
+if(ON) # disable until CXX-12758
+
+# update .inc files only on Unix
+if (UNIX AND NOT CMAKE_CROSSCOMPILING)
+
+    get_property(_allowedprojects GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS)
+    list(APPEND _allowedprojects multipattern)
+    list(REMOVE_DUPLICATES _allowedprojects)
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS ${_allowedprojects})
+    unset(_allowedprojects)
+
+    if (TARGET macro)
+
+        set(_prt_modules
+            weasel.txt
+        )
+
+        set(_target_dir ${CMAKE_CURRENT_SOURCE_DIR})
+        set(_source_dir ${CMAKE_CURRENT_SOURCE_DIR})
+        set(_prt2fsm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/multipattern${CMAKE_EXECUTABLE_SUFFIX})
+
+        add_custom_target(macro_fsm_files
+            COMMENT "Generate FSM files for discrepancy generator"
+            SOURCES make_fsm_file.py
+            )
+
+        foreach(_module ${_prt_modules})
+
+            # remove suffix
+            string(REGEX REPLACE "\\..*" "" _tmp_module_name "${_module}")
+
+            set(_prt_file ${_module})
+            set(_inc_file ${_tmp_module_name}.inc)
+            set(_target disrepancy_${_tmp_module_name}_inc)
+
+            add_custom_command(
+                OUTPUT ${_target_dir}/${_inc_file}
+                COMMAND python3 make_fsm_file.py ${_inc_file} ${_prt2fsm} -A -i ${_prt_file}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                COMMENT "Running make_fsm_file.py for ${_prt_file}"
+                DEPENDS ${_source_dir}/${_prt_file} ${_source_dir}/make_fsm_file.py ${_prt2fsm}
+                )
+            add_custom_target(
+                ${_target}
+                DEPENDS ${_target_dir}/${_inc_file}
+            )
+            add_dependencies(macro_fsm_files ${_target})
+        endforeach()
+
+        # uncomment next line to allow generating .inc files automatically
+        if (NCBI_FSM_COMPILER_ENABLED)
+            add_dependencies(macro macro_fsm_files)
+        endif()
+
+        unset(_inc_file)
+        unset(_prt_file)
+        unset(_target)
+        unset(_target_dir)
+        unset(_source_dir)
+        unset(_prt2fsm)
+
+    endif() # if TARGET discrepancy
+
+endif() # if UNIX
+endif()
