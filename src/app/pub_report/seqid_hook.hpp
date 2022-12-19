@@ -47,8 +47,7 @@ class CSkipSeqIdHook : public CSkipClassMemberHook
 {
 public:
     CSkipSeqIdHook(CBaseReport& report);
-
-    virtual void SkipClassMember(CObjectIStream& in, const CObjectTypeInfoMI& member);
+    void SkipClassMember(CObjectIStream& in, const CObjectTypeInfoMI& member) override;
 
 private:
     CBaseReport& m_report;

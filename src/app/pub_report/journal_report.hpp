@@ -47,7 +47,7 @@ class CJournalReport : public CBaseReport
 {
 public:
     CJournalReport(ncbi::CNcbiOstream& out);
-    virtual void SetCurrentSeqId(const std::string& name);
+    void SetCurrentSeqId(const std::string& name) override;
     void ReportJournal(const std::string& name);
 
 private:

@@ -55,8 +55,7 @@ class CSkipPubUnpublishedHook : public CSkipObjectHook
 {
 public:
     CSkipPubUnpublishedHook(CUnpublishedReport& report);
-
-    virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& info);
+    void SkipObject(CObjectIStream& in, const CObjectTypeInfo& info) override;
 
 private:
     void ProcessUnpublished(const CPub& pub);
