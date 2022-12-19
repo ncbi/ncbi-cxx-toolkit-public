@@ -1,34 +1,34 @@
-/*  
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Alexey Dobronadezhdin
-*
-* File Description:
-*
-* ===========================================================================
-*/
+/*
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Alexey Dobronadezhdin
+ *
+ * File Description:
+ *
+ * ===========================================================================
+ */
 
 #include <ncbi_pch.hpp>
 #include <common/ncbi_source_ver.h>
@@ -94,7 +94,7 @@ void CPubReportApp::Init(void)
     arg_desc->AddDefaultKey("b", "BinaryFormat", "Binary mode", CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("max-date-check", "MaxDateCheck", "Maximal amount of years from the publication date", CArgDescriptions::eInteger, "1");
 
-    SetupArgDescriptions(arg_desc.release());  // call CreateArgs
+    SetupArgDescriptions(arg_desc.release()); // call CreateArgs
 }
 
 CNcbiIstream* CPubReportApp::GetInputStream()
@@ -150,35 +150,33 @@ ESerialDataFormat CPubReportApp::GetSerialDataFormat() const
 
 int CPubReportApp::Run(void)
 {
-    CNcbiIstream* in = GetInputStream();
+    CNcbiIstream* in  = GetInputStream();
     CNcbiOstream* out = GetOutputStream();
 
-    ESerialDataFormat format = GetSerialDataFormat();
+    ESerialDataFormat          format = GetSerialDataFormat();
     unique_ptr<CObjectIStream> in_obj(CObjectIStream::Open(format, *in));
 
     shared_ptr<CBaseReport> report;
-    CRef<CSkipObjectHook> pub_hook;
+    CRef<CSkipObjectHook>   pub_hook;
 
     if (IsJournalReport()) {
 
         shared_ptr<CJournalReport> journal_report(new CJournalReport(*out));
         pub_hook.Reset(new CSkipPubJournalHook(*journal_report));
         report = journal_report;
-    }
-    else if (IsUnpublishedReport()) {
+    } else if (IsUnpublishedReport()) {
 
         shared_ptr<CUnpublishedReport> unpub_report(new CUnpublishedReport(*out, GetMaxDateCheck()));
         pub_hook.Reset(new CSkipPubUnpublishedHook(*unpub_report));
         report = unpub_report;
-    }
-    else {
+    } else {
         NCBI_THROW(CArgHelpException, eHelp, kEmptyStr);
     }
 
     CObjectTypeInfo pub_type_info = CType<CPub_equiv>();
     pub_type_info.SetLocalSkipHook(*in_obj, pub_hook);
 
-    CObjectTypeInfo seq_entry_type_info = CType<CSeq_entry>();
+    CObjectTypeInfo         seq_entry_type_info = CType<CSeq_entry>();
     CRef<CSkipSeqEntryHook> seq_entry_hook(new CSkipSeqEntryHook(*report));
     seq_entry_type_info.SetLocalSkipHook(*in_obj, seq_entry_hook);
 
@@ -189,28 +187,24 @@ int CPubReportApp::Run(void)
     known_types.insert(CSeq_entry::GetTypeInfo());
 
     set<TTypeInfo> types_found = in_obj->GuessDataType(known_types);
-    string strObjType;
+    string         strObjType;
     if (types_found.size() == 1) {
         const TTypeInfo& objtype = *(types_found.begin());
-        strObjType = objtype->GetName();
+        strObjType               = objtype->GetName();
         if (strObjType == "Bioseq-set") {
             in_obj->Skip(CType<CBioseq_set>());
-        }
-        else if (strObjType == "Seq-submit") {
+        } else if (strObjType == "Seq-submit") {
             in_obj->Skip(CType<CSeq_submit>());
-        }
-        else if (strObjType == "Seq-entry") {
+        } else if (strObjType == "Seq-entry") {
             in_obj->Skip(CType<CSeq_entry>());
-        }
-        else {
+        } else {
             // not supported type
             strObjType.clear();
         }
     }
-    
+
     if (strObjType.empty()) {
-        NCBI_THROW(CException, eUnknown,
-            "Failed to determine object type from the file: " + GetArgs()["i"].AsString());
+        NCBI_THROW(CException, eUnknown, "Failed to determine object type from the file: " + GetArgs()["i"].AsString());
     }
 
     report->CompleteReport();
@@ -218,7 +212,7 @@ int CPubReportApp::Run(void)
     return 0;
 }
 
-} // namespace pub_report
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
