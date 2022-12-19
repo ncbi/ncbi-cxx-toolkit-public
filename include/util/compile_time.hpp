@@ -36,7 +36,13 @@
  */
 
 #include "impl/compile_time_bits.hpp"
-#include "impl/ct_bitset_cxx14.hpp"
+
+#ifdef NCBI_HAVE_CXX17
+#   include "impl/ct_bitset_cxx17.hpp"
+#else
+#   include "impl/ct_bitset_cxx14.hpp"
+#endif
+
 
 
 namespace ct
