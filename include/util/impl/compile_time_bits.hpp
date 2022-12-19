@@ -38,14 +38,9 @@
 #include <type_traits>
 #include <limits>
 #include <stdexcept>
+#include <array>
 
 // forward declarations to avoid unnecessary includes
-namespace std
-{
-    template<class _Ty, class _Alloc>
-    class vector;
-}
-
 namespace ncbi
 {
     class CTempString;
