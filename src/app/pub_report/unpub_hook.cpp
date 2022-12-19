@@ -65,11 +65,10 @@ static bool IsGenUnpublished(const CCit_gen& cit)
 static bool IsArtUnpublished(const CCit_art& cit)
 {
     bool ret = false;
-    if (cit.IsSetFrom() && cit.GetFrom().IsJournal()) {
 
+    if (cit.IsSetFrom() && cit.GetFrom().IsJournal()) {
         const CCit_jour& journal = cit.GetFrom().GetJournal();
         if (journal.IsSetImp()) {
-
             const CImprint& imprint = journal.GetImp();
             ret                     = (imprint.IsSetPrepub() && imprint.GetPrepub() == CImprint::ePrepub_in_press) ||
                     (imprint.IsSetPubstatus() && imprint.GetPubstatus() == ePubStatus_aheadofprint);
@@ -82,6 +81,7 @@ static bool IsArtUnpublished(const CCit_art& cit)
 static bool IsUnpublished(const CPub& pub)
 {
     bool ret = false;
+
     if (pub.IsGen()) {
         ret = IsGenUnpublished(pub.GetGen());
     } else if (pub.IsArticle()) {
@@ -101,10 +101,11 @@ void CSkipPubUnpublishedHook::SkipObject(CObjectIStream& in, const CObjectTypeIn
     CPub_equiv pubs;
     DefaultRead(in, ObjectInfo(pubs));
 
-    ITERATE (CPub_equiv::Tdata, pub, pubs.Get()) {
-        if ((*pub)->IsSub()) {
-            if ((*pub)->GetSub().IsSetDate() && (*pub)->GetSub().GetDate().IsStd()) {
-                const CDate_std& sub_date = (*pub)->GetSub().GetDate().GetStd();
+    for (const auto& pub : pubs.Get()) {
+        if (pub->IsSub()) {
+            const CCit_sub& sub = pub->GetSub();
+            if (sub.IsSetDate() && sub.GetDate().IsStd()) {
+                const CDate_std& sub_date = sub.GetDate().GetStd();
                 if (m_report.IsSetDate()) {
                     if (m_report.GetDate().Compare(sub_date) == CDate::eCompare_after) {
                         m_report.SetDate(sub_date);
@@ -113,8 +114,8 @@ void CSkipPubUnpublishedHook::SkipObject(CObjectIStream& in, const CObjectTypeIn
                     m_report.SetDate(sub_date);
                 }
             }
-        } else if (IsUnpublished(**pub)) {
-            ProcessUnpublished(**pub);
+        } else if (IsUnpublished(*pub)) {
+            ProcessUnpublished(*pub);
         }
     }
 }
