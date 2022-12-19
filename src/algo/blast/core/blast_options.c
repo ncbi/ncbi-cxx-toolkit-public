@@ -1781,6 +1781,16 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
        }
    }
 
+    if (program_number == eBlastTypeRpsBlast ||
+        program_number == eBlastTypeRpsTblastn) {
+    	if((hit_options->culling_limit != 0) || (hit_options->hsp_filt_opt != NULL)) {
+           Blast_MessageWrite(blast_msg, eBlastSevError,
+                              kBlastMessageNoContext,
+                              "Culling or best hit filtering is not supported");
+           return BLASTERR_OPTION_VALUE_INVALID;
+    	}
+    }
+
    return status;
 }
 
