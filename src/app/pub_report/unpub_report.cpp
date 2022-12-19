@@ -1,34 +1,34 @@
 /*
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Alexey Dobronadezhdin
-*
-* File Description:
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Alexey Dobronadezhdin
+ *
+ * File Description:
+ *
+ * ===========================================================================
+ */
 #include <ncbi_pch.hpp>
 
 #include <iostream>
@@ -90,12 +90,12 @@ static void GetAuthorsFromList(list<string>& authors, const CAuth_list& auth_lis
         const CAuth_list::C_Names& names = auth_list.GetNames();
         if (names.IsStd()) {
 
-            ITERATE(list<CRef<CAuthor>>, auth, names.GetStd()) {
+            ITERATE (list<CRef<CAuthor>>, auth, names.GetStd()) {
 
                 if ((*auth)->IsSetName()) {
 
                     string cur_auth,
-                           cur_initials;
+                        cur_initials;
 
                     const CPerson_id& name = (*auth)->GetName();
                     if (name.IsName()) {
@@ -108,28 +108,25 @@ static void GetAuthorsFromList(list<string>& authors, const CAuth_list& auth_lis
                                 ProcessInitials(cur_initials);
                             }
                         }
-                    }
-                    else if (name.IsStr()) {
+                    } else if (name.IsStr()) {
                         cur_auth = name.GetStr();
-                    }
-                    else if (name.IsMl()) {
+                    } else if (name.IsMl()) {
                         cur_auth = name.GetMl();
                     }
 
-                    if (!cur_auth.empty()) {
-                        if (!cur_initials.empty()) {
+                    if (! cur_auth.empty()) {
+                        if (! cur_initials.empty()) {
                             cur_auth += ' ' + cur_initials;
                         }
                         authors.push_back(cur_auth);
                     }
                 }
             }
-        }
-        else {
+        } else {
 
-            ITERATE(list<string>, auth, names.IsStr() ? names.GetStr() : names.GetMl()) {
+            ITERATE (list<string>, auth, names.IsStr() ? names.GetStr() : names.GetMl()) {
 
-                if (!auth->empty()) {
+                if (! auth->empty()) {
                     authors.push_back(*auth);
                 }
             }
@@ -148,17 +145,22 @@ public:
     CPubData() :
         m_title_words_set(false),
         m_full_title_set(false)
-    {}
+    {
+    }
 
     const list<string>& GetAuthors() const
-    { return m_authors; }
+    {
+        return m_authors;
+    }
 
     const TSeqIds& GetSeqIds() const
-    { return m_seq_ids; }
+    {
+        return m_seq_ids;
+    }
 
     const list<string>& GetTitleWords() const
     {
-        if (!m_title_words_set) {
+        if (! m_title_words_set) {
             CreateTitleWords();
             m_title_words_set = true;
         }
@@ -167,7 +169,7 @@ public:
 
     const string& GetFullTitle() const
     {
-        if (!m_full_title_set) {
+        if (! m_full_title_set) {
             CreateFullTitle();
             m_full_title_set = true;
         }
@@ -175,19 +177,29 @@ public:
     }
 
     const string& GetTitle() const
-    { return m_title; }
+    {
+        return m_title;
+    }
 
     const string& GetJournal() const
-    { return m_journal; }
+    {
+        return m_journal;
+    }
 
     const string& GetUnique() const
-    { return m_unique; }
+    {
+        return m_unique;
+    }
 
     const string& GetVolume() const
-    { return m_volume; }
+    {
+        return m_volume;
+    }
 
     const string& GetPages() const
-    { return m_pages; }
+    {
+        return m_pages;
+    }
 
     void SetAuthors(const CAuth_list& auth_list)
     {
@@ -197,19 +209,23 @@ public:
 
     void SetTitle(const string& title)
     {
-        m_title = title;
+        m_title           = title;
         m_title_words_set = false;
-        m_full_title_set = false;
+        m_full_title_set  = false;
 
         m_full_title.clear();
         m_titlewords.clear();
     }
 
     void SetJournal(const string& journal)
-    { m_journal = journal; }
+    {
+        m_journal = journal;
+    }
 
     void SetUnique(const string& unique)
-    { m_unique = unique; }
+    {
+        m_unique = unique;
+    }
 
     void SetDate(const CDate_std& date)
     {
@@ -248,14 +264,18 @@ public:
     }
 
     void SetVolume(const string& volume)
-    { m_volume = volume; }
+    {
+        m_volume = volume;
+    }
 
     void SetPages(const string& pages)
-    { m_pages = pages; }
+    {
+        m_pages = pages;
+    }
 
 private:
     list<string> m_authors;
-    TSeqIds m_seq_ids;
+    TSeqIds      m_seq_ids;
 
     mutable list<string> m_titlewords;
 
@@ -263,14 +283,14 @@ private:
     string m_title;
     string m_unique;
 
-    mutable string m_full_title;
+    mutable string  m_full_title;
     CRef<CDate_std> m_date;
 
     mutable bool m_title_words_set,
-                 m_full_title_set;
+        m_full_title_set;
 
     string m_volume,
-           m_pages;
+        m_pages;
 
     void CreateTitleWords() const
     {
@@ -289,7 +309,7 @@ private:
     {
         m_full_title = NStr::Sanitize(m_title);
 
-        if (!m_full_title.empty() && m_full_title.front() == '[' && m_full_title.back() == ']') {
+        if (! m_full_title.empty() && m_full_title.front() == '[' && m_full_title.back() == ']') {
 
             m_full_title = m_full_title.substr(1, m_full_title.size() - 2);
             m_full_title = NStr::Sanitize(m_full_title);
@@ -306,7 +326,8 @@ private:
 CUnpublishedReport::CUnpublishedReport(CNcbiOstream& out, int max_date_check) :
     m_out(out),
     m_max_date_check(max_date_check)
-{}
+{
+}
 
 static void CollectDataGen(const CCit_gen& cit, CPubData& data)
 {
@@ -346,7 +367,7 @@ static void CollectDataArt(const CCit_art& cit, CPubData& data)
 
     if (cit.IsSetTitle() && cit.GetTitle().IsSet()) {
 
-        ITERATE(CTitle::Tdata, cur_title, cit.GetTitle().Get()) {
+        ITERATE (CTitle::Tdata, cur_title, cit.GetTitle().Get()) {
             if ((*cur_title)->IsName()) {
                 data.SetTitle((*cur_title)->GetName());
                 break;
@@ -371,8 +392,7 @@ static void CollectData(const CPub& pub, CPubData& data)
 {
     if (pub.IsGen()) {
         CollectDataGen(pub.GetGen(), data);
-    }
-    else if (pub.IsArticle()) {
+    } else if (pub.IsArticle()) {
         CollectDataArt(pub.GetArticle(), data);
     }
 
@@ -381,8 +401,7 @@ static void CollectData(const CPub& pub, CPubData& data)
     data.SetUnique(label);
 }
 
-enum AuthorNameMatch
-{
+enum AuthorNameMatch {
     eNoMatch,
     eLastNameMatch,
     eOneInitialMatch,
@@ -451,8 +470,8 @@ static AuthorNameMatch CompareAuthors(const list<string>& first, const list<stri
         return eNoMatch;
     }
 
-    auto first_it = first.begin(),
-        second_it = second.begin();
+    auto first_it  = first.begin(),
+            second_it = second.begin();
 
     AuthorNameMatch ret = eFullMatch;
     for (; ret != eNoMatch && first_it != first.end(); ++first_it, ++second_it) {
@@ -474,17 +493,17 @@ void CUnpublishedReport::ReportUnpublished(const CPub& pub)
     CollectData(pub, *data);
 
     bool need_to_add = true;
-    NON_CONST_ITERATE(TPubs, cur_pub, m_pubs) {
+    NON_CONST_ITERATE(TPubs, cur_pub, m_pubs)
+    {
 
         AuthorNameMatch match = CompareAuthors((*cur_pub)->GetAuthors(), data->GetAuthors());
-        if ( match == eFullMatch  &&
+        if (match == eFullMatch &&
             NStr::EqualNocase((*cur_pub)->GetFullTitle(), data->GetFullTitle()) &&
             NStr::EqualNocase((*cur_pub)->GetUnique(), data->GetUnique())) {
 
-            if (!cur_seq_id.empty()) {
+            if (! cur_seq_id.empty()) {
                 (*cur_pub)->AddSeqId(cur_seq_id);
-            }
-            else {
+            } else {
                 m_pubs_need_id.push_back(*cur_pub);
             }
 
@@ -498,12 +517,11 @@ void CUnpublishedReport::ReportUnpublished(const CPub& pub)
 
         if (cur_seq_id.empty()) {
             m_pubs_need_id.push_back(data);
-        }
-        else {
+        } else {
             data->AddSeqId(cur_seq_id);
         }
 
-        if (!data->IsSetDate()) {
+        if (! data->IsSetDate()) {
             m_pubs_need_date.push_back(data);
         }
     }
@@ -532,8 +550,7 @@ static void GetOneInitialAuthorName(const string& author, string& name)
     size_t space = author.rfind(' ');
     if (space == string::npos) {
         name = author;
-    }
-    else {
+    } else {
         name = author.substr(0, space + 1);
         if (space + 1 < author.size()) {
             name += author[space + 1];
@@ -551,11 +568,9 @@ static void GetNameFromStdName(const CPerson_id& id, string& name)
                 name += ' ' + id.GetName().GetInitials();
             }
         }
-    }
-    else if (id.IsMl()) {
+    } else if (id.IsMl()) {
         name = id.GetMl();
-    }
-    else if (id.IsStr()) {
+    } else if (id.IsStr()) {
         name = id.GetStr();
     }
 }
@@ -563,7 +578,7 @@ static void GetNameFromStdName(const CPerson_id& id, string& name)
 static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_list::C_Names& pubmed_authors)
 {
     string first_author,
-           last_author;
+        last_author;
 
     if (authors.size()) {
         GetOneInitialAuthorName(authors.front(), first_author);
@@ -575,7 +590,7 @@ static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_li
 
     bool ret = false;
     if (pubmed_authors.IsStd()) {
-        ITERATE(CAuth_list::C_Names::TStd, id, pubmed_authors.GetStd()) {
+        ITERATE (CAuth_list::C_Names::TStd, id, pubmed_authors.GetStd()) {
             if ((*id)->IsSetName()) {
 
                 string name;
@@ -590,10 +605,9 @@ static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_li
                 }
             }
         }
-    }
-    else {
+    } else {
         const list<string>& names = pubmed_authors.IsMl() ? pubmed_authors.GetMl() : pubmed_authors.GetStr();
-        ITERATE(list<string>, name, names) {
+        ITERATE (list<string>, name, names) {
 
             string cur_name;
             GetOneInitialAuthorName(*name, cur_name);
@@ -614,7 +628,7 @@ static bool CheckRefs(const CMedline_entry& medline_entry, const CPubData::TSeqI
     if (medline_entry.IsSetXref()) {
 
         ret = false;
-        ITERATE(CMedline_entry::TXref, xref, medline_entry.GetXref()) {
+        ITERATE (CMedline_entry::TXref, xref, medline_entry.GetXref()) {
 
             if ((*xref)->IsSetCit()) {
 
@@ -638,13 +652,12 @@ static bool CheckDate(int year, int month, int max_date_check, const CCit_jour& 
             const CDate_std& std_pub_date = pub_date.GetStd();
 
             CDate_std date_before,
-                      date_after;
+                date_after;
 
             date_before.SetYear(year);
             if (month > 1) {
                 date_before.SetMonth(month - 1);
-            }
-            else {
+            } else {
                 date_before.SetYear(year - 1);
                 date_before.SetMonth(12);
             }
@@ -653,10 +666,10 @@ static bool CheckDate(int year, int month, int max_date_check, const CCit_jour& 
             date_after.SetMonth(month);
 
             CDate::ECompare before = date_before.Compare(std_pub_date),
-                            after = date_after.Compare(std_pub_date);
+                            after  = date_after.Compare(std_pub_date);
 
             ret = (before == CDate::eCompare_before || before == CDate::eCompare_same) &&
-                  (after == CDate::eCompare_after || after == CDate::eCompare_same);
+                    (after == CDate::eCompare_after || after == CDate::eCompare_same);
         }
     }
 
@@ -682,13 +695,13 @@ static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
     string query = NStr::Join(data.GetTitleWords(), "+");
 
     // authors
-    ITERATE(list<string>, author, data.GetAuthors()) {
+    ITERATE (list<string>, author, data.GetAuthors()) {
 
         list<CTempString> names;
         NStr::Split(*author, " ", names, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-        if (!names.empty()) {
+        if (! names.empty()) {
 
-            if (!query.empty())
+            if (! query.empty())
                 query += '+';
             query += names.front();
         }
@@ -697,18 +710,13 @@ static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
     vector<int> uids;
 
     try {
-       
-        hydra_search.DoHydraSearch(query, uids, 
-                                   CHydraSearch::ESearch::ePMC, 
-                                   CHydraSearch::EScoreCutoff::eCutoff_Medium);
+
+        hydra_search.DoHydraSearch(query, uids, CHydraSearch::ESearch::ePMC, CHydraSearch::EScoreCutoff::eCutoff_Medium);
 
         if (uids.empty()) {
-            hydra_search.DoHydraSearch(query, uids,
-                                       CHydraSearch::ESearch::ePUBMED,
-                                       CHydraSearch::EScoreCutoff::eCutoff_Medium);
+            hydra_search.DoHydraSearch(query, uids, CHydraSearch::ESearch::ePUBMED, CHydraSearch::EScoreCutoff::eCutoff_Medium);
         }
-    }
-    catch (CException& e) {
+    } catch (CException& e) {
         ERR_POST(Warning << "failed while Hydra search: " << e);
     }
 
@@ -737,7 +745,7 @@ static int ConvertPMCtoPMID(int pmc)
             string result;
 
             vector<char> buf(BUF_SIZE);
-            while (!https.fail()) {
+            while (! https.fail()) {
                 https.read(&buf[0], BUF_SIZE);
                 result.append(&buf[0], https.gcount());
             }
@@ -746,7 +754,7 @@ static int ConvertPMCtoPMID(int pmc)
                 if (result.find("status = \"error\"") == string::npos && result.find("<errmsg>") == string::npos) {
 
                     static const char pmid_start[] = "pmid=\"";
-                    size_t pmid_pos = result.find(pmid_start);
+                    size_t            pmid_pos     = result.find(pmid_start);
                     if (pmid_pos != string::npos) {
                         pmid = NStr::StringToInt(result.c_str() + pmid_pos + sizeof(pmid_start) - 1, NStr::fAllowTrailingSymbols);
                     }
@@ -755,10 +763,9 @@ static int ConvertPMCtoPMID(int pmc)
                 break;
             }
 
-        }
-        catch (CException& e) {
+        } catch (CException& e) {
             ERR_POST(Warning << "failed on attempt " << attempt
-                     << ": " << e);
+                                << ": " << e);
         }
     }
 
@@ -767,15 +774,15 @@ static int ConvertPMCtoPMID(int pmc)
 
 int CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed_entry) const
 {
-    CEutilsClient& eutils = GetEUtils();
-    CHydraSearch& hydra_search = GetHydraSearch();
+    CEutilsClient& eutils       = GetEUtils();
+    CHydraSearch&  hydra_search = GetHydraSearch();
 
     // TODO: look at MLA search
     string term = NStr::Join(data.GetSeqIds(), " AND ");
 
     int pmid = 0;
 
-    if (!term.empty()) {
+    if (! term.empty()) {
         try {
             pmid = DoEUtilsSearch(eutils, "pubmed", term);
 
@@ -785,8 +792,7 @@ int CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed
                     pmid = ConvertPMCtoPMID(pmid);
                 }
             }
-        }
-        catch(...) {
+        } catch (...) {
             pmid = 0;
         }
     }
@@ -809,8 +815,7 @@ int CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed
             if (asnPubMedEntry) {
                 asnPubMedEntry >> MSerial_AsnText >> pubmed_entry;
             }
-        }
-        catch (CException& e) {
+        } catch (CException& e) {
             // skips exceptions those may occur during Fetch(...) and '>>'
             ERR_POST(Warning << "failed while fetching data from PubMed: " << e);
         }
@@ -821,7 +826,7 @@ int CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed
             if (cit_art.IsSetFrom() && cit_art.GetFrom().IsJournal()) {
 
                 bool proceed = CheckDate(data.GetYear(), data.GetMonth(), m_max_date_check, cit_art.GetFrom().GetJournal()) && CheckRefs(pubmed_entry.GetMedent(), data.GetSeqIds());
-                
+
                 if (proceed && cit_art.IsSetAuthors()) {
 
                     const CAuth_list& authors = cit_art.GetAuthors();
@@ -842,7 +847,7 @@ static AuthorNameMatch IsAuthorInList(const list<string>& auths, const string& a
     AuthorNameMatch res = eFullMatch;
 
     bool found = false;
-    ITERATE(list<string>, cur_author, auths) {
+    ITERATE (list<string>, cur_author, auths) {
 
         AuthorNameMatch cur_cmp_res = CompareAuthorNames(*cur_author, author);
         if (cur_cmp_res == eNoMatch) {
@@ -860,7 +865,7 @@ static AuthorNameMatch IsAuthorInList(const list<string>& auths, const string& a
 
 static void ReportSeqIds(CNcbiOstream& out, const CPubData::TSeqIds& ids)
 {
-    ITERATE(CPubData::TSeqIds, id, ids) {
+    ITERATE (CPubData::TSeqIds, id, ids) {
         out << "SEQID |" << *id << "|\t";
     }
 }
@@ -880,7 +885,7 @@ static bool ReportAuthorDiff(CNcbiOstream& out, const list<string>& pubmed_auths
     AuthorNameMatch best_match = eFullMatch;
 
     size_t matches = 0;
-    ITERATE(list<string>, author, auths) {
+    ITERATE (list<string>, author, auths) {
 
         AuthorNameMatch cur_match = IsAuthorInList(pubmed_auths, *author);
         if (cur_match == eNoMatch) {
@@ -896,24 +901,21 @@ static bool ReportAuthorDiff(CNcbiOstream& out, const list<string>& pubmed_auths
     bool both_ok = true;
 
     size_t pubmed_size = pubmed_auths.size(),
-           cur_size = auths.size();
-    string result_str = GetAuthorsCmpResultStr(best_match);
+            cur_size    = auths.size();
+    string result_str  = GetAuthorsCmpResultStr(best_match);
 
-    if (!auths.empty() && matches == cur_size) {
+    if (! auths.empty() && matches == cur_size) {
 
         if (cur_size < 3 && pubmed_size > 4) {
 
             out << "AUTHORS_QUESTIONABLE [" << result_str << "] " << cur_size << " -> " << pubmed_size << '\t';
             both_ok = false;
-        }
-        else if (cur_size < pubmed_size) {
+        } else if (cur_size < pubmed_size) {
             out << "AUTHORS_ADDED [" << result_str << "] " << pubmed_size - cur_size << '\t';
-        }
-        else {
+        } else {
             out << "AUTHORS_REORDERED [" << result_str << "]\t";
         }
-    }
-    else {
+    } else {
         out << "AUTHORS_CHANGED [" << result_str << "] " << matches << " / " << pubmed_size << '\t';
         both_ok = false;
     }
@@ -924,7 +926,7 @@ static bool ReportAuthorDiff(CNcbiOstream& out, const list<string>& pubmed_auths
 static bool ReportTitleDiff(CNcbiOstream& out, const list<string>& pubmed_title_words, const list<string>& title_words)
 {
     size_t matches = 0;
-    ITERATE(list<string>, word, title_words) {
+    ITERATE (list<string>, word, title_words) {
 
         if (NStr::FindNoCase(pubmed_title_words, *word)) {
             ++matches;
@@ -934,21 +936,18 @@ static bool ReportTitleDiff(CNcbiOstream& out, const list<string>& pubmed_title_
     bool both_ok = true;
 
     size_t pubmed_size = pubmed_title_words.size(),
-           cur_size = title_words.size();
+            cur_size    = title_words.size();
 
     if (cur_size < 3 && pubmed_size > 4) {
         out << "TITLE_QUESTIONABLE " << cur_size << " -> " << pubmed_size << '\t';
         both_ok = false;
-    }
-    else if (pubmed_size && cur_size && NStr::EqualNocase(pubmed_title_words.front(), title_words.front()) &&
-             matches == pubmed_size) {
+    } else if (pubmed_size && cur_size && NStr::EqualNocase(pubmed_title_words.front(), title_words.front()) &&
+                matches == pubmed_size) {
         out << "TITLE_SAME [SIMILAR] " << matches << '\t';
-    }
-    else if (pubmed_size && matches == pubmed_size) {
+    } else if (pubmed_size && matches == pubmed_size) {
         out << "TITLE_ALTERED " << matches << '\t';
         both_ok = false;
-    }
-    else {
+    } else {
         out << "TITLE_DIFFERS " << matches << " / " << pubmed_size << '\t';
         both_ok = false;
     }
@@ -959,7 +958,7 @@ static bool ReportTitleDiff(CNcbiOstream& out, const list<string>& pubmed_title_
 static void ReportAuththors(CNcbiOstream& out, const char* prefix, const list<string>& auths)
 {
     out << prefix;
-    if (!auths.empty()) {
+    if (! auths.empty()) {
 
         out << auths.front();
         auto auth = auths.begin();
@@ -973,13 +972,12 @@ static void ReportTitle(CNcbiOstream& out, const char* prefix, const CPubData& d
 {
     out << prefix;
 
-    if (!data.GetFullTitle().empty()) {
+    if (! data.GetFullTitle().empty()) {
         out << data.GetFullTitle();
-    }
-    else {
+    } else {
 
         const list<string>& words = data.GetTitleWords();
-        if (!words.empty()) {
+        if (! words.empty()) {
             out << words.front();
             auto word = words.begin();
             for (++word; word != words.end(); ++word)
@@ -1000,19 +998,18 @@ static void ReportJournal(CNcbiOstream& out, const char* prefix, const CPubData&
         if (year) {
             out << " [" << year << ']';
         }
-    }
-    else {
+    } else {
         out << data.GetJournal();
 
         if (year) {
             out << " [" << year << ']';
         }
 
-        if (!data.GetVolume().empty()) {
+        if (! data.GetVolume().empty()) {
             out << ' ' << data.GetVolume();
         }
 
-        if (!data.GetPages().empty()) {
+        if (! data.GetPages().empty()) {
             out << " : " << data.GetPages();
         }
     }
@@ -1023,34 +1020,31 @@ static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, cons
     CPubData pubmed_data;
     CollectDataArt(pubmed_cit_art, pubmed_data);
 
-    if (!pubmed_data.GetAuthors().empty() && !pubmed_data.GetTitleWords().empty()) {
+    if (! pubmed_data.GetAuthors().empty() && ! pubmed_data.GetTitleWords().empty()) {
 
         AuthorNameMatch authors_cmp_res = CompareAuthors(pubmed_data.GetAuthors(), data.GetAuthors());
-        bool title_same = NStr::EqualNocase(pubmed_data.GetFullTitle(), data.GetFullTitle());
+        bool            title_same      = NStr::EqualNocase(pubmed_data.GetFullTitle(), data.GetFullTitle());
 
         out << "PMID " << pmid << '\t';
         ReportSeqIds(out, data.GetSeqIds());
 
         if (data.GetUnique().empty()) {
             out << "?\t";
-        }
-        else {
+        } else {
             out << "UNIQ_CIT " << data.GetUnique() << '\t';
         }
 
         bool both_ok = true;
         if (authors_cmp_res == eNoMatch) {
             both_ok = ReportAuthorDiff(out, pubmed_data.GetAuthors(), data.GetAuthors());
-        }
-        else {
+        } else {
             out << "AUTHORS_SAME [" << GetAuthorsCmpResultStr(authors_cmp_res) << "]\t";
         }
 
         if (title_same) {
             out << "TITLE_SAME [IDENTICAL]\t";
-        }
-        else {
-            if (!ReportTitleDiff(out, pubmed_data.GetTitleWords(), data.GetTitleWords()))
+        } else {
+            if (! ReportTitleDiff(out, pubmed_data.GetTitleWords(), data.GetTitleWords()))
                 both_ok = false;
         }
 
@@ -1074,10 +1068,11 @@ static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, cons
 void CUnpublishedReport::CompleteReport()
 {
     m_out << "Trying " << m_pubs.size() << " Entrez Queries\n\n";
-    NON_CONST_ITERATE(TPubs, pub, m_pubs) {
+    NON_CONST_ITERATE(TPubs, pub, m_pubs)
+    {
 
         CPubmed_entry pubmed_entry;
-        int pmid = RetrievePMid(**pub, pubmed_entry);
+        int           pmid = RetrievePMid(**pub, pubmed_entry);
 
         if (pmid) {
 
@@ -1090,8 +1085,9 @@ void CUnpublishedReport::CompleteReport()
 
 void CUnpublishedReport::SetCurrentSeqId(const std::string& name)
 {
-    if (!name.empty() && !m_pubs_need_id.empty()) {
-        NON_CONST_ITERATE(TPubs, pub_need_id, m_pubs_need_id) {
+    if (! name.empty() && ! m_pubs_need_id.empty()) {
+        NON_CONST_ITERATE(TPubs, pub_need_id, m_pubs_need_id)
+        {
             (*pub_need_id)->AddSeqId(name);
         }
 
@@ -1104,8 +1100,9 @@ void CUnpublishedReport::SetCurrentSeqId(const std::string& name)
 void CUnpublishedReport::ClearData()
 {
     if (IsSetDate()) {
-        NON_CONST_ITERATE(TPubs, pub, m_pubs_need_date) {
-            if (!(*pub)->IsSetDate()) {
+        NON_CONST_ITERATE(TPubs, pub, m_pubs_need_date)
+        {
+            if (! (*pub)->IsSetDate()) {
                 (*pub)->SetDate(GetDate());
             }
         }
