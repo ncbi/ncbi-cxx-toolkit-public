@@ -628,15 +628,15 @@ BOOST_AUTO_TEST_CASE(TestConstSet)
 
 BOOST_AUTO_TEST_CASE(TestCRC32)
 {
-    using hash_type = ct::SaltedCRC32<ncbi::NStr::eCase>::type;
+    using hash_type = ct::SaltedCRC32<ct::tagStrCase>::type;
 
     constexpr hash_type good_cs = 0x38826fa7;
     constexpr hash_type good_ncs = 0xefa77b2c;
-    constexpr auto hash_good_cs = ct::SaltedCRC32<ncbi::NStr::eCase>::ct("Good");
-    constexpr auto hash_good_ncs = ct::SaltedCRC32<ncbi::NStr::eNocase>::ct("Good");
+    constexpr auto hash_good_cs = ct::SaltedCRC32<ct::tagStrCase>::ct("Good");
+    constexpr auto hash_good_ncs = ct::SaltedCRC32<ct::tagStrNocase>::ct("Good");
 
-    auto hash_good_cs_rt = ct::SaltedCRC32<ncbi::NStr::eCase>::rt("Good", 4);
-    auto hash_good_ncs_rt = ct::SaltedCRC32<ncbi::NStr::eNocase>::rt("Good", 4);
+    auto hash_good_cs_rt = ct::SaltedCRC32<ct::tagStrCase>::rt("Good", 4);
+    auto hash_good_ncs_rt = ct::SaltedCRC32<ct::tagStrNocase>::rt("Good", 4);
 
     static_assert(hash_good_cs != hash_good_ncs, "not good");
     static_assert(good_cs == hash_good_cs, "not good");
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE(TestCRC32)
     ;
 
     static_assert(
-        ct::SaltedCRC32<ncbi::NStr::eNocase>::ct("Good") == ct::SaltedCRC32<ncbi::NStr::eCase>::ct("good"),
+        ct::SaltedCRC32<ct::tagStrNocase>::ct("Good") == ct::SaltedCRC32<ct::tagStrCase>::ct("good"),
         "not good");
 
     BOOST_CHECK(hash_good_cs  == hash_good_cs_rt);

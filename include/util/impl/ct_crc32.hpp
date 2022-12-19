@@ -106,15 +106,16 @@ namespace compile_time_bits
 
 namespace ct
 {
-    template<ncbi::NStr::ECase case_sensitive>
+    template<typename _CaseTag>
     struct NCBI_XUTIL_EXPORT SaltedCRC32
     {
         using type = uint32_t;
+        static constexpr bool need_lower_case = std::is_same<_CaseTag, compile_time_bits::tagStrNocase>::value;
 
         template<size_t N>
         static type constexpr ct(const char(&s)[N]) noexcept
         {
-            auto hash = compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<case_sensitive==ncbi::NStr::eNocase, N>(s);
+            auto hash = compile_time_bits::ct_crc32<compile_time_bits::platform_poly>::SaltedHash<need_lower_case, N>(s);
 #if 0
 //def NCBI_COMPILER_ICC
 // Intel compiler ignores uint32_to int32_t conversion at compile time
@@ -141,6 +142,59 @@ namespace ct
         static uint32_t sse42(const char* s, size_t realsize) noexcept;
 #endif
     };
+}
+
+namespace compile_time_bits
+{
+    template<typename _CaseTag, class _Hash = ct::SaltedCRC32<_CaseTag>>
+    class CHashString
+    {
+    public:
+        using hash_func = _Hash;
+        using hash_type = typename _Hash::type;
+        using sv = ct_string;
+
+        constexpr CHashString() noexcept = default;
+
+        template<size_t N>
+        constexpr CHashString(char const (&s)[N]) noexcept
+            : m_view{s, N-1},  m_hash{hash_func::ct(s)}
+        {}
+
+        CHashString(const sv& s) noexcept
+            : m_view{s}, m_hash(hash_func::rt(s.data(), s.size()))
+        {}
+
+        constexpr operator hash_type() const noexcept { return m_hash; }
+        constexpr operator const sv&() const noexcept { return m_view; }
+        constexpr hash_type get_hash() const noexcept { return m_hash; }
+        constexpr const sv& get_view() const noexcept { return m_view; }
+
+    private:
+        sv        m_view;
+        hash_type m_hash{ 0 };
+    };
+
+    // this crc32 hashed string, probably nobody will use it
+    template<typename _T, _T value>
+    struct DeduceHashedType<std::integral_constant<_T, value>>
+    {
+        using case_tag   = std::integral_constant<_T, value>;
+        using init_type  = CHashString<case_tag>;
+        using value_type = typename init_type::sv;
+        using hash_type  = typename init_type::hash_type;
+        using hash_compare   = std::less<hash_type>;
+        using value_compare  = std::less<case_tag>;
+    };
+}
+
+namespace std
+{
+    template<class _Traits, typename _T, _T value> inline
+        basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const compile_time_bits::CHashString<std::integral_constant<_T, value>>& v)
+    {
+        return operator<<(_Ostr, v.get_view());
+    }
 }
 
 #endif

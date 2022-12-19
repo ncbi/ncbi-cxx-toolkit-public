@@ -36,15 +36,29 @@
  *
  */
 
+#include <string_view>
+#include <functional>
+
+#ifdef CT_USE_NCBI_STR
+    #include <corelib/ncbistr.hpp>
+    //#include <corelib/tempstr.hpp>
+#endif
+
 namespace compile_time_bits
 {
+
+#ifdef CT_USE_NCBI_STR
     using tagStrCase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eCase>;
     using tagStrNocase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eNocase>;
+#else
+    using tagStrCase = std::true_type;
+    using tagStrNocase = std::false_type;
+#endif
 
     /*
         See: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/n4640.pdf
         Standard made implicit conversion of std::basic_string_view into std::string too strong,
-        it prevents implicit conversion and temporal object instantiation in some cases. 
+        it prevents implicit conversion and temporal object instantiation in some cases.
         For example some of these operations don't work:
 
         std::string_view view_a = "aaa";
@@ -61,11 +75,11 @@ namespace compile_time_bits
             return std::string{str}; // this works
         }
     */
-  
+
 #if 0
     template<class _Char>
     using ct_basic_string = std::basic_string_view<_Char>;
-#else    
+#else
     template<class _Char=char>
     class ct_basic_string: public std::basic_string_view<_Char>
     {
@@ -74,7 +88,7 @@ namespace compile_time_bits
         using sv = std::basic_string_view<char_type>;
 
         constexpr ct_basic_string() noexcept = default;
-        
+
         template<size_t N>
         constexpr ct_basic_string(const char_type(&s)[N]) noexcept
             : sv { s, N-1 }
@@ -93,14 +107,14 @@ namespace compile_time_bits
         {}
 
         template<class _Traits, class _Alloc>
-        operator std::basic_string<_Char, _Traits, _Alloc>() const 
-        { 
+        operator std::basic_string<_Char, _Traits, _Alloc>() const
+        {
             const sv& _this = *this;
             return std::basic_string<_Char, _Traits, _Alloc>{_this};
         }
 
     };
-#endif    
+#endif
     using ct_string = ct_basic_string<char>;
 
     constexpr int CompareNocase(const std::string_view& l, const std::string_view& r)
@@ -139,20 +153,20 @@ namespace std
 
     template<>
     struct less<compile_time_bits::tagStrNocase>
-    {        
+    {
         constexpr bool operator()(const compile_time_bits::ct_string& l, const compile_time_bits::ct_string& r) const
         {
             return compile_time_bits::CompareNocase(l, r) < 0;
         }
-    };   
+    };
     template<>
     struct equal_to<compile_time_bits::tagStrNocase>
-    {        
+    {
         constexpr bool operator()(const compile_time_bits::ct_string& l, const compile_time_bits::ct_string& r) const
         {
             return (l.size() == r.size())? compile_time_bits::CompareNocase(l, r)==0 : false;
         }
-    };   
+    };
 }
 
 
