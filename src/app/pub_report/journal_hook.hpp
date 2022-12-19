@@ -62,8 +62,7 @@ class CSkipPubJournalHook : public CSkipObjectHook
 {
 public:
     CSkipPubJournalHook(CJournalReport& report);
-
-    virtual void SkipObject(CObjectIStream& in, const CObjectTypeInfo& info);
+    void SkipObject(CObjectIStream& in, const CObjectTypeInfo& info) override;
 
 private:
     bool IsJournalMissing(const string& title);

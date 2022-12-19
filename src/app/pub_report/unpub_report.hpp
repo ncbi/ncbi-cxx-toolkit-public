@@ -65,9 +65,9 @@ class CUnpublishedReport : public CBaseReport
 public:
     CUnpublishedReport(ncbi::CNcbiOstream& out, int max_date_check);
 
-    virtual void CompleteReport();
-    virtual void SetCurrentSeqId(const std::string& name);
-    virtual void ClearData();
+    void CompleteReport() override;
+    void SetCurrentSeqId(const std::string& name) override;
+    void ClearData() override;
 
     void ReportUnpublished(const CPub& pub);
 

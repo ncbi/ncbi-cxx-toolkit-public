@@ -47,15 +47,14 @@ static CConstRef<CSeq_id> GetBestId(const CBioseq::TId& ids)
     CConstRef<CSeq_id> best_seq_id;
 
     int best_score = INT_MAX;
-    ITERATE (CBioseq::TId, it, ids) {
-
-        if (CSeq_id::e_Genbank == (*it)->Which()) {
-            return *it;
+    for (const CRef<CSeq_id>& it : ids) {
+        if (CSeq_id::e_Genbank == it->Which()) {
+            return it;
         }
 
-        int score = (*it)->BaseBestRankScore();
+        int score = it->BaseBestRankScore();
         if (best_score > score) {
-            best_seq_id = *it;
+            best_seq_id = it;
             best_score  = score;
         }
     }

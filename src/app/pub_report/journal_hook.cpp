@@ -63,7 +63,7 @@ CSkipPubJournalHook::CSkipPubJournalHook(CJournalReport& report) :
 
 CEutilsClient& CSkipPubJournalHook::GetEUtils()
 {
-    if (m_eutils.get() == nullptr) {
+    if (! m_eutils) {
         m_eutils.reset(new CEutilsClient);
     }
 
@@ -75,10 +75,9 @@ void CSkipPubJournalHook::SkipObject(CObjectIStream& in, const CObjectTypeInfo& 
     CPub_equiv pubs;
     DefaultRead(in, ObjectInfo(pubs));
 
-    ITERATE (CPub_equiv::Tdata, pub, pubs.Get()) {
-
-        if (IsJournal(**pub)) {
-            ProcessJournal((*pub)->GetArticle().GetFrom().GetJournal());
+    for (const auto& pub : pubs.Get()) {
+        if (IsJournal(*pub)) {
+            ProcessJournal(pub->GetArticle().GetFrom().GetJournal());
         }
     }
 }
@@ -89,7 +88,7 @@ bool CSkipPubJournalHook::IsJournalMissing(const string& title)
     string term = title;
     validator::ConvertToEntrezTerm(term);
 
-    map<string, bool>::iterator cached_term = m_term_cache.find(term);
+    auto cached_term = m_term_cache.find(term);
 
     if (cached_term != m_term_cache.end()) {
         ret = cached_term->second;
@@ -101,7 +100,7 @@ bool CSkipPubJournalHook::IsJournalMissing(const string& title)
         if (count == 0) {
             count = GetEUtils().Count("nlmcatalog", term + "[jour]");
         }
-        ret                = count == 0;
+        ret                = (count == 0);
         m_term_cache[term] = ret;
     }
 

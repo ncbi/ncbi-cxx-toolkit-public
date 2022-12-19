@@ -67,8 +67,8 @@ public:
     }
 
 private:
-    virtual void Init(void);
-    virtual int  Run(void);
+    void Init() override;
+    int  Run() override;
 
     bool IsJournalReport() const;
     bool IsUnpublishedReport() const;
@@ -82,7 +82,7 @@ private:
 };
 
 
-void CPubReportApp::Init(void)
+void CPubReportApp::Init()
 {
     // Prepare command line descriptions
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -148,7 +148,7 @@ ESerialDataFormat CPubReportApp::GetSerialDataFormat() const
     return GetArgs()["b"].AsBoolean() ? eSerial_AsnBinary : eSerial_AsnText;
 }
 
-int CPubReportApp::Run(void)
+int CPubReportApp::Run()
 {
     CNcbiIstream* in  = GetInputStream();
     CNcbiOstream* out = GetOutputStream();

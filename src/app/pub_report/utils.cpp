@@ -46,22 +46,21 @@ string GetBestTitle(const CTitle& titles)
     string ret;
 
     if (titles.IsSet()) {
-        ITERATE (CTitle::Tdata, title, titles.Get()) {
-            if ((*title)->IsIso_jta()) {
-                ret = (*title)->GetIso_jta();
+        for (const auto& title : titles.Get()) {
+            if (title->IsIso_jta()) {
+                ret = title->GetIso_jta();
                 break;
             }
         }
 
         if (ret.empty()) {
-            ITERATE (CTitle::Tdata, title, titles.Get()) {
-                if ((*title)->IsName()) {
-                    ret = (*title)->GetName();
+            for (const auto& title : titles.Get()) {
+                if (title->IsName()) {
+                    ret = title->GetName();
                     break;
                 }
-
-                if ((*title)->IsJta()) {
-                    ret = (*title)->GetJta();
+                if (title->IsJta()) {
+                    ret = title->GetJta();
                     break;
                 }
             }
