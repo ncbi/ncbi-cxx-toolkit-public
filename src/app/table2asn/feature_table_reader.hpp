@@ -61,47 +61,23 @@ public:
     void ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry) const;
 
 private:
-    typedef map<string, CRef<objects::CSeq_feat>> TFeatMap;
-
     bool xCheckIfNeedConversion(const objects::CSeq_entry& entry) const;
     void xConvertSeqIntoSeqSet(objects::CSeq_entry& entry, bool nuc_prod_set) const;
 
     void xParseCdregions(objects::CSeq_entry& entry, TAsyncToken&);
-
     void xMergeCDSFeatures_impl(objects::CSeq_entry&, TAsyncToken&);
-
     CRef<objects::CSeq_entry> xTranslateProtein(
         const objects::CBioseq& bioseq,
         objects::CSeq_feat& cd_feature,
         list<CRef<CSeq_feat>>& seq_ftable,
         TAsyncToken&);
-
     bool xAddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
-
     void xMoveCdRegions(objects::CSeq_entry_Handle entry_h, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable, TAsyncToken&);
-
-    CRef<objects::CSeq_feat> xGetParentGene(const objects::CSeq_feat& cds, TAsyncToken&);
-
-    CRef<objects::CSeq_feat> xGetParentMrna(const objects::CSeq_feat& cds, TAsyncToken&);
-
-    CRef<objects::CSeq_feat> xFindGeneByLocusTag(const objects::CSeq_feat& cds, TAsyncToken&) const;
-    CRef<objects::CSeq_feat> xFindMrnaByQual(const objects::CSeq_feat& cds, TAsyncToken&) const;
-    CRef<objects::CSeq_feat> xGetFeatFromMap(const string& key, const TFeatMap& featMap) const;
-    CRef<objects::CSeq_feat> xFindFeature(const objects::CFeat_id& id, TAsyncToken&);
-
     void xAddFeatures(TAsyncToken&);
-    //void xClearTrees(TAsyncToken&);
-
-    //TFeatMap m_transcript_to_mrna;
-    //TFeatMap m_protein_to_mrna;
-    //TFeatMap m_locus_to_gene;
-
 
     CTable2AsnContext& m_context;
 };
 
 END_NCBI_SCOPE
-
-
 
 #endif

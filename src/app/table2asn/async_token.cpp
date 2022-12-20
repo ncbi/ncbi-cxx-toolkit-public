@@ -34,12 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <common/ncbi_source_ver.h>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbi_mask.hpp>
-
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 
@@ -48,47 +42,16 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 
-#include <util/line_reader.hpp>
-#include <objtools/edit/remote_updater.hpp>
-#include <objtools/cleanup/cleanup.hpp>
-
-#include "multireader.hpp"
-#include "table2asn_context.hpp"
-#include "struc_cmt_reader.hpp"
-#include "feature_table_reader.hpp"
-#include "fcs_reader.hpp"
-#include "src_quals.hpp"
-
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/submit/Seq_submit.hpp>
-#include <objects/general/Date.hpp>
-
-#include <objects/seq/Linkage_evidence.hpp>
-#include <objects/seq/Seq_gap.hpp>
-
-#include <objtools/edit/seq_entry_edit.hpp>
-#include <objects/valerr/ValidError.hpp>
-#include <objtools/validator/validator.hpp>
-
-#include <objtools/readers/message_listener.hpp>
-
-#include "table2asn_validator.hpp"
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 
 #include <objmgr/feat_ci.hpp>
-#include "visitors.hpp"
 
-#include <objtools/readers/fasta_exception.hpp>
-
-#include <misc/data_loaders_util/data_loaders_util.hpp>
-
-#include <objtools/format/flat_file_generator.hpp>
-#include <objtools/logging/listener.hpp>
-#include <objtools/writers/async_writers.hpp>
-#include <objtools/cleanup/cleanup_pub.hpp>
-
+#include <objmgr/util/feature.hpp>
+#include "async_token.hpp"
 #include <common/test_assert.h>  /* This header must go last */
 
-#include "async_token.hpp"
 
 using namespace ncbi;
 using namespace objects;
@@ -102,7 +65,6 @@ TAsyncToken::operator CConstRef<CSeq_entry>() const
         return entry;
     if (seh)
         return seh.GetCompleteSeq_entry();
-
     return {};
 }
 
@@ -126,4 +88,127 @@ void TAsyncToken::Clear()
     feat_tree.ReleaseOrNull();
 }
 
+
+CRef<CSeq_feat> TAsyncToken::ParentGene(const CSeq_feat& cds)
+{
+    for (auto pXref : cds.GetXref()) {
+        if (pXref->IsSetId()) {
+            auto pLinkedFeat = FindFeature(pXref->GetId());
+            if (pLinkedFeat &&
+                pLinkedFeat->IsSetData() &&
+                pLinkedFeat->GetData().IsGene()) {
+                return pLinkedFeat;
+            }
+        }
+
+        if (pXref->IsSetData() &&
+            pXref->GetData().IsGene() &&
+            pXref->GetData().GetGene().IsSetLocus_tag()) {
+            auto pGene = FeatFromMap(pXref->GetData().GetGene().GetLocus_tag(), map_locus_to_gene);
+            if (pGene) {
+                return pGene;
+            }
+        }
+    }
+
+    auto pGene = FindGeneByLocusTag(cds);
+    if (!pGene) {
+        CMappedFeat mappedCds(scope->GetSeq_featHandle(cds));
+        auto mappedGene = feature::GetBestGeneForCds(mappedCds, FeatTree());
+        if (mappedGene) {
+            pGene.Reset(const_cast<CSeq_feat*>(&mappedGene.GetOriginalFeature()));
+        }
+    }
+    return pGene;
+}
+
+
+CRef<CSeq_feat> TAsyncToken::FindFeature(const CFeat_id& id)
+{
+    for (auto annot : bioseq->GetAnnot())
+    {
+        if (!annot->IsFtable()) continue;
+
+        ITERATE(CSeq_annot::TData::TFtable, feat_it, annot->GetData().GetFtable())
+        {
+            if ((**feat_it).IsSetIds())
+            {
+                ITERATE(CSeq_feat::TIds, id_it, (**feat_it).GetIds())
+                {
+                    if ((**id_it).Equals(id))
+                    {
+                        return *feat_it;
+                    }
+                }
+            }
+            if ((**feat_it).IsSetId() && (**feat_it).GetId().Equals(id))
+                return *feat_it;
+        }
+    }
+    return CRef<CSeq_feat>();
+}
+
+
+CRef<CSeq_feat> TAsyncToken::FeatFromMap(const string& key, const TFeatMap& feat_map) const
+{
+    if (!key.empty()) {
+        auto it = feat_map.find(key);
+        if (it != feat_map.end()) {
+            return it->second;
+        }
+    }
+    return CRef<CSeq_feat>();
+}
+
+
+CRef<CSeq_feat> TAsyncToken::FindGeneByLocusTag(const CSeq_feat& cds) const
+{
+    if (!cds.GetData().IsCdregion() || !cds.IsSetQual())
+        return CRef<CSeq_feat>();
+
+    const auto& locus_tag = cds.GetNamedQual("locus_tag");
+    return FeatFromMap(locus_tag, map_locus_to_gene);
+}
+
+
+CRef<CSeq_feat> TAsyncToken::ParentMrna(const CSeq_feat& cds)
+{
+    for (auto pXref : cds.GetXref()) {
+        if (pXref->IsSetId()) {
+            auto pLinkedFeat = FindFeature(pXref->GetId());
+            if (pLinkedFeat &&
+                pLinkedFeat->IsSetData() &&
+                pLinkedFeat->GetData().IsRna() &&
+                pLinkedFeat->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
+                return pLinkedFeat;
+            }
+        }
+    }
+
+    auto pMrna = FindMrnaByQual(cds);
+    if (!pMrna) {
+        CMappedFeat mappedCds(scope->GetSeq_featHandle(cds));
+        auto mappedMrna = feature::GetBestMrnaForCds(mappedCds, FeatTree());
+        if (mappedMrna) {
+            pMrna.Reset(const_cast<CSeq_feat*>(&mappedMrna.GetOriginalFeature()));
+        }
+    }
+    return pMrna;
+}
+
+
+CRef<CSeq_feat> TAsyncToken::FindMrnaByQual(const CSeq_feat& cds) const
+{
+    if (!cds.GetData().IsCdregion() || !cds.IsSetQual())
+        return CRef<CSeq_feat>();
+
+    const auto& transcript_id = cds.GetNamedQual("transcript_id");
+    auto pMrna = FeatFromMap(transcript_id, map_transcript_to_mrna);
+    if (!pMrna) {
+        const auto& protein_id = cds.GetNamedQual("protein_id");
+        pMrna = FeatFromMap(protein_id, map_protein_to_mrna);
+    }
+
+    return pMrna;
+}
 
