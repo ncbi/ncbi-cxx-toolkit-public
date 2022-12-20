@@ -449,6 +449,8 @@ CFeatureTableReader::~CFeatureTableReader()
 
 void CFeatureTableReader::xAddFeatures(TAsyncToken& token)
 {
+    using TFeatMap = TAsyncToken::TFeatMap;
+
     auto& bioseq = *token.bioseq;
     for (auto annot : bioseq.GetAnnot())
     {
@@ -504,128 +506,6 @@ void CFeatureTableReader::xAddFeatures(TAsyncToken& token)
         }
     }
 
-}
-
-
-CRef<CSeq_feat> CFeatureTableReader::xFindGeneByLocusTag(const CSeq_feat& cds, TAsyncToken& token) const
-{
-    if (!cds.GetData().IsCdregion() || !cds.IsSetQual())
-        return CRef<CSeq_feat>();
-
-    const auto& locus_tag = cds.GetNamedQual("locus_tag");
-    return xGetFeatFromMap(locus_tag, token.map_locus_to_gene);
-}
-
-
-CRef<CSeq_feat> CFeatureTableReader::xFindMrnaByQual(const CSeq_feat& cds, TAsyncToken& token) const
-{
-    if (!cds.GetData().IsCdregion() || !cds.IsSetQual())
-        return CRef<CSeq_feat>();
-
-    const auto& transcript_id = cds.GetNamedQual("transcript_id");
-    auto pMrna = xGetFeatFromMap(transcript_id, token.map_transcript_to_mrna);
-    if (!pMrna) {
-        const auto& protein_id = cds.GetNamedQual("protein_id");
-        pMrna = xGetFeatFromMap(protein_id, token.map_protein_to_mrna);
-    }
-
-    return pMrna;
-}
-
-CRef<CSeq_feat> CFeatureTableReader::xGetFeatFromMap(const string& key, const TFeatMap& featMap) const
-{
-    if (!key.empty()) {
-        auto it = featMap.find(key);
-        if (it != featMap.end()) {
-            return it->second;
-        }
-    }
-    return CRef<CSeq_feat>();
-}
-
-
-CRef<CSeq_feat> CFeatureTableReader::xFindFeature(const CFeat_id& id, TAsyncToken& token)
-{
-    auto& bioseq = *token.bioseq;
-    for (auto annot : bioseq.GetAnnot())
-    {
-        if (!annot->IsFtable()) continue;
-
-        ITERATE(CSeq_annot::TData::TFtable, feat_it, annot->GetData().GetFtable())
-        {
-            if ((**feat_it).IsSetIds())
-            {
-                ITERATE(CSeq_feat::TIds, id_it, (**feat_it).GetIds())
-                {
-                    if ((**id_it).Equals(id))
-                    {
-                        return *feat_it;
-                    }
-                }
-            }
-            if ((**feat_it).IsSetId() && (**feat_it).GetId().Equals(id))
-                return *feat_it;
-        }
-    }
-    return CRef<CSeq_feat>();
-}
-
-CRef<CSeq_feat> CFeatureTableReader::xGetParentGene(const CSeq_feat& cds, TAsyncToken& token)
-{
-    for (auto pXref : cds.GetXref()) {
-        if (pXref->IsSetId()) {
-            auto pLinkedFeat = xFindFeature(pXref->GetId(), token);
-            if (pLinkedFeat &&
-                pLinkedFeat->IsSetData() &&
-                pLinkedFeat->GetData().IsGene()) {
-                return pLinkedFeat;
-            }
-        }
-
-        if (pXref->IsSetData() &&
-            pXref->GetData().IsGene() &&
-            pXref->GetData().GetGene().IsSetLocus_tag()) {
-            auto pGene = xGetFeatFromMap(pXref->GetData().GetGene().GetLocus_tag(), token.map_locus_to_gene);
-            if (pGene) {
-                return pGene;
-            }
-        }
-    }
-
-    auto pGene = xFindGeneByLocusTag(cds, token);
-    if (!pGene) {
-        CMappedFeat mappedCds(token.scope->GetSeq_featHandle(cds));
-        auto mappedGene = feature::GetBestGeneForCds(mappedCds, token.FeatTree());
-        if (mappedGene) {
-            pGene.Reset(const_cast<CSeq_feat*>(&mappedGene.GetOriginalFeature()));
-        }
-    }
-    return pGene;
-}
-
-CRef<CSeq_feat> CFeatureTableReader::xGetParentMrna(const CSeq_feat& cds, TAsyncToken& token)
-{
-    for (auto pXref : cds.GetXref()) {
-        if (pXref->IsSetId()) {
-            auto pLinkedFeat = xFindFeature(pXref->GetId(), token);
-            if (pLinkedFeat &&
-                pLinkedFeat->IsSetData() &&
-                pLinkedFeat->GetData().IsRna() &&
-                pLinkedFeat->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
-                return pLinkedFeat;
-            }
-        }
-    }
-
-    auto pMrna = xFindMrnaByQual(cds, token);
-    if (!pMrna) {
-        CMappedFeat mappedCds(token.scope->GetSeq_featHandle(cds));
-        auto mappedMrna = feature::GetBestMrnaForCds(mappedCds, token.FeatTree());
-        if (mappedMrna) {
-            pMrna.Reset(const_cast<CSeq_feat*>(&mappedMrna.GetOriginalFeature()));
-        }
-    }
-    return pMrna;
 }
 
 
@@ -717,8 +597,8 @@ static void s_SetProtRef(const CSeq_feat& cds,
 
 CRef<CSeq_entry> CFeatureTableReader::xTranslateProtein(const CBioseq& bioseq, CSeq_feat& cd_feature, list<CRef<CSeq_feat>>& seq_ftable, TAsyncToken& token)
 {
-    CRef<CSeq_feat> mrna = xGetParentMrna(cd_feature, token);
-    CRef<CSeq_feat> gene = xGetParentGene(cd_feature, token);
+    CRef<CSeq_feat> mrna = token.ParentMrna(cd_feature);
+    CRef<CSeq_feat> gene = token.ParentGene(cd_feature);
     CRef<CSeq_feat> prot_feat;
 
     bool was_extended = false;
