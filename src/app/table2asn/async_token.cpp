@@ -212,3 +212,59 @@ CRef<CSeq_feat> TAsyncToken::FindMrnaByQual(const CSeq_feat& cds) const
     return pMrna;
 }
 
+
+void TAsyncToken::InitFeatures()
+{
+    for (auto annot: bioseq->GetAnnot()) {
+        if (!annot->IsFtable()) {
+            continue;
+        }
+
+        for (auto feat: annot->GetData().GetFtable()) {
+            if (!feat->CanGetData()) {
+                continue;
+            }
+            const auto& data = feat->GetData();
+            bool ismrna = data.IsRna() && data.GetRna().IsSetType() && data.GetRna().GetType() == CRNA_ref::eType_mRNA;
+            bool isgene = data.IsGene();
+
+            if (feat->IsSetQual()) {
+                for (auto qual: feat->GetQual()) {
+                    if (!qual->CanGetQual() || !qual->CanGetVal()) {
+                        continue;
+                    }
+                    const string& name = qual->GetQual();
+                    const string& value = qual->GetVal();
+
+                    if (name == "transcript_id") {
+                        if (ismrna) {
+                            map_transcript_to_mrna.insert(TFeatMap::value_type(value, feat));
+                        }
+                    }
+                    else {
+                        if (name == "protein_id") {
+                            if (ismrna) {
+                                map_protein_to_mrna.insert(TFeatMap::value_type(value, feat));
+                            }
+                        }
+                        else {
+                            if (name == "locus_tag") {
+                                if (isgene) {
+                                    map_locus_to_gene.insert(TFeatMap::value_type(value, feat));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (isgene) {
+                if (feat->GetData().GetGene().IsSetLocus_tag()) {
+                    map_locus_to_gene.insert(
+                        TFeatMap::value_type(feat->GetData().GetGene().GetLocus_tag(), feat));
+                }
+            }
+        }
+    }
+}
+
+

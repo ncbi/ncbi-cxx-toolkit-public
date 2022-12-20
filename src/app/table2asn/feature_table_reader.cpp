@@ -447,68 +447,6 @@ CFeatureTableReader::~CFeatureTableReader()
 {
 }
 
-void CFeatureTableReader::xAddFeatures(TAsyncToken& token)
-{
-    using TFeatMap = TAsyncToken::TFeatMap;
-
-    auto& bioseq = *token.bioseq;
-    for (auto annot : bioseq.GetAnnot())
-    {
-        if (!annot->IsFtable())
-            continue;
-
-        for (auto feat : annot->GetData().GetFtable())
-        {
-            if (!feat->CanGetData())
-                continue;
-
-            bool ismrna = feat->GetData().IsRna() && feat->GetData().GetRna().IsSetType() &&
-                feat->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA;
-            bool isgene = feat->GetData().IsGene();
-
-            if (feat->IsSetQual())
-                for (auto qual : feat->GetQual())
-                {
-                    if (!qual->CanGetQual() || !qual->CanGetVal())
-                        continue;
-
-                    const string& name = qual->GetQual();
-                    const string& value = qual->GetVal();
-
-                    if (name == "transcript_id")
-                    {
-                        if (ismrna)
-                        {
-                            token.map_transcript_to_mrna.insert(TFeatMap::value_type(value, feat));
-                        }
-                    }
-                    else
-                        if (name == "protein_id")
-                        {
-                            if (ismrna)
-                                token.map_protein_to_mrna.insert(TFeatMap::value_type(value, feat));
-                        }
-                        else
-                            if (name == "locus_tag")
-                            {
-                                if (isgene)
-                                    token.map_locus_to_gene.insert(TFeatMap::value_type(value, feat));
-                            }
-
-                }
-            if (isgene)
-            {
-                if (feat->GetData().GetGene().IsSetLocus_tag())
-                {
-                    token.map_locus_to_gene.insert(TFeatMap::value_type(feat->GetData().GetGene().GetLocus_tag(), feat));
-                }
-            }
-        }
-    }
-
-}
-
-
 static void s_AppendProtRefInfo(CProt_ref& current_ref, const CProt_ref& other_ref)
 {
 
@@ -1020,7 +958,7 @@ void CFeatureTableReader::xParseCdregions(CSeq_entry& entry, TAsyncToken& token)
     token.scope->AddDefaults();
     CSeq_entry_Handle entry_h = token.scope->AddTopLevelSeqEntry(entry);
 
-    xAddFeatures(token);
+    token.InitFeatures();
 
     xMoveCdRegions(entry_h, seq_ftable, set_ftable, token);
 

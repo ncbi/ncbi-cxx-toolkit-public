@@ -58,6 +58,8 @@ struct TAsyncToken
     operator CConstRef<CSeq_entry>() const;
     void Clear();
 
+    void InitFeatures();
+
     CRef<objects::CSeq_feat> ParentGene(const objects::CSeq_feat& cds);
     CRef<feature::CFeatTree> FeatTree();
     CRef<objects::CSeq_feat> FindFeature(const objects::CFeat_id& id);
