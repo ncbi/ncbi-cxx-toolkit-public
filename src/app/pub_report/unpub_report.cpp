@@ -89,10 +89,10 @@ static void GetAuthorsFromList(list<string>& authors, const CAuth_list& auth_lis
         if (names.IsStd()) {
             for (const CRef<CAuthor>& auth : names.GetStd()) {
                 if (auth->IsSetName()) {
-                    string cur_auth, cur_initials;
-                    const CPerson_id& name = auth->GetName();
-                    if (name.IsName()) {
-                        const CName_std& std_name = name.GetName();
+                    string            cur_auth, cur_initials;
+                    const CPerson_id& person = auth->GetName();
+                    if (person.IsName()) {
+                        const CName_std& std_name = person.GetName();
                         if (std_name.IsSetLast()) {
                             cur_auth = std_name.GetLast();
                             if (std_name.IsSetInitials()) {
@@ -100,10 +100,10 @@ static void GetAuthorsFromList(list<string>& authors, const CAuth_list& auth_lis
                                 ProcessInitials(cur_initials);
                             }
                         }
-                    } else if (name.IsStr()) {
-                        cur_auth = name.GetStr();
-                    } else if (name.IsMl()) {
-                        cur_auth = name.GetMl();
+                    } else if (person.IsStr()) {
+                        cur_auth = person.GetStr();
+                    } else if (person.IsMl()) {
+                        cur_auth = person.GetMl();
                     }
 
                     if (! cur_auth.empty()) {
@@ -539,20 +539,20 @@ static void GetOneInitialAuthorName(const string& author, string& name)
     }
 }
 
-static void GetNameFromStdName(const CPerson_id& id, string& name)
+static void GetNameFromStdName(const CPerson_id& person, string& name)
 {
-    if (id.IsName()) {
-        if (id.GetName().IsSetLast()) {
-            name = id.GetName().GetLast();
+    if (person.IsName()) {
+        if (person.GetName().IsSetLast()) {
+            name = person.GetName().GetLast();
 
-            if (id.GetName().IsSetInitials()) {
-                name += ' ' + id.GetName().GetInitials();
+            if (person.GetName().IsSetInitials()) {
+                name += ' ' + person.GetName().GetInitials();
             }
         }
-    } else if (id.IsMl()) {
-        name = id.GetMl();
-    } else if (id.IsStr()) {
-        name = id.GetStr();
+    } else if (person.IsMl()) {
+        name = person.GetMl();
+    } else if (person.IsStr()) {
+        name = person.GetStr();
     }
 }
 
@@ -571,10 +571,10 @@ static bool FirstOrLastAuthorMatches(const list<string>& authors, const CAuth_li
 
     bool ret = false;
     if (pubmed_authors.IsStd()) {
-        for (const auto& id : pubmed_authors.GetStd()) {
-            if (id->IsSetName()) {
+        for (const auto& auth : pubmed_authors.GetStd()) {
+            if (auth->IsSetName()) {
                 string name;
-                GetNameFromStdName(id->GetName(), name);
+                GetNameFromStdName(auth->GetName(), name);
                 string cur_name;
                 GetOneInitialAuthorName(name, cur_name);
                 if (NStr::EqualNocase(cur_name, first_author) || NStr::EqualNocase(cur_name, last_author)) {
@@ -740,7 +740,7 @@ static TEntrezId ConvertPMCtoPMID(TEntrezId pmc)
     return pmid;
 }
 
-TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed_entry) const
+TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data, CRef<CPubmed_entry>& pubmed_entry) const
 {
     CEutilsClient& eutils       = GetEUtils();
     CHydraSearch&  hydra_search = GetHydraSearch();
@@ -778,17 +778,19 @@ TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& 
         try {
             eutils.Fetch("PubMed", uids, asnPubMedEntry, "asn.1");
             if (asnPubMedEntry) {
-                asnPubMedEntry >> MSerial_AsnText >> pubmed_entry;
+                pubmed_entry.Reset(new CPubmed_entry);
+                asnPubMedEntry >> MSerial_AsnText >> *pubmed_entry;
             }
         } catch (CException& e) {
             // skips exceptions those may occur during Fetch(...) and '>>'
             ERR_POST(Warning << "failed while fetching data from PubMed: " << e);
+            return ZERO_ENTREZ_ID;
         }
 
-        if (pubmed_entry.IsSetMedent() && pubmed_entry.GetMedent().IsSetCit()) {
-            const CCit_art& cit_art = pubmed_entry.GetMedent().GetCit();
+        if (pubmed_entry && pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit()) {
+            const CCit_art& cit_art = pubmed_entry->GetMedent().GetCit();
             if (cit_art.IsSetFrom() && cit_art.GetFrom().IsJournal()) {
-                bool proceed = CheckDate(data.GetYear(), data.GetMonth(), m_max_date_check, cit_art.GetFrom().GetJournal()) && CheckRefs(pubmed_entry.GetMedent(), data.GetSeqIds());
+                bool proceed = CheckDate(data.GetYear(), data.GetMonth(), m_max_date_check, cit_art.GetFrom().GetJournal()) && CheckRefs(pubmed_entry->GetMedent(), data.GetSeqIds());
                 if (proceed && cit_art.IsSetAuthors()) {
                     const CAuth_list& authors = cit_art.GetAuthors();
                     if (authors.IsSetNames() && FirstOrLastAuthorMatches(data.GetAuthors(), authors.GetNames())) {
@@ -1024,11 +1026,11 @@ void CUnpublishedReport::CompleteReport()
 {
     m_out << "Trying " << m_pubs.size() << " Entrez Queries\n\n";
     for (const auto& pub : m_pubs) {
-        CPubmed_entry pubmed_entry;
+        CRef<CPubmed_entry> pubmed_entry;
         TEntrezId     pmid = RetrievePMid(*pub, pubmed_entry);
         if (pmid != ZERO_ENTREZ_ID) {
-            _ASSERT(pubmed_entry.IsSetMedent() && pubmed_entry.GetMedent().IsSetCit() && "MedEntry and MedEntry.Cit should be present at this point");
-            ReportOnePub(m_out, pubmed_entry.GetMedent().GetCit(), *pub, pmid);
+            _ASSERT(pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit() && "MedEntry and MedEntry.Cit should be present at this point");
+            ReportOnePub(m_out, pubmed_entry->GetMedent().GetCit(), *pub, pmid);
         }
     }
 }
