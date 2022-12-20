@@ -150,7 +150,14 @@ void s_ForeachToken(container_type& container, check_type f, proc_type proc)
 
 static string utf8_to_string(const string& str)
 {
-    return utf8::UTF8ToAsciiString(str.c_str(), nullptr, nullptr, nullptr);
+    string utf8;
+    try {
+        utf8 = CUtf8::AsUTF8(str, CUtf8::GuessEncoding(str));
+    }
+    catch (CStringException) {
+        utf8 = str;
+    }
+    return utf8::UTF8ToAsciiString(utf8.c_str(), nullptr, nullptr, nullptr);
 }
 
 
