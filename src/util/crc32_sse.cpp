@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <ncbiconf.h>
+
 #include <util/compile_time.hpp>
 #include <util/impl/ct_crc32.hpp>
 
