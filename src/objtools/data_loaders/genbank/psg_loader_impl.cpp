@@ -111,6 +111,36 @@ CSeq_id_Handle PsgIdToHandle(const CPSG_BioId& id)
 
 const int kDefaultCacheLifespanSeconds = 2*3600;
 const size_t kDefaultMaxCacheSize = 10000;
+const unsigned int kDefaultRetryCount = 4;
+const unsigned int kDefaultBulkRetryCount = 8;
+
+#define DEFAULT_WAIT_TIME 1
+#define DEFAULT_WAIT_TIME_MULTIPLIER 1.5
+#define DEFAULT_WAIT_TIME_INCREMENT 1
+#define DEFAULT_WAIT_TIME_MAX 30
+
+static CIncreasingTime::SAllParams s_WaitTimeParams = {
+    {
+        "wait_time",
+        0,
+        DEFAULT_WAIT_TIME
+    },
+    {
+        "wait_time_max",
+        0,
+        DEFAULT_WAIT_TIME_MAX
+    },
+    {
+        "wait_time_multiplier",
+        0,
+        DEFAULT_WAIT_TIME_MULTIPLIER
+    },
+    {
+        "wait_time_increment",
+        0,
+        DEFAULT_WAIT_TIME_INCREMENT
+    }
+};
 
 
 class CPSGBioseqCache
@@ -904,6 +934,7 @@ CPSG_Task::EStatus CPSG_PrefetchCDD_Task::Execute(void)
 #define NCBI_PSGLOADER_WHOLE_TSE "whole_tse"
 #define NCBI_PSGLOADER_WHOLE_TSE_BULK "whole_tse_bulk"
 #define NCBI_PSGLOADER_ADD_WGS_MASTER "add_wgs_master"
+//#define NCBI_PSGLOADER_RETRY_COUNT "retry_count"
 
 NCBI_PARAM_DECL(string, PSG_LOADER, SERVICE_NAME);
 NCBI_PARAM_DEF_EX(string, PSG_LOADER, SERVICE_NAME, "PSG2",
@@ -935,22 +966,28 @@ NCBI_PARAM_DEF_EX(bool, PSG_LOADER, PREFETCH_CDD, false,
     eParam_NoThread, PSG_LOADER_PREFETCH_CDD);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, PREFETCH_CDD) TPSG_PrefetchCDD;
 
+NCBI_PARAM_DECL(unsigned int, PSG_LOADER, RETRY_COUNT);
+NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, RETRY_COUNT, kDefaultRetryCount,
+    eParam_NoThread, PSG_LOADER_RETRY_COUNT);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, RETRY_COUNT) TPSG_RetryCount;
+
+NCBI_PARAM_DECL(unsigned int, PSG_LOADER, BULK_RETRY_COUNT);
+NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, BULK_RETRY_COUNT, kDefaultBulkRetryCount,
+    eParam_NoThread, PSG_LOADER_BULK_RETRY_COUNT);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, BULK_RETRY_COUNT) TPSG_BulkRetryCount;
+
 
 template<class TParamType>
-static void s_ConvertParamValue(TParamType& value, const string& str);
+static void s_ConvertParamValue(TParamType& value, const string& str)
+{
+    value = NStr::StringToNumeric<TParamType>(str);
+}
 
 
 template<>
 void s_ConvertParamValue<bool>(bool& value, const string& str)
 {
-    if ( !str.empty() ) {
-        try {
-            value = NStr::StringToBool(str);
-        }
-        catch (CException&) {
-            // TODO: should we ignora bad values?
-        }
-    }
+    value = NStr::StringToBool(str);
 }
 
 
@@ -987,7 +1024,8 @@ static typename TParamDescription::TValueType s_GetParamValue(const TPluginManag
 
 
 CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
-    : m_ThreadPool(new CThreadPool(kMax_UInt, TPSG_MaxPoolThreads::GetDefault()))
+    : m_ThreadPool(new CThreadPool(kMax_UInt, TPSG_MaxPoolThreads::GetDefault())),
+      m_WaitTime(s_WaitTimeParams)
 {
     unique_ptr<CPSGDataLoader::TParamTree> app_params;
     const CPSGDataLoader::TParamTree* psg_params = 0;
@@ -1074,6 +1112,15 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         }
     }
 
+    m_RetryCount =
+        s_GetParamValue<X_NCBI_PARAM_DECLNAME(PSG_LOADER, RETRY_COUNT)>(psg_params);
+    m_BulkRetryCount =
+        s_GetParamValue<X_NCBI_PARAM_DECLNAME(PSG_LOADER, BULK_RETRY_COUNT)>(psg_params);
+    if ( psg_params ) {
+        CConfig conf(psg_params);
+        m_WaitTime.Init(conf, NCBI_PSGLOADER_NAME, s_WaitTimeParams);
+    }
+
     m_BioseqCache.reset(new CPSGBioseqCache(m_CacheLifespan, cache_max_size));
     m_AnnotCache.reset(new CPSGAnnotCache(m_CacheLifespan, cache_max_size));
     m_BlobMap.reset(new CPSGBlobMap(m_CacheLifespan, cache_max_size));
@@ -1126,7 +1173,7 @@ CPSGDataLoader_Impl::CallWithRetry(Call&& call,
                                    int retry_count)
 {
     if ( retry_count == 0 ) {
-        retry_count = 4;
+        retry_count = m_RetryCount;
     }
     for ( int t = 1; t < retry_count; ++ t ) {
         try {
@@ -1156,9 +1203,11 @@ CPSGDataLoader_Impl::CallWithRetry(Call&& call,
         catch ( ... ) {
             LOG_POST(Warning<<"CPSGDataLoader::"<<name<<"() try "<<t<<" exception");
         }
-        double wait_sec = 1<<(t-1);
-        LOG_POST(Warning<<"CPSGDataLoader: waiting "<<wait_sec<<"s before retry");
-        SleepMilliSec(Uint4(wait_sec*1000));
+        if ( t >= 2 ) {
+            double wait_sec = m_WaitTime.GetTime(t-2);
+            LOG_POST(Warning<<"CPSGDataLoader: waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
     }
     return call();
 }
@@ -2094,7 +2143,8 @@ void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobsOnce, this,
                        data_source, ref(tse_sets)),
-                  "GetBlobs");
+                  "GetBlobs",
+                  m_BulkRetryCount);
 }
 
 
@@ -2160,7 +2210,9 @@ void CPSGDataLoader_Impl::GetCDDAnnots(CDataSource* data_source,
     const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetCDDAnnotsOnce, this,
-                       data_source, id_sets, ref(loaded), ref(ret)), "GetCDDAnnots");
+                       data_source, id_sets, ref(loaded), ref(ret)),
+                  "GetCDDAnnots",
+                  m_BulkRetryCount);
 }
 
 
@@ -3102,7 +3154,7 @@ void CPSGDataLoader_Impl::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetAccVersOnce, this,
                        cref(ids), ref(loaded), ref(ret)),
                   "GetAccVers",
-                  6);
+                  m_BulkRetryCount);
 }
 
 
@@ -3132,8 +3184,8 @@ void CPSGDataLoader_Impl::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetGisOnce, this,
                        cref(ids), ref(loaded), ref(ret)),
-                  "GetAccVers",
-                  8);
+                  "GetGis",
+                  m_BulkRetryCount);
 }
 
 
@@ -3160,8 +3212,8 @@ void CPSGDataLoader_Impl::GetSequenceLengths(const TIds& ids, TLoaded& loaded, T
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceLengthsOnce, this,
                        cref(ids), ref(loaded), ref(ret)),
-                  "GetAccVers",
-                  8);
+                  "GetSequenceLengths",
+                  m_BulkRetryCount);
 }
 
 
@@ -3189,8 +3241,8 @@ void CPSGDataLoader_Impl::GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSe
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceTypesOnce, this,
                        cref(ids), ref(loaded), ref(ret)),
-                  "GetAccVers",
-                  8);
+                  "GetSequenceTypes",
+                  m_BulkRetryCount);
 }
 
 

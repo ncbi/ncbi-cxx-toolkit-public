@@ -37,6 +37,7 @@
 #include <objtools/data_loaders/genbank/psg_loader.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 #include <objtools/data_loaders/genbank/blob_id.hpp>
+#include <objtools/data_loaders/genbank/impl/incr_time.hpp>
 #include <memory>
 #include <vector>
 
@@ -265,6 +266,9 @@ private:
     unique_ptr<CThreadPool> m_ThreadPool;
     CRef<CPSG_PrefetchCDD_Task> m_CDDPrefetchTask;
     int m_CacheLifespan;
+    unsigned int m_RetryCount;
+    unsigned int m_BulkRetryCount;
+    CIncreasingTime m_WaitTime;
 };
 
 END_SCOPE(objects)
