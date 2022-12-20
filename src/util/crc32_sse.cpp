@@ -32,8 +32,10 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbistr.hpp>
 #include <util/compile_time.hpp>
 #include <util/impl/ct_crc32.hpp>
+
 
 #if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
     #include <immintrin.h>
