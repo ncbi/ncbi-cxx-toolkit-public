@@ -73,7 +73,6 @@ private:
         TAsyncToken&);
     bool xAddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
     void xMoveCdRegions(objects::CSeq_entry_Handle entry_h, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable, TAsyncToken&);
-    void xAddFeatures(TAsyncToken&);
 
     CTable2AsnContext& m_context;
 };
