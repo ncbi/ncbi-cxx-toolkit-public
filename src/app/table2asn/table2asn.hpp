@@ -36,6 +36,7 @@
 #include <util/format_guess.hpp>
 
 #include "table2asn_context.hpp"
+#include "async_token.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -58,28 +59,6 @@ namespace objects::edit {
 namespace objects::feature {
     class CFeatTree;
 }
-
-struct TAsyncToken
-{
-    CRef<CSeq_entry>  entry;
-    CRef<CSeq_submit> submit;
-    CRef<CSeq_entry>  top_entry;
-    CRef<CScope>      scope;
-    CSeq_entry_Handle seh;
-    CRef<objects::CBioseq> bioseq;
-    CRef<objects::feature::CFeatTree> featTree;
-
-    operator CConstRef<CSeq_entry>() const
-    {
-        if (entry)
-            return entry;
-        if (seh)
-            return seh.GetCompleteSeq_entry();
-
-        return {};
-    }
-};
-
 
 class CTbl2AsnApp : public CNcbiApplication
 {
