@@ -343,16 +343,41 @@ static map<EErrorPos, string> ErrorPositionNames = {
 };
 
 
-static CRandom& Random()
+class CRandomMT : private CRandom
 {
-    static unique_ptr<CRandom> s_Random;
+public:
+    CRandomMT(void) {}
+    CRandomMT(TValue seed) : CRandom(seed) {}
+
+    void Randomize(void) { CRandom::Randomize(); }
+
+    CRandom::TValue GetSeed(void) { return CRandom::GetSeed(); }
+
+    Int8 GetRandMT(Int8 min, Int8 max) {
+        CFastMutexGuard guard(m_Mutex);
+        return GetRand(min, max);
+    }
+
+    size_t GetRandIndexMT(size_t size) {
+        CFastMutexGuard guard(m_Mutex);
+        return GetRandIndexSize_t(size);
+    }
+
+private:
+    CFastMutex m_Mutex;
+};
+
+
+static CRandomMT& Random()
+{
+    static unique_ptr<CRandomMT> s_Random;
     if (!s_Random) {
         const CArgs& args = CNcbiApplication::Instance()->GetArgs();
         if (args["seed"]) {
-            s_Random.reset(new CRandom(args["seed"].AsInteger()));
+            s_Random.reset(new CRandomMT(args["seed"].AsInteger()));
         }
         else {
-            s_Random.reset(new CRandom);
+            s_Random.reset(new CRandomMT);
             s_Random->Randomize();
         }
     }
@@ -653,7 +678,7 @@ void CTestWriter::x_WriteObjectError(void)
         pos = len - 1;
         break;
     case eErrPos_Random:
-        pos = RandomValue < 0 ? Random().GetRand(0, len - 1) : RandomValue;
+        pos = RandomValue < 0 ? Random().GetRandMT(0, len - 1) : RandomValue;
         break;
     }
 
@@ -701,7 +726,7 @@ void CTestWriter::x_WriteCompressedError(void)
         pos = len;
         break;
     case eErrPos_Random:
-        pos = RandomValue < 0 ? Random().GetRand(0, len) : RandomValue;
+        pos = RandomValue < 0 ? Random().GetRandMT(0, len) : RandomValue;
         break;
     }
 
@@ -758,7 +783,7 @@ void CTestWriter::x_WriteSocketError(void)
         pos = len;
         break;
     case eErrPos_Random:
-        pos = RandomValue < 0 ? Random().GetRand(0, len) : RandomValue;
+        pos = RandomValue < 0 ? Random().GetRandMT(0, len) : RandomValue;
         break;
     }
     string data = str_stream.str();
@@ -857,7 +882,8 @@ void CTestWriter::x_WriteUnexpectedMember(void)
     case eErrPos_Random:
     {
         size_t count = type_info.GetClassTypeInfo()->GetMembers().Size();
-        size_t idx = RandomValue < 0 ? Random().GetRandIndexSize_t(count - 1) + 1 : RandomValue;
+        _ASSERT(count > 0);
+        size_t idx = RandomValue < 0 ? Random().GetRandIndexMT(count - 1) + 1 : RandomValue;
         member_name = type_info.GetMemberIterator(idx).GetAlias();
         wrong_index = idx == 1 ? count : 1;
     }
