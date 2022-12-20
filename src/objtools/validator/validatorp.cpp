@@ -1248,6 +1248,22 @@ CValidatorEntryInfo& CValidError_imp::x_SetEntryInfo()
 }
 
 
+CConstRef<CUser_object> s_AutoDefUserObjectFromBioseq (const CBioseq& seq)
+{
+    if (seq.IsNa() && seq.IsSetDescr()) {
+        for (auto desc : seq.GetDescr().Get()) {
+            if (desc->IsUser()) {
+                const CUser_object& uo = desc->GetUser();
+                if (uo.GetObjectType() == CUser_object::eObjectType_AutodefOptions) {
+                    return CConstRef<CUser_object>( &uo );
+                }
+            }
+        }
+    }
+    return CConstRef<CUser_object>();
+}
+
+
 bool CValidError_imp::Validate
 (const CSeq_entry_Handle& seh,
  const CCit_sub* cs)
@@ -1474,6 +1490,55 @@ bool CValidError_imp::Validate
         CValidError_bioseqset bioseqset_validator(*this);
         try {
             bioseqset_validator.ValidateBioseqSet(set);
+            bool not_all_autodef = false;
+            bool has_any_autodef = false;
+            CConstRef<CUser_object> first_autodef;
+            for (auto se : set.GetSeq_set()) {
+                bool has_autodef = false;
+                CConstRef<CUser_object> aduo;
+                if ( se->IsSet() ) {
+                    const CBioseq_set& bss = se->GetSet();
+                    for (auto sub : bss.GetSeq_set()) {
+                        if (sub->IsSeq()) {
+                            const CBioseq& seq = sub->GetSeq();
+                            if (seq.IsNa() && seq.IsSetDescr()) {
+                                aduo = s_AutoDefUserObjectFromBioseq (seq);
+                                if (aduo) {
+                                    has_autodef = true;
+                                    has_any_autodef = true;
+                                    if (! first_autodef) {
+                                        first_autodef = aduo;
+                                    }
+                                } else {
+                                    has_autodef = false;
+                                }
+                            }
+                        }
+                    }
+                } else if (se->IsSeq()) {
+                    const CBioseq& seq = se->GetSeq();
+                    if (seq.IsNa() && seq.IsSetDescr()) {
+                        aduo = s_AutoDefUserObjectFromBioseq (seq);
+                        if (aduo) {
+                            has_autodef = true;
+                            has_any_autodef = true;
+                            if (! first_autodef) {
+                                first_autodef = aduo;
+                            }
+                        } else {
+                            has_autodef = false;
+                        }
+                    }
+                }
+                if (! has_autodef) {
+                    not_all_autodef = true;
+                }
+            }
+            if (not_all_autodef && has_any_autodef) {
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingAutodef,
+                    "Not all pop/phy/mut/eco set components have an autodef user object",
+                    set);
+            }
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exception while validating bioseq set. EXCEPTION: ") +

@@ -1193,6 +1193,12 @@ however be referenced remotely." } },
    { eErr_SEQ_PKG_InconsistentMoltypeSet,
    { "InconsistentMoltypeSet",
 "Molecule types should be consistent within a pop/phy/mut/eco set" } },
+   { eErr_SEQ_PKG_MissingAutodef,
+   { "MissingAutodef",
+"Missing Autodef user object within a pop/phy/mut/eco set" } },
+   { eErr_SEQ_PKG_InconsistentAutodef,
+   { "InconsistentAutodef",
+"Inconsistent Autodef user objects within a pop/phy/mut/eco set" } },
 
 /* SEQ_FEAT */
 
