@@ -84,20 +84,17 @@ private:
 
     CRef<objects::CSeq_feat> xGetParentMrna(const objects::CSeq_feat& cds, TAsyncToken&);
 
-    CRef<objects::CSeq_feat> xFindGeneByLocusTag(const objects::CSeq_feat& cds) const;
-    CRef<objects::CSeq_feat> xFindMrnaByQual(const objects::CSeq_feat& cds) const;
+    CRef<objects::CSeq_feat> xFindGeneByLocusTag(const objects::CSeq_feat& cds, TAsyncToken&) const;
+    CRef<objects::CSeq_feat> xFindMrnaByQual(const objects::CSeq_feat& cds, TAsyncToken&) const;
     CRef<objects::CSeq_feat> xGetFeatFromMap(const string& key, const TFeatMap& featMap) const;
     CRef<objects::CSeq_feat> xFindFeature(const objects::CFeat_id& id, TAsyncToken&);
 
     void xAddFeatures(TAsyncToken&);
+    //void xClearTrees(TAsyncToken&);
 
-    void xClearTrees(TAsyncToken&);
-
-    CRef<objects::feature::CFeatTree> xGetFeatTree(TAsyncToken&);
-
-    TFeatMap m_transcript_to_mrna;
-    TFeatMap m_protein_to_mrna;
-    TFeatMap m_locus_to_gene;
+    //TFeatMap m_transcript_to_mrna;
+    //TFeatMap m_protein_to_mrna;
+    //TFeatMap m_locus_to_gene;
 
 
     CTable2AsnContext& m_context;

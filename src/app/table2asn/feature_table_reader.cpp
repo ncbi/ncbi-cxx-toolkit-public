@@ -76,7 +76,7 @@
 #include "feature_table_reader.hpp"
 #include <objtools/cleanup/cleanup.hpp>
 
-#include "table2asn.hpp"
+#include "async_token.hpp"
 #include "table2asn_context.hpp"
 #include "visitors.hpp"
 #include "utils.hpp"
@@ -447,27 +447,6 @@ CFeatureTableReader::~CFeatureTableReader()
 {
 }
 
-void CFeatureTableReader::xClearTrees(TAsyncToken& token)
-{
-    m_locus_to_gene.clear();
-    m_protein_to_mrna.clear();
-    m_transcript_to_mrna.clear();
-    token.featTree.ReleaseOrNull();
-}
-
-CRef<feature::CFeatTree> CFeatureTableReader::xGetFeatTree(TAsyncToken& token)
-{
-    auto& featTree = token.featTree;
-    if (featTree.Empty())
-    {
-        featTree.Reset(new feature::CFeatTree());
-        featTree->AddFeatures(CFeat_CI(token.scope->GetBioseqHandle(*token.bioseq)));
-    }
-
-    return featTree;
-}
-
-
 void CFeatureTableReader::xAddFeatures(TAsyncToken& token)
 {
     auto& bioseq = *token.bioseq;
@@ -498,20 +477,20 @@ void CFeatureTableReader::xAddFeatures(TAsyncToken& token)
                     {
                         if (ismrna)
                         {
-                            m_transcript_to_mrna.insert(TFeatMap::value_type(value, feat));
+                            token.map_transcript_to_mrna.insert(TFeatMap::value_type(value, feat));
                         }
                     }
                     else
                         if (name == "protein_id")
                         {
                             if (ismrna)
-                                m_protein_to_mrna.insert(TFeatMap::value_type(value, feat));
+                                token.map_protein_to_mrna.insert(TFeatMap::value_type(value, feat));
                         }
                         else
                             if (name == "locus_tag")
                             {
                                 if (isgene)
-                                    m_locus_to_gene.insert(TFeatMap::value_type(value, feat));
+                                    token.map_locus_to_gene.insert(TFeatMap::value_type(value, feat));
                             }
 
                 }
@@ -519,7 +498,7 @@ void CFeatureTableReader::xAddFeatures(TAsyncToken& token)
             {
                 if (feat->GetData().GetGene().IsSetLocus_tag())
                 {
-                    m_locus_to_gene.insert(TFeatMap::value_type(feat->GetData().GetGene().GetLocus_tag(), feat));
+                    token.map_locus_to_gene.insert(TFeatMap::value_type(feat->GetData().GetGene().GetLocus_tag(), feat));
                 }
             }
         }
@@ -528,26 +507,26 @@ void CFeatureTableReader::xAddFeatures(TAsyncToken& token)
 }
 
 
-CRef<CSeq_feat> CFeatureTableReader::xFindGeneByLocusTag(const CSeq_feat& cds) const
+CRef<CSeq_feat> CFeatureTableReader::xFindGeneByLocusTag(const CSeq_feat& cds, TAsyncToken& token) const
 {
     if (!cds.GetData().IsCdregion() || !cds.IsSetQual())
         return CRef<CSeq_feat>();
 
     const auto& locus_tag = cds.GetNamedQual("locus_tag");
-    return xGetFeatFromMap(locus_tag, m_locus_to_gene);
+    return xGetFeatFromMap(locus_tag, token.map_locus_to_gene);
 }
 
 
-CRef<CSeq_feat> CFeatureTableReader::xFindMrnaByQual(const CSeq_feat& cds) const
+CRef<CSeq_feat> CFeatureTableReader::xFindMrnaByQual(const CSeq_feat& cds, TAsyncToken& token) const
 {
     if (!cds.GetData().IsCdregion() || !cds.IsSetQual())
         return CRef<CSeq_feat>();
 
     const auto& transcript_id = cds.GetNamedQual("transcript_id");
-    auto pMrna = xGetFeatFromMap(transcript_id, m_transcript_to_mrna);
+    auto pMrna = xGetFeatFromMap(transcript_id, token.map_transcript_to_mrna);
     if (!pMrna) {
         const auto& protein_id = cds.GetNamedQual("protein_id");
-        pMrna = xGetFeatFromMap(protein_id, m_protein_to_mrna);
+        pMrna = xGetFeatFromMap(protein_id, token.map_protein_to_mrna);
     }
 
     return pMrna;
@@ -606,17 +585,17 @@ CRef<CSeq_feat> CFeatureTableReader::xGetParentGene(const CSeq_feat& cds, TAsync
         if (pXref->IsSetData() &&
             pXref->GetData().IsGene() &&
             pXref->GetData().GetGene().IsSetLocus_tag()) {
-            auto pGene = xGetFeatFromMap(pXref->GetData().GetGene().GetLocus_tag(), m_locus_to_gene);
+            auto pGene = xGetFeatFromMap(pXref->GetData().GetGene().GetLocus_tag(), token.map_locus_to_gene);
             if (pGene) {
                 return pGene;
             }
         }
     }
 
-    auto pGene = xFindGeneByLocusTag(cds);
+    auto pGene = xFindGeneByLocusTag(cds, token);
     if (!pGene) {
         CMappedFeat mappedCds(token.scope->GetSeq_featHandle(cds));
-        auto mappedGene = feature::GetBestGeneForCds(mappedCds, xGetFeatTree(token));
+        auto mappedGene = feature::GetBestGeneForCds(mappedCds, token.FeatTree());
         if (mappedGene) {
             pGene.Reset(const_cast<CSeq_feat*>(&mappedGene.GetOriginalFeature()));
         }
@@ -638,10 +617,10 @@ CRef<CSeq_feat> CFeatureTableReader::xGetParentMrna(const CSeq_feat& cds, TAsync
         }
     }
 
-    auto pMrna = xFindMrnaByQual(cds);
+    auto pMrna = xFindMrnaByQual(cds, token);
     if (!pMrna) {
         CMappedFeat mappedCds(token.scope->GetSeq_featHandle(cds));
-        auto mappedMrna = feature::GetBestMrnaForCds(mappedCds, xGetFeatTree(token));
+        auto mappedMrna = feature::GetBestMrnaForCds(mappedCds, token.FeatTree());
         if (mappedMrna) {
             pMrna.Reset(const_cast<CSeq_feat*>(&mappedMrna.GetOriginalFeature()));
         }
@@ -1165,8 +1144,7 @@ void CFeatureTableReader::xParseCdregions(CSeq_entry& entry, TAsyncToken& token)
 
     xMoveCdRegions(entry_h, seq_ftable, set_ftable, token);
 
-    xClearTrees(token);
-
+    token.Clear();
     token.scope->RemoveTopLevelSeqEntry(entry_h);
 
     if (seq_ftable.empty()) {
