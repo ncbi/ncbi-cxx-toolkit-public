@@ -426,6 +426,8 @@ enum EErrType {
     eErr_SEQ_PKG_ImproperlyNestedSets,
     eErr_SEQ_PKG_SeqSubmitWithWgsSet,
     eErr_SEQ_PKG_InconsistentMoltypeSet,
+    eErr_SEQ_PKG_MissingAutodef,
+    eErr_SEQ_PKG_InconsistentAutodef,
     ERR_CODE_END(SEQ_PKG),
 
     ERR_CODE_BEGIN(SEQ_FEAT) = 4000,
