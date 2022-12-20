@@ -23,8 +23,7 @@
 *
 * ===========================================================================
 *
-* Authors:  Jonathan Kans, Clifford Clausen,
-*           Aaron Ucko, Sergiy Gotvyanskyy
+* Authors:
 *
 * File Description:
 *   table2asn thread state
@@ -59,7 +58,13 @@ struct TAsyncToken
     operator CConstRef<CSeq_entry>() const;
     void Clear();
 
+    CRef<objects::CSeq_feat> ParentGene(const objects::CSeq_feat& cds);
     CRef<feature::CFeatTree> FeatTree();
+    CRef<objects::CSeq_feat> FindFeature(const objects::CFeat_id& id);
+    CRef<objects::CSeq_feat> FeatFromMap(const string& key, const TFeatMap&) const;
+    CRef<CSeq_feat> FindGeneByLocusTag(const CSeq_feat& cds) const;
+    CRef<objects::CSeq_feat> ParentMrna(const objects::CSeq_feat& cds);
+    CRef<objects::CSeq_feat> FindMrnaByQual(const objects::CSeq_feat& cds) const;
 };
 
 END_NCBI_SCOPE
