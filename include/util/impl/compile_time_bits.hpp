@@ -39,6 +39,7 @@
 #include <limits>
 #include <stdexcept>
 #include <array>
+#include <new>
 
 // forward declarations to avoid unnecessary includes
 namespace ncbi
@@ -85,7 +86,7 @@ namespace std
 #include "ct_string_cxx17.hpp"
 
 
-#ifndef __cpp_lib_hardware_interference_size
+#if !defined(__cpp_lib_hardware_interference_size) || (defined(NCBI_COMPILER_APPLE_CLANG) && ! __has_builtin(__builtin_hardware_destructive_interference_size)) 
 namespace std
 {// these are backported implementations of C++17 methods
     constexpr size_t hardware_destructive_interference_size = 64;
