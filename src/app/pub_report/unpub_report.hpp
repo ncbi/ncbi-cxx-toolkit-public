@@ -81,7 +81,7 @@ private:
     CHydraSearch&  GetHydraSearch() const;
     CEutilsClient& GetEUtils() const;
 
-    int RetrievePMid(const CPubData& data, CPubmed_entry& pubmed_entry) const;
+    TEntrezId RetrievePMid(const CPubData& data, CPubmed_entry& pubmed_entry) const;
 
     typedef std::list<std::shared_ptr<CPubData>> TPubs;
 

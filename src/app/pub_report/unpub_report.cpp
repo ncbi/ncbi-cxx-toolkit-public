@@ -87,7 +87,7 @@ static void GetAuthorsFromList(list<string>& authors, const CAuth_list& auth_lis
     if (auth_list.IsSetNames()) {
         const CAuth_list::C_Names& names = auth_list.GetNames();
         if (names.IsStd()) {
-            for  (const CRef<CAuthor>& auth : names.GetStd()) {
+            for (const CRef<CAuthor>& auth : names.GetStd()) {
                 if (auth->IsSetName()) {
                     string cur_auth, cur_initials;
                     const CPerson_id& name = auth->GetName();
@@ -650,20 +650,20 @@ static bool CheckDate(int year, int month, int max_date_check, const CCit_jour& 
     return ret;
 }
 
-static int DoEUtilsSearch(CEutilsClient& eutils, const string& database, const string& term)
+static TEntrezId DoEUtilsSearch(CEutilsClient& eutils, const string& database, const string& term)
 {
-    vector<int> uids;
+    vector<TEntrezId> uids;
     eutils.Search(database, term, uids);
 
-    int pmid = 0;
+    TEntrezId pmid = ZERO_ENTREZ_ID;
     if (uids.size() == 1) {
-        pmid = uids[0];
+        pmid = uids.front();
     }
 
     return pmid;
 }
 
-static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
+static TEntrezId DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
 {
     // title
     string query = NStr::Join(data.GetTitleWords(), "+");
@@ -690,22 +690,22 @@ static int DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
         ERR_POST(Warning << "failed while Hydra search: " << e);
     }
 
-    int pmid = 0;
+    TEntrezId pmid = ZERO_ENTREZ_ID;
     if (uids.size() == 1) {
-        pmid = uids[0];
+        pmid = ENTREZ_ID_FROM(int, uids.front());
     }
 
     return pmid;
 }
 
-static int ConvertPMCtoPMID(int pmc)
+static TEntrezId ConvertPMCtoPMID(TEntrezId pmc)
 {
     static const string BASE_URL = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?tool=pub_report&versions=no&format=xml&ids=PMC";
     static const size_t BUF_SIZE = 1024;
 
-    string url = BASE_URL + NStr::IntToString(pmc);
+    string url = BASE_URL + NStr::IntToString(ENTREZ_ID_TO(int, pmc));
 
-    int pmid = 0;
+    TEntrezId pmid = ZERO_ENTREZ_ID;
 
     for (int attempt = 1; attempt <= 5; attempt++) {
         try {
@@ -721,11 +721,10 @@ static int ConvertPMCtoPMID(int pmc)
 
             if (NStr::StartsWith(result, "<pmcids status=\"ok\">")) {
                 if (result.find("status = \"error\"") == string::npos && result.find("<errmsg>") == string::npos) {
-
                     static const char pmid_start[] = "pmid=\"";
                     size_t            pmid_pos     = result.find(pmid_start);
                     if (pmid_pos != string::npos) {
-                        pmid = NStr::StringToInt(result.c_str() + pmid_pos + sizeof(pmid_start) - 1, NStr::fAllowTrailingSymbols);
+                        pmid = ENTREZ_ID_FROM(int, NStr::StringToInt(result.c_str() + pmid_pos + sizeof(pmid_start) - 1, NStr::fAllowTrailingSymbols));
                     }
                 }
 
@@ -741,7 +740,7 @@ static int ConvertPMCtoPMID(int pmc)
     return pmid;
 }
 
-int CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed_entry) const
+TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed_entry) const
 {
     CEutilsClient& eutils       = GetEUtils();
     CHydraSearch&  hydra_search = GetHydraSearch();
@@ -749,34 +748,32 @@ int CUnpublishedReport::RetrievePMid(const CPubData& data, CPubmed_entry& pubmed
     // TODO: look at MLA search
     string term = NStr::Join(data.GetSeqIds(), " AND ");
 
-    int pmid = 0;
+    TEntrezId pmid = ZERO_ENTREZ_ID;
 
     if (! term.empty()) {
         try {
             pmid = DoEUtilsSearch(eutils, "pubmed", term);
-
-            if (pmid == 0) {
+            if (pmid == ZERO_ENTREZ_ID) {
                 pmid = DoEUtilsSearch(eutils, "pmc", term);
-                if (pmid) {
+                if (pmid != ZERO_ENTREZ_ID) {
                     pmid = ConvertPMCtoPMID(pmid);
                 }
             }
         } catch (...) {
-            pmid = 0;
+            pmid = ZERO_ENTREZ_ID;
         }
     }
 
-    if (pmid == 0) {
+    if (pmid == ZERO_ENTREZ_ID) {
         pmid = DoHydraSearch(hydra_search, data);
     }
 
-    if (pmid) {
-
+    if (pmid != ZERO_ENTREZ_ID) {
         CNcbiStrstream asnPubMedEntry;
 
-        vector<int> uids;
+        vector<TEntrezId> uids;
         uids.push_back(pmid);
-        pmid = 0;
+        pmid = ZERO_ENTREZ_ID;
 
         try {
             eutils.Fetch("PubMed", uids, asnPubMedEntry, "asn.1");
@@ -973,7 +970,7 @@ static void ReportJournal(CNcbiOstream& out, const char* prefix, const CPubData&
     }
 }
 
-static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, const CPubData& data, int pmid)
+static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, const CPubData& data, TEntrezId pmid)
 {
     CPubData pubmed_data;
     CollectDataArt(pubmed_cit_art, pubmed_data);
@@ -983,7 +980,7 @@ static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, cons
         AuthorNameMatch authors_cmp_res = CompareAuthors(pubmed_data.GetAuthors(), data.GetAuthors());
         bool            title_same      = NStr::EqualNocase(pubmed_data.GetFullTitle(), data.GetFullTitle());
 
-        out << "PMID " << pmid << '\t';
+        out << "PMID " << ENTREZ_ID_TO(int, pmid) << '\t';
         ReportSeqIds(out, data.GetSeqIds());
 
         if (data.GetUnique().empty()) {
@@ -1018,7 +1015,7 @@ static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, cons
         out << '\t';
         ReportJournal(out, "NEW_JOUR ", pubmed_data);
 
-        out << " <" << pmid << '>';
+        out << " <" << ENTREZ_ID_TO(int, pmid) << '>';
         out << '\n';
     }
 }
@@ -1028,8 +1025,8 @@ void CUnpublishedReport::CompleteReport()
     m_out << "Trying " << m_pubs.size() << " Entrez Queries\n\n";
     for (const auto& pub : m_pubs) {
         CPubmed_entry pubmed_entry;
-        int           pmid = RetrievePMid(*pub, pubmed_entry);
-        if (pmid) {
+        TEntrezId     pmid = RetrievePMid(*pub, pubmed_entry);
+        if (pmid != ZERO_ENTREZ_ID) {
             _ASSERT(pubmed_entry.IsSetMedent() && pubmed_entry.GetMedent().IsSetCit() && "MedEntry and MedEntry.Cit should be present at this point");
             ReportOnePub(m_out, pubmed_entry.GetMedent().GetCit(), *pub, pmid);
         }
