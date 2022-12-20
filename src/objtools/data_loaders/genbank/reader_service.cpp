@@ -332,7 +332,7 @@ void CReaderServiceConnector::x_SetTimeoutTo(STimeout* tmout,
                                              double timeout)
 {
     tmout->sec = unsigned(timeout);
-    tmout->usec = unsigned((timeout-tmout->sec)*1e9);
+    tmout->usec = unsigned((timeout-tmout->sec)*1e6);
 }
 
 
