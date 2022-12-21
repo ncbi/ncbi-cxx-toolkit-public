@@ -34,6 +34,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistl.hpp>
 
 #if 0
 #define DEBUG_MAKE_CONST_MAP(name)                                                          \
