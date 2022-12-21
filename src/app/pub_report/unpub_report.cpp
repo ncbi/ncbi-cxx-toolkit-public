@@ -55,6 +55,11 @@
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/medline/Medline_si.hpp>
 
+#include <objtools/eutils/efetch/PubmedArticle.hpp>
+#include <objtools/eutils/efetch/PubmedArticleSet.hpp>
+#include <objtools/eutils/efetch/PubmedBookArticle.hpp>
+#include <objtools/eutils/efetch/PubmedBookArticleSet.hpp>
+
 #include <connect/ncbi_conn_stream.hpp>
 
 #include "utils.hpp"
@@ -770,21 +775,33 @@ TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data, CRef<CPubmed_en
 
     if (pmid != ZERO_ENTREZ_ID) {
         CNcbiStrstream asnPubMedEntry;
+        eutils::CPubmedArticleSet pas;
 
         vector<TEntrezId> uids;
         uids.push_back(pmid);
         pmid = ZERO_ENTREZ_ID;
 
         try {
-            eutils.Fetch("PubMed", uids, asnPubMedEntry, "asn.1");
+            eutils.Fetch("PubMed", uids, asnPubMedEntry, "xml");
             if (asnPubMedEntry) {
-                pubmed_entry.Reset(new CPubmed_entry);
-                asnPubMedEntry >> MSerial_AsnText >> *pubmed_entry;
+                asnPubMedEntry >> MSerial_Xml >> pas;
             }
         } catch (CException& e) {
             // skips exceptions those may occur during Fetch(...) and '>>'
             ERR_POST(Warning << "failed while fetching data from PubMed: " << e);
             return ZERO_ENTREZ_ID;
+        }
+
+        const auto& pp = pas.GetPP().GetPP();
+        if (! pp.empty()) {
+            const auto& ppf = *pp.front();
+            if (ppf.IsPubmedArticle()) {
+                const eutils::CPubmedArticle& article = ppf.GetPubmedArticle();
+                pubmed_entry.Reset(article.ToPubmed_entry());
+            } else if (ppf.IsPubmedBookArticle()) {
+                const eutils::CPubmedBookArticle& article = ppf.GetPubmedBookArticle();
+                pubmed_entry.Reset(article.ToPubmed_entry());
+            }
         }
 
         if (pubmed_entry && pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit()) {
