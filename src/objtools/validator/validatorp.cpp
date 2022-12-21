@@ -1499,6 +1499,7 @@ bool CValidError_imp::Validate
             case CBioseq_set::eClass_eco_set:
                 {
                     bool not_all_autodef = false;
+                    bool not_same_autodef = false;
                     bool has_any_autodef = false;
                     CConstRef<CUser_object> first_autodef;
                     for (auto se : set.GetSeq_set()) {
@@ -1516,6 +1517,8 @@ bool CValidError_imp::Validate
                                             has_any_autodef = true;
                                             if (! first_autodef) {
                                                 first_autodef = aduo;
+                                            } else if (! first_autodef->Equals(*aduo)) {
+                                                not_same_autodef = true;
                                             }
                                         } else {
                                             has_autodef = false;
@@ -1532,6 +1535,8 @@ bool CValidError_imp::Validate
                                     has_any_autodef = true;
                                     if (! first_autodef) {
                                         first_autodef = aduo;
+                                    } else if (! first_autodef->Equals(*aduo)) {
+                                        not_same_autodef = true;
                                     }
                                 } else {
                                     has_autodef = false;
@@ -1545,6 +1550,11 @@ bool CValidError_imp::Validate
                     if (not_all_autodef && has_any_autodef) {
                         PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingAutodef,
                             "Not all pop/phy/mut/eco set components have an autodef user object",
+                            set);
+                    }
+                    if (not_same_autodef && has_any_autodef) {
+                        PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentAutodef,
+                            "Inconsistent autodef user objects in pop/phy/mut/eco set",
                             set);
                     }
                 }
