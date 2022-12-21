@@ -985,6 +985,25 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
 }
 
 
+static void s_RemoveGenBankDbxrefs(list<CRef<CSeq_feat>>& ftable)
+{
+    for (auto pFeat : ftable) {
+        if (pFeat->IsSetDbxref()) {
+            auto& dbxrefs = pFeat->SetDbxref();
+            auto it = remove_if(dbxrefs.begin(), dbxrefs.end(),
+                [](const CRef<CDbtag>& pDbtag) {
+                return(pDbtag && pDbtag->IsSetDb() && 
+                        NStr::EqualNocase(pDbtag->GetDb(), "GenBank"));
+                });
+            dbxrefs.erase(it, dbxrefs.end());
+            if (dbxrefs.empty()) {
+                pFeat->ResetDbxref();
+            }
+        }
+    }
+}
+
+
 void CMultiReader::x_PostProcessAnnots(TAnnots& annots) const
 {
     unsigned int startingLocusTagNumber = 1;
@@ -992,10 +1011,12 @@ void CMultiReader::x_PostProcessAnnots(TAnnots& annots) const
     for (auto it = annots.begin(); it != annots.end(); ++it) {
 
         auto& annot = **it;
-        const auto& data = annot.GetData();
+        auto& data = annot.SetData();
         if (!data.IsFtable()  ||  data.GetFtable().empty()) {
             continue; // all that follows applies to feature tables only
         }
+
+        s_RemoveGenBankDbxrefs(data.SetFtable()); // RW-1861
 
         edit::CFeatTableEdit fte(
             annot, 0, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
