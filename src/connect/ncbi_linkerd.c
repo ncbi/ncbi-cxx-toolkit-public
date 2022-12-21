@@ -180,7 +180,9 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
 
     /* Host:port */
-    if (!(host = SOCK_gethostbyname(net_info->host))
+    if (!(host = SOCK_gethostbynameEx(net_info->host,
+                                      net_info->debug_printout
+                                      == eDebugPrintout_Data ? eOn : eDefault))
         ||  !SOCK_HostPortToString(host, net_info->port,
                                    hostport, sizeof(hostport))) {
         CORE_LOGF_X(host ? eLSub_TooLong : eLSub_BadData, eLOG_Error,
@@ -436,9 +438,9 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
     /* N.B. Proxy configuration (including 'http_proxy' env. var. detected and
        parsed by the toolkit) may be used to override the default host:port for
        Linkerd.  But connections via Linkerd should be made directly to the
-       Linkerd host:port as the authority part of the URL, not by using the
+       Linkerd's host:port as the authority part of the URL, not by using the
        proxy settings.  Therefore, this code sets 'net_info->host', not
-       'net_info->http_proxy_host' (same for port). */
+       'net_info->http_proxy_host' (and same for port). */
     if (!net_info->http_proxy_host[0]  ||
         !net_info->http_proxy_port     ||
         !net_info->http_proxy_only) {
@@ -456,8 +458,7 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
             ||  NCBI_HasSpaces(net_info->host, strlen(net_info->host))) {
             CORE_LOGF_X(eLSub_BadData, eLOG_Error,
                         ("[%s]  %s LINKERD host \"%s\"", iter->name,
-                         net_info->http_proxy_host[0] ? "Bad" : "Empty",
-                         net_info->http_proxy_host));
+                         net_info->host[0] ? "Bad" : "Empty", net_info->host));
             return 0/*failed*/;
         }
         if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
