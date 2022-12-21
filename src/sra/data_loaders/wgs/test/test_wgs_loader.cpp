@@ -690,7 +690,7 @@ void sx_CheckSeq(CScope& scope,
 void sx_ReportState(const CBioseq_Handle& bsh, const CSeq_id_Handle& idh)
 {
     if ( !bsh ) {
-        cerr << "failed to find sequence: " << idh << endl;
+        cerr << "no sequence: " << idh << endl;
         CBioseq_Handle::TBioseqStateFlags flags = bsh.GetState();
         if (flags & CBioseq_Handle::fState_suppress_temp) {
             cerr << "  suppressed temporarily" << endl;
@@ -2722,6 +2722,8 @@ BOOST_AUTO_TEST_CASE(FetchIndex2)
 
 BOOST_AUTO_TEST_CASE(TestReplaced)
 {
+    bool config_keep_replaced = true;
+    
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
     CScope scope(*om);
 
@@ -2730,7 +2732,7 @@ BOOST_AUTO_TEST_CASE(TestReplaced)
     CBioseq_Handle bh;
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ABAJ01000001"));
-    BOOST_CHECK(!bh);
+    BOOST_CHECK_EQUAL(bool(bh), config_keep_replaced);
 
     sx_InitGBLoader(*om);
     scope.AddDataLoader("GBLOADER");
