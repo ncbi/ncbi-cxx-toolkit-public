@@ -112,10 +112,10 @@ static void EmblSegment(ParserPtr pp)
 // LCOV_EXCL_STOP
 
 /**********************************************************/
-static Uint1 em_err_field(const char* str)
+static bool em_err_field(const char* str)
 {
     ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "No %s in Embl format file, entry dropped", str);
-    return (1);
+    return true;
 }
 
 /**********************************************************/
@@ -127,7 +127,7 @@ static void ParseEmblVersion(IndexblkPtr entry, char* line)
     p = StringRChr(line, '.');
     if (! p) {
         ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in SV line.");
-        entry->drop = 1;
+        entry->drop = true;
         return;
     }
     *p++ = '\0';
@@ -135,18 +135,18 @@ static void ParseEmblVersion(IndexblkPtr entry, char* line)
         q++;
     if (*q != '\0') {
         ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in SV line: \"%s\".", p);
-        entry->drop = 1;
+        entry->drop = true;
         return;
     }
     if (StringCmp(entry->acnum, line) != 0) {
         ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in SV and AC lines don't match: \"%s\" vs \"%s\".", line, entry->acnum);
-        entry->drop = 1;
+        entry->drop = true;
         return;
     }
     entry->vernum = atoi(p);
     if (entry->vernum < 1) {
         ErrPostEx(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"%s.%d\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
-        entry->drop = 1;
+        entry->drop = true;
     }
 }
 
@@ -270,7 +270,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 } else if (StringEquN(finfo.str, keywordId.c_str(), keywordId.size())) {
                     if (after_ID) {
                         ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
-                        entry->drop = 1;
+                        entry->drop = true;
                         break;
                     }
                     after_ID = true;
@@ -284,13 +284,13 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 }
                 if (after_SQ && isalpha(finfo.str[0]) != 0) {
                     ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
-                    entry->drop = 1;
+                    entry->drop = true;
                     break;
                 }
                 if (StringEquN(finfo.str, keywordNi.c_str(), 2)) {
                     if (after_NI) {
                         ErrPostStr(SEV_ERROR, ERR_FORMAT_Multiple_NI, "Multiple NI lines in the entry, entry dropped");
-                        entry->drop = 1;
+                        entry->drop = true;
                         break;
                     }
                     after_NI = true;
@@ -307,11 +307,11 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     StringEquN(finfo.str, keywordSv.c_str(), keywordSv.size())) {
                     if (entry->embl_new_ID) {
                         ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"SV\" is not allowed in conjunction with the new format of \"ID\" line. Entry dropped.");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else {
                         if (after_SV) {
                             ErrPostStr(SEV_FATAL, ERR_FORMAT_Multiple_SV, "Multiple SV lines in the entry");
-                            entry->drop = 1;
+                            entry->drop = true;
                             break;
                         }
                         after_SV = true;
@@ -345,7 +345,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                         after_AC = true;
                         if (GetAccession(pp, finfo.str, entry, 2) == false)
                             pp->num_drop++;
-                    } else if (entry->drop == 0 &&
+                    } else if (! entry->drop &&
                                GetAccession(pp, finfo.str, entry, 1) == false)
                         pp->num_drop++;
                 } else if (StringEquN(finfo.str, keywordDt.c_str(), keywordDt.size())) {
@@ -363,7 +363,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
                 if (finfo.str[0] != ' ' && finfo.str[0] != '\t') {
                     if (CheckLineType(finfo.str, finfo.line, checkedEmblKeywords, false) == false)
-                        entry->drop = 1;
+                        entry->drop = true;
                 }
             } /* while, end of one entry */
 
@@ -374,10 +374,10 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
             entry->is_tpa_wgs_con = (entry->is_contig && entry->is_wgs && entry->is_tpa);
 
-            if (entry->drop != 1) {
+            if (! entry->drop) {
                 if (after_AC == false) {
                     ErrPostStr(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No AC in Embl format file, entry dropped");
-                    entry->drop = 1;
+                    entry->drop = true;
                 }
 
                 if (after_ID == false)
@@ -402,7 +402,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 if (after_SQ == false && entry->is_contig == false)
                     entry->drop = em_err_field("Sequence data");
             }
-            if (entry->drop != 1 && pp->accver) {
+            if (! entry->drop && pp->accver) {
                 ParseEmblVersion(entry, line_sv);
             }
             if (line_sv) {

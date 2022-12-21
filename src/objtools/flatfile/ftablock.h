@@ -182,8 +182,8 @@ struct Indexblk {
                                                number */
     size_t linenum = 0;     /* line number at which the entry
                                                starts */
-    Uint1  drop    = 0;     /* 1 if the accession should be
-                                               dropped, otherwise 0 */
+    bool   drop    = false; /* True if the accession should be
+                                               dropped, otherwise False */
     size_t len     = 0;     /* total length (or sizes in bytes)
                                                of the entry */
 

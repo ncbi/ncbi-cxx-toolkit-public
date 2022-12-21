@@ -144,22 +144,22 @@ static void CkSegmentSet(ParserPtr pp)
                 pp->entrylist[j]->segtotal = 0;
 
                 if (pp->debug == false)
-                    pp->entrylist[j]->drop = 1;
+                    pp->entrylist[j]->drop = true;
             }
         }    /* if, flag */
-        else /* assign all drop = 0 if they have "mix ownership" */
+        else /* assign all drop = false if they have "mix ownership" */
         {
             for (j = bindx, drop = notdrop = false; j < i; j++) {
-                if (pp->entrylist[j]->drop == 0)
-                    notdrop = true;
-                else
+                if (pp->entrylist[j]->drop)
                     drop = true;
+                else
+                    notdrop = true;
             }
 
             if (drop && notdrop) /* mix ownership */
             {
                 for (j = bindx; j < i; j++)
-                    pp->entrylist[j]->drop = 0;
+                    pp->entrylist[j]->drop = false;
                 if (drop)
                     pp->num_drop--;
             }
@@ -276,11 +276,11 @@ static void CheckDupEntries(ParserPtr pp)
 
     for (i = 0; i < pp->indx; i++) {
         first = tibp[i];
-        if (first->drop != 0)
+        if (first->drop)
             continue;
         for (j = i + 1; j < pp->indx; j++) {
             second = tibp[j];
-            if (second->drop != 0)
+            if (second->drop)
                 continue;
             if (StringCmp(first->acnum, second->acnum) < 0)
                 break;
@@ -296,22 +296,22 @@ static void CheckDupEntries(ParserPtr pp)
             if (dtm == CDate::eCompare_before) {
                 /* 2 after 1 take 2 remove 1
                  */
-                first->drop = 1;
+                first->drop = true;
                 ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry with a later update date", first->acnum, first->locusname);
             } else if (dtm == CDate::eCompare_same) {
                 if (first->offset > second->offset) {
                     /* 1 larger than 2 take 1 remove 2
                      */
-                    second->drop = 1;
+                    second->drop = true;
                     ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry located at a larger byte offset", second->acnum, second->locusname);
                 } else /* take 2 remove 1 */
                 {
-                    first->drop = 1;
+                    first->drop = true;
                     ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry located at a larger byte offset", first->acnum, first->locusname);
                 }
             } else /* take 1 remove 2 */
             {
-                second->drop = 1;
+                second->drop = true;
                 ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry with a later update date", second->acnum, second->locusname);
             }
         }

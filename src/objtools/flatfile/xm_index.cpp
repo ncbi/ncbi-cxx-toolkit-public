@@ -258,7 +258,7 @@ static bool XMLDelSegnum(IndexblkPtr ibp, const char* segnum, size_t len2)
     i = atoi(segnum);
     if (atoi(p) != (int)i) {
         ErrPostEx(SEV_REJECT, ERR_SEGMENT_BadLocusName, "Segment suffix in locus name \"%s\" does not match number in <INSDSEQ_segment> line = \"%d\". Entry dropped.", str, i);
-        ibp->drop = 1;
+        ibp->drop = true;
     }
 
     *q = '\0'; /* strip off "len" characters */
@@ -479,7 +479,7 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
 
     if (! line) {
         ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine, "Empty <INSDSeq_accession-version> line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -487,27 +487,27 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
         p++;
     if (*p != '\0') {
         ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine, "Incorrect <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
     q = StringRChr(line, '.');
     if (! q) {
         ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing version number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
     for (p = q + 1; *p >= '0' && *p <= '9';)
         p++;
     if (*p != '\0') {
         ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
     *q = '\0';
     if (StringCmp(ibp->acnum, line) != 0) {
         *q = '.';
         ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.", line, ibp->acnum);
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
     *q++        = '.';
@@ -517,7 +517,7 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
         return;
 
     ErrPostEx(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"%s.%d\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
-    ibp->drop = 1;
+    ibp->drop = true;
 }
 
 /**********************************************************/
@@ -785,7 +785,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
     if (! xip->subtags) {
         p = (char*)XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
-        ibp->drop = 1;
+        ibp->drop = true;
         return false;
     }
 
@@ -832,7 +832,7 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     if (! xip->subtags) {
         p = (char*)XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
-        ibp->drop = 1;
+        ibp->drop = true;
         return false;
     }
 
@@ -1440,24 +1440,24 @@ bool XMLIndex(ParserPtr pp)
         ibp = *ibpp;
         if (ibp->len == 0) {
             ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end tag of XML record, which starts at line %d. Entry dropped.", ibp->linenum);
-            ibp->drop = 1;
+            ibp->drop = true;
             continue;
         }
         entry = XMLLoadEntry(pp, true);
         if (! entry) {
             ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "Failed ro read entry from file, which starts at line %d. Entry dropped.", ibp->linenum);
-            ibp->drop = 1;
+            ibp->drop = true;
             continue;
         }
 
         XMLInitialEntry(ibp, entry, pp->accver, pp->source);
-        if (ibp->drop != 0) {
+        if (ibp->drop) {
             MemFree(entry);
             continue;
         }
         if (XMLTagCheck(ibp->xip, xmkwl) == false) {
             ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted XML record. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             MemFree(entry);
             continue;
         }
@@ -1467,7 +1467,7 @@ bool XMLIndex(ParserPtr pp)
         }
         XMLGetSegment(entry, ibp);
         if (XMLCheckRequiredTags(pp, ibp) == false) {
-            ibp->drop = 1;
+            ibp->drop = true;
             MemFree(entry);
             continue;
         }
@@ -1477,7 +1477,7 @@ bool XMLIndex(ParserPtr pp)
         }
         if (XMLIndexFeatures(entry, ibp->xip) == false ||
             XMLIndexReferences(entry, ibp->xip, ibp->bases) == false) {
-            ibp->drop = 1;
+            ibp->drop = true;
             MemFree(entry);
             continue;
         }
@@ -1486,7 +1486,7 @@ bool XMLIndex(ParserPtr pp)
 
     pp->num_drop = 0;
     for (auto ibpp = pp->entrylist.begin(); ibpp != pp->entrylist.end(); ++ibpp)
-        if ((*ibpp)->drop != 0)
+        if ((*ibpp)->drop)
             pp->num_drop++;
 
     if (pp->indx > 0)

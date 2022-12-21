@@ -1350,7 +1350,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
             if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
                 if (! allow_uwsec) {
                     ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". WGS/TSA/TLS records are not currently allowed to replace finished sequence records, scaffolds, etc. without human review and confirmation.", p);
-                    ibp->drop = 1;
+                    ibp->drop = true;
                 } else {
                     ErrPostEx(SEV_WARNING, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". This is being allowed via the use of a special parser flag.", p);
                 }
@@ -1369,7 +1369,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
             if (source != Parser::ESource::EMBL && source != Parser::ESource::DDBJ &&
                 source != Parser::ESource::Refseq) {
                 ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSMasterAsSecondary, "WGS/TSA/TLS master accession \"%s\" is not allowed to be used as a secondary accession number.", p);
-                ibp->drop = 1;
+                ibp->drop = true;
             }
             continue;
         }
@@ -1381,7 +1381,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
             if (! StringEquN(p, ibp->acnum, i)) {
                 if (! allow_uwsec) {
                     ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
-                    ibp->drop = 1;
+                    ibp->drop = true;
                 } else if (! is_cp || source != Parser::ESource::NCBI) {
                     ErrPostEx(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA project is being replaced (either by another project or by finished sequence). This is being allowed via the use of a special parser flag.");
                 }
@@ -1392,7 +1392,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                                                                    contig */
             {
                 ErrPostEx(SEV_REJECT, ERR_ACCESSION_ScfldHasWGSContigSec, "This record, which appears to be a scaffold, has one or more WGS/TSA/TLS contig accessions as secondary. Currently, it does not make sense for a contig to replace a scaffold.");
-                ibp->drop = 1;
+                ibp->drop = true;
             }
         } else if (unusual_wgs_msg) {
             if (! allow_uwsec) {
@@ -1404,7 +1404,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                     ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "%s. This is not allowed without human review and confirmation.", text);
                 }
                 unusual_wgs = true;
-                ibp->drop   = 1;
+                ibp->drop   = true;
             } else if (! is_cp || source != Parser::ESource::NCBI) {
                 if (! unusual_wgs) {
                     if (sec_acc == 1 || sec_acc == 5 || sec_acc == 11)
@@ -1721,12 +1721,12 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
                     ErrPostEx(SEV_REJECT, ERR_SEQUENCE_TooShort, "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
                 else
                     ErrPostEx(SEV_REJECT, ERR_SEQUENCE_TooShortIsPatent, "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
-                ibp->drop = 1;
+                ibp->drop = true;
             }
         }
         if (seqlen == static_cast<Uint4>(numns)) {
             ErrPostEx(SEV_REJECT, ERR_SEQUENCE_AllNs, "This nucleotide sequence for this record contains nothing but unknown (N) basepairs.");
-            ibp->drop = 1;
+            ibp->drop = true;
         }
     }
 
@@ -2176,7 +2176,7 @@ static void SrchSegDescr(TEntryList& entries, CSeq_descr& descr)
 }
 
 /**********************************************************/
-static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr headsep*/, unsigned char* drop)
+static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr headsep*/, bool* drop)
 {
     if (entries.empty())
         return;
@@ -2270,12 +2270,12 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
 
     if (bad_dblink) {
         ErrPostEx(SEV_REJECT, ERR_SEGMENT_DBLinkMissingOrNonUnique, "One or more member of segmented set has missing or non-unique DBLink user-object. Entry dropped.");
-        *drop = 1;
+        *drop = true;
     }
 
     if (bad_gpid) {
         ErrPostEx(SEV_REJECT, ERR_SEGMENT_GPIDMissingOrNonUnique, "One or more member of segmented set has missing or non-unique GPID user-object. Entry dropped.");
-        *drop = 1;
+        *drop = true;
     }
 
     if (bad_gpid || bad_dblink ||
@@ -2296,7 +2296,7 @@ static void GetSegSetDblink(CSeq_descr& descr, TEntryList& entries /*SeqEntryPtr
  *                                              1-20-16
  *
  **********************************************************/
-static void GetBioseqSetDescr(TEntryList& entries, CSeq_descr& descr, unsigned char* drop)
+static void GetBioseqSetDescr(TEntryList& entries, CSeq_descr& descr, bool* drop)
 {
     SrchSegDescr(entries, descr); /* get from ASN.1 tree */
     GetSegSetDblink(descr, entries, drop);
