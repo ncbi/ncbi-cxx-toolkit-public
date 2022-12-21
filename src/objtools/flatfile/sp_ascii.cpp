@@ -723,7 +723,7 @@ static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, ch
  *                                              10-1-93
  *
  **********************************************************/
-static void MakePDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, const char* rel, char* chain, unsigned char* drop, Parser::ESource source)
+static void MakePDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, const char* rel, char* chain, bool* drop, Parser::ESource source)
 {
     if (! mol)
         return;
@@ -1860,7 +1860,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
  *      Also need to delete duplicated DR line.
  *
  **********************************************************/
-static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* drop, Parser::ESource source)
+static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, bool* drop, Parser::ESource source)
 {
     ValNodePtr   embl_vnp;
     ValNodePtr   acc_list      = nullptr;
@@ -1908,7 +1908,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
     embl_vnp        = embl_acc_list;
     check_embl_prot = false;
     for (ptr = str;;) {
-        if (*drop != 0)
+        if (*drop)
             break;
         ptr = StringChr(ptr, '\n');
         if (! ptr)
@@ -2120,7 +2120,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, unsigned char* dro
 
     if (pdbold && pdbnew) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_MixedPDBXrefs, "Both old and new types of PDB cross-references exist on this record. Only one style is allowed.");
-        *drop = 1;
+        *drop = true;
     }
 
     if (pdbnew && spb.SetSeqref().size() > 1)
@@ -2342,7 +2342,7 @@ GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     GetDRlineDataSP(entry, *spb, &ibp->drop, pp->source);
 
     if (! i)
-        ibp->drop = 1;
+        ibp->drop = true;
     else if (spb->GetClass() == CSP_block::eClass_standard ||
              spb->GetClass() == CSP_block::eClass_prelim) {
         for (auto& cur_id : bioseq.SetId()) {
@@ -2728,11 +2728,10 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
                     continue;
                 }
 
-                unsigned char drop = 0;
-
+                bool drop = false;
                 CRef<COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, tvhp->taxid, &drop, true);
                 if (org_ref_cur.Empty()) {
-                    if (drop == 0)
+                    if (! drop)
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "OH-line TaxId \"%d\" was not found via the NCBI TaxArch service.", TAX_ID_TO(int, tvhp->taxid));
                     else
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"%d\" failed.", TAX_ID_TO(int, tvhp->taxid));
@@ -3943,7 +3942,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
         if (StringEquNI(p, "Name=", 5)) {
             if (name) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Name=\" occurs multiple times within a GN line. Entry dropped.");
-                ibp->drop = 1;
+                ibp->drop = true;
                 break;
             }
             p += 5;
@@ -3952,7 +3951,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
         } else if (StringEquNI(p, "Synonyms=", 9)) {
             if (syns) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Synonyms=\" occurs multiple times within a GN line. Entry dropped.");
-                ibp->drop = 1;
+                ibp->drop = true;
                 break;
             }
             p += 9;
@@ -3961,7 +3960,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
         } else if (StringEquNI(p, "OrderedLocusNames=", 18)) {
             if (ltags) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"OrderedLocusNames=\" occurs multiple times within a GN line. Entry dropped.");
-                ibp->drop = 1;
+                ibp->drop = true;
                 break;
             }
             p += 18;
@@ -3970,7 +3969,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
         } else if (StringEquNI(p, "ORFNames=", 9)) {
             if (orfs) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"ORFNames=\" occurs multiple times within a GN line. Entry dropped.");
-                ibp->drop = 1;
+                ibp->drop = true;
                 break;
             }
             p += 9;
@@ -3996,7 +3995,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             orfs  = nullptr;
         } else {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_UnknownGeneField, "Field \"%s\" is not a legal field for the GN linetype. Entry dropped.", p);
-            ibp->drop = 1;
+            ibp->drop = true;
             break;
         }
     }
@@ -4006,7 +4005,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
     if (! name && ! syns && ! ltags && ! orfs)
         return;
 
-    if (ibp->drop == 1) {
+    if (ibp->drop) {
         SPFreeGenRefTokens(name, syns, ltags, orfs);
         return;
     }
@@ -4152,7 +4151,7 @@ static void SPCollectProtNames(SPDEFieldsPtr sfp, CProt_ref& prot, Int4 tag)
 }
 
 /**********************************************************/
-static void SPValidateDefinition(SPDEFieldsPtr sfp, Uint1* drop, bool is_trembl)
+static void SPValidateDefinition(SPDEFieldsPtr sfp, bool* drop, bool is_trembl)
 {
     SPDEFieldsPtr tsfp;
     Int4          rcount;
@@ -4182,20 +4181,20 @@ static void SPValidateDefinition(SPDEFieldsPtr sfp, Uint1* drop, bool is_trembl)
 
     if (rcount > 1) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_MultipleRecName, "This UniProt record has multiple RecName protein-name categories, but only one is allowed. Entry dropped.");
-        *drop = 1;
+        *drop = true;
     } else if (rcount == 0 && ! is_trembl) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_MissingRecName, "This UniProt/Swiss-Prot record lacks required RecName protein-name categorie. Entry dropped.");
-        *drop = 1;
+        *drop = true;
     }
 
     if (scount > 0 && ! is_trembl) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_SwissProtHasSubName, "This UniProt/Swiss-Prot record includes a SubName protein-name category, which should be used only for UniProt/TrEMBL. Entry dropped.");
-        *drop = 1;
+        *drop = true;
     }
 
     if (fcount == 0 && rcount > 0) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_MissingFullRecName, "This UniProt record lacks a Full name in the RecName protein-name category.");
-        *drop = 1;
+        *drop = true;
     }
 }
 
@@ -4407,7 +4406,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     if (StringEquNI(str, "Contains: ", 10) ||
         StringEquNI(str, "Includes: ", 10)) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_NoProteinNameCategory, "DE lines do not have a non-Includes/non-Contains RecName, AltName or SubName protein name category. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
     }
 
     if (StringEquNI(str, "RecName: ", 9) ||
@@ -4882,7 +4881,7 @@ bool SprotAscii(ParserPtr pp)
 
         err_install(ibp, pp->accver);
 
-        if (ibp->drop != 1) {
+        if (! ibp->drop) {
             entry = LoadEntry(pp, ibp->offset, ibp->len);
             if (! entry) {
                 FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
@@ -4891,7 +4890,7 @@ bool SprotAscii(ParserPtr pp)
 
             SpPrepareEntry(pp, entry, protconv.get());
 
-            if (ibp->drop != 1) {
+            if (! ibp->drop) {
                 CRef<CSeq_entry>& cur_entry = (static_cast<EntryBlk*>(entry->mpData))->seq_entry;
                 pp->entries.push_back(cur_entry);
 
@@ -4899,7 +4898,7 @@ bool SprotAscii(ParserPtr pp)
             }
             // delete entry;
         }
-        if (ibp->drop != 1) {
+        if (! ibp->drop) {
             total++;
             ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry \"%s|%s\" parsed successfully", ibp->locusname, ibp->acnum);
         } else {

@@ -1724,7 +1724,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 
             string prot;
             if (! Translate(feat, prot))
-                pp->entrylist[pp->curindx]->drop = 1;
+                pp->entrylist[pp->curindx]->drop = true;
 
             if (prot.empty())
                 continue;
@@ -1761,7 +1761,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 
     string prot;
     if (! Translate(feat, prot))
-        pp->entrylist[pp->curindx]->drop = 1;
+        pp->entrylist[pp->curindx]->drop = true;
 
     if (cur_code)
         sprintf(gcode_str, "%d", (int)cur_code->GetId());
@@ -2353,7 +2353,7 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
         if (loc.IsEmpty() || loc.IsEquiv() || loc.IsBond()) {
             string loc_str = location_to_string(loc);
             ErrPostEx(SEV_REJECT, ERR_CDREGION_BadLocForTranslation, "Coding region feature has a location that cannot be processed: \"%s\".", loc_str.c_str());
-            pp->entrylist[pp->curindx]->drop = 1;
+            pp->entrylist[pp->curindx]->drop = true;
             break;
         }
 
@@ -2365,7 +2365,7 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
         }
 
         if (i == -1) {
-            pp->entrylist[pp->curindx]->drop = 1;
+            pp->entrylist[pp->curindx]->drop = true;
             break;
         }
 
@@ -2562,7 +2562,7 @@ void ProcNucProt(ParserPtr pp, TEntryList& seq_entries, GeneRefFeats& gene_refs)
 
     FindCd(seq_entries, GetScope(), pp, gene_refs);
 
-    if (pp->entrylist[pp->curindx]->drop == 1) {
+    if (pp->entrylist[pp->curindx]->drop) {
         ProtBlkFree(pbp);
         seq_entries.clear();
         return;

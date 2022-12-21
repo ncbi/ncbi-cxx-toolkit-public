@@ -1261,7 +1261,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
     if (! err)
         return;
 
-    ibp->drop = 1;
+    ibp->drop = true;
     feats.clear();
 }
 
@@ -2481,7 +2481,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
     }
 
     if (! fta_check_evidence(*feat, fbp)) {
-        pp->entrylist[pp->curindx]->drop = 1;
+        pp->entrylist[pp->curindx]->drop = true;
         return feat;
     }
 
@@ -2757,7 +2757,7 @@ private:
     string qual_;
 };
 
-static void fta_check_multiple_locus_tag(DataBlkPtr dbp, unsigned char* drop)
+static void fta_check_multiple_locus_tag(DataBlkPtr dbp, bool* drop)
 {
     FeatBlkPtr fbp;
     Char       ch;
@@ -2779,13 +2779,13 @@ static void fta_check_multiple_locus_tag(DataBlkPtr dbp, unsigned char* drop)
         ErrPostEx(SEV_REJECT, ERR_FEATURE_MultipleLocusTags, "Multiple /locus_tag values for \"%s\" feature at \"%s\".", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
         if (ch != '\0')
             fbp->location[50] = ch;
-        *drop = 1;
+        *drop = true;
         break;
     }
 }
 
 /**********************************************************/
-static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
+static void fta_check_old_locus_tags(DataBlkPtr dbp, bool* drop)
 {
     Int4 i;
 
@@ -2804,7 +2804,7 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
 
         if (lt == 0) {
             ErrPostEx(SEV_REJECT, ERR_FEATURE_OldLocusTagWithoutNew, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier but lacks a /locus_tag qualifier. Entry dropped.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
-            *drop = 1;
+            *drop = true;
         } else {
             i = 0;
             for (const auto& gbqp1 : fbp->quals) {
@@ -2827,7 +2827,7 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, unsigned char* drop)
                         continue;
 
                     ErrPostEx(SEV_REJECT, ERR_FEATURE_MatchingOldNewLocusTag, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier with a value that is identical to that of a /locus_tag qualifier: \"%s\". Entry dropped.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location", gbqp1_val.c_str());
-                    *drop = 1;
+                    *drop = true;
                 }
             }
         }
@@ -3070,7 +3070,7 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
     if (! dbp)
         return;
 
-    ibp->drop = 1;
+    ibp->drop = true;
     if (location && StringLen(location) > 45) {
         location[40] = '\0';
         StringCat(location, "...");
@@ -3272,7 +3272,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
     curr_gap     = 0;
     finished_gap = false;
     for (ibp->gaps = nullptr; dbp; dbp = dbp->mpNext) {
-        if (ibp->drop != 0)
+        if (ibp->drop)
             break;
         if (dbp->mType != type)
             continue;
@@ -3281,7 +3281,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
         asn_linkage_evidence.clear();
 
         for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp; tdbp = tdbp->mpNext) {
-            if (ibp->drop != 0)
+            if (ibp->drop)
                 break;
             fbp = static_cast<FeatBlk*>(tdbp->mpData);
             if (! fbp || ! fbp->key)
@@ -3363,7 +3363,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                     ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidGapLocation, "Invalid gap feature location : \"%s\" : all gap features must have a simple X..Y location on the plus strand.", fbp->location ? fbp->location : "unknown");
                 else
                     ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidAssemblyGapLocation, "Invalid assembly_gap location : \"%s\".", fbp->location ? fbp->location : "unknown");
-                ibp->drop = 1;
+                ibp->drop = true;
                 break;
             }
 
@@ -3396,7 +3396,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
 
                 if (! gap_type) {
                     ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MissingGapType, "assembly_gap feature at \"%d..%d\" lacks the required /gap_type qualifier.", from, to);
-                    ibp->drop = 1;
+                    ibp->drop = true;
                     break;
                 }
 
@@ -3405,7 +3405,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                         break;
                 if (! snp->str) {
                     ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidGapType, "assembly_gap feature at \"%d..%d\" has an invalid gap type : \"%s\".", from, to, gap_type);
-                    ibp->drop = 1;
+                    ibp->drop = true;
                     break;
                 }
                 asn_gap_type = snp->num;
@@ -3414,7 +3414,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                     (StringCmp(gap_type, "within scaffold") == 0 ||
                      StringCmp(gap_type, "repeat within scaffold") == 0)) {
                     ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MissingLinkageEvidence, "assembly_gap feature at \"%d..%d\" with gap type \"%s\" lacks a /linkage_evidence qualifier.", from, to, gap_type);
-                    ibp->drop = 1;
+                    ibp->drop = true;
                     break;
                 }
                 if (! linkage_evidence_names.empty()) {
@@ -3427,7 +3427,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                                   from,
                                   to,
                                   gap_type);
-                        ibp->drop = 1;
+                        ibp->drop = true;
                         break;
                     }
 
@@ -3442,7 +3442,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                                       from,
                                       to,
                                       evidence.c_str());
-                            ibp->drop = 1;
+                            ibp->drop = true;
                             break;
                         }
 
@@ -3458,21 +3458,21 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                     ErrPostEx(SEV_REJECT, ERR_FEATURE_AssemblyGapAndLegacyGap, "Legacy gap feature at \"%d..%d\" co-exists with a new AGP 2.0 assembly_gap feature at \"%d..%d\".", from, to, gfp->from, gfp->to);
                 else
                     ErrPostEx(SEV_REJECT, ERR_FEATURE_AssemblyGapAndLegacyGap, "Legacy gap feature at \"%d..%d\" co-exists with a new AGP 2.0 assembly_gap feature at \"%d..%d\".", gfp->from, gfp->to, from, to);
-                ibp->drop = 1;
+                ibp->drop = true;
                 break;
             }
 
             if (estimated_length == -1) /* missing qual */
             {
                 ErrPostEx(SEV_REJECT, ERR_FEATURE_RequiredQualifierMissing, "The gap feature at \"%d..%d\" lacks the required /estimated_length qualifier.", from, to);
-                ibp->drop = 1;
+                ibp->drop = true;
             } else if (estimated_length == 0) {
                 ErrPostEx(SEV_REJECT, ERR_FEATURE_IllegalEstimatedLength, "Gap feature at \"%d..%d\" has an illegal /estimated_length qualifier : \"%s\" : should be \"unknown\" or an integer.",
                           //                          from, to, gbqp->val); // at this point gbqp is definitely = NULL
                           from,
                           to,
                           "");
-                ibp->drop = 1;
+                ibp->drop = true;
             } else if (estimated_length == -100) {
                 if (is_htg >= 0 && to - from != 99) {
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownGapNot100, "Gap feature at \"%d..%d\" has /estimated_length \"unknown\" but the gap size is not 100 bases.", from, to);
@@ -3482,7 +3482,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                     sev = SEV_ERROR;
                 else {
                     sev       = SEV_REJECT;
-                    ibp->drop = 1;
+                    ibp->drop = true;
                 }
 
                 ErrPostEx(sev, ERR_FEATURE_GapSizeEstLengthMissMatch, "Gap feature at \"%d..%d\" has a size that does not match the /estimated_length : %d.", from, to, estimated_length);
@@ -3493,19 +3493,19 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                     (gfp->to >= from && gfp->to <= to) ||
                     (gfp->from <= from && gfp->to >= to)) {
                     ErrPostEx(SEV_REJECT, ERR_FEATURE_OverlappingGaps, "Gap features at \"%d..%d\" and \"%d..%d\" overlap.", from, to, gfp->from, gfp->to);
-                    ibp->drop = 1;
+                    ibp->drop = true;
                 } else if (to + 1 == gfp->from || from - 1 == gfp->to) {
                     if (pp->source == Parser::ESource::EMBL)
                         sev = SEV_ERROR;
                     else {
                         sev       = SEV_REJECT;
-                        ibp->drop = 1;
+                        ibp->drop = true;
                     }
 
                     ErrPostEx(sev, ERR_FEATURE_ContiguousGaps, "Gap features at \"%d..%d\" and \"%d..%d\" are contiguous, and should probably be represented by a single gap that spans both.", from, to, gfp->from, gfp->to);
                 }
             }
-            if (ibp->drop != 0)
+            if (ibp->drop)
                 break;
 
             gfp                   = new GapFeats;
@@ -3548,7 +3548,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 break;
             }
         }
-        if (ibp->drop != 0) {
+        if (ibp->drop) {
             linkage_evidence_names.clear();
             asn_linkage_evidence.clear();
         }
@@ -3557,7 +3557,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
     if (! ibp->gaps)
         return;
 
-    if (ibp->drop != 0) {
+    if (ibp->drop) {
         GapFeatsFree(ibp->gaps);
         ibp->gaps = nullptr;
     }
@@ -3846,7 +3846,7 @@ static void ParseQualifiers(
 
 
 /**********************************************************/
-static void fta_check_satellite(char* str, unsigned char* drop)
+static void fta_check_satellite(char* str, bool* drop)
 {
     char* p;
     Int2  i;
@@ -3863,10 +3863,10 @@ static void fta_check_satellite(char* str, unsigned char* drop)
         *p = ':';
     if (i < 0) {
         ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidSatelliteType, "/satellite qualifier \"%s\" does not begin with a valid satellite type.", str);
-        *drop = 1;
+        *drop = true;
     } else if (p && p[1] == '\0') {
         ErrPostEx(SEV_REJECT, ERR_FEATURE_NoSatelliteClassOrIdentifier, "/satellite qualifier \"%s\" does not include a class or identifier after the satellite type.", str);
-        *drop = 1;
+        *drop = true;
     }
 }
 
@@ -3878,7 +3878,7 @@ static void fta_check_satellite(char* str, unsigned char* drop)
  *   FeatBlkPtr, fbp.
  *      Put warning message if bad qualifier's value or
  *   unknown feature key found.
- *      fdbp->drop = 1, if found unknown feature key, or
+ *      fdbp->drop = true, if found unknown feature key, or
  *   do not go through 2nd time of qualifiers sematic
  *   check (i.e. drop bad qualifier if the value if illegal
  *   format in the 1st time)
@@ -4007,7 +4007,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                     if (cur_qual == "gap_type" ||
                         cur_qual == "assembly_evidence") {
                         ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key, fbp->location ? fbp->location : "Unknown");
-                        ibp->drop = 1;
+                        ibp->drop = true;
                     }
                 }
             }
@@ -4017,7 +4017,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                     const string& cur_qual = cur->GetQual();
                     if (cur_qual == "submitter_seqid") {
                         ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key, fbp->location ? fbp->location : "Unknown");
-                        ibp->drop = 1;
+                        ibp->drop = true;
                     }
                 }
             }
@@ -4504,7 +4504,7 @@ static void fta_convert_to_regulatory(FeatBlkPtr fbp, const char* rclass)
 }
 
 /**********************************************************/
-static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
+static void fta_check_replace_regulatory(DataBlkPtr dbp, bool* drop)
 {
     FeatBlkPtr   fbp;
     const char** b;
@@ -4575,7 +4575,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
                 ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidRegulatoryClass, "Empty /regulatory_class qualifier value in regulatory feature at location %s.", p);
                 if (ch != '\0')
                     p[50] = ch;
-                *drop = 1;
+                *drop = true;
                 continue;
             }
 
@@ -4604,7 +4604,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
             ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidRegulatoryClass, "Invalid /regulatory_class qualifier value %s provided in regulatory feature at location %s.", val_str.c_str(), p);
             if (ch != '\0')
                 p[50] = ch;
-            *drop = 1;
+            *drop = true;
         }
 
         if (count == 0) {
@@ -4621,7 +4621,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
             ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MissingRegulatoryClass, "The regulatory feature is missing mandatory /regulatory_class qualifier at location %s.", p);
             if (ch != '\0')
                 p[50] = ch;
-            *drop = 1;
+            *drop = true;
         } else if (count > 1) {
             ch = '\0';
             if (! fbp->location || *fbp->location == '\0')
@@ -4636,7 +4636,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
             ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MultipleRegulatoryClass, "Multiple /regulatory_class qualifiers were encountered in regulatory feature at location %s.", p);
             if (ch != '\0')
                 p[50] = ch;
-            *drop = 1;
+            *drop = true;
         }
 
         if (other_class && ! got_note) {
@@ -4653,7 +4653,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, unsigned char* drop)
             ErrPostEx(SEV_REJECT, ERR_QUALIFIER_NoNoteForOtherRegulatory, "The regulatory feature of class other is lacking required /note qualifier at location %s.", p);
             if (ch != '\0')
                 p[50] = ch;
-            *drop = 1;
+            *drop = true;
         }
     }
 }
@@ -4702,7 +4702,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
     if (seqtype == 0 || seqtype == 3 || seqtype == 4 || seqtype == 6 ||
         seqtype == 10 || seqtype == 12) {
         ErrPostEx(SEV_REJECT, ERR_SOURCE_SubmitterSeqidNotAllowed, "WGS/TLS/TSA master records are not allowed to have /submitter_seqid qualifiers, only contigs and scaffolds. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -4824,7 +4824,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
     }
 
     ErrPostEx(SEV_REJECT, ERR_SOURCE_SubmitterSeqidNotAllowed, "Only WGS/TLS/TSA related records (contigs and scaffolds) are allowed to have /submitter_seqid qualifier. This \"%s\" is not one of them. Entry dropped.", ibp->acnum);
-    ibp->drop = 1;
+    ibp->drop = true;
 }
 
 /**********************************************************
@@ -4923,18 +4923,18 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     if (i > 1 && ibp->is_mga) {
         ErrPostEx(SEV_REJECT, ERR_FEATURE_MoreThanOneCAGEFeat, "CAGE records are allowed to have only one feature, and it must be the \"source\" one. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
     }
 
-    if (ibp->drop == 0)
+    if (! ibp->drop)
         CollectGapFeats(entry, dab, pp, type);
 
     TSeqFeatList seq_feats;
-    if (ibp->drop == 0)
+    if (! ibp->drop)
         ParseSourceFeat(pp, dab, ids, type, bioseq, seq_feats);
 
     if (seq_feats.empty()) {
-        ibp->drop = 1;
+        ibp->drop = true;
         for (; dab; dab = dabnext) {
             dabnext = dab->mpNext;
             FreeFeatBlk(static_cast<DataBlk*>(dab->mpData), pp->format);
@@ -4994,14 +4994,14 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             if (feat.Empty()) {
                 if (StringCmp(fbp->key, "CDS") == 0) {
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_LocationParsing, "CDS feature has unparsable location. Entry dropped. Location = [%s].", fbp->location);
-                    ibp->drop = 1;
+                    ibp->drop = true;
                 }
                 continue;
             }
 
             if (StringCmp(fbp->key, "mobile_element") == 0 &&
                 ! fta_check_mobile_element(*feat)) {
-                ibp->drop = 1;
+                ibp->drop = true;
                 continue;
             }
 
@@ -5055,7 +5055,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (! fta_perform_operon_checks(seq_feats, ibp)) {
-        ibp->drop = 1;
+        ibp->drop = true;
         seq_feats.clear();
         xinstall_gbparse_range_func(nullptr, nullptr);
         return;
@@ -5080,14 +5080,14 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (stop) {
-        ibp->drop = 1;
+        ibp->drop = true;
         seq_feats.clear();
         xinstall_gbparse_range_func(nullptr, nullptr);
         return;
     }
 
     SeqFeatPub(pp, entry, seq_feats, ids, col_data, ibp);
-    if (seq_feats.empty() && ibp->drop != 0) {
+    if (seq_feats.empty() && ibp->drop) {
         xinstall_gbparse_range_func(nullptr, nullptr);
         return;
     }
@@ -5380,7 +5380,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
         } else {
             ErrPostEx(SEV_REJECT, ERR_SOURCE_InvalidMolType, "Invalid /mol_type value \"%s\" provided in source features. Entry dropped.", ibp->moltype.c_str());
-            ibp->drop = 1;
+            ibp->drop = true;
             if (molstr)
                 *r = c;
             return;
@@ -5389,7 +5389,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         if (! same) {
             if (ibp->embl_new_ID) {
                 ErrPostEx(SEV_REJECT, ERR_SOURCE_MolTypesDisagree, "Molecule type \"%s\" from the ID line disagrees with \"%s\" from the /mol_type qualifier.", q, ibp->moltype.c_str());
-                ibp->drop = 1;
+                ibp->drop = true;
                 if (molstr)
                     *r = c;
                 return;
@@ -5465,7 +5465,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             return;
         if (pp->source == Parser::ESource::DDBJ && StringEquNI(molstr, "PRT", 3))
             return;
-        ibp->drop = 1;
+        ibp->drop = true;
         q         = molstr;
         c         = '\0';
         if (q) {

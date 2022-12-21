@@ -2667,7 +2667,7 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
 
         resort = false;
         if (LocusTagCheck(gnp->glp, resort) == false) {
-            ibp->drop = 1;
+            ibp->drop = true;
             GeneListFree(gnp->glp);
             CdssListFree(gnp->clp);
             GeneLocsFree(gnp->gelop);
@@ -2682,7 +2682,7 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
         ScannGeneName(gnp, gnp->bioseq ? gnp->bioseq->GetLength() : 0);
 
         if (GeneLocusCheck(gnp->feats, pp->diff_lt) == false) {
-            ibp->drop = 1;
+            ibp->drop = true;
             GeneListFree(gnp->glp);
             CdssListFree(gnp->clp);
             GeneLocsFree(gnp->gelop);

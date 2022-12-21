@@ -98,13 +98,13 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 
     if (condiv && ibp->segnum != 0) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_ConDivInSegset, "Use of the CON division is not allowed for members of segmented set : %s|%s. Entry dropped.", ibp->locusname, ibp->acnum);
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
     if (! condiv && ibp->is_contig == false && ibp->origin == false) {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingSequenceData, "Required sequence data is absent. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
     } else if (! condiv && ibp->is_contig && ibp->origin == false) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_MappedtoCON, "Division [%s] mapped to CON based on the existence of <INSDSeq_contig> line.", ibp->division);
     } else if (ibp->is_contig && ibp->origin) {
@@ -112,11 +112,11 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
             ErrPostEx(SEV_INFO, ERR_FORMAT_ContigWithSequenceData, "The <INSDSeq_contig> linetype and sequence data are both present. Ignoring sequence data.");
         } else {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigWithSequenceData, "The <INSDSeq_contig> linetype and sequence data may not both be present in a sequence record.");
-            ibp->drop = 1;
+            ibp->drop = true;
         }
     } else if (condiv && ibp->is_contig == false && ibp->origin == false) {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingContigFeature, "No <INSDSeq_contig> data in XML format file. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
     } else if (condiv && ibp->is_contig == false && ibp->origin) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_ConDivLacksContig, "Division is CON, but <INSDSeq_contig> data have not been found.");
     }
@@ -855,19 +855,19 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
             StringEquN(title.c_str(), "TPA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
 
         if (ibp->is_tsa == false && StringEquN(title.c_str(), "TSA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
 
         if (ibp->is_tls == false && StringEquN(title.c_str(), "TLS:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
     }
@@ -875,21 +875,21 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     if (ibp->is_tpa &&
         (title.empty() || ! StringEquN(title.c_str(), "TPA:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
     if (ibp->is_tsa &&
         (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
     if (ibp->is_tls &&
         (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -948,11 +948,11 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 
     if (pp->source == Parser::ESource::EMBL) {
         if (embl.Empty()) {
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
     } else if (gbb.Empty()) {
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -988,19 +988,19 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
                 ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:%s record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
-                ibp->drop = 1;
+                ibp->drop = true;
                 return;
             }
         } else if (ibp->specialist_db == false) {
             ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA record lacks required AH/PRIMARY linetype. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
     }
 
     if (offset) {
         if (! fta_parse_tpa_tsa_block(bioseq, offset, ibp->acnum, ibp->vernum, 10, 0, ibp->is_tpa)) {
-            ibp->drop = 1;
+            ibp->drop = true;
             MemFree(offset);
             return;
         }
@@ -1026,7 +1026,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         fta_parse_structured_comment(offset, bad, user_objs);
 
         if (bad) {
-            ibp->drop = 1;
+            ibp->drop = true;
             MemFree(offset);
             return;
         }
@@ -1170,7 +1170,7 @@ bool XMLAscii(ParserPtr pp)
         if (ibp->segnum == 1)
             segindx = i;
 
-        if (ibp->drop == 1 && ibp->segnum == 0) {
+        if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             total_dropped++;
             continue;
@@ -1191,7 +1191,7 @@ bool XMLAscii(ParserPtr pp)
         }
 
         XMLCheckContigEverywhere(ibp, pp->source);
-        if (ibp->drop == 1 && ibp->segnum == 0) {
+        if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             MemFree(entry);
             total_dropped++;
@@ -1211,7 +1211,7 @@ bool XMLAscii(ParserPtr pp)
         dbp->len     = StringLen(entry);
 
         if (! XMLGetInst(pp, dbp, ibp->is_prot ? protconv.get() : dnaconv.get(), *bioseq)) {
-            ibp->drop = 1;
+            ibp->drop = true;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data. Entry dropped.");
             if (ibp->segnum == 0) {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1225,7 +1225,7 @@ bool XMLAscii(ParserPtr pp)
         XMLFakeBioSources(ibp->xip, dbp->mOffset, *bioseq, pp->source);
         LoadFeat(pp, *dbp, *bioseq);
 
-        if (! bioseq->IsSetAnnot() && ibp->drop != 0 && ibp->segnum == 0) {
+        if (! bioseq->IsSetAnnot() && ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             delete dbp;
             MemFree(entry);
@@ -1235,7 +1235,7 @@ bool XMLAscii(ParserPtr pp)
 
         XMLGetDescr(pp, dbp, *bioseq);
 
-        if (ibp->drop != 0 && ibp->segnum == 0) {
+        if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             delete dbp;
             MemFree(entry);
@@ -1265,7 +1265,7 @@ bool XMLAscii(ParserPtr pp)
         if (no_date(pp->format, bioseq->GetDescr().Get()) &&
             pp->debug == false && pp->no_date == false &&
             pp->xml_comp == false && pp->source != Parser::ESource::USPTO) {
-            ibp->drop = 1;
+            ibp->drop = true;
             ErrPostStr(SEV_ERROR, ERR_DATE_IllegalDate, "Illegal create date. Entry dropped.");
             if (ibp->segnum == 0) {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1287,7 +1287,7 @@ bool XMLAscii(ParserPtr pp)
 
         if (! QscoreToSeqAnnot(dbp->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, true)) {
             if (pp->ign_bad_qs == false) {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
                 if (ibp->segnum == 0) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1321,7 +1321,7 @@ bool XMLAscii(ParserPtr pp)
             } else if (ibp->is_wgs) {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references for WGS entry. Continue anyway.");
             } else {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references. Entry dropped.");
                 if (ibp->segnum == 0) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1360,7 +1360,7 @@ bool XMLAscii(ParserPtr pp)
                     if (StringCmp(div, tibp->division) != 0) {
                         ErrPostEx(SEV_WARNING, ERR_DIVISION_Mismatch, "Division different in segmented set: %s: %s", div, tibp->division);
                     }
-                    if (tibp->drop != 0) {
+                    if (tibp->drop) {
                         ErrPostEx(SEV_WARNING, ERR_SEGMENT_Rejected, "Reject the whole segmented set");
                         break;
                     }

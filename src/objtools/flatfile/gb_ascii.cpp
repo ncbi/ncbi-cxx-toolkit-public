@@ -106,14 +106,14 @@ static void CheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 
     if (condiv && ibp->segnum != 0) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_ConDivInSegset, "Use of the CON division is not allowed for members of segmented set : %s|%s. Entry skipped.", ibp->locusname, ibp->acnum);
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
     if (! condiv && ibp->is_contig == false && ibp->origin == false &&
         ibp->is_mga == false) {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingSequenceData, "Required sequence data is absent. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
     } else if (! condiv && ibp->is_contig && ibp->origin == false) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_MappedtoCON, "Division [%s] mapped to CON based on the existence of CONTIG line.", ibp->division);
     } else if (ibp->is_contig && ibp->origin) {
@@ -121,11 +121,11 @@ static void CheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
             ErrPostEx(SEV_INFO, ERR_FORMAT_ContigWithSequenceData, "The CONTIG/CO linetype and sequence data are both present. Ignoring sequence data.");
         } else {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigWithSequenceData, "The CONTIG/CO linetype and sequence data may not both be present in a sequence record.");
-            ibp->drop = 1;
+            ibp->drop = true;
         }
     } else if (condiv && ibp->is_contig == false && ibp->origin == false) {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingContigFeature, "No CONTIG data in GenBank format file, entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
     } else if (condiv && ibp->is_contig == false && ibp->origin) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_ConDivLacksContig, "Division is CON, but CONTIG data have not been found.");
     }
@@ -1149,17 +1149,17 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
             StringEquN(title.c_str(), "TPA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
         if (ibp->is_tsa == false && StringEquN(title.c_str(), "TSA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
         if (ibp->is_tls == false && StringEquN(title.c_str(), "TLS:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
     }
@@ -1185,18 +1185,18 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                            ! StringEquN(title.c_str(), "TPA_asm:", 8) &&
                            ! StringEquN(title.c_str(), "TPA_reasm:", 10)))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
     if (ibp->is_tsa && ! ibp->is_tpa &&
         (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
     if (ibp->is_tls && (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -1250,7 +1250,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (gbbp.Empty()) {
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -1273,19 +1273,19 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
                 ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:%s record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
-                ibp->drop = 1;
+                ibp->drop = true;
                 return;
             }
         } else if (ibp->specialist_db == false) {
             ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA record lacks required AH/PRIMARY linetype. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
     }
 
     if (offset && len > 0 &&
         fta_parse_tpa_tsa_block(bioseq, offset, ibp->acnum, ibp->vernum, len, ParFlat_COL_DATA, ibp->is_tpa) == false) {
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -1308,7 +1308,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
             fta_parse_structured_comment(str, bad, user_objs);
             if (bad) {
-                ibp->drop = 1;
+                ibp->drop = true;
                 MemFree(str);
                 return;
             }
@@ -1431,7 +1431,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
         if (ibp->segnum == 1)
             segindx = i;
 
-        if (ibp->drop == 1 && ibp->segnum == 0) {
+        if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             total_dropped++;
             continue;
@@ -1464,14 +1464,14 @@ bool GenBankAsciiOrig(ParserPtr pp)
         }
 
         CheckContigEverywhere(ibp, pp->source);
-        if (ibp->drop == 1 && ibp->segnum == 0) {
+        if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             total_dropped++;
             continue;
         }
 
         if (ptr >= eptr) {
-            ibp->drop = 1;
+            ibp->drop = true;
             ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry. Entry dropped.");
             if (ibp->segnum == 0) {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1498,7 +1498,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
 
 
         if (! GetGenBankInst(pp, *pEntry, conv)) {
-            ibp->drop = 1;
+            ibp->drop = true;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data. Entry dropped.");
             if (ibp->segnum == 0) {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1510,14 +1510,14 @@ bool GenBankAsciiOrig(ParserPtr pp)
         FakeGenBankBioSources(*pEntry, *bioseq);
         LoadFeat(pp, *pEntry, *bioseq);
 
-        if (! bioseq->IsSetAnnot() && ibp->drop != 0 && ibp->segnum == 0) {
+        if (! bioseq->IsSetAnnot() && ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             total_dropped++;
             continue;
         }
 
         GetGenBankDescr(pp, *pEntry, *bioseq);
-        if (ibp->drop != 0 && ibp->segnum == 0) {
+        if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             total_dropped++;
             continue;
@@ -1545,7 +1545,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
         if (no_date(pp->format, bioseq->GetDescr().Get()) && pp->debug == false &&
             pp->no_date == false &&
             pp->mode != Parser::EMode::Relaxed) {
-            ibp->drop = 1;
+            ibp->drop = true;
             ErrPostStr(SEV_ERROR, ERR_DATE_IllegalDate, "Illegal create date. Entry dropped.");
             if (ibp->segnum == 0) {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1565,7 +1565,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
 
         if (! QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, true)) {
             if (pp->ign_bad_qs == false) {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
                 if (ibp->segnum == 0) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1600,7 +1600,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
             } else if (ibp->is_wgs) {
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references for WGS entry. Continue anyway.");
             } else {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No references. Entry dropped.");
                 if (ibp->segnum == 0) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1638,7 +1638,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
                     if (StringCmp(div, tibp->division) != 0) {
                         ErrPostEx(SEV_WARNING, ERR_DIVISION_Mismatch, "Division different in segmented set: %s: %s", div, tibp->division);
                     }
-                    if (tibp->drop != 0) {
+                    if (tibp->drop) {
                         ErrPostEx(SEV_WARNING, ERR_SEGMENT_Rejected, "Reject the whole segmented set");
                         break;
                     }
@@ -1836,7 +1836,7 @@ bool GenBankAscii(ParserPtr pp)
 
         err_install(ibp, pp->accver);
 
-        if (ibp->drop == 1 && ibp->segnum == 0) {
+        if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             total_dropped++;
             continue;
@@ -1860,7 +1860,7 @@ bool GenBankAscii(ParserPtr pp)
         }
 
         CheckContigEverywhere(ibp, pp->source);
-        if (ibp->drop == 1 && ibp->segnum == 0) {
+        if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
             total_dropped++;
             continue;
@@ -1868,7 +1868,7 @@ bool GenBankAscii(ParserPtr pp)
 
         auto lastType = pEntry->mSections.back()->mType;
         if (lastType != ParFlat_END) {
-            ibp->drop = 1;
+            ibp->drop = true;
             ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry. Entry dropped.");
             if (ibp->segnum == 0) {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1893,7 +1893,7 @@ bool GenBankAscii(ParserPtr pp)
         }
 
         if (! pEntry->xInitSeqInst(conv)) {
-            ibp->drop = 1;
+            ibp->drop = true;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data. Entry dropped.");
             if (ibp->segnum == 0) {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1906,7 +1906,7 @@ bool GenBankAscii(ParserPtr pp)
         /*FakeGenBankBioSources(*pEntry, *bioseq);
         LoadFeat(pp, *pEntry, *bioseq);
 
-        if (!bioseq->IsSetAnnot() && ibp->drop != 0 && ibp->segnum == 0)
+        if (! bioseq->IsSetAnnot() && ibp->drop && ibp->segnum == 0)
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                       "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1915,7 +1915,7 @@ bool GenBankAscii(ParserPtr pp)
         }
 
         GetGenBankDescr(pp, *pEntry, *bioseq);
-        if(ibp->drop != 0 && ibp->segnum == 0)
+        if (ibp->drop && ibp->segnum == 0)
         {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped,
                       "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -1949,7 +1949,7 @@ bool GenBankAscii(ParserPtr pp)
            pp->no_date == false &&
            pp->mode != Parser::EMode::Relaxed)
         {
-            ibp->drop = 1;
+            ibp->drop = true;
             ErrPostStr(SEV_ERROR, ERR_DATE_IllegalDate,
                        "Illegal create date. Entry dropped.");
             if(ibp->segnum == 0)
@@ -1976,7 +1976,7 @@ bool GenBankAscii(ParserPtr pp)
         {
             if(pp->ign_bad_qs == false)
             {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse,
                           "Error while parsing QScore. Entry dropped.");
                 if(ibp->segnum == 0)
@@ -2034,7 +2034,7 @@ bool GenBankAscii(ParserPtr pp)
             }
             else
             {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references,
                            "No references. Entry dropped.");
                 if(ibp->segnum == 0)
@@ -2087,7 +2087,7 @@ bool GenBankAscii(ParserPtr pp)
                                   "Division different in segmented set: %s: %s",
                                   div, tibp->division);
                     }
-                    if(tibp->drop != 0)
+                    if (tibp->drop)
                     {
                         ErrPostEx(SEV_WARNING, ERR_SEGMENT_Rejected,
                                   "Reject the whole segmented set");

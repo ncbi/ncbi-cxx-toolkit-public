@@ -45,12 +45,12 @@ namespace objects
     class CCit_art;
 };
 
-CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, unsigned char* drop, bool isoh);
+CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, bool* drop, bool isoh);
 
 void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries);
 void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag);
 Int4 fta_is_con_div(ParserPtr pp, const objects::CSeq_id& id, const Char* acc);
-void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, unsigned char* drop, char* organelle);
+void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, bool* drop, char* organelle);
 
 END_NCBI_SCOPE
 

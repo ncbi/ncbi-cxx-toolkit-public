@@ -69,10 +69,10 @@ vector<string> swissProtKeywords = {
 };
 
 /**********************************************************/
-static Uint1 sp_err_field(const char* name)
+static bool sp_err_field(const char* name)
 {
     ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Missing %s line, entry dropped", name);
-    return (1);
+    return true;
 }
 
 /**********************************************************/
@@ -163,7 +163,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                 }
                 if (after_SQ && isalpha(finfo.str[0]) != 0) {
                     ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
-                    entry->drop = 1;
+                    entry->drop = true;
                     break;
                 }
                 if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_SQ].c_str(), swissProtKeywords[ParFlatSP_SQ].size()))
@@ -183,7 +183,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                         after_AC = true;
                         if (! GetAccession(pp, finfo.str, entry, 2))
                             pp->num_drop++;
-                    } else if (entry->drop == 0 && ! GetAccession(pp, finfo.str, entry, 1))
+                    } else if (! entry->drop && ! GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
                 } else if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_DT].c_str(), swissProtKeywords[ParFlatSP_DT].size())) {
                     if (reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
@@ -200,10 +200,10 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
             } /* while, end of one entry */
 
-            if (entry->drop != 1) {
+            if (! entry->drop) {
                 if (after_AC == false) {
                     ErrPostStr(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "Missing AC (accession #) line, entry dropped");
-                    entry->drop = 1;
+                    entry->drop = true;
                 }
 
                 if (after_OS == false)

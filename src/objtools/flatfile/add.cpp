@@ -323,7 +323,7 @@ static void CreateSeqGap(CSeq_literal& seq_lit, GapFeatsPtr gfp)
 }
 
 /**********************************************************/
-void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
+void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
 {
     if (! bioseq.GetInst().IsSetExt() || ! bioseq.GetInst().GetExt().IsDelta() ||
         ! gfp)
@@ -341,7 +341,7 @@ void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
         CSeq_literal& literal = (*delta)->SetLiteral();
         if (literal.GetLength() != static_cast<Uint4>(gfp->to - gfp->from + 1)) {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The lengths of the CONTIG/CO line gaps disagrees with the lengths of assembly_gap features. First assembly_gap with a mismatch is at \"%d..%d\".", gfp->from, gfp->to);
-            *drop = 1;
+            *drop = true;
             break;
         }
 
@@ -350,12 +350,12 @@ void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
         gfp = gfp->next;
     }
 
-    if (*drop != 0 || (delta == deltas.end() && ! gfp))
+    if (*drop || (delta == deltas.end() && ! gfp))
         return;
 
     if (delta == deltas.end() && gfp) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The number of the assembly_gap features exceeds the number of CONTIG/CO line gaps. First extra assembly_gap is at \"%d..%d\".", gfp->from, gfp->to);
-        *drop = 1;
+        *drop = true;
     } else if (delta != deltas.end() && ! gfp) {
         for (; delta != deltas.end(); ++delta) {
             if ((*delta)->IsLiteral()) /* Seq-lit */
@@ -366,12 +366,12 @@ void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
             return;
 
         ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The number of the CONTIG/CO line gaps exceeds the number of assembly_gap features.");
-        *drop = 1;
+        *drop = true;
     }
 }
 
 /**********************************************************/
-void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
+void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
 {
     GapFeatsPtr tgfp;
 
@@ -426,13 +426,13 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop)
                 break;
         if (i < tgfp->to) {
             ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidGapSequence, "The sequence data associated with the gap feature at \"%d..%d\" contains basepairs other than N.", tgfp->from, tgfp->to);
-            *drop = 1;
+            *drop = true;
         }
 
         prevto = tgfp->to;
     }
 
-    if (*drop != 0)
+    if (*drop)
         return;
 
     CDelta_ext::Tdata deltas;
@@ -1582,7 +1582,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
 }
 
 /**********************************************************/
-void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, unsigned char* drop, Parser::ESource source)
+void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, bool* drop, Parser::ESource source)
 {
     ValNodePtr vnp;
     ValNodePtr tvnp;
@@ -1618,7 +1618,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         if (format == Parser::EFormat::GenBank) {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "PROJECT line is missing \"GenomeProject:\" tag. Entry dropped.", str);
             MemFree(str);
-            *drop = 1;
+            *drop = true;
             return;
         }
         newstyle = true;
@@ -1628,7 +1628,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 
     vnp = fta_tokenize_project(str + len, source, newstyle);
     if (! vnp) {
-        *drop = 1;
+        *drop = true;
         MemFree(str);
         return;
     }
@@ -1926,7 +1926,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
 }
 
 /**********************************************************/
-void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, unsigned char* drop, CRef<CUser_object>& dbuop)
+void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, bool* drop, CRef<CUser_object>& dbuop)
 {
     ValNodePtr vnp;
     ValNodePtr tvnp;
@@ -1944,7 +1944,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     MemFree(str1);
 
     if (! vnp) {
-        *drop = 1;
+        *drop = true;
         return;
     }
 
@@ -2137,7 +2137,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty or unsupported Seq-id found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
         if (ch != '\0')
             location[50] = ch;
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -2154,7 +2154,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty Seq-id found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
         if (ch != '\0')
             location[50] = ch;
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -2199,7 +2199,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Invalid accession found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
         if (ch != '\0')
             location[50] = ch;
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -2334,14 +2334,14 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
             ErrPostEx(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, "The CONTIG/CO line with location \"%s\" refers to intervals on both primary and third-party sequence records. Entry skipped.", location);
         else
             ErrPostEx(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, "The \"%s\" feature at \"%s\" refers to intervals on both primary and third-party sequence records. Entry skipped.", name, location);
-        ibp->drop = 1;
+        ibp->drop = true;
     }
 
     if (tpa > 1 || non_tpa > 1) {
         if (! pp->allow_crossdb_featloc) {
             sev       = SEV_REJECT;
             p         = "Entry skipped.";
-            ibp->drop = 1;
+            ibp->drop = true;
         } else {
             sev = SEV_WARNING;
             p   = "";
