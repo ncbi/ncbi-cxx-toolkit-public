@@ -400,7 +400,7 @@ static void SetXrefObjId(CEMBL_xref& xref, const string& str)
  *   type (DR) line.
  *
  **********************************************************/
-static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, unsigned char* drop, CEMBL_block& embl)
+static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, bool* drop, CEMBL_block& embl)
 {
     const char** b;
 
@@ -514,7 +514,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
                     ErrPostEx(SEV_REJECT, ERR_DRXREF_InvalidBioSample, "Multiple BioSample ids provided in the same DR line: \"%s\".", drline);
                 if (! valid_biosample)
                     ErrPostEx(SEV_REJECT, ERR_DRXREF_InvalidBioSample, "Invalid BioSample id(s) provided in DR line: \"%s\".", drline);
-                *drop = 1;
+                *drop = true;
                 if (q)
                     *q = '\n';
             } else {
@@ -543,7 +543,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
                         *q = '\0';
                 }
                 ErrPostEx(SEV_REJECT, ERR_DRXREF_InvalidSRA, "Multiple possible SRA ids provided in the same DR line: \"%s\".", drline);
-                *drop = 1;
+                *drop = true;
                 if (q)
                     *q = '\n';
             } else {
@@ -724,13 +724,13 @@ static bool CheckEmblContigEverywhere(const IndexblkPtr ibp, Parser::ESource sou
     bool result = true;
     if (condiv && ibp->segnum != 0) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_ConDivInSegset, "Use of the CON division is not allowed for members of segmented set : %s|%s. Entry skipped.", ibp->locusname, ibp->acnum);
-        //ibp->drop = 1;
+        // ibp->drop = true;
         result = false;
     }
 
     if (! condiv && ibp->is_contig == false && ibp->origin == false) {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingSequenceData, "Required sequence data is absent. Entry dropped.");
-        //ibp->drop = 1;
+        // ibp->drop = true;
         result = false;
     } else if (! condiv && ibp->is_contig && ibp->origin == false) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_MappedtoCON, "Division [%s] mapped to CON based on the existence of CONTIG line.", ibp->division);
@@ -739,12 +739,12 @@ static bool CheckEmblContigEverywhere(const IndexblkPtr ibp, Parser::ESource sou
             ErrPostEx(SEV_INFO, ERR_FORMAT_ContigWithSequenceData, "The CONTIG/CO linetype and sequence data are both present. Ignoring sequence data.");
         } else {
             ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigWithSequenceData, "The CONTIG/CO linetype and sequence data may not both be present in a sequence record.");
-            //ibp->drop = 1;
+            // ibp->drop = true;
             result = false;
         }
     } else if (condiv && ! ibp->is_contig && ! ibp->origin) {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingContigFeature, "No CONTIG data in GenBank format file, entry dropped.");
-        //ibp->drop = 1;
+        // ibp->drop = true;
         result = false;
     } else if (condiv && ! ibp->is_contig && ibp->origin) {
         ErrPostEx(SEV_WARNING, ERR_DIVISION_ConDivLacksContig, "Division is CON, but CONTIG data have not been found.");
@@ -1698,19 +1698,19 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
             StringEquN(str, "TPA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
 
         if (ibp->is_tsa == false && StringEquN(str, "TSA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
 
         if (ibp->is_tls == false && StringEquN(str, "TLS:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
 
@@ -1751,20 +1751,20 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (ibp->is_tpa &&
         (title.empty() || ! s_HasTPAPrefix(title))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
     if (ibp->is_tsa && ! ibp->is_tpa &&
         (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
     if (ibp->is_tls && (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -1849,7 +1849,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         fta_build_ena_user_object(bioseq.SetDescr().Set(), dr_ena, dr_biosample, dbuop);
 
     if (embl_block.Empty()) {
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -1882,19 +1882,19 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
                 ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:%s record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
-                ibp->drop = 1;
+                ibp->drop = true;
                 return;
             }
         } else if (ibp->specialist_db == false) {
             ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA record lacks required AH/PRIMARY linetype. Entry dropped.");
-            ibp->drop = 1;
+            ibp->drop = true;
             return;
         }
     }
 
     if (offset && len > 0 &&
         fta_parse_tpa_tsa_block(bioseq, offset, ibp->acnum, ibp->vernum, len, ParFlat_COL_DATA_EMBL, ibp->is_tpa) == false) {
-        ibp->drop = 1;
+        ibp->drop = true;
         return;
     }
 
@@ -1945,7 +1945,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
             fta_parse_structured_comment(str, bad, user_objs);
             if (bad) {
-                ibp->drop = 1;
+                ibp->drop = true;
                 MemFree(str);
                 return;
             }
@@ -2186,7 +2186,7 @@ bool EmblAscii(ParserPtr pp)
         ibp         = pp->entrylist[i];
 
         err_install(ibp, pp->accver);
-        if (ibp->drop != 1) {
+        if (! ibp->drop) {
             unique_ptr<DataBlk, decltype(&xFreeEntry)> pEntry(
                 LoadEntry(pp, ibp->offset, ibp->len), &xFreeEntry);
             //pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
@@ -2219,15 +2219,14 @@ bool EmblAscii(ParserPtr pp)
             }
 
             if (! CheckEmblContigEverywhere(ibp, pp->source)) {
-                //if(ibp->drop != 0)
-                //{
-                ibp->drop = 1;
+                // if (ibp->drop) {
+                ibp->drop = true;
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
                 continue;
             }
 
             if (ptr >= eptr) {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                 if (pp->segment == false) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -2247,7 +2246,7 @@ bool EmblAscii(ParserPtr pp)
                 GetReleaseInfo(*pEntry);
             }
             if (! GetEmblInst(pp, *pEntry, dnaconv.get())) {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data, entry dropped");
                 if (pp->segment == false) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -2258,7 +2257,7 @@ bool EmblAscii(ParserPtr pp)
             FakeEmblBioSources(*pEntry, *bioseq);
             LoadFeat(pp, *pEntry, *bioseq);
 
-            if (! bioseq->IsSetAnnot() && ibp->drop != 0) {
+            if (! bioseq->IsSetAnnot() && ibp->drop) {
                 if (pp->segment == false) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
                 }
@@ -2267,7 +2266,7 @@ bool EmblAscii(ParserPtr pp)
 
             GetEmblDescr(pp, *pEntry, *bioseq);
 
-            if (ibp->drop != 0) {
+            if (ibp->drop) {
                 if (pp->segment == false) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
                 }
@@ -2304,7 +2303,7 @@ bool EmblAscii(ParserPtr pp)
 
             if (! QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, false)) {
                 if (pp->ign_bad_qs == false) {
-                    ibp->drop = 1;
+                    ibp->drop = true;
                     ErrPostEx(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
                     if (pp->segment == false) {
                         ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -2326,7 +2325,7 @@ bool EmblAscii(ParserPtr pp)
             }
 
             if (no_reference(*bioseq) && pp->debug == false) {
-                ibp->drop = 1;
+                ibp->drop = true;
                 ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No reference for the entry, entry dropped");
                 if (pp->segment == false) {
                     ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -2346,8 +2345,8 @@ bool EmblAscii(ParserPtr pp)
                 }
 
                 if (! OutputEmblAsn(seq_long, pp, seq_entries))
-                    ibp->drop = 1;
-                else if (ibp->drop == 0)
+                    ibp->drop = true;
+                else if (! ibp->drop)
                     total++;
                 seq_long = false;
             } else {
@@ -2357,7 +2356,7 @@ bool EmblAscii(ParserPtr pp)
         } /* if, not drop */
 
         if (pp->segment == false) {
-            if (ibp->drop == 0) {
+            if (! ibp->drop) {
                 ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry parsed successfully: \"%s|%s\".", ibp->locusname, ibp->acnum);
             } else {
                 ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
@@ -2369,7 +2368,7 @@ bool EmblAscii(ParserPtr pp)
         /* reject the whole set if any one entry was rejected
          */
         for (reject_set = false, i = 0; i < imax; i++) {
-            if (pp->entrylist[i]->drop != 0) {
+            if (pp->entrylist[i]->drop) {
                 reject_set = true;
                 break;
             }

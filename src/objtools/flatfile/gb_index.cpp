@@ -147,7 +147,7 @@ static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
     int j = atoi(segnum);
     if (atoi(p) != j) {
         ErrPostEx(SEV_REJECT, ERR_SEGMENT_BadLocusName, "Segment suffix in locus name \"%s\" does not match number in SEGMENT line = \"%d\". Entry dropped.", str, j);
-        entry->drop = 1;
+        entry->drop = true;
     }
 
     *q = '\0'; /* strip off "len" characters */
@@ -182,10 +182,10 @@ static void GetSegment(char* str, IndexblkPtr entry)
 // LCOV_EXCL_STOP
 
 /**********************************************************/
-static Uint1 gb_err_field(const char* str)
+static bool gb_err_field(const char* str)
 {
     ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "No %s data in GenBank format file, entry dropped", str);
-    return (1);
+    return true;
 }
 
 /**********************************************************/
@@ -212,7 +212,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
         if (mode != Parser::EMode::Relaxed) {
             *p = ch1;
             ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in VERSION line: \"%s\".", line);
-            entry->drop = 1;
+            entry->drop = true;
         }
         return;
     }
@@ -223,7 +223,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
         if (mode != Parser::EMode::Relaxed) {
             *p = ch1;
             ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in VERSION line: \"%s\".", line);
-            entry->drop = 1;
+            entry->drop = true;
         }
         return;
     }
@@ -234,7 +234,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
         *p = ch1;
         if (mode != Parser::EMode::Relaxed) {
             ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in VERSION and ACCESSION lines don't match: \"%s\" vs \"%s\".", line, entry->acnum);
-            entry->drop = 1;
+            entry->drop = true;
         }
         return;
     }
@@ -244,7 +244,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     if (entry->vernum < 1) {
         *p = ch1;
         ErrPostEx(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"%s.%d\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
-        entry->drop = 1;
+        entry->drop = true;
         return;
     }
 
@@ -264,7 +264,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
 
     if (! StringEquN(p, "GI:", 3)) {
         ErrPostEx(SEV_FATAL, ERR_VERSION_IncorrectGIInVersion, "Incorrect GI entry in VERSION line: \"%s\".", line);
-        entry->drop = 1;
+        entry->drop = true;
         return;
     }
     p += 3;
@@ -272,7 +272,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
         q++;
     if (*q != '\0') {
         ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitGI, "Incorrect GI number in VERSION line: \"%s\".", line);
-        entry->drop = 1;
+        entry->drop = true;
     }
 }
 
@@ -427,7 +427,7 @@ bool GenBankIndex(ParserPtr pp)
                 case ParFlat_LOCUS:
                     if (after_LOCUS) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines LOCUS in one entry");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else {
                         after_LOCUS = true;
                         line_locus  = StringSave(finfo.str);
@@ -436,7 +436,7 @@ bool GenBankIndex(ParserPtr pp)
                 case ParFlat_COMMENT:
                     if (after_COMMENT) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple COMMENT lines in one entry");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else
                         after_COMMENT = true;
 
@@ -449,7 +449,7 @@ bool GenBankIndex(ParserPtr pp)
                         break;
                     if (after_VERSION) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple VERSION lines in one entry");
-                        entry->drop = 1;
+                        entry->drop = true;
                         break;
                     }
                     after_VERSION = true;
@@ -488,10 +488,10 @@ bool GenBankIndex(ParserPtr pp)
                 case ParFlat_DEFINITION:
                     if (after_DEFNTN) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'DEFINITION'");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else if (after_LOCUS == false) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "DEFINITION field out of order");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else
                         after_DEFNTN = true;
 
@@ -499,10 +499,10 @@ bool GenBankIndex(ParserPtr pp)
                 case ParFlat_SOURCE:
                     if (after_SOURCE) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'SOURCE'");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else if (after_LOCUS == false || after_DEFNTN == false) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "SOURCE field out of order");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else
                         after_SOURCE = true;
 
@@ -513,31 +513,31 @@ bool GenBankIndex(ParserPtr pp)
                 case ParFlat_CONTIG:
                     if (entry->is_contig) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than one line CONTIG in one entry");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else
                         entry->is_contig = true;
                     break;
                 case ParFlat_MGA:
                     if (entry->is_mga == false) {
                         ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"MGA\" is allowed for CAGE records only. Entry dropped.");
-                        entry->drop = 1;
+                        entry->drop = true;
                     }
                     if (fta_check_mga_line(finfo.str + ParFlat_COL_DATA, entry) == false) {
                         ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectMGALine, "Incorrect range of accessions supplied in MGA line of CAGE record. Entry dropped.");
-                        entry->drop = 1;
+                        entry->drop = true;
                     }
                     after_MGA = true;
                     break;
                 case ParFlat_FEATURES:
                     if (after_FEAT) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'FEATURES'");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else if (pp->mode != Parser::EMode::Relaxed &&
                                (after_LOCUS == false ||
                                 after_DEFNTN == false ||
                                 after_SOURCE == false)) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "FEATURES field out of order");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else
                         after_FEAT = true;
 
@@ -545,7 +545,7 @@ bool GenBankIndex(ParserPtr pp)
                 case ParFlat_ORIGIN:
                     if (after_ORIGIN) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'ORIGIN'");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else if (
                         pp->mode != Parser::EMode::Relaxed &&
                         (after_LOCUS == false ||
@@ -553,7 +553,7 @@ bool GenBankIndex(ParserPtr pp)
                          after_SOURCE == false ||
                          after_FEAT == false)) {
                         ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "ORIGIN field out of order");
-                        entry->drop = 1;
+                        entry->drop = true;
                     } else {
                         after_ORIGIN  = true;
                         entry->origin = true;
@@ -579,7 +579,7 @@ bool GenBankIndex(ParserPtr pp)
                 case ParFlat_USER:
                     if (pp->source != Parser::ESource::Flybase) {
                         ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"USER\" is allowed for source \"FLYBASE\" only. Entry dropped.");
-                        entry->drop = 1;
+                        entry->drop = true;
                     }
                     break;
                 case ParFlat_PRIMARY:
@@ -627,7 +627,7 @@ bool GenBankIndex(ParserPtr pp)
                         dbl_len += StringLen(finfo.str);
                     }
 
-                    if (currentKeyword == ParFlat_ACCESSION && entry->drop == 0 &&
+                    if (currentKeyword == ParFlat_ACCESSION && ! entry->drop &&
                         GetAccession(pp, finfo.str, entry, 0) == false)
                         pp->num_drop++;
 
@@ -651,18 +651,18 @@ bool GenBankIndex(ParserPtr pp)
 
                 if (finfo.str[0] != ' ' && finfo.str[0] != '\t' &&
                     CheckLineType(finfo.str, finfo.line, genbankKeywords, after_ORIGIN) == false)
-                    entry->drop = 1;
+                    entry->drop = true;
 
             } /* while, end of one entry */
 
             entry->is_tpa_wgs_con = (entry->is_contig && entry->is_wgs && entry->is_tpa);
 
-            if (entry->drop != 1) {
+            if (! entry->drop) {
 
                 if (pp->mode != Parser::EMode::Relaxed) {
                     if (line_locus &&
                         CkLocusLinePos(line_locus, pp->source, &entry->lc, entry->is_mga) == false)
-                        entry->drop = 1;
+                        entry->drop = true;
 
                     if (entry->is_mga && after_MGA == false)
                         entry->drop = gb_err_field("MGA");
@@ -693,7 +693,7 @@ bool GenBankIndex(ParserPtr pp)
 
                 if (entry->is_contig && entry->segnum != 0) {
                     ErrPostEx(SEV_ERROR, ERR_FORMAT_ContigInSegset, "CONTIG data are not allowed for members of segmented sets, entry dropped.");
-                    entry->drop = 1;
+                    entry->drop = true;
                 }
             }
             if (pp->accver) {

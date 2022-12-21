@@ -2470,13 +2470,13 @@ CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
             ErrPostEx(SEV_ERROR, ERR_REFERENCE_MissingAuthors, "Reference has no author names.");
         else {
             ErrPostEx(SEV_REJECT, ERR_REFERENCE_MissingAuthors, "Reference has no author names. Entry dropped.");
-            pp->entrylist[pp->curindx]->drop = 1;
+            pp->entrylist[pp->curindx]->drop = true;
         }
     }
 
     if (rej) {
         ErrPostEx(SEV_REJECT, ERR_REFERENCE_InvalidMuid, "Use of Medline ID in INSDSeq format is not alowed. Entry dropped.");
-        pp->entrylist[pp->curindx]->drop = 1;
+        pp->entrylist[pp->curindx]->drop = true;
     }
 
     if (desc.NotEmpty() && desc->IsSetPub()) {

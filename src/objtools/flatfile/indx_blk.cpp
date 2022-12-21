@@ -1811,7 +1811,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
         if (get)
             get = sCheckAccession(tokens, parseInfo.source, parseInfo.mode, entry->acnum, skip);
         if (! get)
-            entry->drop = 1;
+            entry->drop = true;
 
         if (tokens.size() > skip && skip < 2) { // Not sure about the logic
             auto it = skip ? next(tokens.begin(), skip) : tokens.begin();
@@ -1825,7 +1825,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
     if (tokens.size() < 2) {
         if (parseInfo.mode != Parser::EMode::Relaxed) {
             ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
-            entry->drop = 1;
+            entry->drop = true;
         }
         return false;
     }
@@ -1857,7 +1857,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
 
     if (accession.size() < 2) {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [%s] for this entry.", accession.c_str());
-        entry->drop = 1;
+        entry->drop = true;
         return false;
     }
 
@@ -1923,7 +1923,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
     }
 
     if (! get)
-        entry->drop = 1;
+        entry->drop = true;
 
     return get;
 }
@@ -1957,7 +1957,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
         if (get)
             get = CheckAccession(stoken, pp->source, pp->mode, entry->acnum, skip);
         if (! get)
-            entry->drop = 1;
+            entry->drop = true;
 
         if (skip == 0) {
             tbp          = stoken->list;
@@ -1987,7 +1987,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
     if (stoken->num < 2) {
         if (pp->mode != Parser::EMode::Relaxed) {
             ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
-            entry->drop = 1;
+            entry->drop = true;
         }
         FreeTokenstatblk(stoken);
         MemFree(line);
@@ -2027,7 +2027,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
         pp->mode != Parser::EMode::Relaxed) {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [%s] for this entry.", acc);
         FreeTokenstatblk(stoken);
-        entry->drop = 1;
+        entry->drop = true;
         MemFree(line);
         return false;
     }
@@ -2097,7 +2097,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
     MemFree(line);
 
     if (! get)
-        entry->drop = 1;
+        entry->drop = true;
 
     return (get);
 }

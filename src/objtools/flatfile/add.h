@@ -48,17 +48,17 @@ bool no_reference(const objects::CBioseq& bioseq);
 bool check_cds(const DataBlk& entry, Parser::EFormat format);
 void err_install(const Indexblk* ibp, bool accver);
 void SeqToDelta(objects::CBioseq& bioseq, Int2 tech);
-void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
-void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, unsigned char* drop);
+void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, bool* drop);
+void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, bool* drop);
 bool fta_strings_same(const char* s1, const char* s2);
 
 bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& mol_info);
 
 bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum, Int2 vernum, size_t len, Int2 col_data, bool tpa);
 
-void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, unsigned char* drop, Parser::ESource source);
+void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, bool* drop, Parser::ESource source);
 
-void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, unsigned char* drop, CRef<objects::CUser_object>& dbuop);
+void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, bool* drop, CRef<objects::CUser_object>& dbuop);
 
 int fta_check_con_for_wgs(objects::CBioseq& bioseq);
 

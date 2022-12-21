@@ -608,7 +608,7 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
         new_cit_art = FetchPubPmId(oldpmid);
         if (new_cit_art.Empty()) {
             ErrPostEx(SEV_REJECT, ERR_REFERENCE_InvalidPmid, "MedArch failed to find a Cit-art for reference with pmid \"%d\".", oldpmid);
-            ibp->drop = 1;
+            ibp->drop = true;
         } else {
             if (new_cit_art->IsSetIds()) {
                 for (const auto& pId : new_cit_art->GetIds().Get()) {
@@ -622,10 +622,10 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
 
             if (pmid == ZERO_ENTREZ_ID) {
                 ErrPostEx(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid, "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
-                ibp->drop = 1;
+                ibp->drop = true;
             } else if (pmid != oldpmid) {
                 ErrPostEx(SEV_REJECT, ERR_REFERENCE_DifferentPmids, "Pmid \"%d\" used for lookup does not match pmid \"%d\" in the ArticleIdSet of the Cit-art returned by MedArch.", oldpmid, pmid);
-                ibp->drop = 1;
+                ibp->drop = true;
             }
             if (muid > ZERO_ENTREZ_ID && oldmuid > ZERO_ENTREZ_ID && muid != oldmuid) {
                 ErrPostEx(SEV_ERROR, ERR_REFERENCE_MuidPmidMissMatch, "Reference has supplied Medline UI \"%d\" but it does not match muid \"%d\" in the Cit-art returned by MedArch.", oldmuid, muid);
@@ -812,7 +812,7 @@ static void fix_synonyms(CTaxon1& taxon, COrg_ref& org_ref)
 }
 
 /**********************************************************/
-static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, TTaxId taxid, bool isoh)
+static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, bool* drop, TTaxId taxid, bool isoh)
 {
     CConstRef<CTaxon2_data> taxdata;
 
@@ -832,7 +832,7 @@ static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, TTa
     if (taxdata.Empty()) {
         if (connection_failed) {
             ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, apparently because the server is down. Cannot generate ASN.1 for this entry.", TAX_ID_TO(int, taxid));
-            *drop = 1;
+            *drop = true;
         } else {
             ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxname not found: [taxid %d].", TAX_ID_TO(int, taxid));
         }
@@ -854,7 +854,7 @@ static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, unsigned char* drop, TTa
 }
 
 /**********************************************************/
-CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, unsigned char* drop, bool isoh)
+CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, bool* drop, bool isoh)
 {
     CRef<COrg_ref> ret;
 
@@ -866,7 +866,7 @@ CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, unsigned char* dr
 
     if (pp->taxserver == 2) {
         ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, because the server is down. Cannot generate ASN.1 for this entry.", TAX_ID_TO(int, taxid));
-        *drop = 1;
+        *drop = true;
         return ret;
     }
 
@@ -879,7 +879,7 @@ CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, unsigned char* dr
 }
 
 /**********************************************************/
-static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_ref& org_ref, const Char* pn, int merge, Int4 attempt)
+static CRef<COrg_ref> fta_replace_org(ParserPtr pp, bool* drop, COrg_ref& org_ref, const Char* pn, int merge, Int4 attempt)
 {
     IndexblkPtr ibp = pp->entrylist[pp->curindx];
 
@@ -908,7 +908,7 @@ static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_re
 
         if (connection_failed) {
             ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"%s\", apparently because the server is down. Cannot generate ASN.1 for this entry.", pn);
-            *drop = 1;
+            *drop = true;
         } else if (taxon.GetTaxIdByOrgRef(org_ref) < ZERO_TAX_ID) {
             if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
                 ibp->is_pat && ibp->taxid > ZERO_TAX_ID && ! ibp->organism.empty()) {
@@ -942,7 +942,7 @@ static CRef<COrg_ref> fta_replace_org(ParserPtr pp, unsigned char* drop, COrg_re
 }
 
 /**********************************************************/
-void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop, char* organelle)
+void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, bool* drop, char* organelle)
 {
     Int4 attempt;
     int  merge;
@@ -984,7 +984,7 @@ void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, unsigned char* drop, char* 
     string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "";
     if (pp->taxserver == 2) {
         ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"%s\", because the server is down. Cannot generate ASN.1 for this entry.", taxname.c_str());
-        *drop = 1;
+        *drop = true;
     } else {
         merge = 1;
 
@@ -1047,14 +1047,14 @@ Int4 fta_is_con_div(ParserPtr pp, const CSeq_id& id, const Char* acc)
     //     pp->entrez_fetch = fta_init_pubseq();
     if (pp->entrez_fetch == 2) {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
-        pp->entrylist[pp->curindx]->drop = 1;
+        pp->entrylist[pp->curindx]->drop = true;
         return (-1);
     }
 
     TGi gi = fta_get_gi_for_seq_id(id);
     if (gi < ZERO_GI) {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
-        pp->entrylist[pp->curindx]->drop = 1;
+        pp->entrylist[pp->curindx]->drop = true;
         return (-1);
     }
 
@@ -1067,7 +1067,7 @@ Int4 fta_is_con_div(ParserPtr pp, const CSeq_id& id, const Char* acc)
     if (! s_pubseq->GetIdGiClass(gi, id_gi) || ! s_pubseq->GetIdBlobClass(id_gi, id_blob) ||
         id_blob.div[0] == '\0') {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
-        pp->entrylist[pp->curindx]->drop = 1;
+        pp->entrylist[pp->curindx]->drop = true;
         return (-1);
     }
     if (NStr::EqualNocase(id_blob.div, "CON"))
