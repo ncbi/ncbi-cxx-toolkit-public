@@ -173,12 +173,12 @@ typedef unsigned EBDebugPrintout;
  * NOTE1:      Not every field may be fully utilized throughout the library.
  * NOTE2:      HTTP passwords can be either clear text or Base-64 encoded value
  *             enclosed in square brackets [] (which are not Base-64 charset).
- *             For encoding / decoding, one can use command-line OpenSSL:
+ *             For encoding / decoding, one can use the command-line OpenSSL:
  *             echo [-n] "password|base64value" | openssl enc {-e|-d} -base64
  *             or an online tool (search the Web for "base64 online").
- * NOTE3:      The NCBI_CRED credentials are stored by handle value and are not
- *             otherwise managed (reallocated / duplicated) by the API: they
- *             are passed "as-is" to the lower levels of the SSL.
+ * NOTE3:      The NCBI_CRED credentials are stored by the handle value and are
+ *             not otherwise managed (reallocated / duplicated) by the API:
+ *             they are passed strictly "as-is" to the lower levels of the SSL.
  */
 typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     char            client_host[CONN_HOST_LEN+1]; /*client hostname('\0'=def)*/
