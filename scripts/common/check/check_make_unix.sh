@@ -761,9 +761,13 @@ EOF_launch
                                    grep '==ERROR: AddressSanitizer:' \$x_test_out > /dev/null 2>&1 
                                    if test \$? -eq 0;  then
                                       result=253
+                                   else
+                                       grep 'FATAL: ThreadSanitizer CHECK failed:' \$x_test_out > /dev/null 2>&1 
+                                       if test \$? -eq 0;  then
+                                          result=252
+                                       fi
                                    fi
                                fi
-                    
                 esac
 
                 else # skipped
