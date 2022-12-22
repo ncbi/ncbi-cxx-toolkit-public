@@ -61,21 +61,22 @@ CRequestTimeSeries::CRequestTimeSeries() :
 
 void CRequestTimeSeries::Add(EPSGSCounter  counter)
 {
+    size_t      current_index = m_CurrentIndex.load();
     switch (counter) {
         case eRequest:
-            ++m_Requests[m_CurrentIndex];
+            ++m_Requests[current_index];
             ++m_TotalRequests;
             break;
         case eError:
-            ++m_Errors[m_CurrentIndex];
+            ++m_Errors[current_index];
             ++m_TotalErrors;
             break;
         case eWarning:
-            ++m_Warnings[m_CurrentIndex];
+            ++m_Warnings[current_index];
             ++m_TotalWarnings;
             break;
         case eNotFound:
-            ++m_NotFound[m_CurrentIndex];
+            ++m_NotFound[current_index];
             ++m_TotalNotFound;
             break;
         default:
@@ -86,13 +87,19 @@ void CRequestTimeSeries::Add(EPSGSCounter  counter)
 
 void CRequestTimeSeries::Rotate(void)
 {
-    ++m_CurrentIndex;
-    if (m_CurrentIndex >= kSeriesIntervals)
-        m_CurrentIndex = 0;
-    m_Requests[m_CurrentIndex] = 0;
-    m_Errors[m_CurrentIndex] = 0;
-    m_Warnings[m_CurrentIndex] = 0;
-    m_NotFound[m_CurrentIndex] = 0;
+    size_t      new_current_index = m_CurrentIndex.load();
+    if (new_current_index == kSeriesIntervals - 1) {
+        new_current_index = 0;
+    } else {
+        ++new_current_index;
+    }
+
+    m_Requests[new_current_index] = 0;
+    m_Errors[new_current_index] = 0;
+    m_Warnings[new_current_index] = 0;
+    m_NotFound[new_current_index] = 0;
+
+    m_CurrentIndex.store(new_current_index);
 }
 
 
@@ -107,31 +114,33 @@ void CRequestTimeSeries::Reset(void)
     memset(m_NotFound, 0, sizeof(m_NotFound));
     m_TotalNotFound = 0;
 
-    m_CurrentIndex = 0;
+    m_CurrentIndex.store(0);
 }
 
 
 CJsonNode  CRequestTimeSeries::Serialize(void) const
 {
+    size_t      current_index = m_CurrentIndex.load();
     CJsonNode   ret(CJsonNode::NewObjectNode());
 
     ret.SetInteger("BinCoverageSec", 60);
     ret.SetInteger("TotalRequests", m_TotalRequests);
-    ret.SetByKey("RequestsTimeSeries", x_SerializeOneSeries(m_Requests));
+    ret.SetByKey("RequestsTimeSeries", x_SerializeOneSeries(m_Requests, current_index));
     ret.SetInteger("TotalErrors", m_TotalErrors);
-    ret.SetByKey("ErrorsTimeSeries", x_SerializeOneSeries(m_Errors));
+    ret.SetByKey("ErrorsTimeSeries", x_SerializeOneSeries(m_Errors, current_index));
     ret.SetInteger("TotalWarnings", m_TotalErrors);
-    ret.SetByKey("WarningsTimeSeries", x_SerializeOneSeries(m_Warnings));
+    ret.SetByKey("WarningsTimeSeries", x_SerializeOneSeries(m_Warnings, current_index));
     ret.SetInteger("TotalNotFound", m_TotalNotFound);
-    ret.SetByKey("NotFoundTimeSeries", x_SerializeOneSeries(m_NotFound));
+    ret.SetByKey("NotFoundTimeSeries", x_SerializeOneSeries(m_NotFound, current_index));
 
     return ret;
 }
 
 
-CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values) const
+CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values,
+                                                    size_t  current_index) const
 {
-    size_t      index = m_CurrentIndex;
+    size_t      index = current_index;
     CJsonNode   ret(CJsonNode::NewArrayNode());
 
     for ( ;; ) {
@@ -143,7 +152,7 @@ CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values) co
     }
 
     index = kSeriesIntervals - 1;
-    while (index > m_CurrentIndex) {
+    while (index > current_index) {
         ret.AppendInteger(values[index]);
         --index;
     }

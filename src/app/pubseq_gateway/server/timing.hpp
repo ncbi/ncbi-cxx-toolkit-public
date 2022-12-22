@@ -465,7 +465,6 @@ class COperationTiming
         CRequestTimeSeries          m_IdGetTSEChunkStat;
         CRequestTimeSeries          m_IdGetNAStat;
         CRequestTimeSeries          m_IpgResolveStat;
-        mutable mutex               m_RequestTimeSeriesLock;    // Reset-rotate-serialize lock
 };
 
 #endif /* PUBSEQ_GATEWAY_TIMING__HPP */
