@@ -53,7 +53,7 @@ set(NCBI_ThirdParty_GLEW      ${NCBI_TOOLS_ROOT}/glew-1.5.8 CACHE PATH "GLEW roo
 set(NCBI_ThirdParty_GRPC      ${NCBI_TOOLS_ROOT}/grpc-1.36.4-ncbi1 CACHE PATH "GRPC root")
 set(NCBI_ThirdParty_Boring    ${NCBI_ThirdParty_GRPC})
 set(NCBI_ThirdParty_PROTOBUF  ${NCBI_TOOLS_ROOT}/grpc-1.36.4-ncbi1 CACHE PATH "PROTOBUF root")
-set(NCBI_ThirdParty_wxWidgets ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.4-ncbi2 CACHE PATH "wxWidgets root")
+set(NCBI_ThirdParty_wxWidgets ${NCBI_TOOLS_ROOT}/wxWidgets-3.2.1-ncbi1 CACHE PATH "wxWidgets root")
 set(NCBI_ThirdParty_UV        ${NCBI_TOOLS_ROOT}/libuv-1.35.0 CACHE PATH "UV root")
 set(NCBI_ThirdParty_NGHTTP2   ${NCBI_TOOLS_ROOT}/nghttp2-1.40.0 CACHE PATH "NGHTTP2 root")
 set(NCBI_ThirdParty_GL2PS     ${NCBI_TOOLS_ROOT}/gl2ps-1.4.0 CACHE PATH "GL2PS root")
@@ -354,7 +354,7 @@ NCBIcomponent_report(VDB)
 
 #############################################################################
 # wxWidgets
-set(_wx_ver 3.1)
+set(_wx_ver 3.2)
 NCBI_define_Xcomponent(NAME wxWidgets LIB
     wx_osx_cocoa_gl-${_wx_ver}
     wx_osx_cocoa_richtext-${_wx_ver}

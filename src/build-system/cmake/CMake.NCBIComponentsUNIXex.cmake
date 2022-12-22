@@ -83,11 +83,7 @@ set(NCBI_ThirdParty_SGE           "/netmnt/gridengine/current/drmaa" CACHE PATH 
 set(NCBI_ThirdParty_MONGOCXX      ${NCBI_TOOLS_ROOT}/mongodb-3.6.3 CACHE PATH "MONGOCXX root")
 set(NCBI_ThirdParty_MONGOC        ${NCBI_TOOLS_ROOT}/mongo-c-driver-1.17.5 CACHE PATH "MONGOC root")
 set(NCBI_ThirdParty_LEVELDB       ${NCBI_TOOLS_ROOT}/leveldb-1.21 CACHE PATH "LEVELDB root")
-if (APPLE)
-  set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.4-ncbi2 CACHE PATH "wxWidgets root")
-else(APPLE)
-  set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1 CACHE PATH "wxWidgets root")
-endif(APPLE)
+set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.2.1-ncbi1 CACHE PATH "wxWidgets root")
 set(NCBI_ThirdParty_GLPK          "/usr/local/glpk/4.45" CACHE PATH "GLPK root")
 set(NCBI_ThirdParty_UV            ${NCBI_TOOLS_ROOT}/libuv-1.35.0 CACHE PATH "UV root")
 set(NCBI_ThirdParty_NGHTTP2       ${NCBI_TOOLS_ROOT}/nghttp2-1.40.0 CACHE PATH "NGHTTP2 root")
@@ -522,7 +518,7 @@ NCBIcomponent_report(VDB)
 # wxWidgets
 NCBI_define_Xcomponent(NAME GTK2 PACKAGE GTK2)
 NCBI_define_Xcomponent(NAME FONTCONFIG MODULE fontconfig PACKAGE Fontconfig LIB fontconfig)
-set(_wx_ver 3.1)
+set(_wx_ver 3.2)
 NCBI_define_Xcomponent(NAME wxWidgets LIB
     wx_gtk2_gl-${_wx_ver}
     wx_gtk2_richtext-${_wx_ver}
