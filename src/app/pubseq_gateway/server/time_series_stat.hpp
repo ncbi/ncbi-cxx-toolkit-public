@@ -65,7 +65,8 @@ class CRequestTimeSeries
         static EPSGSCounter RequestStatusToCounter(CRequestStatus::ECode  status);
 
     private:
-        CJsonNode x_SerializeOneSeries(const uint64_t *  values) const;
+        CJsonNode x_SerializeOneSeries(const uint64_t *  values,
+                                       size_t  current_index) const;
 
     private:
         uint64_t    m_Requests[kSeriesIntervals];
@@ -77,7 +78,21 @@ class CRequestTimeSeries
         uint64_t    m_NotFound[kSeriesIntervals];
         uint64_t    m_TotalNotFound;
 
-        size_t      m_CurrentIndex;
+        // Note: there is no any kind of lock to protect the current index.
+        // This is an intention due to a significant performance penalty at
+        // least under a production load. If a lock is used then the blob
+        // retrieval could be up to 25% slower. Most probably it is related to
+        // the fact that the other threads which finished requests are
+        // increasing the counters under a lock so it leads to impossibility to
+        // use these threads to process the blob chunks though they are already
+        // retrieved.
+        // All the precautions were made to prevent data corruption without the
+        // lock. The only possible implication is to have a request registered
+        // under a wrong minute (which can be like harmless timing) and slight
+        // off for the total number of requests sent to the client (which is
+        // almost harmless since the client is interested in a trend but not in
+        // absolutely precise data).
+        atomic_uint_fast64_t      m_CurrentIndex;
 };
 
 

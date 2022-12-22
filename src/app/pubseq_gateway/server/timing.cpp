@@ -1113,7 +1113,6 @@ void COperationTiming::RegisterForTimeSeries(
         return;
 
     auto                counter = CRequestTimeSeries::RequestStatusToCounter(status);
-    lock_guard<mutex>   guard(m_RequestTimeSeriesLock);
 
     switch (request_type) {
         case CPSGS_Request::ePSGS_ResolveRequest:
@@ -1179,8 +1178,6 @@ void COperationTiming::Rotate(void)
 
 void COperationTiming::RotateRequestStat(void)
 {
-    lock_guard<mutex>   guard(m_RequestTimeSeriesLock);
-
     m_IdGetStat.Rotate();
     m_IdGetblobStat.Rotate();
     m_IdResolveStat.Rotate();
@@ -1230,7 +1227,6 @@ void COperationTiming::Reset(void)
         m_HugeBlobByteCounter = 0;
     }
 
-    lock_guard<mutex>   series_guard(m_RequestTimeSeriesLock);
     m_IdGetStat.Reset();
     m_IdGetblobStat.Reset();
     m_IdResolveStat.Reset();
@@ -1282,16 +1278,13 @@ COperationTiming::Serialize(int  most_ancient_time,
             }
         }
 
-        {
-            lock_guard<mutex>   series_guard(m_RequestTimeSeriesLock);
-            ret.SetByKey("ID_get_time_series", m_IdGetStat.Serialize());
-            ret.SetByKey("ID_getblob_time_series", m_IdGetblobStat.Serialize());
-            ret.SetByKey("ID_resolve_time_series", m_IdResolveStat.Serialize());
-            ret.SetByKey("ID_acc_ver_hist_time_series", m_IdAccVerHistStat.Serialize());
-            ret.SetByKey("ID_get_tse_chunk_time_series", m_IdGetTSEChunkStat.Serialize());
-            ret.SetByKey("ID_get_na_time_series", m_IdGetNAStat.Serialize());
-            ret.SetByKey("IPG_resolve_time_series", m_IpgResolveStat.Serialize());
-        }
+        ret.SetByKey("ID_get_time_series", m_IdGetStat.Serialize());
+        ret.SetByKey("ID_getblob_time_series", m_IdGetblobStat.Serialize());
+        ret.SetByKey("ID_resolve_time_series", m_IdResolveStat.Serialize());
+        ret.SetByKey("ID_acc_ver_hist_time_series", m_IdAccVerHistStat.Serialize());
+        ret.SetByKey("ID_get_tse_chunk_time_series", m_IdGetTSEChunkStat.Serialize());
+        ret.SetByKey("ID_get_na_time_series", m_IdGetNAStat.Serialize());
+        ret.SetByKey("IPG_resolve_time_series", m_IpgResolveStat.Serialize());
 
     } else {
         lock_guard<mutex>       guard(m_Lock);
