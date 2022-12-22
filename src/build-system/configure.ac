@@ -6473,7 +6473,7 @@ if test "$with_opengl" != "no"; then
    fi
    case "$OSTYPE" in
       darwin) # Use native interface
-         OPENGL_LIBS="-framework AGL -framework OpenGL"
+         OPENGL_LIBS="-framework AGL -framework GLKit -framework OpenGL"
          # ... and its proprietary successor
          OPENGL_LIBS="$OPENGL_LIBS -framework Metal -framework MetalKit"
          OPENGL_LIBS="$OPENGL_LIBS -framework QuartzCore"
