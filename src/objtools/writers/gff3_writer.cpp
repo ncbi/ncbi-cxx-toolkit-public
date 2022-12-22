@@ -1853,7 +1853,7 @@ bool CGff3Writer::xAssignFeatureAttributeDbxref(
                     string str;
                     idh.GetSeqId()->GetLabel(&str, CSeq_id::eContent);
                     if (NPOS != str.find('_')) { //nucleotide
-                        str = string("Genbank:") + str;
+                        str = string("GenBank:") + str;
                     }
                     else { //protein
                         str = string("NCBI_GP:") + str;
