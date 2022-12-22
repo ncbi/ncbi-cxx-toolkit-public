@@ -1,6 +1,27 @@
 #############################################################################
 # $Id$
 #############################################################################
+# 
+#                            PUBLIC DOMAIN NOTICE
+#               National Center for Biotechnology Information
+# 
+#  This software/database is a "United States Government Work" under the
+#  terms of the United States Copyright Act.  It was written as part of
+#  the author's official duties as a United States Government employee and
+#  thus cannot be copyrighted.  This software/database is freely available
+#  to the public for use. The National Library of Medicine and the U.S.
+#  Government have not placed any restriction on its use or reproduction.
+# 
+#  Although all reasonable efforts have been taken to ensure the accuracy
+#  and reliability of the software and data, the NLM and the U.S.
+#  Government do not and cannot warrant the performance or results that
+#  may be obtained by using this software or data. The NLM and the U.S.
+#  Government disclaim all warranties, express or implied, including
+#  warranties of performance, merchantability or fitness for any particular
+#  purpose.
+# 
+#  Please cite the author in any work or product based on this material.
+#############################################################################
 #############################################################################
 ##
 ##  NCBI CMake wrapper
@@ -44,6 +65,7 @@
 ##      NCBI_uses_toolkit_libraries(  list of libraries)
 ##      NCBI_optional_toolkit_libraries( COMP list of libraries) - if component COMP is found, use these libraries
 ##      NCBI_uses_external_libraries( list of libraries)
+##      NCBI_custom_target_dependencies(list of toolkit libraries or apps)
 ##      NCBI_add_definitions(         list of compiler definitions)
 ##      NCBI_add_include_directories( list of directories)
 ##
@@ -1651,6 +1673,11 @@ function(NCBI_internal_verify_libs)
                     get_property(_hasspec GLOBAL PROPERTY NCBI_PTBPROP_DATASPEC_${_prj})
                     if (_hasspec)
                         list(APPEND _value ${_prj})
+                    else()
+                        get_property(_type GLOBAL PROPERTY NCBI_PTBPROP_TYPE_${_prj})
+                        if (NOT "${_type}" STREQUAL "STATIC" AND NOT "${_type}" STREQUAL "SHARED")
+                            list(APPEND _value ${_prj})
+                        endif()
                     endif()
                 else()
                     list(APPEND _value ${_prj})
@@ -1709,6 +1736,36 @@ function(NCBI_internal_verify_libs)
     list(REMOVE_DUPLICATES _value)
     set(NCBITMP_NCBILIB ${_value} PARENT_SCOPE)
     set(NCBITMP_TARGET_NOTFOUND ${NCBITMP_TARGET_NOTFOUND} PARENT_SCOPE)
+endfunction()
+
+##############################################################################
+function(NCBI_internal_identify_libs _link _deps)
+    set(_libs ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB})
+    set(_linklibs)
+    set(_prjdeps)
+    foreach( _item IN LISTS _libs)
+        get_property(_type GLOBAL PROPERTY NCBI_PTBPROP_TYPE_${_item})
+        if (NOT "${_type}" STREQUAL "")
+            if ("${_type}" STREQUAL "STATIC" OR "${_type}" STREQUAL "SHARED")
+                list(APPEND _linklibs ${_item})
+            else()
+                list(APPEND _prjdeps ${_item})
+            endif()
+        else()
+            if(TARGET ${_item})
+                get_property(_type TARGET ${_item} PROPERTY TYPE)
+                if(${_type} MATCHES "LIBRARY")
+                    list(APPEND _linklibs ${_item})
+                else()
+                    list(APPEND _prjdeps ${_item})
+                endif()
+            else()
+                list(APPEND _linklibs ${_item})
+            endif()
+        endif()
+    endforeach()
+    set(${_link} ${_linklibs} PARENT_SCOPE)
+    set(${_deps} ${_prjdeps} PARENT_SCOPE)
 endfunction()
 
 ##############################################################################
@@ -2246,6 +2303,7 @@ endif()
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_DEPS_${NCBI_PROJECT} "${NCBITMP_NCBILIB}")
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_DIRECT_DEPS_${NCBI_PROJECT} "${NCBITMP_NCBILIB}")
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_DIR_${NCBI_PROJECT} "${NCBI_CURRENT_SOURCE_DIR}")
+        set_property(GLOBAL PROPERTY NCBI_PTBPROP_TYPE_${NCBI_PROJECT} "${NCBI_${NCBI_PROJECT}_TYPE}")
         if (DEFINED NCBI_${NCBI_PROJECT}_DATASPEC)
             set_property(GLOBAL PROPERTY NCBI_PTBPROP_DATASPEC_${NCBI_PROJECT} "${NCBI_${NCBI_PROJECT}_DATASPEC}")
         elseif(NOT "${NCBITMP_PROJECT_DATASPEC}" STREQUAL "")
@@ -2429,11 +2487,14 @@ if(OFF)
 endif()
 
 #message("target_link_libraries: ${NCBI_PROJECT}     ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB}")
-        set(_libs ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB})
-        if ("${_libs}" STREQUAL "")
-            set(_libs ${ORIG_LIBS})
+        NCBI_internal_identify_libs(_linklibs _prjdeps)
+        if ("${_linklibs}" STREQUAL "")
+            set(_linklibs ${ORIG_LIBS})
         endif()
-        target_link_libraries(     ${NCBI_PROJECT}         ${_libs})
+        target_link_libraries(     ${NCBI_PROJECT}         ${_linklibs})
+        if (NOT "${_prjdeps}" STREQUAL "")
+            add_dependencies(${NCBI_PROJECT} ${_prjdeps})
+        endif()
 
         if (DEFINED _suffix)
             set_target_properties( ${NCBI_PROJECT} PROPERTIES PROJECT_LABEL ${NCBI_PROJECT}${_suffix})
