@@ -38,33 +38,33 @@
 #include <objtools/flatfile/flatfile_parser.hpp>
 
 // clang-format off
-/* genbank format old style LOCUS line column position
- */
-#define ParFlat_COL_BASES           22
-#define ParFlat_COL_BP              30
-#define ParFlat_COL_STRAND          33
-#define ParFlat_COL_MOLECULE        36
-#define ParFlat_COL_TOPOLOGY        42
-#define ParFlat_COL_DIV             52
-#define ParFlat_COL_DATE            62
+enum EIndexCol {
+    /* genbank format old style LOCUS line column position */
+    ParFlat_COL_BASES           = 22,
+    ParFlat_COL_BP              = 30,
+    ParFlat_COL_STRAND          = 33,
+    ParFlat_COL_MOLECULE        = 36,
+    ParFlat_COL_TOPOLOGY        = 42,
+    ParFlat_COL_DIV             = 52,
+    ParFlat_COL_DATE            = 62,
 
-/* genbank format new style LOCUS line column position
- */
-#define ParFlat_COL_BASES_NEW       29
-#define ParFlat_COL_BP_NEW          41
-#define ParFlat_COL_STRAND_NEW      44
-#define ParFlat_COL_MOLECULE_NEW    47
-#define ParFlat_COL_TOPOLOGY_NEW    55
-#define ParFlat_COL_DIV_NEW         64
-#define ParFlat_COL_DATE_NEW        68
+    /* genbank format new style LOCUS line column position */
+    ParFlat_COL_BASES_NEW       = 29,
+    ParFlat_COL_BP_NEW          = 41,
+    ParFlat_COL_STRAND_NEW      = 44,
+    ParFlat_COL_MOLECULE_NEW    = 47,
+    ParFlat_COL_TOPOLOGY_NEW    = 55,
+    ParFlat_COL_DIV_NEW         = 64,
+    ParFlat_COL_DATE_NEW        = 68,
 
-#define ParFlat_REF_END             26
-#define ParFlat_REF_BTW             27
-#define ParFlat_REF_SITES           28
-#define ParFlat_REF_NO_TARGET       29
+    ParFlat_REF_END             = 26,
+    ParFlat_REF_BTW             = 27,
+    ParFlat_REF_SITES           = 28,
+    ParFlat_REF_NO_TARGET       = 29,
 
-#define ParFlat_COL_FEATKEY         5
-#define ParFlat_COL_FEATDAT         21
+    ParFlat_COL_FEATKEY         = 5,
+    ParFlat_COL_FEATDAT         = 21,
+};
 // clang-format on
 
 #endif
