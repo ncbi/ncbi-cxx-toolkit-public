@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import subprocess
 from subprocess import Popen, PIPE
 
 def MakeIncFile(outfile, cmd_args):
@@ -12,11 +13,11 @@ def MakeIncFile(outfile, cmd_args):
         with open(outfile, "rb") as _outfile:
             _original=_outfile.read()
 
-    with Popen(cmd_args, stdout=PIPE) as proc:
-        _produced = proc.stdout.read()
-        returncode = proc.returncode
+    proc = subprocess.run(cmd_args, stdout=PIPE)
+    returncode = proc.returncode
 
     if returncode == 0:
+        _produced = proc.stdout
         if _original != _produced:
             with open(outfile, "wb") as _outfile:
                 _outfile.write(_produced)
