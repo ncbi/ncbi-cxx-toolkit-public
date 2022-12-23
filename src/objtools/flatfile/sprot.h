@@ -35,41 +35,39 @@
 #ifndef _SPROT_
 #define _SPROT_
 
-// clang-format off
 #define ParFlat_COL_DATA_SP 5
 
-/* datablk.type: for detecting which keyword in the datablk's chain
- */
-#define ParFlatSP_ID        0
-#define ParFlatSP_AC        1
-#define ParFlatSP_DT        2
-#define ParFlatSP_DE        3
-#define ParFlatSP_GN        4
-#define ParFlatSP_OS        5
-#define ParFlatSP_RN        6
-#define ParFlatSP_CC        7
-#define ParFlatSP_PE        8
-#define ParFlatSP_DR        9
-#define ParFlatSP_KW        10
-#define ParFlatSP_FT        11
-#define ParFlatSP_SQ        12
-#define ParFlatSP_END       13
+/* datablk.type: for detecting which keyword in the datablk's chain */
+enum ESprotBlockType {
+    ParFlatSP_ID  = 0,
+    ParFlatSP_AC  = 1,
+    ParFlatSP_DT  = 2,
+    ParFlatSP_DE  = 3,
+    ParFlatSP_GN  = 4,
+    ParFlatSP_OS  = 5,
+    ParFlatSP_RN  = 6,
+    ParFlatSP_CC  = 7,
+    ParFlatSP_PE  = 8,
+    ParFlatSP_DR  = 9,
+    ParFlatSP_KW  = 10,
+    ParFlatSP_FT  = 11,
+    ParFlatSP_SQ  = 12,
+    ParFlatSP_END = 13,
 
-/* define subkeyword
- */
-#define ParFlatSP_OG        20          /* organelle */
-#define ParFlatSP_OC        21          /* organism classification */
-#define ParFlatSP_OX        22          /* NCBI tax ids */
-#define ParFlatSP_OH        23          /* NCBI tax ids and organism names
+    /* define subkeyword */
+    ParFlatSP_OG = 20, /* organelle */
+    ParFlatSP_OC = 21, /* organism classification */
+    ParFlatSP_OX = 22, /* NCBI tax ids */
+    ParFlatSP_OH = 23, /* NCBI tax ids and organism names
                                            of viral hosts */
-#define ParFlatSP_RP        24          /* reference positions */
-#define ParFlatSP_RC        25          /* reference comment */
-#define ParFlatSP_RM        26          /* old (not used) reference Medline */
-#define ParFlatSP_RX        27          /* reference Medline */
-#define ParFlatSP_RA        28          /* reference authors */
-#define ParFlatSP_RG        29          /* reference consortium */
-#define ParFlatSP_RL        30          /* reference location */
-#define ParFlatSP_RT        31          /* reference Title */
-// clang-format on
+    ParFlatSP_RP = 24, /* reference positions */
+    ParFlatSP_RC = 25, /* reference comment */
+    ParFlatSP_RM = 26, /* old (not used) reference Medline */
+    ParFlatSP_RX = 27, /* reference Medline */
+    ParFlatSP_RA = 28, /* reference authors */
+    ParFlatSP_RG = 29, /* reference consortium */
+    ParFlatSP_RL = 30, /* reference location */
+    ParFlatSP_RT = 31, /* reference Title */
+};
 
 #endif

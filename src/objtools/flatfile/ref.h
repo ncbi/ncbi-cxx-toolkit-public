@@ -34,57 +34,32 @@
 #ifndef _REF_
 #define _REF_
 
-// clang-format off
-#define ParFlat_MISSING_JOURNAL       0
-#define ParFlat_UNPUB_JOURNAL         1
-#define ParFlat_MONOGRAPH_NOT_JOURNAL 2
-#define ParFlat_NORMAL_JOURNAL        3
-#define ParFlat_SYMPOSIUM_CITATION    4
-#define ParFlat_SUBMITTED             5
-#define ParFlat_THESIS_CITATION       6
-#define ParFlat_THESIS_IN_PRESS       7
-#define ParFlat_IN_PRESS              8
-#define ParFlat_PATENT_CITATION       9
-#define ParFlat_BOOK_CITATION         10
-#define ParFlat_GEN_CITATION          11
-#define ParFlat_ONLINE_CITATION       12
+enum ERefRetType {
+    ParFlat_MISSING_JOURNAL       = 0,
+    ParFlat_UNPUB_JOURNAL         = 1,
+    ParFlat_MONOGRAPH_NOT_JOURNAL = 2,
+    ParFlat_NORMAL_JOURNAL        = 3,
+    ParFlat_SYMPOSIUM_CITATION    = 4,
+    ParFlat_SUBMITTED             = 5,
+    ParFlat_THESIS_CITATION       = 6,
+    ParFlat_THESIS_IN_PRESS       = 7,
+    ParFlat_IN_PRESS              = 8,
+    ParFlat_PATENT_CITATION       = 9,
+    ParFlat_BOOK_CITATION         = 10,
+    ParFlat_GEN_CITATION          = 11,
+    ParFlat_ONLINE_CITATION       = 12,
+};
 
-#define ParFlat_Authors               20
-#define ParFlat_Journal               21
-#define ParFlat_Book                  22
-#define ParFlat_Citation              23
-#define ParFlat_Title                 24
-#define ParFlat_Submission            25
-#define ParFlat_Description           26
-#define ParFlat_Contents              27
-#define ParFlat_Comment               28
-#define ParFlat_Ignore                29
-
-#define ParFlat_Cit_let_manuscript    1
-#define ParFlat_Cit_let_letter        2
-#define ParFlat_Cit_let_thesis        3
-
-#define ParFlat_Cit_book_othertype    0
-#define ParFlat_Cit_proc_othertype    1
-#define ParFlat_Cit_let_othertype     2
-
-#define ParFlat_Cit_art_journal       1
-#define ParFlat_Cit_art_book          2
-#define ParFlat_Cit_art_proc          3
-
-#define ParFlat_Author_std            1
-#define ParFlat_Author_ml             2
-#define ParFlat_Author_str            3
-
-#define ParFlat_ReftypeIgnore         0
-#define ParFlat_ReftypeNoParse        1
-#define ParFlat_ReftypeThesis         2
-#define ParFlat_ReftypeArticle        3
-#define ParFlat_ReftypeSubmit         4
-#define ParFlat_ReftypeBook           5
-#define ParFlat_ReftypePatent         6
-#define ParFlat_ReftypeUnpub          7
-// clang-format on
+enum ERefBlockType {
+    ParFlat_ReftypeIgnore  = 0,
+    ParFlat_ReftypeNoParse = 1,
+    ParFlat_ReftypeThesis  = 2,
+    ParFlat_ReftypeArticle = 3,
+    ParFlat_ReftypeSubmit  = 4,
+    ParFlat_ReftypeBook    = 5,
+    ParFlat_ReftypePatent  = 6,
+    ParFlat_ReftypeUnpub   = 7,
+};
 
 BEGIN_NCBI_SCOPE
 
