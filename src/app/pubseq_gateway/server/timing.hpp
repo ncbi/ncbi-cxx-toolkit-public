@@ -369,6 +369,7 @@ class COperationTiming
         CJsonNode Serialize(int  most_ancient_time,
                             int  most_recent_time,
                             const vector<CTempString> &  histogram_names,
+                            bool  need_time_series,
                             unsigned long  tick_span) const;
 
     private:
