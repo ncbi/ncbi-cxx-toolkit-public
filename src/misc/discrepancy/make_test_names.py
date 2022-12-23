@@ -29,7 +29,6 @@ class CBuildTestNames:
 
     def LoadIncFile(self):
         self.testnames=list()
-        print(self.incfile)
         if os.path.isfile(self.incfile):
             with open(self.incfile, "r") as file:
                 for line in file.readlines():
