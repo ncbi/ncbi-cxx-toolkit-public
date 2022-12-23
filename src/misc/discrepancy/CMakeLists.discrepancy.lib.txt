@@ -29,99 +29,62 @@ NCBI_begin_lib(xdiscrepancy)
     )
     NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
     NCBI_project_watchers(gotvyans)
+
+    if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
+        NCBI_custom_target_dependencies(discrepancy_fsm_files)
+    endif()
+    if(ON) # disable until RW-1852
+        NCBI_custom_target_dependencies(discrepancy_testnames)
+    endif()
+
+
 NCBI_end_lib()
 
-if(OFF) # disable until CXX-12758
+function(define_discrepancy_fsm_files_target)
+    set(_prt_modules
+        product_rules.prt
+        organelle_products.prt
+        FLATFILE_FIND.txt
+    )
 
-if (TARGET xdiscrepancy)
-    set(_target_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../include/misc/discrepancy)
-    set(_source_dir ${CMAKE_CURRENT_SOURCE_DIR})
+    define_multipatern_inc_target(discrepancy_fsm_files prt2fsm "${_prt_modules}" "")
+endfunction()
+
+
+NCBI_begin_custom_target(discrepancy_fsm_files)
+    NCBI_custom_target_definition(define_discrepancy_fsm_files_target)
+    NCBI_custom_target_dependencies(prt2fsm)
+NCBI_end_custom_target()
+
+NCBI_begin_custom_target(discrepancy_testnames)
+    NCBI_custom_target_definition(define_discrepancy_testnames_target)
+NCBI_end_custom_target()
+
+
+function(define_discrepancy_testnames_target)
+    set(_target_dir ${NCBI_INC_ROOT}/misc/discrepancy)
+
+    set(_source_dir ${NCBI_CURRENT_SOURCE_DIR})
     set(_cpp_files)
 
     foreach(_module ${_discrepancy_modules})
-       list(APPEND _cpp_files ${_source_dir}/${_module}.cpp)
+       list(APPEND _cpp_files ${_module}.cpp)
     endforeach()
 
     add_custom_command(
         OUTPUT ${_target_dir}/testnames.inc
-        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/make_test_names.py ${_target_dir}/testnames.inc ${_cpp_files}
+        COMMAND python3 make_test_names.py ${_target_dir}/testnames.inc ${_cpp_files}
         COMMENT "Running make_test_names.py for ${discrepancy_modules} modules"
-        DEPENDS ${_cpp_files} ${CMAKE_CURRENT_SOURCE_DIR}/make_test_names.py
+        WORKING_DIRECTORY ${_source_dir}
+        DEPENDS ${_cpp_files} ${_source_dir}/make_test_names.py
         )
 
     add_custom_target(
-        testnames_inc
+        discrepancy_testnames
         DEPENDS ${_target_dir}/testnames.inc
     )
-    add_dependencies(xdiscrepancy testnames_inc)
+    add_dependencies(xdiscrepancy discrepancy_testnames)
     unset(_cpp_files)
     unset(_target_dir)
     unset(_source_dir)
-endif()
-
-# update .inc files only on Unix
-if (UNIX AND NOT CMAKE_CROSSCOMPILING)
-
-    get_property(_allowedprojects GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS)
-    list(APPEND _allowedprojects prt2fsm multipattern)
-    list(REMOVE_DUPLICATES _allowedprojects)
-    set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS ${_allowedprojects})
-    unset(_allowedprojects)
-
-    if (TARGET xdiscrepancy)
-
-        set(_prt_modules
-            product_rules.prt
-            organelle_products.prt
-            FLATFILE_FIND.txt
-        )
-
-        set(_target_dir ${CMAKE_CURRENT_SOURCE_DIR})
-        set(_source_dir ${CMAKE_CURRENT_SOURCE_DIR})
-        set(_make_fsm_file ${CMAKE_CURRENT_SOURCE_DIR}/../../objects/macro/make_fsm_file.py)
-        set(_prt2fsm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/prt2fsm${CMAKE_EXECUTABLE_SUFFIX})
-
-        add_custom_target(discrepancy_fsm_files
-            COMMENT "Generate FSM files for discrepancy generator"
-            SOURCES ${_make_fsm_file}
-            )
-
-        foreach(_module ${_prt_modules})
-
-            # remove suffix
-            string(REGEX REPLACE "\\..*" "" _tmp_module_name "${_module}")
-
-            set(_prt_file ${_module})
-            set(_inc_file ${_tmp_module_name}.inc)
-            set(_target disrepancy_${_tmp_module_name}_inc)
-
-            add_custom_command(
-                OUTPUT ${_target_dir}/${_inc_file}
-                COMMAND python3 ${_make_fsm_file} ${_inc_file} ${_prt2fsm} -i ${_prt_file}
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMENT "Running make_fsm_file.py for ${_prt_file}"
-                DEPENDS ${_source_dir}/${_prt_file} ${_make_fsm_file} ${_prt2fsm}
-                )
-            add_custom_target(
-                ${_target}
-                DEPENDS ${_target_dir}/${_inc_file}
-            )
-            add_dependencies(discrepancy_fsm_files ${_target})
-        endforeach()
-
-        # uncomment next line to allow generating .inc files automatically
-        if (NCBI_FSM_COMPILER_ENABLED)
-            add_dependencies(xdiscrepancy discrepancy_fsm_files)
-        endif()
-
-        unset(_inc_file)
-        unset(_prt_file)
-        unset(_target)
-        unset(_target_dir)
-        unset(_source_dir)
-        unset(_prt2fsm)
-
-    endif() # if TARGET discrepancy
-
-endif() # if UNIX
-endif()
+endfunction()
