@@ -1244,3 +1244,39 @@ BOOST_AUTO_TEST_CASE(TestMSVCTupleBug)
     A1 a2 = experimental::to_array(a1);
 }
 #endif
+
+#ifndef NCBI_OS_MSWIN
+/*
+    MSVC compiler cannot instantiate array of std::initializer_lists.
+    This doesn't work on windows. It compiles, but in fact in run-time it's empty
+        static constexpr
+        std::initializer_list<int> il_two_by_three [] =  { {1, 2, 3}, {4, 5} };
+
+    But this still does:
+        static constexpr std::initializer_list<int> il_three_items = {1, 2, 3};
+*/
+BOOST_AUTO_TEST_CASE(Test_initializer_list)
+{
+    prefixer buf(std::cout.rdbuf());
+    std::ostream out(&buf);
+
+    //static constexpr std::initializer_list<int> il_three_items = {1, 2, 3};
+    //static constexpr std::initializer_list<int> il_two_items   = {4, 5};
+    static constexpr std::initializer_list<std::string_view> il_three_items = {"1", "2", "3"};
+    static constexpr std::initializer_list<std::string_view> il_two_items   = {"4", "5"};
+
+    BOOST_CHECK_EQUAL(sizeof(il_three_items), sizeof(il_two_items));
+
+    static constexpr
+    std::initializer_list<int> il_two_by_three [] =  { {1, 2, 3}, {4, 5} };
+
+    //static constexpr
+    //std::initializer_list<std::string_view> il_two_by_three [] = { {"1", "2", "3"}, {"4", "5", "6"} };
+
+    for (auto rec1: il_two_by_three) {
+        for (auto rec2: rec1) {
+            out << rec2 << "\n";
+        }
+    }
+}
+#endif
