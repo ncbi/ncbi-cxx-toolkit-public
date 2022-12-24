@@ -11,28 +11,34 @@ NCBI_begin_lib(macro)
 
 NCBI_end_lib()
 
+if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
+
 NCBI_begin_custom_target(macro_fsm_files)
     NCBI_custom_target_definition(define_macro_fsm_files_target)
     NCBI_custom_target_dependencies(multipattern)
 NCBI_end_custom_target()
 
-function(define_macro_fsm_files_target)
+endif()
+
+
+function(define_macro_fsm_files_target variable access value current_list_file stack)
     set(_prt_modules
         weasel.txt
     )
 
-    define_multipatern_inc_target(macro_fsm_files multipattern "${_prt_modules}" "-A")
+    define_multipatern_inc_target(macro_fsm_files ${current_list_file} multipattern "${_prt_modules}" "-A")
 endfunction()
 
-function(define_multipatern_inc_target up_target compiler modules more_args)
+function(define_multipatern_inc_target up_target current_list_file compiler modules more_args)
+
+    cmake_path(GET current_list_file PARENT_PATH _source_dir)
 
     set (_compiler ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${compiler}${CMAKE_EXECUTABLE_SUFFIX})
 
-    set(_source_dir ${NCBI_CURRENT_SOURCE_DIR})
-    set(_target_dir ${NCBI_CURRENT_SOURCE_DIR})
+    set(_target_dir ${_source_dir})
 
-    #set(_make_fsm_file ${NCBI_CURRENT_SOURCE_DIR}/../../objects/macro/make_fsm_file.py)
     set(_make_fsm_file ${NCBI_SRC_ROOT}/objects/macro/make_fsm_file.py)
+    #set(_make_fsm_file ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/make_fsm_file.py)
 
     add_custom_target(${up_target}
         COMMENT "Generate FSM files"
@@ -53,7 +59,8 @@ function(define_multipatern_inc_target up_target compiler modules more_args)
             COMMAND python3 ${_make_fsm_file} ${_inc_file} ${_compiler} -i ${_prt_file} ${more_args}
             WORKING_DIRECTORY ${_source_dir}
             COMMENT "Running make_fsm_file.py for ${_prt_file}"
-            DEPENDS ${_source_dir}/${_prt_file} ${_make_fsm_file} ${_compiler}
+            DEPENDS ${current_list_file} ${_source_dir}/${_prt_file} ${_make_fsm_file} ${_compiler}
+            # ${CMAKE_CURRENT_FUNCTION_LIST_FILE}
             )
 
         add_custom_target(
