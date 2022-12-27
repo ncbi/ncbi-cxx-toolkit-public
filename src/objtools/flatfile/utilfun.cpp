@@ -1580,13 +1580,13 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, 
 }
 
 /**********************************************************/
-ValNodePtr ConstructValNode(ValNodePtr head, CSeq_id::E_Choice choice, char* data)
+ValNodePtr ConstructValNode(CSeq_id::E_Choice choice, const char* data)
 {
     ValNodePtr res;
 
-    res         = ValNodeNew(head);
+    res         = ValNodeNew(nullptr);
     res->choice = choice;
-    res->data   = data;
+    res->data   = StringSave(data);
     return (res);
 }
 
