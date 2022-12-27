@@ -145,6 +145,9 @@ race:^ncbi::objects::CSeqMap::x_FindSegment
 # false positive -- double-check one-time initialization
 race:^ncbi::objects::CSeqMap::GetLength
 
+# false positive -- double-check one-time initialization
+race:^ncbi::objects::CProcessor::GetGiOffset()
+
 
 
 ################################################################
