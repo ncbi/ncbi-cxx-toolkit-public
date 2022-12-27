@@ -1699,7 +1699,7 @@ static bool AddToList(ValNodePtr* head, char* str)
         }
         *dot = '.';
     }
-    vnp = ConstructValNode(nullptr, CSeq_id::e_not_set, StringSave(str));
+    vnp = ConstructValNode(CSeq_id::e_not_set, str);
     ValNodeLink(head, vnp);
 
     return true;
@@ -1994,9 +1994,9 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, bool* drop, Parser
                 p = nullptr;
 
             if (ntype > CSeq_id::e_not_set) {
-                embl_vnp->next = ConstructValNode(nullptr, ptype, StringSave(token3));
+                embl_vnp->next = ConstructValNode(ptype, token3);
                 embl_vnp       = embl_vnp->next;
-                embl_vnp->next = ConstructValNode(nullptr, ntype, StringSave(token2));
+                embl_vnp->next = ConstructValNode(ntype, token2);
                 embl_vnp       = embl_vnp->next;
             }
 
