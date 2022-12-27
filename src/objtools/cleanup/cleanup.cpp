@@ -4738,11 +4738,7 @@ bool CInfluenzaSet::OkToMakeSet() const
         return false;
     }
 
-    bool ok = true;
-    bool* seg_found = new bool[m_Required];
-    for (size_t i = 0; i < m_Required; i++) {
-        seg_found[i] = false;
-    }
+    set<size_t> segs_found;
 
     ITERATE(TMembers, it, m_Members) {
         // check to make sure one of each segment is represented
@@ -4752,28 +4748,19 @@ bool CInfluenzaSet::OkToMakeSet() const
             ITERATE(CBioSource::TSubtype, s, src->GetSource().GetSubtype()) {
                 if ((*s)->IsSetSubtype() && (*s)->IsSetName() &&
                     (*s)->GetSubtype() == CSubSource::eSubtype_segment) {
-                    try {
-                        size_t seg = NStr::StringToSizet((*s)->GetName());
-                        if (seg < 1 || seg > m_Required) {
-                            ok = false;
-                            break;
-                        }
-                        seg_found[seg - 1] = true;
-                        found_seg = true;
-                    } catch (CException&) {
-                        ok = false;
-                        break;
+                    size_t seg = NStr::StringToSizet((*s)->GetName(), NStr::fConvErr_NoThrow);
+                    if (seg < 1 || seg > m_Required) {
+                        return false;
                     }
+                    segs_found.insert(seg);
+                    found_seg = true;
                 }
             }
             if (!found_seg) {
-                ok = false;
+                return false;
             }
         } else {
-            ok = false;
-        }
-        if (!ok) {
-            break;
+            return false;
         }
 
         // make sure all coding regions and genes are complete
@@ -4784,25 +4771,13 @@ bool CInfluenzaSet::OkToMakeSet() const
         while (f) {
             if (f->GetLocation().IsPartialStart(eExtreme_Biological) ||
                 f->GetLocation().IsPartialStop(eExtreme_Biological)) {
-                ok = false;
-                break;
+                return false;
             }
             ++f;
         }
-        if (!ok) break;
     }
 
-    if (ok) {
-        for (size_t i = 0; i < m_Required; i++) {
-            if (!seg_found[i]) {
-                ok = false;
-                break;
-            }
-        }
-    }
-    delete[] seg_found;
-
-    return ok;
+    return (segs_found.size() == m_Required);
 }
 
 
