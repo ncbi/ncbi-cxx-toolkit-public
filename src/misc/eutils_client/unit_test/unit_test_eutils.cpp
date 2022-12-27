@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistory)
 {
     CEutilsClient cli;
     stringstream content;
-    
+
     BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistory)
 
     xml::node_set items = root.run_xpath_query("./WebEnv");
     BOOST_CHECK ( 1 == items.size() );
-    
+
     items  = root.run_xpath_query("./QueryKey");
     BOOST_CHECK ( 1 == items.size() );
 }
@@ -68,9 +68,12 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
 {
     CEutilsClient cli;
     stringstream content;
-   
+
+    // PubMed search only supports queries that match up to 10,000 items.
+    // This is regardless of any limit on the number of items to return.
+    // See: https://ncbiinsights.ncbi.nlm.nih.gov/2022/11/22/updated-pubmed-eutilities-live/
     cli.SetMaxReturn(101); 
-    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
+    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma AND 1780/01/01:1968/01/01[pdat]", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -94,7 +97,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
 
         items = root.run_xpath_query("./RetStart/text()");
         BOOST_CHECK ( 1 == items.size() );
- 
+
         int retstart = NStr::StringToNumeric<int>(items.size() ? items.begin()->get_content() : "0");
         BOOST_CHECK ( retstart + retmax <= count );
 
@@ -117,9 +120,12 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
 {
     CEutilsClient cli;
     stringstream content;
-   
+
+    // PubMed search only supports queries that match up to 10,000 items.
+    // This is regardless of any limit on the number of items to return.
+    // See: https://ncbiinsights.ncbi.nlm.nih.gov/2022/11/22/updated-pubmed-eutilities-live/
     cli.SetMaxReturn(101); 
-    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
+    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma AND 1780/01/01:1968/01/01[pdat]", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -151,7 +157,7 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
 {
     CEutilsClient cli;
     stringstream content;
-   
+
     cli.SetMaxReturn(101);
     BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
@@ -184,7 +190,7 @@ BOOST_AUTO_TEST_CASE(TestLinkHistory)
 {
     CEutilsClient cli;
     stringstream content;
-   
+
     vector<int> uids;
     uids.push_back(15718680);
     uids.push_back(157427902);
@@ -217,7 +223,7 @@ BOOST_AUTO_TEST_CASE(TestLinkOut)
         xml::node_set items = root.run_xpath_query("//eLinkResult/LinkSet/IdUrlList/IdUrlSet");
         BOOST_CHECK ( 2 == items.size() );
     }
-    
+
     //The same with accessions
     {
         vector<objects::CSeq_id_Handle> acc = { objects::CSeq_id_Handle::GetHandle("DQ896796.2"), objects::CSeq_id_Handle::GetHandle("DQ896797.2") };
