@@ -814,7 +814,6 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     XmlIndexPtr xip;
     XmlIndexPtr xipkwd;
     ValNodePtr  vnp;
-    char*       buf;
     char*       p;
 
     bool tpa_check = (source == Parser::ESource::EMBL);
@@ -840,21 +839,20 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     for (xipkwd = xip->subtags; xipkwd; xipkwd = xipkwd->next)
         len += (xipkwd->end - xipkwd->start + 2);
 
-    buf  = MemNew(len);
-    *buf = '\0';
+    string buf;
+    buf.reserve(len);
     for (xipkwd = xip->subtags; xipkwd; xipkwd = xipkwd->next) {
         p = XMLGetTagValue(entry, xipkwd);
         if (! p)
             continue;
-        if (*buf != '\0')
-            StringCat(buf, "; ");
-        StringCat(buf, p);
+        if (! buf.empty())
+            buf += "; ";
+        buf += p;
         MemFree(p);
     }
 
-    vnp = ConstructValNode(nullptr, objects::CSeq_id::e_not_set, buf);
+    vnp = ConstructValNode(objects::CSeq_id::e_not_set, buf.c_str());
     check_est_sts_gss_tpa_kwds(vnp, len, ibp, tpa_check, ibp->specialist_db, ibp->inferential, ibp->experimental, ibp->assembly);
-    MemFree(buf);
     delete vnp;
     return true;
 }

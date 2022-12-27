@@ -595,14 +595,14 @@ bool GenBankIndex(ParserPtr pp)
                         break;
                     if (kwds)
                         ValNodeFreeData(kwds);
-                    kwds     = ConstructValNode(nullptr, objects::CSeq_id::e_not_set, StringSave(finfo.str + 8));
+                    kwds     = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
                     tkwds    = kwds;
                     kwds_len = StringLen(finfo.str) - 8;
                     break;
                 case ParFlat_DBLINK:
                     if (dbl)
                         ValNodeFreeData(dbl);
-                    dbl     = ConstructValNode(nullptr, objects::CSeq_id::e_not_set, StringSave(finfo.str + 8));
+                    dbl     = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
                     tdbl    = dbl;
                     dbl_len = StringLen(finfo.str) - 8;
                     break;
