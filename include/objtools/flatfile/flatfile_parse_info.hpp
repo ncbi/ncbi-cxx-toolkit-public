@@ -40,10 +40,6 @@
 BEGIN_NCBI_SCOPE
 
 // some forward declarations
-struct FileBuf {
-    const char* start   = nullptr;
-    const char* current = nullptr;
-};
 struct Indexblk;
 struct ProtBlk;
 class CKeywordParser;
@@ -51,6 +47,20 @@ using IndexblkPtr = Indexblk*;
 using ProtBlkPtr = ProtBlk*;
 
 using TEntryList = list<CRef<objects::CSeq_entry>>;
+
+struct FileBuf {
+    const char* start   = nullptr;
+    const char* current = nullptr;
+
+    void set(const char* p, size_t offs = 0)
+    {
+        start   = p;
+        current = p + offs;
+    }
+
+    size_t get_offs() const { return size_t(current - start); }
+    void   set_offs(size_t offs) { current = start + offs; }
+};
 
 struct Parser {
 
@@ -96,6 +106,7 @@ struct Parser {
     vector<IndexblkPtr> entrylist;    /* the index block */
     Int4         curindx   = 0;       /* current index of the entrylist */
     Indexblk*    CurEntry() { return entrylist[curindx]; }
+    size_t       GetNumEntries() const { return (Uint4)indx; }
 
     /* all the files will be produced in the directory where the program was
      * executed except the input file which located in the argument path
