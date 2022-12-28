@@ -170,7 +170,7 @@ protected:
         CSeq_annot&,
         ILineErrorListener*);
 
-    virtual bool xUpdateAnnotMrna(
+    virtual bool xUpdateAnnotRna(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CSeq_annot&,
