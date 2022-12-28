@@ -399,8 +399,8 @@ bool CGff3Reader::xUpdateAnnotFeature(
     if (recType == "gene") {
          return xUpdateAnnotGene(gffRecord, pFeature, annot, pEC);
     }
-    if (recType == "mrna") {
-        return xUpdateAnnotMrna(gffRecord, pFeature, annot, pEC);
+    if (NStr::EndsWith(recType, "rna")) {
+            return xUpdateAnnotRna(gffRecord, pFeature, annot, pEC);
     }
     if (recType == "region") {
         return xUpdateAnnotRegion(gffRecord, pFeature, annot, pEC);
@@ -720,7 +720,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::xUpdateAnnotMrna(
+bool CGff3Reader::xUpdateAnnotRna(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
     CSeq_annot& annot,
