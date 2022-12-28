@@ -614,15 +614,13 @@ bool GenBankIndex(ParserPtr pp)
 
                 while (! end_of_file && (finfo.str[0] == ' ' || finfo.str[0] == '\t')) {
                     if (currentKeyword == ParFlat_KEYWORDS && tkwds) {
-                        tkwds->next = ValNodeNew(nullptr);
-                        tkwds       = tkwds->next;
+                        tkwds       = ValNodeNew(tkwds);
                         tkwds->data = StringSave(finfo.str);
                         kwds_len += StringLen(finfo.str);
                     }
 
                     if (currentKeyword == ParFlat_DBLINK && tdbl) {
-                        tdbl->next = ValNodeNew(nullptr);
-                        tdbl       = tdbl->next;
+                        tdbl       = ValNodeNew(tdbl);
                         tdbl->data = StringSave(finfo.str);
                         dbl_len += StringLen(finfo.str);
                     }
