@@ -137,6 +137,16 @@ public:
     };
     virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CLoaderException, CObjMgrException);
+public:
+    
+    void SetFailedCall(const string& call);
+    
+protected:
+    /// Report "non-standard" attributes.
+    virtual void ReportExtra(ostream& out) const override;
+    
+private:
+    string m_FailedCall;
 };
 
 
