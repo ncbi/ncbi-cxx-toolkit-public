@@ -433,12 +433,162 @@ CDataSource::FindTSE_Lock(const CSeq_entry& tse,
 }
 
 
+static ostream& s_Format(ostream& out, const CSeq_id_Handle& seq_id)
+{
+    return out << seq_id;
+}
+
+
+static ostream& s_Format(ostream& out, const string& str)
+{
+    return out << str;
+}
+
+
+static ostream& s_Format(ostream& out, const pair<const string, int>& na_with_zoom)
+{
+    out << na_with_zoom.first;
+    if ( na_with_zoom.second > 0 ) {
+        out << NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX << na_with_zoom.second;
+    }
+    return out;
+}
+
+
+template<class Value>
+static ostream& s_Format(ostream& out, const pair<const CSeq_id_Handle, Value>& request_pair)
+{
+    return out << request_pair.first;
+}
+
+
+template<class Container>
+static ostream& s_Format(ostream& out, const Container& container)
+{
+    char separator = '(';
+    for ( auto& element : container ) {
+        out << separator; separator = ',';
+        s_Format(out, element);
+    }
+    return out << ')';
+}
+
+
+static string s_FormatCall(const char* method_name,
+                           const CSeq_id_Handle& seq_id)
+{
+    ostringstream out;
+    out << method_name << '(' << seq_id << ')';
+    return out.str();
+}
+
+
+static string s_FormatCall(const char* method_name,
+                           const CBioseq_Handle::TId& ids)
+{
+    ostringstream out;
+    out << method_name << '(';
+    s_Format(out, ids);
+    out << ')';
+    return out.str();
+}
+
+
+static string s_FormatCall(const char* method_name,
+                           const CDataSource::TSeqIdSets& id_sets)
+{
+    ostringstream out;
+    out << method_name << '(';
+    s_Format(out, id_sets);
+    out << ')';
+    return out.str();
+}
+
+
+static string s_FormatCall(const char* method_name,
+                           const CDataLoader::TTSE_LockSets& tse_set)
+{
+    ostringstream out;
+    out << method_name << '(';
+    s_Format(out, tse_set);
+    out << ')';
+    return out.str();
+}
+
+
+static string s_FormatCall(const char* method_name,
+                           const CSeq_id_Handle& seq_id,
+                           CDataLoader::EChoice choice)
+{
+    ostringstream out;
+    out << method_name << '(' << seq_id << ')';
+    return out.str();
+}
+
+
+static string s_FormatCall(const char* method_name,
+                           const CDataLoader::TSeq_idSet& ids,
+                           const SAnnotSelector* sel,
+                           CDataLoader::TProcessedNAs* processed_nas)
+{
+    ostringstream out;
+    out << method_name << '(';
+    s_Format(out, ids);
+    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+        out << ',';
+        s_Format(out, sel->GetNamedAnnotAccessions());
+        if ( processed_nas && !processed_nas->empty() ) {
+            out << '-';
+            s_Format(out, *processed_nas);
+        }
+    }
+    out << ')';
+    return out.str();
+}
+
+
+static string s_FormatCall(const char* method_name,
+                           const CBioseq_Info& bioseq,
+                           const SAnnotSelector* sel,
+                           CDataLoader::TProcessedNAs* processed_nas)
+{
+    ostringstream out;
+    out << method_name << '(';
+    s_Format(out, bioseq.GetId());
+    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+        out << ',';
+        s_Format(out, sel->GetNamedAnnotAccessions());
+        if ( processed_nas && !processed_nas->empty() ) {
+            out << '-';
+            s_Format(out, *processed_nas);
+        }
+    }
+    out << ')';
+    return out.str();
+}
+
+
+static string s_FormatCall(const char* method_name,
+                           const CDataLoader::TBlobId& blob_id)
+{
+    ostringstream out;
+    out << method_name << '(' << blob_id << ')';
+    return out.str();
+}
+
+
 CDataSource::TSeq_entry_Lock
 CDataSource::GetSeq_entry_Lock(const CBlobIdKey& blob_id)
 {
     TSeq_entry_Lock ret;
     {{
-        ret.first = m_Loader->GetBlobById(blob_id);
+        try {
+            ret.first = m_Loader->GetBlobById(blob_id);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetBlobById", blob_id));
+            throw;
+        }
         TMainLock::TWriteLockGuard guard(m_DSMainLock);
         if ( ret.first ) {
             x_SetLock(ret.second, ConstRef(&ret.first->GetTSE_Info()));
@@ -840,7 +990,14 @@ CDataSource::x_GetRecords(const CSeq_id_Handle& idh,
 {
     TTSE_LockSet tse_set;
     if ( m_Loader ) {
-        CDataLoader::TTSE_LockSet tse_set2 = m_Loader->GetRecords(idh, choice);
+        CDataLoader::TTSE_LockSet tse_set2;
+        try {
+            tse_set2 = move(m_Loader->GetRecords(idh, choice));
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetRecords", idh, choice));
+            throw;
+        }
         ITERATE ( CDataLoader::TTSE_LockSet, it, tse_set2 ) {
             tse_set.AddLock(*it);
             (*it)->x_GetRecords(idh, choice == CDataLoader::eBioseqCore);
@@ -931,8 +1088,14 @@ void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
         // with loader installed we look only in TSEs reported by loader.
 
         // collect set of TSEs with orphan annotations
-        CDataLoader::TTSE_LockSet tse_set =
-            m_Loader->GetOrphanAnnotRecordsNA(ids, sel, processed_nas);
+        CDataLoader::TTSE_LockSet tse_set;
+        try {
+            tse_set = move(m_Loader->GetOrphanAnnotRecordsNA(ids, sel, processed_nas));
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetOrphanAnnotRecordsNA(", ids, sel, processed_nas));
+            throw;
+        }
 
         ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set ) {
             x_AddTSEOrphanAnnots(ret, ids, *tse_it);
@@ -983,8 +1146,14 @@ void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
         // and TSEs with external annotations reported by the loader.
 
         // external annotations
-        CDataLoader::TTSE_LockSet tse_set2 =
-            m_Loader->GetExternalAnnotRecordsNA(bioseq, sel, processed_nas);
+        CDataLoader::TTSE_LockSet tse_set2;
+        try {
+            tse_set2 = move(m_Loader->GetExternalAnnotRecordsNA(bioseq, sel, processed_nas));
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetExternalAnnotRecordsNA", bioseq, sel, processed_nas));
+            throw;
+        }
         ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set2 ) {
             x_AddTSEBioseqAnnots(ret, bioseq, *tse_it);
         }
@@ -1359,7 +1528,13 @@ void CDataSource::GetIds(const CSeq_id_Handle& idh, TIds& ids)
     }
     // Bioseq not found - try to request ids from loader if any.
     if ( m_Loader ) {
-        m_Loader->GetIds(idh, ids);
+        try {
+            m_Loader->GetIds(idh, ids);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetIds", idh));
+            throw;
+        }
     }
 }
 
@@ -1373,7 +1548,13 @@ CDataSource::SAccVerFound CDataSource::GetAccVer(const CSeq_id_Handle& idh)
         ret.sequence_found = true;
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetAccVerFound(idh);
+        try {
+            ret = m_Loader->GetAccVerFound(idh);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetAccVer", idh));
+            throw;
+        }
     }
     return ret;
 }
@@ -1388,7 +1569,13 @@ CDataSource::SGiFound CDataSource::GetGi(const CSeq_id_Handle& idh)
         ret.sequence_found = true;
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetGiFound(idh);
+        try {
+            ret = m_Loader->GetGiFound(idh);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetGi", idh));
+            throw;
+        }
     }
     return ret;
 }
@@ -1409,7 +1596,13 @@ string CDataSource::GetLabel(const CSeq_id_Handle& idh)
         }
     }
     if ( m_Loader ) {
-        ret = m_Loader->GetLabel(idh);
+        try {
+            ret = m_Loader->GetLabel(idh);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetLabel", idh));
+            throw;
+        }
     }
     return ret;
 }
@@ -1423,7 +1616,13 @@ TTaxId CDataSource::GetTaxId(const CSeq_id_Handle& idh)
         ret = match.m_Bioseq->GetTaxId();
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetTaxId(idh);
+        try {
+            ret = m_Loader->GetTaxId(idh);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetTaxId", idh));
+            throw;
+        }
     }
     return ret;
 }
@@ -1437,7 +1636,13 @@ TSeqPos CDataSource::GetSequenceLength(const CSeq_id_Handle& idh)
         ret = match.m_Bioseq->GetBioseqLength();
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetSequenceLength(idh);
+        try {
+            ret = m_Loader->GetSequenceLength(idh);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetSequenceLength", idh));
+            throw;
+        }
     }
     return ret;
 }
@@ -1453,7 +1658,13 @@ CDataSource::GetSequenceType(const CSeq_id_Handle& idh)
         ret.sequence_found = true;
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetSequenceTypeFound(idh);
+        try {
+            ret = m_Loader->GetSequenceTypeFound(idh);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetSequenceType", idh));
+            throw;
+        }
     }
     return ret;
 }
@@ -1467,7 +1678,13 @@ int CDataSource::GetSequenceState(const CSeq_id_Handle& idh)
         ret = match.m_Bioseq->GetTSE_Info().GetBlobState();
     }
     else if ( m_Loader ) {
-        ret = m_Loader->GetSequenceState(idh);
+        try {
+            ret = m_Loader->GetSequenceState(idh);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetSequenceState", idh));
+            throw;
+        }
     }
     return ret;
 }
@@ -1492,7 +1709,13 @@ void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
         }
     }
     if ( remaining && m_Loader ) {
-        m_Loader->GetAccVers(ids, loaded, ret);
+        try {
+            m_Loader->GetAccVers(ids, loaded, ret);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetAccVers", ids));
+            throw;
+        }
     }
 }
 
@@ -1516,7 +1739,13 @@ void CDataSource::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
         }
     }
     if ( remaining && m_Loader ) {
-        m_Loader->GetGis(ids, loaded, ret);
+        try {
+            m_Loader->GetGis(ids, loaded, ret);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetGis", ids));
+            throw;
+        }
     }
 }
 
@@ -1540,7 +1769,13 @@ void CDataSource::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
         }
     }
     if ( remaining && m_Loader ) {
-        m_Loader->GetLabels(ids, loaded, ret);
+        try {
+            m_Loader->GetLabels(ids, loaded, ret);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetLabels", ids));
+            throw;
+        }
     }
 }
 
@@ -1564,7 +1799,13 @@ void CDataSource::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
         }
     }
     if ( remaining && m_Loader ) {
-        m_Loader->GetTaxIds(ids, loaded, ret);
+        try {
+            m_Loader->GetTaxIds(ids, loaded, ret);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetTaxIds", ids));
+            throw;
+        }
     }
 }
 
@@ -1589,7 +1830,13 @@ void CDataSource::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
         }
     }
     if ( remaining && m_Loader ) {
-        m_Loader->GetSequenceLengths(ids, loaded, ret);
+        try {
+            m_Loader->GetSequenceLengths(ids, loaded, ret);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetSequenceLengths", ids));
+            throw;
+        }
     }
 }
 
@@ -1614,7 +1861,13 @@ void CDataSource::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
         }
     }
     if ( remaining && m_Loader ) {
-        m_Loader->GetSequenceTypes(ids, loaded, ret);
+        try {
+            m_Loader->GetSequenceTypes(ids, loaded, ret);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetSequenceTypes", ids));
+            throw;
+        }
     }
 }
 
@@ -1639,7 +1892,13 @@ void CDataSource::GetSequenceStates(const TIds& ids, TLoaded& loaded,
         }
     }
     if ( remaining && m_Loader ) {
-        m_Loader->GetSequenceStates(ids, loaded, ret);
+        try {
+            m_Loader->GetSequenceStates(ids, loaded, ret);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetSequenceStates", ids));
+            throw;
+        }
     }
 }
 
@@ -1649,7 +1908,13 @@ CDataSource::GetSequenceHash(const CSeq_id_Handle& idh)
 {
     SHashFound ret;
     if ( m_Loader ) {
-        ret = m_Loader->GetSequenceHashFound(idh);
+        try {
+            ret = m_Loader->GetSequenceHashFound(idh);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetSequenceHash", idh));
+            throw;
+        }
     }
     return ret;
 }
@@ -1659,7 +1924,13 @@ void CDataSource::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
                                     TSequenceHashes& ret, THashKnown& known)
 {
     if ( m_Loader ) {
-        m_Loader->GetSequenceHashes(ids, loaded, ret, known);
+        try {
+            m_Loader->GetSequenceHashes(ids, loaded, ret, known);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetSequenceHashes", ids));
+            throw;
+        }
     }
 }
 
@@ -1667,7 +1938,13 @@ void CDataSource::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
 void CDataSource::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
 {
     if (!m_Loader) return;
-    m_Loader->GetCDDAnnots(id_sets, loaded, ret);
+    try {
+        m_Loader->GetCDDAnnots(id_sets, loaded, ret);
+    }
+    catch ( CLoaderException& exc ) {
+        exc.SetFailedCall(s_FormatCall("GetCDDAnnots", id_sets));
+        throw;
+    }
 }
 
 
@@ -1684,7 +1961,13 @@ void CDataSource::GetBlobs(TSeqMatchMap& match_map)
                 CDataLoader::TTSE_LockSets::value_type(
                 match->first, CDataLoader::TTSE_LockSet()));
         }
-        m_Loader->GetBlobs(tse_sets);
+        try {
+            m_Loader->GetBlobs(tse_sets);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetBlobs", tse_sets));
+            throw;
+        }
         if ( s_GetBulkChunks() ) {
             // bulk chunk loading
             vector<CConstRef<CTSE_Chunk_Info>> chunks;

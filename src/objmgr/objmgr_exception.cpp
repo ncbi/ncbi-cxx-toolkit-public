@@ -118,6 +118,20 @@ const char* CLoaderException::GetErrCodeString(void) const
 }
 
 
+void CLoaderException::SetFailedCall(const string& call)
+{
+    m_FailedCall = call;
+}
+
+
+void CLoaderException::ReportExtra(ostream& out) const
+{
+    if ( !m_FailedCall.empty() ) {
+        out << "in " << m_FailedCall;
+    }
+}
+
+
 const char* CBlobStateException::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {
