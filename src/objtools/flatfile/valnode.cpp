@@ -50,12 +50,16 @@ BEGIN_NCBI_SCOPE
  *      adds after prev if not NULL
  *
  *****************************************************************************/
-ValNodePtr ValNodeNew(ValNodePtr prev)
+ValNodePtr ValNodeNew(ValNodePtr prev, const char* data)
 {
     ValNodePtr newnode = new ValNode;
 
     if (prev) {
         prev->next = newnode;
+    }
+
+    if (data) {
+        newnode->data = StringSave(data);
     }
 
     return newnode;
