@@ -176,7 +176,7 @@ void CGff2Reader::xPostProcessAnnot(
 //  ----------------------------------------------------------------------------
 {
     xAssignAnnotId(annot);
-    if (!(m_iFlags & fGenbankMode)) {
+    if (!IsInGenbankMode()) {
         //xAssignTrackData(pAnnot);
         xAddConversionInfo(annot, nullptr);
         xGenerateParentChildXrefs(annot);
@@ -246,9 +246,7 @@ void CGff2Reader::xAssignAnnotId(
     }
 
     string annotId(givenId);
-    if (annotId.empty() &&
-        (!(m_iFlags & fGenbankMode)) &&
-        m_pTrackDefaults) {
+    if (annotId.empty()  &&  !IsInGenbankMode()  &&  m_pTrackDefaults) {
         annotId = m_pTrackDefaults->Name();
     }
     if (annotId.empty()) {
