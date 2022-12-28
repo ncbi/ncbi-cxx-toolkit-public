@@ -1584,9 +1584,8 @@ ValNodePtr ConstructValNode(CSeq_id::E_Choice choice, const char* data)
 {
     ValNodePtr res;
 
-    res         = ValNodeNew(nullptr);
+    res         = ValNodeNew(nullptr, data);
     res->choice = choice;
-    res->data   = StringSave(data);
     return (res);
 }
 

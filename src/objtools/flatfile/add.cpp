@@ -1560,10 +1560,8 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
             break;
         }
 
-        tvnp       = ValNodeNew(tvnp);
-        tvnp->data = StringSave(q);
-
-        *p = ch;
+        tvnp = ValNodeNew(tvnp, q);
+        *p   = ch;
     }
 
     tvnp = vnp->next;
@@ -1838,11 +1836,10 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     if (bad)
                         break;
 
-                    tvnp       = ValNodeNew(tvnp);
-                    tvnp->data = StringSave(p);
-                    tagvnp     = tvnp;
-                    *t         = ch;
-                    p          = t;
+                    tvnp   = ValNodeNew(tvnp, p);
+                    tagvnp = tvnp;
+                    *t     = ch;
+                    p      = t;
                     continue;
                 }
             }
@@ -1898,9 +1895,8 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
         if (assembly)
             fta_validate_assembly(q);
 
-        tvnp       = ValNodeNew(tvnp);
-        tvnp->data = StringSave(q);
-        *p         = ch;
+        tvnp = ValNodeNew(tvnp, q);
+        *p   = ch;
     }
 
     if (! bad && tvnp->data && StringChr(tvnp->data, ':')) {
@@ -2443,8 +2439,7 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
 
         q = StringStr(p + 2, "::");
         if (! q) {
-            vnp       = ValNodeNew(vnp);
-            vnp->data = StringSave(start);
+            vnp = ValNodeNew(vnp, start);
             for (r = vnp->data; *r != '\0'; r++)
                 if (*r == '~')
                     *r = ' ';
@@ -2460,10 +2455,9 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
             break;
         }
 
-        *r        = '\0';
-        vnp       = ValNodeNew(vnp);
-        vnp->data = StringSave(start);
-        *r        = '~';
+        *r  = '\0';
+        vnp = ValNodeNew(vnp, start);
+        *r  = '~';
         for (p = vnp->data; *p != '\0'; p++)
             if (*p == '~')
                 *p = ' ';
@@ -2614,8 +2608,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
             break;
 
         if (! tagvnp) {
-            tagvnp       = ValNodeNew(nullptr);
-            tagvnp->data = StringSave(tag);
+            tagvnp = ValNodeNew(nullptr, tag);
         } else {
             for (vnp = tagvnp; vnp; vnp = vnp->next) {
                 r = vnp->data;
@@ -2627,8 +2620,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
                     break;
                 }
                 if (! vnp->next) {
-                    vnp             = ValNodeNew(vnp);
-                    vnp->next->data = StringSave(tag);
+                    ValNodeNew(vnp, tag);
                     break;
                 }
             }
