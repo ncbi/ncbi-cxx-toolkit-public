@@ -2173,8 +2173,7 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
             break;
         if (p)
             *p = '\0';
-        tvnp->next = ValNodeNew(nullptr);
-        tvnp       = tvnp->next;
+        tvnp       = ValNodeNew(tvnp);
         tvnp->data = StringSave(q);
         if (! p)
             break;

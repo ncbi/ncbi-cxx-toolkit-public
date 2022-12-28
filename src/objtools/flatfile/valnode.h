@@ -52,7 +52,7 @@ struct ValNode {
 };
 using ValNodePtr = ValNode*;
 
-ValNodePtr ValNodeNew(ValNodePtr vnp);
+ValNodePtr ValNodeNew(ValNodePtr prev);
 ValNodePtr ValNodeFree(ValNodePtr vnp);
 ValNodePtr ValNodeFreeData(ValNodePtr vnp);
 ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode);

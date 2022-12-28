@@ -84,8 +84,7 @@ ValNodePtr get_tokens(char* pt, const Char* delimeter)
         if (*pt == '\0')
             break;
 
-        vnp->next = ValNodeNew(nullptr);
-        vnp       = vnp->next;
+        vnp       = ValNodeNew(vnp);
         vnp->data = pt;
         more      = false;
 
