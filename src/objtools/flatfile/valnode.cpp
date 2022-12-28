@@ -46,20 +46,18 @@
 BEGIN_NCBI_SCOPE
 /*****************************************************************************
  *
- *   ValNodeNew(vnp)
- *      adds after last node in list if vnp not NULL
+ *   ValNodeNew(prev)
+ *      adds after prev if not NULL
  *
  *****************************************************************************/
-ValNodePtr ValNodeNew(ValNodePtr vnp)
+ValNodePtr ValNodeNew(ValNodePtr prev)
 {
-    ValNodePtr newnode;
+    ValNodePtr newnode = new ValNode;
 
-    newnode = new ValNode;
-    if (vnp) {
-        while (vnp->next)
-            vnp = vnp->next;
-        vnp->next = newnode;
+    if (prev) {
+        prev->next = newnode;
     }
+
     return newnode;
 }
 
