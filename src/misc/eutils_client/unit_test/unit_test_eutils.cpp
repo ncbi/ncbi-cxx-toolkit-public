@@ -70,7 +70,8 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
     stringstream content;
 
     // PubMed search only supports queries that match up to 10,000 items.
-    // This is regardless of any limit on the number of items to return.
+    // This is regardless of any limit on the number of items to return;
+    // one cannot use RetStart to overcome this limit.
     // See: https://ncbiinsights.ncbi.nlm.nih.gov/2022/11/22/updated-pubmed-eutilities-live/
     cli.SetMaxReturn(101); 
     BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma AND 1780/01/01:1968/01/01[pdat]", content, CEutilsClient::eUseHistoryEnabled));
@@ -110,7 +111,9 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
             string body = next_chunk.str();
             xml::document doc(body.c_str(), body.size(), NULL);
             const xml::node& root = doc.get_root_node();
-            int retstart = NStr::StringToNumeric<int>(root.run_xpath_query("./RetStart/text()").begin()->get_content());
+            const xml::node_set nodes = root.run_xpath_query("./RetStart/text()");
+            BOOST_REQUIRE_MESSAGE ( nodes.size() == 1, "Expecting exactly one RetStart in XML response" );
+            int retstart = NStr::StringToNumeric<int>(nodes.begin()->get_content());
             BOOST_CHECK ( retstart == next_start );
         }
     }
@@ -121,11 +124,8 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
     CEutilsClient cli;
     stringstream content;
 
-    // PubMed search only supports queries that match up to 10,000 items.
-    // This is regardless of any limit on the number of items to return.
-    // See: https://ncbiinsights.ncbi.nlm.nih.gov/2022/11/22/updated-pubmed-eutilities-live/
     cli.SetMaxReturn(101); 
-    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma AND 1780/01/01:1968/01/01[pdat]", content, CEutilsClient::eUseHistoryEnabled));
+    BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
