@@ -929,3 +929,131 @@ CPubseqGatewayApp::x_GetNucleotide(CHttpRequest &  req,
     return true;
 }
 
+
+bool
+CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
+                                   shared_ptr<CPSGS_Reply>  reply,
+                                   const psg_time_point_t &  now,
+                                   vector<pair<int, int>> &  time_series)
+{
+    // It is like "1:59 5:1439 60:"
+    // Should return {{1, 59}, {5, 1439}, {60, numeric_limits<int>::max()}}
+    static string                   kTimeSeriesParam = "time_series";
+    static vector<pair<int, int>>   kDefaultTimeSeries = {{1, 59}, {5, 1439},
+                                                          {60, numeric_limits<int>::max()}};
+
+    SRequestParameter   time_series_param = x_GetParam(req, kTimeSeriesParam);
+    if (time_series_param.m_Found) {
+        time_series.clear();
+
+        if (time_series_param.m_Value.empty()) {
+            x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                 "' parameter is empty. Expected at leas one "
+                                 "space separated pair of integers "
+                                 "<aggregation mins>:<last minute> or 'no'");
+            return false;
+        }
+
+        if (time_series_param.m_Value == "no") {
+            // Special value: 'no' means there will be no time series
+            // The caller knows that it is a special value by an empty
+            // time_series container
+            return true;
+        }
+
+        bool                last = false;
+        int                 previous = -1;
+        vector<string>      parts;
+        NStr::Split(time_series_param.m_Value, " ", parts);
+        for (auto &  item : parts) {
+            if (last) {
+                x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                     "' is malformed. Another item is found "
+                                     "after the one which describes the rest "
+                                     "of the time series.");
+
+                return false;
+            }
+
+            vector<string>  vals;
+            NStr::Split(item, ":", vals);
+            if (vals.size() != 2) {
+                x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                     "' is malformed. One or more items "
+                                     "do not have a second value.");
+                return false;
+            }
+
+            int     aggregation;
+            try {
+                aggregation = NStr::StringToInt(vals[0]);
+            } catch (...) {
+                x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                     "' is malformed. Cannot convert one or more "
+                                     "aggregation mins into an integer");
+                return false;
+            }
+            if (aggregation <= 0) {
+                x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                     "' is malformed. One or more "
+                                     "aggregation mins is <= 0 while it must be > 0.");
+                return false;
+            }
+
+            int     last_minute;
+            if (vals[1].empty()) {
+                last_minute = numeric_limits<int>::max();
+                last = true;
+            } else {
+                try {
+                    last_minute = NStr::StringToInt(vals[1]);
+                } catch (...) {
+                    x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                         "' is malformed. Cannot convert one or more "
+                                         "last minute into an integer");
+                    return false;
+                }
+
+                if (last_minute <= previous) {
+                    x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                         "' is malformed. One or more last minute "
+                                         "<= than the previous one");
+                    return false;
+                }
+
+                // Check divisibility
+                int     start = 0;
+                if (previous != -1) {
+                    start = previous;
+                }
+                if ((last_minute - start + 1) % aggregation != 0) {
+                   x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                         "' is malformed. The range " +
+                                         to_string(start) + "-" +
+                                         to_string(last_minute) +
+                                         " is not divisable by aggregation of " +
+                                         to_string(aggregation));
+                    return false;
+                }
+
+                previous = last_minute;
+            }
+
+            time_series.push_back(make_pair(aggregation, last_minute));
+        }
+
+        if (!last) {
+            x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
+                                 "' is malformed. The item which descibes the "
+                                 "rest of the series is not found.");
+            return false;
+        }
+
+        return true;
+    }
+
+    // The user did not provide the parameter
+    time_series = kDefaultTimeSeries;
+    return true;
+}
+

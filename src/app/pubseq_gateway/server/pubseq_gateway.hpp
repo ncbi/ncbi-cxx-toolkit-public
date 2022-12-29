@@ -497,6 +497,10 @@ private:
                          shared_ptr<CPSGS_Reply>  reply,
                          const psg_time_point_t &  now,
                          CTempString &  nucleotide);
+    bool x_GetTimeSeries(CHttpRequest &  req,
+                         shared_ptr<CPSGS_Reply>  reply,
+                         const psg_time_point_t &  now,
+                         vector<pair<int, int>> &  time_series);
 
 private:
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,

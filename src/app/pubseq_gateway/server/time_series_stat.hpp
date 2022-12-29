@@ -61,11 +61,13 @@ class CRequestTimeSeries
         void Add(EPSGSCounter  counter);
         void Rotate(void);
         void Reset(void);
-        CJsonNode  Serialize(void) const;
+        CJsonNode  Serialize(const vector<pair<int, int>> &  time_series) const;
         static EPSGSCounter RequestStatusToCounter(CRequestStatus::ECode  status);
 
     private:
         CJsonNode x_SerializeOneSeries(const uint64_t *  values,
+                                       const vector<pair<int, int>> &  time_series,
+                                       bool  loop,
                                        size_t  current_index) const;
 
     private:
@@ -77,6 +79,9 @@ class CRequestTimeSeries
         uint64_t    m_TotalWarnings;
         uint64_t    m_NotFound[kSeriesIntervals];
         uint64_t    m_TotalNotFound;
+
+        // Tells if the current index made a loop
+        bool        m_Loop;
 
         // Note: there is no any kind of lock to protect the current index.
         // This is an intention due to a significant performance penalty at
