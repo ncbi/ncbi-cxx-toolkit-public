@@ -170,7 +170,8 @@ static const set<string> k_WgsScaffoldPrefix = {
     "GG", "GJ", "GK", "GL", "HT", "HU",
     "JH", "KB", "KD", "KE", "KI", "KK",
     "KL", "KN", "KQ", "KV", "KZ", "LD",
-    "ML", "MU" };
+    "ML", "MU"
+};
 
 static const map<Parser::ESource, string> sourceNames = {
     { Parser::ESource::unknown, "unknown" },
@@ -316,7 +317,7 @@ bool XReadFileBuf(FileBuf& fbuf, FinfoBlkPtr finfo)
 
     StringCpy(finfo->str, "\n");
     while (! end_of_file && StringEquN(finfo->str, "\n", 1)) {
-        finfo->pos = (size_t)(fbuf.current - fbuf.start);
+        finfo->pos = fbuf.get_offs();
         if (FileGetsBuf(finfo->str, sizeof(finfo->str) - 1, fbuf) == 0)
             end_of_file = true;
         else
@@ -1270,7 +1271,7 @@ bool IsSPROTAccession(const char* acc)
                 break;
         }
 
-        return (*b);
+        return (*b != nullptr);
     }
 
     if (acc[0] < 'A' || acc[0] > 'Z' || acc[1] < '0' || acc[1] > '9' ||

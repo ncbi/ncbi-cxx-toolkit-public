@@ -410,7 +410,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 line_sv = nullptr;
             }
 
-            entry->len = (size_t)(pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
+            entry->len = pp->ffbuf.get_offs() - entry->offset;
 
             if (fun) {
                 data = LoadEntry(pp, entry->offset, entry->len);
