@@ -178,8 +178,7 @@ bool CFlat2AsnApp::x_OpenFiles(const CArgs& args, TConfig& config, IObjtoolsList
 
     m_pFileMap.reset(new CMemoryFileMap(m_InputFile));
     auto fileSize = m_pFileMap->GetFileSize();
-    config.ffbuf.start = (const char*)m_pFileMap->Map(0, fileSize);  
-    config.ffbuf.current = config.ffbuf.start;
+    config.ffbuf.set((const char*)m_pFileMap->Map(0, fileSize));
 
     if (!config.ffbuf.start) {
         listener.PutMessage(
