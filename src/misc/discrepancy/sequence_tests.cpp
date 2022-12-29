@@ -58,7 +58,7 @@
 
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
-#include <util/compiled_fsm.hpp>
+#include <util/impl/generated_fsm.hpp>
 
 
 BEGIN_NCBI_SCOPE

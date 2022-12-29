@@ -86,7 +86,7 @@ NCBI_FSM_HITS_1(15) = {
 158, //  1: /cytochrome\s+c\s+oxidase\s+subunit/i
 178, //  10: /ribulose-1,5-bisphosphate\s+carboxylase\/oxygenase/i
 };
-NCBI_FSM_HITS_2(15) = {
+NCBI_FSM_HITS_2(15) = { {
 { 14, }, // 14: /matK/i
 { 6, }, // 6: /PsbA/i
 { 7, }, // 7: /PsbB/i
@@ -102,7 +102,7 @@ NCBI_FSM_HITS_2(15) = {
 { 2, }, // 2: /NADH\s+dehydrogenase\s+subunit/i
 { 1, }, // 1: /cytochrome\s+c\s+oxidase\s+subunit/i
 { 10, }, // 10: /ribulose-1,5-bisphosphate\s+carboxylase\/oxygenase/i
-};
+} };
 NCBI_FSM_STATES = {
 // 0
 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,

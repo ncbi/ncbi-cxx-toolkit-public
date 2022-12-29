@@ -38,7 +38,7 @@
 #include <util/compile_time.hpp>
 #include <misc/discrepancy/discrepancy.hpp>
 #include <util/multipattern_search.hpp>
-#include <util/compiled_fsm.hpp>
+#include <util/impl/generated_fsm.hpp>
 
 BEGIN_NCBI_SCOPE
 

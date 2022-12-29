@@ -59,7 +59,7 @@ void CMultipatternApp::Init(void)
     arg_desc->AddOptionalKey("i", "InFile", "Input File", CArgDescriptions::eInputFile);
     arg_desc->AddExtra(0, kMax_UInt, "Search Patterns as /regex/ or \"plain string\"", CArgDescriptions::eString);
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
-};
+}
 
 
 static const pair<string, CMultipatternSearch::TFlags> FlagNames[] = {
@@ -115,7 +115,7 @@ int CMultipatternApp::Run(void)
             fname = fname.substr(m + 1);
         }
     }
-	
+
 	for (size_t i = 1; i <= args.GetNExtra(); i++) {
         string param = args["#" + to_string(i)].AsString();
         params += " " + param;
