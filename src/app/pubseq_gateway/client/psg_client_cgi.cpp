@@ -169,6 +169,9 @@ struct SRequestBuilder::SReader<SPsgCgiEntries>
     EPSG_BioIdResolution GetBioIdResolution() const { return input.Has("no-bio-id-resolution") ? EPSG_BioIdResolution::NoResolve : EPSG_BioIdResolution::Resolve; }
     CTimeout GetResendTimeout() const { return CTimeout::eDefault; }
     void ForEachTSE(TExclude exclude) const;
+    auto GetProtein() const { return input.GetString("protein"); }
+    auto GetIpg() const { return input.Get("ipg", [](const auto& v) { return NStr::StringToInt8(v); }, 0); }
+    auto GetNucleotide() const { return input.GetString("nucleotide"); }
     SPSG_UserArgs GetUserArgs() const { return NStr::URLDecode(input.GetString("user-args")); }
 };
 

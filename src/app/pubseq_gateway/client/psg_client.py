@@ -323,7 +323,7 @@ def cgi_help_cmd(args):
             r.setdefault('params', []).append((param_name, param_desc))
 
     ns = {'ns': 'ncbi:application'}
-    show_requests = ['biodata', 'blob', 'chunk', 'named_annot', 'resolve']
+    show_requests = ['biodata', 'blob', 'chunk', 'ipg_resolve', 'named_annot', 'resolve']
     hide_keys = ['conffile', 'debug-printout', 'id-file', 'io-threads', 'logfile', 'max-streams', 'requests-per-io', 'worker-threads']
     hide_flags = ['dryrun', 'latency', 'all-latency', 'first-latency', 'last-latency', 'server-mode']
     tse_flags = ['no-tse', 'slim-tse', 'smart-tse', 'whole-tse', 'orig-tse']

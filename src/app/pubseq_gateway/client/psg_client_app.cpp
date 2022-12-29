@@ -95,6 +95,7 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID", SCommand::fParallel),
             s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID(s)"),
             s_GetCommand<CPSG_Request_Chunk>         ("chunk",       "Request blob data chunk by chunk ID"),
+            s_GetCommand<CPSG_Request_IpgResolve>    ("ipg_resolve", "Request IPG info"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
             s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden),
@@ -252,6 +253,14 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Chunk>(CArgDescriptions& arg_desc
     arg_desc.AddPositional("ID2_CHUNK", "ID2 chunk number", CArgDescriptions::eInteger);
     arg_desc.AddPositional("ID2_INFO", "ID2 info", CArgDescriptions::eString);
     s_InitDataOnly(arg_desc);
+}
+
+template <>
+void CPsgClientApp::s_InitRequest<CPSG_Request_IpgResolve>(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddOptionalKey("protein", "PROTEIN", "Protein", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("ipg", "IPG", "IPG", CArgDescriptions::eInt8);
+    arg_desc.AddOptionalKey("nucleotide", "NUCLEOTIDE", "Nucleotide", CArgDescriptions::eString);
 }
 
 template<>
@@ -459,6 +468,9 @@ struct SRequestBuilder::SReader<CArgs>
     EPSG_BioIdResolution GetBioIdResolution() const { return input["no-bio-id-resolution"].HasValue() ? EPSG_BioIdResolution::NoResolve : EPSG_BioIdResolution::Resolve; }
     CTimeout GetResendTimeout() const { return CTimeout::eDefault; }
     void ForEachTSE(TExclude exclude) const;
+    auto GetProtein() const { return input["protein"].HasValue() ? input["protein"].AsString() : string(); }
+    auto GetIpg() const { return input["ipg"].HasValue() ? input["ipg"].AsInt8() : 0; }
+    auto GetNucleotide() const { return input["nucleotide"].HasValue() ? input["nucleotide"].AsString() : string(); }
     SPSG_UserArgs GetUserArgs() const { return input["user-args"].HasValue() ? input["user-args"].AsString() : SPSG_UserArgs(); }
 };
 
