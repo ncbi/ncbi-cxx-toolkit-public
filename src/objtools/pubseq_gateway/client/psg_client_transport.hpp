@@ -535,6 +535,7 @@ struct SPSG_TimedRequest
     }
 
     unsigned AddTime() { return ++m_Time; }
+    void ResetTime() { m_Time = 0; }
 
     template <class TOnRetry, class TOnFail>
     bool CheckExpiration(const SPSG_Params& params, const SUvNgHttp2_Error& error, TOnRetry on_retry, TOnFail on_fail);
