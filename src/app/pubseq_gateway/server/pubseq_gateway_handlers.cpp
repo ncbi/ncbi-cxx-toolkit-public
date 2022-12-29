@@ -65,7 +65,6 @@ static string  kId2InfoParam = "id2_info";
 static string  kMostRecentTimeParam = "most_recent_time";
 static string  kMostAncientTimeParam = "most_ancient_time";
 static string  kHistogramNamesParam = "histogram_names";
-static string  kNeedTimeSeriesParam = "need_time_series";
 static string  kNA = "n/a";
 
 static string  kBadUrlMessage = "Unknown request, the provided URL "
@@ -1918,26 +1917,19 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
             NStr::Split(histogram_names_param.m_Value, ",", histogram_names);
         }
 
-        bool                need_time_series = true;
-        SRequestParameter   need_time_series_param = x_GetParam(req, kNeedTimeSeriesParam);
-        if (need_time_series_param.m_Found) {
-            string      err_msg;
-            if (!x_IsBoolParamValid(kNeedTimeSeriesParam,
-                                    need_time_series_param.m_Value, err_msg)) {
-                x_SendMessageAndCompletionChunks(
-                        reply, now, err_msg, CRequestStatus::e400_BadRequest,
-                        ePSGS_MalformedParameter, eDiag_Error);
-                PSG_WARNING(err_msg);
-                m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-                return 0;
-            }
-            need_time_series = need_time_series_param.m_Value == "yes";
+        vector<pair<int, int>>      time_series;
+        if (!x_GetTimeSeries(req, reply, now, time_series)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            return 0;
         }
 
         CJsonNode   timing(m_Timing->Serialize(most_ancient_time,
                                                most_recent_time,
                                                histogram_names,
-                                               need_time_series,
+                                               time_series,
                                                m_TickSpan));
         string      content = timing.Repr(CJsonNode::fStandardJson);
 

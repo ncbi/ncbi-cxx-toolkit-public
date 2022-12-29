@@ -68,6 +68,13 @@ if [[ "${https}" == "True" ]]; then
     curl_https="-k"
 fi
 
+TESTS="wrong_no_series_statistics no_end_statistics unsorted_statistics no_division_statistics"
+if echo $TESTS | grep -w $obasename > /dev/null; then
+    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    exit 0
+fi
+
+
 if [[ $url == ADMIN* ]] && [[ $obasename != admin_ack_alert* ]]; then
     curl "${curl_https}" -I --HEAD -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
     exit 0

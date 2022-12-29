@@ -53,6 +53,7 @@ CRequestTimeSeries::RequestStatusToCounter(CRequestStatus::ECode  status)
 
 
 CRequestTimeSeries::CRequestTimeSeries() :
+    m_Loop(false),
     m_CurrentIndex(0)
 {
     Reset();
@@ -100,6 +101,9 @@ void CRequestTimeSeries::Rotate(void)
     m_NotFound[new_current_index] = 0;
 
     m_CurrentIndex.store(new_current_index);
+    if (new_current_index == 0) {
+        m_Loop = true;
+    }
 }
 
 
@@ -115,47 +119,135 @@ void CRequestTimeSeries::Reset(void)
     m_TotalNotFound = 0;
 
     m_CurrentIndex.store(0);
+    m_Loop = false;
 }
 
 
-CJsonNode  CRequestTimeSeries::Serialize(void) const
+CJsonNode  CRequestTimeSeries::Serialize(const vector<pair<int, int>> &  time_series) const
 {
+    bool        loop = m_Loop;
     size_t      current_index = m_CurrentIndex.load();
     CJsonNode   ret(CJsonNode::NewObjectNode());
 
-    ret.SetInteger("BinCoverageSec", 60);
-    ret.SetInteger("TotalRequests", m_TotalRequests);
-    ret.SetByKey("RequestsTimeSeries", x_SerializeOneSeries(m_Requests, current_index));
-    ret.SetInteger("TotalErrors", m_TotalErrors);
-    ret.SetByKey("ErrorsTimeSeries", x_SerializeOneSeries(m_Errors, current_index));
-    ret.SetInteger("TotalWarnings", m_TotalErrors);
-    ret.SetByKey("WarningsTimeSeries", x_SerializeOneSeries(m_Warnings, current_index));
-    ret.SetInteger("TotalNotFound", m_TotalNotFound);
-    ret.SetByKey("NotFoundTimeSeries", x_SerializeOneSeries(m_NotFound, current_index));
-
+    ret.SetByKey("Requests",
+                 x_SerializeOneSeries(m_Requests, time_series, loop, current_index));
+    ret.SetByKey("Errors",
+                 x_SerializeOneSeries(m_Errors, time_series, loop, current_index));
+    ret.SetByKey("Warnings",
+                 x_SerializeOneSeries(m_Warnings, time_series, loop, current_index));
+    ret.SetByKey("NotFound",
+                 x_SerializeOneSeries(m_NotFound, time_series, loop, current_index));
     return ret;
 }
 
 
 CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values,
+                                                    const vector<pair<int, int>> &  time_series,
+                                                    bool  loop,
                                                     size_t  current_index) const
 {
-    size_t      index = current_index;
-    CJsonNode   ret(CJsonNode::NewArrayNode());
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+
+    if (current_index == 0 && loop == false) {
+        // There is no data collected yet
+        return ret;
+    }
+
+    CJsonNode   output_series(CJsonNode::NewArrayNode());
+
+    // Needed to calculate max and average reqs/sec
+    uint64_t    max_n_req_per_min = 0;
+    uint64_t    total_reqs = 0;
+    uint64_t    total_mins = 0;
+
+    // Index in the array where the data are collected
+    size_t      raw_index;
+    if (current_index == 0) {
+        raw_index = kSeriesIntervals - 1;
+        loop = false;   // to avoid going the second time over
+    } else {
+        raw_index = current_index - 1;
+    }
+
+    size_t      current_accumulated_mins = 0;
+    uint64_t    current_accumulated_reqs = 0;
+    size_t      output_data_index = 0;
+
+    // The current index in the 'time_series', i.e. a pair of
+    // <mins to accumulate>:<last sequential data index>
+    // It is guaranteed they are both > 0.
+    size_t      range_index = 0;
+    size_t      current_mins_to_accumulate = time_series[range_index].first;
+    size_t      current_last_seq_index = time_series[range_index].second;
 
     for ( ;; ) {
-        ret.AppendInteger(values[index]);
+        uint64_t    reqs = values[raw_index];
 
-        if (index == 0)
+        ++total_mins;
+        max_n_req_per_min = max(max_n_req_per_min, reqs);
+        total_reqs += reqs;
+
+        ++current_accumulated_mins;
+        current_accumulated_reqs += reqs;
+
+        if (current_accumulated_mins >= current_mins_to_accumulate) {
+            output_series.AppendDouble(double(current_accumulated_reqs) /
+                                       (double(current_accumulated_mins) * 60.0));
+            current_accumulated_mins = 0;
+            current_accumulated_reqs = 0;
+        }
+
+        ++output_data_index;
+        if (output_data_index > current_last_seq_index) {
+            ++range_index;
+            current_mins_to_accumulate = time_series[range_index].first;
+            current_last_seq_index = time_series[range_index].second;
+        }
+
+        if (raw_index == 0)
             break;
-        --index;
+        --raw_index;
     }
 
-    index = kSeriesIntervals - 1;
-    while (index > current_index) {
-        ret.AppendInteger(values[index]);
-        --index;
+    if (loop) {
+        raw_index = kSeriesIntervals - 1;
+        while (raw_index > current_index + 1) {
+            uint64_t    reqs = values[raw_index];
+            --raw_index;
+
+            ++total_mins;
+            max_n_req_per_min = max(max_n_req_per_min, reqs);
+            total_reqs += reqs;
+
+            ++current_accumulated_mins;
+            current_accumulated_reqs += reqs;
+
+            if (current_accumulated_mins >= current_mins_to_accumulate) {
+                output_series.AppendDouble(double(current_accumulated_reqs) /
+                                           (double(current_accumulated_mins) * 60.0));
+                current_accumulated_mins = 0;
+                current_accumulated_reqs = 0;
+            }
+
+            ++output_data_index;
+            if (output_data_index > current_last_seq_index) {
+                ++range_index;
+                current_mins_to_accumulate = time_series[range_index].first;
+                current_last_seq_index = time_series[range_index].second;
+            }
+        }
     }
+
+    if (current_accumulated_mins > 0) {
+        output_series.AppendDouble(double(current_accumulated_reqs) /
+                                   (double(current_accumulated_mins) * 60.0));
+    }
+
+
+    ret.SetInteger("TotalRequests", total_reqs);
+    ret.SetDouble("MaxReqPerSec", max_n_req_per_min / 60.0);
+    ret.SetDouble("AvgReqPerSec", total_reqs / (total_mins * 60.0));
+    ret.SetByKey("time_series", output_series);
 
     return ret;
 }
