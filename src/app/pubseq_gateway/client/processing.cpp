@@ -230,6 +230,7 @@ const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
         case CPSG_ReplyItem::eNamedAnnotInfo: return "NamedAnnotInfo";
         case CPSG_ReplyItem::ePublicComment:  return "PublicComment";
         case CPSG_ReplyItem::eProcessor:      return "Processor";
+        case CPSG_ReplyItem::eIpgInfo:        return "IpgInfo";
         case CPSG_ReplyItem::eEndOfReply:     if (!trouble) return "Reply"; _TROUBLE;
     }
 
@@ -273,6 +274,9 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
         case CPSG_ReplyItem::eProcessor:
             return Fill(static_pointer_cast<CPSG_Processor>(reply_item));
+
+        case CPSG_ReplyItem::eIpgInfo:
+            return Fill(static_pointer_cast<CPSG_IpgInfo>(reply_item));
 
         case CPSG_ReplyItem::eEndOfReply:
             _TROUBLE;
@@ -395,6 +399,15 @@ void CJsonResponse::Fill(shared_ptr<CPSG_Processor> processor)
     }
 
     Set("progress_status", s_ProgressStatusToString(progress_status));
+}
+
+void CJsonResponse::Fill(shared_ptr<CPSG_IpgInfo> ipg_info)
+{
+    Set("protein",    ipg_info->GetProtein());
+    Set("ipg",        ipg_info->GetIpg());
+    Set("nucleotide", ipg_info->GetNucleotide());
+    Set("tax_id",     ipg_info->GetTaxId());
+    Set("gb_state",   ipg_info->GetGbState());
 }
 
 template <class TItem>
@@ -1551,6 +1564,25 @@ CJson_Document CProcessing::RequestSchema()
                         "user_args": { "$ref": "#/definitions/user_args" }
                     },
                     "required": [ "chunk_id" ]
+                },
+                "id": { "$ref": "#/definitions/id" }
+            },
+            "required": [ "jsonrpc", "method", "params", "id" ]
+        },
+        {
+            "properties": {
+                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
+                "method": { "enum": [ "ipg_resolve" ] },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "protein": { "type": "string" },
+                        "ipg": { "type": "number" },
+                        "nucleotide": { "type": "string" },
+                        "context": { "$ref": "#/definitions/context" },
+                        "user_args": { "$ref": "#/definitions/user_args" }
+                    },
+                    "anyOf": [ { "required": [ "protein" ] }, { "required": [ "ipg" ] } ]
                 },
                 "id": { "$ref": "#/definitions/id" }
             },

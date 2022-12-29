@@ -104,6 +104,7 @@ private:
     void Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
     void Fill(shared_ptr<CPSG_PublicComment> public_comment);
     void Fill(shared_ptr<CPSG_Processor> processor);
+    void Fill(shared_ptr<CPSG_IpgInfo> ipg_info);
 
     template <class TItem>
     void Fill(TItem item, EPSG_Status status);
@@ -367,6 +368,9 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     EPSG_BioIdResolution GetBioIdResolution() const { return input.has("bio_id_resolution") && !input["bio_id_resolution"].GetValue().GetBool() ? EPSG_BioIdResolution::NoResolve : EPSG_BioIdResolution::Resolve; }
     CTimeout GetResendTimeout() const { return !input.has("resend_timeout") ? CTimeout::eDefault : CTimeout(input["resend_timeout"].GetValue().GetDouble()); }
     void ForEachTSE(TExclude exclude) const;
+    auto GetProtein() const { return input.has("protein") ? input["protein"].GetValue().GetString() : string(); }
+    auto GetIpg() const { return input.has("ipg") ? input["ipg"].GetValue().GetInt8() : 0; }
+    auto GetNucleotide() const { return input.has("nucleotide") ? input["nucleotide"].GetValue().GetString() : string(); }
     SPSG_UserArgs GetUserArgs() const { return input.has("user_args") ? input["user_args"].GetValue().GetString() : SPSG_UserArgs(); }
 
 private:
@@ -452,6 +456,8 @@ shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const TInput
         return Build<CPSG_Request_NamedAnnotInfo>(input, forward<TArgs>(args)...);
     } else if (name == "chunk") {
         return Build<CPSG_Request_Chunk>(input, forward<TArgs>(args)...);
+    } else if (name == "ipg_resolve") {
+        return Build<CPSG_Request_IpgResolve>(input, forward<TArgs>(args)...);
     } else {
         return {};
     }
@@ -523,6 +529,16 @@ shared_ptr<CPSG_Request_Chunk> SRequestBuilder::SImpl<CPSG_Request_Chunk>::Build
 {
     auto chunk_id = reader.GetChunkId();
     return Create(move(chunk_id));
+}
+
+template <>
+template <class TReader>
+shared_ptr<CPSG_Request_IpgResolve> SRequestBuilder::SImpl<CPSG_Request_IpgResolve>::Build(const TReader& reader)
+{
+    auto protein = reader.GetProtein();
+    auto ipg = reader.GetIpg();
+    auto nucleotide = reader.GetNucleotide();
+    return Create(move(protein), ipg, move(nucleotide));
 }
 
 template <class TRequest>

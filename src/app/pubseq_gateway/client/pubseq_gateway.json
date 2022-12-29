@@ -62,6 +62,16 @@
         }
       }
     },
+    "ipg_resolve": {
+      "description": "Request IPG info",
+      "Request-specific Parameters": {
+        "optional": {
+          "ipg": "IPG",
+          "nucleotide": "Nucleotide",
+          "protein": "Protein"
+        }
+      }
+    },
     "named_annot": {
       "description": "Request named annotations info by bio ID(s)",
       "Request-specific Parameters": {
