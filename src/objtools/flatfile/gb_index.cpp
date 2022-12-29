@@ -471,8 +471,7 @@ bool GenBankIndex(ParserPtr pp)
                     line_ver[i] = '\0';
                     break;
                 case ParFlat_NCBI_GI:
-                    if (pp->source == Parser::ESource::DDBJ || pp->accver == false ||
-                        line_nid)
+                    if (pp->source == Parser::ESource::DDBJ || pp->accver == false || line_nid)
                         break;
                     p = finfo.str + ParFlat_COL_DATA;
                     while (*p == ' ' || *p == '\t')
@@ -716,7 +715,7 @@ bool GenBankIndex(ParserPtr pp)
                 MemFree(line_nid);
                 line_nid = nullptr;
             }
-            entry->len = (size_t)(pp->ffbuf.current - pp->ffbuf.start) - entry->offset;
+            entry->len = pp->ffbuf.get_offs() - entry->offset;
 
             if (acwflag == false &&
                 pp->mode != Parser::EMode::Relaxed) {

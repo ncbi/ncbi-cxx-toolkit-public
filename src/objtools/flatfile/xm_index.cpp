@@ -322,9 +322,9 @@ static int s_GetCharAndAdvance(Parser& config)
     return *(config.ffbuf.current++);
 }
 
-void s_SetPointer(Parser& config, int offset)
+void s_SetPointer(Parser& config, size_t offset)
 {
-    config.ffbuf.current = config.ffbuf.start + offset;
+    config.ffbuf.set_offs(offset);
 }
 
 /**********************************************************/

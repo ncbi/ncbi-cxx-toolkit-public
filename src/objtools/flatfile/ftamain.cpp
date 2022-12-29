@@ -169,13 +169,13 @@ static void CkSegmentSet(ParserPtr pp)
 // LCOV_EXCL_STOP
 
 /**********************************************************/
-static bool CompareAccs(const IndexblkPtr& p1, const IndexblkPtr& p2)
+static bool CompareAccs(const Indexblk* p1, const Indexblk* p2)
 {
     return StringCmp(p1->acnum, p2->acnum) < 0;
 }
 
 /**********************************************************/
-static bool CompareAccsV(const IndexblkPtr& p1, const IndexblkPtr& p2)
+static bool CompareAccsV(const Indexblk* p1, const Indexblk* p2)
 {
     int i = StringCmp(p1->acnum, p2->acnum);
     if (i != 0)
@@ -197,7 +197,7 @@ static bool CompareAccsV(const IndexblkPtr& p1, const IndexblkPtr& p2)
  *                                              3-9-93
  *
  **********************************************************/
-static bool CompareData(const IndexblkPtr& p1, const IndexblkPtr& p2)
+static bool CompareData(const Indexblk* p1, const Indexblk* p2)
 {
     int retval = StringCmp(p1->blocusname, p2->blocusname);
     if (retval == 0) {
@@ -226,7 +226,7 @@ static bool CompareData(const IndexblkPtr& p1, const IndexblkPtr& p2)
 }
 
 /**********************************************************/
-static bool CompareDataV(const IndexblkPtr& p1, const IndexblkPtr& p2)
+static bool CompareDataV(const Indexblk* p1, const Indexblk* p2)
 {
     int retval = StringCmp(p1->blocusname, p2->blocusname);
 
@@ -479,7 +479,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
 
     FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
 
-    //fta_entrez_fetch_enable(pp);
+    // fta_entrez_fetch_enable(pp);
 
     /* CompareData: group all the segments data together
      */
@@ -518,7 +518,7 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
 
     GetScope().ResetHistory();
 
-    //fta_entrez_fetch_disable(pp);
+    // fta_entrez_fetch_disable(pp);
 
     ret = CloseAll(pp);
 
@@ -671,8 +671,7 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format, bool accver, Parse
     pp->qsfd                  = nullptr;
     pp->qamode                = false;
 
-    pp->ffbuf.start   = ffentry;
-    pp->ffbuf.current = pp->ffbuf.start;
+    pp->ffbuf.set(ffentry);
 
     fta_fill_find_pub_option(pp, false, false);
     fta_main(pp, true);
@@ -757,12 +756,11 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, const string& file
         s_ReportFatalError(msg, m_pMessageListener);
     }
 
-    auto       pFileMap     = make_unique<CMemoryFileMap>(filename);
-    const auto fileSize     = pFileMap->GetFileSize();
-    parseInfo.ffbuf.start   = (const char*)pFileMap->Map(0, fileSize);
-    parseInfo.ffbuf.current = parseInfo.ffbuf.start;
+    auto       pFileMap = make_unique<CMemoryFileMap>(filename);
+    const auto fileSize = pFileMap->GetFileSize();
+    parseInfo.ffbuf.set((const char*)pFileMap->Map(0, fileSize));
 
-    if (! parseInfo.ffbuf.current) {
+    if (! parseInfo.ffbuf.start) {
         string msg = "Failed to open input file " + filename;
         s_ReportFatalError(msg, m_pMessageListener);
     }
@@ -785,8 +783,7 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr
     os << istr.rdbuf();
     string buffer = os.str();
 
-    parseInfo.ffbuf.start   = buffer.c_str();
-    parseInfo.ffbuf.current = parseInfo.ffbuf.start;
+    parseInfo.ffbuf.set(buffer.c_str());
 
     CRef<CSerialObject> pResult;
     if (sParseFlatfile(pResult, &parseInfo)) {
@@ -805,16 +802,11 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
 
     FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
-
-    pp.ffbuf.start   = buf;
-    pp.ffbuf.current = buf;
-
+    pp.ffbuf.set(buf);
     FtaDeletePrefix(PREFIX_LOCUS);
 
     FtaInstallPrefix(PREFIX_LOCUS, "INDEXING");
-
     bool good = FlatFileIndex(&pp, nullptr);
-
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
     if (! good) {
@@ -846,7 +838,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
 
-    //fta_entrez_fetch_enable(&pp);
+    // fta_entrez_fetch_enable(&pp);
 
     /*
     if (pp->ffdb == 0)
@@ -912,7 +904,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     //? SeqMgrFreeCache();
     //? FreeFFEntries();
 
-    //fta_entrez_fetch_disable(&pp);
+    // fta_entrez_fetch_disable(&pp);
     fta_fini_servers(&pp);
 
     return pp.entries;
@@ -965,11 +957,11 @@ void fta_init_pp(Parser& pp)
     pp.ffdb         = false;
 
     /* as of june, 2004 the sequence length limitation removed
-	*/
+     */
     pp.limit = 0;
     pp.all   = 0;
-    //pp.fpo = nullptr;
-    //fta_fill_find_pub_option(&pp, false, false);
+    // pp.fpo = nullptr;
+    // fta_fill_find_pub_option(&pp, false, false);
 
     pp.indx                  = 0;
     pp.entrylist.clear();
