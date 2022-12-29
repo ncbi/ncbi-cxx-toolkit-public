@@ -362,14 +362,13 @@ struct SPSG_Reply
 
         SPSG_CV<> change;
 
-        SState() : m_State(eInProgress), m_Returned(false), m_Empty(true) {}
+        SState() : m_State(eInProgress), m_Empty(true) {}
 
         const volatile atomic<EState>& GetState() const volatile { return m_State; }
         EPSG_Status GetStatus() const volatile;
         string GetError();
 
         bool InProgress() const volatile { return m_State == eInProgress; }
-        bool Returned() const volatile { return m_Returned; }
         bool Empty() const volatile { return m_Empty; }
 
         void SetState(EState state) volatile
@@ -383,14 +382,12 @@ struct SPSG_Reply
 
         void AddError(string message) { m_Messages.push_back(move(message)); }
         void SetComplete() { SetState(m_Messages.empty() ? eSuccess : eError); }
-        void SetReturned() volatile { m_Returned.store(true); }
         void SetNotEmpty() volatile { m_Empty.store(false); }
 
         static EState FromRequestStatus(int status);
 
     private:
         atomic<EState> m_State;
-        atomic_bool m_Returned;
         atomic_bool m_Empty;
         vector<string> m_Messages;
     };
@@ -407,6 +404,7 @@ struct SPSG_Reply
     };
 
     SThreadSafe<list<SItem::TTS>> items;
+    SThreadSafe<list<SItem::TTS*>> new_items;
     SItem::TTS reply_item;
     SDebugPrintout debug_printout;
     shared_ptr<TPSG_Queue> queue;
