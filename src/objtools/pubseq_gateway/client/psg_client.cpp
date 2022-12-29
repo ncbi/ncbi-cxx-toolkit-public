@@ -178,6 +178,7 @@ const char* s_GetRequestTypeName(CPSG_Request::EType type)
         case CPSG_Request::eBlob:           return "blob";
         case CPSG_Request::eNamedAnnotInfo: return "annot";
         case CPSG_Request::eChunk:          return "chunk";
+        case CPSG_Request::eIpgResolve:     return "ipg_resolve";
     }
 
     // Should not happen
@@ -424,6 +425,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
             case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks);
             case CPSG_ReplyItem::ePublicComment:    return new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front());
             case CPSG_ReplyItem::eProcessor:        return new CPSG_Processor(s_GetProgressStatus(args));
+            case CPSG_ReplyItem::eIpgInfo:          return CreateImpl(new CPSG_IpgInfo, chunks);
             case CPSG_ReplyItem::eEndOfReply:       return nullptr;
         }
 
@@ -483,6 +485,7 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
         case SPSG_Args::eBioseqNa:       return CPSG_ReplyItem::eNamedAnnotInfo;
         case SPSG_Args::ePublicComment:  return CPSG_ReplyItem::ePublicComment;
         case SPSG_Args::eProcessor:      return CPSG_ReplyItem::eProcessor;
+        case SPSG_Args::eIpgInfo:        return CPSG_ReplyItem::eIpgInfo;
         case SPSG_Args::eUnknownItem:    break;
     }
 
@@ -881,6 +884,39 @@ void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
     os << "/ID/get_tse_chunk?" << m_ChunkId;
 }
 
+
+CPSG_Request_IpgResolve::CPSG_Request_IpgResolve(string protein, Int8 ipg, string nucleotide, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
+    : CPSG_Request(move(user_context), move(request_context)),
+        m_Protein(move(protein)),
+        m_Ipg(ipg),
+        m_Nucleotide(move(nucleotide))
+{
+    if (m_Protein.empty()) {
+        if (!m_Ipg) {
+            NCBI_THROW(CPSG_Exception, eParameterMissing, "protein and ipg cannot be both empty");
+        }
+
+        if (!m_Nucleotide.empty()) {
+            NCBI_THROW(CPSG_Exception, eParameterMissing, "protein cannot be empty if nucleotide is specified");
+        }
+    }
+}
+
+string CPSG_Request_IpgResolve::x_GetId() const
+{
+    return to_string(m_Ipg) + '~' + m_Protein + (m_Nucleotide.empty() ? m_Nucleotide : '~' + m_Nucleotide);
+}
+
+void CPSG_Request_IpgResolve::x_GetAbsPathRef(ostream& os) const
+{
+    os << "/IPG/resolve?protein=" << m_Protein;
+
+    if (m_Ipg) os << "&ipg=" << m_Ipg;
+
+    os << "&nucleotide=" << m_Nucleotide;
+}
+
+
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG_Request> r, CDeadline deadline)
 {
     _ASSERT(queue);
@@ -1253,6 +1289,37 @@ CPSG_Processor::CPSG_Processor(EProgressStatus progress_status) :
     CPSG_ReplyItem(eProcessor),
     m_ProgressStatus(progress_status)
 {
+}
+
+
+CPSG_IpgInfo::CPSG_IpgInfo()
+    : CPSG_ReplyItem(eIpgInfo)
+{
+}
+
+string CPSG_IpgInfo::GetProtein() const
+{
+    return m_Data.GetString("protein");
+};
+
+Int8 CPSG_IpgInfo::GetIpg() const
+{
+    return m_Data.GetInteger("ipg");
+}
+
+string CPSG_IpgInfo::GetNucleotide() const
+{
+    return m_Data.GetString("nucleotide");
+}
+
+TTaxId CPSG_IpgInfo::GetTaxId() const
+{
+    return TAX_ID_FROM(Int8, m_Data.GetInteger("tax_id"));
+}
+
+CPSG_IpgInfo::TState CPSG_IpgInfo::GetGbState() const
+{
+    return static_cast<TState>(m_Data.GetInteger("gb_state"));
 }
 
 
