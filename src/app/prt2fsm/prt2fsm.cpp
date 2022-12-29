@@ -63,7 +63,7 @@ void CPrt2FsmApp::Init()
     arg_desc->SetUsageContext("", "Suspect Product Rules to FSM");
     arg_desc->AddOptionalKey("i", "InFile", "Input File", CArgDescriptions::eInputFile);
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
-};
+}
 
 
 string QuoteString(const string& s)

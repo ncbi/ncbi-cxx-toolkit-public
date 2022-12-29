@@ -55,7 +55,7 @@ static bool IsStringConstraintEmpty(const CString_constraint* constraint)
         return true;
     }
     return false;
-};
+}
 
 
 static const string SkipWeasel(const string& str)
@@ -153,7 +153,7 @@ static bool CaseNCompareEqual(string str1, string str2, unsigned len1, bool case
     else {
         return (NStr::EqualNocase(comp_str1, 0, len1, comp_str2));
     }
-};
+}
 
 
 static bool AdvancedStringCompare(const string& str, const string& str_match, const CString_constraint* str_cons, bool is_start, unsigned* ini_target_match_len = 0)
@@ -430,7 +430,7 @@ static bool StringIsPositiveAllDigits(const string& str)
         return false;
     }
     return true;
-};
+}
 
 
 static bool IsStringInSpan(const string& str, const string& first, const string& second)
@@ -721,7 +721,7 @@ bool CSuspect_rule::StringMatchesSuspectProductRule(const CMatchString& str) con
         }
     }
     return true;
-};
+}
 
 
 bool CSuspect_rule::ApplyToString(string& val) const

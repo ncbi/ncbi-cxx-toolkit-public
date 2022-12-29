@@ -92,7 +92,7 @@ NCBI_FSM_HITS_1(32) = {
 118, //  8: /\buncharacterized\b/i
 119, //  8: /\buncharacterized\b/i 10: /\s/
 };
-NCBI_FSM_HITS_2(32) = {
+NCBI_FSM_HITS_2(32) = { {
 { 10, }, // 10: /\s/
 { 10, }, // 10: /\s/
 { 2, }, // 2: /\bnovel\b/i
@@ -125,7 +125,7 @@ NCBI_FSM_HITS_2(32) = {
 { 8, }, // 8: /\buncharacterized\b/i
 { 8, }, // 8: /\buncharacterized\b/i
 { 8, 10, }, // 8: /\buncharacterized\b/i 10: /\s/
-};
+} };
 NCBI_FSM_STATES = {
 // 0
 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
