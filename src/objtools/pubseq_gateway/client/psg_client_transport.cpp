@@ -932,6 +932,7 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
     if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
         if (auto [processor_id, req] = it->second.Get(); req) {
             req->OnReplyData(processor_id, (const char*)data, len);
+            it->second.ResetTime();
         }
     }
 
