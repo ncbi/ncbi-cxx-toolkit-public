@@ -161,7 +161,7 @@ void CDiscRepApp::Init()
                                 CArgDescriptions::eString);
 */
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
-};
+}
 
 
 string CDiscRepApp::x_ConstructOutputName(const string& input) // LCOV_EXCL_START
@@ -244,10 +244,10 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 
     CDir::TEntries Entries = Dir.GetEntries();
     for (const CDir::TEntry& entry : Entries) {
-        const string name = entry->GetName();
-        if (name == "." || name == "..") continue;
+        const string fname = entry->GetName();
+        if (fname == "." || fname == "..") continue;
         if (recursive && entry->IsDir()) x_ParseDirectory(entry->GetPath(), true);
-        if (NStr::EndsWith(name, ext) && !NStr::EndsWith(name, autofixext))
+        if (NStr::EndsWith(fname, ext) && !NStr::EndsWith(fname, autofixext))
         {
             if (entry->IsFile())
                 m_Files.push_back(entry->GetPath());

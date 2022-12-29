@@ -38,7 +38,7 @@
 #include <objects/macro/String_constraint.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
-#include <util/compiled_fsm.hpp>
+#include <util/impl/generated_fsm.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -151,7 +151,7 @@ namespace
             return storage;
         else
             return str;
-    };
+    }
 
     inline
     bool x_DisallowCharacter(const char ch, bool disallow_slash)
@@ -159,9 +159,9 @@ namespace
         if (isalpha(Uint1(ch)) || isdigit(Uint1(ch)) || ch == '_' || ch == '-') return true;
         else if (disallow_slash && ch == '/') return true;
         else return false;
-    };
+    }
 
-};
+}
 
 
 void CMatchString::x_PopWeasel() const
@@ -321,7 +321,7 @@ bool CString_constraint::x_IsWholeWordMatch(const CTempString& start, size_t fou
         }
     }
     return true;
-};
+}
 
 
 bool CString_constraint :: x_PartialCompare(const string& str, const string& pattern, char prev_char, size_t & match_len) const
@@ -411,7 +411,7 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
     }
 
     return rval;
-};
+}
 
 bool CString_constraint::x_AdvancedStringMatch(const string& str, const string& tmp_match) const
 {
@@ -450,7 +450,7 @@ bool CString_constraint::x_AdvancedStringMatch(const string& str, const string& 
         }
     }
     return rval;
-};
+}
 
 
 CTempString CString_constraint::x_GetConstraintString(ECase e_case) const

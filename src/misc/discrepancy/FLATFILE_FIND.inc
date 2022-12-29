@@ -242,7 +242,7 @@ NCBI_FSM_HITS_1(94) = {
 642, //  39: nuclear shutting
 643, //  39: nuclear shutting
 };
-NCBI_FSM_HITS_2(94) = {
+NCBI_FSM_HITS_2(94) = { {
 { 78, }, // 78: haem
 { 80, }, // 80: heam
 { 61, }, // 61: sulfer
@@ -337,7 +337,7 @@ NCBI_FSM_HITS_2(94) = {
 { 79, }, // 79: haemagglutination
 { 39, }, // 39: nuclear shutting
 { 39, }, // 39: nuclear shutting
-};
+} };
 NCBI_FSM_STATES = {
 // 0
 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,

@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include "multipattern_search_impl.hpp"
-#include <util/compiled_fsm.hpp>
+#include <util/impl/generated_fsm.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -148,19 +148,6 @@ static void xMultiPatternSearch(const char* input, const CRegExFSA& fsa, CMultip
         ++p;
     }
 #endif
-
-namespace FSM
-{
-    const CCompiledFSM::THits2::value_type& CCompiledFSM::get_hits(index_type state) const
-    {
-        auto it = std::lower_bound(m_hits1.begin(), m_hits1.end(), state);
-#ifdef _DEBUG
-        _ASSERT(it != m_hits1.end());
-#endif
-        auto dist = std::distance(m_hits1.begin(), it);
-        return m_hits2[dist];
-    }
-}
 
 static void xMultiPatternSearch(const char* input, const CCompiledFSM& fsm, CMultipatternSearch::BoolCall2 report)
 {
@@ -1747,7 +1734,7 @@ void CRegExFSA::GenerateArrayMapData(ostream& out) const
     }
     out << "};\n";
 
-    out << "NCBI_FSM_HITS_2(" << num_hits << ") = {\n";   // #define _FSM_HITS static map<size_t, vector<size_t>> hits
+    out << "NCBI_FSM_HITS_2(" << num_hits << ") = { {\n";   // #define _FSM_HITS static map<size_t, vector<size_t>> hits
     for (size_t n = 0; n < m_States.size(); n++) {
         if (m_States[n]->m_Emit.size()) {
             out << "{ ";
@@ -1761,7 +1748,7 @@ void CRegExFSA::GenerateArrayMapData(ostream& out) const
             out << "\n";
         }
     }
-    out << "};\n";
+    out << "} };\n";
 
     // #define _FSM_STATE(size) static size_t states[size]
     out << "NCBI_FSM_STATES = {\n";
