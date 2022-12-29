@@ -104,6 +104,7 @@ public:
         eBlob,
         eNamedAnnotInfo,
         eChunk,
+        eIpgResolve,
     };
 
     /// Get the user-provided context
@@ -581,6 +582,34 @@ private:
 
 
 
+/// Request IPG resolve
+///
+
+class CPSG_Request_IpgResolve : public CPSG_Request
+{
+public:
+    CPSG_Request_IpgResolve(string                protein,
+                            Int8                  ipg = {},
+                            string                nucleotide = {},
+                            shared_ptr<void>      user_context = {},
+                            CRef<CRequestContext> request_context = {});
+
+    const string& GetProtein() const { return m_Protein; }
+    Int8 GetIpg() const { return m_Ipg; }
+    const string& GetNucleotide() const { return m_Nucleotide; }
+
+private:
+    EType x_GetType() const override { return eIpgResolve; }
+    string x_GetId() const override;
+    void x_GetAbsPathRef(ostream&) const override;
+
+    string m_Protein;
+    Int8 m_Ipg;
+    string m_Nucleotide;
+};
+
+
+
 /// Retrieval result
 /// @sa GetStatus
 enum class EPSG_Status {
@@ -621,6 +650,7 @@ public:
         eNamedAnnotInfo,
         ePublicComment,
         eProcessor,
+        eIpgInfo,
         eEndOfReply,    ///< No more items expected in the (overall!) reply
     };
 
@@ -948,6 +978,38 @@ private:
     CPSG_Processor(EProgressStatus progress_status);
 
     EProgressStatus m_ProgressStatus;
+
+    friend class CPSG_Reply;
+};
+
+
+
+/// Ipg info -- result of the IPG resolution.
+
+class CPSG_IpgInfo : public CPSG_ReplyItem
+{
+public:
+    /// Get protein
+    string GetProtein() const;
+
+    /// Get Ipg
+    Int8 GetIpg() const;
+
+    /// Get nucleotide
+    string GetNucleotide() const;
+
+    /// Get taxonomy ID
+    TTaxId GetTaxId() const;
+
+    typedef int TState;
+
+    /// Get state
+    TState GetGbState() const;
+
+private:
+    CPSG_IpgInfo();
+
+    CJsonNode m_Data;
 
     friend class CPSG_Reply;
 };

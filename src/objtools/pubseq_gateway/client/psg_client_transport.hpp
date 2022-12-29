@@ -96,6 +96,7 @@ struct SPSG_ArgsBase : CUrlArgs
         eBioseqNa,
         ePublicComment,
         eProcessor,
+        eIpgInfo,
         eUnknownItem,
     };
 
