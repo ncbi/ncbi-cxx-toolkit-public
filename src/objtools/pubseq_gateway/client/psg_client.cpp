@@ -505,7 +505,6 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& item_ts)
 {
     auto item_locked = item_ts.GetLock();
-    item_locked->state.SetReturned();
 
     const auto& args = item_locked->args;
     const auto itar = SItemTypeAndReason::Get(args);
@@ -1354,28 +1353,30 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
     do {
         bool was_in_progress = reply_state.InProgress();
 
-        if (auto items_locked = m_Impl->reply->items.GetLock()) {
-            auto& items = *items_locked;
+        if (auto new_items_locked = m_Impl->reply->new_items.GetLock()) {
+            auto& new_items = *new_items_locked;
 
-            for (auto& item_ts : items) {
+            for (auto it = new_items.begin(); it != new_items.end(); ) {
+                auto& item_ts = **it;
                 const auto& item_state = item_ts->state;
-
-                if (item_state.Returned()) continue;
 
                 if (item_state.Empty()) {
                     auto item_locked = item_ts.GetLock();
                     auto& item = *item_locked;
 
                     // Wait for more chunks on this item
-                    if (!item.expected.Cmp<less_equal>(item.received)) continue;
+                    if (!item.expected.Cmp<less_equal>(item.received)) {
+                        ++it;
+                        continue;
+                    }
                 }
+
+                it = new_items.erase(it);
 
                 // Do not hold lock on item_ts around this call!
                 if (auto rv = m_Impl->Create(item_ts)) {
                     return rv;
                 }
-
-                continue;
             }
         }
 

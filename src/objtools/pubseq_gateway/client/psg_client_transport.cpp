@@ -783,6 +783,7 @@ void SPSG_Request::Add()
         } else {
             if (auto items_locked = reply->items.GetLock()) {
                 items_locked->emplace_back();
+                reply->new_items.GetLock()->emplace_back(&items_locked->back());
                 item_by_id = &items_locked->back();
             }
 
