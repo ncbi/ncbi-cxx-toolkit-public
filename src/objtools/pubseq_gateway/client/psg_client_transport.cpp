@@ -118,6 +118,7 @@ SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_Ar
     if (value == "bioseq_na")       return { SPSG_ArgsBase::eBioseqNa,       cref(value) };
     if (value == "public_comment")  return { SPSG_ArgsBase::ePublicComment,  cref(value) };
     if (value == "processor")       return { SPSG_ArgsBase::eProcessor,      cref(value) };
+    if (value == "ipg_info")        return { SPSG_ArgsBase::eIpgInfo,        cref(value) };
     if (value.empty())              return { SPSG_ArgsBase::eReply,          cref(value) };
     return { SPSG_ArgsBase::eUnknownItem, cref(value) };
 };
@@ -246,6 +247,7 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eRequest>
             case CPSG_Request::eBlob:               return "blob";
             case CPSG_Request::eNamedAnnotInfo:     return "named_annot_info";
             case CPSG_Request::eChunk:              return "chunk";
+            case CPSG_Request::eIpgResolve:         return "ipg_resolve";
         }
 
         // Should not happen
@@ -269,6 +271,7 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eReplyItem>
         CPSG_ReplyItem::eNamedAnnotInfo,
         CPSG_ReplyItem::ePublicComment,
         CPSG_ReplyItem::eProcessor,
+        CPSG_ReplyItem::eIpgInfo,
         CPSG_ReplyItem::eEndOfReply,
     };
 
@@ -282,6 +285,7 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eReplyItem>
             case CPSG_ReplyItem::eNamedAnnotInfo:       return "named_annot_info";
             case CPSG_ReplyItem::ePublicComment:        return "public_comment";
             case CPSG_ReplyItem::eProcessor:            return "processor";
+            case CPSG_ReplyItem::eIpgInfo:              return "ipg_info";
             case CPSG_ReplyItem::eEndOfReply:           return "end_of_reply";
         }
 
