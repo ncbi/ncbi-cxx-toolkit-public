@@ -166,7 +166,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
 {
     int i = 0;
     for (; i < pp->indx; i++) {
-        if (StringCmp(pp->entrylist[i]->acnum, acc) == 0 &&
+        if (StringEqu(pp->entrylist[i]->acnum, acc) &&
             (! pp->accver || pp->entrylist[i]->vernum == vernum))
             break;
     }

@@ -1969,7 +1969,7 @@ static bool GetFeatNameAndLoc(GeneListPtr glp, const CSeq_feat& feat, GeneNodePt
     if (! glp)
         return (ret);
 
-    if (StringCmp(p, "misc_feature") == 0)
+    if (StringEqu(p, "misc_feature"))
         gnp->got_misc = true;
 
     glp->fname = p;
@@ -2632,7 +2632,7 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
     gnp->circular     = false;
     gnp->simple_genes = pp->simple_genes;
     gnp->got_misc     = false;
-    if (div && (StringCmp(div, "BCT") == 0 || StringCmp(div, "SYN") == 0))
+    if (div && (StringEqu(div, "BCT") || StringEqu(div, "SYN")))
         gnp->skipdiv = true;
     else
         gnp->skipdiv = false;

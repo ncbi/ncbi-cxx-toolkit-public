@@ -1747,9 +1747,9 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
 
     fmet = false;
     if (second) {
-        if (StringCmp(second, "F MET") == 0 ||
-            StringCmp(second, "FMET") == 0 ||
-            StringCmp(second, "F MT") == 0) {
+        if (StringEqu(second, "F MET") ||
+            StringEqu(second, "FMET") ||
+            StringEqu(second, "F MT")) {
             StringCpy(second, "FMET");
             fmet = true;
         }
@@ -1807,7 +1807,7 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned c
     if (StringEquN(comm, "CODON RECOGNIZED ", 17)) {
         p = comm + 17;
         q = StringChr(p, ' ');
-        if (q && StringCmp(q + 1, "PUTATIVE") == 0)
+        if (q && StringEqu(q + 1, "PUTATIVE"))
             *q = '\0';
         if (! StringChr(p, ' ') && StringLen(p) == 3) {
             MemFree(comm);
@@ -2353,7 +2353,7 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
     }
 
     if (evi_exp + evi_not > 0 && exp_good + exp_bad + inf_good + inf_bad > 0) {
-        if (fbp->location  && StringLen(fbp->location) > 50) {
+        if (fbp->location && StringLen(fbp->location) > 50) {
             ch                = fbp->location[50];
             fbp->location[50] = '\0';
         } else
@@ -2467,7 +2467,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
 
     if (! fbp->quals.empty()) {
         for (b = TransSplicingFeats; *b; b++)
-            if (StringCmp(fbp->key, *b) == 0)
+            if (StringEqu(fbp->key, *b))
                 break;
         if (*b && DeleteQual(fbp->quals, "trans_splicing")) {
             feat->SetExcept(true);
@@ -2485,7 +2485,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         return feat;
     }
 
-    if ((! feat->IsSetPartial() || ! feat->GetPartial()) && StringCmp(fbp->key, "gap") != 0) {
+    if ((! feat->IsSetPartial() || ! feat->GetPartial()) && ! StringEqu(fbp->key, "gap")) {
         if (SeqLocHaveFuzz(feat->GetLocation()))
             feat->SetPartial(true);
     }
@@ -2972,8 +2972,8 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
         }
 
         if (com_count > 0 || cit_count > 0 ||
-            (StringCmp(fbp->key, "old_sequence") != 0 &&
-             StringCmp(fbp->key, "conflict") != 0))
+            (! StringEqu(fbp->key, "old_sequence") &&
+             ! StringEqu(fbp->key, "conflict")))
             continue;
 
         ch = '\0';
@@ -3286,10 +3286,10 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             fbp = static_cast<FeatBlk*>(tdbp->mpData);
             if (! fbp || ! fbp->key)
                 continue;
-            if (StringCmp(fbp->key, "gap") == 0) {
+            if (StringEqu(fbp->key, "gap")) {
                 prev_gap = curr_gap;
                 curr_gap = 1;
-            } else if (StringCmp(fbp->key, "assembly_gap") == 0) {
+            } else if (StringEqu(fbp->key, "assembly_gap")) {
                 prev_gap = curr_gap;
                 curr_gap = 2;
             } else
@@ -3370,8 +3370,8 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             if (curr_gap == 2) /* "assembly_gap" feature */
             {
                 if (gap_type && is_htg > -1 &&
-                    StringCmp(gap_type, "within scaffold") != 0 &&
-                    StringCmp(gap_type, "repeat within scaffold") != 0)
+                    ! StringEqu(gap_type, "within scaffold") &&
+                    ! StringEqu(gap_type, "repeat within scaffold"))
                     ErrPostEx(SEV_ERROR, ERR_QUALIFIER_UnexpectedGapTypeForHTG, "assembly_gap has /gap_type of \"%s\", but clone-based HTG records are only expected to have \"within scaffold\" or \"repeat within scaffold\" gaps. assembly_gap feature located at \"%d..%d\".", gap_type, from, to);
 
                 if (is_htg == 0 || is_htg == 1) {
@@ -3401,7 +3401,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 }
 
                 for (snp = GapTypeValues; snp->str; snp++)
-                    if (StringCmp(snp->str, gap_type) == 0)
+                    if (StringEqu(snp->str, gap_type))
                         break;
                 if (! snp->str) {
                     ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidGapType, "assembly_gap feature at \"%d..%d\" has an invalid gap type : \"%s\".", from, to, gap_type);
@@ -3411,16 +3411,16 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 asn_gap_type = snp->num;
 
                 if (linkage_evidence_names.empty() &&
-                    (StringCmp(gap_type, "within scaffold") == 0 ||
-                     StringCmp(gap_type, "repeat within scaffold") == 0)) {
+                    (StringEqu(gap_type, "within scaffold") ||
+                     StringEqu(gap_type, "repeat within scaffold"))) {
                     ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MissingLinkageEvidence, "assembly_gap feature at \"%d..%d\" with gap type \"%s\" lacks a /linkage_evidence qualifier.", from, to, gap_type);
                     ibp->drop = true;
                     break;
                 }
                 if (! linkage_evidence_names.empty()) {
-                    if (StringCmp(gap_type, "unknown") != 0 &&
-                        StringCmp(gap_type, "within scaffold") != 0 &&
-                        StringCmp(gap_type, "repeat within scaffold") != 0) {
+                    if (! StringEqu(gap_type, "unknown") &&
+                        ! StringEqu(gap_type, "within scaffold") &&
+                        ! StringEqu(gap_type, "repeat within scaffold")) {
                         ErrPostEx(SEV_REJECT,
                                   ERR_QUALIFIER_InvalidGapTypeForLinkageEvidence,
                                   "The /linkage_evidence qualifier is not legal for the assembly_gap feature at \"%d..%d\" with /gap_type \"%s\".",
@@ -3981,8 +3981,8 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
         }
 
         FtaInstallPrefix(PREFIX_FEATURE, fbp->key, fbp->location);
-        if (StringCmp(fbp->key, "allele") == 0 ||
-            StringCmp(fbp->key, "mutation") == 0) {
+        if (StringEqu(fbp->key, "allele") ||
+            StringEqu(fbp->key, "mutation")) {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_ObsoleteFeature, "Obsolete feature \"%s\" found. Replaced with \"variation\".", fbp->key);
             MemFree(fbp->key);
             fbp->key = StringSave("variation");
@@ -4001,7 +4001,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
         {
             ParseQualifiers(fbp, ptr2, eptr, format);
 
-            if (StringCmp(fbp->key, "assembly_gap") != 0) {
+            if (! StringEqu(fbp->key, "assembly_gap")) {
                 for (const auto& cur : fbp->quals) {
                     const string& cur_qual = cur->GetQual();
                     if (cur_qual == "gap_type" ||
@@ -4012,7 +4012,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                 }
             }
 
-            if (StringCmp(fbp->key, "source") != 0) {
+            if (! StringEqu(fbp->key, "source")) {
                 for (const auto& cur : fbp->quals) {
                     const string& cur_qual = cur->GetQual();
                     if (cur_qual == "submitter_seqid") {
@@ -4037,17 +4037,16 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             if (ret > retval)
                 retval = ret;
 
-            if (ret > GB_FEAT_ERR_REPAIRABLE &&
-                StringCmp(fbp->key, "ncRNA") != 0)
+            if (ret > GB_FEAT_ERR_REPAIRABLE && ! StringEqu(fbp->key, "ncRNA"))
                 dbp->mDrop = true;
         } else if (subtype == CSeqFeatData::eSubtype_bad && ! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
-            if (StringCmp(fbp->key, "mobile_element") != 0) {
+            if (! StringEqu(fbp->key, "mobile_element")) {
                 auto        qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
                 string      str1     = CSeqFeatData::GetQualifierAsString(qual_idx);
                 const char* str      = str1.c_str();
-                if ((StringCmp(fbp->key, "old_sequence") != 0 &&
-                     StringCmp(fbp->key, "conflict") != 0) ||
-                    StringCmp(str, "citation") != 0) {
+                if ((! StringEqu(fbp->key, "old_sequence") &&
+                     ! StringEqu(fbp->key, "conflict")) ||
+                    ! StringEqu(str, "citation")) {
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "lacks required /%s qualifier : feature has been dropped.", str);
                     if (! deb) {
                         dbp->mDrop = true;
@@ -4055,7 +4054,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                     }
                 }
             }
-        } else if (StringCmp(fbp->key, "misc_feature") == 0 && fbp->quals.empty()) {
+        } else if (StringEqu(fbp->key, "misc_feature") && fbp->quals.empty()) {
             if (! deb) {
                 dbp->mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
@@ -4202,8 +4201,8 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             fbp->key = StringSave("misc_feature");
         }
 
-        if (StringCmp(fbp->key, "allele") == 0 ||
-            StringCmp(fbp->key, "mutation") == 0) {
+        if (StringEqu(fbp->key, "allele") ||
+            StringEqu(fbp->key, "mutation")) {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_ObsoleteFeature, "Obsolete feature \"%s\" found. Replaced with \"variation\".", fbp->key);
             MemFree(fbp->key);
             fbp->key = StringSave("variation");
@@ -4253,17 +4252,16 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             if (ret > retval)
                 retval = ret;
 
-            if (ret > GB_FEAT_ERR_REPAIRABLE &&
-                StringCmp(fbp->key, "ncRNA") != 0)
+            if (ret > GB_FEAT_ERR_REPAIRABLE && ! StringEqu(fbp->key, "ncRNA"))
                 dbp->mDrop = true;
         } else if (subtype == CSeqFeatData::eSubtype_bad && ! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
-            if (StringCmp(fbp->key, "mobile_element") != 0) {
+            if (! StringEqu(fbp->key, "mobile_element")) {
                 auto        qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
                 string      str1     = CSeqFeatData::GetQualifierAsString(qual_idx);
                 const char* str      = str1.c_str();
-                if ((StringCmp(fbp->key, "old_sequence") != 0 &&
-                     StringCmp(fbp->key, "conflict") != 0) ||
-                    StringCmp(str, "citation") != 0) {
+                if ((! StringEqu(fbp->key, "old_sequence") &&
+                     ! StringEqu(fbp->key, "conflict")) ||
+                    ! StringEqu(str, "citation")) {
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "lacks required /%s qualifier : feature has been dropped.", str);
                     if (! deb) {
                         dbp->mDrop = true;
@@ -4271,7 +4269,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
                     }
                 }
             }
-        } else if (StringCmp(fbp->key, "misc_feature") == 0 && fbp->quals.empty()) {
+        } else if (StringEqu(fbp->key, "misc_feature") && fbp->quals.empty()) {
             if (! deb) {
                 dbp->mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
@@ -4519,29 +4517,29 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, bool* drop)
         if (! fbp || ! fbp->key)
             continue;
 
-        if (StringCmp(fbp->key, "attenuator") == 0)
+        if (StringEqu(fbp->key, "attenuator"))
             fta_convert_to_regulatory(fbp, "attenuator");
-        else if (StringCmp(fbp->key, "CAAT_signal") == 0)
+        else if (StringEqu(fbp->key, "CAAT_signal"))
             fta_convert_to_regulatory(fbp, "CAAT_signal");
-        else if (StringCmp(fbp->key, "enhancer") == 0)
+        else if (StringEqu(fbp->key, "enhancer"))
             fta_convert_to_regulatory(fbp, "enhancer");
-        else if (StringCmp(fbp->key, "GC_signal") == 0)
+        else if (StringEqu(fbp->key, "GC_signal"))
             fta_convert_to_regulatory(fbp, "GC_signal");
-        else if (StringCmp(fbp->key, "-35_signal") == 0)
+        else if (StringEqu(fbp->key, "-35_signal"))
             fta_convert_to_regulatory(fbp, "minus_35_signal");
-        else if (StringCmp(fbp->key, "-10_signal") == 0)
+        else if (StringEqu(fbp->key, "-10_signal"))
             fta_convert_to_regulatory(fbp, "minus_10_signal");
-        else if (StringCmp(fbp->key, "polyA_signal") == 0)
+        else if (StringEqu(fbp->key, "polyA_signal"))
             fta_convert_to_regulatory(fbp, "polyA_signal_sequence");
-        else if (StringCmp(fbp->key, "promoter") == 0)
+        else if (StringEqu(fbp->key, "promoter"))
             fta_convert_to_regulatory(fbp, "promoter");
-        else if (StringCmp(fbp->key, "RBS") == 0)
+        else if (StringEqu(fbp->key, "RBS"))
             fta_convert_to_regulatory(fbp, "ribosome_binding_site");
-        else if (StringCmp(fbp->key, "TATA_signal") == 0)
+        else if (StringEqu(fbp->key, "TATA_signal"))
             fta_convert_to_regulatory(fbp, "TATA_box");
-        else if (StringCmp(fbp->key, "terminator") == 0)
+        else if (StringEqu(fbp->key, "terminator"))
             fta_convert_to_regulatory(fbp, "terminator");
-        else if (StringCmp(fbp->key, "regulatory") != 0)
+        else if (! StringEqu(fbp->key, "regulatory"))
             continue;
 
         got_note    = false;
@@ -4979,9 +4977,9 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 continue;
 
             fbp = static_cast<FeatBlk*>(dbp->mpData);
-            if (StringCmp(fbp->key, "source") == 0 ||
-                StringCmp(fbp->key, "assembly_gap") == 0 ||
-                (StringCmp(fbp->key, "gap") == 0 &&
+            if (StringEqu(fbp->key, "source") ||
+                StringEqu(fbp->key, "assembly_gap") ||
+                (StringEqu(fbp->key, "gap") &&
                  pp->source != Parser::ESource::DDBJ && pp->source != Parser::ESource::EMBL))
                 continue;
 
@@ -4992,14 +4990,14 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             else
                 feat = SpProcFeatBlk(pp, fbp, ids);
             if (feat.Empty()) {
-                if (StringCmp(fbp->key, "CDS") == 0) {
+                if (StringEqu(fbp->key, "CDS")) {
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_LocationParsing, "CDS feature has unparsable location. Entry dropped. Location = [%s].", fbp->location);
                     ibp->drop = true;
                 }
                 continue;
             }
 
-            if (StringCmp(fbp->key, "mobile_element") == 0 &&
+            if (StringEqu(fbp->key, "mobile_element") &&
                 ! fta_check_mobile_element(*feat)) {
                 ibp->drop = true;
                 continue;
@@ -5178,7 +5176,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         return;
     }
 
-    if (StringCmp(ibp->division, "SYN") == 0 ||
+    if (StringEqu(ibp->division, "SYN") ||
         (org_ref && org_ref->IsSetOrgname() && org_ref->GetOrgname().IsSetDiv() &&
          org_ref->GetOrgname().GetDiv() == "SYN"))
         is_syn = true;

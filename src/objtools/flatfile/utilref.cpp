@@ -344,10 +344,10 @@ static Int4 check_mix_pages_range(char* pages)
         *p  = '\0';
         ch2 = *q;
         *q  = '\0';
-        i   = StringCmp(page1, page2);
+        bool j = StringEqu(page1, page2);
         *p  = ch1;
         *q  = ch2;
-        if (i != 0) {
+        if (! j) {
             *dash = '-';
             return (-1);
         }
@@ -389,7 +389,7 @@ static Int4 check_mix_pages_range(char* pages)
         p++;
     for (page2 = q; (*q >= 'a' && *q <= 'z') || (*q >= 'A' && *q <= 'Z');)
         q++;
-    if (*p != '\0' || *q != '\0' || StringCmp(page1, page2) != 0) {
+    if (*p != '\0' || *q != '\0' || ! StringEqu(page1, page2)) {
         *dash = '-';
         return (-1);
     }
