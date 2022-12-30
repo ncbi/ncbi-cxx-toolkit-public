@@ -66,6 +66,7 @@ class CRequestTimeSeries
 
     private:
         CJsonNode x_SerializeOneSeries(const uint64_t *  values,
+                                       uint64_t  grand_total,
                                        const vector<pair<int, int>> &  time_series,
                                        bool  loop,
                                        size_t  current_index) const;
@@ -83,6 +84,9 @@ class CRequestTimeSeries
         // Tells if the current index made a loop
         bool        m_Loop;
 
+        // Includes the current minute
+        atomic_uint_fast64_t    m_TotalMinutesCollected;
+
         // Note: there is no any kind of lock to protect the current index.
         // This is an intention due to a significant performance penalty at
         // least under a production load. If a lock is used then the blob
@@ -97,7 +101,7 @@ class CRequestTimeSeries
         // off for the total number of requests sent to the client (which is
         // almost harmless since the client is interested in a trend but not in
         // absolutely precise data).
-        atomic_uint_fast64_t      m_CurrentIndex;
+        atomic_uint_fast64_t    m_CurrentIndex;
 };
 
 
