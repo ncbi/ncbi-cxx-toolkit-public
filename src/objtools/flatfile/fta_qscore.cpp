@@ -551,7 +551,7 @@ static Int4 QSbuf_ParseScores(char* score_buf, unsigned char* scores, Int4 max_t
     fflush(stdout);
     */
 
-        if (allow_na && StringCmp(p, "NA") == 0) {
+        if (allow_na && StringEqu(p, "NA")) {
             *scores = 0;
             scores++;
         } else {
@@ -1002,8 +1002,8 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
              * generate a warning message and then exit the while loop.
              */
 
-            if (StringCmp(my_buf, "//") == 0) {
-                /*                ErrPostEx(SEV_WARNING, ERR_QSCORE_DoubleSlash,
+            if (StringEqu(my_buf, "//")) {
+                /* ErrPostEx(SEV_WARNING, ERR_QSCORE_DoubleSlash,
                           "Encountered unusual double-slash terminator in qscore buffer : assuming it flags the end of qscore data.");*/
                 break;
             }

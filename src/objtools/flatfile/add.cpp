@@ -638,7 +638,7 @@ static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
     } else {
         master = acc2;
         range  = acc1;
-        if (p)
+        if (p) // ?
             *p = '\0';
     }
 
@@ -875,7 +875,7 @@ bool fta_strings_same(const char* s1, const char* s2)
 {
     if (! s1 && ! s2)
         return true;
-    if (! s1 || ! s2 || StringCmp(s1, s2) != 0)
+    if (! s1 || ! s2 || ! StringEqu(s1, s2))
         return false;
     return true;
 }
@@ -1805,21 +1805,21 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     ch = *++t;
                     *t = '\0';
 
-                    if (StringCmp(p, "Project:") != 0 &&
-                        StringCmp(p, "Assembly:") != 0 &&
-                        StringCmp(p, "BioSample:") != 0 &&
-                        StringCmp(p, "BioProject:") != 0 &&
-                        StringCmp(p, "Sequence Read Archive:") != 0 &&
-                        StringCmp(p, "Trace Assembly Archive:") != 0) {
+                    if (! StringEqu(p, "Project:") &&
+                        ! StringEqu(p, "Assembly:") &&
+                        ! StringEqu(p, "BioSample:") &&
+                        ! StringEqu(p, "BioProject:") &&
+                        ! StringEqu(p, "Sequence Read Archive:") &&
+                        ! StringEqu(p, "Trace Assembly Archive:")) {
                         ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Invalid DBLINK tag encountered: \"%s\". Entry dropped.", p);
                         bad = true;
                         break;
                     }
 
-                    bioproject = (StringCmp(p, "BioProject:") == 0);
-                    sra        = (StringCmp(p, "Sequence Read Archive:") == 0);
-                    biosample  = (StringCmp(p, "BioSample:") == 0);
-                    assembly   = (StringCmp(p, "Assembly:") == 0);
+                    bioproject = StringEqu(p, "BioProject:");
+                    sra        = StringEqu(p, "Sequence Read Archive:");
+                    biosample  = StringEqu(p, "BioSample:");
+                    assembly   = StringEqu(p, "Assembly:");
 
                     if (tvnp->data && StringChr(tvnp->data, ':')) {
                         ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"%s\". Entry dropped.", tvnp->data);
@@ -1828,7 +1828,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     }
 
                     for (uvnp = vnp->next; uvnp; uvnp = uvnp->next)
-                        if (StringCmp(uvnp->data, p) == 0) {
+                        if (StringEqu(uvnp->data, p)) {
                             ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"%s\". Entry dropped.", p);
                             bad = true;
                             break;
@@ -1871,7 +1871,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
 
         if (tagvnp && tagvnp->data) {
             for (uvnp = tagvnp->next; uvnp; uvnp = uvnp->next) {
-                if (! uvnp->data || StringCmp(uvnp->data, q) != 0)
+                if (! uvnp->data || ! StringEqu(uvnp->data, q))
                     continue;
 
                 ErrPostEx(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, "Duplicate identifier \"%s\" from \"%s\" link removed.", q, tagvnp->data);
@@ -1948,7 +1948,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             if (user_obj.NotEmpty())
                 break;
 
-            if (StringCmp(tvnp->data, "Project:") == 0) {
+            if (StringEqu(tvnp->data, "Project:")) {
                 user_obj.Reset(new CUser_object);
                 CObject_id& id = user_obj->SetType();
 
@@ -2001,7 +2001,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     bool inpr = false;
     for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
         if (StringChr(tvnp->data, ':')) {
-            if (StringCmp(tvnp->data, "Project:") == 0) {
+            if (StringEqu(tvnp->data, "Project:")) {
                 inpr = true;
                 continue;
             }
@@ -2098,8 +2098,8 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
 /**********************************************************/
 static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
-    Int4  i;
-    Char  ch;
+    Int4 i;
+    Char ch;
 
     if (! ibp)
         return;
@@ -2378,7 +2378,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
             else if (sli.wgsscaf && ! StringEquN(sli.wgsscaf, ibp->acnum, 4))
                 p = sli.wgsscaf;
             else if (sli.wgsacc && ! StringEquN(sli.wgsacc, ibp->acnum, 4))
-                p = sli.wgsscaf;
+                p = sli.wgsscaf; // ?
 
             if (p) {
                 Char msg[5];
@@ -2612,7 +2612,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         } else {
             for (vnp = tagvnp; vnp; vnp = vnp->next) {
                 r = vnp->data;
-                if (StringCmp(r + 2, tag + 2) == 0) {
+                if (StringEqu(r + 2, tag + 2)) {
                     if (*r != ' ') {
                         ErrPostEx(SEV_ERROR, ERR_COMMENT_SameStructuredCommentTags, "More than one structured comment with the same tag \"%s\" found.", tag + 2);
                         *r = ' ';
@@ -2626,7 +2626,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
             }
         }
 
-        if (StringCmp(tag, "##Metadata") == 0) {
+        if (StringEqu(tag, "##Metadata")) {
             MemFree(tag);
             p += 8;
             continue;

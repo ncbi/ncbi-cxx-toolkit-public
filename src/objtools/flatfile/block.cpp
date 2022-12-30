@@ -274,7 +274,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         std::sort(qsspp.begin(), qsspp.end(), QSCmp);
 
         for (j = 0, count--; j < count; j++)
-            if (StringCmp(qsspp[j]->accession, qsspp[j + 1]->accession) == 0)
+            if (StringEqu(qsspp[j]->accession, qsspp[j + 1]->accession))
                 if (pp->accver == false ||
                     qsspp[j]->version == qsspp[j + 1]->version)
                     break;

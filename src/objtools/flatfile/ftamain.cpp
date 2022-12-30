@@ -125,7 +125,7 @@ static void CkSegmentSet(ParserPtr pp)
         flag = (pp->entrylist[bindx]->segnum != 1);
 
         for (i++; i < pp->indx &&
-                  StringCmp(pp->entrylist[i]->blocusname, locus) == 0;
+                  StringEqu(pp->entrylist[i]->blocusname, locus);
              i++) {
             if (pp->entrylist[i - 1]->segnum + 1 != pp->entrylist[i]->segnum)
                 flag = true;

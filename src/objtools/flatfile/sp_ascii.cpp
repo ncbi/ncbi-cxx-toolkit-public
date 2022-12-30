@@ -1679,7 +1679,7 @@ static bool AddToList(ValNodePtr* head, char* str)
 
     dot = StringChr(str, '.');
     for (vnp = *head; vnp; vnp = vnp->next)
-        if (StringCmp(vnp->data, str) == 0)
+        if (StringEqu(vnp->data, str))
             break;
     if (vnp)
         return false;
@@ -1692,7 +1692,7 @@ static bool AddToList(ValNodePtr* head, char* str)
             if (! d)
                 continue;
             *d = '\0';
-            if (StringCmp(data, str) == 0) {
+            if (StringEqu(data, str)) {
                 ErrPostEx(SEV_WARNING, ERR_SPROT_DRLine, "Same protein accessions with different versions found in DR line [PID1:%s.%s; PID2:%s.%s].", data, d + 1, str, dot + 1);
             }
             *d = '.';
@@ -1779,7 +1779,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
         n = vnp->next->data;
         for (vnpn = vnp->next->next; vnpn; vnpn = vnpn->next->next) {
             if (vnp->next->choice != vnpn->next->choice &&
-                StringCmp(p, vnpn->data) == 0) {
+                StringEqu(p, vnpn->data)) {
                 if (q)
                     *q = '\0';
                 if (GetProtAccOwner(p) > CSeq_id::e_not_set)
@@ -1923,7 +1923,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, bool* drop, Parser
         token4 = GetDRToken(&ptr);
         token5 = GetDRToken(&ptr);
         if (! token1 || ! token2 || ! token3 ||
-            (StringCmp(token2, "-") == 0 && StringCmp(token3, "-") == 0)) {
+            (StringEqu(token2, "-") && StringEqu(token3, "-"))) {
             ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Badly formatted DR line. Skipped.");
             continue;
         }
@@ -3757,7 +3757,7 @@ static void ParseGeneNameSP(char* str, CSeq_feat& feat)
             p++;
         if (*p != '\0')
             *p++ = '\0';
-        if (StringCmp(q, "AND") == 0 || StringCmp(q, "OR") == 0)
+        if (StringEqu(q, "AND") || StringEqu(q, "OR"))
             continue;
         r = StringSave(q);
         CkGeneNameSP(r);

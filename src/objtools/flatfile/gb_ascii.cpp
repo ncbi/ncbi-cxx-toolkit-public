@@ -418,20 +418,20 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                 pat_ref = true;
 
             if (ibp->is_tpa &&
-                (StringCmp(p_div, "EST") == 0 || StringCmp(p_div, "GSS") == 0 ||
-                 StringCmp(p_div, "PAT") == 0 || StringCmp(p_div, "HTG") == 0)) {
+                (StringEqu(p_div, "EST") || StringEqu(p_div, "GSS") ||
+                 StringEqu(p_div, "PAT") || StringEqu(p_div, "HTG"))) {
                 ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTPADivcode, "Division code \"%s\" is not legal for TPA records. Entry dropped.", p_div);
                 return ret;
             }
 
-            if (ibp->is_tsa && StringCmp(p_div, "TSA") != 0) {
+            if (ibp->is_tsa && ! StringEqu(p_div, "TSA")) {
                 ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTSADivcode, "Division code \"%s\" is not legal for TSA records. Entry dropped.", p_div);
                 return ret;
             }
 
             cancelled = IsCancelled(gbb->GetKeywords());
 
-            if (StringCmp(p_div, "HTG") == 0) {
+            if (StringEqu(p_div, "HTG")) {
                 if (! HasHtg(gbb->GetKeywords())) {
                     ErrPostEx(SEV_ERROR, ERR_DIVISION_MissingHTGKeywords, "Division is HTG, but entry lacks HTG-related keywords. Entry dropped.");
                     return ret;
@@ -652,7 +652,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
 
             gbb->ResetDiv();
         } else if (gbb->GetDiv() == "SYN" && bio_src && bio_src->IsSetOrigin() &&
-                   bio_src->GetOrigin() == 5) /* synthetic */
+                   bio_src->GetOrigin() == CBioSource::eOrigin_synthetic)
         {
             gbb->ResetDiv();
         }
@@ -1456,7 +1456,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
         auto ppCurrentEntry = pp->entrylist[pp->curindx];
         if (ppCurrentEntry->lc.div > -1) {
             GenBankGetDivision(ppCurrentEntry->division, ppCurrentEntry->lc.div, *pEntry);
-            if (StringCmp(ibp->division, "TSA") == 0) {
+            if (StringEqu(ibp->division, "TSA")) {
                 if (ibp->tsa_allowed == false)
                     ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession, "The record with accession \"%s\" is not expected to have a TSA division code.", ibp->acnum);
                 ibp->is_tsa = true;
@@ -1635,7 +1635,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
                 for (; j <= i; j++) {
                     tibp = pp->entrylist[j];
                     err_install(tibp, pp->accver);
-                    if (StringCmp(div, tibp->division) != 0) {
+                    if (! StringEqu(div, tibp->division)) {
                         ErrPostEx(SEV_WARNING, ERR_DIVISION_Mismatch, "Division different in segmented set: %s: %s", div, tibp->division);
                     }
                     if (tibp->drop) {
@@ -1852,7 +1852,7 @@ bool GenBankAscii(ParserPtr pp)
 
         if (pp->entrylist[pp->curindx]->lc.div > -1) {
             xGenBankGetDivision(pp->entrylist[pp->curindx]->division, pp->entrylist[pp->curindx]->lc.div, pEntry->mBaseData);
-            if (StringCmp(ibp->division, "TSA") == 0) {
+            if (StringEqu(ibp->division, "TSA")) {
                 if (ibp->tsa_allowed == false)
                     ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession, "The record with accession \"%s\" is not expected to have a TSA division code.", ibp->acnum);
                 ibp->is_tsa = true;
@@ -2081,7 +2081,7 @@ bool GenBankAscii(ParserPtr pp)
                 {
                     tibp = pp->entrylist[j];
                     err_install(tibp, pp->accver);
-                    if(StringCmp(div, tibp->division) != 0)
+                    if (! StringEqu(div, tibp->division))
                     {
                         ErrPostEx(SEV_WARNING, ERR_DIVISION_Mismatch,
                                   "Division different in segmented set: %s: %s",

@@ -229,7 +229,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     }
     ch = *q;
     *q = '\0';
-    if (StringCmp(entry->acnum, line) != 0) {
+    if (! StringEqu(entry->acnum, line)) {
         *q = ch;
         *p = ch1;
         if (mode != Parser::EMode::Relaxed) {
