@@ -1582,6 +1582,7 @@ CJson_Document CProcessing::RequestSchema()
                         "context": { "$ref": "#/definitions/context" },
                         "user_args": { "$ref": "#/definitions/user_args" }
                     },
+                    "dependencies": { "nucleotide": [ "protein" ] },
                     "anyOf": [ { "required": [ "protein" ] }, { "required": [ "ipg" ] } ]
                 },
                 "id": { "$ref": "#/definitions/id" }
