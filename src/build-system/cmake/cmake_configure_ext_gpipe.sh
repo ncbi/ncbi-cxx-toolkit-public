@@ -54,6 +54,7 @@ configure_ext_ParseArgs()
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Release}"
       configure_common_gpipe
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault"
       ;; 
     "--gpipe-dev")
       GPIPE_MODE=dev
@@ -63,6 +64,7 @@ configure_ext_ParseArgs()
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Debug}"
       configure_common_gpipe
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault"
       ;;
     "--gpipe-max-debug")
       GPIPE_MODE=max-debug
@@ -72,7 +74,7 @@ configure_ext_ParseArgs()
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS}" # WGMLST doesn't support MaxDebug yet.
       : "${BUILD_ROOT:=../MaxDebug}"
       configure_common_gpipe
-      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ } -fsanitize=address"
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault -fsanitize=address"
       _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address"
       _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address"
       ;;
