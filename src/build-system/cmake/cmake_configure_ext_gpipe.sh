@@ -75,8 +75,8 @@ configure_ext_ParseArgs()
       : "${BUILD_ROOT:=../MaxDebug}"
       configure_common_gpipe
       _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault -fsanitize=address"
-      _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address"
-      _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address"
+      _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address -DNCBI_USE_LSAN"
       ;;
     "--gpipe-cgi")
       GPIPE_MODE=cgi
