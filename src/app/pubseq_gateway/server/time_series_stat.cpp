@@ -54,6 +54,7 @@ CRequestTimeSeries::RequestStatusToCounter(CRequestStatus::ECode  status)
 
 CRequestTimeSeries::CRequestTimeSeries() :
     m_Loop(false),
+    m_TotalMinutesCollected(1),
     m_CurrentIndex(0)
 {
     Reset();
@@ -101,6 +102,7 @@ void CRequestTimeSeries::Rotate(void)
     m_NotFound[new_current_index] = 0;
 
     m_CurrentIndex.store(new_current_index);
+    ++m_TotalMinutesCollected;
     if (new_current_index == 0) {
         m_Loop = true;
     }
@@ -119,6 +121,7 @@ void CRequestTimeSeries::Reset(void)
     m_TotalNotFound = 0;
 
     m_CurrentIndex.store(0);
+    m_TotalMinutesCollected.store(1);
     m_Loop = false;
 }
 
@@ -130,18 +133,23 @@ CJsonNode  CRequestTimeSeries::Serialize(const vector<pair<int, int>> &  time_se
     CJsonNode   ret(CJsonNode::NewObjectNode());
 
     ret.SetByKey("Requests",
-                 x_SerializeOneSeries(m_Requests, time_series, loop, current_index));
+                 x_SerializeOneSeries(m_Requests, m_TotalRequests,
+                                      time_series, loop, current_index));
     ret.SetByKey("Errors",
-                 x_SerializeOneSeries(m_Errors, time_series, loop, current_index));
+                 x_SerializeOneSeries(m_Errors, m_TotalErrors,
+                                      time_series, loop, current_index));
     ret.SetByKey("Warnings",
-                 x_SerializeOneSeries(m_Warnings, time_series, loop, current_index));
+                 x_SerializeOneSeries(m_Warnings, m_TotalWarnings,
+                                      time_series, loop, current_index));
     ret.SetByKey("NotFound",
-                 x_SerializeOneSeries(m_NotFound, time_series, loop, current_index));
+                 x_SerializeOneSeries(m_NotFound, m_TotalNotFound,
+                                      time_series, loop, current_index));
     return ret;
 }
 
 
 CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values,
+                                                    uint64_t  grand_total,
                                                     const vector<pair<int, int>> &  time_series,
                                                     bool  loop,
                                                     size_t  current_index) const
@@ -243,12 +251,30 @@ CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values,
                                    (double(current_accumulated_mins) * 60.0));
     }
 
+    if (loop) {
+        size_t      last_minute_index = current_index + 1;
+        if (last_minute_index >= kSeriesIntervals)
+            last_minute_index = 0;
+
+        // The current minute and the last minute in case of a loop are not
+        // sent to avoid unreliable data
+        uint64_t    rest_reqs = grand_total - values[last_minute_index] - values[current_index];
+        uint64_t    rest_mins = m_TotalMinutesCollected.load() - kSeriesIntervals - 2;
+
+        ret.SetDouble("RestAvgReqPerSec", rest_reqs / (rest_mins * 60.0));
+    } else {
+        ret.SetDouble("RestAvgReqPerSec", 0.0);
+    }
+
 
     ret.SetInteger("TotalRequests", total_reqs);
     ret.SetDouble("MaxReqPerSec", max_n_req_per_min / 60.0);
     ret.SetDouble("AvgReqPerSec", total_reqs / (total_mins * 60.0));
     ret.SetByKey("time_series", output_series);
 
+    // Just in case: grand total includes everything - sent minutes, not sent
+    // minutes in case of the loops and the rest
+    ret.SetInteger("GrandTotalRequests", grand_total);
     return ret;
 }
 

@@ -1024,7 +1024,7 @@ CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
                 // Check divisibility
                 int     start = 0;
                 if (previous != -1) {
-                    start = previous;
+                    start = previous + 1;
                 }
                 if ((last_minute - start + 1) % aggregation != 0) {
                    x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
