@@ -387,7 +387,7 @@ static void XMLPerformIndex(ParserPtr pp)
         if (ch == '<')
             continue;
         s[++i] = '\0';
-        if (StringCmp(s, INSDSEQ_START) == 0) {
+        if (StringEqu(s, INSDSEQ_START)) {
             if (within)
                 continue;
             within = true;
@@ -408,18 +408,18 @@ static void XMLPerformIndex(ParserPtr pp)
             continue;
         }
         if (! within) {
-            if (StringCmp(s, INSDSEQ_END) == 0)
+            if (StringEqu(s, INSDSEQ_END))
                 ErrPostEx(SEV_ERROR, ERR_FORMAT_UnexpectedEnd, "Unexpected end tag \"%s\" of XML record found at line %d.", s, line);
             continue;
         }
-        if (StringCmp(s, INSDSEQ_END) == 0) {
+        if (StringEqu(s, INSDSEQ_END)) {
             ibp->len = count - ibp->offset;
             within   = false;
             continue;
         }
         p = s + ((s[1] == '/') ? 2 : 1);
         for (xkbp = xmkwl; xkbp->str; xkbp++)
-            if (StringCmp(p, xkbp->str + 1) == 0)
+            if (StringEqu(p, xkbp->str + 1))
                 break;
         if (! xkbp->str)
             continue;
@@ -504,7 +504,7 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
         return;
     }
     *q = '\0';
-    if (StringCmp(ibp->acnum, line) != 0) {
+    if (! StringEqu(ibp->acnum, line)) {
         *q = '.';
         ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.", line, ibp->acnum);
         ibp->drop = true;
@@ -607,11 +607,11 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
             ibp->division[3] = '\0';
             if (NStr::CompareNocase(ibp->division, "EST") == 0)
                 ibp->EST = true;
-            else if (StringCmp(ibp->division, "STS") == 0)
+            else if (StringEqu(ibp->division, "STS"))
                 ibp->STS = true;
-            else if (StringCmp(ibp->division, "GSS") == 0)
+            else if (StringEqu(ibp->division, "GSS"))
                 ibp->GSS = true;
-            else if (StringCmp(ibp->division, "HTC") == 0)
+            else if (StringEqu(ibp->division, "HTC"))
                 ibp->HTC = true;
         } else if (xip->tag == INSDSEQ_MOLTYPE && ibp->is_prot == false) {
             buf = XMLGetTagValue(entry, xip);
@@ -729,7 +729,7 @@ static XmlIndexPtr XMLIndexSameSubTags(const char* entry, XmlIndexPtr xip, Int4 
             continue;
         s[++i] = '\0';
         p      = s + ((s[1] == '/') ? 2 : 1);
-        if (StringCmp(p, name + 1) != 0)
+        if (! StringEqu(p, name + 1))
             continue;
 
         if (! xipsub) {
@@ -1059,7 +1059,7 @@ static bool XMLIndexSubTags(const char* entry, XmlIndexPtr xip, XmlKwordBlkPtr x
         s[++i] = '\0';
         p      = s + ((s[1] == '/') ? 2 : 1);
         for (txkbp = xkbp; txkbp->str; txkbp++)
-            if (StringCmp(p, txkbp->str + 1) == 0)
+            if (StringEqu(p, txkbp->str + 1))
                 break;
         if (! txkbp->str)
             continue;
@@ -1284,9 +1284,9 @@ static Int2 XMLGetRefTypePos(char* reftag, size_t bases)
 
     sprintf(str, "1..%d", (int)bases);
 
-    if (StringCmp(reftag, str) == 0)
+    if (StringEqu(reftag, str))
         return (ParFlat_REF_END);
-    if (StringCmp(reftag, "sites") == 0)
+    if (StringEqu(reftag, "sites"))
         return (ParFlat_REF_SITES);
     return (ParFlat_REF_BTW);
 }

@@ -650,7 +650,7 @@ static void GetReleaseInfo(const DataBlk& entry)
 
     ebp                 = static_cast<EntryBlk*>(entry.mpData);
     CBioseq&     bioseq = ebp->seq_entry->SetSeq();
-    CTextseq_id& id     = SetTextIdRef(*(*(bioseq.SetId().begin())));
+    CTextseq_id& id     = SetTextIdRef(*(bioseq.SetId().front()));
 
     offset = xSrchNodeType(entry, ParFlat_DT, &len);
     if (! offset)
@@ -1013,7 +1013,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
             bptr++;
         StringNCpy(dataclass, bptr, 3);
         dataclass[3] = '\0';
-        if (StringCmp(dataclass, "TSA") == 0)
+        if (StringEqu(dataclass, "TSA"))
             ibp->is_tsa = true;
     } else {
         bptr         = (char*)"   ";
@@ -1079,13 +1079,13 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     const char* p = gbdiv.c_str();
     if (ibp->is_tpa &&
-        (StringCmp(p, "EST") == 0 || StringCmp(p, "GSS") == 0 ||
-         StringCmp(p, "PAT") == 0 || StringCmp(p, "HTG") == 0)) {
+        (StringEqu(p, "EST") || StringEqu(p, "GSS") ||
+         StringEqu(p, "PAT") || StringEqu(p, "HTG"))) {
         ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTPADivcode, "Division code \"%s\" is not legal for TPA records. Entry dropped.", p);
         return ret;
     }
 
-    if (ibp->is_tsa && StringCmp(p, "TSA") != 0) {
+    if (ibp->is_tsa && ! StringEqu(p, "TSA")) {
         ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTSADivcode, "Division code \"%s\" is not legal for TSA records. Entry dropped.", p);
         return ret;
     }
@@ -1232,22 +1232,23 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         if (drop) {
             return ret;
         }
-    } else if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "CON") == 0) {
+    } else if (! gbdiv.empty() && StringEqu(gbdiv.c_str(), "CON")) {
         gbdiv.clear();
     }
 
-    bool has_htc = HasHtc(embl->GetKeywords());
+    bool is_htc_div = ! gbdiv.empty() && StringEqu(gbdiv.c_str(), "HTC");
+    bool has_htc    = HasHtc(embl->GetKeywords());
 
-    if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0 && ! has_htc) {
+    if (is_htc_div && ! has_htc) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_MissingHTCKeyword, "This record is in the HTC division, but lacks the required HTC keyword.");
         return ret;
     }
-    if ((gbdiv.empty() || StringCmp(gbdiv.c_str(), "HTC") != 0) && has_htc) {
+    if (! is_htc_div && has_htc) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_InvalidHTCKeyword, "This record has the special HTC keyword, but is not in HTC division. If this record has graduated out of HTC, then the keyword should be removed.");
         return ret;
     }
 
-    if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0) {
+    if (is_htc_div) {
         char* p;
         p = entry.mOffset + ParFlat_COL_DATA_EMBL; /* p points to 1st token */
         p = PointToNextToken(p);                   /* p points to 2nd token */
@@ -1280,21 +1281,21 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     /* will be used in flat file database
      */
     if (! gbdiv.empty()) {
-        if (StringCmp(gbdiv.c_str(), "EST") == 0) {
+        if (StringEqu(gbdiv.c_str(), "EST")) {
             ibp->EST = true;
             mol_info.SetTech(CMolInfo::eTech_est);
-        } else if (StringCmp(gbdiv.c_str(), "STS") == 0) {
+        } else if (StringEqu(gbdiv.c_str(), "STS")) {
             ibp->STS = true;
             mol_info.SetTech(CMolInfo::eTech_sts);
-        } else if (StringCmp(gbdiv.c_str(), "GSS") == 0) {
+        } else if (StringEqu(gbdiv.c_str(), "GSS")) {
             ibp->GSS = true;
             mol_info.SetTech(CMolInfo::eTech_survey);
-        } else if (StringCmp(gbdiv.c_str(), "HTC") == 0) {
+        } else if (StringEqu(gbdiv.c_str(), "HTC")) {
             ibp->HTC = true;
             mol_info.SetTech(CMolInfo::eTech_htc);
             gbdiv.clear();
-        } else if (StringCmp(gbdiv.c_str(), "SYN") == 0 && bio_src &&
-                   bio_src->IsSetOrigin() && bio_src->GetOrigin() == 5) /* synthetic */
+        } else if (StringEqu(gbdiv.c_str(), "SYN") && bio_src &&
+                   bio_src->IsSetOrigin() && bio_src->GetOrigin() == CBioSource::eOrigin_synthetic)
         {
             gbdiv.clear();
         }
@@ -1344,7 +1345,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     GetEmblBlockXref(entry, nullptr, nullptr, dr_ena, dr_biosample, &ibp->drop, *embl);
 
-    if (StringCmp(dataclass, "ANN") == 0 || StringCmp(dataclass, "CON") == 0) {
+    if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
         if (StringLen(ibp->acnum) == 8 &&
             (StringEquN(ibp->acnum, "CT", 2) ||
              StringEquN(ibp->acnum, "CU", 2))) {
@@ -2212,7 +2213,7 @@ bool EmblAscii(ParserPtr pp)
             else
                 EmblGetDivision(ibp, *pEntry);
 
-            if (StringCmp(ibp->division, "TSA") == 0) {
+            if (StringEqu(ibp->division, "TSA")) {
                 if (ibp->tsa_allowed == false)
                     ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession, "The record with accession \"%s\" is not expected to have a TSA division code.", ibp->acnum);
                 ibp->is_tsa = true;
@@ -2520,13 +2521,13 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
     const char* p = gbdiv.c_str();
     if (ibp->is_tpa &&
-        (StringCmp(p, "EST") == 0 || StringCmp(p, "GSS") == 0 ||
-         StringCmp(p, "PAT") == 0 || StringCmp(p, "HTG") == 0)) {
+        (StringEqu(p, "EST") || StringEqu(p, "GSS") ||
+         StringEqu(p, "PAT") || StringEqu(p, "HTG"))) {
         ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTPADivcode, "Division code \"%s\" is not legal for TPA records. Entry dropped.", p);
         return ret;
     }
 
-    if (ibp->is_tsa && StringCmp(p, "TSA") != 0) {
+    if (ibp->is_tsa && ! StringEqu(p, "TSA")) {
         ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTSADivcode, "Division code \"%s\" is not legal for TSA records. Entry dropped.", p);
         return ret;
     }
@@ -2670,22 +2671,23 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         if (drop) {
             return ret;
         }
-    } else if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "CON") == 0) {
+    } else if (! gbdiv.empty() && StringEqu(gbdiv.c_str(), "CON")) {
         gbdiv.clear();
     }
 
-    bool has_htc = HasHtc(embl->GetKeywords());
+    bool is_htc_div = ! gbdiv.empty() && StringEqu(gbdiv.c_str(), "HTC");
+    bool has_htc    = HasHtc(embl->GetKeywords());
 
-    if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0 && ! has_htc) {
+    if (is_htc_div && ! has_htc) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_MissingHTCKeyword, "This record is in the HTC division, but lacks the required HTC keyword.");
         return ret;
     }
-    if ((gbdiv.empty() || StringCmp(gbdiv.c_str(), "HTC") != 0) && has_htc) {
+    if (! is_htc_div && has_htc) {
         ErrPostEx(SEV_ERROR, ERR_DIVISION_InvalidHTCKeyword, "This record has the special HTC keyword, but is not in HTC division. If this record has graduated out of HTC, then the keyword should be removed.");
         return ret;
     }
 
-    if (! gbdiv.empty() && StringCmp(gbdiv.c_str(), "HTC") == 0) {
+    if (is_htc_div) {
         r = XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE);
         if (r) {
             p = r;
@@ -2711,21 +2713,21 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     /* will be used in flat file database
      */
     if (! gbdiv.empty()) {
-        if (StringCmp(gbdiv.c_str(), "EST") == 0) {
+        if (StringEqu(gbdiv.c_str(), "EST")) {
             ibp->EST = true;
             mol_info.SetTech(CMolInfo::eTech_est);
-        } else if (StringCmp(gbdiv.c_str(), "STS") == 0) {
+        } else if (StringEqu(gbdiv.c_str(), "STS")) {
             ibp->STS = true;
             mol_info.SetTech(CMolInfo::eTech_sts);
-        } else if (StringCmp(gbdiv.c_str(), "GSS") == 0) {
+        } else if (StringEqu(gbdiv.c_str(), "GSS")) {
             ibp->GSS = true;
             mol_info.SetTech(CMolInfo::eTech_survey);
-        } else if (StringCmp(gbdiv.c_str(), "HTC") == 0) {
+        } else if (StringEqu(gbdiv.c_str(), "HTC")) {
             ibp->HTC = true;
             mol_info.SetTech(CMolInfo::eTech_htc);
             gbdiv.clear();
-        } else if (StringCmp(gbdiv.c_str(), "SYN") == 0 && bio_src &&
-                   bio_src->IsSetOrigin() && bio_src->GetOrigin() == 5) /* synthetic */
+        } else if (StringEqu(gbdiv.c_str(), "SYN") && bio_src &&
+                   bio_src->IsSetOrigin() && bio_src->GetOrigin() == CBioSource::eOrigin_synthetic)
         {
             gbdiv.clear();
         }
@@ -2773,7 +2775,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
     GetEmblBlockXref(DataBlk(), ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl);
 
-    if (StringCmp(dataclass, "ANN") == 0 || StringCmp(dataclass, "CON") == 0) {
+    if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
         if (StringLen(ibp->acnum) == 8 && StringEquN(ibp->acnum, "CT", 2)) {
             bool found = false;
             for (const string& acc : embl->SetExtra_acc()) {

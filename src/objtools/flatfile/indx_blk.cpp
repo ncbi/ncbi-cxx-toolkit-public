@@ -645,7 +645,7 @@ static bool fta_check_embl_moltype(char* str)
     *q = '\0';
 
     for (b = ValidMolTypes; *b; b++)
-        if (StringCmp(p, *b) == 0)
+        if (StringEqu(p, *b))
             break;
 
     if (*b) {
@@ -831,7 +831,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
 
         ptr = stoken->list->next;
         if (pp->format == Parser::EFormat::EMBL && ptr->next &&
-            ptr->next->str && StringCmp(ptr->next->str, "SV") == 0) {
+            ptr->next->str && StringEqu(ptr->next->str, "SV")) {
             for (i = 0, p = finfo->str; *p != '\0'; p++)
                 if (*p == ';' && p[1] == ' ')
                     i++;
@@ -1610,16 +1610,16 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
 static bool IsPatentedAccPrefix(const Parser& parseInfo, const char* acc)
 {
     if (acc[2] == '\0') {
-        if ((StringCmp(acc, "AR") == 0 || StringCmp(acc, "DZ") == 0 ||
-             StringCmp(acc, "EA") == 0 || StringCmp(acc, "GC") == 0 ||
-             StringCmp(acc, "GP") == 0 || StringCmp(acc, "GV") == 0 ||
-             StringCmp(acc, "GX") == 0 || StringCmp(acc, "GY") == 0 ||
-             StringCmp(acc, "GZ") == 0 || StringCmp(acc, "HJ") == 0 ||
-             StringCmp(acc, "HK") == 0 || StringCmp(acc, "HL") == 0 ||
-             StringCmp(acc, "KH") == 0 || StringCmp(acc, "MI") == 0 ||
-             StringCmp(acc, "MM") == 0 || StringCmp(acc, "MO") == 0 ||
-             StringCmp(acc, "MV") == 0 || StringCmp(acc, "MX") == 0 ||
-             StringCmp(acc, "MY") == 0 || StringCmp(acc, "OO") == 0) &&
+        if ((StringEqu(acc, "AR") || StringEqu(acc, "DZ") ||
+             StringEqu(acc, "EA") || StringEqu(acc, "GC") ||
+             StringEqu(acc, "GP") || StringEqu(acc, "GV") ||
+             StringEqu(acc, "GX") || StringEqu(acc, "GY") ||
+             StringEqu(acc, "GZ") || StringEqu(acc, "HJ") ||
+             StringEqu(acc, "HK") || StringEqu(acc, "HL") ||
+             StringEqu(acc, "KH") || StringEqu(acc, "MI") ||
+             StringEqu(acc, "MM") || StringEqu(acc, "MO") ||
+             StringEqu(acc, "MV") || StringEqu(acc, "MX") ||
+             StringEqu(acc, "MY") || StringEqu(acc, "OO")) &&
             (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
             return true;
         if ((StringEquN(acc, "AX", 2) || StringEquN(acc, "CQ", 2) ||
@@ -1733,12 +1733,12 @@ static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
 
     if (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI) {
         if ((StringLen(acc) == 2 &&
-             (StringCmp(acc, "EZ") == 0 || StringCmp(acc, "HP") == 0 ||
-              StringCmp(acc, "JI") == 0 || StringCmp(acc, "JL") == 0 ||
-              StringCmp(acc, "JO") == 0 || StringCmp(acc, "JP") == 0 ||
-              StringCmp(acc, "JR") == 0 || StringCmp(acc, "JT") == 0 ||
-              StringCmp(acc, "JU") == 0 || StringCmp(acc, "JV") == 0 ||
-              StringCmp(acc, "JW") == 0 || StringCmp(acc, "KA") == 0)) ||
+             (StringEqu(acc, "EZ") || StringEqu(acc, "HP") ||
+              StringEqu(acc, "JI") || StringEqu(acc, "JL") ||
+              StringEqu(acc, "JO") || StringEqu(acc, "JP") ||
+              StringEqu(acc, "JR") || StringEqu(acc, "JT") ||
+              StringEqu(acc, "JU") || StringEqu(acc, "JV") ||
+              StringEqu(acc, "JW") || StringEqu(acc, "KA"))) ||
             fta_if_wgs_acc(ibp->acnum) == 5) {
             ibp->is_tsa      = true;
             ibp->tsa_allowed = true;
@@ -1915,7 +1915,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
     } else if (i == 5) {
         char* p = entry->acnum;
         if (parseInfo.source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
-            StringCmp(p + 5, "0000000") != 0) {
+            ! StringEqu(p + 5, "0000000")) {
             string sourceName = sourceNames.at(parseInfo.source);
             ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession \"%s\" for this source: %s", p, sourceName.c_str());
             get = false;
@@ -2087,7 +2087,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
     } else if (i == 5) {
         p = entry->acnum;
         if (pp->source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
-            StringCmp(p + 5, "0000000") != 0) {
+            ! StringEqu(p + 5, "0000000")) {
             string sourceName = sourceNames.at(pp->source);
             ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession \"%s\" for this source: %s", p, sourceName.c_str());
             get = false;

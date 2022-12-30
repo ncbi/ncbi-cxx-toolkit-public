@@ -344,7 +344,7 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
             while (*ptr1 == ',' || *ptr1 == ' ')
                 ptr1++;
             prbp->country = StringSave(ptr1);
-            if (StringCmp(prbp->country, "U.S.A.") != 0)
+            if (! StringEqu(prbp->country, "U.S.A."))
                 CleanTailNoneAlphaChar(prbp->country);
         } else /* error */
         {

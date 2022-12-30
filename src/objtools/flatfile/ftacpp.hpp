@@ -88,6 +88,16 @@ inline int StringCmp(const char* s1, const char* s2)
         }
     }
 }
+inline bool StringEqu(const char* s1, const char* s2)
+{
+    if (s1 && s2)
+        return (std::strcmp(s1, s2) == 0);
+
+    if (! s1 && ! s2)
+        return true;
+
+    return false;
+}
 inline bool StringEquN(const char* s1, const char* s2, size_t n)
 {
     if (s1 && s2)

@@ -374,8 +374,7 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
             continue;
         for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp; tdbp = tdbp->mpNext) {
             fbp = static_cast<FeatBlk*>(tdbp->mpData);
-            if (! fbp || ! fbp->key ||
-                StringCmp(fbp->key, "source") != 0)
+            if (! fbp || ! fbp->key || ! StringEqu(fbp->key, "source"))
                 continue;
             tsfbp->next = SourceFeatBlkNew();
             tsfbp       = tsfbp->next;
@@ -1091,9 +1090,9 @@ static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, char* div)
 
     syntgndiv = 0;
     if (div && *div != '\0') {
-        if (StringCmp(div, "SYN") == 0)
+        if (StringEqu(div, "SYN"))
             syntgndiv = 1;
-        else if (StringCmp(div, "TGN") == 0)
+        else if (StringEqu(div, "TGN"))
             syntgndiv = 2;
     }
 
@@ -1243,7 +1242,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
 
         for (b = special_orgs; *b; b++) {
             if (NStr::CompareNocase(*b, tsfbp->name) == 0 &&
-                StringCmp(tsfbp->location, pat) == 0)
+                StringEqu(tsfbp->location, pat))
                 break;
         }
         if (*b)
@@ -1956,9 +1955,9 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
 
     div = ibp->division;
     if (div) {
-        if (StringCmp(div, "SYN") == 0)
+        if (StringEqu(div, "SYN"))
             is_syn = true;
-        else if (StringCmp(div, "PAT") == 0)
+        else if (StringEqu(div, "PAT"))
             is_pat = true;
     }
     for (; sfbp; sfbp = sfbp->next) {
@@ -2312,7 +2311,7 @@ static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, string& moltype)
             ErrPostEx(SEV_ERROR, ERR_SOURCE_MissingMolType, "Source feature at \"%s\" lacks a /mol_type qualifier.", p ? p : "<empty>");
             if (ch != '\0')
                 p[50] = ch;
-        } else if (ret && StringCmp(name, tsfbp->moltype) != 0)
+        } else if (ret && ! StringEqu(name, tsfbp->moltype))
             ret = false;
     }
 
@@ -2868,7 +2867,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
                                 p[2] |= 040;
                         }
                         for (b = Mmm, month = 1; *b; b++, month++)
-                            if (StringCmp(*b, p) == 0)
+                            if (StringEqu(*b, p))
                                 break;
                         if (! *b)
                             bad = 1;
@@ -2912,7 +2911,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
                                     p[2] |= 040;
                             }
                             for (b = Mmm, month = 1; *b; b++, month++)
-                                if (StringCmp(*b, p) == 0)
+                                if (StringEqu(*b, p))
                                     break;
                             if (! *b)
                                 bad = 1;
@@ -3109,7 +3108,7 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 
         if (! ssid)
             ssid = tsfbp->submitter_seqid;
-        else if (StringCmp(ssid, tsfbp->submitter_seqid) != 0) {
+        else if (! StringEqu(ssid, tsfbp->submitter_seqid)) {
             ErrPostEx(SEV_REJECT, ERR_SOURCE_DifferentSubmitterSeqids, "Different /submitter_seqid qualifiers were encountered amongst source features: \"%s\" and \"%s\" at least. Entry dropped.", ssid, tsfbp->submitter_seqid);
             break;
         }
