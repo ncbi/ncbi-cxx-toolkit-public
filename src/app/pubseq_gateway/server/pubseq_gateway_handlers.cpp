@@ -973,6 +973,21 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
             return 0;
         }
 
+        // Prohibit protein less requests
+        if (!nucleotide.empty()) {
+            if (protein.empty()) {
+                x_InsufficientArguments(reply, now,
+                                        "If a 'nucleotide' parameter is provided "
+                                        "then a 'protein' parameter"
+                                        " must be provided as well");
+                m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+                x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                                   CRequestStatus::e400_BadRequest,
+                                   reply->GetBytesSent());
+                return 0;
+            }
+        }
+
         // Check that at least one of the mandatory parameters are provided
         if (ipg == -1 && protein.empty()) {
             x_InsufficientArguments(reply, now,
