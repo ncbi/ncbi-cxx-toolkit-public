@@ -229,7 +229,7 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
         return;
     }
 
-    if (pub->IsGen()) {
+    if (pub && pub->IsGen()) {
         if (pub->GetGen().IsSetSerial_number() && ! pub_info.GetPub()) // pub points to the first pub in pub_equiv
         {
             const TPubList& equiv_pubs = pub_equiv->Get();
@@ -241,7 +241,7 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
         }
     }
 
-    if (pub->IsMuid() || pub->IsPmid()) {
+    if (pub && (pub->IsMuid() || pub->IsPmid())) {
         new_pub.Reset(new CPub);
         new_pub->Assign(*pub);
         pubs.push_back(new_pub);
@@ -249,7 +249,7 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs)
     }
 
     string label;
-    if (! pub->GetLabel(&label, CPub::fLabel_Unique)) {
+    if (pub && ! pub->GetLabel(&label, CPub::fLabel_Unique)) {
         new_pub.Reset(new CPub);
         new_pub->Assign(*pub);
         pubs.push_back(new_pub);
@@ -326,8 +326,7 @@ void ProcessCitations(TEntryList& seq_entries)
         }
     }
 
-    for (auto& entry : seq_entries)
-    {
+    for (auto& entry : seq_entries) {
         for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
             if (bio_set->IsSetAnnot())
                 ProcessCit(pubs, bio_set->SetAnnot(), nullptr);

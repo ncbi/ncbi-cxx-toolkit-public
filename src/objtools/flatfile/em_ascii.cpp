@@ -1903,15 +1903,15 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     if (pp->taxserver == 1) {
         if (hasEmblBlock && embl_block->IsSetDiv() && embl_block->GetDiv() < 15) {
-            if (org_ref->IsSetOrgname() && ! org_ref->GetOrgname().IsSetDiv() &&
+            if (org_ref && org_ref->IsSetOrgname() && ! org_ref->GetOrgname().IsSetDiv() &&
                 (! org_ref->IsSetDb() || ! fta_orgref_has_taxid(org_ref->GetDb()))) {
                 org_ref->SetOrgname().SetDiv(ParFlat_GBDIV_array[embl_block->GetDiv()]);
             }
 
             if (bioseq.IsSetAnnot()) {
-                for (auto pAnnot : bioseq.GetAnnot()) {
+                for (auto& pAnnot : bioseq.SetAnnot()) {
                     if (pAnnot->IsFtable()) {
-                        for (auto pFeat : pAnnot->SetData().SetFtable()) {
+                        for (auto& pFeat : pAnnot->SetData().SetFtable()) {
                             if (pFeat->IsSetData() && pFeat->SetData().IsBiosrc()) {
                                 auto& biosrc = pFeat->SetData().SetBiosrc();
                                 if (biosrc.IsSetOrg() &&
@@ -2106,8 +2106,8 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
 /**********************************************************/
 static void EmblGetDivision(IndexblkPtr ibp, const DataBlk& entry)
 {
-    char* p;
-    char* q;
+    const char* p;
+    const char* q;
 
     p = StringChr(entry.mOffset, ';');
     if (! p)
@@ -2127,8 +2127,8 @@ static void EmblGetDivision(IndexblkPtr ibp, const DataBlk& entry)
 /**********************************************************/
 static void EmblGetDivisionNewID(IndexblkPtr ibp, const DataBlk& entry)
 {
-    char* p;
-    Int4  i;
+    const char* p;
+    Int4        i;
 
     for (i = 0, p = entry.mOffset; *p != '\0' && i < 4; p++)
         if (*p == ';' && p[1] == ' ')
@@ -2144,10 +2144,10 @@ static void EmblGetDivisionNewID(IndexblkPtr ibp, const DataBlk& entry)
             for (p++; *p == ' ';)
                 p++;
     } else if (i == 0)
-        p = (char*)"CON";
+        p = "CON";
 
     if (! p)
-        p = (char*)"   ";
+        p = "   ";
 
     StringNCpy(ibp->division, p, 3);
     ibp->division[3] = '\0';
