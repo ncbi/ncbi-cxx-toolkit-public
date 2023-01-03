@@ -9619,15 +9619,15 @@ case "$host_os:$compiler:$compiler_version" in
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No dlfcn.h in /usr/include or /sw/include." >&5
 $as_echo "$as_me: WARNING: No dlfcn.h in /usr/include or /sw/include." >&2;}
    fi
-   case "$CPPFLAGS $LIBS" in
-      *sw/*) ;;
-      *)
-         if test -d "$orig_NCBI/safe-sw"; then
-             CPPFLAGS="-I$orig_NCBI/safe-sw/include $CPPFLAGS"
-             LDFLAGS="-L$orig_NCBI/safe-sw/lib $LDFLAGS"
-         fi
-         ;;
-   esac
+   # case "$CPPFLAGS $LIBS" in
+   #    *sw/*) ;;
+   #    *)
+   #       if test -d "$orig_NCBI/safe-sw"; then
+   #           CPPFLAGS="-I$orig_NCBI/safe-sw/include $CPPFLAGS"
+   #           LDFLAGS="-L$orig_NCBI/safe-sw/lib $LDFLAGS"
+   #       fi
+   #       ;;
+   # esac
    : ${with_x=${with_xpm-no}}
 
    # CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
