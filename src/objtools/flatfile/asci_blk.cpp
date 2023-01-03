@@ -954,10 +954,10 @@ CRef<CSeq_id> MakeLocusSeqId(const char* locus, CSeq_id::E_Choice seqtype)
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 /**********************************************************/
-static CRef<CSeq_id> MakeSegSetSeqId(const char* accession, const char* locus, Uint1 seqtype, bool is_tpa)
+static CRef<CSeq_id> MakeSegSetSeqId(const char* accession, const string& locus, Uint1 seqtype, bool is_tpa)
 {
     CRef<CSeq_id> res;
-    if (! locus || *locus == '\0')
+    if (locus.empty())
         return res;
 
     seqtype = ValidSeqType(accession, seqtype);
@@ -2377,24 +2377,19 @@ static Int4 SrchSegLength(const TEntryList& entries)
  **********************************************************/
 static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CSeq_loc& slp)
 {
-    IndexblkPtr ibp;
-
-    ibp             = pp->entrylist[pp->curindx];
-    char* locusname = new char[StringLen(ibp->blocusname) + 5];
-    StringCpy(locusname, "SEG_");
-    StringCat(locusname, ibp->blocusname);
-
+    IndexblkPtr   ibp = pp->entrylist[pp->curindx];
     CRef<CBioseq> bioseq(new CBioseq);
-    bioseq->SetId().push_back(MakeSegSetSeqId(ibp->acnum, locusname, pp->seqtype, ibp->is_tpa));
-    delete[] locusname;
+
+    {
+        string locusname = "SEG_";
+        locusname.append(ibp->blocusname);
+        bioseq->SetId().push_back(MakeSegSetSeqId(ibp->acnum, locusname, pp->seqtype, ibp->is_tpa));
+    }
 
     if (pp->seg_acc) {
-        char* locusname = new char[StringLen(ibp->acnum) + 5];
-        StringCpy(locusname, "SEG_");
-        StringCat(locusname, ibp->acnum);
-
+        string locusname = "SEG_";
+        locusname.append(ibp->acnum);
         bioseq->SetId().push_back(MakeSegSetSeqId(ibp->acnum, locusname, pp->seqtype, ibp->is_tpa));
-        delete[] locusname;
     }
 
     const CSeq_entry& first_entry = *(entries.front());
