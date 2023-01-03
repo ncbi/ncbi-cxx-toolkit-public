@@ -61,18 +61,15 @@ public:
         m_FinishedRead(false),
         m_FetchType(ePSGS_UnknownFetch),
         m_Canceled(false),
-        m_AutoBlobSkipping(false),
         m_ExcludeBlobCacheUpdated(false)
     {}
 
     CCassFetch(const string &  client_id,
-               bool  auto_blob_skipping,
                const SCass_BlobId &  blob_id) :
         m_FinishedRead(false),
         m_FetchType(ePSGS_UnknownFetch),
         m_Canceled(false),
         m_ClientId(client_id),
-        m_AutoBlobSkipping(auto_blob_skipping),
         m_BlobId(blob_id),
         m_ExcludeBlobCacheUpdated(false)
     {}
@@ -119,12 +116,6 @@ public:
     SCass_BlobId GetBlobId(void) const
     { return m_BlobId; }
 
-    bool GetAutoBlobSkipping(void) const
-    { return m_AutoBlobSkipping; }
-
-    void SetAutoBlobSkipping(bool  value)
-    { m_AutoBlobSkipping = value; }
-
     string GetClientId(void) const
     { return m_ClientId; }
 
@@ -158,7 +149,6 @@ protected:
 
     // These fields are only for the blob fetches IsBlobFetches() == true
     string                          m_ClientId;
-    bool                            m_AutoBlobSkipping;
     SCass_BlobId                    m_BlobId;
     bool                            m_ExcludeBlobCacheUpdated;
 };
@@ -232,8 +222,7 @@ class CCassBlobFetch : public CCassFetch
 public:
     CCassBlobFetch(const SPSGS_BlobBySeqIdRequest &  blob_request,
                    const SCass_BlobId &  blob_id) :
-        CCassFetch(blob_request.m_ClientId,
-                   blob_request.m_AutoBlobSkipping, blob_id),
+        CCassFetch(blob_request.m_ClientId, blob_id),
         m_TSEOption(blob_request.m_TSEOption),
         m_BlobPropSent(false),
         m_UserProvidedBlobId(false),
@@ -246,7 +235,7 @@ public:
 
     CCassBlobFetch(const SPSGS_BlobBySatSatKeyRequest &  blob_request,
                    const SCass_BlobId &  blob_id) :
-        CCassFetch(blob_request.m_ClientId, false, blob_id),
+        CCassFetch(blob_request.m_ClientId, blob_id),
         m_TSEOption(blob_request.m_TSEOption),
         m_BlobPropSent(false),
         m_UserProvidedBlobId(true),
@@ -259,8 +248,7 @@ public:
 
     CCassBlobFetch(const SPSGS_AnnotRequest &  blob_request,
                    const SCass_BlobId &  blob_id) :
-        CCassFetch(blob_request.m_ClientId,
-                   blob_request.m_AutoBlobSkipping, blob_id),
+        CCassFetch(blob_request.m_ClientId, blob_id),
         m_TSEOption(blob_request.m_TSEOption),
         m_BlobPropSent(false),
         m_UserProvidedBlobId(true),
@@ -287,7 +275,7 @@ public:
     //   case the blob props are not found.
     CCassBlobFetch(const SPSGS_TSEChunkRequest &  chunk_request,
                    const SCass_BlobId &  tse_id) :
-        CCassFetch("", false, tse_id),
+        CCassFetch("", tse_id),
         m_TSEOption(SPSGS_BlobRequestBase::ePSGS_UnknownTSE),
         m_BlobPropSent(false),
         m_UserProvidedBlobId(false),

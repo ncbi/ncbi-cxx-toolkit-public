@@ -386,7 +386,6 @@ CJsonNode SPSGS_BlobBySeqIdRequest::Serialize(void) const
     json.SetByKey("exclude blobs", exclude_blobs);
 
     json.SetString("subst option", AccSubstitutioOptionToString(m_AccSubstOption));
-    json.SetBoolean("auto blob skipping", m_AutoBlobSkipping);
     json.SetInteger("resend timeout mks", m_ResendTimeoutMks);
 
     SPSGS_BlobRequestBase::AppendCommonParameters(json);
@@ -423,7 +422,6 @@ CJsonNode SPSGS_AnnotRequest::Serialize(void) const
     }
     json.SetByKey("names", names);
 
-    json.SetBoolean("auto blob skipping", m_AutoBlobSkipping);
     json.SetInteger("resend timeout mks", m_ResendTimeoutMks);
 
     CJsonNode   seq_ids(CJsonNode::NewArrayNode());

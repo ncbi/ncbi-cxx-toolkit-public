@@ -588,7 +588,6 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
 
     bool    need_to_check_blob_exclude_cache =
         !m_AnnotRequest->m_ClientId.empty() &&   // cache is per client
-        m_AnnotRequest->m_AutoBlobSkipping &&    // auto blob skipping is switched on
         m_AnnotRequest->m_ResendTimeoutMks > 0;  // resend_timeout == 0 is switching off blob skipping
 
     // Checking only.

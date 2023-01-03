@@ -554,7 +554,6 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
     int                             m_SeqIdType;
     vector<string>                  m_ExcludeBlobs;
     EPSGS_AccSubstitutioOption      m_AccSubstOption;
-    bool                            m_AutoBlobSkipping;
     unsigned long                   m_ResendTimeoutMks;
     bool                            m_SeqIdResolve;
 
@@ -564,7 +563,6 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
                              EPSGS_TSEOption  tse_option,
                              EPSGS_CacheAndDbUse  use_cache,
                              EPSGS_AccSubstitutioOption  subst_option,
-                             bool  auto_blob_skipping,
                              double  resend_timeout,
                              const string &  client_id,
                              int  send_blob_if_small,
@@ -583,7 +581,6 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
         m_SeqIdType(seq_id_type),
         m_ExcludeBlobs(move(exclude_blobs)),
         m_AccSubstOption(subst_option),
-        m_AutoBlobSkipping(auto_blob_skipping),
         m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
         m_SeqIdResolve(seq_id_resolve)
     {}
@@ -591,7 +588,6 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
     SPSGS_BlobBySeqIdRequest() :
         m_SeqIdType(-1),
         m_AccSubstOption(ePSGS_UnknownAccSubstitution),
-        m_AutoBlobSkipping(true),
         m_ResendTimeoutMks(0),
         m_SeqIdResolve(true)    // default
     {}
@@ -669,7 +665,6 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
     string                          m_SeqId;
     int                             m_SeqIdType;
     vector<string>                  m_Names;
-    bool                            m_AutoBlobSkipping;
     unsigned long                   m_ResendTimeoutMks;
     vector<string>                  m_SeqIds;
     bool                            m_SeqIdResolve;
@@ -678,7 +673,6 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
                        int  seq_id_type,
                        vector<string> &  names,
                        EPSGS_CacheAndDbUse  use_cache,
-                       bool  auto_blob_skipping,
                        double  resend_timeout,
                        vector<string> &  seq_ids,
                        const string &  client_id,
@@ -698,7 +692,6 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_Names(move(names)),
-        m_AutoBlobSkipping(auto_blob_skipping),
         m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
         m_SeqIds(move(seq_ids)),
         m_SeqIdResolve(seq_id_resolve),
@@ -708,7 +701,6 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
 
     SPSGS_AnnotRequest() :
         m_SeqIdType(-1),
-        m_AutoBlobSkipping(true),
         m_ResendTimeoutMks(0),
         m_SeqIdResolve(true),   // default
         m_Lock(false),

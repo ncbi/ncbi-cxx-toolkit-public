@@ -472,10 +472,6 @@ private:
                                     shared_ptr<CPSGS_Reply>  reply,
                                     const psg_time_point_t &  now,
                                     bool &  auto_blob_skipping);
-    bool x_GetAutoBlobSkippingParameter(CHttpRequest &  req,
-                                        shared_ptr<CPSGS_Reply>  reply,
-                                        const psg_time_point_t &  now,
-                                        bool &  seq_id_resolve);
     bool x_GetEnabledAndDisabledProcessors(CHttpRequest &  req,
                                            shared_ptr<CPSGS_Reply>  reply,
                                            const psg_time_point_t &  now,

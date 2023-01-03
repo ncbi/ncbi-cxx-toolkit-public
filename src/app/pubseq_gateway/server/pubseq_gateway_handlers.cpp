@@ -217,15 +217,6 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
 
-        bool                auto_blob_skipping = true;  // default
-        if (!x_GetAutoBlobSkippingParameter(req, reply, now, auto_blob_skipping)) {
-            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
-                               CRequestStatus::e400_BadRequest,
-                               reply->GetBytesSent());
-            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-            return 0;
-        }
-
         double  resend_timeout;
         if (!x_GetResendTimeout(req, reply, now, resend_timeout)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
@@ -258,7 +249,6 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, exclude_blobs,
                         tse_option, use_cache, subst_option,
-                        auto_blob_skipping,
                         resend_timeout,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
@@ -757,15 +747,6 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             return 0;
         }
 
-        bool                auto_blob_skipping = true;  // default
-        if (!x_GetAutoBlobSkippingParameter(req, reply, now, auto_blob_skipping)) {
-            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
-                               CRequestStatus::e400_BadRequest,
-                               reply->GetBytesSent());
-            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
-            return 0;
-        }
-
         double              resend_timeout;
         if (!x_GetResendTimeout(req, reply, now, resend_timeout)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
@@ -789,7 +770,6 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             req(new SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, names, use_cache,
-                        auto_blob_skipping,
                         resend_timeout,
                         seq_ids,
                         string(client_id_param.m_Value.data(),

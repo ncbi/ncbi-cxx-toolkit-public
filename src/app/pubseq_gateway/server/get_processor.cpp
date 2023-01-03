@@ -253,7 +253,6 @@ void CPSGS_GetProcessor::x_GetBlob(void)
 
     bool    need_to_check_blob_exclude_cache =
         !m_BlobRequest->m_ClientId.empty() &&   // cache is per client
-        m_BlobRequest->m_AutoBlobSkipping &&    // auto blob skipping is switched on
         m_BlobRequest->m_ResendTimeoutMks > 0;  // resend_timeout == 0 is switching off blob skipping
 
     // Note: checking only if the blob is in cache. The cache insert is done in
