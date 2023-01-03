@@ -261,30 +261,6 @@ CPubseqGatewayApp::x_GetSeqIdResolveParameter(CHttpRequest &  req,
 
 
 bool
-CPubseqGatewayApp::x_GetAutoBlobSkippingParameter(CHttpRequest &  req,
-                                                  shared_ptr<CPSGS_Reply>  reply,
-                                                  const psg_time_point_t &  now,
-                                                  bool &  auto_blob_skipping)
-{
-    static string  kAutoBlobSkippingParam = "auto_blob_skipping";
-
-    auto_blob_skipping = true;      // default
-    SRequestParameter   auto_blob_skipping_param = x_GetParam(req, kAutoBlobSkippingParam);
-
-    if (auto_blob_skipping_param.m_Found) {
-        string      err_msg;
-        if (!x_IsBoolParamValid(kAutoBlobSkippingParam,
-                                auto_blob_skipping_param.m_Value, err_msg)) {
-            x_MalformedArguments(reply, now, err_msg);
-            return false;
-        }
-        auto_blob_skipping = auto_blob_skipping_param.m_Value == "yes";
-    }
-    return true;
-}
-
-
-bool
 CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
                              shared_ptr<CPSGS_Reply>  reply,
                              const psg_time_point_t &  now,

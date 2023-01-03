@@ -335,9 +335,6 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     // Blob props have already been received
     cass_blob_fetch->SetBlobPropSent();
 
-    // The auto blob skipping needs to be copied
-    cass_blob_fetch->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
-
     if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_SkipRetrieving)
         return;
 
@@ -407,9 +404,6 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // Prepare Id2Info retrieval
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
     cass_blob_fetch.reset(new CCassBlobFetch(info_blob_request, info_blob_id));
-
-    // The auto blob skipping needs to be copied
-    cass_blob_fetch->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
 
     if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_ProceedRetrieving) {
         unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
@@ -538,9 +532,6 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
 
         unique_ptr<CCassBlobFetch>   details;
         details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
-
-        // The auto blob skipping needs to be copied
-        details->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
 
         // Check the already sent cache
         if (x_CheckExcludeBlobCache(details.get()) == ePSGS_SkipRetrieving) {
@@ -783,9 +774,6 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
         unique_ptr<CCassBlobFetch>   details;
         details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
 
-        // The auto blob skipping needs to be copied
-        details->SetAutoBlobSkipping(fetch_details->GetAutoBlobSkipping());
-
         // Check the already sent cache
         if (x_CheckExcludeBlobCache(details.get()) == ePSGS_SkipRetrieving) {
             continue;
@@ -892,8 +880,6 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
     }
 
     if (cache_result == ePSGS_Added)
-        return ePSGS_ProceedRetrieving;
-    if (!fetch_details->GetAutoBlobSkipping())
         return ePSGS_ProceedRetrieving;
 
     unsigned long       resend_timeout_mks;
