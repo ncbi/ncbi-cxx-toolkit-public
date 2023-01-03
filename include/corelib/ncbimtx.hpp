@@ -1412,7 +1412,7 @@ private:
     mutex                 m_Mtx;
     condition_variable    m_Cv;
     const unsigned int    m_Max;
-    atomic<unsigned int>  m_Count;
+    unsigned int          m_Count;
     bool x_TryAcquire(void);
 #else
     struct SSemaphore* m_Sem;  ///< System-specific semaphore data.

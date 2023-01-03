@@ -1773,12 +1773,10 @@ CSemaphore::~CSemaphore(void)
 inline
 bool CSemaphore::x_TryAcquire(void)
 {
-    unsigned int expected = 1;
-    do {
-        if (m_Count.compare_exchange_weak(expected, expected-1)) {
-            return true;
-        }
-    } while (expected > 0);
+    if (m_Count > 0) {
+        --m_Count;
+        return true;
+    }
     return false;
 }
 #endif
@@ -1786,11 +1784,9 @@ bool CSemaphore::x_TryAcquire(void)
 void CSemaphore::Wait(void)
 {
 #if NCBI_SEMAPHORE_USE_NEW
-    if (!x_TryAcquire()) {
-        unique_lock<mutex> lck( m_Mtx);
-        while (!x_TryAcquire()) {
-            m_Cv.wait(lck);
-        }
+    unique_lock<mutex> lck(m_Mtx);
+    while (!x_TryAcquire()) {
+        m_Cv.wait(lck);
     }
 #else
 #if defined(NCBI_POSIX_THREADS)
@@ -1846,6 +1842,7 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
                          unsigned int NCBI_THREADS_ARG(timeout_nsec))
 {
 #if NCBI_SEMAPHORE_USE_NEW
+    unique_lock<mutex> lck(m_Mtx);
 #if defined(NCBI_NO_THREADS)
     return x_TryAcquire();
 #else
@@ -1857,7 +1854,6 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
     }
     chrono::time_point<chrono::steady_clock> to = chrono::steady_clock::now() + chrono::seconds(timeout_sec) + chrono::nanoseconds(timeout_nsec);
     cv_status res = cv_status::no_timeout;
-    unique_lock<mutex> lck( m_Mtx);
     while (!x_TryAcquire()) {
         res = m_Cv.wait_until(lck, to);
         if (res == cv_status::timeout) {
@@ -1975,14 +1971,10 @@ void CSemaphore::Post(unsigned int count)
         return;
 
 #if NCBI_SEMAPHORE_USE_NEW
-    unsigned int cnt_now = m_Count;
-    do {
-        xncbi_Validate(cnt_now <= kMax_UInt - count && cnt_now + count <= m_Max,
-                       "CSemaphore::Post() - attempt to exceed max_count");
-    }
-    while (!m_Count.compare_exchange_weak(cnt_now, cnt_now + count));
-
     unique_lock<mutex> lck( m_Mtx);
+    xncbi_Validate(m_Count <= kMax_UInt - count && m_Count + count <= m_Max,
+                   "CSemaphore::Post() - attempt to exceed max_count");
+    m_Count += count;
     m_Cv.notify_all();
 #else
 #if defined (NCBI_POSIX_THREADS)
