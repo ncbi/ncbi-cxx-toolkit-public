@@ -4008,6 +4008,8 @@ NCBI_PARAM_ENUM_DEF_EX(EDiagSev,
 
 void* InitDiagHandler(void)
 {
+    NCBI_LSAN_DISABLE_GUARD;
+
     static bool s_DiagInitialized = false;
     if (!s_DiagInitialized) {
         CDiagContext::SetupDiag(eDS_Default, 0, eDCM_Init);
