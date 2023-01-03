@@ -1842,15 +1842,15 @@ case "$host_os:$compiler:$compiler_version" in
    else
       AC_MSG_WARN([No dlfcn.h in /usr/include or /sw/include.])
    fi
-   case "$CPPFLAGS $LIBS" in
-      *sw/*) ;;
-      *)
-         if test -d "$orig_NCBI/safe-sw"; then
-             CPPFLAGS="-I$orig_NCBI/safe-sw/include $CPPFLAGS"
-             LDFLAGS="-L$orig_NCBI/safe-sw/lib $LDFLAGS"
-         fi
-         ;;
-   esac
+   # case "$CPPFLAGS $LIBS" in
+   #    *sw/*) ;;
+   #    *)
+   #       if test -d "$orig_NCBI/safe-sw"; then
+   #           CPPFLAGS="-I$orig_NCBI/safe-sw/include $CPPFLAGS"
+   #           LDFLAGS="-L$orig_NCBI/safe-sw/lib $LDFLAGS"
+   #       fi
+   #       ;;
+   # esac
    : ${with_x=${with_xpm-no}}
 
    # CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
