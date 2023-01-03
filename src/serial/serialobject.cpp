@@ -628,7 +628,7 @@ EEncoding s_FlagsToEncoding(CNcbiIos& io)
 {
     long enc = (s_SerFlags(io, eSerIndex_Encoding) & eEncoding_All) >> 16;
     switch (enc) {
-    default: return eEncoding_Unknown;
+    default:
     case 1:  return eEncoding_UTF8;
     case 2:  return eEncoding_Ascii;
     case 3:  return eEncoding_ISO8859_1;
