@@ -50,8 +50,6 @@ struct FinfoBlk {
     }
 };
 
-using FinfoBlkPtr = FinfoBlk*;
-
 
 struct IndBlkNode {
     Indexblk*   ibp;
@@ -65,15 +63,15 @@ using IndBlkNextPtr = IndBlkNode*;
 CRef<objects::CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source);
 
 /**********************************************************/
-bool XReadFileBuf(FileBuf& fileBuf, FinfoBlkPtr finfo);
-bool SkipTitleBuf(FileBuf& fileBuf, FinfoBlkPtr finfo, const CTempString& keyword);
-bool FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, FinfoBlkPtr finfo, const CTempString& keyword);
+bool XReadFileBuf(FileBuf& fileBuf, FinfoBlk& finfo);
+bool SkipTitleBuf(FileBuf& fileBuf, FinfoBlk& finfo, const CTempString& keyword);
+bool FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, FinfoBlk& finfo, const CTempString& keyword);
 
-IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo);
+IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo);
 bool        GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip);
 //bool        GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip);
 void CloseFiles(ParserPtr pp);
-void MsgSkipTitleFail(const Char* flatfile, FinfoBlkPtr finfo);
+void MsgSkipTitleFail(const Char* flatfile, FinfoBlk& finfo);
 bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
 void ResetParserStruct(ParserPtr pp);
 bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp);
