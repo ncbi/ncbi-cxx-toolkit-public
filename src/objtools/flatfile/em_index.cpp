@@ -217,9 +217,9 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     char*         p;
     char*         q;
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, &finfo, emblKeywords[ParFlat_ID]);
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
     if (end_of_file) {
-        MsgSkipTitleFail("Embl", &finfo);
+        MsgSkipTitleFail("Embl", finfo);
         return false;
     }
 
@@ -229,7 +229,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     tibnp = ibnp;
 
     while (! end_of_file) {
-        entry = InitialEntry(pp, &finfo);
+        entry = InitialEntry(pp, finfo);
 
         if (entry) {
             pp->curindx = indx;
@@ -359,7 +359,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     FreeTokenstatblk(stoken);
                 }
 
-                end_of_file = XReadFileBuf(pp->ffbuf, &finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
 
                 if (finfo.str[0] != ' ' && finfo.str[0] != '\t') {
                     if (CheckLineType(finfo.str, finfo.line, checkedEmblKeywords, false) == false)
@@ -420,11 +420,11 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
         } /* if, entry */
         else {
             end_of_file = FindNextEntryBuf(
-                end_of_file, pp->ffbuf, &finfo, emblKeywords[ParFlatEM_END]);
+                end_of_file, pp->ffbuf, finfo, emblKeywords[ParFlatEM_END]);
         }
 
         end_of_file = FindNextEntryBuf(
-            end_of_file, pp->ffbuf, &finfo, emblKeywords[ParFlat_ID]);
+            end_of_file, pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
 
     } /* while, end_of_file */
 

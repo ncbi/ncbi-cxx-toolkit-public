@@ -260,26 +260,26 @@ static const char* GetResidue(TokenStatBlkPtr stoken)
  *                                              2-26-93
  *
  **********************************************************/
-bool XReadFile(FILE* fp, FinfoBlkPtr finfo)
+bool XReadFile(FILE* fp, FinfoBlk& finfo)
 {
     bool end_of_file = false;
 
-    StringCpy(finfo->str, "\n");
-    while (! end_of_file && StringEquN(finfo->str, "\n", 1)) {
-        finfo->pos = (size_t)ftell(fp);
-        if (fgets(finfo->str, sizeof(finfo->str) - 1, fp) == NULL)
+    StringCpy(finfo.str, "\n");
+    while (! end_of_file && StringEquN(finfo.str, "\n", 1)) {
+        finfo.pos = (size_t)ftell(fp);
+        if (! fgets(finfo.str, sizeof(finfo.str) - 1, fp))
             end_of_file = true;
         else
-            ++(finfo->line);
+            ++finfo.line;
     }
 
-    auto n = strlen(finfo->str);
+    auto n = strlen(finfo.str);
     while (n) {
         n--;
-        if (finfo->str[n] != '\n' && finfo->str[n] != '\r') {
+        if (finfo.str[n] != '\n' && finfo.str[n] != '\r') {
             break;
         }
-        finfo->str[n] = 0;
+        finfo.str[n] = 0;
     }
 
     return (end_of_file);
@@ -311,17 +311,17 @@ static Int2 FileGetsBuf(char* res, Int4 size, FileBuf& fbuf)
 }
 
 /**********************************************************/
-bool XReadFileBuf(FileBuf& fbuf, FinfoBlkPtr finfo)
+bool XReadFileBuf(FileBuf& fbuf, FinfoBlk& finfo)
 {
     bool end_of_file = false;
 
-    StringCpy(finfo->str, "\n");
-    while (! end_of_file && StringEquN(finfo->str, "\n", 1)) {
-        finfo->pos = fbuf.get_offs();
-        if (FileGetsBuf(finfo->str, sizeof(finfo->str) - 1, fbuf) == 0)
+    StringCpy(finfo.str, "\n");
+    while (! end_of_file && StringEquN(finfo.str, "\n", 1)) {
+        finfo.pos = fbuf.get_offs();
+        if (FileGetsBuf(finfo.str, sizeof(finfo.str) - 1, fbuf) == 0)
             end_of_file = true;
         else
-            ++(finfo->line);
+            ++finfo.line;
     }
 
     return (end_of_file);
@@ -338,32 +338,33 @@ bool XReadFileBuf(FileBuf& fbuf, FinfoBlkPtr finfo)
  *                                              3-5-93
  *
  **********************************************************/
-bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const char* str, size_t len)
+NCBI_UNUSED
+bool SkipTitle(FILE* fp, FinfoBlk& finfo, const char* str, size_t len)
 {
     bool end_of_file = XReadFile(fp, finfo);
-    while (! end_of_file && ! StringEquN(finfo->str, str, len))
+    while (! end_of_file && ! StringEquN(finfo.str, str, len))
         end_of_file = XReadFile(fp, finfo);
 
     return (end_of_file);
 }
 
-
-bool SkipTitle(FILE* fp, FinfoBlkPtr finfo, const CTempString& keyword)
+NCBI_UNUSED
+bool SkipTitle(FILE* fp, FinfoBlk& finfo, const CTempString& keyword)
 {
     return SkipTitle(fp, finfo, keyword.data(), keyword.size());
 }
 
 //  ----------------------------------------------------------------------------
-bool SkipTitleBuf(FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
+bool SkipTitleBuf(FileBuf& fbuf, FinfoBlk& finfo, const CTempString& keyword)
 //  ----------------------------------------------------------------------------
 {
     const char* p           = keyword.data();
     size_t      len         = keyword.size();
     bool        end_of_file = XReadFileBuf(fbuf, finfo);
-    while (! end_of_file && ! StringEquN(finfo->str, p, len))
+    while (! end_of_file && ! StringEquN(finfo.str, p, len))
         end_of_file = XReadFileBuf(fbuf, finfo);
 
-    return (end_of_file);
+    return end_of_file;
 }
 
 
@@ -783,7 +784,7 @@ static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offset
  *      Check LOCUS line column position, genbank format.
  *
  **********************************************************/
-IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
+IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
 {
     Int2            i;
     Int2            j;
@@ -795,18 +796,18 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
 
     entry = new Indexblk;
 
-    entry->offset  = finfo->pos;
-    entry->linenum = finfo->line;
+    entry->offset  = finfo.pos;
+    entry->linenum = finfo.line;
     entry->ppp     = pp;
     entry->is_tsa  = false;
     entry->is_tls  = false;
     entry->is_pat  = false;
 
-    stoken = TokenString(finfo->str, ' ');
+    stoken = TokenString(finfo.str, ' ');
 
     bool badlocus = false;
     if (stoken->num > 2) {
-        p = finfo->str;
+        p = finfo.str;
         if (pp->mode == Parser::EMode::Relaxed) {
             sSetLocusLineOffsets(p, entry->lc);
         } else {
@@ -832,7 +833,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
         ptr = stoken->list->next;
         if (pp->format == Parser::EFormat::EMBL && ptr->next &&
             ptr->next->str && StringEqu(ptr->next->str, "SV")) {
-            for (i = 0, p = finfo->str; *p != '\0'; p++)
+            for (i = 0, p = finfo.str; *p != '\0'; p++)
                 if (*p == ';' && p[1] == ' ')
                     i++;
 
@@ -847,7 +848,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
             if (i != 6 || (stoken->num != 10 && stoken->num != 11)) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
                 badlocus = true;
-            } else if (fta_check_embl_moltype(finfo->str) == false)
+            } else if (fta_check_embl_moltype(finfo.str) == false)
                 badlocus = true;
         }
 
@@ -876,10 +877,10 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlkPtr finfo)
     }
 
     if (badlocus) {
-        p = StringChr(finfo->str, '\n');
+        p = StringChr(finfo.str, '\n');
         if (p)
             *p = '\0';
-        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped. LOCUS line = \"%s\".", finfo->str);
+        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped. LOCUS line = \"%s\".", finfo.str);
         if (p)
             *p = '\n';
         delete entry;
@@ -2171,20 +2172,20 @@ void CloseFiles(ParserPtr pp)
  *                                              7-2-93
  *
  **********************************************************/
-void MsgSkipTitleFail(const char* flatfile, FinfoBlkPtr finfo)
+void MsgSkipTitleFail(const char* flatfile, FinfoBlk& finfo)
 {
     ErrPostEx(SEV_ERROR, ERR_ENTRY_Begin, "No valid beginning of entry found in %s file", flatfile);
 
-    delete finfo;
+    // delete finfo;
 }
 
 
-bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlkPtr finfo, const CTempString& keyword)
+bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlk& finfo, const CTempString& keyword)
 {
     const char* p    = keyword.data();
     size_t      len  = keyword.size();
     bool        done = end_of_file;
-    while (! done && ! StringEquN(finfo->str, p, len))
+    while (! done && ! StringEquN(finfo.str, p, len))
         done = XReadFileBuf(fbuf, finfo);
 
     return (done);

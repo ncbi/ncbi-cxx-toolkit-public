@@ -372,10 +372,10 @@ bool GenBankIndex(ParserPtr pp)
     ValNodePtr    dbl;
     ValNodePtr    tdbl;
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, &finfo, "LOCUS");
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, "LOCUS");
 
     if (end_of_file) {
-        MsgSkipTitleFail("GenBank", &finfo);
+        MsgSkipTitleFail("GenBank", finfo);
         return false;
     }
 
@@ -388,7 +388,7 @@ bool GenBankIndex(ParserPtr pp)
     kwds         = nullptr;
     dbl          = nullptr;
     while (! end_of_file) {
-        entry = InitialEntry(pp, &finfo);
+        entry = InitialEntry(pp, finfo);
         if (entry) {
             pp->curindx = indx;
             tibnp->next = new IndBlkNode(entry);
@@ -609,7 +609,7 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 } /* switch */
 
-                end_of_file = XReadFileBuf(pp->ffbuf, &finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
 
                 while (! end_of_file && (finfo.str[0] == ' ' || finfo.str[0] == '\t')) {
                     if (currentKeyword == ParFlat_KEYWORDS && tkwds) {
@@ -626,7 +626,7 @@ bool GenBankIndex(ParserPtr pp)
                         GetAccession(pp, finfo.str, entry, 0) == false)
                         pp->num_drop++;
 
-                    end_of_file = XReadFileBuf(pp->ffbuf, &finfo);
+                    end_of_file = XReadFileBuf(pp->ffbuf, finfo);
                 }
 
 
@@ -728,10 +728,10 @@ bool GenBankIndex(ParserPtr pp)
             }
         } /* if, entry */
         else {
-            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, &finfo, "//");
+            end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "//");
         }
 
-        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, &finfo, "LOCUS");
+        end_of_file = FindNextEntryBuf(end_of_file, pp->ffbuf, finfo, "LOCUS");
 
     } /* while, end_of_file */
 
