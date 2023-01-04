@@ -93,7 +93,7 @@ void  fta_set_strandedness(TEntryList& seq_entries);
 bool GetEmblInstContig(const DataBlk& entry, objects::CBioseq& bioseq, ParserPtr pp);
 
 bool fta_orgref_has_taxid(const objects::COrg_ref::TDb& dbtags);
-void fta_fix_orgref_div(const objects::CBioseq::TAnnot& annots, objects::COrg_ref& org_ref, objects::CGB_block& gbb);
+void fta_fix_orgref_div(const objects::CBioseq::TAnnot& annots, objects::COrg_ref* org_ref, objects::CGB_block& gbb);
 
 const char*                GetEmblDiv(Uint1 num);
 const objects::CSeq_descr& GetDescrPointer(const objects::CSeq_entry& entry);
