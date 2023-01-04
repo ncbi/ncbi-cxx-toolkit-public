@@ -1653,13 +1653,13 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
     if (pp->format == Parser::EFormat::XML) {
         str    = XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE);
         seqptr = str;
-        if (seqptr)
+        if (seqptr) {
             len = StringLen(seqptr);
-        if (pp->source != Parser::ESource::USPTO || ibp->is_prot == false)
-            for (; *seqptr != '\0'; seqptr++)
-                if (*seqptr >= 'A' && *seqptr <= 'Z')
-                    *seqptr |= 040;
-        seqptr = str;
+            if (pp->source != Parser::ESource::USPTO || ! ibp->is_prot)
+                for (char* p = seqptr; *p != '\0'; p++)
+                    if (*p >= 'A' && *p <= 'Z')
+                        *p |= 040; // tolower
+        }
     } else {
         str    = nullptr;
         seqptr = xSrchNodeType(entry, nodetype, &len);
