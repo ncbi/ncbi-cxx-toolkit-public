@@ -1925,7 +1925,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 }
             }
         } else if (gbb && gbb->IsSetDiv()) {
-            fta_fix_orgref_div(bioseq.GetAnnot(), *org_ref, *gbb);
+            fta_fix_orgref_div(bioseq.GetAnnot(), org_ref, *gbb);
         }
     }
 
