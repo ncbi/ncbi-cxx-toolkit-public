@@ -288,7 +288,7 @@ static void s_LOG_Handler(void*             /*data*/,
             level = eDiag_Fatal;
             break;
         }
-        if (!IsVisibleDiagPostLevel(level))
+        if (level != eDiag_Fatal  &&  !IsVisibleDiagPostLevel(level))
             return;
 
         CDiagCompileInfo info(mess->file,
@@ -309,6 +309,9 @@ static void s_LOG_Handler(void*             /*data*/,
                  NStr::fNewLine_Passthru | NStr::fNonAscii_Quote) <<
                 "\n#################### [_END_] Raw Data";
         }
+        diag << Endm;
+        if (level == eDiag_Fatal)
+            Abort();
     }
     NCBI_CATCH_ALL_X(4, "s_LOG_Handler(" + x_Log(mess->level) + ") failed");
 }
