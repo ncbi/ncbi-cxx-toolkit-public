@@ -342,6 +342,8 @@ endif()
 
 #----------------------------------------------------------------------------
 # UNIX
+include(CheckCXXCompilerFlag)
+include(CheckCCompilerFlag)
 
 set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
 set(_tmp ${CMAKE_CXX_COMPILER_VERSION})
@@ -393,6 +395,13 @@ if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-D_GLIBCXX_DEBUG)
     set(Boost_USE_DEBUG_RUNTIME 1)
     set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}MaxDebug")
+
+    if(NCBI_COMPILER_GCC)
+        set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fstack-check -fsanitize=address")
+        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fstack-check -fsanitize=address")
+        set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+        set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+    endif()
 endif()
 
 message(STATUS "CMake Build Type: ${CMAKE_BUILD_TYPE}")
@@ -542,12 +551,9 @@ if (CMAKE_COMPILER_IS_GNUCC)
     add_compile_options(-Wall -Wno-format-y2k )
 endif()
 
-include(CheckCXXCompilerFlag)
-include(CheckCCompilerFlag)
-
 macro(set_cxx_compiler_flag_optional)
     foreach (var ${ARGN})
-        CHECK_CXX_COMPILER_FLAG("${var}" _COMPILER_SUPPORTS_FLAG)
+        check_cxx_compiler_flag("${var}" _COMPILER_SUPPORTS_FLAG)
         if (_COMPILER_SUPPORTS_FLAG)
             message(STATUS "The compiler ${CMAKE_CXX_COMPILER} supports ${var}")
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${var}")
@@ -562,7 +568,7 @@ endmacro()
 
 macro(set_c_compiler_flag_optional)
     foreach (var ${ARGN})
-        CHECK_C_COMPILER_FLAG(${var} _COMPILER_SUPPORTS_FLAG)
+        check_c_compiler_flag(${var} _COMPILER_SUPPORTS_FLAG)
         if (_COMPILER_SUPPORTS_FLAG)
             message(STATUS "The compiler ${CMAKE_C_COMPILER} supports ${var}")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${var}")
