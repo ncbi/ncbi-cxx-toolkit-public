@@ -261,7 +261,10 @@ esac
 
 : ${LIBUNWIND_PATH=$NCBI/libunwind-1.1}
 
-: ${LIBUV_PATH=$NCBI/libuv-1.35.0}
+case "$ncbi_platform" in
+    *MAC       ) : ${LIBUV_PATH=$NCBI/libuv-1.44.2} ;;
+    *          ) : ${LIBUV_PATH=$NCBI/libuv-1.35.0} ;;
+esac
 
 case "$ncbi_platform" in
     Linux64    ) : ${LIBXML_PATH=$NCBI/libxml-2.9.1} ;;
@@ -384,10 +387,7 @@ case "$ncbi_platform" in
         ;;
 esac
 
-case "$ncbi_platform" in
-    FreeBSD64* ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.1.0-ncbi2} ;;
-             * ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.2.1-ncbi1} ;;
-esac
+: ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.2.1-ncbi1}
 
 : ${XALAN_PATH=$NCBI/xalan-1.11}
 
