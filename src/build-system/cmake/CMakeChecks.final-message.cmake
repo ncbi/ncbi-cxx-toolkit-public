@@ -61,7 +61,7 @@ message("-----------------------------------------------------------------------
     if (CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
         message("    ccache:     ${CCACHE_EXECUTABLE}")
     endif()
-    string(TOUPPER ${CMAKE_BUILD_TYPE} _BuildType)
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _BuildType)
     message("CFLAGS:        ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${_BuildType}} ${_CompileOptions}")
     message("CXXFLAGS:      ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BuildType}} ${_CompileOptions}")
     message("EXE_LINKER_FLAGS:    ${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${_BuildType}} ${_LinkOptions}")
