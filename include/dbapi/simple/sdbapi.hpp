@@ -418,6 +418,12 @@ public:
     class CRowIterator
     {
     public:
+        typedef int                difference_type;
+        typedef CRow               value_type;
+        typedef CRow*              pointer;
+        typedef CRow&              reference;
+        typedef input_iterator_tag iterator_category;
+
         /// Empty constructor of iterator.
         /// Object constructed this way cannot be used for anything except
         /// assigning from another iterator object.
