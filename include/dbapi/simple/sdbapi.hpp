@@ -1241,7 +1241,8 @@ public:
     ///   Maximum size of a single blob (to be split across columns as
     ///   needed).
     CBlobStoreStatic* NewBlobStore(const string&      table_name,
-                                   TNewBlobStoreFlags flags = 0,
+                                   TNewBlobStoreFlags flags
+                                   = TNewBlobStoreFlags(0),
                                    size_t             image_limit = 1 << 24);
 
     /// Get new CBlobStoreStatic object (to be owned by caller).
@@ -1267,7 +1268,8 @@ public:
                                    const string&        key_col_name,
                                    const string&        num_col_name,
                                    const vector<string> blob_col_names,
-                                   TNewBlobStoreFlags   flags = 0,
+                                   TNewBlobStoreFlags   flags
+                                   = TNewBlobStoreFlags(0),
                                    size_t               image_limit = 1 << 24);
 
 private:
@@ -1360,7 +1362,8 @@ public:
     ///   needed).
     static CBlobStoreDynamic* NewBlobStore(const CSDB_ConnectionParam& param,
                                            const string& table_name,
-                                           TNewBlobStoreFlags flags = 0,
+                                           TNewBlobStoreFlags flags
+                                           = TNewBlobStoreFlags(0),
                                            size_t image_limit = 1 << 24);
 
 private:
