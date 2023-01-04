@@ -129,9 +129,9 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     FinfoBlk finfo;
 
-    end_of_file = SkipTitleBuf(pp->ffbuf, &finfo, swissProtKeywords[ParFlatSP_ID]);
+    end_of_file = SkipTitleBuf(pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_ID]);
     if (end_of_file) {
-        MsgSkipTitleFail("Swiss-Prot", &finfo);
+        MsgSkipTitleFail("Swiss-Prot", finfo);
         return false;
     }
 
@@ -139,7 +139,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
     tibnp = ibnp;
 
     while (! end_of_file) {
-        entry = InitialEntry(pp, &finfo);
+        entry = InitialEntry(pp, finfo);
         if (entry) {
             pp->curindx = indx;
             tibnp->next = new IndBlkNode(entry);
@@ -196,7 +196,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                     FreeTokenstatblk(stoken);
                 }
 
-                end_of_file = XReadFileBuf(pp->ffbuf, &finfo);
+                end_of_file = XReadFileBuf(pp->ffbuf, finfo);
 
             } /* while, end of one entry */
 
@@ -229,10 +229,10 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
         } /* if, entry */
         else {
             end_of_file = FindNextEntryBuf(
-                end_of_file, pp->ffbuf, &finfo, swissProtKeywords[ParFlatSP_END]);
+                end_of_file, pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_END]);
         }
         end_of_file = FindNextEntryBuf(
-            end_of_file, pp->ffbuf, &finfo, swissProtKeywords[ParFlatSP_ID]);
+            end_of_file, pp->ffbuf, finfo, swissProtKeywords[ParFlatSP_ID]);
 
     } /* while, end_of_file */
 
