@@ -1009,7 +1009,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 
     if (gbb.NotEmpty()) {
         if (pp->taxserver == 1 && gbb->IsSetDiv())
-            fta_fix_orgref_div(bioseq.SetAnnot(), *org_ref, *gbb);
+            fta_fix_orgref_div(bioseq.SetAnnot(), org_ref, *gbb);
 
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetGenbank(*gbb);

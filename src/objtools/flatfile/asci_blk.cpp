@@ -3241,17 +3241,17 @@ bool fta_orgref_has_taxid(const COrg_ref::TDb& dbtags)
 }
 
 /**********************************************************/
-void fta_fix_orgref_div(const CBioseq::TAnnot& annots, COrg_ref& org_ref, CGB_block& gbb)
+void fta_fix_orgref_div(const CBioseq::TAnnot& annots, COrg_ref* org_ref, CGB_block& gbb)
 {
     Int4 count;
 
-    if (! gbb.IsSetDiv())
+    if (! org_ref || ! gbb.IsSetDiv())
         return;
 
     count = 1;
-    if (org_ref.IsSetOrgname() && ! org_ref.GetOrgname().IsSetDiv() &&
-        fta_orgref_has_taxid(org_ref.GetDb()) == false) {
-        org_ref.SetOrgname().SetDiv(gbb.GetDiv());
+    if (org_ref->IsSetOrgname() && ! org_ref->GetOrgname().IsSetDiv() &&
+        ! fta_orgref_has_taxid(org_ref->GetDb())) {
+        org_ref->SetOrgname().SetDiv(gbb.GetDiv());
         count--;
     }
 
@@ -3267,8 +3267,8 @@ void fta_fix_orgref_div(const CBioseq::TAnnot& annots, COrg_ref& org_ref, CGB_bl
             count++;
 
             const CBioSource& bio_src = feat->GetData().GetBiosrc();
-            if (bio_src.IsSetOrg() && fta_orgref_has_taxid(bio_src.GetOrg().GetDb()) == false) {
-                org_ref.SetOrgname().SetDiv(gbb.GetDiv());
+            if (bio_src.IsSetOrg() && ! fta_orgref_has_taxid(bio_src.GetOrg().GetDb())) {
+                org_ref->SetOrgname().SetDiv(gbb.GetDiv());
                 count--;
             }
         }
