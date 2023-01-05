@@ -1035,7 +1035,7 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     else {
         CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if (app) {
-            app_params.reset(CConfig::ConvertRegToTree(app->GetConfig(), NStr::eNocase));
+            app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
             psg_params = CPSGDataLoader::GetParamsSubnode(app_params.get(), NCBI_PSGLOADER_NAME);
         }
     }
@@ -1117,7 +1117,7 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     m_BulkRetryCount =
         s_GetParamValue<X_NCBI_PARAM_DECLNAME(PSG_LOADER, BULK_RETRY_COUNT)>(psg_params);
     if ( psg_params ) {
-        CConfig conf(psg_params, NStr::eNocase);
+        CConfig conf(psg_params);
         m_WaitTime.Init(conf, NCBI_PSGLOADER_NAME, s_WaitTimeParams);
     }
 

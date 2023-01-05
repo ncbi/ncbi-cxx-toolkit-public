@@ -63,7 +63,7 @@ CGICacheReader::CGICacheReader(void)
 CGICacheReader::CGICacheReader(const TPluginManagerParamTree* params,
                                const string& driver_name)
 {
-    CConfig conf(params, NStr::eNocase);
+    CConfig conf(params);
     m_Path = conf.GetString(
         driver_name,
         NCBI_GBLOADER_READER_GICACHE_PARAM_PATH_NAME,
