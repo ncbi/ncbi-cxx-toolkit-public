@@ -137,7 +137,7 @@ CId2Reader::CId2Reader(int max_connections)
 CId2Reader::CId2Reader(const TPluginManagerParamTree* params,
                        const string& driver_name)
 {
-    CConfig conf(params);
+    CConfig conf(params, NStr::eNocase);
     string service_name = conf.GetString(
         driver_name,
         NCBI_GBLOADER_READER_ID2_PARAM_SERVICE_NAME,

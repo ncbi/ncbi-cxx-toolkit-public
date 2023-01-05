@@ -292,7 +292,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
     else {
         CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
         if ( app ) {
-            app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
+            app_params.reset(CConfig::ConvertRegToTree(app->GetConfig(), NStr::eNocase));
             gb_params = GetLoaderParams(app_params.get());
         }
     }
@@ -587,7 +587,7 @@ CReader* CGBDataLoader_Native::x_CreateReader(const string& name,
                                        const TParamTree* params)
 {
     CRef<TReaderManager> manager = x_GetReaderManager();
-    CReader* ret = manager->CreateInstanceFromList(params, name);
+    CReader* ret = manager->CreateInstanceFromList(params, name, manager->GetDefaultDrvVers(), NStr::eNocase);
     if ( !ret ) {
         if ( s_ForceDriver(name) ) {
             // reader is required at this slot
@@ -606,7 +606,7 @@ CWriter* CGBDataLoader_Native::x_CreateWriter(const string& name,
                                        const TParamTree* params)
 {
     CRef<TWriterManager> manager = x_GetWriterManager();
-    CWriter* ret = manager->CreateInstanceFromList(params, name);
+    CWriter* ret = manager->CreateInstanceFromList(params, name, manager->GetDefaultDrvVers(), NStr::eNocase);
     if ( !ret ) {
         if ( s_ForceDriver(name) ) {
             // writer is required at this slot
