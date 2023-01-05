@@ -65,10 +65,16 @@ BEGIN_SCOPE(objects)
 CInfluenzaSet::CInfluenzaSet(const string& key) : m_Key(key)
 {
     m_FluType = GetInfluenzaType(key);
-    m_Required = 7;
-    if (m_FluType == eInfluenzaA || m_FluType == eInfluenzaB) {
-        m_Required = 8;
+    m_Required = GetNumRequired(m_FluType);
+}
+
+
+size_t CInfluenzaSet::GetNumRequired(EInfluenzaType fluType) 
+{
+    if (fluType == eInfluenzaA || fluType == eInfluenzaB) {
+        return 8;
     }
+    return 7;
 }
 
 
@@ -131,6 +137,28 @@ void CInfluenzaSet::AddBioseq(CBioseq_Handle bsh)
 }
 
 
+bool g_FindSegs(const CBioSource& src, size_t numRequired, set<size_t>& segsFound) 
+{
+    if (!src.IsSetSubtype()) {
+        return false;
+    }
+
+    bool foundSeg = false;
+    for (auto pSubSource : src.GetSubtype()) {
+        if (pSubSource && pSubSource->IsSetSubtype() && pSubSource->IsSetName() &&
+            pSubSource->GetSubtype() == CSubSource::eSubtype_segment) {
+            auto segment = NStr::StringToSizet(pSubSource->GetName(), NStr::fConvErr_NoThrow);
+            if (segment < 1 || segment > numRequired ) {
+                return false;
+            }
+            segsFound.insert(segment);
+            foundSeg = true;
+        }
+    }
+    return foundSeg;
+}
+
+
 bool CInfluenzaSet::OkToMakeSet() const
 {
     if (m_Members.size() < m_Required) {
@@ -138,30 +166,12 @@ bool CInfluenzaSet::OkToMakeSet() const
     }
 
     set<size_t> segs_found;
-
     for(auto bsh : m_Members) {
         // check to make sure one of each segment is represented
         CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
-        if (src->GetSource().IsSetSubtype()) {
-            bool found_seg = false;
-            for (auto pSubSource : src->GetSource().GetSubtype()) {
-                if (pSubSource && pSubSource->IsSetSubtype() &&  pSubSource->IsSetName() &&
-                    pSubSource->GetSubtype() == CSubSource::eSubtype_segment) {
-                    size_t seg = NStr::StringToSizet(pSubSource->GetName(), NStr::fConvErr_NoThrow);
-                    if (seg < 1 || seg > m_Required) {
-                        return false;
-                    }
-                    segs_found.insert(seg);
-                    found_seg = true;
-                }
-            }
-            if (!found_seg) {
-                return false;
-            }
-        } else {
+        if (!g_FindSegs(src->GetSource(), m_Required, segs_found)) {
             return false;
         }
-
         // make sure all coding regions and genes are complete
         SAnnotSelector sel;
         sel.IncludeFeatType(CSeqFeatData::e_Cdregion);

@@ -174,8 +174,9 @@ private:
 // global lists, readonly after indexing
     TBioseqList               m_bioseq_list;
 protected:
-    TBioseqSetList            m_bioseq_set_list;
-    CRef<CSeq_entry>          m_top_entry;
+    TBioseqSetList                  m_bioseq_set_list;
+    CRef<CSeq_entry>                m_top_entry;
+    std::list<CConstRef<CSeq_id>>   m_top_ids;
 private:
     CConstRef<CSubmit_block>  m_submit_block;
 
@@ -184,7 +185,6 @@ private:
     TBioseqSetIndex           m_FlattenedIndex;
     TBioseqSetList            m_FlattenedSets;
     TBioseqSetList::const_iterator  m_Current;
-    std::list<CConstRef<CSeq_id>> m_top_ids;
     bool m_HasHugeSetAnnot{ false };
     const CBioseq_set::TClass* m_pTopLevelClass { nullptr };
 };

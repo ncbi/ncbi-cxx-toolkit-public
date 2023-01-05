@@ -35,6 +35,7 @@
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objtools/edit/huge_file_process.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -44,9 +45,11 @@ class NCBI_CLEANUP_EXPORT CCleanupHugeAsnReader :
 {   
 public:
     enum EOptions {
-        eExtendedCleanup    = 1,
-        eNoNcbiUserObjects  = 1<<1,  
+        eExtendedCleanup       = 1,
+        eNoNcbiUserObjects     = 1<<1,  
+        eEnableSmallGenomeSets = 1<<2,
     };
+
     using TOptions = int;
 
     CCleanupHugeAsnReader(TOptions options);
@@ -58,6 +61,7 @@ public:
             eAddTopEntry add_top_entry = eAddTopEntry::yes) const override;
     const CCleanupChangeCore& GetChanges() const;
 private:
+    void x_CreateSmallGenomeSets();
     void x_CleanupTopLevelDescriptors();
     bool x_LooksLikeNucProtSet() const;
     void x_AddTopLevelDescriptors(CSeq_entry& entry) const;
@@ -65,6 +69,10 @@ private:
     CRef<CSeqdesc> m_pTopLevelMolInfo;
     const TOptions m_CleanupOptions;
     mutable CCleanupChangeCore m_Changes;
+    map<CConstRef<CSeq_id>,string> m_IdToFluLabel;  
+    map<string, list<TBioseqSetInfo>> m_FluLabelToSetInfo;
+    map<TFileSize, string> m_SetPosToFluLabel;
+    string x_GetFluLabel(const CConstRef<CSeq_id>& pId) const; 
 };
 
 END_SCOPE(object);
