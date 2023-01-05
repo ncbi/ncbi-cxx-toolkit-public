@@ -141,7 +141,7 @@ CPubseq2Reader::CPubseq2Reader(const TPluginManagerParamTree* params,
       m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER),
       m_SetCubbyUser(false)
 {
-    CConfig conf(params);
+    CConfig conf(params, NStr::eNocase);
     m_Server = conf.GetString(
         driver_name,
         NCBI_GBLOADER_READER_PUBSEQ2_PARAM_SERVER,
