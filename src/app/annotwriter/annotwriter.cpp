@@ -37,44 +37,19 @@
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 
-#include <objects/general/Object_id.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/seqfeat/Feat_id.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/submit/Seq_submit.hpp>
+
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_entry_ci.hpp>
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/annot_ci.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <dbapi/driver/drivers.hpp>
-
-#include <objtools/format/flat_file_config.hpp>
-#include <objtools/format/flat_file_generator.hpp>
-#include <objtools/format/flat_expt.hpp>
-#include <objects/seqset/gb_release_file.hpp>
-
-#include <objects/entrez2/Entrez2_boolean_element.hpp>
-#include <objects/entrez2/Entrez2_boolean_reply.hpp>
-#include <objects/entrez2/Entrez2_boolean_exp.hpp>
-#include <objects/entrez2/Entrez2_eval_boolean.hpp>
-#include <objects/entrez2/Entrez2_id_list.hpp>
-#include <objects/entrez2/entrez2_client.hpp>
-
-#include <objtools/cleanup/cleanup.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
-#include <objmgr/util/sequence.hpp>
+
+#include <objtools/cleanup/cleanup.hpp>
 #include <objtools/writers/writer_message.hpp>
 #include <objtools/writers/writer_listener.hpp>
 #include <objtools/writers/writer_exception.hpp>
@@ -88,12 +63,9 @@
 #include <objtools/writers/gvf_writer.hpp>
 #include <objtools/writers/aln_writer.hpp>
 #include <objtools/writers/psl_writer.hpp>
-#include <objtools/writers/genbank_id_resolve.hpp>
-
 #include <objtools/readers/format_guess_ex.hpp>
 
 #include <algo/sequence/gene_model.hpp>
-
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 
 
@@ -245,12 +217,11 @@ void CAnnotWriterApp::Init()
         "STRING",
         "Output format",
         CArgDescriptions::eString, 
-        "gff" );
+        "gff3" );
     arg_desc->SetConstraint(
         "format", 
         &(*new CArgAllow_Strings, 
             "gvf",
-            "gff", "gff2", 
             "gff3",
             "gtf", 
             "wig", "wiggle",
@@ -854,12 +825,6 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     }
 
     const string strFormat = args["format"].AsString();
-    if (strFormat == "gff"  ||  strFormat == "gff2") { 
-        CGff2Writer* pWriter = new CGff2Writer(*m_pScope, *pOs, xGffFlags(args));
-        xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
-        return pWriter;
-    }
-
     if (strFormat == "gff3") { 
         const bool sortAlignments = args["no-sort"] ? false : true;
         if (args["flybase"]) {
