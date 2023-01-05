@@ -51,6 +51,7 @@
 #include <sstream>
 #undef NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
+#include <common/test_data_path.h>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
@@ -249,11 +250,17 @@ BOOST_AUTO_TEST_SUITE(seqalignfilter)
 
 BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
 {
-    string fname_in = "/am/ncbiapdata/test_data/blast/algo/unit_tests/blast_format/data/in_test.txt";
+    string fname_in_rel = "blast/algo/unit_tests/blast_format/data/in_test.txt"; 
     string fname_out = "data/out_test.txt";
     string fname_gis = "data/gilist_test.txt";
+    // convert all pathes to platform specific form
+    std::replace( fname_in_rel.begin(), fname_in_rel.end(), '/', CDirEntry::GetPathSeparator() );
+    std::replace( fname_out.begin(), fname_out.end(), '/', CDirEntry::GetPathSeparator() );
+    std::replace( fname_gis.begin(), fname_gis.end(), '/', CDirEntry::GetPathSeparator() );
 
-	CSeq_align_set aln_all;
+    string fname_in = CFile::ConcatPath( NCBI_GetTestDataPath(), fname_in_rel );
+
+    CSeq_align_set aln_all;
     s_LoadSeqAlignsFromFile(aln_all, fname_in);
 
     CSeqAlignFilter filter;
@@ -287,9 +294,15 @@ BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
 
 BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
 {
-    string fname_in = "/am/ncbiapdata/test_data/blast/algo/unit_tests/blast_format/data/in_test.txt"; 
+    string fname_in_rel = "blast/algo/unit_tests/blast_format/data/in_test.txt"; 
     string fname_out = "data/out_test.txt";
     string fname_gis = "data/gilist_test.txt";
+    // convert all pathes to platform specific form
+    std::replace( fname_in_rel.begin(), fname_in_rel.end(), '/', CDirEntry::GetPathSeparator() );
+    std::replace( fname_out.begin(), fname_out.end(), '/', CDirEntry::GetPathSeparator() );
+    std::replace( fname_gis.begin(), fname_gis.end(), '/', CDirEntry::GetPathSeparator() );
+
+    string fname_in = CFile::ConcatPath( NCBI_GetTestDataPath(), fname_in_rel );
 
     string db_name = "nt";
     bool use_prot = false;
