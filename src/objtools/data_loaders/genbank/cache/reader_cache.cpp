@@ -283,7 +283,7 @@ CCacheReader::CCacheReader(const TPluginManagerParamTree* params,
                            const string& driver_name)
     : m_JoinedBlobVersion(eDefault)
 {
-    CConfig conf(params, NStr::eNocase);
+    CConfig conf(params);
     bool joined_blob_version = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_CACHE_PARAM_JOINED_BLOB_VERSION,
@@ -1682,7 +1682,7 @@ ICache* SCacheInfo::CreateCache(const TParams* params,
     CRef<TCacheManager> manager(CPluginManagerGetter<ICache>::Get());
     _ASSERT(manager);
     return manager->CreateInstanceFromKey
-        (cache_params.get(), NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER, manager->GetDefaultDrvVers(), NStr::eNocase);
+        (cache_params.get(), NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER);
 }
 
 
