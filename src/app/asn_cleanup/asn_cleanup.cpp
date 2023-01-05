@@ -575,6 +575,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         cerr << "Warning: -serial argument should not be used; Input file format is now autodetected." << endl;
     }
 
+
     CCleanupHugeAsnReader::TOptions options{0};
     if (m_do_extended) {
         options |= CCleanupHugeAsnReader::eExtendedCleanup;
@@ -582,6 +583,11 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     if (args["noobj"]) {
         options |= CCleanupHugeAsnReader::eNoNcbiUserObjects;
     }
+
+    if (args["X"] && (NStr::Find(args["X"].AsString(), "i") != NPOS)) { 
+        options |= CCleanupHugeAsnReader::eEnableSmallGenomeSets; 
+    }
+
     edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(options));
     huge_process.OpenFile(filename);
 
@@ -608,7 +614,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         // always regular mode
         mode = eModeRegular;
     } else if (args["huge"]) {
-        if (!is_Xi)
+      //  if (!is_Xi)
             mode = eModeHugefile;
     } else if (args["batch"]) {
         mode = eModeBatch;
@@ -1099,7 +1105,7 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Ui
     if (NStr::Find(opt, "a") != string::npos) {
         any_changes |= CCleanup::ConvertDeltaSeqToRaw(seh);
     }
-    if (NStr::Find(opt, "i") != string::npos) {
+    if (!m_IsHugeSet && (NStr::Find(opt, "i") != string::npos)) {
         if (CCleanup::MakeSmallGenomeSet(seh) > 0) {
             any_changes = true;
         }
