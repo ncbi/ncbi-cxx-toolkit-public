@@ -279,15 +279,22 @@ public:
     ///    hierachy of node keys to search for
     /// @param res
     ///    list of discovered found nodes
-    void FindNodes(const TKeyList& node_path, TNodeList* res);
+    /// @param use_case
+    ///    case sensetivity of node name comparison
+    void FindNodes(const TKeyList& node_path,
+                   TNodeList* res,
+                   NStr::ECase use_case = NStr::eCase);
 
     /// Find or create tree node corresponding to the path from the top
     ///
     /// @param node_path
     ///    hierachy of node keys to search for
+    /// @param use_case
+    ///    case sensetivity of node name comparison
     /// @return
     ///    tree node
-    TTreeType* FindOrCreateNode(const TKeyList& node_path);
+    TTreeType* FindOrCreateNode(const TKeyList& node_path,
+                                NStr::ECase use_case = NStr::eCase);
 
     /// Find tree nodes corresponding to the path from the top
     ///
@@ -295,18 +302,31 @@ public:
     ///    hierachy of node keys to search for
     /// @param res
     ///    list of discovered found nodes (const pointers)
+    /// @param use_case
+    ///    case sensetivity of node name comparison
     void FindNodes(const TKeyList& node_path, 
-                   TConstNodeList* res) const;
+                   TConstNodeList* res,
+                   NStr::ECase use_case = NStr::eCase) const;
 
     /// Non recursive linear scan of all subnodes, with key comparison
     ///
+    /// @param key
+    ///    name of the node to search
+    /// @param use_case
+    ///    case sensetivity of node name comparison
     /// @return SubNode pointer or NULL
-    const TTreeType* FindSubNode(const TKeyType& key) const;
+    const TTreeType* FindSubNode(const TKeyType& key,
+                                 NStr::ECase use_case = NStr::eCase) const;
 
     /// Non recursive linear scan of all subnodes, with key comparison
     ///
+    /// @param key
+    ///    name of the node to search
+    /// @param use_case
+    ///    case sensetivity of node name comparison
     /// @return SubNode pointer or NULL
-    TTreeType* FindSubNode(const TKeyType& key);
+    TTreeType* FindSubNode(const TKeyType& key,
+                           NStr::ECase use_case = NStr::eCase);
 
     /// Parameters for node search by key
     ///
@@ -322,12 +342,27 @@ public:
 
     /// Search for node
     ///
+    /// @param key
+    ///    name or path of the node to search
     /// @param sflag
     ///     ORed ENodeSearchType
+    /// @param use_case
+    ///    case sensetivity of node name comparison
     /// @return node pointer or NULL
     const TTreeType* FindNode(const TKeyType& key,
-                              TNodeSearchMode sflag = eImmediateAndTop) const;
+                              TNodeSearchMode sflag = eImmediateAndTop,
+                              NStr::ECase use_case = NStr::eCase) const;
 
+    /// Search for node
+    ///
+    /// @param key
+    ///    name or path of the node to search
+    /// @param use_case
+    ///    case sensetivity of node name comparison
+    /// @return node pointer or NULL
+    const TTreeType* FindNode(const TKeyType& key,
+                              NStr::ECase use_case) const;
+    
     /// How to count nodes in the tree of which this node is a root.
     /// @sa CountNodes, TConstNodeList
     enum ECountNodes {
@@ -804,7 +839,8 @@ bool CTreeNode<TValue, TKeyGetter>::IsParent(const TTreeType& tree_node) const
 
 template<class TValue, class TKeyGetter>
 void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
-                                              TNodeList*      res)
+                                              TNodeList*      res,
+                                              NStr::ECase     use_case)
 {
     TTreeType* tr = this;
 
@@ -817,7 +853,7 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
 
         for (; it != it_end; ++it) {
             TTreeType* node = *it;
-            if (node->GetKey() == key) {
+            if (NStr::Equal(node->GetKey(), key, use_case)) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -836,7 +872,8 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
 
 template<class TValue, class TKeyGetter>
 typename CTreeNode<TValue, TKeyGetter>::TTreeType*
-CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path)
+CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path,
+                                                NStr::ECase     use_case)
 {
     TTreeType* tr = this;
 
@@ -849,7 +886,7 @@ CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path)
 
         for (; it != it_end; ++it) {
             TTreeType* node = *it;
-            if (node->GetKey() == key) {
+            if (NStr::Equal(node->GetKey(), key, use_case)) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -871,7 +908,8 @@ CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path)
 
 template<class TValue, class TKeyGetter>
 void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
-                                              TConstNodeList* res) const
+                                              TConstNodeList* res,
+                                              NStr::ECase     use_case) const
 {
     const TTreeType* tr = this;
 
@@ -884,7 +922,7 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
 
         for (; it != it_end; ++it) {
             const TTreeType* node = *it;
-            if (node->GetKey() == key) {
+            if (NStr::Equal(node->GetKey(), key, use_case)) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -903,13 +941,14 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
 
 template<class TValue, class TKeyGetter>
 const typename CTreeNode<TValue, TKeyGetter>::TTreeType*
-CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key) const
+CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key,
+                                           NStr::ECase     use_case) const
 {
     TNodeList_CI it = SubNodeBegin();
     TNodeList_CI it_end = SubNodeEnd();
 
     for(; it != it_end; ++it) {
-        if ((*it)->GetKey() == key) {
+        if (NStr::Equal((*it)->GetKey(), key, use_case)) {
             return *it;
         }
     }
@@ -918,13 +957,14 @@ CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key) const
 
 template<class TValue, class TKeyGetter>
 typename CTreeNode<TValue, TKeyGetter>::TTreeType*
-CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key)
+CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key,
+                                           NStr::ECase     use_case)
 {
     TNodeList_I it = SubNodeBegin();
     TNodeList_I it_end = SubNodeEnd();
 
     for(; it != it_end; ++it) {
-        if ((*it)->GetKey() == key) {
+        if (NStr::Equal((*it)->GetKey(), key, use_case)) {
             return *it;
         }
     }
@@ -934,17 +974,18 @@ CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key)
 template<class TValue, class TKeyGetter>
 const typename CTreeNode<TValue, TKeyGetter>::TTreeType*
 CTreeNode<TValue, TKeyGetter>::FindNode(const TKeyType& key,
-                                        TNodeSearchMode sflag) const
+                                        TNodeSearchMode sflag,
+                                        NStr::ECase     use_case) const
 {
     const TTreeType* ret = 0;
     if (sflag & eImmediateSubNodes) {
-         ret = FindSubNode(key);
+        ret = FindSubNode(key, use_case);
     }
 
     if (!ret && (sflag & eAllUpperSubNodes)) {
         const TTreeType* parent = GetParent();
         for (; parent; parent = parent->GetParent()) {
-            ret = parent->FindSubNode(key);
+            ret = parent->FindSubNode(key, use_case);
             if (ret) {
                 return ret;
             }
@@ -954,11 +995,20 @@ CTreeNode<TValue, TKeyGetter>::FindNode(const TKeyType& key,
     if (!ret && (sflag & eTopLevelNodes)) {
         const TTreeType* root = GetRoot();
         if (root != this) {
-            ret = root->FindSubNode(key);
+            ret = root->FindSubNode(key, use_case);
         }
     }
     return ret;
 }
+
+template<class TValue, class TKeyGetter>
+const typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::FindNode(const TKeyType& key,
+                                        NStr::ECase     use_case) const
+{
+    return FindNode(key, eImmediateAndTop, use_case);
+}
+
 
 template<class TValue, class TKeyGetter>
 unsigned int
