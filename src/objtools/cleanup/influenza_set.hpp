@@ -57,6 +57,7 @@ public:
     } EInfluenzaType;
 
     static EInfluenzaType GetInfluenzaType(const string& taxname);
+    static size_t GetNumRequired(EInfluenzaType fluType);
 
     void AddBioseq(CBioseq_Handle bsh);
 
@@ -67,6 +68,8 @@ protected:
     EInfluenzaType m_FluType;
     size_t m_Required;
 };
+
+bool g_FindSegs(const CBioSource& src, size_t numRequired, set<size_t>& segsFound);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
