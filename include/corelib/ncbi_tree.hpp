@@ -280,7 +280,7 @@ public:
     /// @param res
     ///    list of discovered found nodes
     /// @param use_case
-    ///    case sensetivity of node name comparison
+    ///    case sensitivity of node name comparison
     void FindNodes(const TKeyList& node_path,
                    TNodeList* res,
                    NStr::ECase use_case = NStr::eCase);
@@ -290,7 +290,7 @@ public:
     /// @param node_path
     ///    hierachy of node keys to search for
     /// @param use_case
-    ///    case sensetivity of node name comparison
+    ///    case sensitivity of node name comparison
     /// @return
     ///    tree node
     TTreeType* FindOrCreateNode(const TKeyList& node_path,
@@ -303,7 +303,7 @@ public:
     /// @param res
     ///    list of discovered found nodes (const pointers)
     /// @param use_case
-    ///    case sensetivity of node name comparison
+    ///    case sensitivity of node name comparison
     void FindNodes(const TKeyList& node_path, 
                    TConstNodeList* res,
                    NStr::ECase use_case = NStr::eCase) const;
@@ -313,7 +313,7 @@ public:
     /// @param key
     ///    name of the node to search
     /// @param use_case
-    ///    case sensetivity of node name comparison
+    ///    case sensitivity of node name comparison
     /// @return SubNode pointer or NULL
     const TTreeType* FindSubNode(const TKeyType& key,
                                  NStr::ECase use_case = NStr::eCase) const;
@@ -323,7 +323,7 @@ public:
     /// @param key
     ///    name of the node to search
     /// @param use_case
-    ///    case sensetivity of node name comparison
+    ///    case sensitivity of node name comparison
     /// @return SubNode pointer or NULL
     TTreeType* FindSubNode(const TKeyType& key,
                            NStr::ECase use_case = NStr::eCase);
@@ -347,7 +347,7 @@ public:
     /// @param sflag
     ///     ORed ENodeSearchType
     /// @param use_case
-    ///    case sensetivity of node name comparison
+    ///    case sensitivity of node name comparison
     /// @return node pointer or NULL
     const TTreeType* FindNode(const TKeyType& key,
                               TNodeSearchMode sflag = eImmediateAndTop,
@@ -358,7 +358,7 @@ public:
     /// @param key
     ///    name or path of the node to search
     /// @param use_case
-    ///    case sensetivity of node name comparison
+    ///    case sensitivity of node name comparison
     /// @return node pointer or NULL
     const TTreeType* FindNode(const TKeyType& key,
                               NStr::ECase use_case) const;
