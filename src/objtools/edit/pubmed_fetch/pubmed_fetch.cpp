@@ -58,7 +58,7 @@ public:
         arg_desc->AddOptionalKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
         arg_desc->AddOptionalKey("ids", "pmids", "PubMed IDs", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("idfile", "pmids", "File containing PubMed IDs", CArgDescriptions::eInputFile);
-        arg_desc->AddDefaultKey("pubmed", "source", "Source of data", CArgDescriptions::eString, "eutils");
+        arg_desc->AddDefaultKey("pubmed", "source", "Source of data", CArgDescriptions::eString, "medarch");
         arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
         arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
@@ -115,7 +115,7 @@ public:
             return 0;
         }
 
-        bool bTypeMLA = false;
+        bool bTypeMLA = true;
         if (args["pubmed"]) {
             string s = args["pubmed"].AsString();
             if (s == "medarch") {
