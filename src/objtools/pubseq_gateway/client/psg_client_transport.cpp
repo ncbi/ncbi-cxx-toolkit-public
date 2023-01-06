@@ -390,6 +390,36 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eMessage>
     }
 };
 
+enum EPSG_StatsCountersRetries {
+    ePSG_StatsCountersRetries_Retry,
+    ePSG_StatsCountersRetries_Timeout,
+};
+
+template <>
+struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eRetries>
+{
+    using type = EPSG_StatsCountersRetries;
+    static constexpr size_t size = ePSG_StatsCountersRetries_Timeout + 1;
+    static constexpr auto prefix = "\tretries\tevent=";
+
+    static constexpr array<type, size> values = {
+        ePSG_StatsCountersRetries_Retry,
+        ePSG_StatsCountersRetries_Timeout,
+    };
+
+    static const char* ValueName(type value)
+    {
+        switch (value) {
+            case ePSG_StatsCountersRetries_Retry:       return "retry";
+            case ePSG_StatsCountersRetries_Timeout:     return "timeout";
+        }
+
+        // Should not happen
+        _TROUBLE;
+        return "unknown";
+    }
+};
+
 template <SPSG_Stats::EGroup group>
 void SPSG_StatsCounters::SInit::Func(TData& data)
 {
@@ -431,6 +461,7 @@ void SPSG_StatsCounters::Apply(EGroup start_with, TArgs&&... args)
         case eSkippedBlob:      TWhat::template Func<eSkippedBlob>      (forward<TArgs>(args)...);
         case eReplyItemStatus:  TWhat::template Func<eReplyItemStatus>  (forward<TArgs>(args)...);
         case eMessage:          TWhat::template Func<eMessage>          (forward<TArgs>(args)...);
+        case eRetries:          TWhat::template Func<eRetries>          (forward<TArgs>(args)...);
     }
 }
 
@@ -1104,11 +1135,13 @@ bool SPSG_TimedRequest::CheckExpiration(const SPSG_Params& params, const SUvNgHt
 
     if (time == params.competitive_after) {
         if (req->Retry(error)) {
+            if (auto stats = req->reply->stats.lock()) stats->IncCounter(SPSG_Stats::eRetries, ePSG_StatsCountersRetries_Retry);
             on_retry(req);
         }
     }
 
     if (time >= params.request_timeout) {
+        if (auto stats = req->reply->stats.lock()) stats->IncCounter(SPSG_Stats::eRetries, ePSG_StatsCountersRetries_Timeout);
         on_fail(processor_id, req);
         return true;
     }
