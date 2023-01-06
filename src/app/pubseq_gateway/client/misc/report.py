@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import shutil
 import socket
-from statistics import mean, median, quantiles, StatisticsError
+from statistics import mean, median, quantiles, stdev, StatisticsError
 import subprocess
 import sys
 from timeit import timeit
@@ -121,7 +121,9 @@ class Statistics(list):
                         self.setdefault(name, []).append(rule_data[0])
 
                 self.setdefault('Max ', []).append(max(rule_data))
-                self.setdefault('Average', []).append(mean(rule_data))
+                m = mean(rule_data)
+                self.setdefault('Average', []).append(m)
+                self.setdefault('StdDev', []).append(stdev(rule_data, xbar=m))
 
             for row_name, row_data in self.items():
                 values = [ f'{v:7.3f}' for v in row_data ]
@@ -307,7 +309,8 @@ def get_filename(path, suffix, service, user_threads, io_threads, requests_per_i
 def performance_cmd(args, path, input_file, iter_args):
     statistics_to_output = {
             'median':   'Median time spent on sending a request and receiving corresponding reply, milliseconds',
-            'average':  'Average time, milliseconds'
+            'average':  'Average time, milliseconds',
+            'stddev':   'Standard deviation, milliseconds'
         }
 
     delay = hasattr(args, 'delay') and args.delay
@@ -370,7 +373,8 @@ def performance_cmd(args, path, input_file, iter_args):
 def overall_cmd(input_file_option, args, path, input_file, iter_args):
     statistics_to_output = {
             'median':   'Median elapsed real time, seconds',
-            'average':  'Average time, seconds'
+            'average':  'Average time, seconds',
+            'stddev':   'Standard deviation, seconds'
         }
 
     def overall(run_no, service, user_threads, io_threads, requests_per_io, binary, rate):
@@ -410,7 +414,8 @@ def overall_cmd(input_file_option, args, path, input_file, iter_args):
         with open(get_filename(path, 'pro', *run_args), 'w') as output_file:
             print(*[f'{v:.3f}' for v in run_results], sep='\n', file=output_file)
 
-        aggregate[run_args] = [ median(run_results), mean(run_results) ]
+        m = mean(run_results)
+        aggregate[run_args] = [ median(run_results), m, stdev(run_results, xbar=m) ]
 
     return aggregate, statistics_to_output
 
