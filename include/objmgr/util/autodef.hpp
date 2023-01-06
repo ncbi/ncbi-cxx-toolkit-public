@@ -78,6 +78,7 @@ public:
     
     void SetOptionsObject(const CUser_object& user);
     CRef<CUser_object> GetOptionsObject() const { return m_Options.MakeUserObject(); }
+    void SetOptions(const CAutoDefModifierCombo& mod_combo);
 
     void SetFeatureListType(CAutoDefOptions::EFeatureListType feature_list_type);
     void SetMiscFeatRule(CAutoDefOptions::EMiscFeatRule misc_feat_rule);
