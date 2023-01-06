@@ -690,7 +690,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     const Char* vol;
     const Char* page;
 
-    char* tit;
+    string title;
 
     ValNodePtr token;
     ValNodePtr vnp;
@@ -738,26 +738,24 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
             break;
     }
 
-    tit    = MemNew(len);
-    tit[0] = '\0';
+    title.reserve(len);
     for (vnp = token; vnp; vnp = vnp->next) {
         if (vnp != token)
-            StringCat(tit, ", ");
-        StringCat(tit, vnp->data);
+            title.append(", ");
+        title.append(vnp->data);
         if (vnp == here)
             break;
     }
 
     CRef<CAuth_list> authors;
     get_auth_from_toks(here->next, SP_REF, authors);
-    if (authors.Empty() || ! tit) {
-        MemFree(tit);
+    if (authors.Empty() /* || title.empty() */) {
         return false;
     }
 
     CCit_book& book = article.SetFrom().SetBook();
 
-    SetCitTitle(book.SetTitle(), tit);
+    SetCitTitle(book.SetTitle(), title.c_str());
     book.SetAuthors(*authors);
 
     page = StringIStr(temp2, "PP.");

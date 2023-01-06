@@ -1830,11 +1830,10 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
         if (pp->xml_comp) {
             q = StringRChr(p, '.');
             if (! q || q[1] != '\0') {
-                q = MemNew(StringLen(p) + 2);
-                StringCpy(q, p);
-                StringCat(q, ".");
+                string s = p;
+                s.append(".");
                 MemFree(p);
-                p = q;
+                p = StringSave(s.c_str());
                 q = nullptr;
             }
         }
