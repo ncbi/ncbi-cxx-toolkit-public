@@ -273,9 +273,7 @@ size_t HasIntField(const CUser_object& user, const string& field_name, int value
 }
 
 
-void CheckAutoDefOptions
-(const CUser_object& user,
- CAutoDefOptions& opts)
+void CheckAutoDefOptions(const CUser_object& user, CAutoDefOptions& opts)
 {
     size_t expected_num_fields = 7;
     if (opts.GetOrgMods().size() > 0 || opts.GetSubSources().size() > 0) {
@@ -403,6 +401,18 @@ static void CheckDeflineMatches(CSeq_entry_Handle seh,
        new_defline = autodef2.GetOneDefLine(bh);
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
        CheckAutoDefOptions(*user, opts);
+    }
+
+    for (CBioseq_CI seq_it(seh, CSeq_inst::eMol_na); seq_it; ++seq_it) {
+        
+        CAutoDef autodefA;
+        autodefA.SetOptions(*mod_combo);
+        CRef<CUser_object> user_optsA = autodefA.GetOptionsObject();
+        
+        CAutoDef autodefB;
+        autodefB.GetOneDefLine(mod_combo, *seq_it);
+        CRef<CUser_object> user_optsB = autodefB.GetOptionsObject();
+        BOOST_CHECK(user_optsA->Equals(*user_optsB));
     }
 
     // check popset title if needed
