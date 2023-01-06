@@ -1103,18 +1103,13 @@ bool SPSG_TimedRequest::CheckExpiration(const SPSG_Params& params, const SUvNgHt
     auto time = AddTime();
 
     if (time == params.competitive_after) {
-        if (req) {
-            if (req->Retry(error)) {
-                on_retry(req);
-            }
+        if (req->Retry(error)) {
+            on_retry(req);
         }
     }
 
     if (time >= params.request_timeout) {
-        if (req) {
-            on_fail(processor_id, req);
-        }
-
+        on_fail(processor_id, req);
         return true;
     }
 
