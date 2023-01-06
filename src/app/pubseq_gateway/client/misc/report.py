@@ -374,7 +374,9 @@ def overall_cmd(input_file_option, args, path, input_file, iter_args):
         }
 
     def overall(run_no, service, user_threads, io_threads, requests_per_io, binary):
-        cmd = [ binary, args.command, input_file_option, input_file, '-service', service, '-worker-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io) ]
+        conf_file = binary + '.ini'
+        conf = [ '-conffile', conf_file ] if os.path.isfile(conf_file) else []
+        cmd = [ binary, args.command, input_file_option, input_file, '-service', service, '-worker-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), *conf ]
         open_stdout = lambda: open(get_filename(path, f'raw.{run_no}', *run_args), 'w') if args.save_output else contextlib.nullcontext()
         open_stderr = lambda: open(get_filename(path, f'err.{run_no}', *run_args), 'w') if args.save_stderr else contextlib.nullcontext()
 
