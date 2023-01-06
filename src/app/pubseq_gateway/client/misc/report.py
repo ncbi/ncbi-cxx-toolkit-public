@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import contextlib
 import csv
 from enum import IntEnum, auto
 from functools import partial
@@ -320,13 +321,21 @@ def performance_cmd(args, path, input_file, iter_args):
         output_file = get_filename(path, f'raw.{run_no}', service, user_threads, io_threads, requests_per_io, binary)
         conf_file = binary + '.ini'
         conf = [ '-conffile', conf_file ] if os.path.isfile(conf_file) else []
-        cmd = [ binary, 'performance', '-output-file', output_file, '-service', service, '-user-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), '-verbose', *conf ]
+        verbose = [] if args.save_stderr else [ '-verbose' ]
+        cmd = [ binary, 'performance', '-output-file', output_file, '-service', service, '-user-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), *verbose, *conf ]
 
         if delay:
             cmd.extend([ '-delay', str(delay) ])
 
-        with open(input_file, 'r') as f:
-            subprocess.run(cmd, stdin=f, text=True)
+        open_stdin = lambda: open(input_file, 'r')
+        open_stderr = lambda: open(get_filename(path, f'err.{run_no}', *run_args), 'w') if args.save_stderr else contextlib.nullcontext()
+
+        with open_stdin() as stdin, open_stderr() as stderr:
+            stderr = stderr if args.save_stderr else None
+            subprocess.run(cmd, stdin=stdin, stderr=stderr, text=True)
+
+        if args.save_stderr:
+            print('.', end='', flush=True)
 
     def adjusted_requests():
         for run_no in range(args.RUNS):
@@ -343,6 +352,9 @@ def performance_cmd(args, path, input_file, iter_args):
     for run_no in range(args.RUNS):
         for run_args in product(*iter_args.values()):
             performance(run_no, *run_args)
+
+    if args.save_stderr:
+        print(flush=True)
 
     aggregate = {}
 
@@ -363,12 +375,13 @@ def overall_cmd(input_file_option, args, path, input_file, iter_args):
 
     def overall(run_no, service, user_threads, io_threads, requests_per_io, binary):
         cmd = [ binary, args.command, input_file_option, input_file, '-service', service, '-worker-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io) ]
+        open_stdout = lambda: open(get_filename(path, f'raw.{run_no}', *run_args), 'w') if args.save_output else contextlib.nullcontext()
+        open_stderr = lambda: open(get_filename(path, f'err.{run_no}', *run_args), 'w') if args.save_stderr else contextlib.nullcontext()
 
-        if args.save_output:
-            with open(get_filename(path, f'raw.{run_no}', *run_args), 'w') as f:
-                subprocess.run(cmd, stdout=f)
-        else:
-            subprocess.run(cmd, stdout=subprocess.DEVNULL)
+        with open_stdout() as stdout, open_stderr() as stderr:
+            stdout = stdout if args.save_output else subprocess.DEVNULL
+            stderr = stderr if args.save_stderr else subprocess.DEVNULL
+            subprocess.run(cmd, stdout=stdout, stderr=stderr)
 
         print('.', end='', flush=True)
 
@@ -490,6 +503,7 @@ for mode in [ 'resolve', 'interactive', 'performance' ]:
     parser_run.add_argument('-requests-per-io', help='Numbers of requests per I/O to use (default: %(default)s)', metavar='REQUESTS', type=int, default=[ 1 ], nargs='+')
     parser_run.add_argument('-binary', help='psg_client binaries to run', nargs='+', required=True)
     parser_run.add_argument('-warm-up', help='Whether to do a warm up run', action='store_true')
+    parser_run.add_argument('-save-stderr', help='Whether to save stderr', action='store_true')
 
     if mode == 'performance':
         parser_run.add_argument('-delay', help='Delay between requests, seconds (default: %(default)s)', type=float, default=0.0)
