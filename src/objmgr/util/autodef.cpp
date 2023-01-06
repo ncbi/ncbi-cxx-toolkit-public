@@ -1116,6 +1116,11 @@ void CAutoDef::SetOptionsObject(const CUser_object& user)
     m_Options.InitFromUserObject(user);
 }
 
+void CAutoDef::SetOptions(const CAutoDefModifierCombo& mod_combo)
+{
+    mod_combo.InitOptions(m_Options);
+}
+
 
 //starting here, remove when separating autodef from taxonomy options
 CConstRef<CUser_object> s_GetOptionsForSet(CBioseq_set_Handle set)
