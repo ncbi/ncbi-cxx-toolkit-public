@@ -219,6 +219,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
     arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
     arg_desc.AddFlag("no-bio-id-resolution", "Do not try to resolve provided bio ID(s) before use");
+    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 
     for (const auto& f : SRequestBuilder::GetInfoFlags()) {
@@ -269,6 +270,7 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("input-file", "FILENAME", "File containing JSON-RPC requests (one per line)", CArgDescriptions::eInputFile, "-");
     arg_desc.AddFlag("server-mode", "Output one JSON-RPC response per line and always output reply statuses");
     arg_desc.AddFlag("echo", "Echo all incoming requests");
+    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 }
 
@@ -399,6 +401,7 @@ struct SParallelProcessing : SBase<TParams>, SIoRedirector
     SParallelProcessing(const CArgs& args, const string& filename, TInitArgs&&... init_args) :
         SBase<TParams>{
             args,
+            args["rate"].AsInteger(),
             max(1, min(10, args["worker-threads"].AsInteger())),
             args[filename].AsString() == "-",
             args["server-mode"].AsBoolean(),

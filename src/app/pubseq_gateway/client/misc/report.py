@@ -300,9 +300,9 @@ def create_input(path, input_file, requests):
 
     return filename
 
-def get_filename(path, suffix, service, user_threads, io_threads, requests_per_io, binary):
+def get_filename(path, suffix, service, user_threads, io_threads, requests_per_io, binary, rate=0):
     safe_binary = binary.replace('/', '_')
-    return Path(path) / f'{service}_{user_threads}_{io_threads}_{requests_per_io}_{safe_binary}.{suffix}.txt'
+    return Path(path) / f'{service}_{user_threads}_{io_threads}_{requests_per_io}_{safe_binary}_{rate}.{suffix}.txt'
 
 def performance_cmd(args, path, input_file, iter_args):
     statistics_to_output = {
@@ -373,10 +373,10 @@ def overall_cmd(input_file_option, args, path, input_file, iter_args):
             'average':  'Average time, seconds'
         }
 
-    def overall(run_no, service, user_threads, io_threads, requests_per_io, binary):
+    def overall(run_no, service, user_threads, io_threads, requests_per_io, binary, rate):
         conf_file = binary + '.ini'
         conf = [ '-conffile', conf_file ] if os.path.isfile(conf_file) else []
-        cmd = [ binary, args.command, input_file_option, input_file, '-service', service, '-worker-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), *conf ]
+        cmd = [ binary, args.command, input_file_option, input_file, '-service', service, '-worker-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), '-rate', str(rate), *conf ]
         open_stdout = lambda: open(get_filename(path, f'raw.{run_no}', *run_args), 'w') if args.save_output else contextlib.nullcontext()
         open_stderr = lambda: open(get_filename(path, f'err.{run_no}', *run_args), 'w') if args.save_stderr else contextlib.nullcontext()
 
@@ -470,6 +470,9 @@ def additional_info(args):
     yield       '',             f'Measurements performed on "{socket.gethostname()}"'
 
 def run_cmd(args):
+    if args.command != 'performance':
+        args_descriptions['rate'] = 'Maximum number of requests to submit per second'
+
     check_binaries(args.binary)
 
     path = create_dir(args.command, args.INPUT_FILE, args.REQUESTS, args.RUNS)
@@ -511,6 +514,7 @@ for mode in [ 'resolve', 'interactive', 'performance' ]:
         parser_run.add_argument('-delay', help='Delay between requests, seconds (default: %(default)s)', type=float, default=0.0)
     else:
         parser_run.add_argument('-save-output', help='Whether to save actual output', action='store_true')
+        parser_run.add_argument('-rate', help='Maximum number of requests to submit per second (default: %(default)s)', type=int, default=[ 0 ], nargs='+')
 
 args = parser.parse_args()
 args.func(args)
