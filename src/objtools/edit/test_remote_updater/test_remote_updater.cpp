@@ -27,8 +27,8 @@ public:
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
         arg_desc->SetUsageContext("", "Test CRemoteUpdater using medarch/eutils");
         arg_desc->AddKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
-        arg_desc->AddDefaultKey("source", "source", "Source of data", CArgDescriptions::eString, "medarch");
-        arg_desc->SetConstraint("source", &(*new CArgAllow_Strings, "medarch", "eutils"));
+        arg_desc->AddDefaultKey("pubmed", "source", "Source of data", CArgDescriptions::eString, "medarch");
+        arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
         arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
         SetupArgDescriptions(arg_desc.release());
@@ -48,8 +48,8 @@ public:
         }
 
         bool bTypeMLA = true;
-        if (args["source"]) {
-            string s = args["source"].AsString();
+        if (args["pubmed"]) {
+            string s = args["pubmed"].AsString();
             if (s == "medarch") {
                 bTypeMLA = true;
             } else if (s == "eutils") {
