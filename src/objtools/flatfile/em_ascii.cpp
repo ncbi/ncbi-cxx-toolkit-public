@@ -1655,7 +1655,6 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     char*  offset;
     char*  str;
-    char*  str1;
     string gbdiv;
     char*  p;
     char*  q;
@@ -1716,23 +1715,20 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
 
         if (StringEquN(str, "TPA:", 4)) {
+            string str1;
             if (ibp->assembly)
-                p = (char*)"TPA_asm:";
+                str1 = "TPA_asm:";
             else if (ibp->specialist_db)
-                p = (char*)"TPA_specdb:";
+                str1 = "TPA_specdb:";
             else if (ibp->inferential)
-                p = (char*)"TPA_inf:";
+                str1 = "TPA_inf:";
             else if (ibp->experimental)
-                p = (char*)"TPA_exp:";
-            else
-                p = nullptr;
+                str1 = "TPA_exp:";
 
-            if (p) {
-                str1 = MemNew(StringLen(p) + StringLen(str));
-                StringCpy(str1, p);
-                StringCat(str1, str + 4);
+            if (! str1.empty()) {
+                str1.append(str + 4);
                 MemFree(str);
-                str = str1;
+                str = StringSave(str1.c_str());
             }
         }
 

@@ -358,7 +358,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
 
         CGB_block& gb_block = descr->SetGenbank();
         char*      p        = StringSave(gb_block.GetSource().c_str());
-        char*      pper     = 0;
+        char*      pper     = nullptr;
 
         size_t len = StringLen(p);
         if (p[len - 1] == '.') {
@@ -417,10 +417,10 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
         }
 
         if (pper) {
+            string s = p;
+            s.append(".");
             MemFree(pper);
-            pper = MemNew(StringLen(p) + 2);
-            StringCpy(pper, p);
-            StringCat(pper, ".");
+            pper = StringSave(s.c_str());
         }
 
         const string& first_name  = names[0];

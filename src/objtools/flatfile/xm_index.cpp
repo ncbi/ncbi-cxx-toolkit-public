@@ -762,23 +762,22 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
 {
     XmlIndexPtr xip;
     XmlIndexPtr xipsec;
-    char*       buf;
+    string      buf;
     char*       p;
 
     bool   ret = true;
-    size_t len = StringLen(ibp->acnum) + StringLen(XML_FAKE_ACC_TAG) + 1;
+    size_t len = StringLen(ibp->acnum) + StringLen(XML_FAKE_ACC_TAG);
 
     for (xip = ibp->xip; xip; xip = xip->next)
         if (xip->tag == INSDSEQ_SECONDARY_ACCESSIONS)
             break;
 
     if (! xip) {
-        buf = MemNew(len);
-        StringCpy(buf, XML_FAKE_ACC_TAG);
-        StringCat(buf, ibp->acnum);
-        ret = GetAccession(pp, buf, ibp, 2);
-        MemFree(buf);
-        return (ret);
+        buf.reserve(len);
+        buf.append(XML_FAKE_ACC_TAG);
+        buf.append(ibp->acnum);
+        ret = GetAccession(pp, buf.c_str(), ibp, 2);
+        return ret;
     }
 
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDSECONDARY_ACCN);
@@ -792,20 +791,19 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
     for (xipsec = xip->subtags; xipsec; xipsec = xipsec->next)
         len += (xipsec->end - xipsec->start + 1);
 
-    buf = MemNew(len);
-    StringCpy(buf, XML_FAKE_ACC_TAG);
-    StringCat(buf, ibp->acnum);
+    buf.reserve(len);
+    buf.append(XML_FAKE_ACC_TAG);
+    buf.append(ibp->acnum);
     for (xipsec = xip->subtags; xipsec; xipsec = xipsec->next) {
         p = XMLGetTagValue(entry, xipsec);
-        if (! p)
-            continue;
-        StringCat(buf, " ");
-        StringCat(buf, p);
-        MemFree(p);
+        if (p) {
+            buf.append(" ");
+            buf.append(p);
+            MemFree(p);
+        }
     }
-    ret = GetAccession(pp, buf, ibp, 2);
-    MemFree(buf);
-    return (ret);
+    ret = GetAccession(pp, buf.c_str(), ibp, 2);
+    return ret;
 }
 
 /**********************************************************/
@@ -843,12 +841,12 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     buf.reserve(len);
     for (xipkwd = xip->subtags; xipkwd; xipkwd = xipkwd->next) {
         p = XMLGetTagValue(entry, xipkwd);
-        if (! p)
-            continue;
-        if (! buf.empty())
-            buf += "; ";
-        buf += p;
-        MemFree(p);
+        if (p) {
+            if (! buf.empty())
+                buf += "; ";
+            buf += p;
+            MemFree(p);
+        }
     }
 
     vnp = ConstructValNode(objects::CSeq_id::e_not_set, buf.c_str());
