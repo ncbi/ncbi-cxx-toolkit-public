@@ -129,6 +129,7 @@ struct SParallelProcessing : SBase<TParams>
     SParallelProcessing(const SPsgCgiEntries& entries, TInitArgs&&... init_args) :
         SBase<TParams>{
             entries,
+            0,
             1,
             false,
             false,

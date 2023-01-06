@@ -182,12 +182,14 @@ struct SOneRequestParams : SParams
 
 struct SParallelProcessingParams : SParams
 {
+    const int rate;
     const int worker_threads;
     const bool pipe;
     const bool server;
 
-    SParallelProcessingParams(string s, SPSG_UserArgs ua, int wt, bool p, bool srv) :
+    SParallelProcessingParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv) :
         SParams(move(s), move(ua)),
+        rate(r),
         worker_threads(wt),
         pipe(p),
         server(srv)
@@ -204,8 +206,8 @@ struct SResolveParams
 
 struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
 {
-    SBatchResolveParams(string s, SPSG_UserArgs ua, int wt, bool p, bool srv, SResolveParams resolve_params) :
-        SParallelProcessingParams(move(s), move(ua), wt, p, srv),
+    SBatchResolveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, SResolveParams resolve_params) :
+        SParallelProcessingParams(move(s), move(ua), r, wt, p, srv),
         SResolveParams(move(resolve_params))
     {}
 };
@@ -214,8 +216,8 @@ struct SInteractiveParams : SParallelProcessingParams
 {
     const bool echo;
 
-    SInteractiveParams(string s, SPSG_UserArgs ua, int wt, bool p, bool srv, bool e) :
-        SParallelProcessingParams(move(s), move(ua), wt, p, srv),
+    SInteractiveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, bool e) :
+        SParallelProcessingParams(move(s), move(ua), r, wt, p, srv),
         echo(e)
     {}
 };
@@ -312,12 +314,22 @@ private:
 template <class TParams>
 inline int CProcessing::ParallelProcessing(const TParams& params, istream& is)
 {
+    using namespace chrono;
+
     CParallelProcessing parallel_processing(params);
+    auto start = params.rate > 0 ? system_clock::now() : system_clock::time_point{};
+    auto n = 0;
     string line;
 
     while (ReadLine(line, is)) {
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
         parallel_processing(move(line));
+
+        if ((params.rate > 0) && (++n == params.rate)) {
+            n = 0;
+            this_thread::sleep_for(seconds(1) - (system_clock::now() - start));
+            start += seconds(1);
+        }
     }
 
     return 0;
