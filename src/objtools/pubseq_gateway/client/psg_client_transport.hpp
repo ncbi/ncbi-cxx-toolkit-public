@@ -799,7 +799,7 @@ private:
 
 struct SPSG_StatsCounters
 {
-    enum EGroup : size_t { eRequest, eReplyItem, eSkippedBlob, eReplyItemStatus, eMessage };
+    enum EGroup : size_t { eRequest, eReplyItem, eSkippedBlob, eReplyItemStatus, eMessage, eRetries };
 
     void IncCounter(EGroup group, unsigned counter)
     {
