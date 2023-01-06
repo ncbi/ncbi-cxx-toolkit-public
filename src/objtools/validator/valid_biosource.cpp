@@ -482,6 +482,22 @@ static const CBioseq* s_GetNucSeqFromContext(const CSeq_entry* ctx)
     return nullptr;
 }
 
+bool s_IsAllDigitsOrSpaces (string str)
+
+{
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
+    bool rval = true;
+        ITERATE(string, it, str) {
+        if (!isdigit(*it) && *it != ' ') {
+            rval = false;
+            break;
+        }
+    }
+    return rval;
+}
+
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
 const CSerialObject& obj,
@@ -567,6 +583,7 @@ const CSeq_entry *ctx)
     string countryname;
     string lat_lon;
     double lat_value = 0.0, lon_value = 0.0;
+    bool is_single_cell_amplification = false;
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE(ssit, bsrc)
     {
@@ -749,6 +766,25 @@ const CSeq_entry *ctx)
                     "Viroid has unexpected tissue-type qualifier", obj, ctx);
             }
             break;
+        case CSubSource::eSubtype_isolation_source:
+            {
+                if ((*ssit)->IsSetName()) {
+                    const string& subname = ((*ssit)->GetName());
+                    if (NStr::StartsWith(subname, "single cell amplified") || NStr::StartsWith(subname, "a few single cells amplified")) {
+                        is_single_cell_amplification = true;
+                    } else {
+                        size_t pos = NStr::Find(subname, "single cells amplified");
+                        if (pos != NPOS) {
+                            string num = subname.substr(0, pos);
+                            if (s_IsAllDigitsOrSpaces(num)) {
+                                is_single_cell_amplification = true;
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+
         }
 
         if (isViral && IsUnexpectedViralSubSourceQualifier(subtype)) {
@@ -1041,7 +1077,7 @@ const CSeq_entry *ctx)
           (s_IsChromosome(bsrc) || s_HasWGSTech(*pBioseq)) &&
           s_IsEukaryoteOrProkaryote(m_biosource_kind)));
 
-    ValidateOrgRef(orgref, obj, ctx, checkForUndefinedSpecies);
+    ValidateOrgRef(orgref, obj, ctx, checkForUndefinedSpecies, is_single_cell_amplification);
     if (bsrc.IsSetPcr_primers()) {
         ValidatePCRReactionSet(bsrc.GetPcr_primers(), obj, ctx);
     }
@@ -1510,7 +1546,8 @@ void CValidError_imp::ValidateOrgRef
 (const COrg_ref&    orgref,
 const CSerialObject& obj,
 const CSeq_entry *ctx,
-const bool checkForUndefinedSpecies)
+const bool checkForUndefinedSpecies,
+const bool is_single_cell_amplification)
 {
     // Organism must have a name.
     if ((!orgref.IsSetTaxname() || orgref.GetTaxname().empty()) &&
@@ -1527,7 +1564,7 @@ const bool checkForUndefinedSpecies)
 
     if (orgref.IsSetTaxname()) {
         taxname = orgref.GetTaxname();
-        if (checkForUndefinedSpecies && !s_HasMetagenomeSource(orgref))
+        if (checkForUndefinedSpecies && !s_HasMetagenomeSource(orgref) && !is_single_cell_amplification)
         {
                 if(s_IsUndefinedSpecies(taxname) &&
                 !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
