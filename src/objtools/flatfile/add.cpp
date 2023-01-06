@@ -1092,7 +1092,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     FTATpaBlockPtr tftbp;
     FTATpaBlockPtr ft;
 
-    char* buf;
+    string buf;
     char* p;
     char* q;
     char* r;
@@ -1120,9 +1120,8 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         p = StringChr(offset, '\n');
         if (! p)
             return false;
-        buf = MemNew(StringLen(p) + 1);
-        StringCpy(buf, p + 1);
-        StringCat(buf, "\n");
+        buf.assign(p + 1);
+        buf.append("\n");
     } else {
         ch          = offset[len];
         offset[len] = '\0';
@@ -1131,7 +1130,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             offset[len] = ch;
             return false;
         }
-        buf         = StringSave(p + 1);
+        buf.assign(p + 1);
         offset[len] = ch;
     }
 
@@ -1140,7 +1139,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     bad_line      = false;
     bad_interval  = false;
     bad_accession = nullptr;
-    p             = buf;
+    p             = buf.data();
     for (q = StringChr(p, '\n'); q; p = q + 1, q = StringChr(p, '\n')) {
         *q = '\0';
         if ((Int2)StringLen(p) < col_data)
@@ -1273,7 +1272,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
     }
 
-    MemFree(buf);
+    buf.clear();
     if (bad_line || bad_interval || bad_accession) {
         if (bad_interval) {
             if (tpa)

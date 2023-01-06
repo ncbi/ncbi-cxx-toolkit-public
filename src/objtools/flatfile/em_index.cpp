@@ -173,10 +173,10 @@ static char* EmblGetNewIDVersion(char* locus, char* str)
         return nullptr;
     *q = '\0';
 
-    res = MemNew(StringLen(locus) + StringLen(p) + 2);
-    StringCpy(res, locus);
-    StringCat(res, ".");
-    StringCat(res, p);
+    string s = locus;
+    s.append(".");
+    s.append(p);
+    res = StringSave(s.c_str());
 
     *q = ';';
     return (res);
