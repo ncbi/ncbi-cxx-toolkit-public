@@ -90,10 +90,6 @@ enum EProcessingMode
     eModeHugefile,
 };
 
-namespace
-{
-};
-
 struct TThreadState
 {
     CRef<CScope>                m_Scope;
@@ -584,8 +580,8 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         options |= CCleanupHugeAsnReader::eNoNcbiUserObjects;
     }
 
-    if (args["X"] && (NStr::Find(args["X"].AsString(), "i") != NPOS)) { 
-        options |= CCleanupHugeAsnReader::eEnableSmallGenomeSets; 
+    if (args["X"] && (NStr::Find(args["X"].AsString(), "i") != NPOS)) {
+        options |= CCleanupHugeAsnReader::eEnableSmallGenomeSets;
     }
 
     edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(options));

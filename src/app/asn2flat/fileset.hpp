@@ -37,7 +37,7 @@
 #include <objtools/writers/multi_source_file.hpp>
 #include <fstream>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 BEGIN_NAMESPACE(objects);
 
 template<typename _T, class _ParentDeleter>

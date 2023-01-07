@@ -42,11 +42,11 @@ BEGIN_SCOPE(objects)
 
 class NCBI_CLEANUP_EXPORT CCleanupHugeAsnReader :
     public edit::CHugeAsnReader
-{   
+{
 public:
     enum EOptions {
         eExtendedCleanup       = 1,
-        eNoNcbiUserObjects     = 1<<1,  
+        eNoNcbiUserObjects     = 1<<1,
         eEnableSmallGenomeSets = 1<<2,
     };
 
@@ -57,7 +57,7 @@ public:
     using TParent = edit::CHugeAsnReader;
 
     void FlattenGenbankSet() override;
-    CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info, 
+    CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info,
             eAddTopEntry add_top_entry = eAddTopEntry::yes) const override;
     const CCleanupChangeCore& GetChanges() const;
 private:
@@ -69,13 +69,13 @@ private:
     CRef<CSeqdesc> m_pTopLevelMolInfo;
     const TOptions m_CleanupOptions;
     mutable CCleanupChangeCore m_Changes;
-    map<CConstRef<CSeq_id>,string> m_IdToFluLabel;  
+    map<CConstRef<CSeq_id>,string> m_IdToFluLabel;
     map<string, list<TBioseqSetInfo>> m_FluLabelToSetInfo;
     map<TFileSize, string> m_SetPosToFluLabel;
-    string x_GetFluLabel(const CConstRef<CSeq_id>& pId) const; 
+    string x_GetFluLabel(const CConstRef<CSeq_id>& pId) const;
 };
 
-END_SCOPE(object);
+END_SCOPE(object)
 END_NCBI_SCOPE
 
 #endif  ///  HUGE_FILE_CLEANUP
