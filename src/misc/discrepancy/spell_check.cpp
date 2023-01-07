@@ -179,11 +179,5 @@ DISCREPANCY_CASE(_SPELL_CHECK, CSeqFeatData, 0, "Spell check")
 }
 
 
-DISCREPANCY_SUMMARIZE(_SPELL_CHECK)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

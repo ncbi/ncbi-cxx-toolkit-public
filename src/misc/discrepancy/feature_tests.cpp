@@ -59,8 +59,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(feature_tests);
-
 
 // PSEUDO_MISMATCH
 
@@ -77,12 +75,6 @@ DISCREPANCY_CASE(PSEUDO_MISMATCH, FEAT, eDisc | eOncaller | eSubmitter | eSmart 
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(PSEUDO_MISMATCH)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -107,12 +99,6 @@ DISCREPANCY_CASE(SHORT_RRNA, FEAT, eDisc | eOncaller | eSubmitter | eSmart | eFa
             m_Objs["[n] rRNA feature[s] [is] too short"].Add(*context.SeqFeatObjRef(feat)).Fatal();
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(SHORT_RRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -158,12 +144,6 @@ DISCREPANCY_CASE(RBS_WITHOUT_GENE, FEAT, eOncaller | eFatal, "RBS features shoul
 }
 
 
-DISCREPANCY_SUMMARIZE(RBS_WITHOUT_GENE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MISSING_GENES
 
 bool ReportGeneMissing(const CSeq_feat& f)
@@ -193,12 +173,6 @@ DISCREPANCY_CASE(MISSING_GENES, FEAT, eDisc | eSubmitter | eSmart | eFatal, "Mis
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MISSING_GENES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -273,12 +247,6 @@ DISCREPANCY_CASE(EXTRA_GENES, SEQUENCE, eDisc | eSubmitter | eSmart, "Extra Gene
 }
 
 
-DISCREPANCY_SUMMARIZE(EXTRA_GENES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 //SUPERFLUOUS_GENE
 
 DISCREPANCY_CASE(SUPERFLUOUS_GENE, SEQUENCE, eDisc | eOncaller, "Superfluous Genes")
@@ -309,12 +277,6 @@ DISCREPANCY_CASE(SUPERFLUOUS_GENE, SEQUENCE, eDisc | eOncaller, "Superfluous Gen
             m_Objs["[n] gene feature[s] [is] not associated with any feature and [is] not pseudo."].Add(*context.SeqFeatObjRef(*genes[i]));
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(SUPERFLUOUS_GENE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -504,12 +466,6 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, SEQUENCE, eDisc | eSu
 }
 
 
-DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 const string kNonExtendableException = "unextendable partial coding region";
 
 DISCREPANCY_AUTOFIX(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
@@ -547,12 +503,6 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, SEQUENCE, eDisc | eS
             m_Objs["[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so, but [has] the correct exception"].Add(*context.SeqFeatObjRef(feat));
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -595,12 +545,6 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(PARTIAL_PROBLEMS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -740,7 +684,7 @@ DISCREPANCY_SUMMARIZE(EUKARYOTE_SHOULD_HAVE_MRNA)
     if (!m_Objs[kEukaryoteShouldHavemRNA].GetObjects().empty() && m_Objs[kEukaryoticCDSHasMrna].GetObjects().empty()) {
         m_Objs.GetMap().erase(kEukaryoticCDSHasMrna);
         m_Objs[kEukaryoteShouldHavemRNA].clearObjs();
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+        xSummarize();
     }
 }
 
@@ -762,12 +706,6 @@ DISCREPANCY_CASE(NON_GENE_LOCUS_TAG, FEAT, eDisc | eOncaller | eSubmitter | eSma
 }
 
 
-DISCREPANCY_SUMMARIZE(NON_GENE_LOCUS_TAG)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // FIND_BADLEN_TRNAS
 
 DISCREPANCY_CASE(FIND_BADLEN_TRNAS, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Find short and long tRNAs")
@@ -786,12 +724,6 @@ DISCREPANCY_CASE(FIND_BADLEN_TRNAS, FEAT, eDisc | eOncaller | eSubmitter | eSmar
 }
 
 
-DISCREPANCY_SUMMARIZE(FIND_BADLEN_TRNAS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // ORG_TRNAS
 
 DISCREPANCY_CASE(ORG_TRNAS, FEAT, eDisc | eOncaller, "Find long tRNAs > 90nt except Ser/Leu/Sec")
@@ -807,12 +739,6 @@ DISCREPANCY_CASE(ORG_TRNAS, FEAT, eDisc | eOncaller, "Find long tRNAs > 90nt exc
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(ORG_TRNAS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1065,12 +991,6 @@ DISCREPANCY_CASE(MICROSATELLITE_REPEAT_TYPE, FEAT, eOncaller | eFatal, "Microsat
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MICROSATELLITE_REPEAT_TYPE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1683,12 +1603,6 @@ DISCREPANCY_CASE(UNWANTED_SPACER, FEAT, eOncaller, "Intergenic spacer without pl
 }
 
 
-DISCREPANCY_SUMMARIZE(UNWANTED_SPACER)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // CHECK_RNA_PRODUCTS_AND_COMMENTS
 
 DISCREPANCY_CASE(CHECK_RNA_PRODUCTS_AND_COMMENTS, FEAT, eOncaller, "Check for gene or genes in rRNA and tRNA products and comments")
@@ -2028,12 +1942,6 @@ DISCREPANCY_CASE(UNUSUAL_MISC_RNA, FEAT, eDisc | eSubmitter | eSmart, "Unexpecte
 }
 
 
-DISCREPANCY_SUMMARIZE(UNUSUAL_MISC_RNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // CDS_WITHOUT_MRNA
 
 static bool IsProductMatch(const string& rna_product, const string& cds_product)
@@ -2136,12 +2044,7 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, SEQUENCE, eDisc | eOncaller | eSmart, "Coding
 }
 
 
-DISCREPANCY_SUMMARIZE(CDS_WITHOUT_MRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
+#if 0
 static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
 {
     CConstRef<CSeq_feat> old_mRNA = sequence::GetmRNAforCDS(cds, scope);
@@ -2158,9 +2061,10 @@ static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
     }
     return true;
 }
+#endif
 
 
-static CSeq_annot_EditHandle GetAnnotHandle(CScope& scope, CBioseq_Handle bsh)
+static CSeq_annot_EditHandle GetAnnotHandle(CBioseq_Handle bsh)
 {
     CSeq_annot_Handle ftable;
     CSeq_annot_CI annot_ci(bsh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
@@ -2188,7 +2092,7 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
     CRef<CSeq_feat> new_mRNA = edit::MakemRNAforCDS(*sf, scope);
     if (old_mRNA.Empty()) {
         CBioseq_Handle bh = scope.GetBioseqHandle(new_mRNA->GetLocation());
-        CSeq_annot_EditHandle annot_handle = GetAnnotHandle(scope, bh);
+        CSeq_annot_EditHandle annot_handle = GetAnnotHandle(bh);
         annot_handle.AddFeat(*new_mRNA);
     }
     else {
@@ -2298,12 +2202,6 @@ DISCREPANCY_CASE(FEATURE_LIST, FEAT, eDisc | eSubmitter, "Feature List")
 }
 
 
-DISCREPANCY_SUMMARIZE(FEATURE_LIST)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MULTIPLE_QUALS
 
 DISCREPANCY_CASE(MULTIPLE_QUALS, FEAT, eDisc | eOncaller, "Multiple qualifiers")
@@ -2325,13 +2223,6 @@ DISCREPANCY_CASE(MULTIPLE_QUALS, FEAT, eDisc | eOncaller, "Multiple qualifiers")
 }
 
 
-DISCREPANCY_SUMMARIZE(MULTIPLE_QUALS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
-
 // MISC_FEATURE_WITH_PRODUCT_QUAL
 
 DISCREPANCY_CASE(MISC_FEATURE_WITH_PRODUCT_QUAL, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Misc features containing a product qualifier")
@@ -2346,13 +2237,6 @@ DISCREPANCY_CASE(MISC_FEATURE_WITH_PRODUCT_QUAL, FEAT, eDisc | eOncaller | eSubm
         }
     }
 }
-
-
-DISCREPANCY_SUMMARIZE(MISC_FEATURE_WITH_PRODUCT_QUAL)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
 
 
 // CDS_HAS_NO_ADJACENT_TRNA
@@ -2432,12 +2316,6 @@ DISCREPANCY_CASE(CDS_HAS_NO_ADJACENT_TRNA, SEQUENCE, eDisc, "CDSs should have ad
 }
 
 
-DISCREPANCY_SUMMARIZE(CDS_HAS_NO_ADJACENT_TRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MITO_RRNA
 
 DISCREPANCY_CASE(MITO_RRNA, SEQUENCE, eOncaller, "Non-mitochondrial rRNAs with 12S/16S")
@@ -2454,12 +2332,6 @@ DISCREPANCY_CASE(MITO_RRNA, SEQUENCE, eOncaller, "Non-mitochondrial rRNAs with 1
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MITO_RRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

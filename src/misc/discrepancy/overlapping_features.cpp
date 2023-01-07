@@ -35,8 +35,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(overlapping_features);
-
 // CDS_TRNA_OVERLAP
 
 static const string kCDSoverlapTRNA = "[n] Bioseq[s] [has] coding regions that overlap tRNAs";
@@ -79,12 +77,6 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, SEQUENCE, eDisc | eSubmitter | eSmart, "CDS t
     if (increase_count) {
         m_Objs[kCDSoverlapTRNA].Incr();
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(CDS_TRNA_OVERLAP)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -320,12 +312,6 @@ DISCREPANCY_CASE(OVERLAPPING_RRNAS, SEQUENCE, eDisc | eSubmitter | eSmart | eFat
 }
 
 
-DISCREPANCY_SUMMARIZE(OVERLAPPING_RRNAS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // OVERLAPPING_GENES
 
 DISCREPANCY_CASE(OVERLAPPING_GENES, SEQUENCE, eDisc, "Overlapping Genes")
@@ -341,12 +327,6 @@ DISCREPANCY_CASE(OVERLAPPING_GENES, SEQUENCE, eDisc, "Overlapping Genes")
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(OVERLAPPING_GENES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -378,12 +358,6 @@ DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, SEQUENCE, eDisc | eSmart, "Genes complet
 }
 
 
-DISCREPANCY_SUMMARIZE(FIND_OVERLAPPED_GENES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // DUP_GENES_OPPOSITE_STRANDS
 
 DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart, "Genes match other genes in the same location, but on the opposite strand")
@@ -406,12 +380,6 @@ DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, SEQUENCE, eDisc | eOncaller | eSubm
 }
 
 
-DISCREPANCY_SUMMARIZE(DUP_GENES_OPPOSITE_STRANDS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MRNA_OVERLAPPING_PSEUDO_GENE
 
 DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, SEQUENCE, eOncaller, "mRNA overlapping pseudo gene")
@@ -429,12 +397,6 @@ DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, SEQUENCE, eOncaller, "mRNA overla
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MRNA_OVERLAPPING_PSEUDO_GENE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -531,12 +493,6 @@ DISCREPANCY_CASE(EXON_INTRON_CONFLICT, SEQUENCE, eOncaller | eSubmitter | eSmart
 }
 
 
-DISCREPANCY_SUMMARIZE(EXON_INTRON_CONFLICT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // GENE_MISC_IGS_OVERLAP
 
 static const string kGeneMisc = "[n] gene[s] overlap[S] with IGS misc features";
@@ -564,12 +520,6 @@ DISCREPANCY_CASE(GENE_MISC_IGS_OVERLAP, SEQUENCE, eOncaller, "Gene with misc fea
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(GENE_MISC_IGS_OVERLAP)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -604,12 +554,6 @@ DISCREPANCY_CASE(GENE_LOCUS_MISSING, SEQUENCE, eOncaller, "Gene locus missing")
             m_Objs["[n] gene[s] missing locus"].Add(*context.SeqFeatObjRef(*gene, gene));
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(GENE_LOCUS_MISSING)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

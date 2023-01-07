@@ -49,70 +49,32 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(NDiscrepancy)
 
 /// Housekeeping classes
-class CDiscrepancyConstructor;
+
+// forward declararions
+class CDiscrepancyCore;
+class CDiscrepancyContext;
+class CDiscrepancyObject;
+class CReportNode;
 
 struct CDiscrepancyCaseProps
 {
-    CDiscrepancyConstructor* Constructor;
-    string Descr;
+    using TConstructor = CRef<CDiscrepancyCore>(*)();
+    TConstructor Constructor;
+    eTestTypes  Type;
+    eTestNames  Name;
+    string_view sName;
+    string_view Descr;
     TGroup Group;
-    vector<string> AliasList;
+    const std::initializer_list<const char*>* Aliases;
 };
 
-class CDiscrepancyConstructor
+template<eTestNames _Name>
+class CDiscrepancyCasePropsRef
 {
-protected:
-    virtual ~CDiscrepancyConstructor() {}
-    virtual CRef<CDiscrepancyCase> Create() const = 0;
-    static void Register(const string& name, const string& descr, TGroup group, CDiscrepancyConstructor& obj);
-    static string GetDiscrepancyCaseName(const string&);
-    static const CDiscrepancyConstructor* GetDiscrepancyConstructor(const string& name);
-    static map<string, CDiscrepancyCaseProps>& GetTable() { return sm_Table.Get(); }
-    static map<string, string>& GetAliasTable() { return sm_AliasTable.Get(); }
-private:
-    static CSafeStatic<map<string, CDiscrepancyCaseProps>> sm_Table;
-    static CSafeStatic<map<string, string>> sm_AliasTable;
-
-friend NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
-friend NCBI_DISCREPANCY_EXPORT string GetDiscrepancyDescr(const string&);
-friend NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string&);
-friend NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(TGroup group);
-friend NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string& name);
-friend class CDiscrepancyAlias;
-friend class CDiscrepancyContext;
-friend class CReportItem;
+public:
+    static const CDiscrepancyCaseProps* props;
 };
 
-
-inline void CDiscrepancyConstructor::Register(const string& name, const string& descr, TGroup group, CDiscrepancyConstructor& obj)
-{
-    auto& entry = GetTable()[name];
-    entry.Constructor = &obj;
-    entry.Descr = descr;
-    entry.Group = group;
-}
-
-
-class CDiscrepancyAlias : public CDiscrepancyConstructor
-{
-protected:
-    CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(); }
-    static void Register(const string& name, const string& alias)
-    {
-        map<string, string>& AliasTable = GetAliasTable();
-        if (AliasTable.find(alias) != AliasTable.end()) {
-            return;
-        }
-        AliasTable[alias] = name;
-        map<string, CDiscrepancyCaseProps>& Table = GetTable();
-        Table[name].AliasList.push_back(alias);
-    }
-};
-
-
-/// CDiscrepancyItem and CReportObject
-class CDiscrepancyContext;
-class CDiscrepancyObject;
 
 template<typename T> struct CSimpleTypeObject : public CObject
 {
@@ -122,16 +84,12 @@ template<typename T> struct CSimpleTypeObject : public CObject
 };
 
 
-class CReportNode;
-
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(const string& m) : m_Msg(m), m_Count(0) {}
-    CDiscrepancyItem(CDiscrepancyCase& t, const string& s, const string& m, const string& x, const string& o, size_t n)
-      : m_Str(s), m_Msg(m), m_Xml(x), m_Unit(o), m_Count(n), m_Test(&t) {}
-    string GetTitle() const override { return m_Test ? m_Test->GetName() : kEmptyStr; }
-    string GetStr() const override { return m_Str; }
+    CDiscrepancyItem(CDiscrepancyCore& t, const string& s, const string& m, const string& x, const string& o, size_t n);
+    string_view GetTitle() const override { return m_Title; };
+    //string GetStr() const override { return m_Str; }
     string GetMsg() const override { return m_Msg; }
     string GetXml() const override { return m_Xml; }
     string GetUnit() const override { return m_Unit; }
@@ -144,9 +102,10 @@ public:
     bool IsInfo() const override { return m_Severity == eSeverity_info; }
     bool IsExtended() const override { return m_Ext; }
     bool IsSummary() const override { return m_Summ; }
-    bool IsReal() const override { return !m_Test.Empty(); }
+    //bool IsReal() const override { return !m_Test.Empty(); }
 
 protected:
+    string_view m_Title;
     string m_Str;
     string m_Msg;
     string m_Xml;
@@ -158,15 +117,9 @@ protected:
     bool m_Summ{ false };
     TReportObjectList m_Objs;
     TReportItemList m_Subs;
-    CRef<CDiscrepancyCase> m_Test;
 friend class CReportNode;
-friend class CDiscrepancyGroup;
-friend class CReportItem;
-friend class CDiscrepancyObject;
 };
 
-
-/// CDiscrepancyCore and CDiscrepancyVisitor - parents for CDiscrepancyCase_* classes
 
 struct CReportObjPtr
 {
@@ -182,7 +135,9 @@ class CReportNode : public CObject
 public:
     typedef map<string, CRef<CReportNode>> TNodeMap;
 
-    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Count(0) {}
+    CReportNode() = default;
+    CReportNode(const string& name) : m_Name(name) {}
+    CReportNode& Merge(CReportNode& other);
 
     CReportNode& operator[](const string& name);
 
@@ -194,9 +149,9 @@ public:
     CReportNode& NoRec(bool b = true) { m_NoRec = b; return *this; }
     CReportNode& Incr() { m_Count++; return *this; }
 
-    static bool Exist(TReportObjectList& /*list*/, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
+    static bool Exist(TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
     bool Exist(const string& name) const { return m_Map.find(name) != m_Map.end(); }
-    bool Exist(CReportObj& obj) { return Exist(m_Objs, m_Hash, obj); }
+    bool Exist(CReportObj& obj) { return Exist(m_Hash, obj); }
     static void Add(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj, bool unique = true);
     CReportNode& Add(CReportObj& obj, bool unique = true) { Add(m_Objs, m_Hash, obj, unique);  return *this; }
     static void Add(TReportObjectList& list, TReportObjectSet& hash, TReportObjectList& objs, bool unique = true);
@@ -206,7 +161,7 @@ public:
     TNodeMap& GetMap() { return m_Map; }
     size_t GetCount() const { return m_Count > 0 ? m_Count : m_Objs.size(); }
     void SetCount(size_t n) { m_Count = n; }
-    CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true) const;
+    CRef<CReportItem> Export(CDiscrepancyCore& test, bool unique = true) const;
     void Copy(CRef<CReportNode> other);
     bool Promote();
 
@@ -230,49 +185,54 @@ protected:
 class CDiscrepancyCore : public CDiscrepancyCase
 {
 public:
-    CDiscrepancyCore() : m_Count(0) {}
-    virtual void Summarize(CDiscrepancyContext& /*context*/){}
-    TReportItemList GetReport() const override { return m_ReportItems; }
+    CDiscrepancyCore(const CDiscrepancyCaseProps* props) : m_props(props) {}
+    eTestNames GetName() const override { return m_props->Name; }
+    string_view GetSName() const override { return m_props->sName; }
+    string_view GetDescription() const override { return m_props->Descr; }
+    eTestTypes GetType() const override { return m_props->Type; }
+
+    virtual void Summarize() = 0;
+    bool Empty() const { return m_Objs.empty(); }
+    const TReportItemList& GetReport() const override { return m_ReportItems; }
     TReportObjectList GetObjects() const override;
-    virtual CRef<CAutofixReport> Autofix(CDiscrepancyObject* /*obj*/, CDiscrepancyContext& /*context*/) const { return CRef<CAutofixReport>(); }
+    [[nodiscard]]
+    virtual CRef<CAutofixReport> Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const = 0;
+    void Call(CDiscrepancyContext& context);
+    virtual void Visit(CDiscrepancyContext& context) = 0;
+    void Merge(CDiscrepancyCore& other);
 protected:
     CReportNode m_Objs;
     TReportItemList m_ReportItems;
-    size_t m_Count;
+    //size_t m_Count = 0;
+    const CDiscrepancyCaseProps* m_props;
+    void xSummarize();
 };
 
+typedef map<eTestNames, CRef<CDiscrepancyCore> > TDiscrepancyCaseMap;
 
-//inline CRef<CAutofixReport> CDiscrepancyItem::Autofix(CScope& scope) const
-//{
-//    if (m_Autofix) {
-//        CRef<CAutofixReport> ret = ((CDiscrepancyCore&)*m_Test).Autofix(this, scope);
-//        m_Autofix = false;
-//        return ret;
-//    }
-//    return CRef<CAutofixReport>();
-//}
+template<eTestNames _Name>
+class CDiscrepancyPrivateData
+{};
 
-
-template<typename T> class CDiscrepancyVisitor : public CDiscrepancyCore
+template<eTestNames _Name>
+class CDiscrepancyVisitorImpl : public CDiscrepancyCore
 {
 public:
-    void Call(const T& node, CDiscrepancyContext& context);
-    virtual void Visit(const T& node, CDiscrepancyContext& context) = 0;
+    using CDiscrepancyCore::CDiscrepancyCore;
+    static CRef<CDiscrepancyCore> Create()
+        {
+            return Ref(new CDiscrepancyVisitorImpl(CDiscrepancyCasePropsRef<_Name>::props));
+        }
+    [[nodiscard]]
+    CRef<CAutofixReport> Autofix(CDiscrepancyObject*, CDiscrepancyContext&) const override
+    {
+        return CRef<CAutofixReport>();
+    }
+    void Visit(CDiscrepancyContext& context) override;
+    void Summarize() override { xSummarize(); } // default implementation
+protected:
+    CDiscrepancyPrivateData<_Name> m_private;
 };
-
-
-/// BIG FILE
-/// will change to enum when possible
-class SEQUENCE {};
-class SEQ_SET {};
-class FEAT {};
-class DESC {};
-class BIOSRC {};
-class PUBDESC {};
-class AUTHORS {};
-class SUBMIT {};
-class STRING {};
-
 
 struct CSeqSummary
 {
@@ -329,6 +289,17 @@ class CCopyHook_Bioseq;
 class CCopyHook_Seq_descr;
 class CCopyHook_Seq_annot;
 
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyProductImpl: public CDiscrepancyProduct
+{
+public:
+    void OutputText(CNcbiOstream& out, unsigned short flags, char group = 0) override;
+    void OutputXML(CNcbiOstream& out, unsigned short flags) override;
+    void Merge(CDiscrepancyProduct& other) override;
+    void Summarize() override;
+    TDiscrepancyCaseMap m_Tests;
+protected:
+};
+
 class CDiscrepancyContext : public CDiscrepancySet
 {
 protected:
@@ -344,23 +315,28 @@ public:
 
     CDiscrepancyContext(objects::CScope& scope) : m_Scope(&scope) {}
 
-    bool AddTest(const string& name) override;
-    void Push(const CSerialObject& root, const string& fname) override;
-    void Parse() override { ParseAll(*m_RootNode); }
-    //void Parse(const CSerialObject& root, const string& fname) override;
+    CRef<CDiscrepancyProduct> RunTests(const TTestNamesSet& testnames, const CSerialObject& object, const string& filename) override;
+    CRef<CDiscrepancyProduct> GetProduct() override;
+    void AddTest(eTestNames name) override;
+
+    //bool AddTest(const string& name) override;
+    void Push(const CSerialObject& root, const string& fname); // override;
+    //void Parse() override { ParseAll(*m_RootNode); }
+    void Parse(const CSerialObject& root, const string& fname); // override;
     void ParseObject(const CBioseq& root);
     void ParseObject(const CBioseq_set& root);
     void ParseObject(const CSeq_entry& root);
     void ParseObject(const CSeq_submit& root);
     void ParseStream(CObjectIStream& stream, const string& fname, bool skip, const string& default_header = kEmptyStr) override;
     void ParseStrings(const string& fname) override;
-    void TestString(const string& str) override;
+    //void TestString(const string& str) override;
     unsigned Summarize() override;
-    void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr) override;
+    map<string, size_t> Autofix() override;
+    void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr);
     void AutofixFile(vector<CDiscrepancyObject*>&fixes, const string& default_header);
-    const TDiscrepancyCaseMap& GetTests() const override { return m_Tests; }
-    void OutputText(CNcbiOstream& out, unsigned short flags, char group) override;
-    void OutputXML(CNcbiOstream& out, unsigned short flags) override;
+    //const TDiscrepancyCaseMap& GetTests() const override { return m_Tests; }
+    //void OutputText(CNcbiOstream& out, unsigned short flags, char group) override;
+    //void OutputXML(CNcbiOstream& out, unsigned short flags) override;
     CParseNode* FindNode(const CRefNode& obj);
     const CObject* GetMore(CReportObj& obj);
     const CSerialObject* FindObject(CReportObj& obj, bool alt = false) override;
@@ -375,8 +351,6 @@ public:
     const CSeqSummary& CurrentBioseqSummary() const;
     unsigned char ReadFlags() const { return m_CurrentNode->m_Flags; }
     void PropagateFlags(unsigned char f) { for (CParseNode* node = m_CurrentNode; node; node = node->m_Parent) node->m_Flags |= f; }
-
-    template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this); }
 
     objects::CScope& GetScope() const { return const_cast<objects::CScope&>(*m_Scope); }
 
@@ -446,9 +420,6 @@ public:
     CRef<CDiscrepancyObject> StringObjRef(const CObject* fix = nullptr, const CObject* more = nullptr);
     bool IsBioseq() const { return m_CurrentNode->m_Type == eBioseq; }
     const CPub* AuthPub(const CAuth_list* a) const { auto& apm = m_CurrentNode->m_AuthorPubMap; auto it = apm.find(a); return it == apm.end() ? nullptr : it->second; }
-
-    // GENE_PRODUCT_CONFLICT
-    TGeneLocusMap& GetGeneLocusMap() { return m_GeneLocusMap; }
 
     struct CSeqdesc_vec
     {
@@ -615,31 +586,9 @@ protected:
     CRef<CSeq_descr> m_AF_Seq_descr;
     CRef<CSubmit_block> m_AF_Submit_block;
 
-    CRef<CDiscrepancyGroup> m_Order;
-    const CDiscrepancyGroup& x_OutputOrder();
+    ct::const_bitset<static_cast<size_t>(eTestTypes::max_num_types), eTestTypes> m_Enabled;
+#define ADD_DISCREPANCY_TYPE(type) vector<CDiscrepancyCore*> m_All_##type;
 
-    //map<const CSerialObject*, CConstRef<CReportObjectData>> m_DataMap;
-
-    // GENE_PRODUCT_CONFLICT
-    TGeneLocusMap m_GeneLocusMap;
-
-#define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type{ false }; vector<CDiscrepancyVisitor<type>*> m_All_##type;
-    //ADD_DISCREPANCY_TYPE(CSeq_inst)
-    //ADD_DISCREPANCY_TYPE(CSeqdesc)
-    //ADD_DISCREPANCY_TYPE(CSeq_feat)
-    //ADD_DISCREPANCY_TYPE(CSubmit_block)
-    //ADD_DISCREPANCY_TYPE(CSeqFeatData)
-    //ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
-    //ADD_DISCREPANCY_TYPE(COverlappingFeatures)
-    //ADD_DISCREPANCY_TYPE(CBioSource)
-    //ADD_DISCREPANCY_TYPE(COrgName)
-    //ADD_DISCREPANCY_TYPE(CSeq_annot)
-    //ADD_DISCREPANCY_TYPE(CPubdesc)
-    //ADD_DISCREPANCY_TYPE(CAuth_list)
-    //ADD_DISCREPANCY_TYPE(CPerson_id)
-    ADD_DISCREPANCY_TYPE(string)
-
-/// BIG FILE
 ADD_DISCREPANCY_TYPE(SEQUENCE)
 ADD_DISCREPANCY_TYPE(SEQ_SET)
 ADD_DISCREPANCY_TYPE(FEAT)
@@ -650,8 +599,6 @@ ADD_DISCREPANCY_TYPE(AUTHORS)
 ADD_DISCREPANCY_TYPE(SUBMIT)
 ADD_DISCREPANCY_TYPE(STRING)
 
-    mutable TReportItemList m_Group0;
-    mutable TReportItemList m_Group1;
 
 /// BIG FILE
 friend class CReadHook_Bioseq_set;
@@ -914,7 +861,7 @@ public:
     static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &type, string &location, string &locus_tag);
 
 protected:
-    CRef<CDiscrepancyCase> m_Case;
+    CRef<CDiscrepancyCore> m_Case;
     CRef<CDiscrepancyContext::CRefNode> m_Ref;
     CRef<CDiscrepancyContext::CRefNode> m_Fix;
     CConstRef<CObject> m_More;
@@ -929,74 +876,36 @@ protected:
 inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return static_cast<CDiscrepancyObject*>(&obj)->m_More; }
 
 // MACRO definitions
+// Uses template specializations
 
-// The following two macros are required to make sure all modules get loaded from the library
-// Use this in discrepancy_core.cpp when adding a new module
-#define DISCREPANCY_LINK_MODULE(name) \
-    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=nullptr; } };         \
-    static CDiscrepancyModule_##name module_##name
+#define DISCREPANCY_CASE_FULL(name, sname, type, group, descr, aliases_ptr) \
+    static constexpr CDiscrepancyCaseProps s_testcase_props_##name = {                                              \
+        CDiscrepancyVisitorImpl<eTestNames::name>::Create,                                                          \
+        eTestTypes::type, eTestNames::name, sname, descr, group, aliases_ptr};                                      \
+    template<>                                                                                                      \
+    const CDiscrepancyCaseProps*                                                                                    \
+    CDiscrepancyCasePropsRef<eTestNames::name>::props = &s_testcase_props_##name;                                   \
+    template<> void CDiscrepancyVisitorImpl<eTestNames::name>::Visit(NCBI_UNUSED CDiscrepancyContext& context)
 
-// Use this in the new module
-#define DISCREPANCY_MODULE(name) \
-    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=nullptr; } };         \
-    void* CDiscrepancyModule_##name::dummy=nullptr
+#define DISCREPANCY_CASE(name, type, group, descr) \
+    DISCREPANCY_CASE_FULL(name, #name, type, group, descr, nullptr)
 
+#define DISCREPANCY_CASE0(name, sname, type, group, descr) \
+    DISCREPANCY_CASE_FULL(name, sname, type, group, descr, nullptr)
 
-#define DISCREPANCY_CASE(name, type, group, descr, ...) \
-    class CDiscrepancyCase_##name : public CDiscrepancyVisitor<type>                                                \
-    {                                                                                                               \
-    public:                                                                                                         \
-        void Visit(const type&, CDiscrepancyContext&) override;                                                     \
-        void Summarize(CDiscrepancyContext&) override;                                                              \
-        string GetName() const override { return #name; }                                                           \
-        string GetType() const override { return #type; }                                                           \
-    protected:                                                                                                      \
-        __VA_ARGS__;                                                                                                \
-    };                                                                                                              \
-    static const char* descr_for_##name = descr;                                                                    \
-    static TGroup group_for_##name = group;                                                                         \
-    class CDiscrepancyConstructor_##name : public CDiscrepancyConstructor                                           \
-    {                                                                                                               \
-    public:                                                                                                         \
-        CDiscrepancyConstructor_##name(){ Register(#name, descr_for_##name, group_for_##name, *this); }             \
-    protected:                                                                                                      \
-        CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name); }       \
-    };                                                                                                              \
-    static CDiscrepancyConstructor_##name DiscrepancyConstructor_##name;                                            \
-    void CDiscrepancyCase_##name::Visit(NCBI_UNUSED const type& obj, NCBI_UNUSED CDiscrepancyContext& context)
+#define DISCREPANCY_CASE1(name, type, group, descr, ...) \
+    static constexpr std::initializer_list<const char*> g_aliases_ ##name = { __VA_ARGS__ };                        \
+    DISCREPANCY_CASE_FULL(name, #name, type, group, descr, &g_aliases_ ##name)
 
-
+// non-default Summarize specialization
 #define DISCREPANCY_SUMMARIZE(name) \
-    void CDiscrepancyCase_##name::Summarize(NCBI_UNUSED CDiscrepancyContext& context)
+    template<> void CDiscrepancyVisitorImpl<eTestNames::name>::Summarize()
 
 
 #define DISCREPANCY_AUTOFIX(name) \
-    class CDiscrepancyCaseA_##name : public CDiscrepancyCase_##name                                                 \
-    {                                                                                                               \
-    public:                                                                                                         \
-        CDiscrepancyCaseA_##name() {}                                                                               \
-        CRef<CAutofixReport> Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const;                  \
-    };                                                                                                              \
-    class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
-    {                                                                                                               \
-    public:                                                                                                         \
-        CDiscrepancyCaseAConstructor_##name(){ Register(#name, descr_for_##name, group_for_##name | eAutofix, *this); }     \
-    protected:                                                                                                      \
-        CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name); }      \
-    };                                                                                                              \
-    static CDiscrepancyCaseAConstructor_##name DiscrepancyCaseAConstructor_##name;                                  \
-    CRef<CAutofixReport> CDiscrepancyCaseA_##name::Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const
-
-
-#define DISCREPANCY_ALIAS(name, alias) \
-    class CDiscrepancyCase_##alias { void* name; }; /* prevent name conflicts */                                    \
-    class CDiscrepancyAlias_##alias : public CDiscrepancyAlias                                                      \
-    {                                                                                                               \
-    public:                                                                                                         \
-        CDiscrepancyAlias_##alias() { Register(#name, #alias); }                                                    \
-    };                                                                                                              \
-    static CDiscrepancyAlias_##alias DiscrepancyAlias_##alias;
-
+    template<>                                                                                                      \
+    CRef<CAutofixReport>                                                                                            \
+    CDiscrepancyVisitorImpl<eTestNames::name>::Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const
 
 // Unit test functions
 NCBI_DISCREPANCY_EXPORT void UnitTest_FLATFILE_FIND();

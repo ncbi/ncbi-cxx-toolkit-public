@@ -725,7 +725,7 @@ void CDiscrepancyContext::Autofix(TReportObjectList& tofix, map<string, size_t>&
         if (!in_file) { // GBench etc. -- all objects already in the scope
             for (auto& fix : tofix) {
                 CDiscrepancyObject& obj = static_cast<CDiscrepancyObject&>(*fix);
-                CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*obj.m_Case).Autofix(&obj, *this);
+                CRef<CAutofixReport> result = obj.m_Case->Autofix(&obj, *this);
                 if (result) {
                     rep[result->GetS()] += result->GetN();
                 }
@@ -1002,7 +1002,7 @@ void CDiscrepancyContext::AutofixSeq_annot()
     for (auto* fix : *m_Fixes) {
         if (CanFixFeat(*fix->m_Fix) && fix->m_Fix->m_Index < m_CurrentNode->m_Features.size()) {
             m_NodeMap[&*fix->m_Fix] = m_CurrentNode->m_Features[fix->m_Fix->m_Index];
-            CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
+            CRef<CAutofixReport> result = (*fix->m_Case).Autofix(fix, *this);
         }
     }
 }
@@ -1019,7 +1019,7 @@ void CDiscrepancyContext::AutofixSeq_descr()
     for (auto* fix : *m_Fixes) {
         if (CanFixDesc(*fix->m_Fix) && fix->m_Fix->m_Index < m_CurrentNode->m_Descriptors.size()) {
             m_NodeMap[&*fix->m_Fix] = m_CurrentNode->m_Descriptors[fix->m_Fix->m_Index];
-            CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
+            CRef<CAutofixReport> result = (*fix->m_Case).Autofix(fix, *this);
         }
     }
 }
@@ -1033,7 +1033,7 @@ void CDiscrepancyContext::AutofixSubmit_block()
     for (auto* fix : *m_Fixes) {
         if (CanFixSubmit_block(*fix->m_Fix)) {
             m_NodeMap[&*fix->m_Fix] = sblock;
-            CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
+            CRef<CAutofixReport> result = (*fix->m_Case).Autofix(fix, *this);
         }
     }
 }
@@ -1074,7 +1074,7 @@ void CDiscrepancyContext::AutofixBioseq_set()
     for (auto* fix : *m_Fixes) {
         if (CanFixBioseq_set(*fix->m_Fix)) {
             m_NodeMap[&*fix->m_Fix] = m_CurrentNode;
-            CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
+            CRef<CAutofixReport> result = (*fix->m_Case).Autofix(fix, *this);
         }
     }
 }
@@ -1101,7 +1101,7 @@ void CDiscrepancyContext::AutofixBioseq()
     for (auto* fix : *m_Fixes) {
         if (CanFixBioseq(*fix->m_Fix)) {
             m_NodeMap[&*fix->m_Fix] = m_CurrentNode;
-            CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
+            CRef<CAutofixReport> result = (*fix->m_Case).Autofix(fix, *this);
         }
     }
 }

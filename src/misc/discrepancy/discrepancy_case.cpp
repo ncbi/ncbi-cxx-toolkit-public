@@ -53,8 +53,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(discrepancy_case);
-
 
 // COUNT_NUCLEOTIDES
 
@@ -73,7 +71,7 @@ DISCREPANCY_CASE(COUNT_NUCLEOTIDES, SEQUENCE, eOncaller | eSubmitter | eSmart | 
 DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
 {
     m_Objs["[n] nucleotide Bioseq[s] [is] present"]; // If no sequences found still report 0
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    xSummarize();
 }
 
 
@@ -88,12 +86,6 @@ DISCREPANCY_CASE(COUNT_PROTEINS, SEQUENCE, eDisc, "Count Proteins")
         node.GetCount();
         node.Add(*context.BioseqObjRef());
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -116,12 +108,6 @@ DISCREPANCY_CASE(MISSING_PROTEIN_ID, SEQUENCE, eDisc | eSubmitter | eSmart | eFa
     if (bioseq.CanGetInst() && bioseq.GetInst().IsAa() && !GetProteinId(bioseq)) {
         m_Objs["[n] protein[s] [has] invalid ID[s]."].Add(*context.BioseqObjRef()).Fatal();
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MISSING_PROTEIN_ID)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -194,12 +180,6 @@ DISCREPANCY_CASE(N_RUNS, SEQUENCE, eDisc | eSubmitter | eSmart | eBig | eFatal, 
 }
 
 
-DISCREPANCY_SUMMARIZE(N_RUNS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // PERCENT_N
 
 DISCREPANCY_CASE(PERCENT_N, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "More than 5 percent Ns")
@@ -211,12 +191,6 @@ DISCREPANCY_CASE(PERCENT_N, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "More 
             m_Objs["[n] sequence[s] [has] more than 5% Ns"].Add(*context.BioseqObjRef());
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(PERCENT_N)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -237,12 +211,6 @@ DISCREPANCY_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA, FEAT, eOncaller, "Look for rR
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(INTERNAL_TRANSCRIBED_SPACER_RRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -377,7 +345,7 @@ DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
     if (m_Objs.Exist(kOverlap0)) {
         m_Objs[kOverlap0].Promote();
     }
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    xSummarize();
 }
 
 
@@ -414,11 +382,6 @@ DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, FEAT, eDisc | eOncaller | eSubmi
     }
 }
 
-
-DISCREPANCY_SUMMARIZE(PARTIAL_CDS_COMPLETE_SEQUENCE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
 
 
 DISCREPANCY_CASE(RNA_NO_PRODUCT, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Find RNAs without Products")
@@ -496,11 +459,6 @@ DISCREPANCY_CASE(RNA_NO_PRODUCT, FEAT, eDisc | eOncaller | eSubmitter | eSmart, 
 }
 
 
-DISCREPANCY_SUMMARIZE(RNA_NO_PRODUCT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
 
 // CONTAINED_CDS
 
@@ -552,7 +510,7 @@ DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
         m_ReportItems = m_Objs[kContained].Export(*this)->GetSubitems();
     }
     else {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+        xSummarize();
     }
 }
 
@@ -597,12 +555,6 @@ DISCREPANCY_CASE(ZERO_BASECOUNT, SEQUENCE, eDisc | eOncaller | eSubmitter | eSma
 }
 
 
-DISCREPANCY_SUMMARIZE(ZERO_BASECOUNT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // NONWGS_SETS_PRESENT
 
 DISCREPANCY_CASE(NONWGS_SETS_PRESENT, SEQ_SET, eDisc, "Eco, mut, phy or pop sets present")
@@ -621,12 +573,6 @@ DISCREPANCY_CASE(NONWGS_SETS_PRESENT, SEQ_SET, eDisc, "Eco, mut, phy or pop sets
                 break;
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(NONWGS_SETS_PRESENT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -652,12 +598,6 @@ DISCREPANCY_CASE(NO_ANNOTATION, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmar
 }
 
 
-DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 DISCREPANCY_CASE(LONG_NO_ANNOTATION, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart | eBig, "No annotation for LONG sequence")
 {
     const int kSeqLength = 5000;
@@ -668,12 +608,6 @@ DISCREPANCY_CASE(LONG_NO_ANNOTATION, SEQUENCE, eDisc | eOncaller | eSubmitter | 
             m_Objs["[n] bioseq[s] [is] longer than 5000nt and [has] no features"].Add(*context.BioseqObjRef());
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(LONG_NO_ANNOTATION)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -708,12 +642,6 @@ DISCREPANCY_CASE(POSSIBLE_LINKER, SEQUENCE, eOncaller, "Detect linker sequence a
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -767,12 +695,6 @@ DISCREPANCY_CASE(ORDERED_LOCATION, FEAT, eDisc | eOncaller | eSmart, "Location i
 }
 
 
-DISCREPANCY_SUMMARIZE(ORDERED_LOCATION)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 {
     const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
@@ -822,7 +744,7 @@ DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
 {
     if (m_Objs.Exist(kEmptyStr)) {
         m_Objs.GetMap().erase(kEmptyStr);
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+        xSummarize();
     }
 }
 
@@ -851,7 +773,7 @@ DISCREPANCY_CASE(NO_LOCUS_TAGS, FEAT, eDisc | eSubmitter | eSmart | eFatal, "No 
 DISCREPANCY_SUMMARIZE(NO_LOCUS_TAGS)
 {
     if (!m_Objs.Exist(kEmptyStr)) {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+        xSummarize();
     }
 }
 
@@ -892,7 +814,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_LOCUS_TAG_PREFIX)
 {
     // If there is more than 1 bin, the prefixes are inconsistent
     if (m_Objs.GetMap().size() > 1) {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+        xSummarize();
     }
 }
 
@@ -924,7 +846,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLTYPES)
 {
     // If there is more than 1 key, the moltypes are inconsistent
     if (m_Objs[kInconsistent_Moltype].GetMap().size() > 1) {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+        xSummarize();
     }
 }
 
@@ -967,12 +889,6 @@ DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, SEQUENCE, eDisc | eSubmitter | eSmart, "B
 }
 
 
-DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // SEGSETS_PRESENT
 
 DISCREPANCY_CASE(SEGSETS_PRESENT, SEQ_SET, eDisc | eSmart | eFatal, "Segsets present")
@@ -981,12 +897,6 @@ DISCREPANCY_CASE(SEGSETS_PRESENT, SEQ_SET, eDisc | eSmart | eFatal, "Segsets pre
     if (set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_segset) {
         m_Objs["[n] segset[s] [is] present"].Add(*context.BioseqSetObjRef());
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(SEGSETS_PRESENT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1033,12 +943,6 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, FEAT, eDisc | eOncaller | eSubmi
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_MRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1093,13 +997,13 @@ DISCREPANCY_CASE(BAD_BGPIPE_QUALS, SEQUENCE, eDisc | eSmart, "Bad BGPIPE qualifi
 }
 
 
-DISCREPANCY_SUMMARIZE(BAD_BGPIPE_QUALS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // GENE_PRODUCT_CONFLICT
+template<>
+class CDiscrepancyPrivateData<eTestNames::GENE_PRODUCT_CONFLICT>
+{
+public:
+    TGeneLocusMap m_GeneLocusMap;
+};
 
 DISCREPANCY_CASE(GENE_PRODUCT_CONFLICT, SEQUENCE, eDisc | eSubmitter | eSmart, "Gene Product Conflict")
 {
@@ -1109,7 +1013,7 @@ DISCREPANCY_CASE(GENE_PRODUCT_CONFLICT, SEQUENCE, eDisc | eSubmitter | eSmart, "
             if (gene_feat && gene_feat->IsSetData() && gene_feat->GetData().IsGene()) {
                 const CGene_ref& gene = gene_feat->GetData().GetGene();
                 if (gene.IsSetLocus()) {
-                    TGeneLocusMap& genes = context.GetGeneLocusMap();
+                    TGeneLocusMap& genes = m_private.m_GeneLocusMap;
                     const string& locus = gene.GetLocus();
                     string product = context.GetProdForFeature(feat);
                     genes[locus].push_back(make_pair(context.SeqFeatObjRef(feat), product));
@@ -1122,7 +1026,7 @@ DISCREPANCY_CASE(GENE_PRODUCT_CONFLICT, SEQUENCE, eDisc | eSubmitter | eSmart, "
 
 DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
 {
-    TGeneLocusMap& genes = context.GetGeneLocusMap();
+    TGeneLocusMap& genes = m_private.m_GeneLocusMap;
     for (auto& gene : genes) {
         if (gene.second.size() > 1) {
             TGenesList::const_iterator cur_gene = gene.second.cbegin();
@@ -1137,14 +1041,14 @@ DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
             }
             if (diff) {
                 string sub = "[n] coding regions have the same gene name (" + gene.first + ") as another coding region but a different product";
-                for (auto& cur_gene : gene.second) {
-                    m_Objs["[n] coding region[s] [has] the same gene name as another coding region but a different product"][sub].Ext().Add(*cur_gene.first, false);
+                for (auto& rec : gene.second) {
+                    m_Objs["[n] coding region[s] [has] the same gene name as another coding region but a different product"][sub].Ext().Add(*rec.first, false);
                 }
             }
         }
     }
     genes.clear();
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    xSummarize();
 }
 
 

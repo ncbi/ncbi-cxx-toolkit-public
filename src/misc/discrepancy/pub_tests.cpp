@@ -60,8 +60,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(pub_tests);
-
 
 // TITLE_AUTHOR_CONFLICT
 
@@ -256,7 +254,7 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
         m_ReportItems = m_Objs.GetMap().cbegin()->second->Export(*this)->GetSubitems();
     }
     else {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+        xSummarize();
     }
 }
 
@@ -386,12 +384,6 @@ DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, PUBDESC, eDisc | eOncaller | eSubmitte
 }
 
 
-DISCREPANCY_SUMMARIZE(UNPUB_PUB_WITHOUT_TITLE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MISSING_AFFIL
 
 bool HasNoAffiliation(const CAffil& affil)
@@ -440,12 +432,6 @@ DISCREPANCY_CASE(MISSING_AFFIL, PUBDESC, eDisc | eOncaller | eFatal, "Missing af
             m_Objs["[n] citsub[s] [is] missing affiliation"].Add(*context.PubdescObjRef(*pubdesc)).Fatal();
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MISSING_AFFIL)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -621,12 +607,6 @@ DISCREPANCY_CASE(CONSORTIUM, AUTHORS, eOncaller, "Submitter blocks and publicati
 }
 
 
-DISCREPANCY_SUMMARIZE(CONSORTIUM)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 static int RemoveConsortium(CAuth_list& authors)
 {
     int n = 0;
@@ -698,12 +678,6 @@ DISCREPANCY_CASE(CHECK_AUTH_NAME, AUTHORS, eDisc | eOncaller | eSubmitter | eSma
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(CHECK_AUTH_NAME)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -785,12 +759,6 @@ DISCREPANCY_CASE(CITSUB_AFFIL_DUP_TEXT, PUBDESC, eOncaller, "Cit-sub affiliation
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(CITSUB_AFFIL_DUP_TEXT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1010,12 +978,6 @@ DISCREPANCY_CASE(USA_STATE, PUBDESC, eDisc | eOncaller | eSmart, "For country US
 }
 
 
-DISCREPANCY_SUMMARIZE(USA_STATE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 static bool ReplaceStateAbbreviation(CAffil* affil)
 {
     if (!affil) {
@@ -1179,12 +1141,6 @@ DISCREPANCY_CASE(CHECK_AUTH_CAPS, AUTHORS, eDisc | eOncaller | eSmart, "Check fo
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(CHECK_AUTH_CAPS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

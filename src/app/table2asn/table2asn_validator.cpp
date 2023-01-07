@@ -16,7 +16,6 @@
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
 #include <objtools/edit/remote_updater.hpp>
 
-#include <misc/discrepancy/discrepancy.hpp>
 #include <objtools/validator/entry_info.hpp>
 #include <objtools/validator/utilities.hpp>
 
@@ -235,78 +234,73 @@ void CTable2AsnValidator::ValReportErrorStats(CNcbiOstream& out)
     }
 }
 
-void CTable2AsnValidator::x_PopulateDiscrepancy(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry)
+CRef<NDiscrepancy::CDiscrepancyProduct> CTable2AsnValidator::x_PopulateDiscrepancy(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry) const
 {
-    if (!m_discrep_scope) {
-        m_discrep_scope.Reset(new CScope(*m_context->m_ObjMgr));
-        m_discrep_scope->AddDefaults();
-    }
-
-    if (!discrepancy)
-        discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_discrep_scope);
+    CRef<NDiscrepancy::CDiscrepancySet> discrepancy = NDiscrepancy::CDiscrepancySet::New(entry.GetScope());
 
     CSeq_entry_Handle seh;
-    CRef<CSerialObject> obj;
+    CConstRef<CSerialObject> obj;
     if (submit) {
-        seh = m_discrep_scope->AddSeq_submit(*submit);
+        //seh = m_discrep_scope->AddSeq_submit(*submit);
         obj = submit;
     } else
     if (entry) {
-        seh = m_discrep_scope->AddTopLevelSeqEntry(*entry);
-        obj = entry;
+        obj = entry.GetCompleteSeq_entry();
     }
 
-    vector<string> names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
-    discrepancy->AddTests(names);
+    auto names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
 
     CFile nm(m_context->GenerateOutputFilename(eFiles::asn));
     discrepancy->SetLineage(m_context->m_disc_lineage);
     //discrepancy->SetEukaryote(m_context->m_eukaryote);
-    discrepancy->Parse(*obj, nm.GetName());
-
-    m_discrep_scope->RemoveTopLevelSeqEntry(seh);
+    auto product = discrepancy->RunTests(names, *obj, nm.GetName());
+    return product;
 }
 
-void CTable2AsnValidator::CollectDiscrepancies(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry)
+void CTable2AsnValidator::CollectDiscrepancies(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry)
 {
     if (!m_context->m_run_discrepancy)
         return;
 
-    std::lock_guard<std::mutex> g{m_discrep_mutex};
-
-    x_PopulateDiscrepancy(m_discrepancy, submit, entry);
+    auto product = x_PopulateDiscrepancy(submit, entry);
     if(m_context->m_split_discrepancy && !m_context->m_huge_files_mode) {
-        x_ReportDiscrepancies(m_discrepancy, m_context->GetOstream(eFiles::dr));
+        x_ReportDiscrepancies(product, m_context->GetOstream(eFiles::dr));
+    } else {
+        std::lock_guard<std::mutex> g{m_discrep_mutex};
+        if (m_discr_product)
+            m_discr_product->Merge(*product);
+        else
+            m_discr_product = product;
     }
 }
 
-void CTable2AsnValidator::x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, std::ostream& ostr)
+void CTable2AsnValidator::x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancyProduct>& product, std::ostream& ostr) const
 {
-    discrepancy->Summarize();
     unsigned short output_flags = NDiscrepancy::CDiscrepancySet::eOutput_Files;
     if (!m_context->m_master_genome_flag.empty()) {
         output_flags |= NDiscrepancy::CDiscrepancySet::eOutput_Fatal;
     }
-    discrepancy->OutputText(ostr, output_flags);
-    discrepancy.Reset();
+    product->Summarize();
+    product->OutputText(ostr, output_flags);
+    product.Reset();
 }
 
 void CTable2AsnValidator::ReportDiscrepancies()
 {
-    if (m_discrepancy)
+    if (m_discr_product)
     {
-        x_ReportDiscrepancies(m_discrepancy, m_context->GetOstream(eFiles::dr));
+        x_ReportDiscrepancies(m_discr_product, m_context->GetOstream(eFiles::dr));
     }
 }
 
 void CTable2AsnValidator::ReportDiscrepancies(const string& filename)
 {
-    if (m_discrepancy)
+    if (m_discr_product)
     {
         std::ofstream ostr;
         ostr.exceptions( ios::failbit | ios::badbit );
         ostr.open(filename);
-        x_ReportDiscrepancies(m_discrepancy, ostr);
+        x_ReportDiscrepancies(m_discr_product, ostr);
     }
 }
 

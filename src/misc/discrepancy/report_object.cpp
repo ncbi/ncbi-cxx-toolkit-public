@@ -77,9 +77,9 @@ string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
             tag = (gene->CanGetLocus_tag()) ? gene->GetLocus_tag() : kEmptyStr;
         }
         else {
-            CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(seq_feat, scope);
-            if (gene.NotEmpty()) {
-                tag = (gene->GetData().GetGene().CanGetLocus_tag()) ? gene->GetData().GetGene().GetLocus_tag() : kEmptyStr;
+            CConstRef<CSeq_feat> gene2 = sequence::GetGeneForFeature(seq_feat, scope);
+            if (gene2.NotEmpty()) {
+                tag = (gene2->GetData().GetGene().CanGetLocus_tag()) ? gene2->GetData().GetGene().GetLocus_tag() : kEmptyStr;
             }
         }
     }
@@ -489,7 +489,7 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
 
 // label for Bioseq includes "best" ID, plus length, plus number of
 // non-ATGC characters (if any), plus number of gaps (if any)
-string CDiscrepancyObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
+string CDiscrepancyObject::GetTextObjectDescription(const CBioseq& bs, CScope&)
 {
     string rval;
     CConstRef<CSeq_id> id = GetBestId(bs);
