@@ -190,7 +190,7 @@ void CHTMLFormatterEx::FormatTranscriptId(string& str, const CSeq_id& seq_id, co
     str += "</a>";
 }
 
-void CHTMLFormatterEx::FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const
+void CHTMLFormatterEx::FormatNucId(string& str, const CSeq_id&, TIntId gi, const string& acc_id) const
 {
     str = "<a href=\"";
     str += strLinkBaseNuc + NStr::NumericToString(gi) + "\">" + acc_id + "</a>";
@@ -719,8 +719,9 @@ int CAsn2FlatApp::Run()
         return 0;
     }
 
-    if (args["i"])
-        m_huge_process.OpenFile(args["i"].AsString());
+    if (args["i"]) {
+        m_huge_process.OpenFile(args["i"].AsString(), args["c"] ? nullptr : &edit::CHugeFileProcess::g_supported_types);
+    }
 
     if (m_HugeFileMode) {
         m_huge_process.OpenReader();
@@ -824,7 +825,7 @@ bool CAsn2FlatApp::HandleSeqId(TFFContext& context, const edit::CHugeAsnReader* 
             auto pSeqSubmit = Ref(new CSeq_submit());
             pSeqSubmit->SetSub().Assign(*pSubmitBlock);
             pSeqSubmit->SetData().SetEntrys().push_back(entry);
-            return HandleSeqSubmit(context, *pSeqSubmit); 
+            return HandleSeqSubmit(context, *pSeqSubmit);
         }
         else {
             return HandleSeqEntry(context, entry);
@@ -864,7 +865,7 @@ int CAsn2FlatApp::x_GenerateHugeMode()
         }
     }
 
-    bool success = m_huge_process.Read([this, seqid](edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist)
+    bool all_success = m_huge_process.Read([this, seqid](edit::CHugeAsnReader* reader, const std::list<CConstRef<CSeq_id>>& idlist)
     {
         bool success = true;
         if (seqid) {
@@ -882,7 +883,7 @@ int CAsn2FlatApp::x_GenerateHugeMode()
         return success;
     });
 
-    if (! success || m_Exception)
+    if (! all_success || m_Exception)
         return -1;
     return 0;
 }
@@ -1023,8 +1024,8 @@ bool CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
 
     try {
         x_FFGenerate(seh, context);
-    } catch (CException& e) {
-        ERR_POST(Error << e);
+    } catch (const CException& exc) {
+        ERR_POST(Error << exc);
         m_Exception = true;
     }
     context.m_Scope->RemoveTopLevelSeqEntry(seh);
@@ -1378,9 +1379,9 @@ unique_ptr<CObjectIStream> CAsn2FlatApp::x_OpenIStream(const CArgs& args) const
     // turning it into an object stream:
     CObjectIStream* pI = nullptr;
     if (args["c"]) {
-        CZipStreamDecompressor* pDecompressor = 
+        CZipStreamDecompressor* pDecompressor =
             new CZipStreamDecompressor(CZipCompression::fCheckFileHeader);
-        CCompressionIStream* pUnzipStream = 
+        CCompressionIStream* pUnzipStream =
             new CCompressionIStream(*pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor);
         pI = CObjectIStream::Open(serial, *pUnzipStream, eTakeOwnership);
     } else {
