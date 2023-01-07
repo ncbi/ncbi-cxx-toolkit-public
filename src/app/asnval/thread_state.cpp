@@ -120,7 +120,7 @@ namespace
     private:
         CDataLoader* m_loader = nullptr;
     };
-};
+}
 
 
 const set<TTypeInfo> s_known_types{
@@ -158,7 +158,7 @@ CAsnvalThreadState::CAsnvalThreadState(const CAppConfig& appConfig, SValidatorCo
     m_pContext.reset(new SValidatorContext());
     m_ObjMgr = CObjectManager::GetInstance();
     m_pContext->m_taxon_update = taxon;
-};
+}
 
 CAsnvalThreadState::~CAsnvalThreadState()
 {

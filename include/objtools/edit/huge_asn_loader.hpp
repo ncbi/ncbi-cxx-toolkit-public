@@ -44,7 +44,7 @@ namespace edit
 {
     class CHugeAsnReader;
     class CHugeFile;
-};
+}
 
 BEGIN_SCOPE(edit)
 
