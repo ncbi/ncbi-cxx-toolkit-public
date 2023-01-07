@@ -30,15 +30,49 @@
 #ifndef _MISC_DISCREPANCY_DISCREPANCY_H_
 #define _MISC_DISCREPANCY_DISCREPANCY_H_
 
-#include <serial/iterator.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbistd.hpp>
-#include <serial/serialbase.hpp>
-#include <objmgr/scope.hpp>
-#include <objects/macro/Suspect_rule.hpp>
-#include <objects/macro/Suspect_rule_set.hpp>
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CSerialObject;
+class CObjectIStream;
+
+BEGIN_SCOPE(objects)
+class CSuspect_rule_set;
+class CSuspect_rule;
+class CScope;
+class CSeq_feat;
+
+END_SCOPE(objects)
+
 BEGIN_SCOPE(NDiscrepancy)
+
+enum class eTestNames
+{
+    #include "testnames.inc"
+    max_test_names,
+    notset,
+};
+
+enum class eTestTypes
+{
+    SEQUENCE,
+    FEAT,
+    STRING,
+    SEQ_SET,
+    DESC,
+    BIOSRC,
+    AUTHORS,
+    SUBMIT,
+    PUBDESC,
+    max_num_types,
+};
+
+using TTestNamesSet = ct::const_bitset<static_cast<size_t>(eTestNames::max_test_names), eTestNames>;
+template<eTestTypes _type>
+using TTypeTag = std::integral_constant<eTestTypes, _type>;
 
 class NCBI_DISCREPANCY_EXPORT CReportObj : public CObject
 {
@@ -91,8 +125,8 @@ public:
         eSeverity_error   = 2
     };
     virtual ~CReportItem(){}
-    virtual string GetTitle() const = 0;
-    virtual string GetStr() const = 0;
+    virtual string_view GetTitle() const = 0;
+    //virtual string GetStr() const = 0;
     virtual string GetMsg() const = 0;
     virtual string GetXml() const = 0;
     virtual string GetUnit() const = 0;
@@ -105,7 +139,7 @@ public:
     virtual bool IsInfo() const = 0;
     virtual bool IsExtended() const = 0;
     virtual bool IsSummary() const = 0;
-    virtual bool IsReal() const = 0;
+    //virtual bool IsReal() const = 0;
     static CRef<CReportItem> CreateReportItem(const string& test, const CReportObj& obj, const string& msg, bool autofix = false);
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
@@ -115,20 +149,42 @@ class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 {
 public:
     virtual ~CDiscrepancyCase(){}
-    virtual string GetName() const = 0;
-    virtual string GetType() const = 0;
-    virtual TReportItemList GetReport() const = 0;
+    virtual eTestNames GetName() const = 0;
+    virtual string_view GetSName() const = 0;
+    virtual eTestTypes GetType() const = 0;
+    virtual string_view GetDescription() const = 0;
+    virtual const TReportItemList& GetReport() const = 0;
     virtual TReportObjectList GetObjects() const = 0;
 };
-typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 
-
-class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyProduct: public CObject
 {
 public:
-    CDiscrepancySet() : m_SesameStreetCutoff(0.75), /*m_Eukaryote(false),*/ m_Gui(false), m_UserData(nullptr) {}
+    virtual void OutputText(CNcbiOstream& out, unsigned short flags, char group = 0) = 0;
+    virtual void OutputXML(CNcbiOstream& out, unsigned short flags) = 0;
+    virtual void Merge(CDiscrepancyProduct& other) = 0;
+    virtual void Summarize() = 0;
+};
+
+class NCBI_DISCREPANCY_EXPORT CDiscrepancySet: public CObject
+{
+protected:
+    CDiscrepancySet() {}
+public:
     virtual ~CDiscrepancySet(){}
 
+    virtual CRef<CDiscrepancyProduct> RunTests(const TTestNamesSet& testnames, const CSerialObject& object, const string& filename) = 0;
+    virtual CRef<CDiscrepancyProduct> GetProduct() = 0;
+
+    virtual unsigned Summarize() = 0;
+    virtual map<string, size_t> Autofix() = 0;
+    virtual void ParseStream(CObjectIStream& stream, const string& fname, bool skip, const string& default_header = kEmptyStr) = 0;
+    virtual void AddTest(eTestNames name) = 0;
+    virtual void ParseStrings(const string& fname) = 0;
+#if 0
+    virtual const TDiscrepancyCaseMap& GetTests() const = 0;
+    virtual void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr) = 0;
+    virtual bool AddTest(const string& name) = 0;
     template<typename Container>
     bool AddTests(const Container& cont)
     {
@@ -137,16 +193,13 @@ public:
         return success;
     }
 
-    virtual bool AddTest(const string& name) = 0;
     virtual void Push(const CSerialObject& root, const string& fname = kEmptyStr) = 0;
     virtual void Parse() = 0;
     virtual void Parse(const CSerialObject& root, const string& fname = kEmptyStr) { Push(root, fname); Parse(); }
-    virtual void ParseStream(CObjectIStream& stream, const string& fname, bool skip, const string& default_header = kEmptyStr) = 0;
-    virtual void ParseStrings(const string& fname) = 0;
     virtual void TestString(const string& str) = 0;
-    virtual unsigned Summarize() = 0;
-    virtual void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr) = 0;
-    virtual const TDiscrepancyCaseMap& GetTests() const = 0;
+    virtual void OutputText(CNcbiOstream& out, unsigned short flags, char group = 0) = 0;
+    virtual void OutputXML(CNcbiOstream& out, unsigned short flags) = 0;
+#endif
 
     enum EOutput {
         eOutput_Summary = 1 << 0,   // only summary
@@ -154,45 +207,25 @@ public:
         eOutput_Ext     = 1 << 2,   // extended output
         eOutput_Files   = 1 << 3    // print file name
     };
-    virtual void OutputText(CNcbiOstream& out, unsigned short flags, char group = 0) = 0;
-    virtual void OutputXML(CNcbiOstream& out, unsigned short flags) = 0;
 
-    bool IsGui() const { return m_Gui; }
+    static bool IsGui() { return m_Gui; }
     const string& GetLineage() const { return m_Lineage; }
-    float GetSesameStreetCutoff() const { return m_SesameStreetCutoff; }
-    void* GetUserData() const { return m_UserData; }
-    //virtual void SetFile(const string& fname) = 0;
+    //float GetSesameStreetCutoff() const { return m_SesameStreetCutoff; }
+    //void* GetUserData() const { return m_UserData; }
     void SetLineage(const string& s) { m_Lineage = s; }
-    //void SetEukaryote(bool b) { m_Eukaryote = b; }
-    void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
+    //void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
     virtual void SetSuspectRules(const string& name, bool read = true) = 0;
-    void SetGui(bool b){ m_Gui = b; }
-    void SetUserData(void* p){ m_UserData = p; }
+    static void SetGui(bool b){ m_Gui = b; }
+    //void SetUserData(void* p){ m_UserData = p; }
     static CRef<CDiscrepancySet> New(objects::CScope& scope);
     static string Format(const string& str, unsigned int count);
     virtual const CSerialObject* FindObject(CReportObj& obj, bool alt = false) = 0;
 
 protected:
     string m_Lineage;
-    float m_SesameStreetCutoff;
-    //bool m_Eukaryote;
-    bool m_Gui;
-    void* m_UserData;
-};
-
-
-class NCBI_DISCREPANCY_EXPORT CDiscrepancyGroup : public CObject
-{
-public:
-    CDiscrepancyGroup(const string& name = "", const string& test = "") : m_Name(name), m_Test(test) {}
-    void Add(CRef<CDiscrepancyGroup> child) { m_List.push_back(child); }
-    TReportItemList Collect(TDiscrepancyCaseMap& tests, bool all = true) const;
-    const CDiscrepancyGroup& operator[](size_t n) const { return *m_List[n]; }
-
-protected:
-    string m_Name;
-    string m_Test;
-    vector<CRef<CDiscrepancyGroup> > m_List;
+    //float m_SesameStreetCutoff = 0.75;
+    static std::atomic<bool> m_Gui;
+    //void* m_UserData = nullptr;
 };
 
 
@@ -205,16 +238,17 @@ enum EGroup {
     eBig = 16,
     eTSA = 32,
     eFatal = 64,
-    eAutofix = 128
+    //eAutofix = 128
 };
 typedef unsigned short TGroup;
 
 
-NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
-NCBI_DISCREPANCY_EXPORT string GetDiscrepancyDescr(const string&);
-NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string&);
-NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(TGroup group = 0);
-NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
+NCBI_DISCREPANCY_EXPORT eTestNames GetDiscrepancyCaseName(string_view);
+NCBI_DISCREPANCY_EXPORT string_view GetDiscrepancyCaseName(eTestNames name);
+NCBI_DISCREPANCY_EXPORT string_view GetDiscrepancyDescr(eTestNames name);
+NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(eTestNames name);
+NCBI_DISCREPANCY_EXPORT TTestNamesSet GetDiscrepancyNames(TGroup group);
+NCBI_DISCREPANCY_EXPORT vector<string_view> GetDiscrepancyAliases(eTestNames name);
 NCBI_DISCREPANCY_EXPORT bool IsShortrRNA(const objects::CSeq_feat& f, objects::CScope* scope);
 
 typedef std::function < CRef<objects::CSeq_feat>() > GetFeatureFunc;
@@ -223,7 +257,11 @@ NCBI_DISCREPANCY_EXPORT string FixProductName(const objects::CSuspect_rule* rule
 NCBI_DISCREPANCY_EXPORT CConstRef<objects::CSuspect_rule_set> GetOrganelleProductRules(const string& name = "");
 NCBI_DISCREPANCY_EXPORT CConstRef<objects::CSuspect_rule_set> GetProductRules(const string& name = "");
 
+NCBI_DISCREPANCY_EXPORT std::ostream& operator<<(std::ostream& str, NDiscrepancy::eTestNames name);
+
 END_SCOPE(NDiscrepancy)
+
 END_NCBI_SCOPE
+
 
 #endif  // _MISC_DISCREPANCY_DISCREPANCY_H_

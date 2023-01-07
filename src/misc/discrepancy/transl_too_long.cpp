@@ -39,8 +39,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(transl_too_long);
-
 
 // TRANSL_TOO_LONG
 
@@ -87,12 +85,6 @@ DISCREPANCY_CASE(TRANSL_TOO_LONG, FEAT, eDisc, "Transl_except longer than 3")
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(TRANSL_TOO_LONG)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

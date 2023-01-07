@@ -37,8 +37,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(rna_names);
-
 
 // RRNA_NAME_CONFLICTS
 
@@ -105,12 +103,6 @@ DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, FEAT, eDisc | eSubmitter | eSmart | eFatal
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(RRNA_NAME_CONFLICTS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

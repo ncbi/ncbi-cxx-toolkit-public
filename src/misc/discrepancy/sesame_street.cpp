@@ -45,8 +45,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(sesame_street);
-
 // Some animals are more equal than others...
 
 
@@ -94,8 +92,31 @@ static string OrderQual(const string& s)
     return r + s;
 }
 
+static void ConvertDuplicates(CReportNode& node)
+{
+    auto& all = node["all"];
+    for (auto& qual_it: node.GetMap() ) {
+        if (qual_it.first == "all") continue;
+
+        //cerr << qual_it.first << "\n";
+        auto& all_qual = all[qual_it.first];
+        for (auto& val_it: qual_it.second->GetMap())
+        {
+            //cerr << "  " << val_it.first << ":" << val_it.second->GetObjects().size() <<  "\n";
+            for (auto obj: val_it.second->GetObjects())
+            {
+                if (all_qual.Exist(*obj))
+                    all_qual["*"].Add(*obj, false); // duplicated
+                else
+                    all_qual.Add(*obj, false);
+            }
+        }
+    }
+}
+
 static void AddObjToQualMap(const string& qual, const string& val, CReportObj& obj, CReportNode& node)
 {
+#if 0
     if (node["all"][qual].Exist(obj)) {
         node["all"][qual]["*"].Add(obj, false); // duplicated
     }
@@ -103,9 +124,25 @@ static void AddObjToQualMap(const string& qual, const string& val, CReportObj& o
         node["all"][qual].Add(obj, false);
     }
     node[qual][val].Add(obj);
+#else
+    //std::cerr << "Add:" << qual << ":" << val << "\n";
+    node[qual][val].Add(obj);
+#endif
 }
 
-DISCREPANCY_CASE(SOURCE_QUALS, BIOSRC, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Some animals are more equal than others...")
+template<>
+class CDiscrepancyPrivateData<eTestNames::SOURCE_QUALS>
+{
+public:
+    void* m_UserData = nullptr;
+};
+
+
+DISCREPANCY_CASE1(SOURCE_QUALS, BIOSRC, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Some animals are more equal than others...",
+    "SOURCE_QUALS_ASNDISC",
+    "SRC_QUAL_PROBLEM",
+    "MISSING_SRC_QUAL"
+)
 {
     for (const CBioSource* biosrc : context.GetBiosources()) {
         CRef<CDiscrepancyObject> disc_obj(context.BiosourceObjRef(*biosrc));
@@ -325,9 +362,16 @@ static size_t GetSortOrderId(const string& subitem, CReportNode& node)
     return ret;
 }
 
+static float g_GetSesameStreetCutoff()
+{
+    float g_SesameStreetCutoff = 0.75;
+    return g_SesameStreetCutoff;
+}
 
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
+    ConvertDuplicates(m_Objs);
+
     CReportNode report, final_report;
     CReportNode::TNodeMap& the_map = m_Objs.GetMap();
     TReportObjectList& all = m_Objs["all"].GetObjects();
@@ -389,7 +433,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                     size_t best_count = 0;
                     fix.Reset(new CSourseQualsAutofixData);
                     fix->m_Qualifier = it.first;
-                    fix->m_User = context.GetUserData();
+                    fix->m_User = m_private.m_UserData;
                     for (auto x: objs) {
                         fix->m_Choice.push_back(x.first);
                         if (best_count < x.second.size()) {
@@ -409,12 +453,12 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             }
 
             if (num < total) { // some missing
-                if (capital.size() == 1 && num / (float)total >= context.GetSesameStreetCutoff()) { // all same and autofixable
+                if (capital.size() == 1 && num / (float)total >= g_GetSesameStreetCutoff()) { // all same and autofixable
                     if (fix.IsNull()) {
                         fix.Reset(new CSourseQualsAutofixData);
                         fix->m_Qualifier = it.first;
                         fix->m_Value = sub.begin()->first;
-                        fix->m_User = context.GetUserData();
+                        fix->m_User = m_private.m_UserData;
                     }
                     for (auto o: missing) {
                         report[diagnosis]["[n] source[s] [has] missing " + it.first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o.second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
@@ -443,7 +487,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             string sort_order_str = NStr::SizetToString(sort_order_id);
             string leading_zeros(MAX_NUM_STR_LEN - sort_order_str.size(), '0');
             string subitem = "[*" + leading_zeros + sort_order_str + "*]" + item.first;
-            if (!context.IsGui()) {
+            if (!CDiscrepancySet::IsGui()) {
                 final_report[diagnosis];
                 if (item.second->GetCount()) {
                     final_report[diagnosis][subitem].SetCount(item.second->GetCount());
@@ -451,7 +495,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                 }
             }
             else {
-                final_report[diagnosis][subitem].Copy(item.second);
+                final_report[diagnosis][subitem] = *item.second;
             }
         }
     }
@@ -588,11 +632,6 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
 #endif
     return CRef<CAutofixReport>();
 }
-
-
-DISCREPANCY_ALIAS(SOURCE_QUALS, SOURCE_QUALS_ASNDISC)
-DISCREPANCY_ALIAS(SOURCE_QUALS, SRC_QUAL_PROBLEM)
-DISCREPANCY_ALIAS(SOURCE_QUALS, MISSING_SRC_QUAL)
 
 
 END_SCOPE(NDiscrepancy)

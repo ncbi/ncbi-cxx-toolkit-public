@@ -38,8 +38,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(division_code_conflicts);
-
 
 // DIVISION_CODE_CONFLICTS
 
@@ -57,7 +55,7 @@ DISCREPANCY_CASE(DIVISION_CODE_CONFLICTS, SEQUENCE, eOncaller, "Division Code Co
 DISCREPANCY_SUMMARIZE(DIVISION_CODE_CONFLICTS)
 {
     if (m_Objs[kDivCodeConfl].GetMap().size() > 1) {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+        xSummarize();
     }
 }
 

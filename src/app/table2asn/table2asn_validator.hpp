@@ -20,6 +20,7 @@ namespace objects
 namespace NDiscrepancy
 {
     class CDiscrepancySet;
+    class CDiscrepancyProduct;
 }
 
 class CTable2AsnContext;
@@ -38,13 +39,13 @@ public:
     void Cleanup(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry, const string& flags) const;
     void UpdateECNumbers(objects::CSeq_entry& entry);
 
-    void CollectDiscrepancies(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry);
+    void CollectDiscrepancies(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry);
     void ReportDiscrepancies();
     void ReportDiscrepancies(const string& filename);
 
 protected:
-    void x_PopulateDiscrepancy(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry);
-    void x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancySet>& discrepancy, std::ostream& ostr);
+    CRef<NDiscrepancy::CDiscrepancyProduct> x_PopulateDiscrepancy(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry) const;
+    void x_ReportDiscrepancies(CRef<NDiscrepancy::CDiscrepancyProduct>& discrepancy, std::ostream& ostr) const;
     typedef map<int, size_t> TErrorStatMap;
     class TErrorStats
     {
@@ -56,8 +57,7 @@ protected:
     CTable2AsnContext*     m_context;
 
     std::mutex  m_discrep_mutex;
-    CRef<objects::CScope>                                  m_discrep_scope;
-    CRef<NDiscrepancy::CDiscrepancySet>                    m_discrepancy;
+    CRef<NDiscrepancy::CDiscrepancyProduct>                m_discr_product;
 
     std::shared_ptr<objects::validator::SValidatorContext> m_val_context;
     vector<TErrorStats>                                    m_val_stats;

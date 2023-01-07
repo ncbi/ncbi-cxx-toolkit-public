@@ -51,8 +51,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(suspect_product_names);
-
 
 string GetTwoFieldSubfield(const string& str, unsigned subfield)
 {
@@ -263,12 +261,6 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, FEAT, eDisc | eOncaller | eSubmitter | e
 }
 
 
-DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 static string ReplaceNoCase(const string& input, const string& search, const string& replace)
 {
     string find = search;
@@ -285,7 +277,7 @@ static string ReplaceNoCase(const string& input, const string& search, const str
 }
 
 
-const void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, CSeq_feat*& prot, CSeq_feat*& mrna)
+static void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, CSeq_feat*& prot, CSeq_feat*& mrna)
 {
     prot = 0;
     mrna = 0;
@@ -306,7 +298,7 @@ const void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, CSeq_feat*& 
 
 
 typedef std::function < CRef<CSeq_feat>() > GetFeatureFunc;
-string FixProductName(const CSuspect_rule* rule, CScope& scope, string& prot_name, GetFeatureFunc get_mrna, GetFeatureFunc get_cds)
+string FixProductName(const CSuspect_rule* rule, CScope&, string& prot_name, GetFeatureFunc get_mrna, GetFeatureFunc get_cds)
 {
     string newtext;
     string orig_prot_name;
@@ -411,12 +403,6 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, FEAT, eOncaller, "Organelle products on non
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(ORGANELLE_PRODUCTS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -587,12 +573,6 @@ DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, FEAT, eDisc | eSubmitter | eSmart, "rRNA
 }
 
 
-DISCREPANCY_SUMMARIZE(SUSPECT_RRNA_PRODUCTS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // _SUSPECT_PRODUCT_NAMES - used for asndisc -N option
 
 DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, STRING, 0, "Suspect Product Names for asndisc -N option")
@@ -623,12 +603,6 @@ DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, STRING, 0, "Suspect Product Names for a
         }
         rule_num++;
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(_SUSPECT_PRODUCT_NAMES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 END_SCOPE(NDiscrepancy)

@@ -39,8 +39,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(feature_per_bioseq);
-
 // COUNT_RRNAS
 
 static inline string rRnaLabel(const CSeqFeatData& data) // eSubtype_rRNA assumed
@@ -49,7 +47,7 @@ static inline string rRnaLabel(const CSeqFeatData& data) // eSubtype_rRNA assume
 }
 
 
-DISCREPANCY_CASE(COUNT_RRNAS, SEQUENCE, eDisc, "Count rRNAs")
+DISCREPANCY_CASE1(COUNT_RRNAS, SEQUENCE, eDisc, "Count rRNAs", "FIND_DUP_RRNAS")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
     if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
@@ -76,15 +74,6 @@ DISCREPANCY_CASE(COUNT_RRNAS, SEQUENCE, eDisc, "Count rRNAs")
         }
     }
 }
-
-
-DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
-DISCREPANCY_ALIAS(COUNT_RRNAS, FIND_DUP_RRNAS);
 
 
 // COUNT_TRNAS
@@ -128,7 +117,7 @@ static const DesiredAAData desired_aaList[] = {
 };
 
 
-DISCREPANCY_CASE(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs")
+DISCREPANCY_CASE1(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs", "FIND_DUP_TRNAS")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
     if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
@@ -183,14 +172,6 @@ DISCREPANCY_CASE(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs")
     }
 }
 
-
-DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
-DISCREPANCY_ALIAS(COUNT_TRNAS, FIND_DUP_TRNAS);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

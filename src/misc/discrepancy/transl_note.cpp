@@ -39,8 +39,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(transl_note);
-
 struct CFeatureInspectResults
 {
     bool m_hasNote;
@@ -117,12 +115,6 @@ DISCREPANCY_CASE(TRANSL_NO_NOTE, FEAT, eDisc, "Transl_except without Note")
 }
 
 
-DISCREPANCY_SUMMARIZE(TRANSL_NO_NOTE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // NOTE_NO_TRANSL
 
 DISCREPANCY_CASE(NOTE_NO_TRANSL, FEAT, eDisc, "Note without Transl_except")
@@ -135,11 +127,6 @@ DISCREPANCY_CASE(NOTE_NO_TRANSL, FEAT, eDisc, "Note without Transl_except")
     }
 }
 
-
-DISCREPANCY_SUMMARIZE(NOTE_NO_TRANSL)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

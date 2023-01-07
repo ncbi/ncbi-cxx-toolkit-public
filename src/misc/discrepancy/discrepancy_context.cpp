@@ -446,6 +446,7 @@ void CDiscrepancyContext::BuildSeqSummary(const CBioseq& bs, CSeqSummary& summar
             summary.First = false;
             summary.EndsWithGap = false;
             summary.HasRef = true;
+            break;
         default:
             _notN(summary);
             break;
@@ -959,6 +960,28 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::StringObjRef(const CObject* fix, c
     return obj;
 }
 
+
+CRef<CDiscrepancyProduct> CDiscrepancyContext::RunTests(const TTestNamesSet& testnames, const CSerialObject& object, const string& filename)
+{
+    for (auto n: testnames)
+        AddTest(n);
+
+    Parse(object, filename);
+    return GetProduct();
+}
+
+CRef<CDiscrepancyProduct> CDiscrepancyContext::GetProduct()
+{
+    auto product = Ref(new CDiscrepancyProductImpl);
+    product->m_Tests = m_Tests;
+    return product;
+}
+
+void CDiscrepancyContext::Parse(const CSerialObject& root, const string& fname)
+{
+    Push(root, fname);
+    ParseAll(*m_RootNode);
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

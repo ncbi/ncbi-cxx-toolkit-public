@@ -46,8 +46,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(biosource_tests);
-
 #if 0
 static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (*call)(CBioSource& src))
 {
@@ -110,12 +108,6 @@ DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, BIOSRC, eDisc | eOncaller | eSmart | e
 }
 
 
-DISCREPANCY_SUMMARIZE(MAP_CHROMOSOME_CONFLICT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // INFLUENZA_DATE_MISMATCH
 
 DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, BIOSRC, eOncaller, "Influenza Strain/Collection Date Mismatch")
@@ -163,12 +155,6 @@ DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, BIOSRC, eOncaller, "Influenza Strain/C
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(INFLUENZA_DATE_MISMATCH)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -227,12 +213,6 @@ DISCREPANCY_CASE(INFLUENZA_QUALS, BIOSRC, eOncaller, "Influenza must have strain
 }
 
 
-DISCREPANCY_SUMMARIZE(INFLUENZA_QUALS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // INFLUENZA_SEROTYPE
 
 DISCREPANCY_CASE(INFLUENZA_SEROTYPE, BIOSRC, eOncaller, "Influenza A virus must have serotype")
@@ -251,12 +231,6 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE, BIOSRC, eOncaller, "Influenza A virus must 
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(INFLUENZA_SEROTYPE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -279,12 +253,6 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE_FORMAT, BIOSRC, eOncaller, "Influenza A viru
 }
 
 
-DISCREPANCY_SUMMARIZE(INFLUENZA_SEROTYPE_FORMAT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // UNCULTURED_NOTES
 
 DISCREPANCY_CASE(UNCULTURED_NOTES, BIOSRC, eOncaller | eFatal, "Uncultured Notes")
@@ -299,12 +267,6 @@ DISCREPANCY_CASE(UNCULTURED_NOTES, BIOSRC, eOncaller | eFatal, "Uncultured Notes
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(UNCULTURED_NOTES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -355,12 +317,6 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, BIOSRC, eOncaller, "Viruses should specify
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MISSING_VIRAL_QUALS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -436,12 +392,6 @@ DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, BIOSRC, eDisc | eOncaller, "ATCC strain 
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(ATCC_CULTURE_CONFLICT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -546,12 +496,6 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, BIOSRC, eDisc | eOncaller | e
 }
 
 
-DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MAG_SHOULD_NOT_HAVE_STRAIN
 
 DISCREPANCY_CASE(MAG_SHOULD_NOT_HAVE_STRAIN, BIOSRC, eDisc | eSmart, "Organism assembled from metagenome reads should not have strain")
@@ -583,12 +527,6 @@ DISCREPANCY_CASE(MAG_SHOULD_NOT_HAVE_STRAIN, BIOSRC, eDisc | eSmart, "Organism a
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MAG_SHOULD_NOT_HAVE_STRAIN)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -633,12 +571,6 @@ DISCREPANCY_CASE(MAG_MISSING_ISOLATE, BIOSRC, eDisc | eSmart, "Organism assemble
 }
 
 
-DISCREPANCY_SUMMARIZE(MAG_MISSING_ISOLATE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MULTISRC
 
 DISCREPANCY_CASE(MULTISRC, BIOSRC, eDisc | eOncaller, "Comma or semicolon appears in strain or isolate")
@@ -660,12 +592,6 @@ DISCREPANCY_CASE(MULTISRC, BIOSRC, eDisc | eOncaller, "Comma or semicolon appear
 }
 
 
-DISCREPANCY_SUMMARIZE(MULTISRC)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MULTIPLE_CULTURE_COLLECTION
 
 DISCREPANCY_CASE(MULTIPLE_CULTURE_COLLECTION, BIOSRC, eOncaller, "Multiple culture-collection quals")
@@ -684,12 +610,6 @@ DISCREPANCY_CASE(MULTIPLE_CULTURE_COLLECTION, BIOSRC, eOncaller, "Multiple cultu
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MULTIPLE_CULTURE_COLLECTION)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -738,12 +658,6 @@ DISCREPANCY_CASE(REQUIRED_STRAIN, BIOSRC, eDisc | eSubmitter | eSmart, "Bacteria
             m_Objs["[n] biosource[s] [is] missing required strain value"].Add(*context.BiosourceObjRef(*biosrc));
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(REQUIRED_STRAIN)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -805,12 +719,6 @@ DISCREPANCY_CASE(STRAIN_CULTURE_COLLECTION_MISMATCH, BIOSRC, eOncaller | eSmart,
 }
 
 
-DISCREPANCY_SUMMARIZE(STRAIN_CULTURE_COLLECTION_MISMATCH)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // SP_NOT_UNCULTURED
 
 DISCREPANCY_CASE(SP_NOT_UNCULTURED, BIOSRC, eOncaller, "Organism ending in sp. needs tax consult")
@@ -823,12 +731,6 @@ DISCREPANCY_CASE(SP_NOT_UNCULTURED, BIOSRC, eOncaller, "Organism ending in sp. n
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(SP_NOT_UNCULTURED)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -855,12 +757,6 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, SEQUENCE, eDisc, "Find tRNAs on the same str
             m_Objs[strand_plus ? "[n] tRNA[s] on plus strand" : "[n] tRNA[s] on minus strand"].Add(*context.SeqFeatObjRef(*feat));
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(FIND_STRAND_TRNAS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -935,12 +831,6 @@ DISCREPANCY_CASE(REQUIRED_CLONE, BIOSRC, eOncaller, "Uncultured or environmental
             m_Objs["[n] biosource[s] [is] missing required clone value"].Add(*context.BiosourceObjRef(*biosrc));
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(REQUIRED_CLONE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1148,12 +1038,6 @@ DISCREPANCY_CASE(ORGANELLE_ITS, SEQUENCE, eOncaller, "Test Bioseqs for suspect r
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(ORGANELLE_ITS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1397,14 +1281,14 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
     auto& M = m_Objs.GetMap();
     string subtype;
     for (auto a = M.cbegin(); a != M.cend(); ++a) {
-        stringstream ss(a->first);
+        stringstream ss_a(a->first);
         CBioSource bs_a;
-        ss >> MSerial_AsnBinary >> bs_a;
+        ss_a >> MSerial_AsnBinary >> bs_a;
         auto b = a;
         for (++b; b != M.cend(); ++b) {
-            stringstream ss(b->first);
+            stringstream ss_b(b->first);
             CBioSource bs_b;
-            ss >> MSerial_AsnBinary >> bs_b;
+            ss_b >> MSerial_AsnBinary >> bs_b;
             TInconsistecyDescriptionList diffs;
             GetBiosourceDifferences(bs_a, bs_b, diffs);
             if (!diffs.empty()) {
@@ -1604,12 +1488,6 @@ DISCREPANCY_CASE(UNNECESSARY_ENVIRONMENTAL, BIOSRC, eOncaller, "Unnecessary envi
 }
 
 
-DISCREPANCY_SUMMARIZE(UNNECESSARY_ENVIRONMENTAL)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // END_COLON_IN_COUNTRY
 
 DISCREPANCY_CASE(END_COLON_IN_COUNTRY, BIOSRC, eOncaller, "Country name end with colon")
@@ -1626,12 +1504,6 @@ DISCREPANCY_CASE(END_COLON_IN_COUNTRY, BIOSRC, eOncaller, "Country name end with
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(END_COLON_IN_COUNTRY)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1701,12 +1573,6 @@ DISCREPANCY_CASE(COUNTRY_COLON, BIOSRC, eOncaller, "Country description should o
 }
 
 
-DISCREPANCY_SUMMARIZE(COUNTRY_COLON)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 static bool ChangeCountryColonToComma(CBioSource& src)
 {
     if (!src.IsSetSubtype()) {
@@ -1766,12 +1632,6 @@ DISCREPANCY_CASE(HUMAN_HOST, BIOSRC, eDisc | eOncaller, "\'Human\' in host shoul
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(HUMAN_HOST)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1855,12 +1715,6 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, BIOSRC, eDisc | eOncaller, "Authority and Taxn
 }
 
 
-DISCREPANCY_SUMMARIZE(CHECK_AUTHORITY)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // TRINOMIAL_SHOULD_HAVE_QUALIFIER
 
 static const pair<int, string> srcqual_keywords[] = {
@@ -1914,12 +1768,6 @@ DISCREPANCY_CASE(TRINOMIAL_SHOULD_HAVE_QUALIFIER, BIOSRC, eDisc | eOncaller | eS
 }
 
 
-DISCREPANCY_SUMMARIZE(TRINOMIAL_SHOULD_HAVE_QUALIFIER)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE
 
 DISCREPANCY_CASE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE, BIOSRC, eOncaller, "Species-specific primers, no environmental sample")
@@ -1948,12 +1796,6 @@ DISCREPANCY_CASE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE, BIOSRC, eOncaller, "
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -2038,12 +1880,6 @@ DISCREPANCY_CASE(MISSING_PRIMER, BIOSRC, eOncaller, "Missing values in primer se
 }
 
 
-DISCREPANCY_SUMMARIZE(MISSING_PRIMER)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // DUPLICATE_PRIMER_SET
 
 static bool EqualPrimerSets(const CPCRPrimerSet::Tdata& a, const CPCRPrimerSet::Tdata& b)
@@ -2098,12 +1934,6 @@ DISCREPANCY_CASE(DUPLICATE_PRIMER_SET, BIOSRC, eOncaller, "Duplicate PCR primer 
 }
 
 
-DISCREPANCY_SUMMARIZE(DUPLICATE_PRIMER_SET)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 
 // METAGENOMIC
 
@@ -2122,12 +1952,6 @@ DISCREPANCY_CASE(METAGENOMIC, BIOSRC, eDisc | eOncaller | eSmart, "Source has me
 }
 
 
-DISCREPANCY_SUMMARIZE(METAGENOMIC)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // METAGENOME_SOURCE
 
 DISCREPANCY_CASE(METAGENOME_SOURCE, BIOSRC, eDisc | eOncaller | eSmart, "Source has metagenome_source qualifier")
@@ -2142,12 +1966,6 @@ DISCREPANCY_CASE(METAGENOME_SOURCE, BIOSRC, eDisc | eOncaller | eSmart, "Source 
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(METAGENOME_SOURCE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -2170,7 +1988,8 @@ static string GetSubtypeName(const CSubSource& qual)
 static const char* kDupSrc = "[n] source[s] [has] two or more qualifiers with the same value";
 
 
-DISCREPANCY_CASE(DUP_SRC_QUAL, BIOSRC, eDisc | eOncaller | eSmart, "Each qualifier on a source should have different value")
+DISCREPANCY_CASE1(DUP_SRC_QUAL, BIOSRC, eDisc | eOncaller | eSmart, "Each qualifier on a source should have different value",
+    "DUP_SRC_QUAL_DATA")
 {
     for (const CBioSource* biosrc : context.GetBiosources()) {
         map<string, vector<string> > Map;
@@ -2267,14 +2086,6 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, BIOSRC, eDisc | eOncaller | eSmart, "Each qualifi
 }
 
 
-DISCREPANCY_SUMMARIZE(DUP_SRC_QUAL)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
-DISCREPANCY_ALIAS(DUP_SRC_QUAL, DUP_SRC_QUAL_DATA)
-
 
 // UNUSUAL_ITS
 
@@ -2298,12 +2109,6 @@ DISCREPANCY_CASE(UNUSUAL_ITS, SEQUENCE, eDisc | eOncaller, "Test Bioseqs for unu
             m_Objs["[n] Bioseq[s] [has] unusual rRNA / ITS"].Add(*context.BioseqObjRef());
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(UNUSUAL_ITS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -2373,12 +2178,6 @@ DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have co
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(SARS_QUALS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
