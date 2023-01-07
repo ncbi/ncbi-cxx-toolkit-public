@@ -42,6 +42,8 @@
 #include <util/format_guess.hpp>
 #include <util/compress/stream_util.hpp>
 #include <util/line_reader.hpp>
+#include <corelib/rwstream.hpp>
+#include <util/multi_writer.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(NDiscrepancy);
@@ -62,15 +64,14 @@ protected:
     void x_ParseDirectory(const string& name, bool recursive);
     unsigned x_ProcessOne(const string& filename);
     unsigned x_ProcessAll(const string& outname);
-    void x_Output(const string& filename, CDiscrepancySet& tests, unsigned short flags);
-    void x_OutputXml(const string& filename, CDiscrepancySet& tests, unsigned short flags);
+    void x_Output(const string& fname, CDiscrepancyProduct& tests, unsigned short flags);
     void x_Autofix(CDiscrepancySet& tests);
 
     CRef<CScope> m_Scope;
     string m_SuspectRules;
     string m_Lineage;   // override lineage
     vector<string> m_Files;
-    vector<string> m_Tests;
+    TTestNamesSet m_Tests;
 
     char m_Group{0};
     bool m_SuspectProductNames{false};
@@ -100,12 +101,12 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
     CArgDescriptions::PrintUsage(str, detailed);
     if (detailed) {
         str += "TESTS\n";
-        const vector<string> names = GetDiscrepancyNames();
-        for (const string& nm : names) {
+        auto names = GetDiscrepancyNames(0);
+        for (auto nm : names) {
             str += "   ";
-            str += nm;
-            const vector<string> aliases = GetDiscrepancyAliases(nm);
-            for (const string& al : aliases) {
+            str += GetDiscrepancyCaseName(nm);
+            auto aliases = GetDiscrepancyAliases(nm);
+            for (auto al : aliases) {
                 str += " / ";
                 str += al;
             }
@@ -162,7 +163,6 @@ void CDiscRepApp::Init()
 */
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 }
-
 
 string CDiscRepApp::x_ConstructOutputName(const string& input) // LCOV_EXCL_START
 {
@@ -231,9 +231,9 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 }
 
 
-void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
+void CDiscRepApp::x_ParseDirectory(const string& dirname, bool recursive)
 {
-    CDir Dir(name);
+    CDir Dir(dirname);
     if (!Dir.Exists() || !Dir.IsDir()) return;
 
     string ext = GetArgs()["x"].AsString();
@@ -244,10 +244,10 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 
     CDir::TEntries Entries = Dir.GetEntries();
     for (const CDir::TEntry& entry : Entries) {
-        const string fname = entry->GetName();
-        if (fname == "." || fname == "..") continue;
+        auto filename = entry->GetName();
+        if (filename == "." || filename == "..") continue;
         if (recursive && entry->IsDir()) x_ParseDirectory(entry->GetPath(), true);
-        if (NStr::EndsWith(fname, ext) && !NStr::EndsWith(fname, autofixext))
+        if (NStr::EndsWith(filename, ext) && !NStr::EndsWith(filename, autofixext))
         {
             if (entry->IsFile())
                 m_Files.push_back(entry->GetPath());
@@ -258,16 +258,17 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
 
 unsigned CDiscRepApp::x_ProcessOne(const string& fname) // LCOV_EXCL_START
 {
-    unsigned severity = 0;
+    unsigned severity;
+    CRef<CDiscrepancyProduct> product;
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
-        Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
+        Tests->AddTest(eTestNames::_SUSPECT_PRODUCT_NAMES);
         Tests->ParseStrings(fname);
         severity = Tests->Summarize();
     }
     else {
-        for (const string& tname : m_Tests) {
+        for (auto tname : m_Tests) {
             Tests->AddTest(tname);
         }
         Tests->SetLineage(m_Lineage);
@@ -277,14 +278,26 @@ unsigned CDiscRepApp::x_ProcessOne(const string& fname) // LCOV_EXCL_START
             x_Autofix(*Tests);
         }
     }
-    unsigned short flags = (GetArgs()["S"].AsBoolean() ? CDiscrepancySet::eOutput_Summary : 0) | (m_Fat ? CDiscrepancySet::eOutput_Fatal : 0) | (m_Ext ? CDiscrepancySet::eOutput_Ext : 0);
-    m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests, flags) : x_Output(x_ConstructOutputName(fname), *Tests, flags);
-    if (m_Print) {
-        m_Xml ? Tests->OutputXML(cout, flags) : Tests->OutputText(cout, m_Fat, false);
-    }
+    auto outfilename = x_ConstructOutputName(fname);
+    x_Output(outfilename, *Tests->GetProduct(), 0);
     return severity;
 } // LCOV_EXCL_STOP
 
+
+void CDiscRepApp::x_Output(const string& fname, CDiscrepancyProduct& tests, unsigned short iflags)
+{
+    //m_Fat m_Group
+    unsigned short flags = (GetArgs()["S"].AsBoolean() ? CDiscrepancySet::eOutput_Summary : 0) | (m_Fat ? CDiscrepancySet::eOutput_Fatal : 0) | (m_Ext ? CDiscrepancySet::eOutput_Ext : 0);
+    flags |= iflags;
+
+    CNcbiOfstream out1(fname, ofstream::out);
+    list<ostream*> olist{&out1};
+    if (m_Print)
+        olist.push_back(&std::cout);
+
+    CWStream tee(new CMultiWriter(olist));
+    m_Xml ? tests.OutputXML(tee, flags) : tests.OutputText(tee, flags, m_Group);
+}
 
 unsigned CDiscRepApp::x_ProcessAll(const string& outname)
 {
@@ -293,7 +306,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
-        Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
+        Tests->AddTest(eTestNames::_SUSPECT_PRODUCT_NAMES);
         for (const string& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
@@ -303,7 +316,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         }
         severity = Tests->Summarize();
     } else if (m_AutoFix) {
-        for (const string& tname : m_Tests) {
+        for (auto tname : m_Tests) {
             Tests->AddTest(tname);
         }
         Tests->SetLineage(m_Lineage);
@@ -318,7 +331,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         }
     } else {
         for (const string& fname : m_Files) {
-            for (const string& tname : m_Tests) {
+            for (auto tname : m_Tests) {
                 Tests->AddTest(tname);
             }
             Tests->SetLineage(m_Lineage);
@@ -330,44 +343,16 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         }
         severity = Tests->Summarize();
     }
-    unsigned short flags = (GetArgs()["S"].AsBoolean() ? CDiscrepancySet::eOutput_Summary : 0) | (m_Fat ? CDiscrepancySet::eOutput_Fatal : 0) | (m_Ext ? CDiscrepancySet::eOutput_Ext : 0) | CDiscrepancySet::eOutput_Files;
-    m_Xml ? x_OutputXml(outname, *Tests, flags) : x_Output(outname, *Tests, flags);
-    if (m_Print) {
-        m_Xml ? Tests->OutputXML(cout, flags) : Tests->OutputText(cout, m_Fat, true);
-    }
+    unsigned short flags = CDiscrepancySet::eOutput_Files;
+    x_Output(outname, *Tests->GetProduct(), flags);
+
     return severity;
-}
-
-
-void CDiscRepApp::x_Output(const string& filename, CDiscrepancySet& tests, unsigned short flags)
-{
-    CNcbiOfstream out(filename, ofstream::out);
-    tests.OutputText(out, flags, m_Group);
-}
-
-
-void CDiscRepApp::x_OutputXml(const string& filename, CDiscrepancySet& tests, unsigned short flags)
-{
-    CNcbiOfstream out(filename, ofstream::out);
-    tests.OutputXML(out, flags);
 }
 
 
 void CDiscRepApp::x_Autofix(CDiscrepancySet& tests)
 {
-    TReportObjectList tofix;
-    map<string, size_t> ignore;
-    for (const auto& tst : tests.GetTests()) {
-        const TReportItemList& list = tst.second->GetReport();
-        for (const auto& it : list) {
-            for (auto& obj : it->GetDetails()) {
-                if (obj->CanAutofix()) {
-                    tofix.push_back(CRef<CReportObj>(&*obj));
-                }
-            }
-        }
-    }
-    tests.Autofix(tofix, ignore);
+    tests.Autofix();
 }
 
 
@@ -401,7 +386,7 @@ int CDiscRepApp::Run()
     }
 
     // constructing the test list
-    set<string> Tests;
+    TTestNamesSet Tests;
     if (args["e"]) {
         if (args["N"]) {
             ERR_POST("Options -N and -e are mutually exclusive");
@@ -410,12 +395,12 @@ int CDiscRepApp::Run()
         list<string> List;
         NStr::Split(args["e"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         for (const string& s : List) {
-            string name = GetDiscrepancyCaseName(s);
-            if (name.empty()) {
+            auto name = GetDiscrepancyCaseName(s);
+            if (name == eTestNames::notset) {
                 ERR_POST("Test name not found: " + s);
                 return 1;
             } else {
-                Tests.insert(name);
+                Tests.set(name);
             }
         }
         if (m_Group) {
@@ -424,7 +409,7 @@ int CDiscRepApp::Run()
         }
     }
     else if (!args["N"]) {
-        vector<string> AllTests;
+        TTestNamesSet AllTests;
         switch (m_Group) {
             case 'q':
                 AllTests = GetDiscrepancyNames(eSmart);
@@ -439,9 +424,9 @@ int CDiscRepApp::Run()
                 AllTests = GetDiscrepancyNames(eFatal);
                 break;
             default:
-                AllTests = GetDiscrepancyNames();
+                AllTests = GetDiscrepancyNames(0);
         }
-        copy(AllTests.begin(), AllTests.end(), inserter(Tests, Tests.begin()));
+        Tests += AllTests;
     }
     if (args["d"]) {
         if (args["N"]) {
@@ -451,12 +436,12 @@ int CDiscRepApp::Run()
         list<string> List;
         NStr::Split(args["d"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         for (const string& s : List) {
-            string name = GetDiscrepancyCaseName(s);
-            if (name.empty()) {
+            auto name = GetDiscrepancyCaseName(s);
+            if (name == eTestNames::notset) {
                 ERR_POST("Test name not found: " + s);
                 return 1;
             } else {
-                Tests.erase(name);
+                Tests.reset(name);
             }
         }
     }
@@ -464,7 +449,7 @@ int CDiscRepApp::Run()
         m_SuspectProductNames = true;
     }
     else {
-        copy(Tests.begin(), Tests.end(), back_inserter(m_Tests));
+        m_Tests += Tests;
         if (m_Tests.empty()) {
             ERR_POST("Empty test list");
             return 1;
@@ -486,8 +471,8 @@ int CDiscRepApp::Run()
     }
 
     if (args["LIST"]) {
-        for (const string& t : m_Tests) {
-            cout << t << "\n";
+        for (auto t : m_Tests) {
+            cout << GetDiscrepancyCaseName(t) << "\n";
         }
         return 0;
     }

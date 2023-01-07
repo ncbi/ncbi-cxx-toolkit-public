@@ -402,7 +402,7 @@ size_t CTbl2AsnApp::xGetNumThreads() const
         numThreadsConfig = GetConfig().GetString("table2asn", "UseThreads", "one");
     }
     static constexpr array<string_view, 3> numThreadsValues{"one", "two", "many"};
-    auto numThreads = distance(begin(numThreadsValues), 
+    auto numThreads = distance(begin(numThreadsValues),
             find(begin(numThreadsValues), end(numThreadsValues), numThreadsConfig));
     numThreads += 1;
     if (1 <= numThreads && numThreads <= 3) {
@@ -430,7 +430,7 @@ int CTbl2AsnApp::Run()
         }
     }
 
-    m_context.m_disable_huge_files = args["disable-huge"]; 
+    m_context.m_disable_huge_files = args["disable-huge"];
     if  (!m_context.m_disable_huge_files) {
         m_context.m_can_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false) || args["huge"];
         if (m_context.m_can_use_huge_files)
@@ -1106,7 +1106,7 @@ void CTbl2AsnApp::ProcessOneEntry(
             m_validator->ValCollect(submit, entry, m_context.m_validate);
         }
 
-        m_validator->CollectDiscrepancies(submit, entry);
+        m_validator->CollectDiscrepancies(submit, seh);
 
         if (m_context.m_make_flatfile)
         {
@@ -1265,7 +1265,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
         m_validator->ValCollect(submit, entry, m_context.m_validate);
     }
 
-    m_validator->CollectDiscrepancies(submit, entry);
+    m_validator->CollectDiscrepancies(submit, seh);
 
     // ff generator is invoked in other places
 }
@@ -1316,14 +1316,14 @@ void CTbl2AsnApp::CloseDataStreams()
 }
 
 static bool s_UseHugeFileMode(const CTable2AsnContext& context, CFormatGuess::EFormat format)
-{   
+{
     if (context.m_disable_huge_files) {
         return false;
     }
 
     return context.m_can_use_huge_files;
-/* 
-    return (context.m_can_use_huge_files || 
+/*
+    return (context.m_can_use_huge_files ||
             format == CFormatGuess::eFasta ||
             format == CFormatGuess::eGff3);
             */
@@ -1376,14 +1376,14 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
                 auto message = e.GetMsg();
                 if (message == "File format not supported") {
                     hugeFile.m_format = CFormatGuess::eFasta;
-                } 
+                }
                 else {
                     throw;
                 }
             }
-           
+
             if (s_UseHugeFileMode(m_context, hugeFile.m_format)) {
-                    
+
                 if (!m_context.m_use_threads) {
                     m_context.m_use_threads = xGetNumThreads();
                 }
@@ -1391,11 +1391,11 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
                 ProcessHugeFile(hugeFile, output);
             }
             else {
-                const string objectType = 
+                const string objectType =
                     hugeFile.m_content ?
                     hugeFile.m_content->GetName() :
                     "";
-                ProcessOneFile(hugeFile.m_format, 
+                ProcessOneFile(hugeFile.m_format,
                         objectType,
                         //*(hugeFile.m_stream),
                         hugeFile.m_stream,
@@ -1440,13 +1440,13 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
     }
 }
 
-void CTbl2AsnApp::ProcessOneFile(CFormatGuess::EFormat format, 
+void CTbl2AsnApp::ProcessOneFile(CFormatGuess::EFormat format,
         const string& contentType,
         unique_ptr<CNcbiIstream>& pIstr,
         CNcbiOstream* output)
 {
     CMultiReader::TAnnots annots;
-    CRef<CSerialObject> pInputObject = 
+    CRef<CSerialObject> pInputObject =
         m_reader->FetchEntry(format,
                              contentType,
                              pIstr,
@@ -1466,7 +1466,7 @@ void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
 
 void CTbl2AsnApp::xProcessOneFile(
         CFormatGuess::EFormat format,
-        CRef<CSerialObject> input_obj, 
+        CRef<CSerialObject> input_obj,
         CMultiReader::TAnnots& annots,
         CNcbiOstream* output)
 {
@@ -1545,7 +1545,7 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
 
     auto compareNames = [](const auto& l, const auto& r) { return l->GetPath() < r->GetPath(); };
     sort(vec.begin(), vec.end(), compareNames);
-    
+
     bool commonOutputStream = GetArgs()["o"];
     if (commonOutputStream) {
         SetupAndOpenDataStreams();

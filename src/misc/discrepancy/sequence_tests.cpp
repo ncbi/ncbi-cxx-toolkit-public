@@ -65,8 +65,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(sequence_tests);
-
 
 // DUP_DEFLINE
 
@@ -128,12 +126,6 @@ DISCREPANCY_CASE(TERMINAL_NS, SEQUENCE, eDisc | eSmart | eBig | eFatal, "Ns at e
 }
 
 
-DISCREPANCY_SUMMARIZE(TERMINAL_NS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // SHORT_PROT_SEQUENCES
 
 DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, SEQUENCE, eDisc | eOncaller | eSmart, "Protein sequences should be at least 50 aa, unless they are partial")
@@ -145,12 +137,6 @@ DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, SEQUENCE, eDisc | eOncaller | eSmart, "Pr
             m_Objs["[n] protein sequences are shorter than 50 aa."].Add(*context.BioseqObjRef(), false);
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(SHORT_PROT_SEQUENCES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -206,12 +192,6 @@ DISCREPANCY_CASE(MRNA_ON_WRONG_SEQUENCE_TYPE, SEQUENCE, eDisc | eOncaller, "Euka
 }
 
 
-DISCREPANCY_SUMMARIZE(MRNA_ON_WRONG_SEQUENCE_TYPE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // DISC_GAPS
 
 const string kSequencesWithGaps = "[n] sequence[s] contain[S] gaps";
@@ -246,12 +226,6 @@ DISCREPANCY_CASE(GAPS, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "Sequences 
 }
 
 
-DISCREPANCY_SUMMARIZE(GAPS)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // BIOPROJECT_ID
 
 DISCREPANCY_CASE(BIOPROJECT_ID, SEQUENCE, eOncaller, "Sequences with BioProject IDs")
@@ -278,12 +252,6 @@ DISCREPANCY_CASE(BIOPROJECT_ID, SEQUENCE, eOncaller, "Sequences with BioProject 
 }
 
 
-DISCREPANCY_SUMMARIZE(BIOPROJECT_ID)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MISSING_DEFLINES
 
 DISCREPANCY_CASE(MISSING_DEFLINES, SEQUENCE, eOncaller, "Missing definition lines")
@@ -294,11 +262,6 @@ DISCREPANCY_CASE(MISSING_DEFLINES, SEQUENCE, eOncaller, "Missing definition line
     }
 }
 
-
-DISCREPANCY_SUMMARIZE(MISSING_DEFLINES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
 
 
 // N_RUNS_14
@@ -312,12 +275,6 @@ DISCREPANCY_CASE(N_RUNS_14, SEQUENCE, eDisc | eTSA, "Runs of more than 14 Ns")
             m_Objs["[n] sequence[s] [has] runs of 15 or more Ns"].Add(*context.BioseqObjRef());
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(N_RUNS_14)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -335,15 +292,9 @@ DISCREPANCY_CASE(EXTERNAL_REFERENCE, SEQUENCE, eDisc | eOncaller, "Sequence has 
 }
 
 
-DISCREPANCY_SUMMARIZE(EXTERNAL_REFERENCE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // 10_PERCENTN
 
-DISCREPANCY_CASE(10_PERCENTN, SEQUENCE, eDisc | eSubmitter | eSmart | eTSA, "Greater than 10 percent Ns")
+DISCREPANCY_CASE0(TEN_PERCENTN, "10_PERCENTN", SEQUENCE, eDisc | eSubmitter | eSmart | eTSA, "Greater than 10 percent Ns")
 {
     const double MIN_N_PERCENTAGE = 10.0;
 
@@ -354,12 +305,6 @@ DISCREPANCY_CASE(10_PERCENTN, SEQUENCE, eDisc | eSubmitter | eSmart | eTSA, "Gre
             m_Objs["[n] sequence[s] [has] > 10% Ns"].Add(*context.BioseqObjRef());
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(10_PERCENTN)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -375,7 +320,7 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
         string key = feat.GetData().IsGene() ? "gene" : feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
         m_Objs[key + ": [n] present"].Info().Incr();
     }
-    if (context.IsGui() && context.IsBioseq()) {
+    if (CDiscrepancySet::IsGui() && context.IsBioseq()) {
         const CBioseq& bioseq = context.CurrentBioseq();
         bool na = false;
         if (bioseq.CanGetInst() && bioseq.GetInst().IsNa()) {
@@ -397,7 +342,7 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
 
 DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
 {
-    if (context.IsGui()) {
+    if (CDiscrepancySet::IsGui()) {
         for (auto& it : m_Objs[kEmptyCStr].GetMap()) {
             if (it.first == "N" || it.first == "A") {
                 continue;
@@ -426,7 +371,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
         }
         m_Objs.GetMap().erase(kEmptyCStr);
     }
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    xSummarize();
 }
 
 
@@ -440,12 +385,6 @@ DISCREPANCY_CASE(EXON_ON_MRNA, SEQUENCE, eOncaller | eSmart, "mRNA sequences sho
             m_Objs["[n] mRNA bioseq[s] [has] exon features"].Add(*context.BioseqObjRef(CDiscrepancyContext::eFixSet));
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(EXON_ON_MRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -581,12 +520,6 @@ DISCREPANCY_CASE(TITLE_ENDS_WITH_SEQUENCE, DESC, eDisc | eSubmitter | eSmart | e
 }
 
 
-DISCREPANCY_SUMMARIZE(TITLE_ENDS_WITH_SEQUENCE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // FEATURE_MOLTYPE_MISMATCH
 
 DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, SEQUENCE, eOncaller, "Sequences with rRNA or misc_RNA features should be genomic DNA")
@@ -624,13 +557,6 @@ DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, SEQUENCE, eOncaller, "Sequences with 
         }
     }
 }
-
-
-DISCREPANCY_SUMMARIZE(FEATURE_MOLTYPE_MISMATCH)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
 
 DISCREPANCY_AUTOFIX(FEATURE_MOLTYPE_MISMATCH)
 {
@@ -903,12 +829,12 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
         }
     }
 
-    for (auto& it : m_Objs[kDBLinkCollect].GetMap()) {
+    for (auto& it2 : m_Objs[kDBLinkCollect].GetMap()) {
         bool this_present = true;
         bool this_same = true;
-        AnalyzeField(*it.second, this_present, this_same);
-        string new_label = AdjustDBLinkFieldName(it.first) + " " + GetSummaryLabel(this_present, this_same);
-        for (auto& s : it.second->GetMap()){
+        AnalyzeField(*it2.second, this_present, this_same);
+        string new_label = AdjustDBLinkFieldName(it2.first) + " " + GetSummaryLabel(this_present, this_same);
+        for (auto& s : it2.second->GetMap()){
             for (auto& q : s.second->GetObjects()) {
                 m_Objs[top_label][new_label][s.first].Add(*q);
             }
@@ -916,7 +842,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
     }
     m_Objs.GetMap().erase(kDBLinkCollect);
 
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    xSummarize();
 }
 
 
@@ -1004,12 +930,12 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
         }
     }
 
-    for (auto& it : m_Objs[kStructuredCommentReport].GetMap()) {
+    for (auto& it2 : m_Objs[kStructuredCommentReport].GetMap()) {
         bool this_present = true;
         bool this_same = true;
-        AnalyzeField(*it.second, this_present, this_same);
-        string new_label = it.first + " " + GetSummaryLabel(this_present, this_same);
-        for (auto& s : it.second->GetMap()) {
+        AnalyzeField(*it2.second, this_present, this_same);
+        string new_label = it2.first + " " + GetSummaryLabel(this_present, this_same);
+        for (auto& s : it2.second->GetMap()) {
             string sub_label = s.first;
             if (this_present && this_same) {
                 NStr::ReplaceInPlace(sub_label, "[n]", "All");
@@ -1021,7 +947,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
     }
     m_Objs.GetMap().erase(kStructuredCommentReport);
 
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    xSummarize();
 }
 
 
@@ -1041,12 +967,6 @@ DISCREPANCY_CASE(MISSING_STRUCTURED_COMMENT, SEQUENCE, eDisc | eTSA, "Structured
         }
         m_Objs["[n] sequence[s] [does] not include structured comments."].Add(*context.BioseqObjRef());
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MISSING_STRUCTURED_COMMENT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1078,12 +998,6 @@ DISCREPANCY_CASE(MISSING_PROJECT, SEQUENCE, eDisc | eTSA, "Project not included"
 }
 
 
-DISCREPANCY_SUMMARIZE(MISSING_PROJECT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // COUNT_UNVERIFIED
 
 DISCREPANCY_CASE(COUNT_UNVERIFIED, SEQUENCE, eOncaller, "Count number of unverified sequences")
@@ -1103,12 +1017,6 @@ DISCREPANCY_CASE(COUNT_UNVERIFIED, SEQUENCE, eOncaller, "Count number of unverif
 }
 
 
-DISCREPANCY_SUMMARIZE(COUNT_UNVERIFIED)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // DEFLINE_PRESENT
 
 const string kDeflineExists = "[n] Bioseq[s] [has] definition line";
@@ -1119,12 +1027,6 @@ DISCREPANCY_CASE(DEFLINE_PRESENT, SEQUENCE, eDisc, "Test defline existence")
     if (bioseq.CanGetInst() && !bioseq.GetInst().IsAa() && context.GetTitle()) {
         m_Objs[kDeflineExists].Add(*context.BioseqObjRef());
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(DEFLINE_PRESENT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1139,12 +1041,6 @@ DISCREPANCY_CASE(UNUSUAL_NT, SEQUENCE, eDisc | eSubmitter | eSmart, "Sequence co
             m_Objs["[n] sequence[s] contain[S] nucleotides that are not ATCG or N"].Add(*context.BioseqObjRef());
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(UNUSUAL_NT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1183,12 +1079,6 @@ DISCREPANCY_CASE(TAXNAME_NOT_IN_DEFLINE, SEQUENCE, eDisc | eOncaller, "Complete 
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(TAXNAME_NOT_IN_DEFLINE)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1296,12 +1186,6 @@ DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, SEQUENCE, eOncaller | eSubmitter | eSmart
 }
 
 
-DISCREPANCY_SUMMARIZE(MULTIPLE_CDS_ON_MRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // MRNA_SEQUENCE_MINUS_STRAND_FEATURES
 
 static const string kMrnaSequenceMinusStrandFeatures = "[n] mRNA sequences have features on the complement strand.";
@@ -1330,12 +1214,6 @@ DISCREPANCY_CASE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES, SEQUENCE, eOncaller, "mRNA
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1376,12 +1254,6 @@ DISCREPANCY_CASE(LOW_QUALITY_REGION, SEQUENCE, eDisc | eSubmitter | eSmart, "Seq
             m_Objs["[n] sequence[s] contain[S] low quality region"].Add(*context.BioseqObjRef());
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(LOW_QUALITY_REGION)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -1442,6 +1314,7 @@ DISCREPANCY_SUMMARIZE(MITOCHONDRION_REQUIRED)
 }
 
 
+#if 0
 static bool FixGenome(const CBioseq& bioseq, CScope& scope)
 {
     CBioseq_Handle seq_h = scope.GetBioseqHandle(bioseq);
@@ -1454,6 +1327,7 @@ static bool FixGenome(const CBioseq& bioseq, CScope& scope)
 
     return false;
 }
+#endif
 
 
 DISCREPANCY_AUTOFIX(MITOCHONDRION_REQUIRED)
@@ -1489,14 +1363,6 @@ DISCREPANCY_CASE(SEQ_SHORTER_THAN_50bp, SEQUENCE, eDisc | eSubmitter | eSmart | 
         m_Objs["[n] sequence[s] [is] shorter than 50 nt"].Add(*context.BioseqObjRef());
     }
 }
-
-
-DISCREPANCY_SUMMARIZE(SEQ_SHORTER_THAN_50bp)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 
 
 // SEQ_SHORTER_THAN_200bp
@@ -1710,12 +1576,6 @@ DISCREPANCY_CASE(UNWANTED_SET_WRAPPER, FEAT, eOncaller, "Set wrapper on microsat
 }
 
 
-DISCREPANCY_SUMMARIZE(UNWANTED_SET_WRAPPER)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // FLATFILE_FIND
 struct SpellFixData
 {
@@ -1841,7 +1701,11 @@ void UnitTest_FLATFILE_FIND()
 }
 
 
-DISCREPANCY_CASE(FLATFILE_FIND, SEQUENCE, eOncaller, "Flatfile representation of object contains suspect text")
+DISCREPANCY_CASE1(FLATFILE_FIND, SEQUENCE, eOncaller, "Flatfile representation of object contains suspect text",
+    "FLATFILE_FIND_ONCALLER",
+    "FLATFILE_FIND_ONCALLER_UNFIXABLE",
+    "FLATFILE_FIND_ONCALLER_FIXABLE"
+    )
 {
     bool Found[kSpellFixesSize];
     for (auto& desc : context.GetAllSeqdesc()) {
@@ -1929,11 +1793,6 @@ DISCREPANCY_AUTOFIX(FLATFILE_FIND)
     obj->SetFixed();
     return CRef<CAutofixReport>(new CAutofixReport("FLATFILE_FIND: [n] suspect text[s] [is] fixed", n));
 }
-
-
-DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER);
-DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER_UNFIXABLE);
-DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER_FIXABLE);
 
 
 // ALL_SEQS_SHORTER_THAN_20kb
@@ -2136,12 +1995,6 @@ DISCREPANCY_CASE(CHROMOSOME_PRESENT, SEQ_SET, eSubmitter | eSmart, "Chromosome p
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(CHROMOSOME_PRESENT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

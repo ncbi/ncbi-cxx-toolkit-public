@@ -45,8 +45,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(seqdesc_per_bioseq);
-
 // RETROVIRIDAE_DNA
 
 DISCREPANCY_CASE(RETROVIRIDAE_DNA, SEQUENCE, eOncaller, "Retroviridae DNA")
@@ -61,12 +59,6 @@ DISCREPANCY_CASE(RETROVIRIDAE_DNA, SEQUENCE, eOncaller, "Retroviridae DNA")
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(RETROVIRIDAE_DNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -97,12 +89,6 @@ DISCREPANCY_CASE(NON_RETROVIRIDAE_PROVIRAL, SEQUENCE, eOncaller, "Non-Retrovirid
 }
 
 
-DISCREPANCY_SUMMARIZE(NON_RETROVIRIDAE_PROVIRAL)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // BAD_MRNA_QUAL
 
 DISCREPANCY_CASE(BAD_MRNA_QUAL, SEQUENCE, eOncaller, "mRNA sequence contains rearranged or germline")
@@ -117,12 +103,6 @@ DISCREPANCY_CASE(BAD_MRNA_QUAL, SEQUENCE, eOncaller, "mRNA sequence contains rea
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(BAD_MRNA_QUAL)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -141,12 +121,6 @@ DISCREPANCY_CASE(ORGANELLE_NOT_GENOMIC, SEQUENCE, eDisc | eOncaller, "Organelle 
             m_Objs["[n] non-genomic sequence[s] [is] organelle[s]"].Add(*context.SeqdescObjRef(*biosrc));
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(ORGANELLE_NOT_GENOMIC)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -249,12 +223,6 @@ DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, DESC, eOncaller, "Suspicious 
 }
 
 
-DISCREPANCY_SUMMARIZE(SWITCH_STRUCTURED_COMMENT_PREFIX)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 DISCREPANCY_AUTOFIX(SWITCH_STRUCTURED_COMMENT_PREFIX)
 {
     const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(context.FindObject(*obj));
@@ -346,12 +314,6 @@ DISCREPANCY_CASE(GENOMIC_MRNA, DESC, eOncaller | eSmart, "Genomic mRNA is legal,
 }
 
 
-DISCREPANCY_SUMMARIZE(GENOMIC_MRNA)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 // AUTODEF_USER_OBJECT
 
 DISCREPANCY_CASE(AUTODEF_USER_OBJECT, SEQUENCE, eOncaller, "Nucleotide sequence must have an autodef user object")
@@ -371,12 +333,6 @@ DISCREPANCY_CASE(AUTODEF_USER_OBJECT, SEQUENCE, eOncaller, "Nucleotide sequence 
             m_Objs["[n] nucleotide sequence[s] [has] multiple autodef user objects"].Add(*context.BioseqObjRef());
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(AUTODEF_USER_OBJECT)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

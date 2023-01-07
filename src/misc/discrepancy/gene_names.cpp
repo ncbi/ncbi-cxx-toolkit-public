@@ -37,8 +37,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(gene_names);
-
 
 // BAD_GENE_NAME
 static bool HasBadWord(const string& s, string& word)
@@ -61,7 +59,7 @@ static bool Has4Numbers(const string& s)
         n = isdigit(s[i]) ? n+1 : 0;
     }
     return n >= 4;
-};
+}
 
 
 DISCREPANCY_CASE(BAD_GENE_NAME, FEAT, eDisc | eSubmitter | eSmart, "Bad gene name")
@@ -75,12 +73,6 @@ DISCREPANCY_CASE(BAD_GENE_NAME, FEAT, eDisc | eSubmitter | eSmart, "Bad gene nam
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(BAD_GENE_NAME)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -120,12 +112,6 @@ DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, FEAT, eDisc | eOncaller | eSubmitter |
 }
 
 
-DISCREPANCY_SUMMARIZE(BAD_BACTERIAL_GENE_NAME)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 {
     const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
@@ -156,12 +142,6 @@ DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, FEAT, eDisc | eSubmitter | eSmart
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(EC_NUMBER_ON_UNKNOWN_PROTEIN)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -201,12 +181,6 @@ DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, FEAT, eDisc | eSubmitte
             }
         }
     }
-}
-
-
-DISCREPANCY_SUMMARIZE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
-{
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -264,7 +238,7 @@ DISCREPANCY_SUMMARIZE(DUPLICATE_LOCUS_TAGS)
         }
     }
     m_Objs.GetMap().erase(kEmptyStr);
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    xSummarize();
 }
 
 

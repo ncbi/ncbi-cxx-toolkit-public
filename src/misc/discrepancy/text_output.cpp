@@ -34,8 +34,115 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-// THIS WHOLE THING IS EVIL!
-// DATA LAYER IS MIXED WITH PRESENTATION LAYER :(
+static constexpr std::initializer_list<eTestNames> g_ReportOrder0 = {
+        eTestNames::COUNT_NUCLEOTIDES,
+        eTestNames::LONG_NO_ANNOTATION,
+        eTestNames::NO_ANNOTATION,
+        };
+
+static constexpr std::initializer_list<eTestNames> g_ReportOrder1 = {
+        eTestNames::SOURCE_QUALS,
+        eTestNames::DUP_SRC_QUAL,
+        eTestNames::MAP_CHROMOSOME_CONFLICT,
+        eTestNames::BIOMATERIAL_TAXNAME_MISMATCH,
+        eTestNames::SPECVOUCHER_TAXNAME_MISMATCH,
+        eTestNames::STRAIN_CULTURE_COLLECTION_MISMATCH,
+        eTestNames::TRINOMIAL_SHOULD_HAVE_QUALIFIER,
+        eTestNames::REQUIRED_STRAIN,
+        eTestNames::BACTERIA_SHOULD_NOT_HAVE_ISOLATE,
+        eTestNames::METAGENOMIC,
+        eTestNames::METAGENOME_SOURCE,
+        eTestNames::MAG_SHOULD_NOT_HAVE_STRAIN,
+        eTestNames::MAG_MISSING_ISOLATE,
+
+        eTestNames::TITLE_ENDS_WITH_SEQUENCE,
+        eTestNames::GAPS,
+        eTestNames::N_RUNS,
+        eTestNames::PERCENT_N,
+        eTestNames::TEN_PERCENTN,
+        eTestNames::TERMINAL_NS,
+        eTestNames::ZERO_BASECOUNT,
+        eTestNames::LOW_QUALITY_REGION,
+        eTestNames::UNUSUAL_NT,
+        //eTestNames::SHORT_CONTIG,
+        //eTestNames::SHORT_SEQUENCES,
+        //eTestNames::SEQUENCES_ARE_SHORT,
+        eTestNames::GENOMIC_MRNA,
+
+        eTestNames::CHECK_AUTH_CAPS,
+        eTestNames::CHECK_AUTH_NAME,
+        eTestNames::TITLE_AUTHOR_CONFLICT,
+        eTestNames::CITSUBAFFIL_CONFLICT,
+        eTestNames::SUBMITBLOCK_CONFLICT,
+        eTestNames::UNPUB_PUB_WITHOUT_TITLE,
+        eTestNames::USA_STATE,
+
+        eTestNames::FEATURE_COUNT,
+        eTestNames::PROTEIN_NAMES,
+        eTestNames::SUSPECT_PRODUCT_NAMES,
+        eTestNames::SUSPECT_PHRASES,
+        eTestNames::INCONSISTENT_PROTEIN_ID,
+        eTestNames::MISSING_PROTEIN_ID,
+        eTestNames::MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS,
+        eTestNames::BAD_LOCUS_TAG_FORMAT,
+        eTestNames::INCONSISTENT_LOCUS_TAG_PREFIX,
+        eTestNames::DUPLICATE_LOCUS_TAGS,
+        eTestNames::MISSING_LOCUS_TAGS,
+        eTestNames::NON_GENE_LOCUS_TAG,
+        eTestNames::MISSING_GENES,
+        eTestNames::EXTRA_GENES,
+        eTestNames::BAD_BACTERIAL_GENE_NAME,
+        eTestNames::BAD_GENE_NAME,
+        eTestNames::BAD_GENE_STRAND,
+        eTestNames::DUP_GENES_OPPOSITE_STRANDS,
+        eTestNames::GENE_PARTIAL_CONFLICT,
+        eTestNames::GENE_PRODUCT_CONFLICT,
+        eTestNames::SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME,
+        eTestNames::EC_NUMBER_ON_UNKNOWN_PROTEIN,
+        eTestNames::MISC_FEATURE_WITH_PRODUCT_QUAL,
+        eTestNames::PARTIAL_CDS_COMPLETE_SEQUENCE,
+        eTestNames::CONTAINED_CDS,
+        eTestNames::RNA_CDS_OVERLAP,
+        eTestNames::CDS_TRNA_OVERLAP,
+        eTestNames::OVERLAPPING_RRNAS,
+        eTestNames::FIND_OVERLAPPED_GENES,
+        eTestNames::ORDERED_LOCATION,
+        eTestNames::PARTIAL_PROBLEMS,
+        eTestNames::FEATURE_LOCATION_CONFLICT,
+        eTestNames::PSEUDO_MISMATCH,
+        eTestNames::EUKARYOTE_SHOULD_HAVE_MRNA,
+        eTestNames::MULTIPLE_CDS_ON_MRNA,
+        eTestNames::CDS_WITHOUT_MRNA,
+        eTestNames::BACTERIA_SHOULD_NOT_HAVE_MRNA,
+        eTestNames::BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION,
+        eTestNames::BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS,
+        eTestNames::BACTERIAL_JOINED_FEATURES_NO_EXCEPTION,
+        eTestNames::JOINED_FEATURES,
+        eTestNames::RIBOSOMAL_SLIPPAGE,
+        eTestNames::BAD_BGPIPE_QUALS,
+        eTestNames::CDS_HAS_NEW_EXCEPTION,
+        eTestNames::SHOW_TRANSL_EXCEPT,
+        eTestNames::RNA_NO_PRODUCT,
+        eTestNames::RRNA_NAME_CONFLICTS,
+        eTestNames::SUSPECT_RRNA_PRODUCTS,
+        eTestNames::SHORT_RRNA,
+        eTestNames::FIND_BADLEN_TRNAS,
+        eTestNames::UNUSUAL_MISC_RNA,
+        eTestNames::SHORT_LNCRNA,
+        eTestNames::SHORT_INTRON,
+        eTestNames::EXON_INTRON_CONFLICT,
+        eTestNames::EXON_ON_MRNA,
+        eTestNames::SHORT_PROT_SEQUENCES,
+
+        eTestNames::INCONSISTENT_DBLINK,
+        eTestNames::INCONSISTENT_MOLINFO_TECH,
+        eTestNames::INCONSISTENT_MOLTYPES,
+        eTestNames::INCONSISTENT_STRUCTURED_COMMENTS,
+        eTestNames::QUALITY_SCORES,
+        eTestNames::SEGSETS_PRESENT,
+        };
+
+//static_assert(g_ReportOrder0.size()+g_ReportOrder1.size() == TTestNamesSet::capacity(), "Not all of the tests included in the reporting groups");
 
 
 static bool ShowFatal(const CReportItem& item)
@@ -53,7 +160,7 @@ static bool ShowFatal(const CReportItem& item)
 }
 
 
-static inline string deunderscore(const string s)
+static inline string_view deunderscore(string_view s)
 {
     return s[0] == '_' ? s.substr(1) : s;
 }
@@ -143,8 +250,87 @@ static bool RecursiveFatalSummary(ostream& out, const TReportItemList& list, siz
     return found;
 }
 
+static TReportItemList x_CollectGroup(const std::initializer_list<eTestNames>& m_List, TDiscrepancyCaseMap& tests, bool all)
+{
+    TReportItemList out;
+    for (const auto& it : m_List) {
+        if (tests.find(it) != tests.end()) {
+            TReportItemList tmp = tests[it]->GetReport();
+            for (const auto& tt : tmp) {
+                out.push_back(tt);
+            }
+            tests.erase(it);
+        }
+    }
+    if (all) {
+        for (const auto& it : tests) {
+            TReportItemList list = it.second->GetReport();
+            for (const auto& it2 : list) {
+                out.push_back(it2);
+            }
+        }
+    }
+    #if 0
+    for (const auto& it : m_List) {
+        TReportItemList tmp = it.Collect(tests, false);
+        for (const auto& tt : tmp) {
+            out.push_back(tt);
+        }
+    }
+    if (tests.find(m_Test) != tests.end()) {
+        TReportItemList tmp = tests[m_Test]->GetReport();
+        for (const auto& tt : tmp) {
+            out.push_back(tt);
+        }
+        tests.erase(m_Test);
+    }
+    if (!m_Label.empty()) {
+        TReportObjectList objs;
+        TReportObjectSet hash;
+        _ASSERT(0);
+        #if 0
+        CRef<CDiscrepancyItem> di(new CDiscrepancyItem(m_Label));
+        di->m_Subs = out;
+        bool empty = true;
+        for (const auto& tt : out) {
+            TReportObjectList details = tt->GetDetails();
+            if (!details.empty() || tt->GetCount() > 0) {
+                empty = false;
+            }
+            for (auto& ob : details) {
+                CReportNode::Add(objs, hash, *ob);
+            }
+            if (tt->CanAutofix()) {
+                di->m_Autofix = true;
+            }
+            if (tt->IsInfo()) {
+                di->m_Severity = CDiscrepancyItem::eSeverity_info;
+            }
+            else if (tt->IsFatal()) {
+                di->m_Severity = CDiscrepancyItem::eSeverity_error;
+            }
+        }
+        di->m_Objs = objs;
+        out.clear();
+        if (!empty) {
+            out.push_back(CRef<CReportItem>(di));
+        }
+        #endif
+    }
+    if (all) {
+        for (const auto& it : tests) {
+            TReportItemList list = it.second->GetReport();
+            for (const auto& it : list) {
+                out.push_back(it);
+            }
+        }
+    }
+    #endif
 
-void CDiscrepancyContext::OutputText(ostream& out, unsigned short flags, char group)
+    return out;
+}
+
+void CDiscrepancyProductImpl::OutputText(ostream& out, unsigned short flags, char group)
 {
     switch (group) {
         case 'b':
@@ -161,24 +347,29 @@ void CDiscrepancyContext::OutputText(ostream& out, unsigned short flags, char gr
     }
 
     out << "Summary\n";
-    if (m_Group0.empty() && m_Group1.empty()) {
-        const CDiscrepancyGroup& order = x_OutputOrder();
-        m_Group0 = order[0].Collect(m_Tests, false);
-        m_Group1 = order[1].Collect(m_Tests, true);
-    }
+    TReportItemList m_Group0;
+    TReportItemList m_Group1;
+
+    m_Group0 = x_CollectGroup(g_ReportOrder0, m_Tests, false);
+    m_Group1 = x_CollectGroup(g_ReportOrder1, m_Tests, true);
+    #ifdef _DEBUG111
+    std::cerr << g_ReportOrder0.size() << ":" << g_ReportOrder1.size() << ":" << TTestNamesSet::capacity() << "\n";
+    std::cerr << m_Group0.size() << ":" << m_Group1.size() << "\n";
+    #endif
+
+
     RecursiveSummary(out, m_Group0, flags);
-    if (flags & eOutput_Fatal) {
+    if (flags & CDiscrepancySet::eOutput_Fatal) {
         RecursiveFatalSummary(out, m_Group1, flags);
     }
     RecursiveSummary(out, m_Group1, flags);
 
-    if (flags & eOutput_Summary) return;
+    if (flags & CDiscrepancySet::eOutput_Summary) return;
 
     out << "\nDetailed Report\n\n";
     RecursiveText(out, m_Group0, flags);
     RecursiveText(out, m_Group1, flags);
 }
-
 
 static void Indent(ostream& out, size_t indent)
 {
@@ -271,9 +462,9 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, unsigned sho
 }
 
 
-void CDiscrepancyContext::OutputXML(ostream& out, unsigned short flags)
+void CDiscrepancyProductImpl::OutputXML(ostream& out, unsigned short flags)
 {
-    const TDiscrepancyCaseMap& tests = GetTests();
+    const TDiscrepancyCaseMap& tests = m_Tests;
     out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     out << "<discrepancy_report>\n";
 
@@ -290,8 +481,8 @@ void CDiscrepancyContext::OutputXML(ostream& out, unsigned short flags)
             }
         }
         Indent(out, 1);
-        out << "<test name=\"" << deunderscore(tst.first)
-            << "\" description=\"" << NStr::XmlEncode(GetDiscrepancyDescr(tst.first))
+        out << "<test name=\"" << deunderscore(tst.second->GetSName())
+            << "\" description=\"" << NStr::XmlEncode(tst.second->GetDescription())
             << "\" severity=\"" << SevLevel[max_sev]
             << "\" cardinality=\"" << rep.size() << "\">\n";
         RecursiveXML(out, rep, flags, 2);
@@ -300,123 +491,6 @@ void CDiscrepancyContext::OutputXML(ostream& out, unsigned short flags)
     }
     out << "</discrepancy_report>\n";
 }
-
-
-const CDiscrepancyGroup& CDiscrepancyContext::x_OutputOrder()
-{
-    if (!m_Order) {
-        CRef<CDiscrepancyGroup> G, H;
-        m_Order.Reset(new CDiscrepancyGroup);
-        G.Reset(new CDiscrepancyGroup("", "")); m_Order->Add(G);
-#define LIST_TEST(name) H.Reset(new CDiscrepancyGroup("", #name)); G->Add(H);
-        LIST_TEST(COUNT_NUCLEOTIDES)
-        LIST_TEST(LONG_NO_ANNOTATION)
-        LIST_TEST(NO_ANNOTATION)
-
-        G.Reset(new CDiscrepancyGroup("", "")); m_Order->Add(G);
-        LIST_TEST(SOURCE_QUALS)
-        LIST_TEST(DUP_SRC_QUAL)
-        LIST_TEST(MAP_CHROMOSOME_CONFLICT)
-        LIST_TEST(BIOMATERIAL_TAXNAME_MISMATCH)
-        LIST_TEST(SPECVOUCHER_TAXNAME_MISMATCH)
-        LIST_TEST(STRAIN_CULTURE_COLLECTION_MISMATCH)
-        LIST_TEST(TRINOMIAL_SHOULD_HAVE_QUALIFIER)
-        LIST_TEST(REQUIRED_STRAIN)
-        LIST_TEST(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
-        LIST_TEST(METAGENOMIC)
-        LIST_TEST(METAGENOME_SOURCE)
-        LIST_TEST(MAG_SHOULD_NOT_HAVE_STRAIN)
-        LIST_TEST(MAG_MISSING_ISOLATE)
-
-        LIST_TEST(TITLE_ENDS_WITH_SEQUENCE)
-        LIST_TEST(GAPS)
-        LIST_TEST(N_RUNS)
-        LIST_TEST(PERCENT_N)
-        LIST_TEST(10_PERCENTN)
-        LIST_TEST(TERMINAL_NS)
-        LIST_TEST(ZERO_BASECOUNT)
-        LIST_TEST(LOW_QUALITY_REGION)
-        LIST_TEST(UNUSUAL_NT)
-        LIST_TEST(SHORT_CONTIG)
-        LIST_TEST(SHORT_SEQUENCES)
-        LIST_TEST(SEQUENCES_ARE_SHORT)
-        LIST_TEST(GENOMIC_MRNA)
-
-        LIST_TEST(CHECK_AUTH_CAPS)
-        LIST_TEST(CHECK_AUTH_NAME)
-        LIST_TEST(TITLE_AUTHOR_CONFLICT)
-        LIST_TEST(CITSUBAFFIL_CONFLICT)
-        LIST_TEST(SUBMITBLOCK_CONFLICT)
-        LIST_TEST(UNPUB_PUB_WITHOUT_TITLE)
-        LIST_TEST(USA_STATE)
-
-        LIST_TEST(FEATURE_COUNT)
-        LIST_TEST(PROTEIN_NAMES)
-        LIST_TEST(SUSPECT_PRODUCT_NAMES)
-        LIST_TEST(SUSPECT_PHRASES)
-        LIST_TEST(INCONSISTENT_PROTEIN_ID)
-        LIST_TEST(MISSING_PROTEIN_ID)
-        LIST_TEST(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
-        LIST_TEST(BAD_LOCUS_TAG_FORMAT)
-        LIST_TEST(INCONSISTENT_LOCUS_TAG_PREFIX)
-        LIST_TEST(DUPLICATE_LOCUS_TAGS)
-        LIST_TEST(MISSING_LOCUS_TAGS)
-        LIST_TEST(NON_GENE_LOCUS_TAG)
-        LIST_TEST(MISSING_GENES)
-        LIST_TEST(EXTRA_GENES)
-        LIST_TEST(BAD_BACTERIAL_GENE_NAME)
-        LIST_TEST(BAD_GENE_NAME)
-        LIST_TEST(BAD_GENE_STRAND)
-        LIST_TEST(DUP_GENES_OPPOSITE_STRANDS)
-        LIST_TEST(GENE_PARTIAL_CONFLICT)
-        LIST_TEST(GENE_PRODUCT_CONFLICT)
-        LIST_TEST(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
-        LIST_TEST(EC_NUMBER_ON_UNKNOWN_PROTEIN)
-        LIST_TEST(MISC_FEATURE_WITH_PRODUCT_QUAL)
-        LIST_TEST(PARTIAL_CDS_COMPLETE_SEQUENCE)
-        LIST_TEST(CONTAINED_CDS)
-        LIST_TEST(RNA_CDS_OVERLAP)
-        LIST_TEST(CDS_TRNA_OVERLAP)
-        LIST_TEST(OVERLAPPING_RRNAS)
-        LIST_TEST(FIND_OVERLAPPED_GENES)
-        LIST_TEST(ORDERED_LOCATION)
-        LIST_TEST(PARTIAL_PROBLEMS)
-        LIST_TEST(FEATURE_LOCATION_CONFLICT)
-        LIST_TEST(PSEUDO_MISMATCH)
-        LIST_TEST(EUKARYOTE_SHOULD_HAVE_MRNA)
-        LIST_TEST(MULTIPLE_CDS_ON_MRNA)
-        LIST_TEST(CDS_WITHOUT_MRNA)
-        LIST_TEST(BACTERIA_SHOULD_NOT_HAVE_MRNA)
-        LIST_TEST(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION)
-        LIST_TEST(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
-        LIST_TEST(BACTERIAL_JOINED_FEATURES_NO_EXCEPTION)
-        LIST_TEST(JOINED_FEATURES)
-        LIST_TEST(RIBOSOMAL_SLIPPAGE)
-        LIST_TEST(BAD_BGPIPE_QUALS)
-        LIST_TEST(CDS_HAS_NEW_EXCEPTION)
-        LIST_TEST(SHOW_TRANSL_EXCEPT)
-        LIST_TEST(RNA_NO_PRODUCT)
-        LIST_TEST(RRNA_NAME_CONFLICTS)
-        LIST_TEST(SUSPECT_RRNA_PRODUCTS)
-        LIST_TEST(SHORT_RRNA)
-        LIST_TEST(FIND_BADLEN_TRNAS)
-        LIST_TEST(UNUSUAL_MISC_RNA)
-        LIST_TEST(SHORT_LNCRNA)
-        LIST_TEST(SHORT_INTRON)
-        LIST_TEST(EXON_INTRON_CONFLICT)
-        LIST_TEST(EXON_ON_MRNA)
-        LIST_TEST(SHORT_PROT_SEQUENCES)
-
-        LIST_TEST(INCONSISTENT_DBLINK)
-        LIST_TEST(INCONSISTENT_MOLINFO_TECH)
-        LIST_TEST(INCONSISTENT_MOLTYPES)
-        LIST_TEST(INCONSISTENT_STRUCTURED_COMMENTS)
-        LIST_TEST(QUALITY_SCORES)
-        LIST_TEST(SEGSETS_PRESENT)
-    }
-    return *m_Order;
-}
-
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
