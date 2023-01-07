@@ -55,11 +55,10 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT CHugeFile
 {
 public:
-    static const set<TTypeInfo> g_supported_types;
-
     CHugeFile();
     virtual ~CHugeFile();
-    const set<TTypeInfo>*           m_supported_types = &g_supported_types;
+    const set<TTypeInfo>*           m_supported_types = nullptr;
+
     std::unique_ptr<CMemoryFile>    m_memfile;
     std::unique_ptr<std::istream>   m_stream;
     std::unique_ptr<std::streambuf> m_streambuf;
@@ -81,7 +80,7 @@ public:
     };
 
     void Reset();
-    void Open(const std::string& filename);
+    void Open(const std::string& filename, const set<TTypeInfo>* supported_types);
     bool IsOpen() const { return m_filesize != 0; }
     TTypeInfo RecognizeContent(std::streampos pos);
     TTypeInfo RecognizeContent(std::istream& istr);

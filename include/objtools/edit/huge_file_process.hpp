@@ -56,14 +56,17 @@ class NCBI_XOBJEDIT_EXPORT CHugeFileProcess
 {
 public:
 
+    static const set<TTypeInfo> g_supported_types;
+
     /// constructors
     CHugeFileProcess();
     CHugeFileProcess(CHugeAsnReader* pReader);
-    CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types = nullptr);
+    CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types);
     /// destructor
     virtual ~CHugeFileProcess(void);
-    void Open(const string& file_name, const set<TTypeInfo>* types = nullptr);
-    void OpenFile(const string& file_name, const set<TTypeInfo>* types = nullptr);
+    void Open(const string& file_name, const set<TTypeInfo>* types);
+    void OpenFile(const string& file_name);
+    void OpenFile(const string& file_name, const set<TTypeInfo>* types);
     void OpenReader();
 
     using THandler    = std::function<void(CConstRef<CSubmit_block>, CRef<CSeq_entry>)>;
@@ -89,7 +92,7 @@ private:
 };
 
 END_SCOPE(edit)
-END_SCOPE(object);
+END_SCOPE(object)
 END_NCBI_SCOPE
 
 #endif  ///  NEW_GB_RELEASE_FILE__HPP

@@ -72,10 +72,10 @@ namespace
         CDataLoader* m_loader = nullptr;
     };
 
-};
+}
 
 
-const set<TTypeInfo> CHugeFile::g_supported_types =
+const set<TTypeInfo> CHugeFileProcess::g_supported_types =
 {
     CBioseq_set::GetTypeInfo(),
     CBioseq::GetTypeInfo(),
@@ -103,7 +103,7 @@ CHugeFileProcess::CHugeFileProcess(const string& file_name, const set<TTypeInfo>
 
 bool CHugeFileProcess::IsSupported(TTypeInfo info)
 {
-    return CHugeFile::g_supported_types.find(info) != CHugeFile::g_supported_types.end();
+    return g_supported_types.find(info) != g_supported_types.end();
 }
 
 void CHugeFileProcess::Open(const string& file_name, const set<TTypeInfo>* types)
@@ -112,10 +112,14 @@ void CHugeFileProcess::Open(const string& file_name, const set<TTypeInfo>* types
     OpenReader();
 }
 
+void CHugeFileProcess::OpenFile(const string& file_name)
+{
+    m_pHugeFile->Open(file_name, &g_supported_types);
+}
+
 void CHugeFileProcess::OpenFile(const string& file_name, const set<TTypeInfo>* types)
 {
-    m_pHugeFile->m_supported_types = types ? types : &CHugeFile::g_supported_types;
-    m_pHugeFile->Open(file_name);
+    m_pHugeFile->Open(file_name, types);
 }
 
 void CHugeFileProcess::OpenReader()
@@ -253,7 +257,7 @@ CSeq_entry_Handle CHugeFileProcess::GetTopLevelEntry(CBioseq_Handle beh)
             break;
 
         if (auto temp = parent.GetParentEntry(); temp) {
-            if (temp.IsSet() && temp.GetSet().IsSetClass() && 
+            if (temp.IsSet() && temp.GetSet().IsSetClass() &&
                 CHugeAsnReader::IsHugeSet(temp.GetSet().GetClass())) {
                 break;
             }

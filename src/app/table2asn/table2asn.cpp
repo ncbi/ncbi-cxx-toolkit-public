@@ -1369,9 +1369,8 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
             m_validator->Clear();
 
             edit::CHugeFile hugeFile;
-            hugeFile.m_supported_types = &CMultiReader::kSupportedTypes;
             try {
-                hugeFile.Open(m_context.m_current_file);
+                hugeFile.Open(m_context.m_current_file, &CMultiReader::kSupportedTypes);
             }
             catch (CObjReaderParseException& e) {
                 auto message = e.GetMsg();

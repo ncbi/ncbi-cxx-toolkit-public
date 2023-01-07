@@ -46,10 +46,11 @@ BEGIN_SCOPE(edit)
 CHugeFile::CHugeFile(){}
 CHugeFile::~CHugeFile(){}
 
-void CHugeFile::Open(const std::string& filename)
+void CHugeFile::Open(const std::string& filename, const set<TTypeInfo>* supported_types)
 {
     if (x_TryOpenMemoryFile(filename) ||
         x_TryOpenStreamFile(filename)) {
+        m_supported_types = supported_types;
         m_content = RecognizeContent(*m_stream);
     }
 }
@@ -134,6 +135,15 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
+
+    // See RW-1892, sometimes compressed files are wrongly
+    // guessed as binary ASN.1
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eZip);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGZip);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBZip2);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eLzo);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eZstd);
+
     FG.GetFormatHints().DisableAllNonpreferred();
     if (m_supported_types)
         FG.SetRecognizedGenbankTypes(*m_supported_types);
@@ -150,6 +160,11 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
             break;
         case CFormatGuess::eFasta:
         case CFormatGuess::eGff3:
+        case CFormatGuess::eZip:
+        case CFormatGuess::eGZip:
+        case CFormatGuess::eBZip2:
+        case CFormatGuess::eLzo:
+        case CFormatGuess::eZstd:
             return nullptr;
             break;
         default:

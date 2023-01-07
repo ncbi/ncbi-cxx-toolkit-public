@@ -86,7 +86,7 @@ bool CHugeAsnReader::IsHugeSet(CBioseq_set::TClass setClass)
 {
     return (setClass == CBioseq_set::eClass_genbank ||
         //    setClass == CBioseq_set::eClass_wgs_set ||
-            setClass == CBioseq_set::eClass_not_set);   
+            setClass == CBioseq_set::eClass_not_set);
 }
 
 
@@ -365,7 +365,7 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     });
 
     SetLocalSkipHook(CType<CSubmit_block>(), objStream,
-        [this](CObjectIStream& in, const CObjectTypeInfo& type)
+        [this](CObjectIStream& in, const CObjectTypeInfo& /*type*/)
     {
         auto submit_block = Ref(new CSubmit_block);
         in.Read(submit_block, CSubmit_block::GetTypeInfo(), CObjectIStream::eNoFileHeader);
@@ -590,7 +590,7 @@ void CHugeAsnReader::FlattenGenbankSet()
 CConstRef<CSubmit_block> CHugeAsnReader::GetSubmitBlock() const
 {
     return m_submit_block;
-};
+}
 
 CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
 {
