@@ -87,6 +87,7 @@ template<typename T> struct CSimpleTypeObject : public CObject
 class CDiscrepancyItem : public CReportItem
 {
 public:
+    CDiscrepancyItem(const std::string& m);
     CDiscrepancyItem(CDiscrepancyCore& t, const string& s, const string& m, const string& x, const string& o, size_t n);
     string_view GetTitle() const override { return m_Title; };
     string GetStr() const override { return m_Str; }
@@ -118,6 +119,8 @@ protected:
     TReportObjectList m_Objs;
     TReportItemList m_Subs;
 friend class CReportNode;
+friend class CDiscrepancyGroup;
+friend class CReportItem;
 };
 
 

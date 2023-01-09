@@ -155,6 +155,11 @@ vector<string_view> GetDiscrepancyAliases(eTestNames name)
 }
 
 
+string_view GetDiscrepancyDescr(string_view name)
+{
+    return GetDiscrepancyDescr(GetDiscrepancyCaseName(name));
+}
+
 string_view GetDiscrepancyDescr(eTestNames name)
 {
     return CCaseRegistry::GetProps(name).Descr;
@@ -168,6 +173,17 @@ TGroup GetDiscrepancyGroup(eTestNames name)
 TGroup GetDiscrepancyGroup(string_view name)
 {
     return GetDiscrepancyGroup(GetDiscrepancyCaseName(name));
+}
+
+vector<string> GetDiscrepancyNames(TGroup group)
+{
+    auto tests = GetDiscrepancyTests(group);
+    vector<string> names; names.reserve(tests.size());
+    for (auto tn: tests) {
+        names.push_back(std::string(GetDiscrepancyCaseName(tn)));
+    }
+
+    return names;
 }
 
 TTestNamesSet GetDiscrepancyTests(TGroup group)
@@ -380,26 +396,23 @@ TReportObjectList CDiscrepancyCore::GetObjects() const
     return ret;
 }
 
-#if 0
-
-CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const CReportObj& obj, const string& msg, bool autofix)
+CRef<CReportItem> CReportItem::CreateReportItem(const string& name, const CReportObj& obj, const string& msg, bool autofix)
 {
-    CRef<CDiscrepancyCase> t = CDiscrepancyConstructor::GetDiscrepancyConstructor(test)->Create();
+    auto test = CCaseRegistry::GetProps(GetDiscrepancyCaseName(name)).Constructor();
     string s = msg;
     NStr::ReplaceInPlace(s, "[(]", "");
     NStr::ReplaceInPlace(s, "[)]", "");
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, msg, s, s, kEmptyCStr, 0));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*test, msg, s, s, kEmptyCStr, 0));
     item->m_Autofix = autofix;
     auto dobj = static_cast<const CDiscrepancyObject&>(obj);
     auto x = CRef<CDiscrepancyObject>(new CDiscrepancyObject(dobj.m_Ref));
-    x->m_Case = t;
+    x->m_Case = test;
     if (autofix) {
         x->m_Fix = dobj.m_Ref;
     }
     item->m_Objs.push_back(CRef<CReportObj>(x));
     return CRef<CReportItem>(item);
 }
-#endif
 
 
 // need to rewrite as a DiscrepancyContext method
@@ -572,6 +585,70 @@ void CDiscrepancyContext::TestString(const string& str)
 #endif
 
 
+CDiscrepancyGroup::CDiscrepancyGroup(const string& name, const string& test)
+    : m_Name(name)
+{
+    m_Test = GetDiscrepancyCaseName(test);
+}
+
+TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all) const
+{
+    TReportItemList out;
+    for (const auto& it : m_List) {
+        TReportItemList tmp = it->Collect(tests, false);
+        for (const auto& tt : tmp) {
+            out.push_back(tt);
+        }
+    }
+    if (m_Test != eTestNames::notset && tests.find(m_Test) != tests.end()) {
+        TReportItemList tmp = tests[m_Test]->GetReport();
+        for (const auto& tt : tmp) {
+            out.push_back(tt);
+        }
+        tests.erase(m_Test);
+    }
+    if (!m_Name.empty()) {
+        TReportObjectList objs;
+        TReportObjectSet hash;
+        CRef<CDiscrepancyItem> di(new CDiscrepancyItem(m_Name));
+        di->m_Subs = out;
+        bool empty = true;
+        for (const auto& tt : out) {
+            TReportObjectList details = tt->GetDetails();
+            if (!details.empty() || tt->GetCount() > 0) {
+                empty = false;
+            }
+            for (auto& ob : details) {
+                CReportNode::Add(objs, hash, *ob);
+            }
+            if (tt->CanAutofix()) {
+                di->m_Autofix = true;
+            }
+            if (tt->IsInfo()) {
+                di->m_Severity = CDiscrepancyItem::eSeverity_info;
+            }
+            else if (tt->IsFatal()) {
+                di->m_Severity = CDiscrepancyItem::eSeverity_error;
+            }
+        }
+        di->m_Objs = objs;
+        out.clear();
+        if (!empty) {
+            out.push_back(CRef<CReportItem>(di));
+        }
+    }
+    if (all) {
+        for (const auto& it : tests) {
+            TReportItemList list = it.second->GetReport();
+            for (const auto& it2 : list) {
+                out.push_back(it2);
+            }
+        }
+    }
+
+    return out;
+}
+
 void CDiscrepancyContext::RunTests()
 {
     if (m_CurrentNode->m_Type == eBioseq) {
@@ -732,6 +809,10 @@ bool CDiscrepancyContext::CompareRefs(CRef<CReportObj> a, CRef<CReportObj> b) {
     }
     return A.size() == B.size() ? &*a < &*b : A.size() < B.size();
 }
+
+CDiscrepancyItem::CDiscrepancyItem(const std::string& m)
+    : m_Msg(m)
+{}
 
 CDiscrepancyItem::CDiscrepancyItem(CDiscrepancyCore& t, const string& s, const string& m, const string& x, const string& o, size_t n)
     : m_Title(t.GetSName()), m_Str(s), m_Msg(m), m_Xml(x), m_Unit(o), m_Count(n)
