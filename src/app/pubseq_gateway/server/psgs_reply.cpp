@@ -1159,7 +1159,11 @@ void CPSGS_Reply::SendPerNamedAnnotationResults(const string &  content)
     if (m_ConnectionCanceled || IsFinished())
         return;
 
-    string      header = GetPerNamedAnnotationResultsHeader(content.size());
+    size_t      item_id = GetItemId();
+    string      header = GetPerNamedAnnotationResultsHeader(item_id,
+                                                            content.size());
+    // There are always 2 chunks
+    string      na_results_meta = GetPerNAResultsCompletionHeader(item_id, 2);
 
     lock_guard<mutex>       guard(m_ChunksLock);
     x_UpdateLastActivity();
@@ -1167,6 +1171,11 @@ void CPSGS_Reply::SendPerNamedAnnotationResults(const string &  content)
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(content.data()), content.size()));
+    ++m_TotalSentReplyChunks;
+
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(na_results_meta.data()),
+                na_results_meta.size()));
     ++m_TotalSentReplyChunks;
 }
 
