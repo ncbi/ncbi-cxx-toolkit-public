@@ -1006,6 +1006,30 @@ CRef<CSNPSeqInfo> CSNPClient::GetSeqInfo(const CSNPBlobId& blob_id)
 }
 
 
+vector<string> CSNPClient::WhatNACanProcess(SPSGS_AnnotRequest& annot_request) const
+{
+    vector<string> can_process;
+    if (HaveValidSeq_id(annot_request)) {
+        for (const auto& name : annot_request.m_Names) {
+            if (m_Config.m_AddPTIS && name == "SNP") {
+                can_process.push_back(name);
+                continue;
+            }
+            string acc = name;
+            size_t filter_index = s_ExtractFilterIndex(acc);
+            if (filter_index == 0 && acc.size() == name.size()) {
+                // filter specification is required
+                continue;
+            }
+            if (CSNPBlobId::IsValidNA(acc)) {
+                can_process.push_back(name);
+            }
+        }
+    }
+    return can_process;
+}
+
+
 bool CSNPClient::CanProcessRequest(CPSGS_Request& request, TProcessorPriority priority) const
 {
     switch (request.GetRequestType()) {

@@ -298,6 +298,7 @@ public:
     CSNPClient(const SSNPProcessor_Config& config);
     ~CSNPClient(void);
 
+    vector<string> WhatNACanProcess(SPSGS_AnnotRequest& annot_request) const;
     bool CanProcessRequest(CPSGS_Request& request, TProcessorPriority priority) const;
 
     vector<SSNPData> GetAnnotInfo(const objects::CSeq_id_Handle& id, const vector<string>& names);
