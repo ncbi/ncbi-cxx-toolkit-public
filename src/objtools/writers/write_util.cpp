@@ -37,6 +37,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -572,6 +573,21 @@ void CWriteUtil::ChangeToPackedInt(
                      (*sub_loc)->GetPacked_int().Get().end(),
                      back_inserter(loc.SetPacked_int().Set()));
             }
+        }
+        return;
+    case CSeq_loc::e_Bond: {
+            const auto& bond = loc.GetBond();
+            const auto& aPoint = bond.GetA();
+            const auto& bPoint = bond.IsSetB() ? 
+                bond.GetB() : bond.GetA();
+            auto pSeqInt = Ref(new CSeq_interval());
+            pSeqInt->SetId().Assign(aPoint.GetId());
+            pSeqInt->SetFrom(aPoint.GetPoint());
+            pSeqInt->SetTo(bPoint.GetPoint());
+            if (aPoint.IsSetStrand()) {
+                pSeqInt->SetStrand(aPoint.GetStrand());
+            }
+            loc.SetPacked_int().AddInterval(*pSeqInt);
         }
         return;
     default:
