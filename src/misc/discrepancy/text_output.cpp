@@ -250,7 +250,7 @@ static bool RecursiveFatalSummary(ostream& out, const TReportItemList& list, siz
     return found;
 }
 
-static TReportItemList x_CollectGroup(const std::initializer_list<eTestNames>& m_List, TDiscrepancyCaseMap& tests, bool all)
+static TReportItemList x_CollectGroup(const std::initializer_list<eTestNames>& m_List, TDiscrepancyCoreMap& tests, bool all)
 {
     TReportItemList out;
     for (const auto& it : m_List) {
@@ -464,11 +464,10 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, unsigned sho
 
 void CDiscrepancyProductImpl::OutputXML(ostream& out, unsigned short flags)
 {
-    const TDiscrepancyCaseMap& tests = m_Tests;
     out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     out << "<discrepancy_report>\n";
 
-    for (const auto& tst : tests) {
+    for (const auto& tst : m_Tests) {
         TReportItemList rep = tst.second->GetReport();
         if (rep.empty()) {
             continue;
