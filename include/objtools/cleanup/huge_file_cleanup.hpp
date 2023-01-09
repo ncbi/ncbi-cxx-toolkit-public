@@ -70,7 +70,9 @@ private:
     CRef<CSeqdesc> m_pTopLevelMolInfo;
     const TOptions m_CleanupOptions;
     mutable CCleanupChangeCore m_Changes;
-    map<CConstRef<CSeq_id>,string,CRefLess> m_IdToFluLabel;  
+    using TIdToFluLabel = map<CConstRef<CSeq_id>,string,CRefLess>;
+    TIdToFluLabel m_IdToFluLabel;  
+    TIdToFluLabel::iterator x_GetFluLabel(const CConstRef<CSeq_id>& pId);
     map<string, list<TBioseqSetInfo>> m_FluLabelToSetInfo;
     map<TFileSize, string> m_SetPosToFluLabel;
     set<CConstRef<CSeq_id>, CRefLess> m_HasIncompleteFeats;
