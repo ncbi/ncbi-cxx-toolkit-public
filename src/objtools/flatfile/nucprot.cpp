@@ -755,24 +755,19 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
     descr->SetMolinfo(*mol_info);
     descrs.push_back(descr);
 
-    p = nullptr;
+    string s;
     for (const auto& qual : feat.GetQual()) {
         if (qual->GetQual() != "product")
             continue;
 
-        const string& val_str = qual->GetVal();
-        if (! p) {
-            p = StringSave(val_str.c_str());
-            continue;
-        }
-
-        q = MemNew(StringLen(p) + val_str.size() + 3);
-        StringCpy(q, p);
-        StringCat(q, "; ");
-        StringCat(q, val_str.c_str());
-        MemFree(p);
-        p = q;
+        if (! s.empty())
+            s.append("; ");
+        s.append(qual->GetVal());
     }
+
+    p = nullptr;
+    if (! s.empty())
+        p = StringSave(s.c_str());
 
     if (! p)
         p = CpTheQualValue(feat.GetQual(), "gene");
@@ -796,13 +791,12 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
     }
 
     if (StringLen(p) < 511 && ! organism.empty() && ! StringStr(p, organism.c_str())) {
-        q = MemNew(StringLen(p) + organism.size() + 4);
-        StringCpy(q, p);
-        StringCat(q, " [");
-        StringCat(q, organism.c_str());
-        StringCat(q, "]");
+        string s = p;
+        s.append(" [");
+        s.append(organism);
+        s.append("]");
         MemFree(p);
-        p = q;
+        p = StringSave(s.c_str());
     }
 
     if (StringLen(p) > 511) {
