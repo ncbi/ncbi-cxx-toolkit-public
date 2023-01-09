@@ -165,8 +165,12 @@ TGroup GetDiscrepancyGroup(eTestNames name)
     return CCaseRegistry::GetProps(name).Group;
 }
 
+TGroup GetDiscrepancyGroup(string_view name)
+{
+    return GetDiscrepancyGroup(GetDiscrepancyCaseName(name));
+}
 
-TTestNamesSet GetDiscrepancyNames(TGroup group)
+TTestNamesSet GetDiscrepancyTests(TGroup group)
 {
     TTestNamesSet names;
     for (auto rec: g_test_registry)
@@ -449,6 +453,11 @@ string CDiscrepancySet::Format(const string& s, unsigned int count)
         }
     }
     return str;
+}
+
+void CDiscrepancyContext::AddTest(string_view name)
+{
+    AddTest(GetDiscrepancyCaseName(name));
 }
 
 void CDiscrepancyContext::AddTest(eTestNames name)
@@ -744,6 +753,16 @@ map<string, size_t> CDiscrepancyContext::Autofix()
     }
     Autofix(tofix, report);
     return report;
+}
+
+TDiscrepancyCaseMap CDiscrepancyContext::GetTests() const
+{
+    TDiscrepancyCaseMap retval;
+    for (auto rec: m_Tests)
+    {
+        retval[rec.first] = rec.second;
+    }
+    return retval;
 }
 
 END_SCOPE(NDiscrepancy)

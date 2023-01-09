@@ -248,7 +248,7 @@ CRef<NDiscrepancy::CDiscrepancyProduct> CTable2AsnValidator::x_PopulateDiscrepan
         obj = entry.GetCompleteSeq_entry();
     }
 
-    auto names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
+    auto names = NDiscrepancy::GetDiscrepancyTests(m_context->m_discrepancy_group);
 
     CFile nm(m_context->GenerateOutputFilename(eFiles::asn));
     discrepancy->SetLineage(m_context->m_disc_lineage);

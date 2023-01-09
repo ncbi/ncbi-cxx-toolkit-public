@@ -89,7 +89,7 @@ class CDiscrepancyItem : public CReportItem
 public:
     CDiscrepancyItem(CDiscrepancyCore& t, const string& s, const string& m, const string& x, const string& o, size_t n);
     string_view GetTitle() const override { return m_Title; };
-    //string GetStr() const override { return m_Str; }
+    string GetStr() const override { return m_Str; }
     string GetMsg() const override { return m_Msg; }
     string GetXml() const override { return m_Xml; }
     string GetUnit() const override { return m_Unit; }
@@ -102,7 +102,7 @@ public:
     bool IsInfo() const override { return m_Severity == eSeverity_info; }
     bool IsExtended() const override { return m_Ext; }
     bool IsSummary() const override { return m_Summ; }
-    //bool IsReal() const override { return !m_Test.Empty(); }
+    bool IsReal() const override { return !m_Title.empty(); }
 
 protected:
     string_view m_Title;
@@ -208,7 +208,7 @@ protected:
     void xSummarize();
 };
 
-typedef map<eTestNames, CRef<CDiscrepancyCore> > TDiscrepancyCaseMap;
+typedef map<eTestNames, CRef<CDiscrepancyCore> > TDiscrepancyCoreMap;
 
 template<eTestNames _Name>
 class CDiscrepancyPrivateData
@@ -296,7 +296,7 @@ public:
     void OutputXML(CNcbiOstream& out, unsigned short flags) override;
     void Merge(CDiscrepancyProduct& other) override;
     void Summarize() override;
-    TDiscrepancyCaseMap m_Tests;
+    TDiscrepancyCoreMap m_Tests;
 protected:
 };
 
@@ -319,9 +319,9 @@ public:
     CRef<CDiscrepancyProduct> GetProduct() override;
     void AddTest(eTestNames name) override;
 
-    //bool AddTest(const string& name) override;
-    void Push(const CSerialObject& root, const string& fname); // override;
-    //void Parse() override { ParseAll(*m_RootNode); }
+    void AddTest(string_view name) override;
+    void Push(const CSerialObject& root, const string& fname) override;
+    void Parse() override { ParseAll(*m_RootNode); }
     void Parse(const CSerialObject& root, const string& fname); // override;
     void ParseObject(const CBioseq& root);
     void ParseObject(const CBioseq_set& root);
@@ -334,7 +334,7 @@ public:
     map<string, size_t> Autofix() override;
     void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr);
     void AutofixFile(vector<CDiscrepancyObject*>&fixes, const string& default_header);
-    //const TDiscrepancyCaseMap& GetTests() const override { return m_Tests; }
+    TDiscrepancyCaseMap GetTests() const override;
     //void OutputText(CNcbiOstream& out, unsigned short flags, char group) override;
     //void OutputXML(CNcbiOstream& out, unsigned short flags) override;
     CParseNode* FindNode(const CRefNode& obj);
@@ -530,7 +530,7 @@ public:
 protected:
     CRef<objects::CScope> m_Scope;
     CRef<feature::CFeatTree> m_FeatTree;
-    TDiscrepancyCaseMap m_Tests;
+    TDiscrepancyCoreMap m_Tests;
     vector<CConstRef<CBioseq_set>> m_Bioseq_set_Stack;
     CBioseq_Handle m_Current_Bioseq_Handle;
     CConstRef<CBioseq> m_Current_Bioseq;

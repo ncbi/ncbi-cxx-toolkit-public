@@ -101,7 +101,7 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
     CArgDescriptions::PrintUsage(str, detailed);
     if (detailed) {
         str += "TESTS\n";
-        auto names = GetDiscrepancyNames(0);
+        auto names = GetDiscrepancyTests(EGroup::eAll);
         for (auto nm : names) {
             str += "   ";
             str += GetDiscrepancyCaseName(nm);
@@ -412,19 +412,19 @@ int CDiscRepApp::Run()
         TTestNamesSet AllTests;
         switch (m_Group) {
             case 'q':
-                AllTests = GetDiscrepancyNames(eSmart);
+                AllTests = GetDiscrepancyTests(eSmart);
                 break;
             case 'u':
-                AllTests = GetDiscrepancyNames(eSubmitter);
+                AllTests = GetDiscrepancyTests(eSubmitter);
                 break;
             case 'b':
-                AllTests = GetDiscrepancyNames(eBig);
+                AllTests = GetDiscrepancyTests(eBig);
                 break;
             case 'f':
-                AllTests = GetDiscrepancyNames(eFatal);
+                AllTests = GetDiscrepancyTests(eFatal);
                 break;
             default:
-                AllTests = GetDiscrepancyNames(0);
+                AllTests = GetDiscrepancyTests(eAll);
         }
         Tests += AllTests;
     }
