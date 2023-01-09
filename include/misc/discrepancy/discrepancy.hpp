@@ -238,14 +238,14 @@ protected:
 class NCBI_DISCREPANCY_EXPORT CDiscrepancyGroup : public CObject
 {
 public:
-    CDiscrepancyGroup(const string& name = "", const string& test = "") : m_Name(name), m_Test(test) {}
+    CDiscrepancyGroup(const string& name = "", const string& test = "");// : m_Name(name), m_Test(test) {}
     void Add(CRef<CDiscrepancyGroup> child) { m_List.push_back(child); }
     TReportItemList Collect(TDiscrepancyCaseMap& tests, bool all = true) const;
     const CDiscrepancyGroup& operator[](size_t n) const { return *m_List[n]; }
 
 protected:
     string m_Name;
-    string m_Test;
+    eTestNames m_Test;
     vector<CRef<CDiscrepancyGroup> > m_List;
 };
 
