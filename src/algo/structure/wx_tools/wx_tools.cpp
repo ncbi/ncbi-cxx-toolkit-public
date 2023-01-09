@@ -246,9 +246,9 @@ FloatingPointSpinCtrl::FloatingPointSpinCtrl(wxWindow* parent,
     fpTextCtrl = new FloatingPointTextCtrl(parent, -1, wxT(""), textCtrlPos, textCtrlSize, textCtrlStyle);
     fpTextCtrl->SetAllowedRange(min, max);
 
-    spinButton = new NotifyingSpinButton(this,
-        parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
-    spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
+//    spinButton = new NotifyingSpinButton(this,
+//        parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
+//    spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
 
     // clamp and set initial value
     if (initial < min) initial = min;
@@ -264,7 +264,7 @@ bool FloatingPointSpinCtrl::SetDouble(double value)
     wxString strVal;
     strVal.Printf(wxT("%g"), value);
     fpTextCtrl->SetValue(strVal);
-    spinButton->SetValue(0);
+//    spinButton->SetValue(0);
     return true;
 }
 

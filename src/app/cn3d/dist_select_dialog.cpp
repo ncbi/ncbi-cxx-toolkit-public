@@ -186,7 +186,7 @@ void DistanceSelectDialog::CreateControls()
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     itemStaticBoxSizer3->Add(fpSpinCtrl->GetTextCtrl(), 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxTOP|wxBOTTOM, 5);
-    itemStaticBoxSizer3->Add(fpSpinCtrl->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    itemStaticBoxSizer3->Add(fpSpinCtrl->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 }
 
 /*!
