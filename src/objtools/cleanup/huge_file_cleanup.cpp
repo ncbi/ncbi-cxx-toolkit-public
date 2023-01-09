@@ -313,6 +313,20 @@ static bool s_CheckForSegments(CConstRef<CSeq_descr> seqDescrs,
 }
 
 
+static bool s_IdInSet(const CConstRef<CSeq_id>& pId, 
+        const set<CConstRef<CSeq_id>, CHugeAsnReader::CRefLess>& idSet)
+{
+    auto it = idSet.lower_bound(pId);
+    if (it != idSet.end()) {
+        if ((*it)->CompareOrdered(*pId) == 0 ||
+            (*it)->Compare(*pId) == CSeq_id::E_SIC::e_YES) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
 {
     map<string, set<size_t>> keyToSegs;
@@ -368,7 +382,7 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
     // Prune if any of the sequences has incomplete cdregion or gene feats
     auto it = m_IdToFluLabel.begin();
     while (it != m_IdToFluLabel.end()) {
-        if (m_HasIncompleteFeats.find(it->first) != m_HasIncompleteFeats.end()) {
+        if (s_IdInSet(it->first, m_HasIncompleteFeats)) {
             auto key = it->second;
             s_RemoveEntriesWithKey(key, m_SetPosToFluLabel);
             if (auto fluLabelIt = m_FluLabelToSetInfo.find(key); fluLabelIt != m_FluLabelToSetInfo.end()) {
@@ -396,6 +410,20 @@ string CCleanupHugeAsnReader::x_GetFluLabel(const CConstRef<CSeq_id>& pId) const
     return  "";
 }
 */
+
+CCleanupHugeAsnReader::TIdToFluLabel::iterator 
+CCleanupHugeAsnReader::x_GetFluLabel(const CConstRef<CSeq_id>& pId) 
+{
+    auto it = m_IdToFluLabel.lower_bound(pId);
+    if (it != m_IdToFluLabel.end()) {
+        if (it->first->CompareOrdered(*pId) == 0 ||
+            it->first->Compare(*pId) == CSeq_id::E_SIC::e_YES) {
+            return it;
+        }
+    }
+    return m_IdToFluLabel.end();
+}
+
 
 
 void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& context)
