@@ -1140,18 +1140,41 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id,
 }
 
 
-string GetPerNamedAnnotationResultsHeader(size_t  per_annot_result_size)
+string GetPerNamedAnnotationResultsHeader(size_t  item_id,
+                                          size_t  per_annot_result_size)
 {
     char        buf[64];
     long        len;
     string      reply(s_ReplyBegin);
 
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len);
+
     len = PSGToString(per_annot_result_size, buf);
-    reply.append(1, '0')
-         .append(s_AndNAStatusItem)
+    reply.append(s_AndNAStatusItem)
          .append(s_AndDataChunk)
          .append(s_AndSize)
          .append(buf, len)
+         .append(1, '\n');
+    return reply;
+}
+
+
+string GetPerNAResultsCompletionHeader(size_t  item_id,
+                                       size_t  chunk_count)
+{
+    char        buf[64];
+    long        len;
+    string      reply(s_ReplyBegin);
+
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndNAStatusItem)
+         .append(s_AndMetaChunk)
+         .append(s_AndNChunks);
+
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
          .append(1, '\n');
     return reply;
 }
