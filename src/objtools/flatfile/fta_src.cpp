@@ -2409,12 +2409,12 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
 {
     PcrPrimersPtr tppp = nullptr;
 
-    char* str_fs;
-    char* str_rs;
-    char* str_fn;
-    char* str_rn;
-    Int4  num_fn;
-    Int4  num_rn;
+    string str_fs;
+    string str_rs;
+    string str_fn;
+    string str_rn;
+    Int4   num_fn;
+    Int4   num_rn;
 
     if (! ppp || count < 1)
         return;
@@ -2449,8 +2449,8 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
         return;
     }
 
-    size_t len_fs = 2,
-           len_rs = 2,
+    size_t len_fs = 1,
+           len_rs = 1,
            len_fn = 0,
            len_rn = 0;
     num_fn        = 0;
@@ -2468,47 +2468,53 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
         }
     }
 
-    str_fs = MemNew(len_fs);
-    str_rs = MemNew(len_rs);
-    str_fn = len_fn ? MemNew(len_fn + count - num_fn + 2) : nullptr;
-    str_rn = len_rn ? MemNew(len_rn + count - num_rn + 2) : nullptr;
+    str_fs.reserve(len_fs);
+    str_rs.reserve(len_rs);
+    if (len_fn > 0)
+        str_fn.reserve(len_fn + count - num_fn + 1);
+    if (len_rn > 0)
+        str_rn.reserve(len_rn + count - num_rn + 1);
 
     for (tppp = ppp; tppp; tppp = tppp->next) {
-        StringCat(str_fs, ",");
-        StringCat(str_fs, tppp->fwd_seq);
-        StringCat(str_rs, ",");
-        StringCat(str_rs, tppp->rev_seq);
-        if (str_fn) {
-            StringCat(str_fn, ",");
+        str_fs.append(",");
+        str_fs.append(tppp->fwd_seq);
+        str_rs.append(",");
+        str_rs.append(tppp->rev_seq);
+        if (len_fn > 0) {
+            str_fn.append(",");
             if (tppp->fwd_name && tppp->fwd_name[0] != '\0')
-                StringCat(str_fn, tppp->fwd_name);
+                str_fn.append(tppp->fwd_name);
         }
-        if (str_rn) {
-            StringCat(str_rn, ",");
+        if (len_rn > 0) {
+            str_rn.append(",");
             if (tppp->rev_name && tppp->rev_name[0] != '\0')
-                StringCat(str_rn, tppp->rev_name);
+                str_rn.append(tppp->rev_name);
         }
     }
 
-    str_fs[0] = '(';
-    StringCat(str_fs, ")");
+    if (! str_fs.empty()) {
+        str_fs[0] = '(';
+        str_fs += ')';
+    }
 
     sub.Reset(new CSubSource);
     sub->SetSubtype(CSubSource::eSubtype_fwd_primer_seq);
     sub->SetName(str_fs);
     subs.push_back(sub);
 
-    str_rs[0] = '(';
-    StringCat(str_rs, ")");
+    if (! str_rs.empty()) {
+        str_rs[0] = '(';
+        str_rs += ')';
+    }
 
     sub.Reset(new CSubSource);
     sub->SetSubtype(CSubSource::eSubtype_rev_primer_seq);
     sub->SetName(str_rs);
     subs.push_back(sub);
 
-    if (str_fn) {
+    if (! str_fn.empty()) {
         str_fn[0] = '(';
-        StringCat(str_fn, ")");
+        str_fn += ')';
 
         sub.Reset(new CSubSource);
         sub->SetSubtype(CSubSource::eSubtype_fwd_primer_name);
@@ -2516,9 +2522,9 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
         subs.push_back(sub);
     }
 
-    if (str_rn) {
+    if (! str_rn.empty()) {
         str_rn[0] = '(';
-        StringCat(str_rn, ")");
+        str_rn += ')';
 
         sub.Reset(new CSubSource);
         sub->SetSubtype(CSubSource::eSubtype_rev_primer_name);
@@ -2555,7 +2561,6 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
     char* p;
     char* q;
     char* r;
-    char* s;
     bool  comma;
     bool  bad_start;
     bool  empty;
@@ -2635,12 +2640,11 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         if (! tppp->fwd_name)
                             tppp->fwd_name = StringSave(q);
                         else {
-                            s = MemNew(StringLen(tppp->fwd_name) + StringLen(q) + 2);
-                            StringCpy(s, tppp->fwd_name);
-                            StringCat(s, ":");
-                            StringCat(s, q);
+                            string s(tppp->fwd_name);
+                            s.append(":");
+                            s.append(q);
                             MemFree(tppp->fwd_name);
-                            tppp->fwd_name = s;
+                            tppp->fwd_name = StringSave(s.c_str());
                         }
                         prev = 1;
                     }
@@ -2651,21 +2655,19 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         if (! tppp->fwd_seq)
                             tppp->fwd_seq = StringSave(q);
                         else {
-                            s = MemNew(StringLen(tppp->fwd_seq) + StringLen(q) + 2);
-                            StringCpy(s, tppp->fwd_seq);
-                            StringCat(s, ":");
-                            StringCat(s, q);
+                            string s(tppp->fwd_seq);
+                            s.append(":");
+                            s.append(q);
                             MemFree(tppp->fwd_seq);
-                            tppp->fwd_seq = s;
+                            tppp->fwd_seq = StringSave(s.c_str());
                             if (prev != 1) {
                                 if (! tppp->fwd_name)
                                     tppp->fwd_name = StringSave(":");
                                 else {
-                                    s = MemNew(StringLen(tppp->fwd_name) + 2);
-                                    StringCpy(s, tppp->fwd_name);
-                                    StringCat(s, ":");
+                                    string s(tppp->fwd_name);
+                                    s.append(":");
                                     MemFree(tppp->fwd_name);
-                                    tppp->fwd_name = s;
+                                    tppp->fwd_name = StringSave(s.c_str());
                                 }
                             }
                         }
@@ -2678,12 +2680,11 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         if (! tppp->rev_name)
                             tppp->rev_name = StringSave(q);
                         else {
-                            s = MemNew(StringLen(tppp->rev_name) + StringLen(q) + 2);
-                            StringCpy(s, tppp->rev_name);
-                            StringCat(s, ":");
-                            StringCat(s, q);
+                            string s(tppp->rev_name);
+                            s.append(":");
+                            s.append(q);
                             MemFree(tppp->rev_name);
-                            tppp->rev_name = s;
+                            tppp->rev_name = StringSave(s.c_str());
                         }
                         prev = 3;
                     }
@@ -2694,21 +2695,19 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         if (! tppp->rev_seq)
                             tppp->rev_seq = StringSave(q);
                         else {
-                            s = MemNew(StringLen(tppp->rev_seq) + StringLen(q) + 2);
-                            StringCpy(s, tppp->rev_seq);
-                            StringCat(s, ":");
-                            StringCat(s, q);
+                            string s(tppp->rev_seq);
+                            s.append(":");
+                            s.append(q);
                             MemFree(tppp->rev_seq);
-                            tppp->rev_seq = s;
+                            tppp->rev_seq = StringSave(s.c_str());
                             if (prev != 3) {
                                 if (! tppp->rev_name)
                                     tppp->rev_name = StringSave(":");
                                 else {
-                                    s = MemNew(StringLen(tppp->rev_name) + 2);
-                                    StringCpy(s, tppp->rev_name);
-                                    StringCat(s, ":");
+                                    string s(tppp->rev_name);
+                                    s.append(":");
                                     MemFree(tppp->rev_name);
-                                    tppp->rev_name = s;
+                                    tppp->rev_name = StringSave(s.c_str());
                                 }
                             }
                         }

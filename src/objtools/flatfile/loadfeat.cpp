@@ -1190,12 +1190,11 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
             } else {
                 p = StringChr(location, ';');
                 if (p) {
-                    p = MemNew(StringLen(location) + 7);
-                    StringCpy(p, "join(");
-                    StringCat(p, location);
-                    StringCat(p, ")");
+                    string s("join(");
+                    s.append(location);
+                    s.append(")");
                     MemFree(location);
-                    location = p;
+                    location = StringSave(s.c_str());
                 }
             }
         } else if (pp->format == Parser::EFormat::GenBank) {
@@ -1476,26 +1475,24 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         p = StringIStr(p, "ribosomalrna");
         if (! p)
             break;
-        q    = MemNew(StringLen(qval) + 2);
         p[9] = '\0';
-        StringCpy(q, qval);
-        StringCat(q, " RNA");
-        StringCat(q, p + 12);
+        string s(qval);
+        s.append(" RNA");
+        s.append(p + 12);
         len = p - qval + 13;
         MemFree(qval);
-        qval = q;
+        qval = StringSave(s.c_str());
     }
 
     if (qval) {
         p = StringIStr(qval, " rrna");
         if (p) {
-            q  = MemNew(StringLen(qval) + 10);
             *p = '\0';
-            StringCpy(q, qval);
-            StringCat(q, " ribosomal RNA");
-            StringCat(q, p + 5);
+            string s(qval);
+            s.append(" ribosomal RNA");
+            s.append(p + 5);
             MemFree(qval);
-            qval = q;
+            qval = StringSave(s.c_str());
         }
     }
 
@@ -1531,16 +1528,15 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
             continue;
         }
         len = p - qval + 14;
-        q   = MemNew(StringLen(qval) + 5);
         p += 9;
         ch = *p;
         *p = '\0';
-        StringCpy(q, qval);
-        StringCat(q, " RNA");
+        string s(qval);
+        s.append(" RNA");
         *p = ch;
-        StringCat(q, p);
+        s.append(p);
         MemFree(qval);
-        qval = q;
+        qval = StringSave(s.c_str());
         p    = qval + len;
     }
 
@@ -2216,8 +2212,6 @@ static void ConvertQualifierValue(CRef<CGb_qual>& qual)
 /**********************************************************/
 static void fta_parse_rpt_units(FeatBlkPtr fbp)
 {
-    char* p;
-
     if (! fbp || fbp->quals.empty())
         return;
 
@@ -2265,9 +2259,10 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
         return;
     }
 
-    p = MemNew(len + count + 2);
-    StringCpy(p, "(");
-    StringCat(p, (*first)->GetVal().c_str());
+    string p;
+    p.reserve(len + count + 1);
+    p.assign("(");
+    p.append((*first)->GetVal());
 
     for (TQualVector::iterator qual = first; qual != fbp->quals.end();) {
         if ((*qual)->GetQual() != "rpt_unit") {
@@ -2275,11 +2270,11 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
             continue;
         }
 
-        StringCat(p, ",");
-        StringCat(p, (*qual)->GetVal().c_str());
+        p.append(",");
+        p.append((*qual)->GetVal());
         qual = fbp->quals.erase(qual);
     }
-    StringCat(p, ")");
+    p.append(")");
     (*first)->SetVal(p);
 }
 
@@ -2425,10 +2420,10 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         DelCharBtwData(loc);
         if (pp->buf)
             MemFree(pp->buf);
-        pp->buf = MemNew(StringLen(fbp->key) + StringLen(loc) + 4);
-        StringCpy(pp->buf, fbp->key);
-        StringCat(pp->buf, " : ");
-        StringCat(pp->buf, loc);
+        string s(fbp->key);
+        s.append(" : ");
+        s.append(loc);
+        pp->buf = StringSave(s.c_str());
 
         feat.Reset(new CSeq_feat);
         locmap = GetSeqLocation(*feat, loc, seqids, &err, pp, fbp->key);
@@ -4662,16 +4657,14 @@ static void fta_create_wgs_dbtag(CBioseq&      bioseq,
                                  char*         prefix,
                                  Int4          seqtype)
 {
-    char* dbname;
-
-    dbname = MemNew(11);
+    string dbname;
     if (seqtype == 0 || seqtype == 1 || seqtype == 7)
-        StringCpy(dbname, "WGS:");
+        dbname = "WGS:";
     else if (seqtype == 4 || seqtype == 5 || seqtype == 8 || seqtype == 9)
-        StringCpy(dbname, "TSA:");
+        dbname = "TSA:";
     else
-        StringCpy(dbname, "TLS:");
-    StringCat(dbname, prefix);
+        dbname = "TLS:";
+    dbname += prefix;
 
     CRef<CSeq_id> gen_id(new CSeq_id);
     CDbtag&       tag = gen_id->SetGeneral();
