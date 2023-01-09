@@ -35,6 +35,9 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objtools/readers/objhook_lambdas.hpp>
 #include "newcleanupp.hpp"
 #include "influenza_set.hpp" 
 
@@ -77,7 +80,7 @@ void CCleanupHugeAsnReader::FlattenGenbankSet()
         set<string> fluLabels;
         auto it = m_top_ids.begin();
         while (it != m_top_ids.end()) {
-            if (auto mit = m_IdToFluLabel.find(*it);
+            if (auto mit = m_IdToFluLabel.find(*it); // is this what we want?
                 mit != m_IdToFluLabel.end()) {
                 if (!fluLabels.insert(mit->second).second) {
                     it = m_top_ids.erase(it);
@@ -309,6 +312,7 @@ static bool s_CheckForSegments(CConstRef<CSeq_descr> seqDescrs,
     return false;
 }
 
+
 void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
 {
     map<string, set<size_t>> keyToSegs;
@@ -360,9 +364,26 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
             } 
         }
     }
+
+    // Prune if any of the sequences has incomplete cdregion or gene feats
+    auto it = m_IdToFluLabel.begin();
+    while (it != m_IdToFluLabel.end()) {
+        if (m_HasIncompleteFeats.find(it->first) != m_HasIncompleteFeats.end()) {
+            auto key = it->second;
+            s_RemoveEntriesWithKey(key, m_SetPosToFluLabel);
+            if (auto fluLabelIt = m_FluLabelToSetInfo.find(key); fluLabelIt != m_FluLabelToSetInfo.end()) {
+                m_FluLabelToSetInfo.erase(fluLabelIt);
+            }
+            it = m_IdToFluLabel.erase(it);
+        }   
+        else {
+            ++it;
+        }
+    }
 }
 
 
+/*
 string CCleanupHugeAsnReader::x_GetFluLabel(const CConstRef<CSeq_id>& pId) const
 {
     auto it = m_IdToFluLabel.lower_bound(pId);
@@ -373,6 +394,49 @@ string CCleanupHugeAsnReader::x_GetFluLabel(const CConstRef<CSeq_id>& pId) const
         }
     }
     return  "";
+}
+*/
+
+
+void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& context)
+{
+    TParent::x_SetHooks(objStream, context);
+
+    if (!(m_CleanupOptions & eEnableSmallGenomeSets)) {
+        return;
+    }
+
+    SetLocalReadHook(CType<CFeat_id>(), objStream,
+            [this](CObjectIStream& in, const CObjectInfo& object)
+            {
+                auto* pObject = object.GetObjectPtr();
+                object.GetTypeInfo()->DefaultReadData(in, pObject);
+                auto* pFeatId = CTypeConverter<CFeat_id>::SafeCast(pObject);
+                if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
+                {
+                    m_max_local_id = std::max(m_max_local_id, pFeatId->GetLocal().GetId());
+                }
+            });
+
+
+    SetLocalSkipHook(CType<CSeq_feat>(), objStream,
+            [this](CObjectIStream& in, const CObjectTypeInfo& type)
+            {
+                auto pSeqFeat = Ref(new CSeq_feat());
+                type.GetTypeInfo()->DefaultReadData(in, pSeqFeat);
+                if (pSeqFeat->IsSetData() &&
+                    (pSeqFeat->GetData().IsCdregion() ||
+                    pSeqFeat->GetData().IsGene())) {
+                    if (pSeqFeat->GetLocation().IsPartialStart(eExtreme_Biological) ||
+                        pSeqFeat->GetLocation().IsPartialStop(eExtreme_Biological)) {
+                        const auto* pSeqId = pSeqFeat->GetLocation().GetId();
+                        if (pSeqId) {
+                            CConstRef<CSeq_id> pConstId(pSeqId);
+                            m_HasIncompleteFeats.insert(pConstId);
+                        }
+                    }   
+                }
+            });
 }
 
 
