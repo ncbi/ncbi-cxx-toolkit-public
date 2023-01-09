@@ -61,6 +61,7 @@ public:
             eAddTopEntry add_top_entry = eAddTopEntry::yes) const override;
     const CCleanupChangeCore& GetChanges() const;
 private:
+    void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
     void x_CreateSmallGenomeSets();
     void x_CleanupTopLevelDescriptors();
     bool x_LooksLikeNucProtSet() const;
@@ -69,10 +70,10 @@ private:
     CRef<CSeqdesc> m_pTopLevelMolInfo;
     const TOptions m_CleanupOptions;
     mutable CCleanupChangeCore m_Changes;
-    map<CConstRef<CSeq_id>,string> m_IdToFluLabel;
+    map<CConstRef<CSeq_id>,string,CRefLess> m_IdToFluLabel;  
     map<string, list<TBioseqSetInfo>> m_FluLabelToSetInfo;
     map<TFileSize, string> m_SetPosToFluLabel;
-    string x_GetFluLabel(const CConstRef<CSeq_id>& pId) const;
+    set<CConstRef<CSeq_id>, CRefLess> m_HasIncompleteFeats;
 };
 
 END_SCOPE(object)

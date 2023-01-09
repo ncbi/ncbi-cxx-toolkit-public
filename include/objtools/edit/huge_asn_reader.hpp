@@ -169,11 +169,11 @@ private:
     std::streampos       m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
     std::streampos       m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
     CHugeFile*           m_file             = nullptr;
-    int                  m_max_local_id     = 0;
 
 // global lists, readonly after indexing
     TBioseqList               m_bioseq_list;
 protected:
+    int                             m_max_local_id     = 0;
     TBioseqSetList                  m_bioseq_set_list;
     CRef<CSeq_entry>                m_top_entry;
     std::list<CConstRef<CSeq_id>>   m_top_ids;
