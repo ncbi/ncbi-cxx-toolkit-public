@@ -279,7 +279,23 @@ public:
     ///    hierachy of node keys to search for
     /// @param res
     ///    list of discovered found nodes
-    void FindNodes(const TKeyList& node_path, TNodeList* res);
+    void FindNodes(const TKeyList& node_path, TNodeList* res)
+        {
+            FindNodes(node_path, res, std::equal_to<TKeyType>());
+        }
+
+    /// Find tree nodes corresponding to the path from the top
+    ///
+    /// @param node_path
+    ///    hierachy of node keys to search for
+    /// @param res
+    ///    list of discovered found nodes
+    /// @param equal
+    ///    predicate to test equality
+    template<class BinaryPredicate>
+    void FindNodes(const TKeyList& node_path,
+                   TNodeList* res,
+                   BinaryPredicate equal);
 
     /// Find or create tree node corresponding to the path from the top
     ///
@@ -287,7 +303,22 @@ public:
     ///    hierachy of node keys to search for
     /// @return
     ///    tree node
-    TTreeType* FindOrCreateNode(const TKeyList& node_path);
+    TTreeType* FindOrCreateNode(const TKeyList& node_path)
+        {
+            return FindOrCreateNode(node_path, std::equal_to<TKeyType>());
+        }
+
+    /// Find or create tree node corresponding to the path from the top
+    ///
+    /// @param node_path
+    ///    hierachy of node keys to search for
+    /// @param equal
+    ///    predicate to test equality
+    /// @return
+    ///    tree node
+    template<class BinaryPredicate>
+    TTreeType* FindOrCreateNode(const TKeyList& node_path,
+                                BinaryPredicate equal);
 
     /// Find tree nodes corresponding to the path from the top
     ///
@@ -296,17 +327,65 @@ public:
     /// @param res
     ///    list of discovered found nodes (const pointers)
     void FindNodes(const TKeyList& node_path, 
-                   TConstNodeList* res) const;
+                   TConstNodeList* res) const
+        {
+            FindNodes(node_path, res, std::equal_to<TKeyType>());
+        }
+
+    /// Find tree nodes corresponding to the path from the top
+    ///
+    /// @param node_path
+    ///    hierachy of node keys to search for
+    /// @param equal
+    ///    predicate to test equality
+    /// @param res
+    ///    list of discovered found nodes (const pointers)
+    template<class BinaryPredicate>
+    void FindNodes(const TKeyList& node_path, 
+                   TConstNodeList* res,
+                   BinaryPredicate equal) const;
 
     /// Non recursive linear scan of all subnodes, with key comparison
     ///
+    /// @param key
+    ///    key to search for
     /// @return SubNode pointer or NULL
-    const TTreeType* FindSubNode(const TKeyType& key) const;
+    const TTreeType* FindSubNode(const TKeyType& key) const
+        {
+            return FindSubNode(key, std::equal_to<TKeyType>());
+        }
 
     /// Non recursive linear scan of all subnodes, with key comparison
     ///
+    /// @param key
+    ///    key to search for
+    /// @param equal
+    ///    predicate to test equality
     /// @return SubNode pointer or NULL
-    TTreeType* FindSubNode(const TKeyType& key);
+    template<class BinaryPredicate>
+    const TTreeType* FindSubNode(const TKeyType& key,
+                                 BinaryPredicate equal) const;
+
+    /// Non recursive linear scan of all subnodes, with key comparison
+    ///
+    /// @param key
+    ///    key to search for
+    /// @return SubNode pointer or NULL
+    TTreeType* FindSubNode(const TKeyType& key)
+        {
+            return FindSubNode(key, std::equal_to<TKeyType>());
+        }
+
+    /// Non recursive linear scan of all subnodes, with key comparison
+    ///
+    /// @param key
+    ///    key to search for
+    /// @param equal
+    ///    predicate to test equality
+    /// @return SubNode pointer or NULL
+    template<class BinaryPredicate>
+    TTreeType* FindSubNode(const TKeyType& key,
+                           BinaryPredicate equal);
 
     /// Parameters for node search by key
     ///
@@ -322,11 +401,30 @@ public:
 
     /// Search for node
     ///
+    /// @param key
+    ///    key to search for
     /// @param sflag
     ///     ORed ENodeSearchType
     /// @return node pointer or NULL
     const TTreeType* FindNode(const TKeyType& key,
-                              TNodeSearchMode sflag = eImmediateAndTop) const;
+                              TNodeSearchMode sflag = eImmediateAndTop) const
+        {
+            return FindNode(key, sflag, std::equal_to<TKeyType>());
+        }
+
+    /// Search for node
+    ///
+    /// @param key
+    ///    key to search for
+    /// @param sflag
+    ///     ORed ENodeSearchType
+    /// @param equal
+    ///    predicate to test equality
+    /// @return node pointer or NULL
+    template<class BinaryPredicate>
+    const TTreeType* FindNode(const TKeyType& key,
+                              TNodeSearchMode sflag,
+                              BinaryPredicate equal) const;
 
     /// How to count nodes in the tree of which this node is a root.
     /// @sa CountNodes, TConstNodeList
@@ -802,9 +900,10 @@ bool CTreeNode<TValue, TKeyGetter>::IsParent(const TTreeType& tree_node) const
 }
 
 
-template<class TValue, class TKeyGetter>
+template<class TValue, class TKeyGetter> template<class BinaryPredicate>
 void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
-                                              TNodeList*      res)
+                                              TNodeList*      res,
+                                              BinaryPredicate equal)
 {
     TTreeType* tr = this;
 
@@ -817,7 +916,7 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
 
         for (; it != it_end; ++it) {
             TTreeType* node = *it;
-            if (node->GetKey() == key) {
+            if (equal(node->GetKey(), key)) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -834,9 +933,10 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
     res->push_back(tr);
 }
 
-template<class TValue, class TKeyGetter>
+template<class TValue, class TKeyGetter> template<class BinaryPredicate>
 typename CTreeNode<TValue, TKeyGetter>::TTreeType*
-CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path)
+CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path,
+                                                BinaryPredicate equal)
 {
     TTreeType* tr = this;
 
@@ -849,7 +949,7 @@ CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path)
 
         for (; it != it_end; ++it) {
             TTreeType* node = *it;
-            if (node->GetKey() == key) {
+            if (equal(node->GetKey(), key)) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -869,9 +969,10 @@ CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path)
 }
 
 
-template<class TValue, class TKeyGetter>
+template<class TValue, class TKeyGetter> template<class BinaryPredicate>
 void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
-                                              TConstNodeList* res) const
+                                              TConstNodeList* res,
+                                              BinaryPredicate equal) const
 {
     const TTreeType* tr = this;
 
@@ -884,7 +985,7 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
 
         for (; it != it_end; ++it) {
             const TTreeType* node = *it;
-            if (node->GetKey() == key) {
+            if (equal(node->GetKey(), key)) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -901,50 +1002,53 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
     res->push_back(tr);
 }
 
-template<class TValue, class TKeyGetter>
+template<class TValue, class TKeyGetter> template<class BinaryPredicate>
 const typename CTreeNode<TValue, TKeyGetter>::TTreeType*
-CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key) const
+CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key,
+                                           BinaryPredicate equal) const
 {
     TNodeList_CI it = SubNodeBegin();
     TNodeList_CI it_end = SubNodeEnd();
 
     for(; it != it_end; ++it) {
-        if ((*it)->GetKey() == key) {
+        if (equal((*it)->GetKey(), key)) {
             return *it;
         }
     }
     return 0;
 }
 
-template<class TValue, class TKeyGetter>
+template<class TValue, class TKeyGetter> template<class BinaryPredicate>
 typename CTreeNode<TValue, TKeyGetter>::TTreeType*
-CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key)
+CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key,
+                                           BinaryPredicate equal)
 {
     TNodeList_I it = SubNodeBegin();
     TNodeList_I it_end = SubNodeEnd();
 
     for(; it != it_end; ++it) {
-        if ((*it)->GetKey() == key) {
+        if (equal((*it)->GetKey(), key)) {
             return *it;
         }
     }
     return 0;
 }
 
-template<class TValue, class TKeyGetter>
+template<class TValue, class TKeyGetter> template<class BinaryPredicate>
 const typename CTreeNode<TValue, TKeyGetter>::TTreeType*
 CTreeNode<TValue, TKeyGetter>::FindNode(const TKeyType& key,
-                                        TNodeSearchMode sflag) const
+                                        TNodeSearchMode sflag,
+                                        BinaryPredicate equal) const
 {
     const TTreeType* ret = 0;
     if (sflag & eImmediateSubNodes) {
-         ret = FindSubNode(key);
+        ret = FindSubNode(key, equal);
     }
 
     if (!ret && (sflag & eAllUpperSubNodes)) {
         const TTreeType* parent = GetParent();
         for (; parent; parent = parent->GetParent()) {
-            ret = parent->FindSubNode(key);
+            ret = parent->FindSubNode(key, equal);
             if (ret) {
                 return ret;
             }
@@ -954,11 +1058,12 @@ CTreeNode<TValue, TKeyGetter>::FindNode(const TKeyType& key,
     if (!ret && (sflag & eTopLevelNodes)) {
         const TTreeType* root = GetRoot();
         if (root != this) {
-            ret = root->FindSubNode(key);
+            ret = root->FindSubNode(key, equal);
         }
     }
     return ret;
 }
+
 
 template<class TValue, class TKeyGetter>
 unsigned int
