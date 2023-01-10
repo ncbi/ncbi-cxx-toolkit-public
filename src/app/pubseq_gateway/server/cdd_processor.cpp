@@ -157,17 +157,13 @@ CPSGS_CDDProcessor::~CPSGS_CDDProcessor(void)
 }
 
 
-bool CPSGS_CDDProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
-                                    shared_ptr<CPSGS_Reply> reply) const
+bool CPSGS_CDDProcessor::x_IsEnabled(CPSGS_Request& request) const
 {
-    auto req_type = request->GetRequestType();
-    if (req_type != CPSGS_Request::ePSGS_AnnotationRequest &&
-        req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) return false;
-
-    auto app = CPubseqGatewayApp::GetInstance();
-    bool enabled = app->GetCDDProcessorsEnabled();
+    // first check global setting
+    bool enabled = CPubseqGatewayApp::GetInstance()->GetCDDProcessorsEnabled();
     if ( enabled ) {
-        for (const auto& name : request->GetRequest<SPSGS_RequestBase>().m_DisabledProcessors ) {
+        // check if disabled in request
+        for (const auto& name : request.GetRequest<SPSGS_RequestBase>().m_DisabledProcessors ) {
             if ( NStr::EqualNocase(name, kCDDProcessorName) ) {
                 enabled = false;
                 break;
@@ -175,21 +171,57 @@ bool CPSGS_CDDProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
         }
     }
     else {
-        for (const auto& name : request->GetRequest<SPSGS_RequestBase>().m_EnabledProcessors ) {
+        // check if enabled in request
+        for (const auto& name : request.GetRequest<SPSGS_RequestBase>().m_EnabledProcessors ) {
             if ( NStr::EqualNocase(name, kCDDProcessorName) ) {
                 enabled = true;
                 break;
             }
         }
     }
-    if ( !enabled ) return false;
+    return enabled;
+}
+
+
+vector<string> CPSGS_CDDProcessor::WhatCanProcess(shared_ptr<CPSGS_Request> request,
+                                                  shared_ptr<CPSGS_Reply> reply) const
+{
+    vector<string> can_process;
+    if ( x_IsEnabled(*request) ) {
+        SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+        if ( x_CanProcessAnnotRequestIds(annot_request) ) {
+            for ( auto& name : annot_request.m_Names ) {
+                if ( NStr::EqualNocase(name, kCDDAnnotName) ) {
+                    can_process.push_back(name);
+                }
+            }
+        }
+    }
+    return can_process;
+}
+
+
+bool CPSGS_CDDProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
+                                    shared_ptr<CPSGS_Reply> reply) const
+{
+    auto req_type = request->GetRequestType();
+    if (req_type != CPSGS_Request::ePSGS_AnnotationRequest &&
+        req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
+        return false;
+    }
+
+    if ( !x_IsEnabled(*request) ) {
+        return false;
+    }
 
     if (req_type == CPSGS_Request::ePSGS_AnnotationRequest &&
-        !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), 0))
+        !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), 0)) {
         return false;
+    }
     if (req_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest &&
-        !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>()))
+        !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>())) {
         return false;
+    }
     
     return true;
 }
@@ -202,35 +234,23 @@ CPSGS_CDDProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
 {
     auto req_type = request->GetRequestType();
     if (req_type != CPSGS_Request::ePSGS_AnnotationRequest &&
-        req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) return nullptr;
+        req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
+        return nullptr;
+    }
 
-    auto app = CPubseqGatewayApp::GetInstance();
-    bool enabled = app->GetCDDProcessorsEnabled();
-    if ( enabled ) {
-        for (const auto& name : request->GetRequest<SPSGS_RequestBase>().m_DisabledProcessors ) {
-            if ( NStr::EqualNocase(name, kCDDProcessorName) ) {
-                enabled = false;
-                break;
-            }
-        }
+    if ( !x_IsEnabled(*request) ) {
+        return nullptr;
     }
-    else {
-        for (const auto& name : request->GetRequest<SPSGS_RequestBase>().m_EnabledProcessors ) {
-            if ( NStr::EqualNocase(name, kCDDProcessorName) ) {
-                enabled = true;
-                break;
-            }
-        }
-    }
-    if ( !enabled ) return nullptr;
 
     if (req_type == CPSGS_Request::ePSGS_AnnotationRequest &&
-        !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), priority))
+        !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), priority)) {
         return nullptr;
+    }
     if (req_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest &&
-        !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>()))
+        !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>())) {
         return nullptr;
-        
+    }
+
     return new CPSGS_CDDProcessor(m_ClientPool, m_ThreadPool, request, reply, priority);
 }
 
@@ -615,15 +635,26 @@ bool CPSGS_CDDProcessor::x_CanProcessSeq_id(const string& psg_id) const
 }
 
 
-bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_request,
-                                                  TProcessorPriority priority) const
+bool CPSGS_CDDProcessor::x_CanProcessAnnotRequestIds(SPSGS_AnnotRequest& annot_request) const
 {
-    if (!x_NameIncluded(annot_request.GetNotProcessedName(priority))) return false;
     if (!annot_request.m_SeqId.empty() && x_CanProcessSeq_id(annot_request.m_SeqId)) return true;
     for (const auto& id: annot_request.m_SeqIds) {
         if (x_CanProcessSeq_id(id)) return true;
     }
     return false;
+}
+
+
+bool CPSGS_CDDProcessor::x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_request,
+                                                  TProcessorPriority priority) const
+{
+    if (!x_NameIncluded(annot_request.GetNotProcessedName(priority))) {
+        return false;
+    }
+    if (!x_CanProcessAnnotRequestIds(annot_request)) {
+        return false;
+    }
+    return true;
 }
 
 
