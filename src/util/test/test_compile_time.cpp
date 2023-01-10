@@ -303,7 +303,7 @@ constexpr bool check_order(const _Container& cont)
 
 BOOST_AUTO_TEST_CASE(TestCountZeroes_ct)
 {
-    BOOST_CHECK_EQUAL(ct::find_first_bit(0), 0);
+    BOOST_CHECK_EQUAL(ct::find_first_bit(0), 64);
     BOOST_CHECK_EQUAL(ct::find_first_bit(0b001), 1);
     BOOST_CHECK_EQUAL(ct::find_first_bit(0b0010), 2);
     BOOST_CHECK_EQUAL(ct::find_first_bit(0b00100), 3);
@@ -1245,3 +1245,30 @@ BOOST_AUTO_TEST_CASE(TestMSVCTupleBug)
 }
 #endif
 
+BOOST_AUTO_TEST_CASE(Test_large_bitsets)
+{
+    ct::const_bitset<1920, int> discrep;
+    discrep.set(127);
+    discrep.set(128);
+    BOOST_CHECK_EQUAL(discrep.size(), 2);
+
+    {
+    auto it = discrep.begin();
+    BOOST_CHECK_EQUAL(*it, 127);
+    ++it;
+    BOOST_CHECK_EQUAL(*it, 128);
+    ++it;
+    bool is_last = it == discrep.end();
+    BOOST_CHECK(is_last);
+    }
+
+    {
+    auto it = discrep.begin();
+    BOOST_CHECK_EQUAL(*it, 127);
+    it++;
+    BOOST_CHECK_EQUAL(*it, 128);
+    it++;
+    bool is_last = it == discrep.end();
+    BOOST_CHECK(is_last);
+    }
+}
