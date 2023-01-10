@@ -83,13 +83,20 @@ public:
 
 public:
     /// Optionally takes ownership on passed param_tree
-    CConfig(TParamTree* param_tree, EOwnership own = eTakeOwnership);
+    explicit
+    CConfig(TParamTree* param_tree,
+            EOwnership own = eTakeOwnership,
+            NStr::ECase use_case = NStr::eNocase);
 
     /// Construct, take no tree ownership
-    CConfig(const TParamTree* param_tree);
+    explicit
+    CConfig(const TParamTree* param_tree,
+            NStr::ECase use_case = NStr::eNocase);
 
     /// Take registry and create a config tree out of it
-    CConfig(const IRegistry& reg);
+    explicit
+    CConfig(const IRegistry& reg,
+            NStr::ECase use_case = NStr::eNocase);
     ~CConfig();
 
     /// Defines how to behave when parameter is missing
@@ -218,7 +225,8 @@ public:
     ///     Application registry (loaded from the INI file)
     /// @return 
     ///     Reconstructed tree (caller is responsible for deletion)
-    static TParamTree* ConvertRegToTree(const IRegistry&  reg);
+    static TParamTree* ConvertRegToTree(const IRegistry&  reg,
+                                        NStr::ECase use_case = NStr::eNocase);
 
     /// Overloading of getters for generic programming
     string Get(const string& d, const string& p, EErrAction e, const string& v,
@@ -250,6 +258,7 @@ protected:
 
 protected:
     AutoPtr<TParamTree> m_ParamTree;
+    NStr::ECase         m_UseCase;
 };
 
 /* @} */
