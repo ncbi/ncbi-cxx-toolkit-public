@@ -1607,41 +1607,113 @@ static void s_GetCigarString(const CSeq_align& align, string& cigar, int query_l
         }
     }
 }
-       
+  
+static string s_InsertGap(const string& nuc_without_gap, const string& nuc, const string& prot, char gap_char) {
+    int new_prot_size = nuc.size()/3 + ((nuc.size()%3 ==2)?1:0);
+    string new_prot (new_prot_size, ' ');
+    int num_gaps = 0;
+    int num_bases = 0;
+    int total_inserted_gap = 0;
+    int gap_hold = 0;
+    int last_aa_pos = 0;
+    for (int i = 0; i < (int)nuc.size(); i++) {
+        if (nuc[i] == gap_char) {
+            num_gaps ++;
+        } else {
+            num_bases ++;
+        } 
+        int index_new_prot = (i+1)/3 - 1;
+        int index_original_prot = index_new_prot - total_inserted_gap;
+
+        if (num_gaps == 3) {
+            if (index_new_prot < new_prot.size()) {
+                total_inserted_gap ++;
+                num_gaps = 0;
+                if (num_bases == 0) {
+                    new_prot[index_new_prot] = gap_char;
+                } else {
+                    //not add gap yet since it needs to be printed after amino acid is printed
+                    gap_hold ++;
+                }     
+            }
+            
+        } else if (num_bases == 3) {
+            
+            index_new_prot -= gap_hold;
+            if (index_new_prot < (int)new_prot.size() && index_original_prot < (int)prot.size()) {
+                new_prot[index_new_prot] = prot[index_original_prot];
+                last_aa_pos = index_new_prot;
+                num_bases = 0;
+                if (gap_hold > 0) {
+                    for (int j = 0; j < gap_hold; j++) {
+                        int position = index_new_prot + 1 + j;
+                        if (position < new_prot.size()) {
+                            new_prot[position] = gap_char;
+                        }
+                    }
+                    gap_hold = 0;
+                }
+            }
+
+        }
+    }  
+    if ((int)nuc_without_gap.size()%3 > 0) {
+        if ((int)prot.size() > nuc_without_gap.size()/3) {
+            //last two partial bases as toolkit Translate may translate partial codon 
+            new_prot[new_prot.size() - 1] = prot[prot.size() - 1];
+        } else if (new_prot[new_prot.size() - 1] == ' ') {
+            new_prot.pop_back();
+        }
+    }
+    return new_prot;
+}
+     
 static void s_GetGermlineTranslation(const CRef<blast::CIgAnnotation> &annot, CAlnVec& alnvec, 
                                      const string& aligned_query_string, const string& aligned_germline_string,
                                      string& query_translation_string,
                                      string& germline_translation_string){
 
-    string aligned_vdj_query = NcbiEmptyString;
-    alnvec.GetSeqString(aligned_vdj_query, 0, alnvec.GetSeqStart(0), alnvec.GetSeqStop(0)); 
-    int query_trans_offset = ((alnvec.GetSeqStart(0) + 3) - annot->m_FrameInfo[0])%3;
-    int query_trans_start =  query_trans_offset > 0?(3 - query_trans_offset):0;
-    string query_translation_template = aligned_vdj_query.substr(min((int)aligned_vdj_query.size() -1, query_trans_start));
+    if (annot->m_FrameInfo[0] >=0) {
+        string aligned_vdj_query = NcbiEmptyString;
+        alnvec.GetSeqString(aligned_vdj_query, 0, alnvec.GetSeqStart(0), alnvec.GetSeqStop(0)); 
+        int query_trans_offset = ((alnvec.GetSeqStart(0) + 3) - annot->m_FrameInfo[0])%3;
+        int query_trans_start =  query_trans_offset > 0?(3 - query_trans_offset):0;
+
  
-    CSeqTranslator::Translate(query_translation_template, 
-                              query_translation_string, 
-                              CSeqTranslator::fIs5PrimePartial, NULL, NULL);
- 
-    CAlnVec::TResidue gap_char = alnvec.GetGapChar(0);
-    //make sure both query and germline are non-gaps.
-    for (int i = query_trans_start; i < (int)aligned_vdj_query.size(); i = i + 3) {
-        int query_aln_pos = alnvec.GetAlnPosFromSeqPos(0, alnvec.GetSeqStart(0) + i, CAlnMap::eRight);
-        
-        if (query_aln_pos < (int)aligned_germline_string.size() && 
-            query_aln_pos< (int)aligned_query_string.size() && 
-            aligned_germline_string[query_aln_pos] != gap_char &&
-            aligned_query_string[query_aln_pos] != gap_char){
-            string germline_translation_template = aligned_germline_string.substr(query_aln_pos);
-            string gap_str = NcbiEmptyString;
-            gap_str.push_back(gap_char);
-            //remove internal gap
-            string final_germline_translation_template = NcbiEmptyString;
-            NStr::Replace(germline_translation_template, gap_str, NcbiEmptyString, final_germline_translation_template);
-            CSeqTranslator::Translate(final_germline_translation_template, 
-                                      germline_translation_string, 
-                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-            break; 
+        CAlnVec::TResidue gap_char = alnvec.GetGapChar(0);
+        string gap_str = NcbiEmptyString;
+        gap_str.push_back(gap_char);
+        //make sure both query and germline are non-gaps.
+        for (int i = query_trans_start; i < (int)aligned_vdj_query.size(); i = i + 3) {
+            int query_aln_pos = alnvec.GetAlnPosFromSeqPos(0, alnvec.GetSeqStart(0) + i, CAlnMap::eRight);
+            
+            if (query_aln_pos < (int)aligned_germline_string.size() && 
+                query_aln_pos< (int)aligned_query_string.size() && 
+                aligned_germline_string[query_aln_pos] != gap_char &&
+                aligned_query_string[query_aln_pos] != gap_char){
+                
+                string query_translation_template = aligned_query_string.substr(query_aln_pos);
+                string final_query_translation_template = NcbiEmptyString;
+                
+                NStr::Replace(query_translation_template, gap_str, NcbiEmptyString, final_query_translation_template);
+                CSeqTranslator::Translate(final_query_translation_template, 
+                                          query_translation_string, 
+                                          CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+                
+                query_translation_string = s_InsertGap(final_query_translation_template, query_translation_template, query_translation_string, gap_char);
+
+                string germline_translation_template = aligned_germline_string.substr(query_aln_pos);
+                
+                //remove internal gap
+                string final_germline_translation_template = NcbiEmptyString;
+                NStr::Replace(germline_translation_template, gap_str, NcbiEmptyString, final_germline_translation_template);
+                CSeqTranslator::Translate(final_germline_translation_template, 
+                                          germline_translation_string, 
+                                          CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+                germline_translation_string = s_InsertGap(final_germline_translation_template, germline_translation_template, germline_translation_string, gap_char);
+           
+                break; 
+            }
         }
     }
 }
@@ -1698,7 +1770,6 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         s_GetGermlineTranslation(annot, alnvec, v_query_alignment, v_germline_alignment,
                                  airr_data["v_sequence_alignment_aa"], airr_data["v_germline_alignment_aa"]);
     }
-
     if (align_d) {
         
         mix.Add(align_d->GetSegs().GetDenseg(), CAlnMix::fPreserveRows);
@@ -1757,8 +1828,8 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         j_germline_alignment = subject;
         s_GetGermlineTranslation(annot, alnvec, j_query_alignment, j_germline_alignment,
                                  airr_data["j_sequence_alignment_aa"], airr_data["j_germline_alignment_aa"]);
-    }   
-        
+           
+    }
 
     
     airr_data["v_identity"] = v_identity_str;
@@ -1853,10 +1924,10 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         string query = NcbiEmptyString;
         string subject = NcbiEmptyString;
         const CDense_seg& ds = (align_c->GetSegs().GetDenseg());
-        CAlnVec alnvec(ds, scope);
-        alnvec.SetGapChar('-');
-        alnvec.GetWholeAlnSeqString(0, query);
-        alnvec.GetWholeAlnSeqString(1, subject);
+        CAlnVec alnvec_c(ds, scope);
+        alnvec_c.SetGapChar('-');
+        alnvec_c.GetWholeAlnSeqString(0, query);
+        alnvec_c.GetWholeAlnSeqString(1, subject);
         
         int num_ident = 0;
         int length = min(query.size(), subject.size());
@@ -1872,8 +1943,9 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         NStr::DoubleToString(c_identity_str, identity*100, 3);
         c_query_alignment = query;
         c_germline_alignment = subject;
-        s_GetGermlineTranslation(annot, alnvec, c_query_alignment, c_germline_alignment,
+        s_GetGermlineTranslation(annot, alnvec_c, c_query_alignment, c_germline_alignment,
                                  airr_data["c_sequence_alignment_aa"], airr_data["c_germline_alignment_aa"]);
+        
         airr_data["c_identity"] = c_identity_str;
         airr_data["c_sequence_alignment"] = c_query_alignment;
         airr_data["c_germline_alignment"] = c_germline_alignment;
