@@ -62,6 +62,8 @@ public:
     CPSGS_CDDProcessor(void);
     ~CPSGS_CDDProcessor(void) override;
 
+    vector<string> WhatCanProcess(shared_ptr<CPSGS_Request> request,
+                                  shared_ptr<CPSGS_Reply> reply) const override;
     bool CanProcess(shared_ptr<CPSGS_Request> request,
                     shared_ptr<CPSGS_Reply> reply) const override;
     IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
@@ -89,7 +91,9 @@ private:
                        shared_ptr<CPSGS_Reply> reply,
                        TProcessorPriority priority);
 
+    bool x_IsEnabled(CPSGS_Request& request) const;
     bool x_CanProcessSeq_id(const string& psg_id) const;
+    bool x_CanProcessAnnotRequestIds(SPSGS_AnnotRequest& annot_request) const;
     bool x_CanProcessAnnotRequest(SPSGS_AnnotRequest& annot_request,
                                   TProcessorPriority priority) const;
     bool x_CanProcessBlobRequest(SPSGS_BlobBySatSatKeyRequest& blob_request) const;
