@@ -77,23 +77,23 @@ void CCleanupHugeAsnReader::FlattenGenbankSet()
 
     if (m_CleanupOptions & eEnableSmallGenomeSets) {
         x_CreateSmallGenomeSets();
-        set<string> fluLabels;
-        list<CConstRef<CSeq_id>> smallGenomeIds; 
+        map<string, CConstRef<CSeq_id>> smallGenomeLabelToId;
         auto it = m_top_ids.begin();
         while (it != m_top_ids.end()) {
             if (auto mit = x_GetFluLabel(*it);
                 mit != m_IdToFluLabel.end()) {
-                if (fluLabels.insert(mit->second).second) {
-                    smallGenomeIds.push_back(*it);
+                if (smallGenomeLabelToId.find(mit->second) 
+                        == smallGenomeLabelToId.end()) {
+                    smallGenomeLabelToId.emplace(mit->second, *it);
                 } 
                 it = m_top_ids.erase(it);
                 continue;
             }
             ++it;
         }
-
-        if (!smallGenomeIds.empty()) {
-            m_top_ids.splice(m_top_ids.end(), smallGenomeIds);
+            
+        for (auto entry : smallGenomeLabelToId) {
+            m_top_ids.push_back(entry.second);
         }
     }
 }
@@ -284,6 +284,7 @@ static void s_RemoveEntriesWithKey(const string& key, TMap& mapToKey)
         }
     }
 }
+
 
 static bool s_CheckForSegments(CConstRef<CSeq_descr> seqDescrs, 
         CConstRef<CSeq_descr> setDescrs,
