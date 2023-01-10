@@ -570,8 +570,8 @@ void CIgBlast::x_SetupCRegionSearch(const vector<CRef <CIgAnnotation> > &annots,
         CSeq_id *q_id = const_cast<CSeq_id *>(&*query->GetQueryId());
         int len = query->GetLength();
         TMaskedQueryRegions mask_list;
-        if ((*annot)->m_GeneInfo[0] == -1) {
-            // This is not a ig sequence or there is no d gene per previous search.  Mask it out
+        if ((*annot)->m_GeneInfo[0] == -1 || (*annot)->m_GeneInfo[4] == -1 || (*annot)->m_GeneInfo[5] == -1) {
+            // This is not a ig sequence or there is no v gene or J gene per previous search.  Mask it out
             CRef<CSeqLocInfo> mask(new CSeqLocInfo(new CSeq_interval(*q_id, 0, len-1), 0));
             mask_list.push_back(mask);
         } else {
