@@ -338,13 +338,15 @@ public:
     TClass* CreateInstanceFromList
         (const TPluginManagerParamTree* params,
          const string&                  driver_list,
-         const CVersionInfo&            version = GetDefaultDrvVers());
+         const CVersionInfo&            version = GetDefaultDrvVers(),
+         NStr::ECase                    use_case = NStr::eNocase);
 
     /// Detect driver from the parameters using the key to get list of drivers.
     TClass* CreateInstanceFromKey
         (const TPluginManagerParamTree* params,
          const string&                  driver_key,
-         const CVersionInfo&            version = GetDefaultDrvVers());
+         const CVersionInfo&            version = GetDefaultDrvVers(),
+         NStr::ECase                    use_case = NStr::eNocase);
 
     /// Get class factory
     ///
@@ -728,7 +730,8 @@ template <class TClass>
 TClass* CPluginManager<TClass>::CreateInstanceFromList(
     const TPluginManagerParamTree* params,
     const string&                  driver_list,
-    const CVersionInfo&            version)
+    const CVersionInfo&            version,
+    NStr::ECase                    use_case)
 {
     TClass* drv = 0;
 
@@ -740,7 +743,7 @@ TClass* CPluginManager<TClass>::CreateInstanceFromList(
     ITERATE ( list<string>, it, drivers ) {
         string drv_name = *it;
         const TPluginManagerParamTree* driver_params = params ?
-            params->FindNode(drv_name) : 0;
+            params->FindNode(drv_name, params->eImmediateAndTop, PEqualNocase_Conditional(use_case)) : 0;
         try {
             drv = CreateInstance(drv_name, version, driver_params);
         }
@@ -760,7 +763,8 @@ template <class TClass>
 TClass* CPluginManager<TClass>::CreateInstanceFromKey(
     const TPluginManagerParamTree* params,
     const string&                  driver_key,
-    const CVersionInfo&            version)
+    const CVersionInfo&            version,
+    NStr::ECase                    use_case)
 {
     _TRACE("Creating an instance of a driver having version " <<
            version << " from a key " << driver_key);
@@ -768,7 +772,7 @@ TClass* CPluginManager<TClass>::CreateInstanceFromKey(
     if ( !params ) {
         return drv;
     }
-    const TPluginManagerParamTree* driver_node = params->FindNode(driver_key);
+    const TPluginManagerParamTree* driver_node = params->FindNode(driver_key, params->eImmediateAndTop, PEqualNocase_Conditional(use_case));
     if ( !driver_node ) {
         return drv;
     }
