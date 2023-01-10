@@ -4938,6 +4938,28 @@ typedef PNocase_Conditional_Generic<string>       PNocase_Conditional;
 typedef PNocase_Conditional_Generic<const char *> PNocase_Conditional_CStr;
 
 
+template <typename T>
+class PEqualNocase_Conditional_Generic
+    : public PNocase_Conditional_Generic<T>
+{
+public:
+    /// Construction
+    explicit
+    PEqualNocase_Conditional_Generic(NStr::ECase case_sens = NStr::eCase)
+        : PNocase_Conditional_Generic<T>(case_sens)
+        {
+        }
+
+    /// Return TRUE if s1 < s2 ignoring case.
+    bool operator()(const T& s1, const T& s2) const
+        {
+            return this->Equals(s1, s2);
+        }
+};
+
+typedef PEqualNocase_Conditional_Generic<string>       PEqualNocase_Conditional;
+typedef PEqualNocase_Conditional_Generic<const char *> PEqualNocase_Conditional_CStr;
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// PQuickStringLess implements an ordering of strings,
