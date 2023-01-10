@@ -80,7 +80,7 @@ void CCleanupHugeAsnReader::FlattenGenbankSet()
         set<string> fluLabels;
         auto it = m_top_ids.begin();
         while (it != m_top_ids.end()) {
-            if (auto mit = m_IdToFluLabel.find(*it); // is this what we want?
+            if (auto mit = x_GetFluLabel(*it);
                 mit != m_IdToFluLabel.end()) {
                 if (!fluLabels.insert(mit->second).second) {
                     it = m_top_ids.erase(it);
@@ -381,9 +381,11 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
 
     // Prune if any of the sequences has incomplete cdregion or gene feats
     auto it = m_IdToFluLabel.begin();
+    set<string> keysToRemove;
     while (it != m_IdToFluLabel.end()) {
         if (s_IdInSet(it->first, m_HasIncompleteFeats)) {
             auto key = it->second;
+            keysToRemove.insert(key);
             s_RemoveEntriesWithKey(key, m_SetPosToFluLabel);
             if (auto fluLabelIt = m_FluLabelToSetInfo.find(key); fluLabelIt != m_FluLabelToSetInfo.end()) {
                 m_FluLabelToSetInfo.erase(fluLabelIt);
@@ -394,22 +396,13 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
             ++it;
         }
     }
-}
 
-
-/*
-string CCleanupHugeAsnReader::x_GetFluLabel(const CConstRef<CSeq_id>& pId) const
-{
-    auto it = m_IdToFluLabel.lower_bound(pId);
-    if (it != m_IdToFluLabel.end()) {
-        if (it->first->CompareOrdered(*pId) == 0 ||
-            it->first->Compare(*pId) == CSeq_id::E_SIC::e_YES) {
-            return it->second;
-        }
+    for (const auto& key : keysToRemove) {
+        s_RemoveEntriesWithKey(key, m_IdToFluLabel);
     }
-    return  "";
 }
-*/
+
+
 
 CCleanupHugeAsnReader::TIdToFluLabel::iterator 
 CCleanupHugeAsnReader::x_GetFluLabel(const CConstRef<CSeq_id>& pId) 
