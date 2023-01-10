@@ -170,21 +170,50 @@ namespace compile_time_bits
 
     };
 
-    template<typename _Ty=uint64_t>
-    constexpr size_t find_first_bit(_Ty current)
+    // C++20 has constexpr std::popcount
+    // See Hamming Weight: https://en.wikipedia.org/wiki/Hamming_weight
+    constexpr int popcount64c(uint64_t x)
     {
-        if (current == 0)
-            return 0;
+        //This uses fewer arithmetic operations than any other known
+        //implementation on machines with fast multiplication.
+        //This algorithm uses 12 arithmetic operations, one of which is a multiply.
 
-        auto new_current = current & (current - 1);
-        auto single_bit = current ^ new_current;
-        size_t delta = 0;
-        do {
-            delta++;
-            single_bit /= 2;
+        //types and constants used in the functions below
+        //uint64_t is an unsigned 64-bit integer variable type (defined in C99 version of C language)
+        constexpr uint64_t m1  = 0x5555555555555555; //binary: 0101...
+        constexpr uint64_t m2  = 0x3333333333333333; //binary: 00110011..
+        constexpr uint64_t m4  = 0x0f0f0f0f0f0f0f0f; //binary:  4 zeros,  4 ones ...
+        //constexpr uint64_t m8  = 0x00ff00ff00ff00ff; //binary:  8 zeros,  8 ones ...
+        //constexpr uint64_t m16 = 0x0000ffff0000ffff; //binary: 16 zeros, 16 ones ...
+        //constexpr uint64_t m32 = 0x00000000ffffffff; //binary: 32 zeros, 32 ones
+        constexpr uint64_t h01 = 0x0101010101010101; //the sum of 256 to the power of 0,1,2,3...
+
+        x -= (x >> 1) & m1;             //put count of each 2 bits into those 2 bits
+        x = (x & m2) + ((x >> 2) & m2); //put count of each 4 bits into those 4 bits
+        x = (x + (x >> 4)) & m4;        //put count of each 8 bits into those 8 bits
+        return int((x * h01) >> 56);  //returns left 8 bits of x + (x<<8) + (x<<16) + (x<<24) + ...
+    }
+
+    constexpr int popcount64d(uint64_t x)
+    {
+        int retval = 0;
+        while (x) {
+            x &= x - 1;
+            ++retval;
         }
-        while (single_bit);
-        return delta;
+        return retval;
+    }
+
+    constexpr size_t find_first_bit(uint64_t x)
+    {   // returns 64 for all zeros 'x'
+        //if (current == 0) return 0;
+
+        // for any number in the form   bXXXX100000
+        // only_low_bits will look like b0000111111
+        // so, counting those one's would give a product
+        auto only_low_bits = x ^ (x - 1);
+        auto count = popcount64c(only_low_bits);
+        return count;
     }
 
 }
@@ -241,14 +270,11 @@ namespace compile_time_bits
 
         static constexpr size_t capacity() { return _Bits; }
         constexpr size_t size() const
-        { // See Hamming Weight: https://en.wikipedia.org/wiki/Hamming_weight
+        {
             size_t retval{0};
             for (auto value: _Array)
             {
-                while (value) {
-                    value &= value - 1;
-                    ++retval;
-                }
+                retval += popcount64c(value);
             }
             return retval;
         }
@@ -411,7 +437,9 @@ namespace compile_time_bits
 
                 auto delta = find_first_bit(current);
                 m_index = index + delta;
-                m_current = current >> (delta);
+                // shift overflow is not well supported by all CPUs
+                current = delta == _Bitsperword ? 0 : current >> delta;
+                m_current = current;
             }
 
             // begin operator
