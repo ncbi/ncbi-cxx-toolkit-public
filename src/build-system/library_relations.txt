@@ -469,7 +469,7 @@ gpxapi needs xconnect
 gpxlib needs gpipe_attr
 gpxlib needs gpxapi
 gpxlib needs xgp_manifest
-grid_wrapper needs gpipe_common
+grid_wrapper needs gpipe_attr
 grid_wrapper needs gpipe_resource_req
 grid_wrapper needs3party $(SGE_LIBS)
 grpc needs $(Z_LIB)
