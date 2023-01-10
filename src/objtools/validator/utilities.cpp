@@ -790,7 +790,7 @@ int CheckDate (const CDate& date, bool require_full_date)
         }
     } else if (date.IsStd()) {
         const auto& sdate = date.GetStd();
-        if (!sdate.IsSetYear() || sdate.GetYear() == 0) {
+        if (!sdate.IsSetYear() || sdate.GetYear() < 1000) {
             rval |= eDateValid_bad_year;
         }
         if (sdate.IsSetMonth() && sdate.GetMonth() > 12) {
