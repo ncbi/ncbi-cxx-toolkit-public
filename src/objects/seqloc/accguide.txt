@@ -1462,7 +1462,7 @@ version  1 # of file format
 2+6  PD  ddbj_patent
 2+8  PD  ddbj_other_nuc
 2+10 PD  ddbj_other_nuc
-2+6  PE  ddbj_other_nuc
+2+6  PE  ddbj_patent # from Korea
 2+8  PE  ddbj_other_nuc
 2+10 PE  ddbj_other_nuc
 2+6  TI  unreserved_nuc # deliberately skipped
