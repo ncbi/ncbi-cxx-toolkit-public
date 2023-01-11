@@ -210,7 +210,7 @@ void CHugeFileDemoApp::x_RunDemo(TAppContext& context, const std::list<CConstRef
     }
 }
 
-void CHugeFileDemoApp::x_ShowIds(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const
+void CHugeFileDemoApp::x_ShowIds(TAppContext& /*context*/, const std::list<CConstRef<CSeq_id>>& idlist) const
 {
     auto id_it = idlist.begin();
     for (size_t i=0; i<100 && i<idlist.size(); ++i)
@@ -266,13 +266,13 @@ void CHugeFileDemoApp::x_ShowSeqSizes(TAppContext& context, const std::list<CCon
     }
 }
 
-bool CHugeFileDemoApp::x_ModifyBioSeq(CBioseq_EditHandle beh) const
+bool CHugeFileDemoApp::x_ModifyBioSeq(CBioseq_EditHandle /*beh*/) const
 {
     //auto& descr = beh.SetDescr();
     return true;
 }
 
-void CHugeFileDemoApp::x_AddUserObjects(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, const string filename) const
+void CHugeFileDemoApp::x_AddUserObjects(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, const string /*filename*/) const
 {
     auto scope = x_PopulateScope(context);
 
