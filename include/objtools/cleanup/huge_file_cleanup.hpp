@@ -63,6 +63,10 @@ public:
 private:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
     void x_CreateSmallGenomeSets();
+    void x_PruneIfFeatsIncomplete();
+    void x_PruneAndReorderTopIds();
+    void x_PruneIfSegsMissing(const string& fluLabel, size_t numSegs);
+
     void x_CleanupTopLevelDescriptors();
     bool x_LooksLikeNucProtSet() const;
     void x_AddTopLevelDescriptors(CSeq_entry& entry) const;
