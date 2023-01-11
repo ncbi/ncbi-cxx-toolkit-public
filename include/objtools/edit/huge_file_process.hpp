@@ -61,10 +61,10 @@ public:
     /// constructors
     CHugeFileProcess();
     CHugeFileProcess(CHugeAsnReader* pReader);
-    CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types);
+    CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types = &g_supported_types);
     /// destructor
     virtual ~CHugeFileProcess(void);
-    void Open(const string& file_name, const set<TTypeInfo>* types);
+    void Open(const string& file_name, const set<TTypeInfo>* types = &g_supported_types);
     void OpenFile(const string& file_name);
     void OpenFile(const string& file_name, const set<TTypeInfo>* types);
     void OpenReader();
