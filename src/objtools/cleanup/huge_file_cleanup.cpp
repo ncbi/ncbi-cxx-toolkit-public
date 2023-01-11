@@ -77,24 +77,30 @@ void CCleanupHugeAsnReader::FlattenGenbankSet()
 
     if (m_CleanupOptions & eEnableSmallGenomeSets) {
         x_CreateSmallGenomeSets();
-        map<string, CConstRef<CSeq_id>> smallGenomeLabelToId;
-        auto it = m_top_ids.begin();
-        while (it != m_top_ids.end()) {
-            if (auto mit = x_GetFluLabel(*it);
-                mit != m_IdToFluLabel.end()) {
-                if (smallGenomeLabelToId.find(mit->second) 
-                        == smallGenomeLabelToId.end()) {
-                    smallGenomeLabelToId.emplace(mit->second, *it);
-                } 
-                it = m_top_ids.erase(it);
-                continue;
-            }
-            ++it;
+        x_PruneAndReorderTopIds();
+    }
+}
+
+void CCleanupHugeAsnReader::x_PruneAndReorderTopIds()
+{ // Needed when wrapping influenza sequences in small-genome sets
+    map<string, CConstRef<CSeq_id>> smallGenomeLabelToId;
+
+    auto it = m_top_ids.begin();
+    while (it != m_top_ids.end()) {
+        if (auto mit = x_GetFluLabel(*it);
+            mit != m_IdToFluLabel.end()) {
+            if (smallGenomeLabelToId.find(mit->second) 
+                == smallGenomeLabelToId.end()) {
+                smallGenomeLabelToId.emplace(mit->second, *it);
+            } 
+            it = m_top_ids.erase(it);
+            continue;
         }
+        ++it;
+    }
             
-        for (auto entry : smallGenomeLabelToId) {
-            m_top_ids.push_back(entry.second);
-        }
+    for (auto entry : smallGenomeLabelToId) {
+        m_top_ids.push_back(entry.second);
     }
 }
 
@@ -268,17 +274,18 @@ static string s_GetInfluenzaKey(const CSeq_descr& descr)
     return "";    
 }
 
+
 template<typename TMap>
-static void s_RemoveEntriesWithKey(const string& key, TMap& mapToKey)
+static void s_RemoveEntriesWithVal(const string& val, TMap& mapToVal)
 {
-    if (mapToKey.empty()) {
+    if (mapToVal.empty()) {
         return;
     }
 
-    auto it = mapToKey.begin();
-    while (it != mapToKey.end()) {
-        if (it->second == key) {
-            it = mapToKey.erase(it);
+    auto it = mapToVal.begin();
+    while (it != mapToVal.end()) {
+        if (it->second == val) {
+            it = mapToVal.erase(it);
         } else {
             ++it;
         }
@@ -375,17 +382,29 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
     // Prune if there are missing segments
     for (auto entry : keyToSegs) {
         const auto& key = entry.first;
-        if (auto it = m_FluLabelToSetInfo.find(key); it != m_FluLabelToSetInfo.end()) {
-            auto fluType = CInfluenzaSet::GetInfluenzaType(key);
-            auto numRequired = CInfluenzaSet::GetNumRequired(fluType);
-            if (entry.second.size() != numRequired) {
-                m_FluLabelToSetInfo.erase(it);
-                s_RemoveEntriesWithKey(key, m_SetPosToFluLabel);
-                s_RemoveEntriesWithKey(key, m_IdToFluLabel);
-            } 
-        }
-    }
+        const auto& numSegs = entry.second.size();
+        x_PruneIfSegsMissing(key, numSegs);
+    };
+    x_PruneIfFeatsIncomplete();
+}
 
+
+void CCleanupHugeAsnReader::x_PruneIfSegsMissing(const string& fluLabel, size_t numSegs)
+{
+    if (auto it = m_FluLabelToSetInfo.find(fluLabel); it != m_FluLabelToSetInfo.end()) {
+        auto fluType = CInfluenzaSet::GetInfluenzaType(fluLabel);
+        auto numRequired = CInfluenzaSet::GetNumRequired(fluType);
+        if (numSegs != numRequired) {
+            m_FluLabelToSetInfo.erase(it);
+            s_RemoveEntriesWithVal(fluLabel, m_SetPosToFluLabel);
+            s_RemoveEntriesWithVal(fluLabel, m_IdToFluLabel);
+        } 
+    }
+}
+
+
+void CCleanupHugeAsnReader::x_PruneIfFeatsIncomplete()
+{
     // Prune if any of the sequences has incomplete cdregion or gene feats
     auto it = m_IdToFluLabel.begin();
     set<string> keysToRemove;
@@ -393,7 +412,7 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
         if (s_IdInSet(it->first, m_HasIncompleteFeats)) {
             auto key = it->second;
             keysToRemove.insert(key);
-            s_RemoveEntriesWithKey(key, m_SetPosToFluLabel);
+            s_RemoveEntriesWithVal(key, m_SetPosToFluLabel);
             if (auto fluLabelIt = m_FluLabelToSetInfo.find(key); fluLabelIt != m_FluLabelToSetInfo.end()) {
                 m_FluLabelToSetInfo.erase(fluLabelIt);
             }
@@ -405,7 +424,7 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
     }
 
     for (const auto& key : keysToRemove) {
-        s_RemoveEntriesWithKey(key, m_IdToFluLabel);
+        s_RemoveEntriesWithVal(key, m_IdToFluLabel);
     }
 }
 
