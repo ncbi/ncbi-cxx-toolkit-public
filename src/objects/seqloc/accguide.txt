@@ -1222,7 +1222,7 @@ version  1 # of file format
 2+6  LF  ddbj_patent
 2+8  LF  ddbj_other_nuc
 2+10 LF  ddbj_other_nuc
-2+6  LG  ddbj_patent
+2+6  LG  ddbj_patent # from Korea
 2+8  LG  ddbj_other_nuc
 2+10 LG  ddbj_other_nuc
 2+6  LH  ddbj_tsa_nuc
@@ -1276,7 +1276,7 @@ version  1 # of file format
 2+6  LX  ddbj_patent
 2+8  LX  ddbj_other_nuc
 2+10 LX  ddbj_other_nuc
-2+6  LY  ddbj_patent
+2+6  LY  ddbj_patent # from Korea
 2+8  LY  ddbj_other_nuc
 2+10 LY  ddbj_other_nuc
 2+6  LZ  ddbj_patent
