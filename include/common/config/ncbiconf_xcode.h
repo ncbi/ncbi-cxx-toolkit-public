@@ -225,6 +225,9 @@
 /* Define to 1 if you have the `eventfd' function. */
 /* #undef HAVE_EVENTFD */
 
+/* Define to 1 if you have the `execvpe' function. */
+/* #undef HAVE_EXECVPE */
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
 

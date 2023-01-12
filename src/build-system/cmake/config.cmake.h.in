@@ -246,6 +246,9 @@
 /* Define to 1 if you have the `eventfd' function. */
 #cmakedefine HAVE_EVENTFD 1
 
+/* Define to 1 if you have the `execvpe' function. */
+#cmakedefine HAVE_EXECVPE 1
+
 /* Define to 1 if you have the `FCGX_Accept_r' function. */
 #define HAVE_FCGX_ACCEPT_R 1
 
