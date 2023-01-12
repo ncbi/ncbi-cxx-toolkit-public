@@ -158,6 +158,9 @@
 /* Define to 1 if you have the `eventfd' function. */
 #undef HAVE_EVENTFD
 
+/* Define to 1 if you have the `execvpe' function. */
+#undef HAVE_EXECVPE
+
 /* Define to 1 if you have the `FCGX_Accept_r' function. */
 #undef HAVE_FCGX_ACCEPT_R
 
