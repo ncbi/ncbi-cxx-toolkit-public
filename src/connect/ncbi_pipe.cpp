@@ -120,7 +120,7 @@ static string x_FormatError(int error, const string& message)
             ::LocalFree((HLOCAL) tmpstr);
         }
     } else
-#endif /*NCBI_OS_MSWIN*/
+#endif // NCBI_OS_MSWIN
         errstr = 0;
 
     int dynamic = 0/*false*/;
@@ -961,7 +961,7 @@ private:
     int  m_ChildStdOut;
     int  m_ChildStdErr;
 
-    // Child process pid.
+    // Child process PID.
     TPid m_Pid;
 
     // Pipe flags
@@ -979,7 +979,7 @@ private:
 
 CPipeHandle::CPipeHandle(void)
     : m_ChildStdIn(-1), m_ChildStdOut(-1), m_ChildStdErr(-1),
-      m_Pid((pid_t)(-1)), m_Flags(0), m_SelfHandles(false)
+      m_Pid((TPid)(-1)), m_Flags(0), m_SelfHandles(false)
 {
     static NCBI_PARAM_TYPE(CONN, PIPE_USE_POLL) use_poll_param;
 
@@ -1008,8 +1008,10 @@ static void s_Exit(int status, int fd)
 }
 
 
-// Emulate nonexistent function execvpe().
-// On success, execve() does not return, on error -1 is returned,
+#ifndef HAVE_EXECVPE
+
+// Emulate the nonexistent execvpe() call.
+// On success, execve() does not return;  on error -1 is returned,
 // and errno is set appropriately.
 
 static int s_ExecShell(const char* command,
@@ -1041,8 +1043,9 @@ static int s_ExecShell(const char* command,
 
 static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
 {
-    // CAUTION (security):  current directory is in the path on purpose,
-    //                      to be in-sync with the default behavior on MS-Win.
+    // CAUTION (security):  the current directory is in the path on purpose
+    //                      (see man execlp), and also to be in-sync with the
+    //                      default behavior on MS-Win.
     static const char* kPathDefault = ":/bin:/usr/bin";
 
     // If file name is not specified
@@ -1068,14 +1071,9 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
     AutoPtr< char, ArrayDeleter<char> > buf_ptr(buf);
 
     bool eacces_err = false;
-    const char* next = path;
-    while (*next) {
-        next = strchr(path, ':');
-        if (!next) {
-            // Last part of the PATH environment variable
-            next = path + strlen(path);
-        }
-        size_t len = next - path;
+    for (;;) {
+        const char* next = strchr(path, ':');
+        size_t len = next ? (size_t)(next - path) : strlen(path)/*last part*/;
         if (len) {
             // Copy directory name into the buffer
             memmove(buf, path, len);
@@ -1084,14 +1082,13 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
                 buf[len++]    = '/';
             }
         } else {
-            // Two colons side by side -- current directory
+            // Empty PATH element (e.g.":...","::","...:") -- current directory
             buf[0] = '.';
             buf[1] = '/';
             len = 2;
         }
         // Add file name
         memcpy(buf + len, file, file_len);
-        path = next + 1;
 
         // Try to execute file with the generated name
         int error;
@@ -1102,8 +1099,9 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         }
         switch (error) {
         case EACCES:
-            // Permission denied. Memorize this fact and try next path.
+            // Permission denied.  Memorize this fact and try next path.
             eacces_err = true;
+            /*FALLTHRU*/
         case ENOENT:
         case ENOTDIR:
             // Try next path element
@@ -1111,8 +1109,13 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         default:
             // We found an executable file, but could not execute it
             CORE_UNLOCK;
+            _ASSERT(error);
             return -1;
         }
+        if (!next) {
+            break;
+        }
+        path = next + 1;
     }
 
     CORE_UNLOCK;
@@ -1121,6 +1124,9 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
     }
     return -1;
 }
+
+#  define execvpe  s_ExecVPE
+#endif // !HAVE_EXECVPE
 
 
 static int x_SafeFD(int fd, int safe)
@@ -1159,7 +1165,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
 
-    if (m_Pid != (pid_t)(-1)) {
+    if (m_Pid != (TPid)(-1)) {
         ERR_POST_X(1, s_FormatErrorMessage("Open", "Pipe busy"));
         return eIO_Unknown;
     }
@@ -1230,8 +1236,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 ::fcntl(status_pipe[1], F_GETFD, 0) | FD_CLOEXEC);
 
         // Fork child process
-        switch (m_Pid = ::fork()) {
-        case (pid_t)(-1):
+        switch (m_Pid = CCurrentProcess::Fork()) {
+        case (TPid)(-1):
             PIPE_THROW(errno,
                        "Failed fork()");
             /*NOTREACHED*/
@@ -1313,10 +1319,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             // Execute the program
             int status;
             if (env) {
-                // Emulate nonexistent execvpe()
-                status = s_ExecVPE(cmd.c_str(),
-                                   const_cast<char**>(x_args),
-                                   const_cast<char**>(env));
+                status = execvpe(cmd.c_str(),
+                                 const_cast<char**>(x_args),
+                                 const_cast<char**>(env));
             } else {
                 status = ::execvp(cmd.c_str(), const_cast<char**>(x_args));
             }
@@ -1395,7 +1400,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
 void CPipeHandle::OpenSelf(void)
 {
-    if (m_Pid != (pid_t)(-1)) {
+    if (m_Pid != (TPid)(-1)) {
         PIPE_THROW(0,
                    "Pipe busy");
     }
@@ -1412,7 +1417,7 @@ void CPipeHandle::OpenSelf(void)
 
 void CPipeHandle::x_Clear(void)
 {
-    m_Pid = (pid_t)(-1);
+    m_Pid = (TPid)(-1);
     if (m_SelfHandles) {
         m_ChildStdIn  = -1;
         m_ChildStdOut = -1;
@@ -1434,7 +1439,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
         CloseHandle(CPipe::eStdOut);
         CloseHandle(CPipe::eStdErr);
 
-        if (m_Pid == (pid_t)(-1)) {
+        if (m_Pid == (TPid)(-1)) {
             if (exitcode) {
                 *exitcode = -1;
             }
@@ -1499,7 +1504,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (m_Pid == (pid_t)(-1)) {
+        if (m_Pid == (TPid)(-1)) {
             PIPE_THROW(0,
                        "Pipe closed");
         }
@@ -1564,7 +1569,7 @@ EIO_Status CPipeHandle::Write(const void* data, size_t count,
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (m_Pid == (pid_t)(-1)) {
+        if (m_Pid == (TPid)(-1)) {
             PIPE_THROW(0,
                        "Pipe closed");
         }
@@ -1630,7 +1635,7 @@ CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
     CPipe::TChildPollMask poll = 0;
 
     try {
-        if (m_Pid == (pid_t)(-1)) {
+        if (m_Pid == (TPid)(-1)) {
             PIPE_THROW(0,
                        "Pipe closed");
         }
