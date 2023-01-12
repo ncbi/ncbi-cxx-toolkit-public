@@ -362,6 +362,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 
 void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 {
+    Set("name", named_annot_info->GetName());
     Set("blob_id", named_annot_info->GetBlobId());
     Set("id2_annot_info", named_annot_info->GetId2AnnotInfo());
 }
