@@ -537,6 +537,8 @@ public:
 
 private:
     CRef<CDB_UserHandler> m_Handler;
+
+    CFastMutex m_Mutex;
 };
 
 
@@ -552,13 +554,14 @@ CDB_UserHandler* CDB_UserHandler_Wrapper::Set(CDB_UserHandler* h)
                             "to set handle wrapper as a handler");
     }
 
+    CFastMutexGuard guard(m_Mutex);
     if (h == m_Handler) {
         return NULL;
     }
 
-    CDB_UserHandler* prev_h = m_Handler.Release();
-    m_Handler = h;
-    return prev_h;
+    CRef<CDB_UserHandler> prev_h(m_Handler);
+    m_Handler.AtomicResetFrom(CRef<CDB_UserHandler>(h));
+    return prev_h.Release();
 }
 
 
