@@ -256,7 +256,7 @@ CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
 }
 
 
-static string s_GetInfluenzaKey(const CSeq_descr& descr)
+static string s_GetInfluenzaLabel(const CSeq_descr& descr)
 {
     if (descr.IsSet()) {
         for (const auto& pDesc : descr.Get()) {
@@ -295,13 +295,13 @@ static void s_RemoveEntriesWithVal(const string& val, TMap& mapToVal)
 
 static bool s_CheckForSegments(CConstRef<CSeq_descr> seqDescrs, 
         CConstRef<CSeq_descr> setDescrs,
-        const string& key,
+        const string& fluLabel,
         set<size_t>& segments)
 {
-    if (NStr::IsBlank(key)) {
+    if (NStr::IsBlank(fluLabel)) {
         return false;
     }
-    auto fluType = CInfluenzaSet::GetInfluenzaType(key);
+    auto fluType = CInfluenzaSet::GetInfluenzaType(fluLabel);
     if (fluType == CInfluenzaSet::eNotInfluenza) {
         return false;
     }
@@ -343,7 +343,7 @@ static bool s_IdInSet(const CConstRef<CSeq_id>& pId,
 
 void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
 {
-    map<string, set<size_t>> keyToSegs;
+    map<string, set<size_t>> fluLabelToSegs;
     CConstRef<CSeq_descr> pNpSetDescr;
     for (const auto& bioseqInfo : GetBioseqs()) {
         if (!CSeq_inst::IsNa(bioseqInfo.m_mol)) {
@@ -357,33 +357,33 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
         if (!IsHugeSet(parent->m_class)) {
             continue;
         }
-        string key;
+        string fluLabel;
         if (bioseqInfo.m_descr) {
-            key = s_GetInfluenzaKey(*(bioseqInfo.m_descr));
-            if (NStr::IsBlank(key) && pNpSetDescr) {
-                key = s_GetInfluenzaKey(*pNpSetDescr);
+            fluLabel = s_GetInfluenzaLabel(*(bioseqInfo.m_descr));
+            if (NStr::IsBlank(fluLabel) && pNpSetDescr) {
+                fluLabel = s_GetInfluenzaLabel(*pNpSetDescr);
             }
         }
-        if (!NStr::IsBlank(key)) {
+        if (!NStr::IsBlank(fluLabel)) {
             bool makeSmallGenomeSet = 
-                s_CheckForSegments(bioseqInfo.m_descr, pNpSetDescr, key, keyToSegs[key]);
+                s_CheckForSegments(bioseqInfo.m_descr, pNpSetDescr, fluLabel, fluLabelToSegs[fluLabel]);
 
             if (makeSmallGenomeSet) {
                 const auto& setInfo = *FindTopObject(bioseqInfo.m_ids.front());
-                m_FluLabelToSetInfo[key].push_back(setInfo);
-                m_SetPosToFluLabel[setInfo.m_pos] = key;
+                m_FluLabelToSetInfo[fluLabel].push_back(setInfo);
+                m_SetPosToFluLabel[setInfo.m_pos] = fluLabel;
                 for (auto pId : bioseqInfo.m_ids) {
-                    m_IdToFluLabel[pId] = key;
+                    m_IdToFluLabel[pId] = fluLabel;
                 }
             }
         }
     }
 
     // Prune if there are missing segments
-    for (auto entry : keyToSegs) {
-        const auto& key = entry.first;
+    for (auto entry : fluLabelToSegs) {
+        const auto& fluLabel = entry.first;
         const auto& numSegs = entry.second.size();
-        x_PruneIfSegsMissing(key, numSegs);
+        x_PruneIfSegsMissing(fluLabel, numSegs);
     };
     x_PruneIfFeatsIncomplete();
 }
@@ -407,13 +407,13 @@ void CCleanupHugeAsnReader::x_PruneIfFeatsIncomplete()
 {
     // Prune if any of the sequences has incomplete cdregion or gene feats
     auto it = m_IdToFluLabel.begin();
-    set<string> keysToRemove;
+    set<string> fluLabelsToRemove;
     while (it != m_IdToFluLabel.end()) {
         if (s_IdInSet(it->first, m_HasIncompleteFeats)) {
-            auto key = it->second;
-            keysToRemove.insert(key);
-            s_RemoveEntriesWithVal(key, m_SetPosToFluLabel);
-            if (auto fluLabelIt = m_FluLabelToSetInfo.find(key); fluLabelIt != m_FluLabelToSetInfo.end()) {
+            auto fluLabel = it->second;
+            fluLabelsToRemove.insert(fluLabel);
+            s_RemoveEntriesWithVal(fluLabel, m_SetPosToFluLabel);
+            if (auto fluLabelIt = m_FluLabelToSetInfo.find(fluLabel); fluLabelIt != m_FluLabelToSetInfo.end()) {
                 m_FluLabelToSetInfo.erase(fluLabelIt);
             }
             it = m_IdToFluLabel.erase(it);
@@ -423,8 +423,8 @@ void CCleanupHugeAsnReader::x_PruneIfFeatsIncomplete()
         }
     }
 
-    for (const auto& key : keysToRemove) {
-        s_RemoveEntriesWithVal(key, m_IdToFluLabel);
+    for (const auto& fluLabel : fluLabelsToRemove) {
+        s_RemoveEntriesWithVal(fluLabel, m_IdToFluLabel);
     }
 }
 
