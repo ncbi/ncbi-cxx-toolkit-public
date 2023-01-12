@@ -423,6 +423,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
             case CPSG_ReplyItem::eBioseqInfo:       return CreateImpl(new CPSG_BioseqInfo, chunks);
             case CPSG_ReplyItem::eBlobInfo:         return CreateImpl(new CPSG_BlobInfo(SDataId::Get(args)), chunks);
             case CPSG_ReplyItem::eNamedAnnotInfo:   return CreateImpl(new CPSG_NamedAnnotInfo(args.GetValue("na")), chunks);
+            case CPSG_ReplyItem::eNamedAnnotStatus: return CreateImpl(new CPSG_NamedAnnotStatus, chunks);
             case CPSG_ReplyItem::ePublicComment:    return new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front());
             case CPSG_ReplyItem::eProcessor:        return new CPSG_Processor(s_GetProgressStatus(args));
             case CPSG_ReplyItem::eIpgInfo:          return CreateImpl(new CPSG_IpgInfo, chunks);
@@ -483,6 +484,7 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
         case SPSG_Args::eBlob:           return GetIfBlob(args);
         case SPSG_Args::eReply:          break;
         case SPSG_Args::eBioseqNa:       return CPSG_ReplyItem::eNamedAnnotInfo;
+        case SPSG_Args::eNaStatus:       return CPSG_ReplyItem::eNamedAnnotStatus;
         case SPSG_Args::ePublicComment:  return CPSG_ReplyItem::ePublicComment;
         case SPSG_Args::eProcessor:      return CPSG_ReplyItem::eProcessor;
         case SPSG_Args::eIpgInfo:        return CPSG_ReplyItem::eIpgInfo;
@@ -1273,6 +1275,44 @@ CPSG_NamedAnnotInfo::TId2AnnotInfoList CPSG_NamedAnnotInfo::GetId2AnnotInfoList(
 CPSG_BlobId CPSG_NamedAnnotInfo::GetBlobId() const
 {
     return s_GetBlobId(m_Data);
+}
+
+
+CPSG_NamedAnnotStatus::CPSG_NamedAnnotStatus() :
+    CPSG_ReplyItem(eNamedAnnotStatus)
+{
+}
+
+
+CPSG_NamedAnnotStatus::TId2AnnotStatusList CPSG_NamedAnnotStatus::GetId2AnnotStatusList() const
+{
+    TId2AnnotStatusList rv;
+    bool error = !m_Data.IsObject();
+
+    if (!error) {
+        for (CJsonIterator it = m_Data.Iterate(); !error && it.IsValid(); it.Next()) {
+            auto value = it.GetNode();
+            error = !value.IsInteger();
+
+            if (!error) {
+                auto status = SPSG_Reply::SState::FromState(SPSG_Reply::SState::FromRequestStatus(static_cast<int>(value.AsInteger())));
+                rv.emplace_back(it.GetKey(), status);
+            }
+        }
+    }
+
+    if (error) {
+        auto reply = GetReply();
+        _ASSERT(reply);
+
+        auto request = reply->GetRequest().get();
+        _ASSERT(request);
+
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong NA status format: '" << m_Data.Repr() <<
+                "' for " << s_GetRequestTypeName(request->GetType()) << " request '" << request->GetId() << '\'');
+    }
+
+    return rv;
 }
 
 

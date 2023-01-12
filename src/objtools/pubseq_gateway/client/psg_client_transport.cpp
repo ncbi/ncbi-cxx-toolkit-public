@@ -116,6 +116,7 @@ SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_Ar
     if (value == "blob")            return { SPSG_ArgsBase::eBlob,           cref(value) };
     if (value == "reply")           return { SPSG_ArgsBase::eReply,          cref(value) };
     if (value == "bioseq_na")       return { SPSG_ArgsBase::eBioseqNa,       cref(value) };
+    if (value == "na_status")       return { SPSG_ArgsBase::eNaStatus,       cref(value) };
     if (value == "public_comment")  return { SPSG_ArgsBase::ePublicComment,  cref(value) };
     if (value == "processor")       return { SPSG_ArgsBase::eProcessor,      cref(value) };
     if (value == "ipg_info")        return { SPSG_ArgsBase::eIpgInfo,        cref(value) };
@@ -269,6 +270,7 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eReplyItem>
         CPSG_ReplyItem::eSkippedBlob,
         CPSG_ReplyItem::eBioseqInfo,
         CPSG_ReplyItem::eNamedAnnotInfo,
+        CPSG_ReplyItem::eNamedAnnotStatus,
         CPSG_ReplyItem::ePublicComment,
         CPSG_ReplyItem::eProcessor,
         CPSG_ReplyItem::eIpgInfo,
@@ -283,6 +285,7 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eReplyItem>
             case CPSG_ReplyItem::eSkippedBlob:          return "skipped_blob";
             case CPSG_ReplyItem::eBioseqInfo:           return "bioseq_info";
             case CPSG_ReplyItem::eNamedAnnotInfo:       return "named_annot_info";
+            case CPSG_ReplyItem::eNamedAnnotStatus:     return "named_annot_status";
             case CPSG_ReplyItem::ePublicComment:        return "public_comment";
             case CPSG_ReplyItem::eProcessor:            return "processor";
             case CPSG_ReplyItem::eIpgInfo:              return "ipg_info";

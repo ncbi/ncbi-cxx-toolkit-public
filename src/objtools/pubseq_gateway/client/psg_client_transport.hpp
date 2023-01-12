@@ -94,6 +94,7 @@ struct SPSG_ArgsBase : CUrlArgs
         eBlob,
         eReply,
         eBioseqNa,
+        eNaStatus,
         ePublicComment,
         eProcessor,
         eIpgInfo,
